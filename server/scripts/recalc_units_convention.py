@@ -77,11 +77,14 @@ def main() -> int:
         f"\ntotal: {grand['percent_formatted']:,} percent-formatted cells, "
         f"{grand['above_1.5']:,} above 1.5"
     )
-    if grand["percent_formatted"] and not grand["above_1.5"]:
+    if grand["percent_formatted"]:
+        share = 100 * grand["above_1.5"] / grand["percent_formatted"]
         print(
-            "every percent-formatted cell here is a decimal fraction — this "
-            "corpus contains ONE of the two real conventions, so no accuracy "
-            "number measured on it says anything about the other"
+            f"{share:.4f}% of percent-formatted cells exceed 1.5. Read them "
+            "before concluding anything — a magnitude threshold cannot tell a "
+            "decimal fraction above 1.5 from a whole-number percent, and both "
+            "exist. This count describes a corpus; it never classifies a cell. "
+            "Only the number format decides the convention."
         )
     return 0
 

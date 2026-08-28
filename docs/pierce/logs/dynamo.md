@@ -3087,3 +3087,90 @@ No code. Both of these narrow what my numbers mean; neither makes
 E2 wrong today on the files it has been measured on. Item (a) —
 number format decides the percent convention — is the next round and
 is registered separately.
+
+## The percent sweep, widened — and the exceptions prove the report's point
+
+Whole corpus, `scripts/recalc_units_convention.py`:
+
+| file | percent-formatted | above 1.5 | largest |
+|---|---|---|---|
+| `final_wacc.xlsx` | 183,987 | 0 | 1.0 |
+| `RIIO GDT3 WACC Rates` | 183,941 | 0 | 1.0 |
+| `RIIO GD3 BPFM` | 118,874 | 0 | 1.111 |
+| `final_et3_bpfm.xlsm` | 106,400 | **6** | 4.518 |
+| `RIIO ET3 BPFM` | 95,864 | **9** | 4.518 |
+| `final_gt3_bpfm.xlsm` | 91,717 | **5** | 2.0 |
+| `RIIO GT3 BPFM` | 89,856 | 0 | 1.111 |
+| `DRAFT_ET3 PCFM` | 4,598 | **3** | 6.473 |
+| `DRAFT_GD3 PCFM` | 2,809 | **1** | 1.512 |
+| …every other file | | 0 | ≤ 1.111 |
+| **total** | **1,213,460** | **24** | |
+
+Twenty-four exceptions in 1.21 million cells — 0.002%.
+
+I read the exceptions rather than reporting a count:
+
+    Tax!AU56 = 6.4733  fmt '0.0%;(0.0%);"-"'  « Actual gearing »
+    Tax!AV56 = 2.1627  « Actual gearing »
+    Tax!AW56 = 1.8258  « Actual gearing »
+    Tax!AU56 = 1.5121  « Actual gearing »   (GD3)
+
+**Those four are gearing above 100%** — debt exceeding RAV, which is
+a real thing a regulated company does — stored as decimal fractions
+and formatted as percentages. Not whole-number-percent
+counterexamples: decimal fractions that happen to exceed 1.5.
+
+**And the other twenty are not the same thing**, which I only found
+by reading them too:
+
+    ScenarioRun_AllOutputData!AR62 = 4.5180  fmt '0.00%'
+        « Shrinkage Management ODI »
+    ScenarioRun_AllOutputData!AQ61 = 2.2435  fmt '0.00%'
+        « Unplanned Interruption Mean Duration ODI [Cadent only] »
+
+Incentive values, not ratios. I had written « all 24 are Actual
+gearing » from the first four before the larger files finished
+reading, and it was wrong — the correction is here rather than in a
+quiet edit because it is the same over-generalising this entry is
+about. Read in full, the twenty fall into two more classes:
+
+    ScenarioRun_AllOutputData!AR62 = 4.5180  « Shrinkage Management ODI »
+    ScenarioRun_AllOutputData!AQ61 = 2.2435  « Quality of connections ODI »
+    SPTL!AP1868 = 1.6949   « Spare UM 3 »
+    SPTL!AP1870 = -1.6942  « Spare UM 3 »
+
+incentive rows and an uncertainty-mechanism placeholder, all under
+percent formats.
+
+**What I can state and what I cannot.** Every one of the 24 sits
+between 1.5 and 6.5 — not in the tens, where a whole-number percent
+would live — so nothing here looks like the second convention. But
+`4.518` under `0.00%` displays as **451.8%**, and I cannot tell from
+the file whether its author meant that or meant 4.518%. The format
+says decimal fraction and E2 reads it as 451.8%; **whether the
+author meant it is a question about the file, not about E2.** The
+research made the same point about a toll-road model carrying two
+unit labels its own author got wrong, and it applies to our corpus
+too: real ground truth is not always right, and this lane says so
+rather than quietly assuming our regulator files are.
+
+So: the corpus still carries one convention as far as any evidence
+shows, and the 24 exceptions are a reason to distrust magnitude
+tests, not evidence of the second convention.
+
+Which is the research's own point, arriving from the other side. The
+report's killer cell was `Module Degradation = 0.5` under `% p.a.`,
+where « below 1 means a fraction » is 100× wrong. My corpus supplies
+the mirror: **13 cells where « above 1.5 means a whole number »
+would also be 100× wrong.** A magnitude threshold fails in both
+directions, on real files, in the same week. The number format is
+the only instrument that works, and I now have my own evidence for
+it rather than only the report's.
+
+The summary sentence my script prints — « this corpus contains ONE
+of the two conventions » — is therefore correct and its trigger
+condition was too strict: it fires only at zero exceptions, so on
+the four files above it said nothing at all. Fixed to report the
+exceptions and say what they are, because « 9 cells above 1.5 » with
+no follow-up is exactly the kind of unexplained number this lane is
+not supposed to publish.
