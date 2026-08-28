@@ -78,8 +78,21 @@ a report.
    tier; the registration forbids importing z3 before that line
    exists. Re-raise it every turn until it lands, and do not
    silently start.
-0. **The profile's next round is the declared-version reader**, and
-   it is a change of *kind*: comparables are the model's other
+0. **The declared-version axis is built and measured** —
+   `watch/version.py` + `profile.profile_by_declaration`. Coverage
+   and discrimination on one footing: size 6/10 and 5/15 comparable,
+   cadence 7/10 and 14/15 (but flags on 13 of 15, one a zero-cell
+   transition), **declared 10/10 and 4/15 with flags on 6/10 and
+   2/15**. It is the first rule whose numbers are *explainable*: ED2
+   versions every release so it covers everything; hickeng versioned
+   nothing for eight transitions so it refuses eleven — and each
+   refusal is « this model did not declare a version then ».
+   **No band, no constant, no tolerance** — the two predecessors
+   each died on theirs. What would falsify it: a chain whose declared
+   steps do not track how the model changed (bumps every commit, or
+   a rewrite shipped under `none`).
+   *(superseded plan, kept for the reasoning)* it was a change of
+   *kind*: comparables are the model's other
    transitions of the same **declared version step** (patch, minor,
    family), read from the file — hickeng writes « github release:
    v0.1.6 » in `Summary!C`, ED2 carries `v2`…`v5` in its filename
@@ -241,6 +254,13 @@ a report.
   and the second dies inside PIL with « I/O operation on closed
   file ». Reload the workbook for every write; it cost the pair
   oracle its first attempt.
+- **A permissive pattern manufactures answers; only the corpus finds
+  it.** Three times now: the fragment classifier omitted AND/OR/NOT
+  against its own registration, an early draft stripped the `=`
+  before tokenizing, and the version reader read the date serial
+  `42036` from a column labelled « Release **Date** » as a version.
+  The constructed tests passed in every case. **Run a new reader over
+  a real corpus before believing it.**
 - **openpyxl's save drops every cached value.** Any planted file
   handed to something that reads *values* (the tie-out, the
   linker, the audit's value rules) will mislead you: C4 round 1

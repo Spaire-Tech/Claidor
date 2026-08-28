@@ -4215,3 +4215,148 @@ version from a workbook. Both chains carry one and neither is hard:
 hickeng's is a labelled cell, ED2's is in the filename and on the
 cover. That reader is a day's work in this lane, needs no dependency
 and no new corpus, and **that is the next round**.
+
+## The declared-version round (REGISTERED BEFORE RESULTS)
+
+Tip `bf444a11`; orders unchanged; `z3-solver` absent. Handoff lessons
+re-read first, per the standing order — the relevant ones here are
+« heavy jobs run alone » (this round runs none), « an openpyxl
+workbook with images can be saved once » (this round writes nothing),
+and « the shell's cwd resets » (bitten twice; every command below
+sets its directory).
+
+**The rule being built.** A workbook's **declared version**, read
+from the file rather than inferred from its diff:
+
+1. **A labelled cell.** Any cell whose row or column label contains
+   *version*, *release* or *build*, whose value carries something
+   version-shaped (`v1`, `0.1.6`, `v0.1.6-b`, `2023-07`). First
+   match in sheet order wins, and the sheet and cell are reported so
+   a reader can check it.
+2. **The filename**, when no cell declares one — `v2_2023-07-14`.
+3. **Neither**: the reader **refuses in words**. « This model does
+   not declare a version » is a fact about the model and a perfectly
+   good answer.
+
+**The step between two declarations** is then classified without any
+threshold: `none` (identical), `patch`, `minor`, `major` for
+dotted numerals, `family` for a bare `v2 → v3`, and `unknown` when
+the two do not parse into the same scheme.
+
+**Why this is the right axis, restated in one line**: the step is an
+*input* — the author declared it before anyone diffed the files — so
+grouping by it cannot be circular the way grouping by composition
+would be.
+
+**How it will be judged.** Coverage *and* discrimination, together,
+against the two rules already measured:
+
+```
+                    comparable / total      flags fired / total
+size        ED2          6/10                     4/10
+            hickeng      5/15                     3/15
+cadence     ED2          7/10                     6/10
+            hickeng     14/15                    13/15
+```
+
+**Predictions.**
+
+1. **Every hickeng version declares itself in a cell** — its Summary
+   sheet carries « github release: v0.1.x », which C3 has already
+   shown me in a `relabelled_line`. ED2 declares in the **filename**
+   and I expect **no** labelled cell to carry a version on its
+   cover.
+2. **Most hickeng transitions are `none`** — at least **8 of 15** —
+   because ordinary development commits do not touch the release
+   string. If so, the « none » group is large and the rule buys
+   coverage cheaply; whether it buys *discrimination* is the whole
+   question.
+3. **ED2 splits 4 family steps and 6 none** — `v1→v2`, `v2→v3`,
+   `v3→v4`, `v4→v5` against the six within-family transitions.
+4. **The discrimination test, and the one I care about**: flags fire
+   on **fewer than 8 of hickeng's 15** transitions, against cadence's
+   13. If it fires on as many as cadence did, the declared step is
+   no better than time and I will say so and stop proposing
+   neighbour rules.
+
+## The declared-version round — results, and the first rule that is honest in both directions
+
+**A defect the corpus caught and the tests did not, again.** The
+first reader returned `42036` as the declared version of ten of
+hickeng's sixteen workbooks. `RSU!C10` sits under the column label
+**« Release Date »**, my label pattern matched *Release*, and my
+version pattern accepted a bare integer — so an Excel **date serial**
+became a version and every step computed from it was fiction
+(`family`, `unknown`, and nine `none`s that meant nothing).
+
+Two fixes, both principled rather than tuned, both now pinned by
+tests: a label that also says *date* declares a **when**, not a
+**what**; and a version must carry a `v` prefix or a dot, because a
+bare number in a cell whose label mentions a release is a number.
+This is the third time this lane has shipped a permissive pattern
+that manufactures an answer instead of refusing, and the third time
+only the corpus found it.
+
+**What the two chains actually declare, after the fix.**
+
+```
+ED2       v1 v2 v2 v3 v3 v3 v4 v4 v4 v4 v5      (filename, all eleven)
+          steps: family 4 · none 6
+hickeng   — — — — — — — — v0.1.5 v0.1.6 v0.1.6 v0.1.6 v0.1.7 v0.1.7 v0.1.8 v0.1.8
+          steps: undeclared 8 · patch 3 · none 4     (Summary!C41)
+```
+
+**Prediction 1 — failed.** I said every hickeng version declares
+itself in a cell. Eight of sixteen do not: **the model began
+declaring its release halfway through its life**, at `09_5649e7a`.
+ED2's half held — filename, no cell.
+**Prediction 2 — failed.** Four `none` steps, not the eight or more I
+predicted; the rest are undeclared, and undeclared is not `none`.
+**Prediction 3 — held exactly**: ED2 is 4 family and 6 none.
+**Prediction 4 — held**: flags fire on **2** of hickeng's 15, against
+cadence's 13 and my predicted ceiling of 8.
+
+### The three rules, measured on one footing
+
+```
+             coverage (comparable / total)        flags fired
+             ED2        hickeng                   ED2     hickeng
+size          6/10        5/15                    4/10     3/15
+cadence       7/10       14/15                    6/10    13/15
+declared    10/10        4/15                     6/10     2/15
+```
+
+**And this is the first rule whose numbers are explainable rather
+than accidental.** ED2 versions every release, so the declared step
+covers **all ten** transitions — better than either predecessor.
+hickeng versioned nothing for its first eight transitions, so the
+rule refuses eleven of fifteen — and each refusal is the sentence
+« this model did not declare a version then », which is a fact about
+the model rather than an artifact of arithmetic. Size refused
+because 1 has no neighbours within a factor of two; cadence spoke
+everywhere and said nothing. This one's coverage tracks whether the
+model versions itself, which is exactly what it should track.
+
+**And where it does speak on hickeng, it speaks about the right
+thing.** The defect pair — the skew fix — is a `none` step compared
+against the chain's other `none` steps, and it comes back flagged on
+six classes. The one transition in this corpus a human labelled a
+defect is now both *reachable* and *flagged*, which neither size nor
+cadence managed.
+
+**Built**: `watch/version.py` (the reader and the step) and
+`profile.profile_by_declaration` — exact grouping, **no band, no
+constant, no tolerance anywhere**, because the author declared a
+category rather than a magnitude. That absence is the point: the two
+predecessors each died on their tolerance.
+
+### What would falsify this, since it is not a refusal to close
+
+Not « a third chain » in the abstract. Precisely: **a chain whose
+declared steps do not track how the model actually changed** — a
+project that bumps its version on every commit, or one that ships a
+rewrite under `none`. hickeng nearly is the first case and is not;
+ED2's four `family` steps are genuinely its four rebuilds. If a
+chain arrives where `patch` steps and `family` steps have
+indistinguishable delta profiles, this axis is as dead as the other
+two, and the measurement that shows it is the same table above.

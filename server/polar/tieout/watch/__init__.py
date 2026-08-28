@@ -24,15 +24,24 @@ from .delta import DeltaItem, DeltaReport, delta_of, delta_report
 from .diff import CellDelta, VersionDiff, diff_paths, diff_raw, read_raw
 from .document import DeckDelta, DeckItem, compare_tieouts, deck_delta
 from .fragment import Eligibility, classify, eligible_pair
-from .profile import Profile, Transition, describe, profile_of, unusual
+from .profile import (
+    Profile,
+    Transition,
+    describe,
+    profile_by_declaration,
+    profile_of,
+    unusual,
+)
 from .signature import LITERAL, Line, SheetGrid, sheet_grids
 from .tiers import Ladder, Tier2Answer, Verdict, build_ladder, gate_violations
+from .version import Declaration, declared_version, step
 
 __all__ = [
     "LITERAL",
     "CellDelta",
     "DeckDelta",
     "DeckItem",
+    "Declaration",
     "DeltaItem",
     "DeltaReport",
     "Eligibility",
@@ -53,6 +62,7 @@ __all__ = [
     "classify",
     "compare_tieouts",
     "deck_delta",
+    "declared_version",
     "delta_of",
     "delta_report",
     "describe",
@@ -60,9 +70,11 @@ __all__ = [
     "diff_raw",
     "eligible_pair",
     "gate_violations",
+    "profile_by_declaration",
     "profile_of",
     "read_raw",
     "sheet_grids",
+    "step",
     "structural_changes",
     "unusual",
 ]
