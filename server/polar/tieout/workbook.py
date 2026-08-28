@@ -349,14 +349,33 @@ def _grid_of(written_sheet: Any, values_sheet: Any) -> _Grid:
             grid._saw(row, column)
         return grid
 
+    formulas_here = False
     for row in written_sheet.iter_rows():
         for cell in row:
-            if cell.value is None:
+            value = cell.value
+            if value is None:
                 continue
             at = (cell.row, cell.column)
-            grid.written[at] = cell.value
+            grid.written[at] = value
             grid.formats[at] = getattr(cell, "number_format", None)
             grid._saw(*at)
+            if not formulas_here and isinstance(value, str) and value[:1] == "=":
+                formulas_here = True
+
+    if not formulas_here:
+        # The two loads differ **only** where a cell holds a formula: one
+        # gives the formula text, the other Excel's cached answer. On a
+        # sheet with no formula at all they agree cell for cell, so the
+        # second parse of the same XML buys nothing.
+        #
+        # It is not a rare case and it is not cheap. The corpus's biggest
+        # file is 496,478 cells with **three** formulas in twenty-seven
+        # sheets; openpyxl parsed 3.1 million cell elements twice to learn
+        # those three. Measured before the skip: 75.9 s to read, against a
+        # spec that promises 600k cells in under a minute.
+        grid.values.update(grid.written)
+        return grid
+
     for row in values_sheet.iter_rows():
         for cell in row:
             if cell.value is None:

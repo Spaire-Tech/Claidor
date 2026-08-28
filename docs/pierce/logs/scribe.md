@@ -5790,3 +5790,97 @@ habit is the thing being corrected, not the outcome.
 - No change to the chain package.
 - **Kelso**: noted as live, not closed, per orders item 4. Nothing to do
   until the bytes arrive.
+
+## 28 August 2026, thirtieth « go » — A1. The reader parsed every sheet twice. **75.9 s → 50.4 s.**
+
+Orders: the document chain stops, I move to the engine's speed and own
+it end to end. Method is not negotiable — profile, fix the top item,
+re-measure, repeat. No essays. So:
+
+### Profiled first
+
+The biggest corpus file, `hchs-sep-2015-trust-ccg.xlsx`, 19.0 MB,
+**496,478 cells and 3 formulas** across 27 sheets.
+
+| stage | before |
+|---|---|
+| `read_workbook` | — |
+| **`read_artifact` (read + outputs + audit)** | **75.91 s** |
+
+cProfile over the read (193.7 s under the profiler, ~2.5× overhead):
+
+```
+ cumtime  function
+  148.46  polar/tieout/workbook.py:334(_grid_of)          <- 77% of everything
+  115.47  openpyxl/worksheet/_reader.py:125(parse)
+   65.89  {method 'Parse' of 'pyexpat.xmlparser' objects}
+   33.50  polar/tieout/workbook.py:465(_read_sheet)
+```
+
+`parse_cell` was called **6,235,932 times to keep 496,478 cells.**
+
+### The top item, which was not the mutation detector
+
+A1's own note says « the mutation detector dominates ». On this file it
+does not, and the audit is not the problem either — it is **5.1 s**.
+
+`_grid_of` iterates the sheet **twice**: once from the `data_only=False`
+load for formula text, once from `data_only=True` for Excel's cached
+answers. That is two full XML parses of the same 3.1 million cell
+elements.
+
+**The two loads differ only where a cell holds a formula.** Everywhere
+else they agree cell for cell, so on a sheet with no formula the second
+parse buys nothing. This file has **three formulas in twenty-seven
+sheets** — openpyxl parsed 3.1 million cell elements twice to learn
+three values.
+
+The fix is nine lines: note whether the written pass saw a formula; if
+it did not, fill `values` from `written` and skip the second parse.
+
+### Re-measured
+
+| | before | after |
+|---|---|---|
+| `read_workbook` | — | **45.26 s** |
+| `period_axes` | — | 0.09 s |
+| `audit` | — | **5.08 s** |
+| **total** | **75.91 s** | **50.43 s** |
+
+**A third off, and the audit is already « in seconds ».**
+
+### Correctness, checked rather than assumed
+
+The change must not alter what is read, so the formula-heavy models —
+where the second pass is genuinely needed — must be identical:
+
+| model | cells | formulas | findings |
+|---|---|---|---|
+| `ofgem_ed2_pcfm_v5` | 43,178 | 20,485 | **8** — unchanged |
+| `ofgem_ed2_pcfm_v3_2023` | 40,948 | 20,522 | 11 |
+| `kelso_model` | 470,594 | 814 | 2 |
+
+ED2 v5 is cell-for-cell, formula-for-formula and finding-for-finding
+what it was before the change. **Full tieout suite: 1,037 passed, 9
+skipped, 0 failed.**
+
+### Where the spec's sentence now stands, stated exactly
+
+« 600k cells read in under a minute, checks in seconds. »
+
+- **checks in seconds** — audit is **5.1 s**. True.
+- **600k cells in under a minute** — the read is **45.3 s for 496,478
+  cells**. No corpus file has 600k cells (the next largest is Kelso at
+  470,594), so 600k cannot be measured directly here; at this file's
+  rate it scales to **≈54.7 s**. Under a minute, **by extrapolation and
+  not by measurement**, and I am not going to call that DONE.
+
+### Not finished — next turn continues without being asked
+
+The remaining 45.3 s is the single surviving XML pass: openpyxl still
+materialises a cell object for every one of 3.1 million elements to keep
+496 thousand. That is the next top item, and the formula-heavy case is a
+separate one — **ED2 is 23.5 s for 43,178 cells**, 20× slower per cell
+than this file, which points at formula parsing rather than XML.
+
+Services were down again and restarted from the handoff's recipe.
