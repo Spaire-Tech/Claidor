@@ -115,8 +115,60 @@ def _is_a_run_of_years(values: Sequence[float]) -> bool:
     return all(b - a == 1 for a, b in zip(values, values[1:], strict=False))
 
 
-def _from_declared(units: str) -> UnitLabel | None:
-    """The model's own Units text, when the caller supplies it."""
+def is_percent_format(number_format: str) -> bool:
+    """A percent-style format: a `%` outside any quoted section.
+
+    `0.00%` and `#,##0.0%;(0.0%);"-"` are percent styles. A format
+    whose only `%` sits inside quotes — `0.0" % of total"` — is not:
+    Excel is printing the character, not scaling the value.
+    """
+    outside, quoted = [], False
+    for character in number_format or "":
+        if character == '"':
+            quoted = not quoted
+        elif not quoted:
+            outside.append(character)
+    return "%" in "".join(outside)
+
+
+def percent_convention(
+    number_formats: Sequence[str], declared: str | None = None
+) -> str:
+    """`decimal`, `percent`, or `unknown` — decided by the format alone.
+
+    The founder's fourth research round, six real models of six:
+    **a percent-style number format means the stored value is a
+    decimal fraction; a non-percent format under a declared `%` means
+    it is a whole number of percent.** Neither the value nor the
+    label may be consulted, and both directions have killer cases —
+    their `Module Degradation = 0.5` under `% p.a.` (0.5 meaning half
+    of one percent), and our own 24 percent-formatted cells above 1.5
+    (gearing at 647%, all decimal fractions). An Australian model
+    carries both conventions in one column of one sheet, so
+    per-sheet and per-column inference is wrong too.
+
+    A declared `%` with no format to read **abstains**. Assuming is
+    what this function exists to stop.
+
+    Note, and it is a property rather than a defect: a format-based
+    rule inherits the file's own mistakes. Five cells in our corpus
+    read exactly `2` under `0.0%`; this returns `decimal`, so they
+    are 200%. If their author meant 2%, nothing here can know.
+    """
+    formats = [f for f in number_formats if f]
+    if any(is_percent_format(f) for f in formats):
+        return "decimal"
+    if declared and "%" in declared and formats:
+        return "percent"
+    return "unknown"
+
+
+def _from_declared(units: str, number_formats: Sequence[str] = ()) -> UnitLabel | None:
+    """The model's own Units text, read together with its format.
+
+    The units text alone cannot decide the percent convention — that
+    is `percent_convention`'s job and it needs the format.
+    """
     text = units.strip().lower()
     if not text:
         return None
@@ -140,11 +192,20 @@ def _from_declared(units: str) -> UnitLabel | None:
             currency="none",
             scale="units",
             period="annual" if "annual" in text else "none",
-            rate_form="unknown",
-            why=f"the sheet's Units column says « {units.strip()} »",
+            rate_form=percent_convention(number_formats, text),
+            why=f"the sheet's Units column says « {units.strip()} »"
+            + _convention_note(percent_convention(number_formats, text)),
             declared=True,
         )
     return None
+
+
+def _convention_note(convention: str) -> str:
+    if convention == "decimal":
+        return "; a percent number format means the value is a decimal fraction"
+    if convention == "percent":
+        return "; no percent format, so the value is a whole number of percent"
+    return "; no number format to read, so the percent convention is not claimed"
 
 
 def classify_row(
@@ -152,7 +213,7 @@ def classify_row(
 ) -> UnitLabel:
     """One row's units, from format, label, headers and values."""
     if evidence.declared_units:
-        declared = _from_declared(evidence.declared_units)
+        declared = _from_declared(evidence.declared_units, evidence.number_formats)
         if declared is not None:
             return declared
 

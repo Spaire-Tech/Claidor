@@ -1,0 +1,112 @@
+{
+ "ed2-v5": {
+  "sheets": 30,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 5954,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 5954,
+  "top_texts": [],
+  "sample": []
+ },
+ "gd3-pcfm": {
+  "sheets": 13,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 1393,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 1393,
+  "top_texts": [],
+  "sample": []
+ },
+ "baldragon_model.xlsm": {
+  "sheets": 26,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 0,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 0,
+  "top_texts": [],
+  "sample": []
+ },
+ "forfar_model.xlsm": {
+  "sheets": 24,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 0,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 0,
+  "top_texts": [],
+  "sample": []
+ },
+ "glasgow_college_model.xlsm": {
+  "sheets": 79,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 0,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 0,
+  "top_texts": [],
+  "sample": []
+ },
+ "inverurie_foresterhill_model.xlsm": {
+  "sheets": 20,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 0,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 0,
+  "top_texts": [],
+  "sample": []
+ },
+ "kelso_model.xlsm": {
+  "sheets": 53,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 0,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 0,
+  "top_texts": [],
+  "sample": []
+ },
+ "levenmouth_model.xlsm": {
+  "sheets": 24,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 0,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 0,
+  "top_texts": [],
+  "sample": []
+ },
+ "newbattle_model.xlsm": {
+  "sheets": 52,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 0,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 0,
+  "top_texts": [],
+  "sample": []
+ },
+ "oban_campbeltown_model.xlsm": {
+  "sheets": 17,
+  "declarations_found": 0,
+  "columns_used": 0,
+  "header_based_rows": 0,
+  "found_and_header": 0,
+  "found_only": 0,
+  "header_only": 0,
+  "top_texts": [],
+  "sample": []
+ }
+}

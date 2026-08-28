@@ -3018,3 +3018,347 @@ mixed, the whole of `b5_type` — rests on it. **A second hand-labelled
 set, drawn by someone other than me, is the single thing that would
 most improve this verdict**, and I would rather say that than let a
 3,796-row number carry weight it cannot hold.
+
+---
+
+## Two corrections to the verdict I published an hour ago
+
+*28 Aug, on reading the founder's fourth research round
+(`corpus-sources.md`, 28 Aug fourth addendum) as the URGENT addendum
+orders. Both corrections narrow claims I made; neither is a change
+of code.*
+
+### 1. `rate_form`'s verdict is measured on a corpus with one convention
+
+The research found that `%` means opposite things in different real
+workbooks — three of six models store `0.005`, three store `70` —
+and that the **number format** separates them six times out of six.
+The lead verified our corpus carries only one. I re-derived it
+rather than take it on trust, because it decides whether my own
+number means anything:
+
+    final_wacc.xlsx: 183,987 percent-formatted, 0 above 1.5,
+                     largest exactly 1
+
+Confirmed to the cell. `scripts/recalc_units_convention.py`, now
+committed so anyone can re-run it on any corpus.
+
+**So `rate_form` — ARM WITH CARE — is armed on evidence that
+contains only decimal-fraction percentages.** The whole-number
+convention is not tested anywhere in my measurement, and on a model
+that uses it E2 would be **100× wrong while reporting no
+abstention**. The verdict line stands as written but must be read
+with this attached, and I would not have found it from our files:
+the research did.
+
+**This is the same failure as the one I found this morning**, and I
+want the pair named together because they rhyme: the author key
+holds one value for `kind` (everything in it is continuous by
+construction), and the corpus holds one value for the percent
+convention. Twice in one day a number of mine turned out to measure
+a narrower thing than its name suggested. The lesson I am taking is
+that **the shape of a key must be measured before its accuracy is
+quoted**, and I have added that check to the handoff rather than
+just to my own habits.
+
+### 2. Build order item (b) will kill my author key — a structural warning
+
+The orders make a **units-column detector** the second thing I
+build. My 3,796-row author key **is** those models' Units column,
+read by the scorer and forbidden to the inference.
+
+**The moment E2 reads units columns, scoring E2 against them is
+circular** and the key is worth nothing. That is not an argument
+against building the detector — nine of 27 real models put units in
+a column and an engine that ignores them is silently blind, which is
+worse. It means the key has to be replaced *before* the detector
+lands, not after.
+
+After (b), the only non-circular evidence I hold is **E1's hundred
+rows, hand-labelled by me**. That is a thin foundation for a
+shippable verdict, and it makes the request I ended the verdict with
+urgent rather than nice-to-have: **a second hand-labelled set drawn
+by someone other than me.** I am raising it now because the build
+order will otherwise consume the key I have been quoting all week.
+
+### What I have not changed
+
+No code. Both of these narrow what my numbers mean; neither makes
+E2 wrong today on the files it has been measured on. Item (a) —
+number format decides the percent convention — is the next round and
+is registered separately.
+
+## The percent sweep, widened — and the exceptions prove the report's point
+
+Whole corpus, `scripts/recalc_units_convention.py`:
+
+| file | percent-formatted | above 1.5 | largest |
+|---|---|---|---|
+| `final_wacc.xlsx` | 183,987 | 0 | 1.0 |
+| `RIIO GDT3 WACC Rates` | 183,941 | 0 | 1.0 |
+| `RIIO GD3 BPFM` | 118,874 | 0 | 1.111 |
+| `final_et3_bpfm.xlsm` | 106,400 | **6** | 4.518 |
+| `RIIO ET3 BPFM` | 95,864 | **9** | 4.518 |
+| `final_gt3_bpfm.xlsm` | 91,717 | **5** | 2.0 |
+| `RIIO GT3 BPFM` | 89,856 | 0 | 1.111 |
+| `DRAFT_ET3 PCFM` | 4,598 | **3** | 6.473 |
+| `DRAFT_GD3 PCFM` | 2,809 | **1** | 1.512 |
+| …every other file | | 0 | ≤ 1.111 |
+| **total** | **1,213,460** | **24** | |
+
+Twenty-four exceptions in 1.21 million cells — 0.002%.
+
+I read the exceptions rather than reporting a count:
+
+    Tax!AU56 = 6.4733  fmt '0.0%;(0.0%);"-"'  « Actual gearing »
+    Tax!AV56 = 2.1627  « Actual gearing »
+    Tax!AW56 = 1.8258  « Actual gearing »
+    Tax!AU56 = 1.5121  « Actual gearing »   (GD3)
+
+**Those four are gearing above 100%** — debt exceeding RAV, which is
+a real thing a regulated company does — stored as decimal fractions
+and formatted as percentages. Not whole-number-percent
+counterexamples: decimal fractions that happen to exceed 1.5.
+
+**And the other twenty are not the same thing**, which I only found
+by reading them too:
+
+    ScenarioRun_AllOutputData!AR62 = 4.5180  fmt '0.00%'
+        « Shrinkage Management ODI »
+    ScenarioRun_AllOutputData!AQ61 = 2.2435  fmt '0.00%'
+        « Unplanned Interruption Mean Duration ODI [Cadent only] »
+
+Incentive values, not ratios. I had written « all 24 are Actual
+gearing » from the first four before the larger files finished
+reading, and it was wrong — the correction is here rather than in a
+quiet edit because it is the same over-generalising this entry is
+about. Read in full, the twenty fall into two more classes:
+
+    ScenarioRun_AllOutputData!AR62 = 4.5180  « Shrinkage Management ODI »
+    ScenarioRun_AllOutputData!AQ61 = 2.2435  « Quality of connections ODI »
+    SPTL!AP1868 = 1.6949   « Spare UM 3 »
+    SPTL!AP1870 = -1.6942  « Spare UM 3 »
+
+incentive rows and an uncertainty-mechanism placeholder, all under
+percent formats.
+
+**What I can state and what I cannot.** Every one of the 24 sits
+between 1.5 and 6.5 — not in the tens, where a whole-number percent
+would live — so nothing here looks like the second convention. But
+`4.518` under `0.00%` displays as **451.8%**, and I cannot tell from
+the file whether its author meant that or meant 4.518%. The format
+says decimal fraction and E2 reads it as 451.8%; **whether the
+author meant it is a question about the file, not about E2.** The
+research made the same point about a toll-road model carrying two
+unit labels its own author got wrong, and it applies to our corpus
+too: real ground truth is not always right, and this lane says so
+rather than quietly assuming our regulator files are.
+
+And then the last file changed the picture again:
+
+    PCFMInterface_SO!AU113 = 2  fmt '0.0%;(0.0%);"-"'
+        « Office, gas national control centre and emergency control »
+    …AV113, AW113, AX113, AY113 — all exactly 2
+
+**Exactly `2`, five times, under a percent format** — displaying as
+200% on a cost-allocation row. A 2% allocation written as `2` is
+precisely the second convention, and it is also precisely the slip a
+modeller makes. I cannot tell which from the file, and I am not
+going to decide it by preference.
+
+So the conclusion is narrower than the one I was about to write.
+**As far as any evidence shows, our corpus carries the
+decimal-fraction convention — with five cells that may be the other
+one and cannot be resolved from the file.** The 24 exceptions are a
+reason to distrust magnitude tests in both directions, and one small
+reason to stop saying our corpus is uniform without qualification.
+
+`scripts/recalc_units_exceptions.py` prints every outlier with its
+label, so the next person reads them rather than trusting a count —
+including mine.
+
+Which is the research's own point, arriving from the other side. The
+report's killer cell was `Module Degradation = 0.5` under `% p.a.`,
+where « below 1 means a fraction » is 100× wrong. My corpus supplies
+the mirror: **13 cells where « above 1.5 means a whole number »
+would also be 100× wrong.** A magnitude threshold fails in both
+directions, on real files, in the same week. The number format is
+the only instrument that works, and I now have my own evidence for
+it rather than only the report's.
+
+The summary sentence my script prints — « this corpus contains ONE
+of the two conventions » — is therefore correct and its trigger
+condition was too strict: it fires only at zero exceptions, so on
+the four files above it said nothing at all. Fixed to report the
+exceptions and say what they are, because « 9 cells above 1.5 » with
+no follow-up is exactly the kind of unexplained number this lane is
+not supposed to publish.
+
+---
+
+## Build order (a) — the number format decides the percent convention
+
+*28 Aug, URGENT addendum item 3(a). Registered before the code.*
+
+### What the rule is
+
+From the research, six models of six: **percent-style number format
+→ the stored value is a decimal fraction; a non-percent format under
+a declared `%` → the stored value is a whole number of percent.**
+Neither the value nor the label may be consulted, and the killer
+cases prove why in both directions — their `Module Degradation = 0.5`
+under `% p.a.`, and our own 24 outliers above 1.5.
+
+Two places in this lane assume `%` means decimal without looking at
+the format, and both are wrong in general:
+
+- `_from_declared` in the inference, used when a caller supplies a
+  units text.
+- `truth_from_units` in the scorer — **the answer key itself**. On a
+  whole-number-percent model my key would be wrong, which would make
+  every accuracy number computed against it wrong in the same
+  direction. Fixing the key matters more than fixing the inference.
+
+### What is built
+
+One function, `percent_convention(number_format, declared)`,
+returning `decimal`, `percent`, or an abstention, used by both. A
+declared `%` with **no** format information abstains rather than
+assuming — that is the whole lesson.
+
+### Predictions
+
+1. **On our corpus this changes nothing.** Every declared-`%` row we
+   hold is percent-formatted, so both the inference and the key
+   should return exactly what they returned before: **0 rows changed
+   on the 3,796-row author key, 0 on E1.** If anything moves, my
+   reading of the corpus is wrong and I would rather find that out
+   here.
+2. The research's six cells classify correctly in tests — the three
+   decimal-fraction models and the three whole-number ones,
+   including `Module Degradation = 0.5` and the Australian file's
+   `E25`/`E61` pair that share a column and disagree.
+3. **The five ambiguous `= 2` cells classify as `decimal`** — 200%,
+   which is what the format says. If their author meant 2%, the rule
+   cannot know that and neither can I; a format-based rule inherits
+   the file's own errors, and that is a property to state rather
+   than a defect to hide.
+4. No dimension moves on either key, so the verdict published today
+   stands unchanged — with its caveat that the second convention
+   remains untested by any measurement I hold.
+
+## Item (a) measured — and it found the second convention in our own corpus
+
+### The predictions
+
+| prediction | outcome |
+|---|---|
+| 1 — nothing changes on our corpus | **almost**: every tally identical, **one row's key changed** |
+| 2 — the research's six cells classify correctly | **confirmed**, in tests |
+| 3 — the five ambiguous `= 2` cells read `decimal` | **confirmed** |
+| 4 — no dimension moves, the verdict stands | **confirmed** |
+
+Both keys re-run at HEAD are identical to the run before the change,
+dimension for dimension. The only difference in the whole output is
+one line, and it is the interesting one:
+
+    - "rate_form: said not-a-rate, was decimal"
+    + "rate_form: said not-a-rate, was percent"
+
+### What that one row is
+
+    gd3-pcfm  Input!442   units « % »
+      format  '#,##0.0;\(#,##0.0\);"-"'   — not a percent format
+      values  11.5847, 10.0364, 5.7118, 1.5500
+      label   « CPI Forecast »
+
+**CPI of 11.58%, written as `11.58`.** That is the whole-number
+convention, in a regulator model, in our own corpus — and UK CPI
+peaked near 11% in 2022, so the reading is not in doubt the way the
+five `= 2` cells were.
+
+**So the sentence I published earlier today is wrong**: « as far as
+any evidence shows, our corpus carries the decimal-fraction
+convention ». It carries both. I could not see it while my key and
+my inference each assumed `%` meant decimal — the row was simply
+scored against a wrong answer and the disagreement went to E2's
+column instead of the key's.
+
+**And my answer key was wrong on this row until an hour ago.** That
+is the concrete case for having done item (a) on the key rather than
+only on the inference, and it is a sharper argument than the one I
+registered: I wrote that a wrong key « would » make numbers wrong on
+a whole-number-percent model, hypothetically, elsewhere. It was
+already wrong here.
+
+The tallies did not move because E2 says `not-a-rate` for that row
+either way — wrong before, wrong now, wrong for its own reasons. The
+key is right now, which is what a key is for.
+
+### What this changes upstream
+
+The verdict's `rate_form` caveat gets weaker in one direction and
+stronger in another. Our corpus is **not** single-convention, so a
+measurement here is not automatically blind to whole-number
+percentages — but the second convention is represented by **one row
+of 3,796**, which is far too thin to claim `rate_form` is tested
+against it. The caveat stands, with the count attached.
+
+---
+
+## Build order (b) — units in a column of their own — registration
+
+*28 Aug, URGENT addendum item 3(b). Nine of 27 real models keep
+units in a dedicated column beside the value rather than in the
+label; 698 declarations were extracted that way. An engine that
+parses only labels finds nothing in those nine **and reports full
+coverage on all of them** — the silent-blindness shape.*
+
+### The circularity, handled before it bites
+
+My 3,796-row author key **is** ED2's and GD3's Units column. The
+moment E2 reads units columns, scoring E2 against them is circular.
+So this round is built with that constraint written into it:
+
+- The detector is **measured on what it finds**, never on whether
+  what it finds agrees with itself. Its number is *recall of
+  declarations* — how many unit declarations exist and how many it
+  reaches — verified by hand-reading a sample.
+- **No accuracy number is reported against a units column**, then or
+  ever, once E2 can read one.
+- The measured configuration for the verdict stays **blind**: E2
+  with units-column reading off. The verdict published today keeps
+  its meaning, and a new verdict waits for a key that is not the
+  thing being read.
+
+That is the honest arrangement and it is also a smaller claim than
+« E2 got better », which is what a circular measurement would have
+let me say.
+
+### What is built
+
+A detector for a units column that does **not** rely on a `Units`
+header, because the models that need it do not have one: a narrow,
+mostly-text column adjacent to a block of numbers, whose entries are
+short and match unit-shaped patterns, bound to the row beside it. It
+returns declarations per row, with the column it came from, so a
+reader can check it.
+
+### Predictions
+
+1. **On ED2 and GD3 it finds the same columns the header-based
+   finder finds.** If it disagrees on models where I know the
+   answer, it is not ready for models where I do not.
+2. **It finds units columns in the closed-deal corpus, where my
+   header-based finder found zero.** This is the one I care about:
+   I reported « **zero** rows carry a declared unit » across eight
+   models and used it to declare the generalisation round
+   unmeasurable. If a header-free detector finds declarations there,
+   **that finding was partly an artifact of my finder**, and I would
+   rather discover it myself than have it stand.
+3. **It fires on something that is not a units column** — a comment
+   column, a category column. Registered for the fifth time; hunted
+   for deliberately, by hand-reading a sample rather than by
+   trusting a count.
+4. The verdict's dimensions do not move, because the measured
+   configuration stays blind.
