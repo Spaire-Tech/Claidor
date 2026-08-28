@@ -67,8 +67,15 @@ Each lane writes its own running log at `docs/pierce/logs/<name>.md`
 - Read `docs/pierce/notes.md` before answering anything of record.
 - Registration before results: the harness and the rules are written
   and committed before a number is looked at. Refusals are honest.
-- Heavy workbook jobs run alone in the container (a concurrent pair
-  OOM-killed a sweep here; the lesson is paid for).
+- Heavy workbook jobs run alone in the container: **`dev/heavy <cmd>`**,
+  which takes an exclusive lock so the second job waits instead of
+  being OOM-killed. Kill a stuck job with **`dev/kill-job <pattern>`**,
+  never bare `pkill -f` — the pattern is in the killing shell's own
+  command line, which is how this team has killed its own session
+  three times in one week.
+  **Both replace rules we kept re-breaking. A rule you have to
+  remember while you are busy is not a guardrail; if a lesson recurs,
+  prose has already failed and the fix is a tool.**
 - Corpora are rebuilt with the committed fetchers
   (`scripts.corpus_au_uk`, `scripts.model_corpus`), never committed.
 - Plain-language reports to the founder; no model identifiers in any

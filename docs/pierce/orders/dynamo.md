@@ -209,3 +209,77 @@ labellers, blind and apart, one written protocol, and **publish
 their disagreement rate** — nobody in model audit has ever published
 a human-versus-human number, and our own evidence says it will be
 large.
+
+## URGENT (28 Aug): period is not the same kind of thing — read before you wire anything
+
+Full record: `docs/pierce/period-reckoning.md`. The founder's fifth
+research round is entirely about `period`, and the lead has checked
+its central claim against our own code before passing it on. Four
+things change; one of them is a live trap in your lane.
+
+**1. You were right first, and it is in your own docstring.**
+`polar/tieout/units/periods.py` opens: « A model states its periods in
+its arithmetic, not in its labels… Nothing here reads a header word. »
+The researcher reached the same conclusion independently. Treat that
+agreement as confirmation of the design, not as new instruction: date
+steps, `/12` and `/4` divisors, YEARFRAC, and the 4,566 carry pairs
+are the evidence, and label text is a tiebreak at best.
+
+**2. The cached-value trap is live and unwired — fix it before it
+exists.** `blocks_from_dates(dates_by_column)` **has no caller yet**.
+The researcher's hypothesis was that a period inference reading the
+workbook the way our engine normally does — formulas — would be blind
+to every *computed* date axis, which is nearly all of them. The lead
+tested this against our reader on `ofgem_ed2/v5_2026-06.xlsx`: 19,261
+cells carry **both** a formula and a cached value, 1,224 carry a
+formula with none, 22,693 are value-only; sample
+`('Annual Inflation!I14', '=DATE(m_baseyear,3,31)', '44286')`. So the
+reader is **not** blind — the cached serial is there — but the caller
+you have not written yet decides whether we use it. **Feed
+`blocks_from_dates` `Cell.value`, never a parse of `Cell.formula`, and
+abstain when the cached value is absent (those 1,224).** Written down
+before the wiring, not after.
+
+**3. Check the column window before you trust a sweep.** A monthly
+model runs 399 columns in our verified set. Any scan that stops at a
+fixed width — 100, 256 — sees an annual model's worth of a monthly
+file and calls it annual. State the window you scan in the result.
+
+**4. Split the 24.9%/64.1% spread before concluding anything.** A 2.5×
+gap between corpus groups is at least two different failures, not one
+weak dimension. The likely cut: files with a real date row versus files
+with none. On the second group **abstain is the correct answer**, and
+an abstention scored as a miss is a number that lies about the
+inference. Report the split; do not blend it.
+
+**This round's design, and it is a capability test you can run today:
+re-time a model we already hold.** Take a monthly file from the six
+verified, aggregate it to annual (or the reverse), and ask whether the
+inference reads the new axis. That is the same planting method we
+accept everywhere else, it needs no corpus we do not have, and it
+answers « can this thing see a period at all » without waiting on
+monthly models nobody publishes.
+
+**And the product answer, so you build toward the right target.**
+`period` is declarable once per sheet, and D4's confirm-once /
+arithmetic-forever shape fits it better than it fits document links.
+If autonomous inference stays unarmable, « ask once, then compute »
+may be the permanently correct product answer rather than a failure —
+say so plainly if that is where the measurement lands.
+
+**The honest gap, stated so nobody claims it closed:** there is **no
+mixed-axis file in all 91** we hold. The monthly-then-semi-annual axis
+`swens.md` §3a describes is untested, and stays untested until such a
+file exists or we build one.
+
+## Reset (28 Aug): everything into the engine
+
+Founder's call: the document chain is stopped, all effort to the
+engine. Yours does not change, it sharpens. **Finish the period key
+and hand Sentinel something it can arm.** That is one job, not a
+research programme, and the re-timing test in the section above
+answers the capability question with files we already hold. B5, B6 and
+the arbiter all stay behind it.
+
+If a turn ends without period being answerable, the next turn is
+period again. Do not write to me about the difficulty; keep going.

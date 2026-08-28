@@ -683,6 +683,33 @@ class TieOutService:
             "report": delta_between(old_side, new_side),
         }
 
+    @staticmethod
+    def identical_upload(old_side: Artifact, new_side: Artifact) -> bool:
+        """Whether two versions are the same file, byte for byte.
+
+        **The one thing about a revision that can be known without
+        reading anything.** Measured: the Watch spends 158 seconds on a
+        432,596-cell model to conclude that a re-upload changed
+        nothing — 58 of those reading the two files, 5 auditing them,
+        and the rest aligning sheets, 87% of it in two large sheets.
+        Two equal digests answer the same question in a string
+        comparison, and answer it *exactly*: identical bytes are
+        identical workbooks.
+
+        This is not a faster comparison. It is not comparing — the
+        successor to « compute the delta from stored cells », which was
+        measured, found to lose an `unmatched_new` on a real pair, and
+        refused (`logs/atelier/delta_stored.py`).
+
+        Ingest has recorded the digest since 28 Aug; a version stored
+        before that has none and is simply compared as before. No
+        migration, and no guessing that two files match because two
+        absences do — hence the explicit emptiness check.
+        """
+        old_sha = str((old_side.counts or {}).get("sha256") or "")
+        new_sha = str((new_side.counts or {}).get("sha256") or "")
+        return bool(old_sha) and old_sha == new_sha
+
     async def deck_delta(
         self,
         session: AsyncSession | AsyncReadSession,

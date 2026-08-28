@@ -126,3 +126,77 @@ when the corpus improves » does not count. Write the three designs you
 did not try, in a line each. Attack the constraint, not the
 parameters. And read your own handoff's lessons *before* acting — the
 traps we keep walking into are ones we have already written down.
+
+## Routed to you (28 Aug, twenty-seventh sweep): export `keyed_findings`
+
+A small, specific ask from Atelier, and the lead approves it. Atelier
+built a fast path for « this upload is byte for byte the version
+before it » — two equal SHA-256 digests, so nothing can differ and no
+comparison is run. For that case the true report is knowable exactly:
+new 0, repaired 0, persistent = the keyed findings of the one
+workbook. It cannot build that today because `keyed_findings` is
+private to `watch/delta.py`, and it declined to reach through a
+private name — correctly.
+
+**So: export it, at whatever interface you judge right.** Your file,
+your call on the signature; the constraint is only that a caller can
+get the keyed findings of a single workbook without running a delta.
+Say in your log what you exported and what you deliberately did not.
+
+This does **not** come with a sheet filter. Atelier's CRC-pruning
+design — pass the Watch a list of sheets whose zip CRCs prove them
+untouched — is refused on measurement, not on taste: the lead ran it
+over eleven real consecutive-version pairs (ten Ofgem ED2 revisions
+and the CAA H7 proposals→determinations pair) and found **0
+byte-identical worksheets out of 372**. Excel rewrites every
+formula-bearing sheet on save. Do not add a sheet filter for it, and
+if you ever want one, it needs a different justification.
+
+## The finding that matters more (28 Aug): the Watch may not terminate on a real pair
+
+Measured by the lead while the V3 exam ran, and it is a completeness
+hole, not a performance nicety.
+
+- Atelier profiled `delta_of` on levenmouth (4.3 MB, 432,596 cells):
+  **158 s**, of which the two reads are 58 s and the two audits 5 s.
+  **The alignment is all the rest, and 87% of it sits in two sheets of
+  twenty-four** (`Distributions` 113.9 s, `Ratios` 111.9 s).
+- The V3 exam's WSH pair is Welsh Water draft determination against
+  final determination: **12 MB against 12 MB**, so roughly 2.8× the
+  bytes. It ran at 99.9% CPU and 9.1 GB resident and returned in
+  **2 h 06 m 06 s** (03:06:40 → 05:12:46), with parity **EXACT**.
+
+**Correction to the first version of this order, which said it might
+never finish: it finishes, and it is right.** Thames Water took
+2 h 09 m and United Utilities 2 h 03 m, so this is the shape of the
+large pairs, not one bad file. The problem is not termination. Two
+point eight times the input costs **forty-eight times the time**, and
+that is not a constant factor — it is strongly superlinear, and the
+shape of Atelier's profile says where: the per-sheet alignment on the
+largest sheets. A 12 MB utility model is not an exotic file; it is the
+ordinary case for the regulator corpus and for the customers this
+product is aimed at.
+
+**So the Watch's honest status is: correct at every size we have
+tested, and two hours too slow at the size that matters.** That is a
+better problem than the one I first wrote down — the answers are
+right, so this is an optimisation with a known-correct oracle to test
+against, not a rebuild. Track C cannot be called complete while a
+real published pair cannot be diffed in usable time, and no amount of
+skipping identical sheets fixes an algorithm that goes quadratic on
+the sheets that are not identical.
+
+**Your round: make the alignment scale, and attack the constraint
+rather than the parameters.** Before writing code, measure — take the
+two biggest sheets of a big pair and find out what the alignment is
+actually doing per row, and whether the cost is in candidate
+generation, in scoring, or in a nested scan nobody intended. Then
+state the complexity you have and the complexity you need. A cheap
+blocking key that makes most row pairs never compared is the usual
+answer to exactly this shape, and it is the same family of fix that
+worked for the linker's coverage asymmetry. Report the before and
+after on the same pair, and if it still cannot finish, say so plainly
+and name the size at which it stops working — an honest limit stated
+in the product beats a check that hangs.
+
+Both of the above are ahead of any C6 work.

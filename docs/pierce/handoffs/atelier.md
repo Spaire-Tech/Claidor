@@ -220,6 +220,24 @@ sitting there unlisted the whole time. Still unsurfaced after this
 turn: the Watch's `classify` / `build_ladder` / `align_lines` /
 `Tier2Answer`, and `recalc.iterative_cells`.
 
+**Every upload carries a SHA-256 in `counts["sha256"]`, and two equal
+digests are the whole answer to « what changed ».** The Versions tab
+reads them off `VersionRead.counts` and never asks for a comparison it
+can prove is empty — instant, where the Watch spends 158 s on a
+432,596-cell model to reach the same conclusion. **Two absences are
+not a match**: every version stored before 28 Aug has no digest, and
+reading « both have none » as « both are the same » would call two
+different files one. A test holds that.
+
+Where the 158 s goes, measured (`logs/atelier/delta_split.py`): two
+reads 58 s, two audits 5 s, the rest alignment — and the alignment is
+**87% in two sheets of twenty-four**. That concentration is what makes
+sheet-level pruning the highest-value unbuilt design; the file's own
+zip entry CRCs identify byte-identical sheets exactly
+(`logs/atelier/zip_sheet_crcs.py`), but the Watch takes no sheet
+filter and **no two-Excel-save pair exists in this corpus** to say
+whether the signal fires in practice.
+
 **Sweep the screens against the corpus, not the fixtures.** Since the
 intake fix real models produce real findings, so the states sweep can
 finally run on them. Doing it found three things on the partner's page:
