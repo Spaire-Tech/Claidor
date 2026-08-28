@@ -4031,3 +4031,53 @@ is a real objection to answer with a control, not a reason to stop.
 - *Wait for a corpus with formulas.* The population proof says
   published closed-deal models are values; waiting is waiting
   forever.
+
+---
+
+## Aggregation from values — registration
+
+*The successor to the failed formula design. Registered before it is
+built, with the control for the hazard I named when I proposed it.*
+
+### The shape
+
+Kelso ships 470,594 values and 814 formulas. So: **if an annual
+cell's value equals the sum of twelve monthly cells' values, that is
+the aggregation** — arithmetic proves it and no formula is needed.
+
+Two rules keep it from being a coincidence machine:
+
+- **Anchored by row label, never searched free.** A row is paired
+  with a row of the same label on a coarser sheet. Pairing every row
+  with every row is where spurious matches live.
+- **It must hold across many periods.** A pair counts as an
+  aggregation only when the sum matches in **at least six** of the
+  coarse periods, at this lane's usual 1e-9 relative tolerance.
+
+### The defect, restated in the same terms
+
+The flagship finding becomes a **within-row inconsistency**: a row
+that aggregates twelve-to-one in every year except one, where the
+annual figure equals a single month. That is far stronger than a
+cross-model rule, because the model's own other years are the
+control — the row is being judged against itself.
+
+### Predictions
+
+1. **At least one Kelso row aggregates 12:1 by value across six or
+   more years.** If none does, values carry no more signal than
+   formulas did and the whole line of attack is finished — which is
+   worth knowing in an afternoon.
+2. **Zero defects on clean Kelso**, same reasoning as last time: a
+   published financial-close model is a control, not a hunting
+   ground. Every reported defect is hand-read before it is called
+   anything.
+3. **A planted defect is caught by name**: overwrite one year's
+   annual value with one month's value, and the row must be reported
+   with that year named.
+4. **The coincidence control**: re-run with rows paired to the
+   *wrong* partners — same numbers, deliberately mismatched labels —
+   and near-zero aggregations must survive. This measures the hazard
+   I registered when I proposed the design rather than asserting it
+   away. If shuffled pairs match nearly as often as real ones, the
+   evidence is coincidence and I will say so.
