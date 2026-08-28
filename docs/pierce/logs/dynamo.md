@@ -3193,3 +3193,56 @@ the four files above it said nothing at all. Fixed to report the
 exceptions and say what they are, because « 9 cells above 1.5 » with
 no follow-up is exactly the kind of unexplained number this lane is
 not supposed to publish.
+
+---
+
+## Build order (a) — the number format decides the percent convention
+
+*28 Aug, URGENT addendum item 3(a). Registered before the code.*
+
+### What the rule is
+
+From the research, six models of six: **percent-style number format
+→ the stored value is a decimal fraction; a non-percent format under
+a declared `%` → the stored value is a whole number of percent.**
+Neither the value nor the label may be consulted, and the killer
+cases prove why in both directions — their `Module Degradation = 0.5`
+under `% p.a.`, and our own 24 outliers above 1.5.
+
+Two places in this lane assume `%` means decimal without looking at
+the format, and both are wrong in general:
+
+- `_from_declared` in the inference, used when a caller supplies a
+  units text.
+- `truth_from_units` in the scorer — **the answer key itself**. On a
+  whole-number-percent model my key would be wrong, which would make
+  every accuracy number computed against it wrong in the same
+  direction. Fixing the key matters more than fixing the inference.
+
+### What is built
+
+One function, `percent_convention(number_format, declared)`,
+returning `decimal`, `percent`, or an abstention, used by both. A
+declared `%` with **no** format information abstains rather than
+assuming — that is the whole lesson.
+
+### Predictions
+
+1. **On our corpus this changes nothing.** Every declared-`%` row we
+   hold is percent-formatted, so both the inference and the key
+   should return exactly what they returned before: **0 rows changed
+   on the 3,796-row author key, 0 on E1.** If anything moves, my
+   reading of the corpus is wrong and I would rather find that out
+   here.
+2. The research's six cells classify correctly in tests — the three
+   decimal-fraction models and the three whole-number ones,
+   including `Module Degradation = 0.5` and the Australian file's
+   `E25`/`E61` pair that share a column and disagree.
+3. **The five ambiguous `= 2` cells classify as `decimal`** — 200%,
+   which is what the format says. If their author meant 2%, the rule
+   cannot know that and neither can I; a format-based rule inherits
+   the file's own errors, and that is a property to state rather
+   than a defect to hide.
+4. No dimension moves on either key, so the verdict published today
+   stands unchanged — with its caveat that the second convention
+   remains untested by any measurement I hold.
