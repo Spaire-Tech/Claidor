@@ -368,6 +368,38 @@ scores strictly higher. The answer is not reachable with the evidence
 the matcher may use, so the abstentions are correct and the two
 proposals are the failure.
 
+### READ THIS BEFORE YOU IMPROVE ANYTHING: D3 has never made a correct proposal
+
+Tallied from every verdict file in `docs/pierce/scribe-d3-round*-verdicts.json`:
+
+| round | corpus | correct | false proposals | true abstentions |
+|---|---|---|---|---|
+| 1 | ED2 | 0 | 8 | 22 |
+| 2 run A | ED2 | 0 | 2 | 28 |
+| 3 run A | ED2 | 0 | 0 | 30 |
+| 5 | Finch | **0** | 1 | 9 |
+| 6 | Finch | **0** | 2 | 7 |
+| 8 | FERC | **0** | 2 | 13 |
+| **total** | **three corpora** | **0** | **15** | **109** |
+
+Rounds 1–3 are the *unsourced* case — abstention is the right answer
+there and zero proposals is the design working. **Rounds 5, 6 and 8 are
+the sourced case**: a correct answer demonstrably existed, across **69
+judged rows on two independent corpora**, and the matcher found **zero**.
+Lifetime precision is **0 of 15**.
+
+Each round's zero was published at the time. Nobody added them up for ten
+sweeps. **Do not spend another round improving the matcher's inputs
+before this is settled** — that is what the last four rounds did.
+
+The open decision, which belongs to the lead and not to this lane: D3 was
+built as a source-*finder* and has never found a source. Either the
+matching approach changes to something that can, or D3 is reframed as the
+abstention instrument the evidence says it already is — 109 true
+abstentions, 30 of 30 on round 3, plus round 8's finding that **10 of 25
+cited inputs are nils**. *"We looked and there is nothing there"* is the
+one statement D3 has earned.
+
 ### Round 9 was investigated and **deliberately not built** — read this before you try
 
 The obvious next fix is the **two-page spread**: a wide table's
@@ -382,6 +414,14 @@ Measured, not assumed:
 | repair the spread (**hand-supplied perfect labels**) | 0 of 15 |
 | drop repeated headers and prose (pool 4,913 → 2,272) | 0 of 15 |
 | match on the FERC account number | ≤ 2 of 15 |
+| model-side section header as a tie-breaker | 0 of 15 |
+| **all six levers at once** | **0 of 15** |
+
+The one lever that earns its keep: **excluding prose from the candidate
+pool removes both wrong answers** (the two false proposals landed on the
+same 20-word instruction sentence; all 15 truth lines have 0–8 word
+tokens). It is not shipped — fixing precision on an instrument whose
+precision is 0 of 15 is the lead's call.
 
 A perfect spread fix moves rows from **unreachable** to **tied**, never
 to correct: r19's top score ties across **seventeen copies of the
