@@ -603,3 +603,68 @@ def test_the_rule_inherits_the_files_own_mistakes() -> None:
     from polar.tieout.units.inference import percent_convention
 
     assert percent_convention(['0.0%;\\(0.0%\\);"-"'], "%") == "decimal"
+
+
+# --- units kept in a column of their own (28 Aug, build item b) ---
+
+
+def sheet_with_a_units_column():
+    """Labels, values, then a narrow units column — no header saying so."""
+    cells = {}
+    rows = [
+        ("Revenue", 1200.0, "£m"),
+        ("Costs", -800.0, "£m"),
+        ("Capex", -250.0, "£m"),
+        ("Gearing", 0.62, "%"),
+        ("Volumes", 41.2, "TWh"),
+    ]
+    for index, (label, value, unit) in enumerate(rows, start=10):
+        cells[f"S!1{index}"] = GridCell("S", index, 1, label)
+        cells[f"S!2{index}"] = GridCell("S", index, 2, value)
+        cells[f"S!3{index}"] = GridCell("S", index, 3, unit)
+    return cells
+
+
+def test_a_units_column_is_found_without_a_header() -> None:
+    from polar.tieout.units.columns import find_units_columns
+
+    found = find_units_columns(sheet_with_a_units_column(), "S")
+    assert {d.text for d in found} == {"£m", "%", "TWh"}
+    assert {d.column for d in found} == {3}
+    assert {d.values_column for d in found} == {2}
+
+
+def test_a_comment_column_is_not_a_units_column() -> None:
+    # Long, all-distinct entries: a description, not units.
+    from polar.tieout.units.columns import find_units_columns
+
+    cells = {}
+    notes = [
+        "Uplifted following the July determination",
+        "Excludes the Scottish transmission adjustment",
+        "Agreed with the licensee in correspondence",
+        "Restated for the revised opening balance",
+        "Subject to the pending appeal",
+    ]
+    for index, note in enumerate(notes, start=10):
+        cells[f"S!1{index}"] = GridCell("S", index, 1, f"Row {index}")
+        cells[f"S!2{index}"] = GridCell("S", index, 2, float(index))
+        cells[f"S!3{index}"] = GridCell("S", index, 3, note)
+    assert find_units_columns(cells, "S") == []
+
+
+def test_a_label_column_with_no_values_beside_it_is_not_units() -> None:
+    from polar.tieout.units.columns import find_units_columns
+
+    cells = {}
+    for index in range(10, 16):
+        cells[f"S!1{index}"] = GridCell("S", index, 1, "£m")
+    assert find_units_columns(cells, "S") == []
+
+
+def test_declarations_are_bound_to_their_own_row() -> None:
+    from polar.tieout.units.columns import declarations_by_row
+
+    found = declarations_by_row(sheet_with_a_units_column(), ["S"])
+    assert found[("S", 13)] == "%"
+    assert found[("S", 10)] == "£m"
