@@ -2837,18 +2837,43 @@ export const ProjectPage = ({
             {deltaFor !== null &&
               (() => {
                 const held = deltas[deltaFor]
-                if (held === undefined || held === 'loading')
+                if (held === undefined || held === 'loading') {
+                  //: How long this actually takes, said in the model's
+                  //: own numbers. The comparison reads both workbooks
+                  //: and aligns them cell by cell: measured, a
+                  //: 313-cell fixture is instant, a 4,800-cell model
+                  //: about three seconds, and a real 432,596-cell
+                  //: project-finance model **two and a half minutes**.
+                  //: A screen that says « comparing… » for that long
+                  //: and nothing else has stopped being honest and
+                  //: started looking broken.
+                  const cells =
+                    typeof model?.counts?.['cells'] === 'number'
+                      ? (model.counts['cells'] as number)
+                      : 0
                   return (
                     <div
                       style={{
                         fontSize: 14.5,
                         color: '#8f96a0',
                         padding: '8px 4px',
+                        lineHeight: 1.55,
+                        maxWidth: '78ch',
                       }}
                     >
                       Reading both versions and comparing…
+                      {cells >= 50_000 && (
+                        <>
+                          {' '}
+                          This model has {cells.toLocaleString()} cells, and a
+                          comparison that size takes a few minutes. It is
+                          computed fresh every time — nothing here is a saved
+                          answer.
+                        </>
+                      )}
                     </div>
                   )
+                }
                 if (held && typeof held === 'object' && 'refused' in held)
                   //: The server's own sentence — bytes dropped under the
                   //: retention policy, most likely — shown as it stands.

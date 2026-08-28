@@ -1733,3 +1733,95 @@ the stored facts round-trip through JSON including the integer row
 keys; and a model stored before the fix still audits, poorer and
 without raising. Full tieout suite **981 passed, 4 skipped** — no
 existing test's finding counts moved, which is its own small comfort.
+
+## Twenty-fourth turn — the Versions view costs two and a half minutes,
+## and the obvious fix is wrong
+
+Looking for the next hole in the fresh inventory, the twenty-ninth
+sweep's new `watch/profile.py` stood out: it is the missing half of the
+Versions panel I built — the panel prints « 1 defect this revision
+introduced » with no denominator, and `profile_of` is exactly the
+denominator, per model and size-matched, refusing below three priors in
+words. So I went to cost it, because a profile needs the model's *prior*
+transitions.
+
+**Costing it found a bigger hole than the one I was closing.** One Watch
+transition, timed:
+
+| model | cells | one transition |
+|---|---|---|
+| cascade fixture | 313 | 0.1 s |
+| example_preapp | 4,798 | 3.1 s |
+| levenmouth | 432,596 | **158 s** |
+
+The Versions tab computes exactly this, in the request, every time it is
+opened. **On a real model the screen I shipped sits at « comparing… »
+for two and a half minutes.** It works on fixtures. It does not work on
+the corpus, and no test could have told me — the fixture is 313 cells.
+
+### The obvious fix, tested and rejected
+
+The product holds both versions' cells, and since this morning's
+rebuild-gap fix the rebuilt workbook carries the file's own facts too.
+So: compute the delta from stored cells instead of re-reading the files.
+
+Measured on **the real thing** rather than a simulation — every adjacent
+version pair in the demo database, `delta_between` (files) against
+`delta_of` over `cells_for_graph` + `_restore_file_facts`
+(`logs/atelier/delta_stored.py`):
+
+| pair | same report |
+|---|---|
+| Cascade Demo v1→v2 | yes |
+| Cascade Watch v1→v2, v2→v3 | yes |
+| unchanged re-upload v1→v2, v2→v3 | yes |
+| **unchanged re-upload v3→v4** | **no** |
+
+Five of six agree. The sixth differs by `unmatched_new`: **1 from the
+files, 0 from the cells.** That is precisely what the Watch's own
+docstring warns about — « a cell the ingest labeller skipped is still a
+cell the Watch reports ». A finding on a cell ingest never stored cannot
+exist in a report built from stored cells, so the product would have
+quietly under-counted, and the count it would have dropped is the one
+the Watch keeps *apart* because it cannot be matched by name. Under-
+counting there is the exact failure this lane spent the morning fixing
+in the other direction.
+
+**And it would not have been fast anyway.** Timed on levenmouth, the
+comparison from stored cells is 128 s against 158 s — the file read is
+not the dominant cost, the alignment over 432,596 cells is. A 19%
+saving for a wrong answer.
+
+So the substitution is dead on both counts, and I have not made it.
+
+### What is true, and where it goes
+
+The Versions delta cannot be made affordable in this lane's row. The
+work is in the Watch's comparison itself (Prism's), or the computation
+has to stop happening inside a request — there is no `tasks.py` in
+`polar/tieout/` and no background path for any check, so making one is
+an architectural decision and the lead's, not a defect fix.
+
+**Persisting it is the other half of the answer and needs the same
+decision.** The delta between two versions is a pure function of two
+immutable artifacts, so it is computed identically every time it is
+viewed. Keeping it would make every view after the first instant *and*
+hand `profile_of` its priors for free — the profile is unreachable
+without it, because building priors on demand means N−1 transitions at
+158 s each. The obstacle is that the only place it is computed today is
+a `GET` on a read session; the product's established pattern for
+expensive-then-kept is a deliberate `POST` (the recalculation mark), and
+which of those this should be is a product call.
+
+### What shipped
+
+The screen now says what it is doing, in the model's own numbers:
+below 50,000 cells nothing changes, and above it the line reads
+« This model has 432,596 cells, and a comparison that size takes a few
+minutes. It is computed fresh every time — nothing here is a saved
+answer. » A screen that says « comparing… » for two and a half minutes
+and nothing else has stopped being honest and started looking broken.
+
+That is a small change on the back of a large measurement, and it is
+deliberately all I changed: the fix I could have shipped was wrong, and
+shipping it would have cost a finding class rather than saved time.

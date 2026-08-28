@@ -220,6 +220,27 @@ sitting there unlisted the whole time. Still unsurfaced after this
 turn: the Watch's `classify` / `build_ladder` / `align_lines` /
 `Tier2Answer`, and `recalc.iterative_cells`.
 
+**The Versions delta costs 158 s on a real model** (432,596 cells;
+3.1 s at 4,798; 0.1 s on the 313-cell fixture) and is computed in the
+request every time the tab opens. The screen is honest about it now,
+in the model's own numbers, but it is not fixed. **Do not "fix" it by
+computing the delta from stored cells** — measured on every adjacent
+pair in the demo database, five of six reports match and the sixth
+loses an `unmatched_new`, which is exactly the case the Watch keeps
+apart because it cannot be matched by name (a cell ingest never
+stored). It is also only 19% faster: the alignment dominates, not the
+file read. `logs/atelier/delta_stored.py` re-runs that check.
+
+The real answers are the Watch's own comparison (Prism's) or moving
+the computation out of the request — there is no `tasks.py` in
+`polar/tieout/` and no background path for any check, so that is an
+architectural call. **Persisting the delta is the other half**: it is a
+pure function of two immutable artifacts, so keeping it makes every
+later view instant *and* is the only way `watch/profile.py` becomes
+reachable (its priors are N−1 transitions at 158 s each). That module
+— the per-model, size-matched denominator for the panel's counts — is
+built, honest, and has no product surface.
+
 **Read cells with `cells_for_graph`, not `cells_of`, wherever a
 caller only rebuilds the workbook.** Same 470,594 rows: **16.0 s as
 entities, 4.0 s as columns** (medians of three, alternating). All of
