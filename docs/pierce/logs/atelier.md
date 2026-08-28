@@ -1455,3 +1455,93 @@ than once per question. Registered here as the next hole, not started.
 
 Checks: 132 green across the route, model-tool and agent-tool suites
 (6 new); ruff, mypy, tsc and prettier clean.
+
+## Twenty-first turn — what a revision did to the deliverables
+
+The lead's standing instruction after the multi-model fix: find the
+next *hole*, not polish, and look in the screenless-capabilities
+inventory. That inventory is spent — all three of its entries (the
+Watch delta view, the source viewer, the recalculation mark) have
+since shipped — so I rebuilt it against the current engine by reading
+the packages' `__all__` and checking each name against
+`endpoints.py`/`service.py`/`schemas.py`/`agent/`.
+
+The biggest thing with no product surface at all: **`watch.deck_delta`
+(C5)**. And it is not a nicety. My own `model_diff` docstring already
+says why:
+
+> The realistic failure is not one typo. It is a model revision the
+> deck never caught up with, which is why the count that matters on
+> this screen is not « cells changed » but « deck figures now wrong
+> because of it ».
+
+`model_diff` *approximates* that with `stale_figures` — a count of
+links sitting on cells that moved. `deck_delta` does the real thing:
+ties the **same deck** out against **both versions** and reads the
+difference. Four lists, four different sentences, never summed:
+
+- **broken** — agreed before, drifts now. The revision did this.
+- **repaired** — drifted before, agrees now.
+- **still drifting** — disagrees with both, so not this revision's
+  account.
+- **coverage changed** — reconcilable against one version only.
+  « I lost sight of it » is not « it broke », and folding the two
+  together is how a checker earns a reputation for crying wolf.
+
+Shipped whole: `service.deck_delta` (three stored files → tempfiles →
+the Watch, persisted nowhere, same posture as the version delta),
+`GET /artifacts/{id}/deck-delta[?against=&deck=]`, `DeckDeltaRead`,
+the client call, and the panel under « What v4 changed » on the
+Versions tab. Agent-designed; the founder reviews.
+
+**One refactor came with it.** `version_delta` and `deck_delta` must
+never disagree about which pairs may be compared — a route that
+admitted a pair the other refused would be a membership hole wearing a
+feature's clothes — so the gate is now one method, `_delta_pair`, and
+both call it.
+
+### Seen on real data, both faces
+
+**The revision exonerated** (`logs/atelier/deck-delta-exonerated.png`).
+An unchanged re-upload: « No reviewed changes » above, and beneath it
+« The same deck reconciled against both versions. 111 of its printed
+figures could be checked against either. » Then **Already disagreeing
+8 — disagrees with both versions, so not this revision's doing**, each
+one named to its slide and its place: « slide 3, chart series
+« Adjusted EBITDA », category « FY2023A » — 37.8, the model now says
+30.8 ». One is flagged « one unit at the printed precision — a
+rounding convention ». Not one of the eight is charged to the
+revision. That is the whole point of the panel.
+
+**The revision caught** (`logs/atelier/deck-delta-broken.png`).
+« 111 of its printed figures could be checked against v3; 14 against
+v4 » — and then **This revision broke 5**, with *Revenue growth: 11.8%
+— the model now says 8.0%* at `O2`, beside **101** figures in « No
+longer checkable ». Summed, that reads as a catastrophe; separated, it
+reads as what it is.
+
+**And where the Watch could not attribute a break, the row says so**
+— « No model change could be attributed to this break. » in grey
+italic — rather than naming the nearest change. A guess printed as a
+cause is the one claim a banker would repeat to a client without
+checking.
+
+**The dropped-bytes refusal, in the route's own words.** The shared
+storage sentence says « so it cannot be corrected », which is the
+markup route's job, not this one's. Driven for real by nulling the
+deck's `storage_path`: the route now answers *« cascade_deck.pptx is
+not stored here any more, so this revision cannot be re-tied against
+the deck. Upload it again. »* — and it names **which** of the three
+files is missing, because « upload it again » is useless without that.
+
+Six route tests (`TestWhatARevisionDidToTheDeck`), the load-bearing one
+being that a re-upload of the identical workbook breaks nothing and
+repairs nothing while the deck's eight standing disagreements all land
+in `still_drifting`. Also: null for a first version, null for a deal
+with no deck, a stranger's revision 404s, and no `cause` is ever a
+bare ref.
+
+The demo database gained two states for this: a deck on « Sweep — an
+unchanged re-upload », and a v4 there that genuinely moves figures.
+
+Checks: 138 green; ruff, mypy, tsc, eslint and prettier clean.

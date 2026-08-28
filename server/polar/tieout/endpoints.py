@@ -20,6 +20,7 @@ already right for the day the work moves.
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
@@ -84,6 +85,8 @@ from .schemas import (
     DealListItem,
     DealPage,
     DecisionRead,
+    DeckDeltaItemRead,
+    DeckDeltaRead,
     DeltaItemRead,
     FigureMap,
     FigureRead,
@@ -1190,6 +1193,106 @@ async def version_audit(
             abstentions=summary["abstentions"],
         ),
         findings=[_finding(one, filenames) for one in result["findings"]],
+    )
+
+
+@router.get("/artifacts/{artifact_id}/deck-delta", response_model=DeckDeltaRead | None)
+async def deck_delta(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    against: UUID | None = Query(
+        default=None,
+        description="The older version to compare against. Left out, the "
+        "version before this one.",
+    ),
+    deck: UUID | None = Query(
+        default=None,
+        description="Which deliverable to re-tie. Left out, the deal's current deck.",
+    ),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> DeckDeltaRead | None:
+    """What this model revision did to the deliverables.
+
+    The failure this product exists for: not one typo, but a model
+    revision the deck never caught up with — because nobody knows
+    which of its hundred printed figures the revision touched. The
+    same deck is tied out against both versions and the difference
+    read in review language: what the revision **broke**, what it
+    **repaired**, what was **already drifting** against both (never
+    this revision's account), and what became reconcilable against
+    only one version, which is « I lost sight of it » and not « it
+    broke ».
+
+    Each break carries the model change underneath it in the Watch's
+    own words — or nothing, where it could not be attributed. The
+    nearest change is not a cause.
+
+    `null` when there is no earlier version or the deal holds no deck:
+    both are absences rather than errors. A file whose bytes were
+    dropped under « keep the chain, drop the documents » is a 404
+    carrying the storage sentence; an `against` outside this model's
+    own lineage reads as not found, the same gate the version delta
+    uses.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        result = await tieout.deck_delta(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+            deck_id=deck,
+            against_id=against,
+        )
+    except FileNotKept as problem:
+        # The storage sentence talks about correcting a file; this route
+        # compares three. Same fact, this route's own words — and it
+        # names which of the three is missing, because « upload it
+        # again » is useless without that.
+        missing = str(problem).split(" is not stored", 1)[0]
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"{missing} is not stored here any more, so this revision "
+                "cannot be re-tied against the deck. Upload it again."
+            ),
+        ) from problem
+    if result is None:
+        if against is not None or artifact.kind is not ArtifactKind.model:
+            raise ResourceNotFound("Nothing to compare against.")
+        return None
+
+    old, new, deck_artifact = result["old"], result["new"], result["deck"]
+    report = result["report"]
+
+    def items(rows: list[Any]) -> list[DeckDeltaItemRead]:
+        return [
+            DeckDeltaItemRead(
+                slide=one.slide,
+                printed=one.printed,
+                location=one.location,
+                old_ref=one.old_ref,
+                expected=one.expected,
+                name=one.name,
+                one_tick=one.one_tick,
+                cause=one.cause,
+            )
+            for one in rows
+        ]
+
+    return DeckDeltaRead(
+        old_artifact_id=old.id,
+        old_version=old.version,
+        new_artifact_id=new.id,
+        new_version=new.version,
+        deck_artifact_id=deck_artifact.id,
+        deck_filename=deck_artifact.filename,
+        computed_at=result["computed_at"],
+        checked_old=report.checked_old,
+        checked_new=report.checked_new,
+        broken=items(report.broken),
+        repaired=items(report.repaired),
+        still_drifting=items(report.still_drifting),
+        coverage_changed=items(report.coverage_changed),
     )
 
 

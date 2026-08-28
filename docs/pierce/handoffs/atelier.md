@@ -199,6 +199,27 @@ two-model deal.
 the old tip, before rebasing. It passes at the tip. Run a cross-lane
 claim *after* the rebase.
 
+**What a revision did to the deliverables is served and drawn**
+(`GET /artifacts/{id}/deck-delta`, `service.deck_delta`, the panel
+under « What vN changed » on the Versions tab). The Watch's C5: the
+same deck tied out against **both** versions. Four lists, four
+sentences, **never summed** — `broken` is the revision's doing,
+`still_drifting` is explicitly not, `coverage_changed` is « I lost
+sight of it ». On a real pair that is 5 broken beside 101 no-longer-
+checkable; summed it reads as a catastrophe. Where the Watch could
+not attribute a break the row says so rather than naming the nearest
+change. `version_delta` and `deck_delta` share one gate
+(`_delta_pair`) so they can never disagree about which pairs may be
+compared. Demo states: a deck on « Sweep — an unchanged re-upload »
+(the exoneration face) and a v4 there that really moves figures.
+
+**Rebuild the screenless-capabilities inventory by reading each
+engine package's `__all__` against the product files** — the old
+inventory's three entries have all shipped, and `deck_delta` was
+sitting there unlisted the whole time. Still unsurfaced after this
+turn: the Watch's `classify` / `build_ladder` / `align_lines` /
+`Tier2Answer`, and `recalc.iterative_cells`.
+
 **The next hole, measured and not started**: `load_model_workspace`
 loads every stored cell before the loop starts — **28.4 s on Kelso**
 (470,594 cells), 21.0 s on Levenmouth, 0.0 s on a 313-cell fixture, on

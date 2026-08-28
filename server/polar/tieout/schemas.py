@@ -899,6 +899,67 @@ class VersionDeltaRead(Schema):
     items: list[DeltaItemRead] = []
 
 
+class DeckDeltaItemRead(Schema):
+    """One printed figure, and what the revision did to it."""
+
+    slide: int
+    #: What the deck prints, as printed.
+    printed: str
+    #: Where on the slide — the deck's own coordinate, so a reader can
+    #: put a finger on it.
+    location: str
+    #: The model row this figure agreed with *before* the revision.
+    #: Old-side on purpose: it is what makes the attribution exact.
+    old_ref: str = ""
+    #: What the new model says it should read now.
+    expected: str = ""
+    name: str = ""
+    #: The disagreement is one unit at the printed precision — a
+    #: rounding convention, reported as itself rather than as an error.
+    one_tick: bool = False
+    #: The model change underneath this break, in the Watch's own
+    #: words. **Empty where it could not be attributed**, which the
+    #: screen says in words rather than filling with the nearest
+    #: change — a guess printed as a cause is the worst thing here.
+    cause: str = ""
+
+
+class DeckDeltaRead(Schema):
+    """What a model revision did to the deliverables.
+
+    The same deck tied out against both versions of the model, and the
+    difference read in review language. The four lists are four
+    different sentences and are never summed into one: only `broken`
+    is the revision's doing, `still_drifting` is explicitly *not*, and
+    `coverage_changed` is « I lost sight of it », which is not « it
+    broke ».
+
+    Computed on request from three stored files and persisted nowhere.
+    """
+
+    old_artifact_id: UUID
+    old_version: int
+    new_artifact_id: UUID
+    new_version: int
+    deck_artifact_id: UUID
+    deck_filename: str
+    computed_at: datetime
+    #: How many of the deck's printed figures could be reconciled at
+    #: all, each side. A fall between them is what `coverage_changed`
+    #: is about, and a reader needs both numbers to judge the rest.
+    checked_old: int
+    checked_new: int
+    #: Agreed before, drifts now — the revision did this.
+    broken: list[DeckDeltaItemRead] = []
+    #: Drifted before, agrees now — the revision came to the deck.
+    repaired: list[DeckDeltaItemRead] = []
+    #: Disagrees with both versions, so it is not this revision's
+    #: fault. Kept off its account deliberately.
+    still_drifting: list[DeckDeltaItemRead] = []
+    #: Reconcilable against one version only.
+    coverage_changed: list[DeckDeltaItemRead] = []
+
+
 class RecalcDiff(Schema):
     """One cell the engine did not reproduce — both numbers, on the record."""
 

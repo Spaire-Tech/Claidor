@@ -2712,3 +2712,222 @@ class TestWhichModelAnAnswerIsAbout:
         assert "cannot see" in said
         #: One model, and the prompt says nothing at all about scope.
         assert _scope_line(models[0], []) == ""
+
+
+@pytest.mark.asyncio
+class TestWhatARevisionDidToTheDeck:
+    """The failure this product exists for, served.
+
+    Not one typo: a model revision the deck never caught up with,
+    because nobody knows which of its hundred printed figures the
+    revision touched. The Watch's C5 comparison has been in the engine
+    with no endpoint and no screen behind it — the same deck tied out
+    against both versions, and every break attributed to the model
+    change underneath it.
+
+    The engine's semantics are proven in `test_watch*`. What is tested
+    here is the route: deal posture, the honest null, and — the part
+    that carries the promise — that the four lists come back as four
+    different sentences and are never summed into one.
+    """
+
+    async def _revision_with_a_deck(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        owner: User,
+        *,
+        second: bytes | None = None,
+    ) -> tuple[Dossier, Artifact, Artifact]:
+        deal = await _deal_for(session, save_fixture, owner)
+        first = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=owner.id,
+        )
+        later = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=second if second is not None else MODEL.read_bytes(),
+            user_id=owner.id,
+        )
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.deck,
+            filename="cascade_deck.pptx",
+            payload=CLEAN.read_bytes(),
+            user_id=owner.id,
+        )
+        await session.flush()
+        return deal, first, later
+
+    @pytest.mark.auth
+    async def test_a_revision_that_changed_nothing_breaks_nothing(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The property that makes the rest trustworthy.
+
+        The same workbook re-uploaded cannot have broken a figure. The
+        deck disagrees with the model in eight places either way, and
+        every one of them belongs to « still drifting » — the list
+        whose whole job is to keep a deck's pre-existing quarrels off
+        this revision's account.
+        """
+        _, _, second = await self._revision_with_a_deck(session, save_fixture, user)
+
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/deck-delta")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["broken"] == []
+        assert body["repaired"] == []
+        assert body["still_drifting"] != []
+        #: Coverage did not move either — the same model reconciles the
+        #: same figures.
+        assert body["coverage_changed"] == []
+        assert body["checked_old"] == body["checked_new"]
+
+    @pytest.mark.auth
+    async def test_a_real_revision_separates_broken_from_lost_sight_of(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """« I lost sight of it » is not « it broke ».
+
+        Folding the two together is how a checker earns a reputation
+        for crying wolf: this revision reconciles far fewer of the
+        deck's figures than the version before, and every figure it can
+        no longer reach would read as a break if the lists were summed.
+        """
+        _, _, second = await self._revision_with_a_deck(
+            session,
+            save_fixture,
+            user,
+            second=(CASCADE / "audit_fixture.xlsx").read_bytes(),
+        )
+
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/deck-delta")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["broken"], "a real revision moved figures the deck prints"
+        assert body["coverage_changed"], "and lost sight of others"
+        #: The counts are the honest reason coverage moved.
+        assert body["checked_new"] < body["checked_old"]
+        #: A break names what the deck prints and what the model now
+        #: says — both, because one without the other is not checkable.
+        first = body["broken"][0]
+        assert first["printed"]
+        assert first["expected"]
+        assert first["slide"] > 0
+
+    @pytest.mark.auth
+    async def test_a_cause_is_never_guessed(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """An unattributed break says nothing rather than the nearest change.
+
+        `cause` carries the model change underneath a break in the
+        Watch's own words. Where the Watch could not attribute it the
+        field is empty and the screen says so in words — a guess
+        printed as a cause is the one claim a banker would repeat.
+        """
+        _, _, second = await self._revision_with_a_deck(
+            session,
+            save_fixture,
+            user,
+            second=(CASCADE / "audit_fixture.xlsx").read_bytes(),
+        )
+
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/deck-delta")
+        assert response.status_code == 200
+        for one in response.json()["broken"]:
+            assert "cause" in one
+            #: Empty is allowed; invented is not — every non-empty cause
+            #: has to be a sentence the Watch wrote, never a bare ref.
+            assert one["cause"] == "" or len(one["cause"]) > 3
+
+    @pytest.mark.auth
+    async def test_a_first_version_is_null_not_an_error(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        only = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+
+        response = await client.get(f"/v1/tieout/artifacts/{only.id}/deck-delta")
+        assert response.status_code == 200
+        assert response.json() is None
+
+    @pytest.mark.auth
+    async def test_a_deal_with_no_deck_is_null_not_an_error(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """Nothing was sent out, so nothing can have gone stale."""
+        deal = await _deal_for(session, save_fixture, user)
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        second = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/deck-delta")
+        assert response.status_code == 200
+        assert response.json() is None
+
+    @pytest.mark.auth
+    async def test_a_strangers_revision_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """Closed by default, like every other route reachable from a deal."""
+        stranger = await create_user(save_fixture)
+        _, _, second = await self._revision_with_a_deck(session, save_fixture, stranger)
+
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/deck-delta")
+        assert response.status_code == 404

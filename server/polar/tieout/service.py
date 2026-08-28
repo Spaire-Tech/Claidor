@@ -670,6 +670,131 @@ class TieOutService:
         this deal; anything else reads as not found to the caller.
         """
         repository = TieOutRepository.from_session(session)
+        sides = await self._delta_pair(
+            repository,
+            dossier_id=dossier_id,
+            artifact_id=artifact_id,
+            against_id=against_id,
+        )
+        if sides is None:
+            return None
+        old_side, new_side = sides
+
+        return {
+            "old": old_side,
+            "new": new_side,
+            "computed_at": datetime.now(UTC),
+            "report": delta_between(old_side, new_side),
+        }
+
+    async def deck_delta(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        deck_id: UUID | None = None,
+        against_id: UUID | None = None,
+    ) -> dict[str, Any] | None:
+        """What this model revision did to the deliverables.
+
+        **The realistic failure this product exists for.** Not one typo:
+        a model revision the deck never caught up with, because nobody
+        knows which of its hundred printed figures the revision touched.
+        The Watch's `deck_delta` (C5) ties the *same* deck out against
+        both versions and reads the difference in review language:
+
+        - **broken** — agreed before, drifts now. The revision did this.
+        - **repaired** — drifted before, agrees now. The revision came
+          to the deck.
+        - **still drifting** — disagrees with both, so it is not this
+          revision's fault and is kept off its account.
+        - **coverage changed** — reconcilable against one version only.
+          « I lost sight of it » is not « it broke », and folding the
+          two together is how a checker earns a reputation for crying
+          wolf.
+
+        Each break carries the model change underneath it in the delta
+        report's own words, or **nothing** where the Watch could not
+        attribute it — never the nearest change, which would be a guess
+        printed as a cause.
+
+        `version_delta` answers « what did this revision do to the
+        model »; this answers « and what did that do to what we sent
+        out ». The deals list's `stale_figures` count approximates it
+        from links on changed cells; this is the real reconciliation,
+        and it disagrees with that count whenever a changed cell had no
+        link or a link survived the change.
+
+        Three files, read on request and persisted nowhere — the same
+        posture as the version delta and for the same reason. Returns
+        None when there is no earlier version or the deal holds no
+        deck; either is an absence, not an error. A file whose bytes
+        were dropped raises :class:`storage.FileNotKept`.
+        """
+        from .watch import deck_delta as watch_deck_delta
+
+        repository = TieOutRepository.from_session(session)
+        sides = await self._delta_pair(
+            repository,
+            dossier_id=dossier_id,
+            artifact_id=artifact_id,
+            against_id=against_id,
+        )
+        if sides is None:
+            return None
+        old_side, new_side = sides
+
+        current = await repository.current_artifacts(dossier_id)
+        decks = [one for one in current if one.kind is ArtifactKind.deck]
+        if deck_id is not None:
+            decks = [one for one in decks if one.id == deck_id]
+        deck = decks[0] if decks else None
+        if deck is None:
+            return None
+
+        old_bytes = storage.fetch(old_side)
+        new_bytes = storage.fetch(new_side)
+        deck_bytes = storage.fetch(deck)
+        paths: list[str] = []
+        try:
+            for payload, source in (
+                (old_bytes, old_side),
+                (new_bytes, new_side),
+                (deck_bytes, deck),
+            ):
+                suffix = Path(source.filename).suffix or ".xlsx"
+                with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                    f.write(payload)
+                    paths.append(f.name)
+            report = watch_deck_delta(paths[0], paths[1], paths[2])
+        finally:
+            for path in paths:
+                Path(path).unlink(missing_ok=True)
+
+        return {
+            "old": old_side,
+            "new": new_side,
+            "deck": deck,
+            "computed_at": datetime.now(UTC),
+            "report": report,
+        }
+
+    async def _delta_pair(
+        self,
+        repository: TieOutRepository,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        against_id: UUID | None,
+    ) -> tuple[Artifact, Artifact] | None:
+        """The old and new sides of a revision, both checked.
+
+        One gate for both delta answers, so « which pairs may be
+        compared » cannot come to mean two different things — a route
+        that admitted a pair the other refused would be a membership
+        hole wearing a feature's clothes.
+        """
         new_side = await repository.get_artifact(artifact_id)
         if (
             new_side is None
@@ -682,24 +807,18 @@ class TieOutService:
             old_side = await repository.previous_version(new_side)
             if old_side is None:
                 return None
-        else:
-            old_side = await repository.get_artifact(against_id)
-            if (
-                old_side is None
-                or old_side.dossier_id != dossier_id
-                or old_side.lineage_id != new_side.lineage_id
-                or old_side.kind is not ArtifactKind.model
-                or old_side.status is not ArtifactStatus.ready
-                or old_side.id == new_side.id
-            ):
-                return None
-
-        return {
-            "old": old_side,
-            "new": new_side,
-            "computed_at": datetime.now(UTC),
-            "report": delta_between(old_side, new_side),
-        }
+            return old_side, new_side
+        old_side = await repository.get_artifact(against_id)
+        if (
+            old_side is None
+            or old_side.dossier_id != dossier_id
+            or old_side.lineage_id != new_side.lineage_id
+            or old_side.kind is not ArtifactKind.model
+            or old_side.status is not ArtifactStatus.ready
+            or old_side.id == new_side.id
+        ):
+            return None
+        return old_side, new_side
 
     async def delta_sides(
         self,
