@@ -1634,3 +1634,102 @@ twenty-fourth-sweep entry above. `ingest.py` is in no lane's row
 either. **Assign it, or say the word and this lane will do it** — it
 is two files and an afternoon, and today it is the difference between
 a report that is honest and one that is quiet.
+
+## Twenty-third turn — the rebuild gap, closed
+
+Raised in the twenty-fourth sweep, restated last turn, and still in no
+orders file and nowhere in the lead's worklog. `ingest.py` is in no
+lane's row, the same reading I applied to `repository.py` last turn and
+reported plainly, so this lane did it. **Revert if that was wrong** —
+but the product has been quietly under-reporting real models for four
+sweeps and that is the more expensive mistake.
+
+### What was wrong
+
+The product never audits a file. `_workbook_of` rebuilds a `Workbook`
+from stored rows, and every field the reader fills at *open* time was
+empty by the time a rule read it. `hidden_sheets` was the one somebody
+noticed, and it was fixed alone — the comment above it («  the cells
+cannot say what the workbook hides ») is exactly right and was never
+generalised.
+
+### What each fact is worth, measured one at a time
+
+Same file, audited whole and audited as the product would, with facts
+restored in groups (`logs/atelier/restore_gap.py`, nine readable corpus
+models):
+
+| restoring | still missing | invented |
+|---|---|---|
+| nothing (today) | `broken-name` ×12, `error-value` ×28, `hidden-sheet/error` ×1 | `hidden-sheet/smell` ×1 |
+| the six cheap facts | **nothing** | **nothing** |
+| those + `row_words` | nothing | nothing |
+
+**The gap closes exactly.** Not « mostly » — the rebuilt workbook
+becomes the file's workbook as far as `audit()` can tell, on all nine.
+
+`row_words` buys nothing measurable *on this corpus*, and it is the
+expensive one (50–400 KB against 0.7–18 KB for the other six). It is
+kept anyway, and the reason is stated rather than assumed: it is the
+audit's **suppression** input — the fact that lets a rule honour a
+number a sheet's own words already state — so a model where it matters
+produces *false positives* without it, and the corpus simply does not
+happen to contain one. The cost is real and small: Kelso's cells
+already occupy **99 MB** in this database and its `row_words` is 254 KB,
+which is 0.26%. Storing half a truth is what created this bug.
+
+### The fix
+
+`ingest.py` keeps them under `counts["workbook"]` (it already holds the
+whole `Workbook` when it writes `counts`), and `service._restore_file_facts`
+puts them back before the audit runs — one function, so the next fact
+has one obvious home instead of another lonely two-liner.
+
+Two details worth keeping: `errors` was already taken in `counts` for
+the audit's error *count*, so the workbook's error cells are
+`error_cells`; and JSON has no integer keys, so `row_words`' row
+numbers go out as strings and are turned back on the way in, which a
+test holds.
+
+**No migration.** A model ingested before the key existed has no facts
+to put back and audits exactly as it did — the restore reads a missing
+key as an absence, not as a zero. Uploading it again is what teaches
+it. That is a test too.
+
+### The face
+
+Levenmouth, re-read through the fixed intake into its own deal so the
+before and after sit side by side. The audit found **the same seven
+findings the engine finds on the file** — `error-value` ×2 error, ×3
+smell, `broken-name` ×2 — where it had found nothing at all.
+
+The report was the thing that lied. It used to open:
+
+> **Nothing failing — but little could be checked.** … The checks that
+> read values — the statements, the model's own check rows — found
+> nothing failing.
+
+It now opens:
+
+> **Not ready to send. Seven findings, two of them material.** This copy
+> carries values only — 224 of 432,596 cells hold a formula — so the
+> rules that read how the model is built saw almost none of it. **What
+> the value-reading checks did find: two error values.**
+
+The values-only qualification survives, and is now telling the truth
+instead of covering for a blind spot. Section 3 names them:
+`Repayment schedules!D79` — « #N/A at D79:D126 inside an otherwise live
+column — values resume at D127 » — the forty-eight dead cells of a live
+repayment column that this lane first found four sweeps ago, finally on
+the page a partner reads. Shots: `logs/atelier/whole-read-verdict.png`,
+`logs/atelier/whole-read-findings.png`.
+
+### Tests
+
+Four, and I proved they bite by stubbing the restore out and watching
+three go red: broken defined names reach a finding on the repo's own
+judged model (it carries fifty); cached error values reach a finding;
+the stored facts round-trip through JSON including the integer row
+keys; and a model stored before the fix still audits, poorer and
+without raising. Full tieout suite **981 passed, 4 skipped** — no
+existing test's finding counts moved, which is its own small comfort.

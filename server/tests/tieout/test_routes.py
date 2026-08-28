@@ -24,6 +24,7 @@ from polar.kit.db.postgres import AsyncSession
 from polar.models import (
     Artifact,
     ArtifactKind,
+    CheckStatus,
     Dossier,
     DossierMember,
     DossierRole,
@@ -3051,3 +3052,178 @@ class TestTheTwoWaysToReadCells:
         assert [(one.rule, one.location, one.title) for one in heavy_findings] == [
             (one.rule, one.location, one.title) for one in light_findings
         ]
+
+
+@pytest.mark.asyncio
+class TestTheFactsTheCellsCannotSay:
+    """The product must audit the same workbook the engine does.
+
+    It never audits a file: `_workbook_of` rebuilds one from stored
+    rows, and every field the reader filled at *open* time was empty by
+    the time a rule read it. `hidden_sheets` was the one anybody
+    noticed, and it was fixed alone. Over the nine readable corpus
+    models the rest cost **41 of 116 findings** — `error-value` ×28,
+    thirteen at error severity, `broken-name` ×12, one `hidden-sheet`
+    downgraded — and took four models to « nothing failing ». One of
+    them prints `#N/A` across forty-eight cells of a live repayment
+    column while its report says nothing is failing.
+
+    Ingest now keeps those facts on the artifact and `_audit_one` puts
+    them back. Restoring them closes the corpus gap exactly: nothing
+    missing, nothing invented, on all nine.
+    """
+
+    PREAPP = CASCADE / "example_preapp_model.xlsx"
+
+    async def _audited(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        owner: User,
+        *,
+        payload: bytes,
+        filename: str,
+    ) -> tuple[Dossier, Artifact]:
+        deal = await _deal_for(session, save_fixture, owner)
+        model = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename=filename,
+            payload=payload,
+            user_id=owner.id,
+        )
+        await session.flush()
+        return deal, model
+
+    async def test_broken_defined_names_reach_a_finding(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The repo's own judged model carries fifty of them.
+
+        `broken-name` fires on eight of the nine readable corpus models
+        and appeared in no deal in the database, because the rule reads
+        `book.broken_names` and the rebuilt workbook had none.
+        """
+        deal, _ = await self._audited(
+            session,
+            save_fixture,
+            user,
+            payload=self.PREAPP.read_bytes(),
+            filename="example_preapp_model.xlsx",
+        )
+        run = await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+        await session.flush()
+
+        repository = TieOutRepository.from_session(session)
+        rules = {one.rule for one in await repository.findings_of(deal.id)}
+        assert "broken-name" in rules
+        assert run.status is CheckStatus.done
+
+    async def test_cached_error_values_reach_a_finding(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """`error-value` was the biggest loss of the four — and dead.
+
+        It reads `book.errors`, which the reader fills from the values
+        Excel cached. A cell showing `#N/A` has no number, so it is not
+        even stored as a cell: without the fact carried over, the
+        product could not know the cell existed.
+        """
+        deal, _ = await self._audited(
+            session,
+            save_fixture,
+            user,
+            payload=(CASCADE / "audit_fixture.xlsx").read_bytes(),
+            filename="audit_fixture.xlsx",
+        )
+        await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+        await session.flush()
+
+        repository = TieOutRepository.from_session(session)
+        rules = {one.rule for one in await repository.findings_of(deal.id)}
+        assert "error-value" in rules
+
+    async def test_the_stored_facts_come_back_as_they_went_in(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """JSON has no integer keys and no tuples; the restore knows."""
+        from polar.tieout.service import _restore_file_facts
+        from polar.tieout.workbook import Workbook, read_workbook
+
+        _, model = await self._audited(
+            session,
+            save_fixture,
+            user,
+            payload=self.PREAPP.read_bytes(),
+            filename="example_preapp_model.xlsx",
+        )
+        from_file = read_workbook(str(self.PREAPP))
+
+        rebuilt = Workbook()
+        _restore_file_facts(rebuilt, model.counts)
+
+        assert rebuilt.broken_names == from_file.broken_names
+        assert rebuilt.foreign_names == from_file.foreign_names
+        assert rebuilt.errors == from_file.errors
+        assert rebuilt.unparseable == from_file.unparseable
+        assert rebuilt.populated == from_file.populated
+        assert rebuilt.iterative == from_file.iterative
+        #: The row numbers went to JSON as strings and have to come back
+        #: as integers, or every lookup the audit makes misses.
+        assert rebuilt.row_words == from_file.row_words
+        assert all(
+            isinstance(row, int) for rows in rebuilt.row_words.values() for row in rows
+        )
+
+    async def test_a_model_stored_before_the_fix_still_reads(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """No migration, and no pretending an old artifact knows more.
+
+        Every model already in a database was ingested without these
+        facts. It has to audit exactly as it did — poorer, and without
+        raising — and uploading it again is what teaches it.
+        """
+        from polar.tieout.service import _restore_file_facts
+        from polar.tieout.workbook import Workbook
+
+        deal, model = await self._audited(
+            session,
+            save_fixture,
+            user,
+            payload=self.PREAPP.read_bytes(),
+            filename="example_preapp_model.xlsx",
+        )
+        counts = dict(model.counts)
+        counts.pop("workbook", None)
+        model.counts = counts
+        session.add(model)
+        await session.flush()
+
+        rebuilt = Workbook()
+        _restore_file_facts(rebuilt, model.counts)
+        assert rebuilt.broken_names == []
+        assert rebuilt.errors == {}
+        assert rebuilt.row_words == {}
+
+        run = await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+        await session.flush()
+        assert run.status is CheckStatus.done
+        repository = TieOutRepository.from_session(session)
+        rules = {one.rule for one in await repository.findings_of(deal.id)}
+        #: The old, poorer answer — which is the honest one for an
+        #: artifact that never carried the fact.
+        assert "broken-name" not in rules

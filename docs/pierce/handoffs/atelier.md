@@ -246,24 +246,26 @@ floor fails a 4,798-cell model on two cells of 3e-07 balance dust;
 in neither rule catalogue, so no firm can see or switch them off;
 and the big one below.
 
-**The product audits a poorer workbook than the engine does.** It
-never audits a file — it rebuilds a `Workbook` from stored cells
-(`service._workbook_of`, cells + sheets and nothing else), and
-`_audit_cells` puts `hidden_sheets` back by hand from a fact ingest
-kept. Every other field the reader fills at open time is empty by the
-time a rule reads it: `errors`, `unparseable`, `broken_names`,
-`foreign_names`, `iterative`, `populated`, `row_words`. Measured over
-the nine readable corpus models: **41 of 116 findings lost**
-(`error-value` ×28, thirteen at error severity; `broken-name` ×12;
-one `hidden-sheet` downgraded error→smell), and **four models go to
-zero**. Levenmouth's report says « Nothing failing » over a file
-carrying `#N/A` across forty-eight cells of a live repayment column.
-The golden-master gate cannot see it: it certifies `audit()` against
-files, and the product never audits a file. The patch is one dict
-literal in `ingest.py` (log has it verbatim); `ingest.py` is in no
-lane's row, so the lead assigns it. **Do not weaken the report's
-prose to match** — that would hide a defect that is going to be
-fixed.
+**The product audits the same workbook the engine does — keep it that
+way.** It never audits a *file*: `_workbook_of` rebuilds one from
+stored rows, so every fact the reader fills at open time has to be
+carried on the artifact and put back. `ingest.py` keeps them under
+`counts["workbook"]`; `service._restore_file_facts` restores them.
+**Any new `Workbook` field the audit reads needs a line in both** —
+`hidden_sheets` was fixed alone once and the six siblings it left
+behind cost 41 of 116 findings across the corpus and took four models
+to « nothing failing ». Restoring them closes that gap *exactly*
+(nothing missing, nothing invented, all nine models —
+`logs/atelier/restore_gap.py` measures it).
+
+`row_words` is kept although it buys nothing on this corpus: it is the
+audit's **suppression** input, so a model where it matters gets false
+positives without it. 254 KB against the 99 MB Kelso's cells already
+occupy. Two traps: `errors` in `counts` is the audit's error *count*,
+so the workbook's error cells are `error_cells`; and JSON has no
+integer keys, so `row_words`' rows go out as strings and come back as
+ints. **No migration** — a model ingested before the key reads as it
+did, and re-uploading is what teaches it.
 
 **Check the category map against what the engine *emits*, never
 against the catalogues.** A rule missing from `RULE_NAMES` /
