@@ -243,6 +243,60 @@ edited is not a weak result, it is not a result.
 taken; a re-run after a fix is a new measurement, not a correction
 of the old one.
 
+## 28 August 2026 — the label column: a reasonable decision nobody had priced
+
+A6 round 2 turned up a file whose every formula sat in column A,
+invisible. I wrote it up as a defect. Then I read the code, and it
+is not one: `_read_sheet` excludes the label column from the numeric
+sweep by an explicit `column != label_column`, and `_label_column`
+picks exactly one column per sheet by counting distinct text values.
+It is deliberate and well-argued — a number in the label column is
+usually a label.
+
+So I corrected the A6 write-up and registered a different round.
+**The framing was the whole point: registered as a bug, I would have
+been measuring to confirm rather than to find out.**
+
+**And the measurement went against me.** I predicted well under 0.5%
+on the regulator and closed-deal corpora, reasoning that clean model
+layouts keep numbers to the right of the labels. Measured: the
+regulator set hides **1.55% of its formulas and 5.31% of its
+numerics**; the closed-deal models hide 0.71% of formulas; the worst
+files run to 32%. Both corpora fail the bar I fixed in advance, and
+the general-spreadsheet set I had expected to be the bad one was
+never needed.
+
+The hand-read is where it became real rather than statistical.
+Twenty cells drawn from a full enumeration of all 79,083, seed fixed
+in the registration: thirteen are computed date ladders, six are
+cross-sheet label mirrors resolving to text — correctly hidden — and
+one is junk. The closed-deal half is sharper still: all 156 hidden
+formulas there are computed date columns, and `newbattle`'s
+repayment schedule runs **two different formula shapes in one
+series**. A hardcoded date in a repayment schedule is a live defect
+and is exactly what `typed-over-formula` and `inconsistent-row` are
+for. Neither can see that column at all.
+
+The hand-read also handed me a discriminator, which the full data
+then confirmed: 62% of hidden formulas resolve to a **number** (the
+ladders), 38% to **text** (the mirrors). That is the shape of the
+change to test — and I have written its impurity into the document
+rather than leaving it to be found later: 133 `CHOOSE` mirrors
+resolve to numbers too.
+
+**One thing I made myself qualify.** « 1.55% of the regulator
+corpus » is true and, alone, misleading: 70% of that volume is four
+daily-date sheets in two WACC models. But it touches 25 of 37 files
+across 97 sheets. Widespread in incidence, concentrated in volume —
+and quoting either half without the other tells a different story
+than the data does.
+
+Nothing wired, per the round's own criterion 3. Electing 49,011
+cells moves findings on files the baseline covers, so it is its own
+round with the full gate, and the proposal carries a warning I would
+rather write now than discover then: 34,000 cells of a single shape
+could swamp a corpus report on their own.
+
 ## 28 August 2026 — A6 round 2: the premise was wrong, and the worst defect was ours
 
 The lead's addendum made A6 the gate on the Enron corpus — 9,145
