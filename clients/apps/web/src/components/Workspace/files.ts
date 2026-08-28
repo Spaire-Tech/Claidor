@@ -119,6 +119,27 @@ const CATEGORY_OF: Record<string, string> = {
   'hardcode-in-formula': 'Embedded hardcodes',
   'external-link': 'Auditability risks',
   'broken-name': 'Auditability risks',
+  //: **A new family, and the first added since this map was written.**
+  //: Sentinel's unit checks report a sum that adds dollars to euros,
+  //: or thousands to millions. That is not a « probable formula
+  //: defect »: the formula is mechanically perfect and the answer is
+  //: nonsense — a meaning error, not a mechanical one. Nor is it a
+  //: « structural exception », which in this map means the statements
+  //: not holding together, one relationship at a time.
+  //:
+  //: « Units that do not agree » says the whole of it in words a
+  //: banker uses, and it extends to the unit checks that follow —
+  //: currency, scale, per-unit against total. A later check about a
+  //: *basis* rather than a unit (real against nominal, say) earns its
+  //: own family rather than stretching this one; families are named
+  //: for what the reader is being told.
+  //:
+  //: Neither rule is in `RULE_NAMES` or `HEADLINES` on the engine
+  //: side, so until they are, **this family name is the only name a
+  //: reader sees for the defect** — which is why it has to carry the
+  //: meaning on its own.
+  'currency-mismatch': 'Units that do not agree',
+  'scale-mismatch': 'Units that do not agree',
   volatile: 'Auditability risks',
   'long-formula': 'Auditability risks',
   'hidden-sheet': 'Auditability risks',
