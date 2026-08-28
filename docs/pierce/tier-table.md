@@ -106,7 +106,7 @@ counted in that number.
 | **Claims** | Both versions computed the same value on every trial, and the trials **moved** this cell |
 | **Strength** | Evidence, never proof: five trials, one seed. « No divergence found », stated as such |
 | **Cost** | `2 × trials` recalculations of the whole workbook. **14 min** at a fixed band; **39–57 min** when the band is searched |
-| **On the pair** | **313 supported · 0 plain divergences · 7 latent** |
+| **On the pair** | **285–313 supported · 0–71 plain divergences · 6–7 latent** — two runs, same code, different draws. The range *is* the finding: a single seeded run understates divergence |
 | **Refuses** | `no_perturbable_input` (939) · `degenerate_under_perturbation` (257) · `tier2_divergence_latent` (7) · `not_offered_to_tier2` · `volatile` · `environment_dependent` · `not_read_by_driver` |
 
 **The band matters more than the seed.** ED2 tolerates ±1% and not
@@ -123,6 +123,15 @@ perturbation pushed them out of the domain where the model computes
 anything, and comparing two versions at `#DIV/0!` is vacuous. The
 refusal was right; its published name was false, and it is now two
 names.
+
+**A single run understates divergence, and the table says so.** Two
+runs of the same code at the same registered seed — differing only
+in which draws the band search accepted — found **0** and **71**
+plain divergences on the same pair. The 71 are real: the
+real-to-nominal conversion rows of `Annual Inflation`, identical in
+both saved files, computing up to **27%** apart. Tier 2's answer is
+« no divergence *found* », never « none exists », and that wording
+is doing work.
 
 **`tier2_divergence_latent` is the tier's most interesting output.**
 Seven cells on `Finance&Tax` are byte-identical in both files —
@@ -179,6 +188,8 @@ everything downstream of them.
 
 The cell diff sees 1,255 changed cells and cannot say that. The
 ladder says: 93.19% could not have moved · 3.11% moved and is named
-· 313 cells verified to compute identically under perturbation ·
-7 cells that agree as saved and differ once exercised · 1,203
-refused, by name.
+· ~300 cells found to compute identically under the trials · dozens
+more that agree as saved and differ once exercised — 6 of them on
+paths the model does not currently take · ~1,200 refused, by name.
+The counts are ranges because they are sampled, and the table
+refuses to print a sampled number as though it were a fact.

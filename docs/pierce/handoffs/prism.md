@@ -38,6 +38,7 @@ answering anything of record; register before results, always.
 | C4 tier 2, what the revision *is* | `scratchpad` probes + `domain` mode | The frontier of divergence is `AVERAGEIFS` over whole `Monthly Inflation` columns; the revision **replaces twelve months of forecast with published outturn** (`H284:H295`, new-version-only). Seven `Finance&Tax` cells are byte-identical in both files (stored **0**) and compute differently once exercised — **a difference no cell diff can see** |
 | C4 tier 2, the domain round | `scripts/watch_tiers.py domain` | Perturbation bands narrowed against the file's own error count: ED2 tolerates **±1% and not ±5%** (1,379 errors at every wider band). Coverage of the disturbed cells **96 → 293 of 294**; seven divergences on `Finance&Tax` remain **unexplained**, five candidate causes eliminated |
 | C4 tier 2, why cells freeze | `scripts/watch_tiers.py` (verdict dump) | The 198 frozen disturbed cells are on live sheets, not licensee branches (**no `CHOOSE` names any of them**); **198/198 reach a held categorical literal, 0/96 supported ones do**, with a median 527 perturbed literals in cone — so reach is not the problem, the zero-holding rule is |
+| **Tier 2 is sampled, and the range is the finding** | `scripts/watch_tiers.py domain` | Two runs, same code and same registered seed, differing only in which draws the band search accepted: **0 and 71 plain divergences** on the same pair. The 71 are real — `Annual Inflation`'s real-to-nominal rows, identical in both saved files, computing **27% apart**. Never quote a tier-2 count as a property of the pair. |
 | C4 tier 2, pair oracle | `scripts/watch_tiers.py oracle/control` | Control (file against itself) **0 diverged, 0 violations**. ED2 pair: **0 diverged** over 8,475 perturbed inputs, 172 supported, 1,344 `no_perturbable_input`. Coverage is the real story: of the **294** cells the revision disturbed, the trials reached **96** |
 | C4 ladder (one verdict per cell) | `watch/tiers.py`, `scripts/watch_tiers.py` | ED2 v2 14→31 July: **93.19% proved · 3.11% changed · 3.69% refused, all five gates clean**, and the count reconciles with C1's raw diff to a single named cell (`Cover!G4`) |
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
@@ -77,6 +78,19 @@ a report.
    tier; the registration forbids importing z3 before that line
    exists. Re-raise it every turn until it lands, and do not
    silently start.
+0. **The profile's next round is the declared-version reader**, and
+   it is a change of *kind*: comparables are the model's other
+   transitions of the same **declared version step** (patch, minor,
+   family), read from the file — hickeng writes « github release:
+   v0.1.6 » in `Summary!C`, ED2 carries `v2`…`v5` in its filename
+   and cover. Not circular, no band, no constant. **Cadence was
+   measured and is not shipped**: it fixed coverage (hickeng 5→14 of
+   15 comparable) and made discrimination worse (the flag fires on
+   13 of 15, one of them a zero-cell transition). **Composition is
+   dead by argument** — choosing neighbours by the shape of the
+   change and then asking whether the change is unusual is
+   tautological; a neighbour rule must use an *input*, not an output
+   of the diff.
 1. **The profile is NOT ready to ship, and the measurement that
    says so is out-of-sample.** On `hickeng/financial`'s fifteen
    transitions it refuses on **ten** and is silent on the one
