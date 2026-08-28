@@ -1975,3 +1975,268 @@ rather than correct until someone re-uploads.
    the fast path return a full report instead of a refusal-shaped one.
 
 Suite **1037 passed, 4 skipped**; ruff, mypy, tsc and prettier clean.
+
+## Twenty-seventh turn — two rule keys, and the abundant direction surveyed
+
+### The priority: `currency-mismatch` and `scale-mismatch`
+
+Sentinel's merge was held at the tip until the category map covered
+them. Both are mapped, and the guard test that caught the gap is why
+this took ten minutes rather than a sweep.
+
+**A new family — « Units that do not agree »** — the first added since
+the map was written, so the reasoning is on the record. I read the
+rules on Sentinel's branch before naming anything: the finding is
+« `{formula}` adds terms of different currency: USD, EUR. A sum may
+only carry one currency », severity **error**.
+
+That is not a « probable formula defect »: the formula is
+mechanically perfect and the answer is nonsense — a **meaning** error,
+not a mechanical one, and filing it beside a skipped SUM range would
+tell a reader the wrong thing about what went wrong. Nor is it a
+« structural exception », which in this map means the statements not
+holding together, one relationship at a time.
+
+« Units that do not agree » says the whole of it in words a banker
+uses, and it extends to the unit checks that follow — currency, scale,
+per-unit against total. **The pattern it sets**: a later check about a
+*basis* rather than a unit (real against nominal) earns its own family
+rather than stretching this one. Families are named for what the
+reader is being told, not for where the code lives.
+
+**And the name is carrying more weight than it should.** Neither rule
+is in `RULE_NAMES` or `HEADLINES` on Sentinel's branch, so a firm
+cannot see or switch them off, and — because the report falls back to
+the family when a finding has no headline — **this family name is the
+only name a reader sees for the defect**. That is the sixth rule
+outside the catalogue (`gapped-test`, `broken-name`, `typed-over-beat`
+before them), and the first two at *error* severity.
+
+**The guard now clears its own exemption.** Mapping ahead of a merge
+breaks `test_the_map_invents_nothing`, so the two keys sit in an
+explicit `AHEAD_OF_THE_ENGINE` set — and a second test fails the
+moment the engine *does* emit one, which is the sweep the entry must
+be deleted. Proved by dropping a scratch file carrying the rule
+literal into the engine tree and watching it go red. An exemption that
+outlives its reason is how a guard quietly stops guarding.
+
+### The abundant direction: what the product does today
+
+Seeded for real (`cascade_memo_stale.docx` against `cascade_model.xlsx`)
+and taken through the whole path rather than read off the code.
+
+**It works, and it is already first-class.** The tie-out reconciled 6
+figures, 4 agreeing, **2 drifting**, and the Findings tab shows them
+under « Documents against the model »:
+
+> **$235.3mm where the model says $228.9mm** — paragraph 6 — Material
+> **10.2% where the model says 9.8%** — paragraph 9 — Material
+
+That *is* « your memo says 14.2% IRR, the model now says 13.7% », with
+the paragraph cited. `run_tieout` has read memos and messages beside
+decks all along — the comment in it says so in as many words.
+`logs/atelier/memo-drift-findings.png`.
+
+### What is missing — four gaps, in the order they cost
+
+**1. The reader that can read a PDF is wired only to the scarce
+direction.** `SUFFIXES` maps `.pdf` to `ArtifactKind.source`, and
+`_read_memo` takes `.docx` only — so a PDF **cannot** be checked
+against the model whatever the caller asks for, even though the upload
+route accepts an explicit `kind`. An IC memo, a board paper and a
+quarterly covenant certificate circulate as PDFs. The Chain already
+reads a PDF's every number with its page and box; that extraction
+feeds provenance and nothing else. **This is the whole gap between the
+abundant direction and the documents it is abundant in.**
+
+**2. No screen lets a person say what a document is.** The client's
+`upload()` posts the file and never the `kind`, so the extension
+decides alone. Even once a PDF *could* be either, nothing on the
+screen asks.
+
+**3. A memo revision gets no « what did this do to what we sent
+out ».** My own `deck_delta` filters `kind is ArtifactKind.deck`, so
+the comparison the tie-out is happy to run on a memo has no revision
+view. Widening the filter alone would break: the Watch's `deck_delta`
+calls `tie_out`, which calls `read_deck` — pptx only. But
+`tie_out_both(figures, book, published)` is split out precisely so a
+caller can supply its own figures, and `compare_tieouts` is exported.
+Composing `read_memo(...).figures` with those two would give memos the
+same revision view without touching the engine — a small, real
+successor, **not built**, because the orders say findings only.
+
+**4. One figure could not be matched and only the report says so.**
+The run recorded `unlinked: 1` with the reason « no output fits the
+label ». The report's coverage section carries it (« N not checked »);
+the Overview says « Every check that applies to this model ran to the
+end », which is true of *checks* and silent about the figure. Not a
+defect — the sentences are about different things — but the Overview
+is where a person lands, and « 6 of 7 figures were reconciled » is a
+fact it does not carry.
+
+**What I did not survey**: whether the memo reader finds figures in
+tables, headers or footnotes as well as paragraphs. The fixture's
+drifts are both in body paragraphs. That is Scribe's answer-key work
+and the honest next measurement here.
+
+Suite **1043 passed, 4 skipped**; ruff, mypy, tsc and prettier clean.
+
+## Twenty-eighth turn — G4: one place to act is one entry
+
+The reset says the only surfaces that matter are the ones carrying
+engine output to a reader, and names G4 after the rule keys. The rule
+keys are pushed and holding nothing; this is G4.
+
+**A hostile read of Kelso's report**, on the newest engine output —
+470,594 cells, five findings including the `broken-name` the intake
+fix restored. The verdict, the coverage, the abstentions and the
+citations all held. Section 3 did not.
+
+It printed **three material findings that are one place**:
+
+> 01 The model's own check rows are firing at calcFundingSA!N712
+>    calcFundingSA!N712
+>    16.3 on the model's own « CHECK » row, built to read zero
+> 02 The model's own check rows are firing at calcFundingSA!M712
+>    calcFundingSA!M712
+>    33.64 …
+> 03 The model's own check rows are firing at calcFundingSA!O712 …
+
+One check row, three adjacent columns, the same sentence three times,
+the cell printed twice each time — once inside the sentence and once
+as its own citation — and a third of the page spent on it. A partner
+reads three problems where there is one thing to do.
+
+**Fixed, and nothing composed.** Three changes, each checked rather
+than assumed:
+
+1. **The section numbers places, not findings.** Findings are grouped
+   by rule, sheet and row. The tally above is untouched — three
+   findings *are* three findings and the count says so — but 01 is now
+   the row, with each cell beneath it keeping its own figure and its
+   own evidence sentence.
+2. **A shared sentence is said once.** Only when every title in the
+   place is identical *with its own reference removed*, so a place
+   whose sentences genuinely differ keeps all of them. That is a test,
+   not an assumption about how rules phrase themselves.
+3. **The doubled citation is gone.** The pill is suppressed when the
+   sentence already prints the very same reference — and comes back
+   when the shared sentence has taken the reference out.
+
+And the cells are ordered as a person reads a model — down the
+columns, left to right. They arrived N712, M712, O712.
+
+It now reads:
+
+> **01 The model's own check rows are firing**
+> `calcFundingSA!M712` · 33.64 on the model's own « CHECK » row, built
+> to read zero — reports 33.64 in FY2018, a row that is zero
+> everywhere else.
+> `calcFundingSA!N712` · 16.3 …
+> `calcFundingSA!O712` · 6.818 …
+
+**Verified as the artifact a partner receives**, not just on screen:
+printed and read back — 4 pages, the product's own three fonts
+embedded (Instrument Sans, Newsreader, JetBrains Mono), section
+footers right, and page 3 carrying the grouped entry with all three
+cells and all three figures intact.
+`logs/atelier/report-kelso.pdf`, `logs/atelier/report-one-place.png`.
+
+### What else the hostile read found, not fixed
+
+- **Page 1 prints the same two numbers twice** — the verdict says
+  « 814 of 470,594 cells hold a formula » and the fact row says
+  « 470,594 · 814 of them formulas ». True twice over; the row could
+  carry something the verdict does not.
+- **A workbook-level finding is cited differently on two surfaces** —
+  the Findings table says « defined names » (the endpoint's fallback,
+  fixed last turn) and the report says `kelso_model.xlsm`, because
+  `citeOf` falls to `where.filename` before the label. Both true,
+  neither wrong, and they should agree.
+- **Section 2 lists the abstentions above the values-only sentence**,
+  which is the larger reason coverage is poor.
+
+### A lesson from the lead's refutation, worth writing down
+
+The CRC design was refuted 372/372 on the AU-UK corpus — eleven
+consecutive Ofgem ED2 revisions of one model, which is exactly the
+« two consecutive saves » I said did not exist here. **It did exist,
+in another corpus.** Before claiming a measurement is impossible,
+check every corpus in the repo, not the one the current work happens
+to use.
+
+Suite **1043 passed, 4 skipped**; ruff, mypy, tsc, eslint and prettier clean.
+
+## Twenty-ninth turn — what a reviewer actually receives, per real model
+
+Every lane tests its own module against fixtures with planted defects.
+Nobody runs the whole engine over the whole corpus and asks the
+reader's question, which is this lane's to ask: **is this a page a
+person can act on, or a wall?** A rule that fires twice is a finding;
+the same rule firing fifty times is noise that buries the other nine.
+
+`logs/atelier/reader_load.py`, nine readable corpus models:
+
+| model | findings | material | worst single rule |
+|---|---|---|---|
+| baldragon | 10 | 5 | `error-value` ×8 |
+| forfar | 6 | 2 | `error-value` ×4 |
+| glasgow_college | 11 | 3 | `error-value` ×5 |
+| inverclyde | 3 | 0 | `hidden-sheet` ×2 |
+| inverurie_foresterhill | 9 | 1 | `model-own-check` ×4 |
+| kelso | 2 | 0 | `broken-name` ×1 |
+| levenmouth | 7 | 2 | `error-value` ×5 |
+| **newbattle** | **68** | **62** | **`hidden-sheet` ×53** |
+| oban_campbeltown | 4 | 0 | `error-value` ×3 |
+
+**The good news first, because it is the larger fact.** Eight of nine
+real models produce **two to eleven findings**. That is a page a
+partner reads, not a wall. The engine is not crying wolf.
+
+### The ninth, and it is one defect not fifty-three
+
+Newbattle: **53 of its 54 sheets are *very* hidden.** The only visible
+sheet is `Disclaimer`. `Contents`, `Checks`, `BID PRICE`, `Control` —
+the navigation of the model — are all behind the VBA editor.
+
+That is not fifty-three concealment defects. It is **one act by one
+person on one day**: the model was published locked. A reviewer asks
+about it once.
+
+The engine emits it as **53 findings, every one at *error* severity**,
+each carrying the same sentence with a different sheet name in it:
+
+> « BID PRICE » is very hidden — it does not appear in Excel's unhide
+> menu and can only be reached through the VBA editor. Whatever it
+> holds feeds the model without being on any screen.
+
+So a nine-finding model reports as sixty-eight, and a nine-material
+model reports as sixty-two.
+
+**The fold this needs already exists in the same file.** On the same
+model, `broken-name` folds 338 defined names into *one* finding with a
+roster — « 338 defined names point into other workbooks that are not
+here (IRRSHARINGREQ, ModStartDate … and 332 more) ». Two rules about
+workbook-wide facts, written by one lane: one folds, one floods.
+
+**Routed to Sentinel, with three parts:**
+
+1. `hidden-sheet` should fold like `broken-name` — one finding, the
+   sheets rostered.
+2. **53 of 54 is a different fact from « a sheet is hidden »** and
+   deserves its own sentence. « Every sheet but the disclaimer is very
+   hidden » is a publication posture, and arguably a *stronger*
+   finding than any one of the fifty-three.
+3. Severity is a judgement I will not make from here: one very-hidden
+   sheet in a working model is a concealment signal and material;
+   53 of 54 may be a convention rather than a concealment. Sentinel's
+   call, with the evidence above.
+
+**I have deliberately not masked this in the report.** My report groups
+findings by *place*, and fifty-three sheets are fifty-three places, so
+the grouping shipped this morning does not fire. Making it fire — by
+folding on the rule alone — would print one tidy entry over a severity
+band still reading « Material 62 », which is the report lying about
+the engine on the engine's behalf. The count is wrong at source and
+that is where it gets fixed. Until then the report carries the
+engine's answer faithfully, which is its job.
