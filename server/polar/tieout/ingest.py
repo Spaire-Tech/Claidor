@@ -13,6 +13,7 @@ again with the same file. The messages below name the cause and the fix,
 and where there is no fix they say that too.
 """
 
+import hashlib
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -85,14 +86,24 @@ def read_artifact(payload: bytes, filename: str, kind: ArtifactKind) -> Ingested
         path = Path(folder) / Path(filename).name
         path.write_bytes(payload)
         if kind is ArtifactKind.model:
-            return _read_model(str(path))
-        if kind is ArtifactKind.deck:
-            return _read_deck(str(path))
-        if kind is ArtifactKind.memo:
-            return _read_memo(str(path), suffix)
-        if kind is ArtifactKind.source:
-            return _read_source(str(path))
-        raise Unreadable(f"reading a {kind.value} is not something this can do")
+            read = _read_model(str(path))
+        elif kind is ArtifactKind.deck:
+            read = _read_deck(str(path))
+        elif kind is ArtifactKind.memo:
+            read = _read_memo(str(path), suffix)
+        elif kind is ArtifactKind.source:
+            read = _read_source(str(path))
+        else:
+            raise Unreadable(f"reading a {kind.value} is not something this can do")
+
+    # What was uploaded, as a fact rather than an inference. Two uploads
+    # with the same digest are the same file, and that is the one thing
+    # about a revision that can be known without reading anything: the
+    # Watch spends 158 seconds on a 432,596-cell model to conclude that
+    # a re-upload changed nothing, and this answers it in a string
+    # comparison. Costs a hash over bytes already in hand.
+    read.counts["sha256"] = hashlib.sha256(payload).hexdigest()
+    return read
 
 
 def _read_source(path: str) -> Ingested:

@@ -3275,3 +3275,123 @@ class TestAFindingWithNoCell:
             assert one["where"]["anchor"].get("ref") in (None, "")
             assert one["where"]["label"], "an empty pill is a rendering fault"
             assert one["where"]["label"] == "defined names"
+
+
+@pytest.mark.asyncio
+class TestTheSameFileUploadedAgain:
+    """Two uploads with one digest are one file, and nothing to compare.
+
+    Refusing « compute the delta from stored cells » was right — it lost
+    an `unmatched_new` on a real pair — and a refusal is half a turn.
+    This is the successor, and it differs in kind: not a faster
+    comparison, but not comparing at all.
+
+    Measured, that matters: the Watch spends **158 seconds** on a
+    432,596-cell model to conclude a re-upload changed nothing — 58 of
+    them reading the two files, 5 auditing them, and most of the rest
+    aligning two large sheets against themselves. Identical bytes are
+    identical workbooks, so the same answer comes out of a string
+    comparison and comes out *exact*.
+
+    Ingest has recorded the digest since 28 Aug. A version stored before
+    that has none, and is compared as before: two absences are not a
+    match, which is the case that would otherwise turn « we know
+    nothing about either file » into « they are the same ».
+    """
+
+    async def _pair(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        owner: User,
+        *,
+        second: bytes | None = None,
+    ) -> tuple[Artifact, Artifact]:
+        deal = await _deal_for(session, save_fixture, owner)
+        first = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=owner.id,
+        )
+        later = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=second if second is not None else MODEL.read_bytes(),
+            user_id=owner.id,
+        )
+        await session.flush()
+        return first, later
+
+    async def test_a_re_upload_is_recognised_without_reading_anything(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        first, later = await self._pair(session, save_fixture, user)
+        assert first.counts["sha256"] == later.counts["sha256"]
+        assert tieout.identical_upload(first, later) is True
+
+    async def test_a_real_revision_is_not(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        first, later = await self._pair(
+            session,
+            save_fixture,
+            user,
+            second=(CASCADE / "audit_fixture.xlsx").read_bytes(),
+        )
+        assert first.counts["sha256"] != later.counts["sha256"]
+        assert tieout.identical_upload(first, later) is False
+
+    async def test_two_absences_are_not_a_match(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """Every version stored before 28 Aug carries no digest.
+
+        Reading « both have none » as « both are the same » would tell
+        a reader two different files are one, which is the worst
+        answer this fast path could give.
+        """
+        first, later = await self._pair(session, save_fixture, user)
+        for one in (first, later):
+            counts = dict(one.counts)
+            counts.pop("sha256", None)
+            one.counts = counts
+            session.add(one)
+        await session.flush()
+
+        assert tieout.identical_upload(first, later) is False
+
+    @pytest.mark.auth
+    async def test_the_digest_reaches_the_screen_that_uses_it(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The Versions tab decides this itself, off the versions it has.
+
+        No new endpoint and no new field: `VersionRead.counts` already
+        carries whatever ingest kept, so the screen can prove the two
+        uploads match and never ask for a comparison.
+        """
+        _, later = await self._pair(session, save_fixture, user)
+
+        response = await client.get(f"/v1/tieout/artifacts/{later.id}/versions")
+        assert response.status_code == 200
+        digests = {one["counts"].get("sha256") for one in response.json()}
+        assert len(digests) == 1
+        assert next(iter(digests))
