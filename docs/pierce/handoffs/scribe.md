@@ -328,6 +328,78 @@ the moment the six files exist on the lead's container — the two
 unblock paths are with the founder. **Do not force it onto a corpus
 that runs the wrong direction; that is what round 2 taught.**
 
+## The FERC corpus — the blocker is broken, and round 8 has run
+
+**D3 finally has a real document → model pair.** Manifest:
+`docs/pierce/corpus-ferc-formula-rate.md`. Re-fetch it with
+`uv run python scripts/corpus_ferc_fetch.py <dir>` — it verifies both
+halves by magic bytes **and** sha256 and refuses anything else.
+
+- **document** — RMU's FERC Form 1 for 2015 (132 pages, 103 printed
+  page numbers, filed May 2016)
+- **model** — RMU's 2016 formula rate workbook (4,472 cells, 47
+  citation cells)
+- **truth** — the filer's own `p354.21.b` citations: page, line,
+  column. A parse, not a judgement. No one has to guess what the
+  modeller meant.
+
+**Check bytes, never status.** PJM answers HTTP 200 with the identical
+PDF when you request a PDF's path with `.xlsx`. Verified here: same
+size, same sha256, both `%PDF`.
+
+**Two parse rules that own answers you will otherwise re-derive wrongly:**
+
+- A page's printed Form 1 number is the one in its **footer**
+  (`FERC FORM NO. 1 … Page NNN`), never any `Page NNN` in the body.
+  Loose matching makes 10 printed numbers ambiguous; the footer rule
+  is unique across all 103.
+- A schedule's **Line No. column sits on the left of a left-hand page
+  and on the right of its continuation** (`$ 218,200 48`). A
+  start-anchored line finder silently misses every right-hand page.
+
+### Round 8's result: it failed, and the failure is informative
+
+0 correct, 2 wrong, 13 abstained over 15 scorable rows, against all
+4,913 document numbers with no page hint. **Kill criterion 1 fired.**
+
+The number that explains it is not the score: **the truth line clears
+`FLOOR = 0.5` on only 3 of 15**, and on **11 of 15** some other line
+scores strictly higher. The answer is not reachable with the evidence
+the matcher may use, so the abstentions are correct and the two
+proposals are the failure.
+
+**The next thing this lane could do, and it is D1's, not D3's:** a wide
+table prints as a **two-page spread and the continuation page carries
+no labels at all** — four rows extract as `$ 10,895,809 58`, bare
+figures with a line number and no words. Unreachable by construction.
+That is the round 9 candidate. Register it before building it, and it
+falls under the standing extraction policy from decision 1: **no line
+may end up worse, damage judged by hand, repair/damage tally reported.**
+
+**Do not chase the glue.** D1 also merges a printed line number into the
+first label word (`21Transmission`), it affects 4 of 15, it is vivid,
+and the counterfactual says splitting it changes **nothing** — correct
+stays 0. It is a real defect and not the binding cause. That
+counterfactual is why it is not in the round-9 slot.
+
+**One product finding for the lead, not an accuracy one:** 10 of the 25
+cited inputs are **nils** — the document prints no value on the line and
+the filer records `0`. A tie-out that cannot say *"the document states
+nothing here and the model recorded zero"* in words is silent on two
+rows in five.
+
+**Still open:** the transformations the researcher counted (13-month
+averaging above all) live in the **large owners'** workbooks — JCPL's
+2025 ATRR has 72 citation cells and puts one citation over a column of
+thirteen monthly values, exactly round 6's column-anchor shape. **Those
+workbooks have no document half.** `www.ferc.gov` answers 403 here;
+`forms.ferc.gov` and `elibrary.ferc.gov` answer 200 but are ASP.NET
+postback surfaces. Not solved, and not recorded as solved.
+
+**One engine intake fact, for the lead to route:** ATSI's
+`2024-atrr.xlsx` is a genuine XLSX by its bytes and the engine raises
+`ValueError` on it. The engine is read-only to this lane.
+
 ## Working conditions in this container
 
 - Python 3.14.0**rc2** ships here and breaks pydantic (`ForwardRef`
