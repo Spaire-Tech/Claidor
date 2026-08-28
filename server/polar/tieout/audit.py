@@ -3679,30 +3679,56 @@ def _folded(parts: list[str]) -> list[str]:
     return (["#"] if len(kept) < len(parts) else []) + kept
 
 
+#: `_offset`'s grammar, compiled once. It used to be handed to
+#: `re.fullmatch` as a string on every call, and this function is the
+#: hottest in the engine: **6,979,159 calls on one regulator model**,
+#: 39.5 s of its own time inside an audit of 518 s. A pattern string
+#: costs a cache lookup per call before any matching begins.
+OFFSET_PIECE = re.compile(
+    r"(?:(?P<sheet>'[^']+'|[A-Za-z0-9_.]+)!)?"
+    r"(?P<ca>\$?)(?P<column>[A-Z]{1,3})(?P<ra>\$?)(?P<row>\d+)"
+)
+
+#: Column letters to their 1-based index, built once. The inner loop
+#: computed this arithmetically per call, per piece, for every one of
+#: those seven million calls; there are only 18,278 possible three-letter
+#: columns and Excel stops at XFD, so the answer is worth remembering.
+_COLUMN_INDEX: dict[str, int] = {}
+
+
+def _column_number(letters: str) -> int:
+    number = _COLUMN_INDEX.get(letters)
+    if number is None:
+        number = 0
+        for letter in letters:
+            number = number * 26 + (ord(letter) - 64)
+        _COLUMN_INDEX[letters] = number
+    return number
+
+
 def _offset(reference: str, row: int, column: int, anchoring: bool = True) -> str:
     """`E6` seen from `F7` is `R[-1]C[-1]`; `$B$19` stays `$B$19`."""
     parts = []
     for piece in reference.split(":"):
-        match = re.fullmatch(
-            r"(?:(?P<sheet>'[^']+'|[A-Za-z0-9_.]+)!)?"
-            r"(?P<ca>\$?)(?P<column>[A-Z]{1,3})(?P<ra>\$?)(?P<row>\d+)",
-            piece.strip(),
-        )
+        match = OFFSET_PIECE.fullmatch(piece.strip())
         if match is None:
             return reference
-        sheet = f"{match.group('sheet')}!" if match.group("sheet") else ""
-        target_column = 0
-        for letter in match.group("column"):
-            target_column = target_column * 26 + (ord(letter) - 64)
+        # One unpack rather than six separate `.group()` calls: each is a
+        # Python-level call, and at seven million invocations the count
+        # is the cost.
+        name, column_anchor, letters, row_anchor, digits = match.group(
+            "sheet", "ca", "column", "ra", "row"
+        )
+        sheet = f"{name}!" if name else ""
         text_column = (
-            f"C{match.group('column')}"
-            if match.group("ca") and anchoring
-            else f"C[{target_column - column:+d}]"
+            f"C{letters}"
+            if column_anchor and anchoring
+            else f"C[{_column_number(letters) - column:+d}]"
         )
         text_row = (
-            f"R{match.group('row')}"
-            if match.group("ra") and anchoring
-            else f"R[{int(match.group('row')) - row:+d}]"
+            f"R{digits}"
+            if row_anchor and anchoring
+            else f"R[{int(digits) - row:+d}]"
         )
         parts.append(f"{sheet}{text_row}{text_column}")
     return ":".join(parts)

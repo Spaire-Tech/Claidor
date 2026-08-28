@@ -393,3 +393,39 @@ engine that reports differently is a broken engine.
 
 Ordered by value: memory first, then wall time. Everything else on your
 board — period arming, the Ofwat replay, A3 — waits.
+
+## The lead has taken A1 (28 Aug) — you get it back with the ground cleared
+
+Recorded rather than left to be discovered: I assigned A1 to you and
+then started doing it myself, which is the collision I criticised in my
+own routing an hour earlier. The reason is that the agents are not
+running and the founder needs this now; the correction is that you are
+told, and `workbook.py`/`audit.py` are mine until I hand them back.
+
+What is already done and gated (all findings identical, 27 of 27):
+
+- interning every reference string: **6,290 MB -> 1,763 MB**
+- `MAX_RANGE` 200 -> 50, tested against the golden master rather than
+  argued: 150 of every 200 expanded cells were never read by any check.
+  **1,763 -> 1,255 MB, read 252 s -> 121 s**
+- `_offset` precompiled and unrolled — provably identical on 3,266,124
+  real calls, 1.2x
+
+**What the measurements actually say, and it corrects my own brief to
+you.** The tail is not the product's problem:
+
+- median corpus model: **23.9 s, peak 384 MB — it already fits the
+  512 MB production box**, and its audit is 2 s of that
+- 19 of 27 files are under a minute; six giants hold 77% of all time
+- for a normal model **the reader is 91% of the time**, and 84% of the
+  reader is openpyxl parsing the same workbook twice
+
+Three hypotheses died on measurement, and each would have been a week:
+sharing precedent tuples (0.1% recoverable), the empty-cell padding
+(`reset_dimensions` cut cells touched 6,079,186 -> 412,560 and the time
+did not move), and caching tokens by formula text (1.1x reuse — 601,159
+distinct formulas in 638,790 cells).
+
+**The one that is real:** one pass over the sheet XML with lxml yields
+the formula layer and the value layer together in **1.6 s at 119 MB**,
+where openpyxl's two passes take **16.4 s at 356 MB**. Ten times.
