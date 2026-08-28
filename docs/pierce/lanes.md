@@ -302,3 +302,15 @@ tests still run on every merged tip either way.
   when it will be.** « Merged, noted » is not an answer. A lane with
   no answerable work says so and goes short; the cost of that lands
   on the lead, and the record says whose it is.
+
+- **28 Aug — tests-before-change stays on the lane's branch.**
+  Writing the test before the change is the discipline this project
+  runs on and nothing here discourages it. But a lane's push is a
+  *merge request*, and **the integration tip must be green**: a red
+  shared tip destroys the signal every other lane depends on, and
+  the lead cannot fix it without editing another lane's file and its
+  expectations. So: hold the tests-first commit on your branch until
+  the implementation lands beside it, or mark the test skipped with
+  the reason and unskip it in the same push as the change. A red tip
+  is reverted, not tolerated and not patched by the lead — the
+  commit is never lost, and it merges the moment its change arrives.

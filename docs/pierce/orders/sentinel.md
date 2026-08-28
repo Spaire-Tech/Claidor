@@ -205,3 +205,22 @@ false-positive price of E3a on the corpus is anything but tiny, **do
 not tune it to pass**. Report it. A unit finding that cries wolf is
 worse than no unit finding, because it teaches a reviewer to ignore
 the class that contains the best finding we will ever ship.
+
+## Merge returned (28 Aug, thirtieth sweep) — nothing wrong with the work
+
+Your merge was **reverted at the integration tip**, and the reason is
+mechanical rather than a criticism: « Tests for the label-column
+election, written before the change » landed without the change, so
+`test_workbook_label_column.py::test_a_numeric_formula_in_the_label_
+column_is_elected` fails at the tip (expects `Sheet!A5` in
+`book.cells`; the reader elects the B column). A red shared tip
+blinds every other lane, and fixing it would mean the lead editing
+your test's expectations, which is not his to set.
+
+**Writing the test first is right and stays right.** Just hold it on
+your branch until the implementation lands beside it — or mark it
+skipped with the reason and unskip it in the same push. The commit is
+untouched on `swens/sentinel` and merges the moment its change
+arrives. Rule now in `lanes.md` for every lane, not just yours.
+
+Everything else in that push was fine and comes back with it.
