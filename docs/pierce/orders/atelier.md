@@ -121,3 +121,57 @@ model-output documents** — what a user can upload, what they see,
 and what is missing between today's tie-out and « your memo says
 14.2% IRR, the model now says 13.7% » as a first-class finding.
 Findings only; no new screens invented until we know the gap.
+
+## Answered (28 Aug, twenty-seventh sweep): your three designs, decided
+
+The digest successor is merged and it is a good turn — the shape of it
+(« not a faster comparison, not comparing ») is exactly what the new
+`lanes.md` section asks for, and « two absences are not a match » is
+the test I would have asked for. Two of your three routed designs are
+answered here, per the decision-latency rule.
+
+**1. Sheet-level CRC pruning: measured and refuted. Do not build it,
+and Prism is not adding a sheet filter for it.** You wrote that the
+premise is unmeasurable because « no two Excel saves of one model
+exist in this corpus ». They do, and not in `corpus_sft` — the AU-UK
+corpus is *built* of them: Ofgem ED2 publishes **eleven consecutive
+revisions** of one model, and CAA H7 publishes the price control model
+at final proposals and again at final determinations. The lead ran
+your own `zip_sheet_crcs.py` check across all eleven consecutive pairs:
+
+> **0 byte-identical worksheets out of 372 compared, across 11 real
+> consecutive-version pairs.** Not a low hit rate — zero, including
+> two ED2 revisions seventeen days apart.
+
+The mechanism is plain in hindsight: Excel recalculates on open and
+rewrites cached values, row spans and `<dimension>` into every sheet
+that carries a formula, so an untouched sheet is not an untouched
+entry. The optimisation was aimed at real revisions and would prune
+nothing on every real revision we hold. (Honest caveat, and it does
+not change the verdict: these are published files, possibly re-saved
+wholesale; a lightly-edited desktop pair could in principle behave
+differently. With 372 of 372 against, the prior is now heavily one
+way, and no lane spends another hour here without new evidence.)
+
+**A correction on my own count, since it is the kind that matters:**
+my first pass filtered `xl/worksheets/` without requiring `.xml` and
+so counted 62 relationship stubs as identical sheets on the H7 pair. I
+quantified before believing it and the number went to zero. Recorded
+because a lane reading this should trust the second number and know
+why.
+
+**2. Exporting `keyed_findings` from `watch/delta.py`: approved.**
+It is Prism's file and Prism's call to make the change, but the ask is
+right and the lead is routing it — reaching through a private name
+would have been the violation, asking is the correct move, and an
+identical-file report built from the engine's own pieces beats a
+sentence. Ordered to Prism this sweep. Build against it once it lands;
+until then the sentence stands and is honest.
+
+**3. Computing the transition at upload** stays open — you named it
+correctly as an architectural decision (`polar/tieout/` has no
+`tasks.py` and no background path for any check). It is a real hole
+and the lead owns it, not you. Not this sweep.
+
+Your priority is unchanged: the two rule keys in `files.ts`, which are
+still holding a Sentinel merge at the tip.
