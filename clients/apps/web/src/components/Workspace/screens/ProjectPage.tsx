@@ -57,6 +57,7 @@ import {
   Coverage,
   DealListItem,
   DealPage as DealPageData,
+  DeckDelta,
   Finding,
   Link,
   RecalcMark,
@@ -81,6 +82,15 @@ const SEV_DOT = { 1: '#e0322d', 2: '#e8a300', 3: '#2b6cf5' } as const
  *  attention inks the rest of the workspace uses: red for a defect,
  *  amber for an assumption or method at risk, blue for information,
  *  green for a repair, grey for structure. */
+//: The deck-delta panel's own quiet line — loading, and the server's
+//: refusal sentence when a version's bytes were dropped.
+const deckNote: React.CSSProperties = {
+  padding: '18px 4px 0',
+  fontSize: 13.5,
+  color: '#77808c',
+  lineHeight: 1.55,
+}
+
 const DELTA_KIND = {
   new_defect: { word: 'New defect', dot: '#e0322d' },
   class_change: { word: 'Changed class', dot: '#e0322d' },
@@ -203,6 +213,12 @@ export const ProjectPage = ({
   const [deltas, setDeltas] = useState<
     Record<string, VersionDelta | null | 'loading' | { refused: string }>
   >({})
+  //: The same revision's effect on what was *sent out* — the deck tied
+  //: out against both versions. Cached the same way and for the same
+  //: reason: three files are read to answer it.
+  const [deckDeltas, setDeckDeltas] = useState<
+    Record<string, DeckDelta | null | 'loading' | { refused: string }>
+  >({})
   //: Version audits by artifact id — computed server-side on request,
   //: cached here so re-picking a version does not re-run it.
   const [pastAudits, setPastAudits] = useState<
@@ -300,6 +316,26 @@ export const ProjectPage = ({
           .then((got) => setDeltas((now) => ({ ...now, [artifactId]: got })))
           .catch((problem: unknown) =>
             setDeltas((now) => ({
+              ...now,
+              [artifactId]: {
+                refused:
+                  problem instanceof Error
+                    ? problem.message
+                    : 'something went wrong',
+              },
+            })),
+          )
+        return { ...held, [artifactId]: 'loading' }
+      })
+      setDeckDeltas((held) => {
+        if (artifactId in held) return held
+        api
+          .deckDelta(artifactId)
+          .then((got) =>
+            setDeckDeltas((now) => ({ ...now, [artifactId]: got })),
+          )
+          .catch((problem: unknown) =>
+            setDeckDeltas((now) => ({
               ...now,
               [artifactId]: {
                 refused:
@@ -3048,6 +3084,276 @@ export const ProjectPage = ({
                           )
                         })}
                       </div>
+                      {(() => {
+                        //: And what the revision did to what was *sent
+                        //: out*. The model delta above answers « what
+                        //: changed »; this answers the question a
+                        //: banker actually loses sleep over — which of
+                        //: the deck's hundred printed figures the
+                        //: revision just made wrong.
+                        const sent = deckDeltas[delta.new_artifact_id]
+                        if (sent === undefined || sent === null) return null
+                        if (sent === 'loading')
+                          return (
+                            <div style={deckNote}>
+                              Re-tying the deck against both versions…
+                            </div>
+                          )
+                        if ('refused' in sent)
+                          return <div style={deckNote}>{sent.refused}</div>
+                        //: The four lists, in the order a reader needs
+                        //: them: what this revision did, then what it
+                        //: undid, then what can no longer be judged,
+                        //: then what was already wrong. Empty groups do
+                        //: not draw.
+                        const every = [
+                          {
+                            key: 'broken',
+                            rows: sent.broken,
+                            dot: '#d0342c',
+                            head: 'This revision broke',
+                            says: 'agreed with the model before, disagrees now',
+                          },
+                          {
+                            key: 'repaired',
+                            rows: sent.repaired,
+                            dot: '#2e7d54',
+                            head: 'This revision fixed',
+                            says: 'disagreed before, agrees now',
+                          },
+                          {
+                            key: 'coverage_changed',
+                            rows: sent.coverage_changed,
+                            dot: '#b4802a',
+                            head: 'No longer checkable',
+                            says:
+                              'reconcilable against one version only — lost ' +
+                              'sight of, which is not the same as broken',
+                          },
+                          {
+                            key: 'still_drifting',
+                            rows: sent.still_drifting,
+                            dot: '#8f96a0',
+                            head: 'Already disagreeing',
+                            says:
+                              'disagrees with both versions, so not this ' +
+                              "revision's doing",
+                          },
+                        ]
+                        const groups = every.filter(
+                          (one) => one.rows.length > 0,
+                        )
+                        return (
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 10,
+                              paddingTop: 22,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 15.5,
+                                fontWeight: 500,
+                                letterSpacing: '-.014em',
+                                color: '#1c1f23',
+                              }}
+                            >
+                              And what it did to {sent.deck_filename}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 13,
+                                color: '#77808c',
+                                lineHeight: 1.55,
+                                textWrap: 'pretty',
+                              }}
+                            >
+                              The same deck reconciled against both versions.{' '}
+                              {sent.checked_new === sent.checked_old
+                                ? `${sent.checked_old} of its printed figures could be checked against either.`
+                                : `${sent.checked_old} of its printed figures could be checked against v${sent.old_version}; ${sent.checked_new} against v${sent.new_version}.`}
+                            </span>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                background: '#fff',
+                                borderRadius: 18,
+                                boxShadow: '0 1px 2px rgba(16,22,35,.04)',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {groups.length === 0 && (
+                                <div
+                                  style={{
+                                    padding: '36px 24px',
+                                    textAlign: 'center',
+                                    fontSize: 14.5,
+                                    color: '#4a4f57',
+                                  }}
+                                >
+                                  Nothing in the deck moved with this revision.
+                                </div>
+                              )}
+                              {groups.map((group) => (
+                                <div key={group.key}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'baseline',
+                                      gap: 9,
+                                      padding: '13px 20px 9px',
+                                      background: '#fbfbfc',
+                                      borderTop:
+                                        '.5px solid rgba(16,22,35,.06)',
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        flex: '0 0 7px',
+                                        width: 7,
+                                        height: 7,
+                                        borderRadius: '50%',
+                                        background: group.dot,
+                                        alignSelf: 'center',
+                                      }}
+                                    />
+                                    <span
+                                      style={{
+                                        fontSize: 13.5,
+                                        fontWeight: 500,
+                                        letterSpacing: '-.01em',
+                                        color: '#1c1f23',
+                                      }}
+                                    >
+                                      {group.head} {group.rows.length}
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: 12.5,
+                                        color: '#8b939e',
+                                        lineHeight: 1.5,
+                                      }}
+                                    >
+                                      — {group.says}
+                                    </span>
+                                  </div>
+                                  {group.rows.slice(0, 12).map((one, index) => (
+                                    <div
+                                      key={index}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: 14,
+                                        borderTop:
+                                          '.5px solid rgba(16,22,35,.045)',
+                                        padding: '12px 20px',
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          flex: '0 0 78px',
+                                          fontSize: 12.5,
+                                          color: '#77808c',
+                                          marginTop: 2,
+                                        }}
+                                      >
+                                        Slide {one.slide}
+                                      </span>
+                                      <span
+                                        style={{
+                                          flex: 1,
+                                          minWidth: 0,
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: 3,
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontSize: 14.5,
+                                            letterSpacing: '-.01em',
+                                            color: '#1c1f23',
+                                            lineHeight: 1.45,
+                                          }}
+                                        >
+                                          {one.name ? `${one.name}: ` : ''}
+                                          <span
+                                            style={{ fontFamily: font.mono }}
+                                          >
+                                            {one.printed}
+                                          </span>
+                                          {one.expected ? (
+                                            <>
+                                              {' — the model now says '}
+                                              <span
+                                                style={{
+                                                  fontFamily: font.mono,
+                                                }}
+                                              >
+                                                {one.expected}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            ''
+                                          )}
+                                          {one.one_tick
+                                            ? ' (one unit at the printed precision — a rounding convention)'
+                                            : ''}
+                                        </span>
+                                        {group.key === 'broken' && (
+                                          <span
+                                            style={{
+                                              fontSize: 12.5,
+                                              color: one.cause
+                                                ? '#77808c'
+                                                : '#9aa1ab',
+                                              lineHeight: 1.5,
+                                              fontStyle: one.cause
+                                                ? 'normal'
+                                                : 'italic',
+                                            }}
+                                          >
+                                            {one.cause ||
+                                              'No model change could be attributed to this break.'}
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span
+                                        style={{
+                                          flex: '0 0 auto',
+                                          fontFamily: font.mono,
+                                          fontSize: 11.5,
+                                          color: '#9aa1ab',
+                                          whiteSpace: 'nowrap',
+                                          marginTop: 3,
+                                        }}
+                                      >
+                                        {one.old_ref || one.location}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {group.rows.length > 12 && (
+                                    <div
+                                      style={{
+                                        padding: '10px 20px 12px',
+                                        fontSize: 12.5,
+                                        color: '#8b939e',
+                                        borderTop:
+                                          '.5px solid rgba(16,22,35,.045)',
+                                      }}
+                                    >
+                                      and {group.rows.length - 12} more.
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                 )

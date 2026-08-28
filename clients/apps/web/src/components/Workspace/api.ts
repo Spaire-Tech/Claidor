@@ -654,6 +654,49 @@ export interface DeltaItem {
  * address — and the nameless are counted apart, never guessed at; a
  * screen shows that count when it is not zero.
  */
+/** One printed figure, and what a model revision did to it. */
+export interface DeckDeltaItem {
+  slide: number
+  /** What the deck prints, as printed. */
+  printed: string
+  location: string
+  /** The model row it agreed with *before* the revision. */
+  old_ref: string
+  /** What the new model says it should read now. */
+  expected: string
+  name: string
+  /** One unit at the printed precision — a rounding convention. */
+  one_tick: boolean
+  /** The model change underneath the break, in the Watch's words.
+   *  **Empty where it could not be attributed** — the screen says so
+   *  rather than filling it with the nearest change. */
+  cause: string
+}
+
+/**
+ * What a model revision did to the deliverables.
+ *
+ * Four lists, four different sentences, never summed: only `broken` is
+ * the revision's doing, `still_drifting` is explicitly not, and
+ * `coverage_changed` is « I lost sight of it », which is not « it
+ * broke ».
+ */
+export interface DeckDelta {
+  old_artifact_id: string
+  old_version: number
+  new_artifact_id: string
+  new_version: number
+  deck_artifact_id: string
+  deck_filename: string
+  computed_at: string
+  checked_old: number
+  checked_new: number
+  broken: DeckDeltaItem[]
+  repaired: DeckDeltaItem[]
+  still_drifting: DeckDeltaItem[]
+  coverage_changed: DeckDeltaItem[]
+}
+
 export interface VersionDelta {
   old_artifact_id: string
   old_version: number
@@ -1282,6 +1325,14 @@ export class TieOutApi {
   ): Promise<VersionDelta | null> {
     const query = against ? `?against=${against}` : ''
     return this.call(`/artifacts/${artifactId}/delta${query}`)
+  }
+
+  /** What a revision did to the deliverables — the same deck tied out
+   *  against both versions. `null` when there is no earlier version or
+   *  the deal holds no deck: both are absences, not errors. */
+  deckDelta(artifactId: string, against?: string): Promise<DeckDelta | null> {
+    const query = against ? `?against=${against}` : ''
+    return this.call(`/artifacts/${artifactId}/deck-delta${query}`)
   }
 
   /** A source document's stored record — every extracted number with
