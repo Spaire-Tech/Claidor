@@ -243,6 +243,123 @@ edited is not a weak result, it is not a result.
 taken; a re-run after a fix is a new measurement, not a correction
 of the old one.
 
+## 28 August 2026 — the label column: a reasonable decision nobody had priced
+
+A6 round 2 turned up a file whose every formula sat in column A,
+invisible. I wrote it up as a defect. Then I read the code, and it
+is not one: `_read_sheet` excludes the label column from the numeric
+sweep by an explicit `column != label_column`, and `_label_column`
+picks exactly one column per sheet by counting distinct text values.
+It is deliberate and well-argued — a number in the label column is
+usually a label.
+
+So I corrected the A6 write-up and registered a different round.
+**The framing was the whole point: registered as a bug, I would have
+been measuring to confirm rather than to find out.**
+
+**And the measurement went against me.** I predicted well under 0.5%
+on the regulator and closed-deal corpora, reasoning that clean model
+layouts keep numbers to the right of the labels. Measured: the
+regulator set hides **1.55% of its formulas and 5.31% of its
+numerics**; the closed-deal models hide 0.71% of formulas; the worst
+files run to 32%. Both corpora fail the bar I fixed in advance, and
+the general-spreadsheet set I had expected to be the bad one was
+never needed.
+
+The hand-read is where it became real rather than statistical.
+Twenty cells drawn from a full enumeration of all 79,083, seed fixed
+in the registration: thirteen are computed date ladders, six are
+cross-sheet label mirrors resolving to text — correctly hidden — and
+one is junk. The closed-deal half is sharper still: all 156 hidden
+formulas there are computed date columns, and `newbattle`'s
+repayment schedule runs **two different formula shapes in one
+series**. A hardcoded date in a repayment schedule is a live defect
+and is exactly what `typed-over-formula` and `inconsistent-row` are
+for. Neither can see that column at all.
+
+The hand-read also handed me a discriminator, which the full data
+then confirmed: 62% of hidden formulas resolve to a **number** (the
+ladders), 38% to **text** (the mirrors). That is the shape of the
+change to test — and I have written its impurity into the document
+rather than leaving it to be found later: 133 `CHOOSE` mirrors
+resolve to numbers too.
+
+**One thing I made myself qualify.** « 1.55% of the regulator
+corpus » is true and, alone, misleading: 70% of that volume is four
+daily-date sheets in two WACC models. But it touches 25 of 37 files
+across 97 sheets. Widespread in incidence, concentrated in volume —
+and quoting either half without the other tells a different story
+than the data does.
+
+Nothing wired, per the round's own criterion 3. Electing 49,011
+cells moves findings on files the baseline covers, so it is its own
+round with the full gate, and the proposal carries a warning I would
+rather write now than discover then: 34,000 cells of a single shape
+could swamp a corpus report on their own.
+
+## 28 August 2026 — A6 round 2: the premise was wrong, and the worst defect was ours
+
+The lead's addendum made A6 the gate on the Enron corpus — 9,145
+real `.xls` workbooks, the only deep unseen project-finance material
+that exists — so I registered the narrow question round 1 could not
+ask: for a `.xls` that actually holds formulas, does either route
+read them? Round 1's files carried none.
+
+**I predicted the native route would be bad and it is good.** Across
+430 files the median recall is 1.000000 and the aggregate 98.7%. I
+had predicted « very low, and 0/349 suggests it can be total ».
+
+That matters more than being wrong feels. The record has been
+carrying a stronger claim than its evidence: `serious-mining.md`
+measured three subjects, found losses on two, and my own handoff
+generalised it to « every `.xls`-route measurement we hold
+understates the engine ». The three subjects reproduce here exactly
+— `act3_lab23_posey.xls` still reads 30 of 40 — so the finding was
+real. The scope was not. A tail of 76 files in 428 had been written
+up as the rule, and A6 has been priced as a locked door ever since.
+**It is not a locked door: the Enron corpus is substantially
+readable today, natively.** That is the most useful thing this round
+produced and it is a plan input, not a detail.
+
+Conversion is marginally better — 99.2%, no refusals, and it repairs
+the worst native failures — but it fabricates one formula per
+boolean cell, 4 for 4 here, exactly as round 1 found on the
+closed-deal models. Two corpora, two formats, exact agreement.
+
+**The largest finding belongs to neither route.** `tables.xls` holds
+8 formulas, all in column A, and both routes lose all 8:
+`read_workbook` returns 27 cells and not one is in column A. A
+formula written in a sheet's first column is invisible to every rule
+we have. That is in code that is mine, it is downstream of intake
+entirely, and it needs its own registered round because it changes
+what the engine reports.
+
+**Criterion 1 earned its place.** I required the witness be
+validated before either route was judged by it, and it caught a
+fourth instrument error of mine: these corpora carry human notes
+stored as text beginning with `=`, and my counter called any such
+string a formula. openpyxl's `data_type` is the discriminator. With
+it the file that differed agrees exactly, 1,619 against 1,619. The
+same wrong test was in round 1's instrument. And `legacy.py` makes
+the identical misclassification — which is now a named engine
+defect rather than a quirk of my harness.
+
+Two process faults, both caught by counts rather than by review.
+Sixty conversions produced fifty-nine files and reported no error:
+two files in the population share a basename while differing in
+content, so a flat output directory silently overwrote one
+conversion with the other, and pairing by name would have measured
+one file against another's conversion. Everything now pairs through
+a committed manifest and the sample was re-converted from scratch. I
+also wrote `a6_converted_recall.py` into a `scripts/` directory at
+the repo root because the shell was in the wrong place, and
+committed it there.
+
+No route adopted, nothing wired, and the Enron fetch deliberately
+not done — the registration made it conditional on the converted
+route passing in full, and a fetch after a partial pass would have
+been shopping for a corpus that flattered the result.
+
 ## 28 August 2026 — Proof 1A's second run, and what comparing more than the numbers found
 
 The re-run, at `327058a5`, invoked exactly as the first was (one

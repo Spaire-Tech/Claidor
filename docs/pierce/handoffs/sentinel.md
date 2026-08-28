@@ -35,6 +35,8 @@ it falls.
 | A6 intake (`a6-intake.md`) | **REFUSED**, 3 of 5 criteria. All five held models convert; **two will not open** (LibreOffice writes `_xlnm.Print_Titles` empty, openpyxl raises). **No value changed anywhere** — recalculation-on-load did not happen. **Formulas are fabricated**: `=TRUE()` for every boolean cell. **The `.xlsb` route destroys every defined name** (keeps the name, drops the reference); the `.xls` route keeps all 805. Nothing wired, gate not run (no engine file changed). |
 | Own-check periods (`own-check-periods.md`) | **Adopted.** `_own_checks` now judges only the sheet's own period columns. AU-UK unmoved (18 findings, 0 files), SFT exactly as specified in advance, gate clean 27/27 as a tripwire. **Its criteria were narrower than the change** — see the coverage effect below. |
 | Proof 1A, second run (`population-proof.md` § second run) | **PASS** at `327058a5` — 5 of 5 true breaks, 0 false alarms, Kelso and Newbattle silent. **The pass is narrow:** the engine was fixed *using this corpus's failures*, so it can no longer test the original « never seen » claim. Never quote the pass without that sentence. |
+| Label-column cost (`label-column-cost.md`) | **Measured; nothing wired.** One column per sheet is never elected — deliberate, but its price was never known. Regulator corpus hides **1.55% of formulas / 5.31% of numerics**; closed-deal **0.71%**; worst files 32%. 20 cells hand-read: **13 computed date ladders (wrongly hidden), 6 label mirrors (rightly hidden)**. Discriminator found: 62% of hidden formulas resolve numeric, 38% to text. |
+| A6 round 2 (`a6-xls-routes.md`) | **No route adopted; the premise corrected.** Native `.xls` recall over 430 files: median **1.000**, aggregate **98.7%**. Converted: 99.2%, no refusals, fabricates 1 formula per boolean cell. **A6 is not a locked door — Enron is substantially readable today.** Largest finding is neither route's: the label-column loss below. Enron deliberately not fetched (registration made it conditional on a full pass). |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
 Three adoptions have moved the rule catalogue 17 → 20
@@ -58,7 +60,20 @@ reproducibly; today they are fetched by hand and hash-checked.
 
 ## Next, per orders (in this order)
 
-0. **A6 round 2 — the repair pass.** Both refusal causes look
+0. **Elect numeric-valued label-column formulas — start here.**
+   The cost is now measured (`label-column-cost.md`): 49,011 hidden
+   formula cells across 25 of 37 corpus files resolve to a number,
+   and the hand-read says they are computed date ladders and
+   schedule columns that `typed-over-formula` and `inconsistent-row`
+   should see. The change to test is exactly that — elect a
+   label-column cell carrying a formula **whose result is numeric**;
+   leave the 30,072 that resolve to text alone. **Full round, full
+   gate, baseline regenerated**: this moves findings on files the
+   baseline covers. Two warnings from the measurement: 70% of the
+   volume is one shape (`=X+1` date ladders) on four sheets, so the
+   false-positive price could swamp a corpus report; and the numeric
+   class is impure — 133 `CHOOSE` label mirrors resolve to numbers.
+1. **A6 round 3 — the repair pass.** Both refusal causes look
    mechanical: strip `definedName` elements with an empty body
    (fixes both refusals at a stroke) and rewrite
    `=TRUE()`/`=FALSE()` back to boolean literals. Then re-run
@@ -69,7 +84,7 @@ reproducibly; today they are fetched by hand and hash-checked.
    `dalbeattie` (494), the two that will not open. Do **not** add a
    `.xlsb` reader as an alternative first: a second reader is a
    second surface for every rule downstream.
-1. **The own-check abstention round.** The period
+2. **The own-check abstention round.** The period
    restriction I adopted drops a check row from the denominator when
    none of its cells sit in the period grid, and raises **no
    abstention** saying so. Measured with `scripts/own_check_coverage.py`:
@@ -79,11 +94,11 @@ reproducibly; today they are fetched by hand and hash-checked.
    *an own-check row with no cells in the period grid must be
    abstained on, not dropped.* Full write-up in
    `own-check-periods.md` § « After adoption ».
-2. **The serious-error mining round is blocked** pending the lead's
+3. **The serious-error mining round is blocked** pending the lead's
    decision on the `.xls` reader defect (see the table). If it is
    fixed, re-run `scripts.custodes_serious` — the registration and
    classifier are committed and ready; only the reader was wrong.
-3. The « dead assumption » reachability candidate
+4. The « dead assumption » reachability candidate
    (`swens-aha.md`): dependency-graph reachability, no
    recalculation, one-sentence finding. Coordinate the rule name
    with the lead before adoption (it needs Atelier's category map).
@@ -105,11 +120,15 @@ What certifies it is the AU-UK zero-movement result and the SFT
 prediction fixed in advance. Also: the five held models are four
 `.xlsb` and one `.xls`, not « three and two ».
 
-**Needs the lead, not me (1):** the legacy `.xls` reader misses
-formulas — proven arithmetically, quantified per subject. Fixing it
-changes findings on every `.xls` file, which the golden-master gate
-(all `.xlsx`/`.xlsm`) does not cover. Every `.xls`-route measurement
-we hold understates the engine until then.
+**Corrected, 28 Aug — the `.xls` reader claim was overstated.** The
+losses are real and reproduce exactly (`act3_lab23_posey.xls`: 30 of
+40) but they are a **tail, not the rule** — over 430 files the
+median recall is 1.000 and the aggregate 98.7%. The old wording here
+(« every `.xls`-route measurement we hold understates the engine »)
+generalised three subjects to a population and priced A6 as a locked
+door. Two real classes remain: 76 files below full recall (1,213
+formulas), and `legacy.py` counting text that begins with `=` as a
+formula (7 files over-report).
 
 **Needs the lead, not me (2):** candidate 5's class 2 (a range spanning
 a label) requires `Workbook.cells` to carry text cells — frozen
@@ -196,8 +215,25 @@ every finding we raise, with a ready-made sample to hand-read.
 - **The legacy `.xls` reader misses some formulas** (`legacy.py`
   decompiles BIFF records; some cells fall through). Verify with a
   raw `FORMULA` (0x0006) record count before trusting any `.xls`
-  measurement. A 100%-one-bucket classification is the symptom that
-  found it.
+  measurement. **Quantified 28 Aug over 430 files: median recall
+  1.000, aggregate 98.7%, a tail of 76 files losing 1,213 formulas
+  between them.** Real, but a tail — do not repeat the old
+  generalisation that it understates every `.xls` measurement.
+- **Never pair converted files by basename.** Two files in the
+  CUSTODES population share a name while differing in content; a
+  flat `soffice --outdir` silently overwrites one with the other and
+  reports **no error at all** — 60 conversions produced 59 files.
+  Convert into indexed directories and pair through a manifest
+  (`scripts/a6_manifest.py`).
+- **A cell whose text begins with `=` is not a formula.** These
+  corpora carry human notes like `=tput learn x unyld dice`. The
+  discriminator is openpyxl's `data_type == "f"`; `startswith("=")`
+  inflates every count. `legacy.py` makes the same mistake, which is
+  now a named engine defect rather than a quirk of the harness.
+- **`read_workbook` returns no cells from a sheet's first column**,
+  so a formula in column A is invisible to every rule. Found 28 Aug,
+  root cause not established. Assume any column-A measurement is
+  zero until that round lands.
 - **The reader elects only numeric-or-formula cells.** A text cell
   mid-column is absent from `Workbook.cells` entirely — this killed
   candidate 5's class 2 and is pinned by a test in
