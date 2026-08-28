@@ -735,3 +735,98 @@ ships, and any published number names its corpus and terms.
 - **Build our own** is the right long answer, and it is what our
   planting discipline already does — now with **measured real-world
   change rates** to plant at instead of invented ones.
+
+---
+
+## Addendum, 28 August 2026 (fourth) — unit conventions, and a gap in our corpus now measured
+
+The founder's fourth research round, and the most directly
+actionable: 23 repositories downloaded, 31 workbooks opened, **27
+distinct models** after catching that two repos publish the same
+toll-road model (6,490 cells compared, zero differences) — every
+claim from reading cells, with hosts it could not reach named.
+
+### The headline, and it is a trap we would have walked into
+
+**The same unit text means opposite things in different real
+workbooks, and only the number format tells you which.** Six models
+declare `%` explicitly. Three store `0.005` / `0.65`; three store
+`70` / `25.17` / `9.25`. Both conventions, both written down by
+their authors.
+
+The cell that kills any value-based rule: an Indian 1 GW solar
+model, `Module Degradation`, unit `% p.a.`, value **`0.5`** —
+meaning half of one percent. A rule reading « below 1 next to `%`
+means a decimal fraction » is out by **100×**, on a row that decays
+output for 25 years. What separates the conventions cleanly in six
+of six models is the **number format**: percent-style format means
+decimal fraction, `General` means whole number of percent.
+
+And a file that defeats any per-sheet or per-column inference: an
+Australian model with `Input!E25` (unit `%`, value `65`, format
+`General`) and `Input!E61` (unit `p.a.`, value `0.065`, format
+`#,##0.0%`) — **same column, same sheet, opposite conventions**.
+
+### Verified here: our corpus carries only one of the two conventions
+
+The report was careful to mark this as inferred from our notes
+rather than from our files, and invited us to check. Done, on
+`ofgem_riio3/final_wacc.xlsx`: **183,987 percent-formatted cells,
+and not one with an absolute value above 1.5.** Every percentage in
+it is a decimal fraction. So the gap is real and now measured, not
+assumed: an inference tuned only on our corpus would read a
+whole-number-percent model as 100× wrong, and nothing in our own
+files would ever have shown us.
+
+### The other gaps, each with the file that closes it
+
+1. **Units in a column of their own** — nine of the 27 keep units in
+   a dedicated column beside the value, not in the label; 698
+   declarations extracted that way. Our regulator models put units in
+   labels and headers. An engine that only parses labels finds
+   nothing in those nine files **and reports full coverage on all of
+   them** — silent blindness, the worst failure shape we have.
+2. **Scale words we have never seen**: `$MM`, `$M`, `$K`,
+   `USD Billions`, and non-Western `crore` (10,000,000), `lakh`
+   (100,000), `千`, `百万`. One Indian model puts `Lakh/MW/year` and
+   `Cr/year` **three rows apart** — a 100× step with no currency
+   symbol on either.
+3. **The unit label is itself a formula** — `=Applied_currency &
+   "'000"`, computed from a dropdown; and a whole 49-row cost block
+   whose row labels are references (`=D373`) with no typed text at
+   all. Read without cached values, that model looks unlabelled.
+4. **Real vs nominal where the unit string is identical** — both
+   blocks labelled `EUR'000`; the only discriminator is a section
+   heading thirty rows above.
+5. **Energy-price collisions**, all verified in one sheet:
+   `$/MWh` vs `$/kWh` (1,000×), `$/Wdc` vs `$/kWh` (1,000×),
+   `$/kW-month` vs `$/kW-year` (12×), and `MWac` vs `MWdc` — both
+   « MW », physically different.
+6. **Units carried only by the number format**: `#,##0.000"B"`
+   (billions, 374 cells, row label says only « Revenue »),
+   `yyyy"E"` / `yyyy"A"` (estimate vs actual, 270 cells, nothing in
+   any label says which years are history), `" bps"`, `"x"`.
+7. **Non-units inside units columns**: `Choice`, `Index`, `Check`,
+   `[1,0]`, `Toggle YES/NO`, `Days of Revenue`, `of margin`,
+   `3% inflation`. Switches and qualifiers must never enter
+   dimensional arithmetic, and « declared but not parseable » has to
+   be its own reportable class.
+8. **Time bases**: not one monthly model in the 27; one semi-annual;
+   **twenty-four have no date axis at all** — their columns are text
+   like « Year 1 ». Monthly construction phases are standard in
+   project finance and absent from everything we or they hold.
+
+### Two positive test cases worth keeping — the engine must stay quiet
+
+- Australian model: row 45 is `AUD/MWac/yr`, row 46 is `AUD/yr` and
+  its formula is `=E45*E12` where E12 is `MWac`. **The MWac cancels.**
+  The workbook demonstrates a correct unit multiplication; delete the
+  `*E12` and the declared units prove it wrong.
+- UK toll road: `veh/year × £/vehicle ÷ 1000 = k£`, all three
+  declared and the divide-by-1000 present. Correct — the checker
+  must say nothing.
+
+And the same file carries **two wrong unit labels written by its own
+author** (an arrangement fee labelled `per year`; a fee labelled
+`of margin`, which is not a unit). Real ground truth is not always
+right, and any measurement we publish says so.
