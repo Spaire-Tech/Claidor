@@ -16,6 +16,7 @@ neither is a summary of a previous session.
 | --- | --- |
 | What is Swens? What does it do, sell, promise? What should a screen contain? | `swens.md` — the document of record, founder-written, wins over everything |
 | What is the plan? What comes next? What does « complete » mean? | `swens-plan.md` — the only plan (founder-approved; written as `ambre-plan.md`) |
+| What is left to build, and what is half done? | `pieces.md` — the working list, re-pieced 28 Aug when the lanes were stood down |
 | What should the workspace look like? | `docs/pierce/design-swens/` — the founder's export, untouched |
 | What actually happened, and in what order? | `worklog.md` |
 | What is the engine's measured state? | `engine.md`, `corpus-golden-master.md`, `fidelity-report.md` |

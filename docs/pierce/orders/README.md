@@ -1,5 +1,17 @@
 # Standing orders — the lead's channel to the lanes
 
+> **STOOD DOWN, 28 August 2026.** The founder ended the lane model:
+> « we are going to kill the agents. its confusing you and i both more
+> than it helps… now re-piece everything that needs to be done and you
+> and i will do piece by piece. » Nothing in this directory is a live
+> instruction any more. The working list is **`../pieces.md`**.
+>
+> These files are kept as history — the orders were real, the work they
+> produced is merged, and the done-tests in them are still the best
+> written statement of several pieces. Read them for that; do not act
+> on them. One verifier agent remains, and it runs only when the
+> founder asks, after a piece is complete.
+
 Written and maintained by Ledger (the lead) at integration. Each
 lane, at the start of every working turn: fetch
 `origin/claude/pierce-phase-6-writing-mjkaj6`, read your file here,
