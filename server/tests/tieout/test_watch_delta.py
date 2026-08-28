@@ -7,6 +7,9 @@ PR24 pairs) lives under the registration in the lane log.
 """
 
 from decimal import Decimal
+from pathlib import Path
+
+import openpyxl
 
 from polar.tieout.audit import Finding
 from polar.tieout.watch import delta_of
@@ -299,3 +302,54 @@ class TestTheIdenticalPairFastPath:
         report = unchanged_report(findings)
         assert report.persistent_defects == sum(keys.values())
         assert report.unmatched_old == report.unmatched_new == unmatched
+
+
+class TestAuditsCanBeHandedIn:
+    """Measured on the GD3 pair: the two audits are 448.7 s of a
+    1,119.6 s delta_of — 40% of the report. The product audits every
+    upload as it arrives, so recomputing them here is the most
+    expensive quarter of the work done twice."""
+
+    def test_passing_findings_gives_the_same_report_as_running_them(
+        self, tmp_path: Path
+    ) -> None:
+        from polar.tieout.audit import audit
+        from polar.tieout.structure import period_axes
+        from polar.tieout.watch import delta_of
+        from polar.tieout.workbook import read_workbook
+
+        old, new = tmp_path / "old.xlsx", tmp_path / "new.xlsx"
+        book = openpyxl.Workbook()
+        sheet = book.active
+        sheet.title = "Model"
+        sheet["A2"], sheet["B2"] = "Revenue", 100
+        sheet["A3"], sheet["B3"] = "Costs", 40
+        sheet["A4"], sheet["B4"] = "Margin", "=B2-B3"
+        book.save(old)
+        sheet["B3"] = 45
+        book.save(new)
+
+        old_book, new_book = read_workbook(str(old)), read_workbook(str(new))
+        computed = delta_of(old_book, new_book)
+        handed = delta_of(
+            old_book,
+            new_book,
+            old_findings=audit(old_book, axes=period_axes(old_book)).findings,
+            new_findings=audit(new_book, axes=period_axes(new_book)).findings,
+        )
+        assert handed.new_defects == computed.new_defects
+        assert handed.repaired_defects == computed.repaired_defects
+        assert handed.persistent_defects == computed.persistent_defects
+        assert [(i.kind, i.sheet, i.detail) for i in handed.items] == [
+            (i.kind, i.sheet, i.detail) for i in computed.items
+        ]
+
+    def test_an_empty_list_is_not_the_same_as_no_argument(self) -> None:
+        """`None` means « run the audit »; `[]` means « this book has
+        no findings ». Conflating them would silently drop defects."""
+        from polar.tieout.watch.delta import delta_of
+        from polar.tieout.workbook import Workbook
+
+        empty = Workbook(sheets=["M"])
+        report = delta_of(empty, empty, old_findings=[], new_findings=[])
+        assert report.persistent_defects == 0
