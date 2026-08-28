@@ -4740,6 +4740,16 @@ def _unit_mismatch(book: Workbook, result: Audit) -> None:
                 #: E2 declined on at least one term. The disagreement
                 #: may well be real and we cannot say that it is.
                 continue
+            #: `none` and `unknown` are different abstentions, and
+            #: conflating them cost this round its first measurement.
+            #: `unknown` is « the evidence did not decide »; `none` is
+            #: « decided: this quantity has no currency » — a rate, a
+            #: count. A dimensionless term added to a money term is
+            #: ordinary arithmetic, not a mismatch, and counting
+            #: `none` as a competing currency made every cashflow on
+            #: one model a finding: 103 raised of 103 examined, all
+            #: « GBP, none », all wrong.
+            answered.discard("none")
             if len(answered) < 2:
                 continue
             spread = ", ".join(sorted(answered))

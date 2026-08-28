@@ -143,3 +143,31 @@ def test_scale_is_abstained_on_not_silently_clean() -> None:
     assert any(a.rule == "scale-mismatch" for a in result.abstentions), (
         result.abstentions
     )
+
+
+def test_a_dimensionless_term_is_not_a_competing_currency() -> None:
+    """The correction, pinned: `none` is not a currency.
+
+    A cashflow adds money to rates and counts all day. Counting
+    « has no currency » as a currency that disagrees with sterling
+    made 103 of 103 corpus findings false, which is what refused the
+    first round.
+    """
+    def build(sheet) -> None:
+        sheet["A1"] = "Cashflow"
+        for offset, column in enumerate("BCDE"):
+            sheet[f"{column}2"] = f"FY{2025 + offset}"
+        sheet["A3"] = "Revenue"
+        sheet["A4"] = "Utilisation %"
+        sheet["A5"] = "Total"
+        for column in "BCDE":
+            sheet[f"{column}3"] = 100.0
+            sheet[f"{column}3"].number_format = "£#,##0"
+            sheet[f"{column}4"] = 0.5
+            sheet[f"{column}4"].number_format = "0.0%"
+            sheet[f"{column}5"] = f"={column}3-{column}4"
+
+    result = _audit(build)
+    assert not _found(result, "currency-mismatch"), [
+        f.detail for f in result.findings
+    ]

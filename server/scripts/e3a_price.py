@@ -23,13 +23,17 @@ warnings.filterwarnings("ignore")
 
 
 def one(path: Path) -> dict[str, Any]:
-    from polar.tieout.audit import audit
-    from polar.tieout.structure import read_structure
     from polar.tieout.workbook import read_workbook
 
     started = time.time()
     book = read_workbook(str(path))
-    result = audit(book, read_structure(book).axes)
+    #: `_unit_mismatch` is unwired pending this round, so it is run
+    #: directly — measuring it through `audit()` would measure its
+    #: absence.
+    from polar.tieout.audit import Audit, _unit_mismatch
+
+    result = Audit(examined=len(book.cells))
+    _unit_mismatch(book, result)
     rows = []
     for finding in result.findings:
         if finding.rule not in ("currency-mismatch", "scale-mismatch"):
