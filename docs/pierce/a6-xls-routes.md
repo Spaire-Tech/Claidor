@@ -29,8 +29,12 @@ either against ground truth:
 
 ## Material — already on disk, no fetch
 
-**431 `.xls` files** from the CUSTODES/EUSES subjects under
-`server/scripts/custodes_work/`. Real spreadsheets, formula-bearing,
+**430 `.xls` files** from the CUSTODES/EUSES subjects under
+`server/scripts/custodes_work/` (the population is fixed by
+`scripts/a6_sample.py`, committed with this round). I first wrote
+431 here: that count came from a `find` across all of `scripts/`
+and included `corpus_sft/inverclyde_model.xls`, which belongs to
+round 1's material, not this population. Corrected before the draw. Real spreadsheets, formula-bearing,
 independent of us.
 
 Named plainly: these files have been used before, as *scoring*
@@ -69,7 +73,7 @@ For each file, **formula recall** = (formula cells the route reports)
 ÷ (the census's `FORMULA` record count), plus the value fidelity
 round 1 established.
 
-1. **Native route, all 431 files.** Cheap; no conversion.
+1. **Native route, all 430 files.** Cheap; no conversion.
 2. **Converted route, a registered sample of 60**, drawn with
    `random.Random(20260828).sample(sorted(names), 60)` — the seed
    and the ordering are fixed here, before the draw, so the sample
