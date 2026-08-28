@@ -4081,3 +4081,55 @@ control — the row is being judged against itself.
    I registered when I proposed the design rather than asserting it
    away. If shuffled pairs match nearly as often as real ones, the
    evidence is coincidence and I will say so.
+
+## Aggregation from values — the control killed it, and I know why
+
+| prediction | outcome |
+|---|---|
+| 1 — a row aggregates across six or more periods | 655 rows did — **but see 4** |
+| 2 — zero defects on clean Kelso | **failed**: 65 reported |
+| 3 — a planted defect is caught | **not run**: pointless once 4 failed |
+| 4 — **the coincidence control** | **failed**: 503 of 655 |
+
+`docs/pierce/logs/dynamo/period-values-kelso.json`. Pairing rows
+with **deliberately wrong partners** still produced 503 aggregating
+rows against the real 655 — **77%**. The registration said: « if
+shuffled pairs match nearly as often as real ones, the evidence is
+coincidence and I will say so ». They did. It is.
+
+### Why, and it is embarrassing in a familiar way
+
+**Most rows are mostly zeros, and zero aggregates with zero.**
+`0 = 0 + 0 + … ` holds for forty periods, so any sparse row pairs
+with any other sparse row and clears a six-period bar effortlessly.
+The bar measured nothing.
+
+And the 65 « defects » are `retained earnings`, `carried forward
+retained earnings`, `MRA`, `cash bank`, `deferred tax liability` —
+**stocks**. A closing balance is not the sum of twelve months. That
+is the *same conceptual error I named one entry above*, in the
+post-mortem of the previous design, and I then built a check that
+makes it again. Naming a failure is evidently not the same as
+carrying it forward.
+
+### The successor, and the bar it must clear
+
+Two corrections, both about what the row *is* rather than about any
+threshold:
+
+1. **A row must actually vary.** `varying()` already exists in
+   `recalc/mine.py` for exactly this — « a relation among frozen
+   cells is arithmetic about constants, not a law ». The same rule,
+   applied here, removes every zero-with-zero match.
+2. **Classify each row as flow or stock, from its own behaviour.**
+   A flow satisfies `coarse = sum(fine)`; a stock satisfies
+   `coarse = last(fine)`. Test both across all periods and let the
+   row declare which it is. Then a defect is a break **in the row's
+   own established pattern** — a flow row that takes one month, or a
+   stock row that suddenly sums — which is the « judge the row
+   against itself » idea done properly instead of assumed.
+
+**The bar does not move**: the shuffle control runs again, and
+unless mismatched pairs fall to near zero the line of attack is
+dead and I will report it dead. I am not lowering a bar I set two
+hours ago because my design failed it.

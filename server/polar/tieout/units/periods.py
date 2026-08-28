@@ -165,3 +165,65 @@ def aggregations(
                 )
             )
     return found
+
+
+# --- aggregation read from values, where there are no formulas ------
+
+#: Same tolerance as everywhere in this lane.
+RELATIVE = 1e-9
+FLOOR = 1e-12
+
+#: How many coarse periods must agree before a pair counts. Six is
+#: the registered bar: fewer invites coincidence, and a model that
+#: aggregates a row for only five of forty years is not aggregating
+#: it.
+MIN_PERIODS = 6
+
+
+@dataclass(frozen=True)
+class ValueAggregation:
+    """A row that adds up, period by period, with its exceptions."""
+
+    label: str
+    fine_sheet: str
+    fine_row: int
+    coarse_sheet: str
+    coarse_row: int
+    ratio: int
+    matched: tuple[int, ...]
+    #: Coarse columns where the sum does not match **and** the value
+    #: equals a single fine cell — the flagship defect.
+    single_period: tuple[int, ...]
+    #: Coarse columns that match nothing recognisable.
+    unexplained: tuple[int, ...]
+
+
+def _close(a: float, b: float) -> bool:
+    return abs(a - b) <= max(FLOOR, RELATIVE * max(abs(a), abs(b)))
+
+
+def aggregate_by_value(
+    fine: Sequence[float],
+    coarse: Sequence[float],
+    ratio: int,
+) -> tuple[list[int], list[int], list[int]]:
+    """(matched, single-period, unexplained) coarse positions.
+
+    `fine` is the finer series in order; `coarse` the coarser one.
+    Position *i* of `coarse` is compared with the `ratio` fine values
+    that belong to it.
+    """
+    matched: list[int] = []
+    single: list[int] = []
+    unexplained: list[int] = []
+    for index, value in enumerate(coarse):
+        window = fine[index * ratio : (index + 1) * ratio]
+        if len(window) < ratio:
+            break
+        if _close(value, sum(window)):
+            matched.append(index)
+        elif any(_close(value, one) for one in window):
+            single.append(index)
+        else:
+            unexplained.append(index)
+    return matched, single, unexplained
