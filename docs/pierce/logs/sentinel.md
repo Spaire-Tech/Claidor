@@ -243,6 +243,69 @@ edited is not a weak result, it is not a result.
 taken; a re-run after a fix is a new measurement, not a correction
 of the old one.
 
+## 28 August 2026 — A6 round 2: the premise was wrong, and the worst defect was ours
+
+The lead's addendum made A6 the gate on the Enron corpus — 9,145
+real `.xls` workbooks, the only deep unseen project-finance material
+that exists — so I registered the narrow question round 1 could not
+ask: for a `.xls` that actually holds formulas, does either route
+read them? Round 1's files carried none.
+
+**I predicted the native route would be bad and it is good.** Across
+430 files the median recall is 1.000000 and the aggregate 98.7%. I
+had predicted « very low, and 0/349 suggests it can be total ».
+
+That matters more than being wrong feels. The record has been
+carrying a stronger claim than its evidence: `serious-mining.md`
+measured three subjects, found losses on two, and my own handoff
+generalised it to « every `.xls`-route measurement we hold
+understates the engine ». The three subjects reproduce here exactly
+— `act3_lab23_posey.xls` still reads 30 of 40 — so the finding was
+real. The scope was not. A tail of 76 files in 428 had been written
+up as the rule, and A6 has been priced as a locked door ever since.
+**It is not a locked door: the Enron corpus is substantially
+readable today, natively.** That is the most useful thing this round
+produced and it is a plan input, not a detail.
+
+Conversion is marginally better — 99.2%, no refusals, and it repairs
+the worst native failures — but it fabricates one formula per
+boolean cell, 4 for 4 here, exactly as round 1 found on the
+closed-deal models. Two corpora, two formats, exact agreement.
+
+**The largest finding belongs to neither route.** `tables.xls` holds
+8 formulas, all in column A, and both routes lose all 8:
+`read_workbook` returns 27 cells and not one is in column A. A
+formula written in a sheet's first column is invisible to every rule
+we have. That is in code that is mine, it is downstream of intake
+entirely, and it needs its own registered round because it changes
+what the engine reports.
+
+**Criterion 1 earned its place.** I required the witness be
+validated before either route was judged by it, and it caught a
+fourth instrument error of mine: these corpora carry human notes
+stored as text beginning with `=`, and my counter called any such
+string a formula. openpyxl's `data_type` is the discriminator. With
+it the file that differed agrees exactly, 1,619 against 1,619. The
+same wrong test was in round 1's instrument. And `legacy.py` makes
+the identical misclassification — which is now a named engine
+defect rather than a quirk of my harness.
+
+Two process faults, both caught by counts rather than by review.
+Sixty conversions produced fifty-nine files and reported no error:
+two files in the population share a basename while differing in
+content, so a flat output directory silently overwrote one
+conversion with the other, and pairing by name would have measured
+one file against another's conversion. Everything now pairs through
+a committed manifest and the sample was re-converted from scratch. I
+also wrote `a6_converted_recall.py` into a `scripts/` directory at
+the repo root because the shell was in the wrong place, and
+committed it there.
+
+No route adopted, nothing wired, and the Enron fetch deliberately
+not done — the registration made it conditional on the converted
+route passing in full, and a fetch after a partial pass would have
+been shopping for a corpus that flattered the result.
+
 ## 28 August 2026 — Proof 1A's second run, and what comparing more than the numbers found
 
 The re-run, at `327058a5`, invoked exactly as the first was (one
