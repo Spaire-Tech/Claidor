@@ -220,6 +220,18 @@ sitting there unlisted the whole time. Still unsurfaced after this
 turn: the Watch's `classify` / `build_ladder` / `align_lines` /
 `Tier2Answer`, and `recalc.iterative_cells`.
 
+**Only this lane measures the reader's load** — every other lane
+tests its module against planted fixtures. `logs/atelier/reader_load.py`
+runs the whole engine over the whole corpus and counts what a partner
+receives. Eight of nine real models give **2–11 findings**: a page,
+not a wall. The ninth (newbattle) gives **68, 62 material**, because
+**53 of its 54 sheets are very hidden** and `hidden-sheet` emits one
+error-severity finding per sheet — while `broken-name`, in the same
+file, folds 338 names into one. One act by one person, reported
+fifty-three times. Routed to Sentinel; **not masked in the report**,
+because folding it on this side would print a tidy page over a
+severity band still reading « Material 62 ».
+
 **The report's material section numbers *places*, not findings.**
 Kelso printed one check row failing in three columns as 01, 02, 03
 with the same sentence three times and the cell printed twice each.
