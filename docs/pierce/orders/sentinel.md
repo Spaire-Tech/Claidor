@@ -342,3 +342,54 @@ cost real work — including that the 818-model project-finance corpus
 was unreachable, when the reader had handled that format all along.
 When a comment tells you something is impossible, test it before you
 route around it.
+
+## OVERRIDE (28 Aug): speed is your only job now
+
+Everything above is paused. The founder: *« we need to fix that speed
+issue. its the one thing that will make the difference »*. They are
+right, and the lead had misassigned this — A1 was routed to Scribe,
+but **you own `audit.py`, `workbook.py`, `structure.py` and
+`analytics.py`**, which is where the time and the memory are. Correcting
+that: **A1 is yours, alone, and it is the only thing on your board.**
+
+**The measurements, from a clean gate run on the tip (gate clean, 27 of
+27 identical, so the engine is correct — it is just unusable):**
+
+| model | time | findings |
+|---|---|---|
+| `final_gd3_bpfm.xlsm` | **493.9 s** | 85 |
+| `RIIO GD3 BPFM_Draft Determinations` | 450.4 s | 84 |
+| `final_gt3_bpfm.xlsm` | 443.4 s | 75 |
+| `final_et3_bpfm.xlsm` | 430.0 s | 74 |
+| `RIIO GT3 BPFM_Draft Determinations` | 417.2 s | 65 |
+| `RIIO ET3 BPFM_Draft Determinations` | 401.0 s | 68 |
+
+Whole corpus 3,300 s; those six are 2,636 s of it — **80% of the time in
+six files**.
+
+**And the number that makes this urgent rather than annoying. Measured
+in a fresh process that had read nothing else, so it is one model's true
+need, not accumulation across a sweep: `final_gd3_bpfm.xlsm` reached
+7.0 GB and was still climbing.** The production deployment is Render
+`starter` — **0.5 CPU, 512 MB RAM** (`render.yaml`, confirmed against
+Render's own compute-plans documentation). The cheapest Render plan with
+8 GB is `2c-8g`.
+
+So this is not « the check is slow ». **On the servers we actually run,
+a real regulator model cannot be checked at all.** Memory is the harder
+constraint of the two: a fix that makes it twice as fast and still needs
+7 GB has not made the product shippable. **Target both, and treat peak
+resident memory as the primary number.**
+
+**Method, and no deviation:** profile first, fix the largest single
+item, re-measure, repeat. Do not redesign from a hunch. Report before
+and after per file, with peak memory beside every time.
+
+**You have the best harness in the company for this**: the golden master
+is a byte-exact oracle over these same 27 files, so any optimisation
+that changes one finding is caught automatically and immediately. Run
+`dev/verify` and the gate before you call anything done — a faster
+engine that reports differently is a broken engine.
+
+Ordered by value: memory first, then wall time. Everything else on your
+board — period arming, the Ofwat replay, A3 — waits.

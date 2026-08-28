@@ -306,3 +306,40 @@ Method, unchanged: profile, fix the top item, re-measure, repeat. The
 six are the same family, so one real fix probably moves all six. Report
 the before and after per file, and run `dev/verify` plus the gate before
 you call anything done.
+
+## CORRECTION (28 Aug): you profile, Sentinel fixes
+
+My earlier order gave you A1 outright. That was wrong and it was my
+error: `audit.py`, `workbook.py`, `structure.py` and `analytics.py` are
+**Sentinel's** files under the ownership table, and I sent you into
+them. A1's *fixes* are Sentinel's. Corrected.
+
+**What is yours, and it is genuinely the harder half: find out where the
+time and the memory actually go, and hand Sentinel a ranked list.**
+
+The facts to explain: six Ofgem models take 401–494 s each (80% of a
+3,300 s corpus sweep), and **one of them reaches 7.0 GB resident in a
+fresh process that has read nothing else** — so it is one model's true
+appetite, not accumulation. Production is Render `starter`: **512 MB**.
+The engine cannot run there at all.
+
+Your round, and you touch no engine file to do it:
+
+1. **Where does the memory go?** `tracemalloc`, or object counts by type
+   at peak. Name the structure that holds the gigabytes. My guess is the
+   expanded precedents — `MAX_RANGE` is 200 cells per range and these
+   models are full of whole-column references — but a guess is not a
+   finding, and I would rather be wrong on the record than have you
+   confirm me politely.
+2. **Where does the time go?** `cProfile` or `py-spy` on one 494 s
+   model. Rank the top ten by cumulative time.
+3. **Is it the reader or the audit?** The split matters completely: one
+   is Sentinel narrowing what it keeps, the other is Sentinel changing
+   an algorithm. My single-file harness prints both halves —
+   `scratchpad/onefile.py`, reproduced in your log if you want it.
+4. **Hand over a ranked list** — biggest win first, with the number
+   beside it — in your log, and tell the lead it is ready.
+
+Write measurement scripts under your own paths only. Change nothing in
+`polar/tieout/*.py`. This is the « profile first » half of profile-first-
+then-fix, done properly by someone whose only job is the truth of it.
