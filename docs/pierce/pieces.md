@@ -38,6 +38,42 @@ says **not verified** rather than guessing.
 
 ---
 
+# Part 0 — the check against the product document (28 Aug, same day)
+
+The founder asked: « those pieces you gave me are the full product? »
+The first version of this file was built from `swens-plan.md` — the
+plan's tracks — and **not** from `swens.md` § 3, the product document
+of record. Those are not the same list, and the honest answer was no.
+
+Checked part by part against § 3's six parts. **Seven things were
+missing from the first version**, one of them in my favour and six
+against:
+
+| # | What § 3 says | Status | Where it went |
+| --- | --- | --- | --- |
+| 1 | § 3c — « the Watch extends to documents too: if the model moved and the deck did not, that is a finding » | **BUILT** — `watch/document.py`, `test_watch_document.py`, classes registered before any pair produced a number | Added to Part 1. My omission understated what is done |
+| 2 | § 3b — « a typed number with no confirmable source… Swens flags it as such » (D5) | **NOT BUILT** — the phrase appears only in two docstrings naming it as future work | New Piece 9 |
+| 3 | § 3d — « the Grid also holds the second use of extraction: pulling the terms out of the contracts, term sheets and quotes into a structured table, so the model's inputs can be tested against them at scale » | **NOT BUILT — and not in `swens-plan.md` at all** | New Piece 10. The plan has a hole the product document does not |
+| 4 | § 3f — the Excel panel: findings beside the cell, the chain behind a number, accept/explain, proposed corrections (G3) | Panel exists — 3,420 lines under `clients/apps/panel/src`, wired to `/v1/tieout` — **end to end not verified** | New Piece 11 |
+| 5 | § 5 — « if a workbook was saved with calculation set to manual, Swens refuses to reconcile against numbers Excel does not believe, and says so » | **NOT BUILT** — `calcPr` is read for *iteration* settings only; `calcMode` appears nowhere in `polar/` | New Piece 12 |
+| 6 | § 7 — « findings are also mapped to the named modelling standards a firm already works to » | **NOT BUILT** — no standards vocabulary anywhere. It is inside A5's DONE test and was never called out | Folded into Piece 7 |
+| 7 | § 7 — « model calls route through one configurable client so a firm can point Swens at its own cloud deployment » | **NOT BUILT** — API keys are configurable, the endpoint is not | New Piece 13, lowest priority |
+
+**Why this happened, stated plainly.** `swens-plan.md` was written on
+23 August and `swens.md` supersedes it wherever they disagree. I
+re-pieced from the plan because the plan is track-shaped and easy to
+turn into a list. The product document is the record; the plan is a
+route through it. A route can miss a stop, and this one missed at
+least three (the terms table, the manual-calculation refusal, the
+standards mapping) — none of which any lane was ever asked to build.
+
+**The rule that follows:** the completeness question is answered
+against `swens.md` § 3, part by part, and this file is checked against
+it whenever it changes. `notes.md`'s canon rule already said to open
+the file; it now says which file for this question too.
+
+---
+
 # Part 1 — finished (do not reopen)
 
 | Item | What it is | Basis |
@@ -53,6 +89,7 @@ says **not verified** rather than guessing.
 | C1 | Raw version diff | `watch/diff.py`, `test_watch_diff.py` |
 | C2 | DP row/column alignment on label+shape signatures | `watch/align.py`; anchor decomposition measured 10–73× on 11 of 12 real sheets |
 | G1 | Findings API (severity, materiality, evidence, cell sets, accept/explain, house-rule filter) | `endpoints.py`, `service.py`; the Grid renders from it |
+| C5 | The Watch on documents — model moved, deck did not | `watch/document.py`, `test_watch_document.py`; classes registered in `logs/prism.md` before any pair produced a number |
 | G4 (first pass) | The report exists and is generated | `report-kelso.pdf` (224,553 bytes) built from the product |
 
 ---
@@ -178,8 +215,16 @@ is wired. **Not verified**: whether two different firm configurations
 actually produce two correctly different reports from one model, and
 whether the record shows what was disabled and by whom.
 
+**A third part, confirmed absent.** A5's DONE test ends « findings
+mapped to the named modelling standards », and `swens.md` § 7 says why
+it is there: « so a reviewer reads them in the vocabulary they already
+use rather than in Swens's. » No standards vocabulary exists anywhere
+in the tree. This half of the piece has never been started, and I
+never called it out until the § 3 check found it.
+
 **DONE test.** Two firm configs, one model, two correctly different
-reports, with the disabling recorded.
+reports, with the disabling recorded — and every finding carrying its
+standards reference.
 
 ## Piece 8 — B5/B6, relation mining and diagnosis
 
@@ -197,6 +242,75 @@ set is where the thesis lives or dies, and it has not been run.
 law-breaking edits caught at a measured rate with a per-class table;
 zero false law-violations on the unedited model.
 
+## Piece 9 — D5, the unsourced-number finding
+
+**State.** Named in `chain/__init__.py` and `chain/store.py` as future
+work. **Nothing implements it.**
+
+**Why it matters more than its size.** `swens.md` § 3b makes it a
+finding class of its own — « a typed number with no confirmable source
+is not merely undocumented; it is a number nobody can defend » — and
+§ 2 ties it to the growing case: machine-drafted models « do not leave
+a broken link behind, because they never had a link ». Untraceable is
+a defect class, and this is the check that names it.
+
+**The risk to manage.** It floods trivially: every typed number in a
+model with no documents attached is unsourced. The plan already says
+so — « measured for flood on real models first ». Depends on Piece 2
+having a working store to ask.
+
+**DONE test.** In the report, measured for flood on real models first.
+
+## Piece 10 — the Grid's terms table (§ 3d; missing from the plan)
+
+**State.** Not built, and **not in `swens-plan.md` at all.** `swens.md`
+§ 3d: « the Grid also holds the second use of extraction: pulling the
+terms out of the contracts, term sheets and quotes into a structured
+table, so the model's inputs can be tested against them at scale
+rather than one at a time. »
+
+**What it is.** D1's extraction pointed at a different consumer. D3
+matches one model number to one document fact; this inverts it —
+extract the deal's terms into a table, then test the model's inputs
+against the table wholesale. It is also the natural repair for the
+Chain's scale problem: matching one number at a time against 4,913
+document numbers is the search that has failed six rounds.
+
+**DONE test.** To be written before any code, per the method. First
+task is the harness, not the table.
+
+## Piece 11 — G3, the Excel panel end to end
+
+**State.** The panel exists — 3,420 lines under `clients/apps/panel/src`
+(Excel, Word, PowerPoint and Outlook hosts), wired to `/v1/tieout`.
+**Not verified**: whether findings beside the cell, the chain behind a
+number, accept/explain-on-the-record and proposed corrections all run
+against the real APIs end to end, which is G3's DONE test.
+
+This was absent from the first version of this file entirely — the
+plan lists G3 and I did not carry it across.
+
+**DONE test.** Panel runs against the findings, chain, accept/explain
+and correction APIs end to end.
+
+## Piece 12 — the manual-calculation refusal (§ 5)
+
+**State.** Not built. `calcPr` is read in three places — the writer
+sets `fullCalcOnLoad`, the recalculator pushes the file's iteration
+settings, the gate reads `iterateDelta` — but **`calcMode` appears
+nowhere in `polar/`.**
+
+**What is missing.** `swens.md` § 5 is a trust commitment, not a
+feature: « if a workbook was saved with calculation set to manual,
+Swens refuses to reconcile against numbers Excel does not believe, and
+says so, rather than quietly producing a comparison that means
+nothing. » Today a manual-calculation workbook is reconciled silently
+against values Excel itself considers stale. That is the exact failure
+mode the sentence forbids, and it is small to fix.
+
+**DONE test.** A manual-calculation workbook produces a named refusal
+saying what to do about it, not a comparison.
+
 ---
 
 # Part 3 — not started
@@ -213,6 +327,7 @@ zero false law-violations on the unedited model.
 | **F4** | Custody — corrections held by Swens, never written to customer stores | Enforced-by-construction test not written |
 | **H1–H2** | Files-only engagement end to end; closed-by-default posture | `security-posture.md` exists; the end-to-end run has not happened |
 | **H3** | Connection mode | Explicitly not on the critical path |
+| **Piece 13** | § 7 — model calls through one configurable client, so a firm can point Swens at its own cloud deployment | **Confirmed absent**: API keys are configurable, the endpoint is not. Enterprise-deployment item, lowest priority of anything named here |
 | **The four proofs** | Population, units, catch-rate, delivery | None started. Proof 4 (design partners) is **deferred by the founder**, not failed |
 
 ---
