@@ -163,18 +163,25 @@ hole, not a performance nicety.
   twenty-four** (`Distributions` 113.9 s, `Ratios` 111.9 s).
 - The V3 exam's WSH pair is Welsh Water draft determination against
   final determination: **12 MB against 12 MB**, so roughly 2.8× the
-  bytes. It has now been running **over 115 minutes at 99.9% CPU and
-  9.1 GB resident**, and had not returned when this was written.
+  bytes. It ran at 99.9% CPU and 9.1 GB resident and returned in
+  **2 h 06 m 06 s** (03:06:40 → 05:12:46), with parity **EXACT**.
 
-Two point eight times the input, at least forty-three times the time,
-and it may not have finished. That is not a constant factor — it is
-strongly superlinear, and the shape of Atelier's profile says where:
-the per-sheet alignment on the largest sheets. A 12 MB utility model
-is not an exotic file; it is the ordinary case for the regulator
-corpus and for the customers this product is aimed at.
+**Correction to the first version of this order, which said it might
+never finish: it finishes, and it is right.** Thames Water took
+2 h 09 m and United Utilities 2 h 03 m, so this is the shape of the
+large pairs, not one bad file. The problem is not termination. Two
+point eight times the input costs **forty-eight times the time**, and
+that is not a constant factor — it is strongly superlinear, and the
+shape of Atelier's profile says where: the per-sheet alignment on the
+largest sheets. A 12 MB utility model is not an exotic file; it is the
+ordinary case for the regulator corpus and for the customers this
+product is aimed at.
 
-**So the Watch's honest status is: works on a mid-sized workbook,
-unproven on a large one.** Track C cannot be called complete while a
+**So the Watch's honest status is: correct at every size we have
+tested, and two hours too slow at the size that matters.** That is a
+better problem than the one I first wrote down — the answers are
+right, so this is an optimisation with a known-correct oracle to test
+against, not a rebuild. Track C cannot be called complete while a
 real published pair cannot be diffed in usable time, and no amount of
 skipping identical sheets fixes an algorithm that goes quadratic on
 the sheets that are not identical.
