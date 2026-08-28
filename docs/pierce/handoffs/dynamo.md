@@ -108,10 +108,11 @@ files, git-ignored), never committed.
   against tens of thousands per model). Sample committed
   *unlabelled first*, then the labels:
   `docs/pierce/logs/dynamo/e1-{sample-unlabelled,ground-truth}.json`.
-- **E2's shippable verdict (28 Aug), the thing Sentinel needs**:
-  **ARM** `kind`, `currency`, `scale` (the last two answer on only
-  34.6% of rows); **ARM WITH CARE** `rate_form`; **DO NOT ARM**
-  `b5_type` or `period`. Measured through the path `inferred_inputs`
+- **E2's shippable verdict (28 Aug, revised the same day against a
+  second corpus)**: **ARM WITH CARE** `rate_form` — and **nothing
+  else**. `kind`, `currency` and `scale` were armed against the
+  Ofgem key and fail on the closed-deal one (7.77%, 24.62%, 23.32%);
+  `b5_type` and `period` never armed. Measured through the path `inferred_inputs`
   runs, taking the worse of two keys. The trap to inherit: the
   3,796-row author key holds **one value for `kind`** — every row in
   it declares £m or %, so it is continuous by construction, and its
@@ -138,6 +139,11 @@ files, git-ignored), never committed.
 
 ## The disciplines that are not negotiable
 
+- **A dimension whose key cannot contain its failure case must not
+  be armed.** Not « flag the limitation and arm anyway » — that is
+  what I did on 28 Aug, and the first key that could contain the
+  case put `kind` at 7.77% wrong against 0.05%, 74% of it reading
+  rows their author declared `Flag` as continuous quantities.
 - **Measure the shape of a key before quoting its accuracy.** Twice
   on 28 Aug a number of mine measured something narrower than its
   name: the 3,796-row author key holds **one value for `kind`**
