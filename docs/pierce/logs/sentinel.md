@@ -66,6 +66,116 @@ amount. That does not overturn its conclusions — the label-set
 comparison never passed through the engine — but it turns the
 refusal to read fresh-vs-frozen as drift into a named mechanism.
 
+## 28 August 2026 — A6 refused: a converted file was a different file, exactly as the phrase warned
+
+The orders made A6 my highest-value work, and it is the first round
+I have refused on a whole approach rather than a threshold.
+
+**A container fact had to be corrected before any measurement.**
+Every note in my record said LibreOffice could convert nothing here.
+Today it also failed on a plain valid `.xlsx` from our own corpus,
+which pointed away from the files: `libreoffice-core` was installed
+without **`libreoffice-calc`**, so there was no Calc component and
+no spreadsheet of any format could load. With it installed, all five
+held models convert. My handoff's standing lesson was wrong and is
+corrected in the same push — and if the product converts, that
+package is a dependency of its image, not a developer convenience.
+
+The five are all on disk now. `dalbeattie` and `our_lady_st_patricks`
+came from the same public bucket the committed fetcher uses and match
+the contamination log's sha256 prefixes byte for byte.
+
+**The verdict is REFUSED, on three of five criteria.**
+
+*Two of five will not open.* From the `.xlsb` route LibreOffice
+writes `_xlnm.Print_Titles` with an empty body and openpyxl raises
+on it. Not mysterious, and probably mechanical to fix.
+
+*Numeric fidelity passed, on the point that mattered.* **Not one
+value changed in any file.** I registered recalculation-on-load as
+the outcome that would sink the route while looking like success on
+a careless read, and it did not happen. Every cell counted missing
+is explained at the cell — zeros arriving as time values, twelve
+numeric flags arriving as booleans — and none is absent.
+
+*Formulas are fabricated, which is the reverse of what I predicted.*
+I registered formula **loss**; the conversion writes `=TRUE()` for
+every boolean cell — 10,715, 10,715 and 5,223 across the three that
+open, agreeing exactly with the originals' boolean counts from two
+independent witnesses on two different formats. Our structural
+checks are statements about formulas, so this is not cosmetic.
+
+**The part worth remembering.** That finding nearly went into the
+record backwards. The same counts fit a second reading — that
+pyxlsb mislabels a formula record, and the conversion had faithfully
+preserved 10,715 real formulas — and that reading gives the opposite
+verdict. Counts alone could not choose between them. I resolved it
+at a named cell instead of by argument, and kept the probe as a
+committed instrument.
+
+**And one finding no criterion asked for:** the `.xlsb` route
+destroys every defined name, keeping the name and dropping its
+reference — 403, 1,022 and 1,321 of them. The `.xls` route keeps all
+805 intact. The engine reads defined names to resolve named ranges
+in formulas. Found while diagnosing the refusal.
+
+**What I could not measure, said plainly:** `largs` and `dalbeattie`
+are the only held models with genuine formulas (775 and 494), and
+they are the two that will not open. **What conversion does to a
+real formula is unknown**, and the round does not generalise from
+the three value-only files that did open.
+
+**My own instruments were wrong three times, and every one was
+caught by a disagreement I could not explain rather than by
+review.** I counted shared-string indices as numeric values; I
+skipped date cells that openpyxl returns as `datetime`; and I took
+only `xlrd`'s `XL_CELL_NUMBER`, missing its separate date ctype.
+The first two made about 21,000 perfectly converted cells look
+lost. Had I reported that run, I would have accused the conversion
+of a defect that was mine.
+
+The third is worse and is worth writing down plainly. I caught it
+only when re-running the committed instrument to check it still
+reproduced my numbers — and it did not. I had already written
+`inverclyde` into the results table as « 0 missing, 0 added » while
+the measurement said 4,018 added: I diagnosed the cause correctly
+in prose and then wrote the number as though the fix were already
+in. Nothing but the re-run would have caught that. The corrected
+figure is 87 missing, all the same benign coercion, and the whole
+sweep was re-run against the fixed instrument so one artifact backs
+every number in the document.
+
+The rule I am taking from all three: an unexplained disagreement is
+a claim about my instrument until I have read it at a cell — and a
+number is not in the record until the committed instrument has
+produced it.
+
+**Nothing was wired.** `read_workbook` and `legacy.py` are
+untouched, no `.xlsb` route was added, and the gate was **not run** —
+no engine file changed, so there is nothing for it to certify and a
+green tick would have meant nothing.
+
+**On paths, named rather than assumed:** A6 needs `legacy.py` and a
+new `.xlsb` route, which sit in no lane's ownership row. My « never
+touches » is product code and other lanes' packages, and neither is.
+The twenty-fifth sweep assigns A6 to me by name, so I read that as
+covering the intake files A6 cannot be done without, and said so in
+the registration so the lead can overrule it at a sweep rather than
+find it in a diff.
+
+**One correction for the lead.** The orders describe the five held
+models as « three `.xlsb` and two `.xls` »; by extension they are
+**four `.xlsb` and one `.xls`**. Total and conclusion unchanged.
+
+**A second, which matters more.** The orders say Proof 1A run 2 may
+proceed because « the own-check fix is gate-certified ». It is not,
+and cannot be: the gate calls `audit()` only and the golden-master
+baseline holds no analytical finding, so it is blind to that change.
+I registered that before running it precisely so the clean gate
+could not be read as certification. What certifies the own-check fix
+is the AU-UK zero-movement result and the SFT prediction fixed in
+advance — not the gate.
+
 ## 28 August 2026 — the own-check period defect fixed, and what could not certify it
 
 Proof 1A's failure had one cause and I took it as its own registered

@@ -14,12 +14,13 @@ import warnings
 from decimal import Decimal
 from pathlib import Path
 
-warnings.filterwarnings("ignore")
 from openpyxl.utils import get_column_letter as L
 
 from polar.tieout.analytics import _CHECKISH, ZERO_CELLS, ZERO_SHARE
 from polar.tieout.structure import read_structure
 from polar.tieout.workbook import read_workbook
+
+warnings.filterwarnings("ignore")
 
 
 def admitted(valued: list) -> bool:
