@@ -1,352 +1,254 @@
-# The pieces — what is finished, what is half, what is untouched
+# Where we stand — the one file
 
-Written 28 August 2026, at the founder's direction: « we are going to
-kill the agents… re-piece everything that needs to be done and you and
-I will do piece by piece. »
+**There are two files. This is the second one.**
 
-This file replaces the lane orders (`orders/`) as the working list.
-It is a re-piecing of `swens-plan.md` — the plan of record — against
-what is actually in the tree today, not against memory. Every row
-below names **how I know**, so the founder can check any line without
-taking my word for it.
+| File | What it is | Who owns it |
+| --- | --- | --- |
+| `swens.md` | **What we are building.** The product, in the founder's words. Wins over everything. | The founder |
+| `pieces.md` (this) | **Where we stand and what is next.** Every part, its status, the number behind it, and the order of work. | Ledger |
 
-## The operating model from today
+Everything else under `docs/pierce/` is **evidence or archive** — the
+protocols, the measurements, the lane logs, the research. You never
+need to read them to know where we stand. They exist so that every
+line in this file can be checked. `swens-plan.md` is the route that
+was approved on 23 August; this file is that route with today's
+position marked on it, and where the two disagree, `swens.md` wins and
+this file says so.
 
-- **No lane agents.** Sentinel, Dynamo, Prism, Scribe and Atelier are
-  stood down. Their merged work stays; their branches stay in git
-  history. Nothing is thrown away.
-- **I build every piece**, one at a time, in the order below, and I do
-  not open the next piece until the current one is green.
-- **One verifier agent exists**, and it runs only when the founder
-  asks for it: after a piece is complete, to hunt for bugs, gaps and
-  things I missed. It never builds.
-- **A piece is 100% when**: its DONE test from `swens-plan.md` passes,
-  the golden-master gate is clean, `dev/verify` is green, and its
-  number is written down in a doc of record. Three of four is not
-  done.
+Written 28 August 2026, after the founder said: « you keep confusing
+me… I don't know which is which. I don't know where I stand, therefore
+I can't give you tasks. »
 
-## How to read the status column
+---
 
-| Status | Meaning |
+# 1. The product in six parts, and where each one is
+
+`swens.md` § 3 defines six parts. This is all of them, in plain
+English, with what is built and what is not.
+
+## a) The Engine — reading the model properly
+
+Reads an Excel workbook the way a model auditor reads it: finds the
+time axis, the sections, the balance carries, the debt schedule, then
+runs four kinds of check over that structure.
+
+| Check kind | What it catches | Status |
+| --- | --- | --- |
+| **Structural** | typed-over formulas, hardcodes in formula tails, sums skipping rows, broken/frozen refs, error values | **DONE** — 80.1% useful on unseen models, 2.9% false positives, golden-master gated |
+| **Financial** | balance sheet balances, cash carries hold, debt repays to zero | **DONE** |
+| **Unit** | monthly used as annual, percent as decimal, pounds plus dollars, thousands vs millions | **BUILT AND SWITCHED OFF** — see Piece 1 |
+| **Behavioural** | run the model and see if it obeys its own arithmetic | **DONE AND MEASURED** — see § 2 below |
+
+Speed: a median model now checks in **6.9 s at 155 MB** (was 23 s at
+384 MB). The heaviest model in the corpus reads in **121 s at 1,255 MB**
+(was 252 s at 6,290 MB). The spec's sentence — 600k cells under a
+minute — is **not proven**, because this container swings ±30% and
+cannot honestly measure it.
+
+## b) The Chain — where every number comes from
+
+| Direction | What it does | Status |
+| --- | --- | --- |
+| Typed number → the contract page it came from | propose links, a person confirms, then re-checking is arithmetic forever | **HALF** — six rounds, latest scored 0 correct of 15. Piece 2 |
+| Model number → the deck/memo built on it | every printed figure matched back to its source cell | **DONE** — measured 100%/100% on planted errors |
+| A typed number with **no** source | its own finding class — « a number nobody can defend » | **NOT BUILT.** Piece 9 |
+| Outward — filings, rates, company records | « the model says 412, the filing says 409 » | **NOT BUILT.** Piece 14 |
+| Terms into a structured table | test the model's inputs at scale, not one at a time | **NOT BUILT, and was missing from the plan.** Piece 10 |
+
+## c) The Watch — what changed, and what it broke
+
+| | Status |
 | --- | --- |
-| **DONE** | DONE test met and the number is recorded |
-| **HALF** | code exists and is tested, but its DONE test is unmet, unarmed, or never run |
-| **NONE** | nothing exists beyond the plan text |
+| Raw version diff (cells added, removed, changed) | **DONE** |
+| Shift detection — one inserted row reads as one change, not two hundred | **DONE** — anchor decomposition 10–73× on 11 of 12 real sheets |
+| Delta report in review language (new defects, repaired, moved assumptions) | **HALF** — 3× too slow, and its acceptance test never run. Piece 5 |
+| Proving what did **not** change — the three tiers | **BUILT, not measured** |
+| The Watch on documents — model moved, deck did not | **DONE** |
+| **Behavioural version diffing** — the laws v8 obeyed vs the laws v12 obeys | **NOT BUILT — deliberately.** See § 2 |
 
-Verification basis is given per row. Where I have not checked, the row
-says **not verified** rather than guessing.
+## d) The Grid — findings as a workspace
+
+Findings with rule, sheet, cell, evidence, severity; sortable,
+filterable; materiality and rounding tolerance as the firm's settings.
+**DONE** — the Grid renders entirely from the findings API.
+
+Two parts of § 3d and § 7 are **not** built: the terms table
+(Piece 10) and findings mapped to the named modelling standards, so a
+reviewer reads them in their own vocabulary (Piece 7).
+
+## e) Chat — about this model, not about the world
+
+Seven tools exist and are tested: locate, trace back, trace forward,
+inventory, structure, versions, sources. Between them they cover all
+five canonical questions. **Nobody has asked the five questions and
+judged the answers.** Piece 3.
+
+## f) The Excel panel — findings beside the cell, corrections that follow
+
+The panel exists: 3,420 lines, Excel/Word/PowerPoint/Outlook hosts,
+wired to the API. **Never verified end to end.** Piece 11.
+
+The write path underneath it — byte-preserving edits, apply/undo,
+re-audit gate, custody — is **DONE**. The *classes* of determined fix
+(restore the formula the block declares, widen the sum the structure
+defines, replace the deck figure with the model's number) are **NOT
+BUILT**. Piece 15.
 
 ---
 
-# Part 0 — the check against the product document (28 Aug, same day)
+# 2. The execution engine — the founder's question, answered part by part
 
-The founder asked: « those pieces you gave me are the full product? »
-The first version of this file was built from `swens-plan.md` — the
-plan's tracks — and **not** from `swens.md` § 3, the product document
-of record. Those are not the same list, and the honest answer was no.
+The founder asked, 28 August: *« We've upgraded the technical core
+from static formula parsing to a native execution engine that actually
+runs the workbook to mine behavioral invariants, trace dynamic math
+execution, and run model-slicing (Reiter's framework) for root-cause
+diagnosis. Did you account for this dynamic trace pipeline, behavioral
+version diffing, and the base-case reproduction check? »*
 
-Checked part by part against § 3's six parts. **Seven things were
-missing from the first version**, one of them in my favour and six
-against:
+**Yes — all six are in the plan, four are built, and the two that are
+not were deliberately held by the founder's own amendments.** Each row
+below was checked in the tree before it was written.
 
-| # | What § 3 says | Status | Where it went |
+| The founder's words | What it is here | Status |
+| --- | --- | --- |
+| **native execution engine that actually runs the workbook** | B1 — a pool of long-lived LibreOffice workers, UNO socket, `calculateAll()`, the file's own iteration settings pushed in explicitly, one document per process, recycled | **BUILT.** `recalc/pool.py`, `recalc/uno_driver.py`. Caveat: this container runs LibreOffice **24.2.7.2**; the researched architecture calls for **≥ 25.8** |
+| **the base-case reproduction check** | B2 — the fidelity gate. Recalculate every model *unchanged* and diff against what Excel itself stored, cell by cell. **No behavioural check ever runs on a file that failed its gate** | **BUILT AND RUN** on the 27-model corpus. Results in the next table |
+| **mine behavioral invariants** — hand-written laws | B4 — zero-input (volume 0 ⇒ revenue exactly 0), proportionality, scale invariance, consolidation | **BUILT AND MEASURED: 37 plants, 37 catches, 0 false positives** across 26 control runs. The hardcode-in-the-tail class — the one static reading cannot see — stands at **24/24 across 13 host files** and three structural guises |
+| **mine behavioral invariants** — laws *discovered*, not written | B5 — run the model blind under perturbations, keep the equations that never stop holding. Clean-room from the ICSME 2019 paper (the reference code is LGPL and has not been read) | **BUILT, NOT MEASURED.** `recalc/mine.py`. Piece 8 |
+| **trace dynamic math execution / model-slicing for root cause** | B4's amendment — delta debugging (ddmin) plus a frontier walk over the dependency slice between the perturbed input and the broken output, so a violated law names **one** cell | **BUILT.** `recalc/narrow.py` |
+| **Reiter's framework** specifically | B6 — Reiter minimal-diagnosis + spectrum-based fault localisation over broken mined rules | **NOT BUILT — HELD by the founder-relayed amendment of 27 August**, pending evidence: if real regressions break one or two rules, blame-the-changed-cell wins and Reiter is over-engineering; if they break many, B6 is exactly right. The Ofwat run decides |
+| **behavioral version diffing** | C6 — mine v8's laws and v12's, then diff the law sets: « v12 obeys all 47 rules v8 obeyed, adds 2, broke 1 — cash closing no longer ties to its flows in periods 14–15 ». Compares behaviour, not positions, so it survives inserted rows and renamed sheets by construction | **NOT BUILT — GATED by the founder-relayed third amendment**, on two preconditions measured *before* any diff code exists: (1) **seed stability** — mine one unmodified model five times under five seeds; the rule sets must agree, or « v12 broke a rule » is seed noise. (2) **cosmetic invariance** — insert blank rows, rename a sheet, reformat a block; the mined sets must be identical, or the claimed advantage over positional diff is unproven. **Neither has been measured.** That is the next thing C6 needs, and it is cheap |
+| *(also relevant, not asked)* | C4 — verifying-trace fingerprints: hash each cell's formula shape and its inputs' values, so matching fingerprints prove a cell could not have changed at hash cost, no evaluation | **BUILT.** `watch/trace.py` |
+
+## What the base-case reproduction check actually found
+
+The fidelity gate is not a formality — it is the reason the
+behavioural numbers can be trusted, and it currently refuses four
+files. First run, 27 models, LibreOffice 24.2:
+
+| Files | Match | What it is |
+| --- | --- | --- |
+| 3 | **100%** | perfect |
+| 9 (ED2) | 99.998% | one cell each, `Cover!G4` — a filename cell truthfully reporting its new filename. **Environment-volatile, never a fidelity failure** |
+| 2 (H7) | 99.98% | 66 cells each, same class: per-sheet titles rebuilt from the filename |
+| 2 (draft PCFM) | 99.2–99.4% | `#VALUE!` around text operations — under investigation |
+| 1 (GT3) | 96.1% | **1,294 `#NAME?`** — LibreOffice 24.2 does not know the XLOOKUP/LET generation. This is the version gap, and **the gate caught it, which is the gate working** |
+| 2 (WACC) | 95.8–96.3% | ~23k numeric divergences on daily rate series (Excel stored 0.02075…, LibreOffice computes 0.02). Not errors, not volatiles — **unexplained. These files fail the gate and are refused behavioural checks today** |
+| 8 | — | recalculated but not diffed: the *differ* failed on the six big models, not the recalculator |
+
+Those last two rows are what the arbiter (Piece 4) is for: when
+LibreOffice and a file disagree, real Excel decides.
+
+**So the honest one-line answer to the founder's question:** the
+execution core is real and measured — 37/37 on planted behavioural
+frauds, behind a gate that refuses four files rather than guessing.
+What is *not* there is the layer on top: discovered laws are unmeasured
+(Piece 8), behavioural version diffing is gated on two cheap stability
+runs nobody has done, and Reiter is held by the founder's own decision.
+
+---
+
+# 3. The open sources — are they all accounted for?
+
+**Yes, and there is a document per haul.** Neither is a wish list;
+every entry carries a verdict — **OURS / ADOPT / TRIAL / LEARN-FROM /
+SKIP** — and the SKIPs carry their reason.
+
+- **`ambre-toolbox.md`** — the main survey (calculation engines, the
+  spreadsheet-QA research field, document extraction, public data,
+  equivalence proving), mapped onto the six parts. Its headline still
+  stands: **for shift-aware version diff and automated behavioural
+  testing of workbooks, no open implementation exists.** Those are
+  ours by default, not by choice.
+- **`china-os-findings.md`** — the Chinese spreadsheet-science haul the
+  founder's researcher produced, with the load-bearing claims verified
+  from this container before grading.
+
+**What was actually done with them:**
+
+| Source | Verdict | Where it went |
+| --- | --- | --- |
+| LibreOffice UNO | ADOPT | B1, built — including every hard-won specific (UNO socket not CLI convert, `calcPr` pushed by hand, pool recycled because it leaks) |
+| Microsoft Graph Excel API | TRIAL as arbiter | **Not wired.** Piece 4 — and we already own the OAuth/tenant plumbing |
+| CUSTODES benchmark (1,974 labelled cells) | BENCHMARK | Archived to `docs/pierce/custodes/` and scored |
+| Enron / EUSES corpora | BENCHMARK | Archived; drove the `.xls` reader |
+| XLParser grammar | ADOPT | Ported into the fault-tolerant reader as cases arise |
+| ExceLint | LEARN-FROM + head-to-head | **Blocked** — the repo was never approved into a session |
+| SheetDiff | LEARN-FROM then own | Superseded on purpose: the 24 Aug amendment replaced its greedy algorithm with dynamic-programming alignment, because the greedy one misaligns and can loop |
+| Z3 / VeriEQL / EqDAC / SQLSolver | encoding pattern | Tier-1 equivalence — built, unmeasured |
+| docling + pdfplumber | ADOPT | The Chain's extraction with page and box |
+| EDGAR, Companies House + arelle, FRED / NY Fed / BoE / ECB | four free integrations | **Not built.** Piece 14 |
+| Williams 2020 (units) | the blueprint | `units/inference.py` — built, **never measured**. Piece 1 |
+| AutoMR (ICSME 2019) | plan amendment, approved 27 Aug | B5, clean-room. Built, unmeasured |
+| Tasi (ISSTA 2021) | second independent labelling of the same 70 files, **including an ExceLint column** | Ordered, **not run** — it largely settles what the blocked ExceLint run was for. Piece 16 |
+| PaddleOCR, Univer, TableSense, WARDER, Auto-Formula | filed, low priority | Named with their slot, not started |
+| HyperFormula, pycel, xlcalculator, EPPlus, SpreadJS, PyMuPDF, marker/surya, unstructured.io, ForTaP/TUTA, GNN anomaly scoring | **SKIP** | Each with its reason on file — licence, dead, or « unexplainable suspicion is the opposite of defensible findings » |
+
+**The one gap I will not paper over:** I cannot prove this covers
+*everything* the founder ever sent, because there is no single intake
+log of what was handed over and when. Two haul documents exist; a
+source that arrived outside them may not be in either. **Piece 17
+fixes that** — one list, every source, its verdict, and the date.
+
+---
+
+# 4. The order of work
+
+Set by the founder's fourth amendment: **by hole, not by polish** — a
+part of § 3 that does not exist outranks a part that exists and could
+be better. Nothing here is started until the one before it is green,
+and green means: DONE test passed, golden master clean, `dev/verify`
+green, number written down.
+
+| # | Piece | Why here | Size |
 | --- | --- | --- | --- |
-| 1 | § 3c — « the Watch extends to documents too: if the model moved and the deck did not, that is a finding » | **BUILT** — `watch/document.py`, `test_watch_document.py`, classes registered before any pair produced a number | Added to Part 1. My omission understated what is done |
-| 2 | § 3b — « a typed number with no confirmable source… Swens flags it as such » (D5) | **NOT BUILT** — the phrase appears only in two docstrings naming it as future work | New Piece 9 |
-| 3 | § 3d — « the Grid also holds the second use of extraction: pulling the terms out of the contracts, term sheets and quotes into a structured table, so the model's inputs can be tested against them at scale » | **NOT BUILT — and not in `swens-plan.md` at all** | New Piece 10. The plan has a hole the product document does not |
-| 4 | § 3f — the Excel panel: findings beside the cell, the chain behind a number, accept/explain, proposed corrections (G3) | Panel exists — 3,420 lines under `clients/apps/panel/src`, wired to `/v1/tieout` — **end to end not verified** | New Piece 11 |
-| 5 | § 5 — « if a workbook was saved with calculation set to manual, Swens refuses to reconcile against numbers Excel does not believe, and says so » | **NOT BUILT** — `calcPr` is read for *iteration* settings only; `calcMode` appears nowhere in `polar/` | New Piece 12 |
-| 6 | § 7 — « findings are also mapped to the named modelling standards a firm already works to » | **NOT BUILT** — no standards vocabulary anywhere. It is inside A5's DONE test and was never called out | Folded into Piece 7 |
-| 7 | § 7 — « model calls route through one configurable client so a firm can point Swens at its own cloud deployment » | **NOT BUILT** — API keys are configurable, the endpoint is not | New Piece 13, lowest priority |
+| **1** | **The manual-calculation refusal** (§ 5) | We are breaking a stated promise *today*: a workbook saved on manual calculation is reconciled silently against numbers Excel does not believe. `calcMode` appears nowhere in the tree | hours |
+| **2** | **Chat judged** (G2) | Closes a claim I made badly. All seven tools exist; nobody has asked the five questions | a day |
+| **3** | **Units** (E2 → E3) | The flagship finding, and the check is built and switched off because the inference under it was never measured | days |
+| **4** | **C6's two stability runs** | Behavioural version diffing is gated on two cheap measurements nobody has done. Until they run, C6 cannot start and B6 cannot be decided | a day |
+| **5** | **The arbiter** (B3) | Four corpus files are refused and waiting. Check the LibreOffice 24.2 → 25.8 version gap first — part of the queue may be that | days |
+| **6** | **The Chain's page geometry** (D3/D4) | Six failed rounds, and the diagnosis says it is document geometry, not matching | days |
+| **7** | **The terms table** (§ 3d) | Missing from the plan entirely, and probably the real fix for the Chain's scale problem | days |
+| **8** | **B5 measured**, then B6 decided | The measurement decides whether Reiter is right or over-engineering | days |
+| **9** | The delta report's speed + its acceptance test | 3× over the line; the biggest cost is the engine throwing away work it just did | days |
+| **10** | The unsourced-number finding (D5) | Depends on the Chain having a store to ask | days |
+| **11** | The panel end to end (G3) | Exists, never verified | days |
+| **12** | Determined corrections (F3) | The mechanism exists; the classes and their refusal cases do not | weeks |
+| **13** | House rules proven + standards vocabulary (A5) | Built and wired, never demonstrated | days |
+| **14** | Outward checks (D6/D7) | Four free integrations, none built | weeks |
+| **15** | The four completion proofs | Proof 4 (design partners) is **deferred by the founder**, not failed | — |
 
-**Why this happened, stated plainly.** `swens-plan.md` was written on
-23 August and `swens.md` supersedes it wherever they disagree. I
-re-pieced from the plan because the plan is track-shaped and easy to
-turn into a list. The product document is the record; the plan is a
-route through it. A route can miss a stop, and this one missed at
-least three (the terms table, the manual-calculation refusal, the
-standards mapping) — none of which any lane was ever asked to build.
-
-**The rule that follows:** the completeness question is answered
-against `swens.md` § 3, part by part, and this file is checked against
-it whenever it changes. `notes.md`'s canon rule already said to open
-the file; it now says which file for this question too.
-
----
-
-# Part 1 — finished (do not reopen)
-
-| Item | What it is | Basis |
-| --- | --- | --- |
-| F1–F2 | Write path + changeset (byte-preserving edits, apply/undo, re-audit gate) | `write/`, `changeset.py`, `test_write*.py`, `test_changeset.py`; certified on the 27-file corpus |
-| A2 (part) | CUSTODES scorer, validated against published figures | `custodes-benchmark.md`; ExceLint half still open — see Part 3 |
-| A3 (mining) | Five candidate patterns mined, four refused with reasons | `custodes-mining.md` |
-| A7 | Shape-hash normalization (commutativity, constant folding) | `a7-normalization-protocol.md`, `test_shape_normalization.py` |
-| A6 (.xls) | Legacy `.xls` read directly for formulas | `legacy.py`, `test_legacy.py` |
-| A6 (.xlsb) | `.xlsb` via LibreOffice conversion | `binary.py`, `test_binary.py` — **16 passed, 28 Aug** |
-| Speed round | Median regulator model 23s → 6.9s, 384 MB → 155 MB; heaviest 6,290 MB → 1,255 MB, read 252s → 121s | cell-by-cell differential vs openpyxl (27 files, 0 differences), styles differential (27 files, 0 differences), golden master 27/27 identical |
-| B1–B2 | Recalculator pool + fidelity gate, run on the 27-model corpus | `recalc/pool.py`, `recalc/gate.py`, `fidelity-report.md`, 43 recalc tests green |
-| C1 | Raw version diff | `watch/diff.py`, `test_watch_diff.py` |
-| C2 | DP row/column alignment on label+shape signatures | `watch/align.py`; anchor decomposition measured 10–73× on 11 of 12 real sheets |
-| G1 | Findings API (severity, materiality, evidence, cell sets, accept/explain, house-rule filter) | `endpoints.py`, `service.py`; the Grid renders from it |
-| C5 | The Watch on documents — model moved, deck did not | `watch/document.py`, `test_watch_document.py`; classes registered in `logs/prism.md` before any pair produced a number |
-| G4 (first pass) | The report exists and is generated | `report-kelso.pdf` (224,553 bytes) built from the product |
+**Housekeeping, folded into whichever piece touches them:** Tasi
+re-score (Piece 16), the source intake log (Piece 17), triage of the
+~40 uncited research documents, A1's stopwatch claim on a quiet
+machine, the ExceLint repo approval.
 
 ---
 
-# Part 2 — half done (the real queue)
+# 5. What is finished — so you know what not to worry about
 
-Ordered by the founder's fourth amendment: **by hole, not by polish.**
-
-## Piece 1 — E3, units mismatch: implemented, measured, and refused
-
-**State.** `_unit_mismatch` exists in `audit.py:4677`, is unit-tested
-(`test_audit_unit_mismatch.py`), and is **deliberately not called by
-`audit()`** — the comment at `audit.py:816` records why: run against
-the corpus it produced 103 findings and all 103 were false alarms.
-
-**What is actually missing.** Not the check. The *inference* under it.
-E2 (`units/inference.py`) has never had its accuracy measured per
-dimension against E1's hand-labelled set — and the plan arms E3 « only
-where inference is measured-accurate ». So the work is:
-
-1. Confirm E1's labelled set exists and covers enough rows.
-2. Measure E2 per dimension (currency, scale, period, rate-vs-decimal)
-   against it, registered before looking.
-3. Arm E3 only on the dimensions that clear the bar; kill the flood
-   the usual way — every false alarm names a principle.
-
-**DONE test.** The flagship finding (« a monthly figure in an annual
-line ») exists with a published per-class number — *or* units stays
-out of the product and that is written down.
-
-## Piece 2 — D3/D4, the Chain's linking
-
-**State.** `chain/extract.py`, `store.py`, `propose.py`, `anchor.py`,
-`repository.py`, `router.py` all exist with tests. Six matcher rounds
-have run. The most recent (Kelso) scored **2 proposals, 13 abstentions
-out of 15 scorable rows — zero correct**, and the diagnosis was
-structural, not judgement: on 11 of 15 rows some non-truth line scores
-strictly higher than the truth line, and 4 rows cite a continuation
-page that carries **no labels at all** (a wide table printed as a
-two-page spread).
-
-**What is actually missing.** Document geometry, not matcher tuning.
-The extractor has to carry a row's label across a page break before
-the matcher can possibly be right. Then re-run the registered sample.
-
-**DONE test.** D3: proposal quality measured on a real deal set,
-judged from the documents. D4: a revised model re-checks its confirmed
-links with no model call, and the map survives.
-
-## Piece 3 — G2, chat's unanswerable questions
-
-**State.** The tools exist and are tested: `locate`, `trace_back`,
-`trace_forward`, `inventory`, `structure`, `versions`, `sources`
-(`agent/model_tools.py`, `test_model_tools.py`, `test_agent_tools.py`).
-Between them they cover all five canonical questions.
-
-**What is actually missing.** The judgement. « Answers 3 of 5 » was a
-stale lane assessment I repeated without checking, and the tool
-inventory suggests both reported gaps may already be closed —
-**nobody has re-tested.** So: run the five canonical questions against
-a real model, judge the answers, publish which ones hold.
-
-**DONE test.** All five answer correctly on a real model, judged, with
-every number cited to a cell or a page and out-of-model questions
-declined.
-
-## Piece 4 — B3, the arbiter
-
-**State.** The *routing* exists — `recalc/gate.py` marks a file an
-arbiter candidate and `service.py` names the arbiter as where a
-refused file goes. **No arbiter exists.** Four corpus files (2 WACC
-models at 95.8–96.3%, 2 draft PCFMs) sit in that bucket today, plus
-the GT3 file whose 1,294 `#NAME?` errors are LibreOffice 24.2 not
-knowing the XLOOKUP/LET generation.
-
-**Adjacent, and cheaper:** the container runs **LibreOffice 24.2.7.2**;
-the plan calls for **≥ 25.8**. Some of the arbiter's queue may be a
-version gap, not a real disagreement. Check that first.
-
-**DONE test.** A gate failure produces an arbiter verdict, not a shrug.
-
-## Piece 5 — C3/C4, the Watch's delta report and tiers
-
-**State.** `watch/delta.py`, `watch/tiers.py`, `watch/trace.py`,
-`watch/stealth` tests all exist. Version comparison measured **2.55×
-faster** this week (1,119.6 s → 438.4 s on a 15 MB pair, items and
-changed cells identical).
-
-**What is actually missing.** Two things.
-1. **Speed:** the test is « 12 MB in under two minutes ». A 15 MB pair
-   costs 438 s today, ~350 s scaled to 12 MB — about **3× over the
-   line**. The largest remaining item (210 s) is the engine clearing
-   the shape cache the audit just computed; that is mine to fix, and
-   it is a cache-lifetime change, not an algorithm change.
-2. **The DONE test itself:** the PR24 revision pair reproducing its 84
-   introduced defects through the delta report — **never run**.
-
-**DONE test.** As written in the plan, both halves.
-
-## Piece 6 — A1, the performance round
-
-**State.** In flight and most of the way there. The speed round landed
-(see Part 1). `a1-performance.md` is **stale** — it stops at rounds
-1–2 and does not contain this week's numbers. That is a documentation
-hole in a piece I am calling nearly done, which is exactly the kind of
-thing that makes a status untrustworthy.
-
-**What is actually missing.**
-1. Append the speed round to `a1-performance.md` with its method.
-2. The spec's sentence — 600k cells read in under a minute — is still
-   **owed to a quiet machine**. This box swings ±30% and cannot honestly
-   measure it. Heaviest file reads in 121 s here; « under a minute »
-   is not proven and I will not claim it.
-
-**DONE test.** The spec's sentence is true on the biggest corpus file,
-measured — on a machine that can measure it.
-
-## Piece 7 — A5, house rules as configuration
-
-**State.** `house_rule` exists across `models/tieout.py`,
-`repository.py`, `service.py`, `endpoints.py`, and the Settings screen
-is wired. **Not verified**: whether two different firm configurations
-actually produce two correctly different reports from one model, and
-whether the record shows what was disabled and by whom.
-
-**A third part, confirmed absent.** A5's DONE test ends « findings
-mapped to the named modelling standards », and `swens.md` § 7 says why
-it is there: « so a reviewer reads them in the vocabulary they already
-use rather than in Swens's. » No standards vocabulary exists anywhere
-in the tree. This half of the piece has never been started, and I
-never called it out until the § 3 check found it.
-
-**DONE test.** Two firm configs, one model, two correctly different
-reports, with the disabling recorded — and every finding carrying its
-standards reference.
-
-## Piece 8 — B5/B6, relation mining and diagnosis
-
-**State.** `recalc/mine.py`, `recalc/laws.py`, `recalc/narrow.py`
-exist with tests (43 recalc tests green). **B6 is HELD by the
-founder-relayed amendment**, pending evidence from the Ofwat run about
-whether real regressions break one rule or many.
-
-**What is actually missing.** B5's registered measurement in both
-directions: overlap with the 84 static-found regressions, *and* the
-set B5 flags that the static engine missed, hand-verified. The second
-set is where the thesis lives or dies, and it has not been run.
-
-**DONE test.** Mined laws stable across two mining runs; planted
-law-breaking edits caught at a measured rate with a per-class table;
-zero false law-violations on the unedited model.
-
-## Piece 9 — D5, the unsourced-number finding
-
-**State.** Named in `chain/__init__.py` and `chain/store.py` as future
-work. **Nothing implements it.**
-
-**Why it matters more than its size.** `swens.md` § 3b makes it a
-finding class of its own — « a typed number with no confirmable source
-is not merely undocumented; it is a number nobody can defend » — and
-§ 2 ties it to the growing case: machine-drafted models « do not leave
-a broken link behind, because they never had a link ». Untraceable is
-a defect class, and this is the check that names it.
-
-**The risk to manage.** It floods trivially: every typed number in a
-model with no documents attached is unsourced. The plan already says
-so — « measured for flood on real models first ». Depends on Piece 2
-having a working store to ask.
-
-**DONE test.** In the report, measured for flood on real models first.
-
-## Piece 10 — the Grid's terms table (§ 3d; missing from the plan)
-
-**State.** Not built, and **not in `swens-plan.md` at all.** `swens.md`
-§ 3d: « the Grid also holds the second use of extraction: pulling the
-terms out of the contracts, term sheets and quotes into a structured
-table, so the model's inputs can be tested against them at scale
-rather than one at a time. »
-
-**What it is.** D1's extraction pointed at a different consumer. D3
-matches one model number to one document fact; this inverts it —
-extract the deal's terms into a table, then test the model's inputs
-against the table wholesale. It is also the natural repair for the
-Chain's scale problem: matching one number at a time against 4,913
-document numbers is the search that has failed six rounds.
-
-**DONE test.** To be written before any code, per the method. First
-task is the harness, not the table.
-
-## Piece 11 — G3, the Excel panel end to end
-
-**State.** The panel exists — 3,420 lines under `clients/apps/panel/src`
-(Excel, Word, PowerPoint and Outlook hosts), wired to `/v1/tieout`.
-**Not verified**: whether findings beside the cell, the chain behind a
-number, accept/explain-on-the-record and proposed corrections all run
-against the real APIs end to end, which is G3's DONE test.
-
-This was absent from the first version of this file entirely — the
-plan lists G3 and I did not carry it across.
-
-**DONE test.** Panel runs against the findings, chain, accept/explain
-and correction APIs end to end.
-
-## Piece 12 — the manual-calculation refusal (§ 5)
-
-**State.** Not built. `calcPr` is read in three places — the writer
-sets `fullCalcOnLoad`, the recalculator pushes the file's iteration
-settings, the gate reads `iterateDelta` — but **`calcMode` appears
-nowhere in `polar/`.**
-
-**What is missing.** `swens.md` § 5 is a trust commitment, not a
-feature: « if a workbook was saved with calculation set to manual,
-Swens refuses to reconcile against numbers Excel does not believe, and
-says so, rather than quietly producing a comparison that means
-nothing. » Today a manual-calculation workbook is reconciled silently
-against values Excel itself considers stale. That is the exact failure
-mode the sentence forbids, and it is small to fix.
-
-**DONE test.** A manual-calculation workbook produces a named refusal
-saying what to do about it, not a comparison.
+Write path and changeset · the golden-master gate · the static engine
+(80.1% useful, 2.9% false positives) · financial checks · behavioural
+checks (37/37) · the recalculator and its fidelity gate · legacy
+`.xls` and `.xlsb` reading · the speed round · version diff and shift
+detection · verifying-trace fingerprints · the Watch on documents ·
+the findings API and the Grid · the deck tie-out (100%/100%) · the
+report · the CUSTODES benchmark and scorer · shape normalization ·
+custody by construction.
 
 ---
 
-# Part 3 — not started
+# 6. Debts I am carrying, named
 
-| Item | What it is | Why it is not started |
-| --- | --- | --- |
-| **A2 remainder** | ExceLint scored on CUSTODES with our scorer | Blocked: the ExceLint repo was never approved into the session |
-| **A3 candidates** | The five mined checks through the normal loop | Queued behind the holes; four of five were already refused with reasons |
-| **A4** | Coverage on the face of the report (« 102 checked, 26 not ») | `test_audit_coverage.py` exists — **status not verified**, listed here rather than claimed done |
-| **C6** | The rule-set diff over mined laws | Gated on two stability preconditions (seed stability, cosmetic invariance) that have not been measured. Correctly gated — not a delay |
-| **D6** | Deck tie-out re-pointed at the Chain's store | Depends on Piece 2 |
-| **D7** | Outward checks — EDGAR, Companies House, rate sources | **Confirmed absent**: no `edgar` or `companies_house` anywhere in the tree |
-| **F3** | Determined-fix classes with the « determined, not inferred » test each | `write/edit.py` has the mechanism (`replacement_for`); the classes and their refusal cases do not exist |
-| **F4** | Custody — corrections held by Swens, never written to customer stores | Enforced-by-construction test not written |
-| **H1–H2** | Files-only engagement end to end; closed-by-default posture | `security-posture.md` exists; the end-to-end run has not happened |
-| **H3** | Connection mode | Explicitly not on the critical path |
-| **Piece 13** | § 7 — model calls through one configurable client, so a firm can point Swens at its own cloud deployment | **Confirmed absent**: API keys are configurable, the endpoint is not. Enterprise-deployment item, lowest priority of anything named here |
-| **The four proofs** | Population, units, catch-rate, delivery | None started. Proof 4 (design partners) is **deferred by the founder**, not failed |
-
----
-
-# Part 4 — the debts I am carrying, named
-
-Things that are nobody's plan item but will bite if left:
-
-1. **`a1-performance.md` is stale** (Piece 6 covers it).
-2. **~40 research documents under `docs/pierce/` are cited by nothing.**
-   `a6-xls-routes.md` (329 lines on reading `.xls`) is the proof of
-   cost: I rediscovered its contents by hand this week. Each document
-   gets an owner or gets archived.
-3. **The lane orders under `orders/` are dead** as of today and should
-   say so at the top rather than read as live instructions.
-4. **Sentinel's units done-test was written wrong by me** — it assumed
-   a check that E2's accuracy does not yet permit arming. Piece 1
-   restates it correctly.
-5. **My prose-to-code ratio was 83 lines of code to 2,079 lines of
+1. **Two documents were three too many.** This file replaces the split
+   between the plan, the status and the orders. `orders/` is stood
+   down and says so at the top.
+2. **The lane orders and lane logs are history now**, not instructions.
+3. **My prose-to-code ratio was 83 lines of code to 2,079 lines of
    documents over two days.** That is the measured version of « running
-   around in circles », and it is the reason this file is short and
-   the next thing I do is code.
+   around in circles ». This file is the last long document before the
+   next piece of code.
+4. **`a1-performance.md` was stale for three days** while I quoted its
+   conclusions. Fixed 28 Aug; the lesson is that a document of record
+   that trails the work is worse than no document.
+5. **No intake log for the founder's sources** (Piece 17).
