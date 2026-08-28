@@ -22,6 +22,7 @@ from typing import Any
 from polar.models.tieout import ArtifactKind
 
 from .audit import audit
+from .binary import BinaryUnreadable
 from .deck import read_deck
 from .figures import Figure
 from .legacy import LegacyUnreadable
@@ -34,7 +35,7 @@ from .workbook import Cell, read_workbook
 #: What each kind of artifact is expected to arrive as. A `.pptx` uploaded
 #: as a model is a user error worth naming rather than a parse failure.
 SUFFIXES: dict[ArtifactKind, tuple[str, ...]] = {
-    ArtifactKind.model: (".xlsx", ".xlsm", ".xls", ".xlt"),
+    ArtifactKind.model: (".xlsx", ".xlsm", ".xlsb", ".xls", ".xlt"),
     ArtifactKind.deck: (".pptx", ".pptm"),
     ArtifactKind.memo: (".docx", ".doc"),
     ArtifactKind.source: (".pdf",),
@@ -137,6 +138,10 @@ def _read_source(path: str) -> Ingested:
 def _read_model(path: str) -> Ingested:
     try:
         book = read_workbook(path)
+    except BinaryUnreadable as error:
+        # Already a sentence a person can act on — the binary format
+        # needs a converter, and the message names the two ways out.
+        raise Unreadable(str(error)) from error
     except LegacyUnreadable as error:
         raise Unreadable(_legacy_reason(str(error))) from error
     except Exception as error:

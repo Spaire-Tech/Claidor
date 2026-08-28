@@ -1,0 +1,169 @@
+#!/bin/bash
+# The gate every change passes before anybody says it works.
+#
+# Why this exists. On 28 Aug a full test run reported **461 errors**,
+# and a later one **741**. None were real. The first starved beside a
+# 9 GB job; the second started while another suite was still running, and
+# two suites share one postgres, one redis and one minio. A clean run was
+# 1 failed, 1057 passed — and that single real failure was a test
+# correctly catching a behaviour change, the one thing that mattered,
+# nearly lost in the noise.
+#
+# The lesson is not « be careful ». It is that **a test result taken
+# under contention is not a test result**, that the difference is not
+# visible by eye, and that the judgement cannot be left to whoever is in
+# a hurry. Every guess made about those numbers by hand was wrong twice
+# before this file existed.
+#
+# So this does three things a person under pressure will not:
+#   1. takes the heavy-job lock, so the suite never runs against a job
+#      that will starve it;
+#   2. re-runs any failure **on its own** before reporting it, which
+#      separates a real failure from a starved one — a test that fails
+#      alone is real, a test that passes alone was contention;
+#   3. refuses to print a pass unless lint, types and tests all pass.
+#
+#   dev/verify                      # tieout suite (the default target)
+#   dev/verify tests/tieout/test_binary.py
+#   dev/verify --all                # every test in the server
+set -uo pipefail
+
+cd "$(dirname "$0")/../server" || exit 2
+
+target="tests/tieout"
+case "${1:-}" in
+    --all) target="tests" ;;
+    "") ;;
+    *) target="$1" ;;
+esac
+
+red() { printf '\033[31m%s\033[0m\n' "$*"; }
+green() { printf '\033[32m%s\033[0m\n' "$*"; }
+
+failed=0
+
+# **A second suite is worse than a heavy job.** Two pytest runs share one
+# postgres, one redis and one minio, and the loser reports hundreds of
+# setup errors indistinguishable from real breakage: a run started beside
+# a suite that was still going produced 741 of them on an otherwise idle
+# machine, and three of those were nearly believed. The heavy lock does
+# not catch it, because a bare `pytest` never takes the lock. So refuse
+# outright, and name what is already running.
+others="$(../dev/kill-job 'pytest tests' --dry 2>/dev/null | grep -E '[0-9]+ .*(uv run )?pytest tests' | grep -v 'grep -E' | head -3)"
+if [ -n "${others}" ]; then
+    red "another test run is going; this one would report false failures:"
+    echo "${others}"
+    red "wait for it, or stop it: dev/kill-job 'pytest tests'"
+    exit 1
+fi
+
+# The gate is what *you* changed, not the tree. The repository carries
+# pre-existing lint debt in other lanes' scratch scripts, and a gate that
+# fails on somebody else's file every time is a gate everybody learns to
+# ignore. The rule is « you may not add one », which is enforceable.
+mapfile -t changed < <(
+    {
+        git -C .. diff --name-only --diff-filter=ACMR HEAD
+        git -C .. ls-files -o --exclude-standard
+        git -C .. diff --name-only --diff-filter=ACMR @{upstream}...HEAD 2>/dev/null
+    } | grep -E '^server/.*\.py$' | sed 's|^server/||' | sort -u
+)
+
+echo "== lint (${#changed[@]} changed file(s)) =="
+if [ ${#changed[@]} -eq 0 ]; then
+    green "ruff check: nothing changed"
+    green "ruff format: nothing changed"
+else
+    if uv run ruff check -q "${changed[@]}" > /dev/null 2>&1; then
+        green "ruff check: ok"
+    else
+        red "ruff check: FAIL"
+        uv run ruff check "${changed[@]}" 2>&1 | grep -E '^[A-Z]+[0-9]+|-->' | head -10
+        failed=1
+    fi
+
+    echo "== format =="
+    if uv run ruff format --check -q "${changed[@]}" > /dev/null 2>&1; then
+        green "ruff format: ok"
+    else
+        red "ruff format: FAIL (run: uv run ruff format <your files>)"
+        failed=1
+    fi
+fi
+
+echo "== types =="
+# The tree has pre-existing mypy errors outside tieout, so this gate is
+# the tieout package: a lane may not add a new one, and is not asked to
+# fix somebody else's.
+types="$(uv run mypy polar/tieout/ 2>&1 | grep -c '^polar/tieout/.*error:' || true)"
+if [ "${types}" -gt 3 ]; then
+    red "mypy polar/tieout: ${types} errors (3 are pre-existing)"
+    uv run mypy polar/tieout/ 2>&1 | grep '^polar/tieout/.*error:' | head -8
+    failed=1
+else
+    green "mypy polar/tieout: ok (${types} pre-existing)"
+fi
+
+echo "== tests: ${target} =="
+log="$(mktemp)"
+# Under the lock: a suite that starves reports failures that are not
+# real, which is the whole reason this file exists.
+../dev/heavy uv run pytest "${target}" -q > "${log}" 2>&1
+tail -1 "${log}"
+
+# Whatever failed, run it again alone. A real failure fails twice.
+# A parametrised id carries spaces — `test_x[AuthSubjectFixture(subject=
+# 'user', scopes={...})]` — so it cannot be split on whitespace. Cutting
+# at the first space produced three « real failures » that were only
+# malformed ids, on a file that passes 13 of 13 alone.
+mapfile -t broken < <(
+    grep -E '^(FAILED|ERROR) ' "${log}" |
+        sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' |
+        sort -u
+)
+if [ ${#broken[@]} -gt 20 ]; then
+    # Hundreds of failures at once is never hundreds of bugs — it is one
+    # environment problem wearing a costume. Re-running them one at a
+    # time takes longer than the suite it is checking (740 of them ran
+    # for over half an hour here). Re-run the suite instead.
+    red "${#broken[@]} failures — that is an environment fault, not that many bugs"
+    echo "-- re-running the whole suite once, alone --"
+    ../dev/heavy uv run pytest "${target}" -q > "${log}" 2>&1
+    tail -1 "${log}"
+    if grep -qE '^(FAILED|ERROR) ' "${log}"; then
+        red "still failing on a clean run — real:"
+        grep -E '^(FAILED|ERROR) ' "${log}" | head -10
+        failed=1
+    else
+        green "clean on the second run; the first was contention"
+    fi
+elif [ ${#broken[@]} -gt 0 ]; then
+    echo "-- re-running ${#broken[@]} failure(s) alone to tell real from starved --"
+    real=()
+    for one in "${broken[@]}"; do
+        if uv run pytest "${one}" -q > /dev/null 2>&1; then
+            echo "   passed alone (was contention): ${one}"
+        else
+            real+=("${one}")
+            red "   fails alone (real): ${one}"
+        fi
+    done
+    if [ ${#real[@]} -gt 0 ]; then
+        failed=1
+    else
+        green "every failure was contention; the suite is clean"
+    fi
+elif ! grep -qE '[0-9]+ passed' "${log}"; then
+    red "the suite did not report a pass line"
+    failed=1
+else
+    green "tests: ok"
+fi
+rm -f "${log}"
+
+echo
+if [ "${failed}" -ne 0 ]; then
+    red "VERIFY: FAIL — this does not ship"
+    exit 1
+fi
+green "VERIFY: pass"

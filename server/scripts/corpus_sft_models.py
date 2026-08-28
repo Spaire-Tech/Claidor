@@ -14,12 +14,20 @@ convention: `{Project Words}+Financial+Model.{ext}` at the bucket
 root. Discovered by probing a file we already held, then swept
 across the portal's alphabetical index.
 
-Format note, honestly: the portal publishes `.xlsm`, `.xlsb` and
-`.xls`. Our reader is openpyxl-based and reads the XML formats only,
-so `.xlsb` (binary) and `.xls` (OLE2) are fetched and kept but are
-**format-blocked** until plan step A6 lands. This script fetches all
-three and labels which is which; it never pretends a blocked file is
-a subject.
+Format note, honestly, and **corrected on 28 August**: the portal
+publishes `.xlsm`, `.xlsb` and `.xls`. All three are now readable.
+`.xls` always was — `polar.tieout.legacy` decompiles BIFF8 formulas
+directly — and this file was wrong to call it blocked. `.xlsb` became
+readable when `polar.tieout.binary` landed, by converting through
+LibreOffice.
+
+What the fetch found once they could be opened, and it is worth
+stating because it closes a question: **they are value-only too**, the
+same as the `.xlsm` models. The formula counts LibreOffice reports on
+them are its own — it writes every boolean cell out as `=TRUE()` or
+`=FALSE()`, which is 10,417 of the 10,417 « formulas » in one of
+these models. So the population proof's finding stands, and now
+stands on every file rather than on the readable subset.
 
 Usage:
     uv run python -m scripts.corpus_sft_models
@@ -42,7 +50,7 @@ MODELS: dict[str, tuple[str, str]] = {
     "levenmouth": ("Levenmouth Academy", "xlsm"),
     "newbattle": ("Newbattle Centre", "xlsm"),
     "oban_campbeltown": ("Oban and Campbeltown High Schools", "xlsm"),
-    #: format-blocked until A6 — fetched so the gap stays visible.
+    #: Binary and OLE2 formats — readable since 28 Aug (binary.py, legacy.py).
     "barrhead": ("Barrhead High School", "xlsb"),
     "largs": ("Largs Academy", "xlsb"),
     "inverclyde": ("Inverclyde Care Home", "xls"),
@@ -73,7 +81,9 @@ ABSENT = (
     "North Ayrshire Community Hospital",
 )
 
-BLOCKED = {"xlsb", "xls"}
+#: Nothing is format-blocked any more; kept as a name so the counting
+#: below still distinguishes the formats that need a converter.
+CONVERTED = {"xlsb"}
 
 
 def _url(project: str, extension: str) -> str:
@@ -82,10 +92,10 @@ def _url(project: str, extension: str) -> str:
 
 def main() -> int:
     HERE.mkdir(parents=True, exist_ok=True)
-    readable = blocked = 0
+    direct = converted = 0
     for stem, (project, extension) in MODELS.items():
         target = HERE / f"{stem}_model.{extension}"
-        note = " [format-blocked until A6]" if extension in BLOCKED else ""
+        note = " [read via LibreOffice conversion]" if extension in CONVERTED else ""
         if target.exists():
             print(f"[ ok ] {target.name}: already fetched{note}", file=sys.stderr)
         else:
@@ -99,13 +109,13 @@ def main() -> int:
             print(
                 f"[ ok ] {target.name}: {len(payload):,} bytes{note}", file=sys.stderr
             )
-        if extension in BLOCKED:
-            blocked += 1
+        if extension in CONVERTED:
+            converted += 1
         else:
-            readable += 1
+            direct += 1
 
     print(
-        f"\n{readable} readable models, {blocked} format-blocked, "
+        f"\n{direct} models read directly, {converted} through conversion, "
         f"{len(ABSENT)} indexed projects with no model published",
         file=sys.stderr,
     )

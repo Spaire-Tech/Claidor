@@ -2103,14 +2103,35 @@ class TestWhatIntakeWillNotRead:
 
     Found by the corpus rather than by a customer: two of eleven
     eligible models arrived as `.xlsb` (`population-proof.md`,
-    27 Aug), which openpyxl cannot open at all. Widening the reader is
-    plan step A6 and another lane's; what is tested here is that the
-    refusal says what to do, and that the formats it names are the
-    formats the reader actually takes.
+    27 Aug). **That one is no longer refused** — since 28 Aug
+    `polar.tieout.binary` converts it and the reader takes it — so what
+    is tested here is that the formats still named say what to do, and
+    that `.xlsb` is not among them.
     """
 
     @pytest.mark.auth
-    async def test_the_binary_workbook_is_refused_with_the_way_out(
+    async def test_the_binary_workbook_is_no_longer_refused_on_format(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """A `.xlsb` is read now, so it may not be turned away for being
+        one. These bytes are not a workbook, so this upload still fails —
+        the point is *why*: for its contents, not for its extension."""
+        deal = await _deal_for(session, save_fixture, user)
+        response = await client.post(
+            f"/v1/tieout/deals/{deal.id}/artifacts",
+            files={
+                "file": ("model.xlsb", b"PK\x03\x04binary", "application/octet-stream")
+            },
+        )
+        assert response.status_code != 415
+        assert "Save As" not in str(response.json().get("detail", ""))
+
+    @pytest.mark.auth
+    async def test_a_format_we_really_cannot_read_says_what_to_do(
         self,
         client: AsyncClient,
         session: AsyncSession,
@@ -2120,15 +2141,11 @@ class TestWhatIntakeWillNotRead:
         deal = await _deal_for(session, save_fixture, user)
         response = await client.post(
             f"/v1/tieout/deals/{deal.id}/artifacts",
-            files={
-                "file": ("model.xlsb", b"PK\x03\x04binary", "application/octet-stream")
-            },
+            files={"file": ("model.numbers", b"whatever", "application/octet-stream")},
         )
         assert response.status_code == 415
-        detail = response.json()["detail"]
-        # The fix, not just the fact: a banker can act on this in Excel.
-        assert "Save As" in detail
-        assert ".xlsx" in detail
+        # The fix, not just the fact: a person can act on this.
+        assert ".xlsx" in response.json()["detail"]
 
     @pytest.mark.auth
     async def test_the_formats_named_are_the_formats_read(

@@ -825,17 +825,15 @@ async def identify(
 
 
 #: Excel ships more formats than this reads, and a person who has one
-#: needs the way out rather than the list. `.xlsb` is the one the
-#: corpus actually arrived in — two of eleven eligible models, found
-#: by the corpus rather than by a customer (`population-proof.md`,
-#: 27 Aug). Widening the reader is plan step A6 and another lane's;
-#: what belongs here is a refusal a banker can act on in ten seconds.
+#: needs the way out rather than the list.
+#:
+#: **`.xlsb` was the first entry here and is no longer refused** (28
+#: Aug): `polar.tieout.binary` converts it through LibreOffice and the
+#: reader takes it like anything else. It was the format the corpus
+#: actually arrived in — two of eleven eligible models, found by the
+#: corpus rather than by a customer (`population-proof.md`) — so the
+#: refusal it used to get was the most-earned one on this list.
 UNREADABLE_EXCEL = {
-    ".xlsb": (
-        "an .xlsb is Excel's binary workbook, which this cannot open. "
-        "In Excel: File → Save As → Excel Workbook (.xlsx), then upload "
-        "that copy"
-    ),
     ".csv": (
         "a .csv carries values with no formulas, and the checks read "
         "formulas. Upload the workbook it came from"

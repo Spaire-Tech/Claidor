@@ -43,6 +43,7 @@ from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.formula import ArrayFormula
 
+from .binary import converted_copy, unartifact
 from .legacy import read_legacy
 
 #: How many text cells a row must have, outside the label column, before
@@ -331,8 +332,15 @@ class _Grid:
             self.last_column = column
 
 
-def _grid_of(written_sheet: Any, values_sheet: Any) -> _Grid:
-    """One sheet from both loads, streamed into a :class:`_Grid`."""
+def _grid_of(written_sheet: Any, values_sheet: Any, converted: bool = False) -> _Grid:
+    """One sheet from both loads, streamed into a :class:`_Grid`.
+
+    `converted` marks a workbook that reached us through LibreOffice
+    rather than from its author — a `.xlsb`. The converter writes
+    booleans out as `=TRUE()` and `=FALSE()`, and those are undone here,
+    at the one place every value passes through. See
+    :mod:`polar.tieout.binary`.
+    """
     grid = _Grid()
     cells = getattr(written_sheet, "cells", None)
     if isinstance(cells, dict):
@@ -354,7 +362,7 @@ def _grid_of(written_sheet: Any, values_sheet: Any) -> _Grid:
             if cell.value is None:
                 continue
             at = (cell.row, cell.column)
-            grid.written[at] = cell.value
+            grid.written[at] = unartifact(cell.value) if converted else cell.value
             grid.formats[at] = getattr(cell, "number_format", None)
             grid._saw(*at)
     for row in values_sheet.iter_rows():
@@ -376,6 +384,15 @@ def read_workbook(path: str) -> Workbook:
     be, because the corpora with real spreadsheets in them are all the
     old format and the models a bank sends are all the new one.
     """
+    converted = path.lower().endswith(".xlsb")
+    folder = None
+    if converted:
+        # Excel's binary format, which openpyxl refuses outright. It is
+        # converted to `.xlsx` and read like anything else; the folder
+        # holding the conversion has to outlive the load, so it is kept
+        # until the reading below is done with it.
+        path, folder = converted_copy(path)
+
     if path.lower().endswith((".xls", ".xlt")):
         formulas, values = read_legacy(path)
         close = None
@@ -408,7 +425,7 @@ def read_workbook(path: str) -> Workbook:
             # sort of thing only a real model tells you.
             if not hasattr(sheet, "max_row"):
                 continue
-            grids[name] = _grid_of(sheet, values[name])
+            grids[name] = _grid_of(sheet, values[name], converted)
             book.populated[name] = len(grids[name].written)
         names = _names_of(formulas, grids)
         every_name = list(names.book.items()) + [
@@ -434,6 +451,10 @@ def read_workbook(path: str) -> Workbook:
         if close is not None:
             for one in close:
                 one.close()
+        # The conversion is only ever needed for the load above; the
+        # temporary copy of somebody's model does not outlive the read.
+        if folder is not None:
+            folder.cleanup()
 
 
 def _names_of(formulas: Any, grids: dict[str, "_Grid"]) -> Names:
