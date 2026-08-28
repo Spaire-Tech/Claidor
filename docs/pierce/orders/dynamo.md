@@ -148,3 +148,27 @@ ground truth is not always right; say so in any number you publish.
 
 None of this changes E1's registration or the blind-scoring rule. It
 changes what E2 must handle and the order you build it in.
+
+## Addendum (28 Aug): the period key is now your highest-value work
+
+Your E2 verdict is adopted as written, per dimension, and Sentinel is
+arming **only** `currency` and `scale` on it (E3a). The flagship
+finding — « a monthly figure in an annual line » — is a `period`
+mismatch, so **`period` is now the single thing standing between us
+and the most quotable check in the product.**
+
+You named the fix yourself: « a second hand-labelled set drawn by
+someone else is the highest-value thing anyone could add to this
+lane », and you named the trap — the 3,796-row author key holds one
+value for `kind`, so its 96.4% is not evidence about the hard cases,
+and E1's hundred is self-graded.
+
+**So: build the period answer key properly, and do not grade your own
+homework.** Register the draw, label *before* running the inference,
+and if the honest way to avoid self-grading is to have the lead draw
+or judge the sample, say so and I will do it — a lead who adjudicates
+a sample he did not design is a better referee than the lane that
+wrote the inference. Report `period`'s accuracy per corpus dialect,
+not blended: the founder's fourth research round shows monthly models
+are absent from every corpus anyone here holds, which may be exactly
+why `period` is weak.

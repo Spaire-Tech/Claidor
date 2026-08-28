@@ -167,3 +167,41 @@ answer key for Prism nobody planted.
 sample**; the Enron set and our CUSTODES/EUSES subjects draw on the
 same era of business spreadsheets, and four of seven closed-deal
 candidates turned out to be files we already had.
+
+## Priority correction (28 Aug): E3 comes before A6, and it splits in two
+
+The lead had A6 ahead of E3. On reflection that was wrong: intake
+unlocks *future* measurement, armed unit checks are *product*. The
+founder's bar is a complete product, so the visible capability goes
+first. **E3 is now your top item.**
+
+Dynamo's E2 verdict is in and it is per-dimension (its handoff, 28
+Aug): **ARM** `kind`, `currency`, `scale` — `currency` and `scale`
+answer on only 34.6% of rows but are **wrong on none**; **ARM WITH
+CARE** `rate_form`; **DO NOT ARM** `period` (« wrong on 24.9% /
+64.1% and is not to be quoted ») or `b5_type`.
+
+**So E3 splits, and the split is the point:**
+
+1. **E3a — arm what is measured (do this now).** Currency mixes and
+   scale mixes (a thousands figure summed with a millions one) —
+   both on dimensions E2 answers with **zero wrong**. Normal loop:
+   registration, planted defects, false-positive price, gate. Abstain
+   wherever E2 abstains; a finding may only rest on a dimension E2
+   *answered*, never on one it declined. These are real, defensible
+   findings no competitor produces, and they are shippable on
+   today's measurement.
+2. **E3b — the period check waits, and says why.** « A monthly
+   figure in an annual line » is a `period` mismatch, and `period` is
+   the dimension E2 says not to quote. **Do not arm it on the
+   current inference.** It is blocked on measurement, not on code,
+   and the record must say that plainly wherever the flagship
+   finding is discussed — including to the founder.
+3. **Then A6** (intake), unchanged in scope and still the gate on
+   the Enron corpus.
+
+One instruction that overrides the usual autonomy: if the
+false-positive price of E3a on the corpus is anything but tiny, **do
+not tune it to pass**. Report it. A unit finding that cries wolf is
+worse than no unit finding, because it teaches a reviewer to ignore
+the class that contains the best finding we will ever ship.
