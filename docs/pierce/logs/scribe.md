@@ -5661,3 +5661,132 @@ rather than a better matcher.
   here is a ceiling experiment, none is a round, and none revises them.
 - Nothing above loosens a bar. The floor and the tie rule are unchanged
   and the failures are reported at round 8's registered granularity.
+
+## 28 August 2026, twenty-ninth « go » — orders reset. The answer key is registered and its document is chosen.
+
+New orders: **stop hunting corpora, build the answer key.** I read
+`d3-reckoning.md` first, as instructed. It is right about my lane and I
+owe it two corrections — one against me, one against my own comfort.
+
+### Correction to me, and the lead is right
+
+My handoff said, as a heading: **« D3 has never made a correct
+proposal. »** Unqualified, that is **false**, and I have verified the
+counter-evidence rather than taking it on trust:
+`accuracy-backlog.md:967` records **5 of 6 true links, 83% precision**,
+on a real Ofgem pair against ~140,000 candidate cells — graded **fail on
+recall**, not on precision.
+
+My tally was over `scribe-d3-round*-verdicts.json`, which is **this
+lane's rounds on `chain/propose.py`**. I published a lane-scoped number
+under a task-scoped heading, and it travelled. The handoff now says
+which is which, and the reckoning's point stands: *do not treat « no
+correct link has ever been made » as true, because it is not.*
+
+### And a correction the other way, against my own comfort
+
+The reckoning classes FERC as a **no-show** — « FERC (no cells at all —
+the model is published as a PDF) ». **That is no longer true, and the
+evidence is mine.**
+
+The native workbook was found on the twenty-third turn:
+`rmu-2016-formula-rate.xlsx`, 262,916 bytes, magic `504b0304`, sha256
+`01be958d92ca…`, **4,472 cells, 2,239 formulas, 47 citation cells**,
+paired with a real 132-page FERC Form 1 whose every cited page resolves,
+with **the filer's own citations as truth**. Round 8 scored 15 rows on
+it and lost 0/2/13.
+
+So FERC was **Type A — a fair test that lost** — not Type B. The honest
+count is **two losses and several no-shows, not one.** That is worse for
+my lane than the reckoning currently says, and it is what happened. It
+also matters for the plan: the reckoning's « we still do not know
+whether the matcher works » is now supported by *two* independent fair
+tests rather than one, and both lost for causes that were then located.
+
+Orders item 3 — « keep chasing the native workbook » — is already
+satisfied. What is not is the table parsing, and that stands.
+
+### The protocol, registered before the first link exists
+
+`docs/pierce/scribe-answer-key-protocol.md`. The parts that matter:
+
+**Three rules that make the key honest.** Model labels are written from
+the deal's meaning, **never copied from the document's wording** — a
+copied label voids the round. Two separated passes, with the link log
+**committed before the matcher is ever pointed at the document**. The
+matcher is not consulted during construction.
+
+**What is admitted rather than mitigated away.** One author builds and
+runs. The orders offer two weakenings — a separate build pass, or a
+model built earlier for another purpose — and **only the first is
+available to this lane, so only the first is claimed.** A model built
+from a document is also more complete than a real one; recorded, not
+corrected, because correcting it by hand is re-cutting the sample.
+
+**The difficulty register, which is the point.** Every link is tagged as
+it is logged — `verbatim`, `synonym`, `in-table`, `in-prose`,
+`split-run`, `rounded`, `unit-shift`, `repeated` — and results are
+reported **per tag**. « 9 of 20 » teaches nothing; « 6 of 6 verbatim,
+1 of 7 synonym, 0 of 4 split-run » names what to build next. This is
+what turns the key from another pass/fail into a diagnosis, and it is
+registered rather than added afterwards.
+
+**Two kill criteria in advance.** If the matcher scores worse on
+`verbatim` than on `synonym`, the *harness* is broken and nothing is
+published until it is found. If any label proves to be a copy of its
+document line it is struck and reported; **more than a fifth struck
+voids the whole key.**
+
+**A concern, recorded before the work rather than after:** the binding
+constraint measured last turn is **page selection**, so a key searched
+with today's finder will very likely fail for a cause already known.
+That is why the register and `doc_page` exist — they make the
+page-selection half separable from the row-matching half at scoring
+time.
+
+### The document — selection rule executed, no second look
+
+The rule was frozen first, then run. The first document meeting all four
+conditions is taken, and **it was taken**:
+
+> **The executed £3,226,960,000 credit facility agreement between the
+> Commissioners of HM Treasury and Ireland, December 2010**, drafted by
+> Allen & Overy, published by HM Treasury.
+
+| | |
+|---|---|
+| bytes / magic / sha256 | 306,393 · `25504446` %PDF · `b70636bae70c17cf` |
+| native, not a scan | 74,896 characters in the text layer |
+| pages | 34 |
+| D1 v5 | **326 numbers, 0 refusals** |
+| numeric / pricing terms | **63** candidates |
+
+Executed, public, a named borrower, real pricing — `Commitment means
+£3,226,960,000`, `Margin means 2.29 per cent. per annum` — and never
+read by this lane before. Re-fetchable and byte-checked by
+`scripts/corpus_answer_key_fetch.py`.
+
+**And it brought its own hard case, unchosen:** page 10 prints **eight
+identical repayment instalments of £403,370,000**, distinguished only by
+the words *Third, Fourth, Fifth…*. That is the `repeated` tag at its
+worst, it arrived with the document rather than being selected for, and
+it is exactly the ambiguity that beat the FERC round.
+
+### I stopped hunting when the orders said to
+
+Two probes went to Contracts Finder before this: its attachments are
+tender packs, not executed agreements. I noticed I was one step from the
+corpus-hunting the orders had just told me to stop, said so, gave myself
+one targeted query, and it landed. Recording the near-miss because the
+habit is the thing being corrected, not the outcome.
+
+### Turn's end state
+
+- Protocol registered; document selected, fetched, byte-verified and made
+  re-fetchable. **No link has been logged yet** — construction is a real
+  pass and is next turn's work, not a rushed end-of-turn one.
+- `corpus_answer_key_fetch.py`: ruff, ruff-format and mypy clean, and run
+  end to end against the recorded sha256.
+- No change to the chain package.
+- **Kelso**: noted as live, not closed, per orders item 4. Nothing to do
+  until the bytes arrive.

@@ -368,7 +368,22 @@ scores strictly higher. The answer is not reachable with the evidence
 the matcher may use, so the abstentions are correct and the two
 proposals are the failure.
 
-### READ THIS BEFORE YOU IMPROVE ANYTHING: D3 has never made a correct proposal
+### CORRECTED: **Scribe's** rounds have never made a correct proposal — the task has
+
+An earlier version of this section said "D3 has never made a correct
+proposal" without qualification. **That is wrong as written**, and the
+lead was right to correct it. Both of these are true:
+
+- **`accuracy-backlog.md:967`** — an earlier implementation of this task
+  (the linker rounds) scored **5 of 6 true links, 83% precision**, on a
+  real Ofgem Finance Annex ↔ GD-BPFM pair against ~140,000 candidate
+  cells. It graded **fail on recall**, not on precision. It was
+  discounted for running document-from-model, which matters for a
+  sentence in a report and **not at all for the algorithm**.
+- The table below is **this lane's own rounds**, on `chain/propose.py`.
+  Scope it that way whenever you quote it.
+
+### This lane's rounds: 0 correct proposals
 
 Tallied from every verdict file in `docs/pierce/scribe-d3-round*-verdicts.json`:
 
