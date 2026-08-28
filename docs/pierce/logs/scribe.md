@@ -5884,3 +5884,91 @@ separate one — **ED2 is 23.5 s for 43,178 cells**, 20× slower per cell
 than this file, which points at formula parsing rather than XML.
 
 Services were down again and restarted from the handoff's recipe.
+
+## A1, second fix — the reader **opened** every workbook twice as well. **29.0 s → 17.7 s** on a real model.
+
+Same turn, continuing without being asked. Profiled again rather than
+guessing where the rest went, and the two corpus files turn out to have
+**opposite** bottlenecks.
+
+### The second profile
+
+`ofgem_ed2_pcfm_v5.xlsx` — 4.3 MB, 43,178 cells, **20,485 formulas**, a
+real price-control model, and 20× slower *per cell* than the big data
+dump. cProfile put the cost nowhere near the cells:
+
+```
+ cumtime  function
+   31.14  openpyxl/descriptors/serialisable.py:46(from_tree)   <- 33%
+   20.46  openpyxl/descriptors/serialisable.py:204(__hash__)   3,512,832 calls
+   19.78  openpyxl/descriptors/serialisable.py:173(__eq__)     2,394,104 calls
+    2.97  openpyxl/worksheet/_reader.py:189(parse_cell)        802,070 calls
+```
+
+That is openpyxl parsing and **de-duplicating the stylesheet**. Timing
+the two halves apart made it plain:
+
+| | ED2 (a model) | hchs (a data dump) |
+|---|---|---|
+| opening both loads | **15.48 s** | 0.15 s |
+| iterating both loads | 4.48 s | **33.37 s** |
+
+**A model's cost is opening; a data dump's is iterating.** The first fix
+this turn attacked iterating, which is why it barely moved ED2.
+
+### The fix
+
+`read_workbook` called `load_workbook` **twice** — once for formula text,
+once for cached values — and each parsed the whole style table, of which
+the second load's copy is never read.
+
+openpyxl decides formula-text against cached-value **per iteration, not
+per open**: `_cells_by_row` reads `self.parent.data_only` when it builds
+its parser. So **one open serves both passes**, with the flag flipped
+between them and restored after.
+
+### Re-measured, all four models
+
+| model | before this turn | after fix 1 | **after fix 2** |
+|---|---|---|---|
+| `ofgem_ed2_pcfm_v5` | 29.03 s | 27.24 s | **17.74 s** |
+| `ofgem_ed2_pcfm_v3_2023` | 26.58 s | 26.58 s | **17.75 s** |
+| `hchs-sep-2015-trust-ccg` | **75.91 s** | 50.43 s | **46.30 s** |
+| `kelso_model` | — | 14.10 s | **12.65 s** |
+
+**39% off the biggest file and 39% off a real model.**
+
+### Correctness
+
+Cell counts, formula counts and finding counts are **identical on all
+four** to what they were before either fix — ED2 v5 still 43,178 /
+20,485 / **8**, v3 still 40,948 / 20,522 / **11**, hchs 496,478 / 3 / 0,
+Kelso 470,594 / 814 / 2. **Full tieout suite: 1,037 passed, 9 skipped, 0
+failed.**
+
+### One instrument catch, the ninth this session
+
+My equality check reported the one-open read as **different** on sheet
+`UserInterface`. It is not: the cell holds an `ArrayFormula`, which has
+no `__eq__`, so two instances of the identical formula compare unequal by
+identity. Both are `E30` / `=INDEX(E15:E28,m_identity)`. **My comparison
+was the instrument again**, and I checked before believing it rather than
+after publishing it.
+
+### Where the spec's sentence stands now
+
+« 600k cells read in under a minute, checks in seconds. »
+
+- **checks in seconds** — audit is **5.14 s** on the biggest file, 3.20 s
+  on ED2. True, measured.
+- **600k cells under a minute** — **41.03 s for 496,478 cells**. The
+  biggest corpus file is 496k, so 600k still cannot be *measured* here;
+  it scales to **≈49.6 s**. Under a minute with margin, still by
+  extrapolation.
+
+### Next, and it continues next turn
+
+The remaining 41 s on the data dump is one XML pass in which openpyxl
+still builds a cell object for each of **3.1 million elements to keep
+496 thousand** — 2.6 million of them styled but empty. That is now the
+top item, and it is the same one for every large file.
