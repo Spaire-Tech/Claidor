@@ -88,3 +88,63 @@ files stay recorded as arbiter-bound, which is already honest.
 **Your priority is unchanged and unambiguous: E2 to a shippable
 per-dimension verdict.** Sentinel cannot build the flagship missing
 feature until it exists.
+
+## URGENT addendum (28 Aug): E2's design just changed — read before the next round
+
+The founder's fourth research round is about **exactly what you are
+building**. Full record: `corpus-sources.md`, 28 Aug fourth
+addendum. Do not carry on without reading it; two of its findings
+invalidate design choices E2 would otherwise make.
+
+**1. The percent convention is decided by the NUMBER FORMAT, not by
+the value and not by the label.** Six real models declare `%`
+explicitly: three store decimal fractions, three store whole
+numbers. Percent-style format → decimal; `General` → whole number;
+**six of six, no exceptions.** The cell that kills any value-based
+heuristic: `Module Degradation`, unit `% p.a.`, value **`0.5`**,
+meaning half of one percent — « below 1 means a fraction » is out by
+100× there. And an Australian model has both conventions **in one
+column of one sheet** (`E25` = 65 `General`; `E61` = 0.065 percent
+format), so per-sheet or per-column inference is wrong on real
+files.
+
+**Verified against our own corpus by the lead:** `final_wacc.xlsx`
+has **183,987 percent-formatted cells and none above 1.5** — every
+percentage we have ever measured on is a decimal fraction. E2 tuned
+on our corpus alone would be silently 100× wrong on a whole class of
+real models, and nothing in our files would have shown it. This is
+the strongest argument yet for the number-format rule.
+
+**2. Nine of 27 real models keep units in a dedicated column, not in
+the label.** 698 declarations extracted that way. Our regulator
+corpus puts units in labels — so a label-only inference finds
+nothing in those files **and reports full coverage on them**. Silent
+blindness, the failure shape we hate most. E2 needs a units-column
+detector (narrow text column immediately right of values, short
+contents matching unit patterns, bound per row).
+
+**3. Build order the report recommends, and I am adopting as your
+sequence** — it is ordered by value per unit of work and matches the
+evidence: (a) number format for percentages; (b) units-column
+detection; (c) the scale ladder including `MM`/`K`/`B`/`crore`/
+`lakh`/`千`/`百万`; (d) read *cached* values for labels and units and
+**abstain** when there is none (one real model computes its unit
+label as `=Applied_currency & "'000"` and has a 49-row block whose
+row labels are references, so it looks unlabelled); (e) real-vs-
+nominal as a dimension inherited from section headings, because both
+blocks can carry the identical unit string; (f) the energy-price
+family and its collisions (`MWh`/`kWh`, `W`/`kW`, `kW-month`/
+`kW-year`, `MWac`/`MWdc`); (g) a **non-unit class** — `Choice`,
+`Index`, `Check`, `[1,0]`, `Toggle YES/NO` all appear in real units
+columns and must never enter dimensional arithmetic, with « declared
+but not parseable » reported honestly rather than guessed.
+
+**4. Two positive cases for your test set — the checker must stay
+silent on both**: `AUD/MWac/yr × MWac = AUD/yr` (the units cancel,
+and the workbook proves it in its own formula), and
+`veh/year × £/vehicle ÷ 1000 = k£`. And one caution: the same toll
+road file carries **two unit labels its own author got wrong**. Real
+ground truth is not always right; say so in any number you publish.
+
+None of this changes E1's registration or the blind-scoring rule. It
+changes what E2 must handle and the order you build it in.
