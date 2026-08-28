@@ -220,6 +220,34 @@ sitting there unlisted the whole time. Still unsurfaced after this
 turn: the Watch's `classify` / `build_ladder` / `align_lines` /
 `Tier2Answer`, and `recalc.iterative_cells`.
 
+**The category map has a fifth family: « Units that do not agree »**
+(`currency-mismatch`, `scale-mismatch`). A currency or scale mismatch
+is a **meaning** error — the formula is mechanically perfect and the
+answer is nonsense — so it belongs beside neither the mechanical
+defects nor the statement-level exceptions. The pattern that sets: a
+later check about a *basis* rather than a unit earns its own family
+rather than stretching this one. Neither rule is in `RULE_NAMES` or
+`HEADLINES`, so **the family name is the only name a reader sees** for
+the defect — the sixth rule outside the catalogue, and the first two
+at error severity.
+
+**Mapping ahead of a merge goes in `AHEAD_OF_THE_ENGINE`**, and a
+paired test fails the moment the engine emits the rule, forcing the
+entry out. Never widen the guard instead; an exemption that outlives
+its reason is how a guard stops guarding.
+
+**The abundant direction already works** — a memo quoting model
+outputs produces « $235.3mm where the model says $228.9mm · paragraph
+6 · Material » under « Documents against the model », because
+`run_tieout` has read memos and messages beside decks all along. The
+gap is the *format*: `.pdf` maps to `ArtifactKind.source` and
+`_read_memo` takes `.docx` only, so a PDF cannot be checked against
+the model however it is uploaded — and IC memos, board papers and
+covenant certificates circulate as PDFs. Full survey in the log,
+including the composition (`read_memo` + `tie_out_both` +
+`compare_tieouts`) that would give memos a revision view without
+touching the engine.
+
 **Every upload carries a SHA-256 in `counts["sha256"]`, and two equal
 digests are the whole answer to « what changed ».** The Versions tab
 reads them off `VersionRead.counts` and never asks for a comparison it

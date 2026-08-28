@@ -2539,11 +2539,37 @@ class TestTheCategoryMap:
             "files.ts"
         )
 
+    #: Rules mapped **ahead of the engine**, because a merge is
+    #: sequenced behind the mapping. The lead held Sentinel's unit
+    #: checks at the tip until this map covered them, so for one sweep
+    #: the map legitimately knows two rules the merged engine does not.
+    #:
+    #: The exemption clears itself: `test_the_pending_map_is_still
+    #: _pending` fails the moment the engine *does* emit one of these,
+    #: which is the sweep it has to be deleted. An exemption that
+    #: outlives its reason is how a guard quietly stops guarding.
+    AHEAD_OF_THE_ENGINE = {"currency-mismatch", "scale-mismatch"}
+
     def test_the_map_invents_nothing(self) -> None:
         """A family for a rule the engine cannot emit is dead prose."""
-        invented = sorted(self._mapped() - self._emitted())
+        invented = sorted(self._mapped() - self._emitted() - self.AHEAD_OF_THE_ENGINE)
         assert invented == [], (
             f"files.ts files rules the engine never emits: {', '.join(invented)}"
+        )
+
+    def test_the_pending_map_is_still_pending(self) -> None:
+        """Delete the exemption the sweep its rule lands.
+
+        This is the half that keeps the guard honest. Sentinel's unit
+        checks are mapped before they merge, on the lead's sequencing;
+        the moment they arrive this test goes red and the only way to
+        make it green is to remove the name from
+        `AHEAD_OF_THE_ENGINE`, which restores the full check.
+        """
+        landed = sorted(self.AHEAD_OF_THE_ENGINE & self._emitted())
+        assert landed == [], (
+            f"{', '.join(landed)} is emitted by the engine now — delete it "
+            "from AHEAD_OF_THE_ENGINE so the map is fully guarded again"
         )
 
 

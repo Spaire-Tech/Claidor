@@ -1975,3 +1975,108 @@ rather than correct until someone re-uploads.
    the fast path return a full report instead of a refusal-shaped one.
 
 Suite **1037 passed, 4 skipped**; ruff, mypy, tsc and prettier clean.
+
+## Twenty-seventh turn — two rule keys, and the abundant direction surveyed
+
+### The priority: `currency-mismatch` and `scale-mismatch`
+
+Sentinel's merge was held at the tip until the category map covered
+them. Both are mapped, and the guard test that caught the gap is why
+this took ten minutes rather than a sweep.
+
+**A new family — « Units that do not agree »** — the first added since
+the map was written, so the reasoning is on the record. I read the
+rules on Sentinel's branch before naming anything: the finding is
+« `{formula}` adds terms of different currency: USD, EUR. A sum may
+only carry one currency », severity **error**.
+
+That is not a « probable formula defect »: the formula is
+mechanically perfect and the answer is nonsense — a **meaning** error,
+not a mechanical one, and filing it beside a skipped SUM range would
+tell a reader the wrong thing about what went wrong. Nor is it a
+« structural exception », which in this map means the statements not
+holding together, one relationship at a time.
+
+« Units that do not agree » says the whole of it in words a banker
+uses, and it extends to the unit checks that follow — currency, scale,
+per-unit against total. **The pattern it sets**: a later check about a
+*basis* rather than a unit (real against nominal) earns its own family
+rather than stretching this one. Families are named for what the
+reader is being told, not for where the code lives.
+
+**And the name is carrying more weight than it should.** Neither rule
+is in `RULE_NAMES` or `HEADLINES` on Sentinel's branch, so a firm
+cannot see or switch them off, and — because the report falls back to
+the family when a finding has no headline — **this family name is the
+only name a reader sees for the defect**. That is the sixth rule
+outside the catalogue (`gapped-test`, `broken-name`, `typed-over-beat`
+before them), and the first two at *error* severity.
+
+**The guard now clears its own exemption.** Mapping ahead of a merge
+breaks `test_the_map_invents_nothing`, so the two keys sit in an
+explicit `AHEAD_OF_THE_ENGINE` set — and a second test fails the
+moment the engine *does* emit one, which is the sweep the entry must
+be deleted. Proved by dropping a scratch file carrying the rule
+literal into the engine tree and watching it go red. An exemption that
+outlives its reason is how a guard quietly stops guarding.
+
+### The abundant direction: what the product does today
+
+Seeded for real (`cascade_memo_stale.docx` against `cascade_model.xlsx`)
+and taken through the whole path rather than read off the code.
+
+**It works, and it is already first-class.** The tie-out reconciled 6
+figures, 4 agreeing, **2 drifting**, and the Findings tab shows them
+under « Documents against the model »:
+
+> **$235.3mm where the model says $228.9mm** — paragraph 6 — Material
+> **10.2% where the model says 9.8%** — paragraph 9 — Material
+
+That *is* « your memo says 14.2% IRR, the model now says 13.7% », with
+the paragraph cited. `run_tieout` has read memos and messages beside
+decks all along — the comment in it says so in as many words.
+`logs/atelier/memo-drift-findings.png`.
+
+### What is missing — four gaps, in the order they cost
+
+**1. The reader that can read a PDF is wired only to the scarce
+direction.** `SUFFIXES` maps `.pdf` to `ArtifactKind.source`, and
+`_read_memo` takes `.docx` only — so a PDF **cannot** be checked
+against the model whatever the caller asks for, even though the upload
+route accepts an explicit `kind`. An IC memo, a board paper and a
+quarterly covenant certificate circulate as PDFs. The Chain already
+reads a PDF's every number with its page and box; that extraction
+feeds provenance and nothing else. **This is the whole gap between the
+abundant direction and the documents it is abundant in.**
+
+**2. No screen lets a person say what a document is.** The client's
+`upload()` posts the file and never the `kind`, so the extension
+decides alone. Even once a PDF *could* be either, nothing on the
+screen asks.
+
+**3. A memo revision gets no « what did this do to what we sent
+out ».** My own `deck_delta` filters `kind is ArtifactKind.deck`, so
+the comparison the tie-out is happy to run on a memo has no revision
+view. Widening the filter alone would break: the Watch's `deck_delta`
+calls `tie_out`, which calls `read_deck` — pptx only. But
+`tie_out_both(figures, book, published)` is split out precisely so a
+caller can supply its own figures, and `compare_tieouts` is exported.
+Composing `read_memo(...).figures` with those two would give memos the
+same revision view without touching the engine — a small, real
+successor, **not built**, because the orders say findings only.
+
+**4. One figure could not be matched and only the report says so.**
+The run recorded `unlinked: 1` with the reason « no output fits the
+label ». The report's coverage section carries it (« N not checked »);
+the Overview says « Every check that applies to this model ran to the
+end », which is true of *checks* and silent about the figure. Not a
+defect — the sentences are about different things — but the Overview
+is where a person lands, and « 6 of 7 figures were reconciled » is a
+fact it does not carry.
+
+**What I did not survey**: whether the memo reader finds figures in
+tables, headers or footnotes as well as paragraphs. The fixture's
+drifts are both in body paragraphs. That is Scribe's answer-key work
+and the honest next measurement here.
+
+Suite **1043 passed, 4 skipped**; ruff, mypy, tsc and prettier clean.
