@@ -220,3 +220,71 @@ recall then runs against the currency harness already committed.
 That is a correction of a category error, not a loosened threshold:
 the rule's question is unchanged and its bar is unchanged. Said
 plainly so the distinction is on the record rather than assumed.
+
+---
+
+## The correction measured, and then overtaken
+
+### The correction hits its registered bar
+
+Re-run on the same ten models with `none` excluded: **0 findings**,
+which is exactly the bar fixed before it ran. `inverness` reports
+`{"total": 103, "raised": 0}` — the same 103 sums examined, none
+raised. « Looked and found nothing », not « never looked ».
+
+### Planted recall: 1 of 1, **against a scope of one site**
+
+Reported the way the lane now reports recall, because the scope is
+the number that matters here. Across **both corpora — 37 files —
+there is exactly one plantable site**: a sum whose terms span two
+rows the inference reads as two *real* currencies. One site, planted,
+caught, with the right sentence: « =SUM(B17:B26) adds terms of
+different currency: GBP, USD ».
+
+**A recall of 1/1 on a scope of 1 is not evidence the check works.**
+It shows the mechanism connects end to end. Nothing more, and it is
+not to be quoted as more.
+
+### And then the premise went
+
+Dynamo **revised E2's verdict the same day, against a second
+corpus** (its handoff, 28 Aug):
+
+> **ARM WITH CARE `rate_form` — and nothing else.** `kind`,
+> `currency` and `scale` were armed against the Ofgem key and **fail
+> on the closed-deal one (7.77%, 24.62%, 23.32%)**.
+
+**`currency` is wrong on 24.62% of rows against the second key.**
+This round armed it on « answered on 34.6% of rows, wrong on none »,
+which was one key's answer and has been superseded. Dynamo's own
+inherited lesson says the rest:
+
+> A dimension whose key cannot contain its failure case must not be
+> armed. Not « flag the limitation and arm anyway ».
+
+So the arming decision is void — not because my rule misbehaved
+after the correction, but because the measurement it rested on no
+longer says what it said. The `[$…]` misread I routed is very
+probably part of that 24.62%.
+
+## Verdict: REFUSED, and refused twice over
+
+1. **The category error** — 103 of 103 false, `none` counted as a
+   currency. Mine, corrected, re-measured to zero.
+2. **The arming premise** — `currency` is measured wrong on 24.62%
+   by the only key that contains the hard cases. Nothing may be
+   armed on it.
+
+The rule stays **implemented, tested and unwired**, with a test
+pinning that `audit()` says nothing about units. The gate was not
+run and the baseline is untouched: there is nothing to certify.
+
+**Where the units family actually stands, stated plainly because it
+is the flagship:** of the six dimensions, `rate_form` is « arm with
+care » and **every other one is unarmable today** — `currency`,
+`scale` and `kind` failed the second key, `period` was never armed
+and is wrong on 24.9%/64.1%, `b5_type` never armed. E3 has **no
+shippable check right now**, and no amount of work in this lane
+changes that: it is blocked on the inference's accuracy, which is
+Dynamo's, and on a second hand-labelled key drawn by someone else,
+which is nobody's yet.
