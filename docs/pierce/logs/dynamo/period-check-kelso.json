@@ -1,0 +1,293 @@
+{
+ "model": "kelso_model.xlsm",
+ "cells": 470594,
+ "formula_cells": 814,
+ "blocks": {
+  "BID PRICE": "half-yearly",
+  "ReportCharts": "half-yearly",
+  "ReportFinStatsAnnual": "annual",
+  "ReportFinStatsSA": "half-yearly",
+  "ReportRatiosSA": "half-yearly",
+  "Interface Ops Costs": "half-yearly",
+  "inputCapexM": "monthly",
+  "inputOpexM": "monthly",
+  "inputOpexSA": "half-yearly",
+  "inputAccom": "monthly",
+  "calcFundingM": "monthly",
+  "calcFundingSA": "half-yearly",
+  "calcAccomM": "monthly",
+  "calcAccomSA": "half-yearly",
+  "calcWorkCapSA": "half-yearly",
+  "calcWorkCapM": "monthly",
+  "calcCapexM": "monthly",
+  "calcOpexM": "monthly",
+  "calcOpexSA": "half-yearly",
+  "calcFixedAssetSA": "half-yearly",
+  "calcAccountingSA": "half-yearly",
+  "calcTaxationSA": "half-yearly",
+  "sysTimingM": "monthly",
+  "sysTimingSA": "half-yearly",
+  "sysTimeline": "quarterly",
+  "Schedule 12 - Drawdown Schedule": "monthly",
+  "Schools proforma": "half-yearly",
+  "Swap Profiles": "quarterly",
+  "Handback Calculation": "half-yearly"
+ },
+ "aggregations_found": 36,
+ "correct": 0,
+ "broken": [
+  {
+   "ref": "Swap Profiles!H18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!I18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!J18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!K18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!L18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!M18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!N18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!O18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!P18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!Q18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!R18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!S18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!T18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!U18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!V18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!W18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!X18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!Y18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!Z18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AA18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AB18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AC18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AD18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AE18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AF18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AG18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AH18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AI18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AJ18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AK18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AL18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AM18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AN18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AO18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AP18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  },
+  {
+   "ref": "Swap Profiles!AQ18",
+   "taken": 1,
+   "expected": 3,
+   "from": "monthly",
+   "to": "quarterly"
+  }
+ ],
+ "plant": null
+}

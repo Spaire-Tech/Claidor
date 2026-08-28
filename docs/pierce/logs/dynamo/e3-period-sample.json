@@ -3,10 +3,10 @@
  "per_stratum": 40,
  "drawn_by": "scripts/recalc_period_sample.py",
  "labelled_by": "NOT YET LABELLED \u2014 for the lead or the founder",
- "instructions": "For each row, set \"period\" to one of: annual, monthly, quarterly, half-yearly, point-in-time, none (the row is not a flow through time), or unknown (the evidence does not say). Judge from the row label, the column headers and the values. Do not consult E2; its answers are deliberately absent.",
+ "instructions": "For each row, set \"period\" to one of: annual, monthly, quarterly, half-yearly, point-in-time, none (the row is not a flow through time), or unknown (the evidence does not say). Judge from the row label, the candidate header rows (the reader picks one header row and can pick the wrong one, so all of them are given), the column headers and the values. Do not consult E2; its answers are deliberately absent.",
  "counts": {
   "ofgem-regulator": {
-   "eligible": 4831,
+   "eligible": 3401,
    "drawn": 40
   },
   "caa-h7": {
@@ -18,20 +18,247 @@
    "drawn": 37
   },
   "closed-deal": {
-   "eligible": 18066,
+   "eligible": 6669,
    "drawn": 40
   },
   "closed-deal-monthly": {
-   "eligible": 567,
+   "eligible": 107,
    "drawn": 40
   }
  },
  "rows": [
   {
    "file": "v5_2026-06.xlsx",
-   "sheet": "SWEST",
-   "row": 108,
-   "row_label": "Storm Arwen Re-opener",
+   "sheet": "SPN",
+   "row": 130,
+   "row_label": "Actual tree cutting",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    5.8221,
+    6.4761,
+    5.5858,
+    4.3741,
+    4.4231
+   ],
+   "declared_units": "\u00a3m 20/21 prices",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SSES",
+   "row": 229,
+   "row_label": "Equity issuance gearing target",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "0.00%"
+   ],
+   "values": [
+    0.6,
+    0.6,
+    0.6,
+    0.6,
+    0.6
+   ],
+   "declared_units": "%",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
+   "sheet": "Inflation",
+   "row": 294,
+   "row_label": "FY2023",
+   "column_headers": [
+    "Outturn (index)"
+   ],
+   "candidate_header_rows": [
+    [
+     "FY",
+     "Outturn (index)",
+     "Forecast (%)",
+     "CPIH (index)"
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.0;\\(#,##0.0\\);\"-\""
+   ],
+   "values": [
+    129.4
+   ],
+   "declared_units": null,
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SPN",
+   "row": 265,
+   "row_label": "Allowed Revenue (as published)",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    447.9,
+    642.4,
+    496.7721,
+    528.303,
+    0.0
+   ],
+   "declared_units": "\u00a3m nominal",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SPN",
+   "row": 128,
+   "row_label": "Actual non-load related capex - other",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    23.5858,
+    30.2998,
+    17.4127,
+    19.9508,
+    21.8619
+   ],
+   "declared_units": "\u00a3m 20/21 prices",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SSEH",
+   "row": 192,
+   "row_label": "DRS1. Connection services costs",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    -23.1233,
+    -21.6408,
+    -43.0996,
+    -37.0991,
+    -71.9934
+   ],
+   "declared_units": "\u00a3m 20/21 prices",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SWALES",
+   "row": 90,
+   "row_label": "Cyber Resilience OT baseline",
    "column_headers": [
     "FY2019",
     "FY2021",
@@ -42,26 +269,233 @@
     "FY2026",
     "FY2027"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)",
     "0%"
    ],
    "values": [
-    2.0,
+    1.0,
     0.0,
     0.0,
-    0.0,
-    1.0
+    1.0,
+    0.0
    ],
    "declared_units": "mixed inputs",
    "dialect": "ofgem-regulator",
    "period": null
   },
   {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "Monthly Inflation",
+   "row": 27,
+   "row_label": "FY2001",
+   "column_headers": [
+    "CPIH Outturn (CPIHm)",
+    "RPI Outturn (RPIm)"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "",
+     "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/l522/mm23",
+     "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/chaw/mm23",
+     "",
+     ""
+    ],
+    [
+     "End of month \n(used for embedded debt)",
+     "FYE",
+     "CPIH Outturn (CPIHm)",
+     "RPI Outturn (RPIm)",
+     "CPI % forecast",
+     "RPI % forecast"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ]
+   ],
+   "number_formats": [
+    "0.00",
+    "General"
+   ],
+   "values": [
+    73.7,
+    172.0
+   ],
+   "declared_units": null,
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "Monthly Inflation",
+   "row": 6,
+   "row_label": "FY1999",
+   "column_headers": [
+    "CPIH Outturn (CPIHm)",
+    "RPI Outturn (RPIm)"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "",
+     "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/l522/mm23",
+     "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/chaw/mm23",
+     "",
+     ""
+    ],
+    [
+     "End of month \n(used for embedded debt)",
+     "FYE",
+     "CPIH Outturn (CPIHm)",
+     "RPI Outturn (RPIm)",
+     "CPI % forecast",
+     "RPI % forecast"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ]
+   ],
+   "number_formats": [
+    "0.00",
+    "General"
+   ],
+   "values": [
+    72.8,
+    165.6
+   ],
+   "declared_units": null,
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
    "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
    "sheet": "Input",
-   "row": 178,
-   "row_label": "Tier 1 Mains decommissioned Price Control Deliverable",
+   "row": 113,
+   "row_label": "Multiple Occupancy Buildings safety Re-opener",
    "column_headers": [
     "FY2027",
     "FY2028",
@@ -69,15 +503,111 @@
     "FY2030",
     "FY2031"
    ],
+   "candidate_header_rows": [
+    [
+     "Units",
+     "Annual values",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\u00a3m 23/24 prices",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\u00a3m 23/24 prices",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\u00a3m 23/24 prices",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\u00a3m 23/24 prices",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
-    "0.0%;\\(0.0%\\);\"-\""
+    "#,##0.0;\\(#,##0.0\\);\"-\""
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
+    45.0,
+    50.0,
+    28.0,
+    1.0,
+    38.0
+   ],
+   "declared_units": "\u00a3m 23/24 prices",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SSEH",
+   "row": 227,
+   "row_label": "Equity issuance costs",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "0.00%"
+   ],
+   "values": [
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.05
+   ],
+   "declared_units": "%",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SPN",
+   "row": 329,
+   "row_label": "Revenue: Controllable opex",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "0%"
+   ],
+   "values": [
+    0.3394,
+    0.4043,
+    0.4043,
+    0.4043,
+    0.4043
    ],
    "declared_units": "%",
    "dialect": "ofgem-regulator",
@@ -86,8 +616,39 @@
   {
    "file": "v5_2026-06.xlsx",
    "sheet": "SWEST",
-   "row": 297,
-   "row_label": "General: Non-load related capex - other",
+   "row": 85,
+   "row_label": "Load Related Expenditure: Low Voltage Services",
+   "column_headers": [
+    "FY2019",
+    "FY2021",
+    "FY2022",
+    "FY2023",
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)",
+    "0%"
+   ],
+   "values": [
+    2.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "mixed inputs",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SWALES",
+   "row": 326,
+   "row_label": "Revenue: Faults",
    "column_headers": [
     "FY2024",
     "FY2025",
@@ -95,17 +656,423 @@
     "FY2027",
     "FY2028"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "0%"
    ],
    "values": [
-    0.7894,
-    0.8958,
-    0.8558,
-    0.8558,
-    0.8558
+    0.2,
+    0.2,
+    0.2,
+    0.2,
+    0.2
    ],
    "declared_units": "%",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
+   "sheet": "Input",
+   "row": 65,
+   "row_label": "General pool opening balance adjustment",
+   "column_headers": [
+    "FY2027"
+   ],
+   "candidate_header_rows": [
+    [
+     "Units",
+     "Annual values",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\u00a3m 23/24 prices",
+     "",
+     "Input",
+     "Variable inputs",
+     "Actual totex"
+    ],
+    [
+     "\u00a3m 23/24 prices",
+     "",
+     "Input",
+     "Variable inputs",
+     "Actual totex"
+    ],
+    [
+     "\u00a3m 23/24 prices",
+     "",
+     "Input",
+     "Variable inputs",
+     "Actual totex"
+    ],
+    [
+     "\u00a3m 23/24 prices",
+     "",
+     "Input",
+     "Variable inputs",
+     "Actual totex"
+    ]
+   ],
+   "number_formats": [
+    "#,##0.0;\\(#,##0.0\\);\"-\""
+   ],
+   "values": [
+    100.0
+   ],
+   "declared_units": "\u00a3m nominal",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "Monthly Inflation",
+   "row": 12,
+   "row_label": "FY1999",
+   "column_headers": [
+    "CPIH Outturn (CPIHm)",
+    "RPI Outturn (RPIm)"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "",
+     "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/l522/mm23",
+     "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/chaw/mm23",
+     "",
+     ""
+    ],
+    [
+     "End of month \n(used for embedded debt)",
+     "FYE",
+     "CPIH Outturn (CPIHm)",
+     "RPI Outturn (RPIm)",
+     "CPI % forecast",
+     "RPI % forecast"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "-",
+     "-"
+    ]
+   ],
+   "number_formats": [
+    "0.00",
+    "General"
+   ],
+   "values": [
+    72.9,
+    166.7
+   ],
+   "declared_units": null,
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "EPN",
+   "row": 33,
+   "row_label": "Network Asset Risk Metric Expenditure",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    45.64,
+    50.49,
+    50.97,
+    46.8,
+    40.25
+   ],
+   "declared_units": "\u00a3m 20/21 prices",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SPN",
+   "row": 103,
+   "row_label": "Wayleaves and Diversions Re-opener",
+   "column_headers": [
+    "FY2019",
+    "FY2021",
+    "FY2022",
+    "FY2023",
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)",
+    "0%"
+   ],
+   "values": [
+    2.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "mixed inputs",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "NPgN",
+   "row": 399,
+   "row_label": "Ring Fence Costs incurred",
+   "column_headers": [
+    "FY2022",
+    "FY2023"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    0.0341,
+    0.036
+   ],
+   "declared_units": null,
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "LPN",
+   "row": 40,
+   "row_label": "Cyber Resilience OT baseline",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    0.4208,
+    0.3422,
+    0.4435,
+    1.5896,
+    1.5896
+   ],
+   "declared_units": "\u00a3m 20/21 prices",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "ENWL",
+   "row": 391,
+   "row_label": "Pass-through Transmission Connection Point Charges allowance",
+   "column_headers": [
+    "FY2022",
+    "FY2023"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    19.5,
+    22.9
+   ],
+   "declared_units": null,
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SSES",
+   "row": 76,
+   "row_label": "Physical Security Re-opener",
+   "column_headers": [
+    "FY2019",
+    "FY2021",
+    "FY2022",
+    "FY2023",
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)",
+    "0%"
+   ],
+   "values": [
+    2.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "mixed inputs",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
+   "sheet": "Input",
+   "row": 236,
+   "row_label": "London Medium Pressure Price Control Deliverable [Cadent London only]",
+   "column_headers": [
+    "FY2027",
+    "FY2028",
+    "FY2029",
+    "FY2030",
+    "FY2031"
+   ],
+   "candidate_header_rows": [
+    [
+     "Annual values",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "Input"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "Input"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "Input"
+    ],
+    [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "Input"
+    ]
+   ],
+   "number_formats": [
+    "0.0%;\\(0.0%\\);\"-\""
+   ],
+   "values": [
+    0.7575,
+    0.7575,
+    0.7575,
+    0.7575,
+    0.7575
+   ],
+   "declared_units": "%",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "WMID",
+   "row": 266,
+   "row_label": "Base Revenue (as published)",
+   "column_headers": [
+    "FY2026",
+    "FY2027"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    419.1456,
+    411.9582
+   ],
+   "declared_units": null,
    "dialect": "ofgem-regulator",
    "period": null
   },
@@ -124,6 +1091,7 @@
     "FY2026",
     "FY2027"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)",
     "0%"
@@ -141,119 +1109,20 @@
   },
   {
    "file": "v5_2026-06.xlsx",
-   "sheet": "WMID",
-   "row": 409,
-   "row_label": "Shetland New Energy Solution Residual Costs allowance",
+   "sheet": "EMID",
+   "row": 384,
+   "row_label": "Licence fee payments",
    "column_headers": [
     "FY2022",
     "FY2023"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)"
    ],
    "values": [
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
-   "sheet": "Input",
-   "row": 448,
-   "row_label": "Uplift on iBoxx trailing average",
-   "column_headers": [
-    "FY2027",
-    "FY2028",
-    "FY2029",
-    "FY2030",
-    "FY2031"
-   ],
-   "number_formats": [
-    "0.0%;\\(0.0%\\);\"-\""
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "annual real %",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "NPgN",
-   "row": 178,
-   "row_label": "Carry-over Network Innovation Allowance",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    0.403,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m 20/21 prices",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "NPgN",
-   "row": 111,
-   "row_label": "Carry-over Green Recovery Scheme",
-   "column_headers": [
-    "FY2019",
-    "FY2021",
-    "FY2022",
-    "FY2023",
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)",
-    "0%"
-   ],
-   "values": [
-    2.0,
-    1.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "mixed inputs",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
-   "sheet": "Inflation",
-   "row": 22,
-   "row_label": "FY2000",
-   "column_headers": [
-    "Outturn (index)"
-   ],
-   "number_formats": [
-    "#,##0.0;\\(#,##0.0\\);\"-\""
-   ],
-   "values": [
-    74.0
+    2.6482,
+    2.7511
    ],
    "declared_units": null,
    "dialect": "ofgem-regulator",
@@ -261,34 +1130,8 @@
   },
   {
    "file": "v5_2026-06.xlsx",
-   "sheet": "WMID",
-   "row": 15,
-   "row_label": "Non-variant allowed load related capex",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    49.3,
-    37.56,
-    18.16,
-    18.94,
-    20.09
-   ],
-   "declared_units": "\u00a3m 20/21 prices",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "NPgN",
-   "row": 128,
+   "sheet": "SWALES",
+   "row": 137,
    "row_label": "Actual non-load related capex - other",
    "column_headers": [
     "FY2024",
@@ -297,67 +1140,16 @@
     "FY2027",
     "FY2028"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)"
    ],
    "values": [
-    11.5376,
-    22.3108,
-    26.0899,
-    24.1602,
-    20.9032
-   ],
-   "declared_units": "\u00a3m 20/21 prices",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "EPN",
-   "row": 312,
-   "row_label": "Deferred Revenue: Faults",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "0%"
-   ],
-   "values": [
-    0.8189,
-    0.8524,
-    0.8524,
-    0.8524,
-    0.8524
-   ],
-   "declared_units": "%",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "SWEST",
-   "row": 50,
-   "row_label": "Worst Served Customers",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    0.0023,
-    0.0002,
-    0.1465,
-    0.4006,
-    0.4005
+    0.8441,
+    1.0492,
+    1.9652,
+    1.2518,
+    1.0399
    ],
    "declared_units": "\u00a3m 20/21 prices",
    "dialect": "ofgem-regulator",
@@ -366,49 +1158,8 @@
   {
    "file": "v5_2026-06.xlsx",
    "sheet": "SPMW",
-   "row": 379,
-   "row_label": "LVSSA Time to Connect term",
-   "column_headers": [
-    "FY2022",
-    "FY2023"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    0.0916,
-    0.153
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "Monthly Inflation",
-   "row": 41,
-   "row_label": "FY2002",
-   "column_headers": [
-    "CPIH Outturn (CPIHm)",
-    "RPI Outturn (RPIm)"
-   ],
-   "number_formats": [
-    "0.00",
-    "General"
-   ],
-   "values": [
-    75.6,
-    175.7
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "EPN",
-   "row": 278,
-   "row_label": "Adjusted net debt",
+   "row": 53,
+   "row_label": "Wayleaves and Diversions Re-opener",
    "column_headers": [
     "FY2024",
     "FY2025",
@@ -416,157 +1167,7 @@
     "FY2027",
     "FY2028"
    ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    2041.4876,
-    2104.302,
-    2421.1477,
-    2701.6092,
-    2795.294
-   ],
-   "declared_units": "\u00a3m nominal",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
-   "sheet": "Inflation",
-   "row": 241,
-   "row_label": "FY2019",
-   "column_headers": [
-    "Outturn (index)"
-   ],
-   "number_formats": [
-    "#,##0.0;\\(#,##0.0\\);\"-\""
-   ],
-   "values": [
-    107.0
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "ENWL",
-   "row": 88,
-   "row_label": "PCB Interventions",
-   "column_headers": [
-    "FY2019",
-    "FY2021",
-    "FY2022",
-    "FY2023",
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)",
-    "0%"
-   ],
-   "values": [
-    2.0,
-    0.0,
-    1.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "mixed inputs",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "SSES",
-   "row": 229,
-   "row_label": "Equity issuance gearing target",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "0.00%"
-   ],
-   "values": [
-    0.6,
-    0.6,
-    0.6,
-    0.6,
-    0.6
-   ],
-   "declared_units": "%",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "SWEST",
-   "row": 113,
-   "row_label": "Net to Gross Load Related Expenditure",
-   "column_headers": [
-    "FY2019",
-    "FY2021",
-    "FY2022",
-    "FY2023",
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)",
-    "0%"
-   ],
-   "values": [
-    2.0,
-    1.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "mixed inputs",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "Monthly Inflation",
-   "row": 170,
-   "row_label": "FY2013",
-   "column_headers": [
-    "CPIH Outturn (CPIHm)",
-    "RPI Outturn (RPIm)"
-   ],
-   "number_formats": [
-    "0.00",
-    "General"
-   ],
-   "values": [
-    97.0,
-    245.8
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "EMID",
-   "row": 155,
-   "row_label": "Shetland Variable Energy Costs (SSEH only)",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)"
    ],
@@ -574,206 +1175,8 @@
     0.0,
     0.0,
     0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m 20/21 prices",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
-   "sheet": "Inflation",
-   "row": 157,
-   "row_label": "FY2012",
-   "column_headers": [
-    "Outturn (index)"
-   ],
-   "number_formats": [
-    "#,##0.0;\\(#,##0.0\\);\"-\""
-   ],
-   "values": [
-    95.4
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "ENWL",
-   "row": 355,
-   "row_label": "Allowed Distribution Network Revenue",
-   "column_headers": [
-    "FY2016",
-    "FY2017",
-    "FY2018",
-    "FY2019",
-    "FY2020",
-    "FY2021",
-    "FY2022",
-    "FY2023"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    404.5939,
-    448.0634,
-    398.7053,
-    414.633,
-    428.9372
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "ENWL",
-   "row": 311,
-   "row_label": "Deferred Revenue: Non-load related capex - other",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "0%"
-   ],
-   "values": [
-    0.1712,
-    0.1712,
-    0.1712,
-    0.1712,
-    0.1712
-   ],
-   "declared_units": "%",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "ENWL",
-   "row": 35,
-   "row_label": "Load Related Expenditure: Low Voltage Services",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "#,##0.00_);\\(#,##0.00\\);\\-_)",
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    4.6381,
-    3.8155,
-    7.628,
-    12.311,
-    15.995
-   ],
-   "declared_units": "\u00a3m 20/21 prices",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "NPgN",
-   "row": 181,
-   "row_label": "Initial Profile Adjustment",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m 20/21 prices",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "SPD",
-   "row": 45,
-   "row_label": "West Coast of Cumbria Re-opener (ENWL only)",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m 20/21 prices",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "EMID",
-   "row": 373,
-   "row_label": "Performance on normal weather supply restoration",
-   "column_headers": [
-    "FY2022",
-    "FY2023"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "SWEST",
-   "row": 277,
-   "row_label": "Tax liability allowance adjustments - driven by tax trigger events",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    -14.2966,
-    -16.3103,
-    -25.2599,
-    -26.8859,
-    -21.1761
+    9.0566,
+    9.0566
    ],
    "declared_units": "\u00a3m 20/21 prices",
    "dialect": "ofgem-regulator",
@@ -782,8 +1185,8 @@
   {
    "file": "v5_2026-06.xlsx",
    "sheet": "SPN",
-   "row": 213,
-   "row_label": "Risk-free rate",
+   "row": 135,
+   "row_label": "Actual load related capex",
    "column_headers": [
     "FY2024",
     "FY2025",
@@ -791,79 +1194,135 @@
     "FY2027",
     "FY2028"
    ],
-   "number_formats": [
-    "0.00%"
-   ],
-   "values": [
-    0.0146,
-    0.0272,
-    0.0214,
-    0.0305,
-    0.0247
-   ],
-   "declared_units": "annual real %",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "SWALES",
-   "row": 391,
-   "row_label": "Pass-through Transmission Connection Point Charges allowance",
-   "column_headers": [
-    "FY2022",
-    "FY2023"
-   ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)"
    ],
    "values": [
-    8.6,
-    8.8
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "NPgN",
-   "row": 277,
-   "row_label": "Tax liability allowance adjustments - driven by tax trigger events",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
-   "number_formats": [
-    "#,##0.0_);\\(#,##0.0\\);\\-_)"
-   ],
-   "values": [
-    -7.4872,
-    -10.2143,
-    -15.2048,
-    -15.5403,
-    -14.674
+    7.7922,
+    10.225,
+    5.2395,
+    5.0141,
+    4.2285
    ],
    "declared_units": "\u00a3m 20/21 prices",
    "dialect": "ofgem-regulator",
    "period": null
   },
   {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SWEST",
+   "row": 292,
+   "row_label": "Notional gearing for tax clawback gearing level test",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "0%"
+   ],
+   "values": [
+    0.65,
+    0.64,
+    0.63,
+    0.61,
+    0.6
+   ],
+   "declared_units": "%",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
    "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
    "sheet": "Inflation",
-   "row": 81,
-   "row_label": "FY2005",
+   "row": 121,
+   "row_label": "FY2009",
    "column_headers": [
     "Outturn (index)"
+   ],
+   "candidate_header_rows": [
+    [
+     "FY",
+     "Outturn (index)",
+     "Forecast (%)",
+     "CPIH (index)"
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ],
+    [
+     "",
+     "",
+     "-",
+     ""
+    ]
    ],
    "number_formats": [
     "#,##0.0;\\(#,##0.0\\);\"-\""
    ],
    "values": [
-    80.0
+    87.3
    ],
    "declared_units": null,
    "dialect": "ofgem-regulator",
@@ -871,9 +1330,9 @@
   },
   {
    "file": "v5_2026-06.xlsx",
-   "sheet": "NPgY",
-   "row": 354,
-   "row_label": "Regulated Distribution Network Revenue",
+   "sheet": "SWALES",
+   "row": 342,
+   "row_label": "Legacy net RAV additions",
    "column_headers": [
     "FY2016",
     "FY2017",
@@ -884,15 +1343,33 @@
     "FY2022",
     "FY2023"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Base date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Annual values",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)"
    ],
    "values": [
-    362.4049,
-    368.8874,
-    362.5343,
-    376.833,
-    384.7169
+    114.4173,
+    116.4302,
+    107.9625,
+    114.3038,
+    105.353
    ],
    "declared_units": null,
    "dialect": "ofgem-regulator",
@@ -900,90 +1377,34 @@
   },
   {
    "file": "v5_2026-06.xlsx",
-   "sheet": "SPMW",
-   "row": 251,
-   "row_label": "Pre-RIIO transfers to depreciation",
-   "column_headers": [
-    "FY1991",
-    "FY1992",
-    "FY1993",
-    "FY1994",
-    "FY1995",
-    "FY1996",
-    "FY1997",
-    "FY1998"
-   ],
-   "number_formats": [
-    "0"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "WMID",
-   "row": 307,
-   "row_label": "Special Rate: 100% \u2018revenue pool\u2019 expenditure",
+   "sheet": "SWEST",
+   "row": 264,
+   "row_label": "Revenue as billed (ignoring bad debt)",
    "column_headers": [
     "FY2024",
     "FY2025",
     "FY2026",
-    "FY2027",
-    "FY2028"
+    "FY2027"
    ],
-   "number_formats": [
-    "0%"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "%",
-   "dialect": "ofgem-regulator",
-   "period": null
-  },
-  {
-   "file": "v5_2026-06.xlsx",
-   "sheet": "EMID",
-   "row": 51,
-   "row_label": "EV Optioneering Projects",
-   "column_headers": [
-    "FY2024",
-    "FY2025",
-    "FY2026",
-    "FY2027",
-    "FY2028"
-   ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)"
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
+    375.8999,
+    502.4492,
+    425.8585,
+    415.0479
    ],
-   "declared_units": "\u00a3m 20/21 prices",
+   "declared_units": "\u00a3m nominal",
    "dialect": "ofgem-regulator",
    "period": null
   },
   {
    "file": "v5_2026-06.xlsx",
-   "sheet": "EPN",
-   "row": 178,
-   "row_label": "Carry-over Network Innovation Allowance",
+   "sheet": "LPN",
+   "row": 164,
+   "row_label": "Interruptions incentive scheme ODI",
    "column_headers": [
     "FY2024",
     "FY2025",
@@ -991,15 +1412,16 @@
     "FY2027",
     "FY2028"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)"
    ],
    "values": [
-    0.3572,
-    0.0,
-    0.0,
-    0.0,
-    0.0
+    1.1265,
+    1.6835,
+    1.4274,
+    1.3871,
+    1.3454
    ],
    "declared_units": "\u00a3m 20/21 prices",
    "dialect": "ofgem-regulator",
@@ -1008,8 +1430,8 @@
   {
    "file": "v5_2026-06.xlsx",
    "sheet": "SWEST",
-   "row": 162,
-   "row_label": "Time to connect ODI",
+   "row": 21,
+   "row_label": "Non-variant allowed controllable opex",
    "column_headers": [
     "FY2024",
     "FY2025",
@@ -1017,18 +1439,604 @@
     "FY2027",
     "FY2028"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.0_);\\(#,##0.0\\);\\-_)"
    ],
    "values": [
-    0.2498,
-    0.3079,
-    0.5311,
-    0.5372,
-    0.5432
+    75.1,
+    73.19,
+    69.75,
+    70.63,
+    70.34
    ],
    "declared_units": "\u00a3m 20/21 prices",
    "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "EMID",
+   "row": 110,
+   "row_label": "Strategic Investment",
+   "column_headers": [
+    "FY2019",
+    "FY2021",
+    "FY2022",
+    "FY2023",
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)",
+    "0%"
+   ],
+   "values": [
+    2.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "mixed inputs",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "SSEH",
+   "row": 384,
+   "row_label": "Licence fee payments",
+   "column_headers": [
+    "FY2022",
+    "FY2023"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    0.7774,
+    0.8609
+   ],
+   "declared_units": null,
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "ENWL",
+   "row": 137,
+   "row_label": "Actual non-load related capex - other",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)"
+   ],
+   "values": [
+    1.7202,
+    2.08,
+    6.6911,
+    16.3916,
+    24.9803
+   ],
+   "declared_units": "\u00a3m 20/21 prices",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "ENWL",
+   "row": 108,
+   "row_label": "Storm Arwen Re-opener",
+   "column_headers": [
+    "FY2019",
+    "FY2021",
+    "FY2022",
+    "FY2023",
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.0_);\\(#,##0.0\\);\\-_)",
+    "0%"
+   ],
+   "values": [
+    2.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "declared_units": "mixed inputs",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "sheet": "EMID",
+   "row": 315,
+   "row_label": "Deferred Revenue: Controllable opex",
+   "column_headers": [
+    "FY2024",
+    "FY2025",
+    "FY2026",
+    "FY2027",
+    "FY2028"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "0%"
+   ],
+   "values": [
+    0.361,
+    0.3674,
+    0.3473,
+    0.3473,
+    0.3473
+   ],
+   "declared_units": "%",
+   "dialect": "ofgem-regulator",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fds.xlsx",
+   "sheet": "Outturn",
+   "row": 779,
+   "row_label": "FY2025",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0523,
+    0.061,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fds.xlsx",
+   "sheet": "Outturn",
+   "row": 990,
+   "row_label": "FY2026",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0523,
+    0.061,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fds.xlsx",
+   "sheet": "Outturn",
+   "row": 123,
+   "row_label": "FY2023",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0523,
+    0.061,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fp.xlsx",
+   "sheet": "Outturn",
+   "row": 854,
+   "row_label": "FY2025",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0352,
+    0.0452,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fp.xlsx",
+   "sheet": "Outturn",
+   "row": 290,
+   "row_label": "FY2023",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0352,
+    0.0452,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fp.xlsx",
+   "sheet": "Outturn",
+   "row": 758,
+   "row_label": "FY2024",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0352,
+    0.0452,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fds.xlsx",
+   "sheet": "Outturn",
+   "row": 800,
+   "row_label": "FY2026",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0523,
+    0.061,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fp.xlsx",
+   "sheet": "Outturn",
+   "row": 1080,
+   "row_label": "FY2026",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0352,
+    0.0452,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fds.xlsx",
+   "sheet": "Outturn",
+   "row": 957,
+   "row_label": "FY2026",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0523,
+    0.061,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fp.xlsx",
+   "sheet": "Outturn",
+   "row": 158,
+   "row_label": "FY2022",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0352,
+    0.0452,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fp.xlsx",
+   "sheet": "Outturn",
+   "row": 1001,
+   "row_label": "FY2025",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0352,
+    0.0452,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fds.xlsx",
+   "sheet": "Outturn",
+   "row": 18,
+   "row_label": "FY2023",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0523,
+    0.061,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fds.xlsx",
+   "sheet": "Outturn",
+   "row": 348,
+   "row_label": "FY2024",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0523,
+    0.061,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
+   "period": null
+  },
+  {
+   "file": "h7_new_debt_indexation_fp.xlsx",
+   "sheet": "Outturn",
+   "row": 827,
+   "row_label": "FY2025",
+   "column_headers": [
+    "\u00a3 Non-Financials A 10+",
+    "\u00a3 Non-Financials BBB 10+",
+    "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00%"
+   ],
+   "values": [
+    0.0352,
+    0.0452,
+    0.5
+   ],
+   "declared_units": null,
+   "dialect": "caa-h7",
    "period": null
   },
   {
@@ -1040,6 +2048,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1064,6 +2081,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1086,6 +2112,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1110,6 +2145,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1132,6 +2176,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1156,6 +2209,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1178,6 +2240,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1202,6 +2273,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1224,6 +2304,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1248,6 +2337,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1270,6 +2368,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1294,6 +2401,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1316,6 +2432,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1340,6 +2465,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1362,6 +2496,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1386,6 +2529,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1408,6 +2560,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1432,6 +2593,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1454,6 +2624,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1478,6 +2657,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1500,6 +2688,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1524,6 +2721,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1546,6 +2752,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1570,6 +2785,15 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00%"
@@ -1592,6 +2816,15 @@
     "\u00a3 Non-Financials A 10+",
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
+   ],
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1616,28 +2849,14 @@
     "\u00a3 Non-Financials BBB 10+",
     "Weighting"
    ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0352,
-    0.0452,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fp.xlsx",
-   "sheet": "Outturn",
-   "row": 673,
-   "row_label": "FY2024",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
+   "candidate_header_rows": [
+    [
+     "Year",
+     "\u00a3 Non-Financials A 10+",
+     "\u00a3 Non-Financials BBB 10+",
+     "Weighting",
+     "Average yields"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -1650,382 +2869,40 @@
    ],
    "declared_units": null,
    "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fds.xlsx",
-   "sheet": "Outturn",
-   "row": 299,
-   "row_label": "FY2024",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0523,
-    0.061,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fp.xlsx",
-   "sheet": "Outturn",
-   "row": 1273,
-   "row_label": "FY2026",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0352,
-    0.0452,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fds.xlsx",
-   "sheet": "Outturn",
-   "row": 813,
-   "row_label": "FY2026",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0523,
-    0.061,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fp.xlsx",
-   "sheet": "Outturn",
-   "row": 59,
-   "row_label": "FY2022",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0352,
-    0.0452,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fp.xlsx",
-   "sheet": "Outturn",
-   "row": 333,
-   "row_label": "FY2023",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0352,
-    0.0452,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fds.xlsx",
-   "sheet": "Outturn",
-   "row": 356,
-   "row_label": "FY2024",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0523,
-    0.061,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fp.xlsx",
-   "sheet": "Outturn",
-   "row": 228,
-   "row_label": "FY2022",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0352,
-    0.0452,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fp.xlsx",
-   "sheet": "Outturn",
-   "row": 316,
-   "row_label": "FY2023",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0352,
-    0.0452,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fds.xlsx",
-   "sheet": "Outturn",
-   "row": 62,
-   "row_label": "FY2023",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0523,
-    0.061,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fp.xlsx",
-   "sheet": "Outturn",
-   "row": 633,
-   "row_label": "FY2024",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0352,
-    0.0452,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fds.xlsx",
-   "sheet": "Outturn",
-   "row": 483,
-   "row_label": "FY2024",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0523,
-    0.061,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fds.xlsx",
-   "sheet": "Outturn",
-   "row": 551,
-   "row_label": "FY2025",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0523,
-    0.061,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "h7_new_debt_indexation_fds.xlsx",
-   "sheet": "Outturn",
-   "row": 1009,
-   "row_label": "FY2026",
-   "column_headers": [
-    "\u00a3 Non-Financials A 10+",
-    "\u00a3 Non-Financials BBB 10+",
-    "Weighting"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00%"
-   ],
-   "values": [
-    0.0523,
-    0.061,
-    0.5
-   ],
-   "declared_units": null,
-   "dialect": "caa-h7",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 12,
-   "row_label": "Red Elec",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.4005,
-    0.4093,
-    0.388
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 4,
-   "row_label": "UU",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.5474,
-    0.5409,
-    0.5437
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 8,
-   "row_label": "National Grid",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.4951,
-    0.4997,
-    0.4667
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
    "period": null
   },
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "One-Off Wedge",
-   "row": 13,
-   "row_label": "2028/29",
+   "row": 10,
+   "row_label": "2025/26",
    "column_headers": [
     "RPI",
     "CPI",
     "% of 'legacy' RPI in the RPI Figure"
+   ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -2033,210 +2910,9 @@
     "General"
    ],
    "values": [
-    2029.0,
-    2.8,
-    2.0,
-    1.0
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Step-1 Cost of Equity",
-   "row": 6,
-   "row_label": "A",
-   "column_headers": [
-    "RIIO-3 Low",
-    "Proposed",
-    "RIIO-3 High"
-   ],
-   "number_formats": [
-    "0.00%"
-   ],
-   "values": [
-    0.0201,
-    0.0201,
-    0.0201
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 20,
-   "row_label": "Pennon",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.00"
-   ],
-   "values": [
-    1.1491,
-    0.66,
-    0.6276
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Ex Post and Ex Ante TMR",
-   "row": 11,
-   "row_label": "Ex ante TMR (arithmetic)",
-   "column_headers": [
-    "10yr",
-    "20yr"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.072,
-    0.0586,
-    0.0679
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 28,
-   "row_label": "Italgas",
-   "column_headers": [
-    "2Yr",
-    "5yr"
-   ],
-   "number_formats": [
-    "0.00"
-   ],
-   "values": [
-    0.6186,
-    0.6728
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Step-1 Cost of Equity",
-   "row": 11,
-   "row_label": "H",
-   "column_headers": [
-    "RIIO-3 Low",
-    "Proposed",
-    "RIIO-3 High"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.068,
-    0.069,
-    0.069
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 25,
-   "row_label": "Snam",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.00"
-   ],
-   "values": [
-    0.4952,
-    0.6592,
-    0.756
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 27,
-   "row_label": "Terna",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.00"
-   ],
-   "values": [
-    0.3784,
-    0.5682,
-    0.6973
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "One-Off Wedge",
-   "row": 12,
-   "row_label": "2027/28",
-   "column_headers": [
-    "RPI",
-    "CPI",
-    "% of 'legacy' RPI in the RPI Figure"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00",
-    "General"
-   ],
-   "values": [
-    2028.0,
-    3.0,
-    2.0,
-    1.0
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "One-Off Wedge",
-   "row": 7,
-   "row_label": "2022/23",
-   "column_headers": [
-    "RPI",
-    "CPI",
-    "% of 'legacy' RPI in the RPI Figure"
-   ],
-   "number_formats": [
-    "0%",
-    "0.00",
-    "General"
-   ],
-   "values": [
-    2023.0,
-    12.9,
-    10.0,
+    2026.0,
+    2.2,
+    1.6,
     1.0
    ],
    "declared_units": null,
@@ -2252,6 +2928,13 @@
     "2Yr",
     "5yr",
     "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
    ],
    "number_formats": [
     "0.0%"
@@ -2268,55 +2951,19 @@
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "Beta Estimates ",
-   "row": 24,
-   "row_label": "Enagas",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.00"
-   ],
-   "values": [
-    0.4712,
-    0.4757,
-    0.5941
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Ex Post and Ex Ante TMR",
-   "row": 10,
-   "row_label": "Geometric-to-Arithmetic Conversion",
-   "column_headers": [
-    "10yr",
-    "20yr"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.0684,
-    0.0695,
-    0.0161
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
    "row": 22,
    "row_label": "National Grid",
    "column_headers": [
     "2Yr",
     "5yr",
     "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
    ],
    "number_formats": [
     "0.00"
@@ -2332,21 +2979,203 @@
   },
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Step-1 Cost of Equity",
-   "row": 9,
-   "row_label": "D",
+   "sheet": "Beta Estimates ",
+   "row": 28,
+   "row_label": "Italgas",
    "column_headers": [
-    "RIIO-3 Low",
-    "Proposed",
-    "RIIO-3 High"
+    "2Yr",
+    "5yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr"
+    ]
    ],
    "number_formats": [
-    "0%"
+    "0.00"
    ],
    "values": [
-    0.6,
-    0.6,
-    0.6
+    0.6186,
+    0.6728
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Ex Post and Ex Ante TMR",
+   "row": 11,
+   "row_label": "Ex ante TMR (arithmetic)",
+   "column_headers": [
+    "10yr",
+    "20yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "Ofgem Method for DD 2025",
+     "",
+     ""
+    ],
+    [
+     "10yr",
+     "20yr",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.072,
+    0.0586,
+    0.0679
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 11,
+   "row_label": "Snam",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.4965,
+    0.4691,
+    0.4595
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 18,
+   "row_label": "UU",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.00"
+   ],
+   "values": [
+    0.7438,
+    0.5589,
+    0.6132
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 19,
+   "row_label": "SVT",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.00"
+   ],
+   "values": [
+    0.7212,
+    0.5308,
+    0.5807
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 4,
+   "row_label": "UU",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.5474,
+    0.5409,
+    0.5437
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 24,
+   "row_label": "Enagas",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.00"
+   ],
+   "values": [
+    0.4712,
+    0.4757,
+    0.5941
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2355,20 +3184,133 @@
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "One-Off Wedge",
-   "row": 14,
-   "row_label": "2029/30",
+   "row": 8,
+   "row_label": "2023/24",
    "column_headers": [
     "RPI",
-    "CPI"
+    "CPI",
+    "% of 'legacy' RPI in the RPI Figure"
+   ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge"
+    ]
    ],
    "number_formats": [
+    "0%",
     "0.00",
     "General"
    ],
    "values": [
-    2030.0,
-    2.8,
-    2.0
+    2024.0,
+    7.5,
+    5.7,
+    1.0
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 8,
+   "row_label": "National Grid",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.4951,
+    0.4997,
+    0.4667
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Step-1 Cost of Equity",
+   "row": 10,
+   "row_label": "E = (C-(D*B))/(1-D)",
+   "column_headers": [
+    "RIIO-3 Low",
+    "Proposed",
+    "RIIO-3 High"
+   ],
+   "candidate_header_rows": [
+    [
+     "RIIO-3 Low",
+     "Proposed",
+     "RIIO-3 High"
+    ]
+   ],
+   "number_formats": [
+    "General"
+   ],
+   "values": [
+    0.64,
+    0.83,
+    1.01
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 13,
+   "row_label": "Terna",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.39,
+    0.3958,
+    0.4224
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2383,6 +3325,29 @@
     "RPI",
     "CPI",
     "% of 'legacy' RPI in the RPI Figure"
+   ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -2409,6 +3374,29 @@
     "CPI",
     "% of 'legacy' RPI in the RPI Figure"
    ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge"
+    ]
+   ],
    "number_formats": [
     "0%",
     "0.00",
@@ -2426,21 +3414,192 @@
   },
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "One-Off Wedge",
+   "row": 12,
+   "row_label": "2027/28",
+   "column_headers": [
+    "RPI",
+    "CPI",
+    "% of 'legacy' RPI in the RPI Figure"
+   ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge"
+    ]
+   ],
+   "number_formats": [
+    "0%",
+    "0.00",
+    "General"
+   ],
+   "values": [
+    2028.0,
+    3.0,
+    2.0,
+    1.0
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 5,
+   "row_label": "SVT",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.5047,
+    0.5029,
+    0.506
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 25,
+   "row_label": "Snam",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.00"
+   ],
+   "values": [
+    0.4952,
+    0.6592,
+    0.756
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 26,
+   "row_label": "Red Elec",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.00"
+   ],
+   "values": [
+    0.3497,
+    0.3741,
+    0.4934
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "Step-1 Cost of Equity",
-   "row": 10,
-   "row_label": "E = (C-(D*B))/(1-D)",
+   "row": 6,
+   "row_label": "A",
    "column_headers": [
     "RIIO-3 Low",
     "Proposed",
     "RIIO-3 High"
    ],
+   "candidate_header_rows": [
+    [
+     "RIIO-3 Low",
+     "Proposed",
+     "RIIO-3 High"
+    ]
+   ],
    "number_formats": [
-    "General"
+    "0.00%"
    ],
    "values": [
-    0.64,
-    0.83,
-    1.01
+    0.0201,
+    0.0201,
+    0.0201
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 12,
+   "row_label": "Red Elec",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.4005,
+    0.4093,
+    0.388
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2449,12 +3608,35 @@
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "One-Off Wedge",
-   "row": 8,
-   "row_label": "2023/24",
+   "row": 7,
+   "row_label": "2022/23",
    "column_headers": [
     "RPI",
     "CPI",
     "% of 'legacy' RPI in the RPI Figure"
+   ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -2462,10 +3644,123 @@
     "General"
    ],
    "values": [
-    2024.0,
-    7.5,
-    5.7,
+    2023.0,
+    12.9,
+    10.0,
     1.0
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 14,
+   "row_label": "Italgas",
+   "column_headers": [
+    "2Yr",
+    "5yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr"
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.5883,
+    0.5467
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Step-1 Cost of Equity",
+   "row": 7,
+   "row_label": "B",
+   "column_headers": [
+    "RIIO-3 Low",
+    "Proposed",
+    "RIIO-3 High"
+   ],
+   "candidate_header_rows": [
+    [
+     "RIIO-3 Low",
+     "Proposed",
+     "RIIO-3 High"
+    ]
+   ],
+   "number_formats": [
+    "0.000"
+   ],
+   "values": [
+    0.075,
+    0.075,
+    0.075
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 20,
+   "row_label": "Pennon",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.00"
+   ],
+   "values": [
+    1.1491,
+    0.66,
+    0.6276
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Beta Estimates ",
+   "row": 6,
+   "row_label": "Pennon",
+   "column_headers": [
+    "2Yr",
+    "5yr",
+    "10yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
+   "number_formats": [
+    "0.0%"
+   ],
+   "values": [
+    0.6596,
+    0.45,
+    0.4387
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2480,6 +3775,13 @@
     "RIIO-3 Low",
     "Proposed",
     "RIIO-3 High"
+   ],
+   "candidate_header_rows": [
+    [
+     "RIIO-3 Low",
+     "Proposed",
+     "RIIO-3 High"
+    ]
    ],
    "number_formats": [
     "0.00",
@@ -2496,18 +3798,44 @@
   },
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Ex Post and Ex Ante TMR",
-   "row": 8,
-   "row_label": "Geometric Mean Dividend Yield",
+   "sheet": "One-Off Wedge",
+   "row": 14,
+   "row_label": "2029/30",
    "column_headers": [
-    "1yr"
+    "RPI",
+    "CPI"
+   ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge"
+    ]
    ],
    "number_formats": [
-    "0.0%"
+    "0.00",
+    "General"
    ],
    "values": [
-    0.0692,
-    0.0455
+    2030.0,
+    2.8,
+    2.0
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2515,21 +3843,53 @@
   },
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 18,
-   "row_label": "UU",
+   "sheet": "Ex Post and Ex Ante TMR",
+   "row": 9,
+   "row_label": "Geometric Mean Dividend Yield Growth Rate of Real Dividends",
    "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
+    "1yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "1yr",
+     ""
+    ]
    ],
    "number_formats": [
-    "0.00"
+    "0.0%"
    ],
    "values": [
-    0.7438,
-    0.5589,
-    0.6132
+    0.0526,
+    0.0064
+   ],
+   "declared_units": null,
+   "dialect": "rate-models",
+   "period": null
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "sheet": "Step-1 Cost of Equity",
+   "row": 9,
+   "row_label": "D",
+   "column_headers": [
+    "RIIO-3 Low",
+    "Proposed",
+    "RIIO-3 High"
+   ],
+   "candidate_header_rows": [
+    [
+     "RIIO-3 Low",
+     "Proposed",
+     "RIIO-3 High"
+    ]
+   ],
+   "number_formats": [
+    "0%"
+   ],
+   "values": [
+    0.6,
+    0.6,
+    0.6
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2544,6 +3904,32 @@
     "RPI",
     "CPI",
     "% of 'legacy' RPI in the RPI Figure"
+   ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge",
+     "Mean"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -2562,21 +3948,24 @@
   },
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 26,
-   "row_label": "Red Elec",
+   "sheet": "Ex Post and Ex Ante TMR",
+   "row": 8,
+   "row_label": "Geometric Mean Dividend Yield",
    "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
+    "1yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "1yr",
+     ""
+    ]
    ],
    "number_formats": [
-    "0.00"
+    "0.0%"
    ],
    "values": [
-    0.3497,
-    0.3741,
-    0.4934
+    0.0692,
+    0.0455
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2585,103 +3974,31 @@
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "Ex Post and Ex Ante TMR",
-   "row": 9,
-   "row_label": "Geometric Mean Dividend Yield Growth Rate of Real Dividends",
+   "row": 10,
+   "row_label": "Geometric-to-Arithmetic Conversion",
    "column_headers": [
-    "1yr"
+    "10yr",
+    "20yr"
+   ],
+   "candidate_header_rows": [
+    [
+     "Ofgem Method for DD 2025",
+     "",
+     ""
+    ],
+    [
+     "10yr",
+     "20yr",
+     ""
+    ]
    ],
    "number_formats": [
     "0.0%"
    ],
    "values": [
-    0.0526,
-    0.0064
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 6,
-   "row_label": "Pennon",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.6596,
-    0.45,
-    0.4387
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 14,
-   "row_label": "Italgas",
-   "column_headers": [
-    "2Yr",
-    "5yr"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.5883,
-    0.5467
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 19,
-   "row_label": "SVT",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.00"
-   ],
-   "values": [
-    0.7212,
-    0.5308,
-    0.5807
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 11,
-   "row_label": "Snam",
-   "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
-   ],
-   "number_formats": [
-    "0.0%"
-   ],
-   "values": [
-    0.4965,
-    0.4691,
-    0.4595
+    0.0684,
+    0.0695,
+    0.0161
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2690,20 +4007,27 @@
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "Step-1 Cost of Equity",
-   "row": 7,
-   "row_label": "B",
+   "row": 11,
+   "row_label": "H",
    "column_headers": [
     "RIIO-3 Low",
     "Proposed",
     "RIIO-3 High"
    ],
+   "candidate_header_rows": [
+    [
+     "RIIO-3 Low",
+     "Proposed",
+     "RIIO-3 High"
+    ]
+   ],
    "number_formats": [
-    "0.000"
+    "0.0%"
    ],
    "values": [
-    0.075,
-    0.075,
-    0.075
+    0.068,
+    0.069,
+    0.069
    ],
    "declared_units": null,
    "dialect": "rate-models",
@@ -2712,12 +4036,35 @@
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "One-Off Wedge",
-   "row": 10,
-   "row_label": "2025/26",
+   "row": 13,
+   "row_label": "2028/29",
    "column_headers": [
     "RPI",
     "CPI",
     "% of 'legacy' RPI in the RPI Figure"
+   ],
+   "candidate_header_rows": [
+    [
+     "Values from supplementary economy tables, March OBR fiscal outlook.  For FY (table 1.7)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Economic and fiscal outlook \u2013 March 2025 - Office for Budget Responsibility",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "RPI",
+     "CPI",
+     "% of 'legacy' RPI in the RPI Figure",
+     "20Yr Wedge"
+    ]
    ],
    "number_formats": [
     "0%",
@@ -2725,9 +4072,9 @@
     "General"
    ],
    "values": [
-    2026.0,
-    2.2,
-    1.6,
+    2029.0,
+    2.8,
+    2.0,
     1.0
    ],
    "declared_units": null,
@@ -2737,100 +4084,56 @@
   {
    "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
    "sheet": "Beta Estimates ",
-   "row": 13,
+   "row": 27,
    "row_label": "Terna",
    "column_headers": [
     "2Yr",
     "5yr",
     "10yr"
    ],
+   "candidate_header_rows": [
+    [
+     "2Yr",
+     "5yr",
+     "10yr"
+    ]
+   ],
    "number_formats": [
-    "0.0%"
+    "0.00"
    ],
    "values": [
-    0.39,
-    0.3958,
-    0.4224
+    0.3784,
+    0.5682,
+    0.6973
    ],
    "declared_units": null,
    "dialect": "rate-models",
    "period": null
   },
   {
-   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
-   "sheet": "Beta Estimates ",
-   "row": 5,
-   "row_label": "SVT",
+   "file": "baldragon_model.xlsm",
+   "sheet": "InpC",
+   "row": 578,
+   "row_label": "Distributions Stop",
    "column_headers": [
-    "2Yr",
-    "5yr",
-    "10yr"
+    "Baldragon"
+   ],
+   "candidate_header_rows": [
+    [
+     "Baldragon",
+     ""
+    ],
+    [
+     "Base Case",
+     ""
+    ]
    ],
    "number_formats": [
-    "0.0%"
+    "dd\\ mmm\\ yyyy;;\\-"
    ],
    "values": [
-    0.5047,
-    0.5029,
-    0.506
-   ],
-   "declared_units": null,
-   "dialect": "rate-models",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 1781,
-   "row_label": "Senior 1 DSRF - Cap LB - Commitment Fees during construction",
-   "column_headers": [
-    "total",
-    "FY2015",
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 1656,
-   "row_label": "SD1 - Change in Unamortised Loan Cost",
-   "column_headers": [
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.503,
-    0.2679,
-    0.2092,
-    0.065,
-    -0.0292
+    52211.0,
+    52211.0
    ],
    "declared_units": null,
    "dialect": "closed-deal",
@@ -2838,28 +4141,122 @@
   },
   {
    "file": "baldragon_model.xlsm",
-   "sheet": "CalcM",
-   "row": 481,
-   "row_label": "Building Spend -[Facility 3] -[Facility 3]",
+   "sheet": "Gaps",
+   "row": 158,
+   "row_label": "FY2029",
    "column_headers": [
-    "total",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016"
+    "Section",
+    "Comment"
+   ],
+   "candidate_header_rows": [
+    [
+     "Section",
+     "Comment",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\"Financial Model\"",
+     "QMPF to add name of model and provide at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\"Project IRR\"",
+     "QMPF to add at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Schedule Part 14 Section 1 \"Minimum Availability Deduction\"",
+     "QMPF to add indexation factor at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Schedule Part 14 Section 2, para 2",
+     "QMPF to add indexation factor at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Schedule Part 14 Appendix 1",
+     "QMPF to add Annual Service Payment at Base Date at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Schedule Part 23 \"Threshold Equity IRR\"",
+     "QMPF to add at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Document Name, Whereas section of page 1, \"Loan Notes\" (p1),Schedule Part 1,",
+     "All sections refer to total amount of loan notes - to be completed at FC (or when final model)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Part 5 Redemption Table",
+     "Sub-debt repayment schedule required",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "p1. \"Background\" Para (E) (i)",
+     "Confirm term loan amount",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "p1. \"Background\" Para (E) (ii)",
+     "Confirm sub debt amount",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\"Gilt Rate\"",
+     "Add at FC or when locked",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@",
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@\" \"",
+    "0.00%"
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
+    285002.9947,
+    0.0099,
+    10717661.6911,
+    570005.9894,
+    47208.0
    ],
    "declared_units": null,
    "dialect": "closed-deal",
@@ -2867,9 +4264,9 @@
   },
   {
    "file": "forfar_model.xlsm",
-   "sheet": "FixedAssetSA",
-   "row": 769,
-   "row_label": "DevFin - Cap Plant - [Facility 6]",
+   "sheet": "CalcSA",
+   "row": 2629,
+   "row_label": "Senior Debt 1 Sculpted repayment",
    "column_headers": [
     "total",
     "FY2015",
@@ -2880,44 +4277,94 @@
     "FY2018",
     "FY2018"
    ],
+   "candidate_header_rows": [
+    [
+     "total",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
     "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
    ],
    "values": [
-    0.0,
+    35.6681,
     0.0,
     0.0,
     0.0,
     0.0
    ],
-   "declared_units": "\u00a3m",
+   "declared_units": null,
    "dialect": "closed-deal",
    "period": null
   },
   {
-   "file": "forfar_model.xlsm",
-   "sheet": "Charts",
-   "row": 18,
-   "row_label": "LLCR Target",
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 184,
+   "row_label": "Total",
    "column_headers": [
+    "total",
+    "FY2015",
+    "FY2015",
+    "FY2016",
+    "FY2016",
     "FY2017",
     "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019",
-    "FY2019",
-    "FY2020",
-    "FY2020"
+    "FY2018"
+   ],
+   "candidate_header_rows": [
+    [
+     "total",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
     "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
    ],
    "values": [
-    1.15,
-    1.15,
-    1.15,
-    1.15,
-    1.15
+    37.1902,
+    12.7763,
+    12.1558,
+    8.5747,
+    1.3168
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 1542,
+   "row_label": "Operations Start Date Flag",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0
    ],
    "declared_units": null,
    "dialect": "closed-deal",
@@ -2926,8 +4373,8 @@
   {
    "file": "levenmouth_model.xlsm",
    "sheet": "CalcM",
-   "row": 773,
-   "row_label": "[Spare]",
+   "row": 1070,
+   "row_label": "",
    "column_headers": [
     "total",
     "FY2014",
@@ -2938,11 +4385,80 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "total",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
     "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
    ],
    "values": [
+    38.3749,
+    9.0336,
     0.0,
+    2.1508,
+    1.5732
+   ],
+   "declared_units": "\u00a3m",
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 1391,
+   "row_label": "Lifecycle Costs per MRA",
+   "column_headers": [
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018",
+    "FY2019",
+    "FY2019"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    7.1488,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3m",
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "CalcM",
+   "row": 1225,
+   "row_label": "Financial Close Flag",
+   "column_headers": [
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    1.0,
     0.0,
     0.0,
     0.0,
@@ -2954,9 +4470,9 @@
   },
   {
    "file": "baldragon_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 1718,
-   "row_label": "SD1 - CapLB",
+   "sheet": "CashFlowSA",
+   "row": 36,
+   "row_label": "(Increase) / Decrease in VAT",
    "column_headers": [
     "FY2016",
     "FY2017",
@@ -2966,54 +4482,346 @@
     "FY2019",
     "FY2019"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
    ],
    "values": [
     0.0,
+    -0.8216,
+    0.5748,
+    -0.1529,
+    0.3002
+   ],
+   "declared_units": "\u00a3m",
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "InpC",
+   "row": 780,
+   "row_label": "Fixed Asset - Plant Asset Life",
+   "column_headers": [
+    "Baldragon"
+   ],
+   "candidate_header_rows": [
+    [
+     "Baldragon",
+     ""
+    ],
+    [
+     "Base Case",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    5.0,
+    5.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "forfar_model.xlsm",
+   "sheet": "FinLeaseSA",
+   "row": 393,
+   "row_label": "Total FM and other Service Costs",
+   "column_headers": [
+    "total",
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018"
+   ],
+   "candidate_header_rows": [
+    [
+     "total",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    -19.9029,
+    0.0,
+    0.0,
+    0.0,
+    -0.0442
+   ],
+   "declared_units": "\u00a3m",
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "Ratios",
+   "row": 145,
+   "row_label": "Loan Life Cover Ratio",
+   "column_headers": [
+    "Date",
+    "FY2019",
+    "FY2019",
+    "FY2020",
+    "FY2020",
+    "FY2021",
+    "FY2021"
+   ],
+   "candidate_header_rows": [
+    [
+     "Date",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Date",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Date",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Flag",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Flag",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000;\\-#,##0.000",
+    "#,##0.000_);[Red]\\(#,##0.000\\);\\-_)"
+   ],
+   "values": [
+    1.1795,
+    1.3443,
+    1.1982,
+    1.1859,
+    1.1875
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "CalcM",
+   "row": 439,
+   "row_label": "",
+   "column_headers": [
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "InpM",
+   "row": 183,
+   "row_label": "[Spare]",
+   "column_headers": [
+    "constant",
+    "total"
+   ],
+   "candidate_header_rows": [
+    [
+     "constant",
+     "total"
+    ],
+    [
+     "indexation",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@",
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    1.0,
+    0.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 609,
+   "row_label": "Revenue Indexation",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    1.0,
+    1.0,
+    1.0,
+    1.0376,
+    1.0376
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "forfar_model.xlsm",
+   "sheet": "CalcM",
+   "row": 1746,
+   "row_label": "Senior 1 DSRF Arrangement Fee",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    0.0048,
     0.0,
     0.0,
     0.0,
     0.0
    ],
-   "declared_units": "\u00a3m",
+   "declared_units": null,
    "dialect": "closed-deal",
    "period": null
   },
   {
-   "file": "baldragon_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 1767,
-   "row_label": "Cash available after senior debt service",
+   "file": "forfar_model.xlsm",
+   "sheet": "CalcM",
+   "row": 587,
+   "row_label": "Total",
    "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    4.2037,
+    4.2037,
+    5.6194,
+    7.5845,
+    8.7656
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "forfar_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 2160,
+   "row_label": "Operations Period Flag",
+   "column_headers": [
+    "FY2015",
+    "FY2016",
     "FY2016",
     "FY2017",
     "FY2017",
     "FY2018",
     "FY2018",
-    "FY2019",
-    "FY2019",
-    "FY2020"
+    "FY2019"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
    ],
    "values": [
-    0.0284,
-    0.1499,
-    0.1499,
-    0.1499,
-    0.9029
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    1.0
    ],
-   "declared_units": "\u00a3m",
+   "declared_units": null,
    "dialect": "closed-deal",
    "period": null
   },
   {
    "file": "baldragon_model.xlsm",
    "sheet": "CalcSA",
-   "row": 2748,
-   "row_label": "Arrangement Fees",
+   "row": 504,
+   "row_label": "[Spare]",
    "column_headers": [
     "FY2016",
     "FY2017",
@@ -3023,13 +4831,14 @@
     "FY2019",
     "FY2019"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "0.00%_);\\-0.00%_);\"-  \";\" \"@\" \""
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
+    1.0,
+    0.95,
+    0.05,
     0.0,
     0.0
    ],
@@ -3038,226 +4847,38 @@
    "period": null
   },
   {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcM",
-   "row": 916,
-   "row_label": "Decrease",
-   "column_headers": [
-    "total",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    6.837,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 860,
-   "row_label": "Insurance",
-   "column_headers": [
-    "constant",
-    "unit",
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018"
-   ],
-   "number_formats": [
-    "0%;\\(\\%\\);\\-\\ ",
-    "dd\\ mmm\\ yyyy;;\\-"
-   ],
-   "values": [
-    42773.0,
-    51903.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
    "file": "baldragon_model.xlsm",
-   "sheet": "CalcM",
-   "row": 722,
+   "sheet": "CalcSA",
+   "row": 511,
    "row_label": "[Spare]",
    "column_headers": [
     "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016"
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018",
+    "FY2019",
+    "FY2019"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+    "0.00%_);\\-0.00%_);\"-  \";\" \"@\" \""
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
+    1.0,
+    0.95,
+    0.05,
     0.0,
     0.0
    ],
-   "declared_units": null,
+   "declared_units": "%allocation",
    "dialect": "closed-deal",
    "period": null
   },
   {
-   "file": "forfar_model.xlsm",
-   "sheet": "Swap profile",
-   "row": 107,
-   "row_label": "FY2035",
-   "column_headers": [
-    "Last Drawdown Date - Senior Debt 1"
-   ],
-   "number_formats": [
-    "#,##0_);\\(#,##0\\);\"-  \";\" \"@",
-    "_-[$\u20ac-2]* #,##0.00_-;\\-[$\u20ac-2]* #,##0.00_-;_-[$\u20ac-2]* \"-\"??_-",
-    "d-mmm-yy"
-   ],
-   "values": [
-    35.0,
-    49217.0,
-    12509127.1286,
-    0.0,
-    49217.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "CalcM",
-   "row": 110,
-   "row_label": "[Facility 7]",
-   "column_headers": [
-    "constant",
-    "FY2014",
-    "FY2014",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
+   "file": "baldragon_model.xlsm",
    "sheet": "CalcSA",
-   "row": 2449,
-   "row_label": "Bond 1 - Total Fees",
-   "column_headers": [
-    "total",
-    "FY2015",
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "baldragon_model.xlsm",
-   "sheet": "FinLeaseSA",
-   "row": 378,
-   "row_label": "Interest receivable - [Facility 8]",
-   "column_headers": [
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019",
-    "FY2019",
-    "FY2020"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "Databook",
-   "row": 279,
-   "row_label": "MRA Prefund?",
-   "column_headers": [
-    "Value 1"
-   ],
-   "number_formats": [
-    "General"
-   ],
-   "values": [
-    1.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "baldragon_model.xlsm",
-   "sheet": "FixedAssetSA",
-   "row": 268,
+   "row": 1012,
    "row_label": "",
    "column_headers": [
     "FY2016",
@@ -3268,40 +4889,12 @@
     "FY2019",
     "FY2019"
    ],
+   "candidate_header_rows": [],
    "number_formats": [
     "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "CalcM",
-   "row": 770,
-   "row_label": "[Spare]",
-   "column_headers": [
-    "total",
-    "FY2014",
-    "FY2014",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
+    1.8209,
     0.0,
     0.0,
     0.0,
@@ -3313,21 +4906,522 @@
   },
   {
    "file": "baldragon_model.xlsm",
-   "sheet": "Repayment schedules",
-   "row": 27,
-   "row_label": "FY2021",
+   "sheet": "InpC",
+   "row": 546,
+   "row_label": "Lockup ADSCR",
    "column_headers": [
-    "FY2017"
+    "Baldragon"
+   ],
+   "candidate_header_rows": [
+    [
+     "Baldragon",
+     ""
+    ],
+    [
+     "Base Case",
+     ""
+    ]
    ],
    "number_formats": [
-    "#,##0_);\\(#,##0\\);\"-  \";\" \"@",
-    "0.00%",
-    "d-mmm-yy"
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
    ],
    "values": [
-    44469.0,
-    466976.4229,
-    0.0163,
+    1.1,
+    1.1
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcM",
+   "row": 1328,
+   "row_label": "Interest Paid %",
+   "column_headers": [
+    "FY2014",
+    "FY2014",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "0.00%_);\\(0.00%\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "declared_units": "%",
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 1438,
+   "row_label": "Operational days",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    0.0,
+    0.0,
+    0.0,
+    84.0,
+    182.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "InpSA",
+   "row": 6,
+   "row_label": "Model Period Beginning",
+   "column_headers": [
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018",
+    "FY2019",
+    "FY2019",
+    "FY2020"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "dd\\ mmm\\ yy_);\\(###0\\);\"-  \";\" \"@\" \""
+   ],
+   "values": [
+    42278.0,
+    42461.0,
+    42644.0,
+    42826.0,
+    43009.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "CalcM",
+   "row": 677,
+   "row_label": "[Spare]",
+   "column_headers": [
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "0.00%_);\\-0.00%_);\"-  \";\" \"@\" \""
+   ],
+   "values": [
+    0.0055,
+    0.0219,
+    0.1694,
+    0.1639,
+    0.1694
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 150,
+   "row_label": "Indexing at 6%",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "0.00%_);\\(0.00%\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    0.06,
+    0.06,
+    0.06,
+    0.06,
+    0.06
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "forfar_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 1382,
+   "row_label": "Days in Ops phase period",
+   "column_headers": [
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018",
+    "FY2019"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    183.0,
+    183.0,
+    183.0,
+    182.0,
+    183.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "forfar_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 1432,
+   "row_label": "Senior Debt 1 interest paid during construction",
+   "column_headers": [
+    "total",
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018"
+   ],
+   "candidate_header_rows": [
+    [
+     "total",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    1.265,
+    0.0768,
+    0.2549,
+    0.4709,
+    0.4624
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 1014,
+   "row_label": "Nominal Passthrough 3",
+   "column_headers": [
+    "constant",
+    "total",
+    "FY2015",
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017"
+   ],
+   "candidate_header_rows": [
+    [
+     "constant",
+     "total",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@",
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    2.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "forfar_model.xlsm",
+   "sheet": "FixedAssetSA",
+   "row": 289,
+   "row_label": "Facility Operating Timing Flag - Forfar  - Phase 2",
+   "column_headers": [
+    "total",
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018"
+   ],
+   "candidate_header_rows": [
+    [
+     "total",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.00_);\\(#,##0.00\\);\"-  \";\" \"@",
+    "0.00%_);\\-0.00%_);\"-  \";\" \"@\" \""
+   ],
+   "values": [
+    48.6264,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 3117,
+   "row_label": "Senior Debt 1 Unamortised Loan Cost",
+   "column_headers": [
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018",
+    "FY2019",
+    "FY2019",
+    "FY2020"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    0.2681,
+    0.5431,
+    0.7388,
+    0.8314,
+    0.8232
+   ],
+   "declared_units": "\u00a3m",
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcM",
+   "row": 1505,
+   "row_label": "Commitment Fee - Senior Debt 2 payment",
+   "column_headers": [
+    "constant",
+    "FY2014",
+    "FY2014",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "constant",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    0.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "forfar_model.xlsm",
+   "sheet": "InpC",
+   "row": 653,
+   "row_label": "Cash Overdraft interest rate 3",
+   "column_headers": [
+    "Forfar"
+   ],
+   "candidate_header_rows": [
+    [
+     "Forfar",
+     ""
+    ],
+    [
+     "Base Case",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "0.00%_);\\-0.00%_);\"-  \";\" \"@\" \""
+   ],
+   "values": [
+    0.05,
+    0.05
+   ],
+   "declared_units": "%",
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcM",
+   "row": 966,
+   "row_label": "MRA Prefund - additional amount",
+   "column_headers": [
+    "constant",
+    "total",
+    "FY2014",
+    "FY2014",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "constant",
+     "total",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    0.0205,
+    0.0205,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "baldragon_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 3648,
+   "row_label": "Construction Costs FD expensing",
+   "column_headers": [
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018",
+    "FY2019",
+    "FY2019"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    -27.2841,
+    -2.46,
+    -7.7526,
+    -9.9227,
+    -5.9131
+   ],
+   "declared_units": "\u00a3m",
+   "dialect": "closed-deal",
+   "period": null
+  },
+  {
+   "file": "forfar_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 2159,
+   "row_label": "Operations Start Date Flag",
+   "column_headers": [
+    "FY2015",
+    "FY2016",
+    "FY2016",
+    "FY2017",
+    "FY2017",
+    "FY2018",
+    "FY2018",
+    "FY2019"
+   ],
+   "candidate_header_rows": [],
+   "number_formats": [
+    "#,##0_);\\(#,##0\\);\"-  \";\" \"@"
+   ],
+   "values": [
+    0.0,
+    0.0,
+    0.0,
+    1.0,
     0.0
    ],
    "declared_units": null,
@@ -3337,11 +5431,109 @@
   {
    "file": "baldragon_model.xlsm",
    "sheet": "Gaps",
-   "row": 205,
-   "row_label": "FY2040",
+   "row": 121,
+   "row_label": "FY2019",
    "column_headers": [
     "Section",
     "Comment"
+   ],
+   "candidate_header_rows": [
+    [
+     "Section",
+     "Comment",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\"Financial Model\"",
+     "QMPF to add name of model and provide at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\"Project IRR\"",
+     "QMPF to add at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Schedule Part 14 Section 1 \"Minimum Availability Deduction\"",
+     "QMPF to add indexation factor at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Schedule Part 14 Section 2, para 2",
+     "QMPF to add indexation factor at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Schedule Part 14 Appendix 1",
+     "QMPF to add Annual Service Payment at Base Date at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Schedule Part 23 \"Threshold Equity IRR\"",
+     "QMPF to add at FC",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Document Name, Whereas section of page 1, \"Loan Notes\" (p1),Schedule Part 1,",
+     "All sections refer to total amount of loan notes - to be completed at FC (or when final model)",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Part 5 Redemption Table",
+     "Sub-debt repayment schedule required",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "p1. \"Background\" Para (E) (i)",
+     "Confirm term loan amount",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "p1. \"Background\" Para (E) (ii)",
+     "Confirm sub debt amount",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "\"Gilt Rate\"",
+     "Add at FC or when locked",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
     "#,##0_);\\(#,##0\\);\"-  \";\" \"@",
@@ -3349,127 +5541,50 @@
     "0.00%"
    ],
    "values": [
-    517612.5146,
-    0.018,
-    26784636.9619,
+    231122.0182,
+    0.0081,
+    1566704.507,
     0.0,
-    51501.0
+    43830.0
    ],
    "declared_units": null,
    "dialect": "closed-deal",
    "period": null
   },
   {
-   "file": "forfar_model.xlsm",
-   "sheet": "FinLeaseSA",
-   "row": 406,
-   "row_label": "Interest Receivable",
+   "file": "levenmouth_model.xlsm",
+   "sheet": "CalcSA",
+   "row": 1262,
+   "row_label": "LC - Plant SP - Total",
    "column_headers": [
     "total",
+    "FY2015",
     "FY2015",
     "FY2016",
     "FY2016",
     "FY2017",
     "FY2017",
-    "FY2018",
     "FY2018"
+   ],
+   "candidate_header_rows": [
+    [
+     "total",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
     "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
    ],
    "values": [
+    5.7662,
     0.0,
     0.0,
     0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 147,
-   "row_label": "Indexing at 3%",
-   "column_headers": [
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019"
-   ],
-   "number_formats": [
-    "0.00%_);\\-0.00%_);\"-  \";\" \"@\" \""
-   ],
-   "values": [
-    0.03,
-    0.03,
-    0.03,
-    0.03,
-    0.03
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 1162,
-   "row_label": "Lifecycle - Expensed",
-   "column_headers": [
-    "total",
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    9.3097,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcM",
-   "row": 57,
-   "row_label": "Indexing at 1.5% - indexation factor",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "0.00%"
-   ],
-   "values": [
-    0.015,
-    0.015,
-    0.015,
-    0.015,
-    0.015
+    0.0017
    ],
    "declared_units": null,
    "dialect": "closed-deal",
@@ -3477,423 +5592,34 @@
   },
   {
    "file": "baldragon_model.xlsm",
-   "sheet": "InpC",
-   "row": 124,
+   "sheet": "Databook",
+   "row": 20,
    "row_label": "Indexation days in year",
    "column_headers": [
-    "Baldragon"
+    "Value 1"
+   ],
+   "candidate_header_rows": [
+    [
+     "Value 1",
+     "Cell reference"
+    ]
    ],
    "number_formats": [
     "#,##0.00_);\\(#,##0.00\\);\"-  \";\" \"@"
    ],
    "values": [
-    365.25,
     365.25
    ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcM",
-   "row": 404,
-   "row_label": "Construction cost category 7 - [Facility 8]",
-   "column_headers": [
-    "total",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "CalcM",
-   "row": 846,
-   "row_label": "Bank - Insurance Adviser",
-   "column_headers": [
-    "unit",
-    "total",
-    "FY2014",
-    "FY2014",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@",
-    "0.00%_);\\(0.00%\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    1.0,
-    0.015,
-    0.015,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "Databook",
-   "row": 209,
-   "row_label": "Senior 1 DSRA Manual Prefunding",
-   "column_headers": [
-    "Value 1"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "baldragon_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 2068,
-   "row_label": "SD2 - Cap LB - IDC",
-   "column_headers": [
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019",
-    "FY2019"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 701,
-   "row_label": "RPI swap adjustment (ops phase)",
-   "column_headers": [
-    "total",
-    "FY2015",
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "baldragon_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 390,
-   "row_label": "Constr - Exp Allow - [Facility 7]",
-   "column_headers": [
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019",
-    "FY2019"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "baldragon_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 3585,
-   "row_label": "Senior 1 DSRF - Plant SP",
-   "column_headers": [
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019",
-    "FY2019"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "baldragon_model.xlsm",
-   "sheet": "CashFlowSA",
-   "row": 21,
-   "row_label": "SPV Administration",
-   "column_headers": [
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019",
-    "FY2019"
-   ],
-   "number_formats": [
-    "#,##0.000000_);\\(#,##0.000000\\);\"-  \";\" \"@",
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    -1.8209,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "baldragon_model.xlsm",
-   "sheet": "CalcM",
-   "row": 1917,
-   "row_label": "Bond 1 coupon during construction",
-   "column_headers": [
-    "total",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016",
-    "FY2016"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "FixedAssetSA",
-   "row": 751,
-   "row_label": "Plant spend to be depreciated per period",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 1488,
-   "row_label": "SD1 - Closing Balance",
-   "column_headers": [
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018",
-    "FY2019"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    8.7235,
-    17.4758,
-    28.8158,
-    35.0893,
-    34.6921
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 603,
-   "row_label": "[Facility 4]",
-   "column_headers": [
-    "constant",
-    "total",
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "levenmouth_model.xlsm",
-   "sheet": "CalcM",
-   "row": 1069,
-   "row_label": "",
-   "column_headers": [
-    "total",
-    "FY2014",
-    "FY2014",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    4.02,
-    4.02,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3m",
-   "dialect": "closed-deal",
-   "period": null
-  },
-  {
-   "file": "forfar_model.xlsm",
-   "sheet": "CalcSA",
-   "row": 1595,
-   "row_label": "SD1 - Plant NA - IDC",
-   "column_headers": [
-    "total",
-    "FY2015",
-    "FY2016",
-    "FY2016",
-    "FY2017",
-    "FY2017",
-    "FY2018",
-    "FY2018"
-   ],
-   "number_formats": [
-    "#,##0.000_);\\(#,##0.000\\);\"-  \";\" \"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
+   "declared_units": "Days",
    "dialect": "closed-deal",
    "period": null
   },
   {
    "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 159,
-   "row_label": "Spare 9",
+   "sheet": "calcFundingM",
+   "row": 105,
+   "row_label": "TOTAL FUNDING REQUIREMENT",
    "column_headers": [
-    "end date",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -3902,42 +5628,80 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "IFRS - Financial Asset",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
+    "_(* #,##0.000_);_(* \\(#,##0.000\\);_(* \"-\"??_);_(@_)",
+    "_-* #,##0.000_-;\\-* #,##0.000_-;_-* \"-\"??_-;_-@_-"
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 250,
-   "row_label": "Spare 2",
-   "column_headers": [
-    "end date",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@",
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
+    23584.2786,
+    23584.2786,
     0.0,
     0.0,
     0.0
@@ -3949,10 +5713,9 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 550,
-   "row_label": "Sub debt tranche - FC Injection interest and fees",
+   "row": 68,
+   "row_label": "Senior interest",
    "column_headers": [
-    "FY2015",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -3961,12 +5724,79 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
+    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
     0.0,
-    0.0,
+    581.3723,
     0.0,
     0.0,
     0.0
@@ -3978,38 +5808,8 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "inputOpexM",
-   "row": 31,
-   "row_label": "",
-   "column_headers": [
-    "Output checks:",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "\"ERROR\";\\-#,##0;\"OK\"",
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 304,
-   "row_label": "Total Bond Premium",
+   "row": 8,
+   "row_label": "Back to Contents",
    "column_headers": [
     "FY2015",
     "FY2015",
@@ -4020,45 +5820,41 @@
     "FY2015",
     "FY2015"
    ],
-   "number_formats": [
-    "_-* #,##0_-;\\-* #,##0_-;_-* \"-\"??_-;_-@_-"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 102,
-   "row_label": "Available Cash",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
+   "candidate_header_rows": [
+    [
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15",
+     "Sep 15"
+    ],
+    [
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ]
    ],
    "number_formats": [
-    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
+    "General"
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
+    1.0,
+    2.0,
+    3.0,
+    4.0,
+    5.0
    ],
    "declared_units": null,
    "dialect": "closed-deal-monthly",
@@ -4067,8 +5863,8 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 196,
-   "row_label": "Monthly Commitment Fee charge %",
+   "row": 384,
+   "row_label": "Interest Charge",
    "column_headers": [
     "FY2015",
     "FY2015",
@@ -4078,28 +5874,61 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "Look up 2",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
-    "0.00%;\\(0.00\\)%;\\ \\-",
-    "0.00%_);[Red]\\-0.00%_);0.00%_);[Blue]\"Error-\"@"
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
+    "General"
    ],
    "values": [
-    0.4,
+    3.0,
     0.0,
     0.0,
     0.0,
     0.0
    ],
-   "declared_units": "%",
+   "declared_units": "\u00a3'000s",
    "dialect": "closed-deal-monthly",
    "period": null
   },
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 409,
-   "row_label": "c/f",
+   "row": 70,
+   "row_label": "Senior debt facility commitment fees",
    "column_headers": [
-    "FY2015",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -4108,13 +5937,79 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
-    "#,##0.00000_);[Red]\\(#,##0.00000\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
     0.0,
-    0.0,
+    115.9856,
     0.0,
     0.0,
     0.0
@@ -4126,10 +6021,9 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "inputCapexM",
-   "row": 233,
-   "row_label": "Spare 9",
+   "row": 5,
+   "row_label": "",
    "column_headers": [
-    "end date",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -4138,12 +6032,142 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
+    "[=0]\"OK\";0\" errors\"",
+    "d-mmm-yy"
+   ],
+   "values": [
+    0.0,
+    42095.0,
+    42125.0,
+    42156.0,
+    42186.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 56,
+   "row_label": "Movement in working capital",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
     0.0,
-    0.0,
+    -10.889,
     0.0,
     0.0,
     0.0
@@ -4155,8 +6179,8 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 110,
-   "row_label": "Equity Bridge interest to be funded from SD1 prior to expected SD1 d/down",
+   "row": 47,
+   "row_label": "Financial Close Costs",
    "column_headers": [
     "FY2015",
     "FY2015",
@@ -4166,12 +6190,300 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
-    "_-* #,##0_-;\\-* #,##0_-;_-* \"-\"??_-;_-@_-"
+    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
+    1.0,
+    1239.567,
     0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "inputCapexM",
+   "row": 8,
+   "row_label": "Back to Contents",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15",
+     "Sep 15"
+    ],
+    [
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ]
+   ],
+   "number_formats": [
+    "General"
+   ],
+   "values": [
+    1.0,
+    2.0,
+    3.0,
+    4.0,
+    5.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 392,
+   "row_label": "Monthly Letter of Credit Fee charge%",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "0.00%",
+    "0.0000%"
+   ],
+   "values": [
+    0.025,
+    0.0021,
+    0.0021,
+    0.0021,
+    0.0021
+   ],
+   "declared_units": "%",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 347,
+   "row_label": "Interest Charge - Financial Close Drawdown",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "start date",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "year",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "relative period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
+    "0"
+   ],
+   "values": [
+    0.758,
     0.0,
     0.0,
     0.0,
@@ -4184,10 +6496,9 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 531,
-   "row_label": "Senior debt 2 - Capital Contribution facility Arrangement fees",
+   "row": 57,
+   "row_label": "VAT incurred on std rated items",
    "column_headers": [
-    "FY2015",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -4196,11 +6507,275 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
+    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
+    1.0,
+    4414.5746,
     0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 431,
+   "row_label": "Effective Interest Rate",
+   "column_headers": [
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016",
+    "FY2016"
+   ],
+   "candidate_header_rows": [
+    [
+     "Feb 16",
+     "Mar 16",
+     "Apr 16",
+     "May 16",
+     "Jun 16",
+     "Jul 16"
+    ],
+    [
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ]
+   ],
+   "number_formats": [
+    "0.00%"
+   ],
+   "values": [
+    0.0335,
+    0.0335,
+    0.0335,
+    0.0335,
+    0.0335
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 155,
+   "row_label": "Capital Contribution used against construction costs",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000_);[Red]\\(#,##0.000\\);\"-\"_);[Blue]\"Error-\"@",
+    "_-* #,##0_-;\\-* #,##0_-;_-* \"-\"??_-;_-@_-"
+   ],
+   "values": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 244,
+   "row_label": "Arrangement Fee",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
+    "0.00%_);[Red]\\-0.00%_);0.00%_);[Blue]\"Error-\"@"
+   ],
+   "values": [
+    0.015,
     0.0,
     0.0,
     0.0,
@@ -4224,6 +6799,48 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
     "0.00%;\\(0.00\\)%;\\ \\-",
     "0.00%_);[Red]\\-0.00%_);0.00%_);[Blue]\"Error-\"@"
@@ -4241,9 +6858,50 @@
   },
   {
    "file": "kelso_model.xlsm",
+   "sheet": "Interface Constn",
+   "row": 41,
+   "row_label": "Hub Post FC Advisor Costs (CDMC/Principal Designer)",
+   "column_headers": [
+    "period",
+    "Mar 16",
+    "Apr 16",
+    "May 16",
+    "Jun 16",
+    "Jul 16",
+    "Aug 16",
+    "Sep 16"
+   ],
+   "candidate_header_rows": [
+    [
+     "period",
+     "Mar 16",
+     "Apr 16",
+     "May 16",
+     "Jun 16",
+     "Jul 16"
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000_);[Red]\\(#,##0.000\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
+   ],
+   "values": [
+    20.372,
+    1.0186,
+    1.0186,
+    1.0186,
+    1.0186
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 371,
-   "row_label": "b/f",
+   "row": 196,
+   "row_label": "Monthly Commitment Fee charge %",
    "column_headers": [
     "FY2015",
     "FY2015",
@@ -4251,8 +6909,471 @@
     "FY2015",
     "FY2015",
     "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "0.00%;\\(0.00\\)%;\\ \\-",
+    "0.00%_);[Red]\\-0.00%_);0.00%_);[Blue]\"Error-\"@"
+   ],
+   "values": [
+    0.4,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "%",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "Interf Constn Ops costs",
+   "row": 179,
+   "row_label": "",
+   "column_headers": [
+    "Nov 15",
+    "Dec 15",
+    "Jan 16",
+    "Feb 16",
+    "Mar 16",
+    "Apr 16",
+    "May 16",
+    "Jun 16"
+   ],
+   "candidate_header_rows": [
+    [
+     "Nov 15",
+     "Dec 15",
+     "Jan 16",
+     "Feb 16",
+     "Mar 16",
+     "Apr 16"
+    ]
+   ],
+   "number_formats": [
+    "General"
+   ],
+   "values": [
+    212.0729,
+    212.0729,
+    212.0729,
+    212.0729,
+    212.0729
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 5,
+   "row_label": "",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
     "FY2015",
     "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "[=0]\"OK\";0\" errors\"",
+    "d-mmm-yy"
+   ],
+   "values": [
+    0.0,
+    42095.0,
+    42125.0,
+    42156.0,
+    42186.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "inputCapexM",
+   "row": 40,
+   "row_label": "Hub Post FC Advisor Costs (PM/QS)",
+   "column_headers": [
+    "end date",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "start date",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "end date",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "year",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "relative period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
+   ],
+   "values": [
+    87.368,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "Interf Constn Ops costs",
+   "row": 43,
+   "row_label": "DBFM Holdco Set up and Advice",
+   "column_headers": [
+    "Mar 16",
+    "Apr 16",
+    "May 16",
+    "Jun 16",
+    "Jul 16",
+    "Aug 16",
+    "Sep 16",
+    "Oct 16"
+   ],
+   "candidate_header_rows": [
+    [
+     "Mar 16",
+     "Apr 16",
+     "May 16",
+     "Jun 16",
+     "Jul 16",
+     "Aug 16"
+    ]
+   ],
+   "number_formats": [
+    "#,##0.000_);[Red]\\(#,##0.000\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@",
+    "_(* #,##0.000_);_(* \\(#,##0.000\\);_(* \"-\"??_);_(@_)"
+   ],
+   "values": [
+    0.65,
+    0.65,
+    0.65,
+    0.65,
+    0.65
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 327,
+   "row_label": "Drawdown - Financial Close",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
+    "_-* #,##0.0000_-;\\-* #,##0.0000_-;_-* \"-\"??_-;_-@_-",
+    "_-* #,##0_-;\\-* #,##0_-;_-* \"-\"??_-;_-@_-"
+   ],
+   "values": [
+    1297.8717,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 72,
+   "row_label": "DSRF commitment fee",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
     "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
@@ -4260,6 +7381,171 @@
    ],
    "values": [
     0.0,
+    7.2672,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 69,
+   "row_label": "Arrangement fees",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
+   ],
+   "values": [
+    1.0,
+    333.174,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 181,
+   "row_label": "Interest Charge",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
+   ],
+   "values": [
+    9719.5782,
     0.0,
     0.0,
     0.0,
@@ -4272,10 +7558,9 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 7,
-   "row_label": "Data Set: Reference 0.000",
+   "row": 416,
+   "row_label": "Monthly interest rate",
    "column_headers": [
-    "FY2015",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -4284,27 +7569,69 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
-    "General"
+    "0.00%;\\(0.00\\)%;\\ \\-",
+    "0.00%_);[Red]\\-0.00%_);0.00%_);[Blue]\"Error-\"@"
    ],
    "values": [
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0
+    0.0027,
+    0.0,
+    0.0,
+    0.0,
+    0.0
    ],
-   "declared_units": "Accounting:",
+   "declared_units": "%",
    "dialect": "closed-deal-monthly",
    "period": null
   },
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 514,
-   "row_label": "Subordinated Debt - Private Sectorinterest and fees (excl. Arrangement Fees)",
+   "row": 470,
+   "row_label": "MRA drawdown",
    "column_headers": [
-    "FY2015",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -4313,104 +7640,202 @@
     "FY2015",
     "FY2015"
    ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 150,
-   "row_label": "KHS",
-   "column_headers": [
-    "end date",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 193,
-   "row_label": "Spare 5",
-   "column_headers": [
-    "end date",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 484,
-   "row_label": "Bond Finance Balance",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
     "_-* #,##0_-;\\-* #,##0_-;_-* \"-\"??_-;_-@_-"
    ],
    "values": [
-    0.0,
+    16.2212,
     0.0,
     0.0,
     0.0,
     0.0
    ],
-   "declared_units": "\u00a3'000",
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 380,
+   "row_label": "Undrawn Facility",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "0",
+    "_-* #,##0_-;\\-* #,##0_-;_-* \"-\"??_-;_-@_-"
+   ],
+   "values": [
+    1297.8717,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 253,
+   "row_label": "Monthly Commitment Fee charge %",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "0.00%;\\(0.00\\)%;\\ \\-",
+    "0.00%_);[Red]\\-0.00%_);0.00%_);[Blue]\"Error-\"@"
+   ],
+   "values": [
+    0.4,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "%",
    "dialect": "closed-deal-monthly",
    "period": null
   },
@@ -4427,6 +7852,72 @@
     "FY2015",
     "FY2015",
     "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
     "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
@@ -4446,8 +7937,8 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 70,
-   "row_label": "Senior debt facility commitment fees",
+   "row": 329,
+   "row_label": "Equity/Sub-debt injection",
    "column_headers": [
     "FY2015",
     "FY2015",
@@ -4456,43 +7947,151 @@
     "FY2015",
     "FY2015",
     "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "IFRS - Financial Asset",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 1",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
+   "number_formats": [
+    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
+    "_-* #,##0.0_-;\\-* #,##0.0_-;_-* \"-\"??_-;_-@_-"
+   ],
+   "values": [
+    -1297.8717,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "declared_units": "\u00a3'000s",
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "calcFundingM",
+   "row": 52,
+   "row_label": "Set up/bid costs",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
     "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
-    0.0,
-    115.9856,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 306,
-   "row_label": "Bond premium payable up front - for NPV calc - 0.0%",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "_-* #,##0_-;\\-* #,##0_-;_-* \"-\"??_-;_-@_-"
-   ],
-   "values": [
-    0.0,
-    0.0,
+    1.0,
+    513.459,
     0.0,
     0.0,
     0.0
@@ -4503,352 +8102,39 @@
   },
   {
    "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 533,
-   "row_label": "Bond Financing Arrangement fees",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 95,
-   "row_label": "Spare 7",
-   "column_headers": [
-    "end date",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@",
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputOpexM",
-   "row": 46,
-   "row_label": "Spare",
-   "column_headers": [
-    "Output checks:",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "\"ERROR\";\\-#,##0;\"OK\"",
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 204,
-   "row_label": "Frequency of payment",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
-    "General"
-   ],
-   "values": [
-    6.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "months",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 137,
+   "sheet": "Interface Constn",
+   "row": 28,
    "row_label": "KHS",
    "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
+    "period",
+    "Mar 16",
+    "Apr 16",
+    "May 16",
+    "Jun 16",
+    "Jul 16",
+    "Aug 16"
+   ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Mar 16",
+     "Apr 16",
+     "May 16",
+     "Jun 16"
+    ]
    ],
    "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 88,
-   "row_label": "KHS",
-   "column_headers": [
-    "end date",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
+    "#,##0.000_);[Red]\\(#,##0.000\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@",
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
+    "0.0000"
    ],
    "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 223,
-   "row_label": "Drawdown",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 200,
-   "row_label": "KHS",
-   "column_headers": [
-    "end date",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 48,
-   "row_label": "Spare 9",
-   "column_headers": [
-    "end date",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@",
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputOpexM",
-   "row": 33,
-   "row_label": "",
-   "column_headers": [
-    "Output checks:",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "\"ERROR\";\\-#,##0;\"OK\"",
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 226,
-   "row_label": "Repayment",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": null,
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 55,
-   "row_label": "Total monthly costs (vat exclusive)",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
+    1.0,
+    20203.693,
+    65.168,
+    547.936,
+    863.514
    ],
    "declared_units": "\u00a3'000s",
    "dialect": "closed-deal-monthly",
@@ -4869,6 +8155,87 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15",
+     "Sep 15"
+    ],
+    [
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ]
+   ],
+   "number_formats": [
+    "General"
+   ],
+   "values": [
+    1.0,
+    2.0,
+    3.0,
+    4.0,
+    5.0
+   ],
+   "declared_units": null,
+   "dialect": "closed-deal-monthly",
+   "period": null
+  },
+  {
+   "file": "kelso_model.xlsm",
+   "sheet": "inputOpexM",
+   "row": 9,
+   "row_label": "ALL INPUTS ARE MODEL",
+   "column_headers": [
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015",
+    "FY2015"
+   ],
+   "candidate_header_rows": [
+    [
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15",
+     "Sep 15"
+    ],
+    [
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ]
+   ],
    "number_formats": [
     "General"
    ],
@@ -4886,8 +8253,8 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "inputCapexM",
-   "row": 229,
-   "row_label": "Spare 5",
+   "row": 66,
+   "row_label": "Hub Development Fee Balance paybale (excludes pre paid FC) PF7 and PF8",
    "column_headers": [
     "end date",
     "FY2015",
@@ -4898,41 +8265,86 @@
     "FY2015",
     "FY2015"
    ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
-   ],
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 82,
-   "row_label": "Spare 6",
-   "column_headers": [
-    "end date",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
+   "candidate_header_rows": [
+    [
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15",
+     "Aug 15"
+    ],
+    [
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "start date",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "end date",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "year",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "relative period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ]
    ],
    "number_formats": [
     "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
-    0.0,
+    109.869,
     0.0,
     0.0,
     0.0,
@@ -4944,40 +8356,50 @@
   },
   {
    "file": "kelso_model.xlsm",
-   "sheet": "inputCapexM",
-   "row": 10,
-   "row_label": "",
+   "sheet": "Interface Constn",
+   "row": 40,
+   "row_label": "Hub Post FC Advisor Costs (PM/QS)",
    "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
+    "period",
+    "Mar 16",
+    "Apr 16",
+    "May 16",
+    "Jun 16",
+    "Jul 16",
+    "Aug 16",
+    "Sep 16"
+   ],
+   "candidate_header_rows": [
+    [
+     "period",
+     "Mar 16",
+     "Apr 16",
+     "May 16",
+     "Jun 16",
+     "Jul 16"
+    ]
    ],
    "number_formats": [
-    "General"
+    "#,##0.000_);[Red]\\(#,##0.000\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0.00_);[Red]\\(#,##0.00\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0
+    87.368,
+    4.3684,
+    4.3684,
+    4.3684,
+    4.3684
    ],
-   "declared_units": null,
+   "declared_units": "\u00a3'000s",
    "dialect": "closed-deal-monthly",
    "period": null
   },
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 54,
-   "row_label": "Issue costs",
+   "row": 87,
+   "row_label": "Interest",
    "column_headers": [
-    "FY2015",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -4986,12 +8408,80 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
+    "#,##0.0000_);[Red]\\(#,##0.0000\\);\"-\"_);[Blue]\"Error-\"@",
+    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
     0.0,
-    0.0,
+    42.2428,
     0.0,
     0.0,
     0.0
@@ -5003,10 +8493,9 @@
   {
    "file": "kelso_model.xlsm",
    "sheet": "calcFundingM",
-   "row": 39,
-   "row_label": "Phased Unitary Charge received",
+   "row": 59,
+   "row_label": "Total Construction funding requirement",
    "column_headers": [
-    "FY2015",
     "FY2015",
     "FY2015",
     "FY2015",
@@ -5015,40 +8504,79 @@
     "FY2015",
     "FY2015"
    ],
+   "candidate_header_rows": [
+    [
+     "",
+     "period",
+     "Apr 15",
+     "May 15",
+     "Jun 15",
+     "Jul 15"
+    ],
+    [
+     "",
+     "length",
+     "Monthly",
+     "Monthly",
+     "Monthly",
+     "Monthly"
+    ],
+    [
+     "",
+     "section",
+     "Construction",
+     "Construction",
+     "Construction",
+     "Construction"
+    ],
+    [
+     "",
+     "start date",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "year",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "relative period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "Look up 2",
+     "period",
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "Semi-Annual Period",
+     "",
+     "",
+     "",
+     ""
+    ]
+   ],
    "number_formats": [
+    "#,##0.0_);[Red]\\(#,##0.0\\);\"-\"_);[Blue]\"Error-\"@",
     "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@"
    ],
    "values": [
     0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "declared_units": "\u00a3'000s",
-   "dialect": "closed-deal-monthly",
-   "period": null
-  },
-  {
-   "file": "kelso_model.xlsm",
-   "sheet": "calcFundingM",
-   "row": 113,
-   "row_label": "Equity",
-   "column_headers": [
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015",
-    "FY2015"
-   ],
-   "number_formats": [
-    "#,##0_);[Red]\\(#,##0\\);\"-\"_);[Blue]\"Error-\"@",
-    "_(* #,##0_);_(* \\(#,##0\\);_(* \"-\"??_);_(@_)"
-   ],
-   "values": [
-    1.0,
-    0.1,
+    22376.6846,
     0.0,
     0.0,
     0.0

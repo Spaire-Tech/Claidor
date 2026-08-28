@@ -3921,3 +3921,215 @@ to build this one rather than the two cheaper designs on my list.
 4. **It fires falsely somewhere.** Seventh round running I have
    registered this and it has happened every time; hunted for by
    hand-reading, not by trusting a count.
+
+## The `period` sample is drawn and is ready to be labelled — by someone else
+
+197 rows, `docs/pierce/logs/dynamo/e3-period-sample.json`. Verified
+by reading the file, not by trusting the run: **`period` is null on
+every row, and no E2 output of any kind appears anywhere in it.**
+
+| dialect | eligible | drawn |
+|---|---|---|
+| ofgem-regulator | 3,401 | 40 |
+| caa-h7 | 2,353 | 40 |
+| rate-models | 37 | 37 (all of them) |
+| closed-deal | 6,669 | 40 |
+| **closed-deal-monthly** (Kelso) | 107 | 40 |
+
+### The discard was worth it, and here is the proof
+
+`kelso_model.xlsm calcFundingM!105`, « TOTAL FUNDING REQUIREMENT »:
+
+    what the reader picked : FY2015  FY2015  FY2015  FY2015
+    candidate header rows  : ['', 'period',  'Apr 15', 'May 15']
+                             ['', 'length',  'Monthly', 'Monthly']
+                             ['', 'section', 'Construction', …]
+
+**The model says « Monthly » in its own header block**, and the
+reader handed back `FY2015`. A labeller shown only the reader's pick
+labels that row annual — and a `period` key that calls Kelso's
+monthly rows annual cannot contain the flagship case, which is the
+whole reason the key exists. Sixty-three of the 197 rows carry more
+than one candidate header row, so this is not a single unlucky row.
+
+### What I am asking for
+
+The file is ready for **the lead or the founder** to label. Its own
+instructions say: set `period` to `annual`, `monthly`, `quarterly`,
+`half-yearly`, `point-in-time`, `none` or `unknown`, judging from
+the row label, the candidate header rows and the values — and it
+warns in writing that the reader picks one header row and can pick
+the wrong one.
+
+I have not looked at what E2 says about these rows and will not
+before the labels exist. When they do, I score and report per
+dialect rather than blended, as the orders require.
+
+## The aggregation check measured — three predictions failed, and the design is wrong
+
+| prediction | outcome |
+|---|---|
+| 1 — Kelso's monthly-to-annual aggregations are detectable | **failed**: 0 correct found |
+| 2 — zero defects on Kelso | **failed**: 36 reported, all false |
+| 3 — a planted break is caught | **could not run**: no correct aggregation to break |
+| 4 — it fires falsely somewhere | **confirmed**, at 100% of what it reported |
+
+`docs/pierce/logs/dynamo/period-check-kelso.json`.
+
+### What the 36 actually are, hand-read as registered
+
+    Swap Profiles!H18  « Senior Debt 2 »
+        = calcFundingM!H222 * 1000
+
+Not an aggregation. A **unit conversion** — one monthly cell
+restated from `£'000s` into `£`. Two independent errors produced it:
+
+1. **`Swap Profiles` is not quarterly.** My detector found a date row
+   and computed three months per period; it is a swap schedule with
+   irregular dates. The block granularity is simply wrong.
+2. **A one-to-one reference is not a broken aggregation.** The check
+   assumes every coarse cell referencing a finer block must sum the
+   full ratio. That is false for **stocks**: a closing balance at
+   year end is the December figure, not the sum of twelve months.
+   It is false for restatements. It is only true for **flows**.
+
+I registered « a check that finds real defects in a model banks lent
+against is far likelier to be finding mine ». It was, and the
+control is the only reason I know.
+
+### The root cause, and it kills the design as registered
+
+**Kelso has 814 formula cells out of 470,594.** Its calculation layer
+is essentially stripped — the published file is values with a thin
+crust of formulas. A design that reads *arithmetic* cannot work on a
+corpus that ships *numbers*, and the one model carrying the monthly
+capability is the one with no arithmetic to read.
+
+That is not a threshold to loosen. It is the design being the wrong
+shape for the files we have.
+
+### The successor, and it differs in kind
+
+**Read the aggregation from the values, not from the formulas.**
+
+If an annual cell's value equals the sum of twelve monthly cells'
+values, that *is* the aggregation — proved arithmetically, with no
+formula required. The corpus's weakness becomes the signal: 470,594
+values on Kelso and 1,320 monthly headers, all of it readable. And
+the flagship defect states itself in the same terms — **an annual
+cell whose value equals one month rather than the sum of twelve**.
+
+It brings its own hazard, which I will register before building:
+matching by value invites coincidence, so a match must hold across
+many periods and the search must be anchored by row, not free. That
+is a real objection to answer with a control, not a reason to stop.
+
+### The two I am not taking, and why
+
+- *Loosen the ratio, or allow one-to-one as valid.* That is a
+  parameter change and would have silently accepted all 36.
+- *Wait for a corpus with formulas.* The population proof says
+  published closed-deal models are values; waiting is waiting
+  forever.
+
+---
+
+## Aggregation from values — registration
+
+*The successor to the failed formula design. Registered before it is
+built, with the control for the hazard I named when I proposed it.*
+
+### The shape
+
+Kelso ships 470,594 values and 814 formulas. So: **if an annual
+cell's value equals the sum of twelve monthly cells' values, that is
+the aggregation** — arithmetic proves it and no formula is needed.
+
+Two rules keep it from being a coincidence machine:
+
+- **Anchored by row label, never searched free.** A row is paired
+  with a row of the same label on a coarser sheet. Pairing every row
+  with every row is where spurious matches live.
+- **It must hold across many periods.** A pair counts as an
+  aggregation only when the sum matches in **at least six** of the
+  coarse periods, at this lane's usual 1e-9 relative tolerance.
+
+### The defect, restated in the same terms
+
+The flagship finding becomes a **within-row inconsistency**: a row
+that aggregates twelve-to-one in every year except one, where the
+annual figure equals a single month. That is far stronger than a
+cross-model rule, because the model's own other years are the
+control — the row is being judged against itself.
+
+### Predictions
+
+1. **At least one Kelso row aggregates 12:1 by value across six or
+   more years.** If none does, values carry no more signal than
+   formulas did and the whole line of attack is finished — which is
+   worth knowing in an afternoon.
+2. **Zero defects on clean Kelso**, same reasoning as last time: a
+   published financial-close model is a control, not a hunting
+   ground. Every reported defect is hand-read before it is called
+   anything.
+3. **A planted defect is caught by name**: overwrite one year's
+   annual value with one month's value, and the row must be reported
+   with that year named.
+4. **The coincidence control**: re-run with rows paired to the
+   *wrong* partners — same numbers, deliberately mismatched labels —
+   and near-zero aggregations must survive. This measures the hazard
+   I registered when I proposed the design rather than asserting it
+   away. If shuffled pairs match nearly as often as real ones, the
+   evidence is coincidence and I will say so.
+
+## Aggregation from values — the control killed it, and I know why
+
+| prediction | outcome |
+|---|---|
+| 1 — a row aggregates across six or more periods | 655 rows did — **but see 4** |
+| 2 — zero defects on clean Kelso | **failed**: 65 reported |
+| 3 — a planted defect is caught | **not run**: pointless once 4 failed |
+| 4 — **the coincidence control** | **failed**: 503 of 655 |
+
+`docs/pierce/logs/dynamo/period-values-kelso.json`. Pairing rows
+with **deliberately wrong partners** still produced 503 aggregating
+rows against the real 655 — **77%**. The registration said: « if
+shuffled pairs match nearly as often as real ones, the evidence is
+coincidence and I will say so ». They did. It is.
+
+### Why, and it is embarrassing in a familiar way
+
+**Most rows are mostly zeros, and zero aggregates with zero.**
+`0 = 0 + 0 + … ` holds for forty periods, so any sparse row pairs
+with any other sparse row and clears a six-period bar effortlessly.
+The bar measured nothing.
+
+And the 65 « defects » are `retained earnings`, `carried forward
+retained earnings`, `MRA`, `cash bank`, `deferred tax liability` —
+**stocks**. A closing balance is not the sum of twelve months. That
+is the *same conceptual error I named one entry above*, in the
+post-mortem of the previous design, and I then built a check that
+makes it again. Naming a failure is evidently not the same as
+carrying it forward.
+
+### The successor, and the bar it must clear
+
+Two corrections, both about what the row *is* rather than about any
+threshold:
+
+1. **A row must actually vary.** `varying()` already exists in
+   `recalc/mine.py` for exactly this — « a relation among frozen
+   cells is arithmetic about constants, not a law ». The same rule,
+   applied here, removes every zero-with-zero match.
+2. **Classify each row as flow or stock, from its own behaviour.**
+   A flow satisfies `coarse = sum(fine)`; a stock satisfies
+   `coarse = last(fine)`. Test both across all periods and let the
+   row declare which it is. Then a defect is a break **in the row's
+   own established pattern** — a flow row that takes one month, or a
+   stock row that suddenly sums — which is the « judge the row
+   against itself » idea done properly instead of assumed.
+
+**The bar does not move**: the shuffle control runs again, and
+unless mismatched pairs fall to near zero the line of attack is
+dead and I will report it dead. I am not lowering a bar I set two
+hours ago because my design failed it.

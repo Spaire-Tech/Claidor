@@ -137,6 +137,39 @@ files, git-ignored), never committed.
   the lead routing the connector surface (shared ground) and on a
   scope decision (`Files.ReadWrite.All`) that is the founder's.
 
+## Running jobs: the three rules, and the one cause behind them
+
+*Written after killing my own work three times in one session, in
+three different ways. Not a lament — the rules are mechanical.*
+
+1. **Never stop a process by pattern.** `pkill -f name` matches the
+   shell running it; `pgrep … | xargs kill` takes out your own
+   process group. The harness returns a **task ID** for every
+   background job: stop it with `TaskStop`, which cannot match
+   itself. There is no case where a pattern kill is the right tool
+   here.
+2. **Time one unit before running N.** Run the single file with a
+   timer, multiply, then launch the sweep. I killed a draw twice
+   believing it hung, having never measured what *not* hung looks
+   like — it was 12s per file in `read_workbook` and fine.
+3. **Diagnose before optimising.** I rewrote the units-column scan
+   certain it was the bottleneck; measured, it was 4% of the cost.
+4. **Every scripted edit asserts its anchor, and is verified by
+   running the code — never by lint.** Three of my edits to one file
+   silently did nothing because the `str.replace` anchor no longer
+   matched after a reformat. **Lint passed on all three broken
+   versions**, because the names existed and only the bodies were
+   stale, so I committed a claim that a fix was applied when it was
+   not, and then diagnosed a second problem on top of that false
+   belief. `assert old in s` before every replace; run the function
+   afterwards.
+
+**The one cause**: acting on a guess about a running system instead
+of measuring it. That is the same failure this lane exists to
+prevent — a number published without its protocol — pointed at my
+own tools rather than at a model. The discipline was already
+written; it just was not being applied inward.
+
 ## The disciplines that are not negotiable
 
 - **A dimension whose key cannot contain its failure case must not

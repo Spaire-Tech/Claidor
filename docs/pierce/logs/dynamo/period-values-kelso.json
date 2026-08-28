@@ -1,0 +1,7381 @@
+{
+ "model": "kelso_model.xlsm",
+ "blocks": {
+  "BID PRICE": "half-yearly",
+  "ReportCharts": "half-yearly",
+  "ReportFinStatsAnnual": "annual",
+  "ReportFinStatsSA": "half-yearly",
+  "ReportRatiosSA": "half-yearly",
+  "Interface Ops Costs": "half-yearly",
+  "inputCapexM": "monthly",
+  "inputOpexM": "monthly",
+  "inputOpexSA": "half-yearly",
+  "inputAccom": "monthly",
+  "calcFundingM": "monthly",
+  "calcFundingSA": "half-yearly",
+  "calcAccomM": "monthly",
+  "calcAccomSA": "half-yearly",
+  "calcWorkCapSA": "half-yearly",
+  "calcWorkCapM": "monthly",
+  "calcCapexM": "monthly",
+  "calcOpexM": "monthly",
+  "calcOpexSA": "half-yearly",
+  "calcFixedAssetSA": "half-yearly",
+  "calcAccountingSA": "half-yearly",
+  "calcTaxationSA": "half-yearly",
+  "sysTimingM": "monthly",
+  "sysTimingSA": "half-yearly",
+  "sysTimeline": "quarterly",
+  "Schedule 12 - Drawdown Schedule": "monthly",
+  "Schools proforma": "half-yearly",
+  "Swap Profiles": "quarterly",
+  "Handback Calculation": "half-yearly"
+ },
+ "aggregating_rows": [
+  {
+   "label": "senior debt 2 capital contribution facility",
+   "fine": "BID PRICE!67",
+   "coarse": "ReportFinStatsAnnual!87",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contribution",
+   "fine": "ReportCharts!199",
+   "coarse": "ReportFinStatsAnnual!20",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "corporate tax",
+   "fine": "ReportCharts!66",
+   "coarse": "ReportFinStatsAnnual!59",
+   "ratio": 2,
+   "matched": 18,
+   "single_period": [],
+   "unexplained": 22
+  },
+  {
+   "label": "deferred tax",
+   "fine": "ReportCharts!67",
+   "coarse": "ReportFinStatsAnnual!60",
+   "ratio": 2,
+   "matched": 38,
+   "single_period": [],
+   "unexplained": 2
+  },
+  {
+   "label": "dividends",
+   "fine": "ReportCharts!61",
+   "coarse": "ReportFinStatsAnnual!62",
+   "ratio": 2,
+   "matched": 38,
+   "single_period": [],
+   "unexplained": 2
+  },
+  {
+   "label": "dsra",
+   "fine": "ReportCharts!115",
+   "coarse": "ReportFinStatsAnnual!79",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "financial interest",
+   "fine": "ReportCharts!161",
+   "coarse": "ReportFinStatsAnnual!56",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "lifecycle",
+   "fine": "ReportCharts!154",
+   "coarse": "ReportFinStatsAnnual!37",
+   "ratio": 2,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 25
+  },
+  {
+   "label": "mra",
+   "fine": "ReportCharts!114",
+   "coarse": "ReportFinStatsAnnual!78",
+   "ratio": 2,
+   "matched": 16,
+   "single_period": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "retained earnings",
+   "fine": "ReportCharts!62",
+   "coarse": "ReportFinStatsAnnual!104",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt",
+   "fine": "ReportCharts!200",
+   "coarse": "ReportFinStatsAnnual!88",
+   "ratio": 2,
+   "matched": 14,
+   "single_period": [],
+   "unexplained": 26
+  },
+  {
+   "label": "senior debt 2 capital contribution facility",
+   "fine": "ReportCharts!72",
+   "coarse": "ReportFinStatsAnnual!87",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "amortisation of intangibles",
+   "fine": "ReportFinStatsSA!40",
+   "coarse": "ReportFinStatsAnnual!40",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "asset disposals",
+   "fine": "ReportFinStatsSA!135",
+   "coarse": "ReportFinStatsAnnual!134",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond cil drawdown",
+   "fine": "ReportFinStatsSA!177",
+   "coarse": "ReportFinStatsAnnual!177",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond cil release",
+   "fine": "ReportFinStatsSA!150",
+   "coarse": "ReportFinStatsAnnual!149",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond facility interest fees operations",
+   "fine": "ReportFinStatsSA!175",
+   "coarse": "ReportFinStatsAnnual!175",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond facility interest fees pre operations memo included in drawdown above",
+   "fine": "ReportFinStatsSA!174",
+   "coarse": "ReportFinStatsAnnual!174",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond facility repayment",
+   "fine": "ReportFinStatsSA!163",
+   "coarse": "ReportFinStatsAnnual!162",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond finance drawdown",
+   "fine": "ReportFinStatsSA!148",
+   "coarse": "ReportFinStatsAnnual!147",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond finance facility net of frs 4 offset",
+   "fine": "ReportFinStatsSA!90",
+   "coarse": "ReportFinStatsAnnual!49",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contribution",
+   "fine": "ReportFinStatsSA!20",
+   "coarse": "ReportFinStatsAnnual!20",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "ReportFinStatsSA!143",
+   "coarse": "ReportFinStatsAnnual!142",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "carried forward retained earnings",
+   "fine": "ReportFinStatsSA!66",
+   "coarse": "ReportFinStatsAnnual!66",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "cash bank",
+   "fine": "ReportFinStatsSA!83",
+   "coarse": "ReportFinStatsAnnual!82",
+   "ratio": 2,
+   "matched": 27,
+   "single_period": [
+    3
+   ],
+   "unexplained": 12
+  },
+  {
+   "label": "cash bank carried forward",
+   "fine": "ReportFinStatsSA!200",
+   "coarse": "ReportFinStatsAnnual!200",
+   "ratio": 2,
+   "matched": 27,
+   "single_period": [
+    3
+   ],
+   "unexplained": 12
+  },
+  {
+   "label": "cashflow per cashflow statement cashflow per cash cascade",
+   "fine": "ReportFinStatsSA!204",
+   "coarse": "ReportFinStatsAnnual!204",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "cashflows released from the mra",
+   "fine": "ReportFinStatsSA!125",
+   "coarse": "ReportFinStatsAnnual!124",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "cashflows to fund the mra",
+   "fine": "ReportFinStatsSA!127",
+   "coarse": "ReportFinStatsAnnual!126",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "cashflows to fund the mra preoperations",
+   "fine": "ReportFinStatsSA!126",
+   "coarse": "ReportFinStatsAnnual!125",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "cashoutflows to fund dsra",
+   "fine": "ReportFinStatsSA!190",
+   "coarse": "ReportFinStatsAnnual!190",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction cost",
+   "fine": "ReportFinStatsSA!16",
+   "coarse": "ReportFinStatsAnnual!16",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction revenue",
+   "fine": "ReportFinStatsSA!15",
+   "coarse": "ReportFinStatsAnnual!15",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "corporate tax",
+   "fine": "ReportFinStatsSA!59",
+   "coarse": "ReportFinStatsAnnual!59",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "cost of sales transfer to contract debtor",
+   "fine": "ReportFinStatsSA!17",
+   "coarse": "ReportFinStatsAnnual!17",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "current period retained earnings",
+   "fine": "ReportFinStatsSA!64",
+   "coarse": "ReportFinStatsAnnual!64",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "deferred tax",
+   "fine": "ReportFinStatsSA!60",
+   "coarse": "ReportFinStatsAnnual!60",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "deferred tax liability",
+   "fine": "ReportFinStatsSA!98",
+   "coarse": "ReportFinStatsAnnual!97",
+   "ratio": 2,
+   "matched": 35,
+   "single_period": [
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "depreciation",
+   "fine": "ReportFinStatsSA!41",
+   "coarse": "ReportFinStatsAnnual!41",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dividends",
+   "fine": "ReportFinStatsSA!62",
+   "coarse": "ReportFinStatsAnnual!62",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dividends payable",
+   "fine": "ReportFinStatsSA!96",
+   "coarse": "ReportFinStatsAnnual!95",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dsra",
+   "fine": "ReportFinStatsSA!80",
+   "coarse": "ReportFinStatsAnnual!79",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dsra change in law facility",
+   "fine": "ReportFinStatsSA!81",
+   "coarse": "ReportFinStatsAnnual!80",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dsrf",
+   "fine": "ReportFinStatsSA!97",
+   "coarse": "ReportFinStatsAnnual!93",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dsrf fees",
+   "fine": "ReportFinStatsSA!53",
+   "coarse": "ReportFinStatsAnnual!53",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dsrf interest",
+   "fine": "ReportFinStatsSA!54",
+   "coarse": "ReportFinStatsAnnual!54",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge drawdown",
+   "fine": "ReportFinStatsSA!151",
+   "coarse": "ReportFinStatsAnnual!150",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge facility",
+   "fine": "ReportFinStatsSA!91",
+   "coarse": "ReportFinStatsAnnual!90",
+   "ratio": 2,
+   "matched": 38,
+   "single_period": [
+    1,
+    2
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge interest fees",
+   "fine": "ReportFinStatsSA!50",
+   "coarse": "ReportFinStatsAnnual!50",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge interest fees pre operations memo included in drawdown above",
+   "fine": "ReportFinStatsSA!179",
+   "coarse": "ReportFinStatsAnnual!179",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge repayment transfer to sub debt",
+   "fine": "ReportFinStatsSA!160",
+   "coarse": "ReportFinStatsAnnual!159",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity drawdown",
+   "fine": "ReportFinStatsSA!144",
+   "coarse": "ReportFinStatsAnnual!143",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity redeemed",
+   "fine": "ReportFinStatsSA!191",
+   "coarse": "ReportFinStatsAnnual!191",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "financial interest",
+   "fine": "ReportFinStatsSA!56",
+   "coarse": "ReportFinStatsAnnual!56",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gic cash account",
+   "fine": "ReportFinStatsSA!82",
+   "coarse": "ReportFinStatsAnnual!81",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gic interest received",
+   "fine": "ReportFinStatsSA!154",
+   "coarse": "ReportFinStatsAnnual!153",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gross profit",
+   "fine": "ReportFinStatsSA!18",
+   "coarse": "ReportFinStatsAnnual!18",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "hard fm non staff costs",
+   "fine": "ReportFinStatsSA!35",
+   "coarse": "ReportFinStatsAnnual!35",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "intangible fixed assets nbv",
+   "fine": "ReportFinStatsSA!71",
+   "coarse": "ReportFinStatsAnnual!71",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "interest income",
+   "fine": "ReportFinStatsSA!116",
+   "coarse": "ReportFinStatsAnnual!115",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "interest receivable construction period gic",
+   "fine": "ReportFinStatsSA!44",
+   "coarse": "ReportFinStatsAnnual!44",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "interest receivable operations period",
+   "fine": "ReportFinStatsSA!45",
+   "coarse": "ReportFinStatsAnnual!45",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "issue costs",
+   "fine": "ReportFinStatsSA!137",
+   "coarse": "ReportFinStatsAnnual!136",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "issue costs change in net working capital",
+   "fine": "ReportFinStatsSA!138",
+   "coarse": "ReportFinStatsAnnual!137",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "lifecycle",
+   "fine": "ReportFinStatsSA!37",
+   "coarse": "ReportFinStatsAnnual!37",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "mra",
+   "fine": "ReportFinStatsSA!78",
+   "coarse": "ReportFinStatsAnnual!78",
+   "ratio": 2,
+   "matched": 16,
+   "single_period": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "net assets shareholders funds",
+   "fine": "ReportFinStatsSA!203",
+   "coarse": "ReportFinStatsAnnual!203",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "operating profits",
+   "fine": "ReportFinStatsSA!39",
+   "coarse": "ReportFinStatsAnnual!39",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "other variable costs",
+   "fine": "ReportFinStatsSA!31",
+   "coarse": "ReportFinStatsAnnual!31",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through costs",
+   "fine": "ReportFinStatsSA!36",
+   "coarse": "ReportFinStatsAnnual!36",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through income",
+   "fine": "ReportFinStatsSA!27",
+   "coarse": "ReportFinStatsAnnual!27",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "profit before interest tax",
+   "fine": "ReportFinStatsSA!42",
+   "coarse": "ReportFinStatsAnnual!42",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "profit before tax",
+   "fine": "ReportFinStatsSA!57",
+   "coarse": "ReportFinStatsAnnual!57",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "profits after tax",
+   "fine": "ReportFinStatsSA!61",
+   "coarse": "ReportFinStatsAnnual!61",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "receipts from dsra",
+   "fine": "ReportFinStatsSA!156",
+   "coarse": "ReportFinStatsAnnual!155",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "release of funds from gic account",
+   "fine": "ReportFinStatsSA!149",
+   "coarse": "ReportFinStatsAnnual!148",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "repayments in construction period",
+   "fine": "ReportFinStatsSA!147",
+   "coarse": "ReportFinStatsAnnual!146",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "retained earnings",
+   "fine": "ReportFinStatsSA!105",
+   "coarse": "ReportFinStatsAnnual!104",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "ReportFinStatsSA!24",
+   "coarse": "ReportFinStatsAnnual!24",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sales transfer to contract debtor",
+   "fine": "ReportFinStatsSA!13",
+   "coarse": "ReportFinStatsAnnual!13",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sales transfer to contract debtor capital contribution",
+   "fine": "ReportFinStatsSA!14",
+   "coarse": "ReportFinStatsAnnual!14",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility drawdown",
+   "fine": "ReportFinStatsSA!145",
+   "coarse": "ReportFinStatsAnnual!144",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility interest fees",
+   "fine": "ReportFinStatsSA!47",
+   "coarse": "ReportFinStatsAnnual!47",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility interest fees operations",
+   "fine": "ReportFinStatsSA!169",
+   "coarse": "ReportFinStatsAnnual!169",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility interest fees pre operations memo included in drawdown",
+   "fine": "ReportFinStatsSA!168",
+   "coarse": "ReportFinStatsAnnual!168",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility repayment",
+   "fine": "ReportFinStatsSA!161",
+   "coarse": "ReportFinStatsAnnual!160",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt drawdown",
+   "fine": "ReportFinStatsSA!146",
+   "coarse": "ReportFinStatsAnnual!145",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt interest fees operations",
+   "fine": "ReportFinStatsSA!172",
+   "coarse": "ReportFinStatsAnnual!172",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt interest fees pre operations memo included in drawdown above",
+   "fine": "ReportFinStatsSA!171",
+   "coarse": "ReportFinStatsAnnual!171",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "ReportFinStatsSA!30",
+   "coarse": "ReportFinStatsAnnual!30",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "shareholders equity",
+   "fine": "ReportFinStatsSA!104",
+   "coarse": "ReportFinStatsAnnual!103",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "shareholders funds",
+   "fine": "ReportFinStatsSA!106",
+   "coarse": "ReportFinStatsAnnual!105",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "short term liabilities",
+   "fine": "ReportFinStatsSA!99",
+   "coarse": "ReportFinStatsAnnual!98",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "soft fm staff costs",
+   "fine": "ReportFinStatsSA!34",
+   "coarse": "ReportFinStatsAnnual!34",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spv admin costs operating period",
+   "fine": "ReportFinStatsSA!33",
+   "coarse": "ReportFinStatsAnnual!33",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spv admin costs pre operating period",
+   "fine": "ReportFinStatsSA!32",
+   "coarse": "ReportFinStatsAnnual!32",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection drawdown",
+   "fine": "ReportFinStatsSA!153",
+   "coarse": "ReportFinStatsAnnual!152",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection interest fees",
+   "fine": "ReportFinStatsSA!52",
+   "coarse": "ReportFinStatsAnnual!52",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection interest fees operations",
+   "fine": "ReportFinStatsSA!186",
+   "coarse": "ReportFinStatsAnnual!186",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection interest fees pre operations memo included in drawdown above",
+   "fine": "ReportFinStatsSA!185",
+   "coarse": "ReportFinStatsAnnual!185",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection repayment",
+   "fine": "ReportFinStatsSA!166",
+   "coarse": "ReportFinStatsAnnual!165",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "subordinated debt private sector drawdown",
+   "fine": "ReportFinStatsSA!152",
+   "coarse": "ReportFinStatsAnnual!151",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "subordinated debt private sector interest fees",
+   "fine": "ReportFinStatsSA!51",
+   "coarse": "ReportFinStatsAnnual!51",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "subordinated debt private sector interest fees operations",
+   "fine": "ReportFinStatsSA!183",
+   "coarse": "ReportFinStatsAnnual!183",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "subordinated debt private sector interest fees pre operations memo included in drawdown above",
+   "fine": "ReportFinStatsSA!182",
+   "coarse": "ReportFinStatsAnnual!182",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "subordinated debt private sector repayment",
+   "fine": "ReportFinStatsSA!165",
+   "coarse": "ReportFinStatsAnnual!164",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "tangible fixed assets nbv",
+   "fine": "ReportFinStatsSA!72",
+   "coarse": "ReportFinStatsAnnual!72",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "tax payable",
+   "fine": "ReportFinStatsSA!95",
+   "coarse": "ReportFinStatsAnnual!94",
+   "ratio": 2,
+   "matched": 19,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "third party income",
+   "fine": "ReportFinStatsSA!26",
+   "coarse": "ReportFinStatsAnnual!26",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "third party revenue",
+   "fine": "ReportFinStatsSA!114",
+   "coarse": "ReportFinStatsAnnual!113",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total cashflows in period",
+   "fine": "ReportFinStatsSA!198",
+   "coarse": "ReportFinStatsAnnual!198",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total construction cost",
+   "fine": "ReportFinStatsSA!133",
+   "coarse": "ReportFinStatsAnnual!132",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total financing cash inflows",
+   "fine": "ReportFinStatsSA!157",
+   "coarse": "ReportFinStatsAnnual!156",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total financing cash outflows",
+   "fine": "ReportFinStatsSA!194",
+   "coarse": "ReportFinStatsAnnual!194",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total financing cashflows",
+   "fine": "ReportFinStatsSA!196",
+   "coarse": "ReportFinStatsAnnual!196",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total fixed assets",
+   "fine": "ReportFinStatsSA!73",
+   "coarse": "ReportFinStatsAnnual!73",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total investing cashflows",
+   "fine": "ReportFinStatsSA!139",
+   "coarse": "ReportFinStatsAnnual!138",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total operating cashflows",
+   "fine": "ReportFinStatsSA!130",
+   "coarse": "ReportFinStatsAnnual!129",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total pre operations set up bid costs",
+   "fine": "ReportFinStatsSA!136",
+   "coarse": "ReportFinStatsAnnual!135",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total revenue",
+   "fine": "ReportFinStatsSA!28",
+   "coarse": "ReportFinStatsAnnual!28",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "transfer from equity bridge to sub debt facilities",
+   "fine": "ReportFinStatsSA!155",
+   "coarse": "ReportFinStatsAnnual!154",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "transfer of funds from bond finance into gic account",
+   "fine": "ReportFinStatsSA!164",
+   "coarse": "ReportFinStatsAnnual!163",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "ReportFinStatsSA!112",
+   "coarse": "ReportFinStatsAnnual!111",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge operating period",
+   "fine": "ReportFinStatsSA!22",
+   "coarse": "ReportFinStatsAnnual!22",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge operations",
+   "fine": "ReportFinStatsSA!111",
+   "coarse": "ReportFinStatsAnnual!110",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge pre operating period",
+   "fine": "ReportFinStatsSA!21",
+   "coarse": "ReportFinStatsAnnual!21",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "work in progress",
+   "fine": "ReportFinStatsSA!75",
+   "coarse": "ReportFinStatsAnnual!75",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "write off of arrangement fees and issue costs",
+   "fine": "ReportFinStatsSA!55",
+   "coarse": "ReportFinStatsAnnual!55",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond finance drawdown",
+   "fine": "ReportRatiosSA!509",
+   "coarse": "ReportFinStatsAnnual!147",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond finance facility net of frs 4 offset",
+   "fine": "ReportRatiosSA!476",
+   "coarse": "ReportFinStatsAnnual!49",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "ReportRatiosSA!104",
+   "coarse": "ReportFinStatsAnnual!142",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dividends paid",
+   "fine": "ReportRatiosSA!132",
+   "coarse": "ReportFinStatsAnnual!192",
+   "ratio": 2,
+   "matched": 38,
+   "single_period": [],
+   "unexplained": 2
+  },
+  {
+   "label": "dsra",
+   "fine": "ReportRatiosSA!389",
+   "coarse": "ReportFinStatsAnnual!79",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge drawdown",
+   "fine": "ReportRatiosSA!512",
+   "coarse": "ReportFinStatsAnnual!150",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity drawdown",
+   "fine": "ReportRatiosSA!513",
+   "coarse": "ReportFinStatsAnnual!143",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "interest income",
+   "fine": "ReportRatiosSA!544",
+   "coarse": "ReportFinStatsAnnual!115",
+   "ratio": 2,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 25
+  },
+  {
+   "label": "lifecycle",
+   "fine": "ReportRatiosSA!558",
+   "coarse": "ReportFinStatsAnnual!37",
+   "ratio": 2,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 25
+  },
+  {
+   "label": "mra",
+   "fine": "ReportRatiosSA!438",
+   "coarse": "ReportFinStatsAnnual!78",
+   "ratio": 2,
+   "matched": 16,
+   "single_period": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "other variable costs",
+   "fine": "ReportRatiosSA!311",
+   "coarse": "ReportFinStatsAnnual!31",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through costs",
+   "fine": "ReportRatiosSA!307",
+   "coarse": "ReportFinStatsAnnual!36",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through income",
+   "fine": "ReportRatiosSA!306",
+   "coarse": "ReportFinStatsAnnual!27",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "ReportRatiosSA!541",
+   "coarse": "ReportFinStatsAnnual!24",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility",
+   "fine": "ReportRatiosSA!474",
+   "coarse": "ReportFinStatsAnnual!87",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "third party income",
+   "fine": "ReportRatiosSA!542",
+   "coarse": "ReportFinStatsAnnual!26",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "ReportRatiosSA!540",
+   "coarse": "ReportFinStatsAnnual!111",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge nominal",
+   "fine": "ReportRatiosSA!519",
+   "coarse": "ReportFinStatsAnnual!209",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge operations",
+   "fine": "ReportRatiosSA!539",
+   "coarse": "ReportFinStatsAnnual!110",
+   "ratio": 2,
+   "matched": 14,
+   "single_period": [],
+   "unexplained": 26
+  },
+  {
+   "label": "capital contributions",
+   "fine": "inputCapexM!249",
+   "coarse": "ReportFinStatsAnnual!142",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "inputCapexM!249",
+   "coarse": "ReportFinStatsSA!143",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "inputCapexM!249",
+   "coarse": "ReportRatiosSA!104",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "high school",
+   "fine": "inputCapexM!114",
+   "coarse": "inputOpexSA!117",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "inputCapexM!28",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputCapexM!29",
+   "coarse": "inputOpexSA!14",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "inputCapexM!30",
+   "coarse": "inputOpexSA!57",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "inputCapexM!31",
+   "coarse": "inputOpexSA!58",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "inputCapexM!32",
+   "coarse": "inputOpexSA!59",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "inputCapexM!33",
+   "coarse": "inputOpexSA!60",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "inputCapexM!34",
+   "coarse": "inputOpexSA!61",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "inputCapexM!35",
+   "coarse": "inputOpexSA!62",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "inputCapexM!36",
+   "coarse": "inputOpexSA!63",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "inputCapexM!37",
+   "coarse": "inputOpexSA!64",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "inputCapexM!249",
+   "coarse": "calcFundingSA!631",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputCapexM!29",
+   "coarse": "calcFundingSA!42",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "inputCapexM!30",
+   "coarse": "calcFundingSA!43",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "inputCapexM!31",
+   "coarse": "calcFundingSA!44",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "inputCapexM!32",
+   "coarse": "calcFundingSA!45",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "inputCapexM!33",
+   "coarse": "calcFundingSA!46",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "inputCapexM!34",
+   "coarse": "calcFundingSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "inputCapexM!35",
+   "coarse": "calcFundingSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "inputCapexM!36",
+   "coarse": "calcFundingSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "inputCapexM!37",
+   "coarse": "calcFundingSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputCapexM!29",
+   "coarse": "calcAccomSA!17",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "inputCapexM!30",
+   "coarse": "calcAccomSA!18",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "inputCapexM!31",
+   "coarse": "calcAccomSA!19",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "inputCapexM!32",
+   "coarse": "calcAccomSA!20",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "inputCapexM!33",
+   "coarse": "calcAccomSA!21",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "inputCapexM!34",
+   "coarse": "calcAccomSA!22",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "inputCapexM!35",
+   "coarse": "calcAccomSA!23",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "inputCapexM!36",
+   "coarse": "calcAccomSA!24",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "inputCapexM!37",
+   "coarse": "calcAccomSA!25",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputCapexM!29",
+   "coarse": "calcOpexSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "inputCapexM!30",
+   "coarse": "calcOpexSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "inputCapexM!31",
+   "coarse": "calcOpexSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "inputCapexM!32",
+   "coarse": "calcOpexSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "inputCapexM!33",
+   "coarse": "calcOpexSA!51",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "inputCapexM!34",
+   "coarse": "calcOpexSA!52",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "inputCapexM!35",
+   "coarse": "calcOpexSA!53",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "inputCapexM!36",
+   "coarse": "calcOpexSA!54",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "inputCapexM!37",
+   "coarse": "calcOpexSA!55",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "inputCapexM!249",
+   "coarse": "calcFixedAssetSA!257",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "inputCapexM!28",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputCapexM!29",
+   "coarse": "sysTimingSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "inputCapexM!30",
+   "coarse": "sysTimingSA!115",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "inputCapexM!31",
+   "coarse": "sysTimingSA!116",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "inputCapexM!32",
+   "coarse": "sysTimingSA!117",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "inputCapexM!33",
+   "coarse": "sysTimingSA!118",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "inputCapexM!34",
+   "coarse": "sysTimingSA!134",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "inputCapexM!35",
+   "coarse": "sysTimingSA!135",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "inputCapexM!36",
+   "coarse": "sysTimingSA!136",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "inputCapexM!37",
+   "coarse": "sysTimingSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare",
+   "fine": "inputOpexM!45",
+   "coarse": "inputOpexSA!35",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputOpexM!67",
+   "coarse": "inputOpexSA!14",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputOpexM!67",
+   "coarse": "calcFundingSA!42",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputOpexM!67",
+   "coarse": "calcAccomSA!17",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare",
+   "fine": "inputOpexM!45",
+   "coarse": "calcOpexSA!431",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputOpexM!67",
+   "coarse": "calcOpexSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputOpexM!67",
+   "coarse": "sysTimingSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "utilities",
+   "fine": "inputAccom!64",
+   "coarse": "ReportCharts!35",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputAccom!37",
+   "coarse": "inputOpexSA!14",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputAccom!37",
+   "coarse": "calcFundingSA!42",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputAccom!37",
+   "coarse": "calcAccomSA!17",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputAccom!37",
+   "coarse": "calcOpexSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "inputAccom!37",
+   "coarse": "sysTimingSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond finance",
+   "fine": "calcFundingM!114",
+   "coarse": "ReportCharts!73",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcFundingM!104",
+   "coarse": "ReportCharts!199",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge",
+   "fine": "calcFundingM!116",
+   "coarse": "ReportCharts!74",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcFundingM!104",
+   "coarse": "ReportFinStatsAnnual!20",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gic interest received",
+   "fine": "calcFundingM!500",
+   "coarse": "ReportFinStatsAnnual!153",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "issue costs",
+   "fine": "calcFundingM!54",
+   "coarse": "ReportFinStatsAnnual!136",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "other variable costs",
+   "fine": "calcFundingM!48",
+   "coarse": "ReportFinStatsAnnual!31",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "calcFundingM!40",
+   "coarse": "ReportFinStatsAnnual!24",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcFundingM!52",
+   "coarse": "ReportFinStatsAnnual!30",
+   "ratio": 12,
+   "matched": 9,
+   "single_period": [
+    0
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "third party revenue",
+   "fine": "calcFundingM!41",
+   "coarse": "ReportFinStatsAnnual!113",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcFundingM!104",
+   "coarse": "ReportFinStatsSA!20",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gic interest received",
+   "fine": "calcFundingM!500",
+   "coarse": "ReportFinStatsSA!154",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "issue costs",
+   "fine": "calcFundingM!54",
+   "coarse": "ReportFinStatsSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "other variable costs",
+   "fine": "calcFundingM!48",
+   "coarse": "ReportFinStatsSA!31",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "calcFundingM!40",
+   "coarse": "ReportFinStatsSA!24",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcFundingM!52",
+   "coarse": "ReportFinStatsSA!30",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "third party revenue",
+   "fine": "calcFundingM!41",
+   "coarse": "ReportFinStatsSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond finance",
+   "fine": "calcFundingM!114",
+   "coarse": "ReportRatiosSA!483",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond finance balance",
+   "fine": "calcFundingM!484",
+   "coarse": "ReportRatiosSA!288",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dsra funding",
+   "fine": "calcFundingM!81",
+   "coarse": "ReportRatiosSA!323",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge balance",
+   "fine": "calcFundingM!486",
+   "coarse": "ReportRatiosSA!290",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    5
+   ],
+   "unexplained": 4
+  },
+  {
+   "label": "lifecycle costs",
+   "fine": "calcFundingM!50",
+   "coarse": "ReportRatiosSA!313",
+   "ratio": 6,
+   "matched": 7,
+   "single_period": [],
+   "unexplained": 13
+  },
+  {
+   "label": "mra funding",
+   "fine": "calcFundingM!83",
+   "coarse": "ReportRatiosSA!321",
+   "ratio": 6,
+   "matched": 7,
+   "single_period": [
+    5
+   ],
+   "unexplained": 12
+  },
+  {
+   "label": "other variable costs",
+   "fine": "calcFundingM!48",
+   "coarse": "ReportRatiosSA!311",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "calcFundingM!40",
+   "coarse": "ReportRatiosSA!541",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility balance",
+   "fine": "calcFundingM!482",
+   "coarse": "ReportRatiosSA!287",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility interest",
+   "fine": "calcFundingM!63",
+   "coarse": "ReportRatiosSA!332",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcFundingM!137",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcFundingM!138",
+   "coarse": "inputOpexSA!14",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcFundingM!139",
+   "coarse": "inputOpexSA!57",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcFundingM!140",
+   "coarse": "inputOpexSA!58",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcFundingM!141",
+   "coarse": "inputOpexSA!59",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcFundingM!142",
+   "coarse": "inputOpexSA!60",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "arrangement fee",
+   "fine": "calcFundingM!208",
+   "coarse": "calcFundingSA!518",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "b f principal amount",
+   "fine": "calcFundingM!286",
+   "coarse": "calcFundingSA!277",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond financing interest and fees",
+   "fine": "calcFundingM!503",
+   "coarse": "calcFundingSA!652",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bond interest",
+   "fine": "calcFundingM!75",
+   "coarse": "calcFundingSA!675",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "cash retained",
+   "fine": "calcFundingM!136",
+   "coarse": "calcFundingSA!524",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "check",
+   "fine": "calcFundingM!132",
+   "coarse": "calcFundingSA!712",
+   "ratio": 6,
+   "matched": 17,
+   "single_period": [],
+   "unexplained": 3
+  },
+  {
+   "label": "dsra funding",
+   "fine": "calcFundingM!81",
+   "coarse": "calcFundingSA!499",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge interest and fees",
+   "fine": "calcFundingM!504",
+   "coarse": "calcFundingSA!653",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "equity injection",
+   "fine": "calcFundingM!475",
+   "coarse": "calcFundingSA!455",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gic interest received",
+   "fine": "calcFundingM!500",
+   "coarse": "calcFundingSA!641",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "indexation",
+   "fine": "calcFundingM!266",
+   "coarse": "calcFundingSA!276",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "indexation for period",
+   "fine": "calcFundingM!287",
+   "coarse": "calcFundingSA!278",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "interest accrued in respect of inflation rpi",
+   "fine": "calcFundingM!375",
+   "coarse": "calcFundingSA!357",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "interest charge",
+   "fine": "calcFundingM!181",
+   "coarse": "calcFundingSA!285",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "other variable costs",
+   "fine": "calcFundingM!48",
+   "coarse": "calcFundingSA!608",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "calcFundingM!40",
+   "coarse": "calcFundingSA!594",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sa rpi rate",
+   "fine": "calcFundingM!378",
+   "coarse": "calcFundingSA!359",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility interest",
+   "fine": "calcFundingM!63",
+   "coarse": "calcFundingSA!673",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility interest and fees",
+   "fine": "calcFundingM!545",
+   "coarse": "calcFundingSA!650",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility repayment date flag",
+   "fine": "calcFundingM!29",
+   "coarse": "calcFundingSA!35",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility repayment flag",
+   "fine": "calcFundingM!30",
+   "coarse": "calcFundingSA!36",
+   "ratio": 6,
+   "matched": 18,
+   "single_period": [
+    0,
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcFundingM!138",
+   "coarse": "calcFundingSA!42",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcFundingM!139",
+   "coarse": "calcFundingSA!43",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcFundingM!140",
+   "coarse": "calcFundingSA!44",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcFundingM!141",
+   "coarse": "calcFundingSA!45",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcFundingM!142",
+   "coarse": "calcFundingSA!46",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection interest and fees",
+   "fine": "calcFundingM!506",
+   "coarse": "calcFundingSA!656",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "subordinated debt private sector interest and fees",
+   "fine": "calcFundingM!505",
+   "coarse": "calcFundingSA!655",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcFundingM!138",
+   "coarse": "calcAccomSA!17",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcFundingM!139",
+   "coarse": "calcAccomSA!18",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcFundingM!140",
+   "coarse": "calcAccomSA!19",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcFundingM!141",
+   "coarse": "calcAccomSA!20",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcFundingM!142",
+   "coarse": "calcAccomSA!21",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "other variable costs",
+   "fine": "calcFundingM!48",
+   "coarse": "calcOpexSA!929",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "calcFundingM!40",
+   "coarse": "calcOpexSA!341",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcFundingM!138",
+   "coarse": "calcOpexSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcFundingM!139",
+   "coarse": "calcOpexSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcFundingM!140",
+   "coarse": "calcOpexSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcFundingM!141",
+   "coarse": "calcOpexSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcFundingM!142",
+   "coarse": "calcOpexSA!51",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "additions",
+   "fine": "calcFundingM!191",
+   "coarse": "calcFixedAssetSA!35",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "amortisation",
+   "fine": "calcFundingM!192",
+   "coarse": "calcFixedAssetSA!89",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "b f",
+   "fine": "calcFundingM!124",
+   "coarse": "calcFixedAssetSA!34",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "c f",
+   "fine": "calcFundingM!128",
+   "coarse": "calcFixedAssetSA!38",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge interest",
+   "fine": "calcFundingM!522",
+   "coarse": "calcFixedAssetSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge transfer flag",
+   "fine": "calcFundingM!359",
+   "coarse": "calcFixedAssetSA!27",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "interest",
+   "fine": "calcFundingM!87",
+   "coarse": "calcFixedAssetSA!246",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "senior debt 2 capital contribution facility repayment date flag",
+   "fine": "calcFundingM!29",
+   "coarse": "calcFixedAssetSA!29",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility repayment flag",
+   "fine": "calcFundingM!30",
+   "coarse": "calcFixedAssetSA!30",
+   "ratio": 6,
+   "matched": 18,
+   "single_period": [
+    0,
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "additions",
+   "fine": "calcFundingM!191",
+   "coarse": "calcAccountingSA!203",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "bond interest",
+   "fine": "calcFundingM!75",
+   "coarse": "calcAccountingSA!192",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcFundingM!104",
+   "coarse": "calcAccountingSA!142",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge interest and fees",
+   "fine": "calcFundingM!504",
+   "coarse": "calcAccountingSA!29",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gic interest received",
+   "fine": "calcFundingM!500",
+   "coarse": "calcAccountingSA!25",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "lifecycle costs",
+   "fine": "calcFundingM!50",
+   "coarse": "calcAccountingSA!50",
+   "ratio": 6,
+   "matched": 7,
+   "single_period": [],
+   "unexplained": 13
+  },
+  {
+   "label": "senior debt 2 capital contribution facility interest and fees",
+   "fine": "calcFundingM!545",
+   "coarse": "calcAccountingSA!26",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt interest and fees",
+   "fine": "calcFundingM!546",
+   "coarse": "calcAccountingSA!27",
+   "ratio": 6,
+   "matched": 18,
+   "single_period": [],
+   "unexplained": 2
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcFundingM!52",
+   "coarse": "calcAccountingSA!144",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection interest and fees",
+   "fine": "calcFundingM!506",
+   "coarse": "calcAccountingSA!31",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "subordinated debt private sector interest and fees",
+   "fine": "calcFundingM!505",
+   "coarse": "calcAccountingSA!30",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "check",
+   "fine": "calcFundingM!132",
+   "coarse": "calcTaxationSA!84",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcFundingM!137",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcFundingM!138",
+   "coarse": "sysTimingSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcFundingM!139",
+   "coarse": "sysTimingSA!115",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcFundingM!140",
+   "coarse": "sysTimingSA!116",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcFundingM!141",
+   "coarse": "sysTimingSA!117",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcFundingM!142",
+   "coarse": "sysTimingSA!118",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "financial close",
+   "fine": "calcFundingM!20",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "senior debt 1",
+   "fine": "calcFundingM!118",
+   "coarse": "Swap Profiles!16",
+   "ratio": 3,
+   "matched": 9,
+   "single_period": [
+    3
+   ],
+   "unexplained": 30
+  },
+  {
+   "label": "asset disposals",
+   "fine": "calcFundingSA!625",
+   "coarse": "ReportFinStatsAnnual!134",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "calcFundingSA!631",
+   "coarse": "ReportFinStatsAnnual!142",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dividends paid",
+   "fine": "calcFundingSA!465",
+   "coarse": "ReportFinStatsAnnual!192",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dividends payable",
+   "fine": "calcFundingSA!464",
+   "coarse": "ReportFinStatsAnnual!95",
+   "ratio": 2,
+   "matched": 38,
+   "single_period": [],
+   "unexplained": 2
+  },
+  {
+   "label": "dsra",
+   "fine": "calcFundingSA!578",
+   "coarse": "ReportFinStatsAnnual!79",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dsrf",
+   "fine": "calcFundingSA!704",
+   "coarse": "ReportFinStatsAnnual!93",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "dsrf fees",
+   "fine": "calcFundingSA!726",
+   "coarse": "ReportFinStatsAnnual!53",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge drawdown",
+   "fine": "calcFundingSA!638",
+   "coarse": "ReportFinStatsAnnual!150",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge interest fees",
+   "fine": "calcFundingSA!732",
+   "coarse": "ReportFinStatsAnnual!50",
+   "ratio": 2,
+   "matched": 37,
+   "single_period": [],
+   "unexplained": 3
+  },
+  {
+   "label": "equity drawdown",
+   "fine": "calcFundingSA!633",
+   "coarse": "ReportFinStatsAnnual!143",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gic interest received",
+   "fine": "calcFundingSA!641",
+   "coarse": "ReportFinStatsAnnual!153",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "lifecycle",
+   "fine": "calcFundingSA!612",
+   "coarse": "ReportFinStatsAnnual!37",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "mra",
+   "fine": "calcFundingSA!577",
+   "coarse": "ReportFinStatsAnnual!78",
+   "ratio": 2,
+   "matched": 16,
+   "single_period": [],
+   "unexplained": 24
+  },
+  {
+   "label": "other variable costs",
+   "fine": "calcFundingSA!608",
+   "coarse": "ReportFinStatsAnnual!31",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through costs",
+   "fine": "calcFundingSA!611",
+   "coarse": "ReportFinStatsAnnual!36",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through income",
+   "fine": "calcFundingSA!596",
+   "coarse": "ReportFinStatsAnnual!27",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "calcFundingSA!594",
+   "coarse": "ReportFinStatsAnnual!24",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "senior debt 2 capital contribution facility drawdown",
+   "fine": "calcFundingSA!634",
+   "coarse": "ReportFinStatsAnnual!144",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection drawdown",
+   "fine": "calcFundingSA!640",
+   "coarse": "ReportFinStatsAnnual!152",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection interest fees",
+   "fine": "calcFundingSA!687",
+   "coarse": "ReportFinStatsAnnual!52",
+   "ratio": 2,
+   "matched": 37,
+   "single_period": [],
+   "unexplained": 3
+  },
+  {
+   "label": "subordinated debt private sector drawdown",
+   "fine": "calcFundingSA!639",
+   "coarse": "ReportFinStatsAnnual!151",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "subordinated debt private sector interest fees",
+   "fine": "calcFundingSA!724",
+   "coarse": "ReportFinStatsAnnual!51",
+   "ratio": 2,
+   "matched": 37,
+   "single_period": [],
+   "unexplained": 3
+  },
+  {
+   "label": "third party income",
+   "fine": "calcFundingSA!595",
+   "coarse": "ReportFinStatsAnnual!26",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total construction cost",
+   "fine": "calcFundingSA!623",
+   "coarse": "ReportFinStatsAnnual!132",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total pre operations set up bid costs",
+   "fine": "calcFundingSA!626",
+   "coarse": "ReportFinStatsAnnual!135",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "calcFundingSA!593",
+   "coarse": "ReportFinStatsAnnual!111",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge operations",
+   "fine": "calcFundingSA!592",
+   "coarse": "ReportFinStatsAnnual!110",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcAccomM!16",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcAccomM!17",
+   "coarse": "inputOpexSA!14",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcAccomM!18",
+   "coarse": "inputOpexSA!57",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcAccomM!19",
+   "coarse": "inputOpexSA!58",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcAccomM!20",
+   "coarse": "inputOpexSA!59",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcAccomM!21",
+   "coarse": "inputOpexSA!60",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcAccomM!22",
+   "coarse": "inputOpexSA!61",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcAccomM!23",
+   "coarse": "inputOpexSA!62",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcAccomM!24",
+   "coarse": "inputOpexSA!63",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcAccomM!25",
+   "coarse": "inputOpexSA!64",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcAccomM!17",
+   "coarse": "calcFundingSA!42",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcAccomM!18",
+   "coarse": "calcFundingSA!43",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcAccomM!19",
+   "coarse": "calcFundingSA!44",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcAccomM!20",
+   "coarse": "calcFundingSA!45",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcAccomM!21",
+   "coarse": "calcFundingSA!46",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcAccomM!22",
+   "coarse": "calcFundingSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcAccomM!23",
+   "coarse": "calcFundingSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcAccomM!24",
+   "coarse": "calcFundingSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcAccomM!25",
+   "coarse": "calcFundingSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total project",
+   "fine": "calcAccomM!26",
+   "coarse": "calcFundingSA!30",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcAccomM!17",
+   "coarse": "calcAccomSA!17",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcAccomM!18",
+   "coarse": "calcAccomSA!18",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcAccomM!19",
+   "coarse": "calcAccomSA!19",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcAccomM!20",
+   "coarse": "calcAccomSA!20",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcAccomM!21",
+   "coarse": "calcAccomSA!21",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcAccomM!22",
+   "coarse": "calcAccomSA!22",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcAccomM!23",
+   "coarse": "calcAccomSA!23",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcAccomM!24",
+   "coarse": "calcAccomSA!24",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcAccomM!25",
+   "coarse": "calcAccomSA!25",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcAccomM!17",
+   "coarse": "calcOpexSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcAccomM!18",
+   "coarse": "calcOpexSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcAccomM!19",
+   "coarse": "calcOpexSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcAccomM!20",
+   "coarse": "calcOpexSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcAccomM!21",
+   "coarse": "calcOpexSA!51",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcAccomM!22",
+   "coarse": "calcOpexSA!52",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcAccomM!23",
+   "coarse": "calcOpexSA!53",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcAccomM!24",
+   "coarse": "calcOpexSA!54",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcAccomM!25",
+   "coarse": "calcOpexSA!55",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total project",
+   "fine": "calcAccomM!26",
+   "coarse": "calcOpexSA!43",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "khs",
+   "fine": "calcAccomM!16",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcAccomM!17",
+   "coarse": "sysTimingSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcAccomM!18",
+   "coarse": "sysTimingSA!115",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcAccomM!19",
+   "coarse": "sysTimingSA!116",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcAccomM!20",
+   "coarse": "sysTimingSA!117",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcAccomM!21",
+   "coarse": "sysTimingSA!118",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcAccomM!22",
+   "coarse": "sysTimingSA!134",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcAccomM!23",
+   "coarse": "sysTimingSA!135",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcAccomM!24",
+   "coarse": "sysTimingSA!136",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcAccomM!25",
+   "coarse": "sysTimingSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "asset disposals",
+   "fine": "calcWorkCapSA!53",
+   "coarse": "ReportFinStatsAnnual!134",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through costs",
+   "fine": "calcWorkCapSA!36",
+   "coarse": "ReportFinStatsAnnual!36",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through income",
+   "fine": "calcWorkCapSA!31",
+   "coarse": "ReportFinStatsAnnual!27",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spv admin costs",
+   "fine": "calcWorkCapSA!33",
+   "coarse": "ReportFinStatsAnnual!118",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "third party income",
+   "fine": "calcWorkCapSA!30",
+   "coarse": "ReportFinStatsAnnual!26",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "calcWorkCapSA!48",
+   "coarse": "ReportFinStatsAnnual!111",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge operations",
+   "fine": "calcWorkCapSA!47",
+   "coarse": "ReportFinStatsAnnual!110",
+   "ratio": 2,
+   "matched": 14,
+   "single_period": [],
+   "unexplained": 26
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "calcWorkCapM!48",
+   "coarse": "ReportFinStatsAnnual!111",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "calcWorkCapM!48",
+   "coarse": "ReportFinStatsSA!112",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "movement in working capital excluding vat during the construction period",
+   "fine": "calcWorkCapM!158",
+   "coarse": "ReportRatiosSA!563",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "pre operations period working capital vat balance",
+   "fine": "calcWorkCapM!157",
+   "coarse": "ReportRatiosSA!562",
+   "ratio": 6,
+   "matched": 16,
+   "single_period": [
+    1
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "calcWorkCapM!48",
+   "coarse": "ReportRatiosSA!540",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "bal b f",
+   "fine": "calcWorkCapM!103",
+   "coarse": "calcFundingSA!507",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "bal c f",
+   "fine": "calcWorkCapM!147",
+   "coarse": "calcFundingSA!511",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "pre operations period working capital vat balance",
+   "fine": "calcWorkCapM!157",
+   "coarse": "calcFundingSA!616",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "total",
+   "fine": "calcWorkCapM!190",
+   "coarse": "calcFundingSA!553",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1
+   ],
+   "unexplained": 4
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "calcWorkCapM!48",
+   "coarse": "calcFundingSA!593",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "b f bal",
+   "fine": "calcWorkCapM!92",
+   "coarse": "calcWorkCapSA!92",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "b f balance",
+   "fine": "calcWorkCapM!44",
+   "coarse": "calcWorkCapSA!44",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "bal c f excluding vat during construction period",
+   "fine": "calcWorkCapM!149",
+   "coarse": "calcWorkCapSA!155",
+   "ratio": 6,
+   "matched": 16,
+   "single_period": [
+    2,
+    3,
+    4
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "bal payable receivable c f",
+   "fine": "calcWorkCapM!96",
+   "coarse": "calcWorkCapSA!96",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "c f balance",
+   "fine": "calcWorkCapM!88",
+   "coarse": "calcWorkCapSA!88",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions construction",
+   "fine": "calcWorkCapM!54",
+   "coarse": "calcWorkCapSA!54",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction partial period",
+   "fine": "calcWorkCapM!23",
+   "coarse": "calcWorkCapSA!23",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    2,
+    3,
+    4
+   ],
+   "unexplained": 2
+  },
+  {
+   "label": "construction period start",
+   "fine": "calcWorkCapM!19",
+   "coarse": "calcWorkCapSA!24",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "fixed asset purchases construction",
+   "fine": "calcWorkCapM!65",
+   "coarse": "calcWorkCapSA!65",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "hard fm costs payable",
+   "fine": "calcWorkCapM!169",
+   "coarse": "calcWorkCapSA!179",
+   "ratio": 6,
+   "matched": 6,
+   "single_period": [],
+   "unexplained": 14
+  },
+  {
+   "label": "lifecycle building site costs payable",
+   "fine": "calcWorkCapM!170",
+   "coarse": "calcWorkCapSA!180",
+   "ratio": 6,
+   "matched": 8,
+   "single_period": [],
+   "unexplained": 12
+  },
+  {
+   "label": "lifecycle ff e payable",
+   "fine": "calcWorkCapM!171",
+   "coarse": "calcWorkCapSA!181",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "movement in working capital",
+   "fine": "calcWorkCapM!150",
+   "coarse": "calcWorkCapSA!156",
+   "ratio": 6,
+   "matched": 9,
+   "single_period": [],
+   "unexplained": 11
+  },
+  {
+   "label": "movement in working capital excluding vat during construction period",
+   "fine": "calcWorkCapM!151",
+   "coarse": "calcWorkCapSA!157",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [],
+   "unexplained": 1
+  },
+  {
+   "label": "movement in working capital excluding vat during the construction period",
+   "fine": "calcWorkCapM!158",
+   "coarse": "calcWorkCapSA!164",
+   "ratio": 6,
+   "matched": 9,
+   "single_period": [],
+   "unexplained": 11
+  },
+  {
+   "label": "movement in working capital including vat in construction period for financial statements",
+   "fine": "calcWorkCapM!155",
+   "coarse": "calcWorkCapSA!161",
+   "ratio": 6,
+   "matched": 9,
+   "single_period": [],
+   "unexplained": 11
+  },
+  {
+   "label": "pass through costs construction",
+   "fine": "calcWorkCapM!35",
+   "coarse": "calcWorkCapSA!57",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through costs payable",
+   "fine": "calcWorkCapM!166",
+   "coarse": "calcWorkCapSA!175",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through income construction",
+   "fine": "calcWorkCapM!52",
+   "coarse": "calcWorkCapSA!52",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through income receivable",
+   "fine": "calcWorkCapM!164",
+   "coarse": "calcWorkCapSA!173",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through income received construction",
+   "fine": "calcWorkCapM!34",
+   "coarse": "calcWorkCapSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pre operations period working capital vat balance",
+   "fine": "calcWorkCapM!157",
+   "coarse": "calcWorkCapSA!163",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "set up and bid costs",
+   "fine": "calcWorkCapM!36",
+   "coarse": "calcWorkCapSA!60",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [],
+   "unexplained": 1
+  },
+  {
+   "label": "soft fm costs payable",
+   "fine": "calcWorkCapM!168",
+   "coarse": "calcWorkCapSA!178",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spv admin costs paid construction",
+   "fine": "calcWorkCapM!37",
+   "coarse": "calcWorkCapSA!142",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1
+   ],
+   "unexplained": 4
+  },
+  {
+   "label": "third party income construction",
+   "fine": "calcWorkCapM!50",
+   "coarse": "calcWorkCapSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "third party income receivable",
+   "fine": "calcWorkCapM!163",
+   "coarse": "calcWorkCapSA!172",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "third party income received construction",
+   "fine": "calcWorkCapM!33",
+   "coarse": "calcWorkCapSA!135",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge construction",
+   "fine": "calcWorkCapM!48",
+   "coarse": "calcWorkCapSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge receivable",
+   "fine": "calcWorkCapM!162",
+   "coarse": "calcWorkCapSA!171",
+   "ratio": 6,
+   "matched": 6,
+   "single_period": [],
+   "unexplained": 14
+  },
+  {
+   "label": "unitary charge received construction",
+   "fine": "calcWorkCapM!32",
+   "coarse": "calcWorkCapSA!133",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "vat",
+   "fine": "calcWorkCapM!172",
+   "coarse": "calcWorkCapSA!182",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "vat reclaimed paid during construction",
+   "fine": "calcWorkCapM!148",
+   "coarse": "calcWorkCapSA!154",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "vat reclaimed paid in construction period",
+   "fine": "calcWorkCapM!94",
+   "coarse": "calcWorkCapSA!94",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total",
+   "fine": "calcWorkCapM!190",
+   "coarse": "calcOpexSA!938",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "construction partial period",
+   "fine": "calcWorkCapM!23",
+   "coarse": "sysTimingSA!173",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    2,
+    3,
+    4
+   ],
+   "unexplained": 2
+  },
+  {
+   "label": "financial close",
+   "fine": "calcWorkCapM!20",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "construction revenue",
+   "fine": "calcCapexM!613",
+   "coarse": "ReportFinStatsAnnual!15",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction revenue",
+   "fine": "calcCapexM!613",
+   "coarse": "ReportFinStatsSA!15",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcCapexM!27",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcCapexM!28",
+   "coarse": "inputOpexSA!14",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcCapexM!29",
+   "coarse": "inputOpexSA!57",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcCapexM!30",
+   "coarse": "inputOpexSA!58",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcCapexM!31",
+   "coarse": "inputOpexSA!59",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcCapexM!32",
+   "coarse": "inputOpexSA!60",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcCapexM!33",
+   "coarse": "inputOpexSA!61",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcCapexM!34",
+   "coarse": "inputOpexSA!62",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcCapexM!35",
+   "coarse": "inputOpexSA!63",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcCapexM!36",
+   "coarse": "inputOpexSA!64",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcCapexM!28",
+   "coarse": "calcFundingSA!42",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcCapexM!29",
+   "coarse": "calcFundingSA!43",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcCapexM!30",
+   "coarse": "calcFundingSA!44",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcCapexM!31",
+   "coarse": "calcFundingSA!45",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcCapexM!32",
+   "coarse": "calcFundingSA!46",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcCapexM!33",
+   "coarse": "calcFundingSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcCapexM!34",
+   "coarse": "calcFundingSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcCapexM!35",
+   "coarse": "calcFundingSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcCapexM!36",
+   "coarse": "calcFundingSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcCapexM!28",
+   "coarse": "calcAccomSA!17",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcCapexM!29",
+   "coarse": "calcAccomSA!18",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcCapexM!30",
+   "coarse": "calcAccomSA!19",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcCapexM!31",
+   "coarse": "calcAccomSA!20",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcCapexM!32",
+   "coarse": "calcAccomSA!21",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcCapexM!33",
+   "coarse": "calcAccomSA!22",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcCapexM!34",
+   "coarse": "calcAccomSA!23",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcCapexM!35",
+   "coarse": "calcAccomSA!24",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcCapexM!36",
+   "coarse": "calcAccomSA!25",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcCapexM!28",
+   "coarse": "calcOpexSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcCapexM!29",
+   "coarse": "calcOpexSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcCapexM!30",
+   "coarse": "calcOpexSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcCapexM!31",
+   "coarse": "calcOpexSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcCapexM!32",
+   "coarse": "calcOpexSA!51",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcCapexM!33",
+   "coarse": "calcOpexSA!52",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcCapexM!34",
+   "coarse": "calcOpexSA!53",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcCapexM!35",
+   "coarse": "calcOpexSA!54",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcCapexM!36",
+   "coarse": "calcOpexSA!55",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "equipment",
+   "fine": "calcCapexM!536",
+   "coarse": "calcFixedAssetSA!241",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "land",
+   "fine": "calcCapexM!533",
+   "coarse": "calcFixedAssetSA!238",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "new build",
+   "fine": "calcCapexM!534",
+   "coarse": "calcFixedAssetSA!239",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction completion percentage",
+   "fine": "calcCapexM!595",
+   "coarse": "calcAccountingSA!165",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction costs",
+   "fine": "calcCapexM!608",
+   "coarse": "calcAccountingSA!46",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "construction margin",
+   "fine": "calcCapexM!612",
+   "coarse": "calcAccountingSA!92",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction revenue",
+   "fine": "calcCapexM!613",
+   "coarse": "calcAccountingSA!67",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 5
+  },
+  {
+   "label": "setup bid costs",
+   "fine": "calcCapexM!609",
+   "coarse": "calcAccountingSA!132",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction margin",
+   "fine": "calcCapexM!612",
+   "coarse": "calcTaxationSA!190",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "equipment",
+   "fine": "calcCapexM!536",
+   "coarse": "calcTaxationSA!89",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "new build",
+   "fine": "calcCapexM!534",
+   "coarse": "calcTaxationSA!87",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "opening balance",
+   "fine": "calcCapexM!598",
+   "coarse": "calcTaxationSA!128",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "refurbishment",
+   "fine": "calcCapexM!535",
+   "coarse": "calcTaxationSA!88",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcCapexM!27",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcCapexM!28",
+   "coarse": "sysTimingSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcCapexM!29",
+   "coarse": "sysTimingSA!115",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcCapexM!30",
+   "coarse": "sysTimingSA!116",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcCapexM!31",
+   "coarse": "sysTimingSA!117",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcCapexM!32",
+   "coarse": "sysTimingSA!118",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcCapexM!33",
+   "coarse": "sysTimingSA!134",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcCapexM!34",
+   "coarse": "sysTimingSA!135",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcCapexM!35",
+   "coarse": "sysTimingSA!136",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcCapexM!36",
+   "coarse": "sysTimingSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "financial close",
+   "fine": "calcCapexM!39",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcOpexM!275",
+   "coarse": "ReportCharts!199",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "uc indexed at aei rpi 2 5 rpi q",
+   "fine": "calcOpexM!144",
+   "coarse": "ReportCharts!23",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "uc indexed at rpi 2 5 rpi p",
+   "fine": "calcOpexM!143",
+   "coarse": "ReportCharts!22",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "unitary charge",
+   "fine": "calcOpexM!458",
+   "coarse": "ReportCharts!138",
+   "ratio": 6,
+   "matched": 6,
+   "single_period": [],
+   "unexplained": 14
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcOpexM!275",
+   "coarse": "ReportFinStatsAnnual!20",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "calcOpexM!459",
+   "coarse": "ReportFinStatsAnnual!142",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "issue costs",
+   "fine": "calcOpexM!538",
+   "coarse": "ReportFinStatsAnnual!136",
+   "ratio": 12,
+   "matched": 10,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcOpexM!532",
+   "coarse": "ReportFinStatsAnnual!30",
+   "ratio": 12,
+   "matched": 9,
+   "single_period": [
+    0
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcOpexM!275",
+   "coarse": "ReportFinStatsSA!20",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "calcOpexM!459",
+   "coarse": "ReportFinStatsSA!143",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "issue costs",
+   "fine": "calcOpexM!538",
+   "coarse": "ReportFinStatsSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcOpexM!532",
+   "coarse": "ReportFinStatsSA!30",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "calcOpexM!459",
+   "coarse": "ReportRatiosSA!104",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcOpexM!39",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "spare",
+   "fine": "calcOpexM!333",
+   "coarse": "inputOpexSA!35",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcOpexM!40",
+   "coarse": "inputOpexSA!14",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcOpexM!41",
+   "coarse": "inputOpexSA!57",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcOpexM!42",
+   "coarse": "inputOpexSA!58",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcOpexM!43",
+   "coarse": "inputOpexSA!59",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcOpexM!44",
+   "coarse": "inputOpexSA!60",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcOpexM!45",
+   "coarse": "inputOpexSA!61",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcOpexM!46",
+   "coarse": "inputOpexSA!62",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcOpexM!47",
+   "coarse": "inputOpexSA!63",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcOpexM!48",
+   "coarse": "inputOpexSA!64",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "calcOpexM!459",
+   "coarse": "calcFundingSA!631",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcOpexM!40",
+   "coarse": "calcFundingSA!42",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcOpexM!41",
+   "coarse": "calcFundingSA!43",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcOpexM!42",
+   "coarse": "calcFundingSA!44",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcOpexM!43",
+   "coarse": "calcFundingSA!45",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcOpexM!44",
+   "coarse": "calcFundingSA!46",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcOpexM!45",
+   "coarse": "calcFundingSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcOpexM!46",
+   "coarse": "calcFundingSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcOpexM!47",
+   "coarse": "calcFundingSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcOpexM!48",
+   "coarse": "calcFundingSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total",
+   "fine": "calcOpexM!323",
+   "coarse": "calcFundingSA!553",
+   "ratio": 6,
+   "matched": 18,
+   "single_period": [
+    1
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcOpexM!40",
+   "coarse": "calcAccomSA!17",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcOpexM!41",
+   "coarse": "calcAccomSA!18",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcOpexM!42",
+   "coarse": "calcAccomSA!19",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcOpexM!43",
+   "coarse": "calcAccomSA!20",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcOpexM!44",
+   "coarse": "calcAccomSA!21",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcOpexM!45",
+   "coarse": "calcAccomSA!22",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcOpexM!46",
+   "coarse": "calcAccomSA!23",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcOpexM!47",
+   "coarse": "calcAccomSA!24",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcOpexM!48",
+   "coarse": "calcAccomSA!25",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "uc indexed at aei rpi 2 5 rpi q",
+   "fine": "calcOpexM!144",
+   "coarse": "calcAccomSA!115",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "uc indexed at rpi 2 5 rpi p",
+   "fine": "calcOpexM!143",
+   "coarse": "calcAccomSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare",
+   "fine": "calcOpexM!333",
+   "coarse": "calcOpexSA!431",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcOpexM!40",
+   "coarse": "calcOpexSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcOpexM!41",
+   "coarse": "calcOpexSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcOpexM!42",
+   "coarse": "calcOpexSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcOpexM!43",
+   "coarse": "calcOpexSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcOpexM!44",
+   "coarse": "calcOpexSA!51",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcOpexM!45",
+   "coarse": "calcOpexSA!52",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcOpexM!46",
+   "coarse": "calcOpexSA!53",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcOpexM!47",
+   "coarse": "calcOpexSA!54",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcOpexM!48",
+   "coarse": "calcOpexSA!55",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "total",
+   "fine": "calcOpexM!323",
+   "coarse": "calcOpexSA!938",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "uc indexed at aei rpi 2 5 rpi q",
+   "fine": "calcOpexM!144",
+   "coarse": "calcOpexSA!273",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "uc indexed at rpi 2 5 rpi p",
+   "fine": "calcOpexM!143",
+   "coarse": "calcOpexSA!272",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "vat on pass through income",
+   "fine": "calcOpexM!606",
+   "coarse": "calcOpexSA!992",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "vat on third party income",
+   "fine": "calcOpexM!605",
+   "coarse": "calcOpexSA!991",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "calcOpexM!459",
+   "coarse": "calcFixedAssetSA!257",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcOpexM!275",
+   "coarse": "calcAccountingSA!142",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcOpexM!532",
+   "coarse": "calcAccountingSA!144",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcOpexM!39",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "spare 1",
+   "fine": "calcOpexM!40",
+   "coarse": "sysTimingSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "calcOpexM!41",
+   "coarse": "sysTimingSA!115",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "calcOpexM!42",
+   "coarse": "sysTimingSA!116",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "calcOpexM!43",
+   "coarse": "sysTimingSA!117",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "calcOpexM!44",
+   "coarse": "sysTimingSA!118",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "calcOpexM!45",
+   "coarse": "sysTimingSA!134",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "calcOpexM!46",
+   "coarse": "sysTimingSA!135",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "calcOpexM!47",
+   "coarse": "sysTimingSA!136",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "calcOpexM!48",
+   "coarse": "sysTimingSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "financial close",
+   "fine": "calcOpexM!51",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "hard fm non staff costs",
+   "fine": "calcOpexSA!931",
+   "coarse": "ReportFinStatsAnnual!35",
+   "ratio": 2,
+   "matched": 14,
+   "single_period": [],
+   "unexplained": 26
+  },
+  {
+   "label": "lifecycle",
+   "fine": "calcOpexSA!1003",
+   "coarse": "ReportFinStatsAnnual!37",
+   "ratio": 2,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 25
+  },
+  {
+   "label": "other variable costs",
+   "fine": "calcOpexSA!929",
+   "coarse": "ReportFinStatsAnnual!31",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through costs",
+   "fine": "calcOpexSA!949",
+   "coarse": "ReportFinStatsAnnual!36",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "pass through income",
+   "fine": "calcOpexSA!959",
+   "coarse": "ReportFinStatsAnnual!27",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "rpi swap income payment",
+   "fine": "calcOpexSA!341",
+   "coarse": "ReportFinStatsAnnual!24",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "soft fm staff costs",
+   "fine": "calcOpexSA!930",
+   "coarse": "ReportFinStatsAnnual!34",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spv admin costs",
+   "fine": "calcOpexSA!928",
+   "coarse": "ReportFinStatsAnnual!118",
+   "ratio": 2,
+   "matched": 14,
+   "single_period": [],
+   "unexplained": 26
+  },
+  {
+   "label": "third party income",
+   "fine": "calcOpexSA!958",
+   "coarse": "ReportFinStatsAnnual!26",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contributions",
+   "fine": "calcFixedAssetSA!257",
+   "coarse": "ReportFinStatsAnnual!142",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "depreciation",
+   "fine": "calcFixedAssetSA!37",
+   "coarse": "ReportFinStatsAnnual!41",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "capital contribution",
+   "fine": "calcAccountingSA!142",
+   "coarse": "ReportFinStatsAnnual!20",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "construction revenue",
+   "fine": "calcAccountingSA!67",
+   "coarse": "ReportFinStatsAnnual!15",
+   "ratio": 2,
+   "matched": 37,
+   "single_period": [],
+   "unexplained": 3
+  },
+  {
+   "label": "dsrf fees",
+   "fine": "calcAccountingSA!193",
+   "coarse": "ReportFinStatsAnnual!53",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "gic interest received",
+   "fine": "calcAccountingSA!25",
+   "coarse": "ReportFinStatsAnnual!153",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "hard fm non staff costs",
+   "fine": "calcAccountingSA!49",
+   "coarse": "ReportFinStatsAnnual!35",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "lifecycle",
+   "fine": "calcAccountingSA!204",
+   "coarse": "ReportFinStatsAnnual!37",
+   "ratio": 2,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 25
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcAccountingSA!144",
+   "coarse": "ReportFinStatsAnnual!30",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "soft fm staff costs",
+   "fine": "calcAccountingSA!48",
+   "coarse": "ReportFinStatsAnnual!34",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spv admin costs",
+   "fine": "calcAccountingSA!47",
+   "coarse": "ReportFinStatsAnnual!118",
+   "ratio": 2,
+   "matched": 37,
+   "single_period": [
+    0
+   ],
+   "unexplained": 2
+  },
+  {
+   "label": "lifecycle",
+   "fine": "calcTaxationSA!90",
+   "coarse": "ReportFinStatsAnnual!37",
+   "ratio": 2,
+   "matched": 15,
+   "single_period": [],
+   "unexplained": 25
+  },
+  {
+   "label": "profit before tax",
+   "fine": "calcTaxationSA!28",
+   "coarse": "ReportFinStatsAnnual!57",
+   "ratio": 2,
+   "matched": 40,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "sysTimingM!42",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "spare 1",
+   "fine": "sysTimingM!43",
+   "coarse": "inputOpexSA!14",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "sysTimingM!44",
+   "coarse": "inputOpexSA!57",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "sysTimingM!45",
+   "coarse": "inputOpexSA!58",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "sysTimingM!46",
+   "coarse": "inputOpexSA!59",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "sysTimingM!47",
+   "coarse": "inputOpexSA!60",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "sysTimingM!48",
+   "coarse": "inputOpexSA!61",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "sysTimingM!49",
+   "coarse": "inputOpexSA!62",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "sysTimingM!50",
+   "coarse": "inputOpexSA!63",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "sysTimingM!51",
+   "coarse": "inputOpexSA!64",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "sysTimingM!43",
+   "coarse": "calcFundingSA!42",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "sysTimingM!44",
+   "coarse": "calcFundingSA!43",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "sysTimingM!45",
+   "coarse": "calcFundingSA!44",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "sysTimingM!46",
+   "coarse": "calcFundingSA!45",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "sysTimingM!47",
+   "coarse": "calcFundingSA!46",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "sysTimingM!48",
+   "coarse": "calcFundingSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "sysTimingM!49",
+   "coarse": "calcFundingSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "sysTimingM!50",
+   "coarse": "calcFundingSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "sysTimingM!51",
+   "coarse": "calcFundingSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "sysTimingM!43",
+   "coarse": "calcAccomSA!17",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "sysTimingM!44",
+   "coarse": "calcAccomSA!18",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "sysTimingM!45",
+   "coarse": "calcAccomSA!19",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "sysTimingM!46",
+   "coarse": "calcAccomSA!20",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "sysTimingM!47",
+   "coarse": "calcAccomSA!21",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "sysTimingM!48",
+   "coarse": "calcAccomSA!22",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "sysTimingM!49",
+   "coarse": "calcAccomSA!23",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "sysTimingM!50",
+   "coarse": "calcAccomSA!24",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "sysTimingM!51",
+   "coarse": "calcAccomSA!25",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 1",
+   "fine": "sysTimingM!43",
+   "coarse": "calcOpexSA!47",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "sysTimingM!44",
+   "coarse": "calcOpexSA!48",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "sysTimingM!45",
+   "coarse": "calcOpexSA!49",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "sysTimingM!46",
+   "coarse": "calcOpexSA!50",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "sysTimingM!47",
+   "coarse": "calcOpexSA!51",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "sysTimingM!48",
+   "coarse": "calcOpexSA!52",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "sysTimingM!49",
+   "coarse": "calcOpexSA!53",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "sysTimingM!50",
+   "coarse": "calcOpexSA!54",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "sysTimingM!51",
+   "coarse": "calcOpexSA!55",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "sysTimingM!42",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "spare 1",
+   "fine": "sysTimingM!43",
+   "coarse": "sysTimingSA!114",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 2",
+   "fine": "sysTimingM!44",
+   "coarse": "sysTimingSA!115",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 3",
+   "fine": "sysTimingM!45",
+   "coarse": "sysTimingSA!116",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 4",
+   "fine": "sysTimingM!46",
+   "coarse": "sysTimingSA!117",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 5",
+   "fine": "sysTimingM!47",
+   "coarse": "sysTimingSA!118",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 6",
+   "fine": "sysTimingM!48",
+   "coarse": "sysTimingSA!134",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 7",
+   "fine": "sysTimingM!49",
+   "coarse": "sysTimingSA!135",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 8",
+   "fine": "sysTimingM!50",
+   "coarse": "sysTimingSA!136",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "spare 9",
+   "fine": "sysTimingM!51",
+   "coarse": "sysTimingSA!137",
+   "ratio": 6,
+   "matched": 20,
+   "single_period": [],
+   "unexplained": 0
+  },
+  {
+   "label": "financial close",
+   "fine": "sysTimingM!63",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "equity bridge facility",
+   "fine": "Swap Profiles!20",
+   "coarse": "ReportFinStatsAnnual!90",
+   "ratio": 4,
+   "matched": 13,
+   "single_period": [
+    2,
+    9,
+    10
+   ],
+   "unexplained": 7
+  },
+  {
+   "label": "equity bridge facility",
+   "fine": "Swap Profiles!20",
+   "coarse": "ReportFinStatsSA!91",
+   "ratio": 2,
+   "matched": 30,
+   "single_period": [],
+   "unexplained": 17
+  }
+ ],
+ "defects": [
+  {
+   "label": "mra",
+   "fine": "ReportCharts!114",
+   "coarse": "ReportFinStatsAnnual!78",
+   "ratio": 2,
+   "matched": 16,
+   "single_period": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "retained earnings",
+   "fine": "ReportCharts!62",
+   "coarse": "ReportFinStatsAnnual!104",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "carried forward retained earnings",
+   "fine": "ReportFinStatsSA!66",
+   "coarse": "ReportFinStatsAnnual!66",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "cash bank",
+   "fine": "ReportFinStatsSA!83",
+   "coarse": "ReportFinStatsAnnual!82",
+   "ratio": 2,
+   "matched": 27,
+   "single_period": [
+    3
+   ],
+   "unexplained": 12
+  },
+  {
+   "label": "cash bank carried forward",
+   "fine": "ReportFinStatsSA!200",
+   "coarse": "ReportFinStatsAnnual!200",
+   "ratio": 2,
+   "matched": 27,
+   "single_period": [
+    3
+   ],
+   "unexplained": 12
+  },
+  {
+   "label": "deferred tax liability",
+   "fine": "ReportFinStatsSA!98",
+   "coarse": "ReportFinStatsAnnual!97",
+   "ratio": 2,
+   "matched": 35,
+   "single_period": [
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge facility",
+   "fine": "ReportFinStatsSA!91",
+   "coarse": "ReportFinStatsAnnual!90",
+   "ratio": 2,
+   "matched": 38,
+   "single_period": [
+    1,
+    2
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "mra",
+   "fine": "ReportFinStatsSA!78",
+   "coarse": "ReportFinStatsAnnual!78",
+   "ratio": 2,
+   "matched": 16,
+   "single_period": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "retained earnings",
+   "fine": "ReportFinStatsSA!105",
+   "coarse": "ReportFinStatsAnnual!104",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "shareholders equity",
+   "fine": "ReportFinStatsSA!104",
+   "coarse": "ReportFinStatsAnnual!103",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "shareholders funds",
+   "fine": "ReportFinStatsSA!106",
+   "coarse": "ReportFinStatsAnnual!105",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "short term liabilities",
+   "fine": "ReportFinStatsSA!99",
+   "coarse": "ReportFinStatsAnnual!98",
+   "ratio": 2,
+   "matched": 13,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "tax payable",
+   "fine": "ReportFinStatsSA!95",
+   "coarse": "ReportFinStatsAnnual!94",
+   "ratio": 2,
+   "matched": 19,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "mra",
+   "fine": "ReportRatiosSA!438",
+   "coarse": "ReportFinStatsAnnual!78",
+   "ratio": 2,
+   "matched": 16,
+   "single_period": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "inputCapexM!28",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "khs",
+   "fine": "inputCapexM!28",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcFundingM!52",
+   "coarse": "ReportFinStatsAnnual!30",
+   "ratio": 12,
+   "matched": 9,
+   "single_period": [
+    0
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcFundingM!52",
+   "coarse": "ReportFinStatsSA!30",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "equity bridge balance",
+   "fine": "calcFundingM!486",
+   "coarse": "ReportRatiosSA!290",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    5
+   ],
+   "unexplained": 4
+  },
+  {
+   "label": "mra funding",
+   "fine": "calcFundingM!83",
+   "coarse": "ReportRatiosSA!321",
+   "ratio": 6,
+   "matched": 7,
+   "single_period": [
+    5
+   ],
+   "unexplained": 12
+  },
+  {
+   "label": "arrangement fee",
+   "fine": "calcFundingM!208",
+   "coarse": "calcFundingSA!518",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "interest charge",
+   "fine": "calcFundingM!181",
+   "coarse": "calcFundingSA!285",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "senior debt 2 capital contribution facility repayment flag",
+   "fine": "calcFundingM!30",
+   "coarse": "calcFundingSA!36",
+   "ratio": 6,
+   "matched": 18,
+   "single_period": [
+    0,
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "sub debt tranche fc injection interest and fees",
+   "fine": "calcFundingM!506",
+   "coarse": "calcFundingSA!656",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "additions",
+   "fine": "calcFundingM!191",
+   "coarse": "calcFixedAssetSA!35",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "amortisation",
+   "fine": "calcFundingM!192",
+   "coarse": "calcFixedAssetSA!89",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "interest",
+   "fine": "calcFundingM!87",
+   "coarse": "calcFixedAssetSA!246",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "senior debt 2 capital contribution facility repayment flag",
+   "fine": "calcFundingM!30",
+   "coarse": "calcFixedAssetSA!30",
+   "ratio": 6,
+   "matched": 18,
+   "single_period": [
+    0,
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcFundingM!52",
+   "coarse": "calcAccountingSA!144",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "financial close",
+   "fine": "calcFundingM!20",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "senior debt 1",
+   "fine": "calcFundingM!118",
+   "coarse": "Swap Profiles!16",
+   "ratio": 3,
+   "matched": 9,
+   "single_period": [
+    3
+   ],
+   "unexplained": 30
+  },
+  {
+   "label": "movement in working capital excluding vat during the construction period",
+   "fine": "calcWorkCapM!158",
+   "coarse": "ReportRatiosSA!563",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "pre operations period working capital vat balance",
+   "fine": "calcWorkCapM!157",
+   "coarse": "ReportRatiosSA!562",
+   "ratio": 6,
+   "matched": 16,
+   "single_period": [
+    1
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "bal b f",
+   "fine": "calcWorkCapM!103",
+   "coarse": "calcFundingSA!507",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "bal c f",
+   "fine": "calcWorkCapM!147",
+   "coarse": "calcFundingSA!511",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "total",
+   "fine": "calcWorkCapM!190",
+   "coarse": "calcFundingSA!553",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1
+   ],
+   "unexplained": 4
+  },
+  {
+   "label": "b f bal",
+   "fine": "calcWorkCapM!92",
+   "coarse": "calcWorkCapSA!92",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "b f balance",
+   "fine": "calcWorkCapM!44",
+   "coarse": "calcWorkCapSA!44",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "bal c f excluding vat during construction period",
+   "fine": "calcWorkCapM!149",
+   "coarse": "calcWorkCapSA!155",
+   "ratio": 6,
+   "matched": 16,
+   "single_period": [
+    2,
+    3,
+    4
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "bal payable receivable c f",
+   "fine": "calcWorkCapM!96",
+   "coarse": "calcWorkCapSA!96",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "c f balance",
+   "fine": "calcWorkCapM!88",
+   "coarse": "calcWorkCapSA!88",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "construction partial period",
+   "fine": "calcWorkCapM!23",
+   "coarse": "calcWorkCapSA!23",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    2,
+    3,
+    4
+   ],
+   "unexplained": 2
+  },
+  {
+   "label": "spv admin costs paid construction",
+   "fine": "calcWorkCapM!37",
+   "coarse": "calcWorkCapSA!142",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1
+   ],
+   "unexplained": 4
+  },
+  {
+   "label": "vat",
+   "fine": "calcWorkCapM!172",
+   "coarse": "calcWorkCapSA!182",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "total",
+   "fine": "calcWorkCapM!190",
+   "coarse": "calcOpexSA!938",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "construction partial period",
+   "fine": "calcWorkCapM!23",
+   "coarse": "sysTimingSA!173",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    2,
+    3,
+    4
+   ],
+   "unexplained": 2
+  },
+  {
+   "label": "financial close",
+   "fine": "calcWorkCapM!20",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "khs",
+   "fine": "calcCapexM!27",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "construction margin",
+   "fine": "calcCapexM!612",
+   "coarse": "calcTaxationSA!190",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "new build",
+   "fine": "calcCapexM!534",
+   "coarse": "calcTaxationSA!87",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "khs",
+   "fine": "calcCapexM!27",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "financial close",
+   "fine": "calcCapexM!39",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcOpexM!532",
+   "coarse": "ReportFinStatsAnnual!30",
+   "ratio": 12,
+   "matched": 9,
+   "single_period": [
+    0
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcOpexM!532",
+   "coarse": "ReportFinStatsSA!30",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcOpexM!39",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "total",
+   "fine": "calcOpexM!323",
+   "coarse": "calcFundingSA!553",
+   "ratio": 6,
+   "matched": 18,
+   "single_period": [
+    1
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "total",
+   "fine": "calcOpexM!323",
+   "coarse": "calcOpexSA!938",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "set up bid costs",
+   "fine": "calcOpexM!532",
+   "coarse": "calcAccountingSA!144",
+   "ratio": 6,
+   "matched": 19,
+   "single_period": [
+    1
+   ],
+   "unexplained": 0
+  },
+  {
+   "label": "khs",
+   "fine": "calcOpexM!39",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "financial close",
+   "fine": "calcOpexM!51",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "spv admin costs",
+   "fine": "calcAccountingSA!47",
+   "coarse": "ReportFinStatsAnnual!118",
+   "ratio": 2,
+   "matched": 37,
+   "single_period": [
+    0
+   ],
+   "unexplained": 2
+  },
+  {
+   "label": "khs",
+   "fine": "sysTimingM!42",
+   "coarse": "inputOpexSA!55",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "khs",
+   "fine": "sysTimingM!42",
+   "coarse": "sysTimingSA!113",
+   "ratio": 6,
+   "matched": 15,
+   "single_period": [
+    1,
+    5
+   ],
+   "unexplained": 3
+  },
+  {
+   "label": "financial close",
+   "fine": "sysTimingM!63",
+   "coarse": "Swap Profiles!7",
+   "ratio": 3,
+   "matched": 38,
+   "single_period": [
+    3
+   ],
+   "unexplained": 1
+  },
+  {
+   "label": "equity bridge facility",
+   "fine": "Swap Profiles!20",
+   "coarse": "ReportFinStatsAnnual!90",
+   "ratio": 4,
+   "matched": 13,
+   "single_period": [
+    2,
+    9,
+    10
+   ],
+   "unexplained": 7
+  }
+ ],
+ "shuffled_control": 503
+}
