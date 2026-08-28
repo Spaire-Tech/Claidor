@@ -273,16 +273,25 @@ and is the single most useful thing this round produced.
    holding human notes that begin with `=`, such as `=tput learn x
    unyld dice x ult yld`. `legacy.py` makes the same misclassification
    my own instrument did.
-3. **The engine drops the label column, and any formula in it.**
-   `tables.xls` holds 8 formulas, all in column A (`=+A5+1`, cached
-   1989–1996). Both routes lose all 8: `read_workbook` returns 27
-   cells and **not one of them is in column A**. This is not an
-   intake defect at all — it is downstream of both routes, in code
-   that is mine, and it means **a formula written in a sheet's first
-   column is invisible to every rule we have**. Found here, not
-   chased to root cause, and it needs its own registered round with
-   the full gate because it changes what the engine reports on every
-   file.
+3. **The label column is not elected, and nor is any formula in
+   it.** `tables.xls` holds 8 formulas, all in column A (`=+A5+1`,
+   cached 1989-1996). Both routes lose all 8: `read_workbook`
+   returns 27 cells and **not one is in column A**.
+
+   **Mechanism, established after this section was first written:**
+   it is neither an intake fault nor an accident. `_read_sheet`
+   excludes the label column from the numeric sweep by an explicit
+   `column != label_column`, and `_label_column` picks exactly one
+   column per sheet from the first eight, by distinct-value count.
+   The exclusion is deliberate and documented — a number in the
+   label column is usually a label.
+
+   The honest statement is therefore narrower than « a defect »:
+   **one column per sheet is invisible to every rule, by design, and
+   the cost has never been measured.** I first wrote this up as
+   something wrong. It is a design decision carrying an unmeasured
+   price — a different claim, and its own round
+   (`label-column-cost.md`).
 
 ## Verdict
 
@@ -307,8 +316,8 @@ native route while the tail is fixed.
 
 ## Next, priced by what was measured
 
-1. **The label-column loss** (class 3) — the largest finding here,
-   engine-side, and it silently costs every rule. Its own round.
+1. **The label-column exclusion** (class 3) — measure what it costs
+   before proposing to change it: `label-column-cost.md`.
 2. **The native tail**: 76 files, 1,213 formulas. The two worst
    (`2003-4%20budget.xls` at 0.520, `20030114144840!Superi` at
    0.772) are where the mechanism will be legible.
