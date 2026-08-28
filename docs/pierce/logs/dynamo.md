@@ -2802,3 +2802,219 @@ went in, so neither produced them. Not re-running an hour of machine
 time for an artifact when RoE's coverage — the open question that
 unblocks a whole model — needs the machine now; the next runs carry
 both.*
+
+### Prediction 2 of the usage round — confirmed, and the bar still refuses the result
+
+Registered: RoE's coverage clears round 1b's 10 of 193. It does.
+
+| | round 1b (hand) | round 2/3 (inferred) | round 5 (usage) |
+|---|---|---|---|
+| coverage | 10 of 193 | **0 of 193** | **55 of 193 — 28.5%** |
+| verdict | — | uninformative | **uninformative** |
+
+`docs/pierce/logs/dynamo/round5-roe.json`. The model that could not
+be perturbed at all now moves a quarter of its watched sheet, from
+inputs typed entirely by inference. And **28.5% is below the 50% bar
+I fixed before any of this**, so the round is reported as
+uninformative and its 903 « stable rules » are **not results**.
+
+Which is just as well, because they are the sameness pathology in
+its purest form yet: `2031/32 − 2032/33 = 0`, `2031/32 − 2033/34 =
+0`, and so on across a whole block that moves as one. The ratio
+family, mined on the same runs, returned **903 stable rules and 0
+real proportions** — every one of them k = 1. Round 1b said « there
+were no proportions to find, only sameness »; at nearly three times
+the coverage, still true.
+
+### Why the other 138 cells are frozen — measured, not guessed
+
+Of the 138 watched cells that did not move, **136 have no
+perturbable input anywhere upstream** (walked through the precedent
+graph, depth 8). They are not frozen because the perturbation is too
+timid; they are frozen because nothing that moves reaches them.
+
+69 inputs remain untyped: 34 on `One-Off Wedge`, 26 on
+`Beta Estimates`, 9 on `Step-1 Cost of Equity`. That is the next
+number to attack on this model, and it is a different problem again
+from named rates — those 69 are cells with no label, no header and
+no decisive format, where the file genuinely says nothing. Whether
+anything can be inferred for them, or whether the honest answer is
+that a model with 69 undocumented inputs cannot be fully mined, is a
+question I would rather put to the lead than answer by inventing a
+rule.
+
+### The scorecard for the usage round
+
+| prediction | outcome |
+|---|---|
+| 1 — RoE's C and D typed as percent rates | **confirmed**, 26 of 26 |
+| 2 — coverage clears 10 of 193 | **confirmed**, 55 of 193 |
+| 3 — E1 no worse on any dimension | **confirmed** after the gate fired once |
+| 4 — it fires where it should not | **confirmed**, three times, all fixed |
+
+Four for four, with the two failures inside prediction 3 and 4 doing
+the work. The coverage bar refused the rule set anyway, which is the
+bar behaving exactly as designed: a real improvement in typing does
+not entitle a rule set to be believed.
+
+---
+
+## E2's shippable verdict — the arming criteria, registered before the numbers
+
+*28 Aug, twenty-third sweep orders item 1, the single highest-value
+thing on my board. Sentinel cannot build E3 until this verdict
+exists, so the criteria go down **before** I re-run anything.*
+
+### Why the numbers in this log are not yet the verdict
+
+Every E2 accuracy figure above was measured before propagation, the
+column-wise reading and usage evidence went in. Worse, the E1 scorer
+classifies each row **row-wise in isolation**, which is not how the
+caller uses E2 at all: the real path decides the sheet's reading
+first and may read it sideways. A verdict Sentinel arms a finding on
+has to be measured through the path the product actually runs.
+
+So both scorers are re-run at HEAD, and the E1 scorer is upgraded to
+go through `sheet_reading` exactly as `inferred_inputs` does.
+
+### The two keys, and which one decides
+
+- **The author key** — 3,796 rows on ED2 and GD3 whose units were
+  written by Ofgem's own modellers in a `Units` column E2 never
+  reads. Not self-graded. **This decides.**
+- **E1's hundred** — hand-labelled by me. Same author as the
+  inference, so it *informs* and does not decide; its job is
+  regression, and it has already caught one change that had to come
+  out.
+
+### The criteria, fixed now
+
+A finding shown to a banker is wrong if the unit behind it is wrong,
+so **precision decides arming and reach does not**:
+
+| verdict | condition, on the author key |
+|---|---|
+| **arm** | wrong ≤ **1%** of decided rows, and ≥ 100 decided rows |
+| **arm with care** | wrong ≤ **5%** of decided rows |
+| **do not arm** | wrong > 5%, or fewer than 100 decided rows |
+
+« Decided » excludes abstentions throughout. Reach — what share of
+rows the dimension decides at all — is reported beside every verdict
+because it says how *often* a finding could fire, but a dimension
+that abstains constantly and is never wrong is safe to arm; one that
+answers constantly and is wrong 10% of the time is not, however
+useful it looks.
+
+### Predictions
+
+1. `kind` and `rate_form` **arm**. They were 96.4% before these
+   changes with essentially no wrong answers.
+2. `currency` and `scale` **arm** on precision and read as nearly
+   useless on reach — they abstain on most rows and, when they
+   answer, they have not yet been wrong.
+3. `period` **does not arm.** It was wrong on 24.9% and 64.1% of
+   rows and I have said since that it is not to be quoted; I expect
+   the criteria to say so formally.
+4. `b5_type` is the one I cannot call. E1 had it at 54 right / 30
+   wrong, which is nowhere near arming, but the author key is a
+   different and larger population.
+5. **At least one dimension moved since it was last measured** — the
+   three changes touched labels, and if none of them moved anything
+   I have been reporting numbers that no longer describe the code.
+
+---
+
+## E2's shippable verdict — per dimension, with what the evidence cannot cover
+
+*28 Aug, orders item 1. Measured at HEAD through the path
+`inferred_inputs` runs. Criteria registered before the numbers, two
+entries above.*
+
+### The author key, 3,796 Ofgem-labelled rows
+
+| dimension | right | wrong | abstained | **wrong of decided** | reach |
+|---|---|---|---|---|---|
+| `kind` | 3,660 | 2 | 134 | **0.05%** | 96.5% |
+| `rate_form` | 3,661 | 1 | 134 | **0.03%** | 96.5% |
+| `currency` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `scale` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `b5_type` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `period` | 2,572 | 1,090 | 134 | **29.8%** | 96.5% |
+
+### E1's hundred, as the caller uses E2
+
+| dimension | right | wrong | abstained | **wrong of decided** |
+|---|---|---|---|---|
+| `kind` | 97 | 0 | 3 | **0.0%** |
+| `currency`, `scale` | 54 | 0 | 46 | **0.0%** |
+| `rate_form` | 80 | 4 | 16 | **4.8%** |
+| `period` | 69 | 15 | 16 | **17.9%** |
+| `b5_type` | 54 | 30 | 16 | **35.7%** |
+
+### The finding that reshapes the verdict: the big key is a small test
+
+I registered « the author key decides ». Measuring what that key can
+*contain* shows why it cannot decide alone:
+
+| | values the key can hold |
+|---|---|
+| author key, `kind` | **`continuous`, and nothing else** — 6,226 rows, one value |
+| author key, `b5_type` | `money` or `rate`, nothing else |
+| E1, `kind` | `continuous` 69, `categorical` 16, `mixed` 13, `unknown` 2 |
+| E1, `b5_type` | `rate` 51, `money` 18, `date` 16, `untyped` 15 |
+
+The key is built from rows whose Units text is `£m …` or `%`, so
+**every row in it is continuous by construction.** `kind`'s 96.4% —
+the number these orders call the strongest foundation laid this week,
+and which I reported four times without noticing — was never evidence
+that E2 can tell a continuous row from a categorical one. It is
+evidence of precision *on rows that declare money or a percentage*,
+which is a narrower claim than I have been making.
+
+E1 is the only key containing the hard cases. It has a hundred rows
+and I graded it myself. **That is the true state of the evidence**,
+and the verdict below takes the worse of the two keys everywhere.
+
+### The verdict
+
+| dimension | verdict | on what |
+|---|---|---|
+| `kind` | **ARM** | 0.05% wrong on 3,662 decided; 0 of 97 on E1's categorical and mixed rows. Two keys, both clean. |
+| `currency` | **ARM** | 0.15% wrong, 0 of 54 on E1 — but **reach 34.6%**: it answers on a third of rows and abstains on the rest. |
+| `scale` | **ARM** | as `currency`. |
+| `rate_form` | **ARM WITH CARE** | 0.03% on the author key, **4.8% on E1** — inside the 5% band, and the worse number governs. |
+| `b5_type` | **DO NOT ARM** | the author key only tests money-vs-rate; E1, which tests the rest, is **35.7% wrong**. |
+| `period` | **DO NOT ARM** | 29.8% wrong on the author key, 17.9% on E1, and E1's own labels contradict themselves on identical year rows. |
+
+### What this means for E3, in Sentinel's terms
+
+- **A « £ figure in a £m line » check is armable.** `scale` and
+  `currency` are never wrong when they answer. It will only see
+  about a third of rows, so it will find less than it looks like it
+  should — that is a reach limit, not a correctness one.
+- **A « monthly figure in an annual line » check cannot be built.**
+  `period` is wrong on a quarter to two thirds of rows depending on
+  the model. There is no version of this that is safe today.
+- **Anything keyed on `b5_type`** — « a rate where money belongs » —
+  **cannot be built** either.
+- `kind` is safe, which is what B5 consumes; it is not by itself a
+  finding.
+
+### Against the registered predictions
+
+| prediction | outcome |
+|---|---|
+| 1 — `kind` and `rate_form` arm | `kind` **arms**; `rate_form` **arms with care** |
+| 2 — `currency`/`scale` arm, poor reach | **confirmed**, 34.6% |
+| 3 — `period` does not arm | **confirmed** |
+| 4 — `b5_type` I could not call | resolved: **does not arm** |
+| 5 — a dimension moved since last measured | **confirmed**, and it was a regression I had registered as costless |
+
+### What I would want before calling any of this settled
+
+E1 is a hundred rows, graded by the same person who wrote the
+inference. Every hard case in this verdict — categorical, date,
+mixed, the whole of `b5_type` — rests on it. **A second hand-labelled
+set, drawn by someone other than me, is the single thing that would
+most improve this verdict**, and I would rather say that than let a
+3,796-row number carry weight it cannot hold.

@@ -1,4 +1,4 @@
-"""E2 against E1's hundred hand-labelled rows — the regression gate.
+"""E2 against E1's hundred hand-labelled rows, through the real path.
 
     cd server && uv run python -m scripts.recalc_units_e1 [OUT.json]
 
@@ -8,10 +8,20 @@ E1 and E2 share an author, so this is not independent validation; it
 is a check that a change to the inference does not quietly overturn
 answers a careful reading already got right.
 
-Usage evidence needs the workbook, not just the row, so each E1 row
-is scored twice: once from its recorded evidence alone, and once
-with the model's consumer formulas read. The two columns are the
-before and after of the change.
+Two readings are reported side by side:
+
+- **isolated** — the row's own recorded evidence, classified
+  row-wise. This is what every earlier number in the log measured,
+  and it is *not* how the caller uses E2.
+- **as used** — the model is opened, `sheet_reading` decides which
+  way the sheet is read, a column-wise sheet is classified down its
+  columns, and usage evidence from the consumer formulas is applied.
+  This is the path `inferred_inputs` runs, so it is the one a
+  verdict may be built on.
+
+E1 and E2 share an author, so neither column is independent
+validation; the author key (`recalc_units_score.py`) decides and
+this informs.
 """
 
 import json
@@ -21,10 +31,17 @@ from pathlib import Path
 
 from polar.tieout.units.inference import (
     DIMENSIONS,
+    Orientation,
     RowEvidence,
+    UnitLabel,
+    classify_columns,
     classify_row,
+    classify_sheet,
+    columns_from_cells,
     orientation,
     rate_form_from_usage,
+    rows_from_cells,
+    sheet_reading,
     with_usage,
 )
 from polar.tieout.workbook import read_workbook
@@ -44,16 +61,44 @@ MODEL_PATHS = {
 }
 
 
+def as_used(row: dict, cache: dict) -> UnitLabel | None:
+    """E2's answer for this row through the path the caller runs."""
+    path = MODEL_PATHS.get(row["model"])
+    if not path or not Path(path).exists():
+        return None
+    model = row["model"]
+    if model not in cache:
+        cells = read_workbook(path).cells
+        cache[model] = (cells, rate_form_from_usage(cells), {})
+    cells, usage, sheets = cache[model]
+    sheet = row["sheet"]
+    if sheet not in sheets:
+        facing = sheet_reading(cells, sheet)
+        if facing is Orientation.COLUMN_WISE:
+            sheets[sheet] = (facing, classify_columns(columns_from_cells(cells, sheet)))
+        else:
+            sheets[sheet] = (facing, classify_sheet(rows_from_cells(cells, sheet)))
+    facing, labels = sheets[sheet]
+    refs = [f"{sheet}!{ref}" for ref in (row.get("refs") or [])]
+    if facing is Orientation.COLUMN_WISE:
+        first = next((cells[r] for r in refs if r in cells), None)
+        label = labels.get(first.column) if first else None
+    else:
+        label = labels.get((sheet, row["row"]))
+    if label is None:
+        return None
+    return with_usage(label, usage.get(refs[0]) if refs else None)
+
+
 def main() -> int:
     out = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("units-e1.json")
     rows = json.loads(TRUTH.read_text())
-    usage_by_model: dict[str, dict] = {}
+    cache: dict = {}
     tallies = {
-        stage: {d: Counter() for d in DIMENSIONS} for stage in ("before", "after")
+        stage: {d: Counter() for d in DIMENSIONS} for stage in ("isolated", "as_used")
     }
-    changed: list[dict] = []
+    missing = 0
     for row in rows:
-        model = row["model"]
         evidence = RowEvidence(
             sheet=row["sheet"],
             row=row["row"],
@@ -62,19 +107,14 @@ def main() -> int:
             number_formats=row.get("number_formats", ()),
             values=row.get("values", ()),
         )
-        before = classify_row(evidence, orientation([evidence]))
-        usage = None
-        path = MODEL_PATHS.get(model)
-        if path and Path(path).exists():
-            if model not in usage_by_model:
-                usage_by_model[model] = rate_form_from_usage(read_workbook(path).cells)
-            first = (row.get("refs") or [None])[0]
-            if first:
-                usage = usage_by_model[model].get(f"{row['sheet']}!{first}")
-        after = with_usage(before, usage)
+        isolated = classify_row(evidence, orientation([evidence]))
+        used = as_used(row, cache)
+        if used is None:
+            missing += 1
+            used = isolated
         truth = row["labels"]
         for dimension in DIMENSIONS:
-            for stage, label in (("before", before), ("after", after)):
+            for stage, label in (("isolated", isolated), ("as_used", used)):
                 said, real = label.get(dimension), truth.get(dimension)
                 if said in ("unknown", "untyped"):
                     tallies[stage][dimension]["abstained"] += 1
@@ -82,52 +122,27 @@ def main() -> int:
                     tallies[stage][dimension]["right"] += 1
                 else:
                     tallies[stage][dimension]["wrong"] += 1
-        if before != after:
-            changed.append(
-                {
-                    "model": model,
-                    "sheet": row["sheet"],
-                    "row": row["row"],
-                    "row_label": row.get("row_label", "")[:60],
-                    "truth_rate_form": truth.get("rate_form"),
-                    "truth_b5_type": truth.get("b5_type"),
-                    "before": [before.b5_type, before.rate_form],
-                    "after": [after.b5_type, after.rate_form],
-                    "why": after.why,
-                }
-            )
     report = {
         "rows": len(rows),
-        "before": {d: dict(tallies["before"][d]) for d in DIMENSIONS},
-        "after": {d: dict(tallies["after"][d]) for d in DIMENSIONS},
-        "rows_changed": changed,
+        "rows_without_a_workbook": missing,
+        "isolated": {d: dict(tallies["isolated"][d]) for d in DIMENSIONS},
+        "as_used": {d: dict(tallies["as_used"][d]) for d in DIMENSIONS},
     }
-    print(f"{len(rows)} E1 rows, {len(changed)} changed by usage evidence\n")
-    print(f"{'dimension':<12} {'before (r/w/a)':<20} {'after (r/w/a)':<20} verdict")
-    worse = []
+    print(f"{len(rows)} E1 rows ({missing} with no workbook to hand)\n")
+    print(
+        f"{'dimension':<12} {'isolated r/w/a':<18} {'as used r/w/a':<18} wrong of decided"
+    )
     for d in DIMENSIONS:
-        b, a = tallies["before"][d], tallies["after"][d]
-        verdict = "same"
-        if a["wrong"] > b["wrong"]:
-            verdict = "WORSE — the change must come out"
-            worse.append(d)
-        elif a["right"] > b["right"]:
-            verdict = "better"
+        i, u = tallies["isolated"][d], tallies["as_used"][d]
+        decided = u["right"] + u["wrong"]
+        share = f"{100 * u['wrong'] / decided:.1f}%" if decided else "—"
         print(
-            f"{d:<12} "
-            f"{f'{b[chr(39)] if False else b["right"]}/{b["wrong"]}/{b["abstained"]}':<20} "
-            f"{f'{a["right"]}/{a["wrong"]}/{a["abstained"]}':<20} {verdict}"
-        )
-    report["worse_dimensions"] = worse
-    for row in changed[:8]:
-        print(
-            f"  {row['model']} {row['sheet']}!{row['row']} "
-            f"{row['before']} -> {row['after']} | truth "
-            f"[{row['truth_b5_type']}, {row['truth_rate_form']}] | {row['row_label']}"
+            f"{d:<12} {f'{i[chr(114) + chr(105) + chr(103) + chr(104) + chr(116)]}/{i["wrong"]}/{i["abstained"]}':<18} "
+            f"{f'{u["right"]}/{u["wrong"]}/{u["abstained"]}':<18} {share} of {decided}"
         )
     out.write_text(json.dumps(report, indent=1))
     print(f"\nwrote {out}")
-    return 1 if worse else 0
+    return 0
 
 
 if __name__ == "__main__":

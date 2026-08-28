@@ -1,6 +1,7 @@
 {
  "rows": 100,
- "before": {
+ "rows_without_a_workbook": 20,
+ "isolated": {
   "kind": {
    "right": 97,
    "abstained": 3
@@ -29,7 +30,7 @@
    "wrong": 4
   }
  },
- "after": {
+ "as_used": {
   "kind": {
    "right": 97,
    "abstained": 3
@@ -48,8 +49,8 @@
    "right": 54
   },
   "period": {
-   "right": 71,
-   "wrong": 13,
+   "right": 69,
+   "wrong": 15,
    "abstained": 16
   },
   "rate_form": {
@@ -57,7 +58,5 @@
    "abstained": 16,
    "wrong": 4
   }
- },
- "rows_changed": [],
- "worse_dimensions": []
+ }
 }

@@ -21,7 +21,16 @@ from typing import Any
 
 from openpyxl import load_workbook
 
-from polar.tieout.units.inference import classify_sheet, rows_from_cells
+from polar.tieout.units.inference import (
+    Orientation,
+    classify_columns,
+    classify_sheet,
+    columns_from_cells,
+    rate_form_from_usage,
+    rows_from_cells,
+    sheet_reading,
+    with_usage,
+)
 from polar.tieout.workbook import read_workbook
 
 MODELS = {
@@ -96,6 +105,16 @@ def main() -> int:
     for key, path in MODELS.items():
         declared = units_column(path)
         cells = read_workbook(path).cells
+        # Scored through the path the caller runs, not row-wise in
+        # isolation: the sheet's reading is decided first, a record
+        # sheet is read down its columns, and the consumer formulas
+        # supply rate form. A verdict Sentinel arms a finding on has
+        # to describe the code that ships.
+        usage = rate_form_from_usage(cells)
+        by_ref = {}
+        for ref, cell in cells.items():
+            if cell.formula is None and cell.value is not None:
+                by_ref.setdefault((cell.sheet, cell.row), []).append(ref)
         sheets = {cell.sheet for cell in cells.values()}
         tallies = {d: Counter() for d in DIMENSIONS}
         scored = 0
@@ -104,8 +123,20 @@ def main() -> int:
             rows = rows_from_cells(cells, sheet)
             if not rows:
                 continue
-            inferred = classify_sheet(rows)  # blind: never reads Units
+            facing = sheet_reading(cells, sheet)
+            if facing is Orientation.COLUMN_WISE:
+                by_column = classify_columns(columns_from_cells(cells, sheet))
+                inferred = {}
+                for row in rows:
+                    refs = by_ref.get((sheet, row.row), [])
+                    first = next((cells[r] for r in refs if r in cells), None)
+                    if first is not None and first.column in by_column:
+                        inferred[(sheet, row.row)] = by_column[first.column]
+            else:
+                inferred = classify_sheet(rows)  # blind: never reads Units
             for (sheet_name, row_number), label in inferred.items():
+                refs = by_ref.get((sheet_name, row_number), [])
+                label = with_usage(label, usage.get(refs[0]) if refs else None)
                 text = declared.get((sheet_name, row_number))
                 if not text:
                     continue
