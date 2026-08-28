@@ -40,6 +40,20 @@ from polar.routing import APIRouter
 
 from .. import auth, storage
 from ..repository import TieOutRepository
+from .anchor import (
+    AGREES,
+    BOTH_MOVED,
+    MODEL_MOVED,
+    SOURCE_MOVED,
+    Anchored,
+    Broken,
+    DocumentAnchor,
+    ModelAnchor,
+    reanchor_document,
+    reanchor_model,
+    recheck,
+    with_ordinals,
+)
 from .extract import EXTRACTOR_NAME, EXTRACTOR_VERSION, Extraction, extract_pdf
 from .link import ChainLink, LinkState
 from .propose import Abstained, propose
@@ -598,17 +612,20 @@ async def confirm_link(
             detail="Scale must be greater than zero: document value × scale = model value.",
         )
 
+    #: The tiebreak is only sound if confirmation and re-anchoring count
+    #: the same way, so this uses `anchor.with_ordinals` rather than
+    #: re-deriving it — the first cut of this route counted every fact
+    #: on the page sharing the line's *text*, which is the exact bug
+    #: `with_ordinals` documents and avoids: two identical lines on one
+    #: page would be numbered 1,2,3,4 across both instead of 1,2 and
+    #: 1,2, and the tiebreak would then never match.
+    ordered = await ChainFactRepository.from_session(session).list_for_artifact(
+        fact.artifact_id
+    )
     ordinals = {
-        key: ordinal
-        for ordinal, key in enumerate(
-            [
-                other.id
-                for other in await ChainFactRepository.from_session(
-                    session
-                ).list_for_artifact(fact.artifact_id)
-                if other.page == fact.page and other.line == fact.line
-            ],
-            start=1,
+        row.id: ordinal
+        for row, (_, _, ordinal, _, _) in zip(
+            ordered, with_ordinals(ordered), strict=True
         )
     }
 
@@ -679,3 +696,199 @@ async def list_links(
         dossier_id, state=wanted
     )
     return [LinkRead.of(link) for link in found]
+
+
+class RecheckRead(Schema):
+    """One confirmed link, re-checked against a named pair of versions."""
+
+    link_id: UUID
+    cell_name: str
+    #: agrees / the model moved / the source moved / both moved, or the
+    #: anchoring outcome that stopped the arithmetic happening at all.
+    verdict: str
+    #: True only when the pair still ties out under the stated scale.
+    #: Reported separately from the verdict on purpose: « both moved »
+    #: and still agreeing is a deal team that updated everything, and
+    #: « both moved » and not agreeing is one that updated half of it.
+    ties_out_now: bool | None
+    #: Where each side was re-found, and how. Null when it was not.
+    model_ref_now: str | None
+    document_key_now: str | None
+    #: In words, whenever the answer is anything but plain agreement.
+    detail: str
+
+
+class RecheckSummaryRead(Schema):
+    """What a re-check of one deal's confirmed map came to."""
+
+    dossier_id: UUID
+    model_version_id: UUID
+    document_version_id: UUID
+    checked: int
+    #: The registered vocabulary, counted.
+    tallies: dict[str, int]
+    results: list[RecheckRead]
+    #: A structural fact, not a runtime count: this package imports no
+    #: model client, so after confirmation there is no inference left —
+    #: re-anchoring is a lookup by name and the answer is arithmetic.
+    model_calls: int = 0
+
+
+@router.post("/dossiers/{dossier_id}/recheck", response_model=RecheckSummaryRead)
+async def recheck_links(
+    dossier_id: UUID,
+    model_version_id: UUID,
+    document_version_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> RecheckSummaryRead:
+    """Confirm once, arithmetic forever — the « forever » half.
+
+    Takes the deal's confirmed links and asks, of a *newer* pair of
+    versions: is each side still there, and do the two numbers still
+    agree? Both anchors are labels — the cell's own name and the
+    printed line — so a row inserted above the cell or a repaginated
+    document changes nothing, while a renamed row is honestly reported
+    as broken rather than silently re-pointed.
+
+    **No matching happens here and no model is called.** That is
+    structural: this package imports no model client at all, and after
+    confirmation there is nothing left to infer.
+    """
+    from polar.dossier.repository import DossierRepository
+
+    deal = await DossierRepository.from_session(session).get_for_user(
+        dossier_id, auth_subject.subject.id
+    )
+    if deal is None:
+        raise ResourceNotFound("Deal not found.")
+
+    repository = TieOutRepository.from_session(session)
+    model_artifact = await repository.get_artifact(model_version_id)
+    document_artifact = await repository.get_artifact(document_version_id)
+    for artifact, what in ((model_artifact, "model"), (document_artifact, "document")):
+        if artifact is None or artifact.dossier_id != dossier_id:
+            raise ResourceNotFound(f"That {what} version is not on this deal.")
+    assert model_artifact is not None  # the loop above raised otherwise
+    assert document_artifact is not None
+
+    cells = [
+        (
+            cell.ref,
+            cell.name or f"{cell.row_label} {cell.column_label}".strip(),
+            float(cell.value) if cell.value is not None else 0.0,
+        )
+        for cell in await repository.cells_of(model_artifact.id)
+    ]
+    facts = with_ordinals(
+        await ChainFactRepository.from_session(session).list_for_artifact(
+            document_artifact.id
+        )
+    )
+
+    links = await ChainLinkRepository.from_session(session).list_for_dossier(
+        dossier_id, state=LinkState.confirmed
+    )
+
+    results: list[RecheckRead] = []
+    tallies: dict[str, int] = {}
+    for link in links:
+        model_anchor = ModelAnchor(
+            ref=link.model_ref,
+            cell_name=link.cell_name,
+            value=link.model_value_at_confirmation,
+        )
+        document_anchor = DocumentAnchor(
+            page=link.page,
+            printed_text=link.printed_text,
+            value=link.document_value_at_confirmation,
+            anchor_line=link.anchor_line,
+            ordinal_in_line=link.ordinal_in_line,
+        )
+        model_side = reanchor_model(model_anchor, cells)
+        document_side = reanchor_document(document_anchor, facts)
+
+        stopped = next(
+            (
+                side
+                for side in (model_side, document_side)
+                if not isinstance(side, Anchored)
+            ),
+            None,
+        )
+        if stopped is not None:
+            verdict = "broken" if isinstance(stopped, Broken) else "ambiguous"
+            detail = stopped.reason
+            ties = None
+            model_ref_now = model_side.key if isinstance(model_side, Anchored) else None
+            document_key_now = (
+                document_side.key if isinstance(document_side, Anchored) else None
+            )
+        else:
+            assert isinstance(model_side, Anchored)
+            assert isinstance(document_side, Anchored)
+            verdict, ties = recheck(
+                model_anchor,
+                document_anchor,
+                model_side.value,
+                float(document_side.value),
+                scale=link.scale,
+            )
+            model_ref_now = model_side.key
+            document_key_now = document_side.key
+            detail = _recheck_detail(link, verdict, ties, model_side, document_side)
+
+        tallies[verdict] = tallies.get(verdict, 0) + 1
+        results.append(
+            RecheckRead(
+                link_id=link.id,
+                cell_name=link.cell_name,
+                verdict=verdict,
+                ties_out_now=ties,
+                model_ref_now=model_ref_now,
+                document_key_now=document_key_now,
+                detail=detail,
+            )
+        )
+
+    return RecheckSummaryRead(
+        dossier_id=dossier_id,
+        model_version_id=model_version_id,
+        document_version_id=document_version_id,
+        checked=len(links),
+        tallies=tallies,
+        results=results,
+    )
+
+
+def _recheck_detail(
+    link: ChainLink,
+    verdict: str,
+    ties_out: bool,
+    model_side: "Anchored",
+    document_side: "Anchored",
+) -> str:
+    """The sentence a reviewer reads, with both numbers in it.
+
+    A verdict without its numbers makes a person go and look them up,
+    which is the work this is supposed to save.
+    """
+    if verdict == AGREES:
+        return ""
+    moved = []
+    if verdict in (MODEL_MOVED, BOTH_MOVED):
+        moved.append(
+            f"the model moved, {link.model_value_at_confirmation:g} → "
+            f"{float(model_side.value):g}"
+        )
+    if verdict in (SOURCE_MOVED, BOTH_MOVED):
+        moved.append(
+            f"the source moved, {link.document_value_at_confirmation:g} → "
+            f"{document_side.value:g}"
+        )
+    tail = (
+        " and the pair still ties out."
+        if ties_out
+        else " and the pair no longer ties out."
+    )
+    return "; ".join(moved).capitalize() + tail

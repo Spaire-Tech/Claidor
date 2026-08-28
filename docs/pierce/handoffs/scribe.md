@@ -195,9 +195,29 @@ asked; the answers are in `docs/pierce/orders/scribe.md` and acted on:
 |---|---|---|
 | D1 | the bar is **undamaged**; ship round V | **shipped**, extractor version 5 |
 | D5 | **shelve** until D4's store holds confirmations from a real deal | waiting on that trigger |
-| D4 | **approved** | **built** — table, migration, repository, routes, eight tests |
+| D4 | **approved** | **built and complete** — table, migration, repository, three routes, thirteen tests |
 | D3 round 4 | **closed**; harness stays committed | closed |
 | Newbattle | **keep**, caveat recorded; excluded from 1B | nothing to do |
+
+**D4 is finished, not just started.** `POST /chain/links` confirms,
+`GET /chain/dossiers/{id}/links` reads, and
+`POST /chain/dossiers/{id}/recheck` is the « forever » half — it takes
+the deal's confirmed links against a newer pair of versions and
+returns the four registered verdicts plus broken and ambiguous, each
+with both numbers in its sentence. `model_calls: 0` is structural: the
+package imports no model client.
+
+**D5's trigger is now reachable** — « when the D4 store holds
+confirmations from at least one *real* deal, not a fixture ». The store
+exists; what is missing is a real confirmation.
+
+**One pattern to watch, from four instances:** this lane's recurring
+defect is not carelessness about values, it is **re-deriving a rule at
+the call site instead of calling the function that owns it** — a fact
+key without its y-coordinate, finding refs without their sheet, two
+unaligned lists zipped, and `ordinal_in_line` counted by line text when
+`with_ordinals` counts by physical line. When two places implement one
+rule here, they have disagreed every time.
 
 **The standing bar for this lane, now policy:** a change to extraction
 must leave no line *worse*; it need not leave every line *identical*.

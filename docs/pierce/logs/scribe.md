@@ -4483,3 +4483,97 @@ constraint the lane has had: it is what produced the audit, the
 decision sheet, and four self-caught errors, because there was nothing
 to do but check my own work. I would not ask for it again, but I would
 not trade the record it produced either.
+
+## 28 August 2026, twenty-second « go » — the « forever » half, and a defect I put in last turn
+
+Orders read from the tip (`cacd60f2`, twenty-seventh sweep — three
+sweeps in one jump). **The orders file is unchanged**, and its « what
+to do this turn » — round V, then the D4 store — was discharged last
+turn. Nothing new is addressed to this lane.
+
+So this turn is what the store is *for*, plus a hard look at what I
+built in a hurry.
+
+## The defect: I reintroduced a bug I had already fixed
+
+The confirm route records `ordinal_in_line`, the tiebreak that
+separates several figures on one printed line. I derived it inline:
+
+```python
+[other.id for other in facts_of_this_document
+ if other.page == fact.page and other.line == fact.line]
+```
+
+— every fact on the page whose line **text** matches, numbered 1…n.
+
+**`anchor.py`'s `with_ordinals` restarts counting at every *physical*
+line, and its docstring says why**, because I found and fixed exactly
+this last week: « a boilerplate line that repeats on forty pages is
+forty lines, and its figure is the first number of each of them ».
+
+So a page carrying the same row twice — `Total 1.0 2.0` in two blocks —
+was numbered 1, 2, 3, 4 by the route and 1, 2, 1, 2 by re-anchoring.
+**Every such link would have re-checked as ambiguous forever**, and the
+cause would have looked like a data problem rather than a
+disagreement between two counting rules.
+
+**The route now calls `with_ordinals`.** One rule, in the place that
+documents it, used by both sides — which is what it was extracted for.
+A test plants the two-identical-lines page and asserts both the right
+answer and the wrong one the old derivation gave.
+
+**Worth naming: this is the fourth time this lane has shipped two
+implementations of one rule and had them disagree** — the fact key
+without its y-coordinate, the finding refs without their sheet, the
+zipped before/after lists, and now this. The pattern is not
+carelessness about *values*; it is **re-deriving a rule at the call
+site instead of calling the one function that owns it.**
+
+## D4's re-check — built, and it is the whole point of the store
+
+`POST /chain/dossiers/{id}/recheck?model_version_id=…&document_version_id=…`
+
+Takes the deal's confirmed links and asks, of a newer pair of versions:
+is each side still there, and do the two numbers still agree? It wires
+the store to the pure functions that passed eight of eight, and adds
+nothing to their logic.
+
+**The four verdicts, as registered**, plus the two anchoring outcomes —
+each with its sentence, and the sentence carries both numbers, because
+a verdict without its numbers sends a person to look them up, which is
+the work this exists to save:
+
+> « The model moved, 1234.5 → 9999 and the pair no longer ties out. »
+
+**`ties_out_now` is reported separately from the verdict**, on purpose:
+« both moved » and still agreeing is a deal team that updated
+everything; « both moved » and not agreeing is one that updated half of
+it. Averaging those into one field would lose the difference.
+
+**`model_calls: 0` is a structural claim, not a runtime count** — this
+package imports no model client at all, so after confirmation there is
+nothing left to infer. Stated as such in the schema.
+
+Four route-level tests: nothing-changed agrees, the model moved with
+both numbers in the sentence, a renamed cell comes back **broken rather
+than silently re-pointed**, and a version from another deal is refused.
+
+**Thirteen tests on `test_chain_link.py` now**; no lint finding and no
+mypy error in `polar/tieout/chain/` or `tests/tieout/test_chain*`.
+
+### Turn's end state
+
+- full tieout suite **940 passed, 9 skipped, 0 failed**
+- the audit's eight corpus numbers **8 of 8**; ED2 **30 of 30**
+- no lint finding and no mypy error in the chain package or its tests
+- **D4 is complete**: confirm, read, and re-check, thirteen tests
+
+**D5's trigger is now reachable and not yet met.** The store exists;
+what it does not hold is a confirmation from a real deal rather than a
+fixture. That is not something this lane can manufacture — a
+confirmation is a person's statement — so D5 waits where the lead put
+it, and correctly.
+
+**Nothing is blocked, and nothing is waiting on the lead.** The next
+thing this lane could usefully do is not obvious to me, which is a
+better position than it has been in for ten sweeps.
