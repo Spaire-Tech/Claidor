@@ -23,7 +23,7 @@ import random
 import sys
 from pathlib import Path
 
-from polar.tieout.units.columns import cells_with_text, find_units_columns
+from polar.tieout.units.columns import cells_with_text, find_all_units_columns
 from polar.tieout.units.declarations import parse_declaration
 from polar.tieout.units.inference import rows_from_cells
 from polar.tieout.workbook import read_workbook
@@ -75,21 +75,22 @@ KELSO_MONTHLY = (
 )
 
 
+def index_by_position(cells: dict) -> dict[tuple[str, int, int], object]:
+    """`{(sheet, row, column): value}`, built once per workbook."""
+    return {(c.sheet, c.row, c.column): c.value for c in cells.values()}
+
+
 def header_rows_of(cells: dict, sheet: str, columns: list[int]) -> list[list[str]]:
-    """Every candidate header row above the data, in the value columns."""
+    """Every candidate header row above the data, in the value columns.
+
+    `cells` is the position index, not a cell map: this searched the
+    whole workbook per lookup until it was measured.
+    """
     out = []
     for number in range(1, HEADER_ROWS + 1):
         texts = []
         for column in columns[:6]:
-            cell = next(
-                (
-                    c
-                    for c in cells.values()
-                    if c.sheet == sheet and c.row == number and c.column == column
-                ),
-                None,
-            )
-            value = getattr(cell, "value", None)
+            value = cells.get((sheet, number, column))
             texts.append(str(value).strip() if isinstance(value, str) else "")
         if any(texts):
             out.append(texts)
@@ -102,17 +103,25 @@ def eligible(path: str, only_sheets: tuple[str, ...] | None = None) -> list[dict
     A row of nothing but zeros is excluded: it carries no information
     for a labeller, and « Spare 9 » with five zeros was drawn into
     the first sample.
+
+    The workbook is read **twice and only twice** — once through the
+    project reader for values, once through openpyxl for text, since
+    the reader keeps no strings. Everything after that is index
+    lookups. An earlier version searched all 369,348 cells for each
+    of 7,616 rows and ran at 100% CPU for 33 minutes.
     """
     cells = read_workbook(path).cells
-    texts_map = cells_with_text(path)
+    texts = cells_with_text(path)
+    text_index = index_by_position(texts)
+    position: dict[tuple[str, int], list[int]] = {}
+    for cell in cells.values():
+        position.setdefault((cell.sheet, cell.row), []).append(cell.column)
+
     declared: dict[tuple[str, int], str] = {}
-    try:
-        texts = cells_with_text(path)
-        for sheet in sorted({c.sheet for c in texts.values()}):
-            for found in find_units_columns(texts, sheet):
-                declared[(found.sheet, found.row)] = found.text
-    except Exception:
-        declared = {}
+    for found in find_all_units_columns(texts).values():
+        for declaration in found:
+            declared[(declaration.sheet, declaration.row)] = declaration.text
+
     out = []
     for sheet in sorted({cell.sheet for cell in cells.values()}):
         if only_sheets and sheet not in only_sheets:
@@ -126,13 +135,7 @@ def eligible(path: str, only_sheets: tuple[str, ...] | None = None) -> list[dict
                 continue
             if not any(abs(float(v)) > 0 for v in evidence.values):
                 continue
-            columns = sorted(
-                {
-                    c.column
-                    for c in cells.values()
-                    if c.sheet == sheet and c.row == evidence.row
-                }
-            )
+            columns = sorted(set(position.get((sheet, evidence.row), ())))
             out.append(
                 {
                     "file": Path(path).name,
@@ -140,7 +143,7 @@ def eligible(path: str, only_sheets: tuple[str, ...] | None = None) -> list[dict
                     "row": evidence.row,
                     "row_label": evidence.row_label,
                     "column_headers": headers[:8],
-                    "candidate_header_rows": header_rows_of(texts_map, sheet, columns),
+                    "candidate_header_rows": header_rows_of(text_index, sheet, columns),
                     "number_formats": list(evidence.number_formats)[:3],
                     "values": [round(float(v), 4) for v in evidence.values[:5]],
                     "declared_units": text,

@@ -154,6 +154,15 @@ three different ways. Not a lament — the rules are mechanical.*
    like — it was 12s per file in `read_workbook` and fine.
 3. **Diagnose before optimising.** I rewrote the units-column scan
    certain it was the bottleneck; measured, it was 4% of the cost.
+4. **Every scripted edit asserts its anchor, and is verified by
+   running the code — never by lint.** Three of my edits to one file
+   silently did nothing because the `str.replace` anchor no longer
+   matched after a reformat. **Lint passed on all three broken
+   versions**, because the names existed and only the bodies were
+   stale, so I committed a claim that a fix was applied when it was
+   not, and then diagnosed a second problem on top of that false
+   belief. `assert old in s` before every replace; run the function
+   afterwards.
 
 **The one cause**: acting on a guess about a running system instead
 of measuring it. That is the same failure this lane exists to
