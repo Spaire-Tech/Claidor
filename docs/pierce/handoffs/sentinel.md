@@ -135,11 +135,17 @@ every finding we raise, with a ready-made sample to hand-read.
   criteria passed cleanly and still missed a real effect, because
   they asked about findings and the effect was in coverage. Diff
   everything the run emits, then judge.
+- **A number is not in the record until the committed instrument
+  has produced it.** A6's results table carried a figure I had
+  written from a correct diagnosis while the fix was still not in;
+  only re-running the committed instrument to check reproducibility
+  caught it. Re-run before you write, not after.
 - **An unexplained disagreement is a claim about your instrument
-  until you have read it at a cell.** A6 caught two of mine —
+  until you have read it at a cell.** A6 caught three of mine —
   shared-string indices counted as numbers, date cells skipped
-  because openpyxl returns `datetime` — which together made ~21,000
-  perfectly converted cells look lost. And where two readings fit
+  because openpyxl returns `datetime`, and `xlrd`'s separate date
+  ctype dropped — the first two made ~21,000 perfectly converted
+  cells look lost, the third made 4,018 look added. And where two readings fit
   the same counts, the counts cannot choose between them: A6's
   central finding nearly went in backwards until a probe at a named
   cell settled it (`scripts/a6_boolean_probe.py`).
