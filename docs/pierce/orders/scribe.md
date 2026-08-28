@@ -106,3 +106,48 @@ corpus.
 
 Round V (decision 1), then the D4 store (decision 3). Both are
 unblocked, and neither needs anything further from me.
+
+## Addendum (28 Aug): D3's corpus problem is solved — read this before round 6
+
+The founder's researcher found what six rounds could not: **US
+regulated utility ratemaking**, and the structural reason project
+finance never yielded a pair (the populated model is the
+commercially sensitive part; portals publish blank templates). Full
+record in `corpus-sources.md`, 28 Aug second addendum. Take the
+verdicts as decided: **MCC is a model corpus, not a pair corpus**
+(a compact page was opened and every document listed — narratives
+and post-compact evaluations, no feasibility or tariff study), and
+**PPP portals are closed**. Do not re-search either.
+
+Why FERC formula rates fit D3 exactly: the model's inputs come from
+a **separate, earlier, public document** (FERC Form 1), the
+direction is proven three ways (filing calendar, the model's own
+step list, the direction of citation), and **the model prints its
+own provenance** — `p354.21.b` means page 354, line 21, column b —
+with the template marking which cells are inputs. One verified
+filing (Duquesne Light 2025/26) carries **40 cited inputs**, roughly
+30 exact and 10 transformed by sign flip, 13-month averaging,
+percent-to-decimal, allocation and dollars-to-unit-rate. Those
+transformations are D3's hard cases, labelled by the filer.
+
+**Your work, in this order:**
+
+1. **Find one native workbook.** This is the whole blocker. PJM
+   publishes the template as PDF; D3 needs cell addresses, so it
+   needs the filed spreadsheet. **A warning that will cost you an
+   hour if you skip it:** requesting PJM's PDF path with `.xlsx`,
+   `.xls` or `.xlsm` returns **HTTP 200 and the identical PDF** —
+   verified here, same sha256. Check bytes, never status. Try other
+   transmission owners and MISO/SPP, which post per-owner workpapers;
+   the researcher believes some post Excel and did not verify it.
+2. If a native workbook exists, **register the D3 round on it**:
+   the citation convention is a parse, not an inference, so this
+   corpus tests the matcher's *hard* half — the transformed
+   relationships — with the filer's own labels as truth.
+3. If no native workbook can be found anywhere in the family, say
+   so plainly and we take the PDF-side win instead: the Form 1 → the
+   *printed* model is still a real document→document pair for D1's
+   extraction, and the round says what it is.
+
+Round 6's column anchor stands and is unaffected — that is about
+table-shaped documents, and this corpus is full of them.
