@@ -1888,3 +1888,90 @@ exactly the change that should never be waved through.
 
 Suite **1012 passed, 4 skipped**; ruff, mypy, tsc, eslint and prettier
 clean.
+
+## Twenty-sixth turn — the successor to a refusal
+
+`lanes.md` gained « Refusal is not the finish line » and it lands on
+this lane directly: last turn I refused « compute the delta from
+stored cells » — correctly, it lost an `unmatched_new` on a real pair —
+and closed with three routed items and no successor. Half a turn.
+
+### First, where the 158 seconds actually goes
+
+I had assumed the file read dominated. It does not. Timed on
+levenmouth (432,596 cells), `logs/atelier/delta_split.py`:
+
+| step | cost |
+|---|---|
+| `read_workbook` (each side) | 28.9 s |
+| `period_axes` | 0.25 s |
+| `audit` (each side) | 2.6 s |
+| `sheet_grids` | 1.0 s |
+| aligning the sheets | the rest |
+
+Two reads and two audits are 63 s of the 158. **The alignment is the
+rest, and it is concentrated**: aligning each sheet against itself,
+`Distributions` took 113.9 s and `Ratios` 111.9 s — two sheets out of
+twenty-four carrying 87% of the cost. (My per-sheet loop sums to more
+than `delta_of` spends end to end, so it is a profile of where the
+work is, not a decomposition of the total. The concentration is the
+finding and it holds either way.)
+
+### The successor: do not compare
+
+Not a faster comparison — **not comparing**. Two uploads with the same
+digest are the same file: no cell, formula, label or sheet can differ,
+and the answer is exact rather than quick. Ingest now records the
+SHA-256 of the bytes it already holds; `VersionRead.counts` already
+carries whatever ingest kept, so **no new endpoint and no new field** —
+the Versions tab reads the two digests it already has and never asks
+for a comparison it can prove is empty.
+
+On the demo's own re-upload deal the row reads « The same file again —
+byte for byte » and the panel says why: « This upload is byte for byte
+the same file as the version before it, so there is nothing to compare
+— no cell, formula, label or sheet can differ. Nothing was read to
+answer this. » Instant, where the same conclusion cost two and a half
+minutes. `logs/atelier/same-file-again.png`.
+
+Four tests, and the load-bearing one is `two absences are not a match`:
+every version stored before today has no digest, and reading « both
+have none » as « both are the same » would tell a reader two different
+files are one — the worst answer this path could give.
+
+**The digest is also the precondition for the other two successors.**
+A persisted delta keyed by (old digest, new digest) is correct forever
+rather than correct until someone re-uploads.
+
+### The three designs I did not try
+
+1. **Prune the comparison to sheets that can have changed, from the
+   file's own zip entry CRCs.** An `.xlsx` is a zip; each sheet is an
+   entry with a CRC-32, so identical CRCs mean byte-identical sheets —
+   exact, not a heuristic, and a directory read costs milliseconds.
+   With 87% of the alignment in two sheets this is the highest-value
+   design here. Not tried because the Watch takes two workbooks and no
+   sheet filter, and adding one is Prism's; and because **whether
+   Excel leaves untouched sheets byte-identical across a save is not
+   measurable with this corpus** — every SFT model is one version. What
+   would have to be true: two consecutive Excel saves of one real
+   model. Any bank contact can produce that in a minute; the corpus
+   cannot. `logs/atelier/zip_sheet_crcs.py` runs the check the moment
+   such a pair exists.
+2. **Compute the transition once, when the version is uploaded**, at
+   the moment a person already expects to wait for a check — rather
+   than in the request that displays it. Differs in kind: it moves the
+   cost to where it is tolerable instead of reducing it. Not tried
+   because `polar/tieout/` has no `tasks.py` and no background path for
+   *any* check, so introducing one is an architectural decision.
+3. **Derive the identical-file report from the engine's own pieces
+   rather than skipping it.** For identical files the answer is
+   knowable exactly — new 0, repaired 0, persistent = the keyed
+   findings of the one workbook — so the panel could show the real
+   report rather than a sentence. Not tried because `keyed_findings`
+   is private to `watch/delta.py`; reaching through it would be a
+   frozen-interface violation, and the honest move is to **ask for it
+   to be exported**, which is the smallest possible ask and would let
+   the fast path return a full report instead of a refusal-shaped one.
+
+Suite **1037 passed, 4 skipped**; ruff, mypy, tsc and prettier clean.

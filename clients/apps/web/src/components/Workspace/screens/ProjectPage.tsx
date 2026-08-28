@@ -216,7 +216,10 @@ export const ProjectPage = ({
   //: sentence, shown as it stands.
   const [deltaFor, setDeltaFor] = useState<string | null>(null)
   const [deltas, setDeltas] = useState<
-    Record<string, VersionDelta | null | 'loading' | { refused: string }>
+    Record<
+      string,
+      VersionDelta | null | 'loading' | 'identical' | { refused: string }
+    >
   >({})
   //: The same revision's effect on what was *sent out* — the deck tied
   //: out against both versions. Cached the same way and for the same
@@ -311,9 +314,42 @@ export const ProjectPage = ({
   //: keep it. The server computes fresh from the stored bytes; a
   //: refusal (bytes dropped under the retention policy) is its own
   //: sentence, kept and shown as it stands.
+  //: Two uploads with the same digest are the same file, so there is
+  //: nothing to compare and no reason to ask. Measured, this is what
+  //: it saves: the server spends **158 seconds** on a 432,596-cell
+  //: model to conclude that a re-upload changed nothing — 58 of them
+  //: reading the two files and most of the rest aligning two large
+  //: sheets against themselves. Identical bytes are identical
+  //: workbooks, so the answer is exact rather than quick.
+  //:
+  //: A version uploaded before the digest was recorded has none, and
+  //: is compared as before: two absences are not a match.
+  const sameFileAsBefore = useCallback(
+    (artifactId: string): boolean => {
+      const ordered = [...(versions ?? [])].sort(
+        (a, b) => a.version - b.version,
+      )
+      const at = ordered.findIndex((one) => one.id === artifactId)
+      if (at <= 0) return false
+      const mine = ordered[at]?.counts?.['sha256']
+      const before = ordered[at - 1]?.counts?.['sha256']
+      return typeof mine === 'string' && mine.length > 0 && mine === before
+    },
+    [versions],
+  )
+
   const selectDelta = useCallback(
     (artifactId: string) => {
       setDeltaFor(artifactId)
+      if (sameFileAsBefore(artifactId)) {
+        setDeltas((held) =>
+          artifactId in held ? held : { ...held, [artifactId]: 'identical' },
+        )
+        setDeckDeltas((held) =>
+          artifactId in held ? held : { ...held, [artifactId]: null },
+        )
+        return
+      }
       setDeltas((held) => {
         if (artifactId in held) return held
         api
@@ -353,7 +389,7 @@ export const ProjectPage = ({
         return { ...held, [artifactId]: 'loading' }
       })
     },
-    [api],
+    [api, sameFileAsBefore],
   )
   //: Opening the tab lands on the newest revision without a click —
   //: « what did the last upload do » is the question the tab answers.
@@ -2701,31 +2737,37 @@ export const ProjectPage = ({
                     const isFirst = index === sorted.length - 1
                     const changed = isFirst
                       ? 'First upload — nothing earlier to compare'
-                      : held === 'loading'
-                        ? 'Comparing with the version before…'
-                        : held && typeof held === 'object' && 'refused' in held
-                          ? //: The column is a summary, so it carries the
-                            //: fact, not the paragraph — the server's own
-                            //: sentence, and what to do about it, is
-                            //: printed under the table in full.
-                            'Not comparable — the file was dropped'
-                          : held === null
-                            ? 'Nothing earlier was readable to compare'
-                            : held
-                              ? `${word(held.new_defects)} defect${
-                                  held.new_defects === 1 ? '' : 's'
-                                } introduced · ${
-                                  held.repaired_defects === 0
-                                    ? 'none'
-                                    : word(held.repaired_defects).toLowerCase()
-                                } repaired · ${
-                                  held.persistent_defects === 0
-                                    ? 'none'
-                                    : word(
-                                        held.persistent_defects,
-                                      ).toLowerCase()
-                                } standing`
-                              : 'Select to compare'
+                      : held === 'identical'
+                        ? 'The same file again — byte for byte'
+                        : held === 'loading'
+                          ? 'Comparing with the version before…'
+                          : held &&
+                              typeof held === 'object' &&
+                              'refused' in held
+                            ? //: The column is a summary, so it carries the
+                              //: fact, not the paragraph — the server's own
+                              //: sentence, and what to do about it, is
+                              //: printed under the table in full.
+                              'Not comparable — the file was dropped'
+                            : held === null
+                              ? 'Nothing earlier was readable to compare'
+                              : held
+                                ? `${word(held.new_defects)} defect${
+                                    held.new_defects === 1 ? '' : 's'
+                                  } introduced · ${
+                                    held.repaired_defects === 0
+                                      ? 'none'
+                                      : word(
+                                          held.repaired_defects,
+                                        ).toLowerCase()
+                                  } repaired · ${
+                                    held.persistent_defects === 0
+                                      ? 'none'
+                                      : word(
+                                          held.persistent_defects,
+                                        ).toLowerCase()
+                                  } standing`
+                                : 'Select to compare'
                     return (
                       <button
                         key={v.id}
@@ -2850,6 +2892,30 @@ export const ProjectPage = ({
             {deltaFor !== null &&
               (() => {
                 const held = deltas[deltaFor]
+                if (held === 'identical')
+                  //: Nothing was compared, and the reason is stronger
+                  //: than a comparison would have been: the two
+                  //: uploads are the same bytes, so no comparison
+                  //: could find anything. The Watch would have spent
+                  //: two and a half minutes on a real model arriving
+                  //: at the same answer with less certainty.
+                  return (
+                    <div
+                      style={{
+                        fontSize: 14.5,
+                        color: '#4a4f57',
+                        lineHeight: 1.55,
+                        padding: '8px 4px',
+                        maxWidth: '78ch',
+                      }}
+                    >
+                      This upload is{' '}
+                      <strong>byte for byte the same file</strong> as the
+                      version before it, so there is nothing to compare — no
+                      cell, formula, label or sheet can differ. Nothing was read
+                      to answer this.
+                    </div>
+                  )
                 if (held === undefined || held === 'loading') {
                   //: How long this actually takes, said in the model's
                   //: own numbers. The comparison reads both workbooks
