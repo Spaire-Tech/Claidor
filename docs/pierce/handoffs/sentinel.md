@@ -61,22 +61,8 @@ reproducibly; today they are fetched by hand and hash-checked.
 
 ## Next, per orders (in this order)
 
-0. **The label column: register design B — check the ladder's
-   arithmetic.** Three successors differing in kind are in
-   `label-column-election.md`; B is the one to register. It asks « is
-   the computed sequence intact? » instead of « was this cell typed? »,
-   which makes a typed cell that continues the series correctly a
-   non-finding (today's design would flag it) and a formula cell that
-   breaks the series a finding (every provenance design misses it).
-   No frozen interface, no election, and it judges the one shape that
-   is 70% of the population rather than counting its cells.
-   Alternatives if B fails: **A** — expose label series as a separate
-   collection consumed by one new rule, so existing findings cannot
-   move by construction (costs a frozen-interface bump); **C** — walk
-   the precedent graph for cells that *read* a label column, which
-   prices itself because a ladder nothing reads is ignored.
-   *(superseded — varies a parameter, not the constraint:)*
-   **Elect label-column cells by numeric VALUE.** The previous attempt (elect cells
+0. **Elect label-column cells by numeric VALUE — start here, and
+   note what already failed.** The previous attempt (elect cells
    *carrying a formula* with a numeric result) is **refused**:
    planted recall 0 of 12, because a typed-over cell has no formula
    and so stayed excluded by the very rule meant to reveal it. A
@@ -270,17 +256,6 @@ every finding we raise, with a ready-made sample to hand-read.
   `column != label_column`. Deliberate, and priced on 28 Aug: it
   hides 1.55% of the regulator corpus's formulas and 5.31% of its
   numerics.
-- **Never push a test that is red at the tip.** A test-first commit
-  of mine landed on the shared integration tip without its
-  implementation and was reverted — a red tip blinds every lane, and
-  the lead cannot fix it without editing my expectations, which is
-  not his to set. Hold the test on the branch until the change lands
-  beside it, or mark it skipped with the reason and unskip in the
-  same push. Now a rule in `lanes.md` for every lane.
-- **A refusal closes with successors that differ in kind.** Not a
-  loosened threshold, not « retry when the corpus improves ». Write
-  the designs you did not try, one line each, and attack the
-  constraint rather than the parameters (`lanes.md`).
 - **A hardcode is the *absence* of a formula.** Obvious written
   down, and it still cost a round: I measured hidden *formula* cells
   and registered a rule keyed on a formula being present, which by

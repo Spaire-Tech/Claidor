@@ -813,7 +813,6 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _sibling_totals(book, result)
     _range_over_block(book, result)
     _gapped_tests(book, result)
-    _unit_mismatch(book, result)
     _hidden_sheets(book, result)
     _names_table(book, result)
 
@@ -857,11 +856,6 @@ COVERAGE_OF: dict[str, str] = {
     "range-over-block": "aggregations",
     "circular": "connected",
     "hidden-sheet": "sheets",
-    #: E3a. These two report their own coverage — their denominator is
-    #: « sums whose terms disagree », which is not one of the
-    #: populations below — so `_coverage` leaves them alone.
-    "currency-mismatch": "formulas",
-    "scale-mismatch": "formulas",
 }
 
 
@@ -905,12 +899,7 @@ def _coverage(book: Workbook, result: Audit) -> None:
         "sheets": len(book.sheets),
     }
     raised = Counter(finding.rule for finding in result.findings)
-    #: A rule that already reported its own coverage keeps it: the
-    #: unit checks count a population this pass cannot see.
-    already = set(result.tallies) | {a.rule for a in result.abstentions}
     for rule, population in COVERAGE_OF.items():
-        if rule in already:
-            continue
         total = sizes[population]
         if total:
             result.tallies[rule] = {"total": total, "raised": raised.get(rule, 0)}
@@ -4649,180 +4638,6 @@ def _range_over_block(book: Workbook, result: Audit) -> None:
                     )
                 )
                 already.add(cell.ref)
-
-
-def _unit_mismatch(book: Workbook, result: Audit) -> None:
-    """Adding pounds to dollars, or thousands to millions.
-
-    E3a, registered in docs/pierce/e3a-unit-mismatch.md. The evidence
-    is Dynamo's: `units.propagate` carries a row's inferred units into
-    the formulas that read it and records a `Conflict` where a formula
-    that only adds and subtracts has terms whose units disagree. This
-    turns two of those into findings and **nothing else**.
-
-    **Armed on the dimensions E2 measured, and only those.** Dynamo's
-    verdict is per-dimension: `currency` and `scale` answer on 34.6%
-    of rows and are wrong on none, so they are armed. `period` is
-    wrong on a quarter to two thirds of rows and « is not to be
-    quoted », so « a monthly figure in an annual line » — the finding
-    a reader would most want — **is not raised at all**. That is E3b,
-    blocked on measurement rather than on code.
-
-    Four guards, each registered before any result:
-
-    * a finding may rest only on a dimension E2 **answered**. One
-      answered value against an `unknown` is an abstention, not a
-      mismatch: `unknown` means the evidence did not decide, and a
-      check resting on it would be inventing the disagreement.
-    * **two distinct answered values** on the dimension, minimum.
-    * **row-wise sheets only.** A data table's row is a record —
-      `Date | Maturity | rate` — with no single unit, and Dynamo's
-      `orientation` exists because typing one would be a lie.
-    * `Conflict.units` merges currencies with scales into one tuple,
-      so which dimension disagreed is derived here from the precedent
-      labels, through the library's public surface. The `units`
-      package is Dynamo's and is not edited from this lane.
-    """
-    from .units import Orientation, classify_sheet, orientation, propagate
-    from .units.inference import rows_from_cells
-
-    #: Indexed once. Seeding by scanning every cell per row is
-    #: quadratic, and this runs on workbooks of half a million cells.
-    inputs: dict[tuple[str, int], list[Cell]] = {}
-    for cell in book.cells.values():
-        if cell.formula is None:
-            inputs.setdefault((cell.sheet, cell.row), []).append(cell)
-
-    seeds: dict[str, Any] = {}
-    row_wise: set[str] = set()
-    for sheet in book.sheets:
-        rows = rows_from_cells(book.cells, sheet)
-        if not rows:
-            continue
-        if orientation(rows) is not Orientation.ROW_WISE:
-            continue
-        row_wise.add(sheet)
-        for (_sheet, row), label in classify_sheet(rows).items():
-            for cell in inputs.get((sheet, row), ()):
-                seeds[cell.ref] = label
-
-    if not seeds:
-        for rule_name in ("currency-mismatch", "scale-mismatch"):
-            result.abstentions.append(
-                Abstention(
-                    rule=rule_name,
-                    why="no row-wise sheet carried rows the unit inference could read",
-                )
-            )
-        return
-
-    labels, conflicts = propagate(book.cells, seeds)
-
-    examined = 0
-    raised_by: dict[str, int] = {}
-    for conflict in conflicts:
-        found = book.cells.get(conflict.ref)
-        if found is None or found.sheet not in row_wise:
-            continue
-        cell = found
-        examined += 1
-        terms = [labels[p] for p in (cell.precedents or ()) if p in labels]
-        for dimension, rule_name, noun in (
-            ("currency", "currency-mismatch", "currency"),
-            ("scale", "scale-mismatch", "scale"),
-        ):
-            answered = {term.get(dimension) for term in terms}
-            if "unknown" in answered:
-                #: E2 declined on at least one term. The disagreement
-                #: may well be real and we cannot say that it is.
-                continue
-            if len(answered) < 2:
-                continue
-            spread = ", ".join(sorted(answered))
-            raised_by[rule_name] = raised_by.get(rule_name, 0) + 1
-            result.findings.append(
-                Finding(
-                    rule=rule_name,
-                    severity="error",
-                    ref=cell.ref,
-                    sheet=cell.sheet,
-                    name=cell.name,
-                    detail=(
-                        f"{cell.formula} adds terms of different {noun}: "
-                        f"{spread}. A sum may only carry one {noun}."
-                    ),
-                    source="Williams 2020, EuSpRIG",
-                    figure=spread,
-                    figure_unit=f"the {noun}s added together in one sum",
-                )
-            )
-
-    #: A4's contract: each rule reports its coverage exactly once,
-    #: as a tally or as an abstention, never both and never neither.
-    _dimension_coverage(
-        result,
-        rule="currency-mismatch",
-        examined=examined,
-        answered=any(label.currency != "unknown" for label in labels.values()),
-        raised=raised_by.get("currency-mismatch", 0),
-        why=(
-            "no row carried a currency the inference could read — the "
-            "number formats name none and no Units column was supplied"
-        ),
-    )
-    #: Scale is a *structural* abstention on today's inference, not a
-    #: quiet zero. `classify_row` answers scale only from a declared
-    #: Units column — the number-format branch says in as many words
-    #: that « scale is not stated anywhere and is not guessed from
-    #: magnitude » — and `rows_from_cells` does not carry declared
-    #: units, so a blind read can never hold two different answered
-    #: scales. Saying so is the difference between « clean » and
-    #: « never looked », which is the whole of A4.
-    _dimension_coverage(
-        result,
-        rule="scale-mismatch",
-        examined=examined,
-        answered=any(
-            label.scale not in ("unknown", "units") for label in labels.values()
-        ),
-        raised=raised_by.get("scale-mismatch", 0),
-        why=(
-            "the unit inference answers scale only from a declared Units "
-            "column, which this read does not carry — so a "
-            "thousands-into-millions mix cannot be judged here"
-        ),
-    )
-
-
-def _dimension_coverage(
-    result: Audit,
-    *,
-    rule: str,
-    examined: int,
-    answered: bool,
-    raised: int,
-    why: str,
-) -> None:
-    """One coverage line for a unit rule — tally or abstention, never
-    both, per A4's contract.
-
-    A rule tallies when there was something it could have judged: sums
-    whose terms disagree *and* a dimension the inference answered
-    somewhere. Otherwise it abstains and says which of the two was
-    missing, because « no mismatches » and « could not tell » are
-    different sentences and the report must not merge them.
-    """
-    if examined and answered:
-        result.tallies[rule] = {"total": examined, "raised": raised}
-    else:
-        result.abstentions.append(
-            Abstention(
-                rule=rule,
-                why=(
-                    "no formula added terms whose units disagree" if answered else why
-                ),
-            )
-        )
 
 
 def _hidden_sheets(book: Workbook, result: Audit) -> None:
