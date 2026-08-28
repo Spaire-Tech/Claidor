@@ -35,6 +35,7 @@ it falls.
 | A6 intake (`a6-intake.md`) | **REFUSED**, 3 of 5 criteria. All five held models convert; **two will not open** (LibreOffice writes `_xlnm.Print_Titles` empty, openpyxl raises). **No value changed anywhere** — recalculation-on-load did not happen. **Formulas are fabricated**: `=TRUE()` for every boolean cell. **The `.xlsb` route destroys every defined name** (keeps the name, drops the reference); the `.xls` route keeps all 805. Nothing wired, gate not run (no engine file changed). |
 | Own-check periods (`own-check-periods.md`) | **Adopted.** `_own_checks` now judges only the sheet's own period columns. AU-UK unmoved (18 findings, 0 files), SFT exactly as specified in advance, gate clean 27/27 as a tripwire. **Its criteria were narrower than the change** — see the coverage effect below. |
 | Proof 1A, second run (`population-proof.md` § second run) | **PASS** at `327058a5` — 5 of 5 true breaks, 0 false alarms, Kelso and Newbattle silent. **The pass is narrow:** the engine was fixed *using this corpus's failures*, so it can no longer test the original « never seen » claim. Never quote the pass without that sentence. |
+| Label-column cost (`label-column-cost.md`) | **Measured; nothing wired.** One column per sheet is never elected — deliberate, but its price was never known. Regulator corpus hides **1.55% of formulas / 5.31% of numerics**; closed-deal **0.71%**; worst files 32%. 20 cells hand-read: **13 computed date ladders (wrongly hidden), 6 label mirrors (rightly hidden)**. Discriminator found: 62% of hidden formulas resolve numeric, 38% to text. |
 | A6 round 2 (`a6-xls-routes.md`) | **No route adopted; the premise corrected.** Native `.xls` recall over 430 files: median **1.000**, aggregate **98.7%**. Converted: 99.2%, no refusals, fabricates 1 formula per boolean cell. **A6 is not a locked door — Enron is substantially readable today.** Largest finding is neither route's: the label-column loss below. Enron deliberately not fetched (registration made it conditional on a full pass). |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
@@ -59,15 +60,19 @@ reproducibly; today they are fetched by hand and hash-checked.
 
 ## Next, per orders (in this order)
 
-0. **The label-column loss — start here.** `read_workbook` returns
-   no cells at all from a sheet's first column, so **a formula in
-   column A is invisible to every rule we have**. Found in A6 round
-   2: `tables.xls` holds 8 formulas, all in column A, and both
-   intake routes lose all 8 — 27 cells returned, none in column A.
-   Not chased to root cause. It is in `workbook.py`, which is mine,
-   and it changes what the engine reports: full round, full gate.
-   Check first whether the label column is consumed as row labels
-   rather than elected as cells.
+0. **Elect numeric-valued label-column formulas — start here.**
+   The cost is now measured (`label-column-cost.md`): 49,011 hidden
+   formula cells across 25 of 37 corpus files resolve to a number,
+   and the hand-read says they are computed date ladders and
+   schedule columns that `typed-over-formula` and `inconsistent-row`
+   should see. The change to test is exactly that — elect a
+   label-column cell carrying a formula **whose result is numeric**;
+   leave the 30,072 that resolve to text alone. **Full round, full
+   gate, baseline regenerated**: this moves findings on files the
+   baseline covers. Two warnings from the measurement: 70% of the
+   volume is one shape (`=X+1` date ladders) on four sheets, so the
+   false-positive price could swamp a corpus report; and the numeric
+   class is impure — 133 `CHOOSE` label mirrors resolve to numbers.
 1. **A6 round 3 — the repair pass.** Both refusal causes look
    mechanical: strip `definedName` elements with an empty body
    (fixes both refusals at a stroke) and rewrite
