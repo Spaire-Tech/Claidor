@@ -22,12 +22,24 @@ to Sentinel as a registered round. No exceptions, including
 
 | Lane | Owns | Never touches |
 |---|---|---|
-| **Sentinel** — engine findings (Track A) | `server/polar/tieout/{audit,structure,analytics,workbook}.py`, `docs/pierce/corpus-golden-master.json`, `server/scripts/{corpus_gate,corpus_au_uk,custodes_*,model_corpus}.py`, new planting harnesses under `server/scripts/planting/`, `server/tests/tieout/test_audit*`, `test_shape*`, `test_structure*` | product code, other lanes' packages |
+| **Sentinel** — engine findings (Track A) | `server/polar/tieout/{audit,structure,analytics}.py`, `docs/pierce/corpus-golden-master.json`, `server/scripts/{corpus_gate,corpus_au_uk,custodes_*,model_corpus}.py`, new planting harnesses under `server/scripts/planting/`, `server/tests/tieout/test_audit*`, `test_shape*`, `test_structure*` | product code, other lanes' packages |
 | **Dynamo** — recalculator (Track B) | new package `server/polar/tieout/recalc/`, `server/tests/tieout/test_recalc*`, `server/scripts/recalc_*` | everything else |
 | **Prism** — the Watch (Track C) | new package `server/polar/tieout/watch/`, `server/tests/tieout/test_watch*`, `server/scripts/watch_*` | everything else |
-| **Scribe** — the Chain (Track D) | new package `server/polar/tieout/chain/` (incl. its own router file, mounted at integration by the lead), `server/tests/tieout/test_chain*`, `server/scripts/{corpus_documents,corpus_extract_pdfs}*` | everything else |
+| **Scribe** — **the reader** (was the Chain) | `server/polar/tieout/{workbook,sheets,legacy,binary,ingest}.py`, `server/tests/tieout/test_{workbook,sheets,binary,legacy}*`; the dormant `chain/` package stays its custody but is not worked | `audit.py` and the other check modules — those are Sentinel's |
 | **Atelier** — product & delivery (G + H) | `clients/**`, `server/polar/tieout/{endpoints,schemas,service}.py`, `server/tests/tieout/test_routes*`, `server/scripts/demo_*`, the posture doc | engine modules, other lanes' packages |
 | **Ledger** — the lead (this session) | `swens-plan.md`, `notes.md`, `worklog.md`, this file; merges; cross-lane arbitration | — |
+
+**The reader and the checks split on 28 August**, and the boundary is
+the one the speed round exposed rather than an arbitrary line. Reading
+a workbook — parsing XML, decoding formats, decompiling BIFF,
+converting binary — and deciding what is wrong with it are different
+problems, with different skills, different oracles and, as it turned
+out, different bottlenecks. They were one lane's files, which made
+"make the reader fast" and "arm a new check" collide in `workbook.py`
+for no reason. Now Scribe owns everything that turns bytes into cells,
+and Sentinel owns everything that turns cells into findings. The
+frozen `read_workbook`/`Cell` surface is the contract between them, and
+neither may move it without the lead.
 
 Each lane writes its own running log at `docs/pierce/logs/<name>.md`
 — never the shared worklog, which the lead maintains at integration.
@@ -62,6 +74,97 @@ Each lane writes its own running log at `docs/pierce/logs/<name>.md`
   merge. A lane rebases onto the integrated tip only when the lead
   says the tip moved.
 
+## How to attack a hard number (the method that took 23 s to 6.9 s)
+
+Written down on 28 August because it worked, and because « go
+aggressively » without a method is just thrashing. The speed round took
+a median model from 23 s and 384 MB to **6.9 s and 155 MB** in one
+session, with the engine's answers unchanged at every step. This is
+what it consisted of. Follow it on any hard number: a catch rate, a
+false-positive price, a latency, a memory ceiling.
+
+**1. Measure before you touch anything.** Every change that shipped was
+preceded by a number. Not one was preceded by a hunch that survived.
+
+**2. Check whether your instrument is lying.** `cProfile` said `_offset`
+cost 70 s; it costs 13 s — the profiler charges its own overhead per
+call and there were seven million calls, so it ranked by call count and
+called it time. A sampling profiler (`py-spy record --format
+speedscope`) told the truth and named a completely different culprit.
+**Before you believe a profile, ask what it distorts.**
+
+**3. Kill hypotheses in one measurement each.** Three plausible fixes
+died the same afternoon: sharing precedent tuples (0.1% recoverable),
+skipping empty-cell padding (cells touched fell 6,079,186 → 412,560 and
+the clock **did not move at all**), caching tokens by formula text
+(1.1× reuse). Each felt obviously right. Each would have been a week.
+**A dead hypothesis in ten minutes is a better result than a working
+change in a week.**
+
+**4. Find the floor before you build the replacement.** Before writing
+a single line of a new reader, a throwaway script established what one
+raw pass over the XML costs: **1.6 s against openpyxl's 16.4 s**. That
+number is what justified the build. Without it the build is a bet.
+
+**5. Differential-test against the thing you are replacing.** Every
+replacement was proven identical on real data before it was believed:
+3,266,124 calls for the rewritten function, 27 files cell by cell for
+the reader, 27 files style by style for the formats. **Zero differences
+or it does not ship.**
+
+**6. When the test disagrees with you, you are probably wrong.** The
+styles differential flagged two files. The lead concluded openpyxl had
+an off-by-two, wrote it up, and changed the code to reproduce the
+« bug » — which made eleven files differ instead of two. Reading
+openpyxl's source showed the defect was the lead's: a workbook may
+redefine a builtin format id. **The instinct to blame the dependency
+was wrong, cost an hour, and would have shipped wrong number formats
+into the percent rule.**
+
+**7. Never smuggle a correctness change inside a performance change.**
+If a speed-up would change one finding, it is two changes and they are
+gated separately. That rule is why the golden master can certify a 5×
+memory cut in one line.
+
+**8. The oracle is what makes aggression safe.** `MAX_RANGE` had been
+200 since it was written. Nobody knew if the number mattered — so the
+corpus was asked, and the answer was that 150 of every 200 expanded
+cells were never read by any check. **A byte-exact answer sheet turns
+« I daren't touch that » into an experiment that takes one run.** If
+your lane has no oracle for its number, building one is the first task,
+not a distraction from it.
+
+**9. Take the win you can prove, then keep going.** Interning shipped at
+3.6× while 5× was still ahead. Ship the certified step; do not hold it
+hostage to the perfect one.
+
+## Triple-verify, and what it actually means
+
+The founder's instruction, 28 Aug: aggressive, ship fast, and **triple
+verify every block**. Those are not in tension — the verifying is what
+makes the speed safe. Three things, and they are the three that have
+actually caught errors here:
+
+1. **Verify the number, not the run.** `dev/verify` is the floor. A
+   suite result taken beside another job is not a result.
+2. **Verify against something that did not come from us.** The `.xlsb`
+   work was gated on `xlrd` reading the originals — 243,812 cells,
+   100.0000% — before one line of it was wired in. An independent
+   reader, a second implementation, the file's own bytes: anything but
+   our own opinion.
+3. **Verify the claim you are about to make, especially when it is
+   good news.** A conversion appeared to recover 13,408 formulas. It
+   had manufactured 13,346 of them out of boolean cells. The tell was
+   one printed sample. **Before publishing a number, look at a sample
+   of the thing it counts.** Every false result today survived until
+   somebody looked at an example, and died immediately after.
+
+And the standing corollary: **a claim in our own code is not evidence.**
+Three docstrings were asserting things that were false — that
+LibreOffice could not run headless, that `.xls` was unreadable, that the
+818-model corpus was blocked on intake. Each cost weeks of avoided work.
+Test the sentence before you route work around it.
+
 ## Discipline every lane carries
 
 - Read `docs/pierce/notes.md` before answering anything of record.
@@ -76,6 +179,13 @@ Each lane writes its own running log at `docs/pierce/logs/<name>.md`
   **Both replace rules we kept re-breaking. A rule you have to
   remember while you are busy is not a guardrail; if a lesson recurs,
   prose has already failed and the fix is a tool.**
+- **`dev/verify` before any turn is reported. No exceptions.** It lints
+  what you changed, type-checks the package, runs the suite under the
+  heavy lock, refuses to start beside another suite, and re-runs
+  failures alone to tell a real one from a starved one. A turn that has
+  not passed it is not finished, and a number taken without it is not a
+  number: two runs on 28 Aug reported 461 and 741 errors and both were
+  the machine, not the code — believed for a while, each time.
 - Corpora are rebuilt with the committed fetchers
   (`scripts.corpus_au_uk`, `scripts.model_corpus`), never committed.
 - Plain-language reports to the founder; no model identifiers in any

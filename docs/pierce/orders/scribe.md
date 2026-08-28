@@ -235,3 +235,155 @@ the lead measured a real 12 MB pair at 2 h 06 m against 158 s for a
 4.3 MB one. Whatever is quadratic there is probably quadratic in the
 audit too. Prism owns the Watch's own alignment; you own everything
 underneath it — the reader, the audit, the check loop.
+
+## Standing, from the founder (28 Aug): aggressive, and triple-verified
+
+Two instructions, and they are one instruction. **Ship fast and well.**
+
+**`dev/verify` before you report a turn. Every time.** It lints what you
+changed, type-checks tieout, runs the suite under a lock, refuses to
+start beside another suite, and re-runs failures alone. Two runs today
+reported 461 and 741 errors and *neither was real* — one starved beside
+a 9 GB job, the other collided with a second suite. Both were believed
+for a while. Your unaided judgement about a test result is now known to
+be worse than this script's; use the script.
+
+**Also `dev/heavy <cmd>`** for anything large, and **`dev/kill-job
+<pattern>`** instead of `pkill -f`, which matches the killing shell's
+own command line and has ended this team's session three times.
+
+**And read the new `lanes.md` section « Triple-verify, and what it
+actually means » before your next turn.** Its third point is the one
+that matters most and is the least natural: verify the claim hardest
+when it is *good* news. A conversion looked like it had recovered
+13,408 formulas today; it had manufactured 13,346 of them. One printed
+sample killed it. Before you publish a number, look at an example of
+the thing you counted.
+
+Standing corollary: **a claim in our own code is not evidence.** Three
+docstrings in this repository were asserting false things and each had
+cost real work — including that the 818-model project-finance corpus
+was unreachable, when the reader had handled that format all along.
+When a comment tells you something is impossible, test it before you
+route around it.
+
+## Your A1 target, measured (28 Aug): the numbers, from a clean gate run
+
+The lead ran the full golden-master gate on the tip, alone, nothing
+competing. **Gate clean: 27 of 27 files report identically, finding for
+finding.** The engine is correct. It is also this slow, and these are
+real published regulator models, not synthetic ones:
+
+| model | time | findings |
+|---|---|---|
+| `final_gd3_bpfm.xlsm` | **493.9 s** | 85 |
+| `RIIO GD3 BPFM_Draft Determinations` | 450.4 s | 84 |
+| `final_gt3_bpfm.xlsm` | 443.4 s | 75 |
+| `final_et3_bpfm.xlsm` | 430.0 s | 74 |
+| `RIIO GT3 BPFM_Draft Determinations` | 417.2 s | 65 |
+| `RIIO ET3 BPFM_Draft Determinations` | 401.0 s | 68 |
+| `final_wacc.xlsx` | 128.9 s | 15 |
+
+**Whole corpus: 3,300 s — 55 minutes for 27 files. Six of them are
+2,636 s of it, 80% of the total.** Peak resident memory on a single
+model: **7.7 GB**, watched climbing at roughly 250 MB per minute for
+five minutes before it levelled.
+
+Read what that means for the product, because it is worse than « slow »:
+**no banker waits eight minutes for a check**, and 7.7 GB for one file
+means an ordinary server cannot run two at once. This is not a
+nice-to-have round. It is the difference between a product and a
+demonstration.
+
+**So A1's target is these six files.** Not a synthetic benchmark, not
+600k cells in the abstract — `final_gd3_bpfm.xlsm` from 494 seconds to
+something a person will sit through, with the gate still clean
+afterwards. You have the best possible harness for it: the golden
+master is a byte-exact oracle, so any speed-up that changes a single
+finding is caught immediately and automatically.
+
+Method, unchanged: profile, fix the top item, re-measure, repeat. The
+six are the same family, so one real fix probably moves all six. Report
+the before and after per file, and run `dev/verify` plus the gate before
+you call anything done.
+
+## CORRECTION (28 Aug): you profile, Sentinel fixes
+
+My earlier order gave you A1 outright. That was wrong and it was my
+error: `audit.py`, `workbook.py`, `structure.py` and `analytics.py` are
+**Sentinel's** files under the ownership table, and I sent you into
+them. A1's *fixes* are Sentinel's. Corrected.
+
+**What is yours, and it is genuinely the harder half: find out where the
+time and the memory actually go, and hand Sentinel a ranked list.**
+
+The facts to explain: six Ofgem models take 401–494 s each (80% of a
+3,300 s corpus sweep), and **one of them reaches 7.0 GB resident in a
+fresh process that has read nothing else** — so it is one model's true
+appetite, not accumulation. Production is Render `starter`: **512 MB**.
+The engine cannot run there at all.
+
+Your round, and you touch no engine file to do it:
+
+1. **Where does the memory go?** `tracemalloc`, or object counts by type
+   at peak. Name the structure that holds the gigabytes. My guess is the
+   expanded precedents — `MAX_RANGE` is 200 cells per range and these
+   models are full of whole-column references — but a guess is not a
+   finding, and I would rather be wrong on the record than have you
+   confirm me politely.
+2. **Where does the time go?** `cProfile` or `py-spy` on one 494 s
+   model. Rank the top ten by cumulative time.
+3. **Is it the reader or the audit?** The split matters completely: one
+   is Sentinel narrowing what it keeps, the other is Sentinel changing
+   an algorithm. My single-file harness prints both halves —
+   `scratchpad/onefile.py`, reproduced in your log if you want it.
+4. **Hand over a ranked list** — biggest win first, with the number
+   beside it — in your log, and tell the lead it is ready.
+
+Write measurement scripts under your own paths only. Change nothing in
+`polar/tieout/*.py`. This is the « profile first » half of profile-first-
+then-fix, done properly by someone whose only job is the truth of it.
+
+# YOUR PIECE (28 Aug) — the reader on giant models
+
+Everything above is history. The founder has split the product into
+pieces and given each lane **one**, to be taken to 100% before anything
+else is started. Yours is above.
+
+**Done means this, and only this:**
+
+> The six Ofgem business-plan models each read in under sixty seconds and under 512 MB peak, the cell-by-cell differential against openpyxl stays at zero differences, and the golden-master gate stays clean.
+
+That sentence is the whole test. It was agreed before the work started
+so that neither of us can move it afterwards. If you believe it is the
+wrong test, say so in your log **before** you begin — not after you
+have a number that misses it.
+
+**Work it the way the speed round was worked.** Read « How to attack a
+hard number » in `lanes.md` — it is new, it is nine points, and it is a
+transcript of what actually took a median model from 23 s to 6.9 s in
+one session. The parts that matter most for you:
+
+- **Measure before you touch anything.** No change ships behind a hunch.
+- **Check whether your instrument lies.** cProfile ranked by call count
+  and named the wrong culprit; a sampling profiler named the right one.
+- **Kill hypotheses in one measurement each.** Three died in an
+  afternoon that would each have cost a week. A dead hypothesis in ten
+  minutes beats a working change in a week.
+- **Find the floor before you build a replacement**, so the build is
+  justified by a number rather than a bet.
+- **Differential-test against what you replace. Zero differences or it
+  does not ship.**
+- **When the test disagrees with you, you are probably wrong** — the
+  lead blamed a dependency, was wrong, and lost an hour proving it.
+- **If you have no oracle for your number, building one is task one**,
+  not a distraction from the work.
+- **Ship the certified step**; do not hold a proven 3.6× hostage to a
+  hoped-for 5×.
+
+**Never take no for an answer, and never fake a yes.** A refusal closes
+with a successor that differs in kind. A number closes with the
+measurement that produced it and `dev/verify` green. If you cannot hit
+the test, say exactly how close you got and what stopped you — that is
+a real result. Silence, or a number without its harness, is not.
+

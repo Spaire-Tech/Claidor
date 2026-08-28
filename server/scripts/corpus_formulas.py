@@ -21,14 +21,23 @@ XML carries an `<f>` element, on the files themselves:
   never-seen-this-dialect question, and it is **not** a substitute
   for depth.
 
-**The corpus that matters most is not here, and cannot be until A6.**
-`SheetJS/enron_xls` holds 9,145 real workbooks from a real energy
-company; an independent count found 5,391 with live formulas and
-**818 with more than 1,500 formulas and project-finance vocabulary**
-— gas project financings, wind portfolio valuations, acquisition
-models with full statement sets. They are `.xls`, which our reader
-cannot open. It is 2.8 GB, so it is deliberately *not* fetched by
-default: add `--enron` once intake exists.
+**The corpus that matters most is not here — and the reason given for
+that was wrong. Corrected 28 Aug.** `SheetJS/enron_xls` holds 9,145
+real workbooks from a real energy company; an independent count found
+5,391 with live formulas and **818 with more than 1,500 formulas and
+project-finance vocabulary** — gas project financings, wind portfolio
+valuations, acquisition models with full statement sets.
+
+This file used to say « they are `.xls`, which our reader cannot
+open ». **Our reader has read `.xls` all along**:
+`polar.tieout.legacy` walks the BIFF8 record stream and decompiles
+every cell formula in it, and that is the whole point of the module.
+Measured on 28 Aug, converting a 228-formula model down to `.xls` and
+reading it back: **228 of 228 formulas recovered, at the right cells,
+with identical text.** So the only real barrier left is 2.8 GB of
+download, which is why `--enron` is still opt-in rather than the
+default — and Proof 1B's corpus is not blocked on plan step A6, it is
+blocked on somebody running the fetch.
 
 **Licensing, and the lead's own omission (added 28 Aug, second
 research round).** The first version of this file recorded formula

@@ -311,3 +311,165 @@ reported:
 
 Standing: the golden master regenerates in the same commit as any
 findings change, and any new rule key routes to Atelier first.
+
+## Standing, from the founder (28 Aug): aggressive, and triple-verified
+
+Two instructions, and they are one instruction. **Ship fast and well.**
+
+**`dev/verify` before you report a turn. Every time.** It lints what you
+changed, type-checks tieout, runs the suite under a lock, refuses to
+start beside another suite, and re-runs failures alone. Two runs today
+reported 461 and 741 errors and *neither was real* — one starved beside
+a 9 GB job, the other collided with a second suite. Both were believed
+for a while. Your unaided judgement about a test result is now known to
+be worse than this script's; use the script.
+
+**Also `dev/heavy <cmd>`** for anything large, and **`dev/kill-job
+<pattern>`** instead of `pkill -f`, which matches the killing shell's
+own command line and has ended this team's session three times.
+
+**And read the new `lanes.md` section « Triple-verify, and what it
+actually means » before your next turn.** Its third point is the one
+that matters most and is the least natural: verify the claim hardest
+when it is *good* news. A conversion looked like it had recovered
+13,408 formulas today; it had manufactured 13,346 of them. One printed
+sample killed it. Before you publish a number, look at an example of
+the thing you counted.
+
+Standing corollary: **a claim in our own code is not evidence.** Three
+docstrings in this repository were asserting false things and each had
+cost real work — including that the 818-model project-finance corpus
+was unreachable, when the reader had handled that format all along.
+When a comment tells you something is impossible, test it before you
+route around it.
+
+## OVERRIDE (28 Aug): speed is your only job now
+
+Everything above is paused. The founder: *« we need to fix that speed
+issue. its the one thing that will make the difference »*. They are
+right, and the lead had misassigned this — A1 was routed to Scribe,
+but **you own `audit.py`, `workbook.py`, `structure.py` and
+`analytics.py`**, which is where the time and the memory are. Correcting
+that: **A1 is yours, alone, and it is the only thing on your board.**
+
+**The measurements, from a clean gate run on the tip (gate clean, 27 of
+27 identical, so the engine is correct — it is just unusable):**
+
+| model | time | findings |
+|---|---|---|
+| `final_gd3_bpfm.xlsm` | **493.9 s** | 85 |
+| `RIIO GD3 BPFM_Draft Determinations` | 450.4 s | 84 |
+| `final_gt3_bpfm.xlsm` | 443.4 s | 75 |
+| `final_et3_bpfm.xlsm` | 430.0 s | 74 |
+| `RIIO GT3 BPFM_Draft Determinations` | 417.2 s | 65 |
+| `RIIO ET3 BPFM_Draft Determinations` | 401.0 s | 68 |
+
+Whole corpus 3,300 s; those six are 2,636 s of it — **80% of the time in
+six files**.
+
+**And the number that makes this urgent rather than annoying. Measured
+in a fresh process that had read nothing else, so it is one model's true
+need, not accumulation across a sweep: `final_gd3_bpfm.xlsm` reached
+7.0 GB and was still climbing.** The production deployment is Render
+`starter` — **0.5 CPU, 512 MB RAM** (`render.yaml`, confirmed against
+Render's own compute-plans documentation). The cheapest Render plan with
+8 GB is `2c-8g`.
+
+So this is not « the check is slow ». **On the servers we actually run,
+a real regulator model cannot be checked at all.** Memory is the harder
+constraint of the two: a fix that makes it twice as fast and still needs
+7 GB has not made the product shippable. **Target both, and treat peak
+resident memory as the primary number.**
+
+**Method, and no deviation:** profile first, fix the largest single
+item, re-measure, repeat. Do not redesign from a hunch. Report before
+and after per file, with peak memory beside every time.
+
+**You have the best harness in the company for this**: the golden master
+is a byte-exact oracle over these same 27 files, so any optimisation
+that changes one finding is caught automatically and immediately. Run
+`dev/verify` and the gate before you call anything done — a faster
+engine that reports differently is a broken engine.
+
+Ordered by value: memory first, then wall time. Everything else on your
+board — period arming, the Ofwat replay, A3 — waits.
+
+## The lead has taken A1 (28 Aug) — you get it back with the ground cleared
+
+Recorded rather than left to be discovered: I assigned A1 to you and
+then started doing it myself, which is the collision I criticised in my
+own routing an hour earlier. The reason is that the agents are not
+running and the founder needs this now; the correction is that you are
+told, and `workbook.py`/`audit.py` are mine until I hand them back.
+
+What is already done and gated (all findings identical, 27 of 27):
+
+- interning every reference string: **6,290 MB -> 1,763 MB**
+- `MAX_RANGE` 200 -> 50, tested against the golden master rather than
+  argued: 150 of every 200 expanded cells were never read by any check.
+  **1,763 -> 1,255 MB, read 252 s -> 121 s**
+- `_offset` precompiled and unrolled — provably identical on 3,266,124
+  real calls, 1.2x
+
+**What the measurements actually say, and it corrects my own brief to
+you.** The tail is not the product's problem:
+
+- median corpus model: **23.9 s, peak 384 MB — it already fits the
+  512 MB production box**, and its audit is 2 s of that
+- 19 of 27 files are under a minute; six giants hold 77% of all time
+- for a normal model **the reader is 91% of the time**, and 84% of the
+  reader is openpyxl parsing the same workbook twice
+
+Three hypotheses died on measurement, and each would have been a week:
+sharing precedent tuples (0.1% recoverable), the empty-cell padding
+(`reset_dimensions` cut cells touched 6,079,186 -> 412,560 and the time
+did not move), and caching tokens by formula text (1.1x reuse — 601,159
+distinct formulas in 638,790 cells).
+
+**The one that is real:** one pass over the sheet XML with lxml yields
+the formula layer and the value layer together in **1.6 s at 119 MB**,
+where openpyxl's two passes take **16.4 s at 356 MB**. Ten times.
+
+# YOUR PIECE (28 Aug) — units become findings
+
+Everything above is history. The founder has split the product into
+pieces and given each lane **one**, to be taken to 100% before anything
+else is started. Yours is above.
+
+**Done means this, and only this:**
+
+> A planted monthly-figure-in-an-annual-row defect is caught and reported in a sentence a banker would repeat, currency and scale checks are armed alongside it, the false-positive price of all three is measured on the clean corpus, and the golden master is regenerated in the same commit.
+
+That sentence is the whole test. It was agreed before the work started
+so that neither of us can move it afterwards. If you believe it is the
+wrong test, say so in your log **before** you begin — not after you
+have a number that misses it.
+
+**Work it the way the speed round was worked.** Read « How to attack a
+hard number » in `lanes.md` — it is new, it is nine points, and it is a
+transcript of what actually took a median model from 23 s to 6.9 s in
+one session. The parts that matter most for you:
+
+- **Measure before you touch anything.** No change ships behind a hunch.
+- **Check whether your instrument lies.** cProfile ranked by call count
+  and named the wrong culprit; a sampling profiler named the right one.
+- **Kill hypotheses in one measurement each.** Three died in an
+  afternoon that would each have cost a week. A dead hypothesis in ten
+  minutes beats a working change in a week.
+- **Find the floor before you build a replacement**, so the build is
+  justified by a number rather than a bet.
+- **Differential-test against what you replace. Zero differences or it
+  does not ship.**
+- **When the test disagrees with you, you are probably wrong** — the
+  lead blamed a dependency, was wrong, and lost an hour proving it.
+- **If you have no oracle for your number, building one is task one**,
+  not a distraction from the work.
+- **Ship the certified step**; do not hold a proven 3.6× hostage to a
+  hoped-for 5×.
+
+**Never take no for an answer, and never fake a yes.** A refusal closes
+with a successor that differs in kind. A number closes with the
+measurement that produced it and `dev/verify` green. If you cannot hit
+the test, say exactly how close you got and what stopped you — that is
+a real result. Silence, or a number without its harness, is not.
+

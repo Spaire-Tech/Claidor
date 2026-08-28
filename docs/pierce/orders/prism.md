@@ -200,3 +200,78 @@ and name the size at which it stops working — an honest limit stated
 in the product beats a check that hangs.
 
 Both of the above are ahead of any C6 work.
+
+## Standing, from the founder (28 Aug): aggressive, and triple-verified
+
+Two instructions, and they are one instruction. **Ship fast and well.**
+
+**`dev/verify` before you report a turn. Every time.** It lints what you
+changed, type-checks tieout, runs the suite under a lock, refuses to
+start beside another suite, and re-runs failures alone. Two runs today
+reported 461 and 741 errors and *neither was real* — one starved beside
+a 9 GB job, the other collided with a second suite. Both were believed
+for a while. Your unaided judgement about a test result is now known to
+be worse than this script's; use the script.
+
+**Also `dev/heavy <cmd>`** for anything large, and **`dev/kill-job
+<pattern>`** instead of `pkill -f`, which matches the killing shell's
+own command line and has ended this team's session three times.
+
+**And read the new `lanes.md` section « Triple-verify, and what it
+actually means » before your next turn.** Its third point is the one
+that matters most and is the least natural: verify the claim hardest
+when it is *good* news. A conversion looked like it had recovered
+13,408 formulas today; it had manufactured 13,346 of them. One printed
+sample killed it. Before you publish a number, look at an example of
+the thing you counted.
+
+Standing corollary: **a claim in our own code is not evidence.** Three
+docstrings in this repository were asserting false things and each had
+cost real work — including that the 818-model project-finance corpus
+was unreachable, when the reader had handled that format all along.
+When a comment tells you something is impossible, test it before you
+route around it.
+
+# YOUR PIECE (28 Aug) — version comparison in usable time
+
+Everything above is history. The founder has split the product into
+pieces and given each lane **one**, to be taken to 100% before anything
+else is started. Yours is above.
+
+**Done means this, and only this:**
+
+> A real published pair — Welsh Water draft against final determination, 12 MB each, today 2 h 06 m — completes in under two minutes with parity against `revision_diff` still EXACT.
+
+That sentence is the whole test. It was agreed before the work started
+so that neither of us can move it afterwards. If you believe it is the
+wrong test, say so in your log **before** you begin — not after you
+have a number that misses it.
+
+**Work it the way the speed round was worked.** Read « How to attack a
+hard number » in `lanes.md` — it is new, it is nine points, and it is a
+transcript of what actually took a median model from 23 s to 6.9 s in
+one session. The parts that matter most for you:
+
+- **Measure before you touch anything.** No change ships behind a hunch.
+- **Check whether your instrument lies.** cProfile ranked by call count
+  and named the wrong culprit; a sampling profiler named the right one.
+- **Kill hypotheses in one measurement each.** Three died in an
+  afternoon that would each have cost a week. A dead hypothesis in ten
+  minutes beats a working change in a week.
+- **Find the floor before you build a replacement**, so the build is
+  justified by a number rather than a bet.
+- **Differential-test against what you replace. Zero differences or it
+  does not ship.**
+- **When the test disagrees with you, you are probably wrong** — the
+  lead blamed a dependency, was wrong, and lost an hour proving it.
+- **If you have no oracle for your number, building one is task one**,
+  not a distraction from the work.
+- **Ship the certified step**; do not hold a proven 3.6× hostage to a
+  hoped-for 5×.
+
+**Never take no for an answer, and never fake a yes.** A refusal closes
+with a successor that differs in kind. A number closes with the
+measurement that produced it and `dev/verify` green. If you cannot hit
+the test, say exactly how close you got and what stopped you — that is
+a real result. Silence, or a number without its harness, is not.
+
