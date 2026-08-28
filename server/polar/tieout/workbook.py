@@ -46,6 +46,7 @@ from openpyxl.worksheet.formula import ArrayFormula
 
 from .binary import converted_copy, unartifact
 from .legacy import read_legacy
+from .sheets import cells_of
 
 #: How many text cells a row must have, outside the label column, before
 #: it is read as the header naming the columns. Two is enough to tell a
@@ -348,6 +349,25 @@ class _Grid:
             self.last_column = column
 
 
+def _grid_from(cells: Any, converted: bool = False) -> _Grid:
+    """A :class:`_Grid` from one pass over the sheet XML.
+
+    The same grid `_grid_of` builds, filled from
+    :func:`polar.tieout.sheets.cells_of` instead of from two openpyxl
+    loads. Proven cell for cell against openpyxl on the whole corpus —
+    formulas, values and number formats alike — before it was wired in.
+    """
+    grid = _Grid()
+    for at, value in cells.written.items():
+        grid.written[at] = unartifact(value) if converted else value
+        grid.formats[at] = cells.formats.get(at)
+        grid._saw(*at)
+    for at, value in cells.values.items():
+        grid.values[at] = value
+        grid._saw(*at)
+    return grid
+
+
 def _grid_of(written_sheet: Any, values_sheet: Any, converted: bool = False) -> _Grid:
     """One sheet from both loads, streamed into a :class:`_Grid`.
 
@@ -409,13 +429,32 @@ def read_workbook(path: str) -> Workbook:
         # until the reading below is done with it.
         path, folder = converted_copy(path)
 
+    fast: dict[str, Any] | None = None
+    #: What has to be closed at the end. One entry when the fast path
+    #: read the cells, two when openpyxl was asked for both layers.
+    close: tuple[Any, ...] | None = None
     if path.lower().endswith((".xls", ".xlt")):
         formulas, values = read_legacy(path)
         close = None
     else:
         formulas = load_workbook(path, data_only=False, read_only=True)
-        values = load_workbook(path, data_only=True, read_only=True)
-        close = (formulas, values)
+        # One pass instead of two. `cells_of` reads the formula layer and
+        # the value layer together straight from the sheet XML; the
+        # openpyxl workbook above stays open for what is cheap there —
+        # sheet order, sheet state, defined names, the style table — and
+        # is never iterated. Anything it cannot read falls back to the
+        # two loads, so a workbook we do not understand is slow rather
+        # than wrong.
+        try:
+            fast = cells_of(path, formulas)
+        except Exception:
+            fast = None
+        if fast is None:
+            values = load_workbook(path, data_only=True, read_only=True)
+            close = (formulas, values)
+        else:
+            values = None
+            close = (formulas,)
 
     try:
         book = Workbook(
@@ -441,7 +480,13 @@ def read_workbook(path: str) -> Workbook:
             # sort of thing only a real model tells you.
             if not hasattr(sheet, "max_row"):
                 continue
-            grids[name] = _grid_of(sheet, values[name], converted)
+            if fast is not None and name in fast:
+                grids[name] = _grid_from(fast[name], converted)
+            else:
+                # Only reachable when the fast path declined, which is
+                # exactly when the second load was made.
+                assert values is not None
+                grids[name] = _grid_of(sheet, values[name], converted)
             book.populated[name] = len(grids[name].written)
         names = _names_of(formulas, grids)
         every_name = list(names.book.items()) + [
