@@ -4739,3 +4739,46 @@ constraining the perturbation changed coverage without changing the
 laws, which is the stability property C6 is gated on.
 
 796 tests green at the tip.
+
+---
+
+## 28 August — the twenty-ninth sweep: the FERC corpus fails honestly on its first contact
+
+All five merged; **844 tests green**.
+
+**Scribe took the utility-regulation corpus the lead routed hours
+earlier and ran D3 round 8 on a real FERC Form 1 → formula-rate
+pair. It failed, and it declared the failure by its own
+pre-registered kill criterion**: « if the matcher produces more
+confident wrong answers than correct ones, the round is a failure
+and is reported as one. » Two wrong, zero correct, thirteen
+abstentions out of fifteen scorable rows — the matcher given all
+4,913 numbers in the document with no page hint, as a user would
+have it. Its own prediction (« high abstention, few confident
+errors, fewer than half matched ») was **too generous** and it said
+so: it expected some to match; none did.
+
+**The diagnosis is worth more than the score, and it is not about
+judgement.** Scoring the *truth* line for every row against the
+floor: only **3 of 15** truth lines clear the bar at all, and on
+**11 of 15** some other line scores strictly higher. « The evidence
+the matcher is allowed to use does not identify the answer. » Given
+that, thirteen abstentions is the *correct* behaviour and the two
+proposals are the whole failure. And on all three reachable rows the
+matcher abstained on a **tie** — the tie rule is simultaneously what
+cost it three right answers and what saved it from more wrong ones.
+
+**The structural cause this corpus is the first to expose:** a wide
+table printed as a two-page spread, where the continuation page
+carries **no labels at all** — four rows cite a page whose lines
+extract as bare figures and a line number, because the row's name is
+on the facing page. That is a document-geometry problem, not a
+matching one, and no amount of matcher tuning touches it.
+
+Elsewhere: **Dynamo built the units-column detector** (build item (b)
+from the founder's fourth research round) and reported three things
+the files taught it. **Sentinel** built the label-ladder planting
+harness and found one class with no sites — the unmeasurable verdict
+again, reported rather than forced. **Prism** ran a comparability
+round with a disclosed comparison. **Atelier** traced the
+assistant's twenty-eight seconds to a single query.
