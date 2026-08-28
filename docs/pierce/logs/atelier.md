@@ -1634,3 +1634,257 @@ twenty-fourth-sweep entry above. `ingest.py` is in no lane's row
 either. **Assign it, or say the word and this lane will do it** — it
 is two files and an afternoon, and today it is the difference between
 a report that is honest and one that is quiet.
+
+## Twenty-third turn — the rebuild gap, closed
+
+Raised in the twenty-fourth sweep, restated last turn, and still in no
+orders file and nowhere in the lead's worklog. `ingest.py` is in no
+lane's row, the same reading I applied to `repository.py` last turn and
+reported plainly, so this lane did it. **Revert if that was wrong** —
+but the product has been quietly under-reporting real models for four
+sweeps and that is the more expensive mistake.
+
+### What was wrong
+
+The product never audits a file. `_workbook_of` rebuilds a `Workbook`
+from stored rows, and every field the reader fills at *open* time was
+empty by the time a rule read it. `hidden_sheets` was the one somebody
+noticed, and it was fixed alone — the comment above it («  the cells
+cannot say what the workbook hides ») is exactly right and was never
+generalised.
+
+### What each fact is worth, measured one at a time
+
+Same file, audited whole and audited as the product would, with facts
+restored in groups (`logs/atelier/restore_gap.py`, nine readable corpus
+models):
+
+| restoring | still missing | invented |
+|---|---|---|
+| nothing (today) | `broken-name` ×12, `error-value` ×28, `hidden-sheet/error` ×1 | `hidden-sheet/smell` ×1 |
+| the six cheap facts | **nothing** | **nothing** |
+| those + `row_words` | nothing | nothing |
+
+**The gap closes exactly.** Not « mostly » — the rebuilt workbook
+becomes the file's workbook as far as `audit()` can tell, on all nine.
+
+`row_words` buys nothing measurable *on this corpus*, and it is the
+expensive one (50–400 KB against 0.7–18 KB for the other six). It is
+kept anyway, and the reason is stated rather than assumed: it is the
+audit's **suppression** input — the fact that lets a rule honour a
+number a sheet's own words already state — so a model where it matters
+produces *false positives* without it, and the corpus simply does not
+happen to contain one. The cost is real and small: Kelso's cells
+already occupy **99 MB** in this database and its `row_words` is 254 KB,
+which is 0.26%. Storing half a truth is what created this bug.
+
+### The fix
+
+`ingest.py` keeps them under `counts["workbook"]` (it already holds the
+whole `Workbook` when it writes `counts`), and `service._restore_file_facts`
+puts them back before the audit runs — one function, so the next fact
+has one obvious home instead of another lonely two-liner.
+
+Two details worth keeping: `errors` was already taken in `counts` for
+the audit's error *count*, so the workbook's error cells are
+`error_cells`; and JSON has no integer keys, so `row_words`' row
+numbers go out as strings and are turned back on the way in, which a
+test holds.
+
+**No migration.** A model ingested before the key existed has no facts
+to put back and audits exactly as it did — the restore reads a missing
+key as an absence, not as a zero. Uploading it again is what teaches
+it. That is a test too.
+
+### The face
+
+Levenmouth, re-read through the fixed intake into its own deal so the
+before and after sit side by side. The audit found **the same seven
+findings the engine finds on the file** — `error-value` ×2 error, ×3
+smell, `broken-name` ×2 — where it had found nothing at all.
+
+The report was the thing that lied. It used to open:
+
+> **Nothing failing — but little could be checked.** … The checks that
+> read values — the statements, the model's own check rows — found
+> nothing failing.
+
+It now opens:
+
+> **Not ready to send. Seven findings, two of them material.** This copy
+> carries values only — 224 of 432,596 cells hold a formula — so the
+> rules that read how the model is built saw almost none of it. **What
+> the value-reading checks did find: two error values.**
+
+The values-only qualification survives, and is now telling the truth
+instead of covering for a blind spot. Section 3 names them:
+`Repayment schedules!D79` — « #N/A at D79:D126 inside an otherwise live
+column — values resume at D127 » — the forty-eight dead cells of a live
+repayment column that this lane first found four sweeps ago, finally on
+the page a partner reads. Shots: `logs/atelier/whole-read-verdict.png`,
+`logs/atelier/whole-read-findings.png`.
+
+### Tests
+
+Four, and I proved they bite by stubbing the restore out and watching
+three go red: broken defined names reach a finding on the repo's own
+judged model (it carries fifty); cached error values reach a finding;
+the stored facts round-trip through JSON including the integer row
+keys; and a model stored before the fix still audits, poorer and
+without raising. Full tieout suite **981 passed, 4 skipped** — no
+existing test's finding counts moved, which is its own small comfort.
+
+## Twenty-fourth turn — the Versions view costs two and a half minutes,
+## and the obvious fix is wrong
+
+Looking for the next hole in the fresh inventory, the twenty-ninth
+sweep's new `watch/profile.py` stood out: it is the missing half of the
+Versions panel I built — the panel prints « 1 defect this revision
+introduced » with no denominator, and `profile_of` is exactly the
+denominator, per model and size-matched, refusing below three priors in
+words. So I went to cost it, because a profile needs the model's *prior*
+transitions.
+
+**Costing it found a bigger hole than the one I was closing.** One Watch
+transition, timed:
+
+| model | cells | one transition |
+|---|---|---|
+| cascade fixture | 313 | 0.1 s |
+| example_preapp | 4,798 | 3.1 s |
+| levenmouth | 432,596 | **158 s** |
+
+The Versions tab computes exactly this, in the request, every time it is
+opened. **On a real model the screen I shipped sits at « comparing… »
+for two and a half minutes.** It works on fixtures. It does not work on
+the corpus, and no test could have told me — the fixture is 313 cells.
+
+### The obvious fix, tested and rejected
+
+The product holds both versions' cells, and since this morning's
+rebuild-gap fix the rebuilt workbook carries the file's own facts too.
+So: compute the delta from stored cells instead of re-reading the files.
+
+Measured on **the real thing** rather than a simulation — every adjacent
+version pair in the demo database, `delta_between` (files) against
+`delta_of` over `cells_for_graph` + `_restore_file_facts`
+(`logs/atelier/delta_stored.py`):
+
+| pair | same report |
+|---|---|
+| Cascade Demo v1→v2 | yes |
+| Cascade Watch v1→v2, v2→v3 | yes |
+| unchanged re-upload v1→v2, v2→v3 | yes |
+| **unchanged re-upload v3→v4** | **no** |
+
+Five of six agree. The sixth differs by `unmatched_new`: **1 from the
+files, 0 from the cells.** That is precisely what the Watch's own
+docstring warns about — « a cell the ingest labeller skipped is still a
+cell the Watch reports ». A finding on a cell ingest never stored cannot
+exist in a report built from stored cells, so the product would have
+quietly under-counted, and the count it would have dropped is the one
+the Watch keeps *apart* because it cannot be matched by name. Under-
+counting there is the exact failure this lane spent the morning fixing
+in the other direction.
+
+**And it would not have been fast anyway.** Timed on levenmouth, the
+comparison from stored cells is 128 s against 158 s — the file read is
+not the dominant cost, the alignment over 432,596 cells is. A 19%
+saving for a wrong answer.
+
+So the substitution is dead on both counts, and I have not made it.
+
+### What is true, and where it goes
+
+The Versions delta cannot be made affordable in this lane's row. The
+work is in the Watch's comparison itself (Prism's), or the computation
+has to stop happening inside a request — there is no `tasks.py` in
+`polar/tieout/` and no background path for any check, so making one is
+an architectural decision and the lead's, not a defect fix.
+
+**Persisting it is the other half of the answer and needs the same
+decision.** The delta between two versions is a pure function of two
+immutable artifacts, so it is computed identically every time it is
+viewed. Keeping it would make every view after the first instant *and*
+hand `profile_of` its priors for free — the profile is unreachable
+without it, because building priors on demand means N−1 transitions at
+158 s each. The obstacle is that the only place it is computed today is
+a `GET` on a read session; the product's established pattern for
+expensive-then-kept is a deliberate `POST` (the recalculation mark), and
+which of those this should be is a product call.
+
+### What shipped
+
+The screen now says what it is doing, in the model's own numbers:
+below 50,000 cells nothing changes, and above it the line reads
+« This model has 432,596 cells, and a comparison that size takes a few
+minutes. It is computed fresh every time — nothing here is a saved
+answer. » A screen that says « comparing… » for two and a half minutes
+and nothing else has stopped being honest and started looking broken.
+
+That is a small change on the back of a large measurement, and it is
+deliberately all I changed: the fix I could have shipped was wrong, and
+shipping it would have cost a finding class rather than saved time.
+
+## Twenty-fifth turn — a states sweep on the corpus, now that the
+## corpus produces findings
+
+The last states sweep ran on seeded fixtures. Since then the intake
+fix made real models produce real findings, so the screens can be
+swept against them for the first time. Kelso re-read through the fixed
+intake (96 s), then driven tab by tab.
+
+**The product works end to end on a 470,594-cell model.** The deals
+list, Overview, Findings, Versions and the report all render, and the
+new intake facts are visibly doing their job: Kelso's Findings tab now
+carries « 338 defined names point into other workbooks that are not
+here (IRRSHARINGREQ, ModStartDate … and 332 more) — IRRSHARINGREQ reads
+`[1]Checks!$H$110` », filed under **Auditability risks**, which is the
+family this lane mapped three turns ago. That mapping is doing real
+work on a real model.
+
+Three defects found, all on the page a partner reads.
+
+**1. A finding about the workbook had nowhere to be.** `broken-name`
+carries no sheet and no ref — by its nature: it is about the file's
+defined names, not a cell — and every screen drew an **empty grey
+pill** beside it. A reader sees a rendering fault where the truth is
+« the whole workbook ». The engine already names what such a finding
+is about, so the endpoint now falls back to that: the pill reads
+**« defined names »**. Fixed server-side rather than in one screen, so
+the report and the panel get it too. One route test, which asserts
+both halves — no ref, and not blank.
+
+**2. The report printed `432596`.** On the same page as a sentence
+reading « 224 of **432,596** cells hold a formula » — the same number
+twice, one of them unreadable. The « Cells read » fact row now groups
+its thousands like everything else a person reads on a printed page.
+Verified by printing the PDF and reading it back: « Cells read
+432,596 · 224 of them formulas ».
+
+**3. The print path had never carried material findings.** Every
+earlier PDF check ran on a report with none. Printed Levenmouth's, now
+that it has two: **4 pages, the product's own fonts embedded**
+(JetBrainsMono, Newsreader, InstrumentSans), section footers right, and
+section 3 carrying both citations in full — « Repayment
+schedules!D79 · #N/A at D79:D126 inside an otherwise live column —
+values resume at D127 ». No defect; the check had simply never been
+run on this state, and now it has.
+
+**And the honest wait line reads correctly on the real thing**:
+« Reading both versions and comparing… This model has 470,594 cells,
+and a comparison that size takes a few minutes. It is computed fresh
+every time — nothing here is a saved answer. »
+(`logs/atelier/corpus-versions-wait.png`.)
+
+### One number moved, and it was not this lane
+
+Kelso's `model-own-check` findings went from **7 to 3** between its
+first audit and the re-read. That is Sentinel's own-check period
+restriction, not the intake fix: the old run finished at **18:37** on
+27 Aug and the restriction landed at **18:39**. Checked rather than
+assumed, because « the product suddenly reports fewer errors » is
+exactly the change that should never be waved through.
+
+Suite **1012 passed, 4 skipped**; ruff, mypy, tsc, eslint and prettier
+clean.

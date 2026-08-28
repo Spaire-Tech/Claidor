@@ -220,6 +220,42 @@ sitting there unlisted the whole time. Still unsurfaced after this
 turn: the Watch's `classify` / `build_ladder` / `align_lines` /
 `Tier2Answer`, and `recalc.iterative_cells`.
 
+**Sweep the screens against the corpus, not the fixtures.** Since the
+intake fix real models produce real findings, so the states sweep can
+finally run on them. Doing it found three things on the partner's page:
+a `broken-name` finding drew an **empty pill** (no sheet, no ref, by
+its nature — the endpoint now falls back to the engine's own word for
+what it is about, « defined names »); the report printed `432596`
+beside a sentence saying `432,596`; and the print path had never once
+carried material findings — it does now, 4 pages with the product's
+fonts embedded and both citations intact.
+
+Kelso's `model-own-check` count moved 7→3 between audits. That was
+Sentinel's own-check period restriction (old run 18:37, restriction
+18:39), **not** the intake fix — check before assuming when the
+product starts reporting fewer errors.
+
+**The Versions delta costs 158 s on a real model** (432,596 cells;
+3.1 s at 4,798; 0.1 s on the 313-cell fixture) and is computed in the
+request every time the tab opens. The screen is honest about it now,
+in the model's own numbers, but it is not fixed. **Do not "fix" it by
+computing the delta from stored cells** — measured on every adjacent
+pair in the demo database, five of six reports match and the sixth
+loses an `unmatched_new`, which is exactly the case the Watch keeps
+apart because it cannot be matched by name (a cell ingest never
+stored). It is also only 19% faster: the alignment dominates, not the
+file read. `logs/atelier/delta_stored.py` re-runs that check.
+
+The real answers are the Watch's own comparison (Prism's) or moving
+the computation out of the request — there is no `tasks.py` in
+`polar/tieout/` and no background path for any check, so that is an
+architectural call. **Persisting the delta is the other half**: it is a
+pure function of two immutable artifacts, so keeping it makes every
+later view instant *and* is the only way `watch/profile.py` becomes
+reachable (its priors are N−1 transitions at 158 s each). That module
+— the per-model, size-matched denominator for the panel's counts — is
+built, honest, and has no product surface.
+
 **Read cells with `cells_for_graph`, not `cells_of`, wherever a
 caller only rebuilds the workbook.** Same 470,594 rows: **16.0 s as
 entities, 4.0 s as columns** (medians of three, alternating). All of
@@ -246,24 +282,26 @@ floor fails a 4,798-cell model on two cells of 3e-07 balance dust;
 in neither rule catalogue, so no firm can see or switch them off;
 and the big one below.
 
-**The product audits a poorer workbook than the engine does.** It
-never audits a file — it rebuilds a `Workbook` from stored cells
-(`service._workbook_of`, cells + sheets and nothing else), and
-`_audit_cells` puts `hidden_sheets` back by hand from a fact ingest
-kept. Every other field the reader fills at open time is empty by the
-time a rule reads it: `errors`, `unparseable`, `broken_names`,
-`foreign_names`, `iterative`, `populated`, `row_words`. Measured over
-the nine readable corpus models: **41 of 116 findings lost**
-(`error-value` ×28, thirteen at error severity; `broken-name` ×12;
-one `hidden-sheet` downgraded error→smell), and **four models go to
-zero**. Levenmouth's report says « Nothing failing » over a file
-carrying `#N/A` across forty-eight cells of a live repayment column.
-The golden-master gate cannot see it: it certifies `audit()` against
-files, and the product never audits a file. The patch is one dict
-literal in `ingest.py` (log has it verbatim); `ingest.py` is in no
-lane's row, so the lead assigns it. **Do not weaken the report's
-prose to match** — that would hide a defect that is going to be
-fixed.
+**The product audits the same workbook the engine does — keep it that
+way.** It never audits a *file*: `_workbook_of` rebuilds one from
+stored rows, so every fact the reader fills at open time has to be
+carried on the artifact and put back. `ingest.py` keeps them under
+`counts["workbook"]`; `service._restore_file_facts` restores them.
+**Any new `Workbook` field the audit reads needs a line in both** —
+`hidden_sheets` was fixed alone once and the six siblings it left
+behind cost 41 of 116 findings across the corpus and took four models
+to « nothing failing ». Restoring them closes that gap *exactly*
+(nothing missing, nothing invented, all nine models —
+`logs/atelier/restore_gap.py` measures it).
+
+`row_words` is kept although it buys nothing on this corpus: it is the
+audit's **suppression** input, so a model where it matters gets false
+positives without it. 254 KB against the 99 MB Kelso's cells already
+occupy. Two traps: `errors` in `counts` is the audit's error *count*,
+so the workbook's error cells are `error_cells`; and JSON has no
+integer keys, so `row_words`' rows go out as strings and come back as
+ints. **No migration** — a model ingested before the key reads as it
+did, and re-uploading is what teaches it.
 
 **Check the category map against what the engine *emits*, never
 against the catalogues.** A rule missing from `RULE_NAMES` /

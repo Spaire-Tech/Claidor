@@ -419,11 +419,7 @@ class TieOutService:
         tallies: dict[str, dict[str, int]] = {}
 
         book = _workbook_of(cells)
-        #: The cells cannot say what the workbook hides — that fact
-        #: was kept on the artifact at ingest, and the audit needs
-        #: it back before it runs.
-        book.hidden_sheets = tuple(model.counts.get("hidden_sheets", []))
-        book.very_hidden_sheets = tuple(model.counts.get("very_hidden_sheets", []))
+        _restore_file_facts(book, model.counts)
         structure = read_structure(book)
         result = run_rules(book, axes=structure.axes)
         result.findings = [one for one in result.findings if one.rule not in rules_off]
@@ -2092,6 +2088,60 @@ def delta_between(old_side: Artifact, new_side: Artifact) -> Any:
         for path in (old_path, new_path):
             if path:
                 Path(path).unlink(missing_ok=True)
+
+
+def _restore_file_facts(book: Workbook, counts: dict[str, Any]) -> None:
+    """Put back what the reader took off the file and the cells cannot say.
+
+    **The product never audits a file.** It audits a `Workbook` rebuilt
+    from stored rows, and a rule that reads anything the reader filled
+    at *open* time — the error values Excel cached, the defined names
+    pointing at `#REF!`, whether iterative calculation is declared —
+    reads an empty field and finds nothing. It found nothing quietly:
+    over the nine readable corpus models the rebuilt workbook lost 41
+    of the 116 findings the same files produce, and took four of them
+    to « nothing failing ». One of those four prints `#N/A` across
+    forty-eight cells of a live repayment column.
+
+    `hidden_sheets` was the first of these anybody noticed and was
+    fixed alone. This is the rest of the family, kept on the artifact
+    by `ingest.py` under `counts["workbook"]`.
+
+    **A model ingested before that key existed simply has no facts to
+    put back**, and reads exactly as it did before — no migration, and
+    no pretending an old artifact knows something it does not. Uploading
+    it again is what teaches it.
+
+    `row_words` is here for the opposite reason to the others: the
+    audit reads it to *honour* numbers a sheet's own words already
+    state, so without it the product reports findings the engine
+    suppresses.
+    """
+    #: Kept flat since the first version, and never restored until now.
+    book.hidden_sheets = tuple(counts.get("hidden_sheets", []))
+    book.very_hidden_sheets = tuple(counts.get("very_hidden_sheets", []))
+    book.iterative = bool(counts.get("iterative", False))
+
+    facts = counts.get("workbook") or {}
+    if not isinstance(facts, dict):
+        return
+    book.broken_names = list(facts.get("broken_names") or [])
+    book.foreign_names = [
+        (str(pair[0]), str(pair[1]))
+        for pair in (facts.get("foreign_names") or [])
+        if len(pair) == 2
+    ]
+    book.errors = dict(facts.get("error_cells") or {})
+    book.unparseable = list(facts.get("unparseable") or [])
+    book.populated = {
+        str(sheet): int(count)
+        for sheet, count in (facts.get("populated") or {}).items()
+    }
+    #: JSON gave the row numbers back as strings.
+    book.row_words = {
+        str(sheet): {int(row): text for row, text in rows.items()}
+        for sheet, rows in (facts.get("row_words") or {}).items()
+    }
 
 
 def _workbook_of(cells: Sequence[Any]) -> Workbook:

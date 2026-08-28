@@ -345,7 +345,19 @@ def _finding(
             filename=filenames.get(finding.artifact_id)
             if finding.artifact_id
             else None,
-            label=f"slide {finding.page}" if finding.page else finding.location,
+            #: Where this is, in the shortest true words. A finding
+            #: about the *workbook* rather than a cell — the defined
+            #: names pointing into other files, say — carries no
+            #: location at all, and the screens drew an empty pill
+            #: beside a real finding on a real model. It is not
+            #: nowhere: the engine names what it is about, and saying
+            #: « defined names » is both shorter and truer than a
+            #: blank.
+            label=(
+                f"slide {finding.page}"
+                if finding.page
+                else finding.location or str(evidence.get("name") or "")
+            ),
             detail=finding.location,
             anchor=finding.anchor or {},
         ),
