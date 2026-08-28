@@ -271,3 +271,15 @@ say so plainly if that is where the measurement lands.
 mixed-axis file in all 91** we hold. The monthly-then-semi-annual axis
 `swens.md` §3a describes is untested, and stays untested until such a
 file exists or we build one.
+
+## Reset (28 Aug): everything into the engine
+
+Founder's call: the document chain is stopped, all effort to the
+engine. Yours does not change, it sharpens. **Finish the period key
+and hand Sentinel something it can arm.** That is one job, not a
+research programme, and the re-timing test in the section above
+answers the capability question with files we already hold. B5, B6 and
+the arbiter all stay behind it.
+
+If a turn ends without period being answerable, the next turn is
+period again. Do not write to me about the difficulty; keep going.

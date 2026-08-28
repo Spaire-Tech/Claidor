@@ -209,3 +209,29 @@ true, because it is not.
    and proven, blocked on contract *bytes*. It is the strongest
    external key we have found (73 rows written by the deal's own
    bankers) and it runs unchanged the day the bytes arrive.
+
+## STOP (28 Aug): the document chain ends here. You move to the engine.
+
+Founder's decision, and it is the right one. Track D has had eight
+rounds and one partial success (5 of 6 links at 83% precision, once).
+Everything goes into the engine now. **Do not spend another turn on
+document matching, page selection, or FERC.** What exists stays in the
+tree and stays honest; it is not deleted and not sold.
+
+**Your new lane: the engine's speed, and you own it end to end.**
+The check pipeline is the product's throat. Task A1 has been open for
+days — 600k cells under a minute, checks in seconds — and it is now
+yours, alone, with no measurement round in front of it.
+
+Method, and it is not negotiable this round: **profile first, fix the
+top item, re-measure, repeat until the number is met or you can prove
+it cannot be.** No design essays. No « three approaches I did not
+try ». If a turn ends without the number moving, the next turn is the
+same task — do not write to me about it, keep going.
+
+Start where the evidence already points: Atelier profiled the version
+comparison and found 87% of its cost in two sheets of twenty-four, and
+the lead measured a real 12 MB pair at 2 h 06 m against 158 s for a
+4.3 MB one. Whatever is quadratic there is probably quadratic in the
+audit too. Prism owns the Watch's own alignment; you own everything
+underneath it — the reader, the audit, the check loop.

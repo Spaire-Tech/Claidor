@@ -295,3 +295,19 @@ own; the count is a question of where the scope line is drawn, and
 **no published tool states its line.** From now on this lane reports
 « recall X **against scope Y** », the way it already reports
 coverage. That is a strength to state, not a caveat to bury.
+
+## Reset (28 Aug): everything into the engine, aggressively
+
+Founder's call: the document chain is stopped and all effort goes to
+the engine. Yours, in order, and each one is finished before it is
+reported:
+
+1. **Arm `period`** the moment Dynamo's key lands. « A monthly figure
+   in an annual line » is the most quotable check in the product and
+   it is the last one missing from the units family.
+2. **The Ofwat-84 replay** — somebody else's defect list, replayed
+   cold. It is the only recall number we can honestly publish.
+3. Then A3's five mined candidates through the loop.
+
+Standing: the golden master regenerates in the same commit as any
+findings change, and any new rule key routes to Atelier first.

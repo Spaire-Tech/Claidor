@@ -175,3 +175,12 @@ and the lead owns it, not you. Not this sweep.
 
 Your priority is unchanged: the two rule keys in `files.ts`, which are
 still holding a Sentinel merge at the tip.
+
+## Reset (28 Aug): the engine is the product now
+
+Founder's call: all effort into the engine. For you that does **not**
+mean stop — it means the only surfaces that matter are the ones that
+carry engine output to a reader. In order: the two rule keys in
+`files.ts` (still holding a Sentinel merge), then **G4, the report
+face**, which is the artifact a partner actually receives. No new
+screens, no polish, no demo work.
