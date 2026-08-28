@@ -54,6 +54,10 @@ class Transition:
     new: str
     changed_cells: int
     counts: dict[str, int] = field(default_factory=dict)
+    #: The step the model itself declared across this transition —
+    #: `none`, `patch`, `minor`, `major`, `family`, `undeclared`. An
+    #: input to the update, which is why it can group without a band.
+    declaration: str = ""
 
 
 @dataclass(frozen=True)
@@ -125,6 +129,35 @@ def profile_of(priors: list[Transition], size: int) -> Profile:
         qualified=qualified,
         ratios=(spans[0], spans[-1]),
     )
+
+
+def profile_by_declaration(priors: list[Transition], declared: str) -> Profile:
+    """The medians from the priors the model itself calls the same
+    kind of update.
+
+    Grouping is **exact**: a `patch` is compared with patches, a
+    `family` step with family steps. There is no band, because there
+    is no scale — the author declared a category, not a magnitude,
+    and that is the whole reason this axis exists. Size and cadence
+    both needed a tolerance and both broke on it.
+
+    `priors` must carry their own declared step in `declaration`.
+    A transition whose step is `undeclared` gets no profile: « this
+    model did not declare a version then » is a statement about the
+    model and a good answer.
+    """
+    if declared in ("", "undeclared"):
+        return Profile({}, 0, (0, 0), history=len(priors))
+    peers = [item for item in priors if item.declaration == declared]
+    if len(peers) < MINIMUM_PRIORS:
+        return Profile({}, 0, (0, 0), history=len(priors))
+    kinds = {kind for item in peers for kind in item.counts}
+    medians = {
+        kind: float(median([item.counts.get(kind, 0) for item in peers]))
+        for kind in kinds
+    }
+    sizes = [item.changed_cells for item in peers]
+    return Profile(medians, len(peers), (min(sizes), max(sizes)), history=len(priors))
 
 
 def describe(kind: str, count: int, profile: Profile) -> str:

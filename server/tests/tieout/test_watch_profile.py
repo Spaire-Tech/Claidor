@@ -139,3 +139,57 @@ class TestAQualifiedProfileNeverFlags:
         profile = profile_of(QUARTERLY + ROUTINE, 95)
         assert not profile.qualified
         assert unusual("class_change", 83, profile)
+
+
+class TestGroupingByWhatTheModelDeclared:
+    """The third comparability axis, and the first that is an *input*.
+
+    Size degenerates at one cell; cadence puts a zero-cell commit and
+    a 553-cell one in the same group. A declared step is a category
+    the author chose before the diff existed, so it groups by exact
+    match and needs no tolerance at all.
+    """
+
+    def declared(self, step: str, size: int, **counts: int) -> Transition:
+        return Transition("a", "b", size, counts, declaration=step)
+
+    def chain(self) -> list[Transition]:
+        return [
+            self.declared("family", 5000, methodology_change=90),
+            self.declared("family", 5600, methodology_change=95),
+            self.declared("family", 4800, methodology_change=88),
+            self.declared("none", 600, moved_assumption=2),
+            self.declared("none", 550, moved_assumption=2),
+            self.declared("none", 700, moved_assumption=3),
+        ]
+
+    def test_a_family_step_is_compared_with_family_steps(self) -> None:
+        from polar.tieout.watch.profile import profile_by_declaration
+
+        profile = profile_by_declaration(self.chain(), "family")
+        assert profile.usable
+        assert profile.priors == 3
+        assert profile.medians["methodology_change"] == 90
+
+    def test_a_quiet_step_is_not_flagged_by_a_noisy_neighbour(self) -> None:
+        """The failure that killed cadence: two moved assumptions in a
+        routine update, sitting next to a version step, read as
+        unusual. Grouped by declaration it cannot happen."""
+        from polar.tieout.watch.profile import profile_by_declaration
+
+        profile = profile_by_declaration(self.chain(), "none")
+        assert not unusual("moved_assumption", 2, profile)
+        assert not unusual("methodology_change", 0, profile)
+
+    def test_an_undeclared_step_gets_no_profile_and_says_so(self) -> None:
+        from polar.tieout.watch.profile import profile_by_declaration
+
+        profile = profile_by_declaration(self.chain(), "undeclared")
+        assert not profile.usable
+        assert "no profile for this model" in describe("filled_cell", 3, profile)
+
+    def test_too_few_peers_of_that_kind_is_also_a_refusal(self) -> None:
+        from polar.tieout.watch.profile import profile_by_declaration
+
+        chain = [*self.chain(), self.declared("patch", 3, relabelled_line=1)]
+        assert not profile_by_declaration(chain, "patch").usable
