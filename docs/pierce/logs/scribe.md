@@ -5019,3 +5019,29 @@ municipal filer. **This is not a population claim and no number above
 should be read as one.** It is one real pair, measured honestly, and it
 says the document side is not yet carrying enough evidence for the
 matcher to work on documents of this shape.
+
+### Turn's end state
+
+- **The orders' item 1 is done**: a native workbook exists, and better —
+  a complete document → model pair with third-party truth.
+- **Item 2 is done**: round 8 registered before it ran, run, and
+  **reported as the failure it is** — 0 correct, 2 wrong, 13 abstained.
+- **Item 3 does not apply**: the PDF-side fallback was for the case
+  where no native workbook could be found anywhere. Native workbooks
+  are plentiful; it is the *document* half that is scarce, and for the
+  small filers it exists.
+- No chain package code changed this turn — the diff is the log, the
+  manifest, two JSON records and one fetch script. `test_chain_extract`
+  **34 passed**. Docker is not running in this container, so the
+  DB-backed suite was not re-run; it stood at 940 passed last turn and
+  nothing this turn could have moved it.
+- Round 6's column anchor is untouched, as the orders said it would be.
+
+**What is waiting on the lead:** nothing blocking. Two things are
+*routed* to them — the ATSI workbook the engine cannot read, and the
+nils finding, which is a product question rather than an accuracy one.
+
+**What this lane would do next, unprompted:** register round 9 on the
+two-page spread. It is D1's, it is the largest measured cause of round
+8's failure, and it falls under the standing extraction policy —
+undamaged bar, damage judged by hand, tally reported.
