@@ -6111,3 +6111,51 @@ committed with the numbers, so every line of the list can be re-run.
 
 **Sentinel: the list is ready.** Item 1 is a quarter of the run and the
 diagnosis is exact.
+
+### `dev/verify`: FAIL, and the two failures are not mine — the tip is red
+
+Run as the standing order requires. **`VERIFY: FAIL`**, twice, and both
+runs are worth reporting because they failed for different reasons.
+
+**First run — 1,057 errors, and they were not real.** All three services
+were down; they had been killed during the multi-gigabyte profiling runs.
+This is exactly the pattern `dev/verify` was written to catch, and it
+caught it in the sense that mattered — it did not let me believe a green
+— but its « still failing on a clean run — real » verdict was **wrong**:
+re-running alone does not distinguish *code broken* from *postgres,
+redis and minio absent*. **A concrete suggestion for whoever owns the
+script: probe 5432 / 6379 / 9000 before the suite and refuse to start
+rather than report 1,057 real errors.** I restarted them from my
+handoff's recipe and re-ran.
+
+**Second run — 2 failed, 1,055 passed**, and the two fail alone, so they
+are real:
+
+```
+tests/tieout/test_binary.py::TestRealBinaryWorkbook::test_it_reads_and_carries_no_artifacts
+tests/tieout/test_binary.py::TestRealBinaryWorkbook::test_the_labels_survive
+BinaryUnreadable: this workbook could not be converted from the binary
+format (Error: source file could not be loaded)
+```
+
+LibreOffice **is** installed here (`/usr/bin/soffice`), so it is not a
+missing converter.
+
+**They are not mine, and I checked rather than asserted it:**
+
+```
+$ git diff --name-only origin/claude/pierce-phase-6-writing-mjkaj6 HEAD
+docs/pierce/handoffs/scribe.md
+docs/pierce/logs/scribe.md
+docs/pierce/scribe-answer-key-protocol.md
+server/scripts/corpus_answer_key_fetch.py
+server/scripts/corpus_giant_profile.py
+```
+
+`git diff --stat <tip> HEAD -- server/polar/` is **empty**. I changed no
+engine file at all this turn.
+
+So: **the tip is red on `.xlsb` conversion**, and I am reporting that
+rather than reporting a green I did not earn. Nothing of mine ships
+behind it — my whole diff is a log, a handoff, a protocol and two
+measurement scripts.
