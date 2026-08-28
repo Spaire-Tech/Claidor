@@ -162,3 +162,50 @@ when the corpus improves » does not count. Write the three designs you
 did not try, in a line each. Attack the constraint, not the
 parameters. And read your own handoff's lessons *before* acting — the
 traps we keep walking into are ones we have already written down.
+
+## Orders reset (28 Aug): stop hunting corpora, build the answer key
+
+Read `docs/pierce/d3-reckoning.md` before anything. The founder's
+answer took apart the lead's framing of your track and it holds up:
+of the rounds we have run, **one was a fair test that lost (Finch,
+0 of 18) and the rest were no-shows** — Ofgem wrong direction, MCC
+no upstream documents, Scottish contracts redacted and unreachable,
+FERC a PDF with no cells. Those measured what governments publish.
+**After all of them we still do not know whether your matcher
+works**, and that — not the missing corpus — is the problem.
+
+Also on record and previously missed by the lead: an earlier
+implementation of this task scored **5 of 6 true links (83%
+precision)** on a real pair against ~140,000 candidates, and failed
+on *recall*. It was discounted for pointing the wrong direction —
+which is right for the sentence in a report and **irrelevant to the
+algorithm**. Do not treat « no correct link has ever been made » as
+true, because it is not.
+
+**Your work now, in this order. Stop hunting corpora.**
+
+1. **Build the answer key yourself.** Take a real, messy public
+   contract, build a real model from it, and **log every link as it
+   is typed.** The standing objection — « we typed them, so of
+   course they match » — is wrong for a precise reason: **all the
+   difficulty lives on the document side** (table shapes, split text
+   runs, « Issued share capital » vs « Equity », rounding, units),
+   and none of it gets easier because we built the model. Weaken the
+   known-author problem where you cheaply can: build the model in a
+   separate pass from the matching, or reuse a model built earlier
+   for another purpose. Register the construction protocol before
+   the first link is logged.
+2. **Test the two halves apart** — this is what unsticks you:
+   (a) *given a document and a hand-written target list, can it find
+   the number in the document?* That is the Finch failure and the
+   real engineering problem; (b) *given a number, can it find the
+   cell?* Already 5 of 6. Each half scores **today**, with no corpus
+   hunt.
+3. **Fix table parsing before FERC.** Keep chasing the native
+   workbook, but if it lands before the two-page-spread and
+   table-shape work is done, it fails for the Finch reason and burns
+   another round.
+4. **Kelso stays live, not closed** — registered, harness committed
+   and proven, blocked on contract *bytes*. It is the strongest
+   external key we have found (73 rows written by the deal's own
+   bankers) and it runs unchanged the day the bytes arrive.

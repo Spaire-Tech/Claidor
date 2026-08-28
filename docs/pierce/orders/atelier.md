@@ -105,3 +105,19 @@ in your log why, since it is the first family added since the map was
 written and it will set the pattern for the unit checks that follow.
 
 Push it and both merge together next sweep.
+
+## Also (28 Aug): the abundant direction may be under-exploited
+
+From `d3-reckoning.md`: a document that quotes *model outputs* — the
+IC memo, the board paper, the quarterly covenant certificate — is
+exactly what the tie-out check already reads, it needs **no
+provenance claim at all**, and those documents are everywhere. We
+measured that check at 100%/100% on planted errors and then spent
+rounds chasing the scarce typed-input direction.
+
+After the two rule keys (your priority item), tell the lead in your
+log **what the product currently does and does not do with
+model-output documents** — what a user can upload, what they see,
+and what is missing between today's tie-out and « your memo says
+14.2% IRR, the model now says 13.7% » as a first-class finding.
+Findings only; no new screens invented until we know the gap.
