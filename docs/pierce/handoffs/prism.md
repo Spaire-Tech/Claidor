@@ -77,8 +77,20 @@ a report.
    tier; the registration forbids importing z3 before that line
    exists. Re-raise it every turn until it lands, and do not
    silently start.
-1. **The profile is done for now, and one of its features is
-   deliberately dead.** A profile built from priors outside the
+1. **The profile is NOT ready to ship, and the measurement that
+   says so is out-of-sample.** On `hickeng/financial`'s fifteen
+   transitions it refuses on **ten** and is silent on the one
+   transition the author labelled a defect. Cause, measured: a
+   *multiplicative* comparability band degenerates at small sizes —
+   « within a factor of two » of a 1-cell transition means « 0.5 to
+   2 cells ». ED2's refusals were the rule, not thin history.
+   **Registered successor, deliberately not built**: compare by rank
+   within the chain, no multiplicative constant. It cannot be
+   validated on either chain this lane has now seen — it needs a
+   third, and the founder's 70-transition equity model is the one.
+   The sentence the module produces is sound; the verdict is off and
+   stays off.
+2. **The older note, still true:** A profile built from priors outside the
    comparable band answers *and discloses the size ratio in the
    line*; it never refuses when the model has history. But it also
    **never flags**: measured on the chain, the two quietest
@@ -87,11 +99,11 @@ a report.
    updates. The sentence stays, the boolean is off. **Do not
    re-enable `unusual()` for qualified profiles** without a second
    chain to test it on.
-   **There is no held-out chain in this corpus** — `ofgem_riio3` is
-   draft-versus-final of four *different* models and `caa_h7` is two
-   unrelated pairs. Every profile number we have is in-sample on
-   ED2; the founder's equity model with seventy transitions is where
-   this belongs.
+   **Not in this corpus** — `ofgem_riio3` is draft-versus-final of
+   four *different* models and `caa_h7` is two unrelated pairs. The
+   second chain came from the answer key: `hickeng/financial` keeps
+   sixteen versions of one workbook, fifteen transitions, cloned to
+   the scratchpad and never committed.
 2. **Enron E08/E09** — a genuine version pair (45,274 identical
    formulas, 920 differing) arriving behind Sentinel's A6. The
    orders say **do not wait and register nothing yet**. When it
