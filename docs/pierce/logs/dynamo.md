@@ -3154,9 +3154,28 @@ unit labels its own author got wrong, and it applies to our corpus
 too: real ground truth is not always right, and this lane says so
 rather than quietly assuming our regulator files are.
 
-So: the corpus still carries one convention as far as any evidence
-shows, and the 24 exceptions are a reason to distrust magnitude
-tests, not evidence of the second convention.
+And then the last file changed the picture again:
+
+    PCFMInterface_SO!AU113 = 2  fmt '0.0%;(0.0%);"-"'
+        « Office, gas national control centre and emergency control »
+    …AV113, AW113, AX113, AY113 — all exactly 2
+
+**Exactly `2`, five times, under a percent format** — displaying as
+200% on a cost-allocation row. A 2% allocation written as `2` is
+precisely the second convention, and it is also precisely the slip a
+modeller makes. I cannot tell which from the file, and I am not
+going to decide it by preference.
+
+So the conclusion is narrower than the one I was about to write.
+**As far as any evidence shows, our corpus carries the
+decimal-fraction convention — with five cells that may be the other
+one and cannot be resolved from the file.** The 24 exceptions are a
+reason to distrust magnitude tests in both directions, and one small
+reason to stop saying our corpus is uniform without qualification.
+
+`scripts/recalc_units_exceptions.py` prints every outlier with its
+label, so the next person reads them rather than trusting a count —
+including mine.
 
 Which is the research's own point, arriving from the other side. The
 report's killer cell was `Module Degradation = 0.5` under `% p.a.`,
