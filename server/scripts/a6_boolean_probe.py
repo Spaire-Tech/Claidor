@@ -13,21 +13,24 @@ record type and value sitting under them in the original. The answer
 is that they are boolean cells holding True, and the conversion
 rewrote each one as `=TRUE()`.
 """
+
 import io
 import warnings
 import zipfile
 
-warnings.filterwarnings("ignore")
 from openpyxl import load_workbook
 from pyxlsb import biff12
 from pyxlsb.reader import BIFF12Reader
-from pyxlsb.workbook import Workbook as XlsbWorkbook
+
+warnings.filterwarnings("ignore")
 
 S = "/tmp/claude-0/-home-user-Claidor/a5cd5072-e5ae-51cb-9a22-88af22f786db/scratchpad"
 name = {v: k for k, v in vars(biff12).items() if isinstance(v, int) and k.isupper()}
 
 # a sheet with formulas in the converted file
-wb = load_workbook(f"{S}/a6conv/out/barrhead_model.xlsx", data_only=False, read_only=True)
+wb = load_workbook(
+    f"{S}/a6conv/out/barrhead_model.xlsx", data_only=False, read_only=True
+)
 target_sheet = None
 picks = []
 for ws in wb.worksheets:
@@ -54,7 +57,10 @@ order = []
 for typ, obj in BIFF12Reader(fp=io.BytesIO(z.read(names[0]))):
     if typ == biff12.SHEET:
         order.append(obj.name)
-print("original sheet order index of target:", order.index(target_sheet) if target_sheet in order else "NOT FOUND")
+print(
+    "original sheet order index of target:",
+    order.index(target_sheet) if target_sheet in order else "NOT FOUND",
+)
 idx = order.index(target_sheet)
 part = f"xl/worksheets/sheet{idx + 1}.bin"
 want = {(r - 1, col - 1) for r, col, _, _ in picks}
@@ -63,4 +69,6 @@ for typ, obj in BIFF12Reader(fp=io.BytesIO(z.read(part))):
     if typ == biff12.ROW:
         row_num = obj.r
     elif hasattr(obj, "c") and (row_num, obj.c) in want:
-        print(f"  original ({row_num},{obj.c}): record type {typ} = {name.get(typ)} value={getattr(obj, 'v', None)!r}")
+        print(
+            f"  original ({row_num},{obj.c}): record type {typ} = {name.get(typ)} value={getattr(obj, 'v', None)!r}"
+        )

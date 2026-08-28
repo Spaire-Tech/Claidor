@@ -4,14 +4,15 @@ Criterion 2 of `a6-intake.md` requires each one enumerated and
 hand-read, so the sampling in the sweep is not enough to close the
 round.
 """
+
 import collections
 import sys
 import warnings
 from pathlib import Path
 
-warnings.filterwarnings("ignore")
-
 from scripts.a6_fidelity import _converted, _witness_xls, _witness_xlsb
+
+warnings.filterwarnings("ignore")
 
 CORPUS = Path(__file__).parent / "corpus_sft"
 
@@ -36,19 +37,27 @@ def main() -> None:
         if missing:
             zeros = sum(1 for v in missing.values() if v == 0.0)
             print(f"    missing that are exactly 0.0: {zeros} of {len(missing)}")
-            print("    sheets:", collections.Counter(k[0] for k in missing).most_common(6))
+            print(
+                "    sheets:", collections.Counter(k[0] for k in missing).most_common(6)
+            )
             nonzero = [(k, v) for k, v in missing.items() if v != 0.0]
             print(f"    missing non-zero: {len(nonzero)}", nonzero[:8])
         if added:
             zeros = sum(1 for v in added.values() if v == 0.0)
             print(f"    added that are exactly 0.0: {zeros} of {len(added)}")
-            print("    sheets:", collections.Counter(k[0] for k in added).most_common(8))
+            print(
+                "    sheets:", collections.Counter(k[0] for k in added).most_common(8)
+            )
             nonzero = [(k, v) for k, v in added.items() if v != 0.0]
             print(f"    added non-zero: {len(nonzero)}", nonzero[:8])
-        print("    sheets in witness but not converted:",
-              sorted(set(witness["sheets"]) - set(after["sheets"])))
-        print("    sheets in converted but not witness:",
-              sorted(set(after["sheets"]) - set(witness["sheets"])))
+        print(
+            "    sheets in witness but not converted:",
+            sorted(set(witness["sheets"]) - set(after["sheets"])),
+        )
+        print(
+            "    sheets in converted but not witness:",
+            sorted(set(after["sheets"]) - set(witness["sheets"])),
+        )
 
 
 if __name__ == "__main__":

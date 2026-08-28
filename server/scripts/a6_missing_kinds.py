@@ -5,15 +5,17 @@ and hand-read. A cell counted « missing » is not necessarily absent
 — it may have arrived as a type our reader does not elect, which is
 the same thing to the engine and a different thing to the truth.
 """
+
 import collections
 import sys
 import warnings
 from pathlib import Path
 
-warnings.filterwarnings("ignore")
 from openpyxl import load_workbook
 
 from scripts.a6_fidelity import _converted, _witness_xls, _witness_xlsb
+
+warnings.filterwarnings("ignore")
 
 CORPUS = Path(__file__).parent / "corpus_sft"
 
@@ -29,7 +31,9 @@ def main() -> None:
         )
         converted_path = converted_dir / (original.stem + ".xlsx")
         after = _converted(converted_path)
-        missing = {k: v for k, v in witness["values"].items() if k not in after["values"]}
+        missing = {
+            k: v for k, v in witness["values"].items() if k not in after["values"]
+        }
         print(f"=== {name}: {len(missing)} missing")
         if not missing:
             continue
@@ -61,7 +65,9 @@ def main() -> None:
                     )
         book.close()
         for kind, count in kinds.most_common():
-            print(f"    {count:>6}  arrives as {kind:<10} e.g. {examples.get(kind, '')}")
+            print(
+                f"    {count:>6}  arrives as {kind:<10} e.g. {examples.get(kind, '')}"
+            )
 
 
 if __name__ == "__main__":

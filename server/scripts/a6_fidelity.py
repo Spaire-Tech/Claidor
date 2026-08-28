@@ -34,6 +34,7 @@ from typing import Any
 
 warnings.filterwarnings("ignore")
 
+
 CORPUS = Path(__file__).parent / "corpus_sft"
 
 HELD = [
@@ -102,8 +103,12 @@ def _witness_xlsb(path: Path) -> dict[str, Any]:
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 values[(sheet, row, obj.c)] = float(value)
     archive.close()
-    return {"sheets": order, "values": values, "formulas": formulas,
-            "booleans": booleans}
+    return {
+        "sheets": order,
+        "values": values,
+        "formulas": formulas,
+        "booleans": booleans,
+    }
 
 
 def _witness_xls(path: Path) -> dict[str, Any]:
@@ -119,7 +124,7 @@ def _witness_xls(path: Path) -> dict[str, Any]:
     formulas = booleans = 0
     pos, end = 0, len(data)
     while pos + 4 <= end:
-        code, size = struct.unpack("<HH", data[pos:pos + 4])
+        code, size = struct.unpack("<HH", data[pos : pos + 4])
         pos += 4
         if pos + size > end:
             break
@@ -135,12 +140,21 @@ def _witness_xls(path: Path) -> dict[str, Any]:
         for r in range(sheet.nrows):
             for c in range(sheet.ncols):
                 cell = sheet.cell(r, c)
-                if cell.ctype == xlrd.XL_CELL_NUMBER:
+                #: xlrd reports a date-formatted cell as XL_CELL_DATE,
+                #: a *separate* ctype from XL_CELL_NUMBER, and its
+                #: value is the serial the file stores. Taking only
+                #: NUMBER undercounted the original by 4,018 cells and
+                #: made them look like cells the conversion had added.
+                if cell.ctype in (xlrd.XL_CELL_NUMBER, xlrd.XL_CELL_DATE):
                     values[(sheet.name, r, c)] = float(cell.value)
     names = [s.name for s in book.sheets()]
     book.release_resources()
-    return {"sheets": names, "values": values, "formulas": formulas,
-            "booleans": booleans}
+    return {
+        "sheets": names,
+        "values": values,
+        "formulas": formulas,
+        "booleans": booleans,
+    }
 
 
 # --- the converted side, read as the engine reads it ---------------------
@@ -227,15 +241,22 @@ def one(original: Path, converted: Path) -> dict[str, Any]:
         if other is None:
             missing += 1
             if len(disagreements) < 40:
-                disagreements.append({"kind": "missing", "at": list(key),
-                                      "original": value})
+                disagreements.append(
+                    {"kind": "missing", "at": list(key), "original": value}
+                )
         elif _close(value, other):
             matched += 1
         else:
             changed += 1
             if len(disagreements) < 40:
-                disagreements.append({"kind": "changed", "at": list(key),
-                                      "original": value, "converted": other})
+                disagreements.append(
+                    {
+                        "kind": "changed",
+                        "at": list(key),
+                        "original": value,
+                        "converted": other,
+                    }
+                )
     added = sum(1 for key in after_values if key not in before_values)
 
     row.update(
@@ -267,9 +288,14 @@ def main() -> None:
         converted = converted_dir / (original.stem + ".xlsx")
         row = one(original, converted)
         results.append(row)
-        print(json.dumps(row.get("disagreements") and
-                         {k: v for k, v in row.items() if k != "disagreements"}
-                         or row)[:400], flush=True)
+        print(
+            json.dumps(
+                row.get("disagreements")
+                and {k: v for k, v in row.items() if k != "disagreements"}
+                or row
+            )[:400],
+            flush=True,
+        )
         out.write_text(json.dumps(results, indent=1))
 
 

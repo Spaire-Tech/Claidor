@@ -187,7 +187,7 @@ survive. **Criterion 1 fails.**
 |---|---|---|---|---|---|
 | `barrhead` | 343,955 | 343,546 | **0** | 409 | 0 |
 | `our_lady_st_patricks` | 343,945 | 343,516 | **0** | 429 | 0 |
-| `inverclyde` | 111,602 | 111,602 | **0** | 0 | 0 |
+| `inverclyde` | 115,707 | 115,620 | **0** | 87 | 0 |
 
 **Not one numeric value was altered.** The registration named
 recalculation-on-load as the outcome that would sink the route and
@@ -197,10 +197,10 @@ this table is the evidence.
 Every « missing » cell is accounted for at the cell, as criterion 2
 requires — none is absent:
 
-| what happens | barrhead | our_lady |
-|---|---|---|
-| a zero on a time-formatted cell arrives as `datetime.time` | 397 | 417 |
-| a numeric flag `1.0` arrives as a **boolean** | 12 | 12 |
+| what happens | barrhead | our_lady | inverclyde |
+|---|---|---|---|
+| a zero on a time-formatted cell arrives as `datetime.time` | 397 | 417 | 87 |
+| a numeric flag `1.0` arrives as a **boolean** | 12 | 12 | 0 |
 
 The two are different in kind. The `time` case is openpyxl coercing
 on number format — the stored value is unchanged. The **boolean
@@ -209,6 +209,36 @@ is numeric, and LibreOffice writes `t="b"`. Both are invisible to
 our engine all the same, because the reader elects only
 numeric-or-formula cells, so ~409 cells per model silently leave
 `Workbook.cells`.
+
+### Three instrument errors, all mine, all corrected before the verdict
+
+Recorded because each of them, left standing, would have blamed the
+conversion for a defect of my own reading.
+
+1. **Shared-string indices counted as numbers.** A `BrtCellIsst`
+   record's payload is an integer index into the string table, not
+   a value in the cell. This made 10,397 string cells look like
+   numeric cells the conversion had lost.
+2. **Date cells skipped.** openpyxl returns a date-formatted cell
+   as `datetime`, not as the serial the file stores, and my
+   comparator ignored it — about 10,900 perfectly converted cells
+   counted as missing.
+3. **`xlrd`'s date type dropped from the `.xls` witness.** `xlrd`
+   reports a date cell as `XL_CELL_DATE`, a *separate* ctype from
+   `XL_CELL_NUMBER`. Taking only the latter undercounted the
+   original by 4,018 cells, which then appeared as cells the
+   conversion had **added**.
+
+The third was caught last, **after a first version of this section
+had already been written with `inverclyde` at « 0 missing, 0
+added »**. That table was wrong: I had diagnosed the cause in prose
+and then reported the number as though the fix were in. It is
+fixed now, the figures above come from a single re-run of the whole
+sweep against the corrected instrument, and the earlier reading is
+named here rather than quietly replaced.
+
+The rule I am taking from all three: **an unexplained disagreement
+is a claim about my instrument until I have read it at a cell.**
 
 ### Formulas: fabricated, not lost
 
@@ -220,6 +250,10 @@ opposite, and it is worse.
 | `barrhead` | **0** | 10,715 — every one `=TRUE()`/`=FALSE()` |
 | `our_lady_st_patricks` | **0** | 10,716 — 10,715 boolean-shaped |
 | `inverclyde` | **0** | 5,223 — 5,221 boolean-shaped, 2 the empty formula `=` |
+
+`our_lady`'s extra one (10,716 against 10,715 boolean cells) is a
+single formula with no boolean behind it, and is named rather than
+rounded away.
 
 **LibreOffice writes a formula for every boolean cell.** The counts
 agree exactly with the boolean-cell counts in the originals, from
