@@ -372,12 +372,19 @@ def delta_of(
                             0.5,
                         )
                 elif _signature(before) != _signature(after):
+                    #: Both shapes, not just the fact of the change:
+                    #: « the calculation changed shape » is true and
+                    #: nearly useless on the specimen that motivated
+                    #: this — a vertical sum that became a horizontal
+                    #: one, where the shapes say it in one line and
+                    #: the formula text would drown the reader in
+                    #: absolute references.
                     record(
                         "methodology_change",
                         sheet,
                         old_row,
                         old_column,
-                        "the calculation changed shape",
+                        f"{_signature(before)[:70]} → {_signature(after)[:70]}",
                         0.75,
                     )
                 else:

@@ -10,7 +10,7 @@ from pathlib import Path
 import openpyxl
 import pytest
 
-from polar.tieout.watch import diff_paths
+from polar.tieout.watch import diff_paths, read_raw
 from scripts.watch_handcheck import read_cells, statuses, translate
 
 
@@ -139,3 +139,43 @@ class TestSharedFormulaTranslation:
 
     def test_a_shift_off_the_grid_is_a_ref_error(self) -> None:
         assert translate("A1", -1, 0) == "#REF!"
+
+
+class TestArrayFormulasAreReadAsText:
+    """The phantom-change class, pinned.
+
+    openpyxl hands back an `ArrayFormula` **object** for a CSE
+    formula, not an `=`-string. A reader that compares those objects
+    compares identities, and every array cell in the file reads as
+    changed — the founder's research round measured ~600 phantom
+    changes in 17,200 cells (3.5%), and 202 of 203 « changes » on a
+    version-string bump. `_formula_text` extracts `.text`; these tests
+    are what stops that from regressing.
+    """
+
+    def workbook(self, path: Path, marker: int) -> None:
+        from openpyxl.worksheet.formula import ArrayFormula
+
+        book = openpyxl.Workbook()
+        sheet = book.active
+        sheet["A1"], sheet["A2"] = 1, 2
+        sheet["B1"] = ArrayFormula(ref="B1:B2", text="=SUM(A1:A2*2)")
+        sheet["C1"] = f"v{marker}"
+        book.save(path)
+
+    def test_an_array_formula_reads_as_its_text(self, tmp_path: Path) -> None:
+        path = tmp_path / "array.xlsx"
+        self.workbook(path, 1)
+        cells, _ = read_raw(str(path))
+        assert cells["Sheet!B1"][0] == "f:=SUM(A1:A2*2)"
+
+    def test_a_version_bump_does_not_make_array_cells_look_changed(
+        self, tmp_path: Path
+    ) -> None:
+        """One unrelated string changes. Exactly one cell may move."""
+        old, new = tmp_path / "old.xlsx", tmp_path / "new.xlsx"
+        self.workbook(old, 1)
+        self.workbook(new, 2)
+        diff = diff_paths(str(old), str(new))
+        assert diff.refs("changed") == ["Sheet!C1"]
+        assert diff.refs("added") == []

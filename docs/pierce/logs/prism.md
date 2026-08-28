@@ -3239,3 +3239,133 @@ The ask is unchanged and now has a number behind it:
 > formula cells and **31.5%** of the cells that reach its rung on an
 > adjacent revision. Nothing in this lane imports it until the line
 > exists.
+
+## New orders (twenty-eighth sweep): three items, and the gate again
+
+Tip `2bde77d8`. `z3-solver` **still absent** — three sweeps after the
+orders asked for tier 1. Part A is built and measured (75.2%); part
+B waits on the line, and I will keep saying so rather than starting.
+
+The orders bring three new items, all from the founder's research
+round over real git history.
+
+### Item 2 — the array-formula phantom-change class, now pinned
+
+The lead checked `watch/diff.py::_formula_text` and found this lane
+clean: openpyxl hands back an `ArrayFormula` **object** rather than
+an `=`-string, and a reader that compares those objects compares
+identities — their run saw ~600 phantom changes in 17,200 cells
+(3.5%), and 202 of 203 « changes » on a version-string bump. We
+extract `.text`. **No test pinned it.** Two now do, on a real
+workbook carrying a real CSE formula: the array cell reads as its
+text, and a version-string bump moves **exactly one cell**.
+
+### Item 1 — the two specimens, measured before anything was pinned
+
+Both specimens come from real commits, and **C3 already reports both
+as `methodology_change`.** I wrote the tests expecting to find holes
+and found my own expectations wrong twice, which is the right way
+round:
+
+- **The vertical sum that became a horizontal one**
+  (`=SUM(B2:B5)` → `=SUM(C6:F6)`, same cell, same total): reported.
+  The shape layer sees it plainly —
+  `SUM(R[-5]C[+0]:R[-1]C[+0])` against `SUM(R[+0]C[-20]:R[+0]C[-17])`
+  — and a value-only reader sees **nothing at all**, since both sums
+  total 40. That is the whole argument for the class.
+- **The reference shifted one column and two rows inside a copied
+  block**: reported, and **only that row** — the three untouched
+  rows of the block stay silent, which is what makes the asymmetry a
+  signal rather than noise.
+
+**What the specimens did expose is the detail line.** A
+`methodology_change` reads « the calculation changed shape » and
+stops there. For the sum specimen that is true and nearly useless:
+it does not say *what* the calculation became. Registered before the
+change: the line carries **both shapes**, old → new, truncated,
+because the shape is the thing that changed and the formula text
+would drown a reader in absolute references. **Prediction**: the sum
+specimen's line reads
+`SUM(R[-5]C[+0]:R[-1]C[+0]) → SUM(R[+0]C[-20]:R[+0]C[-17])`, no item
+count moves anywhere, and the ED2 pair is unaffected because it
+contains no methodology changes at all.
+
+### Item 3 — the Enron E08/E09 pair
+
+« Do not wait on it; register nothing yet. » Noted and obeyed: it is
+recorded in the handoff's open list and nothing is built for it.
+
+### The specimens, measured — and a prediction that was right about the wrong strings
+
+Both specimens pass, and the detail line now carries both shapes:
+
+```
+SUM(R[-5]C[+0]:R[-2]C[+0]) → SUM(R[-1]C[+1]:R[-1]C[+4])
+```
+
+Read the halves: on the left the **row** offset varies and the
+column is fixed — a column of cells. On the right the row is fixed
+and the **column** offset varies — a row of cells. The direction
+change is legible in the line itself, which is the whole point of
+the specimen.
+
+**A correction to my own prediction, which was right in substance
+and wrong in its quoted strings.** I predicted the line would read
+`SUM(R[-5]C[+0]:R[-1]C[+0]) → SUM(R[+0]C[-20]:R[+0]C[-17])`. Those
+offsets came from the standalone probe, where the formula sits at
+`AM9`; the test fixture puts it at `B7`, so the real offsets differ.
+The prediction that mattered — the line carries both shapes, old →
+new — held; the strings I quoted were from a different geometry and
+I should not have written them as though they were the fixture's.
+No item count moved anywhere, as predicted, and the ED2 pair is
+untouched: it contains no methodology changes at all.
+
+## The update-profile finding — registered, and deliberately not built as a threshold
+
+The orders hand me a measured finding and an explicit instruction:
+« register how you want to use it; **do not bolt a threshold on** ».
+
+```
+measure                    quarterly reforecast (n=11)   routine commit (n=59)
+formula → hardcode                              83                          0
+reference changed                              228                          0
+changed cells                                1,169                         93
+```
+
+**What I take from it.** C3 today ranks by a fixed weight per class
+and a fixed materiality line (`MATERIAL = 1%`). That is exactly the
+« raw threshold » the finding warns against: 83 formulas replaced by
+hardcodes is *routine* in a quarterly reforecast and *alarming* on a
+Tuesday, and a report that treats them alike is wrong in both
+directions — it cries wolf every quarter and stays silent on the
+Tuesday that matters.
+
+**What I will build, when the material exists.** Not a threshold and
+not a classifier of intent. **A denominator.** The report already
+counts each class; what it lacks is « how unusual is this count, for
+this model ». The shape I am registering:
+
+- **The profile is per model and comes from that model's own
+  history** — the medians of each class's count across its previous
+  transitions. Nothing learned across models; a distribution network
+  and a private-equity model share nothing but a file format.
+- **It is reported beside the count, never instead of it.** « 83
+  formulas became hardcodes (this model's median for a transition of
+  this size: 79) » and « 4 formulas became hardcodes (median: 0) »
+  are two lines a reviewer can act on; a single « suspicious » score
+  is one they cannot.
+- **The comparison is to transitions of comparable size**, because
+  the finding's own table is a size effect as much as an intent
+  effect (1,169 changed cells against 93). Size is measurable from
+  the pair itself and needs no commit message; **intent is not, and
+  I am not going to infer it from a diff.**
+- **Below three prior transitions, it refuses**: « no profile for
+  this model » in words, never a median of one.
+
+**What blocks it, stated plainly**: this needs a model with a real
+version *history*, not a pair. The ED2 corpus has eleven versions of
+one model, which is exactly the material — and re-measuring C3 across
+all ten adjacent ED2 transitions is the round that makes a profile
+real rather than argued. That round is affordable (C3 is ~90 s per
+pair, so ~15 minutes for the chain) and it is the one I would run
+next if the orders leave room.
