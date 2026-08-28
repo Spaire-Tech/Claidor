@@ -94,3 +94,44 @@ Adoption needs Atelier's category map
 `currency-mismatch` and `scale-mismatch`, or they file under the
 fallback category. Nothing breaks without it. Not my path; routed
 on adoption, as with the three rules before these.
+
+---
+
+## Found before the corpus price: the inference reads `[$...]` as USD
+
+**Routed to the lead — `units/` is Dynamo's and is not edited from
+this lane.** Verified at the format strings, not inferred from a
+label:
+
+| number format | what it is | inference says |
+|---|---|---|
+| `_-[$€-2]* #,##0.00_-;…` | **euro**, locale-bracketed | **USD** |
+| `[$-409]#,##0.00` | a **locale code carrying no currency at all** | **USD** |
+| `[$$-409]#,##0.00` | dollar, locale-bracketed | USD ✓ |
+| `"£"#,##0.000"m"` | sterling, quoted | GBP ✓ |
+| `#,##0.000_);\(#,##0.000\);…` | no symbol | unknown ✓ |
+
+`CURRENCY_IN_FORMAT` tests `£`, then `$`, then `€`, by plain
+substring. Excel's `[$…]` bracket is **syntax** — it introduces a
+currency-and-locale token — so every format using it contains a `$`
+whatever currency it actually names. A euro format reads as dollars,
+and `[$-409]`, which names only US *English* and no currency,
+reads as dollars too.
+
+**Why this matters here rather than as a curiosity.** It is exactly
+the shape that manufactures a false `currency-mismatch`: a model
+using `[$-409]` beside a `"£"` format has, to the inference, two
+currencies in one sum. `forfar_model.xlsm` already reads as
+**GBP 3 rows, USD 53** — a Scottish schools deal with no dollars in
+it.
+
+**It also bears on E2's verdict.** « `currency` … wrong on none » is
+the measurement E3a was armed on. That measurement cannot have
+included locale-bracketed formats, because these are wrong. The
+verdict is not thereby overturned — it is a different corpus — but
+the arming decision rests on it and the lead should know before the
+number travels further.
+
+I have not changed `units/`, have not tuned my rule around it, and
+have not withdrawn the check before measuring. The corpus price
+below is taken as things stand.
