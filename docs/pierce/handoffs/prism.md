@@ -29,6 +29,7 @@ answering anything of record; register before results, always.
 | C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
 | C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
 | Tier 1 part A (boundary, no solver) | `watch/fragment.py`, `scripts/watch_fragment.py` | **75.2%** of ED2's formula cells are inside the registered fragment; **31.5%** of the tier-1 rung. All 1,516 rung cells have identical formulas both sides, so this pair cannot exercise tier 1 at all — its value is on rewrites |
+| The ED2 chain and the update profile | `watch/profile.py`, `scripts/watch_chain.py` | Ten transitions, 66–72 s each. **The founder's reforecast/routine split replicates on a regulator's model**: four transitions of 247–911 cells move 0–2 assumptions, six of 5,050–9,865 move 44–464, and **nothing lies between 911 and 5,050**. The profile flags in the model's own terms (« rewrote more formulas than this model usually does ») and **refuses on the four small ones** — 0–2 comparable priors |
 | Two specimens from real commits | `tests/tieout/test_watch_specimens.py` | C3 already reports **both**: a vertical sum that became horizontal (same cell, same total — a value reader sees nothing) and one reference shifted inside a copied block, **with the other three rows silent**. The `methodology_change` line now carries both shapes, old → new |
 | The array-formula phantom class | `tests/tieout/test_watch_diff.py` | Pinned at the lead's request: a CSE formula reads as its text, and a version-string bump moves exactly one cell (their run saw 202 of 203 « changes » false) |
 | The tier table | `docs/pierce/tier-table.md` | The single published statement the orders asked for: each rung's claim at its exact strength, measured cost, closed refusal vocabulary, and the number it produced on the registered pair. Every figure from a run artifact |
@@ -41,14 +42,15 @@ answering anything of record; register before results, always.
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
 Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document,
-tiers,fragment,specimens}.py`, **108 green**.
+tiers,fragment,specimens,profile}.py`, **116 green**.
 (Other lanes' tieout tests need the conftest and fail to collect here;
 name your five files explicitly.)
 
 ## Registered constants — never move these silently
 
 `align.THRESHOLD = 0.5`, `align.LABEL_WEIGHT = 0.5`,
-`delta.MATERIAL = 1%`, `watch_stealth.TIER2_SEED = 20260826`,
+`delta.MATERIAL = 1%`, `profile.COMPARABLE_FACTOR = 2.0`,
+`profile.MINIMUM_PRIORS = 3`, `watch_stealth.TIER2_SEED = 20260826`,
 `TIER2_TRIALS = 5`. Each is registered in the log; moving one is a
 written round, never a tuning. **`CATEGORICAL_LIMIT` has a known
 defect**: it holds zero, which in the pair oracle freezes any cone a
@@ -74,13 +76,15 @@ a report.
    tier; the registration forbids importing z3 before that line
    exists. Re-raise it every turn until it lands, and do not
    silently start.
-1. **The update-profile round** — registered this sweep, not built:
-   C3 should report each class's count *against this model's own
-   history* (« 83 hardcodes; this model's median for a transition
-   this size: 79 »), never a bolted-on threshold. The material is
-   the ED2 chain — ten adjacent transitions, ~15 minutes — and that
-   run is the next thing to do if orders leave room. Below three
-   prior transitions it must refuse in words.
+1. **The profile's comparability band** — built and measured, and
+   the measurement exposed its limit: a factor-of-two band leaves
+   ED2's four *small* transitions with 0–2 comparable priors, so the
+   profile refuses on exactly the updates a reviewer reads most.
+   **Do not widen the factor after the fact** — that is tuning to a
+   result this lane has already seen. Registered instead: bands
+   taken from the chain's own distribution, since the gap between
+   911 and 5,050 cells is a boundary the data drew by itself. Decide
+   the rule before running it.
 2. **Enron E08/E09** — a genuine version pair (45,274 identical
    formulas, 920 differing) arriving behind Sentinel's A6. The
    orders say **do not wait and register nothing yet**. When it

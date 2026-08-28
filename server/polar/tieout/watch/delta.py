@@ -118,6 +118,12 @@ class DeltaReport:
     items: list[DeltaItem] = field(default_factory=list)
     sheets_added: tuple[str, ...] = ()
     sheets_removed: tuple[str, ...] = ()
+    #: How many cells this transition touched, before folding — the
+    #: report's own size measure. An update profile compares a
+    #: transition to *others of comparable size*, and « how many
+    #: blocks » is the wrong denominator for that: one block can be a
+    #: cell or two dozen.
+    changed_cells: int = 0
 
     @property
     def summary(self) -> dict[str, int]:
@@ -254,12 +260,15 @@ def delta_of(
     structure: list[DeltaItem] = []
     class_change_refs: dict[str, set[str]] = {}
 
+    touched: set[tuple[str, int, int]] = set()
+
     def record(
         kind: str, sheet: str, row: int, column: int, detail: str, weight: float
     ) -> None:
         events.setdefault((kind, sheet), {}).setdefault(row, []).append(
             (column, detail, weight)
         )
+        touched.add((sheet, row, column))
 
     for sheet in old_grids:
         if sheet not in new_grids:
@@ -458,4 +467,5 @@ def delta_of(
     items.extend(structure)
     items.sort(key=lambda item: (_KIND_ORDER.index(item.kind), -item.weight))
     report.items = items
+    report.changed_cells = len(touched)
     return report

@@ -3369,3 +3369,169 @@ all ten adjacent ED2 transitions is the round that makes a profile
 real rather than argued. That round is affordable (C3 is ~90 s per
 pair, so ~15 minutes for the chain) and it is the one I would run
 next if the orders leave room.
+
+## The ED2 chain — the update profile, measured (REGISTERED BEFORE RESULTS)
+
+Tip `2bde77d8`, unchanged; orders unchanged; `z3-solver` still
+absent. So the round I named last turn is the one to run: **C3 over
+every adjacent transition of the ED2 chain**, which is the only
+material we hold that has a version *history* rather than a pair.
+
+**The chain**: eleven files, ten adjacent transitions, in the
+corpus's own date order —
+`v1_2023-02 → v2_2023-07-14 → v2_2023-07-31 → v3_2023-10 →
+v3_2023-11 → v3_2024-01(.xlsm) → v4_2024-07 → v4_2025-01 →
+v4_2025-07 → v4_2026-01 → v5_2026-06`.
+
+**What is being built**, and it is the design registered last turn,
+not a threshold:
+
+- `watch/profile.py` — `profile_of(transitions)` gives, per delta
+  class, the **median count across a model's own prior
+  transitions**; `describe(kind, count, profile)` gives the line a
+  reviewer reads: « 83 (this model's median: 79) ».
+- **It refuses below three priors**, in words: « no profile for this
+  model ». A median of one is not a profile.
+- **Size-matched**, per the registration: the comparison uses the
+  priors whose total changed-cell count is nearest this
+  transition's, not all of them — because the founder's own table is
+  a size effect as much as an intent effect.
+- **Nothing is learned across models.** The profile is per file
+  chain and per class, and the module has no notion of « normal for
+  a spreadsheet ».
+
+**Predictions, before the chain runs.**
+
+1. **The spread is wide**: the largest transition's changed-cell
+   count is at least **10×** the smallest. If the chain is uniform,
+   the profile idea has nothing to stand on and I will say so.
+2. **`methodology_change` is zero or near-zero within a version
+   family** (v2→v2, v3→v3, v4→v4) and non-zero across families
+   (v2→v3, v3→v4, v4→v5). The 14→31 July pair is already known to be
+   0, and it is a within-family pair.
+3. **`filled_cell` appears in most transitions** — extending a
+   published data series is what a regulatory update *is*, and the
+   July pair showed exactly that.
+4. **At least one transition costs more than five minutes** in the
+   aligner, because a major-version step moves structure and the
+   alignment is quadratic in the moved dimension. If any pair
+   exceeds twenty minutes it is recorded as a refusal with its
+   timing, not waited out.
+
+### Amendment before the chain's numbers are read: « nearest » is not « comparable »
+
+Writing the profile's tests, on transitions whose right answer is
+known by construction, exposed a flaw in my own registered design.
+« The priors whose changed-cell count is nearest » taken as *the five
+nearest* does the wrong thing when a model's history is thin: for a
+95-cell update with only six priors, the five nearest include two
+reforecasts of 1,090 and 1,169 cells, and the median of « formulas
+replaced by hardcodes » comes back **1** where the comparable history
+says **0**. That is precisely the mixing the design exists to
+prevent, reintroduced by a lazy reading of my own rule.
+
+**The rule, fixed here before any chain number is read**: a prior is
+**comparable** only if its changed-cell count is within a **factor of
+two** of the transition being read; among those, the nearest
+`NEIGHBOURS` are used. If fewer than `MINIMUM_PRIORS` comparable
+priors exist, the profile **refuses in words** — « no profile for a
+transition this size » — which is a different and more honest refusal
+than « no profile for this model »: the model may have plenty of
+history and none of it comparable.
+
+The factor of two is declared, not derived. It is a constant of this
+lane now, and moving it is a written round.
+
+## The ED2 chain — results: the founder's finding replicates on a regulator's model
+
+Ten transitions, **66–72 s each**, ~11 minutes for the chain. Every
+one completed; none refused.
+
+```
+transition                              cells   the classes that moved
+v1_2023-02  → v2_2023-07-14               911   methodology 72 · structure 17 · relabelled 2
+v2_2023-07-14 → v2_2023-07-31             680   assumptions 2 · filled 1 · outputs 94
+v2_2023-07-31 → v3_2023-10                247   methodology 10 · structure 4
+v3_2023-10  → v3_2023-11                5,145   assumptions 44 · outputs 333
+v3_2023-11  → v3_2024-01                7,679   assumptions 464 · outputs 330 · structure 113
+                                                · class change 12 · filled 17
+v3_2024-01  → v4_2024-07                5,620   methodology 95 · outputs 269 · structure 14
+v4_2024-07  → v4_2025-01                9,865   assumptions 440 · outputs 362 · structure 52
+v4_2025-01  → v4_2025-07                  553   assumptions 2 · filled 1 · outputs 95
+v4_2025-07  → v4_2026-01                9,425   assumptions 436 · outputs 340 · filled 9
+v4_2026-01  → v5_2026-06                5,050   outputs 292 · structure 10 · relabelled 4
+```
+
+*(« cells » here is the **report's own** size measure — cells that
+produced a delta event — and it is not C1's raw changed-cell count.
+On the July pair it reads 680 where C1 reads 1,255. Two denominators,
+both honest, and I am naming which is which so nobody compares
+them.)*
+
+**The finding replicates, on a model class the research round never
+touched.** The founder's table came from an equity model's git
+history; this is a regulator's price-control model, and its own
+history splits the same way:
+
+```
+four transitions   247 – 911 cells      assumptions moved:   0, 2, 2, —
+six transitions  5,050 – 9,865 cells    assumptions moved:  44, 436, 440, 464
+```
+
+There is **no transition between 911 and 5,050 cells** — the gap is
+in the data, not in a threshold I chose. « 436 assumptions moved » is
+routine for this model in a periodic update and would be alarming in
+a July patch, which is precisely the founder's point arriving
+independently.
+
+**Against the predictions.**
+
+1. **Spread ≥ 10× — held, at 39.9×.**
+2. **`methodology_change` zero within a version family and non-zero
+   across — held nine times and failed on the tenth.** v1→v2: 72.
+   v2→v3: 10. v3→v4: 95. Within-family steps: 0 every time. But
+   **v4→v5, a major-version step, has zero methodology changes** —
+   its signature is 4 relabelled lines and 10 structure items. **The
+   version number is not a reliable predictor of a rewrite**, and the
+   chain says so plainly: v5 was a renaming and restructuring event.
+3. **`filled_cell` in most transitions — held, barely: 6 of 10.**
+4. **« At least one transition costs more than five minutes » —
+   failed, and this is the good kind.** The slowest was **72 s**,
+   including two major-version steps. The memory and timing rounds
+   paid for that; I predicted the aligner would struggle across
+   structural change and it did not.
+
+**The profile, run over the chain with each transition read against
+the other nine.** It flags, in this model's own terms:
+
+```
+v3_2023-11 → v3_2024-01   unusual: class_change, emptied_cell, filled_cell,
+                                   moved_assumption, structure
+v3_2024-01 → v4_2024-07   unusual: methodology_change, relabelled_line
+v4_2024-07 → v4_2025-01   unusual: emptied_cell, filled_cell, moved_assumption,
+                                   structure
+v4_2026-01 → v5_2026-06   unusual: relabelled_line
+```
+
+Those are review sentences, not scores: *this transition rewrote more
+formulas than this model usually does*, and *this one renamed more
+lines than it usually does*. Neither is available from a count alone.
+
+**And the honest limitation, which the run exposed rather than
+hid.** The four small transitions get **0 to 2 comparable priors** and
+the profile **refuses** on all of them — « no profile for a
+transition this size, 9 priors, 0 of comparable size ». That is the
+design behaving exactly as registered, and it means the profile is
+silent on precisely the transitions a reviewer most often reads: the
+small, routine-looking ones. The cause is arithmetic: ED2's history
+holds four small transitions, and a factor-of-two band splits even
+those (247's band is 123–494; the next smallest is 553).
+
+**I am not moving the factor now.** Widening it after seeing which
+transitions refused is tuning to the result, which is the one thing
+this lane does not do. Registered instead, for a later round and to
+be decided before it runs: replace the fixed factor with **bands
+taken from the chain's own distribution** — the gap between 911 and
+5,050 is a cluster boundary the data drew by itself, and a rule that
+finds such boundaries would give the small transitions three priors
+apiece without widening anything by hand.
