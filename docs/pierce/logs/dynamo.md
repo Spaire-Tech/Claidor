@@ -3857,3 +3857,67 @@ None of these is measured. They are designs, registered before any
 of them is built, and the next round takes the one the lead ranks
 highest — my own ranking is (1) period-from-aggregation, because it
 serves the flagship check and the dimension in the same pass.
+
+---
+
+## `period` from the model's own aggregation — registration
+
+*28 Aug. The successor I ranked first, registered before it is
+built. It serves the flagship check and the dimension in one pass,
+which is why it is first.*
+
+### The idea, and why it is a different kind of thing
+
+Every attempt at `period` so far has read **words**: the row label,
+the column headers, the units text. All of them are wrong often
+enough that `period` has never been armable, and the last round
+showed the reader can hand a labeller the wrong header row entirely.
+
+A model states its periods **in its arithmetic**. Twelve monthly
+columns summed into one annual column is a monthly row, and it says
+so without a single word. Kelso proves the structure exists in a
+file we hold: `sysTimeline` carries `Apr 15 … Mar 25` at row 13 and
+`2015/16 … 2024/25` at row 39, with `inputCapexM`, `inputOpexM` and
+`calcFundingM` on the monthly grid feeding annual reporting sheets.
+
+**And the same machinery is the flagship check.** « A monthly figure
+in an annual line » is a *broken aggregation* — an annual cell that
+takes one month instead of twelve. So inferring the period and
+detecting the defect are the same computation, which is the reason
+to build this one rather than the two cheaper designs on my list.
+
+### What is built
+
+1. **Column blocks and their granularity**, from column count and
+   span rather than from header words: a block of 120 columns
+   covering ten years is monthly by arithmetic; 40 columns over 40
+   years is annual. This is design 3 from « the three I did not
+   try », folded in because the structural pass needs it anyway.
+2. **The aggregation map**: for each formula cell, which blocks it
+   references and how many cells of each. A cell in a coarser block
+   that sums exactly twelve cells of a finer one is a correct
+   monthly-to-annual aggregation.
+3. **The defect**: a cell in a coarser block referencing a finer
+   block with **fewer cells than the ratio requires** — an annual
+   line taking one month.
+
+### Predictions
+
+1. **Kelso's monthly-to-annual aggregations are detectable**: at
+   least one annual row is found taking exactly twelve monthly
+   cells. If none is, the structural signal is not there and the
+   design fails at its first step, which I would rather learn in one
+   afternoon than after building the check on top of it.
+2. **Zero defects found on Kelso.** It is a published
+   financial-close model that banks lent against; a check that finds
+   real defects in it is far more likely to be finding mine. Any
+   defect it reports, I hand-read before it is called a finding —
+   the B4 discipline, applied to E3.
+3. **A planted defect is caught**: replace a twelve-cell aggregation
+   with a one-cell reference and the check names that cell. Without
+   this the round proves nothing, because a check that reports
+   nothing on a clean file and a check that reports nothing ever are
+   the same measurement.
+4. **It fires falsely somewhere.** Seventh round running I have
+   registered this and it has happened every time; hunted for by
+   hand-reading, not by trusting a count.
