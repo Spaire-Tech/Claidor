@@ -1,58 +1,404 @@
 {
  "ed2-v5": {
-  "sheets": 30,
-  "declarations_found": 0,
-  "columns_used": 0,
+  "sheets": 31,
+  "declarations_found": 4565,
+  "columns_used": 27,
   "header_based_rows": 5954,
-  "found_and_header": 0,
+  "found_and_header": 4565,
   "found_only": 0,
-  "header_only": 5954,
-  "top_texts": [],
-  "sample": []
+  "header_only": 1389,
+  "top_texts": [
+   [
+    "\u00a3m 20/21 prices",
+    2161
+   ],
+   [
+    "%",
+    1072
+   ],
+   [
+    "mixed inputs",
+    720
+   ],
+   [
+    "\u00a3m nominal",
+    399
+   ],
+   [
+    "scalar",
+    53
+   ],
+   [
+    "annual real %",
+    46
+   ],
+   [
+    "Scalar",
+    29
+   ],
+   [
+    "\u00a3m 2012/13 prices",
+    15
+   ]
+  ],
+  "sample": [
+   {
+    "sheet": "AR",
+    "row": 11,
+    "text": "text",
+    "column": 7
+   },
+   {
+    "sheet": "AR",
+    "row": 12,
+    "text": "flag",
+    "column": 7
+   },
+   {
+    "sheet": "AR",
+    "row": 16,
+    "text": "scalar",
+    "column": 7
+   },
+   {
+    "sheet": "AR",
+    "row": 22,
+    "text": "\u00a3m nominal",
+    "column": 7
+   },
+   {
+    "sheet": "AR",
+    "row": 23,
+    "text": "\u00a3m nominal",
+    "column": 7
+   },
+   {
+    "sheet": "AR",
+    "row": 24,
+    "text": "\u00a3m nominal",
+    "column": 7
+   }
+  ]
  },
  "gd3-pcfm": {
-  "sheets": 13,
-  "declarations_found": 0,
-  "columns_used": 0,
+  "sheets": 14,
+  "declarations_found": 1370,
+  "columns_used": 12,
   "header_based_rows": 1393,
-  "found_and_header": 0,
-  "found_only": 0,
-  "header_only": 1393,
-  "top_texts": [],
-  "sample": []
+  "found_and_header": 1308,
+  "found_only": 62,
+  "header_only": 85,
+  "top_texts": [
+   [
+    "\u00a3m 23/24 prices",
+    651
+   ],
+   [
+    "%",
+    515
+   ],
+   [
+    "\u00a3m nominal",
+    172
+   ],
+   [
+    "scalar",
+    10
+   ],
+   [
+    "flag",
+    5
+   ],
+   [
+    "years",
+    3
+   ],
+   [
+    "annual real %",
+    3
+   ],
+   [
+    "named_range",
+    3
+   ]
+  ],
+  "sample": [
+   {
+    "sheet": "Depn",
+    "row": 9,
+    "text": "\u00a3m 23/24 prices",
+    "column": 7
+   },
+   {
+    "sheet": "Depn",
+    "row": 10,
+    "text": "\u00a3m 23/24 prices",
+    "column": 7
+   },
+   {
+    "sheet": "Depn",
+    "row": 11,
+    "text": "\u00a3m 23/24 prices",
+    "column": 7
+   },
+   {
+    "sheet": "Depn",
+    "row": 12,
+    "text": "%",
+    "column": 7
+   },
+   {
+    "sheet": "Depn",
+    "row": 13,
+    "text": "\u00a3m 23/24 prices",
+    "column": 7
+   },
+   {
+    "sheet": "Depn",
+    "row": 14,
+    "text": "\u00a3m 23/24 prices",
+    "column": 7
+   }
+  ]
  },
  "baldragon_model.xlsm": {
-  "sheets": 26,
-  "declarations_found": 0,
-  "columns_used": 0,
+  "sheets": 28,
+  "declarations_found": 3959,
+  "columns_used": 13,
   "header_based_rows": 0,
   "found_and_header": 0,
-  "found_only": 0,
+  "found_only": 3959,
   "header_only": 0,
-  "top_texts": [],
-  "sample": []
+  "top_texts": [
+   [
+    "\u00a3m",
+    3174
+   ],
+   [
+    "Flag",
+    300
+   ],
+   [
+    "%",
+    84
+   ],
+   [
+    "%allocation",
+    47
+   ],
+   [
+    "Indexation factor",
+    46
+   ],
+   [
+    "Date",
+    44
+   ],
+   [
+    "%age",
+    40
+   ],
+   [
+    "% allocation",
+    39
+   ]
+  ],
+  "sample": [
+   {
+    "sheet": "CalcSA",
+    "row": 11,
+    "text": "Flag",
+    "column": 10
+   },
+   {
+    "sheet": "CalcSA",
+    "row": 13,
+    "text": "Flag",
+    "column": 10
+   },
+   {
+    "sheet": "CalcSA",
+    "row": 14,
+    "text": "Flag",
+    "column": 10
+   },
+   {
+    "sheet": "CalcSA",
+    "row": 18,
+    "text": "Flag",
+    "column": 10
+   },
+   {
+    "sheet": "CalcSA",
+    "row": 20,
+    "text": "Flag",
+    "column": 10
+   },
+   {
+    "sheet": "CalcSA",
+    "row": 21,
+    "text": "Flag",
+    "column": 10
+   }
+  ]
  },
  "forfar_model.xlsm": {
-  "sheets": 24,
-  "declarations_found": 0,
-  "columns_used": 0,
+  "sheets": 26,
+  "declarations_found": 1847,
+  "columns_used": 15,
   "header_based_rows": 0,
   "found_and_header": 0,
-  "found_only": 0,
+  "found_only": 1847,
   "header_only": 0,
-  "top_texts": [],
-  "sample": []
+  "top_texts": [
+   [
+    "\u00a3m",
+    1207
+   ],
+   [
+    "%",
+    371
+   ],
+   [
+    "Flag",
+    61
+   ],
+   [
+    "Indexing at 0%",
+    41
+   ],
+   [
+    "Indexing at 2.5%",
+    23
+   ],
+   [
+    "Date",
+    22
+   ],
+   [
+    "(1=yes, 0=no)",
+    20
+   ],
+   [
+    "Years",
+    17
+   ]
+  ],
+  "sample": [
+   {
+    "sheet": "CalcM",
+    "row": 19,
+    "text": "Flag",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 38,
+    "text": "Flag",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 39,
+    "text": "Flag",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 40,
+    "text": "Flag",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 104,
+    "text": "\u00a3m",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 105,
+    "text": "\u00a3m",
+    "column": 7
+   }
+  ]
  },
  "glasgow_college_model.xlsm": {
-  "sheets": 79,
-  "declarations_found": 0,
-  "columns_used": 0,
+  "sheets": 81,
+  "declarations_found": 98,
+  "columns_used": 2,
   "header_based_rows": 0,
   "found_and_header": 0,
-  "found_only": 0,
+  "found_only": 98,
   "header_only": 0,
-  "top_texts": [],
-  "sample": []
+  "top_texts": [
+   [
+    "kWh",
+    44
+   ],
+   [
+    "\u00a3/kWh",
+    18
+   ],
+   [
+    "kWh / m2",
+    12
+   ],
+   [
+    "%",
+    11
+   ],
+   [
+    "kgCO2/m2",
+    6
+   ],
+   [
+    "m2",
+    4
+   ],
+   [
+    "\u00a3/m3",
+    3
+   ]
+  ],
+  "sample": [
+   {
+    "sheet": "7.2 Utilities & Carbon",
+    "row": 11,
+    "text": "m2",
+    "column": 5
+   },
+   {
+    "sheet": "7.2 Utilities & Carbon",
+    "row": 15,
+    "text": "kWh",
+    "column": 5
+   },
+   {
+    "sheet": "7.2 Utilities & Carbon",
+    "row": 16,
+    "text": "kWh / m2",
+    "column": 5
+   },
+   {
+    "sheet": "7.2 Utilities & Carbon",
+    "row": 17,
+    "text": "kWh",
+    "column": 5
+   },
+   {
+    "sheet": "7.2 Utilities & Carbon",
+    "row": 19,
+    "text": "kWh",
+    "column": 5
+   },
+   {
+    "sheet": "7.2 Utilities & Carbon",
+    "row": 25,
+    "text": "%",
+    "column": 5
+   }
+  ]
  },
  "inverurie_foresterhill_model.xlsm": {
   "sheets": 20,
@@ -66,40 +412,250 @@
   "sample": []
  },
  "kelso_model.xlsm": {
-  "sheets": 53,
-  "declarations_found": 0,
-  "columns_used": 0,
+  "sheets": 54,
+  "declarations_found": 3587,
+  "columns_used": 19,
   "header_based_rows": 0,
   "found_and_header": 0,
-  "found_only": 0,
+  "found_only": 3583,
   "header_only": 0,
-  "top_texts": [],
-  "sample": []
+  "top_texts": [
+   [
+    "\u00a3'000s",
+    2664
+   ],
+   [
+    "\u00a3'000",
+    531
+   ],
+   [
+    "Flag",
+    190
+   ],
+   [
+    "%",
+    92
+   ],
+   [
+    "#",
+    57
+   ],
+   [
+    "Accounting:",
+    11
+   ],
+   [
+    "\u00a3000s",
+    11
+   ],
+   [
+    "check",
+    8
+   ]
+  ],
+  "sample": [
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 113,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 114,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 115,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 116,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 119,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 125,
+    "text": "\u00a3'000",
+    "column": 4
+   }
+  ]
  },
  "levenmouth_model.xlsm": {
-  "sheets": 24,
-  "declarations_found": 0,
-  "columns_used": 0,
+  "sheets": 26,
+  "declarations_found": 1871,
+  "columns_used": 15,
   "header_based_rows": 0,
   "found_and_header": 0,
-  "found_only": 0,
+  "found_only": 1871,
   "header_only": 0,
-  "top_texts": [],
-  "sample": []
+  "top_texts": [
+   [
+    "\u00a3m",
+    1177
+   ],
+   [
+    "%",
+    383
+   ],
+   [
+    "Flag",
+    60
+   ],
+   [
+    "Indexing at 0%",
+    43
+   ],
+   [
+    "Date",
+    31
+   ],
+   [
+    "Date / \u00a3m",
+    28
+   ],
+   [
+    "Years",
+    25
+   ],
+   [
+    "Indexing at 2.5%",
+    21
+   ]
+  ],
+  "sample": [
+   {
+    "sheet": "CalcM",
+    "row": 19,
+    "text": "Flag",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 38,
+    "text": "Flag",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 39,
+    "text": "Flag",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 40,
+    "text": "Flag",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 104,
+    "text": "\u00a3m",
+    "column": 7
+   },
+   {
+    "sheet": "CalcM",
+    "row": 105,
+    "text": "\u00a3m",
+    "column": 7
+   }
+  ]
  },
  "newbattle_model.xlsm": {
-  "sheets": 52,
-  "declarations_found": 0,
-  "columns_used": 0,
+  "sheets": 53,
+  "declarations_found": 3587,
+  "columns_used": 19,
   "header_based_rows": 0,
   "found_and_header": 0,
-  "found_only": 0,
+  "found_only": 3583,
   "header_only": 0,
-  "top_texts": [],
-  "sample": []
+  "top_texts": [
+   [
+    "\u00a3'000s",
+    2664
+   ],
+   [
+    "\u00a3'000",
+    531
+   ],
+   [
+    "Flag",
+    190
+   ],
+   [
+    "%",
+    92
+   ],
+   [
+    "#",
+    57
+   ],
+   [
+    "Accounting:",
+    11
+   ],
+   [
+    "\u00a3000s",
+    11
+   ],
+   [
+    "check",
+    8
+   ]
+  ],
+  "sample": [
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 113,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 114,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 115,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 116,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 119,
+    "text": "\u00a3'000",
+    "column": 4
+   },
+   {
+    "sheet": "IRR Calculations and Sharing",
+    "row": 125,
+    "text": "\u00a3'000",
+    "column": 4
+   }
+  ]
  },
  "oban_campbeltown_model.xlsm": {
-  "sheets": 17,
+  "sheets": 18,
   "declarations_found": 0,
   "columns_used": 0,
   "header_based_rows": 0,

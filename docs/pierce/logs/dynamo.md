@@ -3362,3 +3362,404 @@ reader can check it.
    trusting a count.
 4. The verdict's dimensions do not move, because the measured
    configuration stays blind.
+
+## Item (b) measured — and it overturns a finding I closed a round on
+
+### Prediction 1 — confirmed, after three failures
+
+| model | detector | header-based | both | detector-only | header-only |
+|---|---|---|---|---|---|
+| ED2 v5 | 4,565 | 5,954 | 4,565 | 0 | 1,389 |
+| GD3 PCFM | 1,370 | 1,393 | 1,308 | 62 | 85 |
+
+It agrees with the finder I trust on the models where I know the
+answer. The header-only remainder is rows carrying text but no
+numbers — headings, notes — which the detector deliberately skips
+because a declaration with nothing to describe is not a declaration.
+
+### Prediction 2 — confirmed, and it is a correction
+
+| closed-deal model | declarations | commonest |
+|---|---|---|
+| `baldragon` | **3,959** | `£m` 3,174 · `Flag` 300 · `%` 84 |
+| `kelso` | **3,587** | `£'000s` 2,664 · `£'000` 531 · `Flag` 190 |
+| `newbattle` | **3,587** | `£'000s` 2,664 · `£'000` 531 |
+| `levenmouth` | **1,871** | `£m` 1,177 · `%` 383 |
+| `forfar` | **1,847** | `£m` 1,207 · `%` 371 |
+| `glasgow_college` | **98** | `kWh` 44 · `£/kWh` 18 · `kWh / m2` 12 |
+| `inverurie_foresterhill`, `oban_campbeltown` | 0 | |
+
+**Roughly 14,900 declarations across six of the eight models.** I
+published « **zero** rows carry a declared unit » on this corpus and
+used that zero to declare the generalisation round **unmeasurable**,
+with the whole round reported on that basis. It was an artifact of my
+header-based finder, not a fact about the files — exactly the failure
+I registered as the thing I most wanted to catch, which is the only
+reason it is being caught by me.
+
+Glasgow College is carrying the research's energy-price family in the
+open: `kWh`, `kWh / m2`, `£/kWh`, `kgCO2/m2`, `m2`. That is build
+item (f)'s material sitting in a corpus I own.
+
+### Prediction 3 — I looked, and did not find one
+
+I hand-read the largest columns rather than trusting the counts:
+`InpC` col 7 beside col 6 (`Days in Year` → `Days`), `CalcSA` col 7
+(`First model column flag` → `flag`), `FixedAssetSA` col 7 (135 rows
+of `£m` against construction cost lines). Every column I read is a
+units column.
+
+What is *inside* them includes non-units — `Flag`, `Factor`,
+`Indexing at 0%`, `Date / £m` — which is the research's finding 7 and
+is handled as « declared, not a unit » rather than counted as a
+false positive of the column detector. **So: no false positive found,
+and I am reporting « I looked at six columns and did not find one »,
+not « there are none ».**
+
+### What this changes, and it is the biggest thing on my board
+
+My verdict ended by asking for **a second labelled set drawn by
+someone other than me**, because every hard case rested on E1's
+hundred rows that I graded myself. This is better than what I asked
+for:
+
+- **~14,900 declarations**, four times the current author key
+- written by **the models' own authors**, not by me
+- from a corpus **E2 has never seen**, in a different idiom
+- and **not circular**, because E2's blind pass — the configuration
+  the verdict is measured in — does not read units columns
+
+The one caveat, stated before I use it: these declarations were
+extracted by **my** detector, so a systematic bias in what it finds
+becomes a systematic bias in the key. That is a weaker objection than
+self-grading, and the answer to it is the hand-reading above plus
+publishing the detector, not a claim that it cannot happen.
+
+**Next: score E2's blind pass against this key.** It is the
+non-circular measurement the verdict has been missing, and it may
+move dimensions I have already published — which is the point.
+
+---
+
+## E2 blind against the closed-deal author key — registration
+
+*28 Aug. The non-circular measurement the verdict has been missing.
+Registered before the key is even parseable, let alone scored.*
+
+### Why this round matters more than its size
+
+My verdict published today **ARMs `kind`** on the strength of 3,662
+decided rows at 0.05% wrong. Then I measured the key's shape and
+found it holds **one value** — every row in it declares £m or %, so
+all of them are continuous. `kind`'s job is to tell continuous from
+categorical, and the big key **cannot test that at all**.
+
+The closed-deal key can. Its columns carry `Flag`, `Factor`, `Date`
+beside `£m` and `£'000s`. **This is the first measurement in this
+lane that puts `kind` in front of rows a model's own author declared
+non-continuous** — and `kind` being right is what B5's typing rests
+on and what the ARM verdict says.
+
+### What must be built first, and the honesty problem in it
+
+The key parser only understands `£m`, `£`, `%`. This corpus says
+`£'000s`, `£'000`, `kWh`, `£/kWh`, `Flag`. So:
+
+- **the scale ladder** (build item c): `'000`, `000s`, `k`, `m`,
+  `bn`, `MM`, and the non-Western `crore`, `lakh`, `千`, `百万`
+- **the non-unit class** (build item g): `Flag`, `Factor`, `Date`,
+  `Choice`, `Index`, `Check`, `Toggle`, `[1,0]` — kept, counted,
+  **excluded from the scored key**, and reported as « declared but
+  not a unit » rather than guessed at
+
+**The honesty problem: the key parser is mine.** A wrong parse is a
+wrong key, and this key has no independent check the way the Ofgem
+one had my hand labels. So a sample of parses is hand-read and the
+count of unparseable declarations is published, not dropped.
+
+### Predictions
+
+1. **`kind` is worse here than 0.05% wrong**, because for the first
+   time it faces rows declared `Flag` and `Date`. I do not know by
+   how much. **If it is bad enough, the ARM verdict on `kind`
+   changes and B5's automatic typing loses its foundation** — which
+   is why this is worth doing before anyone builds on it.
+2. **`scale` abstains even more than the 65–81% it does today.** The
+   corpus is largely `£'000s`, and E2 reads scale from a units text
+   it is blind to and a number format that rarely carries one.
+3. **`currency` stays at or near 0% wrong** on whatever it decides.
+4. **Some declarations will not parse.** Reported as their own
+   count, never dropped, because « declared but not parseable » is a
+   real answer about a corpus.
+5. **At least one of my parses is wrong**, found by hand-reading a
+   sample. Sixth round running I have registered this; it has
+   happened every time.
+
+## The closed-deal key measured — and E2's verdict changes
+
+*The non-circular measurement. Two of the three ARM verdicts do not
+survive it.*
+
+### The numbers, after the orientation bug came out
+
+| dimension | Ofgem key | **closed-deal key** | decided |
+|---|---|---|---|
+| `kind` | 0.05% | **7.77%** | 13,418 |
+| `rate_form` | 0.03% | **2.22%** | 12,408 |
+| `b5_type` | 0.15% | **23.89%** | 1,515 |
+| `currency` | 0.15% | **24.62%** | 1,515 |
+| `scale` | 0.15% | **23.32%** | 1,462 |
+| `period` | 29.8% | **40.35%** | 1,197 |
+
+`docs/pierce/logs/dynamo/units-sft-key.json`. 15,220 declarations
+across six models, 1,140 of them declared non-units and reported as
+such, 580 the parser refuses by name.
+
+### What the wrong answers actually are
+
+    770  kind: said continuous, was categorical   (declared « Flag »)
+    287  period: said annual, was none            (declared « % »)
+    155  currency: said none, was GBP             (declared « £m »)
+    145  scale: said units, was millions          (declared « £m »)
+    142  kind: said categorical, was continuous   (declared « £m »)
+    142  b5_type: said date, was money            (declared « £m »)
+    108  rate_form: said decimal, was not-a-rate  (declared « £'000s »)
+
+**Seventy-four per cent of `kind`'s failure is one case: a row the
+author declared `Flag`, holding 1/1/0/0, read as a continuous
+quantity.** That is not an artifact and not a key defect — it is
+exactly the categorical case the Ofgem key could not contain, failing
+exactly as the verdict warned it might and could not check.
+
+The 142 in the other direction (`£m` read as categorical) are the
+mixed-row problem: a row holding a date serial beside an amount gets
+one label. Those are **contested** — the row genuinely is not
+homogeneous — so I discount them entirely, and `kind` is still 6.7%
+wrong. The verdict change does not depend on the contested cases.
+
+### The revised verdict
+
+| dimension | this morning | **now** | why |
+|---|---|---|---|
+| `kind` | ARM | **DO NOT ARM** | 7.77%, and 74% of it is genuine categorical failure |
+| `currency` | ARM | **DO NOT ARM** | 24.62% — it says « none » on rows declaring `£m` |
+| `scale` | ARM | **DO NOT ARM** | 23.32% |
+| `rate_form` | ARM WITH CARE | **ARM WITH CARE** | 2.22% here, 4.8% on E1 — inside the band |
+| `b5_type` | DO NOT ARM | **DO NOT ARM** | unchanged |
+| `period` | DO NOT ARM | **DO NOT ARM** | unchanged |
+
+**Only `rate_form` is armable, and only with care.** Everything I
+published this morning as safe is not.
+
+### What this costs, said plainly
+
+- **E3 has almost nothing to stand on.** The « £ in a £m line » check
+  I said was armable rests on `scale` and `currency`, and both are
+  wrong on a quarter of what they decide outside our corpus. That
+  check cannot be built today. Sentinel should not wait on me to
+  soften this.
+- **B5's automatic typing loses its foundation.** `kind` decides hold
+  versus perturb, and its dominant failure is reading a **flag row as
+  a continuous quantity** — which is precisely the AHA typing law
+  violation the whole B5 design exists to prevent. Round 2's coverage
+  numbers were obtained with a typing that would perturb flags on any
+  model that has them; H7 happens not to.
+- **The morning's verdict was measured on a corpus that could not
+  test its own headline claim.** I said so at the time, and I still
+  published ARM on `kind`. The right lesson is not « I flagged it »;
+  it is that **a dimension whose key cannot contain its failure case
+  must not be armed at all** until one can. That rule goes in the
+  handoff.
+
+### What is now the strongest thing E2 has
+
+Not an accuracy number. It is that the second corpus exists, is
+author-labelled, is unseen, and **found in one afternoon two defects
+the first corpus structurally could not**: an orientation bug worth
+18 points of `kind`, and a flag-blindness worth 770 rows.
+
+---
+
+# ⚠ STOP — `currency` and `scale` are being armed on a superseded verdict
+
+*28 Aug, written the moment I read the period addendum. Not a
+finding; a collision.*
+
+The addendum says **« Sentinel is arming only `currency` and `scale`
+on it (E3a) »**. That is the verdict I published this morning. I
+revised it the same day, and the revision is **not yet in the
+integration tip** — so the order was written without it, in good
+faith, on numbers I have since withdrawn.
+
+| dimension | the verdict being armed | **the revision** |
+|---|---|---|
+| `currency` | ARM — 0.15% wrong | **DO NOT ARM — 24.62% wrong** |
+| `scale` | ARM — 0.15% wrong | **DO NOT ARM — 23.32% wrong** |
+
+Measured on 1,515 decided rows of the closed-deal corpus, against
+declarations written by those models' own authors, with E2 blind to
+them. The dominant error is `currency: said none, was GBP` on rows
+declaring `£m` — 263 of them. Not an artifact: the orientation bug
+that inflated the first run came out before these numbers, and the
+contested mixed-row cases are excluded.
+
+**So E3a as ordered would ship a check whose unit is wrong on
+roughly a quarter of the rows it fires on.** A « £ figure in a £m
+line » finding shown to a banker is worth nothing if the £m was
+inferred wrongly a quarter of the time.
+
+I am not asking anyone to take my word for the revision over my own
+earlier word — that is the problem, not the solution. The evidence is
+`docs/pierce/logs/dynamo/units-sft-key.json` and the entry above it,
+both pushed to `swens/dynamo`. **Whoever integrates next should read
+the revision before E3a is built**, and if the lead judges the
+closed-deal key unfit to overturn the Ofgem one, that is a legitimate
+call — but it should be made deliberately, not by a merge order.
+
+---
+
+## The `period` answer key — registration, and I am asking the lead to judge it
+
+*28 Aug, orders addendum: « build the period answer key properly,
+and do not grade your own homework ».*
+
+### Taking the offer, explicitly
+
+The orders say: *if the honest way to avoid self-grading is to have
+the lead draw or judge the sample, say so and I will do it.*
+
+**I am saying so.** I wrote the inference; I must not write its
+answer key. E1 was mine and it is why every hard case in this lane
+rests on a hundred rows I graded myself, and the closed-deal key —
+which is not mine to label, being the authors' own words — is what
+overturned two of three ARM verdicts within a day.
+
+The arrangement I propose, and will prepare either way:
+
+1. **I draw the sample mechanically** by a rule registered below, and
+   commit it **unlabelled**, with a fixed seed, before any label
+   exists. The draw is auditable; if I had drawn it to flatter E2, the
+   rule would show it.
+2. **The lead labels `period`** on those rows — or the founder does.
+   The labeller sees the row's evidence and never sees E2's answer.
+3. **I score, and never see the labels before scoring.**
+
+That is the arrangement I would want if I were checking someone
+else's work, so it is the one I am asking for.
+
+### The draw, fixed now
+
+- **Stratified by corpus dialect**, because the orders require
+  accuracy per dialect and not blended: Ofgem regulator models,
+  the H7 pair, the RoE/WACC rate models, and the closed-deal
+  project-finance models.
+- **Rows that carry a period answer at all**: rows with numeric
+  cells under column headers, excluding rows whose declaration is a
+  non-unit.
+- **40 rows per dialect, seeded at 11**, uniformly from the eligible
+  rows of each — not from rows E2 answered, and not from rows where
+  it abstained, because either would shape the key around the
+  instrument.
+- Committed as `docs/pierce/logs/dynamo/e3-period-sample.json`, with
+  each row's sheet, row, label, headers, formats and first values —
+  **and no E2 output of any kind.**
+
+### The prior question, measured first
+
+Before a key is drawn: the research reports **no monthly model among
+27**, one semi-annual, and twenty-four with no date axis at all. If
+that holds for our corpora too, then « a monthly figure in an annual
+line » has **no positive example in anything we hold**, and no key
+drawn from these files can test the flagship check — only its
+false-positive half.
+
+That is the same trap as a `kind` key holding one value, and this
+time I am measuring it **before** building the key rather than after
+publishing a verdict on it. `scripts/recalc_units_periods.py`
+classifies every column header in both corpora by shape. The result
+lands in the next entry, and the draw waits on it.
+
+## The prior question answered: we do hold a monthly model
+
+*And the research's gap list is wrong on this one, in our favour.*
+
+`scripts/recalc_units_periods.py`, every column header in both
+corpora classified by shape:
+
+| axis | headers |
+|---|---|
+| **monthly** | **1,334** |
+| annual | 277 |
+| relative (« Year 1 ») | 263 |
+| half-yearly | 1 |
+
+The research reported « **not one monthly model** among 27 » and
+« monthly construction phases are standard in project finance and
+absent from everything we or they hold ». **We hold one.**
+`kelso_model.xlsm` carries 1,320 monthly headers and 80 annual, and
+the two axes meet inside a single sheet:
+
+    sysTimeline!H13 « Apr 15 »  I13 « May 15 »  J13 « Jun 15 »   (120 months)
+    sysTimeline!H39 « 2015/16 » I39 « 2016/17 » J39 « 2017/18 »  (40 years)
+
+with `inputCapexM`, `inputOpexM`, `calcFundingM`, `Interface Constn`
+and `Interf Constn Ops costs` all on the monthly grid — the `M`
+suffix is the modeller's own word for it.
+
+**This is the flagship check's positive example.** « A monthly figure
+in an annual line » needs a model where both exist and can be
+confused; Kelso is a monthly project-finance model with an annual
+reporting layer, which is precisely that. The check is testable
+after all, and it is testable on a file we already hold and have
+already used.
+
+The rest is thinner than it looks and I am saying so: the other
+monthly counts are 4, 4 and 1 headers — stray month names, not axes.
+**One model carries this entire capability.** A `period` key drawn
+across dialects will therefore be almost all annual and relative
+rows, with Kelso the only source of the case that matters, so the
+draw below strata Kelso's monthly sheets separately rather than
+letting 40 uniform rows drown it.
+
+That is also the honest limit: **a check validated on one model is
+validated on one model.** It is enough to build and measure; it is
+not enough to claim the check generalises, and I will not say it
+does.
+
+## The first draw was discarded, and here is why
+
+*Stated plainly because discarding a sample is exactly the move that
+could hide a cherry-pick. **The first draw was never labelled**, by
+me or anyone, so nothing is contaminated — and the seed is unchanged
+at 11, so the second draw is not a retry until I liked it.*
+
+The draw was clean of E2 output — 197 rows, `period` null on every
+one, no inference field anywhere. It was still unfit to hand to a
+labeller, for two reasons I found by reading the rows rather than
+the counts:
+
+**1. The evidence showed the wrong axis on the one stratum that
+matters.** `kelso_model.xlsm inputCapexM!159` came out with
+
+    headers: ['end date', 'FY2015', 'FY2015', 'FY2015', 'FY2015']
+
+but that sheet's real axis is monthly — `Apr 15`, `May 15`, `Jun 15`
+at row 2, which is why the file calls it `inputCapexM`. The reader
+picks **one** header row per sheet and picked an annual one. A
+labeller shown `FY2015` for a monthly row labels it annual, and the
+key comes back wrong **in exactly the direction that hides the
+flagship case** — a monthly figure recorded as annual is the finding
+E3 is supposed to make.
+
+That would have been a self-inflicted version of the trap I have hit
+twice already: a key that cannot contain the case it exists to test.
+The sample now carries **every** candidate header row from the top
+twelve, in the row's own columns, and says in its instructions that
+the reader can pick the wrong one.
+
+**2. Rows of nothing but zeros.** `Spare 9`, five zeros, drawn into
+the monthly stratum. There is nothing there for a human to judge. An
+all-zero row is now ineligible.
+
+Both changes are to *eligibility and evidence*, not to which rows the
+rule prefers, and both are in the committed script.
