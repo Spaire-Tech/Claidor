@@ -64,3 +64,54 @@ revision of a real model by its original authors, which nobody
 planted and nobody curated for us. When A6 lands, that pair is the
 first thing C2/C3 should be re-measured against — a harness we
 designed cannot flatter it. Do not wait on it; register nothing yet.
+
+## Addendum (28 Aug): a measured design finding, and a bug you already avoided
+
+The founder's third research round mined real git history of real
+financial models (13 repos cloned, every historical version pulled,
+a diff engine written and run). Full record: `corpus-sources.md`,
+28 Aug third addendum. Two things are yours.
+
+**1. The finding that should change C3's design.** Splitting one
+equity model's 70 real transitions by commit intent:
+
+| measure | quarterly reforecast (n=11), median | routine commit (n=59), median |
+|---|---|---|
+| formula → hardcode | **83** | **0** |
+| reference changed | 228 | 0 |
+| changed cells | 1,169 | 93 |
+
+The separation is near-total. **A raw threshold on « formulas
+replaced by hardcodes » is the wrong design** — 83 is routine in a
+quarterly update and alarming on a Tuesday. What carries information
+is the count *against the expected profile for that kind of update
+on that model*, and that profile is learnable from a model's own
+history. That is the Watch's product argument, now measured rather
+than asserted. Register how you want to use it; do not bolt a
+threshold on.
+
+Two specimens worth building tests around, both from real commits:
+a vertical sum that became a horizontal sum (`=SUM(AM4:AM8)` →
+`=SUM(S9:V9)`) — a formula that did not move but **changed
+meaning**; and a reference that shifted one column and two rows
+inside a copied block, where the **asymmetry itself** is a cheap and
+strong defect signal.
+
+**2. A bug you already avoided, recorded so you know why.** Their
+first run reported 203 changed cells on a version-string bump; 202
+were false alarms, because openpyxl returns array formulas as
+objects rather than `=`-strings and object identity made every one
+look changed (~600 phantom changes in 17,200, ~3.5%). **I checked
+`watch/diff.py::_formula_text` — you extract `.text` from
+`ArrayFormula` and `DataTableFormula`, so we are clean.** The reason
+we are clean is that the correction gate met this exact class in the
+RIIO-3 round and `changeset.py::comparable()` paid for the lesson
+first. Keep it; add a test if none pins it.
+
+**3. Ground truth with the author's own words, when you want it:**
+`hickeng/financial`, transition v10→v11, commit « Fixes row skewed
+formula » — 98 reference changes, 1 formula change, zero hardcodes,
+every formula in a block reading the row below itself. Level-A
+truth, 98 labelled instances. The same chain has 1-, 2- and 4-cell
+version bumps: signal and required silence in one file.
+Non-commercial licence — internal measurement only.
