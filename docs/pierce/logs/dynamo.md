@@ -3246,3 +3246,60 @@ assuming — that is the whole lesson.
 4. No dimension moves on either key, so the verdict published today
    stands unchanged — with its caveat that the second convention
    remains untested by any measurement I hold.
+
+## Item (a) measured — and it found the second convention in our own corpus
+
+### The predictions
+
+| prediction | outcome |
+|---|---|
+| 1 — nothing changes on our corpus | **almost**: every tally identical, **one row's key changed** |
+| 2 — the research's six cells classify correctly | **confirmed**, in tests |
+| 3 — the five ambiguous `= 2` cells read `decimal` | **confirmed** |
+| 4 — no dimension moves, the verdict stands | **confirmed** |
+
+Both keys re-run at HEAD are identical to the run before the change,
+dimension for dimension. The only difference in the whole output is
+one line, and it is the interesting one:
+
+    - "rate_form: said not-a-rate, was decimal"
+    + "rate_form: said not-a-rate, was percent"
+
+### What that one row is
+
+    gd3-pcfm  Input!442   units « % »
+      format  '#,##0.0;\(#,##0.0\);"-"'   — not a percent format
+      values  11.5847, 10.0364, 5.7118, 1.5500
+      label   « CPI Forecast »
+
+**CPI of 11.58%, written as `11.58`.** That is the whole-number
+convention, in a regulator model, in our own corpus — and UK CPI
+peaked near 11% in 2022, so the reading is not in doubt the way the
+five `= 2` cells were.
+
+**So the sentence I published earlier today is wrong**: « as far as
+any evidence shows, our corpus carries the decimal-fraction
+convention ». It carries both. I could not see it while my key and
+my inference each assumed `%` meant decimal — the row was simply
+scored against a wrong answer and the disagreement went to E2's
+column instead of the key's.
+
+**And my answer key was wrong on this row until an hour ago.** That
+is the concrete case for having done item (a) on the key rather than
+only on the inference, and it is a sharper argument than the one I
+registered: I wrote that a wrong key « would » make numbers wrong on
+a whole-number-percent model, hypothetically, elsewhere. It was
+already wrong here.
+
+The tallies did not move because E2 says `not-a-rate` for that row
+either way — wrong before, wrong now, wrong for its own reasons. The
+key is right now, which is what a key is for.
+
+### What this changes upstream
+
+The verdict's `rate_form` caveat gets weaker in one direction and
+stronger in another. Our corpus is **not** single-convention, so a
+measurement here is not automatically blind to whole-number
+percentages — but the second convention is represented by **one row
+of 3,796**, which is far too thin to claim `rate_form` is tested
+against it. The caveat stands, with the count attached.
