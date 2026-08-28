@@ -5972,3 +5972,190 @@ The remaining 41 s on the data dump is one XML pass in which openpyxl
 still builds a cell object for each of **3.1 million elements to keep
 496 thousand** — 2.6 million of them styled but empty. That is now the
 top item, and it is the same one for every large file.
+
+## 28 August 2026, thirty-first « go » — A1 profiled. **The ranked list is ready for Sentinel.**
+
+### First, two things said before the work rather than after
+
+**1. The orders contain a tension, and I am flagging it as invited.** The
+CORRECTION section says A1's *fixes* are Sentinel's and that I must
+« change nothing in `polar/tieout/*.py` ». The PIECE section then sets a
+DONE test that is a performance outcome — six models under 60 s and
+512 MB. **I cannot reach that test without changing engine files.** I
+have therefore done the half that is unambiguously mine and is task one
+under either reading — the measurement — and the ranked list is below.
+If the piece is mine to finish, I need the files; if it is Sentinel's, it
+is theirs to finish and this is the handover.
+
+**2. My two reader fixes from last turn are superseded, and I dropped
+them.** The tip now opens without the stylesheet and reads the formula
+and value layers in one XML pass (`sheets.cells_of`), differential-tested
+cell for cell. That is further than either of mine. I resolved the merge
+by taking the tip's `workbook.py` wholesale rather than defending my
+edits on what is now a fallback path.
+
+### The baseline moved under both of us — measure, never quote
+
+The orders record `final_gd3_bpfm.xlsm` at **493.9 s**. On the current
+tip it is **223.0 s**. The new reader already more than halved it, and a
+ranked list built on the old number would have pointed at the wrong
+thing.
+
+`final_gd3_bpfm.xlsm` — 17.5 MB, **693,753 cells, 638,790 formulas
+(92%)**, 49 sheets. It is also the first corpus file **over 600k cells**,
+so A1's sentence can finally be measured rather than extrapolated.
+
+| stage | time | peak RSS |
+|---|---|---|
+| read | 91.1 s | 1,267 MB |
+| axes | 0.2 s | |
+| **audit** | **131.6 s** | **3,270 MB** |
+| total | **223.0 s** | **3,270 MB** |
+
+**Is it the reader or the audit? The audit, on both axes** — 59% of the
+time, and it adds two further gigabytes on top of the reader's peak.
+
+### Where the memory goes — and the lead's hypothesis is 21% of it
+
+The lead guessed the expanded precedents, and asked to be told plainly
+rather than confirmed politely. **Measured:**
+
+| | |
+|---|---|
+| precedent entries | **23,501,329** |
+| distinct precedent strings | 813,429 |
+| distinct string **objects** | **813,429** |
+| container overhead | 219 MB |
+| unique string payload | 52 MB |
+
+**They are already fully shared** — 96.5% sharing present, **0% headroom**
+(`workbook.py:1068` calls `intern()`). So the precedent structure is
+**271 MB of a 1,267 MB peak, about 21%**, and de-duplicating it is a dead
+hypothesis, killed in one measurement.
+
+Two corrections that follow:
+
+- **`MAX_RANGE` is 50, not 200.** The orders state 200.
+- **7.7 GB is no longer real.** The reader now peaks at 1,267 MB and the
+  whole run at 3,270 MB.
+
+The rest of the reader's live memory, named:
+
+| structure | MB |
+|---|---|
+| precedent containers + strings | 271 |
+| formula text (637,300 distinct) | 86 |
+| values (`Decimal`) | 61 |
+| `Cell` objects, shallow | 33 |
+| the cells dict | 15 |
+| `row_words` | 2 |
+| **accounted live** | **≈468** |
+| **peak** | **1,267** |
+
+**So ~800 MB of the reader's peak is transient, not retained.** That
+matters more than any structure: to fit 512 MB, Sentinel must cut *peak
+allocation during parsing*, not only the size of what is kept. Shrinking
+`Cell` cannot get there; streaming the parse can.
+
+### Where the time goes — sampled, not cProfiled
+
+`py-spy record --rate 50`, **12,994 samples, 0 errors**. (Installed into
+the local venv for measurement only; **not** added to `pyproject.toml` —
+dependencies go through the lead.) The method's warning applied: cProfile
+ranks by call count and would have named the tokenizer's callers rather
+than the tokenizer.
+
+**Top of the run by self time — what is actually executing:**
+
+| self | share | frame |
+|---|---|---|
+| 15.2 s | 5.8% | `openpyxl/formula/tokenizer.py:351 __init__` |
+| 8.8 s | 3.4% | `openpyxl/formula/tokenizer.py:383 make_operand` |
+| 8.3 s | 3.2% | `polar/tieout/workbook.py:1068 _cells` |
+| 6.2 s | 2.4% | `re.match` |
+| 5.3 s | 2.0% | `polar/tieout/sheets.py:118 read_sheet` |
+| 5.0 s | 1.9% | `openpyxl/formula/tokenizer.py:79 _parse` |
+| 4.2 s | 1.6% | `openpyxl/formula/tokenizer.py:175 _parse_whitespace` |
+
+**openpyxl's formula tokenizer is ≈33 s of self time in a 260 s run.**
+
+## THE RANKED LIST — for Sentinel, biggest first
+
+| # | item | cost | what it is |
+|---|---|---|---|
+| **1** | **`audit.py:797 _volatile`** | **66.7 s — 25.7%** | tokenizes **every one of 638,790 formulas** to read its `FUNC` names |
+| 2 | `workbook.py:512 cells_of` | 78.5 s — 30.2% | the reader stage; its own leaves are XML parsing and the tokenizer |
+| 3 | `audit.py:800 _rows` | 33.5 s — 12.9% | does **not** tokenize; cause not yet established, and I am not guessing |
+| 4 | `workbook.py:455 _read_sheet` | 27.4 s — 10.5% | labels, headers, tags, per sheet |
+| 5 | `audit.py:799 _literals` | 12.3 s — 4.7% | |
+| 6 | `audit.py:802 _mutations` | 11.5 s — 4.4% | |
+| 7 | `audit.py:815 _gapped_tests` | 9.2 s — 3.5% | |
+| 8 | `audit.py:811 _circularity` | 6.4 s — 2.5% | |
+
+**The one that unifies the top of the list: the formula is tokenized more
+than once per run.** The reader tokenizes all 638,790 formulas to expand
+precedents; `_volatile` tokenizes all 638,790 again to ask which function
+names appear. **Tokenize once and share the stream** is the biggest single
+win available, and it is worth roughly a quarter of the run.
+
+**Named so it is not confused with a dead hypothesis:** the speed round
+already killed *caching tokens by formula text* (1.1× reuse — formulas
+differ). This is different in kind — the **same** formula object
+tokenized twice in one run, by two callers who each build their own.
+
+### What I did not do
+
+I did not touch a single file under `polar/tieout/`. Everything above
+comes from `scripts/corpus_giant_profile.py`, which is mine and is
+committed with the numbers, so every line of the list can be re-run.
+
+**Sentinel: the list is ready.** Item 1 is a quarter of the run and the
+diagnosis is exact.
+
+### `dev/verify`: FAIL, and the two failures are not mine — the tip is red
+
+Run as the standing order requires. **`VERIFY: FAIL`**, twice, and both
+runs are worth reporting because they failed for different reasons.
+
+**First run — 1,057 errors, and they were not real.** All three services
+were down; they had been killed during the multi-gigabyte profiling runs.
+This is exactly the pattern `dev/verify` was written to catch, and it
+caught it in the sense that mattered — it did not let me believe a green
+— but its « still failing on a clean run — real » verdict was **wrong**:
+re-running alone does not distinguish *code broken* from *postgres,
+redis and minio absent*. **A concrete suggestion for whoever owns the
+script: probe 5432 / 6379 / 9000 before the suite and refuse to start
+rather than report 1,057 real errors.** I restarted them from my
+handoff's recipe and re-ran.
+
+**Second run — 2 failed, 1,055 passed**, and the two fail alone, so they
+are real:
+
+```
+tests/tieout/test_binary.py::TestRealBinaryWorkbook::test_it_reads_and_carries_no_artifacts
+tests/tieout/test_binary.py::TestRealBinaryWorkbook::test_the_labels_survive
+BinaryUnreadable: this workbook could not be converted from the binary
+format (Error: source file could not be loaded)
+```
+
+LibreOffice **is** installed here (`/usr/bin/soffice`), so it is not a
+missing converter.
+
+**They are not mine, and I checked rather than asserted it:**
+
+```
+$ git diff --name-only origin/claude/pierce-phase-6-writing-mjkaj6 HEAD
+docs/pierce/handoffs/scribe.md
+docs/pierce/logs/scribe.md
+docs/pierce/scribe-answer-key-protocol.md
+server/scripts/corpus_answer_key_fetch.py
+server/scripts/corpus_giant_profile.py
+```
+
+`git diff --stat <tip> HEAD -- server/polar/` is **empty**. I changed no
+engine file at all this turn.
+
+So: **the tip is red on `.xlsb` conversion**, and I am reporting that
+rather than reporting a green I did not earn. Nothing of mine ships
+behind it — my whole diff is a log, a handoff, a protocol and two
+measurement scripts.
