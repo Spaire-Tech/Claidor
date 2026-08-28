@@ -12,7 +12,11 @@ trustworthy; where they disagree the disagreement is the finding, and
 this round stops rather than judging a route by a witness that cannot
 be trusted.
 
-    uv run python -m scripts.a6_witness_check <files.txt> <converted-dir> <out.json>
+    uv run python -m scripts.a6_witness_check <manifest.json> <out.json>
+
+Pairing comes from the manifest, never from a basename: two files in
+the population share a name while differing in content, and a flat
+output directory silently overwrote one conversion with the other.
 """
 
 import json
@@ -69,14 +73,14 @@ def converted_formulas(path: Path) -> int:
 
 
 def main() -> None:
-    listing, converted_dir, out = (Path(a) for a in sys.argv[1:4])
+    manifest, out = Path(sys.argv[1]), Path(sys.argv[2])
     results: list[dict[str, Any]] = []
-    for line in listing.read_text().splitlines():
-        original = Path(line.strip())
+    for pair in json.loads(manifest.read_text()):
+        original = Path(pair["original"])
         if not original.exists():
             continue
-        converted = converted_dir / (original.stem + ".xlsx")
-        row: dict[str, Any] = {"file": original.name}
+        converted = Path(pair["converted"])
+        row: dict[str, Any] = {"file": original.name, "path": str(original)}
         try:
             row["census"] = census(original)
         except Exception as problem:

@@ -86,6 +86,26 @@ round 1 established.
    no number. The repair is measured *with* the route it repairs —
    an unrepaired conversion is already known to fail.
 
+### A method fault found before it could corrupt a number
+
+The first conversion pass wrote every output into one flat
+directory. Two files in the population share a basename while
+**differing in content** —
+`grades_Spring04_Geol%#A8A32.xls`, one under `subjects/` and one in
+the Tasi tree — so one conversion silently overwrote the other, and
+pairing by name would have measured one file against a different
+file's conversion. Sixty conversions produced fifty-nine outputs,
+with no error reported anywhere; the count is the only thing that
+showed it.
+
+Fixed by converting each original into its own indexed directory and
+pairing through a committed manifest (`scripts/a6_manifest.py`),
+never through a basename. The sample was re-converted from scratch.
+
+Checked in the same breath, since it would have mattered more: the
+430 files are **430 distinct contents** by md5 — the collision is a
+naming coincidence, not a duplicated population.
+
 ## Criteria (fixed now)
 
 1. **The witness validates**, per the section above. If it does not,
