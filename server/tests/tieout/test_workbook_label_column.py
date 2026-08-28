@@ -1,15 +1,18 @@
-"""Electing numeric-valued formulas in the label column.
+"""What the label column does and does not elect.
 
-Registered round: `docs/pierce/label-column-election.md`. One column
-per sheet is chosen by `_label_column` and has never been elected as
-content, so a formula written there is invisible to every rule. The
-change elects such a cell **when its cached value is numeric**, and
-leaves the ones resolving to text alone.
+Registered round: `docs/pierce/label-column-election.md`, which was
+**refused**. One column per sheet is chosen by `_label_column` and
+has never been elected as content. The round tried electing cells
+there that carry a formula with a numeric result; planted recall
+came back 0 of 12, because the defect being hunted — a typed-over
+cell — has no formula and so stayed excluded by the very rule meant
+to reveal it.
 
-Two of these tests pin things the change must *not* do, which the
-registration fixed in advance because neither is obvious from the
-proposal: the `series` test must be computed on the data columns
-alone, and the header row keeps today's behaviour.
+These tests therefore pin **today's** behaviour, including the
+refused case, so the same design is not tried again by accident.
+Three of them pin invariants the next attempt must still respect:
+the `series` test is computed on the data columns alone, the header
+row is untouched, and a text-valued formula stays out.
 
 openpyxl writes no cached value for a formula, so the helper injects
 `<v>` by the same XML surgery the planting harnesses use — without a
@@ -96,13 +99,23 @@ def _ladder(sheet) -> None:
         sheet[f"B{row}"] = float(row)
 
 
-def test_a_numeric_formula_in_the_label_column_is_elected() -> None:
+def test_a_numeric_formula_in_the_label_column_is_still_not_elected() -> None:
+    """The refused change, pinned so it is not tried again by accident.
+
+    Electing label-column cells that *carry a formula* with a numeric
+    result was implemented and refused (`label-column-election.md`):
+    it admits every healthy cell of a computed ladder and excludes the
+    one that matters, because a typed-over cell has no formula. 0 of
+    12 planted defects were caught.
+
+    The design that does work — electing label-column cells by their
+    numeric *value*, formula or not — caught 12 of 12 in a diagnostic
+    probe and is its own registered round. Until it lands, this is
+    the behaviour.
+    """
     cached = {f"A{row}": str(39998 + row) for row in range(3, 12)}
     book = _read(_ladder, cached)
-    assert "Sheet!A5" in book.cells, sorted(book.cells)[:12]
-    cell = book.cells["Sheet!A5"]
-    assert cell.formula == "=A4+1"
-    assert cell.value is not None
+    assert "Sheet!A5" not in book.cells
 
 
 def test_a_text_valued_formula_in_the_label_column_is_not_elected() -> None:
