@@ -243,6 +243,56 @@ edited is not a weak result, it is not a result.
 taken; a re-run after a fix is a new measurement, not a correction
 of the old one.
 
+## 28 August 2026 — the revert, and closing the refusal properly
+
+Two corrections from the lead, both fair, and one of them is already
+fixed on my branch.
+
+**The revert.** « Tests for the label-column election, written before
+the change » went to the integration tip without its implementation,
+so a test asserting `Sheet!A5 in book.cells` failed at a tip every
+other lane builds on. Writing the test first was right; pushing it
+red to a shared tip was not, and the lead could not fix it without
+editing my expectations, which are mine to set. **Already resolved
+here:** when the round refused I re-pinned that test to assert the
+cell is *not* elected, so `swens/sentinel`'s tip is green — 119
+tests across the label-column, audit and workbook files — and the
+commit merges as it stands. The rule I take forward: hold a
+test-first commit on the branch until its change lands beside it, or
+skip it with the reason and unskip in the same push.
+
+**Refusal is not the finish line.** The new `lanes.md` section says a
+refusal closes with a successor differing *in kind*, and it caught
+me exactly: the successor I had written — « elect by numeric value
+rather than by carrying a formula » — is the same design with the
+key swapped. It varies a parameter. Three that attack the constraint
+are now in the document:
+
+- **A.** Stop assuming a cell must be in `book.cells` to be seen.
+  Expose label series as their own collection consumed by one new
+  rule: existing findings then cannot move *by construction* rather
+  than by measurement, and the price is confined to one rule instead
+  of seventeen. Costs a frozen-interface bump, honestly.
+- **B.** Ask « is the sequence intact? » rather than « was this cell
+  typed? ». A typed cell that continues a ladder correctly stops
+  being a finding — today's design would flag it — and a formula
+  cell that breaks one starts being a finding, which every
+  provenance-based design misses.
+- **C.** Judge the ladder from what reads it: walk the precedent
+  graph for cells referencing a label column. No election, no new
+  interface, and it prices itself, because a ladder nothing depends
+  on is correctly ignored — which is most of the 34,000 cells of a
+  single shape.
+
+**B first.** It is the only one that changes the question rather than
+the mechanism, and it answers the objection the cost round raised
+against itself: most of the hidden population is one shape, so judge
+the shape instead of counting the cells.
+
+I also did what the orders asked and re-read my own handoff lessons
+before acting. Worth recording that the last two rounds each cost me
+a trap that was already written down there.
+
 ## 28 August 2026 — the election refused: planted recall caught what nothing else would have
 
 The cost round said 49,011 formula cells sit in label columns
