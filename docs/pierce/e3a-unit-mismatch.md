@@ -135,3 +135,88 @@ number travels further.
 I have not changed `units/`, have not tuned my rule around it, and
 have not withdrawn the check before measuring. The corpus price
 below is taken as things stand.
+
+---
+
+## Results (computed after the registration)
+
+### Criterion 2 — the false-positive price: **103 of 103 wrong**
+
+| corpus | files | unit findings | true |
+|---|---|---|---|
+| SFT closed-deal | 10 | **103**, all on `inverness_college_model.xlsm` | **0** |
+
+The tally is the damning part: `{"total": 103, "raised": 103}`. The
+rule fired on **every sum it examined**.
+
+**Every one has the same shape — « GBP, none ».** And `none` is not
+a currency. It is the inference saying *this quantity has no
+currency at all* — a rate, a percentage, a count. `=C20-C25` on
+`PF5_SPV Running costs`, `=SUM(AA18,AA20:AA27)` on `PF6_Cashflows`:
+money terms beside dimensionless ones, which is what a cashflow
+does.
+
+**The error is mine and it is a category error, not a threshold.**
+The registration says « two distinct *answered* values », and `none`
+is an answered value — so I counted « has no currency » as a
+currency that could disagree with sterling. Nine of the ten models
+abstain correctly; the tenth fires on everything.
+
+Per the orders, which override the usual autonomy here: **this is
+reported, not tuned away.** The measurement stands as taken.
+
+### The other two dimensions
+
+- **`scale-mismatch`: structurally unable to fire.** Measured, not
+  assumed — see above; it abstains with its reason, which is the
+  honest state.
+- **`period`: never armed.** E3b, blocked on measurement.
+
+So of the three dimensions E3 could speak on, **one is wrong on
+everything, one cannot answer, and one is not allowed to.**
+
+## Verdict: REFUSED
+
+Criterion 2 fails at a 100% false-positive rate. Criterion 1
+(planted recall) was **not reached** — there is nothing to measure
+recall against on a rule that is wrong every time it speaks, and
+spending a planting run on it would have produced a number
+describing a check that cannot ship. The gate was not run and the
+baseline is untouched.
+
+**The rule is implemented, unit-tested and deliberately unwired**,
+the way `_typed_beats` is, with a test pinning that `audit()` stays
+silent on units so a future edit cannot quietly re-arm it.
+
+## What was learnt that is worth more than the rule
+
+1. **`none` and `unknown` are different abstentions.** `unknown` is
+   « the evidence did not decide »; `none` is « decided: this has no
+   currency ». Treating them alike is what produced every false
+   alarm. Any future dimension check must say which of the two it
+   means.
+2. **The `[$…]` misread** (above) is real and separate, and would
+   have produced a *different* false-alarm class had the first not
+   swamped it. Still routed to the lead.
+3. **The corpus price is what caught this**, not the tests. My five
+   tests all passed — because I built them on rows that were money
+   or money, never money against a rate. A hand-built test agrees
+   with whatever I already believe; the corpus does not.
+
+## The correction, registered before it is measured
+
+**`none` is not a currency.** A mismatch requires two distinct
+values that are both *actual currencies* — `GBP`, `USD`, `EUR` —
+and a `none` term is excluded from the comparison, not counted
+against it.
+
+Fixed now, before any re-measurement, so the next number is taken
+under a criterion written in advance: **on the same ten models the
+corrected rule must raise zero findings**, because none of the 103
+is a real currency mismatch and no other candidate exists in that
+corpus. If it raises any, each is hand-read before adoption. Planted
+recall then runs against the currency harness already committed.
+
+That is a correction of a category error, not a loosened threshold:
+the rule's question is unchanged and its bar is unchanged. Said
+plainly so the distinction is on the record rather than assumed.

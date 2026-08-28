@@ -813,7 +813,16 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _sibling_totals(book, result)
     _range_over_block(book, result)
     _gapped_tests(book, result)
-    _unit_mismatch(book, result)
+    #: `_unit_mismatch` is implemented and unit-tested but NOT wired.
+    #: Measured on the closed-deal corpus it raised 103 findings on
+    #: one model and **every one was a false alarm** — each of the
+    #: form « GBP, none », where `none` is the inference saying a
+    #: quantity has no currency at all (a rate, a count), not that it
+    #: is in a different one. A dimensionless term added to a money
+    #: term is not a currency mismatch, and I had counted `none` as a
+    #: currency that could disagree. The registered verdict is in
+    #: docs/pierce/e3a-unit-mismatch.md; the correction is its own
+    #: round, registered before it is measured again.
     _hidden_sheets(book, result)
     _names_table(book, result)
 
@@ -857,11 +866,6 @@ COVERAGE_OF: dict[str, str] = {
     "range-over-block": "aggregations",
     "circular": "connected",
     "hidden-sheet": "sheets",
-    #: E3a. These two report their own coverage — their denominator is
-    #: « sums whose terms disagree », which is not one of the
-    #: populations below — so `_coverage` leaves them alone.
-    "currency-mismatch": "formulas",
-    "scale-mismatch": "formulas",
 }
 
 

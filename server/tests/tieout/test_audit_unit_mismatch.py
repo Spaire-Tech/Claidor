@@ -18,14 +18,27 @@ from polar.tieout.workbook import read_workbook
 
 
 def _audit(build):
+    """Runs `_unit_mismatch` directly — it is **not wired** into
+    `audit()`.
+
+    The round refused on its false-positive price (103 of 103 wrong
+    on the closed-deal corpus), so the rule reports to nobody. These
+    tests keep it honest until the correction lands, the way
+    `_typed_beats` is kept.
+    """
     from openpyxl import Workbook as Book
+
+    from polar.tieout.audit import Audit, _unit_mismatch
 
     book = Book()
     build(book.active)
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / "built.xlsx"
         book.save(path)
-        return audit(read_workbook(str(path)))
+        read = read_workbook(str(path))
+        result = Audit(examined=len(read.cells))
+        _unit_mismatch(read, result)
+        return result
 
 
 def _found(result, rule):
@@ -79,6 +92,26 @@ def test_the_period_dimension_is_never_raised() -> None:
     """E3b is not armed, and no rule may quote `period`."""
     result = _audit(lambda s: _money_sheet(s, second_format="$#,##0"))
     assert not [f for f in result.findings if "period" in f.rule]
+
+
+def test_the_rule_is_not_wired_into_the_audit() -> None:
+    """The refusal, pinned. `audit()` must stay silent on units.
+
+    103 of 103 corpus findings were false alarms, so the rule reports
+    to nobody until the correction is registered and measured. A
+    future edit that wires it back without that round should fail
+    here.
+    """
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    _money_sheet(book.active, second_format="$#,##0")
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    assert not [f for f in result.findings if "mismatch" in f.rule]
+    assert not [a for a in result.abstentions if "mismatch" in a.rule]
 
 
 def test_scale_is_abstained_on_not_silently_clean() -> None:
