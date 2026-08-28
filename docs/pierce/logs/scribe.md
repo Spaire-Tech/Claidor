@@ -4577,3 +4577,225 @@ it, and correctly.
 **Nothing is blocked, and nothing is waiting on the lead.** The next
 thing this lane could usefully do is not obvious to me, which is a
 better position than it has been in for ten sweeps.
+
+## 28 August 2026, twenty-third « go » — the corpus blocker is broken, and a pair exists
+
+Orders unchanged at the tip: the addendum of 28 August, three items in
+order. **Item 1 was the whole blocker — find one native workbook.** It
+is done, and it went further than the orders asked for: there is not
+only a native workbook, there is a **complete document → model pair
+with the filer's own citations as truth.** The full manifest is
+committed as `docs/pierce/corpus-ferc-formula-rate.md`. Round 8 is
+registered below, before any matcher has been pointed at it.
+
+### The extension trap, verified rather than taken on trust
+
+The lead's warning was exact and I checked it myself rather than
+believing it. PJM's 2025 JCPL ATRR requested at `.pdf` and at `.xlsx`:
+both **HTTP 200**, both **4,070,119 bytes**, the **same sha256**
+`22ea2d6848f5…`, both beginning `25504446` — `%PDF`. An hour saved by
+somebody else's hour spent. Every file this lane accepted from here is
+recorded with the four bytes it was accepted on.
+
+### What was found
+
+PJM's formula-rate page lists **745** spreadsheet/zip links. Native
+XLSX exists in quantity: three current-year large-owner workbooks were
+fetched and byte-verified, and JCPL's 2025 ATRR reads in the engine at
+**4,346 cells, 2,910 formulas, 1,436 typed**, carrying **72 citation
+cells**.
+
+But the large owners have **no document half** — PJM publishes only
+three FERC Form 1 PDFs on the entire page, all for the small municipal
+filers. The pair is there instead:
+
+- **document** — `rmu-2015-ferc-form-1.pdf`, RMU's Form 1 for calendar
+  2015, filed 23 May 2016. 132 PDF pages, 103 with a Form 1 footer,
+  103 distinct printed page numbers, **zero collisions**.
+- **model** — `rmu-2016-formula-rate.xlsx`, the 2016 Attachment H-25B
+  update. 4,472 cells, 2,239 formulas, **47 citation cells**.
+
+Same filer, same folder, same rate cycle, document earlier than model.
+
+**One citation resolved end to end, by hand.** `F10 = "p354.21.b"`,
+label `C10 = "Transmission Wages Expense"`, typed input `H10 = 44016`.
+Printed page 354 (PDF index 107) line 21 reads
+`21Transmission (Enter Total of lines 4 and 14) $ 44,016 $ 44,016`, and
+column (b) is **44,016**. Exact.
+
+And the two labels are **not** the same string, which is the point.
+Harder still: on that page the bare word *Transmission* labels **three**
+lines — 4, 14 and 21. A matcher keying on the label alone must
+disambiguate or abstain, and the filer's citation says which is right.
+
+### Three things I got wrong this turn, two of them before publishing
+
+**1. My citation regex reported zero, and zero was my instrument.**
+The first scan of the RMU workbook returned **0 citations** and I was
+one sentence from writing that the small filers' workbooks carry no
+citation convention — which would have thrown away **the only complete
+pair in the family.** The regex opened with `\b(\d{2,3})`, and in
+`p354.21.b` there is no word boundary between `p` and `3`. The
+convention is `p354.21.b`; I had only ever tested against JCPL's bare
+`354.21.b`. The corrected count is **47**.
+
+This is the same failure as claim 14 and the reversed arrow: **a
+negative produced by my own instrument, one step from being published
+as a fact about the world.** The rule I keep relearning is that a
+surprising zero is a question about the instrument first.
+
+The same fix moved JCPL from 67 to **72**.
+
+**2. I read last turn's measurement as a blocker. It was not.** I
+measured that the engine's cell labels for JCPL's `Attachment H-4A`
+carry column B's row text and not column C's citation, and I was ready
+to report the citation as "not reachable as a cell label today". That
+reading was wrong, and wrong in the direction that matters: **the
+citation is the truth key, not the matcher's input.** If it appeared in
+the label the matcher would be scoring by reading the answer. The
+engine is doing the right thing. What the citation needs is a separate,
+out-of-band parse — which is exactly what a truth key should be.
+
+**3. Printed page numbers, derived loosely, collide.** Searching page
+text for `Page \d{3}` makes **10** printed numbers ambiguous: page 112
+appears to sit on two PDF pages, page 117 on three. Every extra hit is
+a body cross-reference — "…recorded in Page 117, Line 78". The rule
+that owns the answer is the **footer**: `FERC FORM NO. 1 … Page NNN`.
+Under it the mapping is unique across all 103 pages and all 22 cited
+pages resolve. This is this lane's recurring defect in a new dress —
+re-deriving a rule at the call site — caught in intake this time rather
+than after publication, which is the first time that has happened.
+
+### An intake observation, unreported until now
+
+**ATSI's `2024-atrr.xlsx` is a genuine XLSX by its bytes and the engine
+cannot read it** — `ValueError` on load. 1,225,523 bytes, sha256
+`44b6817618a8…`. Recorded here as an engine intake fact; the engine is
+read-only to this lane, so it is the lead's to route, not mine to fix.
+
+Also: `cor-ferc-form-1.pdf` is **2 pages** — a cover letter, not a form.
+Not a document half. `cor-2017-form1.pdf` is 53 pages and **partial**;
+cited pages 200 and 207 are absent from it.
+
+## D3 round 8 — registration, frozen before the matcher is pointed at it
+
+Everything below is committed before any matcher output is read.
+
+### The corpus
+
+The RMU pair above, and nothing else. Document `rmu-2015-form1.pdf`
+(sha256 `b46018ef0d06…`), model `rmu-2016-formula-rate.xlsx` (sha256
+`01be958d92ca…`).
+
+### The sample — exhaustive, so there is no seed
+
+Not a random sample. **Every** cell meeting the rule, so there is
+nothing to seed and nothing to re-cut:
+
+> In `Appendix A - TSRR Summary`: every column-F cell whose text is
+> **exactly** one `p<page>.<line>.<col>` — no `&`, no ranges, no prose,
+> no footnote marker — whose column-H value on the same row is a
+> **typed number** (not a formula, not blank), and whose cited page
+> exists in the document under the footer rule. The model's label is
+> column C of the same row.
+
+**The rule yields 25 rows.** They are frozen, listed in
+`scratchpad/sample.json` and reproduced in the results section when the
+round runs. 12 distinct cited pages; every one resolves. **One of the
+25 has no model-side label at all** (row 176) — kept in, because a cell
+with no name is a real case and round 6 already showed nothing on the
+document side can rescue it.
+
+Two properties of the sample worth stating before anyone sees a score:
+**11 of the 25 values are zero** — a small municipal has many nil lines
+— and the sample is drawn from one sheet of one workbook. This is a
+narrow corpus. It is a *real* one, which it has taken eight rounds to
+obtain, but narrow is narrow and no result from 25 rows will be a
+population claim.
+
+### The truth
+
+The filer's own citation, parsed. For a sample row citing
+`p<P>.<L>.<K>`, the truth is **the document line printed as line L on
+the page whose footer reads Page P.** A parse, not a judgement: nobody
+has to decide what the modeller meant.
+
+### The judging bar — line granularity, and the leniency is declared
+
+A proposal is **correct** if the document fact it names lies on printed
+page P and printed line L. Column K is **not** required to match.
+
+That is deliberate leniency and I am declaring its size rather than
+discovering it later: resolving column (b) from (d) needs the schedule's
+printed column header row, which is a separate parse this round does not
+build. **The round reports how many of the 25 cited lines carry more
+than one distinct number**, so a reader can price the slack exactly.
+This is the existing `indeterminate-line-granularity` vocabulary applied
+to the document side.
+
+Wrong = a proposal naming any other line. Abstention is a **third
+outcome, reported in words**, never folded into either.
+
+### Never-by-value, unchanged
+
+The tokenizer still drops purely numeric tokens from both sides. The
+matcher never sees the model's value or the document's. The values in
+the sample exist to *report* what happened, never to find or score
+anything.
+
+### Two phases, in order
+
+Truth is built and **committed** before any matcher output is read —
+the same two-phase harness that enforces order everywhere in this lane.
+
+### Kill criteria, stated in advance and binding
+
+1. **If the matcher produces more confident wrong answers than correct
+   ones, the round is a failure and is reported as one.** No target is
+   promised.
+2. **If D1 cannot extract a number on the cited line for more than half
+   the sample, no matcher score is published at all.** The round then
+   reports an **intake failure** — the `stated-but-unextracted`
+   condition at corpus scale — because a matcher score computed over
+   rows the extractor never produced would be a number about nothing.
+
+### What this round does NOT test — a correction to the orders' expectation
+
+The orders say this corpus "tests the matcher's **hard** half — the
+transformed relationships — with the filer's own labels as truth." On
+the pair I can actually run, **that is not what it tests, and I would
+rather say so now than let a number be read as more than it is.**
+
+The transformations the researcher counted — 13-month averaging, sign
+flip, percent-to-decimal, allocation, dollars-to-unit-rate — live in the
+**large owners'** workbooks. JCPL's `Attachment 3` and `Attachment 8`
+put one citation in a header row over a **column of thirteen monthly
+values**: that is the averaging case, and it is also exactly the shape
+round 6's column anchor was built for. **Those workbooks have no
+document half.** RMU's Appendix A single-target citations appear to be
+direct lifts — the one I resolved by hand, `p354.21.b` → 44,016, is one.
+
+So round 8 tests **matching against a genuine, earlier, third-party
+document with third-party truth** — which no previous round has had,
+and which is worth having on its own. It does **not** test the
+transformed half. **How many of the 25 are direct lifts and how many
+are transformed is reported as an output of the round's intake phase**,
+not assumed here.
+
+Getting the transformed half needs a FERC Form 1 for a large owner.
+`www.ferc.gov` answers **403** to this environment; `forms.ferc.gov`
+and `elibrary.ferc.gov` answer 200 but are ASP.NET postback surfaces.
+That is an open problem, and I am not recording it as solved.
+
+### The prediction, stated so it can be wrong
+
+The model side reads in short accounting names ("Transmission Wages
+Expense"); the document side reads in form line text ("Transmission
+(Enter Total of lines 4 and 14)") beneath a section head. The shared
+evidence is often a single word, and on page 354 that single word names
+three lines.
+
+**I expect high abstention and few confident errors, and I expect fewer
+than half of the 25 matched.** If instead it produces confident wrong
+answers, the round dies and says so — that is the outcome this whole
+design is arranged to prefer.

@@ -1,0 +1,227 @@
+[
+ {
+  "row": 10,
+  "citation": "p354.21.b",
+  "page": 354,
+  "line": 21,
+  "col": "b",
+  "label": "Transmission Wages Expense",
+  "value": 44016.0
+ },
+ {
+  "row": 12,
+  "citation": "p354.28.b",
+  "page": 354,
+  "line": 28,
+  "col": "b",
+  "label": "Total Wages Expense",
+  "value": 2120257.0
+ },
+ {
+  "row": 13,
+  "citation": "p354.27.b",
+  "page": 354,
+  "line": 27,
+  "col": "b",
+  "label": "Less A&G Wages Expense",
+  "value": 343349.0
+ },
+ {
+  "row": 19,
+  "citation": "p207.104.g",
+  "page": 207,
+  "line": 104,
+  "col": "g",
+  "label": "Electric Plant in Service",
+  "value": 73315883.0
+ },
+ {
+  "row": 21,
+  "citation": "p219.29.c",
+  "page": 219,
+  "line": 29,
+  "col": "c",
+  "label": "Accumulated Depreciation (Total Electric Plant)",
+  "value": 41209384.0
+ },
+ {
+  "row": 22,
+  "citation": "p200.21.c",
+  "page": 200,
+  "line": 21,
+  "col": "c",
+  "label": "Accumulated Amortization",
+  "value": 0.0
+ },
+ {
+  "row": 36,
+  "citation": "p207.58.g",
+  "page": 207,
+  "line": 58,
+  "col": "g",
+  "label": "Transmission Plant In Service",
+  "value": 10895809.0
+ },
+ {
+  "row": 41,
+  "citation": "p207.99.g",
+  "page": 207,
+  "line": 99,
+  "col": "g",
+  "label": "General",
+  "value": 6741539.0
+ },
+ {
+  "row": 42,
+  "citation": "p205.5.g",
+  "page": 205,
+  "line": 5,
+  "col": "g",
+  "label": "Intangible",
+  "value": 0.0
+ },
+ {
+  "row": 44,
+  "citation": "p207.94.g",
+  "page": 207,
+  "line": 94,
+  "col": "g",
+  "label": "Less:  General Plant Account 397 -- Communications",
+  "value": 0.0
+ },
+ {
+  "row": 57,
+  "citation": "p219.25.c",
+  "page": 219,
+  "line": 25,
+  "col": "c",
+  "label": "Transmission Accumulated Depreciation",
+  "value": 6046528.0
+ },
+ {
+  "row": 59,
+  "citation": "p219.28.c",
+  "page": 219,
+  "line": 28,
+  "col": "c",
+  "label": "Accumulated General Depreciation",
+  "value": 919728.0
+ },
+ {
+  "row": 88,
+  "citation": "p227.8.c",
+  "page": 227,
+  "line": 8,
+  "col": "c",
+  "label": "Transmission Materials & Supplies",
+  "value": 39294.0
+ },
+ {
+  "row": 110,
+  "citation": "p200.4.c",
+  "page": 200,
+  "line": 4,
+  "col": "c",
+  "label": "Plus Transmission Lease Payments",
+  "value": 0.0
+ },
+ {
+  "row": 119,
+  "citation": "p323.185.b",
+  "page": 323,
+  "line": 185,
+  "col": "b",
+  "label": "Less Property Insurance Account 924",
+  "value": 91502.0
+ },
+ {
+  "row": 120,
+  "citation": "p323.189.b",
+  "page": 323,
+  "line": 189,
+  "col": "b",
+  "label": "Less Regulatory Commission Exp Account 928",
+  "value": 0.0
+ },
+ {
+  "row": 121,
+  "citation": "p323.191.b",
+  "page": 323,
+  "line": 191,
+  "col": "b",
+  "label": "Less General Advertising Exp Account 930.1",
+  "value": 11671.0
+ },
+ {
+  "row": 176,
+  "citation": "p118.29.c",
+  "page": 118,
+  "line": 29,
+  "col": "c",
+  "label": null,
+  "value": 0.0
+ },
+ {
+  "row": 179,
+  "citation": "p112.16.c",
+  "page": 112,
+  "line": 16,
+  "col": "c",
+  "label": "Proprietary Capital",
+  "value": 42926441.0
+ },
+ {
+  "row": 180,
+  "citation": "p112.15.c",
+  "page": 112,
+  "line": 15,
+  "col": "c",
+  "label": "Less Accumulated Other Comprehensive Income Account 219",
+  "value": 0.0
+ },
+ {
+  "row": 182,
+  "citation": "p112.12.c",
+  "page": 112,
+  "line": 12,
+  "col": "c",
+  "label": "Less Account 216.1",
+  "value": 0.0
+ },
+ {
+  "row": 187,
+  "citation": "p111.81.c",
+  "page": 111,
+  "line": 81,
+  "col": "c",
+  "label": "Less Loss on Reacquired Debt",
+  "value": 312696.0
+ },
+ {
+  "row": 188,
+  "citation": "p113.61.c",
+  "page": 113,
+  "line": 61,
+  "col": "c",
+  "label": "Plus Gain on Reacquired Debt",
+  "value": 0.0
+ },
+ {
+  "row": 192,
+  "citation": "p112.3.c",
+  "page": 112,
+  "line": 3,
+  "col": "c",
+  "label": "Preferred Stock",
+  "value": 0.0
+ },
+ {
+  "row": 221,
+  "citation": "p266.8.f",
+  "page": 266,
+  "line": 8,
+  "col": "f",
+  "label": "Amortized Investment Tax Credit",
+  "value": 0.0
+ }
+]
