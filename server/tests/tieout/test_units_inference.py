@@ -745,3 +745,43 @@ def test_what_it_cannot_read_it_refuses_by_name() -> None:
     for text in ("kWh", "m2", "kgCO2/m2", "No of days"):
         assert parse(text).unparseable, text
         assert text in parse(text).why
+
+
+def test_one_stray_record_word_cannot_flip_a_period_sheet() -> None:
+    # Kelso's annual statements: FY2016…FY2023 across the top, over
+    # 1,200 period headers, and one stray « date » among them.
+    # First-matching the record pattern flipped the sheet to
+    # column-wise and turned 1,370 ordinary revenue rows into
+    # « mixed » — most of a 26% kind failure.
+    from polar.tieout.units.inference import Orientation, orientation
+
+    rows = [
+        row(
+            row_label=f"Line {n}",
+            column_labels=["FY2016", "FY2017", "FY2018", "FY2019"],
+            values=[1.0, 2.0, 3.0, 4.0],
+        )
+        for n in range(20)
+    ]
+    rows.append(
+        row(
+            row_label="Reporting date",
+            column_labels=["Date"],
+            values=[45000.0],
+        )
+    )
+    assert orientation(rows) is Orientation.ROW_WISE
+
+
+def test_a_real_record_table_still_reads_column_wise() -> None:
+    from polar.tieout.units.inference import Orientation, orientation
+
+    rows = [
+        row(
+            row_label=f"{2020 + n}",
+            column_labels=["Date", "Maturity", "Tenor"],
+            values=[45000.0 + n, 5.0, 3.0],
+        )
+        for n in range(8)
+    ]
+    assert orientation(rows) is Orientation.COLUMN_WISE

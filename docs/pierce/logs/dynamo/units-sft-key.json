@@ -1,0 +1,402 @@
+{
+ "baldragon_model.xlsm": {
+  "declarations": 3959,
+  "not_a_unit": 366,
+  "unparseable": 147,
+  "scored": 3446,
+  "per_dimension": {
+   "kind": {
+    "wrong": 2466,
+    "right": 1216,
+    "abstained": 130
+   },
+   "b5_type": {
+    "abstained": 3424,
+    "right": 13,
+    "wrong": 9
+   },
+   "currency": {
+    "abstained": 3424,
+    "right": 13,
+    "wrong": 9
+   },
+   "scale": {
+    "abstained": 3424,
+    "right": 13,
+    "wrong": 9
+   },
+   "period": {
+    "abstained": 259,
+    "right": 10,
+    "wrong": 3
+   },
+   "rate_form": {
+    "abstained": 2254,
+    "right": 1183,
+    "wrong": 9
+   }
+  },
+  "top_unreadable": [
+   [
+    "Indexation factor",
+    46
+   ],
+   [
+    "Date / \u00a3m",
+    28
+   ],
+   [
+    "Years",
+    20
+   ],
+   [
+    "Proportion",
+    11
+   ],
+   [
+    "Days",
+    7
+   ],
+   [
+    "Date/Flag",
+    4
+   ]
+  ]
+ },
+ "forfar_model.xlsm": {
+  "declarations": 1847,
+  "not_a_unit": 173,
+  "scored": 1581,
+  "unparseable": 93,
+  "per_dimension": {
+   "kind": {
+    "wrong": 155,
+    "right": 1395,
+    "abstained": 204
+   },
+   "b5_type": {
+    "abstained": 1104,
+    "right": 404,
+    "wrong": 73
+   },
+   "currency": {
+    "abstained": 1104,
+    "right": 372,
+    "wrong": 105
+   },
+   "scale": {
+    "abstained": 1136,
+    "right": 372,
+    "wrong": 73
+   },
+   "period": {
+    "wrong": 30,
+    "right": 342
+   },
+   "rate_form": {
+    "right": 1439,
+    "abstained": 140,
+    "wrong": 2
+   }
+  },
+  "top_unreadable": [
+   [
+    "(1=yes, 0=no)",
+    20
+   ],
+   [
+    "Years",
+    17
+   ],
+   [
+    "Times",
+    10
+   ],
+   [
+    "Months",
+    9
+   ],
+   [
+    "Date / \u00a3m",
+    7
+   ],
+   [
+    "Days",
+    6
+   ]
+  ]
+ },
+ "glasgow_college_model.xlsm": {
+  "declarations": 98,
+  "unparseable": 65,
+  "scored": 32,
+  "per_dimension": {
+   "kind": {
+    "abstained": 11,
+    "right": 21
+   },
+   "b5_type": {
+    "abstained": 11,
+    "wrong": 21
+   },
+   "currency": {
+    "abstained": 11,
+    "right": 21
+   },
+   "scale": {
+    "abstained": 32
+   },
+   "period": {
+    "abstained": 11
+   },
+   "rate_form": {
+    "abstained": 11,
+    "right": 21
+   }
+  },
+  "top_unreadable": [
+   [
+    "kWh",
+    44
+   ],
+   [
+    "kWh / m2",
+    12
+   ],
+   [
+    "kgCO2/m2",
+    6
+   ],
+   [
+    "m2",
+    3
+   ]
+  ]
+ },
+ "inverurie_foresterhill_model.xlsm": {
+  "declarations": 0
+ },
+ "kelso_model.xlsm": {
+  "declarations": 3583,
+  "scored": 3299,
+  "not_a_unit": 210,
+  "unparseable": 74,
+  "per_dimension": {
+   "kind": {
+    "right": 2657,
+    "abstained": 561,
+    "wrong": 291
+   },
+   "b5_type": {
+    "wrong": 233,
+    "abstained": 3032,
+    "right": 34
+   },
+   "currency": {
+    "wrong": 233,
+    "abstained": 3032,
+    "right": 34
+   },
+   "scale": {
+    "wrong": 232,
+    "abstained": 3032,
+    "right": 35
+   },
+   "period": {
+    "abstained": 2,
+    "right": 19,
+    "wrong": 75
+   },
+   "rate_form": {
+    "wrong": 291,
+    "abstained": 642,
+    "right": 2366
+   }
+  },
+  "top_unreadable": [
+   [
+    "#",
+    57
+   ],
+   [
+    "Accounting:",
+    11
+   ],
+   [
+    "months",
+    4
+   ],
+   [
+    "Max:",
+    1
+   ],
+   [
+    "counter",
+    1
+   ]
+  ]
+ },
+ "levenmouth_model.xlsm": {
+  "declarations": 1871,
+  "not_a_unit": 181,
+  "scored": 1563,
+  "unparseable": 127,
+  "per_dimension": {
+   "kind": {
+    "wrong": 154,
+    "right": 1381,
+    "abstained": 209
+   },
+   "b5_type": {
+    "abstained": 1107,
+    "right": 384,
+    "wrong": 72
+   },
+   "currency": {
+    "abstained": 1107,
+    "right": 384,
+    "wrong": 72
+   },
+   "scale": {
+    "abstained": 1107,
+    "right": 384,
+    "wrong": 72
+   },
+   "period": {
+    "wrong": 30,
+    "right": 354
+   },
+   "rate_form": {
+    "right": 1418,
+    "abstained": 144,
+    "wrong": 1
+   }
+  },
+  "top_unreadable": [
+   [
+    "Date / \u00a3m",
+    28
+   ],
+   [
+    "Years",
+    25
+   ],
+   [
+    "(1=yes, 0=no)",
+    18
+   ],
+   [
+    "Months",
+    12
+   ],
+   [
+    "Times",
+    10
+   ],
+   [
+    "Days",
+    9
+   ]
+  ]
+ },
+ "newbattle_model.xlsm": {
+  "declarations": 3583,
+  "scored": 3299,
+  "not_a_unit": 210,
+  "unparseable": 74,
+  "per_dimension": {
+   "kind": {
+    "right": 2665,
+    "abstained": 553,
+    "wrong": 291
+   },
+   "b5_type": {
+    "wrong": 233,
+    "abstained": 3032,
+    "right": 34
+   },
+   "currency": {
+    "wrong": 233,
+    "abstained": 3032,
+    "right": 34
+   },
+   "scale": {
+    "wrong": 232,
+    "abstained": 3032,
+    "right": 35
+   },
+   "period": {
+    "abstained": 2,
+    "right": 19,
+    "wrong": 75
+   },
+   "rate_form": {
+    "wrong": 291,
+    "abstained": 634,
+    "right": 2374
+   }
+  },
+  "top_unreadable": [
+   [
+    "#",
+    57
+   ],
+   [
+    "Accounting:",
+    11
+   ],
+   [
+    "months",
+    4
+   ],
+   [
+    "Max:",
+    1
+   ],
+   [
+    "counter",
+    1
+   ]
+  ]
+ },
+ "oban_campbeltown_model.xlsm": {
+  "declarations": 0
+ },
+ "_totals": {
+  "not_a_unit": 1140,
+  "unparseable": 580,
+  "scored": 13220,
+  "per_dimension": {
+   "kind": {
+    "wrong": 3357,
+    "right": 9335,
+    "abstained": 1668
+   },
+   "b5_type": {
+    "abstained": 11710,
+    "right": 869,
+    "wrong": 641
+   },
+   "currency": {
+    "abstained": 11710,
+    "right": 858,
+    "wrong": 652
+   },
+   "scale": {
+    "abstained": 11763,
+    "right": 839,
+    "wrong": 618
+   },
+   "period": {
+    "abstained": 274,
+    "right": 744,
+    "wrong": 213
+   },
+   "rate_form": {
+    "abstained": 3825,
+    "right": 8801,
+    "wrong": 594
+   }
+  }
+ }
+}

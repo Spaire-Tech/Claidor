@@ -91,11 +91,20 @@ def orientation(rows: Sequence[RowEvidence]) -> Orientation:
     """
     if not rows:
         return Orientation.UNKNOWN
-    headers = " ".join(h for row in rows for h in row.column_labels)
-    if RECORD_HEADER.search(headers):
-        return Orientation.COLUMN_WISE
-    if PERIOD_HEADER.search(headers):
+    headers = [h.strip() for row in rows for h in row.column_labels if h.strip()]
+    # **Counted, not first-matched.** Kelso's annual statements carry
+    # `FY2016`…`FY2023` across the top — over 1,200 period headers —
+    # and one stray « date » among them. Testing the record pattern
+    # first against the joined text flipped the whole sheet to
+    # column-wise and made 1,370 ordinary revenue rows come back
+    # « mixed », which is where most of a 26% `kind` failure came
+    # from (lane log, 28 Aug).
+    record = sum(1 for header in headers if RECORD_HEADER.search(header))
+    periodic = sum(1 for header in headers if PERIOD_HEADER.search(header))
+    if periodic > record:
         return Orientation.ROW_WISE
+    if record > periodic:
+        return Orientation.COLUMN_WISE
     labelled = sum(1 for row in rows if row.row_label.strip())
     return Orientation.ROW_WISE if labelled > len(rows) / 2 else Orientation.UNKNOWN
 
