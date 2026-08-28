@@ -682,6 +682,19 @@ class Asked(Schema):
     #: The cells behind the answer, from the last tool that returned
     #: any — drawn under the prose, each one clickable.
     rows: list[AskedRow] = []
+    #: **Which model this answer is about**, and what else the deal
+    #: holds. A deal-scoped question narrows to one model, and the
+    #: narrowing used to be silent: on a deal carrying two, a confident
+    #: paragraph could describe the wrong workbook and nothing on the
+    #: screen said which one it read. Null when the deal holds no model
+    #: (the assistant refuses before this matters). These come off the
+    #: artifacts, not the prose, so the screen can state them whatever
+    #: the answer says.
+    model: str | None = None
+    model_version: int | None = None
+    #: The deal's other models, named and versioned. Empty on the
+    #: ordinary deal, which is why the screen only speaks when it is not.
+    other_models: list[str] = []
 
 
 class AskTurn(Schema):

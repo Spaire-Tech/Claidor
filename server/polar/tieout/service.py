@@ -1910,6 +1910,42 @@ class TieOutService:
 # --- adapters ------------------------------------------------------------
 
 
+def models_of(artifacts: Sequence[Artifact]) -> list[Artifact]:
+    """The deal's models, most recently uploaded first.
+
+    Sorted here rather than taken in the order `current_artifacts`
+    happens to return, which follows `list_artifacts`' ordering and
+    promises nothing about it. Three callers used to write
+    `next(one for one in current if one.kind is model)` and get
+    whichever lineage came first — the right file most of the time, by
+    luck, and silently the wrong one on a deal carrying two models.
+    """
+    models = [one for one in artifacts if one.kind is ArtifactKind.model]
+    models.sort(
+        key=lambda one: (one.created_at, one.version),
+        reverse=True,
+    )
+    return models
+
+
+def subject_model(artifacts: Sequence[Artifact]) -> Artifact | None:
+    """The one model a deal-scoped answer is about.
+
+    **The most recently uploaded**, because that is the file the team is
+    working on: a deal picks up an old lender's model or a bidder's copy
+    and the subject is still the one that just arrived.
+
+    This is a choice, not a fact, and the rule for choices in this
+    product is that they are said out loud. Every caller that narrows a
+    deal to one model owes the reader the file's name — the assistant
+    says which model it read and what else the deal holds, because a
+    paragraph of prose about the wrong workbook is worse than a refusal.
+    The audit does not use this at all: it reads **every** model.
+    """
+    models = models_of(artifacts)
+    return models[0] if models else None
+
+
 def delta_between(old_side: Artifact, new_side: Artifact) -> Any:
     """The Watch's delta report between two stored versions.
 

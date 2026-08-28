@@ -175,11 +175,38 @@ copy » (ingest's counts, the same 1% floor as the report and the
 panel). **`trace_back` still does not**; it was outside the two tools
 routed here, and it is with the lead.
 
-**Two more with the lead**: `load_model_workspace` picks the *first*
-model artifact on a deal, so on a multi-model deal chat can silently
-answer about the wrong file (Cascade Watch has three lineages); and a
-pre-existing ruff failure in `tests/tieout/test_structure.py`
-(Sentinel's row) fails `ruff check tests/tieout/`.
+**Which model a deal-scoped answer is about is now decided in one
+place** — `service.subject_model`, the most recently uploaded. Three
+callers used to write `next(one for one in current if one.kind is
+model)` (deals list, marked-up download, the assistant's workspace) and
+take whatever `current_artifacts` returned first, which follows
+`list_artifacts`' ordering and promises nothing. Never add a fourth:
+go through the helper, or the screens will disagree about which file a
+deal means. The audit is the deliberate exception — it reads **every**
+model.
+
+**And the choice is stated, because chat answers in prose.** The
+assistant's tools hold one model, so the prompt carries a scope line
+naming what it reads and what it cannot see (without it, a question
+about a line in the deal's *other* workbook gets « that is not in this
+model »), and the reply carries `model` / `model_version` /
+`other_models` off the artifacts so the screen can say it whatever the
+prose says. The notice draws only where the deal holds more than one.
+« Sweep — an unread source » in the demo database is the standing
+two-model deal.
+
+**The ruff failure this lane reported was its own mistake** — run at
+the old tip, before rebasing. It passes at the tip. Run a cross-lane
+claim *after* the rebase.
+
+**The next hole, measured and not started**: `load_model_workspace`
+loads every stored cell before the loop starts — **28.4 s on Kelso**
+(470,594 cells), 21.0 s on Levenmouth, 0.0 s on a 313-cell fixture, on
+*every* question including a follow-up. Fixtures hide it entirely. The
+deal agent's loader caps at `MAX_CELLS_LOADED = 2_000`; the model
+agent's cannot, because its tools walk a graph rather than search a
+list — so the fix is loading that graph once per deal and version, not
+once per question.
 
 **Format refusals need nothing until A6 lands.**
 `_unreadable_format` derives its sentence from `ingest.SUFFIXES`, so

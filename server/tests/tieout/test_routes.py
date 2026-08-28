@@ -2544,3 +2544,171 @@ class TestTheCategoryMap:
         assert invented == [], (
             f"files.ts files rules the engine never emits: {', '.join(invented)}"
         )
+
+
+@pytest.mark.asyncio
+class TestWhichModelAnAnswerIsAbout:
+    """A deal-scoped answer names the model it read.
+
+    Three places narrowed a deal to one model with
+    `next(one for one in current if one.kind is model)` — the deals
+    list's model column, the marked-up download, and the assistant's
+    workspace. That took whichever lineage `current_artifacts` happened
+    to return first, which follows `list_artifacts`' ordering and
+    promises nothing. It was the newest model most of the time, by
+    luck, and silently another one the rest.
+
+    The assistant is where it hurt: it answers in prose, so a wrong
+    pick is a confident paragraph about the wrong workbook with nothing
+    on the screen to say so. Found on a demo deal carrying three model
+    lineages, where chat answered about a scratch file while the deal's
+    subject sat next to it.
+
+    The fix is `service.subject_model` — the most recently uploaded,
+    said out loud — and these tests hold both halves: that all three
+    callers agree, and that the answer names what it read.
+    """
+
+    async def _two_models(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> tuple[Dossier, str]:
+        """A deal carrying two models, the second uploaded later."""
+        deal = await _deal_for(session, save_fixture, user)
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="lenders_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        return deal, "cascade_model.xlsx"
+
+    async def test_the_subject_is_the_most_recently_uploaded(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        from polar.tieout.service import models_of, subject_model
+
+        deal, newest = await self._two_models(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        current = await repository.current_artifacts(deal.id)
+
+        chosen = subject_model(current)
+        assert chosen is not None
+        assert chosen.filename == newest
+        #: And the ordering is total, not « whatever came back first ».
+        assert [one.filename for one in models_of(current)] == [
+            newest,
+            "lenders_model.xlsx",
+        ]
+
+    async def test_a_deal_with_no_model_has_no_subject(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        from polar.tieout.service import subject_model
+
+        deal = await _deal_for(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        assert subject_model(await repository.current_artifacts(deal.id)) is None
+
+    @pytest.mark.auth
+    async def test_the_deals_list_names_the_same_model(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The row and the assistant must not disagree about the file."""
+        deal, newest = await self._two_models(session, save_fixture, user)
+
+        response = await client.get("/v1/tieout/deals")
+        assert response.status_code == 200
+        row = next(one for one in response.json() if one["id"] == str(deal.id))
+        assert row["model_name"] == newest
+
+    async def test_the_assistants_workspace_takes_the_subject_and_names_the_rest(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        from polar.tieout.agent.service import load_model_workspace
+
+        deal, newest = await self._two_models(session, save_fixture, user)
+        workspace = await load_model_workspace(session, deal.id, "the deal")
+
+        assert workspace is not None
+        assert workspace.filename == newest
+        #: The files this answer is *not* about, named — a count would
+        #: not let a reader tell whether the right one was read.
+        assert workspace.others == ["lenders_model.xlsx (v1)"]
+
+    async def test_one_model_leaves_the_scope_line_unsaid(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The ordinary deal must not grow a paragraph about itself."""
+        from polar.tieout.agent.service import load_model_workspace
+
+        deal = await _deal_for(session, save_fixture, user)
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        workspace = await load_model_workspace(session, deal.id, "the deal")
+        assert workspace is not None
+        assert workspace.others == []
+
+    async def test_the_prompt_tells_the_assistant_what_it_cannot_see(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """Without this the assistant cannot know the other file exists.
+
+        Its tools only ever hold one model, so asked about a line that
+        lives in the deal's *other* workbook it would answer « that is
+        not in this model » — true, and read as « your deal does not
+        contain it ».
+        """
+        from polar.tieout.endpoints import _scope_line
+        from polar.tieout.service import models_of
+
+        deal, newest = await self._two_models(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        models = models_of(await repository.current_artifacts(deal.id))
+
+        said = _scope_line(models[0], models[1:])
+        assert newest in said
+        assert "lenders_model.xlsx (v1)" in said
+        assert "cannot see" in said
+        #: One model, and the prompt says nothing at all about scope.
+        assert _scope_line(models[0], []) == ""

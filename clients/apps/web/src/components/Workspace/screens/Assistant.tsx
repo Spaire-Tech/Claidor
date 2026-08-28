@@ -40,6 +40,10 @@ interface Message {
   ends?: string
   /** « Used 3 tools » — the trace's one-line summary. */
   trace?: string
+  /** Which model the answer was about, and what the deal also holds —
+   *  drawn only where the deal carries more than one model, because on
+   *  every other deal it is noise. Off the artifacts, not the prose. */
+  scope?: { model: string; version: number | null; others: string[] }
 }
 
 /** A finished conversation, kept on this machine — the rail's rows
@@ -215,6 +219,14 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
             rows: answer.rows ?? [],
             trace:
               used > 0 ? `Used ${used} ${used === 1 ? 'tool' : 'tools'}` : '',
+            scope:
+              answer.model && (answer.other_models ?? []).length > 0
+                ? {
+                    model: answer.model,
+                    version: answer.model_version ?? null,
+                    others: answer.other_models ?? [],
+                  }
+                : undefined,
           },
         ])
       })
@@ -892,6 +904,48 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                       >
                         {m.text}
                       </span>
+                      {m.scope !== undefined && (
+                        //: Which workbook this paragraph is about. A
+                        //: deal usually holds one model and this stays
+                        //: away; where it holds two, an answer that
+                        //: does not say which one it read is a
+                        //: confident paragraph about a file the reader
+                        //: may not have meant.
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'baseline',
+                            flexWrap: 'wrap',
+                            padding: '10px 14px',
+                            background: '#fdfbf6',
+                            border: '.5px solid #f0e9da',
+                            borderRadius: 14,
+                            fontSize: 12.5,
+                            lineHeight: 1.6,
+                            color: '#6b5f48',
+                          }}
+                        >
+                          <span style={{ color: '#8a7a5c' }}>Read from</span>
+                          <span
+                            style={{
+                              fontFamily: font.mono,
+                              fontSize: 12,
+                              color: '#3d3527',
+                            }}
+                          >
+                            {m.scope.model}
+                            {m.scope.version !== null
+                              ? ` v${m.scope.version}`
+                              : ''}
+                          </span>
+                          <span>
+                            — this project also holds{' '}
+                            {m.scope.others.join(', ')}, which this answer did
+                            not read.
+                          </span>
+                        </div>
+                      )}
                       {m.rows !== undefined && m.rows.length > 0 && (
                         //: The tool's own rows, verbatim — the cells
                         //: behind the answer, never re-typed by the
