@@ -429,3 +429,47 @@ distinct formulas in 638,790 cells).
 **The one that is real:** one pass over the sheet XML with lxml yields
 the formula layer and the value layer together in **1.6 s at 119 MB**,
 where openpyxl's two passes take **16.4 s at 356 MB**. Ten times.
+
+# YOUR PIECE (28 Aug) — units become findings
+
+Everything above is history. The founder has split the product into
+pieces and given each lane **one**, to be taken to 100% before anything
+else is started. Yours is above.
+
+**Done means this, and only this:**
+
+> A planted monthly-figure-in-an-annual-row defect is caught and reported in a sentence a banker would repeat, currency and scale checks are armed alongside it, the false-positive price of all three is measured on the clean corpus, and the golden master is regenerated in the same commit.
+
+That sentence is the whole test. It was agreed before the work started
+so that neither of us can move it afterwards. If you believe it is the
+wrong test, say so in your log **before** you begin — not after you
+have a number that misses it.
+
+**Work it the way the speed round was worked.** Read « How to attack a
+hard number » in `lanes.md` — it is new, it is nine points, and it is a
+transcript of what actually took a median model from 23 s to 6.9 s in
+one session. The parts that matter most for you:
+
+- **Measure before you touch anything.** No change ships behind a hunch.
+- **Check whether your instrument lies.** cProfile ranked by call count
+  and named the wrong culprit; a sampling profiler named the right one.
+- **Kill hypotheses in one measurement each.** Three died in an
+  afternoon that would each have cost a week. A dead hypothesis in ten
+  minutes beats a working change in a week.
+- **Find the floor before you build a replacement**, so the build is
+  justified by a number rather than a bet.
+- **Differential-test against what you replace. Zero differences or it
+  does not ship.**
+- **When the test disagrees with you, you are probably wrong** — the
+  lead blamed a dependency, was wrong, and lost an hour proving it.
+- **If you have no oracle for your number, building one is task one**,
+  not a distraction from the work.
+- **Ship the certified step**; do not hold a proven 3.6× hostage to a
+  hoped-for 5×.
+
+**Never take no for an answer, and never fake a yes.** A refusal closes
+with a successor that differs in kind. A number closes with the
+measurement that produced it and `dev/verify` green. If you cannot hit
+the test, say exactly how close you got and what stopped you — that is
+a real result. Silence, or a number without its harness, is not.
+

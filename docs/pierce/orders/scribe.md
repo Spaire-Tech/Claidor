@@ -343,3 +343,47 @@ Your round, and you touch no engine file to do it:
 Write measurement scripts under your own paths only. Change nothing in
 `polar/tieout/*.py`. This is the « profile first » half of profile-first-
 then-fix, done properly by someone whose only job is the truth of it.
+
+# YOUR PIECE (28 Aug) — the reader on giant models
+
+Everything above is history. The founder has split the product into
+pieces and given each lane **one**, to be taken to 100% before anything
+else is started. Yours is above.
+
+**Done means this, and only this:**
+
+> The six Ofgem business-plan models each read in under sixty seconds and under 512 MB peak, the cell-by-cell differential against openpyxl stays at zero differences, and the golden-master gate stays clean.
+
+That sentence is the whole test. It was agreed before the work started
+so that neither of us can move it afterwards. If you believe it is the
+wrong test, say so in your log **before** you begin — not after you
+have a number that misses it.
+
+**Work it the way the speed round was worked.** Read « How to attack a
+hard number » in `lanes.md` — it is new, it is nine points, and it is a
+transcript of what actually took a median model from 23 s to 6.9 s in
+one session. The parts that matter most for you:
+
+- **Measure before you touch anything.** No change ships behind a hunch.
+- **Check whether your instrument lies.** cProfile ranked by call count
+  and named the wrong culprit; a sampling profiler named the right one.
+- **Kill hypotheses in one measurement each.** Three died in an
+  afternoon that would each have cost a week. A dead hypothesis in ten
+  minutes beats a working change in a week.
+- **Find the floor before you build a replacement**, so the build is
+  justified by a number rather than a bet.
+- **Differential-test against what you replace. Zero differences or it
+  does not ship.**
+- **When the test disagrees with you, you are probably wrong** — the
+  lead blamed a dependency, was wrong, and lost an hour proving it.
+- **If you have no oracle for your number, building one is task one**,
+  not a distraction from the work.
+- **Ship the certified step**; do not hold a proven 3.6× hostage to a
+  hoped-for 5×.
+
+**Never take no for an answer, and never fake a yes.** A refusal closes
+with a successor that differs in kind. A number closes with the
+measurement that produced it and `dev/verify` green. If you cannot hit
+the test, say exactly how close you got and what stopped you — that is
+a real result. Silence, or a number without its harness, is not.
+
