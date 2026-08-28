@@ -139,6 +139,38 @@ class DeltaReport:
         return counts
 
 
+def unchanged_report(findings: list[Finding], name: str = "") -> DeltaReport:
+    """The delta report for a pair that is **byte for byte the same
+    file** — knowable exactly, without comparing anything.
+
+    Routed from Atelier through the lead: it has a fast path for « this
+    upload is identical to the version before it », where two equal
+    SHA-256 digests mean nothing can differ. Then `new = 0`,
+    `repaired = 0`, and `persistent` is simply what the one workbook's
+    own findings key to.
+
+    This exists so that reasoning does not have to live in the caller.
+    `keyed_findings` is exported too and is the literal ask, but a
+    caller using it would have to know that persistent is the sum of
+    the multiset and that unkeyable findings are counted apart — delta
+    semantics, which belong in this file. Prefer this.
+
+    The caller is trusted on the premise it asserts: **this function
+    does not verify that the two files are identical**, because it is
+    never shown two files. Call it only behind a digest comparison.
+    """
+    keys, _behind, unmatched = keyed_findings(findings)
+    return DeltaReport(
+        old=name,
+        new=name,
+        new_defects=0,
+        repaired_defects=0,
+        persistent_defects=sum(keys.values()),
+        unmatched_old=unmatched,
+        unmatched_new=unmatched,
+    )
+
+
 def _signature(cell: Cell) -> str:
     if cell.formula is None:
         return ""

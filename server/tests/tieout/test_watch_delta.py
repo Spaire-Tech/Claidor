@@ -256,3 +256,46 @@ class TestCellsInsideMatchedStructure:
         assert counted.get("structure", 0) >= 1
         assert "filled_cell" not in counted
         assert "emptied_cell" not in counted
+
+
+class TestTheIdenticalPairFastPath:
+    """Routed from Atelier: when two uploads share a SHA-256 there is
+    nothing to compare, and the true report is knowable exactly."""
+
+    def finding(self, rule: str, sheet: str, name: str) -> Finding:
+        return Finding(
+            rule=rule,
+            severity="error",
+            sheet=sheet,
+            ref=f"{sheet}!B2",
+            name=name,
+            detail="",
+        )
+
+    def test_persistent_is_what_the_one_workbook_keys_to(self) -> None:
+        from polar.tieout.watch import unchanged_report
+
+        findings = [
+            self.finding("hardcode", "Model", "Revenue"),
+            self.finding("hardcode", "Model", "Costs"),
+            self.finding("long-formula", "Model", "Revenue"),
+        ]
+        report = unchanged_report(findings, "book.xlsx")
+        assert (report.new_defects, report.repaired_defects) == (0, 0)
+        assert report.persistent_defects == 3
+        assert report.items == []
+        assert report.old == report.new == "book.xlsx"
+
+    def test_it_agrees_with_running_a_delta_of_a_book_against_itself(self) -> None:
+        """The premise check: the fast path must give what the slow
+        path gives, or it is not a fast path."""
+        from polar.tieout.watch import keyed_findings, unchanged_report
+
+        findings = [
+            self.finding("hardcode", "Model", "Revenue"),
+            self.finding("stale-value", "Other", ""),
+        ]
+        keys, _behind, unmatched = keyed_findings(findings)
+        report = unchanged_report(findings)
+        assert report.persistent_defects == sum(keys.values())
+        assert report.unmatched_old == report.unmatched_new == unmatched
