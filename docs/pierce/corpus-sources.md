@@ -549,3 +549,91 @@ hashed against every corpus we hold before it enters a proof
 sample** — the closed-deal round is the precedent, where four of
 seven candidates turned out to be files we already had. The fetcher
 (`scripts/corpus_formulas.py`) states this rule in its docstring.
+
+---
+
+## Addendum, 28 August 2026 (second) — the source→model corpus is US utility regulation
+
+The founder's researcher went looking for the document→model pairs
+D3 has failed six rounds for want of, and found the structural
+reason we kept coming up empty: **in project finance the populated
+model is the commercially sensitive part.** Governments publish the
+feasibility study and the draft contract and keep the model; PPP
+portals publish *template* models — blank forms. The asymmetry is
+structural, not accidental, and no amount of searching will surface
+what is deliberately withheld. That closes a search we have run
+three separate ways.
+
+Where the opposite is true: **US regulated utility ratemaking**, and
+the report's own sentence is the finding — « regulated utility
+filings beat project finance decisively, and it is not close ».
+
+### Why FERC formula rates are the strongest pairing found anywhere
+
+A transmission owner files an annual spreadsheet computing its
+revenue requirement. Its inputs come from the **FERC Form 1**, a
+separate public annual filing. Three independent pieces of evidence
+put the direction beyond doubt — the calendar (Form 1 filed April,
+the model filed 15 May), the model's own step list (« populate the
+formula with the prior year's data from FERC Form 1 »), and the
+direction of citation (the model cites the Form 1; the Form 1 knows
+nothing of any model).
+
+**And the model prints its own provenance.** Every input row carries
+a reference like `p354.21.b` — page 354, line 21, column b — with
+the convention stated in the model's header, and the template marks
+which cells are inputs (« shaded cells are input cells »). That is a
+model that documents which values were typed and where each came
+from: D3's ground truth, written by the filer, at scale — on the
+order of a hundred filings a year across PJM/MISO/SPP/ISO-NE/NYISO/
+CAISO, going back roughly fifteen years, all on the same template.
+
+The researcher verified one filing (Duquesne Light, rate year
+2025/26) properly: **40 cited inputs mapped**, and it re-computed 22
+of the model's relationships in Python — **20 tie exactly** (wage
+allocator 19.0699%, composite tax rate 27.7071%, cost of debt 4.93%,
+final rate $63,150.03/MW-year), and the two that do not are a
+probable interest transposition between two 3.93% bonds and a
+rounded month-count label. It flagged both as needing the native
+file before anyone calls them errors. **A corpus that contains real
+anomalies, not textbook cases.**
+
+It also drew the line honestly: « I never opened a single `.xlsx` …
+I am not going to pretend otherwise », and every claim about sheet
+names or cell addresses is marked unverified.
+
+### Verified from these containers (28 Aug)
+
+- **`www.pjm.com` serves the filings** — the Duquesne template
+  downloads (4,070,119 bytes, `application/pdf`).
+- **A trap, found and recorded:** requesting the same path with
+  `.xlsx`, `.xls` or `.xlsm` returns **HTTP 200 and the identical
+  PDF** — byte-for-byte the same sha256. PJM's CDN ignores the
+  extension. **A 200 on that host is not evidence a native workbook
+  exists**; only the bytes are. Any fetcher for this corpus checks
+  content, never status.
+- **`www.mcc.gov` answers from here** (the researcher's sandbox was
+  blocked), but its files sit on `assets.mcc.gov`, which fails
+  certificate verification from these containers — retried with the
+  proxy CA bundle, still fails. MCC stays unreachable for us.
+
+### Verdicts adopted
+
+- **MCC is a model corpus, not a pair corpus** — rated Tier 4 as
+  pairs on evidence: the researcher opened a compact page and listed
+  every document, finding Star Reports and post-compact evaluations
+  and *no* feasibility, engineering or tariff study. Model →
+  narrative, the wrong direction, exactly as our own Ofgem and Finch
+  rounds found twice before. Its ~100 models remain worth having as
+  parser material if they ever become reachable.
+- **PPP portals and development banks: closed.** Stop looking.
+
+### The open gap, and it is small
+
+Nobody has yet held the **native workbook**. The model side of this
+pair is published as PDF; the filed original is a spreadsheet. Until
+one native file is in hand, every mapping is a printed line number
+rather than a cell address, and D3 needs cell addresses. That —
+plus confirming five of the forty citations actually appear in the
+Form 1 — is the whole remaining distance, and both are hours of
+work rather than weeks.
