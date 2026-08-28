@@ -4038,3 +4038,180 @@ divergence *found* », and this is what that phrasing was protecting
 against. The tier table said « 0 plain divergences » as though it
 were a property of the pair; it is a property of a run, and it is
 corrected there.
+
+## The standing order, read first — and my last successor does not meet it
+
+Tip `6a78a313`. `z3-solver` absent. `lanes.md` carries a new binding
+section, « Refusal is not the finish line », and I read it before
+acting, along with my own handoff's lessons as it requires.
+
+**It convicts my last round.** I closed the profile with two things
+that the section names as *not* successors:
+
+- « compare by **rank** within the chain rather than by ratio » — a
+  different way to pick neighbours by size. That is a change of
+  **degree**, dressed as a change of kind.
+- « it needs a third chain; the founder's equity model is the
+  natural one » — which is « retry when the corpus improves »
+  almost word for word.
+
+Both are true statements and neither is a successor. The section is
+right and I am taking the correction.
+
+### Attacking the constraint
+
+The constraint I never questioned: **I compared transitions by
+size.** Everything since — factor of two, nearest neighbours, ranks,
+the disclosed ratio — argues about *how* to compare sizes. But size
+was only ever a **proxy**. The founder's finding is « quarterly
+reforecast versus routine commit »: that is a statement about **what
+kind of update this is**, and size is one weak shadow of it.
+
+**The three designs I did not try, one line each.**
+
+1. **Cadence.** « Quarterly » is a statement about *time*. Every
+   chain we hold carries dates the profile never read — ED2's
+   filenames (`v2_2023-07-14`, `v3_2023-11`) and hickeng's commit
+   timestamps. Compare a transition to the model's other
+   transitions of **similar interval**, because a seventeen-day gap
+   and a five-month gap are different kinds of event, and the
+   interval is in the file rather than inferred from the diff.
+2. **Composition, not magnitude.** Compare the **shape** of the
+   class vector — the proportions — instead of its size. A
+   reforecast is « mostly moved assumptions »; a patch is « one
+   relabelled line ». Proportions have no degenerate arithmetic at
+   one cell, and the whole band problem dissolves rather than being
+   re-parameterised.
+3. **The model's own version string.** Both chains state their
+   version *in a cell* — ED2 in its filename and workbook, hickeng
+   in `Summary!C`: « github release: v0.1.6 » → « v0.1.7 ». A model
+   that tells you it went from 0.1.6 to 0.1.7 has told you what kind
+   of update it is, from inside the file. This is the section's own
+   example — information the file already carries that nobody read.
+
+I am taking **(1)** this round, because it attacks the constraint
+most directly (time is what « quarterly » means), and because the
+intervals are data I have **never looked at** in either chain — so
+the measurement is genuinely out-of-sample even though both chains
+are otherwise seen.
+
+## The cadence round (REGISTERED BEFORE RESULTS)
+
+**The rule.** A transition's comparables are the model's other
+transitions whose **interval** — days between the two versions — is
+within a factor of two. Everything else stays as registered:
+`MINIMUM_PRIORS = 3`, `NEIGHBOURS = 5`, the qualified-and-disclosed
+fallback, and the flag off for qualified profiles.
+
+**Why this is a change of kind and not of degree**: it replaces the
+*variable* being compared, not the tolerance. Size is an output of
+the diff; interval is an input from the file. A rule built on
+interval can be wrong, but it cannot be wrong in the way the size
+rule was — a one-cell transition has no small-size degeneracy in
+days.
+
+**Predictions.**
+
+1. **ED2's intervals separate the chain the way size did.** The
+   reforecasts (5,000+ cells) fall on long intervals — three months
+   or more — and the quiet ones on short ones. Specifically: the
+   17-day 14→31 July transition is among the **three shortest**.
+2. **The quiet transitions get comparable profiles under cadence**
+   where they could not under size — at least **three** of ED2's
+   four small transitions, and at least **five** of hickeng's ten
+   qualified ones.
+3. **The hickeng defect pair gets a comparable profile**, so the
+   flag is at last *able* to speak about the one transition a human
+   labelled a defect. Whether it fires is a separate question and I
+   am not predicting it — but a rule that still cannot look at it
+   has not fixed anything.
+4. **Cadence and size disagree on at least one transition** in each
+   chain — a long gap that changed little, or a short gap that
+   changed a lot. If they agree everywhere, cadence is size wearing
+   a hat and I will say so.
+
+## The cadence round — results: coverage solved, discrimination worse, and the tension is the finding
+
+```
+                      comparable / qualified        flags fired
+ED2 (10)      size          6 / 4                        4 of 10
+              cadence       7 / 3                        6 of 10
+hickeng (15)  size          5 / 10                       3 of 15
+              cadence      14 / 1                       13 of 15
+```
+
+**Prediction 1 — failed on its substance.** I said the reforecasts
+fall on long intervals and the quiet updates on short ones. ED2 says
+otherwise, plainly: the **181-day** transition changed **553** cells
+and the **31-day** one changed **5,145**. The sub-claim held (the
+17-day July pair is the chain's shortest), but the idea behind the
+prediction — that time predicts magnitude — is wrong on this
+evidence.
+
+**Prediction 2 — split.** hickeng: nine of the ten previously
+qualified transitions become comparable (predicted ≥5) — **held**,
+and dramatically. ED2: only two of the four small transitions become
+comparable where I predicted three — **failed**.
+
+**Prediction 3 — held, and it was the point.** The hickeng defect
+pair — the skew fix, two days after its parent — now gets a
+**comparable** profile, so the flag can at last speak about the one
+transition a human labelled a defect. It says `material_output,
+moved_assumption, new_defect, repaired_defect`.
+
+**Prediction 4 — held.** Cadence and size disagree in both chains,
+so cadence is not size wearing a hat.
+
+### But look at what else the flag says, because it convicts the round
+
+Under cadence the flag fires on **13 of hickeng's 15 transitions** —
+including `13_d7b9951`, a transition that changes **zero cells**,
+flagged for `relabelled_line`, and `04_231c92d`, a **one-cell**
+transition flagged for four classes. A signal that fires on
+thirteen of fifteen updates, one of which changed nothing at all,
+is not a signal.
+
+**So cadence solves the problem I attacked and sharpens the one
+underneath it, and I am not shipping it.** The two failures have one
+cause:
+
+> **Coverage and discrimination pull against each other, and neither
+> size nor time is the axis that resolves them.** A comparability
+> rule must group transitions that are *alike in kind*. Size fails
+> because a one-cell update has no size neighbours; time fails
+> because a zero-day group holds a zero-cell commit and a 553-cell
+> one. Both are proxies, and both are proxies for the same missing
+> thing.
+
+### The successor, and a design killed by argument rather than by a run
+
+**Design 2 (« compare by composition — the shape of the class
+vector ») is dead, and I am killing it without spending a round on
+it.** The argument: if a transition's comparables are chosen by how
+similar their *change profile* is, then asking « is this change
+profile unusual against its comparables » is close to tautological —
+the rule would select the transitions most like this one and then
+report that this one looks normal. A neighbour rule must be built on
+something that is **an input to the update**, not an output of the
+diff. Composition is an output. That is a reason it cannot work, not
+a report that it did not.
+
+**Design 3 is the successor, and it is the only one of my three that
+is an input.** Both chains state their own version *in the file*:
+hickeng writes « github release: v0.1.6 » in `Summary!C` and ED2
+carries `v2`, `v3`, `v4`, `v5` in its filenames and cover sheet. A
+model that says it went from 0.1.6 to 0.1.7 has declared what kind
+of update this is, **before anyone diffs it**.
+
+The rule to register next: comparables are the model's other
+transitions of the **same declared version step** — patch-to-patch,
+minor-to-minor, family-to-family. It is not circular, it needs no
+band and no constant, and it degenerates only when a model does not
+version itself, which is a refusal it can state in words.
+
+**What it needs, concretely** (per the standing order — not « retry
+when the corpus improves »): a reader that extracts the declared
+version from a workbook. Both chains carry one and neither is hard:
+hickeng's is a labelled cell, ED2's is in the filename and on the
+cover. That reader is a day's work in this lane, needs no dependency
+and no new corpus, and **that is the next round**.

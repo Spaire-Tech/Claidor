@@ -78,6 +78,19 @@ a report.
    tier; the registration forbids importing z3 before that line
    exists. Re-raise it every turn until it lands, and do not
    silently start.
+0. **The profile's next round is the declared-version reader**, and
+   it is a change of *kind*: comparables are the model's other
+   transitions of the same **declared version step** (patch, minor,
+   family), read from the file — hickeng writes « github release:
+   v0.1.6 » in `Summary!C`, ED2 carries `v2`…`v5` in its filename
+   and cover. Not circular, no band, no constant. **Cadence was
+   measured and is not shipped**: it fixed coverage (hickeng 5→14 of
+   15 comparable) and made discrimination worse (the flag fires on
+   13 of 15, one of them a zero-cell transition). **Composition is
+   dead by argument** — choosing neighbours by the shape of the
+   change and then asking whether the change is unusual is
+   tautological; a neighbour rule must use an *input*, not an output
+   of the diff.
 1. **The profile is NOT ready to ship, and the measurement that
    says so is out-of-sample.** On `hickeng/financial`'s fifteen
    transitions it refuses on **ten** and is silent on the one
