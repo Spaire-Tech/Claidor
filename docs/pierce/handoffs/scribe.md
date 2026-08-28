@@ -406,8 +406,14 @@ whether the truth is ever the *top-scoring* candidate:
 
 | | rows | truth is top-scoring (oracle) | blind pick among the tied |
 |---|---|---|---|
-| **Finch** (round 6) | 14 | **7** | 1.3 correct, 5.7 wrong |
+| **Finch** (round 6) | 13 | **6** | 1.22 correct, ~4.8 wrong |
 | **FERC** (round 8) | 15 | **4** | 0.79 |
+
+Reproduce both with `uv run python scripts/corpus_d3_oracle.py finch`
+and `… ferc <dir from corpus_ferc_fetch.py>`. **Do not re-derive these by
+hand** — an earlier hand-run published Finch as 7 of 14 by leaving in a
+row whose recorded truth key no longer addresses its fact, a row the same
+entry had named as excluded. The script excludes it and says so.
 
 On prose the truth is top-scoring for **half** the rows and D3 abstains
 on every one because the top score is **tied** — so there the **rules**
