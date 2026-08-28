@@ -3964,3 +3964,77 @@ since the previous ones came from a path that cannot be reproduced.
    expected, not a failure: the point of the fix is that they no
    longer depend on *history*, not that they match a run made before
    the fix existed.
+
+## The reproducible run — results, and a correction to something I published twice
+
+52.3 minutes, gates clean.
+
+```
+                       previous run        this run (reproducible path)
+tier0_proved                 38,255                            38,255
+changed                       1,278                             1,349
+tier2_supported                 313                               285
+tier3_refused                 1,203                             1,160
+plain divergences                 0                                71
+latent divergences                7                                 6
+```
+
+**Prediction 1 — half held, half failed.** `tier0_proved` is exactly
+38,255, and the raw-evidence part of `changed` is exactly 1,278
+(1,240 + 24 + 14). But `changed` reads **1,349**, because 71 cells
+diverged at tier 2. I predicted 1,278 and in doing so quietly
+assumed no plain divergences would appear. That assumption is the
+thing this run destroyed.
+
+**Prediction 2 — the one I called sharpest — FAILED: 6, not 7.**
+`Finance&Tax!AV185` stores zero in both files, so it is dormant and
+its classification is right; it simply **did not diverge** under
+these draws. Latent membership is draw-dependent, and I predicted it
+was not. Six of the seven recur.
+
+**Prediction 3 held**: 285 supported, 28 away from 313.
+**Prediction 4 held**: the accepted bands differ, as expected — one
+trial was accepted at ±25%, three at ±1%, one exhausted them all.
+
+### The correction, and it matters more than the fix did
+
+Two entries of mine say this revision's behavioural consequences are
+confined to dormant paths — « it rewrote nothing, and its data
+change moves paths that are switched off ». **The second half is too
+narrow, and this run shows it.** The 71 divergences are not dormant
+cells:
+
+```
+Annual Inflation!AA32   stored 0.6809631728045327 in BOTH files
+   trial 1:  0.6683271002700681  ->  0.48774147216924624   (-27%)
+Annual Inflation!AA45, AA46, AB32, AB45, AB46, AC32, AC45 …
+```
+
+These are the real-to-nominal conversion rows — the same
+`IFERROR(…/INDEX(…MATCH…))` cells that came back
+`degenerate_under_perturbation` under the earlier, narrower draws.
+At a band that keeps them inside the model's domain they compute
+ordinary numbers, and the two versions **disagree by up to 27%**.
+The root cause is the one already established: the twelve months of
+outturn typed into `Monthly Inflation`, which no perturbation can
+neutralise, feeding whole-column aggregates that these rows divide
+by.
+
+**So the honest statement, replacing the earlier one:**
+
+> The 31 July revision rewrote no formula. Its data change moves
+> live paths as well as dormant ones — 71 cells in the real-to-
+> nominal conversion block compute differently between the versions
+> — and the earlier runs reported zero only because their draws left
+> those cells outside the model's domain, where nothing can be
+> compared.
+
+**And the general lesson, which is about tier 2 rather than about
+ED2**: a single seeded run **understates** divergence. Five trials at
+one band sample one corner of the input space; the same code with
+different draws at a different accepted band found 71 differences it
+had previously called degenerate. Tier 2's answer was always « no
+divergence *found* », and this is what that phrasing was protecting
+against. The tier table said « 0 plain divergences » as though it
+were a property of the pair; it is a property of a run, and it is
+corrected there.
