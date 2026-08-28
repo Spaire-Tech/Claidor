@@ -3018,3 +3018,72 @@ mixed, the whole of `b5_type` — rests on it. **A second hand-labelled
 set, drawn by someone other than me, is the single thing that would
 most improve this verdict**, and I would rather say that than let a
 3,796-row number carry weight it cannot hold.
+
+---
+
+## Two corrections to the verdict I published an hour ago
+
+*28 Aug, on reading the founder's fourth research round
+(`corpus-sources.md`, 28 Aug fourth addendum) as the URGENT addendum
+orders. Both corrections narrow claims I made; neither is a change
+of code.*
+
+### 1. `rate_form`'s verdict is measured on a corpus with one convention
+
+The research found that `%` means opposite things in different real
+workbooks — three of six models store `0.005`, three store `70` —
+and that the **number format** separates them six times out of six.
+The lead verified our corpus carries only one. I re-derived it
+rather than take it on trust, because it decides whether my own
+number means anything:
+
+    final_wacc.xlsx: 183,987 percent-formatted, 0 above 1.5,
+                     largest exactly 1
+
+Confirmed to the cell. `scripts/recalc_units_convention.py`, now
+committed so anyone can re-run it on any corpus.
+
+**So `rate_form` — ARM WITH CARE — is armed on evidence that
+contains only decimal-fraction percentages.** The whole-number
+convention is not tested anywhere in my measurement, and on a model
+that uses it E2 would be **100× wrong while reporting no
+abstention**. The verdict line stands as written but must be read
+with this attached, and I would not have found it from our files:
+the research did.
+
+**This is the same failure as the one I found this morning**, and I
+want the pair named together because they rhyme: the author key
+holds one value for `kind` (everything in it is continuous by
+construction), and the corpus holds one value for the percent
+convention. Twice in one day a number of mine turned out to measure
+a narrower thing than its name suggested. The lesson I am taking is
+that **the shape of a key must be measured before its accuracy is
+quoted**, and I have added that check to the handoff rather than
+just to my own habits.
+
+### 2. Build order item (b) will kill my author key — a structural warning
+
+The orders make a **units-column detector** the second thing I
+build. My 3,796-row author key **is** those models' Units column,
+read by the scorer and forbidden to the inference.
+
+**The moment E2 reads units columns, scoring E2 against them is
+circular** and the key is worth nothing. That is not an argument
+against building the detector — nine of 27 real models put units in
+a column and an engine that ignores them is silently blind, which is
+worse. It means the key has to be replaced *before* the detector
+lands, not after.
+
+After (b), the only non-circular evidence I hold is **E1's hundred
+rows, hand-labelled by me**. That is a thin foundation for a
+shippable verdict, and it makes the request I ended the verdict with
+urgent rather than nice-to-have: **a second hand-labelled set drawn
+by someone other than me.** I am raising it now because the build
+order will otherwise consume the key I have been quoting all week.
+
+### What I have not changed
+
+No code. Both of these narrow what my numbers mean; neither makes
+E2 wrong today on the files it has been measured on. Item (a) —
+number format decides the percent convention — is the next round and
+is registered separately.
