@@ -5525,3 +5525,139 @@ measures a ceiling.
   so the DB-backed suite was not re-run; `test_chain_extract` was 34
   passed at its last run and nothing since has touched the package.
 - The corrected Finch figures are propagated to the handoff.
+
+## 28 August 2026, twenty-eighth « go » — the correction lands, three successors tested, and the problem moves
+
+New orders carry the standing addition **« refusal is not the finish
+line »**, and `lanes.md` names my lane's failure by example:
+
+> The two-page-spread finding is the example: the continuation page
+> carries a line-number column and the facing page carries the names.
+> **Reconstructing the spread was never proposed.** Six rounds of
+> refining one design, none spent asking whether the design was the
+> right shape.
+
+**That is fair and it is exact.** I tested four ways to *copy a label
+across* and never once asked whether a figure's identity is a line of
+text at all. I read my own handoff's lessons before acting, as habit 3
+requires, and then wrote the three designs I had not tried **before**
+testing any of them:
+
+1. **Reconstruct the spread into one logical table** — a figure's
+   identity is (row label, column header), not a line of text.
+2. **Match on the model's formula graph** — a cited input is a leaf; the
+   cells it feeds carry names the document also uses. `propose` has only
+   ever been handed one label string.
+3. **Align the two tables as ordered sequences** — a Form 1 schedule and
+   its Appendix A block are largely order-preserving; score the
+   alignment, not fifteen independent pairs.
+
+### Three designs tested. All 0 correct. Reported as such.
+
+**(i) The column anchor as a structural gate.** D1 *already records*
+`column`; round 6 **scored** it and its own criterion removed it. Nobody
+had tried it as a **predicate** — a figure with a column header is a
+table cell, one in a sentence is not. Different use, and it dies at
+intake: 43% of facts carry an anchor, but on this document the anchors
+are `'and'`, `'of'`, `'from'`, `'‐'`, `'Market'`. Walking up from a
+figure on a Form 1 hits instruction prose. Round 6's finding, restated
+on a new corpus.
+
+**(ii) Solve a model SECTION jointly instead of a cell at a time.** The
+intake is striking: **7 of 8 sections draw every one of their rows from a
+single document page.** The fifteen lookups were never independent. So
+let the section vote on a page, then match rows within it.
+
+**It is worse than round 8: 0 correct, 6 wrong** (round 8 was 0 and 2).
+The vote picks pages 110, 112 and 118 — the balance sheet and the income
+statement.
+
+**(iii) Weight shared words by their rarity in the document.** Every
+design so far treats all label words as equal: "General" occurs on dozens
+of lines, "Reacquired" on two. The document's own word distribution is
+information in the file that no round has read. **0 correct, 1 wrong, 6
+tie, 8 below floor.** It halves the false proposals — the one precision
+gain of the turn — and is not shipped.
+
+### The pathology, now named for the third time
+
+Design (ii) failed exactly as the page-coverage donor rule failed two
+turns ago, and as the section-header page ranking failed three turns ago:
+
+> **On this corpus, any design that scores a page — or a donor — by
+> aggregate word overlap is won by the densest page.** Printed 112 is a
+> universal false donor; 110, 112 and 118 win every section's vote.
+
+Three designs, three turns, one mechanism. Writing it down as a rule of
+the corpus so a fourth design does not walk into it.
+
+### And the measurement that moves the problem
+
+Asking the question the standing addition demands — *what evidence would
+identify the answer, and is it reachable?* — I scored each row against
+**its own truth page only**, with prose and headings excluded:
+
+| | count |
+|---|---|
+| rows where the truth is **alone at the top of its own page** | **9 of 15** |
+| rows with an equal-or-better rival on their own page | 6 of 15 |
+
+Against **0 of 15** today, and an oracle bound of **4 of 15** across the
+whole document.
+
+**The entire gap is page selection.** Row matching is not the problem —
+given the right page and prose excluded, the row label already resolves
+**nine of fifteen** on its own. The matcher fails because it searches
+4,913 numbers across 132 pages when the answer lives on one, and every
+attempt to narrow to that page has been beaten by the densest page in the
+filing.
+
+That inverts what I have been reporting for four turns. I wrote that
+« the evidence does not identify the answer ». **For nine of fifteen rows
+the evidence identifies the answer exactly**, and D3 never sees it.
+
+### The successor, argued rather than gestured at
+
+**Match the model's section header to the document's page TITLE, not to
+the page's bag of words.** The model says "Wages & Salary Allocation
+Factor"; printed page 354 is titled "DISTRIBUTION OF SALARIES AND WAGES".
+That is a title-to-title match between two things of the same kind. Every
+page-selection attempt so far has matched a title against a *whole page*,
+which is what lets a dense page win.
+
+It is reachable: the titles are in the file. I know the objection,
+because it is mine — my title extractor two turns ago found only 75 of
+132 pages and missed all four pages of the spread. **That was a bad
+heuristic, not an absent title**, and it is a specific, testable thing to
+build rather than a threshold to loosen.
+
+**And where labels genuinely cannot work, I will say so.** For the six
+rows with a rival on their own page the document prints the same evidence
+twice: page 354 lines 4, 14 and 21 all read "Transmission", under
+Operation, under Maintenance, and as their total. Nothing lexical
+separates them, and the model's name — "Transmission Wages Expense" —
+carries no signal of totality. **No label rule can resolve those, on any
+corpus, ever.** The disambiguating evidence for them is not in the
+document at all: it is on the **model** side, in what the cell is used to
+compute. That is design 2, and it is the right successor for that subset
+rather than a better matcher.
+
+### Three designs I did not try this turn
+
+1. **Document row hierarchy** — the schedule has its own sections
+   ("Operation", "Maintenance", "Total Operation and Maintenance"); match
+   hierarchy to hierarchy, which is what separates line 21 from line 4.
+2. **Anchor on the rarest word first** — search for the one distinctive
+   token ("Reacquired", "Proprietary") and expand, rather than scoring
+   every candidate against every label.
+3. **Let the model's own citation column train the matcher** — this
+   corpus has 47 labelled examples; nothing has used them as anything but
+   truth.
+
+### Turn's end state
+
+- **No package code changed.** The diff is this entry and the handoff.
+- Round 8's registration, sample and verdicts are untouched; every number
+  here is a ceiling experiment, none is a round, and none revises them.
+- Nothing above loosens a bar. The floor and the tie rule are unchanged
+  and the failures are reported at round 8's registered granularity.

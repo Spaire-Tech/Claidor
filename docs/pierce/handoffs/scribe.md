@@ -428,6 +428,53 @@ tie-breaker.** Do not read the lifetime zero as "the approach cannot
 work" — read it as "the tie rule converts every reachable answer into an
 abstention, and nothing yet breaks ties.
 
+### The problem is PAGE SELECTION, not row matching (twenty-eighth turn)
+
+Scoring each row against **its own truth page only**, prose and headings
+excluded:
+
+| | count |
+|---|---|
+| truth is **alone at the top of its own page** | **9 of 15** |
+| an equal-or-better rival on its own page | 6 of 15 |
+
+Against **0 of 15** today and an oracle bound of **4 of 15** across the
+whole document. **The entire gap is page selection.** Given the right
+page, the row label already resolves nine of fifteen unaided. Four turns
+of mine reported that "the evidence does not identify the answer"; for
+nine of fifteen rows it identifies it exactly and D3 never sees it.
+
+**The pathology that has beaten every page-selection attempt, three times
+in three turns:** *any design that scores a page — or a donor — by
+aggregate word overlap is won by the densest page.* Printed 112 is a
+universal false donor; 110, 112 and 118 win every section vote. Do not
+build a fourth design that ranks pages by summed overlap.
+
+**The registered successor:** match the model's section header to the
+document's page **TITLE** — title to title, two things of the same kind —
+not to the page's bag of words. The titles are in the file; my own title
+extractor found only 75 of 132 pages and missed the whole spread, and
+**that was a bad heuristic, not an absent title.**
+
+**Where labels cannot work, and this is a real answer, not a shrug:** for
+the six rows with a rival on their own page the document prints the same
+evidence twice — page 354 lines 4, 14 and 21 all read "Transmission",
+under Operation, under Maintenance, and as their total. Nothing lexical
+separates them and the model's name carries no signal of totality. **No
+label rule resolves those on any corpus.** Their disambiguating evidence
+is on the **model** side, in what the cell is used to compute.
+
+**Three designs tested and dead (twenty-eighth turn), so nobody repeats
+them:** the recorded `column` anchor as a structural gate (its values
+here are `'and'`, `'of'`, `'Market'`); section-joint page voting (**worse**
+than round 8 — 0 correct, 6 wrong); rarity-weighted overlap (0 correct, 1
+wrong — it does halve the false proposals, and is unshipped).
+
+**Still untried:** document row hierarchy matched to model hierarchy;
+anchoring on the rarest word first rather than scoring every candidate;
+and using this corpus's 47 labelled citations as training rather than
+only as truth.
+
 ### Round 9 was investigated and **deliberately not built** — read this before you try
 
 The obvious next fix is the **two-page spread**: a wide table's
