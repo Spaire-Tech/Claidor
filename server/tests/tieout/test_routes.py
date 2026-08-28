@@ -3227,3 +3227,51 @@ class TestTheFactsTheCellsCannotSay:
         #: The old, poorer answer — which is the honest one for an
         #: artifact that never carried the fact.
         assert "broken-name" not in rules
+
+
+@pytest.mark.asyncio
+class TestAFindingWithNoCell:
+    """A finding about the workbook still says where it is.
+
+    Most findings sit at a cell. Some are about the *file* — the
+    defined names pointing into workbooks that are not here, which on
+    the repo's judged model is fifty of them and on a corpus model
+    three hundred and thirty-eight. Those carry no sheet and no ref,
+    and every screen drew an empty grey pill beside them: the reader
+    sees a rendering fault where the truth is « the whole workbook ».
+
+    The engine already names what such a finding is about. Saying that
+    is both shorter and truer than a blank.
+    """
+
+    @pytest.mark.auth
+    async def test_a_workbook_finding_names_what_it_is_about(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="example_preapp_model.xlsx",
+            payload=(CASCADE / "example_preapp_model.xlsx").read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+        await session.flush()
+
+        response = await client.get(f"/v1/tieout/deals/{deal.id}/findings")
+        assert response.status_code == 200
+        findings = response.json()
+        workbook_wide = [one for one in findings if one["rule"] == "broken-name"]
+        assert workbook_wide, "the judged model carries fifty broken names"
+        for one in workbook_wide:
+            #: No cell, by the rule's nature — and still not blank.
+            assert one["where"]["anchor"].get("ref") in (None, "")
+            assert one["where"]["label"], "an empty pill is a rendering fault"
+            assert one["where"]["label"] == "defined names"

@@ -82,6 +82,11 @@ const SEV_DOT = { 1: '#e0322d', 2: '#e8a300', 3: '#2b6cf5' } as const
  *  attention inks the rest of the workspace uses: red for a defect,
  *  amber for an assumption or method at risk, blue for information,
  *  green for a repair, grey for structure. */
+/** A count with its thousands grouped, for anything a person reads on
+ *  a printed page. Non-numbers pass through as they came. */
+const grouped = (value: unknown): string =>
+  typeof value === 'number' ? value.toLocaleString() : String(value ?? '')
+
 //: The deck-delta panel's own quiet line — loading, and the server's
 //: refusal sentence when a version's bytes were dropped.
 const deckNote: React.CSSProperties = {
@@ -1792,8 +1797,16 @@ export const ProjectPage = ({
                           const n = sevOf(f)
                           const opened = openId === f.id
                           const grid = f.grid
+                          //: A finding about the *workbook* rather than a
+                          //: cell — the defined names pointing into other
+                          //: files, say — carries no sheet and no ref, and
+                          //: the column sat empty beside a real finding on
+                          //: a real model. It is not nowhere: the engine
+                          //: says what it is about in `where.label`, and an
+                          //: empty column reads as a rendering fault
+                          //: rather than as « the whole workbook ».
                           const sheet = String(
-                            f.where.anchor.sheet ?? f.where.label ?? '',
+                            f.where.anchor.sheet || f.where.label || '',
                           )
                           const ref = String(f.where.anchor.ref ?? '')
                           const hasPair = !!f.fix && !!f.fix_before
@@ -4100,9 +4113,13 @@ const Report = ({
       //: `summary.cells` is cells — the row said « formulas read » over
       //: it, which is a false claim on a document a partner keeps. The
       //: model's own counts carry the formula count, so both are said.
+      //:
+      //: Grouped, because the verdict overleaf already says « 224 of
+      //: 432,596 cells » and this row was printing « 432596 » — the
+      //: same number twice on one page, one of them unreadable.
       typeof modelCounts?.['formulas'] === 'number'
-        ? `${summary['cells']} · ${modelCounts['formulas']} of them formulas`
-        : String(summary['cells']),
+        ? `${grouped(summary['cells'])} · ${grouped(modelCounts['formulas'])} of them formulas`
+        : grouped(summary['cells']),
     ])
   if (Array.isArray(summary['rules_off']) && summary['rules_off'].length > 0)
     facts.push([

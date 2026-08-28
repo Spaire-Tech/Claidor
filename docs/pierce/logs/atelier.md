@@ -1825,3 +1825,66 @@ and nothing else has stopped being honest and started looking broken.
 That is a small change on the back of a large measurement, and it is
 deliberately all I changed: the fix I could have shipped was wrong, and
 shipping it would have cost a finding class rather than saved time.
+
+## Twenty-fifth turn — a states sweep on the corpus, now that the
+## corpus produces findings
+
+The last states sweep ran on seeded fixtures. Since then the intake
+fix made real models produce real findings, so the screens can be
+swept against them for the first time. Kelso re-read through the fixed
+intake (96 s), then driven tab by tab.
+
+**The product works end to end on a 470,594-cell model.** The deals
+list, Overview, Findings, Versions and the report all render, and the
+new intake facts are visibly doing their job: Kelso's Findings tab now
+carries « 338 defined names point into other workbooks that are not
+here (IRRSHARINGREQ, ModStartDate … and 332 more) — IRRSHARINGREQ reads
+`[1]Checks!$H$110` », filed under **Auditability risks**, which is the
+family this lane mapped three turns ago. That mapping is doing real
+work on a real model.
+
+Three defects found, all on the page a partner reads.
+
+**1. A finding about the workbook had nowhere to be.** `broken-name`
+carries no sheet and no ref — by its nature: it is about the file's
+defined names, not a cell — and every screen drew an **empty grey
+pill** beside it. A reader sees a rendering fault where the truth is
+« the whole workbook ». The engine already names what such a finding
+is about, so the endpoint now falls back to that: the pill reads
+**« defined names »**. Fixed server-side rather than in one screen, so
+the report and the panel get it too. One route test, which asserts
+both halves — no ref, and not blank.
+
+**2. The report printed `432596`.** On the same page as a sentence
+reading « 224 of **432,596** cells hold a formula » — the same number
+twice, one of them unreadable. The « Cells read » fact row now groups
+its thousands like everything else a person reads on a printed page.
+Verified by printing the PDF and reading it back: « Cells read
+432,596 · 224 of them formulas ».
+
+**3. The print path had never carried material findings.** Every
+earlier PDF check ran on a report with none. Printed Levenmouth's, now
+that it has two: **4 pages, the product's own fonts embedded**
+(JetBrainsMono, Newsreader, InstrumentSans), section footers right, and
+section 3 carrying both citations in full — « Repayment
+schedules!D79 · #N/A at D79:D126 inside an otherwise live column —
+values resume at D127 ». No defect; the check had simply never been
+run on this state, and now it has.
+
+**And the honest wait line reads correctly on the real thing**:
+« Reading both versions and comparing… This model has 470,594 cells,
+and a comparison that size takes a few minutes. It is computed fresh
+every time — nothing here is a saved answer. »
+(`logs/atelier/corpus-versions-wait.png`.)
+
+### One number moved, and it was not this lane
+
+Kelso's `model-own-check` findings went from **7 to 3** between its
+first audit and the re-read. That is Sentinel's own-check period
+restriction, not the intake fix: the old run finished at **18:37** on
+27 Aug and the restriction landed at **18:39**. Checked rather than
+assumed, because « the product suddenly reports fewer errors » is
+exactly the change that should never be waved through.
+
+Suite **1012 passed, 4 skipped**; ruff, mypy, tsc, eslint and prettier
+clean.
