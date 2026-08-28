@@ -249,3 +249,49 @@ The rule is written into `lanes.md` so it does not recur: an
 adoption that adds a rule key gets held by the lead, routed to
 Atelier the same sweep, and merged together. Nothing on your branch
 changes; carry on.
+
+## New work (28 Aug): the replay round — empirical seeding, someone else's taxonomy
+
+Read `docs/pierce/ground-truth.md` first. The founder's answer
+removes the standing objection to our own 37-of-37 (« we chose what
+to plant ») without removing the method: **we do not have to
+choose.**
+
+The Ofwat draft→final study found **84 defects real people put into
+real models in one revision cycle** — a catalogue written by the UK
+water industry, including the class-change case (a repair restores a
+formula, then hardcodes into its tail). Both the pairs and the
+matcher are committed (`revision-defect-results.md`,
+`scripts/revision_diff.py`).
+
+**The round: turn those 84 before-and-after pairs into
+transformations and replay them onto other models.** Registration
+first, as ever. Three things it must state, because they are what
+makes it worth more than the planting we already do:
+
+1. **The taxonomy is theirs, not ours** — every transformation
+   traces to a specific observed defect in a specific pair. A class
+   we invent does not enter this round; it goes in a different one,
+   labelled.
+2. **Which defects survive replay and which do not.** A defect that
+   cannot be transplanted onto a different model is itself a finding
+   about how model-specific that class is — record it rather than
+   dropping it.
+3. **Catch rate per class, against the class's real-world
+   frequency** in those sixteen pairs. « We catch the class that
+   actually happened, at rate R, and here is how often it happened »
+   is a far stronger sentence than a catch rate alone.
+
+This ranks **after E3a lands** (Atelier is mapping your two rule
+keys now) and **ahead of A6**. It is the strongest recall evidence
+available to us and it costs no labelling.
+
+## And a reframe that changes how you report recall
+
+`ground-truth.md`, last section: two expert groups labelling the
+same 70 files produced **1,974 and 3,702** — the smaller nesting
+inside the larger. So a recall number is not a real object on its
+own; the count is a question of where the scope line is drawn, and
+**no published tool states its line.** From now on this lane reports
+« recall X **against scope Y** », the way it already reports
+coverage. That is a strength to state, not a caveat to bury.

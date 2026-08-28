@@ -183,3 +183,29 @@ when the corpus improves » does not count. Write the three designs you
 did not try, in a line each. Attack the constraint, not the
 parameters. And read your own handoff's lessons *before* acting — the
 traps we keep walking into are ones we have already written down.
+
+## Reframe (28 Aug): you are already holding the purest key in the company
+
+Read `docs/pierce/ground-truth.md`. The lead's brief asked outsiders
+for « somebody else's labels » and failed to count what this lane
+already produced: **the fidelity key is the most independent
+evidence Swens owns.** 3,862,412 cells checked against values *Excel*
+computed and the model's own author accepted and saved — an answer
+key written by Microsoft and by a stranger, that we did not touch,
+could not have influenced, and cannot be accused of grading.
+
+It measures fidelity rather than defect-finding and must always say
+so. But when the units work makes you doubt the value of a
+self-graded key, note that you have already built the opposite of
+one.
+
+**Consequence for E1/E2:** split the key by class before asking
+anyone to label anything. Dimensions with a **computable** right
+answer do not need a human — they need a spec and a second
+implementation by someone who did not write the first, with
+disagreement as the signal. Reserve every human judgement for the
+rows where nothing else can decide. If we ever do buy labels: three
+labellers, blind and apart, one written protocol, and **publish
+their disagreement rate** — nobody in model audit has ever published
+a human-versus-human number, and our own evidence says it will be
+large.
