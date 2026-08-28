@@ -785,3 +785,81 @@ def test_a_real_record_table_still_reads_column_wise() -> None:
         for n in range(8)
     ]
     assert orientation(rows) is Orientation.COLUMN_WISE
+
+
+# --- period from aggregation, not from words (28 Aug) ---
+
+
+def test_granularity_is_arithmetic_not_vocabulary() -> None:
+    from polar.tieout.units.periods import granularity_of
+
+    assert granularity_of(120, 10.0)[0] == "monthly"
+    assert granularity_of(40, 40.0)[0] == "annual"
+    assert granularity_of(40, 10.0)[0] == "quarterly"
+    assert granularity_of(20, 10.0)[0] == "half-yearly"
+    assert granularity_of(7, 0) is None
+
+
+def monthly_and_annual():
+    """A monthly block feeding an annual one, as Kelso is built."""
+    from polar.tieout.units.periods import Block
+
+    return [
+        Block("M", tuple(range(8, 128)), "monthly", "120 over 10 years"),
+        Block("A", tuple(range(8, 18)), "annual", "10 over 10 years"),
+    ]
+
+
+def aggregating_cells(cells_taken: int):
+    cells = {}
+    for column in range(8, 8 + cells_taken):
+        cells[f"M!{column}5"] = GridCell("M", 5, column, 1.0)
+    total = GridCell("A", 5, 8, float(cells_taken))
+    total.formula = "=SUM(M!H5:S5)"
+    total.precedents = tuple(f"M!{c}5" for c in range(8, 8 + cells_taken))
+    cells["A!85"] = total
+    return cells
+
+
+def test_twelve_months_into_a_year_is_a_correct_aggregation() -> None:
+    from polar.tieout.units.periods import aggregations
+
+    found = aggregations(aggregating_cells(12), monthly_and_annual())
+    assert len(found) == 1
+    assert found[0].cells_taken == 12
+    assert found[0].cells_expected == 12
+    assert not found[0].is_broken
+
+
+def test_one_month_in_an_annual_line_is_the_flagship_defect() -> None:
+    # « A monthly figure in an annual line » is a broken aggregation:
+    # an annual cell taking one month where it should take twelve.
+    from polar.tieout.units.periods import aggregations
+
+    found = aggregations(aggregating_cells(1), monthly_and_annual())
+    assert len(found) == 1
+    assert found[0].is_broken
+    assert found[0].cells_taken == 1
+    assert found[0].ref == "A!85"
+
+
+def test_a_coarser_row_feeding_a_finer_one_is_not_an_aggregation() -> None:
+    from polar.tieout.units.periods import aggregations
+
+    cells = {"A!85": GridCell("A", 5, 8, 12.0)}
+    spread = GridCell("M", 5, 8, 1.0)
+    spread.formula = "=A!H5/12"
+    spread.precedents = ("A!85",)
+    cells["M!85"] = spread
+    assert aggregations(cells, monthly_and_annual()) == []
+
+
+def test_blocks_come_from_the_date_axis_alone() -> None:
+    from polar.tieout.units.periods import blocks_from_dates
+
+    monthly = {8 + i: 42000.0 + i * 30.44 for i in range(120)}
+    annual = {8 + i: 42000.0 + i * 365.25 for i in range(10)}
+    blocks = {
+        b.sheet: b.granularity for b in blocks_from_dates({"M": monthly, "A": annual})
+    }
+    assert blocks == {"M": "monthly", "A": "annual"}
