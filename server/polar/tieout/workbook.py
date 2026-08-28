@@ -68,10 +68,25 @@ DERIVED_ROW = re.compile(
 
 #: How many cells a range in a formula is expanded to. `SUM(A1:A20)` is
 #: worth knowing cell by cell; `SUM(A1:IV65536)` is sixteen million
-#: strings and says nothing the first two hundred do not. The cap bounds
-#: the work on a workbook built by somebody who selected whole columns,
-#: which is most workbooks in the wild and none of the models seen so far.
-MAX_RANGE = 200
+#: strings and says nothing the first fifty do not. The cap bounds the
+#: work on a workbook built by somebody who selected whole columns, which
+#: is most workbooks in the wild and none of the models seen so far.
+#:
+#: **200 until 28 August, and the 150 extra were never used.** Tested
+#: against the golden master — a byte-exact oracle over 27 published
+#: regulator models — the corpus reports *identically, finding for
+#: finding* at 50. On the heaviest model (`final_gd3_bpfm.xlsm`):
+#:
+#:     cap    read time    peak      corpus sweep
+#:     200        252 s    6,290 MB       3,300 s
+#:      50        121 s    1,255 MB       2,463 s
+#:
+#: 10 was also tested and also clean, and is **deliberately not taken**:
+#: a twelve-month sum and a thirty-year schedule are units a modeller
+#: thinks of as whole, so truncating them would be real loss even where
+#: this corpus cannot see it. 50 keeps every ordinary range intact and
+#: only bites the whole-column selections the cap was written for.
+MAX_RANGE = 50
 
 #: A whole column — `$M:$M`, `A:C`. Real models are full of them: the
 #: 2026 Ofgem distribution model averages over `'Monthly Inflation'!$M:$M`
