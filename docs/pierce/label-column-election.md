@@ -171,7 +171,54 @@ false-positive price taken and no gate. It says one thing only: the
 successor design is not obviously impossible. Its numbers do not
 enter the record.
 
-## What the next round registers
+## Three designs I did not try, each differing in kind
+
+Required by `lanes.md` § « refusal is not the finish line », and the
+rule is right: my first successor — « elect by numeric *value*
+rather than by carrying a formula » — is the same design with the
+key swapped. It attacks the parameter. These attack the constraint.
+
+**A. Don't elect at all; give the rules a second population.**
+The constraint I accepted without examining it is *to be seen, a
+cell must be in `book.cells`* — which is also why the change was
+expensive, since that dictionary is every rule's input and the whole
+baseline. Instead expose label-column series as their own
+collection (`Workbook.label_series`, say) that **one new rule**
+consumes. Existing findings then cannot move *by construction*
+rather than by measurement, the gate stays clean for a structural
+reason, and the false-positive price is confined to the new rule
+instead of being spread across seventeen. It also makes the frozen
+`Workbook` interface the thing under discussion, which is a
+lead-approved bump and honest about its cost.
+
+**B. Check the ladder's arithmetic, not the cell's provenance.**
+`typed-over-formula` asks « was this typed? ». For a date ladder the
+question an auditor actually has is « is the sequence intact? ». A
+structure pass can recognise a computed progression (each cell the
+previous plus a constant, or a date advancing by a period) and test
+the progression itself. A typed cell that continues the sequence
+correctly is then **rightly** not a finding — today's design would
+flag it — and a cell that breaks it **is** a finding even if it
+carries a formula, which every provenance-based design misses
+entirely. This inverts what counts as the defect.
+
+**C. Judge the ladder from what depends on it.**
+A broken date ladder matters because other cells key on it —
+`OFFSET($H$2,0,A21)`, `VLOOKUP($A193,…)`. So do not judge the label
+column directly at all: walk the precedent graph we already build,
+find cells whose references land in a label column, and check
+whether what they read is an intact computed series. This needs no
+election and no new interface, prices itself (a ladder nothing reads
+is correctly ignored, which is most of the 34,000 cells of one
+shape), and uses machinery that already exists.
+
+**Which I would register first: B.** It is the only one of the three
+that changes what the *question* is, it does not touch a frozen
+interface, and it answers the objection the cost round raised
+against itself — that most of the hidden population is one shape,
+because B judges the shape rather than counting the cells.
+
+## What the superseded successor would have registered
 
 **Elect label-column cells by their numeric value, not by carrying a
 formula** — and the false-positive price becomes the whole question,
@@ -186,6 +233,11 @@ different registration and it starts from a prediction I no longer
 hold confidently.
 
 ## Verdict: REFUSED
+
+**Closed with successors, per `lanes.md`.** Three designs differing
+in kind are above; the one this document originally proposed is
+recorded as superseded, because it varied a parameter rather than
+attacking the constraint.
 
 Criterion 2 fails at zero. Nothing is adopted, nothing is wired, the
 baseline is untouched, and the gate was not run because there was
