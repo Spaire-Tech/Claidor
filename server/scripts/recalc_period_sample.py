@@ -28,6 +28,15 @@ from polar.tieout.units.declarations import parse_declaration
 from polar.tieout.units.inference import rows_from_cells
 from polar.tieout.workbook import read_workbook
 
+#: How far down a sheet to collect candidate header rows. The reader
+#: picks **one** header row; on Kelso's `inputCapexM` it picked an
+#: annual one and the monthly axis — `Apr 15`, `May 15` at row 2 —
+#: never reached the evidence. A labeller shown `FY2015` for a
+#: monthly row would label it annual, and the key would be wrong in
+#: exactly the direction that hides the flagship case. So every
+#: candidate header row is handed over and the labeller decides.
+HEADER_ROWS = 12
+
 SEED = 11
 PER_STRATUM = 40
 
@@ -66,9 +75,36 @@ KELSO_MONTHLY = (
 )
 
 
+def header_rows_of(cells: dict, sheet: str, columns: list[int]) -> list[list[str]]:
+    """Every candidate header row above the data, in the value columns."""
+    out = []
+    for number in range(1, HEADER_ROWS + 1):
+        texts = []
+        for column in columns[:6]:
+            cell = next(
+                (
+                    c
+                    for c in cells.values()
+                    if c.sheet == sheet and c.row == number and c.column == column
+                ),
+                None,
+            )
+            value = getattr(cell, "value", None)
+            texts.append(str(value).strip() if isinstance(value, str) else "")
+        if any(texts):
+            out.append(texts)
+    return out
+
+
 def eligible(path: str, only_sheets: tuple[str, ...] | None = None) -> list[dict]:
-    """Rows a human could label: numbers, under headers, not a switch."""
+    """Rows a human could label: numbers, under headers, not a switch.
+
+    A row of nothing but zeros is excluded: it carries no information
+    for a labeller, and « Spare 9 » with five zeros was drawn into
+    the first sample.
+    """
     cells = read_workbook(path).cells
+    texts_map = cells_with_text(path)
     declared: dict[tuple[str, int], str] = {}
     try:
         texts = cells_with_text(path)
@@ -88,6 +124,15 @@ def eligible(path: str, only_sheets: tuple[str, ...] | None = None) -> list[dict
             text = declared.get((sheet, evidence.row))
             if text and parse_declaration(text).not_a_unit:
                 continue
+            if not any(abs(float(v)) > 0 for v in evidence.values):
+                continue
+            columns = sorted(
+                {
+                    c.column
+                    for c in cells.values()
+                    if c.sheet == sheet and c.row == evidence.row
+                }
+            )
             out.append(
                 {
                     "file": Path(path).name,
@@ -95,6 +140,7 @@ def eligible(path: str, only_sheets: tuple[str, ...] | None = None) -> list[dict
                     "row": evidence.row,
                     "row_label": evidence.row_label,
                     "column_headers": headers[:8],
+                    "candidate_header_rows": header_rows_of(texts_map, sheet, columns),
                     "number_formats": list(evidence.number_formats)[:3],
                     "values": [round(float(v), 4) for v in evidence.values[:5]],
                     "declared_units": text,
@@ -129,7 +175,9 @@ def main() -> int:
             'For each row, set "period" to one of: annual, monthly, '
             "quarterly, half-yearly, point-in-time, none (the row is not a "
             "flow through time), or unknown (the evidence does not say). "
-            "Judge from the row label, the column headers and the values. "
+            "Judge from the row label, the candidate header rows (the "
+            "reader picks one header row and can pick the wrong one, so all "
+            "of them are given), the column headers and the values. "
             "Do not consult E2; its answers are deliberately absent."
         ),
         "counts": counts,

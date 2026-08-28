@@ -3725,3 +3725,41 @@ That is also the honest limit: **a check validated on one model is
 validated on one model.** It is enough to build and measure; it is
 not enough to claim the check generalises, and I will not say it
 does.
+
+## The first draw was discarded, and here is why
+
+*Stated plainly because discarding a sample is exactly the move that
+could hide a cherry-pick. **The first draw was never labelled**, by
+me or anyone, so nothing is contaminated — and the seed is unchanged
+at 11, so the second draw is not a retry until I liked it.*
+
+The draw was clean of E2 output — 197 rows, `period` null on every
+one, no inference field anywhere. It was still unfit to hand to a
+labeller, for two reasons I found by reading the rows rather than
+the counts:
+
+**1. The evidence showed the wrong axis on the one stratum that
+matters.** `kelso_model.xlsm inputCapexM!159` came out with
+
+    headers: ['end date', 'FY2015', 'FY2015', 'FY2015', 'FY2015']
+
+but that sheet's real axis is monthly — `Apr 15`, `May 15`, `Jun 15`
+at row 2, which is why the file calls it `inputCapexM`. The reader
+picks **one** header row per sheet and picked an annual one. A
+labeller shown `FY2015` for a monthly row labels it annual, and the
+key comes back wrong **in exactly the direction that hides the
+flagship case** — a monthly figure recorded as annual is the finding
+E3 is supposed to make.
+
+That would have been a self-inflicted version of the trap I have hit
+twice already: a key that cannot contain the case it exists to test.
+The sample now carries **every** candidate header row from the top
+twelve, in the row's own columns, and says in its instructions that
+the reader can pick the wrong one.
+
+**2. Rows of nothing but zeros.** `Spare 9`, five zeros, drawn into
+the monthly stratum. There is nothing there for a human to judge. An
+all-zero row is now ineligible.
+
+Both changes are to *eligibility and evidence*, not to which rows the
+rule prefers, and both are in the committed script.
