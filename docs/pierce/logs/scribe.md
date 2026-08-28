@@ -4799,3 +4799,100 @@ three lines.
 than half of the 25 matched.** If instead it produces confident wrong
 answers, the round dies and says so — that is the outcome this whole
 design is arranged to prefer.
+
+## D3 round 8 — intake phase, measured. **D1 found every cited line, and my registration was wrong about transformations.**
+
+Committed before the matcher is run, as the registration requires.
+
+### D1 over the document
+
+`extract_pdf` on the 132-page Form 1: **4,913 numbers, 0 refusals, 132
+pages**. Extractor version 5.
+
+### The headline
+
+**25 of 25 cited lines are present in the document.** Not 15, which is
+what my first harness said, and the difference was my instrument twice
+over — see below. D1 failed to extract a printed figure on **zero** of
+them.
+
+| tier | count |
+|---|---|
+| cited lines present in the document | **25 of 25** |
+| cited lines carrying a figure | 15 of 25 |
+| cited lines carrying more than one distinct figure | 9 of 15 |
+
+**Kill criterion 2 does not fire.** It reads "if D1 cannot extract a
+number on the cited line for more than half the sample". Ten rows carry
+no figure — not more than half, so the criterion is not met even on the
+literal reading. On the honest reading it is not close: **all ten are
+lines the document prints with no value at all.** "4Property Under
+Capital Leases", "189(928) Regulatory Commission Expenses", "8TOTAL" —
+the line is there, the figure column is empty, and the filer recorded
+the input as `0`. There is nothing for an extractor to fail at.
+
+### The classification the registration promised
+
+| class | count | what it is |
+|---|---|---|
+| direct lift | **11** | the model's value is printed on the cited line |
+| nil → zero | **10** | the cited line prints no value; the model records `0` |
+| **sign flip** | **3** | document `(41,209,384)`, model `41209384` |
+| judgement | **1** | document prints `704,462`; the model's "Less:" line takes `0` |
+
+The three sign flips are `p219.29.c`, `p219.25.c` and `p219.28.c` —
+accumulated depreciation, printed in accounting parentheses and carried
+into the model positive.
+
+### A correction to my own registration, published hours ago in the same commit
+
+I wrote, under *What this round does NOT test*: "RMU's Appendix A
+single-target citations **appear to be direct lifts**", and concluded
+the pair "does **not** test the transformed half."
+
+**That is wrong and the intake shows it.** Of the 15 rows with a figure
+on the cited line, **11 are direct lifts and 4 are transformed** — three
+sign flips and one judgement. This corpus does carry the transformed
+half, in smaller number and narrower kind than the large owners'
+13-month averaging, but it carries it. I generalised from the one
+citation I had resolved by hand, which is exactly the move this lane
+exists to not make.
+
+What stands from that section: the **13-month averaging** case is only
+in the large owners' workbooks, and those still have no document half.
+
+### Amendment to the sample, made after intake and before any score
+
+**The scorable sample is 15, not 25.** The ten `nil → zero` rows cannot
+be scored: there is no document number for a matcher to point at, so
+neither a proposal nor an abstention can be graded against a fact that
+was never printed. Grading them would be grading nothing.
+
+They are **not discarded** — they are reported as their own outcome, and
+they are a real finding about this corpus in their own right: **40% of a
+small filer's cited inputs are nils.** A tie-out product that cannot say
+"the document states nothing here, and the model recorded zero" in words
+would be silent on two rows in five.
+
+The 15 scorable rows are frozen: r10, r12, r13, r19, r21, r36, r41, r44,
+r57, r59, r88, r119, r121, r179, r187.
+
+### Two more instrument errors, both caught in intake
+
+**4. The line-number column is on the right half of a two-page spread.**
+My line finder read the printed line number from the **start** of the
+line, and Form 1 continuation pages print it at the **end** —
+`$ 218,200 48`, under a header that reads "Balance at Line / End of Year
+No.". Every right-hand page read as a total miss: all four page-207 rows
+failed at once, which is what gave it away. A rule that owns the answer
+matches **either** anchor. This moved the located count from 15 to 20.
+
+**5. I counted the line number itself as a figure.** Having found the
+line *by* its number, I then counted that number as data on the line, so
+five rows whose cited line is genuinely blank reported as "carries a
+figure". Excluding the token used to locate the line moved tier 2 from
+20 to 15 — **downward**, against the direction that flatters the corpus.
+
+Both are the same defect this lane has now named six times: re-deriving
+a rule at the call site instead of writing the rule that owns it. Both
+were caught before publication. The first three were not.
