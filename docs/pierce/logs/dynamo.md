@@ -3763,3 +3763,97 @@ all-zero row is now ineligible.
 
 Both changes are to *eligibility and evidence*, not to which rows the
 rule prefers, and both are in the committed script.
+
+---
+
+## The successors I owe — every open refusal in this lane, answered
+
+*28 Aug, the founder's correction (`lanes.md`, « Refusal is not the
+finish line »). It lands on me squarely. I closed the generalisation
+round « unmeasurable » and moved on; the successor existed, and it
+was found because the **lead** ordered a units-column detector, not
+because I proposed one. Fourteen thousand nine hundred declarations
+were sitting in files I had already read. That is the drift, exactly
+as named.*
+
+**And habit 3, in the same hour I read it**: « read your own
+handoff's lessons before any long job ». I ran `pkill -f
+period_sample` and killed the relaunch I had started in the same
+command. Two runs dead, both mine, from not thinking about a shell
+waiter — the specific thing the correction warns about.
+
+### 1. `period` — DO NOT ARM, and the successor is structural
+
+**Diagnosis**: the row label does not say the period, the headers say
+it only when the reader picks the right header row, and my own key
+cannot say it either.
+
+**What evidence *would* decide it, and it is in the file**: the
+model's own aggregation. `=SUM(H5:S5)` across twelve monthly columns
+into one annual column **proves** the period relationship without any
+label at all. Kelso carries both axes and its annual sheets aggregate
+its monthly ones. So: **infer `period` from the shape of the
+formulas that consume a row, not from words above it.** A row whose
+consumers sum exactly twelve of its cells into one is monthly; four
+is quarterly; a row consumed one-for-one is the same period as its
+consumer. That is evidence of a different *kind* — structural rather
+than lexical — and it is reachable from files we hold.
+
+It also gives the flagship check its teeth: « a monthly figure in an
+annual line » is exactly a **broken** aggregation, so the same
+machinery that infers the period detects the defect.
+
+### 2. `kind` — 770 flag rows read as quantities
+
+**Diagnosis**: a 0/1 row under period headers looks like a quantity
+to any format-and-label rule.
+
+**Successor**: **usage again, and it already works once.** A row
+consumed as the condition of an `IF`, or multiplied against another
+row as a mask, is a switch whatever its format says. The rate-form
+round proved this kind of evidence pays; this is the same instrument
+pointed at a different dimension, and there are 770 author-labelled
+flag rows to measure it against.
+
+### 3. `currency`/`scale` — « said none, was GBP » on 263 £m rows
+
+**Diagnosis**: E2 conflates two different statements — « this has no
+currency » (a ratio) and « I cannot tell » — under one word.
+
+**Successor**: **currency by propagation, not by declaration.** A row
+summed into a row that carries a currency has that currency; the
+propagation machinery for declared units already exists and is
+measured (38 of 38 planted mismatches caught). Point it at inferring
+currency rather than only carrying it. Different in kind from reading
+a format or a label: it uses the dependency graph.
+
+### 4. B5 — « the signed-sum family may be the wrong family »
+
+I closed round 2 with that sentence and added ratio mining, which is
+a degree change, not a kind change. **The successor: mine across
+sheets.** The miner watches one sheet's formula cells, and a
+project-finance model's real identities cross sheets — `calcFundingM`
+into `ReportFinStatsAnnual`. Every rule it has ever found is
+intra-sheet because that is all it was ever shown.
+
+### The three designs I did not try, for the period round
+
+1. **Read the period from the number format**, not the header —
+   `mmm-yy` on a cell is a monthly stamp, and the research already
+   found `yyyy"E"`/`yyyy"A"` carrying estimate-vs-actual in formats
+   alone. Cheaper than the structural design and probably weaker;
+   worth measuring first because it costs an afternoon.
+2. **Ask the model's defined names.** `sysTimeline`, `inputCapexM` —
+   modellers name their monthly sheets and ranges. Nobody in this
+   lane has read a workbook's defined names at all.
+3. **Derive the period from the column count.** A block of 120
+   columns spanning ten years is monthly by arithmetic; 40 columns
+   over 40 years is annual. No labels needed, and it would have
+   caught Kelso without the header row.
+
+### What I am not claiming
+
+None of these is measured. They are designs, registered before any
+of them is built, and the next round takes the one the lead ranks
+highest — my own ranking is (1) period-from-aggregation, because it
+serves the flagship check and the dimension in the same pass.
