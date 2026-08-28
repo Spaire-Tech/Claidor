@@ -16,6 +16,7 @@ different instrument from one that says something false.
 import json
 import sys
 from collections import Counter
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ from polar.tieout.units.inference import (
     classify_columns,
     classify_sheet,
     columns_from_cells,
+    percent_convention,
     rate_form_from_usage,
     rows_from_cells,
     sheet_reading,
@@ -41,8 +43,16 @@ MODELS = {
 DIMENSIONS = ("kind", "b5_type", "currency", "scale", "period", "rate_form")
 
 
-def truth_from_units(text: str) -> dict[str, str] | None:
-    """The answer key, parsed from the model's own words."""
+def truth_from_units(
+    text: str, number_formats: Sequence[str] = ()
+) -> dict[str, str] | None:
+    """The answer key, parsed from the model's own words.
+
+    The key reads the number format too, because the units text alone
+    cannot say which percent convention a model uses — and a key that
+    assumes would make every accuracy number wrong in the same
+    direction on a whole-number-percent model.
+    """
     lowered = text.strip().lower()
     if lowered.startswith("£m"):
         return {
@@ -63,13 +73,14 @@ def truth_from_units(text: str) -> dict[str, str] | None:
             "rate_form": "not-a-rate",
         }
     if "%" in lowered:
+        convention = percent_convention(number_formats, lowered)
         return {
             "kind": "continuous",
             "b5_type": "rate",
             "currency": "none",
             "scale": "units",
             "period": "annual" if "annual" in lowered else "none",
-            "rate_form": "decimal",
+            "rate_form": convention,
         }
     return None
 
@@ -140,7 +151,14 @@ def main() -> int:
                 text = declared.get((sheet_name, row_number))
                 if not text:
                     continue
-                truth = truth_from_units(text)
+                formats = sorted(
+                    {
+                        cells[r].number_format or "General"
+                        for r in by_ref.get((sheet_name, row_number), [])
+                        if r in cells
+                    }
+                )
+                truth = truth_from_units(text, formats)
                 if truth is None:
                     continue
                 scored += 1

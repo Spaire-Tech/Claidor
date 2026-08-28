@@ -533,3 +533,73 @@ def test_amounts_that_look_like_years_are_not_a_date_index() -> None:
         values=[2000.0, 2100.0, 1950.0],
     )
     assert classify_row(money, orientation([money])).b5_type != "date"
+
+
+# --- the percent convention, decided by the number format (28 Aug) ---
+#
+# Every case below is a real cell from the founder's fourth research
+# round or from our own corpus. Six real models of six agree that the
+# format decides; both a value rule and a label rule are 100× wrong
+# on one of these.
+
+
+def test_a_percent_format_means_the_value_is_a_decimal_fraction() -> None:
+    from polar.tieout.units.inference import percent_convention
+
+    assert percent_convention(["0.00%"], "%") == "decimal"
+    assert percent_convention(['#,##0.0%;\\(0.0%\\);"-"'], "% p.a.") == "decimal"
+
+
+def test_no_percent_format_means_a_whole_number_of_percent() -> None:
+    # Their three whole-number models store 70, 25.17, 9.25 under
+    # `General` beside a declared `%`.
+    from polar.tieout.units.inference import percent_convention
+
+    assert percent_convention(["General"], "%") == "percent"
+    assert percent_convention(["0.00"], "% p.a.") == "percent"
+
+
+def test_the_cell_that_kills_a_value_rule() -> None:
+    # `Module Degradation`, unit `% p.a.`, value 0.5 — half of one
+    # percent under a General format. « Below 1 means a fraction » is
+    # out by 100× here, so the value is never consulted.
+    from polar.tieout.units.inference import percent_convention
+
+    assert percent_convention(["General"], "% p.a.") == "percent"
+
+
+def test_one_column_can_carry_both_conventions() -> None:
+    # An Australian model: Input!E25 = 65 under General, Input!E61 =
+    # 0.065 under #,##0.0% — same sheet, same column, opposite
+    # conventions. Per-sheet or per-column inference is wrong.
+    from polar.tieout.units.inference import percent_convention
+
+    assert percent_convention(["General"], "%") == "percent"
+    assert percent_convention(["#,##0.0%"], "p.a.") == "decimal"
+
+
+def test_a_percent_inside_quotes_is_not_a_percent_format() -> None:
+    # Excel printing the character, not scaling the value.
+    from polar.tieout.units.inference import is_percent_format
+
+    assert is_percent_format("0.00%")
+    assert not is_percent_format('0.0" % of total"')
+    assert not is_percent_format("General")
+
+
+def test_no_format_at_all_abstains() -> None:
+    # The whole lesson: a declared « % » with nothing to read it
+    # against claims nothing.
+    from polar.tieout.units.inference import percent_convention
+
+    assert percent_convention([], "%") == "unknown"
+    assert percent_convention([""], "%") == "unknown"
+
+
+def test_the_rule_inherits_the_files_own_mistakes() -> None:
+    # Five cells in our corpus read exactly 2 under '0.0%' on a cost
+    # allocation row — 200%. If the author meant 2%, no format rule
+    # can know. A property to state, not a defect to hide.
+    from polar.tieout.units.inference import percent_convention
+
+    assert percent_convention(['0.0%;\\(0.0%\\);"-"'], "%") == "decimal"
