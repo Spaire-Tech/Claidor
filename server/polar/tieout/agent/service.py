@@ -180,15 +180,21 @@ async def load_model_workspace(
     with its exact precedent graph, the time axes, the versions and the
     diff to the version before. None when the deal holds no model yet.
     """
-    from ..service import _workbook_of, delta_between
+    from ..service import _workbook_of, delta_between, models_of
     from ..structure import period_axes
     from .model_tools import build_workspace
 
     repository = TieOutRepository.from_session(session)
     artifacts = await repository.current_artifacts(dossier_id)
-    model_artifact = next((one for one in artifacts if one.kind == "model"), None)
-    if model_artifact is None:
+    #: The subject model, and the ones this answer will not be about.
+    #: Taking `next(...)` off an unordered list read the deal's newest
+    #: model most of the time and another one silently the rest — a
+    #: paragraph of confident prose about the wrong workbook.
+    models = models_of(artifacts)
+    if not models:
         return None
+    model_artifact = models[0]
+    others = [f"{one.filename} (v{one.version})" for one in models[1:]]
 
     cells = await repository.cells_of(model_artifact.id)
     book = _workbook_of(cells)
@@ -245,6 +251,7 @@ async def load_model_workspace(
         sources_read=sources_read,
         delta=delta,
         counts=dict(model_artifact.counts or {}),
+        others=others,
     )
 
 

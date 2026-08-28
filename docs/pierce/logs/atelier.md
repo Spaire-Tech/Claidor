@@ -1366,3 +1366,92 @@ nothing to coordinate until then, and nothing to re-word by hand.
 Checks: 135 green across the route, model-tool, agent-tool and
 changeset suites (23 in `test_model_tools.py`, 12 of them new); ruff
 and mypy clean on every file I touched.
+
+## Twentieth turn — which model an answer is about
+
+Orders addendum, twenty-seventh sweep: the multi-model finding is a
+defect and mine to fix — « answer about the deal's subject model, or
+name which model it is answering about, or refuse — never silently
+pick the first one ».
+
+**It was in three places, not one.** The deals list's model column, the
+marked-up download and the assistant's workspace each wrote
+`next(one for one in current if one.kind is model)`. That takes
+whichever lineage `current_artifacts` returned first, which follows
+`list_artifacts`' ordering and promises nothing about it. Reading that
+ordering afterwards: it *was* the newest model, by luck. So the pick
+was not wrong — it was **unstated, unguaranteed and invisible**, which
+on a screen that answers in prose is the same thing as wrong.
+
+The fix is `service.subject_model` — the most recently uploaded, sorted
+here rather than inherited from another function's ordering, with the
+reason written down: a deal picks up an old lender's model or a
+bidder's copy and the subject is still the one that just arrived. All
+three callers go through it, so they cannot disagree about which file
+a deal means. The audit is deliberately untouched: it reads **every**
+model, and always did.
+
+**And then it is said out loud, twice.** The assistant's tools only
+ever hold one model, so without being told it cannot know the other
+file exists — asked about a line living in the deal's other workbook it
+would answer « that is not in this model », which is true and reads as
+« your deal does not contain it ». So the prompt carries a scope line
+naming what it is reading and what it cannot see, and the reply carries
+`model` / `model_version` / `other_models` **off the artifacts**, so the
+screen can state them whatever the prose says. The Ask screen draws
+them only where the deal holds more than one model; on the ordinary
+deal it stays quiet.
+
+Six route tests (`TestWhichModelAnAnswerIsAbout`): the subject is the
+newest and the ordering is total, a deal with no model has no subject,
+the deals list names the same file the assistant reads, the workspace
+names the others, one model says nothing at all, and the prompt's scope
+line names files rather than counting them.
+
+**Seen on screen, with the provider stubbed and nothing else.** The
+loop needs a key this container does not have, so the *only* thing
+replaced was the provider call
+(`logs/atelier/rebuilt_gap.py`'s sibling, `stubbed_api.py`, scratch):
+the workspace loaded from the demo database, the `structure` tool ran
+over stored cells, and the endpoint resolved the subject for real. The
+paragraph in the shot says in its own words that it is scripted. What
+is real in `logs/atelier/assistant-which-model.png` is the line
+
+> Read from **lenders_case.xlsx v1** — this project also holds
+> quiet_model.xlsx (v1), which this answer did not read.
+
+and the five sheet rows under it. The demo database now carries a
+two-model deal (« Sweep — an unread source » gained
+`lenders_case.xlsx`) so this state has somewhere to live.
+
+### The ruff failure I reported was mine, not Sentinel's
+
+The lead is right and I was wrong: `ruff check tests/tieout/` passes
+at the tip, and passes here now. I ran it before rebasing, against the
+older tip my branch was still on. Reported against my own interest and
+still wrong — the lesson is to run a cross-lane claim **after** the
+rebase, not before.
+
+### The next hole, measured: the assistant waits half a minute to think
+
+`load_model_workspace` loads every stored cell before the loop starts.
+Timed on the demo database:
+
+| model | cells | load |
+|---|---|---|
+| lenders_case.xlsx | 313 | 0.0 s |
+| levenmouth_model.xlsm | 432,596 | **21.0 s** |
+| kelso_model.xlsm | 470,594 | **28.4 s** |
+
+Twenty-eight seconds before the first token, on **every** question,
+including a follow-up in the same conversation. The fixtures hide it
+completely — 313 cells is instant, which is why it took a real model to
+see. The asymmetry that names the fix: the *deal* agent's loader caps
+what it carries (`MAX_CELLS_LOADED = 2_000`, « past this the search is
+worth a round trip »); the model agent's loader has no cap at all,
+because its tools walk a graph rather than search a list. So the answer
+is not a cap — it is loading the graph once per deal and version rather
+than once per question. Registered here as the next hole, not started.
+
+Checks: 132 green across the route, model-tool and agent-tool suites
+(6 new); ruff, mypy, tsc and prettier clean.

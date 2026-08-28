@@ -17,6 +17,7 @@ carries a `processing` status and the screen polls it: the shape is
 already right for the day the work moves.
 """
 
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
@@ -120,7 +121,7 @@ from .schemas import (
     VersionDeltaRead,
     VersionRead,
 )
-from .service import tieout
+from .service import models_of, subject_model, tieout
 from .storage import FileNotKept, download_url, fetch
 from .writing import NotCorrectable, writing
 
@@ -653,9 +654,11 @@ async def list_deals(
         # them, which is right: they are all the same check failing.
         failing_checks = len({finding.rule for finding in open_findings})
 
-        # The row's model column: the latest ready workbook, by name and
-        # version. Null when there is none — the screen says so.
-        model = next((one for one in current if one.kind is ArtifactKind.model), None)
+        # The row's model column: the deal's subject model, by name and
+        # version. Null when there is none — the screen says so. A deal
+        # carrying two models names the newest, the same one every other
+        # deal-scoped answer takes.
+        model = subject_model(current)
 
         # The row's dot: the worst attention tier among what is open.
         # Audit findings carry their tier in evidence; anything stored
@@ -2167,7 +2170,7 @@ async def marked_up_model(
     deal = await _deal(session, dossier_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
     current = await repository.current_artifacts(deal.id)
-    model = next((one for one in current if one.kind is ArtifactKind.model), None)
+    model = subject_model(current)
     if model is None:
         raise HTTPException(status_code=404, detail="this deal has no model yet")
 
@@ -2288,7 +2291,27 @@ async def ask(
 MOST_TURNS = 6
 
 
-def _conversation(body: Ask, finding: Finding | None) -> str:
+def _scope_line(model: Artifact, others: Sequence[Artifact]) -> str:
+    """Which model the assistant is reading, when the deal holds more.
+
+    The tools only ever see one model, so without this the assistant
+    cannot know it is on a deal with others and will answer « that line
+    is not in this model » about a line sitting in the file next to it.
+    Named rather than counted: a reader has to be able to tell whether
+    the one that was read is the one they meant.
+    """
+    if not others:
+        return ""
+    named = ", ".join(f"{one.filename} (v{one.version})" for one in others)
+    return (
+        f"You are reading {model.filename} (version {model.version}), the "
+        f"most recently uploaded model on this deal. The deal also holds "
+        f"{named}, which you cannot see. Say which model you read when it "
+        f"could matter, and never answer about the others."
+    )
+
+
+def _conversation(body: Ask, finding: Finding | None, scope: str = "") -> str:
     """One prompt for the loop, carrying the chat's context.
 
     The loop takes a single prompt, so the finding the chat was opened
@@ -2298,6 +2321,8 @@ def _conversation(body: Ask, finding: Finding | None) -> str:
     reply.
     """
     parts: list[str] = []
+    if scope:
+        parts.append(scope)
     if finding is not None:
         about = (
             f"This conversation is about one finding: « {finding.title} » — "
@@ -2342,12 +2367,24 @@ async def assist(
     except AgentNotConfigured as problem:
         raise HTTPException(status_code=503, detail=str(problem)) from problem
 
+    #: Which model the answer will be about, resolved here so the reply
+    #: can state it off the artifacts rather than off the prose. The
+    #: loader narrows to the same one through the same helper, so the
+    #: two cannot disagree.
+    repository = TieOutRepository.from_session(session)
+    models = models_of(await repository.current_artifacts(deal.id))
+    subject, others = (models[0], models[1:]) if models else (None, [])
+
     try:
         task, outcome = await agent.ask_model(
             session,
             dossier_id=deal.id,
             user_id=auth_subject.subject.id,
-            prompt=_conversation(body, None),
+            prompt=_conversation(
+                body,
+                None,
+                _scope_line(subject, others) if subject is not None else "",
+            ),
             client=client,
             name=deal.name,
         )
@@ -2385,6 +2422,9 @@ async def assist(
             for step in outcome.steps
         ],
         rows=rows,
+        model=subject.filename if subject is not None else None,
+        model_version=subject.version if subject is not None else None,
+        other_models=[f"{one.filename} (v{one.version})" for one in others],
     )
 
 

@@ -508,6 +508,15 @@ export interface Asked {
   steps: AskedStep[]
   /** The cells behind the answer, from the last tool that returned any. */
   rows?: AskedRow[]
+  /**
+   * Which model this answer is about, off the artifacts rather than the
+   * prose. A deal-scoped question narrows to one model, and on a deal
+   * carrying two the narrowing used to be silent.
+   */
+  model?: string | null
+  model_version?: number | null
+  /** The deal's other models — empty on the ordinary deal. */
+  other_models?: string[]
 }
 
 export interface GridCell {

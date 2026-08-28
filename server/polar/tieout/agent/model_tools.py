@@ -78,6 +78,12 @@ class ModelWorkspace:
     sources: dict[str, dict[str, Any]] = field(default_factory=dict)
     #: Whether any source document has been read on this deal at all.
     sources_read: int = 0
+    #: The deal's *other* models, named — the files this answer is not
+    #: about. A deal-scoped question narrows to one model, and the
+    #: narrowing is a choice the reader is owed: « I read
+    #: cascade_model.xlsx; this deal also holds macro_model.xlsm » is
+    #: an answer, and silence is a paragraph about the wrong workbook.
+    others: list[str] = field(default_factory=list)
     #: A zero-argument call returning the Watch's `DeltaReport` for this
     #: version against the one before, or None when there is no earlier
     #: version. **Deliberately not called by the loader**: it fetches
@@ -946,6 +952,7 @@ def build_workspace(
     sources_read: int = 0,
     delta: Any = None,
     counts: dict[str, Any] | None = None,
+    others: list[str] | None = None,
 ) -> ModelWorkspace:
     """The workspace, with the dependents index built once up front.
 
@@ -966,6 +973,7 @@ def build_workspace(
         sources_read=sources_read,
         delta=delta,
         counts=counts or {},
+        others=others or [],
     )
 
 
