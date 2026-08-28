@@ -3615,3 +3615,66 @@ both pushed to `swens/dynamo`. **Whoever integrates next should read
 the revision before E3a is built**, and if the lead judges the
 closed-deal key unfit to overturn the Ofgem one, that is a legitimate
 call — but it should be made deliberately, not by a merge order.
+
+---
+
+## The `period` answer key — registration, and I am asking the lead to judge it
+
+*28 Aug, orders addendum: « build the period answer key properly,
+and do not grade your own homework ».*
+
+### Taking the offer, explicitly
+
+The orders say: *if the honest way to avoid self-grading is to have
+the lead draw or judge the sample, say so and I will do it.*
+
+**I am saying so.** I wrote the inference; I must not write its
+answer key. E1 was mine and it is why every hard case in this lane
+rests on a hundred rows I graded myself, and the closed-deal key —
+which is not mine to label, being the authors' own words — is what
+overturned two of three ARM verdicts within a day.
+
+The arrangement I propose, and will prepare either way:
+
+1. **I draw the sample mechanically** by a rule registered below, and
+   commit it **unlabelled**, with a fixed seed, before any label
+   exists. The draw is auditable; if I had drawn it to flatter E2, the
+   rule would show it.
+2. **The lead labels `period`** on those rows — or the founder does.
+   The labeller sees the row's evidence and never sees E2's answer.
+3. **I score, and never see the labels before scoring.**
+
+That is the arrangement I would want if I were checking someone
+else's work, so it is the one I am asking for.
+
+### The draw, fixed now
+
+- **Stratified by corpus dialect**, because the orders require
+  accuracy per dialect and not blended: Ofgem regulator models,
+  the H7 pair, the RoE/WACC rate models, and the closed-deal
+  project-finance models.
+- **Rows that carry a period answer at all**: rows with numeric
+  cells under column headers, excluding rows whose declaration is a
+  non-unit.
+- **40 rows per dialect, seeded at 11**, uniformly from the eligible
+  rows of each — not from rows E2 answered, and not from rows where
+  it abstained, because either would shape the key around the
+  instrument.
+- Committed as `docs/pierce/logs/dynamo/e3-period-sample.json`, with
+  each row's sheet, row, label, headers, formats and first values —
+  **and no E2 output of any kind.**
+
+### The prior question, measured first
+
+Before a key is drawn: the research reports **no monthly model among
+27**, one semi-annual, and twenty-four with no date axis at all. If
+that holds for our corpora too, then « a monthly figure in an annual
+line » has **no positive example in anything we hold**, and no key
+drawn from these files can test the flagship check — only its
+false-positive half.
+
+That is the same trap as a `kind` key holding one value, and this
+time I am measuring it **before** building the key rather than after
+publishing a verdict on it. `scripts/recalc_units_periods.py`
+classifies every column header in both corpora by shape. The result
+lands in the next entry, and the draw waits on it.
