@@ -4215,3 +4215,360 @@ version from a workbook. Both chains carry one and neither is hard:
 hickeng's is a labelled cell, ED2's is in the filename and on the
 cover. That reader is a day's work in this lane, needs no dependency
 and no new corpus, and **that is the next round**.
+
+## The declared-version round (REGISTERED BEFORE RESULTS)
+
+Tip `bf444a11`; orders unchanged; `z3-solver` absent. Handoff lessons
+re-read first, per the standing order — the relevant ones here are
+« heavy jobs run alone » (this round runs none), « an openpyxl
+workbook with images can be saved once » (this round writes nothing),
+and « the shell's cwd resets » (bitten twice; every command below
+sets its directory).
+
+**The rule being built.** A workbook's **declared version**, read
+from the file rather than inferred from its diff:
+
+1. **A labelled cell.** Any cell whose row or column label contains
+   *version*, *release* or *build*, whose value carries something
+   version-shaped (`v1`, `0.1.6`, `v0.1.6-b`, `2023-07`). First
+   match in sheet order wins, and the sheet and cell are reported so
+   a reader can check it.
+2. **The filename**, when no cell declares one — `v2_2023-07-14`.
+3. **Neither**: the reader **refuses in words**. « This model does
+   not declare a version » is a fact about the model and a perfectly
+   good answer.
+
+**The step between two declarations** is then classified without any
+threshold: `none` (identical), `patch`, `minor`, `major` for
+dotted numerals, `family` for a bare `v2 → v3`, and `unknown` when
+the two do not parse into the same scheme.
+
+**Why this is the right axis, restated in one line**: the step is an
+*input* — the author declared it before anyone diffed the files — so
+grouping by it cannot be circular the way grouping by composition
+would be.
+
+**How it will be judged.** Coverage *and* discrimination, together,
+against the two rules already measured:
+
+```
+                    comparable / total      flags fired / total
+size        ED2          6/10                     4/10
+            hickeng      5/15                     3/15
+cadence     ED2          7/10                     6/10
+            hickeng     14/15                    13/15
+```
+
+**Predictions.**
+
+1. **Every hickeng version declares itself in a cell** — its Summary
+   sheet carries « github release: v0.1.x », which C3 has already
+   shown me in a `relabelled_line`. ED2 declares in the **filename**
+   and I expect **no** labelled cell to carry a version on its
+   cover.
+2. **Most hickeng transitions are `none`** — at least **8 of 15** —
+   because ordinary development commits do not touch the release
+   string. If so, the « none » group is large and the rule buys
+   coverage cheaply; whether it buys *discrimination* is the whole
+   question.
+3. **ED2 splits 4 family steps and 6 none** — `v1→v2`, `v2→v3`,
+   `v3→v4`, `v4→v5` against the six within-family transitions.
+4. **The discrimination test, and the one I care about**: flags fire
+   on **fewer than 8 of hickeng's 15** transitions, against cadence's
+   13. If it fires on as many as cadence did, the declared step is
+   no better than time and I will say so and stop proposing
+   neighbour rules.
+
+## The declared-version round — results, and the first rule that is honest in both directions
+
+**A defect the corpus caught and the tests did not, again.** The
+first reader returned `42036` as the declared version of ten of
+hickeng's sixteen workbooks. `RSU!C10` sits under the column label
+**« Release Date »**, my label pattern matched *Release*, and my
+version pattern accepted a bare integer — so an Excel **date serial**
+became a version and every step computed from it was fiction
+(`family`, `unknown`, and nine `none`s that meant nothing).
+
+Two fixes, both principled rather than tuned, both now pinned by
+tests: a label that also says *date* declares a **when**, not a
+**what**; and a version must carry a `v` prefix or a dot, because a
+bare number in a cell whose label mentions a release is a number.
+This is the third time this lane has shipped a permissive pattern
+that manufactures an answer instead of refusing, and the third time
+only the corpus found it.
+
+**What the two chains actually declare, after the fix.**
+
+```
+ED2       v1 v2 v2 v3 v3 v3 v4 v4 v4 v4 v5      (filename, all eleven)
+          steps: family 4 · none 6
+hickeng   — — — — — — — — v0.1.5 v0.1.6 v0.1.6 v0.1.6 v0.1.7 v0.1.7 v0.1.8 v0.1.8
+          steps: undeclared 8 · patch 3 · none 4     (Summary!C41)
+```
+
+**Prediction 1 — failed.** I said every hickeng version declares
+itself in a cell. Eight of sixteen do not: **the model began
+declaring its release halfway through its life**, at `09_5649e7a`.
+ED2's half held — filename, no cell.
+**Prediction 2 — failed.** Four `none` steps, not the eight or more I
+predicted; the rest are undeclared, and undeclared is not `none`.
+**Prediction 3 — held exactly**: ED2 is 4 family and 6 none.
+**Prediction 4 — held**: flags fire on **2** of hickeng's 15, against
+cadence's 13 and my predicted ceiling of 8.
+
+### The three rules, measured on one footing
+
+```
+             coverage (comparable / total)        flags fired
+             ED2        hickeng                   ED2     hickeng
+size          6/10        5/15                    4/10     3/15
+cadence       7/10       14/15                    6/10    13/15
+declared    10/10        4/15                     6/10     2/15
+```
+
+**And this is the first rule whose numbers are explainable rather
+than accidental.** ED2 versions every release, so the declared step
+covers **all ten** transitions — better than either predecessor.
+hickeng versioned nothing for its first eight transitions, so the
+rule refuses eleven of fifteen — and each refusal is the sentence
+« this model did not declare a version then », which is a fact about
+the model rather than an artifact of arithmetic. Size refused
+because 1 has no neighbours within a factor of two; cadence spoke
+everywhere and said nothing. This one's coverage tracks whether the
+model versions itself, which is exactly what it should track.
+
+**And where it does speak on hickeng, it speaks about the right
+thing.** The defect pair — the skew fix — is a `none` step compared
+against the chain's other `none` steps, and it comes back flagged on
+six classes. The one transition in this corpus a human labelled a
+defect is now both *reachable* and *flagged*, which neither size nor
+cadence managed.
+
+**Built**: `watch/version.py` (the reader and the step) and
+`profile.profile_by_declaration` — exact grouping, **no band, no
+constant, no tolerance anywhere**, because the author declared a
+category rather than a magnitude. That absence is the point: the two
+predecessors each died on their tolerance.
+
+### What would falsify this, since it is not a refusal to close
+
+Not « a third chain » in the abstract. Precisely: **a chain whose
+declared steps do not track how the model actually changed** — a
+project that bumps its version on every commit, or one that ships a
+rewrite under `none`. hickeng nearly is the first case and is not;
+ED2's four `family` steps are genuinely its four rebuilds. If a
+chain arrives where `patch` steps and `family` steps have
+indistinguishable delta profiles, this axis is as dead as the other
+two, and the measurement that shows it is the same table above.
+
+## The alignment's cost, measured before any code (REGISTERED BEFORE RESULTS)
+
+Tip `90552153`. Two orders, both ahead of C6; the export is done and
+pushed. This is the second.
+
+**Two traps walked into first, both written in my own handoff.**
+
+- The GD3 pair (15 MB against 15 MB) **OOM-killed** at exit 137 while
+  reading. My handoff says « a GD3 BPFM self-align peaked at 8.1 GB »
+  and I asked this container to hold two of them. Dropped to the CAA
+  H7 consecutive pair (6.4 MB each), which reads in 57 s at 0.7 GB.
+- The probe then died on an import because the shell's **cwd had
+  reset** — the third time, and also in my handoff. Every command
+  since sets its directory.
+
+**What the alignment is actually doing.** Instrumented
+`_pair_similarity` and `shape_similarity` call counts on the biggest
+sheets of two real pairs:
+
+```
+pair          sheet              rows        pairs    time   us/pair  survive
+ED2 4.3MB     InputSummary       373x373     139,129  0.1s    0.52     0.7%
+ED2           Monthly Inflation  348x348     121,104  0.1s    0.48     3.7%
+H7 6.4MB      I_InputSets        453x455     206,115  0.1s    0.50     0.4%
+H7            C_Revenue          412x420     173,040  0.2s    0.99     1.1%
+```
+
+Three things, and the first two are good news:
+
+1. **Exactly one `_pair_similarity` call per DP cell.** No nested
+   scan, no candidate generation, nothing unintended. The loop is
+   clean.
+2. **The multiset bound already rejects 96–99.6% of pairs** before
+   `shape_similarity` runs. The timing round's bound is doing its
+   job.
+3. **The cost is `R × C` and nothing else** — 0.5 µs per row-pair,
+   rising to 1.0 µs where lines carry more signatures (C_Revenue's
+   median is 38 against I_InputSets' 3).
+
+**So the complexity I have is `O(R·C·S)` with a measured constant of
+0.5–1.0 µs per row-pair**, and the 113.9 s Atelier profiled on
+levenmouth's `Distributions` implies **≈ 228 million row-pairs — a
+sheet of roughly 15,000 rows against 15,000**. Nothing is wrong with
+the inner loop. The algorithm is quadratic in the number of rows, and
+the big sheets have a lot of rows.
+
+**The complexity I need**: `O((R + C)·S)` to find anchors, plus the
+DP only *inside* the gaps between them — `Σ block²` rather than
+`R·C`. At 40,000 rows the present cost is 1.6 billion pairs, about
+25 minutes for one sheet; if anchors leave gaps of a hundred rows,
+the same sheet costs under a second.
+
+### The design: anchor decomposition, and why it is a change of kind
+
+A row whose **signature tuple is unique within its own sheet and
+identical to exactly one row of the other sheet** can be matched
+without any comparison at all — there is no other candidate for
+either side. Such anchors are strictly increasing in both sheets by
+construction, so they **partition** the problem: every remaining row
+lies between two anchors, and can only match a row in the same gap.
+Run the existing DP inside each gap and concatenate.
+
+This is Bram Cohen's patience-diff idea rather than a tuning of mine,
+and it is a change of kind: it does not make the comparison cheaper,
+it makes **most comparisons never happen**.
+
+**Where it can be wrong, stated before it runs.** The DP is a global
+optimiser; forcing an anchor could in principle cost more than it
+saves, if skipping a unique-equal row let two whole blocks align
+better. I do not believe that happens on real models and I am not
+going to assert it — **the old aligner is the oracle**, and the
+round compares verdicts cell for cell.
+
+**Predictions.**
+
+1. **Identical verdicts** on both ED2 sheets and both H7 sheets —
+   every matched pair, every deletion, every insertion. If a single
+   row moves, the round reports it rather than being called a
+   speed-up.
+2. **Anchors are plentiful on real models**: at least **60%** of rows
+   on `C_Revenue` (median 38 signatures per line, so tuples should be
+   near-unique) and at least **30%** on `I_InputSets` (median 3, so
+   many rows will collide).
+3. **The largest gap after anchoring is under 15% of the sheet's
+   rows** on C_Revenue.
+4. **A speed-up of at least 5×** on C_Revenue, the sheet with the
+   most expensive pairs. Below that, anchoring is not worth the
+   complexity and I will say so.
+
+## Anchor decomposition — results, and the weak case names the next key
+
+Twelve sheets across two real pairs, each aligned both ways:
+
+```
+ED2   InputSummary       373x373   0.07s -> 0.00s   34.5x   anchors  82%  gap  9%  SAME
+      Monthly Inflation  348x348   0.05s -> 0.05s    1.0x   anchors   0%  gap 100% SAME
+      SelectedInputs     324x324   0.05s -> 0.00s   65.5x   anchors 100%  gap  0%  SAME
+      SWEST              279x279   0.05s -> 0.02s    2.0x   anchors   3%  gap 61%  SAME
+H7    I_InputSets        453x455   0.09s -> 0.02s    5.0x   anchors   8%  gap 31%  SAME
+      C_Revenue          412x420   0.19s -> 0.03s    6.8x   anchors  26%  gap 12%  SAME
+      C_Capex            405x405   0.19s -> 0.01s   24.8x   anchors  42%  gap  3%  SAME
+      C_Ratios           347x347   0.17s -> 0.00s   39.6x   anchors  54%  gap  5%  SAME
+```
+
+**Prediction 1 held, and it is the one that mattered: 0
+disagreements in 12 sheets.** Every matched pair, every deletion,
+every insertion identical to the DP's. The oracle agrees.
+**Prediction 3 held** (largest C_Revenue gap 12%, predicted under
+15%). **Prediction 4 held** (6.8× on C_Revenue, predicted ≥5×).
+
+**Prediction 2 failed, and its failure is the useful part.** I
+predicted ≥60% of C_Revenue's rows would anchor because their lines
+carry a median of 38 signatures; it is **26%**, and I_InputSets is
+**8%** against a predicted 30%. My reasoning was wrong in a specific
+way: a long signature tuple is not a *distinctive* one. A model
+repeats the same formula shape down a block of rows, so the tuples
+collide however long they are.
+
+**And that is exactly the weak case.** `Monthly Inflation` gets
+**zero** anchors — every row of a monthly block has the same shape as
+every other — falls back to the DP, and gains nothing (1.0×, no
+regression). The sheets that anchor badly are the repetitive ones,
+and **I cannot tell from here whether levenmouth's two slow sheets
+are of that kind**, because I do not hold that file. Stated as a
+limit rather than glossed: **anchoring is 5–65× on structurally
+varied sheets and 1× on repetitive ones**, and the 12 MB problem may
+be made of repetitive ones.
+
+### Amendment, registered before it is measured: the label is the missing key
+
+The rows of a repeating block have identical shapes and **different
+labels** — « Jan 2024 », « Feb 2024 ». The label is already in the
+`Line`, already read, and the anchor key ignores it.
+
+**The change**: the anchor key becomes `(label, signatures)` when the
+line has a label, and stays the bare signature tuple when it does
+not. Same uniqueness rule, same partition argument, one more field.
+
+**Predictions.** (1) `Monthly Inflation` goes from 0 anchors to over
+**80%**, since a monthly series labels every row distinctly. (2)
+Still **0 disagreements** across all twelve sheets. (3) The three
+licensee sheets (SWEST, SWALES, SSES — 3% anchors, 61–78% gaps) also
+improve, because their rows are labelled line items. (4) No sheet
+gets *slower*: an anchor key that discriminates more cannot produce
+fewer anchors.
+
+### The label-aware key — results
+
+```
+                        anchors   speed-up          anchors  speed-up
+                        (shapes)  (shapes)          (+label) (+label)
+ED2  InputSummary          82%      34.5x              96%     53.5x
+     SelectedInputs       100%      65.5x             100%     55.8x
+     SWEST                  3%       2.0x              94%     66.9x
+     SWALES                 3%       2.0x              94%     72.8x
+     SSES                   3%       1.6x              94%     67.0x
+     Monthly Inflation      0%       1.0x               0%      1.0x
+H7   I_InputSets            8%       5.0x              95%     56.5x
+     C_Revenue             26%       6.8x              65%     10.8x
+     C_Capex               42%      24.8x              70%     56.0x
+     C_Fin_Ind             10%       4.7x              99%     32.4x
+     C_Fin_SynthAccretion  18%       4.9x             100%     31.9x
+     C_Ratios              54%      39.6x              65%     40.3x
+```
+
+**0 disagreements, again, on all twelve sheets** — prediction 2 held,
+and it is still the one that matters. Predictions 3 and 4 held: the
+licensee sheets went from 3% of rows anchored to 94%, and no sheet
+got slower. **Eleven of twelve sheets now align 10–73× faster with
+identical verdicts.**
+
+**Prediction 1 failed: `Monthly Inflation` still anchors zero rows**,
+and the reason is worth the round on its own. Every one of its 348
+rows *is* labelled — but **twelve consecutive rows share the label
+`fy1999`**, because a financial year covers twelve months, and their
+shapes are identical by construction:
+
+```
+index 10  label 'fy1999'  ('EOMONTH(R[+0]C[-1],#)', 'IF(MONTH(…)…)', '•', '•')
+index 11  label 'fy1999'  ( … the same … )
+```
+
+The thing that distinguishes those rows is the **month-end date in
+their first column**, and the signature layer renders it `•` — on
+purpose, because C2 aligns on shape so that a changed *value* never
+looks like a moved row. **The key cannot see what distinguishes these
+rows because the design deliberately erased it.**
+
+### The successor, and it differs in kind again
+
+For a row whose signatures are **all literals** — a pure data block,
+no calculation anywhere on the line — there is no shape to preserve
+and nothing to protect: anchoring such rows on their **typed values**
+costs nothing and risks nothing, because a value change in a data
+block *is* what tells one row from another. Formula-bearing rows keep
+the shape-only key exactly as now.
+
+That is not a loosened threshold and not « retry with a better
+corpus »: it is a different key for a class of row the current key
+provably cannot serve, justified by the same argument that made the
+current key shape-only.
+
+**What this leaves for the order's real problem.** Anchoring is
+10–73× on structurally varied sheets and 1× on a pure data block.
+levenmouth's two slow sheets are `Distributions` and `Ratios`; H7's
+`C_Ratios` anchors 65% and gains 40×, which is encouraging and is
+**not** evidence about levenmouth, a file this lane does not hold. I
+am not claiming the two-hour pair is fixed. What is measured: the
+mechanism is exact on twelve real sheets, and the cost model says the
+gain grows with sheet size, because `R·C` grows and `Σ gap²` does
+not.
