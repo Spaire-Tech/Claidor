@@ -368,19 +368,43 @@ scores strictly higher. The answer is not reachable with the evidence
 the matcher may use, so the abstentions are correct and the two
 proposals are the failure.
 
-**The next thing this lane could do, and it is D1's, not D3's:** a wide
-table prints as a **two-page spread and the continuation page carries
-no labels at all** — four rows extract as `$ 10,895,809 58`, bare
-figures with a line number and no words. Unreachable by construction.
-That is the round 9 candidate. Register it before building it, and it
-falls under the standing extraction policy from decision 1: **no line
-may end up worse, damage judged by hand, repair/damage tally reported.**
+### Round 9 was investigated and **deliberately not built** — read this before you try
 
-**Do not chase the glue.** D1 also merges a printed line number into the
-first label word (`21Transmission`), it affects 4 of 15, it is vivid,
-and the counterfactual says splitting it changes **nothing** — correct
-stays 0. It is a real defect and not the binding cause. That
-counterfactual is why it is not in the round-9 slot.
+The obvious next fix is the **two-page spread**: a wide table's
+continuation page carries no labels at all, so four of round 8's rows
+extract as `$ 10,895,809 58` — a figure, a line number, no words. It is
+real, it explains four failures, and **repairing it buys nothing.**
+Measured, not assumed:
+
+| candidate fix | ceiling |
+|---|---|
+| unglue the printed line number (`21Transmission`) | 0 of 15 |
+| repair the spread (**hand-supplied perfect labels**) | 0 of 15 |
+| drop repeated headers and prose (pool 4,913 → 2,272) | 0 of 15 |
+| match on the FERC account number | ≤ 2 of 15 |
+
+A perfect spread fix moves rows from **unreachable** to **tied**, never
+to correct: r19's top score ties across **seventeen copies of the
+schedule's own title**, and r41 ("General") across 35 lines including
+running prose. The ties re-form after the boilerplate is dropped,
+because a statutory form legitimately says "General", "Total" and
+"Transmission" on dozens of lines.
+
+**Four join keys were tried and all fail.** PDF adjacency — this
+document's pages are out of printed order (204, 206, 205, 207).
+Line-number coverage — the balance sheet becomes a universal false
+donor; the percentage said 92% and a hand-check caught it. Schedule
+title — misses all four pages of the spread. Column letters — right on
+the target, wrong on most pages it fires on, so it fails decision 1's
+undamaged bar.
+
+**The conclusion, and it is D3's not D1's:** the failure is not on the
+document side. Label-overlap scoring cannot separate one row of a filed
+return from the dozens sharing its two or three words. The unmeasured
+idea worth putting to the lead is symmetric to round 6 — round 6 gave
+the *document* side a second dimension; the **model** side still gets
+only the row's own name, not its sheet, its section header, or its
+account-number column. That is a design decision, not a patch.
 
 **One product finding for the lead, not an accuracy one:** 10 of the 25
 cited inputs are **nils** — the document prints no value on the line and
