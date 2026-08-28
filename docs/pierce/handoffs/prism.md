@@ -33,6 +33,7 @@ answering anything of record; register before results, always.
 | **The first external answer key** | `hickeng/financial`, commit « Fixes row skewed formula » (cloned to scratchpad, non-commercial, never committed) | C1 reports **99 content changes** where the author's labelling says 98 references + 1 formula. C3 folds them into 11 blocks and the line reads `R[+1]C[-17] → R[+0]C[-17]` — the author's « offset down by one row », from the files alone. A genuine version bump produces **one** line. |
 | Two specimens from real commits | `tests/tieout/test_watch_specimens.py` | C3 already reports **both**: a vertical sum that became horizontal (same cell, same total — a value reader sees nothing) and one reference shifted inside a copied block, **with the other three rows silent**. The `methodology_change` line now carries both shapes, old → new |
 | The array-formula phantom class | `tests/tieout/test_watch_diff.py` | Pinned at the lead's request: a CSE formula reads as its text, and a version-string bump moves exactly one cell (their run saw 202 of 203 « changes » false) |
+| **Anchor decomposition** | `watch/align.py::_anchors` | Rows whose (label, signature) key is unique on both sides match with no comparison and partition the DP into gaps. **11 of 12 real sheets align 10–73× faster with 0 disagreements** against `align_lines_dp`, kept as the oracle. Weak case named: a pure data block (`Monthly Inflation`, 12 rows per `fy1999` label, values erased to `•`) anchors nothing and falls back exactly. |
 | The tier table | `docs/pierce/tier-table.md` | The single published statement the orders asked for: each rung's claim at its exact strength, measured cost, closed refusal vocabulary, and the number it produced on the registered pair. Every figure from a run artifact |
 | C3 on a known revision | `scripts/watch_delta.py` | Names the revision's substance in one line — `filled_cell: Monthly Inflation rows 284–295 (24 cells)` — and now reconciles with C1 **on the face of the report**: 7+7 = C1's 14 content changes, 24 = C1's 24 added |
 | C4 tier 2, what the revision *is* | `scratchpad` probes + `domain` mode | The frontier of divergence is `AVERAGEIFS` over whole `Monthly Inflation` columns; the revision **replaces twelve months of forecast with published outturn** (`H284:H295`, new-version-only). Seven `Finance&Tax` cells are byte-identical in both files (stored **0**) and compute differently once exercised — **a difference no cell diff can see** |
@@ -254,6 +255,14 @@ a report.
   and the second dies inside PIL with « I/O operation on closed
   file ». Reload the workbook for every write; it cost the pair
   oracle its first attempt.
+- **Two 15 MB workbooks do not fit in this container.** The GD3
+  draft→final pair OOM-killed at exit 137 while reading; the CAA H7
+  pair (6.4 MB each) reads in 57 s at 0.7 GB and is the biggest pair
+  this lane can measure on. My own handoff warned about GD3's memory
+  and I asked for two of them anyway.
+- **The shell's cwd resets between calls** — three times now, and
+  twice it killed a background probe on an import. Set the directory
+  in every command.
 - **A permissive pattern manufactures answers; only the corpus finds
   it.** Three times now: the fragment classifier omitted AND/OR/NOT
   against its own registration, an early draft stripped the `=`

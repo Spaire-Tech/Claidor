@@ -192,3 +192,53 @@ class TestCrossSheetAbsolute:
             cell_signature("=Other!$B$19", "Other!R19CB", "Model", 7, 3)
             == "Other!R19CB"
         )
+
+
+class TestAnchoringAgreesWithTheDynamicProgramme:
+    """Anchoring exists to make most comparisons never happen. It is
+    only allowed to do that if it reaches the same verdict, so the DP
+    is kept beside it as the oracle and these cases run both."""
+
+    def line(self, index: int, label: str, *shapes: str) -> Line:
+        return Line(index=index, label=label, cells=(), signatures=tuple(shapes))
+
+    def both(self, old: list[Line], new: list[Line]) -> None:
+        from polar.tieout.watch.align import align_lines, align_lines_dp
+
+        fast, slow = align_lines(old, new), align_lines_dp(old, new)
+        assert fast.matched == slow.matched
+        assert fast.deleted == slow.deleted
+        assert fast.inserted == slow.inserted
+
+    def test_a_distinctive_sheet(self) -> None:
+        old = [self.line(i, f"row {i}", f"S{i}") for i in range(1, 12)]
+        new = [self.line(i, f"row {i}", f"S{i}") for i in range(1, 12)]
+        self.both(old, new)
+
+    def test_an_inserted_line_between_anchors(self) -> None:
+        old = [self.line(i, f"row {i}", f"S{i}") for i in range(1, 8)]
+        new = [*old[:3], self.line(99, "new row", "S99"), *old[3:]]
+        self.both(old, new)
+
+    def test_a_repetitive_block_that_cannot_anchor(self) -> None:
+        """Twelve rows of a monthly series share a label and a shape —
+        `Monthly Inflation` anchors none of its 348 rows. The fallback
+        to the DP must still be exact."""
+        old = [self.line(i, "fy1999", "EOMONTH(R[+0]C[-1],#)") for i in range(1, 13)]
+        new = [self.line(i, "fy1999", "EOMONTH(R[+0]C[-1],#)") for i in range(1, 13)]
+        self.both(old, new)
+
+    def test_a_mixed_sheet_of_anchors_and_a_repetitive_tail(self) -> None:
+        head = [self.line(i, f"row {i}", f"S{i}") for i in range(1, 6)]
+        tail = [self.line(i, "fy1999", "SAME") for i in range(6, 14)]
+        self.both([*head, *tail], [*head[:2], *head[3:], *tail])
+
+    def test_labels_are_part_of_the_key(self) -> None:
+        """Same shape, different labels: the rows are distinguishable
+        and must anchor — this is what took the licensee sheets from
+        3% of rows anchored to 94%."""
+        from polar.tieout.watch.align import _anchors
+
+        old = [self.line(i, f"line {i}", "SHARED") for i in range(1, 6)]
+        new = [self.line(i, f"line {i}", "SHARED") for i in range(1, 6)]
+        assert len(_anchors(old, new)) == 5

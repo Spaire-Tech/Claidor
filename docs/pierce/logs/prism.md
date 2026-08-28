@@ -4360,3 +4360,215 @@ ED2's four `family` steps are genuinely its four rebuilds. If a
 chain arrives where `patch` steps and `family` steps have
 indistinguishable delta profiles, this axis is as dead as the other
 two, and the measurement that shows it is the same table above.
+
+## The alignment's cost, measured before any code (REGISTERED BEFORE RESULTS)
+
+Tip `90552153`. Two orders, both ahead of C6; the export is done and
+pushed. This is the second.
+
+**Two traps walked into first, both written in my own handoff.**
+
+- The GD3 pair (15 MB against 15 MB) **OOM-killed** at exit 137 while
+  reading. My handoff says « a GD3 BPFM self-align peaked at 8.1 GB »
+  and I asked this container to hold two of them. Dropped to the CAA
+  H7 consecutive pair (6.4 MB each), which reads in 57 s at 0.7 GB.
+- The probe then died on an import because the shell's **cwd had
+  reset** — the third time, and also in my handoff. Every command
+  since sets its directory.
+
+**What the alignment is actually doing.** Instrumented
+`_pair_similarity` and `shape_similarity` call counts on the biggest
+sheets of two real pairs:
+
+```
+pair          sheet              rows        pairs    time   us/pair  survive
+ED2 4.3MB     InputSummary       373x373     139,129  0.1s    0.52     0.7%
+ED2           Monthly Inflation  348x348     121,104  0.1s    0.48     3.7%
+H7 6.4MB      I_InputSets        453x455     206,115  0.1s    0.50     0.4%
+H7            C_Revenue          412x420     173,040  0.2s    0.99     1.1%
+```
+
+Three things, and the first two are good news:
+
+1. **Exactly one `_pair_similarity` call per DP cell.** No nested
+   scan, no candidate generation, nothing unintended. The loop is
+   clean.
+2. **The multiset bound already rejects 96–99.6% of pairs** before
+   `shape_similarity` runs. The timing round's bound is doing its
+   job.
+3. **The cost is `R × C` and nothing else** — 0.5 µs per row-pair,
+   rising to 1.0 µs where lines carry more signatures (C_Revenue's
+   median is 38 against I_InputSets' 3).
+
+**So the complexity I have is `O(R·C·S)` with a measured constant of
+0.5–1.0 µs per row-pair**, and the 113.9 s Atelier profiled on
+levenmouth's `Distributions` implies **≈ 228 million row-pairs — a
+sheet of roughly 15,000 rows against 15,000**. Nothing is wrong with
+the inner loop. The algorithm is quadratic in the number of rows, and
+the big sheets have a lot of rows.
+
+**The complexity I need**: `O((R + C)·S)` to find anchors, plus the
+DP only *inside* the gaps between them — `Σ block²` rather than
+`R·C`. At 40,000 rows the present cost is 1.6 billion pairs, about
+25 minutes for one sheet; if anchors leave gaps of a hundred rows,
+the same sheet costs under a second.
+
+### The design: anchor decomposition, and why it is a change of kind
+
+A row whose **signature tuple is unique within its own sheet and
+identical to exactly one row of the other sheet** can be matched
+without any comparison at all — there is no other candidate for
+either side. Such anchors are strictly increasing in both sheets by
+construction, so they **partition** the problem: every remaining row
+lies between two anchors, and can only match a row in the same gap.
+Run the existing DP inside each gap and concatenate.
+
+This is Bram Cohen's patience-diff idea rather than a tuning of mine,
+and it is a change of kind: it does not make the comparison cheaper,
+it makes **most comparisons never happen**.
+
+**Where it can be wrong, stated before it runs.** The DP is a global
+optimiser; forcing an anchor could in principle cost more than it
+saves, if skipping a unique-equal row let two whole blocks align
+better. I do not believe that happens on real models and I am not
+going to assert it — **the old aligner is the oracle**, and the
+round compares verdicts cell for cell.
+
+**Predictions.**
+
+1. **Identical verdicts** on both ED2 sheets and both H7 sheets —
+   every matched pair, every deletion, every insertion. If a single
+   row moves, the round reports it rather than being called a
+   speed-up.
+2. **Anchors are plentiful on real models**: at least **60%** of rows
+   on `C_Revenue` (median 38 signatures per line, so tuples should be
+   near-unique) and at least **30%** on `I_InputSets` (median 3, so
+   many rows will collide).
+3. **The largest gap after anchoring is under 15% of the sheet's
+   rows** on C_Revenue.
+4. **A speed-up of at least 5×** on C_Revenue, the sheet with the
+   most expensive pairs. Below that, anchoring is not worth the
+   complexity and I will say so.
+
+## Anchor decomposition — results, and the weak case names the next key
+
+Twelve sheets across two real pairs, each aligned both ways:
+
+```
+ED2   InputSummary       373x373   0.07s -> 0.00s   34.5x   anchors  82%  gap  9%  SAME
+      Monthly Inflation  348x348   0.05s -> 0.05s    1.0x   anchors   0%  gap 100% SAME
+      SelectedInputs     324x324   0.05s -> 0.00s   65.5x   anchors 100%  gap  0%  SAME
+      SWEST              279x279   0.05s -> 0.02s    2.0x   anchors   3%  gap 61%  SAME
+H7    I_InputSets        453x455   0.09s -> 0.02s    5.0x   anchors   8%  gap 31%  SAME
+      C_Revenue          412x420   0.19s -> 0.03s    6.8x   anchors  26%  gap 12%  SAME
+      C_Capex            405x405   0.19s -> 0.01s   24.8x   anchors  42%  gap  3%  SAME
+      C_Ratios           347x347   0.17s -> 0.00s   39.6x   anchors  54%  gap  5%  SAME
+```
+
+**Prediction 1 held, and it is the one that mattered: 0
+disagreements in 12 sheets.** Every matched pair, every deletion,
+every insertion identical to the DP's. The oracle agrees.
+**Prediction 3 held** (largest C_Revenue gap 12%, predicted under
+15%). **Prediction 4 held** (6.8× on C_Revenue, predicted ≥5×).
+
+**Prediction 2 failed, and its failure is the useful part.** I
+predicted ≥60% of C_Revenue's rows would anchor because their lines
+carry a median of 38 signatures; it is **26%**, and I_InputSets is
+**8%** against a predicted 30%. My reasoning was wrong in a specific
+way: a long signature tuple is not a *distinctive* one. A model
+repeats the same formula shape down a block of rows, so the tuples
+collide however long they are.
+
+**And that is exactly the weak case.** `Monthly Inflation` gets
+**zero** anchors — every row of a monthly block has the same shape as
+every other — falls back to the DP, and gains nothing (1.0×, no
+regression). The sheets that anchor badly are the repetitive ones,
+and **I cannot tell from here whether levenmouth's two slow sheets
+are of that kind**, because I do not hold that file. Stated as a
+limit rather than glossed: **anchoring is 5–65× on structurally
+varied sheets and 1× on repetitive ones**, and the 12 MB problem may
+be made of repetitive ones.
+
+### Amendment, registered before it is measured: the label is the missing key
+
+The rows of a repeating block have identical shapes and **different
+labels** — « Jan 2024 », « Feb 2024 ». The label is already in the
+`Line`, already read, and the anchor key ignores it.
+
+**The change**: the anchor key becomes `(label, signatures)` when the
+line has a label, and stays the bare signature tuple when it does
+not. Same uniqueness rule, same partition argument, one more field.
+
+**Predictions.** (1) `Monthly Inflation` goes from 0 anchors to over
+**80%**, since a monthly series labels every row distinctly. (2)
+Still **0 disagreements** across all twelve sheets. (3) The three
+licensee sheets (SWEST, SWALES, SSES — 3% anchors, 61–78% gaps) also
+improve, because their rows are labelled line items. (4) No sheet
+gets *slower*: an anchor key that discriminates more cannot produce
+fewer anchors.
+
+### The label-aware key — results
+
+```
+                        anchors   speed-up          anchors  speed-up
+                        (shapes)  (shapes)          (+label) (+label)
+ED2  InputSummary          82%      34.5x              96%     53.5x
+     SelectedInputs       100%      65.5x             100%     55.8x
+     SWEST                  3%       2.0x              94%     66.9x
+     SWALES                 3%       2.0x              94%     72.8x
+     SSES                   3%       1.6x              94%     67.0x
+     Monthly Inflation      0%       1.0x               0%      1.0x
+H7   I_InputSets            8%       5.0x              95%     56.5x
+     C_Revenue             26%       6.8x              65%     10.8x
+     C_Capex               42%      24.8x              70%     56.0x
+     C_Fin_Ind             10%       4.7x              99%     32.4x
+     C_Fin_SynthAccretion  18%       4.9x             100%     31.9x
+     C_Ratios              54%      39.6x              65%     40.3x
+```
+
+**0 disagreements, again, on all twelve sheets** — prediction 2 held,
+and it is still the one that matters. Predictions 3 and 4 held: the
+licensee sheets went from 3% of rows anchored to 94%, and no sheet
+got slower. **Eleven of twelve sheets now align 10–73× faster with
+identical verdicts.**
+
+**Prediction 1 failed: `Monthly Inflation` still anchors zero rows**,
+and the reason is worth the round on its own. Every one of its 348
+rows *is* labelled — but **twelve consecutive rows share the label
+`fy1999`**, because a financial year covers twelve months, and their
+shapes are identical by construction:
+
+```
+index 10  label 'fy1999'  ('EOMONTH(R[+0]C[-1],#)', 'IF(MONTH(…)…)', '•', '•')
+index 11  label 'fy1999'  ( … the same … )
+```
+
+The thing that distinguishes those rows is the **month-end date in
+their first column**, and the signature layer renders it `•` — on
+purpose, because C2 aligns on shape so that a changed *value* never
+looks like a moved row. **The key cannot see what distinguishes these
+rows because the design deliberately erased it.**
+
+### The successor, and it differs in kind again
+
+For a row whose signatures are **all literals** — a pure data block,
+no calculation anywhere on the line — there is no shape to preserve
+and nothing to protect: anchoring such rows on their **typed values**
+costs nothing and risks nothing, because a value change in a data
+block *is* what tells one row from another. Formula-bearing rows keep
+the shape-only key exactly as now.
+
+That is not a loosened threshold and not « retry with a better
+corpus »: it is a different key for a class of row the current key
+provably cannot serve, justified by the same argument that made the
+current key shape-only.
+
+**What this leaves for the order's real problem.** Anchoring is
+10–73× on structurally varied sheets and 1× on a pure data block.
+levenmouth's two slow sheets are `Distributions` and `Ratios`; H7's
+`C_Ratios` anchors 65% and gains 40×, which is encouraging and is
+**not** evidence about levenmouth, a file this lane does not hold. I
+am not claiming the two-hour pair is fixed. What is measured: the
+mechanism is exact on twelve real sheets, and the cost model says the
+gain grows with sheet size, because `R·C` grows and `Σ gap²` does
+not.
