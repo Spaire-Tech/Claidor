@@ -368,19 +368,111 @@ scores strictly higher. The answer is not reachable with the evidence
 the matcher may use, so the abstentions are correct and the two
 proposals are the failure.
 
-**The next thing this lane could do, and it is D1's, not D3's:** a wide
-table prints as a **two-page spread and the continuation page carries
-no labels at all** — four rows extract as `$ 10,895,809 58`, bare
-figures with a line number and no words. Unreachable by construction.
-That is the round 9 candidate. Register it before building it, and it
-falls under the standing extraction policy from decision 1: **no line
-may end up worse, damage judged by hand, repair/damage tally reported.**
+### READ THIS BEFORE YOU IMPROVE ANYTHING: D3 has never made a correct proposal
 
-**Do not chase the glue.** D1 also merges a printed line number into the
-first label word (`21Transmission`), it affects 4 of 15, it is vivid,
-and the counterfactual says splitting it changes **nothing** — correct
-stays 0. It is a real defect and not the binding cause. That
-counterfactual is why it is not in the round-9 slot.
+Tallied from every verdict file in `docs/pierce/scribe-d3-round*-verdicts.json`:
+
+| round | corpus | correct | false proposals | true abstentions |
+|---|---|---|---|---|
+| 1 | ED2 | 0 | 8 | 22 |
+| 2 run A | ED2 | 0 | 2 | 28 |
+| 3 run A | ED2 | 0 | 0 | 30 |
+| 5 | Finch | **0** | 1 | 9 |
+| 6 | Finch | **0** | 2 | 7 |
+| 8 | FERC | **0** | 2 | 13 |
+| **total** | **three corpora** | **0** | **15** | **109** |
+
+Rounds 1–3 are the *unsourced* case — abstention is the right answer
+there and zero proposals is the design working. **Rounds 5, 6 and 8 are
+the sourced case**: a correct answer demonstrably existed, across **69
+judged rows on two independent corpora**, and the matcher found **zero**.
+Lifetime precision is **0 of 15**.
+
+Each round's zero was published at the time. Nobody added them up for ten
+sweeps. **Do not spend another round improving the matcher's inputs
+before this is settled** — that is what the last four rounds did.
+
+The open decision, which belongs to the lead and not to this lane: D3 was
+built as a source-*finder* and has never found a source. Either the
+matching approach changes to something that can, or D3 is reframed as the
+abstention instrument the evidence says it already is — 109 true
+abstentions, 30 of 30 on round 3, plus round 8's finding that **10 of 25
+cited inputs are nils**. *"We looked and there is nothing there"* is the
+one statement D3 has earned.
+
+**But the zero is not the whole story, and an earlier version of this
+file said it was.** Stripping D3's floor and tie rule and asking only
+whether the truth is ever the *top-scoring* candidate:
+
+| | rows | truth is top-scoring (oracle) | blind pick among the tied |
+|---|---|---|---|
+| **Finch** (round 6) | 13 | **6** | 1.22 correct, ~4.8 wrong |
+| **FERC** (round 8) | 15 | **4** | 0.79 |
+
+Reproduce both with `uv run python scripts/corpus_d3_oracle.py finch`
+and `… ferc <dir from corpus_ferc_fetch.py>`. **Do not re-derive these by
+hand** — an earlier hand-run published Finch as 7 of 14 by leaving in a
+row whose recorded truth key no longer addresses its fact, a row the same
+entry had named as excluded. The script excludes it and says so.
+
+On prose the truth is top-scoring for **half** the rows and D3 abstains
+on every one because the top score is **tied** — so there the **rules**
+cost the recall, not the evidence. On the statutory form 11 of 15 are
+unreachable regardless, and 7 truth lines share *no words at all* with
+the cell's label.
+
+The tie rule is still correct today: blind tie-breaking returns more
+wrong than right and fails kill criterion 1. **The headroom is 1.3 → 7
+on Finch, 0.79 → 4 on FERC, and all of it belongs to a better-than-chance
+tie-breaker.** Do not read the lifetime zero as "the approach cannot
+work" — read it as "the tie rule converts every reachable answer into an
+abstention, and nothing yet breaks ties.
+
+### Round 9 was investigated and **deliberately not built** — read this before you try
+
+The obvious next fix is the **two-page spread**: a wide table's
+continuation page carries no labels at all, so four of round 8's rows
+extract as `$ 10,895,809 58` — a figure, a line number, no words. It is
+real, it explains four failures, and **repairing it buys nothing.**
+Measured, not assumed:
+
+| candidate fix | ceiling |
+|---|---|
+| unglue the printed line number (`21Transmission`) | 0 of 15 |
+| repair the spread (**hand-supplied perfect labels**) | 0 of 15 |
+| drop repeated headers and prose (pool 4,913 → 2,272) | 0 of 15 |
+| match on the FERC account number | ≤ 2 of 15 |
+| model-side section header as a tie-breaker | 0 of 15 |
+| **all six levers at once** | **0 of 15** |
+
+The one lever that earns its keep: **excluding prose from the candidate
+pool removes both wrong answers** (the two false proposals landed on the
+same 20-word instruction sentence; all 15 truth lines have 0–8 word
+tokens). It is not shipped — fixing precision on an instrument whose
+precision is 0 of 15 is the lead's call.
+
+A perfect spread fix moves rows from **unreachable** to **tied**, never
+to correct: r19's top score ties across **seventeen copies of the
+schedule's own title**, and r41 ("General") across 35 lines including
+running prose. The ties re-form after the boilerplate is dropped,
+because a statutory form legitimately says "General", "Total" and
+"Transmission" on dozens of lines.
+
+**Four join keys were tried and all fail.** PDF adjacency — this
+document's pages are out of printed order (204, 206, 205, 207).
+Line-number coverage — the balance sheet becomes a universal false
+donor; the percentage said 92% and a hand-check caught it. Schedule
+title — misses all four pages of the spread. Column letters — right on
+the target, wrong on most pages it fires on, so it fails decision 1's
+undamaged bar.
+
+**The conclusion, and it is D3's not D1's:** the failure is not on the
+document side. Label-overlap scoring cannot separate one row of a filed
+return from the dozens sharing its two or three words. The unmeasured
+idea worth putting to the lead is symmetric to round 6 — round 6 gave
+the *document* side a second dimension; the **model** side still gets
+only the row's own name, not its sheet, its section header, or its
+account-number column. That is a design decision, not a patch.
 
 **One product finding for the lead, not an accuracy one:** 10 of the 25
 cited inputs are **nils** — the document prints no value on the line and
