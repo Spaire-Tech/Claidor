@@ -493,3 +493,59 @@ exists and the only one we may use commercially.
 
 Also verified reachable and unclaimed: **MCC ERR** (~100 real
 third-party models, mcc.gov) as the round-4 unseen corpus.
+
+---
+
+## Addendum, 28 August 2026 — the formula-bearing corpora, and what they cost
+
+The founder's researcher solved the hole that suspended the
+population proof, and did it under the same discipline this project
+uses: it stated up front what its sandbox could not reach (MCC, the
+DFIs, PUC dockets, the academic repositories — all
+`host_not_allowed`), refused to describe those sites as if that were
+research, verified everything it *did* claim by opening the workbook
+and counting formula cells, and **reported two bugs in its own
+tooling** (a units detector matching across label boundaries, which
+had produced a phantom currency reading, and an unresolved oddity it
+declined to explain away). Numbers below were re-verified
+independently from these containers.
+
+### Verified reachable and formula-bearing (git route; the GitHub API is proxy-blocked, `git ls-remote` is not)
+
+| corpus | verified here | what it is |
+|---|---|---|
+| `vincichan1089/solar-project-finance-model-mini-perm` | 5 sheets, 11,623 cells, **8,485 formulas (73%)** — the researcher's count reproduced **exactly** | one dense PF model: DSCR, LLCR/PLCR, CFADS, reserve accounts, debt schedule |
+| `Charlie-Hill/Financial-Models` | **157 of 166** carry formulas, 40,311 formula cells — the researcher's 157 reproduced exactly | real listed companies (ASOS, Snowflake, Delta, Nike…); statement-driven and **thin**, ≈257 formulas per file, some in single figures |
+| `SheetJS/enron_xls` | reachable; **not fetched** | 9,145 real workbooks; independently counted 5,391 with live formulas and **818 with >1,500 formulas and PF vocabulary** — 2.8 GB, **all `.xls`** |
+
+### The strategic fact this produces
+
+**A6 is no longer « one published model in three cannot be opened ».
+It is the gate on the only deep, real, unseen project-finance corpus
+that exists.** The Enron set holds gas project financings, wind
+portfolio valuations and acquisition models at 46–91% formula
+density — the exact shape of the models Swens is for, written by
+practitioners under deadline, never seen by this engine, and
+impossible to accuse us of curating. All of it is `.xls`.
+
+What is usable *today* is honestly narrower: one excellent PF model
+and 157 thin corporate ones. Enough to start Proof 1B's registration
+and to test a second dialect; **not** enough for the proof's depth.
+
+### One find that is its own answer key
+
+`E08`/`E09` in the Enron set are a **genuine version pair** — same
+15 sheets, 45,274 identical formulas, 920 differing, one of them a
+discount rate moved from 0.09 to 0.10, and error-value counts moving
+92 → 115. A real revision of a real model by its original authors:
+an external answer key for the Watch that nobody planted. Blocked on
+A6 with the rest.
+
+### Mandatory before any of it scores anything
+
+Both the Enron corpus and our CUSTODES/EUSES subjects draw on
+turn-of-the-century business spreadsheets. **Every candidate is
+hashed against every corpus we hold before it enters a proof
+sample** — the closed-deal round is the precedent, where four of
+seven candidates turned out to be files we already had. The fetcher
+(`scripts/corpus_formulas.py`) states this rule in its docstring.

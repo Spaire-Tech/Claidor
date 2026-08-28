@@ -216,3 +216,6 @@ server/scripts/corpus_finch/*.jsonl
 # Dynamo: perturbed-workbook scratch from mining and narrowing runs.
 # These are written and deleted per run; only the JSON result is a record.
 docs/pierce/logs/dynamo/*-work/
+
+# Formula-bearing model corpora — re-fetchable, never committed.
+server/scripts/corpus_formulas/
