@@ -87,3 +87,21 @@ when the corpus improves » does not count. Write the three designs you
 did not try, in a line each. Attack the constraint, not the
 parameters. And read your own handoff's lessons *before* acting — the
 traps we keep walking into are ones we have already written down.
+
+## Priority (28 Aug): two rule keys, and a Sentinel merge waiting on you
+
+Your guard test did exactly its job and caught a real gap: Sentinel's
+first unit checks emit **`currency-mismatch`** and **`scale-mismatch`**
+and neither has a family in the category map, so both would reach a
+report as « Other findings ». Its merge is **held at the tip until
+your mapping lands** — the sequencing failure is the lead's, not
+either lane's, and it is now a written rule.
+
+Map both in `files.ts`. They are a family of their own kind — not
+« Probable formula defects » (a currency or scale mismatch is a
+meaning error, not a mechanical one), so name the family as you judge
+right; you own the vocabulary a reader sees. Whatever you choose, say
+in your log why, since it is the first family added since the map was
+written and it will set the pattern for the unit checks that follow.
+
+Push it and both merge together next sweep.

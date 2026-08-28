@@ -235,3 +235,17 @@ when the corpus improves » does not count. Write the three designs you
 did not try, in a line each. Attack the constraint, not the
 parameters. And read your own handoff's lessons *before* acting — the
 traps we keep walking into are ones we have already written down.
+
+## Merge held (28 Aug, thirty-second sweep) — the work is right, the order was mine
+
+E3a is exactly what was asked: currency armed, scale abstaining
+where E2 abstains, period never quoted. **The merge is held for one
+sweep, and the reason is a lead failure, not yours**: your two new
+rule keys reach a report with no family in the product's category
+map, and Atelier's guard test caught it at the tip. That file is
+Atelier's; it has been routed and is mapping them now.
+
+The rule is written into `lanes.md` so it does not recur: an
+adoption that adds a rule key gets held by the lead, routed to
+Atelier the same sweep, and merged together. Nothing on your branch
+changes; carry on.

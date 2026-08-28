@@ -368,3 +368,16 @@ The discipline that stays untouched: no unmeasured claim, no
 re-cut criteria, no number without its protocol. Persistence is not
 permission to lower a bar. It is the obligation to find a way to
 clear it.
+
+- **28 Aug — the adoption sequence, a lead failure made routine.**
+  Sentinel's first unit checks (`currency-mismatch`,
+  `scale-mismatch`) were reverted at the tip because Atelier's guard
+  test correctly found both rules reaching a report with no family.
+  Neither lane erred: an engine adoption that adds a rule *cannot*
+  land before the product knows the rule exists, and the lane that
+  adds it cannot map it (that file is Atelier's). **The sequencing is
+  the lead's job**, and from now on it is explicit: when Sentinel
+  pushes an adoption that adds a rule key, the lead **holds the
+  merge**, routes the key to Atelier the same sweep, and merges both
+  together. A rule that reaches a report as « Other findings » is a
+  product defect, not a cosmetic one.
