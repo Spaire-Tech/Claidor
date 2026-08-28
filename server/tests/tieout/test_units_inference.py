@@ -668,3 +668,80 @@ def test_declarations_are_bound_to_their_own_row() -> None:
     found = declarations_by_row(sheet_with_a_units_column(), ["S"])
     assert found[("S", 13)] == "%"
     assert found[("S", 10)] == "£m"
+
+
+# --- the scale ladder and the non-unit class (items c and g) ---
+#
+# Every string below is from a real units column — the research's 27
+# models or our own eight closed-deal ones. The four marked as fixes
+# were wrong when I first hand-read the parser's output.
+
+
+def parse(text, formats=("General",)):
+    from polar.tieout.units.declarations import parse_declaration
+
+    return parse_declaration(text, formats)
+
+
+def test_the_scale_ladder_beyond_our_corpus() -> None:
+    assert (parse("£m").currency, parse("£m").scale) == ("GBP", "millions")
+    assert parse("£'000s").scale == "thousands"
+    assert parse("£'000").scale == "thousands"
+    assert parse("$MM").scale == "millions"
+    assert parse("EUR'000").scale == "thousands"
+
+
+def test_non_western_scales() -> None:
+    # « Lakh/MW/year » and « Cr/year » three rows apart in one Indian
+    # model: a 100× step with no currency sign on either.
+    assert parse("Lakh/MW/year").scale == "lakh"
+    assert parse("Cr/year").scale == "crore"
+    assert parse("千").scale == "thousands"
+    assert parse("百万").scale == "millions"
+
+
+def test_a_currency_code_carries_its_currency() -> None:
+    # Fix: « USD Billions » has no sign and was read as a scale with
+    # no currency at all.
+    assert parse("USD Billions").currency == "USD"
+    assert parse("USD Billions").scale == "billions"
+
+
+def test_switches_are_declared_and_never_dimensional() -> None:
+    for text in ("Flag", "Factor", "Choice", "Index", "Check", "[1,0]"):
+        assert parse(text).not_a_unit, text
+        assert parse(text).b5_type == "untyped"
+
+
+def test_a_switch_may_name_its_own_states() -> None:
+    # Fix: « Toggle YES/NO » was refused as unparseable.
+    assert parse("Toggle YES/NO").not_a_unit
+    assert parse("Y/N").not_a_unit
+
+
+def test_a_percentage_value_is_a_qualifier_not_a_unit() -> None:
+    # Fix: « Indexing at 0% » parsed as a rate. A digit attached to
+    # the sign is what separates « 3% inflation » from « % ».
+    assert parse("Indexing at 0%").not_a_unit
+    assert parse("Indexing at 2.5%").not_a_unit
+    assert not parse("%").not_a_unit
+    assert not parse("annual real %").not_a_unit
+
+
+def test_a_declaration_beside_a_unit_is_refused() -> None:
+    # Fix: « Date / £m » parsed as a price of pounds per date.
+    assert parse("Date / £m").unparseable
+
+
+def test_a_price_is_a_rate_not_an_amount() -> None:
+    priced = parse("£/kWh")
+    assert priced.b5_type == "rate"
+    assert priced.currency == "GBP"
+
+
+def test_what_it_cannot_read_it_refuses_by_name() -> None:
+    # Physical units are build item (f) and are not built. A refusal
+    # naming the text is a real answer about a corpus.
+    for text in ("kWh", "m2", "kgCO2/m2", "No of days"):
+        assert parse(text).unparseable, text
+        assert text in parse(text).why
