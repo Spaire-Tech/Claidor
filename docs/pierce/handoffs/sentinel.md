@@ -35,6 +35,7 @@ it falls.
 | A6 intake (`a6-intake.md`) | **REFUSED**, 3 of 5 criteria. All five held models convert; **two will not open** (LibreOffice writes `_xlnm.Print_Titles` empty, openpyxl raises). **No value changed anywhere** — recalculation-on-load did not happen. **Formulas are fabricated**: `=TRUE()` for every boolean cell. **The `.xlsb` route destroys every defined name** (keeps the name, drops the reference); the `.xls` route keeps all 805. Nothing wired, gate not run (no engine file changed). |
 | Own-check periods (`own-check-periods.md`) | **Adopted.** `_own_checks` now judges only the sheet's own period columns. AU-UK unmoved (18 findings, 0 files), SFT exactly as specified in advance, gate clean 27/27 as a tripwire. **Its criteria were narrower than the change** — see the coverage effect below. |
 | Proof 1A, second run (`population-proof.md` § second run) | **PASS** at `327058a5` — 5 of 5 true breaks, 0 false alarms, Kelso and Newbattle silent. **The pass is narrow:** the engine was fixed *using this corpus's failures*, so it can no longer test the original « never seen » claim. Never quote the pass without that sentence. |
+| Label-column election (`label-column-election.md`) | **REFUSED.** Elected label-column cells carrying a formula with a numeric result. **Planted recall 0 of 12** — a typed-over cell has no formula, so the change admitted every healthy cell of a ladder and excluded the defect itself. Reverted; baseline untouched; gate not run (nothing to certify). Error was in the registration, not the code. |
 | Label-column cost (`label-column-cost.md`) | **Measured; nothing wired.** One column per sheet is never elected — deliberate, but its price was never known. Regulator corpus hides **1.55% of formulas / 5.31% of numerics**; closed-deal **0.71%**; worst files 32%. 20 cells hand-read: **13 computed date ladders (wrongly hidden), 6 label mirrors (rightly hidden)**. Discriminator found: 62% of hidden formulas resolve numeric, 38% to text. |
 | A6 round 2 (`a6-xls-routes.md`) | **No route adopted; the premise corrected.** Native `.xls` recall over 430 files: median **1.000**, aggregate **98.7%**. Converted: 99.2%, no refusals, fabricates 1 formula per boolean cell. **A6 is not a locked door — Enron is substantially readable today.** Largest finding is neither route's: the label-column loss below. Enron deliberately not fetched (registration made it conditional on a full pass). |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
@@ -60,7 +61,26 @@ reproducibly; today they are fetched by hand and hash-checked.
 
 ## Next, per orders (in this order)
 
-0. **Elect numeric-valued label-column formulas — start here.**
+0. **Elect label-column cells by numeric VALUE — start here, and
+   note what already failed.** The previous attempt (elect cells
+   *carrying a formula* with a numeric result) is **refused**:
+   planted recall 0 of 12, because a typed-over cell has no formula
+   and so stayed excluded by the very rule meant to reveal it. A
+   diagnostic — not a measurement, not quotable — says electing by
+   **value** instead catches 6 of 6. **The whole difficulty is the
+   false-positive price**: electing by value admits every year,
+   index and section number a label column holds, and
+   `label-column-cost.md` measured 58,536 content-like numerics on
+   the regulator corpus against 3,210 the label-like test
+   recognised. Likely shape: a guard admitting a label column's
+   numeric cells **only where the column is predominantly
+   formula-bearing**, so a computed ladder comes in whole and a
+   static list of names does not. Planting harness, truth files and
+   `scripts/label_ladder_recall.py` are committed and reusable.
+   **Run planted recall before spending a corpus sweep** — that
+   ordering is what saved the last round.
+   *(superseded item kept for its detail:)*
+   **Elect numeric-valued label-column formulas — refused.**
    The cost is now measured (`label-column-cost.md`): 49,011 hidden
    formula cells across 25 of 37 corpus files resolve to a number,
    and the hand-read says they are computed date ladders and
@@ -230,10 +250,22 @@ every finding we raise, with a ready-made sample to hand-read.
   discriminator is openpyxl's `data_type == "f"`; `startswith("=")`
   inflates every count. `legacy.py` makes the same mistake, which is
   now a named engine defect rather than a quirk of the harness.
-- **`read_workbook` returns no cells from a sheet's first column**,
-  so a formula in column A is invisible to every rule. Found 28 Aug,
-  root cause not established. Assume any column-A measurement is
-  zero until that round lands.
+- **`read_workbook` elects nothing from a sheet's label column** —
+  one column per sheet, chosen by `_label_column` from the first
+  eight by distinct-value count, excluded by an explicit
+  `column != label_column`. Deliberate, and priced on 28 Aug: it
+  hides 1.55% of the regulator corpus's formulas and 5.31% of its
+  numerics.
+- **A hardcode is the *absence* of a formula.** Obvious written
+  down, and it still cost a round: I measured hidden *formula* cells
+  and registered a rule keyed on a formula being present, which by
+  construction could never see a typed-over cell. Check any new rule
+  against the shape of the defect, not the shape of the evidence
+  that motivated it.
+- **Run planted recall before any corpus sweep.** It refused the
+  election round in one run, on evidence no sweep could have
+  produced: the sweeps would have shown plausible new findings and
+  the round would have been adopted having bought nothing.
 - **The reader elects only numeric-or-formula cells.** A text cell
   mid-column is absent from `Workbook.cells` entirely — this killed
   candidate 5's class 2 and is pinned by a test in
