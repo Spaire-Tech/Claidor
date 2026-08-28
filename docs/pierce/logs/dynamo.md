@@ -3494,3 +3494,86 @@ count of unparseable declarations is published, not dropped.
 5. **At least one of my parses is wrong**, found by hand-reading a
    sample. Sixth round running I have registered this; it has
    happened every time.
+
+## The closed-deal key measured — and E2's verdict changes
+
+*The non-circular measurement. Two of the three ARM verdicts do not
+survive it.*
+
+### The numbers, after the orientation bug came out
+
+| dimension | Ofgem key | **closed-deal key** | decided |
+|---|---|---|---|
+| `kind` | 0.05% | **7.77%** | 13,418 |
+| `rate_form` | 0.03% | **2.22%** | 12,408 |
+| `b5_type` | 0.15% | **23.89%** | 1,515 |
+| `currency` | 0.15% | **24.62%** | 1,515 |
+| `scale` | 0.15% | **23.32%** | 1,462 |
+| `period` | 29.8% | **40.35%** | 1,197 |
+
+`docs/pierce/logs/dynamo/units-sft-key.json`. 15,220 declarations
+across six models, 1,140 of them declared non-units and reported as
+such, 580 the parser refuses by name.
+
+### What the wrong answers actually are
+
+    770  kind: said continuous, was categorical   (declared « Flag »)
+    287  period: said annual, was none            (declared « % »)
+    155  currency: said none, was GBP             (declared « £m »)
+    145  scale: said units, was millions          (declared « £m »)
+    142  kind: said categorical, was continuous   (declared « £m »)
+    142  b5_type: said date, was money            (declared « £m »)
+    108  rate_form: said decimal, was not-a-rate  (declared « £'000s »)
+
+**Seventy-four per cent of `kind`'s failure is one case: a row the
+author declared `Flag`, holding 1/1/0/0, read as a continuous
+quantity.** That is not an artifact and not a key defect — it is
+exactly the categorical case the Ofgem key could not contain, failing
+exactly as the verdict warned it might and could not check.
+
+The 142 in the other direction (`£m` read as categorical) are the
+mixed-row problem: a row holding a date serial beside an amount gets
+one label. Those are **contested** — the row genuinely is not
+homogeneous — so I discount them entirely, and `kind` is still 6.7%
+wrong. The verdict change does not depend on the contested cases.
+
+### The revised verdict
+
+| dimension | this morning | **now** | why |
+|---|---|---|---|
+| `kind` | ARM | **DO NOT ARM** | 7.77%, and 74% of it is genuine categorical failure |
+| `currency` | ARM | **DO NOT ARM** | 24.62% — it says « none » on rows declaring `£m` |
+| `scale` | ARM | **DO NOT ARM** | 23.32% |
+| `rate_form` | ARM WITH CARE | **ARM WITH CARE** | 2.22% here, 4.8% on E1 — inside the band |
+| `b5_type` | DO NOT ARM | **DO NOT ARM** | unchanged |
+| `period` | DO NOT ARM | **DO NOT ARM** | unchanged |
+
+**Only `rate_form` is armable, and only with care.** Everything I
+published this morning as safe is not.
+
+### What this costs, said plainly
+
+- **E3 has almost nothing to stand on.** The « £ in a £m line » check
+  I said was armable rests on `scale` and `currency`, and both are
+  wrong on a quarter of what they decide outside our corpus. That
+  check cannot be built today. Sentinel should not wait on me to
+  soften this.
+- **B5's automatic typing loses its foundation.** `kind` decides hold
+  versus perturb, and its dominant failure is reading a **flag row as
+  a continuous quantity** — which is precisely the AHA typing law
+  violation the whole B5 design exists to prevent. Round 2's coverage
+  numbers were obtained with a typing that would perturb flags on any
+  model that has them; H7 happens not to.
+- **The morning's verdict was measured on a corpus that could not
+  test its own headline claim.** I said so at the time, and I still
+  published ARM on `kind`. The right lesson is not « I flagged it »;
+  it is that **a dimension whose key cannot contain its failure case
+  must not be armed at all** until one can. That rule goes in the
+  handoff.
+
+### What is now the strongest thing E2 has
+
+Not an accuracy number. It is that the second corpus exists, is
+author-labelled, is unseen, and **found in one afternoon two defects
+the first corpus structurally could not**: an orientation bug worth
+18 points of `kind`, and a flag-blindness worth 770 rows.

@@ -61,6 +61,48 @@
     "Date/Flag",
     4
    ]
+  ],
+  "top_confusions": [
+   [
+    "kind: said continuous, was categorical (declared \u00ab Flag \u00bb)",
+    297
+   ],
+   [
+    "period: said annual, was none (declared \u00ab % \u00bb)",
+    51
+   ],
+   [
+    "period: said annual, was none (declared \u00ab %allocation \u00bb)",
+    47
+   ],
+   [
+    "period: said annual, was none (declared \u00ab %age \u00bb)",
+    40
+   ],
+   [
+    "period: said annual, was none (declared \u00ab % allocation \u00bb)",
+    39
+   ],
+   [
+    "period: said annual, was none (declared \u00ab %age flag \u00bb)",
+    30
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab Check \u00bb)",
+    18
+   ],
+   [
+    "period: said annual, was none (declared \u00ab % per annum \u00bb)",
+    15
+   ],
+   [
+    "b5_type: said rate, was money (declared \u00ab \u00a3m \u00bb)",
+    10
+   ],
+   [
+    "currency: said none, was GBP (declared \u00ab \u00a3m \u00bb)",
+    10
+   ]
   ]
  },
  "forfar_model.xlsm": {
@@ -124,6 +166,48 @@
     "Days",
     6
    ]
+  ],
+  "top_confusions": [
+   [
+    "currency: said none, was GBP (declared \u00ab \u00a3m \u00bb)",
+    73
+   ],
+   [
+    "scale: said units, was millions (declared \u00ab \u00a3m \u00bb)",
+    73
+   ],
+   [
+    "kind: said categorical, was continuous (declared \u00ab \u00a3m \u00bb)",
+    71
+   ],
+   [
+    "b5_type: said date, was money (declared \u00ab \u00a3m \u00bb)",
+    71
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab Flag \u00bb)",
+    50
+   ],
+   [
+    "currency: said USD, was GBP (declared \u00ab \u00a3m \u00bb)",
+    32
+   ],
+   [
+    "period: said annual, was none (declared \u00ab % \u00bb)",
+    30
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab Factor \u00bb)",
+    13
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab flag \u00bb)",
+    9
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab Indexing at 0% \u00bb)",
+    7
+   ]
   ]
  },
  "glasgow_college_model.xlsm": {
@@ -169,6 +253,16 @@
    ],
    [
     "m2",
+    3
+   ]
+  ],
+  "top_confusions": [
+   [
+    "b5_type: said money, was rate (declared \u00ab \u00a3/kWh \u00bb)",
+    18
+   ],
+   [
+    "b5_type: said money, was rate (declared \u00ab \u00a3/m3 \u00bb)",
     3
    ]
   ]
@@ -233,6 +327,48 @@
     "counter",
     1
    ]
+  ],
+  "top_confusions": [
+   [
+    "kind: said continuous, was categorical (declared \u00ab Flag \u00bb)",
+    187
+   ],
+   [
+    "period: said annual, was none (declared \u00ab % \u00bb)",
+    88
+   ],
+   [
+    "b5_type: said rate, was money (declared \u00ab \u00a3'000s \u00bb)",
+    54
+   ],
+   [
+    "currency: said none, was GBP (declared \u00ab \u00a3'000s \u00bb)",
+    54
+   ],
+   [
+    "scale: said units, was thousands (declared \u00ab \u00a3'000s \u00bb)",
+    54
+   ],
+   [
+    "rate_form: said decimal, was not-a-rate (declared \u00ab \u00a3'000s \u00bb)",
+    54
+   ],
+   [
+    "b5_type: said rate, was money (declared \u00ab \u00a3'000 \u00bb)",
+    39
+   ],
+   [
+    "currency: said none, was GBP (declared \u00ab \u00a3'000 \u00bb)",
+    39
+   ],
+   [
+    "scale: said units, was thousands (declared \u00ab \u00a3'000 \u00bb)",
+    39
+   ],
+   [
+    "rate_form: said decimal, was not-a-rate (declared \u00ab \u00a3'000 \u00bb)",
+    39
+   ]
   ]
  },
  "levenmouth_model.xlsm": {
@@ -296,6 +432,48 @@
     "Days",
     9
    ]
+  ],
+  "top_confusions": [
+   [
+    "currency: said none, was GBP (declared \u00ab \u00a3m \u00bb)",
+    72
+   ],
+   [
+    "scale: said units, was millions (declared \u00ab \u00a3m \u00bb)",
+    72
+   ],
+   [
+    "kind: said categorical, was continuous (declared \u00ab \u00a3m \u00bb)",
+    71
+   ],
+   [
+    "b5_type: said date, was money (declared \u00ab \u00a3m \u00bb)",
+    71
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab Flag \u00bb)",
+    49
+   ],
+   [
+    "period: said annual, was none (declared \u00ab % \u00bb)",
+    30
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab Factor \u00bb)",
+    13
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab flag \u00bb)",
+    9
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab Indexing at 0% \u00bb)",
+    8
+   ],
+   [
+    "kind: said continuous, was categorical (declared \u00ab Indexing at 2.5% \u00bb)",
+    3
+   ]
   ]
  },
  "newbattle_model.xlsm": {
@@ -354,6 +532,48 @@
    [
     "counter",
     1
+   ]
+  ],
+  "top_confusions": [
+   [
+    "kind: said continuous, was categorical (declared \u00ab Flag \u00bb)",
+    187
+   ],
+   [
+    "period: said annual, was none (declared \u00ab % \u00bb)",
+    88
+   ],
+   [
+    "b5_type: said rate, was money (declared \u00ab \u00a3'000s \u00bb)",
+    54
+   ],
+   [
+    "currency: said none, was GBP (declared \u00ab \u00a3'000s \u00bb)",
+    54
+   ],
+   [
+    "scale: said units, was thousands (declared \u00ab \u00a3'000s \u00bb)",
+    54
+   ],
+   [
+    "rate_form: said decimal, was not-a-rate (declared \u00ab \u00a3'000s \u00bb)",
+    54
+   ],
+   [
+    "b5_type: said rate, was money (declared \u00ab \u00a3'000 \u00bb)",
+    39
+   ],
+   [
+    "currency: said none, was GBP (declared \u00ab \u00a3'000 \u00bb)",
+    39
+   ],
+   [
+    "scale: said units, was thousands (declared \u00ab \u00a3'000 \u00bb)",
+    39
+   ],
+   [
+    "rate_form: said decimal, was not-a-rate (declared \u00ab \u00a3'000 \u00bb)",
+    39
    ]
   ]
  },
