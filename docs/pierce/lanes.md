@@ -314,3 +314,57 @@ tests still run on every merged tip either way.
   the reason and unskip it in the same push as the change. A red tip
   is reverted, not tolerated and not patched by the lead — the
   commit is never lost, and it merges the moment its change arrives.
+
+## Refusal is not the finish line (28 Aug, the founder's correction)
+
+The founder named a drift, and it is real: « we cant keep walking
+into traps, low efforts and giving up without really trying. i need
+creativity, persistence, thinking. » The lead had been praising
+honest refusal every sweep, which made killing an idea the
+prestigious move and left inventing the next one exposed. Correcting
+that, without weakening the discipline that makes our numbers mean
+anything.
+
+**Refusing a bad design stays right.** The label-column election
+admitted 58,536 content-like numerics; the beat-family check had no
+plantable sites. Those kills were correct and stay correct. Nothing
+below asks a lane to ship something it cannot defend.
+
+**But a refusal is half a turn's work, not a whole one.** From now
+on, every refusal, unmeasurable verdict, or failed round closes with
+a **successor**, and the successor must differ **in kind, not in
+degree**:
+
+- Naming a threshold to loosen is not a successor.
+- « Retry when the corpus improves » is not a successor unless you
+  say what would have to be true and how we would get it.
+- « The evidence does not identify the answer » is a *diagnosis* —
+  and it obliges you to ask what evidence *would*, and whether it is
+  reachable from the file. (The two-page-spread finding is the
+  example: the continuation page carries a line-number column and the
+  facing page carries the names. Reconstructing the spread was never
+  proposed. Six rounds of refining one design, none spent asking
+  whether the design was the right shape.)
+- If you genuinely believe no successor exists, say **that**, with
+  the argument — « this cannot work because X » is a real answer and
+  a valuable one. « It did not work » is not.
+
+Three habits that go with it:
+
+1. **Before a round closes, write the three designs you did not
+   try**, in one line each, and why. Often the second line is
+   better than the one you spent the round on.
+2. **Attack the constraint, not the parameters.** If a rule cannot
+   see something, ask what would let it see — a different signal, a
+   different granularity, a different pass, information the file
+   already carries that nobody read.
+3. **Read your own handoff's lessons before you act**, especially
+   before any shell waiter, sweep, or long job. Sentinel walked into
+   a self-matching `pgrep` its own handoff warns about, and said so.
+   A lesson written and not read is a lesson not learned — the lead
+   did the same thing with two heavy jobs and an OOM.
+
+The discipline that stays untouched: no unmeasured claim, no
+re-cut criteria, no number without its protocol. Persistence is not
+permission to lower a bar. It is the obligation to find a way to
+clear it.

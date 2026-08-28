@@ -151,3 +151,14 @@ transformations are D3's hard cases, labelled by the filer.
 
 Round 6's column anchor stands and is unaffected — that is about
 table-shaped documents, and this corpus is full of them.
+
+## Standing addition (28 Aug): refusal is not the finish line
+
+Read the new `lanes.md` section of this name before your next round.
+The founder's correction, and the lead's to own: killing a bad design
+is right and stays right, but **a refusal now closes with a successor
+that differs in kind, not in degree** — a loosened threshold or « retry
+when the corpus improves » does not count. Write the three designs you
+did not try, in a line each. Attack the constraint, not the
+parameters. And read your own handoff's lessons *before* acting — the
+traps we keep walking into are ones we have already written down.

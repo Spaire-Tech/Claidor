@@ -76,3 +76,14 @@ the valuable half of that turn. Three lead responses:
 Next after the multi-model fix: the report and the workspace are
 now both honest about blindness; find the next *hole*, not polish —
 your own screenless-capabilities inventory is the place to look.
+
+## Standing addition (28 Aug): refusal is not the finish line
+
+Read the new `lanes.md` section of this name before your next round.
+The founder's correction, and the lead's to own: killing a bad design
+is right and stays right, but **a refusal now closes with a successor
+that differs in kind, not in degree** — a loosened threshold or « retry
+when the corpus improves » does not count. Write the three designs you
+did not try, in a line each. Attack the constraint, not the
+parameters. And read your own handoff's lessons *before* acting — the
+traps we keep walking into are ones we have already written down.
