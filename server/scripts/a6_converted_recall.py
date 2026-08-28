@@ -27,7 +27,7 @@ def census(path: Path) -> dict[str, int]:
     counts = {"formula": 0, "boolerr": 0, "shrfmla": 0}
     pos, end = 0, len(data)
     while pos + 4 <= end:
-        code, size = struct.unpack("<HH", data[pos:pos + 4])
+        code, size = struct.unpack("<HH", data[pos : pos + 4])
         pos += 4
         if pos + size > end:
             break
@@ -47,8 +47,10 @@ def through_engine(path: Path) -> dict[str, Any]:
     book = read_workbook(str(path))
     formulas = [c for c in book.cells.values() if c.formula]
     fabricated = sum(
-        1 for c in formulas if str(c.formula).strip() in ("=TRUE()", "=FALSE()", "=",
-                                                          "TRUE()", "FALSE()", "")
+        1
+        for c in formulas
+        if str(c.formula).strip()
+        in ("=TRUE()", "=FALSE()", "=", "TRUE()", "FALSE()", "")
     )
     return {
         "cells": len(book.cells),

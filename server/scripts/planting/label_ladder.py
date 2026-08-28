@@ -83,18 +83,21 @@ def ladders(path: Path) -> list[dict[str, Any]]:
                     if len(run) >= MIN_RUN:
                         shapes = {_shape(t) for _, t, _ in run}
                         for r, text, number in run[1:]:
-                            found.append({
-                                "sheet": name,
-                                "column": column,
-                                "row": r,
-                                "formula": text,
-                                "value": str(number),
-                                "run_length": len(run),
-                                "anchor_row": run[0][0],
-                                "shapes": len(shapes),
-                                "kind": "ladder-schedule" if len(shapes) > 1
-                                        else "ladder-interior",
-                            })
+                            found.append(
+                                {
+                                    "sheet": name,
+                                    "column": column,
+                                    "row": r,
+                                    "formula": text,
+                                    "value": str(number),
+                                    "run_length": len(run),
+                                    "anchor_row": run[0][0],
+                                    "shapes": len(shapes),
+                                    "kind": "ladder-schedule"
+                                    if len(shapes) > 1
+                                    else "ladder-interior",
+                                }
+                            )
                     run = []
                 else:
                     run.append(entry)
@@ -154,12 +157,21 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
                     data = parts[item.filename].encode("utf-8")
                 target.writestr(item, data)
 
-    truth_path.write_text(json.dumps({
-        "host": host.name, "seed": seed,
-        "planted": planted, "sites_available": len(sites),
-    }, indent=1))
-    print(f"{host.name}: planted {len(planted)} of {len(chosen)} chosen "
-          f"({len(sites)} sites available) -> {out.name}")
+    truth_path.write_text(
+        json.dumps(
+            {
+                "host": host.name,
+                "seed": seed,
+                "planted": planted,
+                "sites_available": len(sites),
+            },
+            indent=1,
+        )
+    )
+    print(
+        f"{host.name}: planted {len(planted)} of {len(chosen)} chosen "
+        f"({len(sites)} sites available) -> {out.name}"
+    )
 
 
 def main() -> None:

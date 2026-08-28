@@ -45,18 +45,18 @@ def one(path: Path) -> dict[str, Any]:
                 term = book.cells.get(ref)
                 if term is not None:
                     formats[ref] = term.number_format or "General"
-        rows.append({
-            "rule": finding.rule,
-            "ref": finding.ref,
-            "detail": finding.detail[:160],
-            "term_formats": formats,
-        })
+        rows.append(
+            {
+                "rule": finding.rule,
+                "ref": finding.ref,
+                "detail": finding.detail[:160],
+                "term_formats": formats,
+            }
+        )
     return {
         "file": path.name,
         "findings": rows,
-        "tallies": {
-            k: v for k, v in result.tallies.items() if "mismatch" in k
-        },
+        "tallies": {k: v for k, v in result.tallies.items() if "mismatch" in k},
         "abstentions": [
             {"rule": a.rule, "why": a.why}
             for a in result.abstentions
@@ -77,12 +77,18 @@ def main() -> None:
         try:
             results.append(one(path))
         except Exception as problem:
-            results.append({"file": path.name,
-                            "refused": f"{type(problem).__name__}: {str(problem)[:140]}"})
+            results.append(
+                {
+                    "file": path.name,
+                    "refused": f"{type(problem).__name__}: {str(problem)[:140]}",
+                }
+            )
         row = results[-1]
-        print(f"done {row['file'][:44]:<44} unit findings "
-              f"{len(row.get('findings', [])):>3}  in {row.get('seconds', 0)}s",
-              flush=True)
+        print(
+            f"done {row['file'][:44]:<44} unit findings "
+            f"{len(row.get('findings', [])):>3}  in {row.get('seconds', 0)}s",
+            flush=True,
+        )
         out.write_text(json.dumps(results, indent=2))
     total = sum(len(r.get("findings", [])) for r in results)
     print(f"corpus: {total} unit findings across {len(results)} files", flush=True)

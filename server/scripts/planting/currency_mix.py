@@ -21,7 +21,6 @@ to the plant. So the surgery is on the XML — one `numFmt` added to
 import json
 import random
 import re
-import shutil
 import sys
 import warnings
 import zipfile
@@ -76,13 +75,15 @@ def sites(path: Path) -> list[dict[str, Any]]:
             hit = {t.row for t in terms if t.row in money}
             if len(hit) < 2:
                 continue
-            found.append({
-                "sheet": sheet,
-                "sum_ref": cell.ref,
-                "formula": (cell.formula or "")[:80],
-                "flip_row": sorted(hit)[0],
-                "currency_rows": sorted(hit)[:6],
-            })
+            found.append(
+                {
+                    "sheet": sheet,
+                    "sum_ref": cell.ref,
+                    "formula": (cell.formula or "")[:80],
+                    "flip_row": sorted(hit)[0],
+                    "currency_rows": sorted(hit)[:6],
+                }
+            )
     return found
 
 
@@ -93,7 +94,7 @@ def _repoint(styles: str, xml: str, row: int) -> tuple[str, str] | None:
         styles = re.sub(
             r'<numFmts count="(\d+)">',
             lambda m: f'<numFmts count="{int(m.group(1)) + 1}">'
-                      f'<numFmt numFmtId="{fmt_id}" formatCode="{FOREIGN}"/>',
+            f'<numFmt numFmtId="{fmt_id}" formatCode="{FOREIGN}"/>',
             styles,
             count=1,
         )
@@ -166,9 +167,10 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
         styles, parts[part] = done
         planted.append(site)
 
-    with zipfile.ZipFile(host) as source, zipfile.ZipFile(
-        out, "w", zipfile.ZIP_DEFLATED
-    ) as target:
+    with (
+        zipfile.ZipFile(host) as source,
+        zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as target,
+    ):
         for item in order:
             if item.filename in parts:
                 data = parts[item.filename].encode("utf-8")
@@ -178,12 +180,21 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
                 data = source.read(item.filename)
             target.writestr(item, data)
 
-    truth_path.write_text(json.dumps({
-        "host": host.name, "seed": seed,
-        "planted": planted, "sites_available": len(available),
-    }, indent=1))
-    print(f"{host.name}: planted {len(planted)} of {len(chosen)} chosen "
-          f"({len(available)} sites) -> {out.name}")
+    truth_path.write_text(
+        json.dumps(
+            {
+                "host": host.name,
+                "seed": seed,
+                "planted": planted,
+                "sites_available": len(available),
+            },
+            indent=1,
+        )
+    )
+    print(
+        f"{host.name}: planted {len(planted)} of {len(chosen)} chosen "
+        f"({len(available)} sites) -> {out.name}"
+    )
 
 
 def main() -> None:

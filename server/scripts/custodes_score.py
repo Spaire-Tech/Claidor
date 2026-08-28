@@ -44,8 +44,8 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-from openpyxl import load_workbook  # noqa: E402
-from openpyxl.utils import column_index_from_string, get_column_letter  # noqa: E402
+from openpyxl import load_workbook
+from openpyxl.utils import column_index_from_string, get_column_letter
 
 HERE = Path(__file__).parent
 ARCHIVE = HERE.parent.parent / "docs" / "pierce" / "custodes"

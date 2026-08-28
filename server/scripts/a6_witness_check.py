@@ -41,7 +41,7 @@ def census(path: Path) -> dict[str, int]:
     counts = {"formula": 0, "shrfmla": 0, "array": 0, "table": 0}
     pos, end = 0, len(data)
     while pos + 4 <= end:
-        code, size = struct.unpack("<HH", data[pos:pos + 4])
+        code, size = struct.unpack("<HH", data[pos : pos + 4])
         pos += 4
         if pos + size > end:
             break
@@ -94,7 +94,9 @@ def main() -> None:
             try:
                 row["libreoffice"] = converted_formulas(converted)
             except Exception as problem:
-                row["libreoffice_error"] = f"{type(problem).__name__}: {str(problem)[:120]}"
+                row["libreoffice_error"] = (
+                    f"{type(problem).__name__}: {str(problem)[:120]}"
+                )
         else:
             row["libreoffice_error"] = "not converted"
         results.append(row)

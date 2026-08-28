@@ -1,4 +1,5 @@
 """The registered sample — drawn exactly as `a6-xls-routes.md` fixes it."""
+
 import random
 import sys
 from pathlib import Path

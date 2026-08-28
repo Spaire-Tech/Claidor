@@ -34,10 +34,10 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-import xlrd  # noqa: E402
-from openpyxl.utils import get_column_letter  # noqa: E402
+import xlrd
+from openpyxl.utils import get_column_letter
 
-from scripts.custodes_score import (  # noqa: E402
+from scripts.custodes_score import (
     A1,
     OUT_OF_SCOPE,
     RECT,

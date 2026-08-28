@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.regulator_eval import _read  # noqa: E402
+from scripts.regulator_eval import _read
 
 
 def keyed(defects: list) -> tuple[Counter, int]:

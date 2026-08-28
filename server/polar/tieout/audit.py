@@ -3736,9 +3736,7 @@ def _offset(reference: str, row: int, column: int, anchoring: bool = True) -> st
             else f"C[{_column_number(letters) - column:+d}]"
         )
         text_row = (
-            f"R{digits}"
-            if row_anchor and anchoring
-            else f"R[{int(digits) - row:+d}]"
+            f"R{digits}" if row_anchor and anchoring else f"R[{int(digits) - row:+d}]"
         )
         parts.append(f"{sheet}{text_row}{text_column}")
     return ":".join(parts)

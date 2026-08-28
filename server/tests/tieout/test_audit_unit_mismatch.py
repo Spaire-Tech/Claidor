@@ -153,6 +153,7 @@ def test_a_dimensionless_term_is_not_a_competing_currency() -> None:
     made 103 of 103 corpus findings false, which is what refused the
     first round.
     """
+
     def build(sheet) -> None:
         sheet["A1"] = "Cashflow"
         for offset, column in enumerate("BCDE"):
@@ -168,6 +169,4 @@ def test_a_dimensionless_term_is_not_a_competing_currency() -> None:
             sheet[f"{column}5"] = f"={column}3-{column}4"
 
     result = _audit(build)
-    assert not _found(result, "currency-mismatch"), [
-        f.detail for f in result.findings
-    ]
+    assert not _found(result, "currency-mismatch"), [f.detail for f in result.findings]

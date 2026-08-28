@@ -37,21 +37,25 @@ def _label_like(value: Decimal) -> bool:
 
 
 def one(path: Path) -> dict[str, Any]:
+    from openpyxl import load_workbook
+
     from polar.tieout.workbook import (
+        _decimal,
         _formula,
         _grid_of,
         _label_column,
-        _decimal,
     )
-    from openpyxl import load_workbook
 
     formulas = load_workbook(path, data_only=False, read_only=True)
     values = load_workbook(path, data_only=True, read_only=True)
     row: dict[str, Any] = {"file": path.name}
     totals = {
-        "formulas": 0, "formulas_in_label": 0,
-        "numerics": 0, "numerics_in_label": 0,
-        "content_like_in_label": 0, "label_like_in_label": 0,
+        "formulas": 0,
+        "formulas_in_label": 0,
+        "numerics": 0,
+        "numerics_in_label": 0,
+        "content_like_in_label": 0,
+        "label_like_in_label": 0,
         "sheets": 0,
     }
     examples: list[dict[str, Any]] = []
@@ -77,11 +81,17 @@ def one(path: Path) -> dict[str, Any]:
                     if c == label_column:
                         totals["formulas_in_label"] += 1
                         if len(examples) < 12:
-                            examples.append({
-                                "sheet": name, "row": r, "column": c,
-                                "formula": str(written)[:70],
-                                "value": str(number) if number is not None else None,
-                            })
+                            examples.append(
+                                {
+                                    "sheet": name,
+                                    "row": r,
+                                    "column": c,
+                                    "formula": str(written)[:70],
+                                    "value": str(number)
+                                    if number is not None
+                                    else None,
+                                }
+                            )
                 elif number is not None:
                     totals["numerics"] += 1
                     if c == label_column:
@@ -91,10 +101,15 @@ def one(path: Path) -> dict[str, Any]:
                         else:
                             totals["content_like_in_label"] += 1
                             if len(examples) < 12:
-                                examples.append({
-                                    "sheet": name, "row": r, "column": c,
-                                    "value": str(number), "formula": None,
-                                })
+                                examples.append(
+                                    {
+                                        "sheet": name,
+                                        "row": r,
+                                        "column": c,
+                                        "value": str(number),
+                                        "formula": None,
+                                    }
+                                )
     finally:
         formulas.close()
         values.close()
@@ -113,8 +128,12 @@ def main() -> None:
         try:
             results.append(one(path))
         except Exception as problem:
-            results.append({"file": path.name,
-                            "error": f"{type(problem).__name__}: {str(problem)[:120]}"})
+            results.append(
+                {
+                    "file": path.name,
+                    "error": f"{type(problem).__name__}: {str(problem)[:120]}",
+                }
+            )
         r = results[-1]
         print(
             f"{path.name[:44]:<44} "

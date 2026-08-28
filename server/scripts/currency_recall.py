@@ -1,4 +1,5 @@
 """Did the engine catch the planted currency mismatches?"""
+
 import json
 import sys
 import warnings
@@ -19,11 +20,14 @@ caught = 0
 for site in truth["planted"]:
     hit = raised.get(site["sum_ref"])
     caught += bool(hit)
-    print(f"  {'CAUGHT ' if hit else 'MISSED '}{site['sum_ref']:<44} "
-          f"flip row {site['flip_row']}"
-          + (f"  :: {hit.detail[:70]}" if hit else ""))
+    print(
+        f"  {'CAUGHT ' if hit else 'MISSED '}{site['sum_ref']:<44} "
+        f"flip row {site['flip_row']}" + (f"  :: {hit.detail[:70]}" if hit else "")
+    )
 extra = [r for r in raised if r not in {s["sum_ref"] for s in truth["planted"]}]
-print(f"{planted.name}: {caught}/{len(truth['planted'])} planted caught, "
-      f"{len(extra)} other findings")
+print(
+    f"{planted.name}: {caught}/{len(truth['planted'])} planted caught, "
+    f"{len(extra)} other findings"
+)
 for ref in extra[:5]:
     print(f"    other: {ref} :: {raised[ref].detail[:70]}")

@@ -22,10 +22,10 @@ from collections import Counter, defaultdict
 
 warnings.filterwarnings("ignore")
 
-from openpyxl import load_workbook  # noqa: E402
-from openpyxl.utils import get_column_letter  # noqa: E402
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 
-from scripts.custodes_score import (  # noqa: E402
+from scripts.custodes_score import (
     WORK,
     _findings,
     _truth_from_comments,

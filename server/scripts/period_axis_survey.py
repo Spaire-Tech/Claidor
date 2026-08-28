@@ -33,12 +33,14 @@ def one(path: Path) -> dict[str, Any]:
     structure = read_structure(book)
     axes = []
     for sheet, axis in structure.axes.items():
-        axes.append({
-            "sheet": sheet,
-            "per_year": axis.per_year,
-            "columns": len(axis.columns),
-            "labels": list(axis.labels[:6]),
-        })
+        axes.append(
+            {
+                "sheet": sheet,
+                "per_year": axis.per_year,
+                "columns": len(axis.columns),
+                "labels": list(axis.labels[:6]),
+            }
+        )
     return {
         "file": path.name,
         "axes": axes,
@@ -57,18 +59,27 @@ def main() -> None:
         try:
             results.append(one(path))
         except Exception as problem:
-            results.append({"file": path.name,
-                            "refused": f"{type(problem).__name__}: {str(problem)[:120]}"})
+            results.append(
+                {
+                    "file": path.name,
+                    "refused": f"{type(problem).__name__}: {str(problem)[:120]}",
+                }
+            )
         row = results[-1]
-        print(f"done {row['file'][:42]:<42} axes {len(row.get('axes', [])):>3}  "
-              f"per_year {row.get('by_per_year', {})}", flush=True)
+        print(
+            f"done {row['file'][:42]:<42} axes {len(row.get('axes', [])):>3}  "
+            f"per_year {row.get('by_per_year', {})}",
+            flush=True,
+        )
         out.write_text(json.dumps(results, indent=1))
     every: Counter = Counter()
     for r in results:
         for a in r.get("axes", []):
             every[a["per_year"]] += 1
-    print(f"corpus: {sum(every.values())} axes, per_year {dict(sorted(every.items()))}",
-          flush=True)
+    print(
+        f"corpus: {sum(every.values())} axes, per_year {dict(sorted(every.items()))}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

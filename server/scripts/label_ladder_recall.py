@@ -9,8 +9,12 @@ could not see.
 Kept because the successor round needs the same measurement,
 against the same planted files and the same truth.
 """
-import json, sys, warnings
+
+import json
+import sys
+import warnings
 from pathlib import Path
+
 warnings.filterwarnings("ignore")
 from polar.tieout.audit import audit
 from polar.tieout.structure import read_structure
@@ -32,5 +36,7 @@ for site in truth["planted"]:
     mark = "CAUGHT " if hits else "MISSED "
     caught += bool(hits)
     rules = ",".join(sorted({h.rule for h in hits})) or "-"
-    print(f"  {mark}{site['ref']:<44} {site['kind']:<16} run={site['run_length']:<4} {rules}")
+    print(
+        f"  {mark}{site['ref']:<44} {site['kind']:<16} run={site['run_length']:<4} {rules}"
+    )
 print(f"{planted_file.name}: {caught}/{len(truth['planted'])} planted defects caught")

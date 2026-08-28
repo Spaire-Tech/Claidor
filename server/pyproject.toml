@@ -162,7 +162,13 @@ ignore = [
 "migrations/*" = [
   "F401", # remove unused import
 ]
-"scripts/*" = ["T20"]
+# Measurement scripts, not library code. They print (that is their whole
+# output) and several must install a `warnings` filter or extend
+# `sys.path` before importing the readers — otherwise openpyxl's warnings
+# drown the numbers the script exists to produce. Waived here rather than
+# with a noqa on every line, because the alternative is re-discovering it
+# at every sweep.
+"scripts/*" = ["T20", "E402"]
 
 [tool.mypy]
 ignore_missing_imports = true

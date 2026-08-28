@@ -21,10 +21,10 @@ from typing import Any
 
 warnings.filterwarnings("ignore")
 
-import xlrd  # noqa: E402
+import xlrd
 
-from scripts.custodes_score import WORK, _unpack  # noqa: E402
-from scripts.custodes_tasi import (  # noqa: E402
+from scripts.custodes_score import WORK, _unpack
+from scripts.custodes_tasi import (
     TOOLS,
     _clone,
     _fresh_sweep,

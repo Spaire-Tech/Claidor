@@ -35,13 +35,13 @@ def _inject(path: Path, values: dict[str, str], text: bool = False) -> Path:
     with zipfile.ZipFile(out) as archive:
         names = [n for n in archive.namelist() if n.startswith("xl/worksheets/sheet")]
         parts = {n: archive.read(n).decode("utf-8") for n in names}
-        others = {
-            n: archive.read(n) for n in archive.namelist() if n not in parts
-        }
+        others = {n: archive.read(n) for n in archive.namelist() if n not in parts}
         order = archive.infolist()
     for name, xml in parts.items():
         for ref, cached in values.items():
-            pattern = re.compile(rf'(<c r="{re.escape(ref)}"[^>]*>)(.*?)(</c>)', re.DOTALL)
+            pattern = re.compile(
+                rf'(<c r="{re.escape(ref)}"[^>]*>)(.*?)(</c>)', re.DOTALL
+            )
             match = pattern.search(xml)
             if match is None:
                 continue
@@ -62,15 +62,19 @@ def _inject(path: Path, values: dict[str, str], text: bool = False) -> Path:
                 body = body + f"<v>{cached}</v>"
             xml = (
                 xml[: match.start()]
-                + opening + body + match.group(3)
+                + opening
+                + body
+                + match.group(3)
                 + xml[match.end() :]
             )
         parts[name] = xml
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as target:
         for item in order:
             data = parts.get(item.filename)
-            target.writestr(item, data.encode("utf-8") if data is not None
-                            else others[item.filename])
+            target.writestr(
+                item,
+                data.encode("utf-8") if data is not None else others[item.filename],
+            )
     return out
 
 
@@ -127,6 +131,7 @@ def test_a_text_valued_formula_in_the_label_column_is_not_elected() -> None:
     the cell is given `t="str"` and real text, the way Excel writes a
     formula that returns a string.
     """
+
     def build(sheet) -> None:
         sheet["A1"] = "Name"
         sheet["B1"] = "Value"
@@ -164,6 +169,7 @@ def test_the_series_test_is_unchanged_by_the_new_election() -> None:
     row would become a series and B would start claiming to be about
     whatever heads its column.
     """
+
     def build(sheet) -> None:
         sheet["A1"] = "Item"
         sheet["B1"] = "FY2026"
@@ -192,6 +198,7 @@ def test_the_header_row_keeps_todays_behaviour() -> None:
     header row was row 1 — it is not, on a book that small, and the
     test was pinning my assumption rather than the engine.
     """
+
     def build(sheet) -> None:
         sheet["A1"] = "Financial model"
         sheet["A2"] = "=1+1"

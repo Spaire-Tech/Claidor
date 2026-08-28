@@ -10,7 +10,6 @@ recall is the second over the first.
 import json
 import struct
 import sys
-import traceback
 import warnings
 from pathlib import Path
 from typing import Any
@@ -28,7 +27,7 @@ def census(path: Path) -> dict[str, int]:
     counts = {"formula": 0, "shrfmla": 0, "array": 0}
     pos, end = 0, len(data)
     while pos + 4 <= end:
-        code, size = struct.unpack("<HH", data[pos:pos + 4])
+        code, size = struct.unpack("<HH", data[pos : pos + 4])
         pos += 4
         if pos + size > end:
             break

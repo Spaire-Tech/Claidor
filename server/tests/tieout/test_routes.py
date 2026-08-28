@@ -2565,7 +2565,20 @@ class TestTheCategoryMap:
     #: _pending` fails the moment the engine *does* emit one of these,
     #: which is the sweep it has to be deleted. An exemption that
     #: outlives its reason is how a guard quietly stops guarding.
-    AHEAD_OF_THE_ENGINE = {"currency-mismatch", "scale-mismatch"}
+    #: Emptied on 28 Aug at the sweep that merged Sentinel's unit checks,
+    #: which is what this exemption was built to provoke. Both rules now
+    #: appear in the engine's source and both are mapped in `files.ts`
+    #: to « Units that do not agree », so the full guard applies again.
+    #:
+    #: Worth knowing, because it reads oddly: `_unit_mismatch` is present
+    #: and unit-tested but **deliberately not wired into `audit()`** —
+    #: measured on the closed-deal corpus it raised 103 findings and every
+    #: one was a false alarm. So the engine cannot emit these today. The
+    #: map having a home for them is right either way: the family is
+    #: ready for the round that arms them, and until then nothing reaches
+    #: it. Put a name back here only for a rule mapped *ahead* of its
+    #: code, which is the case this list exists for.
+    AHEAD_OF_THE_ENGINE: set[str] = set()
 
     def test_the_map_invents_nothing(self) -> None:
         """A family for a rule the engine cannot emit is dead prose."""

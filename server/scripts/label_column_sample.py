@@ -23,7 +23,13 @@ def one(path: Path) -> list[dict[str, Any]]:
     from openpyxl import load_workbook
     from openpyxl.utils import get_column_letter
 
-    from polar.tieout.workbook import _decimal, _formula, _grid_of, _label_column, _shown
+    from polar.tieout.workbook import (
+        _decimal,
+        _formula,
+        _grid_of,
+        _label_column,
+        _shown,
+    )
 
     formulas = load_workbook(path, data_only=False, read_only=True)
     values = load_workbook(path, data_only=True, read_only=True)
@@ -51,16 +57,20 @@ def one(path: Path) -> list[dict[str, Any]]:
                     neighbours.append(
                         (_formula(other) or _shown(grid, r, c + step) or "")[:44]
                     )
-                found.append({
-                    "file": path.name,
-                    "sheet": name,
-                    "ref": f"{get_column_letter(c)}{r}",
-                    "label_column": get_column_letter(label_column),
-                    "formula": text[:120],
-                    "value": str(_decimal(grid.values.get((r, c)))),
-                    "left_of_it": (_shown(grid, r, c - 1) or "")[:36] if c > 1 else "",
-                    "right": neighbours,
-                })
+                found.append(
+                    {
+                        "file": path.name,
+                        "sheet": name,
+                        "ref": f"{get_column_letter(c)}{r}",
+                        "label_column": get_column_letter(label_column),
+                        "formula": text[:120],
+                        "value": str(_decimal(grid.values.get((r, c)))),
+                        "left_of_it": (_shown(grid, r, c - 1) or "")[:36]
+                        if c > 1
+                        else "",
+                        "right": neighbours,
+                    }
+                )
     finally:
         formulas.close()
         values.close()
