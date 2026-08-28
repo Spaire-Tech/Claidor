@@ -5201,3 +5201,129 @@ the number moves" is how a lane starts fitting its own test set.
   turn could have moved it.
 - **For the lead:** round 9 as conceived is dead, with evidence. The open
   question is D3's matching approach, not D1's extraction.
+
+## 28 August 2026, twenty-fifth « go » — **D3 has never once been right.** Six rounds, three corpora, 0 correct proposals and 15 false ones.
+
+The twenty-ninth sweep took my lane up to the handoff commit but **not**
+round 9's investigation, so the lead's worklog records round 8's cause as
+« a document-geometry problem, not a matching one, and no amount of
+matcher tuning touches it. » My round 9 work, pushed and not yet swept,
+measures the opposite: **repairing the geometry perfectly buys zero.**
+That correction is already in my log and handoff; it is repeated here so
+it cannot be missed.
+
+This turn I set out to price the one idea I had named and not measured —
+giving the **model** side a second dimension, symmetric to round 6. I
+measured it, it does not work either, and in the course of checking its
+cost against the older rounds I found something much larger that has been
+sitting in committed files since round 1.
+
+### First: the model-side idea, priced and dead
+
+RMU's Appendix A gives every row a **section header** in column B —
+"Wages & Salary Allocation Factor", "Plant In Service", "Accumulated
+Depreciation" — and these map cleanly onto the Form 1's schedule titles
+("DISTRIBUTION OF SALARIES AND WAGES", "ELECTRIC PLANT IN SERVICE"). Real
+signal, and the matcher has never seen it.
+
+Scoring the section header against every page's words, **the truth page
+ranks first for 3 of 15 rows and in the top three for 8 of 15.** Used as
+a tie-breaker beneath line overlap it shrinks ties — r119 from many to 2,
+r187 to 2 — and resolves none of them. Then every lever at once:
+
+| | correct | wrong | tie | below floor |
+|---|---|---|---|---|
+| round 8 as run | 0 | 2 | 8 | 5 |
+| + perfect spread fix | 0 | 2 | 8 | 5 |
+| + drop repeated lines | 0 | 2 | 8 | 5 |
+| **+ table rows only (no prose)** | 0 | **0** | 8 | 7 |
+| + unglue line numbers | 0 | 0 | 9 | 6 |
+| **+ page-context tie-break — ALL ON** | **0** | **0** | 9 | 6 |
+
+**Six levers, every combination, still zero correct.** One of them earns
+its keep: **excluding prose from the candidate pool removes both wrong
+answers.** The two false proposals both landed on the same instruction
+sentence — *"from distribution of amounts initially recorded in Account
+102, include in column (e) the amount…"* — 20 word tokens, where all 15
+truth lines have between 0 and 8.
+
+### Then the thing that has been in the repository all along
+
+Before proposing a prose filter I went to price its cost in recall
+against the older rounds. There is no cost, and the reason is the
+finding. Tallying **every D3 verdict file this lane has ever committed**:
+
+| round | corpus | correct | false proposals | true abstentions | missed |
+|---|---|---|---|---|---|
+| 1 | ED2 | 0 | 8 | 22 | – |
+| 2 run A | ED2 | 0 | 2 | 28 | – |
+| 3 run A | ED2 | 0 | 0 | 30 | – |
+| 5 | Finch | **0** | 1 | 9 | 17 |
+| 6 | Finch | **0** | 2 | 7 | 18 |
+| 8 | FERC | **0** | 2 | 13 | – |
+| **total** | **three corpora** | **0** | **15** | **109** | **35** |
+
+Rounds 1–3 are the *unsourced* case, where abstention is the right answer
+and zero proposals is the design working — those are not failures and I
+am not counting them as such.
+
+**Rounds 5, 6 and 8 are the sourced case.** A correct answer demonstrably
+existed. Across **69 judged rows on two independent corpora** — a UK
+government document set and a US federal regulatory filing — the matcher
+found **zero**.
+
+**D3's precision over its whole life is 0 of 15.** Every proposal it has
+ever made has been wrong.
+
+I want to be exact about what is new here. Each round's own zero is
+already in my tier table, published at the time. What nobody did — me
+included, across ten sweeps — is **add them up**. The per-round number
+reads as one round's disappointment. The column reads as a verdict.
+
+### What this means, stated plainly
+
+The lane has been improving the *inputs* to a matcher that has never
+produced a correct output. Round 6 gave the document side a column
+anchor. Round V repaired 2,653 invented facts. Round 8 found a real pair
+with third-party truth. Round 9 chased the two-page spread. **Every one
+of those was real work on a genuine defect, and none of them could have
+moved a number that was zero for a reason none of them touched.**
+
+Label-overlap scoring with a hard floor and exact-tie abstention does not
+identify sources. Not on prose, not on a statutory form. Six rounds is
+enough evidence to stop treating that as a tuning problem.
+
+### And the part that is not bad news
+
+The same table says the matcher has **109 true abstentions and has never
+mistaken a stated source for an absent one in the unsourced case** —
+round 3 was 30 of 30. It is a good instrument for exactly one thing:
+saying, in words, *"this document does not state where this number came
+from."* Round 8 added a second: **10 of 25 cited inputs were nils** — the
+document prints no value and the model records zero.
+
+"We looked and there is nothing there" is a real product statement, and
+it is the only one D3 has ever earned the right to make.
+
+### What I am handing over, and what I am not doing
+
+**Not doing:** shipping the prose filter. It is free — with recall at
+zero there is no recall to lose — but shipping a precision fix to an
+instrument whose precision is 0 of 15 is rearranging a result that should
+be reconsidered whole. That is the lead's call, not mine.
+
+**For the lead, one decision:** D3 has been built as a source-*finder*
+and has never found a source. Either the matching approach changes to
+something that can (which is a design question, not a defect), or D3 is
+reframed as the abstention instrument the evidence says it already is.
+Both are above my charter. I have no recommendation between them; I have
+the table.
+
+### Turn's end state
+
+- **No package code changed.** The diff is this log entry and the handoff.
+- Round 8's registration, sample and verdicts stand unchanged; nothing
+  measured this turn revises them.
+- Every number above comes from verdict files already committed to this
+  repository — nothing was re-judged, and the tally can be reproduced
+  from `docs/pierce/scribe-d3-round*-verdicts.json`.
