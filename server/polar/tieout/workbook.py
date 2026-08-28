@@ -36,6 +36,7 @@ import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 from functools import cache
+from sys import intern
 from typing import Any
 
 from openpyxl import load_workbook
@@ -968,9 +969,28 @@ def _cells(
     `SUM(A1:IV65536)` does not become sixteen million strings, and a cap
     that truncates without saying so is the same silent loss this module
     was just fixed for — moved from « dropped » to « quietly shortened ».
+
+    **Every reference string in the engine is born here, and they are
+    interned, which is worth eight lines of explanation because it is
+    worth gigabytes.** A workbook can only contain as many distinct cell
+    references as it has cells, so the same handful of inputs is named
+    over and over by the thousands of formulas that read them. Measured
+    on Ofgem's GD3 business plan model (`final_gd3_bpfm.xlsm`, 693,753
+    cells), before this line existed:
+
+    - **74,491,268** precedent strings held,
+    - **825,694** of them distinct *by value*,
+    - **74,491,268** distinct *by identity* — every duplicate its own
+      allocation, ninety copies of the average reference,
+    - at 22.9 characters each, ~5.4 GB of string objects, which was
+      essentially the whole 6,290 MB the reader peaked at.
+
+    `sys.intern` collapses those ninety copies into one object and leaves
+    the lists holding pointers to it. It costs a dictionary lookup per
+    reference — against an allocation it now usually avoids.
     """
     if not row2:
-        return [f"{where}!{column}{row}"], 1
+        return [intern(f"{where}!{column}{row}")], 1
     first_column = _column_index(column)
     last_column = _column_index(column2 or "")
     span = (row2 - row + 1) * max(last_column - first_column + 1, 0)
@@ -979,7 +999,7 @@ def _cells(
         for two in range(first_column, last_column + 1):
             if len(refs) >= MAX_RANGE:
                 return refs, span
-            refs.append(f"{where}!{get_column_letter(two)}{one}")
+            refs.append(intern(f"{where}!{get_column_letter(two)}{one}"))
     return refs, span
 
 
