@@ -396,3 +396,43 @@ class TestThePairOracleRules:
         assert agreeing.outcome == "supported"  # type: ignore[attr-defined]
         differing = self.answers([["12.2%"], ["9.9%"]], [["12.2%"], ["9.8%"]])["M!B4"]
         assert differing.outcome == "diverged"  # type: ignore[attr-defined]
+
+
+class TestTheDomainRoundsDrawsAreReproducible:
+    """A registered seed that depends on the rejection history is not
+    a registered seed.
+
+    The domain round narrows its band until the model stays inside its
+    own domain, and the first draft drew every attempt from one shared
+    stream — so a rejected draw shifted every number that came after
+    it, and two runs agreed only while the rejection history did. One
+    stream per (trial, band) is the fix, and this is what it buys.
+    """
+
+    def inputs(self) -> dict[str, float]:
+        return {f"M!B{row}": float(row) for row in range(2, 40)}
+
+    def test_a_band_gives_the_same_numbers_whatever_came_before(self) -> None:
+        from scripts.watch_tiers import _banded
+
+        inputs = self.inputs()
+        #: Trial 3 reaching band 4 after four rejections, and the same
+        #: (trial, band) reached by any other route, must agree.
+        assert _banded(inputs, 3, 4, (0.99, 1.01)) == _banded(
+            inputs, 3, 4, (0.99, 1.01)
+        )
+
+    def test_different_trials_and_bands_do_not_share_numbers(self) -> None:
+        from scripts.watch_tiers import _banded
+
+        inputs = self.inputs()
+        first = _banded(inputs, 0, 0, (0.5, 1.5))
+        assert first != _banded(inputs, 1, 0, (0.5, 1.5))
+        assert first != _banded(inputs, 0, 1, (0.5, 1.5))
+
+    def test_every_draw_lands_inside_its_band(self) -> None:
+        from scripts.watch_tiers import _banded
+
+        inputs = self.inputs()
+        for ref, value in _banded(inputs, 2, 3, (0.95, 1.05)).items():
+            assert 0.95 * inputs[ref] <= value <= 1.05 * inputs[ref]

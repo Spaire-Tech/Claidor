@@ -3646,3 +3646,321 @@ sentence kept — and the ordering signal now fires only where the
 comparison is real: the six large transitions, where it says the
 reforecasts moved assumptions and structure, v3→v4 rewrote formulas,
 and v4→v5 renamed lines.
+
+## The first external answer key (REGISTERED BEFORE RESULTS)
+
+Tip `a53eb565`, twenty-ninth sweep. `z3-solver` absent; orders
+unchanged. Item 3 of the twenty-eighth sweep's orders is the one I
+have never taken up, and it is the most valuable thing on the list:
+**ground truth with the author's own words.**
+
+Every measurement this lane has published is on edits I planted
+myself, or on ED2 where I inferred the ground truth from the files.
+`hickeng/financial` is neither: a real financial model whose author
+fixed a real defect and *described it in the commit message*.
+
+```
+31db8d1  « Fixes row skewed formula … This fixes a skew in the RSU
+           Post-merger short term capital gain column where the
+           formula was referencing cells offset down by one row.
+           This was introduced with the switch to comprehensible
+           formula. Fixes #111 »
+parent: 529ca3a
+```
+
+The orders' summary of the labelling: **98 reference changes, 1
+formula change, zero hardcodes, every formula in a block reading the
+row below itself.** The same chain carries « Update version number
+in sheet » commits — 1-, 2- and 4-cell bumps — which are the
+**required-silence** half: an instrument that reports the defect and
+also shouts at a version-string bump has not earned anything.
+
+**Licence.** Non-commercial; internal measurement only. The
+workbooks live in the scratchpad and are **never committed**, the
+same rule the corpus fetchers already follow. The repository is
+cloned, not vendored.
+
+**What is measured, on the defect pair (529ca3a → 31db8d1):**
+
+1. **C1** — how many cells its raw diff calls changed.
+2. **C3** — what the delta report *says*. This is the real test: 98
+   changed references should read as **one folded block** in review
+   language, not as 98 items. A reviewer who is handed 98 lines has
+   been handed the diff again.
+3. **C2's alignment** — whether the block's rows stay matched, since
+   nothing moved structurally.
+
+**And on the version-bump pairs**: how much C3 says at all.
+
+**Predictions.**
+
+1. **C1 reports between 80 and 130 changed cells** on the defect
+   pair. The orders say 98 reference changes and 1 formula change;
+   C1 counts cells, and its count includes any cached values that
+   moved, so I expect it at or above 99 — but the workbook is small
+   and may not carry cached values at all, in which case the count
+   is the content changes alone.
+2. **C3 folds them into fewer than 10 items**, and the largest is a
+   `methodology_change` block covering a contiguous run of rows in
+   one column. If C3 emits ~98 items, the folding does not work on
+   real defects and I will say so.
+3. **The `methodology_change` detail line shows the skew** — the two
+   shapes differing by one row, which is exactly what the new
+   both-shapes line was built for last sweep.
+4. **The version bumps produce at most 2 items each**, and none of
+   them is a `methodology_change`. A version string is a `filled_cell`
+   or an assumption move, nothing more.
+
+## The external answer key — results: the instruments meet the author's own words
+
+**The defect pair (529ca3a → 31db8d1), against Level-A truth.**
+
+```
+C1   changed 101   content 99   value 3   added 0   removed 134
+C3   methodology_change 11 · moved_assumption 10 · material_output 12
+     · structure 12 · new_defect 7 · repaired_defect 7
+```
+
+1. **Prediction 1 held, and better than it had to.** C1 reports
+   **99 content changes** where the orders' labelling says 98
+   reference changes plus 1 formula change. **99 = 98 + 1.** An
+   instrument written for regulatory models, meeting a personal
+   tax model it has never seen, lands on the author's own count.
+   (It also reports **134 removed cells**, which the labelling does
+   not mention. Not a disagreement — the labelling counted changes,
+   not deletions — but it is unexplained and I am not going to claim
+   it as a find.)
+2. **Prediction 2 failed on its number and held on its substance.**
+   I said « fewer than 10 items »; C3 emits **11 methodology blocks**
+   and 59 items in all. But the thing being tested — does 99 changed
+   cells fold into review language — **works**: 99 changes become 11
+   blocks, and the largest single line covers **20 cells**. The
+   number I predicted was optimism about geometry: the skewed column
+   has gaps, so contiguous folding cannot reach one block.
+3. **Prediction 3 held for the defect the commit describes, and
+   failed elsewhere — which turned out to be the useful half.** The
+   RSU line reads:
+
+   ```
+   …(avgoQty,R[+1]C[-17],purchaseDate,R[+1]C[-45],…
+    → …(avgoQty,R[+0]C[-17],purchaseDate,R[+0]C[-45],…
+   ```
+
+   That is precisely « the formula was referencing cells offset down
+   by one row », in the author's words, arrived at from the two files
+   alone. **But the ESPP block showed two identical-looking
+   truncated strings**: with a modern `LET` formula the shapes agree
+   for sixty characters and the change is past the cut. The
+   both-shapes line I built last sweep was defeated by long formulas
+   on its first contact with a real one.
+
+   **Fixed, and the fix is what a diff does**: trim what the two
+   shapes agree on, keep a margin of context, mark the trim. The
+   ESPP block now reads:
+
+   ```
+   …eginDate,R[+2]C[-52],AND(… → …eginDate,R[+0]C[-52],AND(…
+   ```
+
+   **And that line says something the commit message does not.** The
+   author describes a one-row skew in RSU; the same commit also
+   corrected a **two-row** skew in ESPP (`R[+2]` → `R[+0]`). The
+   report names it because it reads the files rather than the note.
+   I am stating that as what the files show, not as a claim about
+   what the author intended.
+4. **Prediction 4 held where it applied, and two of my four pairs
+   were not what I called them.** The two « Update version number in
+   sheet » commits are genuine bumps — **3 changed cells, and C3
+   emits exactly one item**:
+
+   ```
+   relabelled_line: Summary column C
+      « github release: v0.1.6 » → « github release: v0.1.7 »
+   ```
+
+   Required silence, met: one true line, nothing else. The other two
+   I picked — « Update for v0.1.7 release » — are **not bumps at
+   all**: 581 content changes, including 432 cells wrapped in
+   `IFERROR`. My selection was wrong, not the prediction. That pair
+   is worth its own note, because C3 folds those 432 cells into
+   **one line** that says exactly what happened:
+
+   ```
+   methodology_change: RSU rows 7–150 [G,H,Z]
+      R[+0]C[-2]*R[+0]C[-3] → IFERROR(R[+0]C[-2]*R[+0]C[-3],#) (432 cells)
+   ```
+
+**What this round is worth.** Every number this lane had published
+before it came from edits I planted or from ED2, where I inferred
+the truth myself. This is the first time the Watch has been held
+against a defect **described by the person who made it**, in a model
+from a different world — a personal tax workbook rather than a
+regulator's price control — and the instruments met it: the count to
+the cell, the defect in review language, and silence on the version
+bump. The licence is non-commercial; the workbooks stay in the
+scratchpad and are never committed.
+
+## The second chain — the profile, held out (REGISTERED BEFORE RESULTS)
+
+Tip `07f124d1`. `z3-solver` absent; orders unchanged and all three
+of their items addressed.
+
+Last sweep I wrote that the profile's numbers were all in-sample on
+ED2 and that « the real test is a second chain ». The answer key I
+cloned for the specimen round **is** one: `hickeng/financial` keeps
+sixteen distinct versions of its workbook on the first-parent line —
+**fifteen adjacent transitions**, half again as many as ED2 holds.
+
+**How held-out it actually is, stated precisely.** I have already
+seen five of those fifteen: the defect pair (101 changed cells), two
+« Update version number in sheet » bumps (3 cells each) and two
+« Update for v0.1.7 release » commits (582 each). **Ten are
+unseen**, and the profile *rules* were fixed before any of this
+chain existed. So this is a genuine hold-out for the rules and a
+partial one for the distribution, and I am not going to describe it
+as more than that.
+
+**What is being tested — the question ED2 could not answer.** On
+ED2 the four quiet transitions all came back **qualified** (fewer
+than three priors within a factor of two), and I switched
+`unusual()` off for qualified profiles because it flagged the two
+quietest updates in the chain. The open question was whether that is
+a **design flaw** or a **thin-history artifact**. A chain with
+fifteen transitions, several of them near-identical version bumps,
+answers it.
+
+**Predictions.**
+
+1. **The chain is bimodal like ED2's**: at least **five** of the
+   fifteen transitions are under 20 cells, and at least **three**
+   are over 300.
+2. **The quiet transitions get *comparable* profiles here** — three
+   or more priors within a factor of two — where on ED2 they could
+   not. If so, ED2's refusals were thin history and not a broken
+   rule.
+3. **The counterfactual that matters**: on the transitions that get
+   a comparable profile, `unusual()` stays **silent on the version
+   bumps** and **fires on the defect pair** — the skew fix, which is
+   the one transition in this chain a human labelled as a defect. If
+   it fires on the bumps too, the flag is wrong in principle and I
+   will say so and leave it off for good.
+4. **C3 stays fast**: every transition under 60 s, since the
+   workbook is 89 KB against ED2's 4.3 MB.
+
+## The second chain — results: the profile is not ready, and I can say why
+
+Fifteen transitions, **1.8–18.3 s each**. Prediction 4 held; the
+instrument is fast on a small workbook.
+
+```
+sizes (cells the report touched)
+   0, 1, 1, 1, 24, 76, 167, 283, 306, 342, 553, 559, 697, 1518, 2091
+```
+
+**Prediction 1 — half held.** Seven transitions over 300 cells
+(predicted ≥3). But only **four** under 20, where I predicted five.
+Minor, and I am counting it as a miss rather than rounding it.
+
+**Prediction 2 — « the quiet transitions get comparable profiles
+here » — FAILED, and the reason is a defect in my rule, not thin
+history.** Every quiet transition (0, 1, 1, 1, 24 cells) comes back
+**qualified**, exactly as on ED2. The cause is arithmetic and I
+should have seen it when I registered the rule:
+
+> **A multiplicative band degenerates at small sizes.** « Within a
+> factor of two » of a 1-cell transition means « between 0.5 and 2
+> cells ». Of a 0-cell transition it means « exactly 0 ». The band
+> that keeps a 1,169-cell reforecast out of a 95-cell update's
+> profile also keeps a 1-cell bump out of another 1-cell bump's.
+
+Ten of fifteen transitions are qualified; only five get a real
+comparison, and those five are the middle of the distribution
+(283–559 cells). ED2's refusals were **not** thin history. The rule
+is wrong at the bottom of its range.
+
+**Prediction 3 — the one that mattered — FAILED in the worst
+direction.** I predicted `unusual()` would stay silent on the
+version bumps and **fire on the defect pair**. It is silent on
+both. The defect pair — the skew fix, the only transition in this
+chain a human labelled as a defect — reads 76 cells, gets a
+**qualified** profile, and the guard I added last sweep switches
+the flag off.
+
+**So the flag is silent exactly where the ground truth says
+something happened**, and that is a plain negative for the design as
+it stands. The guard was right (a weak comparison must not
+conclude); the band beneath it is what makes almost everything weak.
+
+**The honest verdict: the update profile is not ready to ship.** On
+a real fifteen-transition history it refuses on two thirds of the
+chain and says nothing about the one defect its own author
+documented. The *sentence* it produces is still sound — a count
+beside a median, with the size ratio disclosed — and the ED2
+replication of the founder's finding still stands, because that was
+a statement about the **data** rather than about this module. What
+does not stand is any claim that the module is usable.
+
+### Registered successor, and why I am not implementing it today
+
+The fix is to compare by **rank within the chain** rather than by
+ratio: a transition's comparables are the priors nearest it in the
+ordered list of sizes, a neighbourhood of `NEIGHBOURS`, with no
+multiplicative constant at all. It is scale-free, it degrades
+gracefully at both ends, and it introduces **no new constant** —
+`NEIGHBOURS` and `MINIMUM_PRIORS` are already registered.
+
+**But I have now seen both chains I hold.** Choosing that rule
+*because* the ratio rule failed is a response to data, which is
+legitimate only if the validation happens on data I have not seen.
+I have none left. So the rule is registered and **not built**, and
+the honest statement to the lead is:
+
+> The profile needs a third chain before anything about it can be
+> claimed. The founder's equity model with seventy transitions is
+> the natural one. Until then this module produces a sound sentence
+> and an unusable verdict, and the verdict is off.
+
+## The reproducibility fix — one stream per (trial, band) (REGISTERED BEFORE RESULTS)
+
+Tip `07f124d1`, unchanged. `z3-solver` absent. The profile is parked
+until a third chain exists — parked honestly, and not something I can
+unblock by wanting to. So this turn takes the other registered,
+unbuilt item: the domain round's shared RNG.
+
+**The defect, as recorded two sweeps ago**: every *rejected* draw
+consumes the shared stream, so which numbers a trial finally uses
+depends on how many bands were tried before it. Two runs of the same
+code agree; a run after any change that alters the rejection history
+does not. That is the opposite of what a registered seed is for.
+
+**The fix**: each (trial, band) pair draws from
+`Random(TIER2_SEED + 1000 * trial + band_index)`, so band *k* of
+trial *i* is the same numbers whatever happened earlier.
+
+**How it is verified, and why not by re-running twice.** The
+property — « the same (trial, band) gives the same assignment
+whatever was tried before » — is a property of the draw, not of
+LibreOffice. It is tested directly, by building the assignments
+under different rejection histories and comparing them, at no
+recalculation cost. A single domain run then confirms the pipeline
+end to end and re-establishes the numbers on a reproducible path,
+since the previous ones came from a path that cannot be reproduced.
+
+**Predictions for that run.**
+
+1. **`tier0_proved` is exactly 38,255 and `changed` exactly 1,278.**
+   Neither depends on a draw; if either moves, something unrelated
+   to this fix has broken.
+2. **`tier2_divergence_latent` is exactly 7 again** — the same seven
+   `Finance&Tax` cells. Dormancy is a property of the two files'
+   stored values, and those cells diverge under any perturbation
+   that reaches them, so a different draw must not change the count.
+   This is the sharpest falsifiable prediction in the round.
+3. **`tier2_supported` lands within ±30 of 313**, and
+   `no_perturbable_input` + `degenerate_under_perturbation` move to
+   match. Different numbers at the same band should test the same
+   cells to nearly the same depth.
+4. **The accepted bands may differ from the last run** and that is
+   expected, not a failure: the point of the fix is that they no
+   longer depend on *history*, not that they match a run made before
+   the fix existed.
