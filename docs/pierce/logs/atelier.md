@@ -2166,3 +2166,77 @@ check every corpus in the repo, not the one the current work happens
 to use.
 
 Suite **1043 passed, 4 skipped**; ruff, mypy, tsc, eslint and prettier clean.
+
+## Twenty-ninth turn — what a reviewer actually receives, per real model
+
+Every lane tests its own module against fixtures with planted defects.
+Nobody runs the whole engine over the whole corpus and asks the
+reader's question, which is this lane's to ask: **is this a page a
+person can act on, or a wall?** A rule that fires twice is a finding;
+the same rule firing fifty times is noise that buries the other nine.
+
+`logs/atelier/reader_load.py`, nine readable corpus models:
+
+| model | findings | material | worst single rule |
+|---|---|---|---|
+| baldragon | 10 | 5 | `error-value` ×8 |
+| forfar | 6 | 2 | `error-value` ×4 |
+| glasgow_college | 11 | 3 | `error-value` ×5 |
+| inverclyde | 3 | 0 | `hidden-sheet` ×2 |
+| inverurie_foresterhill | 9 | 1 | `model-own-check` ×4 |
+| kelso | 2 | 0 | `broken-name` ×1 |
+| levenmouth | 7 | 2 | `error-value` ×5 |
+| **newbattle** | **68** | **62** | **`hidden-sheet` ×53** |
+| oban_campbeltown | 4 | 0 | `error-value` ×3 |
+
+**The good news first, because it is the larger fact.** Eight of nine
+real models produce **two to eleven findings**. That is a page a
+partner reads, not a wall. The engine is not crying wolf.
+
+### The ninth, and it is one defect not fifty-three
+
+Newbattle: **53 of its 54 sheets are *very* hidden.** The only visible
+sheet is `Disclaimer`. `Contents`, `Checks`, `BID PRICE`, `Control` —
+the navigation of the model — are all behind the VBA editor.
+
+That is not fifty-three concealment defects. It is **one act by one
+person on one day**: the model was published locked. A reviewer asks
+about it once.
+
+The engine emits it as **53 findings, every one at *error* severity**,
+each carrying the same sentence with a different sheet name in it:
+
+> « BID PRICE » is very hidden — it does not appear in Excel's unhide
+> menu and can only be reached through the VBA editor. Whatever it
+> holds feeds the model without being on any screen.
+
+So a nine-finding model reports as sixty-eight, and a nine-material
+model reports as sixty-two.
+
+**The fold this needs already exists in the same file.** On the same
+model, `broken-name` folds 338 defined names into *one* finding with a
+roster — « 338 defined names point into other workbooks that are not
+here (IRRSHARINGREQ, ModStartDate … and 332 more) ». Two rules about
+workbook-wide facts, written by one lane: one folds, one floods.
+
+**Routed to Sentinel, with three parts:**
+
+1. `hidden-sheet` should fold like `broken-name` — one finding, the
+   sheets rostered.
+2. **53 of 54 is a different fact from « a sheet is hidden »** and
+   deserves its own sentence. « Every sheet but the disclaimer is very
+   hidden » is a publication posture, and arguably a *stronger*
+   finding than any one of the fifty-three.
+3. Severity is a judgement I will not make from here: one very-hidden
+   sheet in a working model is a concealment signal and material;
+   53 of 54 may be a convention rather than a concealment. Sentinel's
+   call, with the evidence above.
+
+**I have deliberately not masked this in the report.** My report groups
+findings by *place*, and fifty-three sheets are fifty-three places, so
+the grouping shipped this morning does not fire. Making it fire — by
+folding on the rule alone — would print one tidy entry over a severity
+band still reading « Material 62 », which is the report lying about
+the engine on the engine's behalf. The count is wrong at source and
+that is where it gets fixed. Until then the report carries the
+engine's answer faithfully, which is its job.
