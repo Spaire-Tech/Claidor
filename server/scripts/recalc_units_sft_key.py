@@ -64,6 +64,7 @@ def main() -> int:
                 by_ref.setdefault((cell.sheet, cell.row), []).append(ref)
 
         tallies = {d: Counter() for d in DIMENSIONS}
+        confusions: Counter = Counter()
         counts = Counter()
         unreadable: Counter = Counter()
         for sheet in sorted({cell.sheet for cell in cells.values()}):
@@ -107,6 +108,9 @@ def main() -> int:
                         tallies["kind"]["right"] += 1
                     else:
                         tallies["kind"]["wrong"] += 1
+                        confusions[
+                            f"kind: said {said}, was categorical (declared « {text} »)"
+                        ] += 1
                     continue
                 if truth.unparseable:
                     counts["unparseable"] += 1
@@ -125,6 +129,9 @@ def main() -> int:
                         tallies[dimension]["right"] += 1
                     else:
                         tallies[dimension]["wrong"] += 1
+                        confusions[
+                            f"{dimension}: said {got}, was {want} (declared « {text} »)"
+                        ] += 1
         for dimension in DIMENSIONS:
             grand[dimension] += tallies[dimension]
         totals += counts
@@ -133,6 +140,7 @@ def main() -> int:
             **counts,
             "per_dimension": {d: dict(tallies[d]) for d in DIMENSIONS},
             "top_unreadable": unreadable.most_common(6),
+            "top_confusions": confusions.most_common(10),
         }
         print(
             f"{path.name}: {len(declared)} declarations — "
@@ -140,6 +148,14 @@ def main() -> int:
             f"{counts['unparseable']} unreadable",
             flush=True,
         )
+    everything: Counter = Counter()
+    for name, entry in report.items():
+        if isinstance(entry, dict):
+            for line, count in entry.get("top_confusions", []):
+                everything[line] += count
+    print("\nwhat the wrong answers are:")
+    for line, count in everything.most_common(10):
+        print(f"  {count:6d}  {line}")
     report["_totals"] = {
         **totals,
         "per_dimension": {d: dict(grand[d]) for d in DIMENSIONS},

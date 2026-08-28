@@ -6,34 +6,34 @@
   "scored": 3446,
   "per_dimension": {
    "kind": {
-    "wrong": 2466,
-    "right": 1216,
+    "wrong": 320,
+    "right": 3362,
     "abstained": 130
    },
    "b5_type": {
-    "abstained": 3424,
-    "right": 13,
-    "wrong": 9
+    "right": 249,
+    "abstained": 3187,
+    "wrong": 10
    },
    "currency": {
-    "abstained": 3424,
-    "right": 13,
-    "wrong": 9
+    "right": 249,
+    "abstained": 3187,
+    "wrong": 10
    },
    "scale": {
-    "abstained": 3424,
-    "right": 13,
-    "wrong": 9
+    "right": 249,
+    "abstained": 3187,
+    "wrong": 10
    },
    "period": {
-    "abstained": 259,
+    "wrong": 239,
     "right": 10,
-    "wrong": 3
+    "abstained": 23
    },
    "rate_form": {
-    "abstained": 2254,
-    "right": 1183,
-    "wrong": 9
+    "right": 3307,
+    "wrong": 10,
+    "abstained": 129
    }
   },
   "top_unreadable": [
@@ -183,34 +183,33 @@
   "unparseable": 74,
   "per_dimension": {
    "kind": {
-    "right": 2657,
-    "abstained": 561,
-    "wrong": 291
+    "right": 3104,
+    "abstained": 198,
+    "wrong": 207
    },
    "b5_type": {
-    "wrong": 233,
-    "abstained": 3032,
-    "right": 34
+    "wrong": 93,
+    "abstained": 3148,
+    "right": 58
    },
    "currency": {
-    "wrong": 233,
-    "abstained": 3032,
-    "right": 34
+    "wrong": 93,
+    "abstained": 3148,
+    "right": 58
    },
    "scale": {
-    "wrong": 232,
-    "abstained": 3032,
-    "right": 35
+    "wrong": 93,
+    "abstained": 3148,
+    "right": 58
    },
    "period": {
-    "abstained": 2,
-    "right": 19,
-    "wrong": 75
+    "wrong": 92,
+    "right": 4
    },
    "rate_form": {
-    "wrong": 291,
-    "abstained": 642,
-    "right": 2366
+    "wrong": 131,
+    "abstained": 198,
+    "right": 2970
    }
   },
   "top_unreadable": [
@@ -306,34 +305,33 @@
   "unparseable": 74,
   "per_dimension": {
    "kind": {
-    "right": 2665,
-    "abstained": 553,
-    "wrong": 291
+    "right": 3112,
+    "abstained": 190,
+    "wrong": 207
    },
    "b5_type": {
-    "wrong": 233,
-    "abstained": 3032,
-    "right": 34
+    "wrong": 93,
+    "abstained": 3148,
+    "right": 58
    },
    "currency": {
-    "wrong": 233,
-    "abstained": 3032,
-    "right": 34
+    "wrong": 93,
+    "abstained": 3148,
+    "right": 58
    },
    "scale": {
-    "wrong": 232,
-    "abstained": 3032,
-    "right": 35
+    "wrong": 93,
+    "abstained": 3148,
+    "right": 58
    },
    "period": {
-    "abstained": 2,
-    "right": 19,
-    "wrong": 75
+    "wrong": 92,
+    "right": 4
    },
    "rate_form": {
-    "wrong": 291,
-    "abstained": 634,
-    "right": 2374
+    "wrong": 131,
+    "abstained": 190,
+    "right": 2978
    }
   },
   "top_unreadable": [
@@ -368,34 +366,34 @@
   "scored": 13220,
   "per_dimension": {
    "kind": {
-    "wrong": 3357,
-    "right": 9335,
-    "abstained": 1668
+    "wrong": 1043,
+    "right": 12375,
+    "abstained": 942
    },
    "b5_type": {
-    "abstained": 11710,
-    "right": 869,
-    "wrong": 641
+    "right": 1153,
+    "abstained": 11705,
+    "wrong": 362
    },
    "currency": {
-    "abstained": 11710,
-    "right": 858,
-    "wrong": 652
+    "right": 1142,
+    "abstained": 11705,
+    "wrong": 373
    },
    "scale": {
-    "abstained": 11763,
-    "right": 839,
-    "wrong": 618
+    "right": 1121,
+    "abstained": 11758,
+    "wrong": 341
    },
    "period": {
-    "abstained": 274,
-    "right": 744,
-    "wrong": 213
+    "wrong": 483,
+    "right": 714,
+    "abstained": 34
    },
    "rate_form": {
-    "abstained": 3825,
-    "right": 8801,
-    "wrong": 594
+    "right": 12133,
+    "wrong": 275,
+    "abstained": 812
    }
   }
  }
