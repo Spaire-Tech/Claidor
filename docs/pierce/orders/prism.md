@@ -53,3 +53,14 @@ finishing it rather than widening it:
    behind E2 — so do not wait on it; it will come.
 3. If both stall, the C3 deferrals you parked
    (added-cells-within-matched-structure) are real holes and yours.
+
+## Addendum (28 Aug): an external answer key is coming
+
+Blocked behind Sentinel's A6, but worth knowing now: the Enron
+corpus contains **`E08`/`E09`, a genuine version pair** — same 15
+sheets, 45,274 identical formulas, 920 differing, one of them
+`=XNPV(0.09,…)` → `=XNPV(0.1,…)`, error-value cells 92 → 115. A real
+revision of a real model by its original authors, which nobody
+planted and nobody curated for us. When A6 lands, that pair is the
+first thing C2/C3 should be re-measured against — a harness we
+designed cannot flatter it. Do not wait on it; register nothing yet.

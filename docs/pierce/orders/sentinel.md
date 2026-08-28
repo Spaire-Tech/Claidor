@@ -140,3 +140,30 @@ amendment). Priority is now by *hole*, not polish. Yours, in order:
 3. Then Proof 1A **run 2** under the same frozen registration (run 1
    is archived; the own-check fix is gate-certified), and the
    serious-error mining lead when the queue clears.
+
+## Addendum (28 Aug): A6 just became the highest-value work on the board
+
+The founder's research changed A6's price. It is no longer « one
+published model in three cannot be opened » — it is **the gate on
+the only deep, real, unseen project-finance corpus that exists**:
+`SheetJS/enron_xls`, 9,145 real workbooks, an independent count
+finding 5,391 with live formulas and **818 with more than 1,500
+formulas and project-finance vocabulary** — gas project financings,
+wind portfolio valuations, acquisition models at 46–91% formula
+density, written by practitioners under deadline, never seen by this
+engine. All `.xls`. See `corpus-sources.md`, 28 Aug addendum.
+
+Nothing about the round changes — conversion **and** a fidelity
+check on the conversion, because a converted file is a different
+file until proven otherwise. What changes is what it unlocks:
+Proof 1B, the A3 mining rounds on a second dialect, and a real
+version pair (`E08`/`E09` — 45,274 identical formulas, 920
+differing, a discount rate moved 0.09 → 0.10) that is an external
+answer key for Prism nobody planted.
+
+`scripts/corpus_formulas.py` is committed and fetches it with
+`--enron` (2.8 GB; check disk first — this container had 8 GB free).
+**Hash every file against every corpus we hold before it enters any
+sample**; the Enron set and our CUSTODES/EUSES subjects draw on the
+same era of business spreadsheets, and four of seven closed-deal
+candidates turned out to be files we already had.
