@@ -79,6 +79,20 @@ to the reader**, four to one over cells that actually moved.
 | **Status** | **Blocked.** `z3-solver` is not a dependency of this repository, and no code of this lane imports it |
 | **What unblocks it** | One line in `server/pyproject.toml`, the lead's to add. Registered in the lane log; re-raised at every sweep since |
 | **On the pair** | **1,516 cells reached tier 1's rung** and it decided none of them |
+| **Coverage, measured without the solver** | **75.2%** of the model's 20,623 formula cells are inside the fragment; **31.5%** of the cells that actually reach tier 1's rung are. Refused by name: lookups and selection (2,752), text and date (1,465), the IFERROR family (839), conditional aggregates (39), unlisted functions (19) |
+
+**On this pair tier 1 could not have earned its keep even if it
+existed**: all 1,516 cells at its rung carry byte-identical formulas
+on both sides, so it would prove them equivalent trivially. Tier 1
+answers *rewrites*, and this revision rewrote nothing. That is a
+fact about the pair, not about the tier.
+
+Note the shape of those two coverage numbers, because it holds for
+every tier: **a tier's coverage of the whole model is not its
+coverage of the cells that reach it.** Each rung inherits what the
+one above could not handle, and that residue is systematically
+harder — tier 0's silence is mostly text-result formulas, which are
+mostly the lookups and text functions tier 1 refuses.
 
 The hole is printed in every run as `tier1_would_have_been_asked`,
 never inferred from this document. A cell tier 1 might have proved
