@@ -2080,3 +2080,89 @@ drifts are both in body paragraphs. That is Scribe's answer-key work
 and the honest next measurement here.
 
 Suite **1043 passed, 4 skipped**; ruff, mypy, tsc and prettier clean.
+
+## Twenty-eighth turn — G4: one place to act is one entry
+
+The reset says the only surfaces that matter are the ones carrying
+engine output to a reader, and names G4 after the rule keys. The rule
+keys are pushed and holding nothing; this is G4.
+
+**A hostile read of Kelso's report**, on the newest engine output —
+470,594 cells, five findings including the `broken-name` the intake
+fix restored. The verdict, the coverage, the abstentions and the
+citations all held. Section 3 did not.
+
+It printed **three material findings that are one place**:
+
+> 01 The model's own check rows are firing at calcFundingSA!N712
+>    calcFundingSA!N712
+>    16.3 on the model's own « CHECK » row, built to read zero
+> 02 The model's own check rows are firing at calcFundingSA!M712
+>    calcFundingSA!M712
+>    33.64 …
+> 03 The model's own check rows are firing at calcFundingSA!O712 …
+
+One check row, three adjacent columns, the same sentence three times,
+the cell printed twice each time — once inside the sentence and once
+as its own citation — and a third of the page spent on it. A partner
+reads three problems where there is one thing to do.
+
+**Fixed, and nothing composed.** Three changes, each checked rather
+than assumed:
+
+1. **The section numbers places, not findings.** Findings are grouped
+   by rule, sheet and row. The tally above is untouched — three
+   findings *are* three findings and the count says so — but 01 is now
+   the row, with each cell beneath it keeping its own figure and its
+   own evidence sentence.
+2. **A shared sentence is said once.** Only when every title in the
+   place is identical *with its own reference removed*, so a place
+   whose sentences genuinely differ keeps all of them. That is a test,
+   not an assumption about how rules phrase themselves.
+3. **The doubled citation is gone.** The pill is suppressed when the
+   sentence already prints the very same reference — and comes back
+   when the shared sentence has taken the reference out.
+
+And the cells are ordered as a person reads a model — down the
+columns, left to right. They arrived N712, M712, O712.
+
+It now reads:
+
+> **01 The model's own check rows are firing**
+> `calcFundingSA!M712` · 33.64 on the model's own « CHECK » row, built
+> to read zero — reports 33.64 in FY2018, a row that is zero
+> everywhere else.
+> `calcFundingSA!N712` · 16.3 …
+> `calcFundingSA!O712` · 6.818 …
+
+**Verified as the artifact a partner receives**, not just on screen:
+printed and read back — 4 pages, the product's own three fonts
+embedded (Instrument Sans, Newsreader, JetBrains Mono), section
+footers right, and page 3 carrying the grouped entry with all three
+cells and all three figures intact.
+`logs/atelier/report-kelso.pdf`, `logs/atelier/report-one-place.png`.
+
+### What else the hostile read found, not fixed
+
+- **Page 1 prints the same two numbers twice** — the verdict says
+  « 814 of 470,594 cells hold a formula » and the fact row says
+  « 470,594 · 814 of them formulas ». True twice over; the row could
+  carry something the verdict does not.
+- **A workbook-level finding is cited differently on two surfaces** —
+  the Findings table says « defined names » (the endpoint's fallback,
+  fixed last turn) and the report says `kelso_model.xlsm`, because
+  `citeOf` falls to `where.filename` before the label. Both true,
+  neither wrong, and they should agree.
+- **Section 2 lists the abstentions above the values-only sentence**,
+  which is the larger reason coverage is poor.
+
+### A lesson from the lead's refutation, worth writing down
+
+The CRC design was refuted 372/372 on the AU-UK corpus — eleven
+consecutive Ofgem ED2 revisions of one model, which is exactly the
+« two consecutive saves » I said did not exist here. **It did exist,
+in another corpus.** Before claiming a measurement is impossible,
+check every corpus in the repo, not the one the current work happens
+to use.
+
+Suite **1043 passed, 4 skipped**; ruff, mypy, tsc, eslint and prettier clean.
