@@ -3535,3 +3535,114 @@ taken from the chain's own distribution** — the gap between 911 and
 5,050 is a cluster boundary the data drew by itself, and a rule that
 finds such boundaries would give the small transitions three priors
 apiece without widening anything by hand.
+
+## The comparability round (REGISTERED BEFORE RESULTS)
+
+Tip `2bde77d8`, unchanged. Orders unchanged. `z3-solver` absent.
+The live registered item is the profile's comparability band, and
+the first thing to say about it is what I do **not** have.
+
+**There is no held-out chain.** I checked the corpus rather than
+assuming: `ofgem_riio3` is draft-versus-final of *four different*
+models, and `caa_h7` is two unrelated pairs. Neither is a history.
+**ED2 is the only version chain we hold**, so any rule I design now
+is designed by someone who has already seen ED2's ten transitions
+and knows there is a gap between 911 and 5,050 cells. I am not going
+to pretend otherwise, and the consequence is stated before the run:
+**a good result here is weak evidence.** The real test is a second
+chain — the founder's research corpus holds an equity model with
+seventy transitions, and that is where this rule should be tried by
+someone who has not seen its numbers.
+
+**What I will not do**, having seen the distribution: fit anything
+to it. No cluster boundary read off ED2's gap, no factor tuned until
+the refusals go away. The rule below is structural and contains no
+number taken from the data.
+
+**The rule.**
+
+1. **Comparable priors first**, unchanged: within
+   `COMPARABLE_FACTOR` (2.0) of this transition's size.
+2. **If fewer than `MINIMUM_PRIORS` are comparable, do not fall
+   silent — answer, and disclose.** Take the three nearest priors by
+   size and report the line *with the size ratio spelled out*:
+   « … compared with this model's 3 nearest updates, 2.2–3.7× larger ».
+   A qualified answer a reviewer can discount beats a refusal they
+   cannot act on, **provided the qualification is in the line
+   itself** and not in a footnote.
+3. **Refuse entirely only when the model has fewer than
+   `MINIMUM_PRIORS` transitions at all.** That refusal is about the
+   model's history and cannot be argued away.
+
+The distinction that matters: silence when the model has no history;
+a *disclosed* comparison when it has history of the wrong size.
+
+**Predictions.**
+
+1. All **four** small ED2 transitions (247–911 cells) get a
+   qualified profile where they now get a refusal; no large one
+   changes at all, because those already have five comparable
+   priors.
+2. The 247-cell transition's disclosed ratio is **between 2× and
+   4×** (its nearest are 553, 680 and 911).
+3. **The 247-cell transition — v2_2023-07-31 → v3_2023-10 — is
+   flagged unusual for `methodology_change`**, because it rewrote 10
+   formulas where this model's other small updates rewrote none.
+4. **The two genuinely routine transitions (553 and 680 cells) are
+   flagged for nothing at all.** If a rule that discloses its own
+   weakness still cries wolf on the quietest updates in the chain,
+   it is not worth having and I will say so.
+
+## The comparability round — results: three predictions held, the fourth killed a feature
+
+```
+transition                    cells   profile      ratio      unusual
+v1_2023-02 → v2_2023-07-14      911   QUALIFIED   1.3–3.7×   methodology, structure,
+                                                             relabelled, emptied, repaired
+v2_2023-07-14 → v2_2023-07-31   680   QUALIFIED   1.2–2.8×   filled, outputs, assumptions
+v2_2023-07-31 → v3_2023-10      247   QUALIFIED   2.2–3.7×   methodology, structure
+v4_2025-01 → v4_2025-07         553   QUALIFIED   1.2–2.2×   filled, outputs, assumptions
+the six large ones            5,050+  comparable      —      (unchanged from last round)
+```
+
+1. **All four small transitions now answer instead of refusing** —
+   held.
+2. **The 247-cell transition's ratio is 2.2–3.7×** — held, inside the
+   predicted 2–4×.
+3. **It is flagged for `methodology_change`** — held. Ten formulas
+   rewritten where this model's other small updates rewrote none.
+4. **« The two genuinely routine transitions are flagged for nothing
+   at all » — FAILED.** Both 680 and 553 — the quietest updates in
+   the whole chain, two moved assumptions and a filled cell apiece —
+   come back flagged for `filled_cell`, `material_output` **and**
+   `moved_assumption`.
+
+**I registered what to do if that happened, so I am doing it.** The
+words were: « if a rule that discloses its own weakness still cries
+wolf on the quietest updates in the chain, it is not worth having
+and I will say so ». It does, and it isn't.
+
+**Why it fails, and it is structural rather than a bad constant.** A
+small transition's three nearest priors are *not* three routine
+updates — they are whatever is nearest by size, which in this chain
+means a routine update sitting beside two version-family steps
+(247 rewrote 10 formulas, 911 rewrote 72). The median of a
+heterogeneous triple is not a habit, and a boolean drawn from it is
+noise wearing a verdict's clothes.
+
+**What I am changing, and it follows from the design's own
+principle rather than from these numbers**: `unusual()` returns
+`False` for any **qualified** profile. A disclosed comparison is
+weak by construction — that is what disclosing it means — and
+turning a weak comparison into a boolean is precisely the over-claim
+this whole module exists to avoid. The *line* stays: « 2
+moved_assumption (this model's median for updates this size: 0, but
+its nearest updates are 1.2–2.8× a different size) » is a sentence a
+reviewer can weigh. The flag was the machine weighing it for them,
+badly.
+
+So the round's net result is one feature narrowed and one honest
+sentence kept — and the ordering signal now fires only where the
+comparison is real: the six large transitions, where it says the
+reforecasts moved assumptions and structure, v3→v4 rewrote formulas,
+and v4→v5 renamed lines.

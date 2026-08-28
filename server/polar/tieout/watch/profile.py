@@ -68,6 +68,14 @@ class Profile:
     #: How many priors the model has at all, comparable or not — so a
     #: refusal can say which kind of refusal it is.
     history: int = 0
+    #: True when the medians came from priors *outside* the
+    #: comparable band, because too few comparable ones existed. The
+    #: answer is then a qualified one and every line it produces says
+    #: so — silence would be safer to write and less use to read.
+    qualified: bool = False
+    #: The size ratios of the priors used, when qualified: (nearest,
+    #: farthest) as multiples of this transition's size.
+    ratios: tuple[float, float] = (1.0, 1.0)
 
     @property
     def usable(self) -> bool:
@@ -84,45 +92,68 @@ def profile_of(priors: list[Transition], size: int) -> Profile:
     order of magnitude away is not a comparison, it is a different
     kind of event.
     """
+    #: A model with almost no history gets silence; that refusal is
+    #: about the history and cannot be argued away.
+    if len(priors) < MINIMUM_PRIORS:
+        return Profile({}, 0, (0, 0), history=len(priors))
+
     low = size / COMPARABLE_FACTOR
     high = size * COMPARABLE_FACTOR
     comparable = [item for item in priors if low <= item.changed_cells <= high]
-    if len(comparable) < MINIMUM_PRIORS:
-        return Profile({}, len(comparable), (0, 0), history=len(priors))
-    nearest = sorted(comparable, key=lambda item: abs(item.changed_cells - size))
-    chosen = nearest[:NEIGHBOURS]
+    by_distance = sorted(priors, key=lambda item: abs(item.changed_cells - size))
+    qualified = len(comparable) < MINIMUM_PRIORS
+    if qualified:
+        #: History of the wrong size is not the same as no history.
+        #: Answer with the nearest priors and put the size ratio in
+        #: the line, where a reviewer can discount it.
+        chosen = by_distance[:MINIMUM_PRIORS]
+    else:
+        nearest = sorted(comparable, key=lambda item: abs(item.changed_cells - size))
+        chosen = nearest[:NEIGHBOURS]
     kinds = {kind for item in chosen for kind in item.counts}
     medians = {
         kind: float(median([item.counts.get(kind, 0) for item in chosen]))
         for kind in kinds
     }
     sizes = [item.changed_cells for item in chosen]
-    return Profile(medians, len(chosen), (min(sizes), max(sizes)), history=len(priors))
+    spans = sorted(max(item, size) / max(min(item, size), 1) for item in sizes)
+    return Profile(
+        medians,
+        len(chosen),
+        (min(sizes), max(sizes)),
+        history=len(priors),
+        qualified=qualified,
+        ratios=(spans[0], spans[-1]),
+    )
 
 
 def describe(kind: str, count: int, profile: Profile) -> str:
     """The line a reviewer reads. The count always comes first; the
     profile is context and never a verdict."""
     if not profile.usable:
-        #: Two different refusals, and the difference matters: a model
-        #: with no history at all, and a model with plenty of history
-        #: none of which is a comparable size.
-        if profile.history < MINIMUM_PRIORS:
-            return (
-                f"{count} {kind} (no profile for this model — "
-                f"{profile.history} prior transitions, {MINIMUM_PRIORS} needed)"
-            )
         return (
-            f"{count} {kind} (no profile for a transition this size — "
-            f"{profile.history} priors, {profile.priors} of comparable size)"
+            f"{count} {kind} (no profile for this model — "
+            f"{profile.history} prior transitions, {MINIMUM_PRIORS} needed)"
         )
+    #: The qualification travels in the line, never in a footnote.
+    caveat = (
+        ""
+        if not profile.qualified
+        else (
+            f", but its nearest updates are "
+            f"{profile.ratios[0]:.1f}–{profile.ratios[1]:.1f}× a different size"
+        )
+    )
     normal = profile.medians.get(kind)
     if normal is None:
         return (
             f"{count} {kind} (this model's comparable updates show none, "
-            f"{profile.priors} priors)"
+            f"{profile.priors} priors{caveat})"
         )
-    return f"{count} {kind} (this model's median for updates this size: {normal:g})"
+    return (
+        f"{count} {kind} (this model's median for updates this size: "
+        f"{normal:g}{caveat})"
+    )
 
 
 def unusual(kind: str, count: int, profile: Profile) -> bool:
@@ -133,8 +164,17 @@ def unusual(kind: str, count: int, profile: Profile) -> bool:
     and the count is not. It exists so a report can *order* its lines,
     never so it can label a transition. A reader who wants the number
     reads `describe`.
+
+    **A qualified profile never flags anything.** It was measured on
+    the ED2 chain doing exactly the wrong thing: the two quietest
+    transitions in the whole history — two moved assumptions apiece —
+    came back flagged, because their nearest priors by size were
+    version-family steps rather than other quiet updates. A
+    disclosed comparison is weak by construction; turning it into a
+    boolean is the over-claim this module exists to avoid. The
+    sentence `describe` returns still says everything it knows.
     """
-    if not profile.usable:
+    if not profile.usable or profile.qualified:
         return False
     normal = profile.medians.get(kind, 0.0)
     if normal == 0:

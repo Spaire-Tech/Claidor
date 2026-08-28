@@ -42,7 +42,7 @@ answering anything of record; register before results, always.
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
 Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document,
-tiers,fragment,specimens,profile}.py`, **116 green**.
+tiers,fragment,specimens,profile}.py`, **121 green**.
 (Other lanes' tieout tests need the conftest and fail to collect here;
 name your five files explicitly.)
 
@@ -76,15 +76,21 @@ a report.
    tier; the registration forbids importing z3 before that line
    exists. Re-raise it every turn until it lands, and do not
    silently start.
-1. **The profile's comparability band** — built and measured, and
-   the measurement exposed its limit: a factor-of-two band leaves
-   ED2's four *small* transitions with 0–2 comparable priors, so the
-   profile refuses on exactly the updates a reviewer reads most.
-   **Do not widen the factor after the fact** — that is tuning to a
-   result this lane has already seen. Registered instead: bands
-   taken from the chain's own distribution, since the gap between
-   911 and 5,050 cells is a boundary the data drew by itself. Decide
-   the rule before running it.
+1. **The profile is done for now, and one of its features is
+   deliberately dead.** A profile built from priors outside the
+   comparable band answers *and discloses the size ratio in the
+   line*; it never refuses when the model has history. But it also
+   **never flags**: measured on the chain, the two quietest
+   transitions in ED2's history came back « unusual » because their
+   nearest priors by size were version steps, not other quiet
+   updates. The sentence stays, the boolean is off. **Do not
+   re-enable `unusual()` for qualified profiles** without a second
+   chain to test it on.
+   **There is no held-out chain in this corpus** — `ofgem_riio3` is
+   draft-versus-final of four *different* models and `caa_h7` is two
+   unrelated pairs. Every profile number we have is in-sample on
+   ED2; the founder's equity model with seventy transitions is where
+   this belongs.
 2. **Enron E08/E09** — a genuine version pair (45,274 identical
    formulas, 920 differing) arriving behind Sentinel's A6. The
    orders say **do not wait and register nothing yet**. When it

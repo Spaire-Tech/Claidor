@@ -72,18 +72,70 @@ class TestTheDenominator:
         profile = profile_of(ROUTINE + QUARTERLY, 1169)
         assert profile.band[0] >= 1090
 
-    def test_history_of_the_wrong_size_is_its_own_refusal(self) -> None:
+    def test_history_of_the_wrong_size_answers_and_discloses(self) -> None:
         """Six priors, none within a factor of two of a 400-cell
-        update: the model has history and none of it comparable, and
-        the line says which refusal this is."""
+        update. The registered rule does not fall silent — it answers
+        from the nearest priors and puts the size ratio in the line,
+        where a reviewer can discount it. Silence would be safer to
+        write and less use to read."""
         profile = profile_of(QUARTERLY + ROUTINE, 400)
-        assert not profile.usable
+        assert profile.usable
+        assert profile.qualified
         line = describe("class_change", 5, profile)
-        assert "no profile for a transition this size" in line
-        assert "6 priors" in line
+        assert line.startswith("5 class_change")
+        assert "a different size" in line
+        assert "×" in line
 
     def test_a_class_the_comparable_updates_never_showed_says_so(self) -> None:
         profile = profile_of(ROUTINE, 95)
         line = describe("filled_cell", 12, profile)
         assert line.startswith("12 filled_cell")
         assert "show none" in line
+
+
+class TestSilenceVersusDisclosure:
+    """The distinction the comparability round exists for: silence
+    when the model has no history, a disclosed comparison when it has
+    history of the wrong size."""
+
+    def test_a_model_with_no_history_gets_silence(self) -> None:
+        profile = profile_of(ROUTINE[:2], 95)
+        assert not profile.usable
+        assert "no profile for this model" in describe("class_change", 3, profile)
+
+    def test_a_disclosed_comparison_never_hides_its_qualification(self) -> None:
+        """Every line the qualified profile produces carries the
+        caveat — including the « shows none » line, which is the one
+        most likely to be read as an alarm."""
+        profile = profile_of(QUARTERLY, 95)
+        assert profile.qualified
+        for line in (
+            describe("class_change", 5, profile),
+            describe("never_seen_before", 2, profile),
+        ):
+            assert "a different size" in line
+
+    def test_a_comparable_profile_carries_no_caveat(self) -> None:
+        profile = profile_of(QUARTERLY + ROUTINE, 1169)
+        assert not profile.qualified
+        assert "different size" not in describe("class_change", 83, profile)
+
+
+class TestAQualifiedProfileNeverFlags:
+    """Measured on the ED2 chain: the two quietest transitions in the
+    model's history came back flagged, because their nearest priors by
+    size were version steps rather than other quiet updates. A weak
+    comparison may be *reported*; it may not conclude."""
+
+    def test_it_reports_and_does_not_flag(self) -> None:
+        profile = profile_of(QUARTERLY, 95)
+        assert profile.qualified
+        assert not unusual("class_change", 83, profile)
+        line = describe("class_change", 83, profile)
+        assert line.startswith("83 class_change")
+        assert "a different size" in line
+
+    def test_a_real_comparison_still_flags(self) -> None:
+        profile = profile_of(QUARTERLY + ROUTINE, 95)
+        assert not profile.qualified
+        assert unusual("class_change", 83, profile)
