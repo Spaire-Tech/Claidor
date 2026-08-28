@@ -567,6 +567,37 @@ def _read_sheet(
         # a year it has nothing to do with.
         series = len(numeric) > 1
 
+        #: The label column, elected only when it holds a formula whose
+        #: result is a number (docs/pierce/label-column-election.md).
+        #:
+        #: One column per sheet is chosen by :func:`_label_column` and has
+        #: never been content, which is right for the text that names a
+        #: row and wrong for the computed series models park there: date
+        #: ladders, drawdown and repayment schedules. Measured over both
+        #: corpora, 49,011 formula cells sit in that column with a numeric
+        #: result — Newbattle's Schedule 7 repayment dates among them,
+        #: where a typed date would break every lookup keyed on it and no
+        #: rule could see the column at all.
+        #:
+        #: The 30,072 whose result is *text* stay out: those are the
+        #: cross-sheet label mirrors (`=East!E484`), and a hand-read of
+        #: twenty said they are correctly hidden.
+        #:
+        #: Appended **after** `series`, deliberately. `series` decides
+        #: whether a cell inherits its column header, and counting this
+        #: cell would flip it on every row that carries a single data
+        #: value — handing existing cells a `column_label` they do not
+        #: have and moving findings on rows that already work. The header
+        #: row keeps today's behaviour: a formula in the label column
+        #: there is part of the header apparatus, not content.
+        if row != header_row:
+            beneath = grid.written.get((row, label_column))
+            if (
+                _formula(beneath) is not None
+                and _decimal(grid.values.get((row, label_column))) is not None
+            ):
+                numeric.append(label_column)
+
         for column in numeric:
             number = _decimal(grid.values.get((row, column)))
             formula = _formula(grid.written.get((row, column)))

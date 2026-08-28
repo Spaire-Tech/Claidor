@@ -25,7 +25,7 @@ from pathlib import Path
 from polar.tieout.workbook import read_workbook
 
 
-def _inject(path: Path, values: dict[str, str]) -> Path:
+def _inject(path: Path, values: dict[str, str], text: bool = False) -> Path:
     """Give named formula cells a cached `<v>`, as a real file has."""
     out = path.with_name("cached.xlsx")
     shutil.copy(path, out)
@@ -43,11 +43,23 @@ def _inject(path: Path, values: dict[str, str]) -> Path:
             if match is None:
                 continue
             body = match.group(2)
-            if "<v>" in body:
+            opening = match.group(1)
+            if text and 't="str"' not in opening:
+                opening = opening.rstrip(">") + ' t="str">'
+                opening = opening.replace("<c ", "<c ", 1)
+            #: openpyxl writes an *empty* `<v></v>` for a formula cell, so
+            #: the value has to replace that rather than be appended —
+            #: skipping cells that already carry a `<v>` leaves the cached
+            #: value None and the case under test never exists.
+            if re.search(r"<v\s*/>|<v>\s*</v>", body):
+                body = re.sub(r"<v\s*/>|<v>\s*</v>", f"<v>{cached}</v>", body)
+            elif "<v>" in body:
                 continue
+            else:
+                body = body + f"<v>{cached}</v>"
             xml = (
                 xml[: match.start()]
-                + match.group(1) + body + f"<v>{cached}</v>" + match.group(3)
+                + opening + body + match.group(3)
                 + xml[match.end() :]
             )
         parts[name] = xml
@@ -59,7 +71,7 @@ def _inject(path: Path, values: dict[str, str]) -> Path:
     return out
 
 
-def _read(build, cached: dict[str, str] | None = None):
+def _read(build, cached: dict[str, str] | None = None, text: bool = False):
     from openpyxl import Workbook as Book
 
     book = Book()
@@ -68,7 +80,7 @@ def _read(build, cached: dict[str, str] | None = None):
     path = Path(folder) / "built.xlsx"
     book.save(path)
     if cached:
-        path = _inject(path, cached)
+        path = _inject(path, cached, text=text)
     return read_workbook(str(path))
 
 
@@ -94,6 +106,14 @@ def test_a_numeric_formula_in_the_label_column_is_elected() -> None:
 
 
 def test_a_text_valued_formula_in_the_label_column_is_not_elected() -> None:
+    """The cross-sheet label mirror — `=East!E484` resolving to text.
+
+    The cached value must be genuinely textual, not merely absent: a
+    blank cached value would fail `_decimal` for a different reason
+    and the test would pass without exercising the rule at all. So
+    the cell is given `t="str"` and real text, the way Excel writes a
+    formula that returns a string.
+    """
     def build(sheet) -> None:
         sheet["A1"] = "Name"
         sheet["B1"] = "Value"
@@ -101,7 +121,13 @@ def test_a_text_valued_formula_in_the_label_column_is_not_elected() -> None:
             sheet[f"A{row}"] = f'="Row {row}"'
             sheet[f"B{row}"] = float(row)
 
-    book = _read(build, {f"A{row}": "" for row in range(2, 9)})
+    book = _read(
+        build,
+        {f"A{row}": f"Row {row}" for row in range(2, 9)},
+        text=True,
+    )
+    #: the fixture really did produce text-valued formulas
+    assert book.row_words["Sheet"].get(5) == "Row 5", book.row_words["Sheet"]
     assert not [ref for ref in book.cells if ref.startswith("Sheet!A")]
 
 
