@@ -4009,6 +4009,70 @@ const Report = ({
   const total = open.length
   const material = open.filter((one) => sevOf(one) === 1)
   const rest = open.filter((one) => sevOf(one) !== 1)
+
+  //: **One place to act is one entry.** Kelso's report listed three
+  //: material findings — `calcFundingSA!M712`, `!N712`, `!O712` — as
+  //: 01, 02, 03, with the same heading and near-identical sentences
+  //: three times. That is one check row failing in three periods, and
+  //: a partner reads it as three problems and spends a third of the
+  //: page on it.
+  //:
+  //: The count above does not change: three findings *are* three
+  //: findings and the tally says so. What changes is that the section
+  //: numbers **places**, and every finding keeps its own sentence and
+  //: its own cell beneath. Nothing is composed, summarised or dropped
+  //: — grouping is the only thing happening here.
+  //: The one sentence a place shares, or empty when its findings
+  //: really do say different things. Each title is compared with its
+  //: *own* reference taken out, because that is the only part a
+  //: repeated rule varies — so this collapses « … firing at !M712 »
+  //: and « … firing at !N712 » and refuses to collapse two genuinely
+  //: different sentences that happen to sit on one row.
+  const sharedSentence = (place: Finding[]): string => {
+    if (place.length < 2) return ''
+    const bare = (one: Finding) =>
+      saidOf(one.plain || one.title)
+        .replace(citeOf(one), '')
+        .replace(/\s+at\s*$/, '')
+        .trim()
+    const first = bare(place[0]!)
+    return place.every((one) => bare(one) === first) ? first : ''
+  }
+
+  const placeOf = (one: Finding): string => {
+    const ref = String(one.where.anchor.ref ?? '')
+    const row = ref.match(/(\d+)$/)?.[1] ?? ''
+    if (!one.rule || !row) return `solo:${one.id}`
+    return `${one.rule}|${one.where.anchor.sheet ?? ''}|${row}`
+  }
+  const materialPlaces = (() => {
+    const byPlace = new Map<string, Finding[]>()
+    for (const one of material) {
+      const key = placeOf(one)
+      byPlace.set(key, [...(byPlace.get(key) ?? []), one])
+    }
+    //: Within a place, in the order a person reads a model: down the
+    //: columns, left to right. They arrived N712, M712, O712.
+    const at = (one: Finding) => {
+      const coordinate =
+        String(one.where.anchor.ref ?? '')
+          .split('!')
+          .pop() ?? ''
+      const column = coordinate.replace(/[^A-Za-z]/g, '')
+      const row = Number(coordinate.replace(/[^0-9]/g, '')) || 0
+      return { column, row }
+    }
+    return [...byPlace.values()].map((group) =>
+      [...group].sort((a, b) => {
+        const one = at(a)
+        const two = at(b)
+        if (one.column.length !== two.column.length)
+          return one.column.length - two.column.length
+        if (one.column !== two.column) return one.column < two.column ? -1 : 1
+        return one.row - two.row
+      }),
+    )
+  })()
   const record = lastRun ? auditRecord(lastRun) : null
   const summary = lastRun?.summary ?? {}
 
@@ -4937,8 +5001,8 @@ const Report = ({
                   paddingTop: 28,
                 }}
               >
-                {material.map((m, i) => (
-                  <div key={m.id} style={{ display: 'flex', gap: 16 }}>
+                {materialPlaces.map((place, i) => (
+                  <div key={place[0]!.id} style={{ display: 'flex', gap: 16 }}>
                     <span
                       style={{
                         flex: '0 0 auto',
@@ -4973,18 +5037,26 @@ const Report = ({
                         minWidth: 0,
                         display: 'flex',
                         flexDirection: 'column',
+                        gap: 14,
                       }}
                     >
-                      {/* …unless the sentence beneath simply repeats it:
-                          « THE MODEL'S OWN CHECK ROWS ARE FIRING » over
-                          « The model's own check rows are firing at
-                          ReportRatiosSA!E356 » is the same words twice. */}
-                      {(m.headline || categoryOfKey(m.rule ?? '')) &&
-                        !saidOf(m.plain || m.title)
+                      {/* The heading once for the place, not once per
+                          cell — and not at all when the sentence
+                          beneath simply repeats it: « THE MODEL'S OWN
+                          CHECK ROWS ARE FIRING » over « The model's own
+                          check rows are firing at ReportRatiosSA!E356 »
+                          is the same words twice. */}
+                      {(() => {
+                        const lead = place[0]!
+                        const said =
+                          lead.headline || categoryOfKey(lead.rule ?? '')
+                        const repeats = saidOf(lead.plain || lead.title)
                           .toLowerCase()
                           .startsWith(
-                            (m.headline || '').toLowerCase().slice(0, 24),
-                          ) && (
+                            (lead.headline || '').toLowerCase().slice(0, 24),
+                          )
+                        if (!said || repeats) return null
+                        return (
                           //: The scan line first — a partner reads the
                           //: headlines down the page, then stops on one.
                           //: A check with no headline of its own is named
@@ -4995,88 +5067,140 @@ const Report = ({
                               letterSpacing: '.02em',
                               textTransform: 'uppercase',
                               color: '#9aa1ab',
-                              paddingBottom: 5,
                             }}
                           >
-                            {m.headline || categoryOfKey(m.rule ?? '')}
+                            {said}
+                            {place.length > 1 ? ` · ${place.length} cells` : ''}
                           </span>
-                        )}
-                      <span
-                        style={{
-                          fontSize: 16.5,
-                          letterSpacing: '-.012em',
-                          lineHeight: 1.35,
-                          color: '#1c1f23',
-                          textWrap: 'pretty',
-                        }}
-                      >
-                        {saidOf(m.plain || m.title)}
-                      </span>
-                      <span
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: 7,
-                          paddingTop: 9,
-                        }}
-                      >
-                        {citeOf(m) && (
+                        )
+                      })()}
+                      {/* When every sentence in the place is the same
+                          once its own cell is taken out of it, say it
+                          once. Kelso printed « The model's own check
+                          rows are firing at calcFundingSA!N712 » three
+                          times over, differing only in the cell already
+                          printed beside it. Checked rather than
+                          assumed: the titles are compared with each
+                          finding's own reference removed, so a place
+                          whose sentences really differ keeps all of
+                          them. */}
+                      {(() => {
+                        const shared = sharedSentence(place)
+                        if (!shared) return null
+                        return (
                           <span
                             style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              background: '#f4f5f7',
-                              borderRadius: 999,
-                              padding: '4px 11px',
-                              fontFamily: font.mono,
-                              fontSize: 11.5,
-                              color: '#4a4f57',
+                              fontSize: 16.5,
+                              letterSpacing: '-.012em',
+                              lineHeight: 1.35,
+                              color: '#1c1f23',
+                              textWrap: 'pretty',
                             }}
                           >
-                            {citeOf(m)}
+                            {shared}
                           </span>
-                        )}
-                        {againstOf(m) && (
+                        )
+                      })()}
+                      {place.map((m) => {
+                        const shared = sharedSentence(place)
+                        //: The citation pill, unless the sentence has
+                        //: already printed the very same reference — the
+                        //: report was saying « … firing at
+                        //: calcFundingSA!N712 » and then printing
+                        //: « calcFundingSA!N712 » underneath it.
+                        const cite = citeOf(m)
+                        const doubled =
+                          !!cite && saidOf(m.plain || m.title).includes(cite)
+                        return (
                           <span
+                            key={m.id}
                             style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              background: '#f4f5f7',
-                              borderRadius: 999,
-                              padding: '4px 11px',
-                              fontFamily: font.mono,
-                              fontSize: 11.5,
-                              color: '#4a4f57',
+                              display: 'flex',
+                              flexDirection: 'column',
                             }}
                           >
-                            {againstOf(m)}
+                            {!shared && (
+                              <span
+                                style={{
+                                  fontSize: 16.5,
+                                  letterSpacing: '-.012em',
+                                  lineHeight: 1.35,
+                                  color: '#1c1f23',
+                                  textWrap: 'pretty',
+                                }}
+                              >
+                                {saidOf(m.plain || m.title)}
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 7,
+                                paddingTop: shared ? 0 : 9,
+                              }}
+                            >
+                              {cite && (!doubled || !!shared) && (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    background: '#f4f5f7',
+                                    borderRadius: 999,
+                                    padding: '4px 11px',
+                                    fontFamily: font.mono,
+                                    fontSize: 11.5,
+                                    color: '#4a4f57',
+                                  }}
+                                >
+                                  {cite}
+                                </span>
+                              )}
+                              {againstOf(m) && (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    background: '#f4f5f7',
+                                    borderRadius: 999,
+                                    padding: '4px 11px',
+                                    fontFamily: font.mono,
+                                    fontSize: 11.5,
+                                    color: '#4a4f57',
+                                  }}
+                                >
+                                  {againstOf(m)}
+                                </span>
+                              )}
+                              {m.figure && (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    background: '#fdeceb',
+                                    borderRadius: 999,
+                                    padding: '4px 11px',
+                                    fontSize: 12.5,
+                                    color: '#c92a25',
+                                  }}
+                                >
+                                  {m.figure}
+                                  {m.figure_unit ? ` ${m.figure_unit}` : ''}
+                                </span>
+                              )}
+                            </span>
+                            {/* The evidence, only when it says something
+                                the sentence above did not — several
+                                checks store the same words in both. */}
+                            {(m.context || m.title) !==
+                              (m.plain || m.title) && (
+                              <div style={{ paddingTop: 12 }}>
+                                {serif(saidOf(m.context || m.title))}
+                              </div>
+                            )}
                           </span>
-                        )}
-                        {m.figure && (
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              background: '#fdeceb',
-                              borderRadius: 999,
-                              padding: '4px 11px',
-                              fontSize: 12.5,
-                              color: '#c92a25',
-                            }}
-                          >
-                            {m.figure}
-                            {m.figure_unit ? ` ${m.figure_unit}` : ''}
-                          </span>
-                        )}
-                      </span>
-                      {/* The evidence, only when it says something the
-                          sentence above did not — several checks store
-                          the same words in both. */}
-                      {(m.context || m.title) !== (m.plain || m.title) && (
-                        <div style={{ paddingTop: 12 }}>
-                          {serif(saidOf(m.context || m.title))}
-                        </div>
-                      )}
+                        )
+                      })}
                     </span>
                   </div>
                 ))}

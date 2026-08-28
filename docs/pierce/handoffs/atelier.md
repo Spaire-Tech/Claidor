@@ -220,6 +220,22 @@ sitting there unlisted the whole time. Still unsurfaced after this
 turn: the Watch's `classify` / `build_ladder` / `align_lines` /
 `Tier2Answer`, and `recalc.iterative_cells`.
 
+**The report's material section numbers *places*, not findings.**
+Kelso printed one check row failing in three columns as 01, 02, 03
+with the same sentence three times and the cell printed twice each.
+Findings are grouped by rule + sheet + row; the tally above is
+untouched. A shared sentence is said once **only when every title in
+the place is identical with its own reference removed** — checked, not
+assumed — and the citation pill is suppressed when the sentence
+already prints the reference. Cells are ordered down the columns, left
+to right. Verify a change here **by printing the PDF and reading it
+back**; the screen will not catch it.
+
+**Before claiming a measurement is impossible, check every corpus in
+the repo.** This lane said no two consecutive saves of one model
+existed; the AU-UK corpus is built of them (eleven Ofgem ED2
+revisions), and the lead used them to refute the CRC design 372/372.
+
 **The category map has a fifth family: « Units that do not agree »**
 (`currency-mismatch`, `scale-mismatch`). A currency or scale mismatch
 is a **meaning** error — the formula is mechanically perfect and the
