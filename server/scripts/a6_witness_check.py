@@ -62,11 +62,16 @@ def converted_formulas(path: Path) -> int:
 
     book = load_workbook(path, data_only=False, read_only=True)
     total = 0
+    #: A cell whose *text* begins with "=" is not a formula. These
+    #: corpora carry human notes like "=tput learn x unyld dice" as
+    #: plain text, and counting them by their leading character
+    #: inflated the count and made the record census look wrong.
+    #: openpyxl's data_type is the discriminator: "f" is a formula,
+    #: "s" is a string that merely looks like one.
     for sheet in book.worksheets:
         for row in sheet.iter_rows():
             for cell in row:
-                value = cell.value
-                if isinstance(value, str) and value.startswith("="):
+                if cell.data_type == "f":
                     total += 1
     book.close()
     return total

@@ -166,6 +166,13 @@ def _converted(path: Path) -> dict[str, Any]:
     from openpyxl import load_workbook
     from openpyxl.utils.datetime import to_excel
 
+    #: A cell whose *text* begins with "=" is not a formula. These
+    #: corpora carry human notes like "=tput learn x unyld dice" as
+    #: plain text, and counting them by their leading character
+    #: inflated the count and made the record census look wrong.
+    #: openpyxl's data_type is the discriminator: "f" is a formula,
+    #: "s" is a string that merely looks like one.
+
     def _serial(value: Any) -> float | None:
         """A date-formatted cell returns as a datetime, not a number.
 
@@ -190,9 +197,9 @@ def _converted(path: Path) -> dict[str, Any]:
                 value = cell.value
                 if value is None:
                     continue
-                if isinstance(value, str) and value.startswith("="):
+                if cell.data_type == "f":
                     formulas["total"] += 1
-                    text = value.strip()
+                    text = value.strip() if isinstance(value, str) else ""
                     if text in ("=TRUE()", "=FALSE()"):
                         formulas["boolean_shaped"] += 1
                     elif text == "=":

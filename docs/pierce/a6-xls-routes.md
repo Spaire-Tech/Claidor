@@ -106,6 +106,52 @@ Checked in the same breath, since it would have mattered more: the
 430 files are **430 distinct contents** by md5 — the collision is a
 naming coincidence, not a duplicated population.
 
+---
+
+## Criterion 1 — the witness validates (measured)
+
+The census was checked against LibreOffice's independent count on
+all 60 sampled files. **59 agree exactly, record for record.**
+
+The one difference is fully explained and is not the census's:
+`rdc022801.xls` holds 141 `FORMULA` records and 4 `BOOLERR` records,
+and its conversion carries 141 real formulas **plus 4 fabricated
+empty `=` formulas** — one per boolean cell. The census is right
+about the original; the excess is round 1's fabrication defect,
+reproduced here on a completely different corpus and by a different
+route into the finding.
+
+The shared-formula worry registered in advance did **not**
+materialise: files carrying `SHRFMLA` groups (up to 131 of them)
+agree with the census exactly, so BIFF8 does emit one `FORMULA`
+record per participating cell as assumed.
+
+### A fourth instrument error, found by this validation
+
+The validation first reported two disagreements. The second,
+`ribimv001.xls`, showed 3,758 records against 3,762 converted
+formulas with no boolean cells to explain it. Localised per sheet
+and then per cell, the four turned out to be **text that begins with
+an equals sign** — human notes such as `=tput learn x unyld dice x
+ult yld` and `=1 millionths of mm2`, stored as strings in the
+original and preserved as strings by the conversion.
+
+My counter classified any string starting with `=` as a formula.
+The correct discriminator is openpyxl's `data_type`: `"f"` is a
+formula, `"s"` is a string that merely looks like one. With it, that
+file agrees exactly — 1,619 against 1,619 on the sheet that differed.
+
+**This also touches round 1.** `a6_fidelity.py` used the same wrong
+test, which is the likeliest source of the one unexplained extra
+formula recorded there (`our_lady`, 10,716 against 10,715 boolean
+cells). Round 1's material is re-measured with the corrected
+instrument and its document corrected if the number moves — the
+finding itself does not depend on it, since the fabrication was
+established by exact agreement with the boolean counts.
+
+**Verdict on criterion 1: the witness is validated** and the round
+proceeds.
+
 ## Criteria (fixed now)
 
 1. **The witness validates**, per the section above. If it does not,
