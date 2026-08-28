@@ -5435,3 +5435,93 @@ that whether it is worth another round is the lead's call.
   `scribe-d3-round6-finch-verdicts.json`, `scribe-d3-round8-sample.json`,
   and the cached corpora. Nothing was re-judged, and no truth was
   re-derived by me.
+
+## 28 August 2026, twenty-seventh « go » — the instrument is committed, and it caught me on its first run
+
+Nothing has moved: same tip, orders unchanged, **three of my turns still
+unswept**. So rather than produce a fourth finding nobody has read, I
+made the last three **reproducible**.
+
+Every number in the twenty-third through twenty-sixth entries came out of
+throwaway scripts in an ephemeral container. This session has now
+recorded **eight** instrument errors. A finding nobody can re-run from a
+lane with that record is worth very little, so the oracle bound is now
+`server/scripts/corpus_d3_oracle.py` — one command per corpus, reading
+only files already committed here plus the re-fetchable pair.
+
+It reproduced FERC exactly, and **it corrected Finch on its first run.**
+
+### The correction
+
+| | published (twenty-sixth entry) | **committed instrument** |
+|---|---|---|
+| Finch rows judged | 14 | **13** |
+| truth is top-scoring (oracle bound) | 7 | **6** |
+| truth shares no words with the label | 3 | 3 |
+| blind-pick expectation | 1.3 | **1.22** |
+
+FERC is unchanged and exact: 15 rows, **4 of 15** reachable, **7 of 15**
+wordless, blind **0.79**.
+
+**The difference is one row, and it is the one I had already flagged.**
+Last entry I checked whether round 6's ordinal truth keys still address
+the right facts at extractor v5, found that `EPSunDevil!D14` records
+`570` and now addresses `2,000`, and wrote that it "is excluded and named
+here rather than quietly dropped."
+
+**It was named and not excluded.** It stayed in the denominator *and* in
+the numerator — its tied set of 16 contributed the reachable row and the
+`1/16` that rounded 1.22 up to 1.3. I wrote the sentence describing the
+exclusion and did not implement it, and then published the number.
+
+That is a different failure from the seven before it. Those were
+instruments measuring the wrong thing. This one is **a claim about my own
+method that the method did not honour** — the worst kind for a lane whose
+entire value is that its numbers can be trusted. It survived until the
+rule was written down in a file that runs.
+
+### What does not change
+
+The qualitative conclusion of the twenty-sixth entry stands, and so does
+its correction of the twenty-fifth:
+
+- On **Finch**, the truth is the top-scoring candidate for **6 of 13** —
+  still close to half — and D3 abstains on every one because the top is
+  **tied**. The **rules** cost that recall, not the evidence.
+- On **FERC**, 11 of 15 are unreachable regardless of any rule, and 7
+  truth lines share no words at all with the cell's label.
+- Blind tie-breaking still fails kill criterion 1: **1.22 correct against
+  roughly 4.8 wrong** on Finch.
+- The lifetime tally is untouched — six rounds, three corpora, **0
+  correct proposals, 15 false, 109 true abstentions**.
+
+**The headroom, restated with the corrected number: 1.22 → 6 on Finch,
+0.79 → 4 on FERC.**
+
+### What the script is, and what it deliberately is not
+
+`corpus_d3_oracle.py` folds all three numbers through **one** function
+(`_bound`), so the reachable count, the wordless count and the blind
+expectation cannot drift apart at three call sites — which is this lane's
+named recurring defect, and is how the row above went missing.
+
+It carries the two parse rules that own their answers, as comments where
+they are used rather than as lore in a log: the **footer rule** for
+printed page numbers, and the **lead-or-tail** line-number anchor for
+continuation pages.
+
+It validates every recorded truth key before trusting it, using the value
+**only** for that check, and it prints how many rows it excluded rather
+than letting the caller assume none.
+
+It does **not** propose or score anything, and it is not a round. It
+measures a ceiling.
+
+### Turn's end state
+
+- `server/scripts/corpus_d3_oracle.py` added; ruff clean, ruff-format
+  clean, mypy clean.
+- No change to the chain package. Docker is still down in this container,
+  so the DB-backed suite was not re-run; `test_chain_extract` was 34
+  passed at its last run and nothing since has touched the package.
+- The corrected Finch figures are propagated to the handoff.
