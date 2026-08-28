@@ -3919,3 +3919,48 @@ the honest statement to the lead is:
 > claimed. The founder's equity model with seventy transitions is
 > the natural one. Until then this module produces a sound sentence
 > and an unusable verdict, and the verdict is off.
+
+## The reproducibility fix — one stream per (trial, band) (REGISTERED BEFORE RESULTS)
+
+Tip `07f124d1`, unchanged. `z3-solver` absent. The profile is parked
+until a third chain exists — parked honestly, and not something I can
+unblock by wanting to. So this turn takes the other registered,
+unbuilt item: the domain round's shared RNG.
+
+**The defect, as recorded two sweeps ago**: every *rejected* draw
+consumes the shared stream, so which numbers a trial finally uses
+depends on how many bands were tried before it. Two runs of the same
+code agree; a run after any change that alters the rejection history
+does not. That is the opposite of what a registered seed is for.
+
+**The fix**: each (trial, band) pair draws from
+`Random(TIER2_SEED + 1000 * trial + band_index)`, so band *k* of
+trial *i* is the same numbers whatever happened earlier.
+
+**How it is verified, and why not by re-running twice.** The
+property — « the same (trial, band) gives the same assignment
+whatever was tried before » — is a property of the draw, not of
+LibreOffice. It is tested directly, by building the assignments
+under different rejection histories and comparing them, at no
+recalculation cost. A single domain run then confirms the pipeline
+end to end and re-establishes the numbers on a reproducible path,
+since the previous ones came from a path that cannot be reproduced.
+
+**Predictions for that run.**
+
+1. **`tier0_proved` is exactly 38,255 and `changed` exactly 1,278.**
+   Neither depends on a draw; if either moves, something unrelated
+   to this fix has broken.
+2. **`tier2_divergence_latent` is exactly 7 again** — the same seven
+   `Finance&Tax` cells. Dormancy is a property of the two files'
+   stored values, and those cells diverge under any perturbation
+   that reaches them, so a different draw must not change the count.
+   This is the sharpest falsifiable prediction in the round.
+3. **`tier2_supported` lands within ±30 of 313**, and
+   `no_perturbable_input` + `degenerate_under_perturbation` move to
+   match. Different numbers at the same band should test the same
+   cells to nearly the same depth.
+4. **The accepted bands may differ from the last run** and that is
+   expected, not a failure: the point of the fix is that they no
+   longer depend on *history*, not that they match a run made before
+   the fix existed.

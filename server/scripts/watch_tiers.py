@@ -397,10 +397,21 @@ def _errors(values: Mapping[str, object]) -> int:
 
 
 def _banded(
-    inputs: Mapping[str, float], rng: object, band: tuple[float, float]
+    inputs: Mapping[str, float], trial: int, band_index: int, band: tuple[float, float]
 ) -> dict[str, float]:
+    """One trial's assignment at one band, from its **own** stream.
+
+    A shared stream is consumed by rejected draws, so which numbers a
+    trial finally uses depends on how many bands were tried before it
+    — a registered seed that is not reproducible across any change to
+    the rejection history. One stream per (trial, band) fixes it, and
+    costs nothing.
+    """
+    import random
+
+    rng = random.Random(TIER2_SEED + 1000 * trial + band_index)
     low, high = band
-    return {ref: inputs[ref] * rng.uniform(low, high) for ref in sorted(inputs)}  # type: ignore[attr-defined]
+    return {ref: inputs[ref] * rng.uniform(low, high) for ref in sorted(inputs)}
 
 
 def _dormant(
@@ -634,7 +645,6 @@ def run_domain(old_path: str, new_path: str, out_path: str) -> int:
     `""` in every trial — reached, and pushed past where the model
     computes.
     """
-    import random
 
     import openpyxl
 
@@ -662,7 +672,6 @@ def run_domain(old_path: str, new_path: str, out_path: str) -> int:
         inputs[ref] = value
         landing[ref] = old_ref
 
-    rng = random.Random(TIER2_SEED)
     accepted: list[dict[str, float]] = []
     new_readings: list[Mapping[str, object]] = []
     bands_used: list[dict[str, object]] = []
@@ -681,8 +690,8 @@ def run_domain(old_path: str, new_path: str, out_path: str) -> int:
 
             for index in range(TIER2_TRIALS):
                 chosen: dict[str, object] | None = None
-                for band in DOMAIN_BANDS:
-                    assignment = _banded(inputs, rng, band)
+                for band_index, band in enumerate(DOMAIN_BANDS):
+                    assignment = _banded(inputs, index, band_index, band)
                     working = openpyxl.load_workbook(new_path)
                     for ref, value in assignment.items():
                         sheet, coordinate = _split(ref)
