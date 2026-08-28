@@ -266,3 +266,43 @@ cost real work — including that the 818-model project-finance corpus
 was unreachable, when the reader had handled that format all along.
 When a comment tells you something is impossible, test it before you
 route around it.
+
+## Your A1 target, measured (28 Aug): the numbers, from a clean gate run
+
+The lead ran the full golden-master gate on the tip, alone, nothing
+competing. **Gate clean: 27 of 27 files report identically, finding for
+finding.** The engine is correct. It is also this slow, and these are
+real published regulator models, not synthetic ones:
+
+| model | time | findings |
+|---|---|---|
+| `final_gd3_bpfm.xlsm` | **493.9 s** | 85 |
+| `RIIO GD3 BPFM_Draft Determinations` | 450.4 s | 84 |
+| `final_gt3_bpfm.xlsm` | 443.4 s | 75 |
+| `final_et3_bpfm.xlsm` | 430.0 s | 74 |
+| `RIIO GT3 BPFM_Draft Determinations` | 417.2 s | 65 |
+| `RIIO ET3 BPFM_Draft Determinations` | 401.0 s | 68 |
+| `final_wacc.xlsx` | 128.9 s | 15 |
+
+**Whole corpus: 3,300 s — 55 minutes for 27 files. Six of them are
+2,636 s of it, 80% of the total.** Peak resident memory on a single
+model: **7.7 GB**, watched climbing at roughly 250 MB per minute for
+five minutes before it levelled.
+
+Read what that means for the product, because it is worse than « slow »:
+**no banker waits eight minutes for a check**, and 7.7 GB for one file
+means an ordinary server cannot run two at once. This is not a
+nice-to-have round. It is the difference between a product and a
+demonstration.
+
+**So A1's target is these six files.** Not a synthetic benchmark, not
+600k cells in the abstract — `final_gd3_bpfm.xlsm` from 494 seconds to
+something a person will sit through, with the gate still clean
+afterwards. You have the best possible harness for it: the golden
+master is a byte-exact oracle, so any speed-up that changes a single
+finding is caught immediately and automatically.
+
+Method, unchanged: profile, fix the top item, re-measure, repeat. The
+six are the same family, so one real fix probably moves all six. Report
+the before and after per file, and run `dev/verify` plus the gate before
+you call anything done.
