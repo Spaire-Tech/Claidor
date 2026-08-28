@@ -243,6 +243,77 @@ edited is not a weak result, it is not a result.
 taken; a re-run after a fix is a new measurement, not a correction
 of the old one.
 
+## 28 August 2026 — my objection to the test, written before I begin
+
+The orders give me one test and say to object *before* starting
+rather than after a number misses it. I have an objection. It is not
+« this is too hard » — it is that **the test as written asks me to
+arm three dimensions the inference is measured wrong on**, and the
+project's own rules forbid that.
+
+> « A planted monthly-figure-in-an-annual-row defect is caught …
+> currency and scale checks are armed alongside it … »
+
+A monthly-figure-in-an-annual-row defect is a **`period`**
+mismatch. Dynamo's measured verdict, revised the same day against a
+second corpus:
+
+- **`period`: never armed**, wrong on **24.9% / 64.1%**, « not to be
+  quoted until it has a better answer key ».
+- **`currency`: 24.62% wrong** on the closed-deal key.
+- **`scale`: 23.32% wrong** on the same key.
+
+And Dynamo's own inherited lesson, which the lead accepted:
+
+> A dimension whose key cannot contain its failure case must not be
+> armed. **Not « flag the limitation and arm anyway »** — that is
+> what I did on 28 Aug.
+
+Arming all three today is exactly « flag the limitation and arm
+anyway ». It also contradicts the standing instruction on my own
+last round: *if the false-positive price is anything but tiny, do
+not tune it to pass.* A check resting on a dimension wrong a quarter
+of the time will cry wolf, and the orders themselves say a unit
+finding that cries wolf is worse than none — it teaches a reviewer
+to ignore the class holding the best finding we will ever ship.
+
+**So the objection is on the record before I start. Now the part
+that is not an excuse.**
+
+« Never take no for an answer. » The test names an outcome, not a
+mechanism, and I have not established that the outcome is
+unreachable — only that the *obvious* route to it is barred. What is
+actually blocked is arming on the inference **as a whole**. Nobody
+has measured whether some *sub-population* of it is reliable: rows
+whose period is stated outright by a column header (« Monthly »,
+« FY2026 »), as against rows where it is guessed from magnitude and
+neighbourhood. « Wrong on 24.9% of all rows » is silent about that
+split, and a check armed only on the declared subset would not be
+flagging-and-arming-anyway — it would be arming on a population
+whose accuracy is its own measurement.
+
+That may fail. If it does, the honest result is « here is exactly
+how close, and here is what stopped it », which the orders call a
+real result.
+
+**Plan, in the method's own order.** Point 9 says if you have no
+oracle for your number, building one is task one — and I have none:
+every period figure we hold is Dynamo's self-graded key. So:
+
+1. **Build the oracle.** A hand-labelled period key over a drawn
+   sample from our own corpora, labelled from the cells before any
+   inference output is looked at.
+2. **Measure the split** — inference accuracy on declared-header
+   rows against inferred-only rows. One measurement, and it kills
+   or keeps the whole idea (point 3).
+3. **Only if a subset measures clean**, arm the check there, with
+   the abstention everywhere else, and take the false-positive
+   price on the clean corpus.
+4. **Differential-test**: every existing finding identical, or it
+   does not ship (point 5).
+
+Measure first, and no change behind a hunch.
+
 ## 28 August 2026 — the revert, and closing the refusal properly
 
 Two corrections from the lead, both fair, and one of them is already
