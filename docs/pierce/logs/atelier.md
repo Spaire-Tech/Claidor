@@ -1545,3 +1545,92 @@ The demo database gained two states for this: a deck on « Sweep — an
 unchanged re-upload », and a v4 there that genuinely moves figures.
 
 Checks: 138 green; ruff, mypy, tsc, eslint and prettier clean.
+
+## Twenty-second turn — the assistant's twenty-eight seconds, and where
+## they actually went
+
+Last turn I registered the hole and named the wrong fix. I wrote that
+the answer was «  loading the graph once per deal and version rather
+than once per question » — a cache. Measuring it first says otherwise.
+
+Timed on Kelso (470,594 cells), the load broken into its parts:
+
+| step | cost |
+|---|---|
+| `current_artifacts` | 0.01 s |
+| **`cells_of` (the ORM read)** | **23.3 s** |
+| `_workbook_of` | 2.6 s |
+| `dependents_index` | 0.01 s |
+| `period_axes` | 0.17 s |
+
+**It is one query, and it is not the rows — it is the ORM.** The same
+470,594 rows read as columns rather than as entities:
+
+| read | median of three |
+|---|---|
+| `cells_of` (entities) | **16.0 s** |
+| `cells_for_graph` (columns) | **4.0 s** |
+
+*(The first pair I measured read 4.3 against 26.6 and the second 13.9
+against 17.0 — one pair is not a measurement. Alternating the order
+across three rounds so neither read gets the warm cache gives the
+medians above, and they are order-independent. The 4× is the number;
+the 6× I nearly wrote down was an artefact.)*
+
+Every bit of the difference is SQLAlchemy building an instrumented
+object per row for callers that read attributes off it once and throw
+it away. `_workbook_of` is exactly that caller.
+
+**And it is not only chat.** `cells_of` feeds `run_audit` and
+`audit_of_version` too, so **every audit of every real model** was
+paying it. Chat was where I noticed it; the audit is where it costs
+most, because it runs on every upload.
+
+`repository.cells_for_graph` returns the same cells as columns. The
+rows are SQLAlchemy `Row`s, which answer to the same attribute names,
+so `_workbook_of` takes either with one widened annotation. What they
+deliberately do **not** carry is `id` — that is the whole difference
+between the two methods, and grounding and the tie-out, which point at
+a *row*, still take `cells_of`.
+
+Measured after: the assistant's whole workspace load on Kelso
+**28.4 s → 9.0 s** (7.0 s on Levenmouth, was 21.0).
+
+**Three tests, and none of them times anything** — a timing test is a
+flake. What they hold is the property that made the switch safe: the
+workbook built from either read is the same workbook, cell by cell,
+down to precedents and `alias_of`; `_audit_one` produces identical
+findings and an identical record from either; and the light read
+carries no `id`, so a caller that needs identity cannot quietly reach
+for the fast one. Full tieout suite **977 passed, 4 skipped**.
+
+**A note on the file.** `repository.py` is in no lane's row in
+`lanes.md` — not an engine module, not another lane's package. The
+change is purely additive (`cells_of` is untouched, so no caller I did
+not switch behaves differently). Reassign or revert if that reading is
+wrong.
+
+### Still unassigned after four sweeps: the rebuild gap
+
+Raised in the twenty-fourth sweep, measured, and it appears in no
+orders file and nowhere in the lead's worklog. Restating it because it
+is the largest hole this lane has found and it is going stale:
+
+**The product audits a poorer workbook than the engine does.** It
+never audits a file — `_workbook_of` rebuilds one from stored cells,
+and only `hidden_sheets` was ever carried across. Over the nine
+readable corpus models that loses **41 of 116 findings** — `error-value`
+×28 (thirteen at error severity), `broken-name` ×12, one `hidden-sheet`
+downgraded — and takes **four models to zero**. Levenmouth's report
+says « Nothing failing » over a file carrying `#N/A` across
+`Repayment schedules!D79:D126`, forty-eight cells of a live repayment
+column. The golden-master gate cannot see it: it certifies `audit()`
+against files, and the product never audits a file.
+
+The patch is one dict literal in `ingest.py` (which already holds the
+whole `Workbook` when it writes `counts`) plus the mirror of the two
+lines already in `_audit_cells` — written out verbatim in the
+twenty-fourth-sweep entry above. `ingest.py` is in no lane's row
+either. **Assign it, or say the word and this lane will do it** — it
+is two files and an afternoon, and today it is the difference between
+a report that is honest and one that is quiet.

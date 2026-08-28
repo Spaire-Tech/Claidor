@@ -2931,3 +2931,123 @@ class TestWhatARevisionDidToTheDeck:
 
         response = await client.get(f"/v1/tieout/artifacts/{second.id}/deck-delta")
         assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestTheTwoWaysToReadCells:
+    """The light read must be the same read.
+
+    The assistant waited 28 seconds before it could think on a real
+    model, and 16 of those were the ORM building an instrumented object
+    for each of 470,594 cells that `_workbook_of` reads once and throws
+    away. `cells_for_graph` returns the same rows as columns — 4.0
+    seconds against 16.0, medians of three alternating runs — and the
+    audit and the assistant now take it.
+
+    A timing test would be a flake, so what is held here is the
+    property that made the switch safe: **the workbook built from
+    either read is the same workbook**. If it ever is not, every audit
+    finding on every model is suspect, which is a far worse failure
+    than a slow one.
+    """
+
+    async def _model(
+        self, session: AsyncSession, save_fixture: SaveFixture, owner: User
+    ) -> Artifact:
+        deal = await _deal_for(session, save_fixture, owner)
+        made = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=owner.id,
+        )
+        await session.flush()
+        return made
+
+    async def test_both_reads_build_the_same_workbook(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        from polar.tieout.service import _workbook_of
+
+        model = await self._model(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+
+        heavy = _workbook_of(await repository.cells_of(model.id))
+        light = _workbook_of(await repository.cells_for_graph(model.id))
+
+        assert set(heavy.cells) == set(light.cells)
+        assert heavy.sheets == light.sheets
+        assert heavy.cells, "the fixture has to have cells for this to mean anything"
+        for ref, was in heavy.cells.items():
+            now = light.cells[ref]
+            assert (was.sheet, was.row, was.column) == (now.sheet, now.row, now.column)
+            assert was.value == now.value
+            assert was.formula == now.formula
+            assert (was.row_label, was.column_label) == (
+                now.row_label,
+                now.column_label,
+            )
+            assert was.precedents == now.precedents
+            assert was.unresolved == now.unresolved
+            assert was.alias_of == now.alias_of
+
+    async def test_the_light_read_carries_no_identity(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The one difference, and it is the point.
+
+        A link points at a cell *row*, so grounding and the tie-out need
+        `cells_of`. Leaving `id` off the light read is what stops a
+        caller reaching for the fast one and quietly losing the ability
+        to say which row it meant.
+        """
+        model = await self._model(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+
+        light = await repository.cells_for_graph(model.id)
+        assert light
+        assert not hasattr(light[0], "id")
+        heavy = await repository.cells_of(model.id)
+        assert heavy[0].id is not None
+
+    async def test_an_audit_reads_the_same_findings_either_way(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The switch's real blast radius, checked end to end.
+
+        `run_audit` is what changed; this proves the findings it would
+        have produced from the ORM read are the findings it produces now.
+        """
+        model = await self._model(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+
+        heavy_findings, heavy_record = tieout._audit_one(
+            model,
+            await repository.cells_of(model.id),
+            dossier_id=model.dossier_id,
+            check_run_id=None,
+            rules_off=set(),
+        )
+        light_findings, light_record = tieout._audit_one(
+            model,
+            await repository.cells_for_graph(model.id),
+            dossier_id=model.dossier_id,
+            check_run_id=None,
+            rules_off=set(),
+        )
+
+        assert heavy_record == light_record
+        assert [(one.rule, one.location, one.title) for one in heavy_findings] == [
+            (one.rule, one.location, one.title) for one in light_findings
+        ]

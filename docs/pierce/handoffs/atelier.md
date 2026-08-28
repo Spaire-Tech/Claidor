@@ -220,14 +220,20 @@ sitting there unlisted the whole time. Still unsurfaced after this
 turn: the Watch's `classify` / `build_ladder` / `align_lines` /
 `Tier2Answer`, and `recalc.iterative_cells`.
 
-**The next hole, measured and not started**: `load_model_workspace`
-loads every stored cell before the loop starts — **28.4 s on Kelso**
-(470,594 cells), 21.0 s on Levenmouth, 0.0 s on a 313-cell fixture, on
-*every* question including a follow-up. Fixtures hide it entirely. The
-deal agent's loader caps at `MAX_CELLS_LOADED = 2_000`; the model
-agent's cannot, because its tools walk a graph rather than search a
-list — so the fix is loading that graph once per deal and version, not
-once per question.
+**Read cells with `cells_for_graph`, not `cells_of`, wherever a
+caller only rebuilds the workbook.** Same 470,594 rows: **16.0 s as
+entities, 4.0 s as columns** (medians of three, alternating). All of
+the difference is the ORM instrumenting objects that `_workbook_of`
+reads once and discards. `run_audit`, `audit_of_version` and the
+assistant's loader take the light read; the assistant's whole
+workspace load went **28.4 s → 9.0 s** on Kelso. `cells_of` stays for
+grounding and the tie-out, which point at a *row* — the light read
+carries no `id`, deliberately, and a test holds that. Measure before
+naming a fix: this lane registered « cache the graph » last turn and
+the answer was one query.
+
+`repository.py` is in no lane's row; the change is additive
+(`cells_of` untouched). Reassign if that reading is wrong.
 
 **Format refusals need nothing until A6 lands.**
 `_unreadable_format` derives its sentence from `ingest.SUFFIXES`, so
