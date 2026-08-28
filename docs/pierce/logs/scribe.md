@@ -4896,3 +4896,126 @@ figure". Excluding the token used to locate the line moved tier 2 from
 Both are the same defect this lane has now named six times: re-deriving
 a rule at the call site instead of writing the rule that owns it. Both
 were caught before publication. The first three were not.
+
+## D3 round 8 — measured. **It fails its own kill criterion: 0 correct, 2 wrong, 13 abstained.**
+
+*RMU FERC Form 1 (2015) → RMU 2016 formula rate. Verdicts:
+`docs/pierce/scribe-d3-round8-verdicts.json`.*
+
+15 scorable rows. Candidate pool: **all 4,913 numbers in the document**,
+no page hint — the matcher is given a document, the way a user has one.
+
+| outcome | count |
+|---|---|
+| correct | **0 of 15** |
+| **wrong** | **2 of 15** |
+| abstained | 13 of 15 |
+| *(not scorable — document prints no value)* | *10* |
+
+**Kill criterion 1 fires.** It reads: "if the matcher produces more
+confident wrong answers than correct ones, the round is a failure and is
+reported as one." Two beats zero. **Round 8 is a failure and I am
+reporting it as one.**
+
+My prediction was "high abstention, few confident errors, fewer than half
+matched." Abstention was high and errors were few, and I was still too
+generous: I expected *some* to match. None did.
+
+### Why — and it is not the matcher's judgement
+
+The decisive measurement is not the score. It is whether the correct
+answer was **reachable** at all. Scoring the *truth* line for each row
+against `FLOOR = 0.5`:
+
+| | count |
+|---|---|
+| rows where the **truth line clears the floor** | **3 of 15** |
+| rows where some **other** line scores strictly higher than the truth | **11 of 15** |
+
+On twelve of fifteen rows the right answer is below the bar, and on
+eleven a wrong line looks better. **The evidence the matcher is allowed
+to use does not identify the answer.** Given that, 13 abstentions is the
+*right* behaviour, and the two proposals are the failure.
+
+And on all three rows where the truth *is* reachable, the matcher
+abstained on a **tie** — the truth tied with other lines rather than
+losing to them. The tie rule is what stands between it and three correct
+answers, and equally what stood between it and more wrong ones.
+
+### The structural cause, which this corpus is the first to expose
+
+**A wide table is printed as a two-page spread, and the continuation
+page carries no labels.** Four of the fifteen rows cite printed page 207
+— the right half of the ELECTRIC PLANT IN SERVICE schedule. Their lines
+extract as
+
+```
+$ (7,741) $ 73,315,883 104
+$ 10,895,809 58
+$ 6,741,539 99
+$ 704,462 94
+```
+
+**No words at all.** The row's name is on the facing page (206); this
+page carries only figures and the Line No. column. D1 anchors a fact to
+its printed *line*, so on a continuation page the anchor is empty and
+`label_tokens` returns nothing. Score 0, unreachable by construction —
+not thin evidence but **no evidence**.
+
+That is a **D1 defect**, newly named, and it is the largest single cause
+here. The eight remaining below-floor rows are the ordinary case: the
+Form 1 says "TOTAL Oper. and Maint. (Total of lines 20 thru 27)" where
+the model says "Total Wages Expense", and one shared word out of three
+does not clear a half.
+
+### A diagnosis I was about to publish, and the counterfactual that killed it
+
+I found that D1 glues a printed line number to the first label word —
+`21Transmission` tokenizes to `21transmission`, which shares **nothing**
+with "Transmission Wages Expense". The one citation I had resolved by
+hand fails for exactly that reason, and it was an irresistible story:
+**the corpus's first row explains the whole result.**
+
+So I measured it instead of telling it. **4 of 15** truth lines carry a
+glued line number. Re-running with the glue split off:
+
+| | as scored | counterfactual: unglued |
+|---|---|---|
+| correct | 0 | **0** |
+| wrong | 2 | 2 |
+| abstained | 13 | 13 |
+
+**It changes nothing.** One row moves from floor-failure to tie and
+nothing becomes correct. The glue is a real defect and it is **not** the
+binding cause. Had I asserted it, I would have sent the lane to fix the
+wrong thing on the strength of one vivid example — which is the sixth
+time this turn's family of error has been caught, and the third time
+today that the instrument, not the world, was speaking.
+
+### What this round bought, given that it failed
+
+A failed round with a real corpus is worth more than eight rounds with
+no corpus, and this is the first D3 round in the lane's history where:
+
+- the truth is a **third party's**, written by the filer, not judged by me
+- the document is **genuinely earlier** and independently published
+- the candidate pool is a **whole real document**, not a page
+
+It also produced two findings the synthetic corpora could not:
+
+1. **The two-page spread.** A continuation page's figures have no label
+   on their own line. This is D1's, it is measurable, and it is the
+   candidate for **round 9** — registered before anything is built.
+2. **Nils are 40% of a small filer's cited inputs.** Ten of 25 cited
+   lines print no value and the model records `0`. A tie-out that cannot
+   say *"the document states nothing here and the model recorded zero"*
+   in words is silent on two rows in five. That is a **product**
+   finding, not an accuracy one, and it belongs to the lead.
+
+### What I am not claiming
+
+Fifteen scorable rows from one sheet of one workbook by one small
+municipal filer. **This is not a population claim and no number above
+should be read as one.** It is one real pair, measured honestly, and it
+says the document side is not yet carrying enough evidence for the
+matcher to work on documents of this shape.
