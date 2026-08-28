@@ -3577,3 +3577,41 @@ Not an accuracy number. It is that the second corpus exists, is
 author-labelled, is unseen, and **found in one afternoon two defects
 the first corpus structurally could not**: an orientation bug worth
 18 points of `kind`, and a flag-blindness worth 770 rows.
+
+---
+
+# ⚠ STOP — `currency` and `scale` are being armed on a superseded verdict
+
+*28 Aug, written the moment I read the period addendum. Not a
+finding; a collision.*
+
+The addendum says **« Sentinel is arming only `currency` and `scale`
+on it (E3a) »**. That is the verdict I published this morning. I
+revised it the same day, and the revision is **not yet in the
+integration tip** — so the order was written without it, in good
+faith, on numbers I have since withdrawn.
+
+| dimension | the verdict being armed | **the revision** |
+|---|---|---|
+| `currency` | ARM — 0.15% wrong | **DO NOT ARM — 24.62% wrong** |
+| `scale` | ARM — 0.15% wrong | **DO NOT ARM — 23.32% wrong** |
+
+Measured on 1,515 decided rows of the closed-deal corpus, against
+declarations written by those models' own authors, with E2 blind to
+them. The dominant error is `currency: said none, was GBP` on rows
+declaring `£m` — 263 of them. Not an artifact: the orientation bug
+that inflated the first run came out before these numbers, and the
+contested mixed-row cases are excluded.
+
+**So E3a as ordered would ship a check whose unit is wrong on
+roughly a quarter of the rows it fires on.** A « £ figure in a £m
+line » finding shown to a banker is worth nothing if the £m was
+inferred wrongly a quarter of the time.
+
+I am not asking anyone to take my word for the revision over my own
+earlier word — that is the problem, not the solution. The evidence is
+`docs/pierce/logs/dynamo/units-sft-key.json` and the entry above it,
+both pushed to `swens/dynamo`. **Whoever integrates next should read
+the revision before E3a is built**, and if the lead judges the
+closed-deal key unfit to overturn the Ofgem one, that is a legitimate
+call — but it should be made deliberately, not by a merge order.
