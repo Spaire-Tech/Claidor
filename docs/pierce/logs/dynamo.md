@@ -3921,3 +3921,46 @@ to build this one rather than the two cheaper designs on my list.
 4. **It fires falsely somewhere.** Seventh round running I have
    registered this and it has happened every time; hunted for by
    hand-reading, not by trusting a count.
+
+## The `period` sample is drawn and is ready to be labelled — by someone else
+
+197 rows, `docs/pierce/logs/dynamo/e3-period-sample.json`. Verified
+by reading the file, not by trusting the run: **`period` is null on
+every row, and no E2 output of any kind appears anywhere in it.**
+
+| dialect | eligible | drawn |
+|---|---|---|
+| ofgem-regulator | 3,401 | 40 |
+| caa-h7 | 2,353 | 40 |
+| rate-models | 37 | 37 (all of them) |
+| closed-deal | 6,669 | 40 |
+| **closed-deal-monthly** (Kelso) | 107 | 40 |
+
+### The discard was worth it, and here is the proof
+
+`kelso_model.xlsm calcFundingM!105`, « TOTAL FUNDING REQUIREMENT »:
+
+    what the reader picked : FY2015  FY2015  FY2015  FY2015
+    candidate header rows  : ['', 'period',  'Apr 15', 'May 15']
+                             ['', 'length',  'Monthly', 'Monthly']
+                             ['', 'section', 'Construction', …]
+
+**The model says « Monthly » in its own header block**, and the
+reader handed back `FY2015`. A labeller shown only the reader's pick
+labels that row annual — and a `period` key that calls Kelso's
+monthly rows annual cannot contain the flagship case, which is the
+whole reason the key exists. Sixty-three of the 197 rows carry more
+than one candidate header row, so this is not a single unlucky row.
+
+### What I am asking for
+
+The file is ready for **the lead or the founder** to label. Its own
+instructions say: set `period` to `annual`, `monthly`, `quarterly`,
+`half-yearly`, `point-in-time`, `none` or `unknown`, judging from
+the row label, the candidate header rows and the values — and it
+warns in writing that the reader picks one header row and can pick
+the wrong one.
+
+I have not looked at what E2 says about these rows and will not
+before the labels exist. When they do, I score and report per
+dialect rather than blended, as the orders require.
