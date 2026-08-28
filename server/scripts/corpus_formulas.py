@@ -30,6 +30,28 @@ models with full statement sets. They are `.xls`, which our reader
 cannot open. It is 2.8 GB, so it is deliberately *not* fetched by
 default: add `--enron` once intake exists.
 
+**Licensing, and the lead's own omission (added 28 Aug, second
+research round).** The first version of this file recorded formula
+counts and said nothing about rights, which was a gap: a corpus that
+cannot be used is not a corpus. Stated now, per source:
+
+- `Charlie-Hill/Financial-Models` — **no LICENSE file at all**. Under
+  copyright the default is all rights reserved: a public repository
+  is readable, not reusable. **Research and internal measurement
+  only. It never enters a shipped product, a published corpus, or
+  training material.** One email to the author could change that; it
+  has not been sent.
+- `vincichan1089/solar-project-finance-model-mini-perm` — check the
+  repository's own terms before any use beyond internal measurement;
+  the same default applies where none is stated.
+- `SheetJS/enron_xls` — the underlying Enron documents were never the
+  collector's to license. Academic use treats this as settled; we are
+  not academics. **Internal measurement only, and legal advice before
+  it goes anywhere near a product.**
+
+Nothing here is committed, nothing here ships, and any number
+published from it names the corpus and its terms.
+
 **Contamination rule, mandatory before any of this scores anything.**
 Both the Enron corpus and our CUSTODES/EUSES benchmark subjects draw
 on turn-of-the-century business spreadsheets. Every candidate is

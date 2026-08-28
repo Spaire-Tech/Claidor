@@ -637,3 +637,101 @@ rather than a cell address, and D3 needs cell addresses. That —
 plus confirming five of the forty citations actually appear in the
 Form 1 — is the whole remaining distance, and both are hours of
 work rather than weeks.
+
+---
+
+## Addendum, 28 August 2026 (third) — versioned corpora, and the design finding inside them
+
+The founder's third research round. It mined git history live rather
+than citing papers — cloned 13 repositories, pulled every historical
+version of each workbook, wrote a diff engine and ran it — and
+separated verified work from page-reading as sharply as the previous
+two. **Four things it produced matter to us.**
+
+### 1. A bug we do not have, and the reason we do not
+
+Its first run reported 203 changed cells for a commit whose message
+was « Update version number in sheet ». **202 were false alarms**:
+openpyxl hands back array formulas as objects, not strings starting
+with `=`, and two objects are never equal in Python unless told how
+to compare — so every array formula looked changed in every version.
+Fixed, the same commit reports **2**. About 600 false alarms in
+17,200 across one chain, ~3.5%.
+
+Checked here immediately: **`watch/diff.py::_formula_text` already
+extracts `.text` from `ArrayFormula` and `DataTableFormula`.** We
+do not have this bug — because we met the same class in the
+correction gate in the RIIO-3 round and `changeset.py::comparable()`
+carries the same lesson. Worth recording as a case where a paid-for
+lesson transferred to a lane that never hit the original.
+
+### 2. The design finding, and it changes how the Watch should think
+
+Splitting one equity model's 70 transitions by commit message:
+
+| measure | quarterly results (n=11), median | everything else (n=59), median |
+|---|---|---|
+| changed cells | 1,169 | 93 |
+| formula → hardcode | **83** | **0** |
+| reference changed | 228 | 0 |
+| formulas added | 181 | 1 |
+
+The separation is near-total. **A raw threshold on « formulas
+replaced by hardcodes » is the wrong design**: 83 is routine in a
+quarterly reforecast and a five-alarm fire on a Tuesday. The number
+alone carries no information; the number *against the expected
+profile for that kind of update on that model* does — and that
+profile is learnable from history, which is the argument for a Watch
+that reads a model over time rather than auditing one file once.
+That is a product claim now supported by measurement rather than
+asserted.
+
+Two specimens worth keeping: a vertical column sum that became a
+horizontal row sum (`=SUM(AM4:AM8)` → `=SUM(S9:V9)`) — a formula
+that did not move but *changed meaning*, where flagging it and
+asking is the entire product; and a reference that moved one column
+and two rows inside a copied block, where the **asymmetry itself** is
+a cheap, strong defect signal.
+
+### 3. Ground-truth chains with the author's own words
+
+`hickeng/financial` — 16 versions of a VMware/Broadcom tax model.
+Transition v10→v11's commit message says « Fixes row skewed
+formula », and the diff shows **98 reference changes, 1 formula
+change, zero hardcodes**: every formula in a block was reading the
+row below itself (`AV7` referencing `AE8`, `C8`, `AT8`). An
+off-by-one producing plausible numbers and no error — level-A ground
+truth, 98 labelled instances, written down by the author. The same
+chain also contains transitions of 1, 2 and 4 cells (version-string
+bumps): **signal and required silence in one file.**
+
+### 4. Licensing, stated plainly — including a correction to the lead
+
+The report is blunt where it matters: **« no license » does not mean
+free** (all rights reserved is the default; a public repo is readable,
+not reusable), and **a CC BY tag on a *collection* does not clear the
+underlying documents** — Hermans could license her gathering work,
+not Enron's copyright.
+
+**The lead's omission, corrected:** `corpus_formulas.py` was written
+an hour earlier recording formula counts and saying nothing about
+rights. Terms are now in its docstring per source — Charlie-Hill has
+no LICENSE at all (research and internal measurement only, never a
+shipped product or training material), Enron's underlying documents
+were never the collector's to license. Nothing is committed, nothing
+ships, and any published number names its corpus and terms.
+
+### Verdicts adopted
+
+- **VEnron2**: research-only by its terms, download behind a form,
+  page last updated 2017, the `tcse.cn` mirror 404s (we found the
+  same). And the deeper catch: **its groups are inferred, at 78.5%
+  precision** — so roughly one file in five in a group may not be a
+  version of the others, and a strange Watch result would be
+  unattributable. Not a precision instrument for us.
+- **Modified EUSES** (576 pairs, one planted fault each, per-cell
+  answer key) is the accuracy instrument; the git chains are the
+  *judgement* instrument. Different tests, both needed.
+- **Build our own** is the right long answer, and it is what our
+  planting discipline already does — now with **measured real-world
+  change rates** to plant at instead of invented ones.
