@@ -3438,3 +3438,59 @@ publishing the detector, not a claim that it cannot happen.
 **Next: score E2's blind pass against this key.** It is the
 non-circular measurement the verdict has been missing, and it may
 move dimensions I have already published — which is the point.
+
+---
+
+## E2 blind against the closed-deal author key — registration
+
+*28 Aug. The non-circular measurement the verdict has been missing.
+Registered before the key is even parseable, let alone scored.*
+
+### Why this round matters more than its size
+
+My verdict published today **ARMs `kind`** on the strength of 3,662
+decided rows at 0.05% wrong. Then I measured the key's shape and
+found it holds **one value** — every row in it declares £m or %, so
+all of them are continuous. `kind`'s job is to tell continuous from
+categorical, and the big key **cannot test that at all**.
+
+The closed-deal key can. Its columns carry `Flag`, `Factor`, `Date`
+beside `£m` and `£'000s`. **This is the first measurement in this
+lane that puts `kind` in front of rows a model's own author declared
+non-continuous** — and `kind` being right is what B5's typing rests
+on and what the ARM verdict says.
+
+### What must be built first, and the honesty problem in it
+
+The key parser only understands `£m`, `£`, `%`. This corpus says
+`£'000s`, `£'000`, `kWh`, `£/kWh`, `Flag`. So:
+
+- **the scale ladder** (build item c): `'000`, `000s`, `k`, `m`,
+  `bn`, `MM`, and the non-Western `crore`, `lakh`, `千`, `百万`
+- **the non-unit class** (build item g): `Flag`, `Factor`, `Date`,
+  `Choice`, `Index`, `Check`, `Toggle`, `[1,0]` — kept, counted,
+  **excluded from the scored key**, and reported as « declared but
+  not a unit » rather than guessed at
+
+**The honesty problem: the key parser is mine.** A wrong parse is a
+wrong key, and this key has no independent check the way the Ofgem
+one had my hand labels. So a sample of parses is hand-read and the
+count of unparseable declarations is published, not dropped.
+
+### Predictions
+
+1. **`kind` is worse here than 0.05% wrong**, because for the first
+   time it faces rows declared `Flag` and `Date`. I do not know by
+   how much. **If it is bad enough, the ARM verdict on `kind`
+   changes and B5's automatic typing loses its foundation** — which
+   is why this is worth doing before anyone builds on it.
+2. **`scale` abstains even more than the 65–81% it does today.** The
+   corpus is largely `£'000s`, and E2 reads scale from a units text
+   it is blind to and a number format that rarely carries one.
+3. **`currency` stays at or near 0% wrong** on whatever it decides.
+4. **Some declarations will not parse.** Reported as their own
+   count, never dropped, because « declared but not parseable » is a
+   real answer about a corpus.
+5. **At least one of my parses is wrong**, found by hand-reading a
+   sample. Sixth round running I have registered this; it has
+   happened every time.
