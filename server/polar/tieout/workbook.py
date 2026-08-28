@@ -46,7 +46,7 @@ from openpyxl.worksheet.formula import ArrayFormula
 
 from .binary import converted_copy, unartifact
 from .legacy import read_legacy
-from .sheets import cells_of
+from .sheets import cells_of, open_workbook
 
 #: How many text cells a row must have, outside the label column, before
 #: it is read as the header naming the columns. Two is enough to tell a
@@ -437,7 +437,13 @@ def read_workbook(path: str) -> Workbook:
         formulas, values = read_legacy(path)
         close = None
     else:
-        formulas = load_workbook(path, data_only=False, read_only=True)
+        # Opened without its stylesheet: a real model carries a 13.5 MB
+        # `styles.xml` whose 55,808 records openpyxl turns into fonts,
+        # fills, borders and colours nobody here reads — 5.62 s of a
+        # 9.2 s read, before a single cell. `sheets.open_workbook` runs
+        # openpyxl's own reader stage by stage without that one step and
+        # `sheets.number_formats` takes the one attribute we do want.
+        formulas = open_workbook(path)
         # One pass instead of two. `cells_of` reads the formula layer and
         # the value layer together straight from the sheet XML; the
         # openpyxl workbook above stays open for what is cheap there —

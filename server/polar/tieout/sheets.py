@@ -73,7 +73,7 @@ class SheetCells:
     def __init__(self) -> None:
         self.written: dict[tuple[int, int], Any] = {}
         self.values: dict[tuple[int, int], Any] = {}
-        self.formats: dict[tuple[int, int], str | None] = {}
+        self.formats: dict[tuple[int, int], str] = {}
 
 
 def _shared_strings(archive: zipfile.ZipFile) -> list[str]:
@@ -101,7 +101,7 @@ def read_sheet(
     date_styles: set[int],
     timedelta_styles: set[int],
     epoch: Any,
-    formats: dict[int, str | None],
+    formats: dict[int, str],
 ) -> SheetCells:
     """Every populated cell of one sheet, formulas and values together.
 
@@ -178,7 +178,7 @@ def read_sheet(
 
             if written is not None:
                 out.written[(row, column)] = written
-                out.formats[(row, column)] = formats.get(style_id)
+                out.formats[(row, column)] = formats.get(style_id, "General")
             if value is not None:
                 out.values[(row, column)] = value
 
@@ -212,7 +212,7 @@ def _formula(
     return text
 
 
-def _formats_by_style(book: Any) -> dict[int, str | None]:
+def _formats_by_style(book: Any) -> dict[int, str]:
     """Style id to number-format code, resolved once for the workbook.
 
     The same two-branch rule `ReadOnlyCell.number_format` applies —
@@ -221,14 +221,16 @@ def _formats_by_style(book: Any) -> dict[int, str | None]:
     """
     from openpyxl.styles.numbers import BUILTIN_FORMATS, BUILTIN_FORMATS_MAX_SIZE
 
-    out: dict[int, str | None] = {}
+    out: dict[int, str] = {}
     for index, style in enumerate(book._cell_styles):
         number = style.numFmtId
         if number < BUILTIN_FORMATS_MAX_SIZE:
             out[index] = BUILTIN_FORMATS.get(number, "General")
         else:
             try:
-                out[index] = book._number_formats[number - BUILTIN_FORMATS_MAX_SIZE]
+                out[index] = (
+                    book._number_formats[number - BUILTIN_FORMATS_MAX_SIZE] or "General"
+                )
             except IndexError:
                 out[index] = "General"
     return out
@@ -245,14 +247,21 @@ def cells_of(path: str, book: Any) -> dict[str, SheetCells]:
     Raises :class:`Unsupported` for anything this cannot do, and the
     caller falls back to openpyxl.
     """
-    formats = _formats_by_style(book)
-    date_styles = set(getattr(book, "_date_formats", ()) or ())
-    timedelta_styles = set(getattr(book, "_timedelta_formats", ()) or ())
     epoch = book.epoch
 
     out: dict[str, SheetCells] = {}
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
+        if "xl/styles.xml" in names:
+            formats, date_styles = number_formats(archive)
+        else:
+            formats, date_styles = (
+                _formats_by_style(book),
+                set(getattr(book, "_date_formats", ()) or ()),
+            )
+        # Timedelta styles stay openpyxl's: they are a rare subset of the
+        # date styles and it costs nothing to take the set it computed.
+        timedelta_styles = set(getattr(book, "_timedelta_formats", ()) or ())
         strings = _shared_strings(archive)
         for sheet in book.worksheets:
             # A read-only worksheet names its part `_worksheet_path`,
@@ -276,3 +285,116 @@ def cells_of(path: str, book: Any) -> dict[str, SheetCells]:
                 formats,
             )
     return out
+
+
+#: Excel's own numbering: format ids below this are the builtin codes,
+#: ids at or above it index the workbook's own `<numFmt>` table.
+CUSTOM_FORMAT_BASE = 164
+
+
+def number_formats(archive: zipfile.ZipFile) -> tuple[dict[int, str], set[int]]:
+    """Each cell format's number-format code, and which are dates.
+
+    **This exists because reading a workbook's styles is the single most
+    expensive thing openpyxl does, and we need one attribute out of it.**
+    A real regulator model carries a 13.5 MB `styles.xml` with 55,808
+    `<xf>` records; openpyxl builds a font, a fill, a border, an
+    alignment and a colour object for every one, which measured at
+    **5.62 s of a 9.2 s read — and it parses no cell data at all.** All
+    that is wanted here is `numFmtId` per record, plus the workbook's
+    own format codes, which is two attributes and a small table.
+
+    Date detection is openpyxl's `is_date_format` on the resolved code,
+    the same test its loader applies, so a serial number becomes a
+    datetime in the same cells it did before.
+
+    **A workbook may redefine a builtin format id, and its own table
+    wins.** Real corpus models declare `<numFmt numFmtId="43">` and
+    `numFmtId="44"` — ids that already have builtin meanings — at the top
+    of their `<numFmts>` block. Resolving builtins first and only then
+    consulting the workbook, which is the obvious reading, gets those
+    cells wrong; openpyxl's `_normalise_numbers` looks in the custom
+    table at every id and falls back to the builtin, and that order is
+    reproduced here. The differential test caught this on two files,
+    which is exactly what it is for.
+    """
+    from openpyxl.styles.numbers import BUILTIN_FORMATS, is_date_format
+
+    custom: dict[int, str] = {}
+    codes: dict[int, str] = {}
+    dates: set[int] = set()
+
+    with archive.open("xl/styles.xml") as source:
+        index = 0
+        in_cell_xfs = False
+        in_num_fmts = False
+        for event, element in etree.iterparse(
+            source,
+            events=("start", "end"),
+            tag=(
+                f"{{{MAIN}}}numFmts",
+                f"{{{MAIN}}}numFmt",
+                f"{{{MAIN}}}cellXfs",
+                f"{{{MAIN}}}xf",
+            ),
+        ):
+            tag = element.tag
+            if tag == f"{{{MAIN}}}numFmts":
+                # `<numFmt>` also appears inside `<dxfs>`; only the ones
+                # in this block are the workbook's own format table.
+                in_num_fmts = event == "start"
+                if event == "end":
+                    element.clear()
+                continue
+            if tag == f"{{{MAIN}}}cellXfs":
+                # `<xf>` appears in `cellStyleXfs` too, and only the ones
+                # inside `cellXfs` are what a cell's `s=` points at.
+                in_cell_xfs = event == "start"
+                if event == "end":
+                    element.clear()
+                continue
+            if event != "end":
+                continue
+            if tag == f"{{{MAIN}}}numFmt":
+                if in_num_fmts:
+                    identifier = element.get("numFmtId")
+                    if identifier is not None:
+                        custom[int(identifier)] = element.get("formatCode") or "General"
+            elif in_cell_xfs:
+                identifier = int(element.get("numFmtId") or 0)
+                # The workbook's own table wins at *any* id, including a
+                # builtin one — see the note above.
+                code = custom.get(identifier) or BUILTIN_FORMATS.get(
+                    identifier, "General"
+                )
+                codes[index] = code
+                if is_date_format(code):
+                    dates.add(index)
+                index += 1
+            element.clear()
+
+    return codes, dates
+
+
+def open_workbook(path: str) -> Any:
+    """A read-only openpyxl workbook without its stylesheet.
+
+    openpyxl's own reader, stage by stage, with `apply_stylesheet`
+    omitted — see :func:`number_formats` for why. Everything fiddly
+    (sheet order and state, defined names and their scopes, the epoch)
+    is still openpyxl's own code producing openpyxl's own objects, so
+    nothing downstream sees a different workbook; it simply never pays
+    for 13.5 MB of fonts and borders nobody reads.
+    """
+    from openpyxl.reader.excel import ExcelReader
+
+    reader = ExcelReader(path, read_only=True, data_only=False, rich_text=False)
+    reader.read_manifest()
+    reader.read_strings()
+    reader.read_workbook()
+    reader.read_properties()
+    reader.read_custom()
+    reader.read_theme()
+    reader.read_worksheets()
+    reader.parser.assign_names()
+    return reader.wb
