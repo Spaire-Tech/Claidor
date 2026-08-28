@@ -255,11 +255,21 @@ a report.
   and the second dies inside PIL with « I/O operation on closed
   file ». Reload the workbook for every write; it cost the pair
   oracle its first attempt.
-- **Two 15 MB workbooks do not fit in this container.** The GD3
-  draft→final pair OOM-killed at exit 137 while reading; the CAA H7
-  pair (6.4 MB each) reads in 57 s at 0.7 GB and is the biggest pair
-  this lane can measure on. My own handoff warned about GD3's memory
-  and I asked for two of them anyway.
+- ~~Two 15 MB workbooks do not fit in this container.~~ **False on
+  the current tip** — the reader's memory round cut it 3.5×, and the
+  GD3 draft→final pair now reads in 2.0 GB. It OOM-killed one sweep
+  earlier and I re-ran it rather than inheriting my own claim. **A
+  15 MB pair is measurable here**, which is larger than the Welsh
+  Water test pair.
+- **`audit()` clears `_shape_of`'s cache when it finishes**
+  (`audit.py:834`). A delta that runs grids and two audits pays the
+  cold shape pass — 210 s on a 15 MB book, 303 µs a cell — three
+  times. Phase timings are therefore **order-dependent and lie**: a
+  split measurement produced a *negative* remainder, which is how it
+  was caught.
+- **`delta_of` takes `old_findings`/`new_findings`.** The product
+  audits every upload; handing those in cut the GD3 report from
+  1,119.6 s to 438.4 s with byte-identical output.
 - **The shell's cwd resets between calls** — three times now, and
   twice it killed a background probe on an import. Set the directory
   in every command.

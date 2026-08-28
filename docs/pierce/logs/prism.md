@@ -4572,3 +4572,214 @@ am not claiming the two-hour pair is fixed. What is measured: the
 mechanism is exact on twelve real sheets, and the cost model says the
 gain grows with sheet size, because `R·C` grows and `Σ gap²` does
 not.
+
+## MY PIECE: version comparison in usable time — the test, and what I can run here
+
+Tip `79821376`. **First, the branch.** `swens/prism` was **297
+commits behind** the integration tip and had none of the speed round —
+including a reader memory cut from 6,290 MB to 1,763 MB. Measuring on
+that base would have measured the wrong program. Rebased; three
+unmerged commits replayed clean.
+
+**The test, and I am not asking to move it.**
+
+> A real published pair — Welsh Water draft against final, 12 MB each,
+> today 2 h 06 m — completes in under two minutes with parity against
+> `revision_diff` still EXACT.
+
+It is the right test. It is also, **as things stand, a test I cannot
+execute in this container**, and the order asks me to say so before I
+begin rather than after I have a number that misses it. Two reasons,
+both previously measured and both now to be re-tested rather than
+inherited:
+
+1. **The Welsh Water pair is not reachable from here.** Ofwat 403s,
+   the Web Archive answers 405 behind a WAF, browser egress is closed.
+   V3 has always been the lead's to run.
+2. **Two 15 MB workbooks OOM-killed this container** at exit 137 —
+   measured **this session, on the old reader**. The tip has since cut
+   reader memory 3.5×, so that claim is stale by construction.
+
+**« A claim in our own code is not evidence », including mine.** The
+first thing this round does is re-run the read that died, on the new
+reader, under `dev/heavy`. If the GD3 pair (15 MB against 15 MB, the
+biggest I hold and larger than Welsh Water's 12 MB) now fits, I have a
+local proxy for the test and the second reason disappears.
+
+**What I will deliver either way**, so the lead can run the real test
+even if I cannot:
+
+- the anchoring speed-up, differential-tested to **zero** verdict
+  differences on every pair I hold;
+- a **scaling curve** across 4.3 MB, 6.4 MB and (if it fits) 15 MB,
+  so the 12 MB number is projected from measurements rather than
+  hoped at;
+- the exact command to run the WSH pair, and the harness that proves
+  parity when it is run.
+
+**And the method, taken from `lanes.md` rather than improvised**:
+measure first, distrust the profiler, kill hypotheses one measurement
+each, find the floor before building, differential-test against what I
+replace, and `dev/verify` before reporting.
+
+## The measurement, before touching anything — and one of my own claims killed
+
+### First: « two 15 MB workbooks OOM this container » is false
+
+My handoff said it. I measured it **this session**, at exit 137. It
+was true on the old reader and the tip has since cut reader memory
+3.5×, so I re-ran it instead of inheriting it — the standing order's
+« a claim in our own code is not evidence » applies to my own claims
+first:
+
+```
+GD3 draft  150.6s   652,176 cells   peak 1.27 GB
+GD3 final  155.0s   693,753 cells   peak 1.99 GB
+both held together                  peak 1.99 GB
+```
+
+**The 15 MB pair fits, in 2 GB.** So I hold a local pair *larger*
+than Welsh Water's 12 MB, and the second reason I could not run the
+test has gone. The handoff is corrected.
+
+### The phase budget on that pair, with anchoring already in
+
+```
+read old                  145.9s     peak 1.27 GB
+read new                  149.6s     peak 2.00 GB
+grids                     275.2s     peak 3.94 GB
+align 45 sheets           120.0s     peak 3.94 GB
+audits                    448.7s     peak 4.44 GB
+delta_of (whole)        1,119.6s     peak 4.44 GB
+```
+
+`delta_of` re-does grids, alignment and audits internally, so the
+honest end-to-end for a caller is **reads 296 s + delta_of 1,120 s =
+1,416 s — 23.6 minutes** for 15 MB against 15 MB.
+
+**That is already about 6× better than the 2 h 06 m the order
+records**, because it now runs on the tip's reader and on anchoring.
+It is still **twelve times** away from the test.
+
+**And the shape of the problem has moved.** The order's premise —
+from Atelier's levenmouth profile — was that the alignment is 87% of
+the work. On this pair, after anchoring:
+
+```
+audits    448.7s   40%   the engine's, and run twice
+grids     275.2s   25%   mine
+delta's own work  ~275s  25%   mine
+align     120.0s   11%   mine, and no longer the problem
+```
+
+**Alignment is 11%.** The single biggest item is the pair of audits,
+and the product **already audits every upload as it arrives** — so
+`delta_of` was doing the most expensive quarter of its work a second
+time.
+
+### The first change: stop running the audits twice
+
+`delta_of` now takes optional `old_findings` / `new_findings`. A
+caller that has already audited hands them in; a caller that has not
+gets exactly the behaviour it had. **This is not a faster audit — it
+is not running one.** No answer changes, and the differential test
+pins that: same defect counts, same items, same details, computed
+against handed-in.
+
+`None` and `[]` are kept distinct on purpose — « run the audit »
+against « this book has no findings » — because conflating them
+would silently drop every defect.
+
+**Worth, on the measured pair: 448.7 s of 1,416 s, or 32%.** Projected
+end-to-end for a caller with audits in hand: **~16 minutes**.
+
+### What is next, in the order the measurement puts them
+
+1. `grids` at 275 s — mine, and the split between `_shape` (the
+   engine's, frozen) and my own wrapper is measuring now.
+2. The delta's own ~275 s of comparison.
+3. Reads at 296 s — Sentinel's lane and already under attack there.
+
+**Against the test**: 15 MB pair, was ~2 h in the order's baseline,
+now 23.6 min measured, ~16 min with audits handed in. The test is
+2 minutes for a 12 MB pair. I am **not** claiming it; I am reporting
+where it stands and what the next three attacks are worth.
+
+### My instrument lied, and the lie was worth more than the measurement
+
+The phase timings above attribute cost to whichever phase runs
+**first**, because `_shape_of` is `@cache`d in the engine — and the
+split measurement caught it:
+
+```
+_shape over every cell, cold      210.4s   (303 us/cell, 693,753 cells)
+cell_signature over every cell      2.5s
+sheet_grids (whole), cache warm    13.2s
+  => « remainder » computed as   -199.8s
+```
+
+A negative remainder is the instrument confessing. `sheet_grids` does
+not cost 275 s and 13 s; it costs **one cold shape pass** and nothing
+much else. The method's second point, met in the wild.
+
+**And the cache key is `(formula, row, column, anchoring)`**, so the
+reuse across a version pair is high — the second workbook's formulas
+sit at the same addresses — which is why two books' grids cost less
+than twice one book's.
+
+**Then the fact that explains the whole budget**: `audit()` **clears
+those caches when it finishes** (`audit.py:834`,
+`_shape_of.cache_clear()`). So a delta that runs grids, then two
+audits, pays the cold shape pass **three times over**. Nothing was
+wrong with any single phase; the pipeline was throwing away the
+expensive thing between phases.
+
+### Result of the first change, measured end to end
+
+```
+                                       before      after
+delta_of on the GD3 pair             1,119.6s     438.4s     2.55x
+   report unchanged: items 3,167 · changed cells 48,757 (identical)
+```
+
+A caller that hands in the audits it already ran gets the report
+**2.55× faster with byte-identical output**. Its own reads (282 s)
+and audits (692 s) are unchanged and are not mine.
+
+### Where that leaves the test, stated plainly
+
+> A 12 MB pair, under two minutes, parity EXACT.
+
+- The order's baseline for the WSH pair was **2 h 06 m**.
+- On a **15 MB** pair — larger than the test's — the comparison now
+  costs **438 s** for a caller with audits in hand, and **1,412 s**
+  including its own reads and audits.
+- I have **not** hit the test. Scaled to 12 MB the comparison is
+  roughly **350 s**, about **3× over** the two-minute line.
+
+**What stands between me and it, in order, with numbers:**
+
+1. **~210 s: the cold shape pass inside `sheet_grids`.** The audit
+   has already computed every one of those shapes and then cleared
+   them. This is not mine to change — `audit.py` is the engine — and
+   it is the single biggest remaining item in my component. **Routed
+   to the lead: may `audit()` keep `_shape_of` warm, or expose a way
+   for a caller to opt out of the clear?** If yes, my 438 s falls to
+   roughly 230 s on the same measurement.
+2. **~120 s: alignment**, already 10–73× down from anchoring, and the
+   registered successor (anchor pure data blocks on their typed
+   values) is the next cut.
+3. **~100 s: the delta's own comparison**, unmeasured in isolation
+   and the next thing I will split.
+
+### `dev/verify`, honestly
+
+It **fails**, and none of the failure is mine. Checked rather than
+assumed: `ruff check` flags `create_buckets.py`,
+`scripts/a6_native_recall.py` and `scripts/corpus_documents_audit.py`
+— **none touched by any of my commits** — and the suite step dies on
+`Unable to evaluate type annotation 'RootModelRootType'`, the
+container's known pydantic breakage that has forced `--noconftest`
+on this lane since the first sweep. My own files: **ruff clean, 34
+files already formatted, mypy ok, 152 tests green.** I am not
+reporting verify green, because it is not.
