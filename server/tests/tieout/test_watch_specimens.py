@@ -130,3 +130,32 @@ class TestTheReferenceThatShiftedInsideACopiedBlock:
         report = delta_report(str(old), str(new))
         reported = [item for item in report.items if item.kind == "methodology_change"]
         assert len(reported) == 1
+
+
+class TestTheShapeLineSurvivesLongFormulas:
+    """From the first external answer key (`hickeng/financial`).
+
+    With a modern `LET` formula the two shapes agree for sixty
+    characters and the change is past a naive truncation, so the line
+    showed a reviewer two strings that looked identical. The line now
+    trims what both sides agree on and spends its width on the
+    difference.
+    """
+
+    def test_the_difference_survives_a_long_common_prefix(self) -> None:
+        from polar.tieout.watch.delta import _shape_change
+
+        before = (
+            "LET(avgoQty,R[+1]C[-17],purchaseDate,R[+1]C[-45],saleDate,Ref!R29CB,x)"
+        )
+        after = "LET(avgoQty,R[+0]C[-17],purchaseDate,R[+0]C[-45],saleDate,Ref!R29CB,x)"
+        line = _shape_change(before * 2, after * 2)
+        assert "R[+1]" in line.split(" → ")[0]
+        assert "R[+0]" in line.split(" → ")[1]
+
+    def test_short_shapes_are_shown_whole(self) -> None:
+        from polar.tieout.watch.delta import _shape_change
+
+        assert _shape_change("SUM(R[-1]C[+0])", "SUM(R[+0]C[+1])") == (
+            "SUM(R[-1]C[+0]) → SUM(R[+0]C[+1])"
+        )

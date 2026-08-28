@@ -3646,3 +3646,156 @@ sentence kept — and the ordering signal now fires only where the
 comparison is real: the six large transitions, where it says the
 reforecasts moved assumptions and structure, v3→v4 rewrote formulas,
 and v4→v5 renamed lines.
+
+## The first external answer key (REGISTERED BEFORE RESULTS)
+
+Tip `a53eb565`, twenty-ninth sweep. `z3-solver` absent; orders
+unchanged. Item 3 of the twenty-eighth sweep's orders is the one I
+have never taken up, and it is the most valuable thing on the list:
+**ground truth with the author's own words.**
+
+Every measurement this lane has published is on edits I planted
+myself, or on ED2 where I inferred the ground truth from the files.
+`hickeng/financial` is neither: a real financial model whose author
+fixed a real defect and *described it in the commit message*.
+
+```
+31db8d1  « Fixes row skewed formula … This fixes a skew in the RSU
+           Post-merger short term capital gain column where the
+           formula was referencing cells offset down by one row.
+           This was introduced with the switch to comprehensible
+           formula. Fixes #111 »
+parent: 529ca3a
+```
+
+The orders' summary of the labelling: **98 reference changes, 1
+formula change, zero hardcodes, every formula in a block reading the
+row below itself.** The same chain carries « Update version number
+in sheet » commits — 1-, 2- and 4-cell bumps — which are the
+**required-silence** half: an instrument that reports the defect and
+also shouts at a version-string bump has not earned anything.
+
+**Licence.** Non-commercial; internal measurement only. The
+workbooks live in the scratchpad and are **never committed**, the
+same rule the corpus fetchers already follow. The repository is
+cloned, not vendored.
+
+**What is measured, on the defect pair (529ca3a → 31db8d1):**
+
+1. **C1** — how many cells its raw diff calls changed.
+2. **C3** — what the delta report *says*. This is the real test: 98
+   changed references should read as **one folded block** in review
+   language, not as 98 items. A reviewer who is handed 98 lines has
+   been handed the diff again.
+3. **C2's alignment** — whether the block's rows stay matched, since
+   nothing moved structurally.
+
+**And on the version-bump pairs**: how much C3 says at all.
+
+**Predictions.**
+
+1. **C1 reports between 80 and 130 changed cells** on the defect
+   pair. The orders say 98 reference changes and 1 formula change;
+   C1 counts cells, and its count includes any cached values that
+   moved, so I expect it at or above 99 — but the workbook is small
+   and may not carry cached values at all, in which case the count
+   is the content changes alone.
+2. **C3 folds them into fewer than 10 items**, and the largest is a
+   `methodology_change` block covering a contiguous run of rows in
+   one column. If C3 emits ~98 items, the folding does not work on
+   real defects and I will say so.
+3. **The `methodology_change` detail line shows the skew** — the two
+   shapes differing by one row, which is exactly what the new
+   both-shapes line was built for last sweep.
+4. **The version bumps produce at most 2 items each**, and none of
+   them is a `methodology_change`. A version string is a `filled_cell`
+   or an assumption move, nothing more.
+
+## The external answer key — results: the instruments meet the author's own words
+
+**The defect pair (529ca3a → 31db8d1), against Level-A truth.**
+
+```
+C1   changed 101   content 99   value 3   added 0   removed 134
+C3   methodology_change 11 · moved_assumption 10 · material_output 12
+     · structure 12 · new_defect 7 · repaired_defect 7
+```
+
+1. **Prediction 1 held, and better than it had to.** C1 reports
+   **99 content changes** where the orders' labelling says 98
+   reference changes plus 1 formula change. **99 = 98 + 1.** An
+   instrument written for regulatory models, meeting a personal
+   tax model it has never seen, lands on the author's own count.
+   (It also reports **134 removed cells**, which the labelling does
+   not mention. Not a disagreement — the labelling counted changes,
+   not deletions — but it is unexplained and I am not going to claim
+   it as a find.)
+2. **Prediction 2 failed on its number and held on its substance.**
+   I said « fewer than 10 items »; C3 emits **11 methodology blocks**
+   and 59 items in all. But the thing being tested — does 99 changed
+   cells fold into review language — **works**: 99 changes become 11
+   blocks, and the largest single line covers **20 cells**. The
+   number I predicted was optimism about geometry: the skewed column
+   has gaps, so contiguous folding cannot reach one block.
+3. **Prediction 3 held for the defect the commit describes, and
+   failed elsewhere — which turned out to be the useful half.** The
+   RSU line reads:
+
+   ```
+   …(avgoQty,R[+1]C[-17],purchaseDate,R[+1]C[-45],…
+    → …(avgoQty,R[+0]C[-17],purchaseDate,R[+0]C[-45],…
+   ```
+
+   That is precisely « the formula was referencing cells offset down
+   by one row », in the author's words, arrived at from the two files
+   alone. **But the ESPP block showed two identical-looking
+   truncated strings**: with a modern `LET` formula the shapes agree
+   for sixty characters and the change is past the cut. The
+   both-shapes line I built last sweep was defeated by long formulas
+   on its first contact with a real one.
+
+   **Fixed, and the fix is what a diff does**: trim what the two
+   shapes agree on, keep a margin of context, mark the trim. The
+   ESPP block now reads:
+
+   ```
+   …eginDate,R[+2]C[-52],AND(… → …eginDate,R[+0]C[-52],AND(…
+   ```
+
+   **And that line says something the commit message does not.** The
+   author describes a one-row skew in RSU; the same commit also
+   corrected a **two-row** skew in ESPP (`R[+2]` → `R[+0]`). The
+   report names it because it reads the files rather than the note.
+   I am stating that as what the files show, not as a claim about
+   what the author intended.
+4. **Prediction 4 held where it applied, and two of my four pairs
+   were not what I called them.** The two « Update version number in
+   sheet » commits are genuine bumps — **3 changed cells, and C3
+   emits exactly one item**:
+
+   ```
+   relabelled_line: Summary column C
+      « github release: v0.1.6 » → « github release: v0.1.7 »
+   ```
+
+   Required silence, met: one true line, nothing else. The other two
+   I picked — « Update for v0.1.7 release » — are **not bumps at
+   all**: 581 content changes, including 432 cells wrapped in
+   `IFERROR`. My selection was wrong, not the prediction. That pair
+   is worth its own note, because C3 folds those 432 cells into
+   **one line** that says exactly what happened:
+
+   ```
+   methodology_change: RSU rows 7–150 [G,H,Z]
+      R[+0]C[-2]*R[+0]C[-3] → IFERROR(R[+0]C[-2]*R[+0]C[-3],#) (432 cells)
+   ```
+
+**What this round is worth.** Every number this lane had published
+before it came from edits I planted or from ED2, where I inferred
+the truth myself. This is the first time the Watch has been held
+against a defect **described by the person who made it**, in a model
+from a different world — a personal tax workbook rather than a
+regulator's price control — and the instruments met it: the count to
+the cell, the defect in review language, and silence on the version
+bump. The licence is non-commercial; the workbooks stay in the
+scratchpad and are never committed.

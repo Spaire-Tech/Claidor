@@ -156,6 +156,43 @@ def _shown(cell: Cell) -> str:
     return str(cell.value)
 
 
+def _shape_change(before: str, after: str) -> str:
+    """Both shapes, trimmed to where they actually differ.
+
+    Measured against author-labelled ground truth (`hickeng/financial`,
+    « Fixes row skewed formula »): with modern `LET` formulas the two
+    shapes share sixty identical characters before the change, so a
+    line that prints the first seventy of each shows a reviewer two
+    strings that look the same. The skew — `R[+1]` against `R[+0]` —
+    was past the cut. Trim what both sides agree on, mark the trim,
+    and spend the width on the difference.
+    """
+    width = 70
+    if len(before) <= width and len(after) <= width:
+        return f"{before} → {after}"
+    head = 0
+    while head < min(len(before), len(after)) and before[head] == after[head]:
+        head += 1
+    tail = 0
+    while (
+        tail < min(len(before), len(after)) - head
+        and before[len(before) - tail - 1] == after[len(after) - tail - 1]
+    ):
+        tail += 1
+    #: A little context on each side of the difference, so the reader
+    #: can see what the changed piece belongs to.
+    margin = 12
+    start = max(head - margin, 0)
+    old_end = len(before) - max(tail - margin, 0)
+    new_end = len(after) - max(tail - margin, 0)
+
+    def piece(text: str, end: int) -> str:
+        body = text[start:end][:width]
+        return ("…" if start else "") + body + ("…" if end < len(text) else "")
+
+    return f"{piece(before, old_end)} → {piece(after, new_end)}"
+
+
 def _material(old: Decimal | None, new: Decimal | None) -> Decimal | None:
     """The relative move past the registered line, or None."""
     if old is None or new is None or old == new:
@@ -393,7 +430,7 @@ def delta_of(
                         sheet,
                         old_row,
                         old_column,
-                        f"{_signature(before)[:70]} → {_signature(after)[:70]}",
+                        _shape_change(_signature(before), _signature(after)),
                         0.75,
                     )
                 else:

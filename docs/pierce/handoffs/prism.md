@@ -30,6 +30,7 @@ answering anything of record; register before results, always.
 | C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
 | Tier 1 part A (boundary, no solver) | `watch/fragment.py`, `scripts/watch_fragment.py` | **75.2%** of ED2's formula cells are inside the registered fragment; **31.5%** of the tier-1 rung. All 1,516 rung cells have identical formulas both sides, so this pair cannot exercise tier 1 at all — its value is on rewrites |
 | The ED2 chain and the update profile | `watch/profile.py`, `scripts/watch_chain.py` | Ten transitions, 66–72 s each. **The founder's reforecast/routine split replicates on a regulator's model**: four transitions of 247–911 cells move 0–2 assumptions, six of 5,050–9,865 move 44–464, and **nothing lies between 911 and 5,050**. The profile flags in the model's own terms (« rewrote more formulas than this model usually does ») and **refuses on the four small ones** — 0–2 comparable priors |
+| **The first external answer key** | `hickeng/financial`, commit « Fixes row skewed formula » (cloned to scratchpad, non-commercial, never committed) | C1 reports **99 content changes** where the author's labelling says 98 references + 1 formula. C3 folds them into 11 blocks and the line reads `R[+1]C[-17] → R[+0]C[-17]` — the author's « offset down by one row », from the files alone. A genuine version bump produces **one** line. |
 | Two specimens from real commits | `tests/tieout/test_watch_specimens.py` | C3 already reports **both**: a vertical sum that became horizontal (same cell, same total — a value reader sees nothing) and one reference shifted inside a copied block, **with the other three rows silent**. The `methodology_change` line now carries both shapes, old → new |
 | The array-formula phantom class | `tests/tieout/test_watch_diff.py` | Pinned at the lead's request: a CSE formula reads as its text, and a version-string bump moves exactly one cell (their run saw 202 of 203 « changes » false) |
 | The tier table | `docs/pierce/tier-table.md` | The single published statement the orders asked for: each rung's claim at its exact strength, measured cost, closed refusal vocabulary, and the number it produced on the registered pair. Every figure from a run artifact |
@@ -42,7 +43,7 @@ answering anything of record; register before results, always.
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
 Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document,
-tiers,fragment,specimens,profile}.py`, **121 green**.
+tiers,fragment,specimens,profile}.py`, **123 green**.
 (Other lanes' tieout tests need the conftest and fail to collect here;
 name your five files explicitly.)
 
