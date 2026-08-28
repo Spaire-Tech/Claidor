@@ -143,7 +143,112 @@ def _pair_similarity(
     return shape_similarity(a, b)
 
 
+def _anchors(old: Sequence[Line], new: Sequence[Line]) -> list[tuple[int, int]]:
+    """Row pairs that can be matched without comparing anything.
+
+    A line whose signature tuple occurs **exactly once** in its own
+    sheet and exactly once in the other has no rival on either side:
+    there is nothing for the DP to decide. Such pairs are strictly
+    increasing in both sheets — two unique keys cannot cross without
+    one of them occurring twice — so they partition the problem into
+    independent gaps.
+
+    Patience diff's idea, not a tuning of this lane's: it does not
+    make the comparison cheaper, it makes most comparisons never
+    happen. Lines with no signatures at all are never anchors; an
+    empty tuple is not a distinctive key, it is the absence of one.
+
+    **The key carries the label** when there is one. Measured: a long
+    signature tuple is not a *distinctive* one, because a model
+    repeats the same shape down a block — `Monthly Inflation` anchored
+    **zero** of 348 rows on shapes alone. The rows of such a block do
+    differ, in the one field the first key ignored: « Jan 2024 » is
+    not « Feb 2024 ».
+    """
+
+    def key(line: Line) -> tuple[str, ...] | None:
+        if not line.signatures:
+            return None
+        return (line.label, *line.signatures) if line.label else line.signatures
+
+    old_seen: dict[tuple[str, ...], int] = {}
+    for position, line in enumerate(old):
+        found = key(line)
+        if found is None:
+            continue
+        old_seen[found] = -1 if found in old_seen else position
+    new_seen: dict[tuple[str, ...], int] = {}
+    for position, line in enumerate(new):
+        found = key(line)
+        if found is None:
+            continue
+        new_seen[found] = -1 if found in new_seen else position
+    pairs = [
+        (position, new_seen[key])
+        for key, position in old_seen.items()
+        if position >= 0 and new_seen.get(key, -1) >= 0
+    ]
+    pairs.sort()
+    #: Unique keys cannot cross, but a defensive sweep costs nothing
+    #: and keeps the invariant true rather than assumed.
+    increasing: list[tuple[int, int]] = []
+    for pair in pairs:
+        if not increasing or pair[1] > increasing[-1][1]:
+            increasing.append(pair)
+    return increasing
+
+
 def align_lines(
+    old: Sequence[Line], new: Sequence[Line], threshold: float = THRESHOLD
+) -> LineAlignment:
+    """Anchor decomposition, then the DP inside each gap.
+
+    The measured problem (« The alignment's cost », lane log): the
+    inner loop is clean and the multiset bound already rejects 96–99%
+    of pairs, so the cost is `R x C` and nothing else — 0.5–1.0 µs a
+    row-pair, which is 25 minutes on a 40,000-row sheet. Anchors cut
+    `R x C` to the sum of the gaps squared.
+
+    `align_lines_dp` is kept beside this as the oracle it was
+    measured against.
+    """
+    anchors = _anchors(old, new)
+    if not anchors:
+        return align_lines_dp(old, new, threshold)
+    matched: list[Match] = []
+    kept_old: set[int] = set()
+    kept_new: set[int] = set()
+
+    def run(old_from: int, old_to: int, new_from: int, new_to: int) -> None:
+        if old_from >= old_to or new_from >= new_to:
+            return
+        gap = align_lines_dp(old[old_from:old_to], new[new_from:new_to], threshold)
+        matched.extend(gap.matched)
+
+    previous_old = previous_new = 0
+    for anchor_old, anchor_new in anchors:
+        run(previous_old, anchor_old, previous_new, anchor_new)
+        matched.append(
+            Match(
+                old[anchor_old].index,
+                new[anchor_new].index,
+                similarity(old[anchor_old], new[anchor_new]),
+            )
+        )
+        previous_old, previous_new = anchor_old + 1, anchor_new + 1
+    run(previous_old, len(old), previous_new, len(new))
+
+    matched.sort(key=lambda match: (match.old, match.new))
+    kept_old = {match.old for match in matched}
+    kept_new = {match.new for match in matched}
+    return LineAlignment(
+        matched=tuple(matched),
+        deleted=tuple(line.index for line in old if line.index not in kept_old),
+        inserted=tuple(line.index for line in new if line.index not in kept_new),
+    )
+
+
+def align_lines_dp(
     old: Sequence[Line], new: Sequence[Line], threshold: float = THRESHOLD
 ) -> LineAlignment:
     """Order-preserving DP: score(i,j) = max(skip old, skip new,
