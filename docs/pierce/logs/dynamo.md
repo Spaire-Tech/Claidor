@@ -3362,3 +3362,79 @@ reader can check it.
    trusting a count.
 4. The verdict's dimensions do not move, because the measured
    configuration stays blind.
+
+## Item (b) measured — and it overturns a finding I closed a round on
+
+### Prediction 1 — confirmed, after three failures
+
+| model | detector | header-based | both | detector-only | header-only |
+|---|---|---|---|---|---|
+| ED2 v5 | 4,565 | 5,954 | 4,565 | 0 | 1,389 |
+| GD3 PCFM | 1,370 | 1,393 | 1,308 | 62 | 85 |
+
+It agrees with the finder I trust on the models where I know the
+answer. The header-only remainder is rows carrying text but no
+numbers — headings, notes — which the detector deliberately skips
+because a declaration with nothing to describe is not a declaration.
+
+### Prediction 2 — confirmed, and it is a correction
+
+| closed-deal model | declarations | commonest |
+|---|---|---|
+| `baldragon` | **3,959** | `£m` 3,174 · `Flag` 300 · `%` 84 |
+| `kelso` | **3,587** | `£'000s` 2,664 · `£'000` 531 · `Flag` 190 |
+| `newbattle` | **3,587** | `£'000s` 2,664 · `£'000` 531 |
+| `levenmouth` | **1,871** | `£m` 1,177 · `%` 383 |
+| `forfar` | **1,847** | `£m` 1,207 · `%` 371 |
+| `glasgow_college` | **98** | `kWh` 44 · `£/kWh` 18 · `kWh / m2` 12 |
+| `inverurie_foresterhill`, `oban_campbeltown` | 0 | |
+
+**Roughly 14,900 declarations across six of the eight models.** I
+published « **zero** rows carry a declared unit » on this corpus and
+used that zero to declare the generalisation round **unmeasurable**,
+with the whole round reported on that basis. It was an artifact of my
+header-based finder, not a fact about the files — exactly the failure
+I registered as the thing I most wanted to catch, which is the only
+reason it is being caught by me.
+
+Glasgow College is carrying the research's energy-price family in the
+open: `kWh`, `kWh / m2`, `£/kWh`, `kgCO2/m2`, `m2`. That is build
+item (f)'s material sitting in a corpus I own.
+
+### Prediction 3 — I looked, and did not find one
+
+I hand-read the largest columns rather than trusting the counts:
+`InpC` col 7 beside col 6 (`Days in Year` → `Days`), `CalcSA` col 7
+(`First model column flag` → `flag`), `FixedAssetSA` col 7 (135 rows
+of `£m` against construction cost lines). Every column I read is a
+units column.
+
+What is *inside* them includes non-units — `Flag`, `Factor`,
+`Indexing at 0%`, `Date / £m` — which is the research's finding 7 and
+is handled as « declared, not a unit » rather than counted as a
+false positive of the column detector. **So: no false positive found,
+and I am reporting « I looked at six columns and did not find one »,
+not « there are none ».**
+
+### What this changes, and it is the biggest thing on my board
+
+My verdict ended by asking for **a second labelled set drawn by
+someone other than me**, because every hard case rested on E1's
+hundred rows that I graded myself. This is better than what I asked
+for:
+
+- **~14,900 declarations**, four times the current author key
+- written by **the models' own authors**, not by me
+- from a corpus **E2 has never seen**, in a different idiom
+- and **not circular**, because E2's blind pass — the configuration
+  the verdict is measured in — does not read units columns
+
+The one caveat, stated before I use it: these declarations were
+extracted by **my** detector, so a systematic bias in what it finds
+becomes a systematic bias in the key. That is a weaker objection than
+self-grading, and the answer to it is the hand-reading above plus
+publishing the detector, not a claim that it cannot happen.
+
+**Next: score E2's blind pass against this key.** It is the
+non-circular measurement the verdict has been missing, and it may
+move dimensions I have already published — which is the point.
