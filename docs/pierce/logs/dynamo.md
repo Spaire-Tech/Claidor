@@ -3964,3 +3964,70 @@ the wrong one.
 I have not looked at what E2 says about these rows and will not
 before the labels exist. When they do, I score and report per
 dialect rather than blended, as the orders require.
+
+## The aggregation check measured — three predictions failed, and the design is wrong
+
+| prediction | outcome |
+|---|---|
+| 1 — Kelso's monthly-to-annual aggregations are detectable | **failed**: 0 correct found |
+| 2 — zero defects on Kelso | **failed**: 36 reported, all false |
+| 3 — a planted break is caught | **could not run**: no correct aggregation to break |
+| 4 — it fires falsely somewhere | **confirmed**, at 100% of what it reported |
+
+`docs/pierce/logs/dynamo/period-check-kelso.json`.
+
+### What the 36 actually are, hand-read as registered
+
+    Swap Profiles!H18  « Senior Debt 2 »
+        = calcFundingM!H222 * 1000
+
+Not an aggregation. A **unit conversion** — one monthly cell
+restated from `£'000s` into `£`. Two independent errors produced it:
+
+1. **`Swap Profiles` is not quarterly.** My detector found a date row
+   and computed three months per period; it is a swap schedule with
+   irregular dates. The block granularity is simply wrong.
+2. **A one-to-one reference is not a broken aggregation.** The check
+   assumes every coarse cell referencing a finer block must sum the
+   full ratio. That is false for **stocks**: a closing balance at
+   year end is the December figure, not the sum of twelve months.
+   It is false for restatements. It is only true for **flows**.
+
+I registered « a check that finds real defects in a model banks lent
+against is far likelier to be finding mine ». It was, and the
+control is the only reason I know.
+
+### The root cause, and it kills the design as registered
+
+**Kelso has 814 formula cells out of 470,594.** Its calculation layer
+is essentially stripped — the published file is values with a thin
+crust of formulas. A design that reads *arithmetic* cannot work on a
+corpus that ships *numbers*, and the one model carrying the monthly
+capability is the one with no arithmetic to read.
+
+That is not a threshold to loosen. It is the design being the wrong
+shape for the files we have.
+
+### The successor, and it differs in kind
+
+**Read the aggregation from the values, not from the formulas.**
+
+If an annual cell's value equals the sum of twelve monthly cells'
+values, that *is* the aggregation — proved arithmetically, with no
+formula required. The corpus's weakness becomes the signal: 470,594
+values on Kelso and 1,320 monthly headers, all of it readable. And
+the flagship defect states itself in the same terms — **an annual
+cell whose value equals one month rather than the sum of twelve**.
+
+It brings its own hazard, which I will register before building:
+matching by value invites coincidence, so a match must hold across
+many periods and the search must be anchored by row, not free. That
+is a real objection to answer with a control, not a reason to stop.
+
+### The two I am not taking, and why
+
+- *Loosen the ratio, or allow one-to-one as valid.* That is a
+  parameter change and would have silently accepted all 36.
+- *Wait for a corpus with formulas.* The population proof says
+  published closed-deal models are values; waiting is waiting
+  forever.
