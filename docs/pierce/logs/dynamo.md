@@ -3678,3 +3678,50 @@ time I am measuring it **before** building the key rather than after
 publishing a verdict on it. `scripts/recalc_units_periods.py`
 classifies every column header in both corpora by shape. The result
 lands in the next entry, and the draw waits on it.
+
+## The prior question answered: we do hold a monthly model
+
+*And the research's gap list is wrong on this one, in our favour.*
+
+`scripts/recalc_units_periods.py`, every column header in both
+corpora classified by shape:
+
+| axis | headers |
+|---|---|
+| **monthly** | **1,334** |
+| annual | 277 |
+| relative (« Year 1 ») | 263 |
+| half-yearly | 1 |
+
+The research reported « **not one monthly model** among 27 » and
+« monthly construction phases are standard in project finance and
+absent from everything we or they hold ». **We hold one.**
+`kelso_model.xlsm` carries 1,320 monthly headers and 80 annual, and
+the two axes meet inside a single sheet:
+
+    sysTimeline!H13 « Apr 15 »  I13 « May 15 »  J13 « Jun 15 »   (120 months)
+    sysTimeline!H39 « 2015/16 » I39 « 2016/17 » J39 « 2017/18 »  (40 years)
+
+with `inputCapexM`, `inputOpexM`, `calcFundingM`, `Interface Constn`
+and `Interf Constn Ops costs` all on the monthly grid — the `M`
+suffix is the modeller's own word for it.
+
+**This is the flagship check's positive example.** « A monthly figure
+in an annual line » needs a model where both exist and can be
+confused; Kelso is a monthly project-finance model with an annual
+reporting layer, which is precisely that. The check is testable
+after all, and it is testable on a file we already hold and have
+already used.
+
+The rest is thinner than it looks and I am saying so: the other
+monthly counts are 4, 4 and 1 headers — stray month names, not axes.
+**One model carries this entire capability.** A `period` key drawn
+across dialects will therefore be almost all annual and relative
+rows, with Kelso the only source of the case that matters, so the
+draw below strata Kelso's monthly sheets separately rather than
+letting 40 uniform rows drown it.
+
+That is also the honest limit: **a check validated on one model is
+validated on one model.** It is enough to build and measure; it is
+not enough to claim the check generalises, and I will not say it
+does.
