@@ -122,6 +122,159 @@ question that comes back WRONG.
 
 ---
 
-# Results
+# Results — round 1, 28 August 2026
 
-*(appended after the run; empty at registration)*
+**Half A score: 2 of 5 CORRECT.** Not three. The circulating number was
+too generous, and the two that hold are not the two anyone assumed.
+
+| # | Question | Verdict |
+| --- | --- | --- |
+| Q1 | Why did the metric fall between versions? | **INGREDIENTS ONLY** (see the rubric note) |
+| Q2 | What feeds equity IRR? | **CORRECT**, two defects named |
+| Q3 | Where is this number from? | **ABSTAINED** — blocked on the Chain, not on chat |
+| Q4 | Hardcodes above materiality | **NOT CORRECT** — under-answered |
+| Q5 | What changed? | **CORRECT**, one defect named |
+
+## A rubric failure, declared rather than hidden
+
+The registration allowed exactly three outcomes and said « no fourth ».
+Q1 produced a fourth: **both halves of the answer, correct and cited,
+with nothing joining them.** It is not CORRECT (it does not answer the
+question), not ABSTAINED (nothing said it could not join them), and not
+WRONG (it asserts nothing false).
+
+Forcing it into one of the three would be bending criteria to fit
+results, which is the whole thing registration exists to prevent. So a
+fourth label is used, marked as **not in the registration**, and it
+**counts as NOT CORRECT** for the bar. The score is unaffected; only my
+claim to have anticipated the outcomes is.
+
+## The subjects, and a discovery about them
+
+Registered Subject A was the Dumfries close model. It turned out to be
+**values-pasted** — 33 sheets, and every one but `GAPSLIST` holds zero
+formulas. « What feeds equity IRR » cannot be answered on such a file
+because nothing feeds anything: the answer is « somebody typed it ».
+That is a defect in my subject choice, not in the tool, and it is why
+round 2 added formula-bearing models.
+
+Counted across the founder's own project-finance set:
+
+| Model | Cells | With formulas |
+| --- | --- | --- |
+| Dumfries & Galloway Royal Infirmary | 223,383 | 328 (one sheet) |
+| RHSC DCN (financial close) | 608,191 | **0** |
+| Bertha Park (final) | 389,418 | 113 |
+| Inverness College | 215,102 | 19,900 |
+
+**Three of four issued close copies are values-pasted.** That is a fact
+about the market, not about this round: the file a deal actually closes
+on is frequently a paste-special of itself. Every question that depends
+on the precedent graph is unanswerable on those files *by nature*, and
+the product's honesty about it is worth more than a walk it cannot do.
+
+## Q1 — « why did the metric fall between versions » · INGREDIENTS ONLY
+
+Asked on the Ofgem ED2 pair `v3_2023-10 → v3_2023-11`.
+
+**DSCR is genuinely absent** from an energy price-control model, and
+the tool said so three times, cleanly and by name — « Nothing in
+v3_2023-11.xlsx is named like « DSCR » ». Substituted, per the
+registered rule, to the model's own headline metric: **allowed
+return**.
+
+What came back, both halves correct and cited:
+
+- `locate('allowed return')` → `InputSummary!AR158` « FY2024 Allowed
+  return on debt », 0.0304, plus the equity and gearing rows.
+- `trace_back('InputSummary!AR158')` → walks to `AR157` « iBoxx
+  trailing average », then `SelectedInputs!AR211`, then names three
+  chain ends honestly: « ENWL!AR211 is a typed input — nothing behind
+  it » (and NPgN, NPgY). Formula shown: `=SUM(AR157:AR157)`.
+- `versions()` → among the 44 changed assumptions,
+  `ENWL!211`, `NPgN!211`, `NPgY!211` moved **0.0313 → 0.0317**.
+
+**The join is visible to a human reading the two outputs side by side
+— those row-211 cells are precisely the traced precedents — and
+nothing in the product performs it.** That join is Half B's job, and
+Half B is blocked on a model key. Q1 is therefore not answerable today,
+and the reason is precisely located rather than guessed at.
+
+## Q2 — « what feeds equity IRR » · CORRECT, two defects
+
+**Correct where a chain exists.** On Inverness College,
+`trace_back('PF3_Financing!D34')` walks « Project IRR » 0.0619634 to
+`Semester Workings!F868` « Project Returns - REAL Pre Tax », same
+value, formula shown (`='Semester Workings'!$F$868`), chain end named
+in words. Every number cited to a cell.
+
+**Correct where no chain exists.** On Bertha Park,
+`locate('equity IRR')` returns `NPV_IRR!I53` « Equity IRR (Real) »
+0.0781079 first — exactly the right cell — and `trace_back` reports
+`formula: typed value`, which is the truth about a values-pasted file.
+
+**Defect 1 — `locate` is flooded by a log of filenames.** On Inverness,
+`locate('equity IRR')` returns twelve rows of which most are from a
+`Model Log` sheet whose row labels are *model filenames* — « Inverness
+Fin model v4804 Annity11yrs_EquityIRR_11-434%.xlsm ». Hand-checked
+against the file: **820 cells carry « IRR » in a row label and 797 of
+them are in `Model Log`.** The match is on a filename, not on a line
+item's name, and nothing ranks a labelled line item above a log entry.
+A person asking for the metric gets a change log.
+
+**Defect 2 — the summary understates what the payload knows.** On a
+values-pasted file the sentence reads « Walked back from X (0 direct
+inputs) », which a reader takes as « nothing feeds it ». The payload
+does carry `formula: typed value`, but § 5 requires the refusal itself
+to say what to do about it. « This file holds no formula for that cell
+— it is a values-pasted copy » is the sentence owed.
+
+## Q3 — « where is this number from » · ABSTAINED, exemplary
+
+`sources('')` → « No number in this model is matched to a source
+document », with the note: « No source document has been read on this
+deal, so nothing in this model can be traced past the cell somebody
+typed it into. »
+
+That is the abstention the product promises: it names what is missing
+and what would resolve it. It cannot be CORRECT today for a reason
+outside this piece — **the Chain has never produced a confirmed link**
+(its last round scored 0 of 15). **Q3 is blocked on the Chain piece,
+not on chat**, and no amount of work here moves it.
+
+## Q4 — « hardcodes above materiality » · NOT CORRECT
+
+The tool lists hardcodes truthfully, cited, biggest first — on
+Dumfries, `GAPSLIST!Q802 =8760`, `Q900 =6`, `Q1101 =0.22`; on
+Inverness, `PF6_Cashflows!C57` « Nominal discount rate » 0.060875.
+
+**But `inventory` has no materiality parameter at all.** Its whole
+vocabulary is `kind` ∈ {typed, hardcodes, external-links} and an
+optional `sheet`. Asked for « hardcodes above materiality » it silently
+answers « hardcodes » — a narrower question, without saying it
+narrowed. Nothing it says is false, which is why the registered rubric
+did not catch it; answering a narrower question while appearing to
+answer the one asked is its own failure, and the one the product's
+« always show coverage » principle exists to forbid.
+
+## Q5 — « what changed » · CORRECT, one defect
+
+`versions()` on the ED2 pair: **« 11 defects still open, 44 assumptions
+changed, 333 outputs moved materially »**, 377 items, each named to
+sheet, row and columns with old → new values — « `Annual Inflation!50`
+an assumption that was changed — 8.884624806289088 → 10.007381931931292
+(6 cells), AQ, AR, AS, AT, AU, AV ». Review language, not a cell diff.
+New defects 0, repaired 0, persistent 11. Every number traces.
+
+**Defect — the versions are unnamed.** The summary prints « v? → v? »
+because the version numbers are read from the stored-cell diff, which
+this bench does not have. The workspace *does* hold the version list,
+so the tool could say « v1 → v2 » from what it already has. A report
+that cannot say which two things it compared is weaker than it needs
+to be.
+
+## What this round changes
+
+Three defects are fixable here (Q2's two, Q4's, Q5's). Q1 needs the
+join, which is Half B. Q3 needs the Chain. Fixes and the re-measurement
+are appended below.
