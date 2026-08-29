@@ -56,6 +56,81 @@ class UnitLabel:
 #: Number-format fragments that name a currency outright.
 CURRENCY_IN_FORMAT = (("£", "GBP"), ("$", "USD"), ("€", "EUR"))
 
+#: Excel's currency-and-locale bracket: `[$<symbol>-<locale>]`.
+#:
+#: **The `$` in that bracket is syntax, not a dollar sign.** Every such
+#: format contains one whatever currency it names, so a plain substring
+#: test read `[$€-2]` (euro) as USD, and read `[$-409]` — a locale id
+#: naming US *English* and no currency at all — as USD too. Measured
+#: consequence before the fix: `forfar_model.xlsm`, a Scottish schools
+#: deal with no dollars in it, inferred **GBP on 3 rows and USD on 53**.
+#:
+#: The rule, from the founder's research round (28 Aug 2026) and
+#: verified there against 14 cases: **split at the last hyphen — what
+#: precedes it is the currency symbol, and empty means no currency.**
+#: The classic locale id is hexadecimal, so that is required; a newer
+#: `en-US` style tag falls back to the first hyphen. The same round
+#: measured that `numfmt` (MIT) implements this correctly while `ssf`
+#: (Apache-2.0) carries our exact bug, and that numfmt still misses
+#: alphabetic symbols (`CHF`, `kr`) which this rule catches.
+CURRENCY_BRACKET = re.compile(r"\[\$([^\]]*)\]")
+_HEX_LOCALE = re.compile(r"^[0-9A-Fa-f]{1,8}$")
+
+#: Symbols we can name. Anything else real is a currency we have not
+#: met, and saying « some currency » beats saying the wrong one.
+CURRENCY_BY_SYMBOL = {
+    "£": "GBP",
+    "$": "USD",
+    "€": "EUR",
+    "¥": "JPY",
+    "US$": "USD",
+    "CHF": "CHF",
+    "kr": "NOK",
+    "R$": "BRL",
+}
+
+
+def currency_symbol(bracket: str) -> str | None:
+    """The currency named by one `[$…]` bracket's contents, or `None`.
+
+    `None` means the bracket names a locale and no currency — which is
+    a decided answer, not an abstention: this quantity has no currency
+    symbol attached to it.
+    """
+    if "-" not in bracket:
+        #: `[$€]` with no locale at all is still a symbol.
+        return bracket or None
+    head, _, tail = bracket.rpartition("-")
+    if not _HEX_LOCALE.match(tail):
+        #: A modern `en-US` style tag: the hyphen inside it is not the
+        #: separator, so split at the first one instead.
+        head = bracket.split("-", 1)[0]
+    return head or None
+
+
+def currency_in(formats: str) -> str:
+    """The currency a number format names, or « unknown ».
+
+    Brackets are read first and decide on their own: a format carrying
+    `[$-409]` names no currency, and must not then fall through to the
+    substring test that would find the bracket's own `$`.
+    """
+    brackets = CURRENCY_BRACKET.findall(formats)
+    if brackets:
+        for bracket in brackets:
+            symbol = currency_symbol(bracket)
+            if symbol is None:
+                continue
+            named = CURRENCY_BY_SYMBOL.get(symbol)
+            if named is not None:
+                return named
+            #: A real symbol we do not have a code for. Still money, and
+            #: still not a reason to guess dollars.
+            return "other"
+        return "none"
+    return next((c for sign, c in CURRENCY_IN_FORMAT if sign in formats), "unknown")
+
+
 #: Header or label text that names a tenor rather than a period.
 TENOR = re.compile(r"^(on|1w|[0-9]{1,2}[mwy]|o/n)$", re.I)
 
@@ -291,7 +366,7 @@ def classify_row(
 
     # Currency in the number format is the only currency evidence
     # that does not require reading the Units column.
-    currency = next((c for sign, c in CURRENCY_IN_FORMAT if sign in formats), "unknown")
+    currency = currency_in(formats)
     periodic = "annual" if PERIOD_HEADER.search(headers + " " + label) else "unknown"
 
     if "%" in formats:

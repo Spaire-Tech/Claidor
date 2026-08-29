@@ -863,3 +863,71 @@ def test_blocks_come_from_the_date_axis_alone() -> None:
         b.sheet: b.granularity for b in blocks_from_dates({"M": monthly, "A": annual})
     }
     assert blocks == {"M": "monthly", "A": "annual"}
+
+
+class TestCurrencyBracket:
+    """Excel's `[$…]` bracket, whose `$` is syntax and not a dollar.
+
+    Routed to the lead weeks before it was fixed: `forfar_model.xlsm`,
+    a Scottish schools deal with no dollars in it, read as **GBP 3 rows
+    and USD 53**, because every `[$…]` format contains a `$` whatever
+    currency it names. The rule below — split at the last hyphen, what
+    precedes it is the symbol, empty means no currency — comes from the
+    founder's research round of 28 Aug 2026, which verified it against
+    14 cases and measured that `numfmt` (MIT) gets this right while
+    `ssf` (Apache-2.0) carries our exact bug.
+    """
+
+    def test_a_euro_bracket_is_not_dollars(self) -> None:
+        from polar.tieout.units.inference import currency_in
+
+        assert currency_in("[$€-2]#,##0.00") == "EUR"
+
+    def test_a_locale_naming_no_currency_names_no_currency(self) -> None:
+        #: `[$-409]` is US *English*. It names no currency at all, and
+        #: « none » is a decided answer, not an abstention.
+        from polar.tieout.units.inference import currency_in
+
+        assert currency_in("[$-409]#,##0.00") == "none"
+
+    def test_a_bracketed_dollar_is_still_dollars(self) -> None:
+        from polar.tieout.units.inference import currency_in
+
+        assert currency_in("[$$-409]#,##0.00") == "USD"
+
+    def test_an_alphabetic_symbol_is_read(self) -> None:
+        #: The gap `numfmt` itself still has: symbols spelled with
+        #: letters. A Swiss or Nordic tranche would have been a silent
+        #: miss.
+        from polar.tieout.units.inference import currency_in
+
+        assert currency_in("[$CHF-807]#,##0.00") == "CHF"
+        assert currency_in("[$kr-414]#,##0.00") == "NOK"
+
+    def test_a_multi_character_symbol_is_read(self) -> None:
+        from polar.tieout.units.inference import currency_in
+
+        assert currency_in("[$R$-416]#,##0.00") == "BRL"
+        assert currency_in("[$US$-C0C]#,##0.00") == "USD"
+
+    def test_a_modern_locale_tag_splits_at_the_first_hyphen(self) -> None:
+        #: `en-US` is not hexadecimal, so the last hyphen is inside the
+        #: tag rather than before it.
+        from polar.tieout.units.inference import currency_in
+
+        assert currency_in("[$-en-US]#,##0.00") == "none"
+        assert currency_in("[$€-fr-FR]#,##0.00") == "EUR"
+
+    def test_an_unbracketed_symbol_still_works(self) -> None:
+        from polar.tieout.units.inference import currency_in
+
+        assert currency_in("$#,##0.00") == "USD"
+        assert currency_in('"£"#,##0.000"m"') == "GBP"
+
+    def test_no_symbol_is_an_abstention_not_a_decision(self) -> None:
+        #: « unknown » is « the evidence did not decide »; « none » is
+        #: « decided: this has no currency ». Treating them alike is
+        #: what produced 103 of 103 false alarms in E3a.
+        from polar.tieout.units.inference import currency_in
+
+        assert currency_in("#,##0.000_);\\(#,##0.000\\)") == "unknown"
