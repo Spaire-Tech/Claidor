@@ -404,6 +404,101 @@ finding across a whole corpus passes a bar written as « zero » is a
 judgement I will put to the founder rather than decide by adjusting the
 bar again.
 
+---
+
+# Criteria 2 and 3, measured
+
+## Criterion 2 — the corpus re-swept
+
+The prediction registered before the materiality rule was written held
+exactly:
+
+| | across all 22 models |
+| --- | --- |
+| patterned rows examined | 864 |
+| defect reports **before** | 27, across 4 models |
+| defect reports **after** | **2**, across 1 model |
+| findings after folding | **1** |
+
+Every calendar row is gone. `cash bank` on Kelso is the only survivor —
+the one of the six with the shape the check exists to find.
+
+**Criterion 2 stands at one finding across sixteen models with
+patterned rows, against a bar written as zero.** Not passed, and not
+adjusted. See the judgement below.
+
+## Criterion 3 — planted recall, against a real scope
+
+One coarse period of each clean flow row overwritten with a single fine
+cell's value, planted **in the cells the reader produced** and the whole
+detection path re-run, then reverted.
+
+| model | caught | sites |
+| --- | --- | --- |
+| kelso | 41 | 42 |
+| dalbeattie | 42 | 43 |
+| largs | 40 | 42 |
+| dumfries | 42 | 51 |
+| **total** | **165** | **178** |
+
+**92.7% on a scope of 178.** The previous attempt could report only
+1 of 1 on a scope of 1, which showed the mechanism connected and
+nothing more. This is a rate.
+
+**The 13 misses cluster, and the cluster is informative.** Nine of the
+thirteen are on Dumfries and three of those are at the same period
+index (21) — `creditors increase decrease`, `financing fees`,
+`transfers into cash buffer` — with the fourth model's single miss at
+period 20. That is not thirteen independent failures; it is a
+structural blind spot at a particular position in a particular model's
+axis, and it is the obvious next thing to read at the cells. **It is
+not read yet, and 92.7% is reported without an explanation for its
+remainder.**
+
+---
+
+# The judgement this round cannot make for itself
+
+Three criteria measured:
+
+| criterion | bar | result |
+| --- | --- | --- |
+| 1 — coincidence control | ≤ 5% | **0.376%** (30 of 10,827) — PASS |
+| 2 — defects on clean models | **0** | **1** finding across 16 models |
+| 3 — planted recall | vs scope | **92.7%**, scope 178 |
+| 4 — no finding moves, full gate | — | pending |
+
+**Criterion 2 is one finding short of its bar**, and the whole round
+turns on whether that is a pass.
+
+**The case for adopting.** One finding across sixteen real close models
+is a false-positive rate no other check in this engine has had to beat.
+The finding that remains has the exact shape the check exists to
+find — a flow row that sums its halves in 25 periods and takes one half
+in the twenty-sixth — and it may well be true, in which case the
+denominator is not sixteen clean models with one false alarm but
+sixteen models with one *finding*. Recall is 92.7% on a scope of 178.
+
+**The case against.** The bar was written as zero and it is one.
+`cash bank` is unresolved: I could not certify it either way from
+arithmetic, and « probably real » is the sentence every flood in this
+project's history began with. Kelso is a control, not a hunting
+ground, and finding something on a control is what a control is for.
+Two criteria have already been corrected this round; both corrections
+were arithmetic and one made the bar harder, but a third — on a
+judgement rather than a proof — is how a bar becomes whatever the
+result needed.
+
+**Held for the founder.** Nothing is wired into `audit()`, the
+catalogue is unchanged at 20 rules, and the golden master is untouched.
+
+**What would settle it without a judgement call:** resolving `cash
+bank` against the Kelso model itself rather than its arithmetic. If it
+is a real defect the round passes on the evidence; if it is a
+convention, the check has a sixth false-alarm class to name and the
+bar is met literally. That is a reading task, and it is the honest
+next step rather than a decision.
+
 ## What adoption would require, named in advance
 
 A new rule key routes to the workspace category map before adoption;
