@@ -194,10 +194,15 @@ def main() -> int:
     #: Both numbers, always. The uncorrected one is what a broken
     #: control reported and it is not quietly dropped.
     naive = patterns(cells, blocks, shuffle=random.Random(11))
+    #: A model the check cannot speak on at all — no dated blocks, or no
+    #: shared labels across them — has no denominator, and dividing by
+    #: it crashed six of the twenty-two closed-deal models before they
+    #: could report their (perfectly honest) silence.
+    naive_percent = (len(naive) / len(rows) * 100) if rows else 0.0
     print(
         f"\nCRITERION 1 — coincidence control"
         f"\n   uncorrected (the broken instrument): {len(naive)} of {len(rows)} "
-        f"= {len(naive) / len(rows) * 100:.1f}%"
+        f"= {naive_percent:.1f}%"
         f"\n   of which never actually shuffled   : "
         f"{sum(1 for r in naive if r['label'] == r['partner'])}"
         f"\n   corrected, shufflable pairs only   : "
