@@ -32,6 +32,7 @@ import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from .calculation import refusal
 from .structure import Structure, _canon
 from .workbook import Cell, Workbook
 
@@ -237,8 +238,39 @@ def _deduplicated(result: Analytics) -> None:
     ]
 
 
+#: The rules whose claim is « this number disagrees with that number ».
+#: Every one of them reads Excel's stored values, so every one of them
+#: refuses when Excel does not maintain them (`swens.md` § 5). The time
+#: axis is deliberately absent: it reads the structure's periods, and a
+#: period out of order is out of order whatever the cache holds.
+_RECONCILING = (
+    "model-own-check",
+    "balance-sheet",
+    "cash-continuity",
+    "debt-terminal",
+    "interest-consistency",
+)
+
+
 def run_analytics(book: Workbook, structure: Structure) -> Analytics:
     result = Analytics(findings=[], abstentions=[])
+    stale = refusal(book.calculation)
+    if stale is not None:
+        # Not a check that runs and finds nothing — a check that declines
+        # to run, once per rule, each saying why and what would fix it.
+        #
+        # Sentence case by hand: `str.capitalize` lowercases the rest and
+        # printed « excel does not maintain ». The unit tests asserted on
+        # a substring and passed; running it against a real model showed
+        # it in one line.
+        said = stale[0].upper() + stale[1:]
+        result.abstentions.extend(Abstention(rule, said) for rule in _RECONCILING)
+        # The time axis still runs: it reads the structure's periods, not
+        # the cache, so a period out of order is out of order either way.
+        # `_graded` and `_deduplicated` are skipped because there is
+        # nothing to grade or deduplicate.
+        _time_axis(structure, result)
+        return result
     _own_checks(book, structure, result)
     _balance(book, structure, result)
     _time_axis(structure, result)

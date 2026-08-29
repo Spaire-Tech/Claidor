@@ -36,8 +36,9 @@ runs four kinds of check over that structure.
 | --- | --- | --- |
 | **Structural** | typed-over formulas, hardcodes in formula tails, sums skipping rows, broken/frozen refs, error values | **DONE** — 80.1% useful on unseen models, 2.9% false positives, golden-master gated |
 | **Financial** | balance sheet balances, cash carries hold, debt repays to zero | **DONE** |
-| **Unit** | monthly used as annual, percent as decimal, pounds plus dollars, thousands vs millions | **BUILT AND SWITCHED OFF** — see Piece 1 |
+| **Unit** | monthly used as annual, percent as decimal, pounds plus dollars, thousands vs millions | **BUILT AND SWITCHED OFF** — see Piece 3 in § 4 |
 | **Behavioural** | run the model and see if it obeys its own arithmetic | **DONE AND MEASURED** — see § 2 below |
+| *(the gate over all of them)* | § 5: on a workbook Excel does not keep current, every **value comparison refuses** instead of reporting a difference it cannot tell from a stale cache | **DONE 28 Aug** — see § 4a |
 
 Speed: a median model now checks in **6.9 s at 155 MB** (was 23 s at
 384 MB). The heaviest model in the corpus reads in **121 s at 1,255 MB**
@@ -202,7 +203,7 @@ green, number written down.
 
 | # | Piece | Why here | Size |
 | --- | --- | --- | --- |
-| **1** | **The manual-calculation refusal** (§ 5) | We are breaking a stated promise *today*: a workbook saved on manual calculation is reconciled silently against numbers Excel does not believe. `calcMode` appears nowhere in the tree | hours |
+| ~~**1**~~ | ~~**The manual-calculation refusal** (§ 5)~~ | **DONE 28 Aug** — `polar/tieout/calculation.py`. See § 4a below | — |
 | **2** | **Chat judged** (G2) | Closes a claim I made badly. All seven tools exist; nobody has asked the five questions | a day |
 | **3** | **Units** (E2 → E3) | The flagship finding, and the check is built and switched off because the inference under it was never measured | days |
 | **4** | **C6's two stability runs** | Behavioural version diffing is gated on two cheap measurements nobody has done. Until they run, C6 cannot start and B6 cannot be decided | a day |
@@ -217,6 +218,67 @@ green, number written down.
 | **13** | House rules proven + standards vocabulary (A5) | Built and wired, never demonstrated | days |
 | **14** | Outward checks (D6/D7) | Four free integrations, none built | weeks |
 | **15** | The four completion proofs | Proof 4 (design partners) is **deferred by the founder**, not failed | — |
+
+## 4a. Piece 1, closed — the manual-calculation refusal (28 August)
+
+The first piece built under the one-at-a-time rule, and the record of
+what « 100% » means here.
+
+**What it does.** `polar/tieout/calculation.py` reads `calcPr@calcMode`,
+`calcCompleted` and `calcOnSave`. Every check whose claim is « this
+number disagrees with that number » refuses when Excel does not
+maintain the values — the five analytical rules (the model's own check
+rows, the balance identity, cash continuity, the debt terminal,
+interest consistency) and the deck tie-out — each carrying a sentence
+that names the setting and the four-second remedy.
+
+**What it deliberately does not refuse.** The mechanical audit. A
+typed-over formula, a skipped row, a hardcode in a tail, a frozen
+reference: read from formulas, and a formula does not go stale.
+Refusing them would be a false refusal, which costs trust in the other
+direction just as badly.
+
+**Measured before it was wired.** Read straight out of
+`xl/workbook.xml` on the 27-model gate corpus, so no library default
+could invent an answer:
+
+| | |
+| --- | --- |
+| `calcPr` present | 27 of 27 |
+| **`calcMode="manual"`** | **1** — RIIO GDT3 WACC Rates Model, draft |
+| `calcCompleted="0"` | 0 |
+| `calcOnSave="0"` | 1 — under *automatic* calculation, so **not** refused |
+
+One file in twenty-seven. A check firing on 3.7% of real regulator
+models is proportionate, so § 5's rule went in as the founder wrote
+it, with nothing narrowed. That `calcOnSave="0"` file is the false
+refusal a sloppier rule would have produced — under automatic
+calculation Excel is current regardless — and it is now a test.
+
+**A lead for the arbiter round (Piece 5).** The manual file is one of
+the two WACC models that already fail the recalculation fidelity gate:
+~23k numeric divergences on their « Daily Data » sheets, recorded in
+`fidelity-report.md` as « the one genuinely interesting class…
+unexplained as yet ». A stale cache is exactly that shape.
+**Hypothesis, not result** — it explains one of the two, and the other
+is on automatic calculation, so something else is happening there too.
+
+**Verified.** 22 tests; golden-master gate clean 27 of 27, finding for
+finding; proven end to end on both real WACC models — the manual one
+abstains across all five reconciling rules and still reports its 12
+mechanical findings, the automatic one is untouched; ruff and format
+clean; mypy clean on the changed files (the two errors it reports are
+pre-existing in `audit.py`, which this did not touch). The UI needed
+no change: the project page already renders « N checks could not
+run: … ».
+
+**One bug the real file caught that the unit tests did not.**
+`str.capitalize()` lowercases the rest of the string, so the sentence
+printed « excel does not maintain ». Unit tests asserted on the
+substring and passed. Running it against an actual model showed it in
+one line. Now pinned by its own test.
+
+---
 
 **Housekeeping, folded into whichever piece touches them:** Tasi
 re-score (Piece 16), the source intake log (Piece 17), triage of the

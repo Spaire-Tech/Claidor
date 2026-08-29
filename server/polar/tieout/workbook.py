@@ -45,6 +45,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.formula import ArrayFormula
 
 from .binary import converted_copy, unartifact
+from .calculation import Calculation, read_calculation
 from .legacy import read_legacy
 from .sheets import cells_of, open_workbook
 
@@ -276,6 +277,13 @@ class Workbook:
     #: True when the workbook has iterative calculation switched on, which
     #: is a model saying its circular references are deliberate.
     iterative: bool = False
+    #: Whether Excel maintains the values this workbook stored — see
+    #: :mod:`polar.tieout.calculation`. Under manual calculation it does
+    #: not, and every check that compares two stored numbers refuses
+    #: rather than reporting a difference it cannot distinguish from a
+    #: stale cache (`swens.md` § 5). The default is the format's own:
+    #: a file that says nothing is not claiming its numbers are stale.
+    calculation: Calculation = field(default_factory=Calculation)
     #: Raw populated cells per sheet, counted at read time — `cells`
     #: holds only what the reader could name, and « is this sheet
     #: empty » must be answered from the file, not from what survived
@@ -537,6 +545,7 @@ def read_workbook(path: str) -> Workbook:
                 if getattr(formulas[name], "sheet_state", "visible") == "veryHidden"
             ),
             iterative=bool(getattr(formulas.calculation, "iterate", False)),
+            calculation=read_calculation(formulas),
         )
         grids: dict[str, _Grid] = {}
         for name in formulas.sheetnames:
