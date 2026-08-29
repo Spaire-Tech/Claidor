@@ -92,7 +92,7 @@ def main() -> None:
     if not found.ok:
         for alternative in ("IRR", "equity return", "blended IRR"):
             found = locate(space_a, alternative)
-            show(f"Q2 step 1b — substitution", f"locate({alternative!r})", found)
+            show("Q2 step 1b — substitution", f"locate({alternative!r})", found)
             if found.ok:
                 break
     if found.ok:
@@ -100,15 +100,24 @@ def main() -> None:
         show("Q2 — what feeds it", f"trace_back({ref!r})", trace_back(space_a, ref))
 
     # --- Q3: where is this number from ---------------------------------
-    typed = inventory(space_a, "typed inputs")
-    show("Q3 step 1 — a typed input to ask about", "inventory('typed inputs')", typed)
+    typed = inventory(space_a, "typed")
+    show("Q3 step 1 — a typed input to ask about", "inventory('typed')", typed)
     if typed.ok and typed.data.get("rows"):
         ref = typed.data["rows"][0]["ref"]
         show("Q3 — where is it from", f"sources({ref!r})", sources(space_a, ref))
     show("Q3b — sources with no ref", "sources('')", sources(space_a, ""))
 
     # --- Q4: hardcodes above materiality -------------------------------
-    show("Q4 — hardcodes", "inventory('hardcodes')", inventory(space_a, "hardcodes"))
+    show(
+        "Q4a — hardcodes, no filter",
+        "inventory('hardcodes')",
+        inventory(space_a, "hardcodes"),
+    )
+    show(
+        "Q4b — hardcodes above materiality",
+        "inventory('hardcodes', above=1.0)",
+        inventory(space_a, "hardcodes", None, 1.0),
+    )
 
     # --- Subject B: the version questions ------------------------------
     print(f"\n\n# Subject B: {old_b.split('/')[-1]} -> {new_b.split('/')[-1]}")

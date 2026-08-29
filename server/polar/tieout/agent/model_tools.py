@@ -94,6 +94,39 @@ class ModelWorkspace:
     _delta: Any = None
     _delta_done: bool = False
     counts: dict[str, Any] = field(default_factory=dict)
+    _formulas: int | None = None
+
+    @property
+    def values_pasted(self) -> bool:
+        """True when this file is a paste-special of itself.
+
+        Measured on the founder's own project-finance set (G2 round 1):
+        **three of four issued close copies hold almost no formulas** —
+        RHSC 0 in 608,191 cells, Bertha Park 113 in 389,418, Dumfries
+        328 in 223,383 across one sheet of thirty-three. The file a
+        deal actually closes on is frequently issued this way.
+
+        It matters because every walk rests on the precedent graph, and
+        such a file has none: « nothing feeds this » and « this file
+        cannot say what feeds anything » are different answers, and
+        giving the first when the second is true is the quiet kind of
+        misleading.
+        """
+        if self._formulas is None:
+            self._formulas = sum(1 for cell in self.book.cells.values() if cell.formula)
+        if not self.book.cells:
+            return False
+        #: Not « zero »: Bertha Park keeps 113 formulas in 389,418 cells,
+        #: a values-pasted file with a few live corners, and a walk that
+        #: lands outside them is just as unanswerable.
+        #:
+        #: **One per cent, and the gap is measured rather than picked.**
+        #: The four project-finance close copies sit at 0.000% (RHSC),
+        #: 0.029% (Bertha Park) and 0.147% (Dumfries); the one live model
+        #: in the set sits at 9.25% (Inverness). Two orders of magnitude
+        #: separate them, so any line drawn inside that gap says the same
+        #: thing, and 1% is the round number in the middle of it.
+        return self._formulas * 100 < len(self.book.cells)
 
 
 def _refuse(summary: str) -> ToolResult:
@@ -144,9 +177,23 @@ def _resolve(workspace: ModelWorkspace, ref_or_name: str) -> list[Cell]:
         if cell.name and all(w in cell.name.lower() for w in words)
     ]
     #: Labelled formula rows first — « Opex total » should beat a stray
-    #: cell whose composed name happens to carry the words.
-    matches.sort(key=lambda c: (c.formula is None, len(c.name)))
+    #: cell whose composed name happens to carry the words — and a
+    #: filename last, whatever else is true of it.
+    matches.sort(key=lambda c: (c.formula is None, _is_filename(c.name), len(c.name)))
     return matches[:MAX_ROWS]
+
+
+#: A row label that is a filename. Models keep change logs — Inverness
+#: College keeps 797 of them on one sheet — and « Inverness Fin model
+#: v4804 Annity11yrs_EquityIRR_11-434%.xlsm » carries the words
+#: « equity IRR » without being a name for any number. Measured in G2
+#: round 1: ten of `locate`'s twelve slots went to that log, crowding
+#: out genuine matches. **A filename is not a name for a number.**
+FILENAME = re.compile(r"\.(xls[xmb]?|xlt[xm]?|csv|pdf|docx?|pptx?)\b", re.IGNORECASE)
+
+
+def _is_filename(name: str) -> bool:
+    return bool(FILENAME.search(name))
 
 
 def locate(workspace: ModelWorkspace, query: str) -> ToolResult:
@@ -197,14 +244,30 @@ def trace_back(workspace: ModelWorkspace, ref: str) -> ToolResult:
                 break
 
     total = len(start.precedents)
+    #: « 0 direct inputs » reads as « nothing feeds it », and on a cell
+    #: holding a typed value that is the wrong sentence: nothing feeds
+    #: it *because there is no formula there*. The payload always
+    #: carried the fact; § 5 asks the sentence to carry it too, and to
+    #: say what would resolve it (G2 round 1, defect 2).
+    if start.formula is None:
+        said = f"{start.ref} holds a typed value — no formula, so nothing feeds it"
+        if workspace.values_pasted:
+            said += (
+                f". {workspace.filename} is a values-pasted copy: almost none "
+                "of its cells keep their formulas, so no walk is possible "
+                "anywhere in it. The version this was pasted from would answer"
+            )
+    else:
+        said = f"Walked back from {start.ref} ({total} direct inputs)"
     return ToolResult(
         ok=True,
-        summary=f"Walked back from {start.ref} ({total} direct inputs)",
+        summary=said,
         data={
             "rows": rows,
             "direct_inputs": total,
             "chain_ends": ends[:4],
             "formula": start.formula or "typed value",
+            "values_pasted": workspace.values_pasted,
         },
     )
 
@@ -269,11 +332,60 @@ def trace_forward(workspace: ModelWorkspace, ref: str) -> ToolResult:
     )
 
 
+def _value_size(cell: Cell) -> float:
+    """A cell's own magnitude. No value cannot clear any threshold."""
+    return abs(float(cell.value)) if cell.value is not None else -1.0
+
+
+def _buried_size(cell: Cell) -> float:
+    """The largest number typed inside a formula — a hardcode's size.
+
+    `=8760` is a hardcode of 8760 whatever the cell's cached value says,
+    and on a values-pasted copy the cached value is often absent
+    entirely.
+    """
+    if not cell.formula:
+        return -1.0
+    sizes = []
+    for literal in _buried(cell.formula):
+        try:
+            sizes.append(abs(float(literal)))
+        except ValueError:
+            # `_buried` returns them as the formula spelt them; anything
+            # that will not parse as a number is not a magnitude.
+            continue
+    return max(sizes) if sizes else -1.0
+
+
 def inventory(
-    workspace: ModelWorkspace, kind: str, sheet: str | None = None
+    workspace: ModelWorkspace,
+    kind: str,
+    sheet: str | None = None,
+    above: float | None = None,
 ) -> ToolResult:
     """Lists with the person's own filter: typed inputs, hardcodes,
-    external links."""
+    external links — optionally only those above a size.
+
+    `above` is a magnitude in the model's own working units, and it
+    exists because « show me every hardcoded value in the debt schedule
+    **above materiality** » is one of the five questions this assistant
+    is built to answer. Until G2 round 1 measured it, this tool had no
+    threshold at all and answered « hardcodes » to that question:
+    nothing it said was false, and it was still the narrower question
+    answered as though it were the one asked. The summary now always
+    states the threshold or its absence, so « always show coverage »
+    holds here as everywhere.
+
+    **The magnitude compared is the one the question means**, and for
+    hardcodes that is not the cell's value. `GAPSLIST!Q802` is `=8760`
+    and its cached value is empty, so a threshold read off the value
+    dropped all three of Dumfries's hardcodes at `above=1` — a filter
+    that answered « none » to a question whose true answer was « the
+    8760 ». For hardcodes the size is the **largest number buried in
+    the formula**, which is the decision the finding is about. For typed
+    inputs and external links the cell's own value is the right
+    magnitude, and a cell that has none cannot clear a threshold.
+    """
     book = workspace.book
     cells = [
         cell
@@ -298,6 +410,11 @@ def inventory(
     else:
         return _refuse("kind must be one of: typed, hardcodes, external-links")
 
+    considered = len(found)
+    if above is not None:
+        size = _buried_size if kind == "hardcodes" else _value_size
+        found = [cell for cell in found if size(cell) >= above]
+
     by_sheet: dict[str, int] = {}
     for cell in found:
         by_sheet[cell.sheet] = by_sheet.get(cell.sheet, 0) + 1
@@ -307,15 +424,23 @@ def inventory(
         key=lambda c: abs(float(c.value)) if c.value is not None else 0,
         reverse=True,
     )
+    where = f" on {sheet}" if sheet else f" across {len(by_sheet)} sheets"
+    #: The denominator, always. Either « above 1,000, of 47 » or « no
+    #: size filter applied » — never a count that leaves the reader to
+    #: guess whether one was.
+    threshold = (
+        f", above {above:,g} of {considered} found"
+        if above is not None
+        else " (no size filter applied)"
+    )
     return ToolResult(
         ok=True,
-        summary=(
-            f"{len(found)} {what}"
-            + (f" on {sheet}" if sheet else f" across {len(by_sheet)} sheets")
-        ),
+        summary=f"{len(found)} {what}{where}{threshold}",
         data={
             "rows": [_row(cell) for cell in found[:MAX_ROWS]],
             "total": len(found),
+            "considered": considered,
+            "above": above,
             "by_sheet": dict(sorted(by_sheet.items(), key=lambda kv: -kv[1])[:10]),
         },
     )
@@ -476,6 +601,29 @@ def _delta_report(workspace: ModelWorkspace) -> Any:
     return workspace._delta
 
 
+def _compared(
+    workspace: ModelWorkspace, diff: dict[str, Any] | None
+) -> tuple[Any, Any]:
+    """The two version numbers this report compared.
+
+    The stored-cell diff carries them when it exists. When it does not
+    — the Watch read both files but no diff was stored — the workspace's
+    own version list still knows: the current version, and the one
+    before it. A report that cannot name what it compared is weaker
+    than it needs to be, and it had the answer all along.
+    """
+    stored_from = (diff or {}).get("from_version")
+    stored_to = (diff or {}).get("to_version")
+    if stored_from is not None and stored_to is not None:
+        return stored_from, stored_to
+    numbers = sorted(
+        {int(one["version"]) for one in workspace.versions if one.get("version")}
+    )
+    if len(numbers) >= 2:
+        return numbers[-2], numbers[-1]
+    return stored_from, stored_to
+
+
 def versions(workspace: ModelWorkspace) -> ToolResult:
     """What this revision did, in the Watch's review language.
 
@@ -519,6 +667,13 @@ def versions(workspace: ModelWorkspace) -> ToolResult:
         for one in changed
     }
     stale_total = sum(stale.values())
+    #: Which two versions this compared. The numbers used to be read
+    #: only from the stored-cell diff, so when the Watch had read both
+    #: files and the diff was absent the report announced « v? → v? » —
+    #: a comparison that cannot say what it compared (G2 round 1). The
+    #: workspace holds the version list either way, so it answers when
+    #: the diff cannot.
+    from_version, to_version = _compared(workspace, diff)
 
     if report is None:
         #: The files are gone but the rows are not. Say which answer
@@ -539,8 +694,8 @@ def versions(workspace: ModelWorkspace) -> ToolResult:
         return ToolResult(
             ok=True,
             summary=(
-                f"v{(diff or {}).get('from_version')} → "
-                f"v{(diff or {}).get('to_version')}: {len(changed)} cells "
+                f"v{from_version} → "
+                f"v{to_version}: {len(changed)} cells "
                 f"changed (values only — the reviewed reading is not available)"
             ),
             data={
@@ -550,8 +705,8 @@ def versions(workspace: ModelWorkspace) -> ToolResult:
                 "removed": (diff or {}).get("removed", 0),
                 "stale_figures": stale_total,
                 "by_sheet": dict(sorted(by_sheet.items(), key=lambda kv: -kv[1])),
-                "from_version": (diff or {}).get("from_version"),
-                "to_version": (diff or {}).get("to_version"),
+                "from_version": from_version,
+                "to_version": to_version,
                 "note": "The two versions' files could not both be read, so "
                 "this is the change in stored values only, not the reviewed "
                 "reading of what the revision did.",
@@ -579,8 +734,8 @@ def versions(workspace: ModelWorkspace) -> ToolResult:
     return ToolResult(
         ok=True,
         summary=(
-            f"v{(diff or {}).get('from_version', '?')} → "
-            f"v{(diff or {}).get('to_version', '?')}: "
+            f"v{from_version if from_version is not None else '?'} → "
+            f"v{to_version if to_version is not None else '?'}: "
             + (headline or "no reviewed change")
         ),
         data={
@@ -601,8 +756,8 @@ def versions(workspace: ModelWorkspace) -> ToolResult:
             "cells_changed": len(changed),
             #: The half the Watch cannot see: this deal's own deliverables.
             "stale_figures": stale_total,
-            "from_version": (diff or {}).get("from_version"),
-            "to_version": (diff or {}).get("to_version"),
+            "from_version": from_version,
+            "to_version": to_version,
         },
     )
 
@@ -857,14 +1012,25 @@ DEFINITIONS: list[dict[str, Any]] = [
         "name": "inventory",
         "description": (
             "List typed inputs, hardcodes buried in formulas, or external "
-            "links — optionally on one sheet. kind: typed | hardcodes | "
-            "external-links."
+            "links — optionally on one sheet, optionally only those at or "
+            "above a size. kind: typed | hardcodes | external-links. Pass "
+            "`above` when the question says above materiality, or names a "
+            "threshold; the answer states the threshold and how many were "
+            "considered either way."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "kind": {"type": "string"},
                 "sheet": {"type": "string"},
+                "above": {
+                    "type": "number",
+                    "description": (
+                        "Magnitude in the model's own working units. Only "
+                        "cells whose absolute value is at least this are "
+                        "listed."
+                    ),
+                },
             },
             "required": ["kind"],
         },
@@ -916,10 +1082,12 @@ def run_tool(
         return trace_forward(workspace, str(arguments.get("ref", "")))
     if name == "inventory":
         sheet = arguments.get("sheet")
+        above = arguments.get("above")
         return inventory(
             workspace,
             str(arguments.get("kind", "")),
             str(sheet) if sheet else None,
+            float(above) if above is not None else None,
         )
     if name == "structure":
         return structure(workspace)

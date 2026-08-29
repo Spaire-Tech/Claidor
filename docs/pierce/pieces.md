@@ -204,7 +204,7 @@ green, number written down.
 | # | Piece | Why here | Size |
 | --- | --- | --- | --- |
 | ~~**1**~~ | ~~**The manual-calculation refusal** (§ 5)~~ | **DONE 28 Aug** — `polar/tieout/calculation.py`. See § 4a below | — |
-| **2** | **Chat judged** (G2) | Closes a claim I made badly. All seven tools exist; nobody has asked the five questions | a day |
+| ~~**2**~~ | ~~**Chat judged** (G2)~~ | **MEASURED 28 Aug — 3 of 5, four defects closed, and NOT DONE.** See § 4b below | — |
 | **3** | **Units** (E2 → E3) | The flagship finding, and the check is built and switched off because the inference under it was never measured | days |
 | **4** | **C6's two stability runs** | Behavioural version diffing is gated on two cheap measurements nobody has done. Until they run, C6 cannot start and B6 cannot be decided | a day |
 | **5** | **The arbiter** (B3) | Four corpus files are refused and waiting. Check the LibreOffice 24.2 → 25.8 version gap first — part of the queue may be that | days |
@@ -277,6 +277,53 @@ run: … ».
 printed « excel does not maintain ». Unit tests asserted on the
 substring and passed. Running it against an actual model showed it in
 one line. Now pinned by its own test.
+
+---
+
+## 4b. Piece 2, measured — chat's five questions (28 August)
+
+Full record: `g2-chat-protocol.md`, registered and committed before a
+single question was asked.
+
+**The stale claim was « 3 of 5 ». Measured, it was 2 of 5. After
+fixing four defects it is 3 of 5 — the same number, for none of the
+same reasons.** And G2 is **not DONE**: the bar is all five plus the
+agent loop, and neither holds.
+
+| # | Question | Verdict | Who owns the gap |
+| --- | --- | --- | --- |
+| Q1 | Why did the metric fall between versions? | ingredients, unjoined | the agent loop — **needs a model key** |
+| Q2 | What feeds equity IRR? | **CORRECT** | — |
+| Q3 | Where is this number from? | ABSTAINED, exemplary | **the Chain** (Piece 6) |
+| Q4 | Hardcodes above materiality | **CORRECT** | — |
+| Q5 | What changed? | **CORRECT** | — |
+
+**The two remaining gaps are not chat's.** Q1 produces both halves of
+its answer, correct and cited — the trace to `InputSummary!AR158` and
+the version delta showing those very precedents moving 0.0313 → 0.0317
+— and nothing joins them, which is what the loop does. Q3 needs one
+confirmed document link to exist; the Chain's last round scored 0 of
+15. **`ANTHROPIC_API_KEY` in the server environment unblocks Q1 and
+the whole of Half B.**
+
+**The four defects closed**, each found by asking a real model rather
+than by reading code: a filename is not a name for a number (a Model
+Log of 797 filenames was eating ten of `locate`'s twelve slots); a walk
+that cannot happen now says why and what would answer; `inventory`
+takes a materiality threshold and always states it or its absence; and
+`versions` names which two versions it compared instead of « v? → v? ».
+
+**A finding that outlives this piece.** Three of the founder's four
+project-finance close copies are **values-pasted** — RHSC holds 608,191
+cells and zero formulas, Bertha Park 113, Dumfries 328. Every question
+resting on the precedent graph is unanswerable on such a file by
+nature. The product now says so in words, including what would answer
+(the version it was pasted from). This is a market fact worth knowing
+before any demo.
+
+**Verified:** 8 new tests, 45 in the tool suite, 1,126 passed across
+tieout; golden-master gate clean; every claim re-runnable via
+`scripts/g2_questions.py`.
 
 ---
 

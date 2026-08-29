@@ -426,3 +426,173 @@ class TestRows:
             assert result.ok, name
             for row in result.data["rows"]:
                 assert set(row) == {"ref", "what", "value"}, name
+
+
+class TestG2Round1Fixes:
+    """The four defects G2 round 1 measured, each pinned by the case
+    that found it.
+
+    Round 1 asked the five canonical questions of real models and scored
+    2 of 5. Nothing below is hypothetical: every case is the shape that
+    actually came back, reduced to a workbook small enough to read.
+    `docs/pierce/g2-chat-protocol.md` carries the round.
+    """
+
+    def test_a_filename_sorts_below_a_line_item(self) -> None:
+        #: Inverness College keeps a `Model Log` sheet with 797 rows
+        #: whose labels are model filenames, and « Inverness Fin model
+        #: v4804 Annity11yrs_EquityIRR_11-434%.xlsm » carries the words
+        #: « equity IRR ». Ten of locate's twelve slots went to that log.
+        #: A filename is not a name for a number.
+        book = Workbook()
+        cells = [
+            _cell("Log!A1", value=1.1, row_label="model v4804 EquityIRR_11-434%.xlsm"),
+            _cell("Log!A2", value=1.2, row_label="model v4805 EquityIRR_11-42%.xlsm"),
+            _cell("Returns!B2", value=0.104, row_label="Equity IRR"),
+        ]
+        for cell in cells:
+            book.cells[cell.ref] = cell
+        book.sheets = ["Log", "Returns"]
+        space = build_workspace(
+            dossier_id=uuid4(),
+            name="d",
+            filename="f.xlsx",
+            version=1,
+            book=book,
+            axes={},
+            versions_list=[{"version": 1}],
+            diff=None,
+        )
+
+        rows = run_tool(space, "locate", {"query": "equity IRR"}).data["rows"]
+
+        assert rows[0]["ref"] == "Returns!B2"
+
+    def test_a_typed_value_says_it_holds_one(self, model: ModelWorkspace) -> None:
+        #: « 0 direct inputs » reads as « nothing feeds it ». The truth
+        #: is that there is no formula there to follow.
+        said = run_tool(model, "trace_back", {"ref": "Debt!C4"}).summary
+
+        assert "holds a typed value" in said
+        assert "no formula" in said
+
+    def test_a_values_pasted_file_says_so_and_says_what_would_answer(self) -> None:
+        #: Three of the founder's four project-finance close copies are
+        #: paste-specials of themselves — RHSC holds 608,191 cells and
+        #: zero formulas. No walk is possible anywhere in such a file,
+        #: and that is a different answer from « nothing feeds this ».
+        book = Workbook()
+        for index in range(200):
+            cell = _cell(f"S!A{index + 1}", value=index, row_label="Line")
+            book.cells[cell.ref] = cell
+        book.sheets = ["S"]
+        space = build_workspace(
+            dossier_id=uuid4(),
+            name="d",
+            filename="close_copy.xlsm",
+            version=1,
+            book=book,
+            axes={},
+            versions_list=[{"version": 1}],
+            diff=None,
+        )
+
+        said = run_tool(space, "trace_back", {"ref": "S!A1"}).summary
+
+        assert "values-pasted copy" in said
+        assert "The version this was pasted from would answer" in said
+
+    def test_a_live_model_is_not_called_values_pasted(
+        self, model: ModelWorkspace
+    ) -> None:
+        #: The control. Inverness College keeps 9.25% of its cells as
+        #: formulas and is a working model; the close copies sit at
+        #: 0.147% and below.
+        assert not model.values_pasted
+        assert (
+            "values-pasted"
+            not in run_tool(model, "trace_back", {"ref": "Debt!C4"}).summary
+        )
+
+    def test_no_threshold_says_no_threshold(self, model: ModelWorkspace) -> None:
+        #: « Always show coverage »: a count with no denominator leaves
+        #: the reader to guess whether a filter was applied.
+        said = run_tool(model, "inventory", {"kind": "typed"}).summary
+
+        assert "no size filter applied" in said
+
+    def test_a_threshold_is_stated_with_its_denominator(
+        self, model: ModelWorkspace
+    ) -> None:
+        result = run_tool(model, "inventory", {"kind": "typed", "above": 1000})
+
+        #: Printed the way a reader reads money, separators and all.
+        assert "above 1,000 of 4 found" in result.summary
+        assert result.data["considered"] == 4
+        assert result.data["total"] == 2
+        #: Senior interest at 128.4m and FY2028 opex at 18,099 clear it;
+        #: the 0.027 indexation rate and the 0.0000031 unit do not.
+        assert sorted(row["ref"] for row in result.data["rows"]) == [
+            "Debt!C4",
+            "Opex!C4",
+        ]
+
+    def test_a_hardcode_is_sized_by_its_buried_number(self) -> None:
+        #: The bug this test exists for was in the fix, not the original:
+        #: filtering on the cell's cached value dropped all three of
+        #: Dumfries's hardcodes at `above=1`, because `=8760` is a
+        #: values-pasted cell with no cached value at all. The size of a
+        #: hardcode is the number typed inside the formula.
+        book = Workbook()
+        cells = [
+            _cell("S!Q802", row_label="Hours", formula="=8760"),
+            _cell("S!Q900", row_label="Months", formula="=6"),
+            _cell("S!Q1101", row_label="Share", formula="=0.22"),
+        ]
+        for cell in cells:
+            book.cells[cell.ref] = cell
+        book.sheets = ["S"]
+        space = build_workspace(
+            dossier_id=uuid4(),
+            name="d",
+            filename="f.xlsx",
+            version=1,
+            book=book,
+            axes={},
+            versions_list=[{"version": 1}],
+            diff=None,
+        )
+
+        result = run_tool(space, "inventory", {"kind": "hardcodes", "above": 1})
+
+        assert result.data["considered"] == 3
+        assert sorted(row["ref"] for row in result.data["rows"]) == [
+            "S!Q802",
+            "S!Q900",
+        ]
+
+    def test_versions_names_what_it_compared_without_a_stored_diff(self) -> None:
+        #: The report printed « v? → v? » because the version numbers
+        #: were read only from the stored-cell diff, while the workspace
+        #: held the version list all along. A comparison that cannot say
+        #: what it compared is weaker than it needs to be.
+        book = Workbook()
+        cell = _cell("S!A1", value=1, row_label="Line")
+        book.cells[cell.ref] = cell
+        book.sheets = ["S"]
+        space = build_workspace(
+            dossier_id=uuid4(),
+            name="d",
+            filename="f.xlsx",
+            version=2,
+            book=book,
+            axes={},
+            versions_list=[{"version": 1}, {"version": 2}],
+            diff={"changed": [{"ref": "S!A1", "was": "1", "now": "2"}]},
+        )
+
+        result = run_tool(space, "versions", {})
+
+        assert "v? " not in result.summary
+        assert result.data["from_version"] == 1
+        assert result.data["to_version"] == 2

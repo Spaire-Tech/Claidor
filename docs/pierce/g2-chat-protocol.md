@@ -213,14 +213,25 @@ in words. Every number cited to a cell.
 0.0781079 first — exactly the right cell — and `trace_back` reports
 `formula: typed value`, which is the truth about a values-pasted file.
 
-**Defect 1 — `locate` is flooded by a log of filenames.** On Inverness,
-`locate('equity IRR')` returns twelve rows of which most are from a
-`Model Log` sheet whose row labels are *model filenames* — « Inverness
-Fin model v4804 Annity11yrs_EquityIRR_11-434%.xlsm ». Hand-checked
-against the file: **820 cells carry « IRR » in a row label and 797 of
-them are in `Model Log`.** The match is on a filename, not on a line
-item's name, and nothing ranks a labelled line item above a log entry.
-A person asking for the metric gets a change log.
+**Defect 1 — `locate`'s result is padded with a log of filenames.** On
+Inverness, `locate('equity IRR')` returns twelve rows: the first two
+are genuine (`Input Scenarios!D19` and `F19`, « (Shortfall)/Excess from
+Equity IRR »), and the other ten come from a `Model Log` sheet whose
+row labels are model *filenames* — « Inverness Fin model v4804
+Annity11yrs_EquityIRR_11-434%.xlsm ». Hand-checked against the file:
+**820 cells carry « IRR » in a row label and 797 of them are in
+`Model Log`.** A filename is not a name for a number, and nothing
+demotes one.
+
+> **Correction, same day.** My first write-up of this said the metric
+> was buried and « the person asking gets a change log ». That is
+> overstated and it is wrong: the existing sort — formula rows first,
+> then shortest name — does put the two genuine rows on top, and on
+> Bertha Park the result was exactly right with no noise at all. The
+> real defect is narrower: ten of twelve slots are spent on filename
+> noise, crowding out other genuine matches. Recorded rather than
+> quietly edited, because an overstated defect is as misleading as a
+> hidden one.
 
 **Defect 2 — the summary understates what the payload knows.** On a
 values-pasted file the sentence reads « Walked back from X (0 direct
@@ -276,5 +287,97 @@ to be.
 ## What this round changes
 
 Three defects are fixable here (Q2's two, Q4's, Q5's). Q1 needs the
-join, which is Half B. Q3 needs the Chain. Fixes and the re-measurement
-are appended below.
+join, which is Half B. Q3 needs the Chain.
+
+---
+
+# Round 2 — the fixes, and what they measure now
+
+## The four changes
+
+**1. A filename is not a name for a number.** `_resolve` now sorts
+filename-shaped labels last, after « formula rows first » and before
+« shortest name ». Stated as a principle rather than a Model Log
+special case, because the next model will keep its change log
+somewhere else.
+
+**2. A walk that cannot happen says why.** `trace_back` on a cell with
+no formula now reads « `Output!K65` holds a typed value — no formula,
+so nothing feeds it », and on a values-pasted file it adds « … is a
+values-pasted copy: almost none of its cells keep their formulas, so no
+walk is possible anywhere in it. The version this was pasted from would
+answer. » That last clause is § 5's requirement that a refusal name
+what would resolve it.
+
+*The values-pasted line was measured, not picked.* The four
+project-finance close copies sit at 0.000% (RHSC), 0.029% (Bertha
+Park) and 0.147% (Dumfries) formulas-per-cell; the one live model sits
+at 9.25% (Inverness). **Two orders of magnitude separate them**, so any
+line inside that gap says the same thing; 1% is the round number in the
+middle. My first threshold was 0.1% and it missed Dumfries by a
+whisker — caught by re-running against the real file, not by the tests.
+
+**3. `inventory` takes a threshold, and always states it.** New `above`
+parameter, exposed in the tool definition so the agent can pass it when
+a question says « above materiality ». The summary now reads either
+« above 1,000 of 47 found » or « (no size filter applied) » — never a
+count that leaves the reader guessing whether one was.
+
+**4. `versions` names what it compared.** The version numbers now fall
+back to the workspace's own version list when the stored-cell diff has
+none. « v? → v? » became « v1 → v2 ».
+
+## A bug in my own fix, caught by the real file again
+
+The first `above` implementation filtered on the cell's cached value.
+On Dumfries that returned **zero hardcodes above 1** — when the true
+answer is `=8760` and `=6`. The cause: a hardcode's magnitude is the
+number *buried in the formula*, and on a values-pasted copy the cell
+often has no cached value at all, so every one was silently dropped. A
+filter that answers « none » to a question whose answer is « the 8760 »
+is worse than no filter.
+
+Fixed: hardcodes are sized by their largest buried literal, typed
+inputs and external links by the cell's own value. Now returns
+« 2 formulas with a number typed inside across 1 sheets, above 1 of 3
+found », listing `=8760` and `=6` and correctly dropping `=0.22`.
+
+**Twice in two pieces, the unit tests passed and the real file found
+the bug.** Both times the fault was a plausible assumption about data
+shape — that a summary sentence carries what the payload carries; that
+a hardcode's size is its cell's value. Running against a real model is
+not a final check on a piece; it is part of writing it.
+
+## The score after round 2
+
+| # | Question | Round 1 | Round 2 |
+| --- | --- | --- | --- |
+| Q1 | Why did the metric fall between versions? | ingredients only | **ingredients only** — the join is Half B |
+| Q2 | What feeds equity IRR? | CORRECT, 2 defects | **CORRECT**, both defects closed |
+| Q3 | Where is this number from? | ABSTAINED | **ABSTAINED** — blocked on the Chain |
+| Q4 | Hardcodes above materiality | NOT CORRECT | **CORRECT** |
+| Q5 | What changed? | CORRECT, 1 defect | **CORRECT**, defect closed |
+
+**3 of 5 CORRECT on Half A, up from 2.** The two that remain are not
+chat's to fix:
+
+- **Q1** needs an agent to join a trace to a version delta. Both halves
+  are produced, correct and cited; nothing joins them, and joining is
+  what the loop does. **Half B, blocked on a model key.**
+- **Q3** needs one confirmed document link to exist. The Chain's last
+  round scored 0 of 15. **Blocked on the Chain piece.**
+
+So « 3 of 5 » is, by coincidence, where the stale claim landed — but
+for none of the reasons it gave, and now with the two gaps located, the
+four defects closed, and every claim re-runnable.
+
+## G2 is not DONE
+
+The bar was all five CORRECT and Half B run. Neither holds. What
+changed is that the remaining two are precisely attributed rather than
+guessed at, and both are somebody else's piece:
+
+- **G2 is not blocked on chat.** It is blocked on a model key (Q1's
+  join, and everything in Half B) and on the Chain (Q3).
+- **The key is one environment variable.** `ANTHROPIC_API_KEY` in the
+  server environment and Half B runs.
