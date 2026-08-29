@@ -381,3 +381,22 @@ guessed at, and both are somebody else's piece:
   join, and everything in Half B) and on the Chain (Q3).
 - **The key is one environment variable.** `ANTHROPIC_API_KEY` in the
   server environment and Half B runs.
+
+## Verification of round 2
+
+| | |
+| --- | --- |
+| New tests | 8, pinning each defect by the case that found it |
+| Tool suite | 45 passed |
+| Whole tieout suite, run alone | **1,126 passed, 4 skipped** |
+| Golden-master gate | **clean — 27 of 27 report identically, finding for finding** |
+| ruff, format, mypy | clean on the changed files |
+
+The gate matters here because `_resolve`'s ranking is shared code: the
+sort that demotes filenames is the same sort every `locate` uses. The
+sweep confirms the engine says exactly what it said before — the
+change is to which cells an assistant offers first, and to nothing the
+audit reports.
+
+*(The gate was still sweeping when round 2 was committed; the commit
+message said so rather than assuming the result. This is the result.)*
