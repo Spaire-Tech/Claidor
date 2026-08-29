@@ -391,3 +391,81 @@ def _matches_one_cell(value: float, window: Sequence[float]) -> bool:
     if _close(value, 0.0):
         return False
     return any(_close(value, one) and not _close(one, 0.0) for one in window)
+
+
+# --- one authoring decision, one finding ----------------------------
+
+
+@dataclass(frozen=True)
+class PeriodFinding:
+    """One broken aggregation, with every row that carries it.
+
+    `swens.md`'s first non-negotiable principle: « A formula dragged
+    across four hundred cells is one decision by one person, not four
+    hundred problems. » The same holds down a reporting stack. Kelso
+    prints its cash balance on two lines of one sheet — `cash bank` and
+    `cash bank carried forward`, identical values, rows 83 and 200 —
+    and round 1 reported the same break twice because they are
+    different cells. They are one number, published twice.
+    """
+
+    label: str
+    fine: str
+    coarse: str
+    ratio: int
+    kind: str
+    kept: int
+    single_period: tuple[int, ...]
+    #: The other places the same broken number appears, as
+    #: `fine -> coarse` pairs. Evidence on one finding, never findings.
+    also: tuple[str, ...] = ()
+
+
+def _identity(
+    coarse_values: Sequence[float], breaks: Sequence[int], ratio: int
+) -> tuple[Any, ...]:
+    """What makes two reports the same authoring decision.
+
+    The *numbers*, not the cells: two rows holding the same series and
+    breaking in the same periods are one decision however far apart
+    they sit. Rounded to twelve significant figures so that a display
+    copy of a number is recognised as the same number.
+    """
+    return (
+        ratio,
+        tuple(breaks),
+        tuple(float(f"{value:.12g}") for value in coarse_values),
+    )
+
+
+def fold(
+    found: Sequence[tuple[PeriodFinding, Sequence[float]]],
+) -> list[PeriodFinding]:
+    """Collapse reports of one decision into one finding.
+
+    Takes `(finding, its coarse series)` pairs because the series is
+    the identity and the finding does not carry it. The first report in
+    each group is kept and the rest become its `also` list — so the
+    evidence survives and the count is honest.
+    """
+    groups: dict[tuple[Any, ...], list[PeriodFinding]] = {}
+    for finding, coarse_values in found:
+        key = _identity(coarse_values, finding.single_period, finding.ratio)
+        groups.setdefault(key, []).append(finding)
+    folded: list[PeriodFinding] = []
+    for members in groups.values():
+        first = members[0]
+        others = tuple(f"{one.fine} -> {one.coarse}" for one in members[1:])
+        folded.append(
+            PeriodFinding(
+                label=first.label,
+                fine=first.fine,
+                coarse=first.coarse,
+                ratio=first.ratio,
+                kind=first.kind,
+                kept=first.kept,
+                single_period=first.single_period,
+                also=others,
+            )
+        )
+    return folded

@@ -22,7 +22,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from polar.tieout.units.periods import Block, classify_row
+from polar.tieout.units.periods import (
+    Block,
+    PeriodFinding,
+    classify_row,
+    fold,
+)
 from polar.tieout.workbook import read_workbook
 from scripts.recalc_period_check import date_axes
 from scripts.recalc_period_values import (
@@ -90,9 +95,32 @@ def patterns(
                     "kept": len(pattern.kept),
                     "single_period": list(pattern.single_period),
                     "unexplained": list(pattern.unexplained),
+                    "coarse_values": list(coarse_values),
                 }
             )
     return found
+
+
+def collapsed(rows: list[dict[str, Any]]) -> list[PeriodFinding]:
+    """The defects as findings — one per authoring decision."""
+    return fold(
+        [
+            (
+                PeriodFinding(
+                    label=row["label"],
+                    fine=row["fine"],
+                    coarse=row["coarse"],
+                    ratio=row["ratio"],
+                    kind=row["kind"],
+                    kept=row["kept"],
+                    single_period=tuple(row["single_period"]),
+                ),
+                row["coarse_values"],
+            )
+            for row in rows
+            if row["single_period"]
+        ]
+    )
 
 
 def plant(
@@ -132,7 +160,7 @@ def report(
         "control_denominator": denominator,
         "control_percent": round(ratio, 1),
         "control_passes": ratio <= 5.0,
-        "detail": rows,
+        "detail": [{k: v for k, v in r.items() if k != "coarse_values"} for r in rows],
     }
 
 
@@ -178,14 +206,18 @@ def main() -> int:
         f"({'PASS' if summary['control_passes'] else 'FAIL'}, bar is 5%)"
     )
 
-    print("\n-- every defect, for hand-reading --")
-    for row in rows:
-        if row["single_period"]:
-            print(
-                f"   {row['kind']:5s} {row['label'][:44]!r} {row['fine']} -> "
-                f"{row['coarse']} at {row['ratio']}:1, kept {row['kept']}, "
-                f"breaks at {row['single_period']}"
-            )
+    findings = collapsed(rows)
+    print(
+        f"\n-- every defect, for hand-reading: {summary['defects']} reports "
+        f"collapse to {len(findings)} findings --"
+    )
+    for one in findings:
+        also = f"  (also {len(one.also)}: {', '.join(one.also)})" if one.also else ""
+        print(
+            f"   {one.kind:7s} {one.label[:44]!r} {one.fine} -> {one.coarse} "
+            f"at {one.ratio}:1, kept {one.kept}, breaks at "
+            f"{list(one.single_period)}{also}"
+        )
 
     print("\n-- rows with unexplained periods --")
     for row in rows[:400]:
