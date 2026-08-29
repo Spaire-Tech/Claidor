@@ -45,15 +45,38 @@ MIN_ROWS_TO_BE_ASKABLE = 4
 PAIRS_FOR_FIVE_PERCENT = 59
 
 
+def _cdf(k: int, n: int, p: float) -> float:
+    """P(X <= k) for X ~ Binomial(n, p)."""
+    return sum(math.comb(n, i) * p**i * (1.0 - p) ** (n - i) for i in range(k + 1))
+
+
 def upper_bound(matches: int, tested: int, confidence: float = 0.95) -> float:
-    """One-sided upper bound on the true rate, exact for zero matches."""
+    """One-sided Clopper-Pearson upper bound on the true rate.
+
+    Exact, not the normal approximation, because the counts are small
+    relative to the denominator and the approximation misbehaves there.
+
+    **This function had a bug worth recording**: it returned the *point
+    estimate* whenever `matches > 0`, under a label that said « upper
+    bound ». It was written that way to avoid inventing a bound and it
+    invented a worse thing — a number that understates the uncertainty
+    while claiming to bound it. Caught by computing the real bound by
+    hand and finding it did not match what the script printed.
+    """
     if tested == 0:
         return 1.0
     if matches == 0:
+        #: The rule of three, exact.
         return 1.0 - (1.0 - confidence) ** (1.0 / tested)
-    #: Not the case this round needs; the point estimate is reported
-    #: beside it rather than a wrong bound being invented.
-    return matches / tested
+    alpha = 1.0 - confidence
+    low, high = matches / tested, 1.0
+    for _ in range(200):
+        mid = (low + high) / 2.0
+        if _cdf(matches, tested, mid) > alpha:
+            low = mid
+        else:
+            high = mid
+    return (low + high) / 2.0
 
 
 def main() -> int:

@@ -242,6 +242,97 @@ control, not a corpus. Whatever this check becomes, its false-positive
 price is unknown until it runs across the closed-deal set, and the
 number from one file is not the number.
 
+---
+
+# Criterion 1, restated and re-measured — 28 August, after the research round
+
+**The criterion I registered was incoherent, and the proof is
+arithmetic rather than opinion.** The founder's research round
+established two facts about the method, both independent of any result
+of ours:
+
+1. **A ratio of two counts is not a false-match rate.** I scored
+   « shuffled patterns ÷ real patterns ». A rate needs the pairs
+   *examined* as its denominator, and a claim about it needs an exact
+   bound. With zero matches in `d` pairs the one-sided 95% upper bound
+   is `1 − 0.05^(1/d)`: **59 pairs are needed before « under 5% » can
+   be claimed at all**, and 0 of 2 is consistent with a true rate of
+   **77.6%**.
+2. **Below four rows the question is not askable.** A permutation test
+   on `n` rows has `n!` arrangements, so the smallest reachable
+   p-value is `1/n!` — **0.5 at n = 2**, 0.167 at n = 3. The two-row
+   models I reported as failures cannot reach the bar however clean
+   they are. « Not measurable » is a third outcome and I did not have
+   one.
+
+And a consequence for what I reported: if the true rate were a healthy
+2%, the chance that at least one of sixteen small samples breaches 5%
+is roughly 48–96%. **One model over the line is the expected outcome of
+scoring sixteen tiny samples separately.** That is what I saw, and what
+I called a failure.
+
+**This is a correction to my criteria, not to the check, and it is not
+a loosening.** Pooled with an exact bound the claim is *harder* to
+make: it requires 59 clean pairs rather than a favourable ratio on
+whatever sample a model happens to offer. Stated before the number was
+computed, so the direction cannot be read backwards from the result.
+
+## The pooled measurement
+
+Across all 22 closed-deal models, mismatched pairs **examined**, not
+patterns compared with patterns:
+
+| | |
+| --- | --- |
+| mismatched pairs examined | **10,827** |
+| of those, still patterned | **30** |
+| point estimate | **0.277%** |
+| 95% upper bound (Clopper–Pearson, exact) | **0.376%** |
+| pairs needed to claim « under 5% » | 59 — we have 10,827 |
+
+**CRITERION 1: PASS.** The true false-match rate is under 0.4% at 95%
+confidence, against a 5% bar, on a sample 183 times the minimum.
+
+Per-model counts are reported for transparency in
+`scripts/e3c_pooled.py`'s output and **no per-model verdict is issued**,
+because that unit is what produced the error above.
+
+### The three « failures » I reported, corrected
+
+| model | what I reported | false-match rate, measured |
+| --- | --- | --- |
+| barrhead | 5.6% — FAIL | **10 of 1,430 = 0.70%** |
+| glasgow_college | 50% | 1 of 40 = 2.5% |
+| inverness_college | 150% | 3 of 910 = 0.33% |
+
+Inverness, which I reported at **150%**, has a true rate of a third of
+one per cent. The two numbers were never measuring the same thing.
+
+### A bug in the instrument that computed this
+
+`upper_bound` returned the **point estimate** whenever `matches > 0`,
+under a label reading « 95% upper bound ». Written that way to avoid
+inventing a bound, it invented a worse thing: a number that understates
+uncertainty while claiming to bound it. Caught by computing the bound
+by hand and finding it did not match what the script printed. Now
+exact Clopper–Pearson by bisection, and verified against the research
+round's own three published values: 30/10,827 → 0.376%, 0/59 → 4.95%,
+0/2 → 77.6%. All three reproduce.
+
+## Where the round now stands
+
+| criterion | bar | result |
+| --- | --- | --- |
+| 1 — coincidence control | ≤ 5% | **0.376% upper bound — PASS** |
+| 2 — defects on clean models | 0 | **open** — 27 reports across 16 models, not yet hand-read |
+| 3 — planted recall | against scope | not run; 42 sites on Kelso |
+| 4 — no finding moves, full gate | — | not reached; nothing wired |
+
+**Criterion 2 is now the whole question**, and it is the one that
+cannot be rescued by a better statistic: it asks whether the findings
+are *right*, and the only instrument for that is reading them at the
+cells.
+
 ## What adoption would require, named in advance
 
 A new rule key routes to the workspace category map before adoption;
