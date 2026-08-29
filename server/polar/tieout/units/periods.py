@@ -227,3 +227,167 @@ def aggregate_by_value(
         else:
             unexplained.append(index)
     return matched, single, unexplained
+
+
+# --- flow or stock: the row decides, and then it is judged on that ---
+
+#: The relative spread at or below which a series counts as frozen —
+#: `recalc/mine.py`'s triviality rule, applied here for the reason it
+#: was written there: a relation among constants is arithmetic, not a
+#: fact about the model.
+#:
+#: **This is the correction that killed the previous design.** Its
+#: coincidence control failed at 503 of 655 — 77% of deliberately
+#: mismatched pairs still « aggregated » — because most rows are
+#: mostly zeros and `0 = 0 + 0 + …` holds for forty periods. Any
+#: sparse row paired with any other sparse row cleared the bar, so
+#: the bar measured nothing.
+FROZEN_SPREAD = 1e-12
+
+#: What a row turned out to be. Three readings, not two: a **closing**
+#: balance carries the last value of its window and an **opening**
+#: balance carries the first, and calling both « stock by last » made
+#: every b/f row look broken. Read from behaviour, never from the
+#: words « b/f » — nothing in this module reads a header word.
+FLOW = "flow"
+CLOSING = "closing"
+OPENING = "opening"
+
+
+def varies(values: Sequence[float]) -> bool:
+    """True when a series actually moves.
+
+    Same rule as `recalc.mine.varying`, on a series rather than across
+    runs: relative spread above `FROZEN_SPREAD`.
+    """
+    if not values:
+        return False
+    spread = max(values) - min(values)
+    scale = max(abs(value) for value in values) or 1.0
+    return spread / scale > FROZEN_SPREAD
+
+
+@dataclass(frozen=True)
+class RowPattern:
+    """What a row does across periods, read from the row itself.
+
+    A **flow** satisfies `coarse = sum(fine)` — revenue, opex, interest
+    paid. A **closing** balance satisfies `coarse = last(fine)`, an
+    **opening** balance `coarse = first(fine)`. The design before this
+    demanded the flow reading of every row and duly reported retained
+    earnings, MRA and cash at bank as broken. A closing balance is not
+    the sum of twelve months, and a check that says so has told a
+    banker it does not understand accounting.
+    """
+
+    kind: str
+    #: Coarse positions obeying the row's own kind, counted only where
+    #: the readings actually disagree — see `_discriminating`.
+    kept: tuple[int, ...]
+    #: Positions that break the kind **and** equal one fine cell in
+    #: their window — the flagship defect, « took one month where it
+    #: takes twelve ».
+    single_period: tuple[int, ...]
+    #: Positions that match neither the kind nor a single cell. Never a
+    #: finding; reported as coverage, because « we looked and could not
+    #: explain this one » is an honest thing to say and a false alarm
+    #: is not.
+    unexplained: tuple[int, ...]
+
+    @property
+    def broken(self) -> bool:
+        return bool(self.single_period)
+
+
+def _discriminating(window: Sequence[float]) -> bool:
+    """True when this window can tell the three readings apart.
+
+    A window of zeros satisfies `sum`, `first` and `last` at once, so
+    it votes for every kind and decides nothing. **Counting such
+    periods is what let « cash bank carried forward » — a balance by
+    its own name — be classified as a flow**, on a margin made of
+    periods that were all zero. Measured on Kelso: it produced 2 of
+    the 10 false alarms directly and muddied the rest.
+    """
+    if not window:
+        return False
+    total = sum(window)
+    return not (_close(total, window[0]) and _close(total, window[-1]))
+
+
+def _readings(window: Sequence[float]) -> dict[str, float]:
+    return {FLOW: sum(window), OPENING: window[0], CLOSING: window[-1]}
+
+
+def classify_row(
+    fine: Sequence[float],
+    coarse: Sequence[float],
+    ratio: int,
+    *,
+    min_periods: int = MIN_PERIODS,
+) -> RowPattern | None:
+    """What this row is, and where it departs from being that.
+
+    `None` when the row does not decide: either series frozen, too few
+    discriminating periods, or two readings tied. **A tie is no kind,
+    and no kind is no finding** — a row that sums as often as it
+    carries has not established a pattern to break.
+    """
+    if not varies(fine) or not varies(coarse):
+        return None
+
+    votes: dict[str, list[int]] = {FLOW: [], OPENING: [], CLOSING: []}
+    windows: list[tuple[int, Sequence[float], float, bool]] = []
+    for index, value in enumerate(coarse):
+        window = fine[index * ratio : (index + 1) * ratio]
+        if len(window) < ratio:
+            break
+        decides = _discriminating(window)
+        windows.append((index, window, value, decides))
+        if not decides:
+            continue
+        for kind, expected in _readings(window).items():
+            if _close(value, expected):
+                votes[kind].append(index)
+
+    ranked = sorted(votes.items(), key=lambda item: -len(item[1]))
+    (kind, kept), (_, second) = ranked[0], ranked[1]
+    if len(kept) < min_periods or len(kept) == len(second):
+        return None
+
+    keeping = set(kept)
+    single: list[int] = []
+    unexplained: list[int] = []
+    for index, window, value, decides in windows:
+        if index in keeping:
+            continue
+        if not decides:
+            #: The row's own kind is unreadable here and the period
+            #: agrees with every reading. Silence, not a finding.
+            continue
+        if _matches_one_cell(value, window):
+            single.append(index)
+        else:
+            unexplained.append(index)
+    return RowPattern(
+        kind=kind,
+        kept=tuple(kept),
+        single_period=tuple(single),
+        unexplained=tuple(unexplained),
+    )
+
+
+def _matches_one_cell(value: float, window: Sequence[float]) -> bool:
+    """« This period took one fine cell instead of the whole window. »
+
+    **Zero does not count.** A coarse zero sitting beside a window that
+    contains a zero matches « one cell » trivially, and on Kelso that
+    manufactured 2 of the 10 false alarms outright — `spv admin costs`
+    and `equity bridge facility`, both reported for taking « one
+    month » when the month in question was 0.0 and so was the year.
+    The claim this finding makes is that a real figure was carried
+    where an aggregate belonged, so both ends must be real.
+    """
+    if _close(value, 0.0):
+        return False
+    return any(_close(value, one) and not _close(one, 0.0) for one in window)

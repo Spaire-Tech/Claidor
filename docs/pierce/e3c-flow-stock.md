@@ -129,6 +129,119 @@ run**, erring strict:
   `i·r … (i+1)·r − 1`. Two blocks whose first columns are not the same
   date break that silently, and nothing currently checks it.
 
+---
+
+# Results — round 1, 28 August 2026
+
+**Status: criterion 1 PASSED, criterion 2 NOT MET. Nothing is wired
+into `audit()` and the golden master is untouched.**
+
+| criterion | bar | result |
+| --- | --- | --- |
+| 1 — coincidence control | ≤ 5% | **0.0%** (0 of 63) — **PASS** |
+| 2 — zero defects on clean Kelso | 0 | **2** — **NOT MET** |
+| 3 — planted recall | against scope | scope measured: **42 sites**; recall not run |
+| 4 — no finding moves, full gate | — | not reached; nothing wired |
+
+## The control, and how it moved
+
+| design | shuffled vs real |
+| --- | --- |
+| Previous round (sum-only, no variance rule) | **77%** — died of it |
+| This design, first run | 8.8% — **failed my own 5% bar** |
+| This design, corrected control | 3.9% |
+| This design, after the three corrections below | **0.0%** |
+
+**The bar never moved.** It was 5% before the first run and it is 5%
+now. What moved was the design, and once the instrument itself was
+found to be broken, the instrument.
+
+### The control was measuring the wrong thing, and it inflated its own failure
+
+**A block-pair sharing exactly one label cannot be shuffled.** A
+one-element list has one permutation, so `partner == label` and the
+« deliberately mismatched » run silently measured the *real* pairing.
+Kelso has 35 such pairs and they supplied **16 of the 28 apparent
+shuffled survivors** — more than half the control's number was the
+real pairing wearing a control's name.
+
+Such pairs are now excluded from **both sides** of the ratio. Dropping
+them from the shuffled count alone would be precisely the tuning this
+round exists to avoid: they carry no evidence in either direction,
+because there is no alternative partner to mismatch them against.
+
+**This flaw was inherited from the previous round's script, so that
+round's 77% was also inflated.** It failed by fifteen times its bar
+either way, so its verdict stands — but the number was wrong and is
+corrected here rather than left standing.
+
+## The ten defects, hand-read at the cells, and all ten false
+
+Criterion 2 required every defect hand-read before being called
+anything. All ten were. **All ten were false alarms**, with three
+distinct causes — every one a category error, not a threshold:
+
+**(a) Zero periods voted for every reading.** A window of zeros
+satisfies `sum`, `first` and `last` at once. Those periods decided
+nothing and still counted, which is how « cash bank **carried
+forward** » — a balance by its own name — came to be classified as a
+flow, on a margin made of zeros. *Correction: a period votes only when
+the readings actually disagree.*
+
+**(b) The defect test matched zero against zero.** « This period took
+one fine cell » was satisfied by a coarse 0.0 sitting beside a window
+containing 0.0. `spv admin costs` and `equity bridge facility` were
+both reported for taking « one month » where the month was 0.0 and so
+was the year. *Correction: both ends must be real numbers.*
+
+**(c) Opening balances were judged as closing ones.** `bal b f` is a
+**brought-forward** balance: it carries the **first** value of its
+window, not the last. Judging it by `last` made every b/f row look
+broken. *Correction: three readings — flow, opening, closing — and the
+row's behaviour picks one. Still no header word is read; « b/f » is
+never matched as text.*
+
+After the three: **10 defects → 2, and the control fell to 0.0%.**
+
+## The two that remain, and why criterion 2 is not met
+
+Both are the same row: `cash bank` (`ReportFinStatsSA!83 →
+ReportFinStatsAnnual!82`) and `cash bank carried forward`
+(`!200 → !200`) hold **identical values**. Hand-read at the cells:
+
+| year | annual | halves | sum | last |
+| --- | --- | --- | --- | --- |
+| 2 | 33.6438 | 0, 33.644 | 33.6438 | 33.6438 |
+| **3** | **6.8184** | **16.299, 6.818** | **23.1175** | **6.8184** |
+
+The row sums its halves in 25 discriminating periods and in year 3
+takes the second half alone. That is exactly the flagship shape — and
+**I cannot certify from arithmetic alone whether it is a defect or a
+convention I do not understand**, so it is not being called either.
+
+Two things are certain and both are mine:
+
+1. **Criterion 2 is not met.** Kelso is a control, and a control with
+   two findings on it has not been passed. Saying « only two, and they
+   look plausible » would be exactly the tuning-by-narrative this round
+   was written to prevent.
+2. **One authoring decision is being reported twice.** Two identical
+   rows on two sheets are one decision, and `swens.md`'s first
+   non-negotiable principle says so. The collapse discipline every
+   other rule in the engine obeys has not been applied here.
+
+## What is next, and what it is not
+
+Not adoption. In order: collapse identical rows to one finding;
+resolve the `cash bank` row against the model itself rather than
+against its arithmetic; then criterion 3's planted recall against the
+42-site scope; then the gate.
+
+**And a limit worth stating now: this is one model.** Kelso is a
+control, not a corpus. Whatever this check becomes, its false-positive
+price is unknown until it runs across the closed-deal set, and the
+number from one file is not the number.
+
 ## What adoption would require, named in advance
 
 A new rule key routes to the workspace category map before adoption;
