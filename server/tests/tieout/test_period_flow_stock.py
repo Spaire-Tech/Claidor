@@ -263,3 +263,60 @@ class TestMaterialDeparture:
         assert pattern is not None
         assert pattern.kind == FLOW
         assert 3 in pattern.single_period
+
+
+class TestFloatDust:
+    """Near-zero aggregating with near-zero — the third catch of one bug.
+
+    The design before last died at a 77% coincidence rate because zero
+    aggregates with zero. That was fixed for *exact* zeros, and Kelso's
+    `Cash @ bank` — a balance-sheet line between « GIC cash account »
+    and « TOTAL CURRENT ASSETS » — was still classified a **flow**, on
+    25 votes from periods printing as 0.0000 that were float dust
+    around 1e-9. Dust clears an absolute floor of 1e-12, so every one
+    of those periods counted as deciding something.
+    """
+
+    def _dusty(self) -> tuple[list[float], list[float]]:
+        #: Two real periods, then a long tail of residue a model means
+        #: as zero — the exact shape of Kelso's cash balance.
+        fine = [0.0, 33.6438, 16.2991, 6.8184]
+        coarse = [33.6438, 6.8184]
+        for index in range(25):
+            dust = 1e-9 * (index + 1)
+            fine += [dust, dust * 2]
+            coarse.append(dust * 3)
+        return fine, coarse
+
+    def test_dust_periods_do_not_vote(self) -> None:
+        fine, coarse = self._dusty()
+
+        pattern = classify_row(fine, coarse, 2)
+
+        #: Two real periods is not a pattern. « No kind » is the right
+        #: answer, and no kind is no finding.
+        assert pattern is None
+
+    def test_without_the_rule_the_dust_would_decide_it(self) -> None:
+        #: The control for the test above: the dust really is what the
+        #: classifier was reading, so `varies` alone does not save it —
+        #: the row varies on its two real periods and the tail still
+        #: outvotes them.
+        from polar.tieout.units.periods import _discriminating, varies
+
+        fine, _ = self._dusty()
+        assert varies(fine)
+        scale = max(abs(v) for v in fine)
+        assert _discriminating([1e-9, 2e-9]) is True
+        assert _discriminating([1e-9, 2e-9], scale) is False
+
+    def test_real_periods_still_decide(self) -> None:
+        #: And the rule does not silence a row whose periods are small
+        #: but real — a rate series in decimals, say.
+        fine = [0.01 * n for n in range(1, 25)]
+        coarse = [fine[i * 2] + fine[i * 2 + 1] for i in range(12)]
+
+        pattern = classify_row(fine, coarse, 2)
+
+        assert pattern is not None
+        assert pattern.kind == FLOW

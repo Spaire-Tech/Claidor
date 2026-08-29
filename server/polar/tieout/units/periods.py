@@ -299,7 +299,27 @@ class RowPattern:
         return bool(self.single_period)
 
 
-def _discriminating(window: Sequence[float]) -> bool:
+#: A window carries no information about a row when its values are
+#: negligible beside the row's own magnitude.
+#:
+#: **This is the zero rule, correctly generalised, and the third time
+#: this failure mode has been caught.** The design before last died at
+#: a 77% coincidence rate because zero aggregates with zero. That was
+#: fixed for *exact* zeros — and Kelso's `Cash @ bank`, a balance-sheet
+#: line sitting between « GIC cash account » and « TOTAL CURRENT
+#: ASSETS », was still classified a **flow** on 25 votes from periods
+#: that print as 0.0000 and are actually float dust around 1e-9. Dust
+#: clears an absolute floor of 1e-12, so every one of those periods
+#: was counted as deciding something.
+#:
+#: A period is only evidence about a row if it is a real part of that
+#: row. One part per million of the row's own peak, which is fifteen
+#: orders of magnitude above the tolerance and six below anything a
+#: model means.
+NEGLIGIBLE = 1e-6
+
+
+def _discriminating(window: Sequence[float], scale: float = 0.0) -> bool:
     """True when this window can tell the three readings apart.
 
     A window of zeros satisfies `sum`, `first` and `last` at once, so
@@ -308,8 +328,16 @@ def _discriminating(window: Sequence[float]) -> bool:
     its own name — be classified as a flow**, on a margin made of
     periods that were all zero. Measured on Kelso: it produced 2 of
     the 10 false alarms directly and muddied the rest.
+
+    `scale` is the row's own peak magnitude. A window negligible beside
+    it is dust and decides nothing either — see `NEGLIGIBLE`, and note
+    that without this the exact-zero rule above is defeated by any
+    model that leaves 1e-9 residue where it means zero, which is most
+    of them.
     """
     if not window:
+        return False
+    if scale and max(abs(value) for value in window) < scale * NEGLIGIBLE:
         return False
     total = sum(window)
     return not (_close(total, window[0]) and _close(total, window[-1]))
@@ -338,11 +366,17 @@ def classify_row(
 
     votes: dict[str, list[int]] = {FLOW: [], OPENING: [], CLOSING: []}
     windows: list[tuple[int, Sequence[float], float, bool]] = []
+    #: The row's own magnitude, so « negligible » means negligible *for
+    #: this row* rather than against some absolute figure.
+    scale = max(
+        (abs(v) for v in list(fine) + list(coarse)),
+        default=0.0,
+    )
     for index, value in enumerate(coarse):
         window = fine[index * ratio : (index + 1) * ratio]
         if len(window) < ratio:
             break
-        decides = _discriminating(window)
+        decides = _discriminating(window, scale)
         windows.append((index, window, value, decides))
         if not decides:
             continue
