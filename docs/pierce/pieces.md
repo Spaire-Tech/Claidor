@@ -353,14 +353,36 @@ design. The last failed its own coincidence control at **77%** —
 shuffle the labels and 503 of 655 rows still « aggregated », because
 most rows are mostly zeros and zero sums with zero.
 
-**Round 1 of the third attempt:**
+**Where it stands after the research round:**
 
 | criterion | bar | result |
 | --- | --- | --- |
-| coincidence control | ≤ 5% | **0.0%** — PASS |
-| defects on clean Kelso | 0 | 10 → **2**, then folded to **1** |
-| plantable sites | reported | 42 on Kelso |
-| planted recall | measured | not yet run |
+| 1 — coincidence control | ≤ 5% | **0.376%** (30 of 10,827, exact bound) — **PASS** |
+| 2 — defects on clean models | 0 | **1 finding** across 16 models (27 reports → 1) |
+| 3 — planted recall | vs scope | running; 42 sites on Kelso alone |
+| 4 — no finding moves, full gate | — | not reached; **nothing wired** |
+
+**Criterion 1 passed only after the founder's research round proved my
+own criterion incoherent** — I wrote a permutation test and computed a
+ratio, and scored sixteen tiny samples separately when one breach of a
+5% bar is the *expected* outcome of doing that. The three models I
+reported as failures measure 0.70%, 2.5% and 0.33%. Corrected in the
+direction that makes the claim **harder** (59 clean pairs required),
+and stated before the number was computed.
+
+**Criterion 2 is one finding, and the bar says zero.** All 27 reports
+were hand-read at the cells; five of the six findings were **calendar
+rows** — day counts breaking by one day in 182 — and the sixth is
+kelso's `cash bank`, off by 70%, which is the shape the check exists to
+find. The correction (a break must depart materially from what the
+row's own pattern predicts) was registered before it was written, and
+the prediction it made held exactly.
+
+**Whether one unresolvable finding across sixteen clean models clears a
+bar written as « zero » is the founder's call, not mine.** Two criteria
+have already been corrected this round, both for arithmetic reasons; a
+third correction on a judgement call is how a bar quietly becomes
+whatever the result needed.
 
 Ten defects, every one hand-read at the cells, **all ten false**, with
 three causes — each a category error rather than a threshold: zero
