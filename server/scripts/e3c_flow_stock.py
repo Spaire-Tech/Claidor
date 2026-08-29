@@ -63,6 +63,10 @@ def patterns(
     because there is no alternative partner to mismatch them with.
     """
     found: list[dict[str, Any]] = []
+    #: Pairs *examined*, not pairs that matched. The false-match rate
+    #: needs a denominator and « shuffled patterns / real patterns » is
+    #: not one — see the round document, Wall 2.
+    tested = 0
     for fine, coarse, ratio in pairs_for(cells, blocks):
         fine_rows = series_by_label(cells, fine.sheet, fine.columns)
         coarse_rows = series_by_label(cells, coarse.sheet, coarse.columns)
@@ -79,6 +83,7 @@ def patterns(
                 while any(a == b for a, b in zip(shared, partners, strict=True)):
                     shuffle.shuffle(partners)
         for label, partner in zip(shared, partners, strict=True):
+            tested += 1
             fine_row, fine_values = fine_rows[label]
             coarse_row, coarse_values = coarse_rows[partner]
             pattern = classify_row(fine_values, coarse_values, ratio)
@@ -96,8 +101,10 @@ def patterns(
                     "single_period": list(pattern.single_period),
                     "unexplained": list(pattern.unexplained),
                     "coarse_values": list(coarse_values),
+                    "shared_labels": len(shared),
                 }
             )
+    globals()["LAST_TESTED"] = tested
     return found
 
 
