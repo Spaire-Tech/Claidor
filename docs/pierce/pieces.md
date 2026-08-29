@@ -205,7 +205,7 @@ green, number written down.
 | --- | --- | --- | --- |
 | ~~**1**~~ | ~~**The manual-calculation refusal** (§ 5)~~ | **DONE 28 Aug** — `polar/tieout/calculation.py`. See § 4a below | — |
 | ~~**2**~~ | ~~**Chat judged** (G2)~~ | **MEASURED 28 Aug — 3 of 5, four defects closed, and NOT DONE.** See § 4b below | — |
-| **3** | **Units** (E2 → E3) | The flagship finding, and the check is built and switched off because the inference under it was never measured | days |
+| **3** | **Units** (E2 → E3) | **IN FLIGHT 28 Aug** — the flagship finding, third attempt. See § 4c below | days |
 | **4** | **C6's two stability runs** | Behavioural version diffing is gated on two cheap measurements nobody has done. Until they run, C6 cannot start and B6 cannot be decided | a day |
 | **5** | **The arbiter** (B3) | Four corpus files are refused and waiting. Check the LibreOffice 24.2 → 25.8 version gap first — part of the queue may be that | days |
 | **6** | **The Chain's page geometry** (D3/D4) | Six failed rounds, and the diagnosis says it is document geometry, not matching | days |
@@ -324,6 +324,60 @@ before any demo.
 **Verified:** 8 new tests, 45 in the tool suite, 1,126 passed across
 tieout; golden-master gate clean; every claim re-runnable via
 `scripts/g2_questions.py`.
+
+---
+
+## 4c. Piece 3, in flight — the flagship finding (28 August)
+
+Full record: `e3c-flow-stock.md`, registered before any code.
+
+**What I found on opening the canon, and it corrected this file.**
+`pieces.md` said E2's accuracy had « never been measured ». That was
+wrong: it was measured twice, and the second measurement is why units
+is stuck. Currency and scale were armed on one key (« answered on
+34.6%, wrong on none ») and then **failed a second, harder key at
+24.62% wrong**. The rule that follows was already on the record: *a
+dimension whose key cannot contain its failure case must not be armed.*
+So E3a is refused, correctly, and no amount of work on it ships
+anything.
+
+**The way through is not the inference at all.** « A monthly figure in
+an annual line » cannot even be *said* in the units vocabulary — the
+word « month » does not appear in `units/inference.py`. The flagship
+check reads periodicity out of the model's own arithmetic instead:
+count columns, span dates, and see how many fine cells a coarse one
+consumes. It owes the blocked inference nothing.
+
+**Two attempts died before this one**, and both post-mortems are the
+design. The last failed its own coincidence control at **77%** —
+shuffle the labels and 503 of 655 rows still « aggregated », because
+most rows are mostly zeros and zero sums with zero.
+
+**Round 1 of the third attempt:**
+
+| criterion | bar | result |
+| --- | --- | --- |
+| coincidence control | ≤ 5% | **0.0%** — PASS |
+| defects on clean Kelso | 0 | 10 → **2**, then folded to **1** |
+| plantable sites | reported | 42 on Kelso |
+| planted recall | measured | not yet run |
+
+Ten defects, every one hand-read at the cells, **all ten false**, with
+three causes — each a category error rather than a threshold: zero
+periods voted for every reading; the defect test matched zero against
+zero; and opening balances were judged as closing ones. Then the two
+survivors turned out to be one number published on two rows, which the
+collapse now folds into one finding.
+
+**I also found the control lying against me** — a block-pair sharing
+one label cannot be shuffled, so 16 of 28 « shuffled » rows were the
+real pairing. Excluded from **both** sides, never just the failing one.
+
+**Not adopted, nothing wired, golden master untouched.** Remaining:
+the corpus sweep across all 22 closed-deal models (running — Kelso is
+one file and one file is not the number), planted recall, then the
+gate. Early coverage signal: some real models produce **no patterned
+rows at all**, so the denominator is part of the verdict.
 
 ---
 
