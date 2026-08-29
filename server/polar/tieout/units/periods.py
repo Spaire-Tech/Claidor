@@ -365,6 +365,13 @@ def classify_row(
             #: The row's own kind is unreadable here and the period
             #: agrees with every reading. Silence, not a finding.
             continue
+        expected = _readings(window)[kind]
+        if not _departs(value, expected):
+            #: A whisker from what the pattern predicts. Whatever this
+            #: is — a calendar day, a rounding convention — it is not
+            #: « took one period instead of the whole window », and
+            #: saying so would claim something the check does not mean.
+            continue
         if _matches_one_cell(value, window):
             single.append(index)
         else:
@@ -375,6 +382,37 @@ def classify_row(
         single_period=tuple(single),
         unexplained=tuple(unexplained),
     )
+
+
+#: How far a break must depart from what the row's own pattern predicts
+#: before it is a finding.
+#:
+#: **This is the claim stated arithmetically, not a tolerance.** The
+#: finding says « this period took one cell where it takes the whole
+#: window everywhere else ». If a row's cells are roughly equal, taking
+#: one of `r` instead of the sum departs by `(r-1)/r` — 50% at a 2:1
+#: ratio, 92% at 12:1 — so 50% is the smallest departure a genuine
+#: instance can produce.
+#:
+#: Measured against the alternative: five of the six findings on the
+#: sixteen-model closed-deal corpus were **calendar rows** — `days in
+#: period`, `days in year`, `days in ops phase period` — whose breaks
+#: are which half-year carries the extra day and which years are leap
+#: years. Every one departs by about `1/182`, **half of one per cent**.
+#: Kelso's `cash bank`, the one genuine shape, departs by 70%.
+#:
+#: Two orders of magnitude separate them, so any line inside the gap
+#: says the same thing; 10% is twenty times calendar noise and five
+#: times below the smallest genuine case.
+MATERIAL_DEPARTURE = 0.10
+
+
+def _departs(value: float, expected: float) -> bool:
+    """True when `value` is far enough from `expected` to be the claim."""
+    scale = max(abs(value), abs(expected))
+    if scale <= FLOOR:
+        return False
+    return abs(value - expected) / scale >= MATERIAL_DEPARTURE
 
 
 def _matches_one_cell(value: float, window: Sequence[float]) -> bool:

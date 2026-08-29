@@ -207,3 +207,59 @@ class TestOneDecisionOneFinding:
 
         assert len(folded) == 1
         assert len(folded[0].also) == 2
+
+
+class TestMaterialDeparture:
+    """A break must be the claim the finding makes, not a whisker.
+
+    Five of the six findings on the sixteen-model closed-deal corpus
+    were calendar rows — `days in period`, `days in year` — breaking by
+    one day in 182. The finding says « this period took one cell where
+    it takes the whole window everywhere else »; half of one per cent
+    is not that.
+    """
+
+    def _calendar(self) -> tuple[list[float], list[float]]:
+        #: Barrhead's `days in period`, exactly: half-years of 182 and
+        #: 183 days, and an annual row carrying one of them.
+        fine: list[float] = []
+        coarse: list[float] = []
+        for year in range(20):
+            first, second = (182.0, 183.0) if year % 4 == 3 else (183.0, 183.0)
+            fine += [first, second]
+            coarse.append(first if year % 4 == 3 else second)
+        return fine, coarse
+
+    def test_a_one_day_calendar_slip_is_not_a_finding(self) -> None:
+        fine, coarse = self._calendar()
+
+        pattern = classify_row(fine, coarse, 2)
+
+        assert pattern is not None
+        assert pattern.single_period == ()
+
+    def test_taking_one_of_two_halves_still_is(self) -> None:
+        #: The smallest genuine instance: a 2:1 ratio, where taking one
+        #: half instead of the sum departs by 50%.
+        fine = [float(n) for n in range(1, 25)]
+        coarse = [fine[i * 2] + fine[i * 2 + 1] for i in range(12)]
+        coarse[6] = fine[13]
+
+        pattern = classify_row(fine, coarse, 2)
+
+        assert pattern is not None
+        assert pattern.single_period == (6,)
+
+    def test_kelso_cash_bank_survives(self) -> None:
+        #: The one genuine finding the corpus produced: 6.8184 where
+        #: 23.1175 belongs — a 70% departure.
+        fine = [0.0, 0.0, 0.0, 0.0, 0.0, 33.6438, 16.2991, 6.8184]
+        fine += [float(n) for n in range(1, 41)]
+        coarse = [0.0, 0.0, 33.6438, 6.8184]
+        coarse += [fine[8 + i * 2] + fine[9 + i * 2] for i in range(18)]
+
+        pattern = classify_row(fine, coarse, 2, min_periods=6)
+
+        assert pattern is not None
+        assert pattern.kind == FLOW
+        assert 3 in pattern.single_period

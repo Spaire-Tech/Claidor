@@ -333,6 +333,77 @@ cannot be rescued by a better statistic: it asks whether the findings
 are *right*, and the only instrument for that is reading them at the
 cells.
 
+---
+
+# Criterion 2 — all 27 hand-read, and the correction registered before it was written
+
+## 27 reports are 6 findings
+
+The collapse earns its place immediately. Barrhead reports the same
+`days in period` row against **eleven** partner sheets; folded, it is
+one decision.
+
+| model | reports | findings |
+| --- | --- | --- |
+| kelso | 2 | **1** |
+| levenmouth | 1 | **1** |
+| barrhead | 12 | **2** |
+| our_lady_st_patricks | 12 | **2** |
+| **total** | **27** | **6** |
+
+## All six read at the cells
+
+**Five of the six are one class, and it is not money.**
+
+| finding | break | window | departure |
+| --- | --- | --- | --- |
+| barrhead `days in period` | 182 | [182, 183] | 0.5% |
+| barrhead `days in year` | 365 | [366, 365] | 0.3% |
+| our_lady `days in period` | 182 | [182, 183] | 0.5% |
+| our_lady `days in year` | 365 | [366, 365] | 0.3% |
+| levenmouth `days in ops phase period` | 182 | [183 ×5, 182] | 0.5% |
+| **kelso `cash bank`** | **6.8184** | **[16.299, 6.818]** | **70%** |
+
+The five are **calendar rows** — day counts per period. They are
+neither flows nor stocks: they are properties of the time axis itself,
+and their « breaks » are which half-year carries the extra day and
+which years are leap years. **Every one departs from its pattern by
+about half of one per cent.**
+
+Kelso's `cash bank` departs by **70%**, and it is the only one of the
+six with the shape the check exists to find.
+
+## The correction, registered before any code
+
+**A break must be a material departure from what the row's own pattern
+predicts.** This is not a threshold on the *values* — it is the claim
+the finding makes, stated arithmetically:
+
+> This period took one cell where it takes the whole window everywhere
+> else.
+
+If a row's cells are roughly equal, taking one of `r` instead of the
+sum departs by `(r − 1) / r` — **50% at a 2:1 ratio, 92% at 12:1.**
+That is the smallest departure a genuine instance of this defect can
+produce. A calendar row's one-day slip is bounded by `1 / 182` ≈
+**0.5%**.
+
+Two orders of magnitude separate them, so any line inside that gap says
+the same thing. **The bar is fixed now at 10%** — twenty times calendar
+noise, five times below the smallest genuine case, and round.
+
+This is a category correction, not a loosening: a departure of half a
+per cent was never the defect being claimed, and reporting one said
+something the check does not mean. Registered here before the code, and
+the re-measurement follows below whatever it says.
+
+**Prediction, on the record:** the five calendar rows go, Kelso's
+`cash bank` stays, and criterion 2 lands at **one finding on sixteen
+clean models** — which is not zero, and whether one unresolvable
+finding across a whole corpus passes a bar written as « zero » is a
+judgement I will put to the founder rather than decide by adjusting the
+bar again.
+
 ## What adoption would require, named in advance
 
 A new rule key routes to the workspace category map before adoption;
