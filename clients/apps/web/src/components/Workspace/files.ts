@@ -140,6 +140,16 @@ const CATEGORY_OF: Record<string, string> = {
   //: meaning on its own.
   'currency-mismatch': 'Units that do not agree',
   'scale-mismatch': 'Units that do not agree',
+  //: The period unit, and it belongs here on the founder's own
+  //: grouping rather than on a judgement of mine: swens.md lists « a
+  //: monthly figure used where an annual one belongs » in the same
+  //: breath as dollars added to pounds and thousands mixed with
+  //: millions, and the unit-checks paragraph names the same pair.
+  //:
+  //: The note above reserved a new family for a check about a *basis*
+  //: rather than a unit. A period is a unit — the row's own time
+  //: axis says which one — so this is the family, not a stretch of it.
+  'broken-aggregation': 'Units that do not agree',
   volatile: 'Auditability risks',
   'long-formula': 'Auditability risks',
   'hidden-sheet': 'Auditability risks',

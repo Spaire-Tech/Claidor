@@ -29,42 +29,21 @@ from collections import Counter
 from dataclasses import replace
 from pathlib import Path
 
-from polar.tieout.units.periods import aggregations, blocks_from_dates
+from polar.tieout.units.periods import (
+    EARLIEST,
+    LATEST,
+    MIN_AXIS,
+    aggregations,
+    blocks_from_dates,
+    date_axes,
+)
 from polar.tieout.workbook import read_workbook
 
-#: Excel serials for 1950 and 2100 — a date axis lives in between.
-EARLIEST, LATEST = 18264.0, 73050.0
-
-#: How many date cells a row needs before it counts as an axis.
-MIN_AXIS = 6
-
-
-def date_axes(cells: dict) -> dict[str, dict[int, float]]:
-    """The best date axis per sheet: `{sheet: {column: serial}}`.
-
-    A row of date serials across many columns is a period axis. The
-    longest such row on a sheet wins, because a model may carry a
-    short date row (« as at ») beside its real axis.
-    """
-    rows: dict[tuple[str, int], dict[int, float]] = {}
-    for _ref, cell in cells.items():
-        value = cell.value
-        try:
-            serial = float(value)
-        except (TypeError, ValueError):
-            continue
-        if not EARLIEST <= serial <= LATEST:
-            continue
-        if not (cell.number_format or "").lower().count("y"):
-            continue  # a date *format*, not a number that looks like one
-        rows.setdefault((cell.sheet, cell.row), {})[cell.column] = serial
-    best: dict[str, dict[int, float]] = {}
-    for (sheet, _row), axis in rows.items():
-        if len(axis) < MIN_AXIS:
-            continue
-        if sheet not in best or len(axis) > len(best[sheet]):
-            best[sheet] = axis
-    return best
+#: `date_axes` and its three constants moved into the product when the
+#: check was wired into `audit()` — a script may not own a definition
+#: the engine runs. They are re-exported here so the measured rounds
+#: keep importing the same one function they were measured with.
+__all__ = ["EARLIEST", "LATEST", "MIN_AXIS", "date_axes", "main"]
 
 
 def main() -> int:

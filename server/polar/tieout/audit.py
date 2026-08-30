@@ -261,6 +261,7 @@ RULE_NAMES: dict[str, str] = {
     "skipped-cell": "Sum ranges that miss a cell",
     "range-over-block": "Ranges that reach past their block",
     "inconsistent-total": "Totals that disagree with their siblings",
+    "broken-aggregation": "Period totals that take one sub-period",
     "hidden-sheet": "Hidden sheets",
 }
 
@@ -288,6 +289,7 @@ HEADLINES: dict[str, str] = {
     "skipped-cell": "Incomplete total",
     "range-over-block": "Range past its block",
     "inconsistent-total": "Disagreeing totals",
+    "broken-aggregation": "Broken aggregation",
     "hidden-sheet": "Hidden sheet",
 }
 
@@ -825,6 +827,7 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     #: round, registered before it is measured again.
     _hidden_sheets(book, result)
     _names_table(book, result)
+    _broken_aggregation(book, result)
 
     _quantified(book, result, axes)
     result.findings = _collapsed(book, result.findings, axes)
@@ -909,6 +912,12 @@ def _coverage(book: Workbook, result: Audit) -> None:
         "sheets": len(book.sheets),
     }
     raised = Counter(finding.rule for finding in result.findings)
+    #: A rule that counts its own population — `broken-aggregation`
+    #: walks rows across dated blocks, which no count of cells can
+    #: supply — records the tally where it computed it and has its
+    #: `raised` filled in here, once the folds have settled.
+    for rule, tally in result.tallies.items():
+        tally["raised"] = raised.get(rule, 0)
     for rule, population in COVERAGE_OF.items():
         total = sizes[population]
         if total:
@@ -5090,3 +5099,171 @@ __all__ = [
     "Finding",
     "audit",
 ]
+
+
+def _broken_aggregation(book: Workbook, result: Audit) -> None:
+    """E3c — a row that takes one period where it takes the whole window.
+
+    The flagship finding of `swens.md` § 3a: « a formula that adds a
+    monthly figure to an annual one is a perfectly valid formula. It is
+    only wrong in meaning. » Nothing here reads a header word. A row's
+    kind — flow, opening balance, closing balance — is read from what
+    the row *does* across forty periods, and a defect is a break in the
+    row's own established pattern.
+
+    Measured before wiring (`docs/pierce/e3c-flow-stock.md`), on the
+    22-model closed-deal corpus:
+
+    - **planted recall 165 of 178 sites (92.7%)** — one coarse period
+      of each clean flow row overwritten with a single fine cell's
+      value, planted in the reader's own cells with the whole path
+      re-run;
+    - **zero false alarms** across 855 patterned rows;
+    - **coincidence control 0.33%** at the exact 95% bound, on 10,827
+      mismatched pairs, against 77% for the design before this one.
+
+    Two limits travel with it and belong in any sentence quoting the
+    numbers. **It is silent on 6 of the 22 models** — 27% of real close
+    models lay out no two dated blocks sharing labels, and silence with
+    a reason is the honest answer there. And **13 of the misses are
+    unexplained**, clustered at one period index in one model, which is
+    one blind spot rather than thirteen faults.
+    """
+    from .units.periods import (
+        COARSENESS,
+        FLOW,
+        RATIOS,
+        Block,
+        PeriodFinding,
+        blocks_from_dates,
+        classify_row,
+        date_axes,
+        fold,
+        series_by_label,
+    )
+
+    blocks = blocks_from_dates(date_axes(book.cells))
+    if len(blocks) < 2:
+        #: **The 27% is said out loud, not hidden as silence.** Six of
+        #: the twenty-two closed-deal models lay out no second dated
+        #: block for the check to read a row against, and a report that
+        #: printed nothing there would be claiming a clean bill it
+        #: never earned.
+        result.abstentions.append(
+            Abstention(
+                rule="broken-aggregation",
+                why=(
+                    "the file lays out no two sheets of dated columns to "
+                    "read one row against the other"
+                ),
+            )
+        )
+        return
+    by_sheet = {block.sheet: block for block in blocks}
+
+    #: One block per sheet, so reading a block's rows once and keeping
+    #: it is the same computation the measured scripts do per pair —
+    #: only not repeated for every partner the sheet is compared with.
+    rows_of: dict[str, dict[str, tuple[int, list[float]]]] = {}
+
+    def _rows(block: Block) -> dict[str, tuple[int, list[float]]]:
+        if block.sheet not in rows_of:
+            rows_of[block.sheet] = series_by_label(
+                book.cells, block.sheet, block.columns
+            )
+        return rows_of[block.sheet]
+
+    #: A4's denominator: rows that **declared a kind**, which is the
+    #: population this rule actually judges. A row whose two series
+    #: never establish a pattern was not examined and must not inflate
+    #: a coverage number.
+    patterned = 0
+    reports: list[tuple[PeriodFinding, list[float]]] = []
+    for fine in blocks:
+        for coarse in blocks:
+            if fine.sheet == coarse.sheet:
+                continue
+            if COARSENESS[fine.granularity] >= COARSENESS[coarse.granularity]:
+                continue
+            ratio = RATIOS.get((fine.granularity, coarse.granularity))
+            if ratio is None:
+                continue
+            fine_rows = _rows(fine)
+            coarse_rows = _rows(coarse)
+            for label in sorted(set(fine_rows) & set(coarse_rows)):
+                fine_row, fine_values = fine_rows[label]
+                coarse_row, coarse_values = coarse_rows[label]
+                pattern = classify_row(fine_values, coarse_values, ratio)
+                if pattern is None:
+                    continue
+                patterned += 1
+                if not pattern.single_period:
+                    continue
+                reports.append(
+                    (
+                        PeriodFinding(
+                            label=label,
+                            fine=f"{fine.sheet}!{fine_row}",
+                            coarse=f"{coarse.sheet}!{coarse_row}",
+                            ratio=ratio,
+                            kind=pattern.kind,
+                            kept=len(pattern.kept),
+                            single_period=pattern.single_period,
+                        ),
+                        list(coarse_values),
+                    )
+                )
+
+    if not patterned:
+        result.abstentions.append(
+            Abstention(
+                rule="broken-aggregation",
+                why=(
+                    "no row on the file's dated sheets holds still long "
+                    "enough across its periods to establish a pattern"
+                ),
+            )
+        )
+        return
+    #: `raised` is refreshed in `_coverage`, after every fold has
+    #: settled, so this number can never disagree with the report.
+    result.tallies["broken-aggregation"] = {"total": patterned, "raised": 0}
+
+    #: One number published on several rows is one authoring decision.
+    for one in fold(reports):
+        sheet, row = one.coarse.split("!")
+        block = by_sheet[sheet]
+        #: `single_period` indexes the coarse series, which was read
+        #: straight off `block.columns` — so the index names the cell,
+        #: and the finding can point at it rather than at the row.
+        broken = [
+            f"{get_column_letter(block.columns[index])}{row}"
+            for index in one.single_period
+            if index < len(block.columns)
+        ]
+        if not broken:
+            continue
+        rest = (
+            f" It does the same at {', '.join(broken[1:])}." if len(broken) > 1 else ""
+        )
+        also = (
+            f" The same figure is published at {', '.join(one.also)}."
+            if one.also
+            else ""
+        )
+        verb = "adds up" if one.kind == FLOW else "carries"
+        result.findings.append(
+            Finding(
+                rule="broken-aggregation",
+                severity="error",
+                ref=f"{sheet}!{broken[0]}",
+                sheet=sheet,
+                name=one.label,
+                detail=(
+                    f"this row {verb} its {one.ratio} sub-periods in "
+                    f"{one.kept} periods, and here it takes a single one "
+                    f"instead.{rest}{also}"
+                ),
+                source="the row's own behaviour across its time axis",
+            )
+        )

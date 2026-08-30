@@ -21,7 +21,6 @@ Registered before this ran (lane log, 28 Aug):
 
 import json
 import random
-import re
 import sys
 from pathlib import Path
 
@@ -31,39 +30,15 @@ from polar.tieout.units.periods import (
     RATIOS,
     aggregate_by_value,
     blocks_from_dates,
+    date_axes,
+    normalise,
+    series_by_label,
 )
 from polar.tieout.workbook import read_workbook
-from scripts.recalc_period_check import date_axes
 
-
-def normalise(label: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", (label or "").lower()).strip()
-
-
-def series_by_label(
-    cells: dict, sheet: str, columns: tuple[int, ...]
-) -> dict[str, tuple[int, list[float]]]:
-    """`{label: (row, values across the block's columns)}` for one sheet."""
-    grid: dict[int, dict[int, float]] = {}
-    labels: dict[int, str] = {}
-    for cell in cells.values():
-        if cell.sheet != sheet:
-            continue
-        if cell.row_label and cell.row not in labels:
-            labels[cell.row] = cell.row_label
-        if cell.column not in columns or cell.value is None:
-            continue
-        try:
-            grid.setdefault(cell.row, {})[cell.column] = float(cell.value)
-        except (TypeError, ValueError):
-            continue
-    out: dict[str, tuple[int, list[float]]] = {}
-    for row, values in grid.items():
-        key = normalise(labels.get(row, ""))
-        if not key or len(values) < MIN_PERIODS:
-            continue
-        out.setdefault(key, (row, [values.get(c, 0.0) for c in columns]))
-    return out
+#: `series_by_label` and `normalise` moved into the product with the
+#: check; re-exported so every E3c script still reads one definition.
+__all__ = ["main", "normalise", "pairs_for", "run", "series_by_label"]
 
 
 def pairs_for(cells: dict, blocks: list) -> list[tuple]:

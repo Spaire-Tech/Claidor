@@ -16,6 +16,7 @@ columns and spanning dates; the relationship between two blocks is
 read from how many cells of one a formula in the other consumes.
 """
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -541,3 +542,87 @@ def fold(
             )
         )
     return folded
+
+
+# --- reading the axis and the rows out of a workbook -----------------
+
+#: Excel serials for 1950 and 2100 — a date axis lives in between.
+#:
+#: These two numbers and `MIN_AXIS` decide which rows count as a time
+#: axis, so they decide which blocks exist, which pairs are compared,
+#: and therefore every number in `docs/pierce/e3c-flow-stock.md`. They
+#: are the values E3c was measured under and must not be changed
+#: without re-running that round.
+EARLIEST, LATEST = 18264.0, 73050.0
+
+#: How many date cells a row needs before it counts as an axis.
+MIN_AXIS = 6
+
+
+def date_axes(cells: Mapping[str, Any]) -> dict[str, dict[int, float]]:
+    """The best date axis per sheet: `{sheet: {column: serial}}`.
+
+    A row of date serials across many columns is a period axis. The
+    longest such row on a sheet wins, because a model may carry a short
+    date row (« as at ») beside its real axis.
+
+    **A date format is required, not just a plausible number.** 40,000
+    is a date and also a perfectly ordinary sum of money; only the
+    format says which, and reading the number alone turned money rows
+    into time axes.
+    """
+    rows: dict[tuple[str, int], dict[int, float]] = {}
+    for cell in cells.values():
+        try:
+            serial = float(cell.value)
+        except (TypeError, ValueError):
+            continue
+        if not EARLIEST <= serial <= LATEST:
+            continue
+        if not (getattr(cell, "number_format", "") or "").lower().count("y"):
+            continue
+        rows.setdefault((cell.sheet, cell.row), {})[cell.column] = serial
+    best: dict[str, dict[int, float]] = {}
+    for (sheet, _row), axis in rows.items():
+        if len(axis) < MIN_AXIS:
+            continue
+        if sheet not in best or len(axis) > len(best[sheet]):
+            best[sheet] = axis
+    return best
+
+
+def series_by_label(
+    cells: Mapping[str, Any], sheet: str, columns: Sequence[int]
+) -> dict[str, tuple[int, list[float]]]:
+    """`{label: (row, values across the block's columns)}` for one sheet.
+
+    Labels are normalised so « Cash @ bank » on one sheet meets « Cash @
+    Bank » on another. A row appearing twice under one label keeps its
+    first occurrence; the fold downstream is what recognises the two as
+    one decision.
+    """
+    grid: dict[int, dict[int, float]] = {}
+    labels: dict[int, str] = {}
+    wanted = set(columns)
+    for cell in cells.values():
+        if cell.sheet != sheet:
+            continue
+        if cell.row_label and cell.row not in labels:
+            labels[cell.row] = cell.row_label
+        if cell.column not in wanted or cell.value is None:
+            continue
+        try:
+            grid.setdefault(cell.row, {})[cell.column] = float(cell.value)
+        except (TypeError, ValueError):
+            continue
+    out: dict[str, tuple[int, list[float]]] = {}
+    for row, values in grid.items():
+        key = normalise(labels.get(row, ""))
+        if not key or len(values) < MIN_PERIODS:
+            continue
+        out.setdefault(key, (row, [values.get(c, 0.0) for c in columns]))
+    return out
+
+
+def normalise(label: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (label or "").lower()).strip()

@@ -574,3 +574,65 @@ A new rule key routes to the workspace category map before adoption;
 the catalogue moves 20 → 21 and the golden master is regenerated in
 the same commit. Nothing is wired into `audit()` until criteria 1–4
 hold.
+
+---
+
+# Adoption round — registered 30 August 2026, before the sweep was read
+
+The founder's instruction was « turn on and on to the next piece ».
+Turning it on means it stops being measured on the corpus it was
+designed against: `audit()` runs on the **27-file AU-UK regulator
+corpus**, where this check's false-alarm rate has never been measured
+at all. So the criteria go down first, and the sweep is read after.
+
+## What I predict, stated before looking
+
+The regulator corpus is not the closed-deal corpus wearing a different
+name. These are price-control financial models — one licensee grid per
+sheet, values pushed through a rate calculation — not a monthly
+statement pair published beside its annual roll-up. **I expect this
+check to be mostly silent here, and I expect the abstention rather
+than the finding to be the common outcome.** Numerically: **0 to 5
+findings across the 27 files.** If it fires far more than that, the
+prediction was wrong and that is the result, not an inconvenience.
+
+## What counts as a pass
+
+1. **Every finding is hand-read at the cells before the baseline
+   moves.** A finding I cannot account for from the model's own cells
+   is a false alarm, and it counts as one.
+2. **More than one false alarm and the check comes back out** of
+   `audit()` in this form. Its cause is then fixed as a category
+   error and the sweep re-run. **One false alarm is not a pass
+   either** — it is recorded here as a limit, with its cause named.
+3. **Every other rule reports byte-identically to the golden master.**
+   If a pre-existing finding moves, the wiring touched something it
+   had no business touching, and that is a defect whatever
+   `broken-aggregation` says. The gate's diff decides this, not me.
+
+## What may not happen
+
+**No threshold moves to make this number better.** Not
+`MATERIAL_DEPARTURE`, not `MIN_PERIODS`, not `NEGLIGIBLE`, not
+`MIN_AXIS`, not `EARLIEST`. Every correction in the round above was a
+*category error* — a class of thing the check was wrong to consider —
+and that is the only kind of correction allowed here. Any change to
+the criteria states its direction before the number is recomputed.
+
+## Two things the wiring itself already changed, recorded now
+
+- **The constants came within one commit of being wrong.** Moving
+  `date_axes` out of `scripts/` into the product, I wrote `EARLIEST =
+  32874.0` and `MIN_AXIS = 4` where the measured scripts had `18264.0`
+  and `6`. Those two numbers decide which rows count as a time axis,
+  so they decide which blocks exist and therefore every number above.
+  They are reconciled to the measured values, the scripts now import
+  the product's one definition rather than keeping their own, and the
+  constants carry a comment saying they may not move without re-running
+  this round.
+- **A sheet whose only date row is its header row hands this check no
+  axis.** The reader keeps header-row cells out of the audit — they are
+  words, not content — so the axis has to be a data row. This is true
+  of the measured scripts too, because they read through the same
+  reader, so it changes no number above. It is a real limit on reach
+  and it is written down rather than discovered later.
