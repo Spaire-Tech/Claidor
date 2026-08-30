@@ -474,6 +474,16 @@ def _elevated(book: Workbook, result: Audit) -> None:
             "the loop is in the dependency graph and the workbook does "
             "not declare iteration",
         ),
+        #: Below the row-pattern rules, and deliberately. The evidence is
+        #: as direct as theirs — the row's own behaviour over twenty-five
+        #: periods — but **arithmetic cannot tell a defect from a house
+        #: convention**, and the one surviving finding of the round that
+        #: built this check was held for a person rather than decided.
+        "broken-aggregation": (
+            0.85,
+            "the row aggregates its sub-periods everywhere else, though "
+            "a house convention can look like a break",
+        ),
     }
     #: Rules whose figure is money rather than a count or a constant —
     #: the only findings magnitude may promote.
