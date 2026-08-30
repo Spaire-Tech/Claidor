@@ -512,7 +512,7 @@ three false-alarm classes I had to find.
 | 1 — coincidence control | ≤ 5% | **0.33%** — 26 of 10,827 mismatched pairs, exact 95% bound | **PASS** |
 | 2 — defects on clean models | 0 | **0** across 22 models and 855 patterned rows | **PASS** |
 | 3 — planted recall | vs scope | **92.7%** — 165 of 178 sites | **measured** |
-| 4 — no finding moves, full gate | — | running | — |
+| 4 — no finding moves, full gate | — | **gate clean, 27 of 27**, finding for finding; 1,154 tests pass | **PASS** |
 
 ## What each number is worth, and what it is not
 
