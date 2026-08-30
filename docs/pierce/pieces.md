@@ -205,7 +205,7 @@ green, number written down.
 | --- | --- | --- | --- |
 | ~~**1**~~ | ~~**The manual-calculation refusal** (§ 5)~~ | **DONE 28 Aug** — `polar/tieout/calculation.py`. See § 4a below | — |
 | ~~**2**~~ | ~~**Chat judged** (G2)~~ | **MEASURED 28 Aug — 3 of 5, four defects closed, and NOT DONE.** See § 4b below | — |
-| **3** | **Units** (E2 → E3) | **IN FLIGHT 28 Aug** — the flagship finding, third attempt. See § 4c below | days |
+| ~~**3**~~ | ~~**Units** (E2 → E3)~~ | **WIRED 30 Aug — and silent on every regulator model.** Four criteria met, gate clean 27/27, and it speaks on 0 of 27 here against 16 of 22 on close models. See § 4c below | — |
 | **4** | **C6's two stability runs** | Behavioural version diffing is gated on two cheap measurements nobody has done. Until they run, C6 cannot start and B6 cannot be decided | a day |
 | **5** | **The arbiter** (B3) | Four corpus files are refused and waiting. Check the LibreOffice 24.2 → 25.8 version gap first — part of the queue may be that | days |
 | **6** | **The Chain's page geometry** (D3/D4) | Six failed rounds, and the diagnosis says it is document geometry, not matching | days |
@@ -400,6 +400,48 @@ the corpus sweep across all 22 closed-deal models (running — Kelso is
 one file and one file is not the number), planted recall, then the
 gate. Early coverage signal: some real models produce **no patterned
 rows at all**, so the denominator is part of the verdict.
+
+### Wired — 30 August, and what it is worth
+
+The founder said « turn on and on to the next piece ». It is on:
+`_broken_aggregation` runs inside `audit()`, the rule is in
+`RULE_NAMES` and `HEADLINES` so a firm can switch it off and a reader
+gets a name for it, it routes to a family in the workspace map, and it
+ranks on its own evidence rather than the generic fallback.
+
+**All four criteria met, and the golden master did not have to move.**
+
+| criterion | result |
+| --- | --- |
+| 1 — coincidence control | **0.33%** at the exact 95% bound |
+| 2 — false alarms | **0** on 22 close models, **0** on 27 regulator models |
+| 3 — planted recall | **92.7%** (165 of 178), unchanged by the dust fix |
+| 4 — no finding moves, full gate | **clean, 27 of 27** — baseline untouched |
+
+**And the number that matters more than any of those: it speaks on 0
+of the 27 regulator models.** Zero findings there was silence, not a
+clean bill. Every silence was traced to a cause and all three are the
+check being right — 19 models carry fewer than two date axes, 2 carry
+only annual grids so no comparable pair can exist, and 6 pair a
+monthly sheet that turns out to be a per-instrument dataset table with
+no named line to match. The cells are in `e3c-flow-stock.md`.
+
+**So the flagship earns its keep on project-finance close models and
+nothing else so far.** On those it speaks on 16 of 22. Any sentence
+quoting 92.7% or 0.33% without that is selling reach the check does
+not have. It stays wired because it raises nothing false, prints its
+reason rather than passing silence off as a clean bill, and moved no
+existing finding — none of which is the same as reach.
+
+**Three defects the wiring itself surfaced**, each fixed and recorded:
+the date-axis constants were rewritten wrong on the move out of
+`scripts/` and would have silently broken reproduction of every number
+above; the A4 coverage invariant caught that the new rule took part in
+coverage while belonging to no denominator set, which is now a named
+constant in the engine with a second test holding the behaviour the
+widened assertion cannot; and a sheet whose only date row is its
+header row hands this check no axis, because the reader keeps header
+cells out of the audit.
 
 ---
 
