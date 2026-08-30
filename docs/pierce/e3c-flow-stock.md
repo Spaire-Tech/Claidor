@@ -636,3 +636,62 @@ the criteria states its direction before the number is recomputed.
   of the measured scripts too, because they read through the same
   reader, so it changes no number above. It is a real limit on reach
   and it is written down rather than discovered later.
+
+## The result — 30 August, read after the criteria were committed
+
+**The registered criteria all hold.**
+
+| criterion, as registered | result |
+| --- | --- |
+| 0–5 findings predicted across 27 regulator models | **0** — the prediction held |
+| every finding hand-read before the baseline moves | none to read |
+| more than one false alarm and the check comes back out | **0 false alarms** |
+| every other rule byte-identical to the golden master | **gate clean, 27 of 27** |
+
+Zero findings and a clean gate means the golden master **did not need
+regenerating**: the check is on and the committed baseline is still the
+truth, file for file and finding for finding.
+
+## And zero findings here was silence, not a clean bill
+
+The number that matters more than the zero: **the check spoke on 0 of
+the 27 regulator models.** Not « looked and found nothing » — *never
+looked*. On the closed-deal corpus it speaks on 16 of 22; here on none.
+The gate sweep cannot show this, because its output is compared byte
+for byte against the baseline and so cannot carry denominators;
+`scripts/e3c_coverage.py` asks the same engine the other question.
+
+Every one of the 27 silences was hand-traced to a cause, and **all
+three causes are the check being right**:
+
+| why it said nothing | models |
+| --- | --- |
+| fewer than two sheets carry a date axis at all | **19 of 27** |
+| dated blocks exist but all are **annual** — no two granularities, so no comparable pair can exist | **2 of 27** (CAA H7 PCM, 43 blocks each) |
+| a comparable pair exists, but the fine sheet is a **dataset table**, not a labelled line-item grid | **6 of 27** (RIIO-3 BPFMs) |
+
+The third deserves its cells, because « monthly sheet present, annual
+sheet present, still nothing » is the shape that would hide a defect.
+On `final_gt3_bpfm.xlsm` the monthly block is `F5 - Inflation Linked
+Debt` — 194 columns, 154,759 cells, 452 rows carrying values, and
+**zero row labels**. Read at the cells: row 11 is a field header
+(`Ofgem Identifier`, `category`, `sector`, `licensee`) and every data
+row's left columns hold `-`. It is one row per debt instrument, not one
+row per named line item. There is no `Total inflation-linked interest`
+on it to match the annual summary's. Nothing to compare is the correct
+answer, and the reader is not at fault.
+
+## What this says about the check, plainly
+
+**It earns nothing on regulator price-control models.** Its whole value
+is on project-finance close models — the corpus it was designed
+against, where it speaks on 16 of 22 and where its one surviving
+finding lives. A sentence that quotes 92.7% recall or 0.33% coincidence
+without this one is selling the check on a corpus it cannot read.
+
+It stays wired, on three grounds and no others: it raises **nothing
+false** on models it cannot read, its abstention prints the reason so a
+report never passes silence off as a clean bill, and the gate proves it
+moved no existing finding. Silence is not a reason to remove a check
+that is right to be silent — but it is not a reason to claim reach
+either.
