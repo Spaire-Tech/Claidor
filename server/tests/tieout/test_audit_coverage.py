@@ -10,7 +10,7 @@ non-empty population never abstains.
 import tempfile
 from pathlib import Path
 
-from polar.tieout.audit import COVERAGE_OF, audit
+from polar.tieout.audit import COVERAGE_OF, SELF_COUNTED, audit
 from polar.tieout.workbook import read_workbook
 
 
@@ -79,12 +79,37 @@ def test_a_single_sheet_book_tallies_rather_than_abstains() -> None:
 
 def test_every_rule_either_tallies_or_abstains_exactly_once() -> None:
     """No rule may be silently absent from both, and none may be in
-    both — the report must be able to say something about each."""
+    both — the report must be able to say something about each.
+
+    The reference set is `COVERAGE_OF` **plus** `SELF_COUNTED`, the
+    rules whose population no count of cells can supply and which
+    therefore record their own tally or their own abstention. The
+    obligation is not relaxed by that: a rule in neither set still
+    fails here, which is the whole point of the assertion.
+    """
     _, result = _audit(_model)
     abstained = {a.rule for a in result.abstentions}
     tallied = set(result.tallies)
-    assert tallied | abstained == set(COVERAGE_OF)
+    assert tallied | abstained == set(COVERAGE_OF) | SELF_COUNTED
     assert not (tallied & abstained)
+
+
+def test_a_self_counted_rule_still_lands_in_exactly_one() -> None:
+    """The teeth of the rule above, aimed at the case that widened it.
+
+    A rule that supplies its own denominator is the easiest one to get
+    wrong — it can silently record neither, and the set union above
+    would still hold if the rule were simply dropped from
+    `SELF_COUNTED` at the same time. This pins the behaviour rather
+    than the bookkeeping.
+    """
+    _, result = _audit(_model)
+    for rule in SELF_COUNTED:
+        lands_in = [
+            rule in result.tallies,
+            rule in {a.rule for a in result.abstentions},
+        ]
+        assert sum(lands_in) == 1, f"{rule} must tally or abstain, exactly one"
 
 
 def test_broken_name_is_deliberately_absent() -> None:

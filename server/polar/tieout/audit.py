@@ -881,6 +881,21 @@ COVERAGE_OF: dict[str, str] = {
     "hidden-sheet": "sheets",
 }
 
+#: A4 — rules that supply their own denominator instead of drawing one
+#: from `COVERAGE_OF`, because no count of cells is the population they
+#: walk. `broken-aggregation` judges **rows that declared a kind across
+#: a pair of dated blocks**; a cell count cannot say how many those
+#: are, and a cell count standing in for one would be a number wearing
+#: a denominator's hat — the same objection that keeps `broken-name`
+#: out of `COVERAGE_OF` entirely.
+#:
+#: Such a rule records its tally where it computed it, or appends its
+#: own abstention naming the reason in the file's own terms. The
+#: obligation is unchanged and `test_audit_coverage.py` holds it:
+#: **every rule here still lands in exactly one of tallies or
+#: abstentions, never both and never neither.**
+SELF_COUNTED: frozenset[str] = frozenset({"broken-aggregation"})
+
 
 #: A4 — why a denominator is zero, in the file's own terms. Ordered:
 #: the first matching reason wins, so the most informative sentence
