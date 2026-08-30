@@ -499,6 +499,75 @@ convention, the check has a sixth false-alarm class to name and the
 bar is met literally. That is a reading task, and it is the honest
 next step rather than a decision.
 
+---
+
+# The round, complete — all four criteria on one version of the check
+
+Every number below comes from the same code. The earlier sections
+record how it got here, including two criteria I had to correct and
+three false-alarm classes I had to find.
+
+| criterion | bar | result | |
+| --- | --- | --- | --- |
+| 1 — coincidence control | ≤ 5% | **0.33%** — 26 of 10,827 mismatched pairs, exact 95% bound | **PASS** |
+| 2 — defects on clean models | 0 | **0** across 22 models and 855 patterned rows | **PASS** |
+| 3 — planted recall | vs scope | **92.7%** — 165 of 178 sites | **measured** |
+| 4 — no finding moves, full gate | — | running | — |
+
+## What each number is worth, and what it is not
+
+**Criterion 2 passing at zero is the weakest of the three**, and the
+E3a round already named the trap: « if both fire zero times on the
+whole corpus, the round's result is *armed, correct, and silent here*
+— which is a pass on the false-positive criterion and **not** evidence
+the check works. » Zero false alarms is trivially achievable by
+detecting nothing.
+
+**Criterion 3 is what carries the round.** 165 of 178 planted defects
+caught, each one a coarse period overwritten with a single fine cell's
+value, planted in the reader's own cells with the whole detection path
+re-run. The scope is reported because a rate without one is a story:
+the previous design could offer 1 of 1 on a scope of 1.
+
+**And recall did not move when the false alarms went.** Before the
+dust rule: 165 of 178. After: 165 of 178, the same thirteen misses.
+That is the result worth trusting — the corrections removed false
+alarms without trading away detection, which is the trade this round
+was most at risk of making silently.
+
+## The 13 misses, unexplained and reported as such
+
+Nine are on Dumfries and three of those share a period index (21);
+Largs's single miss sits at 20. **That is a structural blind spot at a
+position in an axis, not thirteen independent failures.** It has not
+been read at the cells. 92.7% is published without an account of its
+remainder rather than with a guess at one, and the reading is the
+obvious next round.
+
+## Coverage — the denominator nobody asks for
+
+**Six of 22 models produce no patterned rows at all**: the check cannot
+speak on them, because they carry no two dated blocks sharing labels.
+That is an honest silence, and it is also a limit on the flagship: a
+check that cannot speak on **27% of real close models** is a different
+product from one that can. The number belongs beside the others.
+
+## What changed the answer, in order
+
+1. **Zero periods voted for every reading** — fixed, and « cash bank
+   carried forward » stopped being a flow.
+2. **The defect test matched zero against zero** — fixed.
+3. **Opening balances were judged as closing ones** — three readings
+   now, from behaviour, never from the words « b/f ».
+4. **A break had to be material** — five of six findings were calendar
+   rows slipping by one day in 182.
+5. **Float dust cleared the absolute floor** — the zero rule
+   generalised to the row's own scale. This was the last false alarm
+   and the third catch of one failure mode.
+
+Every one is a category error rather than a threshold, and each was
+registered before it was written.
+
 ## What adoption would require, named in advance
 
 A new rule key routes to the workspace category map before adoption;
