@@ -229,6 +229,14 @@ def main() -> int:
         # --- 1. seed stability -------------------------------------
         sets: list[set[Any]] = []
         single_sets: list[set[Any]] = []
+        #: The same five sets keyed by cell reference. On an unmodified
+        #: file this is not merely valid but **stronger**: all five
+        #: minings read the same file, so `I42` means `I42` in every one
+        #: and nothing collapses. Only 14 of this sheet's 144 watched
+        #: cells carry a column label, so the label signature cannot
+        #: tell `I42` from `M42` — five years of one row become one
+        #: identity, and a year-specific flicker could hide inside it.
+        ref_sets: list[set[Any]] = []
         typed = kin = None
         for pair in SEED_PAIRS:
             print(f"  pair {pair}:", flush=True)
@@ -244,8 +252,13 @@ def main() -> int:
                 hand=hand,
             )
             sets.append({signature(rule, labels) for rule in stable})
+            ref_sets.append({frozenset(rule.terms) for rule in stable})
             single_sets += [{signature(r, labels) for r in one} for one in singles]
-            print(f"    -> product rule set: {len(stable)}", flush=True)
+            print(
+                f"    -> product rule set: {len(stable)} rules, "
+                f"{len(sets[-1])} label signatures",
+                flush=True,
+            )
         common = set.intersection(*sets) if sets else set()
         union = set.union(*sets) if sets else set()
         #: The statistic the amendment's question actually needs: a rule
@@ -270,6 +283,27 @@ def main() -> int:
             if pairwise
             else 1.0,
             "identical": all(s == sets[0] for s in sets),
+            #: The stronger comparison, per the registration's
+            #: amendment. The bar applies to this one too.
+            "by_reference": {
+                "counts": [len(s) for s in ref_sets],
+                "in_all_five": len(set.intersection(*ref_sets)) if ref_sets else 0,
+                "in_any": len(set.union(*ref_sets)) if ref_sets else 0,
+                "core_over_union": round(
+                    len(set.intersection(*ref_sets)) / len(set.union(*ref_sets)), 4
+                )
+                if ref_sets and set.union(*ref_sets)
+                else 1.0,
+                "identical": all(s == ref_sets[0] for s in ref_sets),
+                "flickering": [
+                    sorted(f"{ref} {'+' if c > 0 else '-'}" for ref, c in rule)
+                    for rule in sorted(
+                        set.union(*ref_sets) - set.intersection(*ref_sets), key=str
+                    )[:40]
+                ]
+                if ref_sets
+                else [],
+            },
             #: The ten individual minings, compared the way 27 August
             #: compared its five — kept so the two rounds are the same
             #: question asked of different rule sets.
@@ -286,11 +320,19 @@ def main() -> int:
                 for rule in sorted(union - common, key=str)[:40]
             ],
         }
+        by_ref_stat = record["seed_stability"]["by_reference"]
         print(
-            f"seed stability: {[len(s) for s in sets]} rules per set, "
+            f"seed stability BY LABEL: {[len(s) for s in sets]} signatures per set, "
             f"{len(common)} in all five of {len(union)} in any "
             f"(core/union {record['seed_stability']['core_over_union']}), "
             f"identical={record['seed_stability']['identical']}",
+            flush=True,
+        )
+        print(
+            f"seed stability BY REFERENCE: {by_ref_stat['counts']} rules per set, "
+            f"{by_ref_stat['in_all_five']} in all five of {by_ref_stat['in_any']} "
+            f"in any (core/union {by_ref_stat['core_over_union']}), "
+            f"identical={by_ref_stat['identical']}",
             flush=True,
         )
 
