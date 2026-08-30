@@ -55,3 +55,11 @@ say so and open it before answering.**
   improvise a substitute.
 - Deviations from a design or a plan are named in writing, never
   made silently.
+- **« Update on piece X » is answered in plain English, no
+  jargon** (founder's instruction, 30 Aug — « simply like im 10 »).
+  Three things only: are we close to finishing, what are we
+  waiting on, what is being worked on. Numbers, rule names,
+  file paths and method belong in the round documents and in
+  answers to questions that ask for them — not in a status
+  reply. Honesty is unchanged: if it failed, say it failed, in
+  plain words.
