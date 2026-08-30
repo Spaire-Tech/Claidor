@@ -68,6 +68,28 @@ all lane branches based on its tip. The founder merges to main.
 - Run corpus scripts as modules from `server/` (`uv run python -m
   scripts.X`); tests without services use `--noconftest` (the 99
   fixture errors are pre-existing, verified by stash).
+- **`pgrep -f <name>` matches the shell command that runs it.** A
+  liveness check written as `pgrep -f my_sweep && echo RUNNING` will
+  say RUNNING forever, because the `bash -c` wrapper carrying that
+  very string is itself a match. **Paid for on 30 August**: a sweep
+  died with the container, the check reported it alive for **twelve
+  hours**, and the founder — not the check — noticed, because the
+  clock did not fit the claim.
+  - Check liveness with `ps -eo pid,etime,args | grep -F <the actual
+    command> | grep -v grep`, or better, have the job write a
+    sentinel line and wait on **that**.
+  - **And check the clock.** A log whose mtime is hours old is dead
+    whatever any process check says. `stat -c %y <log>` costs nothing
+    and cannot be fooled by its own name.
+  - This is the same family as the `kill-job` self-kill trap that hit
+    this project three times in one session. A process check that can
+    see itself is wrong by construction; the fix is never a better
+    pattern, it is a signal the job emits rather than one inferred
+    about it.
+- **Long jobs do not survive a container restart.** Anything over a
+  few minutes should write partial results per item, so a restart
+  costs the remainder and not the run. The 22-model sweeps do this
+  (one JSON per model) and it saved 15 of 22 when this happened.
 
 ## Where every record lives
 
