@@ -139,3 +139,50 @@ fixed at 200 above, before the first run, so this measures the product
 rather than a version tuned to pass. Any correction must be a
 **category error** — a class of thing the measurement was wrong to
 consider — stated with its direction before the number is recomputed.
+
+## An amendment to this registration, made before any number was computed
+
+The smoke run (3 runs, not a measurement) exposed a property of the
+instrument that has to be stated before the real run, not after.
+
+**Only 14 of the 144 watched cells carry a column label.** A rule's
+registered identity is the `(sign, row label, column label)` triples
+of its terms, so with the column label empty, `I42`, `J42`, `K42`,
+`L42` and `M42` — the same row in five different years — collapse to
+**one** identity. On this model the product's 11 rules become **4
+signatures**.
+
+Two consequences, both real:
+
+1. **Gate 1's registered comparison is weaker than it sounds.**
+   Comparing 4 collapsed signatures across five seeds is an easier
+   test than comparing 11 rules.
+2. **For C6 this is a defect in reach, not a defect of intent.** The
+   signature is *designed* to carry the year in its column label; the
+   reader simply does not assign one on this sheet. So « v12 broke a
+   rule » could not say which year broke, and a rule that holds in
+   year I and breaks in year M would still contribute its signature
+   from year I — C6 would report no change where there was one.
+
+**The 27 August result was measured on the same collapsed
+signatures**, using this same `signature()`. That is not a criticism
+of it; it is the reason both rounds must be read the same way.
+
+**What I am changing, and what I am not.** I am not touching
+`signature()` — changing the instrument mid-round is how a bar
+becomes whatever the result needed, and keeping it is what makes this
+round comparable to 27 August. Instead gate 1 additionally reports the
+**reference-keyed** comparison, which on an unmodified file is not
+merely valid but *stronger*: the five seeds mine the same file, so
+`I42` means `I42` in all five, and no collapse occurs. Gate 1 is
+therefore judged on **both**, and the bar applies to both.
+
+Gate 2 keeps label keying as its only fair comparison, because there
+the rows really did move — with the collapse noted, so « identical by
+label » is never read as more than it is.
+
+**Prediction for the added comparison, before it runs:** the
+reference-keyed core ÷ union will be **lower** than the label-keyed
+one, because it cannot hide a year-specific flicker inside a collapsed
+signature. If they come back equal, the collapse was costing nothing
+on this model and I will say so.
