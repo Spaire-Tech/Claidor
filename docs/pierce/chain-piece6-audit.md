@@ -203,10 +203,12 @@ nothing.**
 - The abstention instrument is genuinely good (30 of 30, 109 true
   abstentions) and the product already tells the truth about itself
   in-band.
-- **Waiting on:** the Kelso **Project Agreement PDF** (see the intake
-  note below — the model half is in hand and verified); Sentinel's
-  `Cell.column_label` stacked-header fix (still the thing between D3
-  and part of its recall); and a first real confirmed deal for D4/D5.
+- **Waiting on:** a **real deal's unredacted papers** — the Kelso
+  round (§ 4a) proved no public pair can test the product case, so
+  the next honest measurement needs a deal room or the registered
+  answer-key construction; Sentinel's `Cell.column_label`
+  stacked-header fix (still the thing between D3 and part of its
+  recall); and a first real confirmed deal for D4/D5.
 
 ## 4a. Kelso intake — 31 August, the founder's upload, verified
 
@@ -226,14 +228,18 @@ Document » (« Schedule 1 → Base Credit Facility Commitment →
 Two sibling tabs (`Credit Agreement Gaps`, `DBFM Gaps`) carry the
 same shape with document references.
 
-**Round 4 still needs its document half:** the signed **Project
-Agreement PDF** from the SFT portal (one browser download). Some
-Gaps List rows cite the **Credit Agreement**, which was never
-published — those score as the registered
-`unreachable (unpublished paper)` condition, exactly as round 4's
-registration foresaw. The harness
-(`scripts/corpus_documents_kelso_round`) is committed and tested; the
-round runs the day the agreement lands.
+**Round 4 has now run** — the founder supplied the signed Project
+Agreement (7,702,131 bytes, sha256 `78ac5bff9b76…`) the same day.
+Result, in `chain-kelso-round.md`: **0 of 50 rows reachable.** 31
+rows cite papers never published, 10 carry no figure, 6 sit behind
+black redaction bars in the published copy, and 3 are handwritten
+into the executed copy and destroyed by OCR — readable by eye
+(« 21.85 % », « £1,901,275.00 »), invisible to any text layer. The
+matcher was never tested; the *pair* was, and it cannot carry the
+test. The Dumfries redaction finding is replicated against the deal
+team's own answer key, and the conclusion is the reckoning's, reached
+a third time: the real test of the Chain lives inside a deal room
+with the unredacted papers, not in public archives.
 
 ## 5. Corrections this audit owes the record
 
