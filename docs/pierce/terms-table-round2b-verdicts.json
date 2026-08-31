@@ -1,0 +1,359 @@
+{
+ "control": [
+  {
+   "row": 10,
+   "transformation": "identity",
+   "document_text": "44,016",
+   "model_value": 44016.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 12,
+   "transformation": "identity",
+   "document_text": "2,120,257",
+   "model_value": 2120257.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 13,
+   "transformation": "identity",
+   "document_text": "343,349",
+   "model_value": 343349.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 19,
+   "transformation": "identity",
+   "document_text": "73,315,883",
+   "model_value": 73315883.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 21,
+   "transformation": "negate",
+   "document_text": "(41,209,384)",
+   "model_value": 41209384.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 36,
+   "transformation": "identity",
+   "document_text": "10,895,809",
+   "model_value": 10895809.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 41,
+   "transformation": "identity",
+   "document_text": "6,741,539",
+   "model_value": 6741539.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 44,
+   "transformation": "identity",
+   "document_text": "704,462",
+   "model_value": 0.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "detail": "Neither side has moved since binding, and the pair does not tie out: the document states 704,462 and the model holds 0."
+  },
+  {
+   "row": 57,
+   "transformation": "negate",
+   "document_text": "(6,046,528)",
+   "model_value": 6046528.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 59,
+   "transformation": "negate",
+   "document_text": "(919,728)",
+   "model_value": 919728.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 88,
+   "transformation": "identity",
+   "document_text": "39,294",
+   "model_value": 39294.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 119,
+   "transformation": "identity",
+   "document_text": "91,502",
+   "model_value": 91502.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 121,
+   "transformation": "identity",
+   "document_text": "11,671",
+   "model_value": 11671.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 179,
+   "transformation": "identity",
+   "document_text": "42,926,441.00",
+   "model_value": 42926441.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 187,
+   "transformation": "identity",
+   "document_text": "312,696",
+   "model_value": 312696.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  }
+ ],
+ "plants": [
+  {
+   "row": 10,
+   "plant": "P1",
+   "planted_value": 440160.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 10,
+   "plant": "P2",
+   "planted_value": 44017.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 12,
+   "plant": "P1",
+   "planted_value": 21202570.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 12,
+   "plant": "P2",
+   "planted_value": 2120258.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 13,
+   "plant": "P1",
+   "planted_value": 3433490.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 13,
+   "plant": "P2",
+   "planted_value": 343350.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 19,
+   "plant": "P1",
+   "planted_value": 733158830.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 19,
+   "plant": "P2",
+   "planted_value": 73315884.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 21,
+   "plant": "P1",
+   "planted_value": 412093840.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 21,
+   "plant": "P2",
+   "planted_value": 41209385.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 36,
+   "plant": "P1",
+   "planted_value": 108958090.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 36,
+   "plant": "P2",
+   "planted_value": 10895810.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 41,
+   "plant": "P1",
+   "planted_value": 67415390.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 41,
+   "plant": "P2",
+   "planted_value": 6741540.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 44,
+   "plant": "P1",
+   "planted_value": 100000.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 44,
+   "plant": "P2",
+   "planted_value": 1.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 57,
+   "plant": "P1",
+   "planted_value": 60465280.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 57,
+   "plant": "P2",
+   "planted_value": 6046529.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 59,
+   "plant": "P1",
+   "planted_value": 9197280.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 59,
+   "plant": "P2",
+   "planted_value": 919729.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 88,
+   "plant": "P1",
+   "planted_value": 392940.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 88,
+   "plant": "P2",
+   "planted_value": 39295.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 119,
+   "plant": "P1",
+   "planted_value": 915020.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 119,
+   "plant": "P2",
+   "planted_value": 91503.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 121,
+   "plant": "P1",
+   "planted_value": 116710.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 121,
+   "plant": "P2",
+   "planted_value": 11672.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 179,
+   "plant": "P1",
+   "planted_value": 429264410.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 179,
+   "plant": "P2",
+   "planted_value": 42926441.01,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 187,
+   "plant": "P1",
+   "planted_value": 3126960.0,
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 187,
+   "plant": "P2",
+   "planted_value": 312697.0,
+   "ties_out": false,
+   "caught": true
+  }
+ ],
+ "quiet": {
+  "checks": 420,
+  "breaks": 0
+ },
+ "wrong_statement_probe": {
+  "row": 10,
+  "ties_out": false
+ }
+}

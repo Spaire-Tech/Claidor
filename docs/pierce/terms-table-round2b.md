@@ -53,3 +53,28 @@ Harness: `server/scripts/terms_table_round2b.py`, reusing round 2's
 frozen selection and construction by import, committed with this
 file and run once after this commit. Verdicts:
 `terms-table-round2b-verdicts.json`, committed whatever they say.
+
+---
+
+# Results (one run, after the registration commit; the bars did not move)
+
+Run 31 Aug 2026. Full verdicts: `terms-table-round2b-verdicts.json`.
+
+| bar | result |
+| --- | --- |
+| B1 — one flag, and it is the finding | **PASS — 14 of 15 tie out; row 44 is the only flag.** The three credits, bound as the page prints them, go quiet; the true wrong input does not |
+| B2 — plants still caught | **PASS — 30 of 30**, the negate rows included |
+| B3 — quiet under plants | **PASS — 0 of 420** |
+| B4 — a wrong statement is caught | **PASS — flagged** (row 10 bound « negate » it does not deserve reads 44,016 against −44,016) |
+
+**Every registered prediction held exactly.**
+
+## Where class 1 now stands, in one sentence
+
+On the real pair, with the credit convention statable, the check
+raises **exactly one flag and it is a genuine wrong input** — a model
+typing 0 against a cited document cell printing $704,462 — with 30 of
+30 planted disagreements caught, zero noise on the 14 clean rows,
+and a wrongly stated convention flagged rather than absorbed. The
+founder's order — class 1 right before anything else — is met with
+its numbers.
