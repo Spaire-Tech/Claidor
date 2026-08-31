@@ -220,3 +220,7 @@ docs/pierce/*-work/
 
 # Formula-bearing model corpora — re-fetchable, never committed.
 server/scripts/corpus_formulas/
+
+# Partial output of a sweep still running — the consolidated JSON
+# beside it is the record; a half-written scratch file is not.
+docs/pierce/*.json.partial
