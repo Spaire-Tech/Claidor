@@ -4812,3 +4812,33 @@ It also recorded walking into a trap its own handoff warns about — a
 waiter matching its own command line — catching it before it cost
 anything and writing down that the lesson existed and it walked
 toward it anyway. 865 tests green at the tip.
+
+---
+
+## 31 August — piece 13: house rules demonstrated, and what the identity check caught
+
+The criteria went into `house-rules-demo.md` and were committed before
+anything ran. Then the run: two firms, the founder's pre-app model in
+both, one on defaults and one with five rules off. First finding, as
+predicted by the audit: the PUT for the second firm was **refused** —
+`broken-name, gapped-test is not a rule the audit runs` — which was
+false on the very model in hand. The two rules were adopted into
+`RULE_NAMES` and `HEADLINES` (the three deliberately-unwired rules
+stayed out, per their registered verdicts), with a guard test pinning
+both directions of that line.
+
+The demonstration then failed its own identity criterion for a reason
+house rules never touched: **the same bytes were not giving the same
+report run to run.** The cell reads had no `ORDER BY`, so which cell
+of a collapsed family fronted a finding depended on the database's
+row order (`skipped-cell` at E41 one run, G41 the next); and the
+audit path never restored `sheet_order`, so the little grids drew the
+sheet-tab strip in database order — the exact failure `ingest.py`'s
+own comment predicted. Both fixed; a demonstration comparing counts
+instead of fields would have noticed neither.
+
+Final state: two reports differing by exactly the configuration —
+12 findings to 6, the pass row and one abstention gone, the switch
+named on the run — every kept finding field-for-field identical, the
+whole tieout suite green (1161), and the demonstration living on as a
+route test. Reports verbatim in `house-rules-demo-reports.json`.

@@ -215,7 +215,7 @@ green, number written down.
 | **10** | The unsourced-number finding (D5) | Depends on the Chain having a store to ask | days |
 | **11** | The panel end to end (G3) | Exists, never verified | days |
 | **12** | Determined corrections (F3) | The mechanism exists; the classes and their refusal cases do not | weeks |
-| **13** | House rules proven + standards vocabulary (A5) | Built and wired, never demonstrated | days |
+| **13** | House rules proven + standards vocabulary (A5) | House rules **DEMONSTRATED 31 Aug** — two firms, one model, two reports differing by exactly the configuration (`house-rules-demo.md`); the two rules no firm could switch off (`gapped-test`, `broken-name`) adopted into the catalogue. Standards vocabulary unchanged | days |
 | **14** | Outward checks (D6/D7) | Four free integrations, none built | weeks |
 | **15** | The four completion proofs | Proof 4 (design partners) is **deferred by the founder**, not failed | — |
 

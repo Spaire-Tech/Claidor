@@ -115,4 +115,70 @@ demonstration.
 
 ## 3. The results
 
-*(Registered empty; filled only after the run.)*
+Run 31 August 2026, after the registration above was committed
+(`a50569c`). The demonstration lives as
+`tests/tieout/test_routes.py::TestHouseRules::test_two_firms_one_model_two_reports`,
+so it re-runs in CI forever; the two reports it produced, verbatim as
+the findings API served them, are `house-rules-demo-reports.json`
+beside this file.
+
+**Criterion 1 — the defect, on the record.** Before the catalogue fix,
+Firm B's PUT came back exactly as predicted:
+
+    422 — "broken-name, gapped-test is not a rule the audit runs"
+
+which was false: the audit raises both on this very model. That is the
+switch a firm could not reach.
+
+**Criteria 2–6 — all met after the fix.** The same PUT succeeds; both
+firms' settings serve all 21 rules the engine runs; and the two
+reports on the same bytes:
+
+| | Firm A (defaults) | Firm B (five rules off) |
+| --- | --- | --- |
+| Findings | 12 | 6 |
+| Errors / smells | 4 / 8 | 3 / 3 |
+| `rules_off` on the run | — | `balance-sheet, broken-name, gapped-test, long-formula, model-own-check` |
+| Checks that pass | Model's own checks, 1 of 1 | *(switched off — no row)* |
+| Abstentions | 4 | 3 (`balance-sheet`'s gone) |
+
+The six findings Firm B loses are exactly the six under its
+switched-off rules — `broken-name` ×2, `gapped-test` ×1,
+`long-formula` ×3 — and the six it keeps are **field-for-field
+identical** to Firm A's: rule, cell, title, detail, severity, weight,
+standard, evidence grid, all of it, asserted over the full response
+minus only the row ids, timestamps and per-upload artifact id.
+
+**What the identity criterion caught on the way.** The first run
+failed criterion 5 for a reason that had nothing to do with house
+rules: the same bytes were not giving the same report run to run.
+Two causes, both in the rebuilt-workbook path and both fixed on this
+branch (`b75edae`):
+
+- the cell reads had no `ORDER BY`, so which cell of a collapsed
+  family fronted a finding depended on the order the database
+  returned rows — `skipped-cell` sat at E41 on one run and G41 on
+  the next, with different figures on the same defect;
+- `_restore_file_facts` never put back the stored `sheet_order`, so
+  the findings' little grids drew the sheet-tab strip in database
+  order (ingest.py had named exactly this failure in the comment
+  above the key it stores).
+
+A demonstration that had compared counts instead of fields would have
+passed over both.
+
+**Validation.** The whole tieout suite: 1161 passed, 0 failed,
+11 skipped, my branch against main — failure sets byte-identical
+before the environment's missing S3 credential was provisioned,
+all green after. Ruff clean; mypy adds no error over main.
+
+**Still true, and named rather than fixed here:** `typed-over-beat`,
+`currency-mismatch` and `scale-mismatch` remain deliberately unwired
+(their registered verdicts stand), so they stay out of the catalogue
+and off the screen; the greyed « Not available yet » rows on Settings
+are the founder's design and were left as drawn. The per-rule
+checklist on the Settings screen opens under « Model audit rules »
+and lists both families in one list — the founder's design draws one
+checklist under two master switches, so it was left as drawn; if the
+founder wants the statement checks listed under their own switch
+instead, that is a screen change to ask for, not one to improvise.
