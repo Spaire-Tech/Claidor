@@ -87,5 +87,58 @@ class listed row by row so the verdicts are checkable by hand.
 Not a measurement of the check's verdicts on the real pair — that
 needs the formula-rate model ingested and each term bound by hand,
 and it is **round 2**, to be registered separately before it runs.
+Round 2's order is set by the founder (31 Aug): **finding class 1 —
+a model input disagreeing with a confirmed term — is measured alone
+first**; the other classes are worth less if that one cries wolf.
 Nothing in this round exercises a matcher, because the piece contains
 none.
+
+---
+
+# Results (run after the registration commit; the bars did not move)
+
+Run: `uv run python -m scripts.terms_table_round1 <corpus-dir>` on the
+sha-verified RMU pair, 31 Aug 2026.
+
+| row | cited | truth facts | class |
+| --- | --- | --- | --- |
+| 10 | p354.21.b | 3 | PICKABLE |
+| 12 | p354.28.b | 3 | PICKABLE |
+| 13 | p354.27.b | 3 | PICKABLE |
+| 19 | p207.104.g | 3 | **NEEDS TYPING** |
+| 21 | p219.29.c | 4 | PICKABLE |
+| 36 | p207.58.g | 2 | **NEEDS TYPING** |
+| 41 | p207.99.g | 2 | **NEEDS TYPING** |
+| 44 | p207.94.g | 2 | **NEEDS TYPING** |
+| 57 | p219.25.c | 3 | PICKABLE |
+| 59 | p219.28.c | 3 | PICKABLE |
+| 88 | p227.8.c | 2 | PICKABLE |
+| 119 | p323.185.b | 2 | PICKABLE |
+| 121 | p323.191.b | 2 | PICKABLE |
+| 179 | p112.16.c | 4 | PICKABLE |
+| 187 | p111.81.c | 4 | PICKABLE |
+
+**PICKABLE 11 · NEEDS TYPING 4 · INVISIBLE 0.**
+
+- **Bar 1 — carried ≥ 14 of 15: PASS at 15 of 15.** Every row the
+  matcher could not link is holdable by the table — 11 picked, 4
+  typed. The typed route's price on this corpus is exactly 4 rows.
+- **Bar 2 — all classified: PASS, 15 of 15.**
+- **The registered prediction held exactly** (11 / 4 / 0). It was
+  derived from round 8's continuation-page diagnosis, and the same
+  judge family locates the truth here, so the agreement partly
+  restates that diagnosis — what is new is that all 15 rows are
+  extraction-visible (INVISIBLE 0) and that the four typed rows are
+  confirmed label-less at the fact level, not just at the match level.
+- **Hand-read before recording**, three rows at the lines: row 19's
+  truth line is « $ (7,741) $ 73,315,883 104 » — figures and a line
+  number, the name on the facing page, correctly NEEDS TYPING; rows
+  10 and 57 print their names in the line (« 21Transmission (Enter
+  Total of lines 4 and 14)… », « 25 Transmission… »), correctly
+  PICKABLE.
+- Informative, no bar: of the 33 labelled truth facts, 16 carry a
+  column anchor.
+
+**Golden-master gate:** prediction registered above is an empty diff.
+Result: _recorded below when the sweep and diff complete; not looked
+at before this line was written._

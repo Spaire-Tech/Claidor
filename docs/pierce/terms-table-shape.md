@@ -152,14 +152,51 @@ classes are measured on planted disagreements before any real claim
 is made; the golden master does not move. Criteria in a registered
 protocol doc before results are looked at, as always.
 
-## The founder's decisions, before building starts
+## The founder's decisions — ANSWERED 31 Aug 2026, all three
 
-1. **Term selection**: person-picks-from-candidates (proposed above),
-   or attempt automatic selection with its measured flood risk?
-2. **Per-deal table with supersession** as described, or
-   per-document tables only?
-3. **The screen is yours** — this piece lands as tables and an API
-   the Grid binds to, nothing more, per the division of labour.
+1. **Term selection: a person picks from candidates. Not automatic.**
+   The founder's reasoning, recorded so it can be argued against on
+   evidence later: quietness is the product; an automatic classifier
+   is a new inference with an unmeasured false-positive budget, and
+   it can be earned later through the normal loop once real documents
+   have shown what a term looks like. The candidate surface is built
+   so earning it later is a swap, not a rewrite: every candidate
+   already carries its signals over the API, and an automatic
+   selector would be a new policy over that same surface.
+2. **Per-deal table with supersession: yes.** A deal is a term sheet,
+   then a credit agreement, then amendments; the banker's question is
+   « which one governs now », and a table that cannot answer it makes
+   the work worse. Binding guard, in the founder's words: supersession
+   is a person's statement, recorded, never inferred.
+3. **The screen: agreed.** This piece lands tables and an API the
+   Grid binds to. Nothing more.
 
-Nothing is built until these are answered. If the answer is « not
-this shape », this file is the record of what was refused and why.
+If any of these turns out wrong once real documents are in front of
+us, it is said out loud — a decision made in ignorance is not binding
+on evidence (founder's own caveat, recorded with the decisions).
+
+## Amendment — 31 Aug 2026, from D3 round 11 (named, not silent)
+
+`chain-round11.md` measured what a generic label is worth: the
+matcher's negative control scored deliberately-WRONG document
+pairings at a perfect 1.0 on the one-word label « General », and the
+one-shared-word truths score exactly what wrong-section garbage
+scores. Generic labels are the enemy, measured.
+
+This piece contains no matcher, but it anchors by label tokens — and
+a term picked on a generic line will re-anchor across revisions to
+« ambiguous » (honestly, never a guess, but uselessly). So the
+candidate surface gains a fifth signal, **distinct**: the line's
+label words re-find exactly one printed line in this document,
+computed by counting over the exact tokenizer the anchor matches
+with, so the signal predicts precisely the anchor's future behaviour.
+Distinct labels rank above generic ones (after labelled and
+non-reference, before tabular and unit-marked). Counting, not
+inference; nothing excluded, nothing elected — the rule that a
+person picks is untouched.
+
+## Measurement order — founder's instruction, binding on round 2
+
+The first finding class — **a model input that disagrees with a
+confirmed term** — is measured alone, before the set: the other two
+classes are worth less if that one cries wolf.

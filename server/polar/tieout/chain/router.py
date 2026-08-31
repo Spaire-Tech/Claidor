@@ -919,6 +919,9 @@ class TermSignalsRead(Schema):
     tabular: bool
     reference: bool
     unit_marked: bool
+    #: The label re-finds one line in this document — anchor quality at
+    #: pick time (the round-11 amendment).
+    distinct: bool
 
 
 class TermCandidateRead(Schema):
@@ -951,10 +954,10 @@ async def list_term_candidates(
 ) -> TermCandidatesRead:
     """Extraction's facts, ranked for picking — never elected.
 
-    Labelled figures in tables surface first, document references sink
-    last, and every candidate shows its signals, so the ordering is
-    inspectable. Nothing is excluded and nothing is chosen: a person
-    picks, per the agreed shape.
+    Labelled figures with distinct, re-findable labels surface first,
+    document references sink last, and every candidate shows its
+    signals, so the ordering is inspectable. Nothing is excluded and
+    nothing is chosen: a person picks, per the agreed shape.
     """
     artifact = await _artifact_for(session, artifact_id, auth_subject.subject.id)
     facts = await ChainFactRepository.from_session(session).list_for_artifact(
@@ -963,7 +966,10 @@ async def list_term_candidates(
     refusals = await ChainRefusalRepository.from_session(session).list_for_artifact(
         artifact.id
     )
-    ordered = rank([(fact.line, fact.column, fact.text) for fact in facts])
+    ordered = rank(
+        [(fact.line, fact.column, fact.text) for fact in facts],
+        line_keys=[(fact.page, fact.line) for fact in facts],
+    )
     return TermCandidatesRead(
         document_id=artifact.lineage_id,
         document_version_id=artifact.id,
@@ -975,6 +981,7 @@ async def list_term_candidates(
                     tabular=signals.tabular,
                     reference=signals.reference,
                     unit_marked=signals.unit_marked,
+                    distinct=signals.distinct,
                 ),
             )
             for index, signals in ordered[: max(0, limit)]

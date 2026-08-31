@@ -184,8 +184,8 @@ class ChainTerm(RecordModel):
 @dataclass(frozen=True)
 class CandidateSignals:
     """Why a fact ranks where it ranks — shown, so the ordering is
-    inspectable rather than asserted. Each is geometry or the matcher's
-    own registered rules; none is a new inference."""
+    inspectable rather than asserted. Each is geometry, counting, or
+    the matcher's own registered rules; none is a new inference."""
 
     #: Its line carries label words — without them a term has no name.
     labelled: bool
@@ -198,33 +198,80 @@ class CandidateSignals:
     #: It prints its own unit mark (%, a currency symbol, a scale
     #: suffix on the digits).
     unit_marked: bool
+    #: Its line's label words re-find exactly one printed line in this
+    #: document — the anchor the re-check will use is unambiguous
+    #: *today*. The round-11 amendment (D3's negative control measured
+    #: « General » covering wrong schedules at a perfect 1.0): a
+    #: generic label is precisely what the anchor machinery cannot
+    #: re-find, so the picker sees anchor quality at pick time. Pure
+    #: counting over `label_tokens` — the same tokenizer the anchor
+    #: matches with, so this signal predicts exactly that behaviour.
+    distinct: bool = False
 
 
-def signals_for(line: str, column: str, text: str) -> CandidateSignals:
-    """One fact's picking signals, from what the page printed."""
+def signals_for(
+    line: str, column: str, text: str, *, distinct: bool = False
+) -> CandidateSignals:
+    """One fact's picking signals, from what the page printed.
+
+    ``distinct`` needs the whole document to compute, so it is the
+    caller's — :func:`rank` derives it for a corpus of entries; a
+    lone-fact caller leaves the default, which claims nothing.
+    """
     return CandidateSignals(
         labelled=bool(label_tokens(line)),
         tabular=bool(column.strip()),
         reference=is_reference(text, line),
         unit_marked=bool(_UNIT_MARK.search(text)),
+        distinct=distinct,
     )
 
 
-def rank(entries: Sequence[tuple[str, str, str]]) -> list[tuple[int, CandidateSignals]]:
+def rank(
+    entries: Sequence[tuple[str, str, str]],
+    line_keys: Sequence[object] | None = None,
+) -> list[tuple[int, CandidateSignals]]:
     """Order a document's facts for a person picking terms.
 
     ``entries`` are ``(line, column, text)`` in reading order. Returns
     ``(index, signals)`` best-first: labelled before unlabelled (a term
-    needs a name), non-references before references, tabular before
-    prose, unit-marked before bare counts — reading order breaking
-    ties, so the ordering is stable and a person scanning the list
-    walks the document top to bottom within each band.
+    needs a name), non-references before references, distinct labels
+    before generic ones (round 11's amendment — a pick whose label
+    words re-find one line survives revisions; « General » does not),
+    tabular before prose, unit-marked before bare counts — reading
+    order breaking ties, so the ordering is stable and a person
+    scanning the list walks the document top to bottom within each
+    band.
+
+    ``line_keys``, parallel to ``entries``, says which facts share one
+    printed line (e.g. ``(page, line_text)``), so a line holding three
+    numbers counts as one line for distinctness. When omitted, every
+    entry counts as its own line — repeated boilerplate still reads
+    non-distinct, but a several-figure line under-claims. Callers with
+    real geometry should pass keys.
 
     This is assistance for a person's pick, not an inference: nothing
     is excluded, nothing is elected, and every row shows its signals.
     """
+    keys = line_keys if line_keys is not None else list(range(len(entries)))
+    tokens_of_line: dict[object, frozenset[str]] = {
+        key: label_tokens(line) for key, (line, _, _) in zip(keys, entries, strict=True)
+    }
+    seen: dict[frozenset[str], int] = {}
+    for tokens in tokens_of_line.values():
+        seen[tokens] = seen.get(tokens, 0) + 1
+
     scored = [
-        (index, signals_for(line, column, text))
+        (
+            index,
+            signals_for(
+                line,
+                column,
+                text,
+                distinct=bool(tokens_of_line[keys[index]])
+                and seen[tokens_of_line[keys[index]]] == 1,
+            ),
+        )
         for index, (line, column, text) in enumerate(entries)
     ]
     return sorted(
@@ -232,6 +279,7 @@ def rank(entries: Sequence[tuple[str, str, str]]) -> list[tuple[int, CandidateSi
         key=lambda pair: (
             not pair[1].labelled,
             pair[1].reference,
+            not pair[1].distinct,
             not pair[1].tabular,
             not pair[1].unit_marked,
             pair[0],

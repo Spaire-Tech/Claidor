@@ -97,6 +97,49 @@ class TestRanking:
         assert signals_for("Scale 3.4m of works", "", "3.4m").unit_marked
         assert not signals_for("Tenor 25", "", "25").unit_marked
 
+    def test_a_generic_label_is_not_distinct_and_a_named_one_is(self) -> None:
+        """The round-11 amendment. D3's negative control measured what a
+        generic label is worth: « General » covered the depreciation
+        schedule and the salaries schedule alike at a perfect 1.0. A
+        label whose words re-find several lines cannot anchor a term
+        across revisions, and the picker sees that at pick time."""
+        ranked = dict(
+            rank(
+                [
+                    ("Total 44,016", "", "44,016"),
+                    ("Total 2,120,257", "", "2,120,257"),
+                    ("Transmission Wages Expense 44,016", "", "44,016"),
+                ]
+            )
+        )
+        assert not ranked[0].distinct  # « Total » re-finds two lines
+        assert not ranked[1].distinct
+        assert ranked[2].distinct
+
+    def test_distinct_labels_outrank_generic_ones(self) -> None:
+        ranked = rank(
+            [
+                ("Total 5", "", "5"),
+                ("Total 9", "", "9"),
+                ("Margin ratchet 15", "", "15"),
+            ]
+        )
+        assert [index for index, _ in ranked] == [2, 0, 1]
+
+    def test_line_keys_group_a_lines_facts_into_one_line(self) -> None:
+        """Three figures on one printed line are one line, not three
+        repeats — with keys, the line's unique label stays distinct;
+        without them, rank under-claims rather than over-claims."""
+        entries = [
+            ("Margin 4.35% 3 2", "", "4.35%"),
+            ("Margin 4.35% 3 2", "", "3"),
+            ("Margin 4.35% 3 2", "", "2"),
+        ]
+        keyed = dict(rank(entries, line_keys=[(1, "Margin 4.35% 3 2")] * 3))
+        bare = dict(rank(entries))
+        assert all(signal.distinct for signal in keyed.values())
+        assert not any(signal.distinct for signal in bare.values())
+
     def test_the_default_name_is_printed_words_only(self) -> None:
         assert default_name("Margin 4.35%", "") == "Margin 4.35%"
         assert default_name("Margin 4.35%", "Tranche A") == "Margin 4.35% — Tranche A"
@@ -162,6 +205,7 @@ class TestTermCandidates:
                 "tabular",
                 "reference",
                 "unit_marked",
+                "distinct",
             }
         assert [refusal["page"] for refusal in body["refusals"]] == [2]
 
