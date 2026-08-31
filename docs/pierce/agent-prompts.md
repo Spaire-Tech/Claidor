@@ -25,14 +25,22 @@ times in a week.
 ```
 You are building one piece of Swens, working for the founder (they/them).
 
-FIRST: read docs/pierce/agent-brief.md in full. It is the constitution
-for this work — the standing rules, the audit mandate, the measurement
-discipline, and the operational lessons already paid for. Do not skip it.
+FIRST, before anything else, run this and read what it prints, in full:
+
+  git fetch origin claude/pierce-phase-6-writing-mjkaj6
+  git show origin/claude/pierce-phase-6-writing-mjkaj6:docs/pierce/agent-brief.md
+
+That is the constitution for this work — the audit mandate, the
+measurement discipline, and the operational lessons already paid for.
+It is NOT on main yet, which is why you fetch it this way. Do not skip
+it, and do not proceed if the command fails — say so instead.
+
+Work on whatever branch this session is bound to. Do not try to create
+or push to a branch of your own choosing.
 
 YOUR PIECE: the Chain — linking a number in a financial model back to
 the clause in the contract, term sheet or quote it came from.
 
-Your branch: piece/6-chain (create it from current main).
 
 WHAT THE LEAD BELIEVES, FOR YOU TO VERIFY RATHER THAN TRUST:
 - polar/tieout/chain/ exists and is substantial: anchor.py, extract.py,
@@ -65,16 +73,24 @@ waiting on. No jargon.
 ```
 You are building one piece of Swens, working for the founder (they/them).
 
-FIRST: read docs/pierce/agent-brief.md in full. It is the constitution
-for this work — the standing rules, the audit mandate, the measurement
-discipline, and the operational lessons already paid for. Do not skip it.
+FIRST, before anything else, run this and read what it prints, in full:
+
+  git fetch origin claude/pierce-phase-6-writing-mjkaj6
+  git show origin/claude/pierce-phase-6-writing-mjkaj6:docs/pierce/agent-brief.md
+
+That is the constitution for this work — the audit mandate, the
+measurement discipline, and the operational lessons already paid for.
+It is NOT on main yet, which is why you fetch it this way. Do not skip
+it, and do not proceed if the command fails — say so instead.
+
+Work on whatever branch this session is bound to. Do not try to create
+or push to a branch of your own choosing.
 
 YOUR PIECE: the terms table. swens.md section 3d says the Grid holds a
 second use of extraction: "pulling the terms out of the contracts, term
 sheets and quotes into a structured table, so the model's inputs can be
 tested against them at scale rather than one at a time."
 
-Your branch: piece/7-terms (create it from current main).
 
 WHAT THE LEAD BELIEVES, FOR YOU TO VERIFY RATHER THAN TRUST:
 - This is in swens.md — the founder's own product document, which wins
@@ -106,16 +122,24 @@ waiting on. No jargon.
 ```
 You are building one piece of Swens, working for the founder (they/them).
 
-FIRST: read docs/pierce/agent-brief.md in full. It is the constitution
-for this work — the standing rules, the audit mandate, the measurement
-discipline, and the operational lessons already paid for. Do not skip it.
+FIRST, before anything else, run this and read what it prints, in full:
+
+  git fetch origin claude/pierce-phase-6-writing-mjkaj6
+  git show origin/claude/pierce-phase-6-writing-mjkaj6:docs/pierce/agent-brief.md
+
+That is the constitution for this work — the audit mandate, the
+measurement discipline, and the operational lessons already paid for.
+It is NOT on main yet, which is why you fetch it this way. Do not skip
+it, and do not proceed if the command fails — say so instead.
+
+Work on whatever branch this session is bound to. Do not try to create
+or push to a branch of your own choosing.
 
 YOUR PIECE: settle an open argument with a measurement. The plan calls
 for model-slicing / root-cause diagnosis (Reiter's framework) to explain
 WHY a model misbehaves, not just that it does. Nobody has established
 whether that earns its keep or is over-engineering.
 
-Your branch: piece/8-diagnosis (create it from current main).
 
 THIS PIECE IS A MEASUREMENT, NOT A BUILD. Your job is to produce a
 defensible answer to "is this worth building", and the honest answer may
@@ -150,15 +174,23 @@ waiting on. No jargon.
 ```
 You are building one piece of Swens, working for the founder (they/them).
 
-FIRST: read docs/pierce/agent-brief.md in full. It is the constitution
-for this work — the standing rules, the audit mandate, the measurement
-discipline, and the operational lessons already paid for. Do not skip it.
+FIRST, before anything else, run this and read what it prints, in full:
+
+  git fetch origin claude/pierce-phase-6-writing-mjkaj6
+  git show origin/claude/pierce-phase-6-writing-mjkaj6:docs/pierce/agent-brief.md
+
+That is the constitution for this work — the audit mandate, the
+measurement discipline, and the operational lessons already paid for.
+It is NOT on main yet, which is why you fetch it this way. Do not skip
+it, and do not proceed if the command fails — say so instead.
+
+Work on whatever branch this session is bound to. Do not try to create
+or push to a branch of your own choosing.
 
 YOUR PIECE: the delta report — what changed between two versions of a
 model — currently runs about 3x slower than its target of two minutes.
 Make it meet the target without changing a single number it reports.
 
-Your branch: piece/9-delta-speed (create it from current main).
 
 THE HARD CONSTRAINT: this is optimisation, so the output must be
 IDENTICAL before and after. The golden-master gate exists exactly for
@@ -195,15 +227,23 @@ waiting on. No jargon.
 ```
 You are building one piece of Swens, working for the founder (they/them).
 
-FIRST: read docs/pierce/agent-brief.md in full. It is the constitution
-for this work — the standing rules, the audit mandate, the measurement
-discipline, and the operational lessons already paid for. Do not skip it.
+FIRST, before anything else, run this and read what it prints, in full:
+
+  git fetch origin claude/pierce-phase-6-writing-mjkaj6
+  git show origin/claude/pierce-phase-6-writing-mjkaj6:docs/pierce/agent-brief.md
+
+That is the constitution for this work — the audit mandate, the
+measurement discipline, and the operational lessons already paid for.
+It is NOT on main yet, which is why you fetch it this way. Do not skip
+it, and do not proceed if the command fails — say so instead.
+
+Work on whatever branch this session is bound to. Do not try to create
+or push to a branch of your own choosing.
 
 YOUR PIECE: the Excel task pane — findings shown beside the cell, inside
 Excel itself. It is BUILT and has NEVER BEEN VERIFIED END TO END. Your
 job is to prove it works, or find out exactly where it does not.
 
-Your branch: piece/11-panel (create it from current main).
 
 WHAT THE LEAD BELIEVES, FOR YOU TO VERIFY RATHER THAN TRUST:
 - clients/apps/panel/ is a real Office add-in: manifest.xml, Panel.tsx,
@@ -241,15 +281,23 @@ waiting on. No jargon.
 ```
 You are building one piece of Swens, working for the founder (they/them).
 
-FIRST: read docs/pierce/agent-brief.md in full. It is the constitution
-for this work — the standing rules, the audit mandate, the measurement
-discipline, and the operational lessons already paid for. Do not skip it.
+FIRST, before anything else, run this and read what it prints, in full:
+
+  git fetch origin claude/pierce-phase-6-writing-mjkaj6
+  git show origin/claude/pierce-phase-6-writing-mjkaj6:docs/pierce/agent-brief.md
+
+That is the constitution for this work — the audit mandate, the
+measurement discipline, and the operational lessons already paid for.
+It is NOT on main yet, which is why you fetch it this way. Do not skip
+it, and do not proceed if the command fails — say so instead.
+
+Work on whatever branch this session is bound to. Do not try to create
+or push to a branch of your own choosing.
 
 YOUR PIECE: house rules. A firm must be able to switch checks off and
 set its own standards, and the report must change accordingly. This is
 BUILT AND WIRED but has NEVER BEEN DEMONSTRATED.
 
-Your branch: piece/13-house-rules (create it from current main).
 
 THE DELIVERABLE, CONCRETELY: two different firm configurations, run
 against ONE model, producing two correct and visibly different reports —

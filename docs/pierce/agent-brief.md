@@ -24,9 +24,9 @@ looking fast.
 does or does not exist, you audit the repository.** Not the docs — the
 *code*. The docs are frequently wrong, including the status file.
 
-Three real examples from the last week, all of them the lead's own
-mistakes, all of them caught only because someone eventually opened the
-file:
+Four real examples, all of them the lead's own mistakes, all caught
+only because someone eventually opened the file — the fourth is this
+very document:
 
 1. The status file said « this container runs LibreOffice 24.2 ». It
    runs **25.8.7.3**, installed by a committed script, and the code had
@@ -39,6 +39,12 @@ file:
    a Microsoft account ». The account was already connected and
    working. What was actually missing was code and one permission
    scope. The founder had to correct the lead.
+4. **This file.** The lead wrote it, told six agents to read it, and
+   never checked they could. It sat on a branch none of them had, so
+   the first agent to finish reported it missing — having done the work
+   correctly anyway. The same lead had written « audit before you
+   assert » three paragraphs above. Assume the same of anything you are
+   handed, including this.
 
 **So: `grep` for it. Open the file. Run it.** « I have not checked » is
 an allowed answer. A guess stated as fact is not. If you find the
@@ -133,8 +139,10 @@ it failed, say it failed, in plain words.
 
 ## Git
 
-- Work on **your own branch**, named in your prompt. Create it from the
-  current `main`.
+- **Work on whatever branch this session is already bound to.** Do not
+  create a branch of your own or try to push elsewhere; a session is
+  pinned to one branch and a name invented in a prompt will not work.
+  This was got wrong when these prompts were first written.
 - Commit early and often, with messages that say *why*, not *what*.
 - End every commit message with:
   ```
