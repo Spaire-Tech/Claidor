@@ -230,6 +230,49 @@ the identity path alone was never going to carry the alignment.
 100–135 s — under the bar.** If coverage of the fast path
 disappoints, the miss will be reported as a miss.
 
+## Change 5, killed by its own measurement — and what the 94 s really was
+
+**My registered premise for change 5 was wrong, and the scanner it
+called for was built, measured, and reverted.** The mirror scanner
+reached 100% coverage with zero mismatches on all 616,122 distinct
+formulas of the GD3 pair — and ran at 131 µs per formula against the
+Tokenizer's 45 µs. Three times *slower* than the thing it replaced.
+It is out of the tree; this section is its record.
+
+The measurement that killed it also found the real cost. The
+Tokenizer parses the pair's 616k distinct formulas in **28 s** when
+the results are discarded — so where did the profiled ~94 s come
+from? From *keeping* them:
+
+| tokenize all 616k, keep results | seconds |
+| --- | --- |
+| discard, collector on | 28.0 |
+| keep, collector on | **128.7** |
+| keep, collector off | **31.0** |
+
+The « tokenizer floor » was never parsing. It is Python's cyclic
+garbage collector re-scanning an ever-growing heap of token lists —
+roughly 100 s of collector churn for ~28 s of work. The same tax
+falls on every phase that populates the caches, which is why the
+audits and the shape pass all read slower inside the pipeline than
+their own arithmetic explains.
+
+## Change 5′, registered in its place
+
+**The retained scope holds the cyclic collector.** While
+`retained_parse_caches` is open, `gc.disable()`; on the outermost
+exit, restore the collector's prior state and run one `gc.collect()`
+with the caches cleared. The collector frees memory and changes no
+value, so this is output-identical by definition — the same class of
+statement as the cache clear being « memory only, never
+correctness ». Cost: cycles created inside the scope live until the
+scope ends, so peak memory rises during one comparison; the scope
+already forbids wrapping a sweep.
+
+*Prediction, registered before the run: cold `delta_of` on the GD3
+pair lands at 90–125 s — under the bar. The A/B (B then A, back to
+back, digests compared) decides.*
+
 ## A/B results, final
 
 *to be filled; every change gated on the digest and the corpus gate*

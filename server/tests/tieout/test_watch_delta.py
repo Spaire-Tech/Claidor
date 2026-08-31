@@ -401,6 +401,8 @@ class TestRetainedParseCaches:
         assert tokens_of.cache_info().currsize == 0
 
     def test_the_scope_clears_even_when_the_work_inside_raises(self) -> None:
+        import gc
+
         from polar.tieout.audit import retained_parse_caches
         from polar.tieout.workbook import tokens_of
 
@@ -411,3 +413,34 @@ class TestRetainedParseCaches:
         except RuntimeError:
             pass
         assert tokens_of.cache_info().currsize == 0
+        assert gc.isenabled()
+
+    def test_the_scope_holds_the_collector_and_restores_it(self) -> None:
+        """The measured 100 s of a cold comparison was the cyclic
+        collector re-scanning the growing caches; the scope holds it
+        and puts back exactly the state it found — nested scopes
+        included."""
+        import gc
+
+        from polar.tieout.audit import retained_parse_caches
+
+        assert gc.isenabled()
+        with retained_parse_caches():
+            assert not gc.isenabled()
+            with retained_parse_caches():
+                assert not gc.isenabled()
+            assert not gc.isenabled()
+        assert gc.isenabled()
+
+    def test_a_collector_already_off_stays_off(self) -> None:
+        import gc
+
+        from polar.tieout.audit import retained_parse_caches
+
+        gc.disable()
+        try:
+            with retained_parse_caches():
+                assert not gc.isenabled()
+            assert not gc.isenabled()
+        finally:
+            gc.enable()

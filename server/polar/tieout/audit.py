@@ -35,6 +35,7 @@ A **smell** is a departure from the standards that is often deliberate,
 and the two are never added into one number.
 """
 
+import gc
 import math
 import re
 from collections import Counter
@@ -797,6 +798,9 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
 #: How many `retained_parse_caches` scopes are open. While any is,
 #: `audit()` leaves the parse caches in place for the next phase.
 _cache_retainers = 0
+#: Whether the cyclic collector was on when the outermost scope
+#: opened, so the exit restores exactly what it found.
+_collector_was_enabled = True
 
 
 def _clear_parse_caches() -> None:
@@ -822,11 +826,26 @@ def retained_parse_caches() -> Iterator[None]:
     way, because every one of these caches is keyed on the full
     inputs of the thing it stores.
 
+    The scope also holds the cyclic garbage collector. Measured on
+    the GD3 pair (`docs/pierce/delta-speed.md`, « what the 94 s
+    really was »): tokenizing the pair's 616k distinct formulas costs
+    28 s discarded, 128.7 s kept with the collector on, 31.0 s kept
+    with it off — the supposed parse floor was ~100 s of the
+    collector re-scanning an ever-growing heap of cached lists. The
+    collector frees memory and changes no value, so holding it is
+    output-identical by definition; the outermost exit restores its
+    prior state and runs one collect over what the scope accrued.
+
     Reentrant: nested scopes clear once, when the outermost closes.
-    The cost is memory — both books' tokens and shapes held at once —
-    so the scope belongs around one comparison, never around a sweep.
+    The cost is memory — both books' tokens and shapes held at once,
+    and cycles uncollected until the exit — so the scope belongs
+    around one comparison, never around a sweep.
     """
-    global _cache_retainers
+    global _cache_retainers, _collector_was_enabled
+    if _cache_retainers == 0:
+        _collector_was_enabled = gc.isenabled()
+        if _collector_was_enabled:
+            gc.disable()
     _cache_retainers += 1
     try:
         yield
@@ -834,6 +853,9 @@ def retained_parse_caches() -> Iterator[None]:
         _cache_retainers -= 1
         if _cache_retainers == 0:
             _clear_parse_caches()
+            if _collector_was_enabled:
+                gc.enable()
+                gc.collect()
 
 
 def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
