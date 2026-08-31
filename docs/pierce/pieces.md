@@ -86,8 +86,12 @@ judged the answers.** Piece 3.
 
 ## f) The Excel panel — findings beside the cell, corrections that follow
 
-The panel exists: 3,420 lines, Excel/Word/PowerPoint/Outlook hosts,
-wired to the API. **Never verified end to end.** Piece 11.
+The panel exists — Excel-only by posture since the pivot, the other
+hosts dormant — and is now **verified to the exact boundary Office
+draws** (31 Aug, § 4d): everything headless proven against the live
+stack, three defects found and fixed on the way, and the Office-side
+remainder named precisely. What is left of Piece 11 is one ten-minute
+sideload by a human with a Microsoft 365 work account.
 
 The write path underneath it — byte-preserving edits, apply/undo,
 re-audit gate, custody — is **DONE**. The *classes* of determined fix
@@ -213,7 +217,7 @@ green, number written down.
 | **8** | **B5 measured**, then B6 decided | The measurement decides whether Reiter is right or over-engineering | days |
 | **9** | The delta report's speed + its acceptance test | 3× over the line; the biggest cost is the engine throwing away work it just did | days |
 | **10** | The unsourced-number finding (D5) | Depends on the Chain having a store to ask | days |
-| **11** | The panel end to end (G3) | Exists, never verified | days |
+| **11** | The panel end to end (G3) | **VERIFIED HEADLESSLY 31 Aug** — see § 4d. Remainder: one real-Excel sideload, founder's ten minutes | — |
 | **12** | Determined corrections (F3) | The mechanism exists; the classes and their refusal cases do not | weeks |
 | **13** | House rules proven + standards vocabulary (A5) | Built and wired, never demonstrated | days |
 | **14** | Outward checks (D6/D7) | Four free integrations, none built | weeks |
@@ -442,6 +446,37 @@ constant in the engine with a second test holding the behaviour the
 widened assertion cannot; and a sheet whose only date row is its
 header row hands this check no axis, because the reader keeps header
 cells out of the audit.
+
+---
+
+## 4d. Piece 11, verified to the boundary — the panel (31 August)
+
+Full record in `worklog.md` (31 Aug); re-runnable via
+`clients/apps/panel/scripts/verify-headless.mjs`.
+
+**What « verified » means here, exactly.** On this container, against
+the live stack: manifest stamped and validated clean by Microsoft's
+acceptance service; both build paths produce the `/panel/` deploy;
+the token endpoint mints from a real session; headless Chromium
+walks every face — signed-out, allow-access, checking, checked with
+11 findings and the « 12 checks pass » line, one finding open,
+re-check — on real workbook bytes through the real check endpoint.
+Four PASS assertions, screenshots kept.
+
+**What « verified » does not mean, exactly.** Nothing on Office's own
+side has run: ribbon button, workbook bytes via `Office.js`, cell
+selection, « Fix the cell » writing back, the sign-in dialog. This
+box has no Excel. The remainder is `SIDELOAD.md`'s ten-minute
+Excel-on-the-web test, and it needs a human with a Microsoft 365
+work account. Piece 11 is not DONE until that sideload has been
+watched working; an earlier build did load inside real Word once
+(14 Aug), so the first-load bug classes are already paid.
+
+**Three defects the drive found, fixed, pinned:** the catalogue call
+that 403'd for every panel user, silently, forever (fix on both
+sides of the API); the external-link finding's verbless sentence and
+wrong plural; a refused jump that still claimed « Selected in the
+sheet ». The golden master did not move for any of them.
 
 ---
 

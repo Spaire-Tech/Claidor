@@ -4812,3 +4812,66 @@ It also recorded walking into a trap its own handoff warns about — a
 waiter matching its own command line — catching it before it cost
 anything and writing down that the lesson existed and it walked
 toward it anyway. 865 tests green at the tip.
+
+---
+
+## 31 August — Piece 11: the panel driven end to end, as far as a box with no Excel can
+
+The panel's claim was « exists, never verified end to end ». Now it is
+verified to the exact boundary Office draws, and the boundary is
+written down instead of rounded up.
+
+**Proven, on this container, against the live stack** — Postgres,
+Redis, Minio, the real API, the panel's own build: the stamped
+manifest validates clean against Microsoft's acceptance service
+(Excel on the web, Excel 2016+ on Windows); `pnpm build` and the
+dashboard's `embed-panel` both produce the `/panel/` deploy with
+stamped manifests; `/v1/tieout/panel/token` mints the 30-day
+two-scope token from a real browser session; the panel in headless
+Chromium — token in, real workbook bytes in through the dev bridge —
+walks signed-out → allow-access → checking → checked, renders 11
+findings from the planted-defect fixture with the engine's own
+sentences, the « 12 checks pass » catalogue line, re-check, and
+refuses the jump honestly outside Office. Re-runnable:
+`clients/apps/panel/scripts/verify-headless.mjs`, four PASS lines.
+
+**Three defects the drive surfaced, all fixed and pinned:**
+
+1. **« N checks pass » could never render, for anyone.** The panel
+   asked `/v1/organizations/` for the caller's firm, and the panel
+   token holds tieout scopes only — 403, every user, always, eaten by
+   a `catch`. The API log said it in one line. Fix on both sides:
+   `GET /house-rules` now resolves the caller's own organization when
+   none is named (a person in no organization gets the defaults), and
+   the panel asks it directly. Two new route tests.
+2. **The external-link finding spoke a broken sentence** — « This
+   workbook  another workbook, [1] — 1 cells pull values »: the
+   composer stripped the verb out of the detail and re-added nothing,
+   and one took a plural. Fixed in `plain_words`, pinned as whole
+   sentences; the golden master stores `detail`, not `plain`, so no
+   baseline moved.
+3. **A refused jump still read « Selected in the sheet ».** The label
+   was unconditional; the refusal sat in the problem strip two inches
+   below the claim. The row now says it only when the sheet agreed.
+
+**Not provable from here, named exactly:** everything on Office's side
+of the boundary — the ribbon button appearing, `Office.js` handing
+over the open workbook's bytes, selecting the finding's cell, « Fix
+the cell » writing back and the re-check after it, the sign-in dialog
+(`displayDialogAsync`/`messageParent`), and Outlook's dormant
+manifest. One earlier build did load inside real Word on the web
+(14 Aug), so the CSP and sign-in-URL classes are already paid; the
+Excel-only panel as it stands has never been opened in a real Excel.
+`SIDELOAD.md` § « First sideload: Excel on the web » is the ten-minute
+test, and it needs a human with a Microsoft 365 work account.
+
+Housekeeping the audit forced: the panel README and SIDELOAD.md still
+described the pre-pivot app (four hosts, placeholder screen,
+choose-a-deal) — the same words that had misled the lead — both
+rewritten to what the code does. For the record: `clients/apps/panel`
+is the product's add-in; `clients/apps/word-addin` is an unrelated
+Apache-2.0 fork of Vaquill's Word dictation add-in (see its FORK.md)
+and no part of this piece. Branding note, founder's call, not taken
+here: the manifest and ribbon still say « Ances », one name behind
+Swens. 219 tieout server tests green, 16 panel tests green,
+type-check and both manifest validations clean.
