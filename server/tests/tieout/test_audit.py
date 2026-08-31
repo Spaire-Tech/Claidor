@@ -1564,6 +1564,28 @@ def test_the_names_table_is_audited() -> None:
     assert any("Elsewhere" in f.detail for f in names)
 
 
+def test_every_rule_the_audit_raises_is_a_switch_a_firm_can_reach() -> None:
+    """Piece 13's guard. The settings catalogue (`RULE_NAMES`) and the
+    finding headlines (`HEADLINES`) must carry the same keys, and every
+    rule the audit raises on the conscience model must be in them —
+    `gapped-test` and `broken-name` shipped for days as findings no
+    firm could switch off and the settings screen never listed, because
+    their adoption wired the pass without touching the catalogue. A
+    rule the engine deliberately does not run (`typed-over-beat`, the
+    unit mismatches) must stay OUT of the catalogue for the same
+    reason: a switch wired to nothing is the same lie told backwards.
+    """
+    from polar.tieout.audit import HEADLINES, RULE_NAMES
+    from polar.tieout.structure import read_structure
+
+    assert set(HEADLINES) == set(RULE_NAMES)
+
+    book = read_workbook(str(CASCADE / "example_preapp_model.xlsx"))
+    result = audit(book, read_structure(book).axes)
+    raised = {finding.rule for finding in result.findings}
+    assert raised <= set(RULE_NAMES), raised - set(RULE_NAMES)
+
+
 def test_a_displaced_window_at_the_runs_edge_is_still_seen() -> None:
     """The gate's own catch: a family of own-column windows whose last
     cell sums a displaced window (`SUM(F3:F5)` closing four
