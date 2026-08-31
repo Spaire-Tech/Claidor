@@ -303,13 +303,29 @@ exactly as before.
 ## Verification
 
 - **Corpus gate**: 27-file sweep against
-  `docs/pierce/corpus-golden-master.json` — *(verdict recorded below
-  when the sweep lands)*.
+  `docs/pierce/corpus-golden-master.json` — **clean, 27 of 27,
+  finding for finding**. (The sweep itself came in faster — GD3
+  final 394.5 → 301.5 s — the normal-form cache paying inside
+  ordinary, unretained audits too.)
 - **Report digests**: identical A↔B on GD3 (three runs), ED2
   v4→v5, and H7 debt indexation FP→FDS.
-- **Tests**: the tieout suite plus 11 new pins — retention semantics
-  (4), collector state (3, in the same class), the align identity
-  path against the DP oracle (3), the bit-parallel LCS against the
-  quadratic oracle (3 + a thousand random cases).
+- **Tests**: 926 passed, 10 skipped — the same one pre-existing
+  failure as untouched main (`test_chain_extract`, the Chain's) and
+  the container's 8 known collection errors, nothing new. Twelve new
+  pins: retention semantics and collector state, the align identity
+  path against the DP oracle, the bit-parallel LCS against the
+  quadratic oracle plus a thousand random cases.
 - ruff and format clean on every touched file; mypy reports only the
   two pre-existing `audit.py` errors recorded in `pieces.md` § 4a.
+
+## Where the piece stands
+
+The speed half is measured and met: the comparison is 3.8× faster
+and the whole product path 2.8×, with the report identical to the
+byte and the gate clean. **The piece's other half — the acceptance
+test on the real Welsh Water pair — remains not run**, for the same
+reason as ever: the pair is unreachable from this container. The
+83.9 s and the 67 s projection are evidence, not that test. When
+someone with a browser drops the two WSH files into Check a model
+(or beside this corpus), `scripts.watch_delta` runs the registered
+test as written, `--parity` included.
