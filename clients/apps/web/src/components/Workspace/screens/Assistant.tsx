@@ -144,19 +144,19 @@ const freshId = (): string =>
 
 /** The serif S — the design's mark on everything Swens says. */
 /**
- * The swan — the assistant's mark wherever it speaks.
+ * The swan — revision 2's mark, drawn but **not currently used**.
  *
- * Revision 2 of the design replaced the serif « S » with this drawn
- * bird at 26px, and the three paths below are the file's own, copied
- * rather than redrawn: the neck and head, the beak, the body. Stroke
- * `#15171b` at 4.6, round caps and joins, `margin-left:-4px` so the
- * bird's optical left edge lines up with the text column above it.
+ * The founder's design replaced the serif « S » with this bird, and
+ * then asked for the S back « for now ». The drawing is kept here
+ * rather than deleted, because it is theirs and the decision was
+ * explicitly temporary: switching is one line in `Mark` below.
  *
- * `top` is the design's per-state nudge, and the states really do
- * differ: a status line sets 1, an answer 5, a verdict 4 — the mark
- * sits against the first line of text in each, not against the box.
+ * The three paths are the design file's own, copied rather than
+ * redrawn — the neck and head, the beak, the body — at `#15171b`,
+ * 4.6 stroke, with `margin-left:-4px` so the bird's optical left edge
+ * lines up with the text column above it.
  */
-const Mark = ({ top = 0 }: { top?: number }) => (
+export const SwanMark = ({ top = 0 }: { top?: number }) => (
   <svg
     width={26}
     height={26}
@@ -178,6 +178,30 @@ const Mark = ({ top = 0 }: { top?: number }) => (
     <path d="M56,43.5 L48.5,48.5" />
     <path d="M20,55 C44,50 65,57 70,77 C48,86 26,74 20,55" />
   </svg>
+)
+
+/**
+ * The assistant's mark wherever it speaks — the serif « S », by the
+ * founder's instruction (« bring back the S actually. For now. »).
+ *
+ * `top` is the per-state nudge: the mark sits against the first line
+ * of text in each state rather than against the box, so a status line,
+ * an answer and a verdict each set their own.
+ */
+const Mark = ({ top = 0 }: { top?: number }) => (
+  <span
+    style={{
+      flex: '0 0 18px',
+      width: 18,
+      fontFamily: font.brand,
+      fontSize: 16,
+      lineHeight: 1,
+      color: '#15171b',
+      marginTop: top,
+    }}
+  >
+    S
+  </span>
 )
 
 /**

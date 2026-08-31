@@ -49,9 +49,25 @@ class Toolset:
     #: a prompt is prose and prose belongs in a file somebody can read
     #: without a syntax highlighter.
     prompt_path: Path
+    #: Prose appended after `prompt_path`, for the parts of a voice that
+    #: are the same wherever the product speaks. Kept separate rather
+    #: than pasted into each prompt file so that changing how Swens
+    #: talks is one edit, not four — and so a toolset that has its own
+    #: reasons to sound different simply leaves it unset.
+    voice_path: Path | None = None
 
     def prompt(self) -> str:
-        return self.prompt_path.read_text(encoding="utf-8")
+        """The system prompt: the toolset's own, then the shared voice.
+
+        **The voice comes last on purpose.** It is the founder's own
+        words about how Swens talks, and a later instruction wins over
+        an earlier one — so where a toolset's prose and the voice
+        disagree, the voice is what the model reads most recently.
+        """
+        text = self.prompt_path.read_text(encoding="utf-8")
+        if self.voice_path is None:
+            return text
+        return text + "\n\n---\n\n" + self.voice_path.read_text(encoding="utf-8")
 
 
 __all__ = ["ToolResult", "Toolset"]

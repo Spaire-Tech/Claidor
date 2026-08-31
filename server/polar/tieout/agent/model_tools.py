@@ -1055,6 +1055,54 @@ DEFINITIONS: list[dict[str, Any]] = [
         "input_schema": {"type": "object", "properties": {}},
     },
     {
+        "name": "ask_the_person",
+        "description": (
+            "Put ONE clarifying question back to the person and stop until "
+            "they answer. Use it only when two readings of the request lead "
+            "somewhere materially different and you cannot tell which they "
+            "meant — never to avoid work you could do, and never twice in a "
+            "row. Name what you would do in the card, so they choose between "
+            "things rather than answer a riddle. Put the WIDER, SLOWER, more "
+            "thorough option LAST: the interface draws the last one as the "
+            "primary action."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": (
+                        "The question, in your own voice, one sentence. Carry "
+                        "the fact that makes it necessary if there is one — "
+                        "'This fix applies to 20 columns. All of them, or "
+                        "just this one?' — and explain a refusal before "
+                        "offering to lift it."
+                    ),
+                },
+                "card_title": {
+                    "type": "string",
+                    "description": (
+                        "Two or three words naming the work: 'Model Review', "
+                        "'Version Comparison', 'Targeted Check', 'Coverage'."
+                    ),
+                },
+                "card_blurb": {
+                    "type": "string",
+                    "description": (
+                        "One line saying what that work actually produces — "
+                        "'Every check that feeds the DSCR row, with sources'."
+                    ),
+                },
+                "options": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": ("Two to four short choices, widest last."),
+                },
+            },
+            "required": ["question", "card_title", "card_blurb", "options"],
+        },
+    },
+    {
         "name": "sources",
         "description": (
             "Where a number came from outside the model: the document "
@@ -1069,6 +1117,62 @@ DEFINITIONS: list[dict[str, Any]] = [
         },
     },
 ]
+
+
+def ask_the_person(
+    question: str,
+    card_title: str,
+    card_blurb: str,
+    options: list[str],
+) -> ToolResult:
+    """Put one question back to the person, and stop until they answer.
+
+    **This is the founder's clarify pattern, and it is model-driven on
+    purpose.** Nothing here matches a phrase or looks the request up in
+    a table: the assistant decides that two readings of what was asked
+    lead somewhere materially different, and says so.
+
+    The tool returns rather than blocks. Its `data` is what the screen
+    draws — the question above, the card naming what would be done, and
+    the choices — and the turn ends there. The person's pick arrives as
+    the next message, so the model never guesses which way they went.
+
+    **The last option is the primary one** on the screen: dark, filled,
+    weighted. That is a fact about the interface the assistant has to
+    know, because it decides the order — the wider and slower choice
+    belongs last, where the design puts its emphasis.
+
+    Refused rather than asked, deliberately: a question with fewer than
+    two options is not a question, and one with more than four is a menu
+    the person has to study. Both come back as a refusal the model can
+    read and correct, not a silent truncation.
+    """
+    picked = [str(o).strip() for o in options if str(o).strip()]
+    if len(picked) < 2:
+        return _refuse(
+            "A clarifying question needs at least two options — otherwise "
+            "there is nothing to choose and the question is decoration."
+        )
+    if len(picked) > 4:
+        return _refuse(
+            f"{len(picked)} options is a menu, not a question. Offer at most "
+            "four, with the widest last."
+        )
+    if not question.strip():
+        return _refuse("Ask the question in words; the card is not the ask.")
+    return ToolResult(
+        ok=True,
+        summary=f"Asked: {question.strip()}",
+        data={
+            "await_person": True,
+            "question": question.strip(),
+            "card": {
+                "title": card_title.strip(),
+                "blurb": card_blurb.strip(),
+            },
+            "options": picked,
+        },
+    )
 
 
 def run_tool(
@@ -1095,6 +1199,14 @@ def run_tool(
         return versions(workspace)
     if name == "sources":
         return sources(workspace, str(arguments.get("ref", "") or ""))
+    if name == "ask_the_person":
+        raw = arguments.get("options") or []
+        return ask_the_person(
+            str(arguments.get("question", "")),
+            str(arguments.get("card_title", "")),
+            str(arguments.get("card_blurb", "")),
+            list(raw) if isinstance(raw, list) else [],
+        )
     return _refuse(f"No tool called {name}")
 
 
@@ -1103,6 +1215,9 @@ MODEL_TOOLSET = Toolset(
     definitions=DEFINITIONS,
     run=run_tool,
     prompt_path=Path(__file__).parent / "prompt_model.md",
+    #: The founder's own words on how Swens talks — quoted, not
+    #: paraphrased, and read last so it wins where it disagrees.
+    voice_path=Path(__file__).parent / "prompt_voice.md",
 )
 
 
