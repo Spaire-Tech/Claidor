@@ -186,6 +186,50 @@ checked on two more pairs (ED2 v4 2026-01 → v5, H7 debt indexation
 FP → FDS), and any engine-touching change re-runs the full 27-file
 golden-master gate.
 
-## A/B results
+## A/B round 1 — changes 1–4 (measured back to back, same hour)
+
+| quantity | A (main) | B (branch) | |
+| --- | --- | --- | --- |
+| cold `delta_of`, findings in hand, GD3 | 316.1 s | **209.3 s** | 1.51× |
+| `delta_report` whole, ED2 v4→v5 | 20.1 s | 16.2 s | |
+| `delta_report` whole, H7 debt FP→FDS | 2.7 s | 2.3 s | |
+| audits (same script, outside any scope) | 551.2 s | 379.5 s | the `_normal_form` cache pays inside a single audit too |
+
+**Digests: identical on all three pairs, and GD3's equals the
+captured baseline** `8128e2b2…` — the report has not moved by one
+character. Reads measured within 0.4 s of each other across the two
+runs, so the box was comparable.
+
+**The registered prediction (180–210 s, bar missed) was right**: B
+landed at 209.3 s, at the top of the range, above the 150 s bar. The
+round continues as registered.
+
+## Round 2 predictions, registered before optimising (addendum)
+
+The branch's 209 s decomposed (pickled pair, phases isolated): grids
+cold 139 + 23 (of which tokenize ~94), align 68, comparison ~6.
+A cProfile of the three heaviest sheets put **`lcs_length` at 256 of
+267 profiled seconds** — the alignment *is* the LCS, and one sheet
+(`F6 - Debt Dataset`, 1,644→1,978 unanchorable data rows) is
+two-thirds of it. Only 9 of 45 sheets are fully grid-identical, so
+the identity path alone was never going to carry the alignment.
+
+5. **The tokenizer fast path** (as registered above): a conservative
+   scanner emitting openpyxl's exact token stream for plain formulas
+   — no strings, no spaces, no brackets, no `%`/`#`/`{}` — falling
+   back to openpyxl for everything else, proven by a token-stream
+   differential over every distinct formula in the 27-file corpus
+   (zero mismatches allowed; coverage reported, not assumed).
+   *Prediction: tokenize ~94 s → ≤ 30 s at ≥ 80% fast-path coverage.*
+6. **`lcs_length` goes bit-parallel** — the standard bit-vector
+   LCS-length algorithm; the same length by definition, pinned by a
+   differential test against the classic DP kept as the oracle.
+   *Prediction: align 68 s → ≤ 15 s.*
+
+**Revised total prediction: cold `delta_of` on GD3 lands at
+100–135 s — under the bar.** If coverage of the fast path
+disappoints, the miss will be reported as a miss.
+
+## A/B results, final
 
 *to be filled; every change gated on the digest and the corpus gate*
