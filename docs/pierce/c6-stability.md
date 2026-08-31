@@ -186,3 +186,108 @@ reference-keyed core ÷ union will be **lower** than the label-keyed
 one, because it cannot hide a year-specific flicker inside a collapsed
 signature. If they come back equal, the collapse was costing nothing
 on this model and I will say so.
+
+---
+
+# Result — 31 August 2026
+
+Both gates pass, on the rule sets the product now produces. Raw output
+is committed: `c6-stability-h7fds.json` (gate 1) and
+`c6-stability-h7fds-gate2.json` (gate 2, after the harness fix below).
+
+## Gate 1 — seed stability: PASS, and my prediction was wrong
+
+| | five product rule sets |
+| --- | --- |
+| rules per set | 11, 11, 11, 11, 11 |
+| label signatures per set | 4, 4, 4, 4, 4 |
+| in all five ÷ in any — **by label** | 4 ÷ 4 = **1.0** |
+| in all five ÷ in any — **by reference** | 11 ÷ 11 = **1.0** |
+| mean pairwise Jaccard | **1.0** |
+| identical | **yes, both keyings** |
+| flickering rules | **none** |
+| runs dropped | **zero**, all 2,000 |
+
+The ten individual minings agree too — the comparison 27 August made,
+repeated here on today's rules: 4 signatures in all ten, identical.
+
+**I registered that this would fall short of its bar and it did not.**
+The prediction was that rules near the detection boundary would
+flicker once 144 of 144 cells were moving instead of 10 of 193. Not
+one rule flickered, under either keying. The reasoning was wrong, and
+the added reference-keyed comparison — which I predicted would come
+back *lower* and which cannot hide a year-specific flicker inside a
+collapsed signature — came back at 1.0 as well.
+
+So the honest reading is stronger than the one I expected to write:
+the mining is not merely stable at the resolution the label signature
+can see, it is stable **cell for cell**.
+
+## Gate 2 — cosmetic invariance: PASS
+
+| | original | variant |
+| --- | --- | --- |
+| rules | 11 | 11 |
+| label signatures | 4 | 4 |
+| only on this side | 0 | 0 |
+| **identical by label** | **yes** | |
+| **Jaccard by cell reference** | **0.0000** | |
+
+Three blank rows inserted above the block and the sheet renamed, the
+edit made by LibreOffice itself so every formula moved with it.
+
+**The 0.0000 is the point, not a failure.** Prediction 3 said the
+reference-keyed comparison would collapse, because every watched cell
+moved three rows. It collapsed completely: *not one* rule matches by
+reference, while *every* rule matches by label. That is the whole case
+for behavioural version diffing over positional diffing, measured
+rather than asserted — a positional diff would have called this
+identical file 100% changed.
+
+## The defect this round found, in the harness and mine
+
+Gate 2 first reported **11 rules against 35** and a failure. The shape
+was wrong for a real failure: a variant that behaves differently does
+not find three times as many rules, and *more* rules means *less*
+moved — round 1b's « laws found in a corner », exactly.
+
+The cause was mine. **Automatic typing types the whole workbook**:
+3,210 inputs on this model, of which only **75 are on the mined sheet**
+and 3,135 sit on `Cover` and `Outturn`. The edit moved one sheet, so
+only those 75 moved — and the translation shifted all 3,210 onto the
+renamed sheet, sending **98% of the perturbation to cells that do not
+exist**. The variant was barely exercised and answered accordingly.
+
+It is the un-shifted-typing defect of 27 August wearing the opposite
+face. The hand typing it was originally fixed under returned only
+mined-sheet inputs, so the blanket shift was correct when written and
+became wrong the moment typing went automatic — inherited, not
+re-examined. **That is the second time this round that a « result »
+was the harness misbehaving**, which is why the direction of a number
+is checked before it is reported.
+
+Two things changed: translation is sheet-aware, and a guard **refuses
+the run** unless the count of inputs moved equals the count living on
+the edited sheet. The refusal prints both numbers, so the next
+occurrence is a stopped run rather than a published failure.
+
+## What this does and does not settle
+
+- **It settles the two preconditions.** « v12 broke a rule » is not
+  seed noise, and it survives someone tidying a spreadsheet. C6's
+  gating measurements are done, on the rules the product makes.
+- **It does not make C6 buildable yet.** Two things stand in the way,
+  both already on the record and neither addressed here:
+  1. **The rule sets are still not modeller-recognisable.** All 11
+     rules are 3 sentences, and they are rate rows equal to each other
+     by construction. The AHA's round-1 test is a person recognising
+     the model in its own laws; nobody has.
+  2. **The label signature cannot tell one year from another** — only
+     14 of 144 watched cells carry a column label, so `I42` and `M42`
+     are one identity. C6 would say « a rule broke » without being
+     able to say *when*, and a rule that holds in one year and breaks
+     in another would not register at all. The reference keying that
+     could tell them apart is exactly the keying the cosmetic gate
+     shows collapsing to zero. **Neither keying alone is enough for
+     C6, and that is a design problem this round has now measured
+     rather than a detail.**
