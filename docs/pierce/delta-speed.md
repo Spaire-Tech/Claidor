@@ -93,13 +93,98 @@ digest unchanged. The stopwatch sentence for the real Welsh Water
 pair stays owed to a machine that can reach it, exactly as A1's
 under-a-minute sentence stays owed to a quiet one.
 
-## Baseline profile (this round, this container)
+## Baseline profile (measured this session, untouched main)
 
-*to be filled from `scripts.watch_delta_profile` before any change*
+`scripts.watch_delta_profile` on the GD3 pair, one process, phases in
+the product's order:
+
+| phase | seconds |
+| --- | --- |
+| read old / read new | 119.4 / 127.4 |
+| audit old / audit new | 283.2 / 294.0 |
+| grids old, caches cold | 182.4 |
+| grids new (reuses old's warm cache) | 29.5 |
+| grids old, warm rerun | 10.9 |
+| align 45 common sheets | 90.7 |
+| `delta_of`, findings in hand, caches **warm** | 125.8 |
+
+Report digest `8128e2b2449ce63b…`, 3,167 items, 48,757 changed cells
+— items and changed-cells identical to prism's recorded run, so the
+report itself has not moved since.
+
+**The cold-call composition.** A caller with findings in hand but a
+cold process pays warm-`delta_of` plus the cold parse pass:
+~126 + ~190 ≈ **~316 s** (measured directly as the A side below).
+Prism's 438 s on their tip is today ~316 s on main — main got faster
+between; the diagnosis held.
+
+**Inside the cold parse pass** (GD3 final: 638,790 formula cells,
+601,159 distinct texts — near-zero text-level reuse, as round 5
+found): tokenize 94.4 s, shape-side 97.0 s. A cProfile sample puts
+`_normal_form` at ~75% of the shape side (`_interleave` a third of
+that) and `_offset` at ~11%. `_normal_form` is a pure function of its
+post-`_offset` pieces, and pieces repeat down every filled block —
+the one part of the pass with high reuse left unexploited.
+
+**Where prism's estimate was wrong, said plainly:** the delta's own
+comparison loop is ~20 s, not « ~100 s ». The order's original
+premise (alignment 87%) was already dead; the ~100 s guess for the
+loop dies here. The cold parse pass and the alignment are the piece.
 
 ## Predictions, registered before optimising
 
-*to be filled after the profile, before any optimisation lands*
+The changes, each output-identical by construction, with the bar and
+my predicted worth on the GD3 pair — written before any of them runs:
+
+1. **The comparison loop iterates occupied positions, not
+   rows × columns** — same `record()` sequence, provably (positions
+   where neither side holds a cell produce no call today; the
+   rewrite visits exactly the others, in the same order).
+   *Prediction: comparison ~20 s → ≤ 6 s.*
+2. **Alignment takes the identity fast path when the two Line
+   sequences are equal** — for equal sequences the anchor + DP path
+   provably matches i↔i at similarity 1.0 (anchors pair unique keys
+   `(i,i)`; in the gaps the DP's diagonal ties win by its own `>=`),
+   so returning that directly is the same answer. *Prediction:
+   align 90.7 s → ≤ 45 s. Least certain — I do not know how many of
+   the 45 sheets are line-identical; if most big sheets carry even
+   one changed row, this saves little.*
+3. **`_normal_form` caches by its pieces tuple** — a pure function,
+   so the cache is exact by construction; keyed on content like every
+   other engine cache, cleared alongside them. *Prediction:
+   shape-side 97 s → ≤ 55 s.*
+4. **`audit()` stops clearing the parse caches inside a retained
+   scope** — a context manager; the delta pipeline opts in, every
+   other caller keeps today's clear-at-end. Correctness unaffected
+   (content-keyed, the clear is memory housekeeping). *Prediction: no
+   effect on the cold A/B quantity below; the product's full
+   `delta_report` path stops paying the grids' cold pass (−~200 s
+   end-to-end) and audit-new's re-tokenize.*
+
+**The bar, restated:** cold-process `delta_of` with findings in hand,
+GD3 pair, ≤ 150 s. **My registered prediction: changes 1–3 land it
+at ~180–210 s — short of the bar** — and the remaining distance is
+the tokenizer floor (94 s of openpyxl `Tokenizer` on 601k distinct
+texts). If the A/B confirms that, the round continues with change 5:
+a conservative fast-path scanner producing openpyxl's exact token
+stream for plain formulas, falling back to openpyxl for anything
+else (round 5's pattern), verified by a token-stream differential
+over every formula in all 27 corpus files. *Prediction for 5:
+tokenize 94 s → ≤ 50 s, total ~135–165 s — the bar met, within this
+box's noise.* If 1–3 alone meet the bar, 5 is not built.
+
+## The A/B protocol, registered
+
+Two trees, one box, back to back in the same hour: A = main's tip in
+a git worktree, B = this branch, the same runner script (read both
+books, audit both, caches cold, then time `delta_of` with findings
+handed in; print seconds and the full-report digest). PASS needs:
+digests equal between A and B and equal to `8128e2b2449ce63b…`; B's
+time under the bar; and if B/A shows less than 2× the run is
+repeated in the reverse order before any claim. Identity is also
+checked on two more pairs (ED2 v4 2026-01 → v5, H7 debt indexation
+FP → FDS), and any engine-touching change re-runs the full 27-file
+golden-master gate.
 
 ## A/B results
 
