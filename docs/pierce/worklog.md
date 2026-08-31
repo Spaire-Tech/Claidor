@@ -4875,3 +4875,15 @@ and no part of this piece. Branding note, founder's call, not taken
 here: the manifest and ribbon still say « Ances », one name behind
 Swens. 219 tieout server tests green, 16 panel tests green,
 type-check and both manifest validations clean.
+
+**Postscript, same day — the gate run instead of reasoned about.** The
+entry above said no baseline moved because the golden master stores
+`detail`, not `plain`. That was reasoning, and the brief's whole point
+is that reasoning is not running. So: corpus rebuilt from the committed
+fetcher (27 of 27, one truncated-zip retry), full sweep on this
+container, diff against `corpus-golden-master.json` — **gate clean,
+every file reports identically, finding for finding.** The empty-diff
+prediction was registered in the session before the diff ran, and held.
+Also corrected against the brief: the pushed commit's co-author line
+carried a model identifier, which the constitution forbids in any
+pushed artifact — amended and re-pushed to both branches.

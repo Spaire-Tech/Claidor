@@ -476,7 +476,11 @@ watched working; an earlier build did load inside real Word once
 that 403'd for every panel user, silently, forever (fix on both
 sides of the API); the external-link finding's verbless sentence and
 wrong plural; a refused jump that still claimed « Selected in the
-sheet ». The golden master did not move for any of them.
+sheet ». **Golden-master gate run, not reasoned about: clean, 27 of
+27, finding for finding** — corpus rebuilt from the committed
+fetcher, prediction (empty diff, because the baseline stores
+`detail` and the fix touched only `plain_words`) registered before
+the diff and held.
 
 ---
 
