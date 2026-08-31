@@ -16,6 +16,7 @@ from polar.models.tieout import Artifact
 
 from .link import ChainLink, LinkState
 from .store import ChainFact, ChainRefusal
+from .terms import ChainTerm
 
 
 class ChainFactRepository(RepositoryBase[ChainFact]):
@@ -158,5 +159,57 @@ class ChainLinkRepository(RepositoryBase[ChainLink]):
             ChainLink.cell_id == cell_id,
             ChainLink.fact_id == fact_id,
             ChainLink.deleted_at.is_(None),
+        )
+        return await self.get_one_or_none(statement)
+
+
+class ChainTermRepository(RepositoryBase[ChainTerm]):
+    """The deal's terms table. Every read is scoped by the deal.
+
+    Same access rule as links, for the same reason: a term is a
+    person's statement about a deal, so a term id must never be a
+    capability to see one.
+    """
+
+    model = ChainTerm
+
+    async def get_in_dossier(self, dossier_id: UUID, term_id: UUID) -> ChainTerm | None:
+        """One term, only if it belongs to the deal the caller named."""
+        statement = self.get_base_statement().where(
+            ChainTerm.id == term_id,
+            ChainTerm.dossier_id == dossier_id,
+            ChainTerm.deleted_at.is_(None),
+        )
+        return await self.get_one_or_none(statement)
+
+    async def get_for_user(self, term_id: UUID) -> ChainTerm | None:
+        """One term by id alone — the router still checks its deal."""
+        statement = self.get_base_statement().where(
+            ChainTerm.id == term_id, ChainTerm.deleted_at.is_(None)
+        )
+        return await self.get_one_or_none(statement)
+
+    async def list_for_dossier(self, dossier_id: UUID) -> list[ChainTerm]:
+        """The deal's whole table, in the order the documents state it:
+        by document, then page, then when it was put on the record —
+        superseded rows included, because a superseded term is history
+        a reviewer may need, not a deleted one."""
+        statement = (
+            self.get_base_statement()
+            .where(ChainTerm.dossier_id == dossier_id, ChainTerm.deleted_at.is_(None))
+            .order_by(ChainTerm.document_id, ChainTerm.page, ChainTerm.created_at)
+        )
+        return list(await self.get_all(statement))
+
+    async def find_for_fact(self, dossier_id: UUID, fact_id: UUID) -> ChainTerm | None:
+        """The existing term picked from this fact, if a person made one.
+
+        Picking the same figure twice updates the one row rather than
+        growing two — the confirm-once precedent, applied to picking.
+        """
+        statement = self.get_base_statement().where(
+            ChainTerm.dossier_id == dossier_id,
+            ChainTerm.fact_id == fact_id,
+            ChainTerm.deleted_at.is_(None),
         )
         return await self.get_one_or_none(statement)

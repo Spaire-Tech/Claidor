@@ -54,15 +54,29 @@ from .anchor import (
     recheck,
     with_ordinals,
 )
-from .extract import EXTRACTOR_NAME, EXTRACTOR_VERSION, Extraction, extract_pdf
+from .extract import (
+    EXTRACTOR_NAME,
+    EXTRACTOR_VERSION,
+    Extraction,
+    extract_pdf,
+    parse_number,
+)
 from .link import ChainLink, LinkState
 from .propose import Abstained, propose
 from .repository import (
     ChainFactRepository,
     ChainLinkRepository,
     ChainRefusalRepository,
+    ChainTermRepository,
 )
 from .store import ChainFact, ChainRefusal, persist_extraction
+from .terms import (
+    STATED_EXTRACTED,
+    STATED_TYPED,
+    ChainTerm,
+    default_name,
+    rank,
+)
 
 router = APIRouter(prefix="/chain", tags=["chain", APITag.private])
 
@@ -859,6 +873,724 @@ async def recheck_links(
         tallies=tallies,
         results=results,
     )
+
+
+# --- the terms table (swens.md § 3d) -------------------------------------
+#
+# The Grid's second use of extraction: the deal's terms, curated by a
+# person from what extraction read (or typed in where geometry defeated
+# it), then tested against the model's inputs at scale. The agreed shape
+# is docs/pierce/terms-table-shape.md. No matching happens anywhere in
+# these routes: extraction ranks, a person picks; a person binds a model
+# input; the check is the D4 arithmetic applied to every row at once.
+
+TERM_NOT_FOUND = "Term not found."
+
+#: The check's two extra verdicts, joining the registered D4 vocabulary
+#: (agrees / the model moved / the source moved / both moved / broken /
+#: ambiguous) rather than replacing any of it — one vocabulary across
+#: the product.
+UNTESTED = "untested"
+SUPERSEDED = "superseded"
+
+
+async def _term_for(
+    session: AsyncSession | AsyncReadSession, term_id: UUID, user_id: UUID
+) -> ChainTerm:
+    """The term, if the caller is on its deal. Else 404 — an id leaks
+    nothing about existence, exactly as everywhere else in the Chain."""
+    from polar.dossier.repository import DossierRepository
+
+    term = await ChainTermRepository.from_session(session).get_for_user(term_id)
+    if term is None:
+        raise ResourceNotFound(TERM_NOT_FOUND)
+    deal = await DossierRepository.from_session(session).get_for_user(
+        term.dossier_id, user_id
+    )
+    if deal is None:
+        raise ResourceNotFound(TERM_NOT_FOUND)
+    return term
+
+
+class TermSignalsRead(Schema):
+    """Why a candidate ranks where it does — shown, never asserted."""
+
+    labelled: bool
+    tabular: bool
+    reference: bool
+    unit_marked: bool
+
+
+class TermCandidateRead(Schema):
+    fact: FactRead
+    signals: TermSignalsRead
+
+
+class TermCandidatesRead(Schema):
+    """A document version's facts, ordered for a person picking terms.
+
+    The refusals ride along on the face: a refused page is exactly
+    where a person may need to type a term in by hand, so hiding the
+    refusals here would hide the reason the typing route exists.
+    """
+
+    document_id: UUID
+    document_version_id: UUID
+    candidates: list[TermCandidateRead]
+    refusals: list[RefusalRead]
+
+
+@router.get(
+    "/documents/{artifact_id}/term-candidates", response_model=TermCandidatesRead
+)
+async def list_term_candidates(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    limit: int = 200,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> TermCandidatesRead:
+    """Extraction's facts, ranked for picking — never elected.
+
+    Labelled figures in tables surface first, document references sink
+    last, and every candidate shows its signals, so the ordering is
+    inspectable. Nothing is excluded and nothing is chosen: a person
+    picks, per the agreed shape.
+    """
+    artifact = await _artifact_for(session, artifact_id, auth_subject.subject.id)
+    facts = await ChainFactRepository.from_session(session).list_for_artifact(
+        artifact.id
+    )
+    refusals = await ChainRefusalRepository.from_session(session).list_for_artifact(
+        artifact.id
+    )
+    ordered = rank([(fact.line, fact.column, fact.text) for fact in facts])
+    return TermCandidatesRead(
+        document_id=artifact.lineage_id,
+        document_version_id=artifact.id,
+        candidates=[
+            TermCandidateRead(
+                fact=FactRead.from_row(facts[index], artifact),
+                signals=TermSignalsRead(
+                    labelled=signals.labelled,
+                    tabular=signals.tabular,
+                    reference=signals.reference,
+                    unit_marked=signals.unit_marked,
+                ),
+            )
+            for index, signals in ordered[: max(0, limit)]
+        ],
+        refusals=[RefusalRead.from_row(refusal) for refusal in refusals],
+    )
+
+
+class TermRead(Schema):
+    """One row of the deal's terms table, everything on the record."""
+
+    id: UUID
+    dossier_id: UUID
+    name: str
+    stated: str
+    document: dict[str, object]
+    superseded: bool
+    superseded_note: str
+    model: dict[str, object] | None
+    scale: float
+    basis: str
+    note: str
+    created_by_id: UUID | None
+    confirmed_by_id: UUID | None
+    confirmed_at: datetime | None
+
+    @classmethod
+    def of(cls, term: ChainTerm) -> "TermRead":
+        bound = term.cell_name != ""
+        return cls(
+            id=term.id,
+            dossier_id=term.dossier_id,
+            name=term.name,
+            stated=term.stated,
+            document={
+                "document_id": str(term.document_id),
+                "document_version_id": str(term.document_version_id),
+                "fact_id": str(term.fact_id) if term.fact_id else None,
+                "page": term.page,
+                "printed_text": term.printed_text,
+                "anchor_line": term.anchor_line,
+                "ordinal_in_line": term.ordinal_in_line,
+                "column": term.column,
+                "value": term.value,
+            },
+            superseded=term.superseded_at is not None,
+            superseded_note=term.superseded_note,
+            model=(
+                {
+                    "model_id": str(term.model_id),
+                    "model_version_id": str(term.model_version_id),
+                    "cell_id": str(term.cell_id),
+                    "ref": term.model_ref,
+                    "cell_name": term.cell_name,
+                    "value_at_confirmation": term.model_value_at_confirmation,
+                }
+                if bound
+                else None
+            ),
+            scale=term.scale,
+            basis=term.basis,
+            note=term.note,
+            created_by_id=term.created_by_id,
+            confirmed_by_id=term.confirmed_by_id,
+            confirmed_at=term.confirmed_at,
+        )
+
+
+class TermCreate(Schema):
+    """A person puts a term on the record — picked, or typed.
+
+    Picked: `fact_id` set, everything cited through the fact; `name`
+    optionally overrides the printed default. Typed — the route for a
+    figure extraction refused or missed, the spread-table case:
+    `document_version_id`, `page`, `name` and `printed_text` all
+    required, and the value is parsed from `printed_text` by the same
+    rule extraction uses, or refused in words. Never both shapes at
+    once.
+    """
+
+    fact_id: UUID | None = None
+    name: str | None = None
+    document_version_id: UUID | None = None
+    page: int | None = None
+    printed_text: str | None = None
+
+
+@router.post("/terms", response_model=TermRead, status_code=201)
+async def create_term(
+    body: TermCreate,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> TermRead:
+    """A person states that this figure is a term of the deal.
+
+    Picking the same fact twice updates the one row rather than growing
+    two. A typed term records who typed it and is honest forever about
+    not being re-readable — its anchor line is empty because nothing
+    printed exists to re-find.
+    """
+    if (body.fact_id is None) == (body.document_version_id is None):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "A term is picked from a fact (fact_id) or typed against a "
+                "document version (document_version_id, page, name, "
+                "printed_text) — exactly one of the two, never both and "
+                "never neither."
+            ),
+        )
+
+    terms = ChainTermRepository.from_session(session)
+
+    if body.fact_id is not None:
+        found = await ChainFactRepository.from_session(session).get(body.fact_id)
+        if found is None:
+            raise ResourceNotFound(NOT_FOUND)
+        fact, artifact = found
+        await _artifact_for(session, artifact.id, auth_subject.subject.id)
+
+        ordered = await ChainFactRepository.from_session(session).list_for_artifact(
+            fact.artifact_id
+        )
+        ordinals = {
+            row.id: ordinal
+            for row, (_, _, ordinal, _, _) in zip(
+                ordered, with_ordinals(ordered), strict=True
+            )
+        }
+        name = (body.name or "").strip() or default_name(fact.line, fact.column)
+
+        existing = await terms.find_for_fact(artifact.dossier_id, fact.id)
+        if existing is not None:
+            updated = await terms.update(existing, update_dict={"name": name})
+            return TermRead.of(updated)
+
+        term = await terms.create(
+            ChainTerm(
+                dossier_id=artifact.dossier_id,
+                name=name,
+                stated=STATED_EXTRACTED,
+                document_id=artifact.lineage_id,
+                document_version_id=artifact.id,
+                fact_id=fact.id,
+                page=fact.page,
+                printed_text=fact.text,
+                anchor_line=fact.line,
+                ordinal_in_line=ordinals.get(fact.id, 1),
+                column=fact.column,
+                value=fact.value,
+                created_by_id=auth_subject.subject.id,
+            ),
+            flush=True,
+        )
+        return TermRead.of(term)
+
+    assert body.document_version_id is not None
+    artifact = await _artifact_for(
+        session, body.document_version_id, auth_subject.subject.id
+    )
+    name = (body.name or "").strip()
+    printed = (body.printed_text or "").strip()
+    if not name:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "A typed term needs a name — there is no printed line to take one from."
+            ),
+        )
+    if body.page is None or body.page < 1:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "A typed term needs the page it was read from — the "
+                "citation is the point of the table."
+            ),
+        )
+    value = parse_number(printed)
+    if value is None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"« {printed or '(nothing)'} » does not read as one "
+                "conventional number, so no value can be stated for it. "
+                "Type the figure the way the document prints it — "
+                "« 4.35% », « £213,000,000 », « (2,340) »."
+            ),
+        )
+
+    term = await terms.create(
+        ChainTerm(
+            dossier_id=artifact.dossier_id,
+            name=name,
+            stated=STATED_TYPED,
+            document_id=artifact.lineage_id,
+            document_version_id=artifact.id,
+            fact_id=None,
+            page=body.page,
+            printed_text=printed,
+            anchor_line="",
+            ordinal_in_line=0,
+            column="",
+            value=value,
+            created_by_id=auth_subject.subject.id,
+        ),
+        flush=True,
+    )
+    return TermRead.of(term)
+
+
+@router.get("/dossiers/{dossier_id}/terms", response_model=list[TermRead])
+async def list_terms(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[TermRead]:
+    """The deal's terms table, in the order the documents state it.
+
+    Superseded rows are in it, marked: a superseded term is history a
+    reviewer may need, not a deleted one.
+    """
+    from polar.dossier.repository import DossierRepository
+
+    deal = await DossierRepository.from_session(session).get_for_user(
+        dossier_id, auth_subject.subject.id
+    )
+    if deal is None:
+        raise ResourceNotFound("Deal not found.")
+    found = await ChainTermRepository.from_session(session).list_for_dossier(dossier_id)
+    return [TermRead.of(term) for term in found]
+
+
+class TermRename(Schema):
+    name: str
+
+
+@router.patch("/terms/{term_id}", response_model=TermRead)
+async def rename_term(
+    term_id: UUID,
+    body: TermRename,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> TermRead:
+    """A person corrects the term's name. The citation is untouched."""
+    term = await _term_for(session, term_id, auth_subject.subject.id)
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(
+            status_code=422, detail="A term cannot be nameless — the name is the row."
+        )
+    updated = await ChainTermRepository.from_session(session).update(
+        term, update_dict={"name": name}
+    )
+    return TermRead.of(updated)
+
+
+@router.delete("/terms/{term_id}", status_code=204)
+async def delete_term(
+    term_id: UUID,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    """A person takes a mispicked row off the table."""
+    term = await _term_for(session, term_id, auth_subject.subject.id)
+    term.set_deleted_at()
+    session.add(term)
+    await session.flush()
+
+
+class TermBind(Schema):
+    """What a person states when binding a model input to a term.
+
+    Nothing here is inferred: the scale, the basis and the note are the
+    person's words, exactly as on a confirmed link.
+    """
+
+    cell_id: UUID
+    #: document value × scale = model value. The person states it.
+    scale: float = 1.0
+    basis: str = ""
+    note: str = ""
+
+
+@router.post("/terms/{term_id}/model", response_model=TermRead)
+async def bind_term(
+    term_id: UUID,
+    body: TermBind,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> TermRead:
+    """A person states which model input this term should govern.
+
+    Everything the check will ever need is captured now — the cell's
+    name to re-find it in any later version, and its value so the check
+    can say which side moved. Binding again replaces the binding; the
+    term itself is untouched.
+    """
+    term = await _term_for(session, term_id, auth_subject.subject.id)
+
+    repository = TieOutRepository.from_session(session)
+    cell = await repository.get_cell(body.cell_id)
+    if cell is None:
+        raise ResourceNotFound("Cell not found.")
+    model_artifact = await _artifact_for(
+        session, cell.artifact_id, auth_subject.subject.id
+    )
+    if model_artifact.dossier_id != term.dossier_id:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "That cell and that term belong to different deals, so one "
+                "cannot be tested against the other."
+            ),
+        )
+    if cell.formula is not None or cell.alias_of is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{cell.ref} is computed from other cells, not typed, so it "
+                "is not a model input — its provenance is its formula, and "
+                "a term governs an input."
+            ),
+        )
+    if cell.value is None:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{cell.ref} holds no value, so there is nothing to test.",
+        )
+    if body.scale <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="Scale must be greater than zero: document value × scale = model value.",
+        )
+
+    updated = await ChainTermRepository.from_session(session).update(
+        term,
+        update_dict={
+            "model_id": model_artifact.lineage_id,
+            "model_version_id": model_artifact.id,
+            "cell_id": cell.id,
+            "model_ref": cell.ref,
+            "cell_name": cell.name or f"{cell.row_label} {cell.column_label}".strip(),
+            "model_value_at_confirmation": float(cell.value),
+            "scale": body.scale,
+            "basis": body.basis,
+            "note": body.note,
+            "confirmed_by_id": auth_subject.subject.id,
+            "confirmed_at": datetime.now(UTC),
+        },
+    )
+    return TermRead.of(updated)
+
+
+class TermSupersede(Schema):
+    superseded: bool
+    note: str = ""
+
+
+@router.post("/terms/{term_id}/supersede", response_model=TermRead)
+async def supersede_term(
+    term_id: UUID,
+    body: TermSupersede,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> TermRead:
+    """A person states that this term no longer governs — or does again.
+
+    « The amended agreement now governs; the term sheet figure does
+    not. » A statement, on the record, reversible — never something
+    this code infers from document dates.
+    """
+    term = await _term_for(session, term_id, auth_subject.subject.id)
+    updated = await ChainTermRepository.from_session(session).update(
+        term,
+        update_dict={
+            "superseded_at": datetime.now(UTC) if body.superseded else None,
+            "superseded_by_id": auth_subject.subject.id if body.superseded else None,
+            "superseded_note": body.note if body.superseded else "",
+        },
+    )
+    return TermRead.of(updated)
+
+
+class TermCheckRead(Schema):
+    """One term's row in the check: the verdict, and the words."""
+
+    term_id: UUID
+    name: str
+    stated: str
+    verdict: str
+    #: True only when the pair ties out under the stated scale, at the
+    #: document's printed precision. None when nothing was tested.
+    ties_out_now: bool | None
+    model_ref_now: str | None
+    detail: str
+
+
+class TermsCheckRead(Schema):
+    """The whole table tested against one model version, at once.
+
+    The coverage sentence swens.md § 3a requires is on the face: every
+    row is in `results`, `checked` is the denominator's tested half,
+    and `tallies` counts every verdict — untested and superseded
+    included, because a table that hid its untested rows would be
+    selling reach it does not have.
+    """
+
+    dossier_id: UUID
+    model_version_id: UUID
+    document_version_id: UUID | None
+    terms: int
+    checked: int
+    tallies: dict[str, int]
+    results: list[TermCheckRead]
+    #: Structural, as on the link re-check: this package imports no
+    #: model client, so testing a table of terms is arithmetic.
+    model_calls: int = 0
+
+
+@router.post("/dossiers/{dossier_id}/terms/check", response_model=TermsCheckRead)
+async def check_terms(
+    dossier_id: UUID,
+    model_version_id: UUID,
+    auth_subject: auth.TieOutRead,
+    document_version_id: UUID | None = None,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> TermsCheckRead:
+    """The model's inputs tested against the terms, at scale.
+
+    The D4 arithmetic applied to every row at once: each bound term's
+    cell is re-found by its name in the version being checked, its
+    document side is re-read by its line when `document_version_id`
+    names a newer upload of its document (typed terms compare at their
+    stated value — there is nothing printed to re-read), and the
+    verdict says whether the pair ties out and which side moved. No
+    matching, no model call, no inference.
+    """
+    from polar.dossier.repository import DossierRepository
+
+    deal = await DossierRepository.from_session(session).get_for_user(
+        dossier_id, auth_subject.subject.id
+    )
+    if deal is None:
+        raise ResourceNotFound("Deal not found.")
+
+    repository = TieOutRepository.from_session(session)
+    model_artifact = await repository.get_artifact(model_version_id)
+    if model_artifact is None or model_artifact.dossier_id != dossier_id:
+        raise ResourceNotFound("That model version is not on this deal.")
+
+    document_artifact = None
+    facts: list[tuple[str, str, int, float, str]] = []
+    if document_version_id is not None:
+        document_artifact = await repository.get_artifact(document_version_id)
+        if document_artifact is None or document_artifact.dossier_id != dossier_id:
+            raise ResourceNotFound("That document version is not on this deal.")
+        facts = with_ordinals(
+            await ChainFactRepository.from_session(session).list_for_artifact(
+                document_artifact.id
+            )
+        )
+
+    cells = [
+        (
+            cell.ref,
+            cell.name or f"{cell.row_label} {cell.column_label}".strip(),
+            float(cell.value) if cell.value is not None else 0.0,
+        )
+        for cell in await repository.cells_of(model_artifact.id)
+    ]
+
+    rows = await ChainTermRepository.from_session(session).list_for_dossier(dossier_id)
+
+    results: list[TermCheckRead] = []
+    tallies: dict[str, int] = {}
+    checked = 0
+    for term in rows:
+        verdict, ties, ref_now, detail = _check_term(
+            term, cells, facts, document_artifact
+        )
+        if verdict not in (UNTESTED, SUPERSEDED):
+            checked += 1
+        tallies[verdict] = tallies.get(verdict, 0) + 1
+        results.append(
+            TermCheckRead(
+                term_id=term.id,
+                name=term.name,
+                stated=term.stated,
+                verdict=verdict,
+                ties_out_now=ties,
+                model_ref_now=ref_now,
+                detail=detail,
+            )
+        )
+
+    return TermsCheckRead(
+        dossier_id=dossier_id,
+        model_version_id=model_version_id,
+        document_version_id=document_version_id,
+        terms=len(rows),
+        checked=checked,
+        tallies=tallies,
+        results=results,
+    )
+
+
+def _check_term(
+    term: ChainTerm,
+    cells: list[tuple[str, str, float]],
+    facts: list[tuple[str, str, int, float, str]],
+    document_artifact: Artifact | None,
+) -> tuple[str, bool | None, str | None, str]:
+    """One row's verdict: (verdict, ties_out_now, model_ref_now, detail)."""
+    if term.superseded_at is not None:
+        return (
+            SUPERSEDED,
+            None,
+            None,
+            term.superseded_note
+            or "A person marked this term superseded; it is not tested.",
+        )
+    if term.cell_name == "":
+        return (
+            UNTESTED,
+            None,
+            None,
+            (
+                "The documents state this term and no model input is bound "
+                "to it, so nothing tests it. Binding a cell is what would."
+            ),
+        )
+
+    assert term.model_value_at_confirmation is not None  # set with cell_name
+    model_anchor = ModelAnchor(
+        ref=term.model_ref,
+        cell_name=term.cell_name,
+        value=term.model_value_at_confirmation,
+    )
+    document_anchor = DocumentAnchor(
+        page=term.page,
+        printed_text=term.printed_text,
+        value=term.value,
+        anchor_line=term.anchor_line,
+        ordinal_in_line=term.ordinal_in_line,
+    )
+
+    model_side = reanchor_model(model_anchor, cells)
+    if not isinstance(model_side, Anchored):
+        verdict = "broken" if isinstance(model_side, Broken) else "ambiguous"
+        return verdict, None, None, model_side.reason
+
+    document_now = term.value
+    rereadable = (
+        document_artifact is not None
+        and term.document_id == document_artifact.lineage_id
+        and term.anchor_line != ""
+    )
+    if rereadable:
+        document_side = reanchor_document(document_anchor, facts)
+        if not isinstance(document_side, Anchored):
+            verdict = "broken" if isinstance(document_side, Broken) else "ambiguous"
+            return verdict, None, model_side.key, document_side.reason
+        document_now = float(document_side.value)
+
+    verdict, ties = recheck(
+        model_anchor,
+        document_anchor,
+        model_side.value,
+        document_now,
+        scale=term.scale,
+    )
+    return (
+        verdict,
+        ties,
+        model_side.key,
+        _term_detail(term, verdict, ties, float(model_side.value), document_now),
+    )
+
+
+def _term_detail(
+    term: ChainTerm,
+    verdict: str,
+    ties_out: bool,
+    model_now: float,
+    document_now: float,
+) -> str:
+    """The sentence a reviewer reads, with both numbers in it.
+
+    The case the table exists for gets its own words: nothing moved
+    since binding and the pair still does not tie out — a model input
+    that disagrees with a confirmed term, from day one.
+    """
+    assert term.model_value_at_confirmation is not None  # only bound terms reach here
+    if verdict == AGREES:
+        if ties_out:
+            return ""
+        return (
+            f"Neither side has moved since binding, and the pair does not "
+            f"tie out: the document states {term.printed_text} and the "
+            f"model holds {model_now:g}"
+            + (f" (at scale {term.scale:g})" if term.scale != 1.0 else "")
+            + "."
+        )
+    moved = []
+    if verdict in (MODEL_MOVED, BOTH_MOVED):
+        moved.append(
+            f"the model moved, {term.model_value_at_confirmation:g} → {model_now:g}"
+        )
+    if verdict in (SOURCE_MOVED, BOTH_MOVED):
+        moved.append(f"the source moved, {term.value:g} → {document_now:g}")
+    tail = (
+        " and the pair still ties out."
+        if ties_out
+        else " and the pair no longer ties out."
+    )
+    return "; ".join(moved).capitalize() + tail
 
 
 def _recheck_detail(
