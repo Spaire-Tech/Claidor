@@ -893,6 +893,32 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
     api
       .assist(picked.id, q, { history })
       .then((answer: Asked) => {
+        //: The assistant stopped to settle one thing first. Draw its
+        //: question and the card, and wait — picking a choice is just
+        //: the next message, so the model is told which way rather
+        //: than left to guess.
+        //
+        //: The question comes off the tool call, not the prose: an
+        //: option narrated but not offered is one the screen must
+        //: not draw.
+        const clarify = answer.clarify
+        if (clarify && clarify.options.length >= 2) {
+          setMessages((was) => [
+            ...was.slice(0, -1),
+            {
+              role: 'ask',
+              text: clarify.question,
+              cardTitle: clarify.title,
+              cardBlurb: clarify.blurb,
+              cardIcons: [],
+              options: clarify.options.map((label) => ({
+                label,
+                pick: () => ask(label),
+              })),
+            },
+          ])
+          return
+        }
         const { text: main, ends } = split(answer.answer)
         const used = answer.steps.filter((one) => one.ok).length
         setMessages((was) => [

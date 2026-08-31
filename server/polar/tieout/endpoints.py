@@ -72,6 +72,7 @@ from .schemas import (
     ArtifactRead,
     Ask,
     Asked,
+    AskedClarify,
     AskedRow,
     AskedStep,
     AuditRuleRead,
@@ -2518,7 +2519,30 @@ async def assist(
                 )
                 for one in step_rows
             ]
+
+    #: Did the assistant stop to ask something? Read off the tool call
+    #: rather than the prose, and **the last one wins**: a turn that
+    #: asked, was answered and asked again is showing its latest
+    #: question, not its first.
+    clarify: AskedClarify | None = None
+    for step in outcome.steps:
+        if not step.ok or not step.data.get("await_person"):
+            continue
+        card = step.data.get("card") or {}
+        options = [str(o) for o in (step.data.get("options") or [])]
+        if len(options) < 2:
+            #: The tool refuses this itself; if one ever reaches here,
+            #: drawing a card with nothing to choose would be worse
+            #: than drawing no card at all.
+            continue
+        clarify = AskedClarify(
+            question=str(step.data.get("question", "")),
+            title=str(card.get("title", "")),
+            blurb=str(card.get("blurb", "")),
+            options=options,
+        )
     return Asked(
+        clarify=clarify,
         id=task.id,
         prompt=task.prompt,
         answer=task.answer,

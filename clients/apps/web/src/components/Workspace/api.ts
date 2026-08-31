@@ -498,6 +498,23 @@ export interface AskedRow {
   value: string
 }
 
+/**
+ * The chat asking one question back, before it does the work.
+ *
+ * Read off the assistant's own tool call, never off its prose — an
+ * option it narrated but did not put in the call is an option the
+ * screen must not offer.
+ */
+export interface AskedClarify {
+  question: string
+  /** Two or three words naming the work — « Targeted Check ». */
+  title: string
+  /** One line saying what that work produces. */
+  blurb: string
+  /** Two to four choices. **The last is drawn as the primary.** */
+  options: string[]
+}
+
 export interface Asked {
   id: string
   prompt: string
@@ -506,6 +523,10 @@ export interface Asked {
   stopped: 'answered' | 'step_limit' | 'failed'
   error: string | null
   steps: AskedStep[]
+  /** Set when the assistant stopped to settle one thing first. The
+   *  screen draws the card and waits; the pick returns as the next
+   *  message, so the model never guesses which way the person went. */
+  clarify?: AskedClarify | null
   /** The cells behind the answer, from the last tool that returned any. */
   rows?: AskedRow[]
   /**
