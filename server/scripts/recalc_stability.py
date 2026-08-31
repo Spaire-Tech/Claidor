@@ -205,8 +205,15 @@ def main() -> int:
     if len(sys.argv) < 3:
         print(__doc__)
         return 2
-    argv = [a for a in sys.argv[1:] if a != "--hand"]
+    flags = {"--hand", "--gate2"}
+    argv = [a for a in sys.argv[1:] if a not in flags]
     hand = "--hand" in sys.argv
+    #: Re-run gate 2 alone. Gate 1 costs five seed pairs and
+    #: roughly five hours; when a harness defect is found in
+    #: gate 2 there is no honesty in repeating a gate the defect
+    #: could not touch — gate 1 never translates a reference.
+    #: The gate 1 result it passed with is kept in the record.
+    gate2_only = "--gate2" in sys.argv
     key, out = argv[0], Path(argv[1])
     runs = int(argv[2]) if len(argv) > 2 else 200
     if find_install() is None:
@@ -238,7 +245,7 @@ def main() -> int:
         #: identity, and a year-specific flicker could hide inside it.
         ref_sets: list[set[Any]] = []
         typed = kin = None
-        for pair in SEED_PAIRS:
+        for pair in [] if gate2_only else SEED_PAIRS:
             print(f"  pair {pair}:", flush=True)
             stable, singles, labels, typed, kin = product_rule_set(
                 calculator,
@@ -259,6 +266,8 @@ def main() -> int:
                 f"{len(sets[-1])} label signatures",
                 flush=True,
             )
+        if gate2_only:
+            record["seed_stability"] = "not re-run — see the prior record"
         common = set.intersection(*sets) if sets else set()
         union = set.union(*sets) if sets else set()
         #: The statistic the amendment's question actually needs: a rule
@@ -273,68 +282,72 @@ def main() -> int:
         ]
         singles_common = set.intersection(*single_sets) if single_sets else set()
         singles_union = set.union(*single_sets) if single_sets else set()
-        record["seed_stability"] = {
-            "seed_pairs": [list(p) for p in SEED_PAIRS],
-            "counts": [len(s) for s in sets],
-            "in_all_five": len(common),
-            "in_any": len(union),
-            "core_over_union": round(len(common) / len(union), 4) if union else 1.0,
-            "mean_pairwise_jaccard": round(sum(pairwise) / len(pairwise), 4)
-            if pairwise
-            else 1.0,
-            "identical": all(s == sets[0] for s in sets),
-            #: The stronger comparison, per the registration's
-            #: amendment. The bar applies to this one too.
-            "by_reference": {
-                "counts": [len(s) for s in ref_sets],
-                "in_all_five": len(set.intersection(*ref_sets)) if ref_sets else 0,
-                "in_any": len(set.union(*ref_sets)) if ref_sets else 0,
-                "core_over_union": round(
-                    len(set.intersection(*ref_sets)) / len(set.union(*ref_sets)), 4
-                )
-                if ref_sets and set.union(*ref_sets)
+        if sets:
+            record["seed_stability"] = {
+                "seed_pairs": [list(p) for p in SEED_PAIRS],
+                "counts": [len(s) for s in sets],
+                "in_all_five": len(common),
+                "in_any": len(union),
+                "core_over_union": round(len(common) / len(union), 4) if union else 1.0,
+                "mean_pairwise_jaccard": round(sum(pairwise) / len(pairwise), 4)
+                if pairwise
                 else 1.0,
-                "identical": all(s == ref_sets[0] for s in ref_sets),
+                "identical": all(s == sets[0] for s in sets),
+                #: The stronger comparison, per the registration's
+                #: amendment. The bar applies to this one too.
+                "by_reference": {
+                    "counts": [len(s) for s in ref_sets],
+                    "in_all_five": len(set.intersection(*ref_sets)) if ref_sets else 0,
+                    "in_any": len(set.union(*ref_sets)) if ref_sets else 0,
+                    "core_over_union": round(
+                        len(set.intersection(*ref_sets)) / len(set.union(*ref_sets)), 4
+                    )
+                    if ref_sets and set.union(*ref_sets)
+                    else 1.0,
+                    "identical": all(s == ref_sets[0] for s in ref_sets),
+                    "flickering": [
+                        sorted(f"{ref} {'+' if c > 0 else '-'}" for ref, c in rule)
+                        for rule in sorted(
+                            set.union(*ref_sets) - set.intersection(*ref_sets), key=str
+                        )[:40]
+                    ]
+                    if ref_sets
+                    else [],
+                },
+                #: The ten individual minings, compared the way 27 August
+                #: compared its five — kept so the two rounds are the same
+                #: question asked of different rule sets.
+                "single_minings": {
+                    "counts": [len(s) for s in single_sets],
+                    "in_all": len(singles_common),
+                    "in_any": len(singles_union),
+                    "identical": all(s == single_sets[0] for s in single_sets),
+                },
+                #: What flickers, named rather than counted, so a shortfall
+                #: is a list of sentences and not a number to argue about.
                 "flickering": [
-                    sorted(f"{ref} {'+' if c > 0 else '-'}" for ref, c in rule)
-                    for rule in sorted(
-                        set.union(*ref_sets) - set.intersection(*ref_sets), key=str
-                    )[:40]
-                ]
-                if ref_sets
-                else [],
-            },
-            #: The ten individual minings, compared the way 27 August
-            #: compared its five — kept so the two rounds are the same
-            #: question asked of different rule sets.
-            "single_minings": {
-                "counts": [len(s) for s in single_sets],
-                "in_all": len(singles_common),
-                "in_any": len(singles_union),
-                "identical": all(s == single_sets[0] for s in single_sets),
-            },
-            #: What flickers, named rather than counted, so a shortfall
-            #: is a list of sentences and not a number to argue about.
-            "flickering": [
-                [list(term) for term in sorted(rule)]
-                for rule in sorted(union - common, key=str)[:40]
-            ],
-        }
-        by_ref_stat = record["seed_stability"]["by_reference"]
-        print(
-            f"seed stability BY LABEL: {[len(s) for s in sets]} signatures per set, "
-            f"{len(common)} in all five of {len(union)} in any "
-            f"(core/union {record['seed_stability']['core_over_union']}), "
-            f"identical={record['seed_stability']['identical']}",
-            flush=True,
-        )
-        print(
-            f"seed stability BY REFERENCE: {by_ref_stat['counts']} rules per set, "
-            f"{by_ref_stat['in_all_five']} in all five of {by_ref_stat['in_any']} "
-            f"in any (core/union {by_ref_stat['core_over_union']}), "
-            f"identical={by_ref_stat['identical']}",
-            flush=True,
-        )
+                    [list(term) for term in sorted(rule)]
+                    for rule in sorted(union - common, key=str)[:40]
+                ],
+            }
+        if sets:
+            by_ref_stat = record["seed_stability"]["by_reference"]
+            print(
+                f"seed stability BY LABEL: {[len(s) for s in sets]} signatures per "
+                f"set, {len(common)} in all five of {len(union)} in any "
+                f"(core/union {record['seed_stability']['core_over_union']}), "
+                f"identical={record['seed_stability']['identical']}",
+                flush=True,
+            )
+            print(
+                f"seed stability BY REFERENCE: {by_ref_stat['counts']} rules per set, "
+                f"{by_ref_stat['in_all_five']} in all five of {by_ref_stat['in_any']} "
+                f"in any (core/union {by_ref_stat['core_over_union']}), "
+                f"identical={by_ref_stat['identical']}",
+                flush=True,
+            )
+        else:
+            print("gate 1 skipped (--gate2) — its prior result stands", flush=True)
 
         # --- 2. cosmetic invariance --------------------------------
         variant = work / f"{source.stem}-cosmetic.xlsx"
@@ -372,12 +385,54 @@ def main() -> int:
         # to recognise cells that have moved, which is a different
         # (and later) question than whether the mining is invariant.
         def _move(ref: str) -> str:
-            _, _, at = ref.partition("!")
+            """Translate a ref onto the variant — **only if it moved.**
+
+            The edit inserts three rows into one sheet and renames that
+            sheet. Nothing on any other sheet moved by a single cell,
+            so nothing on any other sheet may be translated.
+
+            This is not a hypothetical. Automatic typing types the
+            *whole workbook*: on this model 3,210 inputs, of which only
+            **75 are on the mined sheet** and 3,135 sit on `Cover` and
+            `Outturn`. Shifting all of them sent 98% of the
+            perturbation to cells that do not exist, the variant was
+            barely exercised, and the mining answered with 35 rules
+            where the original gives 11 — more rules because *less*
+            moved, exactly round 1b's « laws found in a corner ».
+
+            It is the un-shifted-typing defect of 27 August wearing the
+            opposite face, and the hand typing it was fixed under
+            returned only mined-sheet inputs, which is why the blanket
+            shift looked right when it was inherited.
+            """
+            at_sheet, _, at = ref.partition("!")
+            if at_sheet != sheet:
+                return ref
             column = "".join(c for c in at if c.isalpha())
             row = int("".join(c for c in at if c.isdigit())) + 3
             return f"{renamed}!{column}{row}"
 
         shifted = [replace(item, ref=_move(item.ref)) for item in base_typed]
+        #: The guard that would have caught the defect above on sight.
+        #: If the variant is perturbed at fewer inputs than the
+        #: original, the translation dropped some — and a variant that
+        #: is barely exercised answers with *more* rules, not fewer,
+        #: which reads like an invariance failure and is not one.
+        moved_refs = sum(
+            1 for a, b in zip(base_typed, shifted, strict=True) if a.ref != b.ref
+        )
+        on_sheet = sum(1 for t in base_typed if t.ref.split("!")[0] == sheet)
+        print(
+            f"  translation: {moved_refs} of {len(base_typed)} typed inputs moved "
+            f"({on_sheet} live on the edited sheet) — these must match",
+            flush=True,
+        )
+        if moved_refs != on_sheet:
+            raise RuntimeError(
+                f"translation moved {moved_refs} inputs but {on_sheet} are on the "
+                f"edited sheet — refusing to report a variant that was not "
+                f"perturbed the way the original was"
+            )
         #: The families move with the typing. A family is « these inputs
         #: sum to a constant the model never lets them leave »; leaving
         #: its refs on the original sheet would silently drop the
