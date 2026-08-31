@@ -55,6 +55,12 @@ say so and open it before answering.**
   improvise a substitute.
 - Deviations from a design or a plan are named in writing, never
   made silently.
+- **Agents are back, one per piece** (founder's instruction, 31
+  Aug), reversing the 28 Aug « kill the agents ». Each is given
+  `agent-brief.md` — the constitution, whose first mandate is to
+  **audit the repository before asserting anything**, because the
+  documents have been wrong three times in a week. Prompts are in
+  `agent-prompts.md`. The founder talks to them directly.
 - **« Update on piece X » is answered in plain English, no
   jargon** (founder's instruction, 30 Aug — « simply like im 10 »).
   Three things only: are we close to finishing, what are we
