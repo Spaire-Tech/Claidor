@@ -1,6 +1,7 @@
 """Real financial models, from people who are not us.
 
-**Rule 7 in `docs/pierce/roadmap.md`, made operational.** Every number this
+**The corpus rule, made operational: never measure the engine against
+files we authored.** Every number this
 product has ever reported about itself was measured against fixtures it
 generated, which is why it turned « think 60–70 minutes » into a financial
 figure of $70m the first time somebody uploaded a document from outside.

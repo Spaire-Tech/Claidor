@@ -373,9 +373,7 @@ def verify_conflicts(
             0 <= left_index < len(commitments) and 0 <= right_index < len(commitments)
         ):
             report.invented += 1
-            log.debug(
-                "dossier.crosscheck.invented", left=left_index, right=right_index
-            )
+            log.debug("dossier.crosscheck.invented", left=left_index, right=right_index)
             continue
 
         left = commitments[left_index]

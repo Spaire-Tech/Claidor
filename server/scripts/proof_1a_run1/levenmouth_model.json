@@ -1,0 +1,76 @@
+{
+ "file": "levenmouth_model.xlsm",
+ "bytes": 4470332,
+ "cells": 432596,
+ "sheets": 26,
+ "formulas": 224,
+ "values_pasted": true,
+ "analytical": [],
+ "abstentions": [],
+ "tallies": {
+  "model-own-check": {
+   "total": 21,
+   "clean": 21
+  },
+  "balance-sheet": {
+   "total": 70,
+   "clean": 70
+  },
+  "time-axis": {
+   "total": 13,
+   "clean": 13
+  },
+  "cash-continuity": {
+   "total": 67,
+   "clean": 67
+  }
+ },
+ "structural_count": 7,
+ "audit_tallies": {
+  "long-formula": {
+   "total": 224,
+   "raised": 0
+  },
+  "volatile": {
+   "total": 224,
+   "raised": 0
+  },
+  "hardcode-in-formula": {
+   "total": 224,
+   "raised": 0
+  },
+  "inconsistent-anchoring": {
+   "total": 224,
+   "raised": 0
+  },
+  "inconsistent-row": {
+   "total": 224,
+   "raised": 0
+  },
+  "external-link": {
+   "total": 224,
+   "raised": 0
+  },
+  "error-value": {
+   "total": 432592,
+   "raised": 5
+  },
+  "typed-over-formula": {
+   "total": 432372,
+   "raised": 0
+  },
+  "typed-over-edge": {
+   "total": 432372,
+   "raised": 0
+  },
+  "circular": {
+   "total": 224,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 26,
+   "raised": 0
+  }
+ },
+ "seconds": 25.3
+}

@@ -20,7 +20,7 @@ from polar.tieout.structure import read_structure
 from polar.tieout.workbook import read_workbook
 
 HERE = Path(__file__).parent
-CORPORA = [HERE / 'corpus_pr24dd', HERE / 'corpus_sft']
+CORPORA = [HERE / "corpus_pr24dd", HERE / "corpus_sft"]
 
 
 def models() -> list[Path]:
@@ -29,7 +29,7 @@ def models() -> list[Path]:
         if not corpus.exists():
             continue
         for path in sorted(corpus.iterdir()):
-            if path.suffix.lower() in ('.xlsx', '.xlsm', '.xls'):
+            if path.suffix.lower() in (".xlsx", ".xlsm", ".xls"):
                 found.append(path)
     return found
 
@@ -38,7 +38,7 @@ def survey(path: Path) -> None:
     started = time.monotonic()
     try:
         book = read_workbook(str(path))
-    except Exception as problem:  # noqa: BLE001
+    except Exception as problem:
         print(f"\n=== {path.name}: UNREADABLE — {problem}")
         return
     structure = read_structure(book)
@@ -54,7 +54,7 @@ def survey(path: Path) -> None:
         print(f"  abstains ({abstention.rule}): {abstention.why}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     wanted = [w.lower() for w in sys.argv[1:]]
     for path in models():
         if wanted and not any(w in path.name.lower() for w in wanted):

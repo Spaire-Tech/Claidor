@@ -19,18 +19,12 @@ def upgrade() -> None:
     # Use IF NOT EXISTS so this can be safely re-run on environments
     # where the migration was previously recorded as applied but the
     # actual columns are missing (e.g. partial run, restore from backup).
-    op.execute(
-        "ALTER TABLE course_lessons "
-        "ADD COLUMN IF NOT EXISTS description TEXT"
-    )
+    op.execute("ALTER TABLE course_lessons ADD COLUMN IF NOT EXISTS description TEXT")
     op.execute(
         "ALTER TABLE course_lessons "
         "ADD COLUMN IF NOT EXISTS release_at TIMESTAMP WITH TIME ZONE"
     )
-    op.execute(
-        "ALTER TABLE course_lessons "
-        "ADD COLUMN IF NOT EXISTS drip_days INTEGER"
-    )
+    op.execute("ALTER TABLE course_lessons ADD COLUMN IF NOT EXISTS drip_days INTEGER")
 
 
 def downgrade() -> None:

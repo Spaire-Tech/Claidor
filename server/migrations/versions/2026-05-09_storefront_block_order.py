@@ -21,7 +21,6 @@ old clients keep validating.
 
 from alembic import op
 
-
 revision = "g2n3o4p5q6r7"
 down_revision = "f1m2d3e4a5b6"
 branch_labels: tuple[str] | None = None

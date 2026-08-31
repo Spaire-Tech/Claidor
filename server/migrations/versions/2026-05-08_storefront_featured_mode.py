@@ -24,7 +24,6 @@ which is stamped at that revision, can advance through this chain.
 
 from alembic import op
 
-
 revision = "f1m2d3e4a5b6"
 down_revision = "c8d9e0f1g2h3"
 branch_labels: tuple[str] | None = None

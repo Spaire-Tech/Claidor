@@ -1,0 +1,131 @@
+{
+ "model": "h7_new_debt_indexation_fds.xlsx",
+ "runs": 200,
+ "typing": "inferred",
+ "seed_stability": {
+  "seed_pairs": [
+   [
+    11,
+    12
+   ],
+   [
+    22,
+    23
+   ],
+   [
+    33,
+    34
+   ],
+   [
+    44,
+    45
+   ],
+   [
+    55,
+    56
+   ]
+  ],
+  "counts": [
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "in_all_five": 4,
+  "in_any": 4,
+  "core_over_union": 1.0,
+  "mean_pairwise_jaccard": 1.0,
+  "identical": true,
+  "by_reference": {
+   "counts": [
+    11,
+    11,
+    11,
+    11,
+    11
+   ],
+   "in_all_five": 11,
+   "in_any": 11,
+   "core_over_union": 1.0,
+   "identical": true,
+   "flickering": []
+  },
+  "single_minings": {
+   "counts": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "in_all": 4,
+   "in_any": 4,
+   "identical": true
+  },
+  "flickering": []
+ },
+ "cosmetic_invariance": {
+  "variant": "h7_new_debt_indexation_fds-cosmetic.xlsx",
+  "edits": "3 blank rows inserted at the top, sheet renamed",
+  "rules_original": 4,
+  "rules_variant": 7,
+  "identical_by_label": false,
+  "only_in_original": 0,
+  "only_in_variant": 3,
+  "jaccard_by_reference": 0.0,
+  "differences": [
+   {
+    "side": "variant",
+    "rule": [
+     [
+      -1,
+      "Nominal cost of fixed-rate debt (in-year)",
+      ""
+     ],
+     [
+      1,
+      "Nominal cost of fixed-rate debt (in-year)",
+      ""
+     ]
+    ]
+   },
+   {
+    "side": "variant",
+    "rule": [
+     [
+      -1,
+      "Nominal cost of fixed-rate debt (in-year)",
+      ""
+     ],
+     [
+      1,
+      "Nominal cost of new index-linked debt (in-year, excluding IL premium)",
+      ""
+     ]
+    ]
+   },
+   {
+    "side": "variant",
+    "rule": [
+     [
+      -1,
+      "Nominal cost of new index-linked debt (in-year, excluding IL premium)",
+      ""
+     ],
+     [
+      1,
+      "Nominal cost of new index-linked debt (in-year, excluding IL premium)",
+      ""
+     ]
+    ]
+   }
+  ]
+ },
+ "seconds": 32878.6
+}

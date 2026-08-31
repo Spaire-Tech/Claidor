@@ -86,9 +86,9 @@ async def _slug_holder(
 
 async def _inspect(session: AsyncSession, org: Organization) -> dict[str, Any]:
     customers = await session.scalar(
-        select(func.count()).select_from(Customer).where(
-            Customer.organization_id == org.id
-        )
+        select(func.count())
+        .select_from(Customer)
+        .where(Customer.organization_id == org.id)
     )
     # Order has no organization_id; an org's orders are those whose customer
     # belongs to the org (the canonical join — see OrderRepository).
@@ -99,9 +99,9 @@ async def _inspect(session: AsyncSession, org: Organization) -> dict[str, Any]:
         .where(Customer.organization_id == org.id)
     )
     products = await session.scalar(
-        select(func.count()).select_from(Product).where(
-            Product.organization_id == org.id
-        )
+        select(func.count())
+        .select_from(Product)
+        .where(Product.organization_id == org.id)
     )
     return {
         "id": str(org.id),
@@ -218,7 +218,9 @@ async def _run(
     target_release_slug = release_slug or _default_release_slug(slug, release)
 
     _print_inspection("RELEASE org (will be renamed)", await _inspect(session, release))
-    _print_inspection("CLAIM org (will receive the slug)", await _inspect(session, claim))
+    _print_inspection(
+        "CLAIM org (will receive the slug)", await _inspect(session, claim)
+    )
 
     typer.echo(
         "Plan:\n"

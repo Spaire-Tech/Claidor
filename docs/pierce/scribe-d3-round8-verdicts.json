@@ -1,0 +1,420 @@
+[
+ {
+  "model_row": 10,
+  "citation": "p354.21.b",
+  "model_label": "Transmission Wages Expense",
+  "model_value": 44016.0,
+  "pdf_page": 108,
+  "printed_page": 354,
+  "printed_line": 21,
+  "truth_line": "21Transmission (Enter Total of lines 4 and 14) $ 44,016 $ 44,016",
+  "truth_figures": [
+   4.0,
+   44016.0,
+   44016.0
+  ],
+  "truth_score": 0.0,
+  "best_score_anywhere": 0.333,
+  "outcome": "abstained",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 33%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "model_row": 12,
+  "citation": "p354.28.b",
+  "model_label": "Total Wages Expense",
+  "model_value": 2120257.0,
+  "pdf_page": 108,
+  "printed_page": 354,
+  "printed_line": 28,
+  "truth_line": "28TOTAL Oper. and Maint. (Total of lines 20 thru 27) $ 2,120,257 $ 2,120,257",
+  "truth_figures": [
+   20.0,
+   2120257.0,
+   2120257.0
+  ],
+  "truth_score": 0.333,
+  "best_score_anywhere": 0.333,
+  "outcome": "abstained",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 33%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "model_row": 13,
+  "citation": "p354.27.b",
+  "model_label": "Less A&G Wages Expense",
+  "model_value": 343349.0,
+  "pdf_page": 108,
+  "printed_page": 354,
+  "printed_line": 27,
+  "truth_line": "27Administrative and General (Enter Total of lines 10 and 17) $ 343,349 $ 343,349",
+  "truth_figures": [
+   10.0,
+   343349.0,
+   343349.0
+  ],
+  "truth_score": 0.0,
+  "best_score_anywhere": 0.4,
+  "outcome": "abstained",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 40%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "model_row": 19,
+  "citation": "p207.104.g",
+  "model_label": "Electric Plant in Service",
+  "model_value": 73315883.0,
+  "pdf_page": 47,
+  "printed_page": 207,
+  "printed_line": 104,
+  "truth_line": "$ (7,741) $ 73,315,883 104",
+  "truth_figures": [
+   -7741.0,
+   73315883.0,
+   104.0
+  ],
+  "truth_score": 0.0,
+  "best_score_anywhere": 1.0,
+  "outcome": "abstained",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "model_row": 21,
+  "citation": "p219.29.c",
+  "model_label": "Accumulated Depreciation (Total Electric Plant)",
+  "model_value": 41209384.0,
+  "pdf_page": 51,
+  "printed_page": 219,
+  "printed_line": 29,
+  "truth_line": "29 TOTAL (Enter Total of lines 20 thru 28) $ (41,209,384) $ (41,209,384)",
+  "truth_figures": [
+   29.0,
+   20.0,
+   -41209384.0,
+   -41209384.0
+  ],
+  "truth_score": 0.2,
+  "best_score_anywhere": 0.6,
+  "outcome": "abstained",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "model_row": 22,
+  "citation": "p200.21.c",
+  "model_label": "Accumulated Amortization",
+  "model_value": 0.0,
+  "pdf_page": 40,
+  "printed_page": 200,
+  "printed_line": 21,
+  "truth_line": null,
+  "truth_figures": [],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 36,
+  "citation": "p207.58.g",
+  "model_label": "Transmission Plant In Service",
+  "model_value": 10895809.0,
+  "pdf_page": 47,
+  "printed_page": 207,
+  "printed_line": 58,
+  "truth_line": "$ 10,895,809 58",
+  "truth_figures": [
+   10895809.0,
+   58.0
+  ],
+  "truth_score": 0.0,
+  "best_score_anywhere": 0.75,
+  "outcome": "abstained",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "model_row": 41,
+  "citation": "p207.99.g",
+  "model_label": "General",
+  "model_value": 6741539.0,
+  "pdf_page": 47,
+  "printed_page": 207,
+  "printed_line": 99,
+  "truth_line": "$ 6,741,539 99",
+  "truth_figures": [
+   6741539.0,
+   99.0
+  ],
+  "truth_score": 0.0,
+  "best_score_anywhere": 1.0,
+  "outcome": "abstained",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "model_row": 42,
+  "citation": "p205.5.g",
+  "model_label": "Intangible",
+  "model_value": 0.0,
+  "pdf_page": 46,
+  "printed_page": 205,
+  "printed_line": 5,
+  "truth_line": "$ \u2010 5",
+  "truth_figures": [
+   5.0
+  ],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 44,
+  "citation": "p207.94.g",
+  "model_label": "Less:  General Plant Account 397 -- Communications",
+  "model_value": 0.0,
+  "pdf_page": 47,
+  "printed_page": 207,
+  "printed_line": 94,
+  "truth_line": "$ 704,462 94",
+  "truth_figures": [
+   704462.0,
+   94.0
+  ],
+  "truth_score": 0.0,
+  "best_score_anywhere": 0.4,
+  "outcome": "abstained",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 40%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "model_row": 57,
+  "citation": "p219.25.c",
+  "model_label": "Transmission Accumulated Depreciation",
+  "model_value": 6046528.0,
+  "pdf_page": 51,
+  "printed_page": 219,
+  "printed_line": 25,
+  "truth_line": "25 Transmission $ (6,046,528) $ (6,046,528)",
+  "truth_figures": [
+   25.0,
+   -6046528.0,
+   -6046528.0
+  ],
+  "truth_score": 0.333,
+  "best_score_anywhere": 0.667,
+  "outcome": "wrong",
+  "proposed_line": "from distribution of amounts initially recorded in Account 102, include in column (e) the amounts with respect to accumulated provision for depreciation, acquisition",
+  "proposed_pdf_page": 46
+ },
+ {
+  "model_row": 59,
+  "citation": "p219.28.c",
+  "model_label": "Accumulated General Depreciation",
+  "model_value": 919728.0,
+  "pdf_page": 51,
+  "printed_page": 219,
+  "printed_line": 28,
+  "truth_line": "28 General $ (919,728) $ (919,728)",
+  "truth_figures": [
+   28.0,
+   -919728.0,
+   -919728.0
+  ],
+  "truth_score": 0.333,
+  "best_score_anywhere": 0.667,
+  "outcome": "wrong",
+  "proposed_line": "from distribution of amounts initially recorded in Account 102, include in column (e) the amounts with respect to accumulated provision for depreciation, acquisition",
+  "proposed_pdf_page": 46
+ },
+ {
+  "model_row": 88,
+  "citation": "p227.8.c",
+  "model_label": "Transmission Materials & Supplies",
+  "model_value": 39294.0,
+  "pdf_page": 54,
+  "printed_page": 227,
+  "printed_line": 8,
+  "truth_line": "8Transmission Plant (Estimated) $ 39,294 $ 39,294",
+  "truth_figures": [
+   39294.0,
+   39294.0
+  ],
+  "truth_score": 0.0,
+  "best_score_anywhere": 0.667,
+  "outcome": "abstained",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "model_row": 110,
+  "citation": "p200.4.c",
+  "model_label": "Plus Transmission Lease Payments",
+  "model_value": 0.0,
+  "pdf_page": 40,
+  "printed_page": 200,
+  "printed_line": 4,
+  "truth_line": null,
+  "truth_figures": [],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 119,
+  "citation": "p323.185.b",
+  "model_label": "Less Property Insurance Account 924",
+  "model_value": 91502.0,
+  "pdf_page": 93,
+  "printed_page": 323,
+  "printed_line": 185,
+  "truth_line": "185(924) Property Insurance $ 91,502 $ 60,203",
+  "truth_figures": [
+   91502.0,
+   60203.0
+  ],
+  "truth_score": 0.5,
+  "best_score_anywhere": 0.5,
+  "outcome": "abstained",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "model_row": 120,
+  "citation": "p323.189.b",
+  "model_label": "Less Regulatory Commission Exp Account 928",
+  "model_value": 0.0,
+  "pdf_page": 93,
+  "printed_page": 323,
+  "printed_line": 189,
+  "truth_line": null,
+  "truth_figures": [],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 121,
+  "citation": "p323.191.b",
+  "model_label": "Less General Advertising Exp Account 930.1",
+  "model_value": 11671.0,
+  "pdf_page": 93,
+  "printed_page": 323,
+  "printed_line": 191,
+  "truth_line": "191(930.1) General Advertising Expenses $ 11,671 $ 31,433",
+  "truth_figures": [
+   11671.0,
+   31433.0
+  ],
+  "truth_score": 0.4,
+  "best_score_anywhere": 0.4,
+  "outcome": "abstained",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 40%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "model_row": 176,
+  "citation": "p118.29.c",
+  "model_label": null,
+  "model_value": 0.0,
+  "pdf_page": 31,
+  "printed_page": 118,
+  "printed_line": 29,
+  "truth_line": null,
+  "truth_figures": [],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 179,
+  "citation": "p112.16.c",
+  "model_label": "Proprietary Capital",
+  "model_value": 42926441.0,
+  "pdf_page": 26,
+  "printed_page": 112,
+  "printed_line": 16,
+  "truth_line": "16 Total Proprietary Capital (lines 2 through 15) $ 42,926,441.00 $ 43,769,726.00",
+  "truth_figures": [
+   16.0,
+   2.0,
+   42926441.0,
+   43769726.0
+  ],
+  "truth_score": 1.0,
+  "best_score_anywhere": 1.0,
+  "outcome": "abstained",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "model_row": 180,
+  "citation": "p112.15.c",
+  "model_label": "Less Accumulated Other Comprehensive Income Account 219",
+  "model_value": 0.0,
+  "pdf_page": 26,
+  "printed_page": 112,
+  "printed_line": 15,
+  "truth_line": "15 Accumulated Other Comprehensive Income (219) 122(a)(b)",
+  "truth_figures": [
+   15.0,
+   -219.0
+  ],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 182,
+  "citation": "p112.12.c",
+  "model_label": "Less Account 216.1",
+  "model_value": 0.0,
+  "pdf_page": 26,
+  "printed_page": 112,
+  "printed_line": 12,
+  "truth_line": "12 Unappropriated Undistributed Subsidiary Earnings (216.1) 118-119",
+  "truth_figures": [
+   12.0,
+   -216.1
+  ],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 187,
+  "citation": "p111.81.c",
+  "model_label": "Less Loss on Reacquired Debt",
+  "model_value": 312696.0,
+  "pdf_page": 25,
+  "printed_page": 111,
+  "printed_line": 81,
+  "truth_line": "81 Unamortized Loss on Reaquired Debt (189) $ 312,696 $ 26,099",
+  "truth_figures": [
+   81.0,
+   -189.0,
+   312696.0,
+   26099.0
+  ],
+  "truth_score": 0.6,
+  "best_score_anywhere": 0.8,
+  "outcome": "abstained",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "model_row": 188,
+  "citation": "p113.61.c",
+  "model_label": "Plus Gain on Reacquired Debt",
+  "model_value": 0.0,
+  "pdf_page": 27,
+  "printed_page": 113,
+  "printed_line": 61,
+  "truth_line": "61 Unamortized Gain on Reaquired Debt (257)",
+  "truth_figures": [
+   61.0,
+   -257.0
+  ],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 192,
+  "citation": "p112.3.c",
+  "model_label": "Preferred Stock",
+  "model_value": 0.0,
+  "pdf_page": 26,
+  "printed_page": 112,
+  "printed_line": 3,
+  "truth_line": "3 Preferred Stock Issued (204) 250-251",
+  "truth_figures": [
+   3.0,
+   -204.0
+  ],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ },
+ {
+  "model_row": 221,
+  "citation": "p266.8.f",
+  "model_label": "Amortized Investment Tax Credit",
+  "model_value": 0.0,
+  "pdf_page": 74,
+  "printed_page": 266,
+  "printed_line": 8,
+  "truth_line": null,
+  "truth_figures": [],
+  "outcome": "not scorable \u2014 the document prints no value on this line"
+ }
+]

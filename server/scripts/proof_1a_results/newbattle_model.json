@@ -1,0 +1,81 @@
+{
+ "file": "newbattle_model.xlsm",
+ "bytes": 4269611,
+ "cells": 475922,
+ "sheets": 54,
+ "formulas": 492,
+ "values_pasted": true,
+ "analytical": [],
+ "abstentions": [
+  {
+   "rule": "balance-sheet",
+   "why": "ReportFinStatsAnnual: the net-assets and equity rows are not unique (2 and 1 candidates) \u2014 not paired, not guessed."
+  },
+  {
+   "rule": "balance-sheet",
+   "why": "ReportFinStatsSA: the net-assets and equity rows are not unique (3 and 2 candidates) \u2014 not paired, not guessed."
+  }
+ ],
+ "tallies": {
+  "model-own-check": {
+   "total": 16,
+   "clean": 16
+  },
+  "time-axis": {
+   "total": 29,
+   "clean": 29
+  },
+  "cash-continuity": {
+   "total": 13,
+   "clean": 13
+  }
+ },
+ "structural_count": 68,
+ "audit_tallies": {
+  "long-formula": {
+   "total": 492,
+   "raised": 0
+  },
+  "volatile": {
+   "total": 492,
+   "raised": 5
+  },
+  "hardcode-in-formula": {
+   "total": 492,
+   "raised": 0
+  },
+  "inconsistent-anchoring": {
+   "total": 492,
+   "raised": 0
+  },
+  "inconsistent-row": {
+   "total": 492,
+   "raised": 0
+  },
+  "external-link": {
+   "total": 492,
+   "raised": 0
+  },
+  "error-value": {
+   "total": 475922,
+   "raised": 0
+  },
+  "typed-over-formula": {
+   "total": 475430,
+   "raised": 9
+  },
+  "typed-over-edge": {
+   "total": 475430,
+   "raised": 0
+  },
+  "circular": {
+   "total": 491,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 54,
+   "raised": 53
+  }
+ },
+ "seconds": 20.1
+}

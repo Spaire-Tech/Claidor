@@ -1,6 +1,7 @@
 # Worklog
 
 What actually happened, in enough detail to pick this up cold. `roadmap.md`
+(since deleted — the plan is `swens-plan.md`; git history keeps the old file)
 is what was intended; this is what occurred, including the things that went
 wrong and what they cost.
 
@@ -466,7 +467,8 @@ query.
 ## 10 August — the agent, and the chat that answers
 
 **The instruction changed.** Accuracy is parked at 83 %; the job is a
-complete product. The standing note is at the top of `roadmap.md`.
+complete product. The standing note is at the top of `roadmap.md`
+(since deleted; git history keeps it).
 
 **Checked before building, and it paid.** There was already an agent in
 the tree — written for the legal product, with a trace, a step budget, an
@@ -3601,3 +3603,1212 @@ one removal: `ScenDelta!AA9`'s long-formula fold re-anchors to AA8 —
 the header-row fix admitted the family's true first cell (144 → 180
 member cells, same finding). Baseline regenerated at 674; 502 tieout
 tests green.
+
+---
+
+## 24 August — the plan crisis, then Track F opens
+
+**The plan went wrong twice, and was put right.** Asked « remind me
+the plan? », I recited `clone-plan.md` from memory; told to find the
+right plan and make sure it's the only one, I crowned `plan.md` and
+deleted `ambre-plan.md` — the plan the founder had commissioned and
+approved. The founder pasted the thread proving it. Restored as
+`swens-plan.md` (only the names updated, per swens.md's supersession
+of name and framing, never tracks or method); `plan.md` deleted; every
+pointer re-patched; and `notes.md` created at the founder's request —
+the canon table (product = swens.md, plan = swens-plan.md, design =
+design-swens/, history = this file) with the rule that questions of
+record are answered from the record, never from memory. CLAUDE.md now
+points at it, so every session starts there.
+
+**Four plan amendments, founder-approved,** from an external research
+gap map checked against our own code first: C2 becomes DP alignment
+on label + formula-shape signatures (not SheetDiff's greedy
+algorithm); C4 gains verifying-trace fingerprints as the cheap
+no-change proof; B4 gains ddmin attribution; A7 added — shape-hash
+commutativity + constant folding as a measured micro-round (`_shape`
+verifiably lacks both today).
+
+**F1 — creation.** `set_cell(create=True)` materializes a missing
+cell: column order held in its row, the row element built and placed
+in ascending order when absent, dimension stretched, Excel's row
+spans updated when present (openpyxl writes none — probed — so that
+path is tested on an injected Excel-style layout). Text goes in as an
+inline string; replacement stays strict without the flag. Found and
+fixed on the way: replacing a text constant with a formula used to
+keep `t="inlineStr"` on a cell now carrying `<f>` — corrupt typing;
+the type attribute is now always derived from the new content.
+
+**F2 — the changeset** (`changeset.py`). `apply_corrections` is
+atomic: all corrections or none. Three walls: the cell-exact compare
+(both files, every sheet, openpyxl — anything unasked-for changed, or
+a target not holding exactly what was asked, refuses the set and
+releases nothing; proven by a sabotage test that monkeypatches the
+writer to corrupt a bystander cell); the re-audit (a defect class
+appearing on a sheet where it did not exist before is damage the
+write created — refused); and « incomplete » as a first-class state —
+a correction names its motivating rule, and when that rule still
+fires on the sheet after the fix, the changeset applies but says so
+and names the cells still wrong. `undo()` rebuilds the original
+member-for-member (calcChain and content-types restoration exercised
+on an injected chain). `record()` is the Changes UI's plain-JSON
+contract.
+
+**Honest state.** 45 write-path tests green (writer 17, changeset 8,
+older write modules 20 — all run with `--noconftest`; this container
+has no database or Minio, and the corpus files are not on disk).
+What F1/F2's DONE tests still owe: the round-trip re-verification on
+the 27 real corpus files, which needs a machine with the corpus. Not
+claimed done.
+
+---
+
+## 24 August, later — the marked-up model ships end to end
+
+**The engine half** (`markup.py`): `marked_up_copy` builds the § 4
+file — Findings sheet first (Severity · Sheet · Cell · What's wrong ·
+blank Notes/Done, autofiltered so it sorts and ticks), every problem
+cell coloured by severity in Excel's own review red and amber with
+the finding's sentence as a note authored Swens. Zip surgery in the
+writer's discipline (per-style xf clones so fonts and number formats
+survive; legacy comments + VML per touched sheet; scoped defined
+names' localSheetId re-pointed for the new first sheet), verified the
+changeset's way: the copy re-read beside the original, every formula
+and value compared, or the markup refuses itself. A finding on an
+absent cell gets an empty styled cell; a sheet already carrying
+comments is refused in words. Proven past openpyxl: **LibreOffice
+Calc round-trips the copy** — sheets in order, formulas live (Calc
+recalculates B3 to 108), fills exact, notes intact. Namespace lesson,
+twice: openpyxl declares xmlns:r per element, Excel on the root, so
+inserted r:id elements carry their own declaration.
+
+**The product half:** `GET /deals/{id}/markup` builds the copy fresh
+from the stored model and the open cell-anchored findings on it —
+never persisted, refusals as sentences (no model; nothing open;
+markup refused). The Overview card « Download the marked-up model »
+is live: the drawn card, opacity restored, downloads the server's
+file under the server's filename (« … — marked up.xlsx »); a refusal
+sentence appears in the card's subtitle in the design's danger ink.
+tsc clean; 54 write-path tests green; mypy adds no errors in the
+touched files.
+
+**Owed, named:** the endpoint has no automated test in this container
+(it needs the database fixtures); its verification here is the
+engine tests plus import + typecheck. Corpus round-trip for the whole
+write path still owed with the corpus machine.
+
+---
+
+## 24 August, night — A2: the instrument committed, the record replicated
+
+Opening A2, the record showed more done than remembered: the
+six-tool two-axis head-to-head was already registered, run and
+framed on 23 August — what A2 still owed was ExceLint, and what
+nobody had noticed was that **the scorer itself lived only in a
+session scratchpad**, one container recycle from gone, the exact
+exposure the archive README records for the data.
+
+So: `server/scripts/custodes_score.py` — the 23 August scoring
+logic verbatim, plus unpack/convert stages, sha256-checking the
+tarballs against the README before trusting them. Run end-to-end on
+this fresh machine (LibreOffice 24.2.7, 361 fresh conversions):
+**every number identical** — truth 1,973/0 unmapped, coverage
+283/1,973 = 14.3% with the identical per-rule split, agreement
+239/1,166 = 20.5% per-rule identical, the six-row table digit for
+digit. The benchmark record is now reproducible from the repository
+alone, and the replication is logged in custodes-benchmark.md.
+
+**ExceLint: blocked here, registered anyway.** The network policy
+blocks fetching the tool (npm 403, codeload 403, git prompt); the
+repository-approval request is with the founder. The run's
+conventions are registered in custodes-benchmark.md before the code
+is obtained: shipped defaults only, same truth column, both axes or
+nothing, refusals counted, the schema-to-cell-set sentence appended
+on inspection and before any score.
+
+---
+
+## 24 August, later still — A3: their labels mined, five candidates named
+
+The registered mining round over the 1,690 CUSTODES truth cells our
+findings do not cover (`custodes-mining.md`; classifier
+`scripts/custodes_mine.py`; buckets and the first-twelve hand-read
+sample fixed before anything was computed). What the misses actually
+are: ~62% is their loose-cluster philosophy — typed data tables,
+zero templates, values-pasted statements — which is our flood, not
+our miss. The rest yielded five candidate checks, adopted for
+financial-model value and none for the benchmark score: totals-row
+sibling disagreement (plugs like `=SUM(E10:E22)-1000` beside clean
+siblings, range off-by-ones, cross-column bleed, mis-dragged terms —
+the round's strongest), family-edge typed cells, beat families,
+column-direction typed-over, and aggregation-range-vs-block-extent.
+Four patterns rejected in writing: loose-cluster missing-formula,
+typed-actuals boundaries, value-magnitude outliers, idiom
+dissimilarity (that one feeds A7 as a normalization guard). No check
+shipped, no threshold moved — the candidates owe the loop on our own
+corpora, tracked as engine work.
+
+---
+
+## 25 August — the corpus unlocked, the write path proven on it,
+## and the gate's first real catch
+
+**A wrong claim corrected first.** Yesterday's entries said this
+container had no corpus. False — a depth-limited `find` missed
+470MB of regulator files sitting on disk, and a probe showed
+ofgem.gov.uk reachable through the proxy. The claims are corrected
+here rather than edited away.
+
+**The corpus rebuilds itself now.** `scripts/corpus_au_uk.py` turns
+the manifest into one command: the golden master's 27 files, named
+exactly as the baseline expects, RIIO-3 drafts pulled from Ofgem's
+own zip. Fetched fresh on this machine in minutes.
+
+**F1/F2's owed round trip ran, 27 real files** —
+`scripts/writer_roundtrip.py`: no-op saves member-identical
+everywhere; a real formula cell rewritten as itself with only its
+own sheet allowed to change; creation probes beyond the dimension
+reading back clean. 27/27 at the writer level. The full changeset
+gate ran on the smallest files and **refused one** — and the
+diagnosis was the day's best find: nothing had changed; the file
+carries an ArrayFormula, openpyxl returns a fresh object each load,
+objects compare by identity, and so any workbook containing an
+array formula would have failed every cell-exact compare forever —
+every changeset, every marked-up copy. The gate and the markup
+verifier now compare openpyxl formula objects by content;
+regression tests pin it; the refused file applies with
+member-identical undo. The bug was caught by the gate the plan
+insisted on, on a file the synthetic hosts could never have
+supplied. That is what the corpus is for.
+
+**An operational lesson, paid for in 40 minutes:** the golden-master
+sweep and the round-trip harness were run concurrently on a 15GB
+box; the sweep was OOM-killed at file 20. Heavy workbook jobs run
+alone now.
+
+**A7 in flight, protocol first.** The three registered
+normalizations (commutative chains, constant-shape folding, unary
+plus) plus the amendment (whitespace erasure, named before
+measurement) are implemented behind twelve unit tests — including
+the mining round's own idiom pair `=+C26+C31` ≡ `=F26+F31` — with
+zero regressions across the 450 conftest-free tieout tests (the 99
+fixture errors reproduce on the unmodified engine, checked by
+stash). The change sits stashed while the precondition runs: the
+gate must be green on the unmodified engine on this machine before
+the after-sweep decides adoption. Results land in the next entry,
+whatever they are.
+
+---
+
+## 25 August, later — A7 lands: two refusals, one adoption, three
+## true findings the old code was lucky about
+
+The full record is `a7-normalization-protocol.md`; the shape of it:
+round 1 refused itself when a typed-over finding vanished (the
+island detector's witness demanded the single crowned majority and
+lost a tie to Counter's insertion order — the old finding had
+survived on luck, not evidence). Round 2 aligned the witness to the
+detector's own docstring — any repeating family — and its decisive
+sweep came back with the predicted merges, GT3's finding restored,
+and **two unpredicted gains**: the same ten-zeros paste in the
+sibling ET3 and GD3 BPFMs, byte-for-byte the same template row,
+which the baseline had missed by the same tie-luck pointing the
+other way. Refused by the letter, examined against the cells,
+adopted with the examination on record. Net: four normalizations in
+the shape hash (commutative chains, constant folding, unary plus,
+whitespace), one witness alignment, findings 4 → 2 in three files
+by honest merging, +1 true finding in two files, baseline
+regenerated — its git diff is the review. 452 conftest-free tieout
+tests green throughout; 12 new shape unit tests pin the
+normalizations, including the A3 mining round's own idiom pair.
+
+---
+
+## 25 August, evening — the team stands up
+
+Five lanes are live as their own sessions, each on its own branch
+and container: **Sentinel** (engine findings — the only hand allowed
+on the baseline), **Dynamo** (recalculator; part-blocked on the
+Track B machine, first deliverable is the founder's shopping list),
+**Prism** (the Watch), **Scribe** (the Chain), **Atelier** (product
+and delivery). Their constitution is `lanes.md` — path ownership,
+frozen interfaces, the one hard rule — committed before any of them
+existed; their paste-ready charters are `lane-prompts.md`, because
+the in-session spawning tool refused five approvals in a row and the
+founder stood the sessions up by hand, which is recorded rather than
+smoothed over. This session becomes the lead: integration one lane
+at a time, tests plus the full gate at every merge, the plan and
+this worklog as the single record. Earlier today, and the reason the
+lanes start from a clean base: A1 rounds 1–2 certified gate-clean
+across all 27 corpus files.
+
+---
+
+## 25 August, night — the first sweep: three lanes report, three merges
+
+Hours after standing up, three of the five lanes pushed their first
+work, and every one of it passed the ownership check clean —
+`swens/atelier`, `swens/dynamo`, `swens/scribe` merged one at a
+time. All three diffs were docs-only, which produced the loop's
+first amendment (recorded in `lanes.md`): no code path touched means
+no gate re-run — the engine's answers are identical by construction
+— while the conftest-free tests still run on every merged tip (452
+passed, unchanged, before and after).
+
+What landed: **Atelier** wrote the H2 security posture doc with
+every « enforced » claim checked against the code that day — all 41
+tieout routes audited for the membership gate — and surfaced two
+honest findings instead of smoothing them (deal *names* visible
+org-wide on the team screen; the « configurable client » of
+`swens.md` § 7 is a configurable key, not endpoint — the doc says
+« planned, not shipped »). **Dynamo** measured the container against
+B1's needs: LibreOffice here is 24.2 without Calc, the venv's
+Python 3.14 can never import uno (it ships with LibreOffice, not
+PyPI), so the UNO client is out-of-process by construction — a
+driver under the LibreOffice-matched interpreter talking to the venv
+over pipes; the TDF 25.8 bundle is reachable and is the founder's
+decision. **Scribe** proved the network serves the Chain end to end
+— pdfplumber instantly, docling with its HF model cache, a real
+38-page gov.uk PDF converted with page + bounding-box on every
+item — and registered D1's measurement contract (seed 271828 for the
+spot-check draw) before looking at any number.
+
+Lead decisions, recorded in `lanes.md`: pdfplumber approved into the
+server env (lock updated, tests identical); docling deferred as the
+lane itself proposed; Atelier's § 3 finding and Dynamo's machine
+question go to the founder. Sentinel and Prism have not pushed yet —
+they started latest; silence in a log is a question, and the next
+sweep asks it.
+
+---
+
+## 25 August, late night — the second sweep: all five lanes alive, four merged, one held
+
+Every lane has now pushed, and this round carried real code — about
+six thousand lines across four lanes, every path inside its owner's
+row. Merged one at a time, conftest-free tests after each, engine
+modules verified byte-identical across the lot (the gate rule got its
+honest refinement in `lanes.md`: the gate re-runs when audit-time
+modules change; for everything else, an empty diff on the engine
+files *is* the certification).
+
+**Dynamo** built the recalculator's whole shore-side: the fidelity
+gate's comparison rules (the file's own convergence delta inside
+cycles, never our invention), the tokenized denylist that routes
+LAMBDA/CUBE to the arbiter and refuses RTD/UDFs by catalogue-absence
+— erring toward refusal — the worker pool proven against fakes that
+label themselves fake, and `recalc_probe.py`, which prints exactly
+what any machine lacks (this one: LibreOffice 24.2 < 25.8, no Calc).
+B4's four laws are registered with no machine to bend them. **Prism**
+closed C1 on a real adjacent ED2 pair — 1,279 differences, hand-check
+zero disagreements, and the finding that formula equality must be in
+translated-shape terms or sixty thousand shared-formula falses drown
+everything — then registered C2's signatures, DP alignment,
+thresholds and cost measurement before any recovery number exists.
+**Scribe** shipped D1: every number with page and box, scans refused
+in words, 30 tests; the D2 fact-store contract proposed and now
+approved; its router mounted in `api.py` by the lead at this sweep.
+**Atelier** built and *ran* the demo kit (#18) end to end — repairing
+its container to run the full backend, cascade v1/v2 through the
+product's own writer, the planted defect found and named, 113 deck
+figures reconciled — and put four route tests on the marked-up
+download; all 65 route tests pass where a database exists.
+
+**Sentinel merges next sweep, not this one** — held by the one hard
+rule, in exactly the state its own log promises: candidate 1
+implemented behind ten unit tests, corpus verdict and baseline still
+owed. And one defect the sweep caught in the shared ground, fixed by
+the lead as pyproject owner: locust's pytest plugin smuggles a global
+`session` fixture that deadlocked a conftest-free run via gevent's
+import lock — disabled with `-p no:locust`, suite back to 24 seconds.
+548 tieout tests pass at the new tip; the 103 collection errors are
+the one known environmental class (pydantic vs this container's
+Python 3.14rc), proven passing where the fixtures run.
+
+---
+
+## 26 August — the third sweep: Prism's self-refusing rounds, Atelier finishes its charter
+
+Two lanes moved. **Prism** ran the C2 planted-edit harness the way
+the discipline demands: round 1 scored 3/24 and the lane refused its
+own number — the planting instrument, not the aligner, was the
+defect (openpyxl's save drops every cached value, destroying the
+formula-produced labels that rescue real files). Round 2, values
+re-injected, re-registered, re-run: every planted change now found
+exactly, with one honest phenomenon remaining — cross-sheet
+references encoded relative to their cell make pull-through rows
+change shape under row shifts, which Excel's own semantics say they
+should not. Round 3 registered and implemented in the Watch's own
+signature layer (engine untouched): cross-sheet pieces rewritten to
+absolute targets; its numbers are the lane's next push. **Atelier**
+closed the last of its four charter tasks — the version dropdown now
+re-scopes the page: any stored version checked on demand through one
+shared audit path that persists nothing (route tests prove looking
+changes no stored byte), the page saying plainly what stays on the
+current version, all proven by driving the real product in a real
+browser on the seeded demo deal. It also reported two dev-environment
+defects; the lead fixed the JWK-kid mismatch in `dev/setup-environment`
+(`polar_dev` vs config's `claidor_dev`) and recorded the
+database-grant gap as open.
+
+Both merges: paths in-lane, engine modules byte-identical, 552
+conftest-free tieout tests green at the tip (the four new
+route tests join the environment-blocked file here and pass where a
+database exists — 559 on Atelier's repaired box). Sentinel, Dynamo,
+Scribe: no new pushes; Sentinel's corpus verdict remains the next
+expected merge.
+
+---
+
+## 26 August — the fourth sweep: C2 closes
+
+**Prism closed C2.** On the round-3 signature definition, run from
+scratch on both registered sheets: 42/42 exact on every structural
+and value-only class — one planted row reads as one structural
+change, at every position, on both sheets — with the single missing
+class named and kept (whole-row single-formula rewrites on a
+label-less row read as delete+insert; arguably the truth, recorded
+as a miss under the registered judge, carried as a registered
+limitation). The real v4→v5 pair, re-run under the final signatures:
+64 structural changes telling one checkable story — ten licensee
+sheets gain a row at 157, the two long sheets show it changed in
+place, two show nothing — and the log corrects its own earlier
+« fourteen sheets » recollection against the JSON, which is the
+kind of correction the record exists for. The plan's C2 DONE line is
+met; C3's delta report has its inputs.
+
+**Sentinel** recorded its precondition — the unmodified engine's
+fresh sweep reports identically to the committed baseline on its
+machine — which is the required opening move; the after-sweep with
+the detector live, the verdict, and the regenerated baseline remain
+the next push, and its merge stays held until they arrive together.
+Docs-only merge; engine untouched; 552 tieout tests green at the tip.
+
+---
+
+## 26 August — the fifth sweep: Sentinel's recall lands, its merge still waits
+
+Only Sentinel moved, and its numbers arrived in the registered
+order: hosts picked by the pre-committed rule (kept even though two
+are near-twins — said openly rather than re-rolled), then planted
+recall — **46 of 49 planted defects caught (94%)**, the plug class
+carried by the new `inconsistent-total` rule alone (9/11, the
+adoption criterion met), and each of the three misses run to ground
+in writing: one is the registration's own stated boundary (a two-row
+total narrowed to a single-row range falls out of the family by
+definition), two await examination when the sweep frees its machine.
+Still owed before anything merges: the false-positive price on the
+unplanted corpus and the gate's after-sweep with the regenerated
+baseline in the same push. The hold holds — not for doubt, but
+because the answer sheet and the detector must land together.
+No merge this sweep; the integration tip is unchanged.
+
+---
+
+## 26 August — the machine stops being a founder problem
+
+The founder read « provide a small cloud VM » and answered, fairly:
+« i genuinely have no idea what this even means. cant you do it? »
+They were right — it was mine to solve. Checked rather than assumed:
+TDF's LibreOffice 25.8.7 bundle downloads and installs cleanly into
+these session containers (204MB, ~2 minutes), and the whole B1
+mechanism was then proven end to end right here: headless soffice
+listening on a UNO socket, the bundled Python's uno bridge, a
+workbook written by openpyxl with a formula and **no stored answer**,
+`calculateAll()`, and the correct computed value read back. That is
+a real recalculation by the exact architecture Dynamo designed —
+out-of-process driver under the LibreOffice-matched interpreter.
+
+Committed `dev/setup-libreoffice`: idempotent, self-verifying, one
+command per fresh container. Dynamo is unblocked the moment it pulls
+the tip. What this does *not* change: timings on this shared box
+remain noise, and the machine that serves customers in production is
+a later deployment decision — but every fidelity match rate and
+behavioural-law catch rate in Track B is now measurable without
+anyone buying anything. One founder decision remains open: the team
+screen's deal names.
+
+---
+
+## 26 August — the sixth sweep: Sentinel refuses its own round 1
+
+Only Sentinel moved, and what it pushed is the discipline at full
+stretch: the after-sweep put 20 new `inconsistent-total` findings
+into two GT3 files — over the registered flood line — and the hand
+reading judged all 20 noise: a depreciation *triangle* whose totals
+row legitimately carries two range spellings, every populated cell
+inside its own column's range. **Round 1 REFUSED by its own
+criteria.** Round 2 registered before measurement: a consequence
+guard (report a range disagreement only when the deviant misses a
+*live* cell the consensus covers — over-reach stays silent and is
+named as a limitation), and an identical-deviant fold (one authoring
+decision, one finding). Both implemented behind new unit tests;
+round 2's corpus verdict is the next push. The third planted miss
+(`C_Capex!AL463`) was run to ground meanwhile: the row pass caught
+it and the collapse layer's fill fold buried it — a missing
+adjacency test in the fold, named as engine work for its own future
+registered round rather than patched quietly inside this one.
+No merge; the hold holds until verdict and baseline land together.
+
+---
+
+## 26 August — the seventh sweep: the recalculator is real
+
+Dynamo took the machine green-light and, in one day, made Track B's
+keystone exist. The real UNO adapter and driver landed exactly as
+the blocked-state design promised — one class, one script, nothing
+above the `Calculator` interface changed — with four integration
+tests proving the whole mechanism on this container class: uncached
+formulas computed, a circular pair converging only because the
+file's own iteration settings were pushed, a planted one-cell lie in
+stored values caught and named, and B1's DONE sentence verbatim (a
+changed input changed downstream values, unattended).
+
+Then the first fidelity numbers in Swens' life, registered before
+looked at: **B2 round 1 — 723,192 formula cells compared across 18
+gated corpus files, 723,192 matched. Zero mismatches.** Round 2, on
+the nine deferred files with the amended scan: **1.82M further cells
+compared, 99.83% matched**, and every mismatch class run to ground
+rather than averaged away: SINGLE (Excel's implicit-intersection
+wrapper) is a *measured* LibreOffice gap — proven by a 976-cell fail
+plus a five-cell probe, given its own `engine-gap` denylist category
+and routed to the future arbiter, never a silent pass; `#ERR:502` on
+the final BPFMs is an unidentified engine gap, those files
+arbiter-bound; `TODAY()`-class volatiles are a fourth reading the
+registration didn't anticipate, named for the next rules round;
+near-zero dust sits just over the registered floor and the floor
+question is parked, not quietly widened. Three draft BPFMs still
+refuse to load over UNO (the files themselves load by CLI — the
+driver gained a decline-everything interaction handler, round 3
+registered). The gate's discipline held throughout: no behavioural
+check touches an ungated file.
+
+Merged clean: paths in-lane, engine byte-identical, 558 tieout tests
+green at the tip (Dynamo's UNO tests run for real here, since the
+lead's install script provisions this container too). B3 rises in
+priority — four files now wait on real Excel's word.
+
+---
+
+## 26 August — the eighth sweep: B2 is whole; a posture claim waits for its code
+
+**Dynamo finished the fidelity report.** Round 3's interaction
+handler was the whole story for the stubborn draft BPFMs — all three
+loaded, calculated and gated. The corpus fidelity report now covers
+**27 of 27 files: 3,862,412 stored-vs-recalculated comparisons,
+99.88% matched**, eighteen files at exactly 1.0, and every mismatch
+in a named class (the SINGLE cone and `#ERR:502` for the arbiter,
+volatiles for a rules round, near-floor dust flagged). The plan's B2
+sentence is true for this corpus: the report exists and gates
+everything downstream — 18 files eligible for B4's laws, nine
+waiting on the arbiter or named diagnostics. Merged; engine
+untouched; 558 tests green.
+
+**Atelier's part 1 of the deal-names change is held, not merged**:
+the posture doc edit claims the hiding as enforced while its own
+commit message says code and tests follow. The doc's covenant — every
+enforced claim checked against the code — is the reason the founder
+can trust it; it holds even when the claim is about to become true.
+Parts 1 and 2 merge together when the code arrives. (Mechanical
+notes: the resumed Atelier container lost git auth and pushed via
+the GitHub API under the founder's GitHub identity, citing a log
+entry not present in the push — both to regularize in part 2.)
+
+---
+
+## 26 August — the ninth sweep: the deal-names decision ships whole
+
+Atelier's part 2 arrived — endpoint, schema, client and test — and
+the held part 1 merged beside it, doc and code as one, exactly as
+the hold demanded. Verified at integration before merging: the
+`/tieout/team` response now carries `deal_count`, a number, and the
+names never leave the server; the route test asserts no deal name
+appears anywhere in the payload; the Settings screen shows the
+count. The posture doc's § 3 sentence is now both written and true:
+« being at the firm grants nothing » holds without an asterisk. The
+series carries the founder's GitHub identity as author (the resumed
+container pushes via the API — named in the lane log as the
+registered deviation) and the lane log entry part 1 cited is now
+present. 558 tieout tests green; engine untouched.
+
+---
+
+## 26 August — the tenth sweep: C3 merges, and V3 starts where the corpus lives
+
+**Prism's C3 merged**: the delta report in review language — seven
+classes (the seventh, `relabelled_line`, forced by a real pair
+mid-round and registered in writing before the re-run), the fold to
+one item per authoring decision, V1 parity EXACT with the study's
+matcher on both pairs run, V2's nine synthetic truths, and the
+`SelectedInputs!157`/`InputSummary!95` renames surfaced that no
+earlier view had seen. V3 — the sixteen PR24 pairs against the
+study's recorded 84 — was blocked on Prism's container by network
+(Ofwat 403, the web-archive route now behind a captcha, browser
+egress closed; each tried and recorded). 567 tieout tests green at
+the tip; engine untouched.
+
+**The lead is running V3 here**: this container still holds the
+study's own corpus (`corpus_pr24dd/` sixteen drafts,
+`corpus_regulator/` sixteen finals). Prism's committed harness,
+untouched, `--parity` on every pair, sequential per the heavy-job
+rule. Results land in this log when the run completes; per the
+registration, matcher disagreement must be zero and any difference
+from the recorded 84 is attributed to measured engine drift by
+name, or the run refuses.
+
+---
+
+## 26 August — the lead takes the wheel: standing orders
+
+The founder asked to stop composing instructions (« i dont know
+what to tell them, i'd rather you make all the calls »). The direct
+path — messaging the lane sessions from here — remains broken (the
+tool-approval gate refuses before the founder can even click;
+retried today, recorded). So the calls move into the repository:
+`docs/pierce/orders/<name>.md`, one per lane, written by the lead,
+updated at every sweep. Each lane's turn begins by reading its
+orders; the founder's only word to any lane is « go ». First orders
+issued: Sentinel finishes round 2 and regenerates the baseline in
+the same push; Dynamo names `#ERR:502`, registers the volatile
+rules round, then B4 on the 18 gated files, and drafts B3's design;
+Prism registers C4's verifying-trace fingerprints (V3 is running on
+the lead's container, which holds the PR24 corpus); Scribe builds
+D2's serving routes and registers D3; Atelier wires the real Watch
+into the demo kit's delta section and inventories screenless
+capabilities for the founder.
+
+---
+
+## 26 August — V3's first run fails honestly: the aligner cannot afford the water models
+
+The lead's sixteen-pair V3 run: every pair OOM-killed at the
+container's memory cap (~14GB, exit 137). Localized on the AFW pair
+stage by stage: the C1 raw diff is innocent (699MB, 54s); **the C2
+alignment alone balloons to 13.6GB and is killed** — the PR24
+financial models (a million populated cells, 51 sheets) present a
+shape the aligner's registered cost measurement never met. No
+verdict number exists and none is claimed; the study's 84 stays
+uncompared for now. Prism's orders updated with the measured
+diagnosis: a registered memory round on the aligner, gated by its
+own 42/42 harness (results must not move), before C4. V3 re-runs
+after the fix merges. This is the DONE test doing its job — the
+wall was found by the exam, not by a customer.
+
+---
+
+## 26 August — the eleventh sweep, part 1: five lanes land
+
+All five lanes merged, one at a time, tests green after each (615
+conftest-free at the Sentinel tip). Sentinel adopted A3 candidates 1
+(inconsistent-total, after the round-1 self-refusal on the triangle)
+and 2 (typed-over-edge, round 1 refused twice over) — both ship
+quiet on the corpus, so the baseline is rightly untouched; Sentinel's
+own after-sweep was gate clean, and **the lead's independent gate
+certification is running at integration now** — its verdict is the
+next entry, and had it shown any diff the merge would have been
+reverted on the record. Dynamo's B4 pilot: three plants, three
+catches naming their cells, zero false positives, with the honest
+narrowing that ED2 promises only two of the four laws. Prism closed
+the aligner memory round (4.4× on the failure shape, 42/42 results
+unmoved) and C4's cheap proof stands after a self-refusing round.
+Scribe shipped D2 (facts served with page + box; its chain migration
+accepted into shared ground — lanes.md records the amendment) and
+reported D3 round 1 at 0/8 proposal precision — the matcher does
+not ship, the failure class is named (definitional lines), round 2
+is registered next. Atelier made the demo kit's delta section the
+real Watch. Orders round 2 issued to all five lanes.
+
+## 26 August — eleventh sweep, part 2: the gate certifies
+
+The lead's independent gate certification of the Sentinel merge is
+in: **gate clean — all 27 files report identically to the committed
+baseline, finding for finding**, on the integrated tip with both
+adoptions live. The first engine-findings merge of the team era is
+certified. Next on this machine: the V3 re-run on the
+memory-fixed aligner.
+
+---
+
+## 26 August — the twelfth sweep: five more, and the loop's edges show their worth
+
+All five lanes again. **Sentinel** took candidate 3 (beat families)
+through the loop and reached the rarest verdict: **unmeasurable on
+this corpus** — zero plantable sites in all 27 files, so the
+detector stays implemented, unit-tested, and deliberately *unwired*:
+« an unmeasured check does not report to anyone. » **Dynamo** closed
+the H7 debt-pair round — proportionality and scale invariance
+measured at last on a model that promises them: 4/4 catches naming
+their cells, zero false positives; all four B4 laws now have real
+catches. **Prism** registered and implemented tier 2 (randomized
+differential evaluation in the stealth harness). **Scribe** ran D3
+round 2: the reference-word defense killed all eight round-1 false
+proposals (two new ones of a second shape appeared — round 3 is
+registered for the leading-paragraph case), and run B delivered a
+structural finding worth the whole round: 90 seeded draws, zero
+typed cells stated by these documents, because *this corpus runs
+the wrong direction* — the Finance Annex derives from the model;
+the product case (term sheet feeding a model) needs a document-fed
+pair, now a founder question. **Atelier** put the adopted rules in
+the category map. Scribe also reported a cross-lane break the sweep
+routed: an Atelier test asserts 17 rules where the catalogue is now
+19 — Atelier's orders lead with it.
+
+Integration: engine change this round is additive, uncalled code
+plus candidate 3's unwiring (verified in the diff) — reports
+unchanged by construction; the formal gate certification rides the
+next Sentinel round's precondition sweep because this machine is
+inside the multi-day V3 run (pair 3 of 16 at this writing, ~90
+min/pair on the memory-fixed aligner — the time cost routed to
+Prism as a registered question). 631 conftest-free tests green.
+
+---
+
+## 26 August — the founder's research: the corpus we said didn't exist
+
+The founder went researching and came back with the thing D3's
+measurement was missing — and with a correction to our own record.
+`closed-deal-ground-truth.md` had concluded from one deal (Dumfries &
+Galloway) that the Scottish project agreements redact every
+model-shaped figure; the founder checked fifteen and **seven leave
+the principal figure visible** — hand-verifying two end to end
+(Levenmouth's £3,741,000 ↔ « Unitary Charge » 3.741 in a millions
+sheet; Oban & Campbeltown to the penny) and finding Kelso's model
+carries a 73-row provenance tab written by the deal team itself —
+an independent marking scheme for the matcher. One deal was true;
+the generalization was ours, and it is corrected in
+`corpus-sources.md` (26 Aug addendum) along with the rest of the
+research: MCC's ~100 real models (also the named round-4 unseen
+corpus, and possibly what makes beat families measurable), EDGAR
+EX-10 agreements, the smoke-test pairs, FinWorkBench. Reachability
+verified from this container: SFT 200, MCC 200, HuggingFace 200.
+Scribe's orders now lead with the Scottish fetcher and the
+registered hit-rate round; the named limitations (formula-stripped
+models → declared typed-cell convention; OCR'd contracts;
+unpublished loan agreements) are in the registration's path before
+any number.
+
+---
+
+## 26 August — the founder unlocks design
+
+A standing rule changed, by the founder's own decision: agents that
+need a screen no founder design covers now design it themselves —
+full effort, existing style, marked agent-designed, founder reviews
+and may redesign. « Not be lazy just because i might re-design »
+is in the constitution now (`lanes.md`). The untouched absolutes:
+founder drawings are never deleted or replaced, an existing founder
+design is the spec, and an unworkable design stops for the founder
+rather than being improvised around. Atelier's hold is lifted; its
+orders now run the three screenless capabilities in order — the
+Watch delta view first.
+
+---
+
+## 27 August — the fourteenth sweep: the biggest day the build has had
+
+The container restarted (V3 lost its process, not its results — four
+pair verdicts survived; resumed from pair five). All five lanes
+pushed. **Atelier shipped all three agent-designed screens whole** —
+the Watch delta view, the source viewer, the recalculation mark —
+under the founder's new design rule, screenshots in its log.
+**Dynamo closed the B4 per-class table: 37 plants, 37 catches, zero
+false positives** across the four laws — including an ED2 run where
+its own control exposed a selector defect before any claim was made.
+**Prism** landed tier 2's first measured round (control silent, the
+hardcoded tail caught, dead branches named) and closed the aligner
+timing round (1.8× at the registered shape, the remaining cost
+priced as honest). **Scribe** froze matcher v3 (leading-paragraph
+defense), measured D5's flood honestly, built the Scottish fetcher —
+and hit an external wall it documented to the byte: SFT's certificate
+expired in July (blocking every honest fetcher), the archive caps
+this container at 1 MiB per document, and the models aren't archived
+at all; the two unblock paths are with the founder. **Sentinel** is
+mid-loop on candidate 4 (orientation checks) — merge held for its
+verdict-plus-baseline push, per standing precedent.
+
+Integration: four lanes merged one at a time, engine files verified
+untouched by all four, 636 conftest-free tests green; the 13 new
+collection errors are Atelier's and Scribe's DB-fixture tests, the
+known environmental class, green where databases exist.
+
+---
+
+## 27 August — the AHA becomes plan: B5's laws, C6, B6
+
+The founder's research agent delivered the build's thesis measured
+(« every published tool reads the file; we are the only one who can
+run it ») with its own toy-model experiment, planted answer key, and
+a self-refuted headline — recorded and graded in `swens-aha.md`. On
+the founder's go: **C6** (the rule-set diff — version comparison by
+diffing discovered laws, position-proof by construction) and **B6**
+(minimal diagnosis over broken rules — one-decision-one-finding as
+an algorithm) join the plan; B5 gains binding design laws from the
+report's measured failures (typed perturbation, gate-refused files
+never mined, PSLQ candidate engine, plants drawn from the PR24 real
+diffs, and round 1 = print the rule set and read it before any
+score). Sentinel gains the reachability candidate (« this assumption
+changes nothing »— graph-only, no recalculation). The lead's caution
+stands in the record: the report's own numbers are its author's toy;
+only registered rounds on our corpus produce ours. Also noted: the
+founder is switching sessions to a different model tier as usage
+runs down — the discipline lives in the repository (orders,
+handoffs, registrations), which is what makes that switch safe.
+
+---
+
+## 27 August — the review that sharpened the thesis
+
+A technical review relayed by the founder landed six corrections;
+all adopted. C6 is now gated on two one-day stability tests (seed
+stability; cosmetic invariance) before any diff code — the whole
+rule-set-diff advantage rests on a property nobody had checked. B6
+is held, not cancelled: whether Reiter-style diagnosis earns its
+keep depends on how many rules a real regression breaks at once,
+and the Ofwat run will say. The thesis sentence itself was wrong in
+an important way and is rewritten in the overview: calling
+recalculate is free — **the moat is not running the model, it is
+the proof that your run reproduces Excel on that file**, without
+which mined laws are noise dressed as mathematics. BlueFin is cited
+only for what its builder-population supports. B5's measurement now
+registers both directions (overlap with the static-found 84, and
+the hand-verified set only B5 catches — where the thesis lives or
+dies). And the input-typing classifier is declared one shared
+component with Track E's unit inference, built once, so two lanes
+never build two disagreeing versions of the same judgment.
+
+---
+
+## 27 August, evening — the sixteenth sweep, and a corpus route closed for good
+
+Four lanes merged (674 tests green, engine untouched by all four);
+**Sentinel held again, correctly**: its candidate-4 round 3 is wired
+into the audit with no verdict yet, and a findings change merges only
+with its verdict and baseline. Sentinel also answered the founder's
+« is it stuck? » exactly as ordered — it checkpointed partial work,
+labelled it partial, then refused its own round 2 three ways by the
+registered criteria and registered round 3. Not stuck: disciplined.
+**Dynamo registered and built B5 whole** — typing policy, mining
+engine, cleansing, stability, and the Monday experiment on three
+gate-clean models with the rule set to be read before anything is
+scored — plus the ddmin narrowing round. **Prism** registered tier 1
+after reading SQLSolver first-hand and widened tier 2 to a second
+host. **Scribe** measured D4 at 8/8 planted revisions and proved the
+Kelso harness ready on a stand-in pair. **Atelier** swept its three
+agent-designed screens through every real state and fixed six things
+against a production build.
+
+**The Scottish deal pairs are abandoned as unobtainable**, and the
+dead ends are recorded in `corpus-sources.md` so nobody repeats
+them: expired TLS at origin, a 1 MiB archive truncation cap, no
+archived models at all, a rate-limited save service, the founder's
+own browser refusing the site, and their research agent unable to
+bridge its fetcher to its filesystem. The pivot is verified rather
+than hoped: **FinWorkBench/Finch** — public, ungated, 17 PDFs paired
+with source and reference spreadsheets, document-grounded extraction
+with reference outputs, and **CC BY 3.0**, the first corpus licence
+we hold that permits commercial use. Scribe's orders lead with a
+read-it-by-hand check before any registration: if it is not our
+task, we lose an afternoon rather than a thesis.
+
+---
+
+## 27 August — the seventeenth sweep, and a lead's error worth recording
+
+All five lanes merged (688 tests green). **Sentinel adopted
+candidate 4** — the column direction, after round 1 measured the
+engine's row-major bias, round 2 was refused three ways, and round 3
+carried candidate 2's identity guard inward: 12 new findings in 5
+files, none removed, baseline regenerated in the same commit. It
+also ran **the Tasi re-score**, and its most valuable output is three
+of its own predictions proved wrong: the two expert label sets
+*nest* rather than conflict (99.4% of CUSTODES's cells are Tasi's
+too), their two error classes partition our rules cleanly, and our
+coverage of *serious* errors is lower than our overall coverage —
+1,206 uncovered cells with a ready-made sample, now the best-funded
+mining lead the record holds. **Scribe** ran D3 round 5 on the Finch
+pivot: **0 of 18, and the reason is structural** — finance documents
+are tables and the matcher reads lines, so a label cannot separate
+the `$` column from the `HC` column on the same row. It refused to
+loosen the tie rule (that would manufacture confident guesses),
+named `indeterminate-line-granularity` for the fifteen cells its own
+*judge* could not honestly score, and registered the column anchor
+for round 6 — approved. **Dynamo** registered the review's four
+gates and measured the ddmin narrowing (43 narrowings, 32 exact, 11
+the predicted wide case, 0 misses). **Prism** ran four more tier-2
+rounds. **Atelier** caught the build record up and took new orders:
+the report face (G4) and chat's five canonical questions (G2).
+
+**The lead's own error, recorded because the rule is the rule:** the
+independent gate certification of Sentinel's adoption was OOM-killed
+at file 19 — because the V3 run was still alive. The lead's kill
+command matched the wrong process name, so two heavy jobs ran
+together, which is exactly the failure `lanes.md` warns about and
+this record already paid for once. V3 is stopped with ten pairs
+banked; the gate is re-running alone on a verified-quiet machine,
+and the certification claim waits for it.
+
+**Certified, 27 Aug:** the re-run on a verified-quiet machine is
+**gate clean** — all 27 files report identically to the regenerated
+baseline, finding for finding, on the tip carrying candidate 4's
+adoption. Sentinel's twelve new findings are exactly what the
+baseline says they are, and nothing else moved. V3 resumes with ten
+pairs banked.
+
+---
+
+## 27 August — the eighteenth sweep: B5's honest negative redirects the plan
+
+All five merged; 697 tests green; engine and baseline untouched
+since the certified tip.
+
+**The result of the week is a negative, and it is worth more than a
+win.** Dynamo ran B5's Monday experiment and refused to sell what
+the mathematics produced. The mining is stable under five seeds,
+invariant to cosmetic edits, and clean — and its rule sets are
+**artifacts of low perturbation coverage**: hand-typing reached 10
+of 193 cells on one model; another's cone holds 21,638 constants
+across 3,279 label groups, not hand-typeable at all; H7's « laws »
+turned out to be equalities between rows that never moved because
+almost nothing varied. « Laws found in a corner are not the model's
+laws. » Coverage is now reported beside every rule set, and a
+low-coverage round is declared uninformative rather than dressed as
+a result — the gate's discipline applied to mining.
+
+**The consequence, decided by the lead: Track E's first half moves
+to Dynamo.** The input-typing classifier the review already ruled
+must be built once *is* unit inference, and it is now the binding
+constraint on B5 — and therefore on C6 and B6 behind it. Dynamo owns
+E1 (registered hand-labelled ground truth) and E2 (the inference, as
+a library that reports nothing). **E3 — the unit mismatch findings —
+stays Sentinel's**, armed only when the inference measures accurate
+enough per dimension. Track E was the plan's untouched track and the
+flagship demo finding; it is now also the unblocker of the execution
+thesis. Two reasons to build it, one component.
+
+Elsewhere: **Sentinel** certified candidate 5's precondition gate
+clean. **Scribe** measured D1's dash round — a nil printed as « - »
+is now extracted as a fact, and the rule survived its own criterion.
+**Prism** made its refusals name which case they are. **Atelier**
+built the report face (G4) and measured chat's five canonical
+questions honestly: **not met** — three have their material
+reachable, one cannot be answered at all, one answers in the wrong
+register, and none has been judged as an answer because none can be
+generated in its container. It also caught a red route test the way
+the last one was fixed: assertions now read the engine's own kind
+order instead of copying it, so the Watch can grow without breaking
+the product's tests. Two agent-package tools would close two of the
+five questions — routed to the lead, not written by the wrong lane.
+
+---
+
+## 28 August — the twentieth sweep: the first completion proof runs, and fails honestly
+
+**Proof 1A ran and FAILED, on all three criteria, and it is the most
+valuable failure the project has had.** Sentinel ran the analytical
+proof on ten of the eleven closed-deal models, engine frozen, house
+rules at defaults, and adjudicated all thirteen findings at the
+cells. Five of nine value-only models were **completely silent** —
+the registration's predicted pass, and it held. Then: eight false
+alarms across Kelso and Newbattle, all one class, traced to one
+line — the own-checks pass collects every numeric cell of a
+check-labelled row and never asks the structure which columns are
+periods, so a covenant *threshold* parked in a scalar column
+(1.15 breach, 1.1 lockup) reads as a failing period. The remaining
+five findings are true breaks or defensible judgement calls. Per the
+cold-run conditions the defect was **not fixed during the run**; it
+becomes its own registered round and these numbers stand.
+
+The criteria were not re-cut afterwards, and that is the point:
+strike the eight and the rest pass, but the eight are exactly what
+the proof existed to find. What it bought is precise: a false-alarm
+class the entire regulator corpus never surfaced, because regulator
+models do not park scalars beside their period grid — which is the
+transfer question the proof asks, answered « not yet, and here is
+why, on one line of code ».
+
+Two disciplines worth recording. The container restart wiped the
+founder-supplied half of the corpus mid-proof; Sentinel recovered
+two files from the public bucket and **verified them byte-identical
+to the hashes in the registration** before using them, and reported
+the third (`hwcbsb`, unrecoverable, no deal name on record) as
+**unavailable** rather than as a refusal or a silent drop. And the
+scope sentence is carried everywhere the number goes: 1A is not
+evidence about the structural checks, which need formulas these
+files do not have.
+
+Elsewhere: **Dynamo** ran E2's generalisation round on the
+value-only corpus and reported it **unmeasurable on accuracy** with
+two failures named — the honest verdict where a weaker one was
+available. **Prism** published a coverage table stating what
+« 0 diverged » does and does not cover. **Scribe** returned five
+items to the lead. **Atelier** put the values-only truth on the
+screen where a person meets the file, so nobody is told a stripped
+model is a clean one. 756 tests green.
+
+**Certified, 28 Aug:** the independent gate on the tip carrying A4's
+adoption is **clean** — all 27 files report identically to the
+baseline, finding for finding. The audit now states its own
+denominator and says nothing else differently.
+
+---
+
+## 28 August — the twenty-first sweep: two lanes find the same defect from opposite ends
+
+Four merged; **Sentinel held** — its fix for Proof 1A's false-alarm
+class (restricting own-checks to period columns) is implemented
+behind its tests, and a findings change merges only with its verdict
+and regenerated baseline. That is the proof's own discipline
+applying to the proof's own bug.
+
+**Dynamo's B5 round 2 produced the most load-bearing defect the
+build has found**, and it found it twice from two different corpora:
+**row-level labelling cannot represent a row whose cells carry
+different units.** On the H7 file the typing worked and over-reached;
+on the RoE file coverage collapsed to zero — and Dynamo named the
+second half as its own fault rather than the inference's: E2 returned
+orientation `unknown`, its contract says a caller must then not treat
+a row as a quantity, and the typing map never asked. « Had it asked,
+it would have refused the sheet honestly instead of freezing it by
+accident. » Three rounds registered in order, the first of which
+turns the accident into a stated refusal. Neither model's rules may
+be called its laws, and the reasons are now specific enough to fix.
+
+**Prism** ran down its frozen cells and concluded « it was my own
+rule, not the model » — the second lane this sweep to find the defect
+in its own instrument rather than its subject. **Scribe** classified
+its round: 20 repairs, 1 damage, 11 neither, and **both criteria
+reject the round** — plus it marked a reversed claim where a reader
+meets it, not 900 lines later, which is a documentation discipline
+worth copying. **Atelier** made the report declare its blindness
+*even when findings exist*, so a page full of findings can still say
+what it could not see. 756 tests green.
+
+---
+
+## 28 August — the twenty-second sweep: predictions failing in public
+
+Four merged (Sentinel still held, its own-check fix awaiting its
+verdict and baseline); 760 tests green.
+
+**Dynamo published a scorecard against its own registered
+predictions and two of five failed** — 0 of 26 rate cells recovered
+where 24 were predicted, coverage 0 of 193 where a clear
+improvement was predicted. Neither was hidden or softened: « the
+design was wrong in a way the machine showed me, and the amendment
+was wrong about how much it would buy. What the round bought is a
+precisely named blocker instead of a vague one, which is worth more
+than the coverage number I predicted and did not get. » It also
+found a transposed year column as the round's one new systematic
+problem, exactly as it had predicted it would find one.
+
+**Prism turned its instrument on itself again.** Seven divergences
+its tier-2 round could not explain stay **open and unexplained**
+rather than being attributed to anything convenient — and the
+leading suspect it registered next is *its own aligner*: if a
+perturbed literal is paired to the wrong old cell, the two files
+receive the same number in different places and disagree exactly as
+those seven do. The test is registered with two numeric predictions
+before it runs, and it is explicitly a test that could indict C2 —
+its own completed, celebrated work — rather than the revision.
+**Scribe** priced a cheap decision honestly, including what getting
+there cost. **Atelier** made the landing screen say what it could
+not see, matching the report.
+
+The sweep's shape is worth naming: this is what it looks like when a
+team is not marking its own homework — a lane publishing its failed
+predictions, a lane nominating its own best work as the prime
+suspect, and a lane whose fix for the failed proof waits behind the
+same gate as everyone else's.
+
+---
+
+## 28 August — the twenty-fourth sweep: three predictions land, and the lead answers a nine-sweep debt
+
+All five merged; 780 tests green.
+
+**The lead's failure first, because it is the sweep's real lesson.**
+Scribe raised « items for the lead » in five consecutive turns; the
+lead merged its work each time and answered none of them. The lane
+responded correctly rather than comfortably: it **stopped
+manufacturing rounds to fill turns** — « seven D1 rounds sit in this
+log, six dead and one waiting, and an eighth design would be noise »
+— and put all five asks on one page with the evidence in a sentence
+each. All five are now answered (D1's bar is *undamaged* not
+*unchanged*, since a bar that forbids repair is a freeze; D4's store
+approved; D5 shelved with a written trigger; D3 round 4 closed with
+an error in the lead's own orders corrected; Newbattle kept in the
+proof with its caveat recorded rather than the sample re-cut after
+seeing its result). `lanes.md` now carries a decision-latency rule so
+this cannot recur: an open decision is answered in the sweep it is
+raised, or the lead writes down why not and when.
+
+**Three registered predictions landed.** Prism's latency refinement:
+the seven unexplained divergences reclassify and plain divergences go
+to **zero**, exactly as predicted — the revision swaps forecast
+inflation for outturn and wakes dormant paths, which was never a
+disagreement at all. Dynamo's rate-form-from-usage: **26 of 26** RoE
+cells recovered where the previous design got 0, with E1 unchanged
+across every dimension and H7 untouched — and its note on why it
+took *two* measurements is worth keeping: a regression set stayed
+green through two regex failures while the target count stayed green
+through a different bug, and « neither measurement alone would have
+caught both ». Sentinel closed the own-check round gate clean and
+archived run 1 under its own name rather than overwriting it.
+
+**Scribe's short turn produced the sweep's best corroboration**, and
+it was not looking for it: re-running every published measurement
+against the moved tip, all reproduced except one — its eight deal
+models' analytics count fell 12 → 4, and the eight that vanished are
+exactly Kelso's four and Newbattle's four, the same eight Proof 1A
+adjudicated as false alarms at the cells. An independent lane, on a
+corpus measured for another reason, confirming Sentinel's fix by
+arithmetic. It marked its own published number stale in place.
+
+**Certified, 28 Aug:** the independent gate on the own-check period
+restriction is **clean** — all 27 files report identically to the
+baseline. Sentinel's claim that the Proof 1A fix moves nothing on
+the regulator corpus is confirmed from outside its own tests, which
+is exactly what the defect predicted (regulator models do not park
+scalars beside their period grids; the private infrastructure models
+that failed the proof do). Two independent confirmations now stand
+behind one fix: this gate, and Scribe's unrelated re-run dropping
+12 → 4 by exactly the adjudicated eight.
+
+---
+
+## 28 August — the twenty-sixth sweep: a pass that refuses to be quoted
+
+**Proof 1A run 2: PASS — and Sentinel wrote the sentence that stops
+anyone, including us, from selling it.** All three criteria now
+clear (5 of 5 findings true or defensible, 0 false alarms, both
+previously-noisy models silent). And the very next paragraph:
+
+> « This run cannot test that claim, because the engine was changed
+> **using these very models' failures** — Kelso and Newbattle are
+> named in the fix's own registration and code comment. The corpus
+> is contaminated as evidence for the original claim, permanently
+> and by design. Anyone quoting « Proof 1A passes » without that
+> sentence is misreporting it. »
+
+The first run's FAIL stands above it, unedited, as taken. Every
+surviving finding is byte-identical in rule, cell and sentence to
+the first run's — checked mechanically, not by eye. Seven of nine
+models are now silent against five before. And the plan's first
+completion proof is **still not met**, because 1B — the structural
+half — still has no corpus.
+
+**The second run also found something its own criteria never asked
+about.** Comparing the two runs' *coverage tallies* rather than
+their findings showed two check rows that quietly stopped being
+examined by the fix. Neither was ever a finding; neither raised an
+abstention. It is written up as a named consequence in the fix's own
+round — found only because the run compared more than the numbers
+the criteria demanded.
+
+Elsewhere: **Scribe** shipped round V (2,653 invented facts gone,
+ED2 and the nils untouched) and **built the D4 confirmed-link
+store** on D2's terms, hours after nine sweeps of waiting — 915
+tests green on its side. It had rebased onto the moved tip, so its
+own log and handoff conflicted with the copies already merged; both
+were taken whole from the lane, because hand-merging a lane's record
+of itself is how a record silently loses a line. **Dynamo** drew
+constrained families legally on h7-fp with an identical rule set.
+**Prism** found that one of its ordered items was already done and
+said so rather than redoing it, and reconciled C3 with C1 on its
+face. 784 tests green at the tip.
+
+---
+
+## 28 August — the twenty-seventh sweep
+
+**Atelier closed chat's two unanswerable questions** with the two
+agent tools the lead routed to it — and found a defect worth more
+than the feature: on a deal carrying several models,
+`load_model_workspace` takes the *first* model it finds, so chat
+could answer confidently about the wrong file. « Worse than
+refusing » is the lane's own verdict, and it is the
+never-guess-between-candidates principle applied to file selection.
+Routed back as a defect to fix, not a round to register. It also
+reported a ruff failure it believed pre-existing; the lead ran it at
+the tip and **it does not reproduce** — reported honestly, checked
+rather than forwarded, and no phantom handed to Sentinel.
+
+**Dynamo's held-families round: 96.5% coverage on h7-fds with the
+rule set again identical** — the third consecutive run where
+constraining the perturbation changed coverage without changing the
+laws, which is the stability property C6 is gated on.
+
+796 tests green at the tip.
+
+---
+
+## 28 August — the twenty-ninth sweep: the FERC corpus fails honestly on its first contact
+
+All five merged; **844 tests green**.
+
+**Scribe took the utility-regulation corpus the lead routed hours
+earlier and ran D3 round 8 on a real FERC Form 1 → formula-rate
+pair. It failed, and it declared the failure by its own
+pre-registered kill criterion**: « if the matcher produces more
+confident wrong answers than correct ones, the round is a failure
+and is reported as one. » Two wrong, zero correct, thirteen
+abstentions out of fifteen scorable rows — the matcher given all
+4,913 numbers in the document with no page hint, as a user would
+have it. Its own prediction (« high abstention, few confident
+errors, fewer than half matched ») was **too generous** and it said
+so: it expected some to match; none did.
+
+**The diagnosis is worth more than the score, and it is not about
+judgement.** Scoring the *truth* line for every row against the
+floor: only **3 of 15** truth lines clear the bar at all, and on
+**11 of 15** some other line scores strictly higher. « The evidence
+the matcher is allowed to use does not identify the answer. » Given
+that, thirteen abstentions is the *correct* behaviour and the two
+proposals are the whole failure. And on all three reachable rows the
+matcher abstained on a **tie** — the tie rule is simultaneously what
+cost it three right answers and what saved it from more wrong ones.
+
+**The structural cause this corpus is the first to expose:** a wide
+table printed as a two-page spread, where the continuation page
+carries **no labels at all** — four rows cite a page whose lines
+extract as bare figures and a line number, because the row's name is
+on the facing page. That is a document-geometry problem, not a
+matching one, and no amount of matcher tuning touches it.
+
+Elsewhere: **Dynamo built the units-column detector** (build item (b)
+from the founder's fourth research round) and reported three things
+the files taught it. **Sentinel** built the label-ladder planting
+harness and found one class with no sites — the unmeasurable verdict
+again, reported rather than forced. **Prism** ran a comparability
+round with a disclosed comparison. **Atelier** traced the
+assistant's twenty-eight seconds to a single query.
+
+---
+
+## 28 August — the thirty-first sweep: a reverted merge comes back inverted
+
+Yesterday's revert had a better ending than the merge would have.
+Sentinel's tests-before-change had left the tip red; sent back with
+the new rule (tests-first stays on the lane's branch until its change
+lands). It returned having **implemented the change, priced it, and
+refused it** — and rewrote the tests to pin the *refusal*
+(`test_a_numeric_formula_in_the_label_column_is_still_not_elected`,
+« so the same design is not tried again by accident »). A refused
+design with its reasoning pinned in tests is a more durable artifact
+than the feature would have been.
+
+The refusal itself is well made. The reader deliberately excludes the
+label column from its numeric sweep — « a number in the label column
+is usually a label » — and electing those cells by *value* rather
+than by carrying a formula catches 6 of 6 planted defects but admits
+**58,536 content-like numerics** on the regulator corpus alone. The
+lane ran that as a diagnostic, labelled it as one, and **kept its
+numbers out of the record** because it was unregistered, on defects
+it had planted and already knew, with no false-positive price and no
+gate: « it says only that the successor is not obviously
+impossible ».
+
+It also recorded walking into a trap its own handoff warns about — a
+waiter matching its own command line — catching it before it cost
+anything and writing down that the lesson existed and it walked
+toward it anyway. 865 tests green at the tip.

@@ -13,6 +13,7 @@ again with the same file. The messages below name the cause and the fix,
 and where there is no fix they say that too.
 """
 
+import hashlib
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -21,6 +22,7 @@ from typing import Any
 from polar.models.tieout import ArtifactKind
 
 from .audit import audit
+from .binary import BinaryUnreadable
 from .deck import read_deck
 from .figures import Figure
 from .legacy import LegacyUnreadable
@@ -33,7 +35,7 @@ from .workbook import Cell, read_workbook
 #: What each kind of artifact is expected to arrive as. A `.pptx` uploaded
 #: as a model is a user error worth naming rather than a parse failure.
 SUFFIXES: dict[ArtifactKind, tuple[str, ...]] = {
-    ArtifactKind.model: (".xlsx", ".xlsm", ".xls", ".xlt"),
+    ArtifactKind.model: (".xlsx", ".xlsm", ".xlsb", ".xls", ".xlt"),
     ArtifactKind.deck: (".pptx", ".pptm"),
     ArtifactKind.memo: (".docx", ".doc"),
     ArtifactKind.source: (".pdf",),
@@ -85,14 +87,24 @@ def read_artifact(payload: bytes, filename: str, kind: ArtifactKind) -> Ingested
         path = Path(folder) / Path(filename).name
         path.write_bytes(payload)
         if kind is ArtifactKind.model:
-            return _read_model(str(path))
-        if kind is ArtifactKind.deck:
-            return _read_deck(str(path))
-        if kind is ArtifactKind.memo:
-            return _read_memo(str(path), suffix)
-        if kind is ArtifactKind.source:
-            return _read_source(str(path))
-        raise Unreadable(f"reading a {kind.value} is not something this can do")
+            read = _read_model(str(path))
+        elif kind is ArtifactKind.deck:
+            read = _read_deck(str(path))
+        elif kind is ArtifactKind.memo:
+            read = _read_memo(str(path), suffix)
+        elif kind is ArtifactKind.source:
+            read = _read_source(str(path))
+        else:
+            raise Unreadable(f"reading a {kind.value} is not something this can do")
+
+    # What was uploaded, as a fact rather than an inference. Two uploads
+    # with the same digest are the same file, and that is the one thing
+    # about a revision that can be known without reading anything: the
+    # Watch spends 158 seconds on a 432,596-cell model to conclude that
+    # a re-upload changed nothing, and this answers it in a string
+    # comparison. Costs a hash over bytes already in hand.
+    read.counts["sha256"] = hashlib.sha256(payload).hexdigest()
+    return read
 
 
 def _read_source(path: str) -> Ingested:
@@ -126,6 +138,10 @@ def _read_source(path: str) -> Ingested:
 def _read_model(path: str) -> Ingested:
     try:
         book = read_workbook(path)
+    except BinaryUnreadable as error:
+        # Already a sentence a person can act on — the binary format
+        # needs a converter, and the message names the two ways out.
+        raise Unreadable(str(error)) from error
     except LegacyUnreadable as error:
         raise Unreadable(_legacy_reason(str(error))) from error
     except Exception as error:
@@ -188,6 +204,37 @@ def _read_model(path: str) -> Ingested:
             # on stored rows and still has to say what was concealed.
             "hidden_sheets": list(book.hidden_sheets),
             "very_hidden_sheets": list(book.very_hidden_sheets),
+            # The rest of what the reader took off the *file* and the
+            # stored cells cannot say. `hidden_sheets` above was the
+            # first of these anybody noticed, and it was fixed alone;
+            # its siblings were not, so the product audited a poorer
+            # workbook than the engine did — over the nine readable
+            # corpus models that lost 41 of 116 findings and took four
+            # models to « nothing failing ». Measured in
+            # `docs/pierce/logs/atelier.md`, twenty-fourth turn.
+            #
+            # Cheap to keep: 0.7–18 KB per model beside a cell table of
+            # half a million rows. `row_words` is the heavy one and is
+            # kept for the opposite reason — the audit reads it to
+            # *honour* numbers a sheet's own words already state, so
+            # without it the product reports findings the engine
+            # suppresses.
+            "workbook": {
+                "broken_names": list(book.broken_names),
+                "foreign_names": [list(pair) for pair in book.foreign_names],
+                # Not `errors`: that key above is the audit's error
+                # *count*, and two meanings on one name is how a
+                # screen ends up printing the wrong one.
+                "error_cells": dict(book.errors),
+                "unparseable": list(book.unparseable),
+                "populated": dict(book.populated),
+                # JSON has no integer keys, so the row numbers come
+                # back as strings and the restore turns them again.
+                "row_words": {
+                    sheet: {str(row): text for row, text in rows.items()}
+                    for sheet, rows in book.row_words.items()
+                },
+            },
         },
         cells=list(book.cells.values()),
         defects=list(result.findings),

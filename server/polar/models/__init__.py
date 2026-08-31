@@ -1,5 +1,10 @@
 from polar.kit.db.models import Model, TimestampedModel
 
+# The Chain's fact store lives in its own package; imported here so the
+# tables register in the metadata alembic and the test harness build from.
+from polar.tieout.chain.link import ChainLink
+from polar.tieout.chain.store import ChainFact, ChainRefusal
+
 from .account import Account
 from .account_credit import AccountCredit
 from .agent_task import AgentStep, AgentTask
@@ -151,13 +156,13 @@ from .tieout import (
     Correction,
     CorrectionState,
     CorrectionWhere,
+    DealVisit,
     Figure,
     FigureLink,
     Finding,
     FindingKind,
     FindingSeverity,
     FindingState,
-    DealVisit,
     HouseRules,
     LinkState,
     ModelCell,
@@ -189,6 +194,9 @@ __all__ = [
     "BenefitGrant",
     "BillingEntry",
     "Campaign",
+    "ChainFact",
+    "ChainLink",
+    "ChainRefusal",
     "CheckKind",
     "CheckRun",
     "CheckStatus",
@@ -217,6 +225,7 @@ __all__ = [
     "CustomerSeat",
     "CustomerSession",
     "CustomerSessionCode",
+    "DealVisit",
     "DecisionArticleLink",
     "DecisionArticleTreatment",
     "DecisionKind",
@@ -268,7 +277,6 @@ __all__ = [
     "FormStatus",
     "FormSubmission",
     "HeldBalance",
-    "DealVisit",
     "HouseRules",
     "IssueReward",
     "LegacyRecurringProductPriceCustom",

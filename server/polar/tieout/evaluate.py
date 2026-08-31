@@ -37,9 +37,7 @@ class _Abstain(Exception):
 def _tokens(formula: str) -> list[Token]:
     try:
         return [
-            token
-            for token in Tokenizer(formula).items
-            if token.type != Token.WSPACE
+            token for token in Tokenizer(formula).items if token.type != Token.WSPACE
         ]
     except Exception as error:
         raise _Abstain from error
@@ -55,9 +53,7 @@ def _value_of(book: Workbook, sheet: str, coordinate: str) -> float:
     return float(cell.value)
 
 
-def _range_values(
-    book: Workbook, sheet: str, match: "re.Match[str]"
-) -> list[float]:
+def _range_values(book: Workbook, sheet: str, match: "re.Match[str]") -> list[float]:
     top = min(int(match.group("row")), int(match.group("row2")))
     bottom = max(int(match.group("row")), int(match.group("row2")))
     left = column_index_from_string(match.group("col"))
@@ -69,9 +65,7 @@ def _range_values(
     values: list[float] = []
     for row in range(top, bottom + 1):
         for column in range(left, right + 1):
-            cell = book.cells.get(
-                f"{sheet}!{get_column_letter(column)}{row}"
-            )
+            cell = book.cells.get(f"{sheet}!{get_column_letter(column)}{row}")
             if cell is None:
                 continue  # empty — aggregates skip it, as Excel does
             if cell.value is None:
@@ -103,13 +97,18 @@ class _Parser:
     def expression(self) -> float:
         left = self.additive()
         token = self.peek()
-        while token and token.type == Token.OP_IN and token.value in (
-            "=",
-            "<>",
-            "<",
-            "<=",
-            ">",
-            ">=",
+        while (
+            token
+            and token.type == Token.OP_IN
+            and token.value
+            in (
+                "=",
+                "<>",
+                "<",
+                "<=",
+                ">",
+                ">=",
+            )
         ):
             op = self.take().value
             right = self.additive()
@@ -266,9 +265,7 @@ class _Parser:
             ):
                 self.take()
                 sheet = (
-                    match.group("qsheet")
-                    or match.group("sheet")
-                    or self.sheet
+                    match.group("qsheet") or match.group("sheet") or self.sheet
                 ).strip()
                 values.extend(_range_values(self.book, sheet, match))
             else:
@@ -322,9 +319,7 @@ def evaluate(book: Workbook, sheet: str, formula: str) -> float | None:
         return None
 
 
-_SHIFT = re.compile(
-    r"('[^']+'!|\b[A-Za-z_][\w.]*!)?(\$?)([A-Z]{1,3})(\$?)(\d+)"
-)
+_SHIFT = re.compile(r"('[^']+'!|\b[A-Za-z_][\w.]*!)?(\$?)([A-Z]{1,3})(\$?)(\d+)")
 
 
 def shifted(formula: str, columns: int) -> str:
@@ -339,8 +334,6 @@ def shifted(formula: str, columns: int) -> str:
         at = column_index_from_string(match.group(3)) + columns
         if at < 1:
             return match.group(0)
-        return (
-            f"{prefix}{get_column_letter(at)}{match.group(4)}{match.group(5)}"
-        )
+        return f"{prefix}{get_column_letter(at)}{match.group(4)}{match.group(5)}"
 
     return _SHIFT.sub(move, formula)

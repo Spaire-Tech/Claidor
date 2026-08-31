@@ -1,6 +1,6 @@
 # Writing to a deck
 
-Supersedes the line in `roadmap.md` that said PowerPoint's reversible-edit
+Supersedes the line in `roadmap.md` (since deleted) that said PowerPoint's reversible-edit
 story "has to be invented". That was wrong, and it was wrong in a way that
 made the biggest remaining item look harder than it is.
 

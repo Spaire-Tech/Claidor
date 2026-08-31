@@ -40,7 +40,8 @@ NOL carryforward, senior-debt label, no IRR row, balance-check
 netting) are semantic/accounting observations — plausible, unverified
 one by one, and out of scope for a static structural engine today.
 They are filed as seed material for the Part D (project-finance /
-accounting semantics) spec in `plan.md`.
+accounting semantics) spec in `plan.md` (since deleted — the plan is
+`swens-plan.md`; git history keeps the old file).
 
 ## The four named fixes (each general, each with a regression test)
 

@@ -91,10 +91,7 @@ def downgrade() -> None:
     )
     for name, _ in _BOOL_COLUMNS:
         op.execute(f"ALTER TABLE community_settings DROP COLUMN IF EXISTS {name}")
+    op.execute("ALTER TABLE community_settings DROP COLUMN IF EXISTS who_can_post")
     op.execute(
-        "ALTER TABLE community_settings DROP COLUMN IF EXISTS who_can_post"
-    )
-    op.execute(
-        "ALTER TABLE community_settings "
-        "DROP COLUMN IF EXISTS default_meeting_provider"
+        "ALTER TABLE community_settings DROP COLUMN IF EXISTS default_meeting_provider"
     )

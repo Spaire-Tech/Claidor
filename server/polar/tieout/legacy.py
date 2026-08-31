@@ -7,13 +7,21 @@ place the published precision baselines mean anything — is `.xls`. Sixty-
 nine of Aswath Damodaran's seventy-three teaching models are `.xls`. A
 model auditor that reads only `.xlsx` can be measured against nothing.
 
-**Neither obvious route worked.** LibreOffice is installed here and
-refuses to load these files at all, on a headless server with no display
-and no Java; the files themselves are ordinary BIFF8 and open fine
-elsewhere, so that is an environment defeating a converter rather than a
-format problem. `openpyxl` has never read `.xls`. `xlrd` reads them
-perfectly — and exposes only *values*, because that is what a reader for
-data does, and formulas are exactly what an audit needs.
+**Neither obvious route worked.** `openpyxl` has never read `.xls`.
+`xlrd` reads them perfectly — and exposes only *values*, because that
+is what a reader for data does, and formulas are exactly what an audit
+needs.
+
+*Corrected 28 Aug.* This paragraph used to say LibreOffice refused to
+load these files at all on a headless server. That was true of the
+environment it was written in and is not true of the format: with
+LibreOffice 25.8.7 properly installed (`dev/setup-libreoffice`) it
+converts real `.xls` and `.xlsb` models headlessly in about eleven
+seconds each. It is now the route for `.xlsb`
+(:mod:`polar.tieout.binary`). It is deliberately **not** the route for
+`.xls`, because this module reads the author's formulas directly out
+of the file, and a conversion is a rewrite — one that was measured
+inventing `=TRUE()` and `=FALSE()` formulas out of boolean cells.
 
 **What xlrd does have is a formula decompiler**, written for defined names
 and never wired to cells. The Excel file format stores a formula as a
@@ -70,6 +78,18 @@ DEGENERATE = re.compile(r"\b([A-Z]{1,3}\d+):([A-Z]{1,3}\d+)\b")
 #: Set in a `FORMULA` record's flags when the cell's real formula lives in
 #: a `SHRFMLA` record covering a range this cell falls inside.
 SHARED_FLAG = 0x0008
+
+#: A whole number the decompiler has printed as a double. BIFF stores every
+#: numeric literal as an IEEE double, so `=1/(1+rate)^n` comes back as
+#: `=1.0/(1.0+rate)^n` — the same formula, spelled differently.
+#:
+#: **Measured, 28 Aug**: converting a 228-formula model to `.xls` and
+#: reading it back recovered 228 of 228 at the right cells, and 24 of them
+#: differed from the original in exactly this way and in no other. It is
+#: cosmetic to a person and not to us: the version comparison keys on
+#: formula *text*, so the same untouched row would read as a methodology
+#: change on a model saved once in each format.
+TRAILING_ZERO = re.compile(r"(?<![\w.$])(\d+)\.0(?![\d.])")
 
 
 class LegacyUnreadable(Exception):
@@ -355,7 +375,21 @@ def _decompile(
         return None
     if not text or not isinstance(text, str):
         return None
-    return "=" + DEGENERATE.sub(lambda m: m[1] if m[1] == m[2] else m[0], text)
+    text = DEGENERATE.sub(lambda m: m[1] if m[1] == m[2] else m[0], text)
+    return "=" + _whole_numbers(text)
+
+
+def _whole_numbers(text: str) -> str:
+    """`1.0` back to `1`, outside string literals.
+
+    Quoted text is left exactly as the author wrote it — a label reading
+    `"Phase 1.0"` is not arithmetic, and rewriting somebody's words to
+    tidy up our own number formatting would be the worse bug.
+    """
+    out = []
+    for index, piece in enumerate(text.split('"')):
+        out.append(piece if index % 2 else TRAILING_ZERO.sub(r"\1", piece))
+    return '"'.join(out)
 
 
 __all__ = ["LegacyBook", "LegacyUnreadable", "read_legacy"]

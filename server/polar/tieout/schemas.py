@@ -568,8 +568,17 @@ class DealListItem(Schema):
     #: never a findings count, because one check can produce forty
     #: findings and the row would read like forty problems.
     failing_checks: int = 0
-    #: When this deal was last reconciled. Null: never.
+    #: When this deal was last **checked** — a tie-out or an audit,
+    #: whichever finished last. Null: neither has ever run. It was the
+    #: tie-out alone until a model-only deal (no deck to reconcile
+    #: against) was seen reading « Not checked yet » beside eight
+    #: findings of its own.
     checked_at: datetime | None = None
+    #: The model this row names is a values-pasted copy — the published
+    #: form most real models arrive in — so the construction rules read
+    #: almost none of it. « Nothing failing » on such a row is true and
+    #: misleading at once, and the row says so in two words.
+    values_only: bool = False
     #: When this person last opened the deal. Null: never. The two counts
     #: beneath derive from it — what arrived and what was found since,
     #: cleared by opening the deal. Zero for a first-time reader on
@@ -673,6 +682,19 @@ class Asked(Schema):
     #: The cells behind the answer, from the last tool that returned
     #: any — drawn under the prose, each one clickable.
     rows: list[AskedRow] = []
+    #: **Which model this answer is about**, and what else the deal
+    #: holds. A deal-scoped question narrows to one model, and the
+    #: narrowing used to be silent: on a deal carrying two, a confident
+    #: paragraph could describe the wrong workbook and nothing on the
+    #: screen said which one it read. Null when the deal holds no model
+    #: (the assistant refuses before this matters). These come off the
+    #: artifacts, not the prose, so the screen can state them whatever
+    #: the answer says.
+    model: str | None = None
+    model_version: int | None = None
+    #: The deal's other models, named and versioned. Empty on the
+    #: ordinary deal, which is why the screen only speaks when it is not.
+    other_models: list[str] = []
 
 
 class AskTurn(Schema):
@@ -781,6 +803,236 @@ class VersionRead(Schema):
     counts: dict[str, Any]
 
 
+class VersionAuditSummary(Schema):
+    """One version's audit record — the same shape a stored run keeps."""
+
+    errors: int
+    smells: int
+    #: Attention tiers, « 1 » · « 2 » · « 3 », same fold as run history.
+    tiers: dict[str, int]
+    cells: int
+    #: Rules the firm switched off, applied here exactly as in a real
+    #: run — a decision on the record, never a silence.
+    rules_off: list[str]
+    values_only: bool
+    abstentions: list[dict[str, str]]
+
+
+class VersionAudit(Schema):
+    """The audit re-run on one stored version, persisted nowhere.
+
+    What the version dropdown re-scopes the page to. The findings carry
+    no durable identity — nothing here can be accepted, dismissed or
+    corrected, because rulings belong to the current version — and
+    `checked_at` is the moment this answer was computed, not a stored
+    run's date.
+    """
+
+    artifact_id: UUID
+    version: int
+    filename: str
+    uploaded_by: Uploader | None
+    uploaded_at: datetime
+    checked_at: datetime
+    summary: VersionAuditSummary
+    findings: list[FindingRead]
+
+
+class DeltaItemRead(Schema):
+    """One reviewed change — one authoring decision where possible.
+
+    The Watch's own item, on the wire: `kind` is one of its eight
+    classes (`new_defect` · `class_change` · `relabelled_line` ·
+    `methodology_change` · `moved_assumption` · `material_output` ·
+    `structure` · `repaired_defect`), already ranked by the engine.
+    A screen renders them in the order received and never re-ranks.
+    """
+
+    kind: str
+    sheet: str
+    #: Old-side row block for row-shaped items; 0 when the item is not
+    #: row-shaped (a keyed finding with no aligned position).
+    first_row: int = 0
+    last_row: int = 0
+    #: Column letters touched, old-side, in order.
+    columns: list[str] = []
+    #: The Watch's own sentence for the item, when it wrote one.
+    detail: str = ""
+    #: Orders items inside their kind; finding weight where the item is
+    #: a finding, magnitude otherwise.
+    weight: float = 0.0
+    #: Finding keys folded into this item — the class-change join's
+    #: roster (« new: typed-over-formula »).
+    findings: list[str] = []
+
+
+class VersionDeltaRead(Schema):
+    """What one revision did, in review language — the Watch, served.
+
+    Computed on request from the two versions' stored bytes and
+    persisted nowhere. The counts are the revision-defect study's own
+    semantics: findings matched on rule + sheet + name, never the
+    address, and the ones with no name to match by are **counted
+    apart, never guessed at** — a screen shows that count when it is
+    not zero rather than folding it away.
+    """
+
+    old_artifact_id: UUID
+    old_version: int
+    old_uploaded_at: datetime
+    old_uploaded_by: Uploader | None
+    new_artifact_id: UUID
+    new_version: int
+    new_uploaded_at: datetime
+    new_uploaded_by: Uploader | None
+    #: When this answer was computed — the report is always fresh,
+    #: never a stored run's date.
+    computed_at: datetime
+    new_defects: int
+    repaired_defects: int
+    persistent_defects: int
+    unmatched_old: int
+    unmatched_new: int
+    sheets_added: list[str] = []
+    sheets_removed: list[str] = []
+    #: Ranked by the engine; rendered in order.
+    items: list[DeltaItemRead] = []
+
+
+class DeckDeltaItemRead(Schema):
+    """One printed figure, and what the revision did to it."""
+
+    slide: int
+    #: What the deck prints, as printed.
+    printed: str
+    #: Where on the slide — the deck's own coordinate, so a reader can
+    #: put a finger on it.
+    location: str
+    #: The model row this figure agreed with *before* the revision.
+    #: Old-side on purpose: it is what makes the attribution exact.
+    old_ref: str = ""
+    #: What the new model says it should read now.
+    expected: str = ""
+    name: str = ""
+    #: The disagreement is one unit at the printed precision — a
+    #: rounding convention, reported as itself rather than as an error.
+    one_tick: bool = False
+    #: The model change underneath this break, in the Watch's own
+    #: words. **Empty where it could not be attributed**, which the
+    #: screen says in words rather than filling with the nearest
+    #: change — a guess printed as a cause is the worst thing here.
+    cause: str = ""
+
+
+class DeckDeltaRead(Schema):
+    """What a model revision did to the deliverables.
+
+    The same deck tied out against both versions of the model, and the
+    difference read in review language. The four lists are four
+    different sentences and are never summed into one: only `broken`
+    is the revision's doing, `still_drifting` is explicitly *not*, and
+    `coverage_changed` is « I lost sight of it », which is not « it
+    broke ».
+
+    Computed on request from three stored files and persisted nowhere.
+    """
+
+    old_artifact_id: UUID
+    old_version: int
+    new_artifact_id: UUID
+    new_version: int
+    deck_artifact_id: UUID
+    deck_filename: str
+    computed_at: datetime
+    #: How many of the deck's printed figures could be reconciled at
+    #: all, each side. A fall between them is what `coverage_changed`
+    #: is about, and a reader needs both numbers to judge the rest.
+    checked_old: int
+    checked_new: int
+    #: Agreed before, drifts now — the revision did this.
+    broken: list[DeckDeltaItemRead] = []
+    #: Drifted before, agrees now — the revision came to the deck.
+    repaired: list[DeckDeltaItemRead] = []
+    #: Disagrees with both versions, so it is not this revision's
+    #: fault. Kept off its account deliberately.
+    still_drifting: list[DeckDeltaItemRead] = []
+    #: Reconcilable against one version only.
+    coverage_changed: list[DeckDeltaItemRead] = []
+
+
+class RecalcDiff(Schema):
+    """One cell the engine did not reproduce — both numbers, on the record."""
+
+    ref: str
+    #: The value Excel left in the file; None when the mismatch is of
+    #: kind (a stored number against an engine error, say).
+    stored: float | None
+    #: What our engine computed — a number, an error string, or None.
+    computed: float | str | None
+    #: The absolute difference that *would* have been allowed, when
+    #: both sides were numbers.
+    tolerance: float | None
+
+
+class RecalcRefusal(Schema):
+    """One construct the engine may not honestly compute, in words."""
+
+    ref: str
+    #: The denylist's category: `lambda`, `cube`, `rtd`, `udf`,
+    #: `external-link`, `engine-gap`.
+    category: str
+    #: The function or reference that tripped the scan, as written.
+    target: str
+    #: Where this construct routes the file: `arbiter` (real Excel
+    #: could settle it) or `refuse` (nothing we run honestly could).
+    route: str
+
+
+class RecalcMarkRead(Schema):
+    """The fidelity gate's answer for one stored version — the mark.
+
+    `verdict` is the gate's own, one of four: **pass** (the engine
+    reproduced every compared cell — the only verdict that reads
+    « validated by recalculation »), **fail** (differing cells, named
+    below), **refused** (denylisted constructs; no comparison ran, and
+    `refusals` says why in words), **nothing-compared** (the formula
+    cells carry no stored values, so there was nothing to certify).
+    Persisted on the artifact, so the mark always describes exactly the
+    bytes of the version it sits on; a new upload starts unmarked.
+    """
+
+    verdict: str
+    #: Which engine produced the numbers — named so a fake can never be
+    #: mistaken for a machine result. None when the file was refused
+    #: before any engine ran.
+    engine: str | None
+    computed_at: datetime
+    #: Formula cells with a stored value the engine also computed.
+    compared: int
+    matched: int
+    match_rate: float | None
+    #: The worst differing cells, named; `mismatch_count` is the whole
+    #: truth when the list is capped.
+    mismatches: list[RecalcDiff] = []
+    mismatch_count: int = 0
+    #: Cells where the engine produced an error against a stored number
+    #: — the engine's measured inability, never the model's defect.
+    engine_errors: list[RecalcDiff] = []
+    engine_error_count: int = 0
+    #: Formula cells the engine returned nothing for.
+    not_computed: int = 0
+    #: Formula cells with no stored value to compare against.
+    no_stored_value: int = 0
+    refusals: list[RecalcRefusal] = []
+    refusal_count: int = 0
+    #: The refused file's route: `arbiter` or `refuse`; None otherwise.
+    route: str | None = None
+    #: TODAY/NOW/RAND-class cells and everything downstream of one —
+    #: set aside, reported, never counted as compared.
+    volatile_roots: int = 0
+    volatile_cone: int = 0
+
+
 class ModelGrid(Schema):
     """A model as it is laid out, rather than as a search box.
 
@@ -845,15 +1097,23 @@ class HouseRulesUpdate(Schema):
 
 
 class TeamMember(Schema):
-    """One person on the team, and where they are."""
+    """One person on the team — never which deals they are on.
+
+    The founder decided it (26 August, on the posture doc's § 3
+    finding): deal names come off the team screen, so « being at the
+    firm grants nothing » holds without an asterisk. Only the count
+    travels; which deals stays behind membership, like everything
+    else about them.
+    """
 
     id: UUID
     name: str
     email: str
     avatar_url: str | None
     you: bool
-    #: The deals they are on, in this organization only.
-    deals: list[str]
+    #: How many of this organization's deals they are on — a number,
+    #: never a name.
+    deal_count: int
 
 
 class TeamRead(Schema):

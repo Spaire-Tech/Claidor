@@ -398,3 +398,435 @@ licences.
   model" pairing is not published as a ready dataset; extracting it
   from the PST files is possible but is work, and the result would be
   more than 20 years old.
+
+---
+
+## Addendum, 26 August 2026 — the founder's research corrects this file
+
+The record first: `closed-deal-ground-truth.md` concluded from the
+Dumfries & Galloway pair that the Scottish project agreements redact
+every model-shaped figure, and that conclusion quietly became « the
+Scottish contracts are censored ». **The founder checked fifteen
+deals; seven leave the principal money figure visible.** One deal was
+true; the generalization was ours and it was wrong. Corrected here.
+
+### The Scottish deal pairs (document-feeds-model — D3's missing direction)
+
+~30 NPD/hub deals publish both halves free, no NDA: the signed
+project agreement and the financial close model
+(scottishfuturestrust.org.uk — reachable from the containers, HTTP
+200). The founder hand-verified two end to end:
+
+- **Levenmouth Academy**: contract « £3,741,000 a year » ↔ model cell
+  `3.741` labelled « Unitary Charge » (a millions sheet — scale and
+  wording differ, the link is exactly D3's task). Contract « 22% »
+  indexation ↔ cell « Gearing of Unitary Charge to Indexation ».
+- **Oban & Campbeltown**: contract £4,912,193 ↔ model 4,912,193.07.
+- **Kelso**: the model carries a hand-written provenance tab — **73
+  rows of « clause → term → figure »** (« Schedule 1 → Base Credit
+  Facility → £21,461,602.52 », « Loan Agreement → Margin →
+  3.349% ») — a marking scheme written by the deal team at close,
+  independent of us.
+
+Named limitations, stated before any measurement: the published
+models are **formula-stripped** (every cell a value), so typed vs
+computed cannot be read from the file — a registered convention
+(e.g. « input tabs count as typed ») must be declared openly; the
+contracts are **OCR'd photocopies** (garbled letters, numbers
+survive better); some referenced loan agreements were **never
+published**, so part of Kelso's 73 rows points at unavailable
+paper.
+
+### Also from the founder's research (each verified reachable where noted)
+
+- **MCC ERR models** (mcc.gov/our-impact/err/, HTTP 200): ~100 real
+  third-party `.xls/.xlsx/.xlsm` across ~30 country programmes.
+  Narrative docs are model-derived (the Ofwat direction), but input
+  sources (feasibility studies) are often published — one road
+  project decides that. Independently valuable as round-4 unseen
+  corpus for the engine — and general spreadsheets may make A3
+  candidate 3 (beat families) measurable.
+- **EDGAR EX-10 credit agreements**: unredacted economic terms,
+  HTML, full-text search since 2001 (the tested search endpoint
+  returned 403 from here; the www.sec.gov document paths are the
+  ones to verify at fetch time).
+- **Smoke-test pairs**: ModelOff cases, A.CRE (case + solution
+  model), Bodmer's library, HBS/Ivey/Darden case+spreadsheet pairs
+  (paid, ~$10 each).
+- **FinWorkBench (Finch)** on HuggingFace (HTTP 200), CC BY 3.0:
+  172 expert-annotated workflows incl. document-grounded extraction
+  with reference outputs — the only hand-annotated ground truth of
+  this exact shape.
+
+### 27 August — the Scottish route is closed; the pivot
+
+The Scottish deal pairs are **unobtainable by any automated route**,
+and the failure is structural, not effort. Recorded so nobody spends
+another day on it:
+
+- Origin (`contracts.scottishfuturestrust.org.uk`): TLS certificate
+  expired 10 July 2026, issued for the wrong host. Every honest
+  client refuses it. Verified from the lead's container and by
+  Scribe independently.
+- Internet Archive: agreements truncate at exactly 1,048,576 bytes
+  (verified twice — a hard cap on that path, not a coincidence); the
+  **financial models are not archived at all** (every snapshot
+  predates their publication). Save Page Now rate-limits anonymous
+  robots (429 on first attempt).
+- The founder's browser: the site is refused client-side on their
+  machine.
+- The founder's research agent: its file-writing sandbox cannot
+  reach the host, and its fetching tool returns text into context
+  and cannot write bytes to disk. No bridge exists between the two.
+
+**The verified pivot: FinWorkBench/Finch** (HuggingFace, **CC BY
+3.0** — permissive, commercial use with attribution, unlike every
+academic corpus we hold). Verified from this container: dataset
+public and ungated, 537 files, **17 PDFs paired with source and
+reference spreadsheets**, per-task JSON, downloads succeed
+(`huggingface.co/datasets/FinWorkBench/Finch/resolve/main/...`).
+It contains document-grounded extraction tasks — values that must be
+pulled from supporting documents into a spreadsheet, **with
+reference outputs** — which is D3's exact shape with hand-annotated
+ground truth. Small, but it is the only such ground truth that
+exists and the only one we may use commercially.
+
+Also verified reachable and unclaimed: **MCC ERR** (~100 real
+third-party models, mcc.gov) as the round-4 unseen corpus.
+
+---
+
+## Addendum, 28 August 2026 — the formula-bearing corpora, and what they cost
+
+The founder's researcher solved the hole that suspended the
+population proof, and did it under the same discipline this project
+uses: it stated up front what its sandbox could not reach (MCC, the
+DFIs, PUC dockets, the academic repositories — all
+`host_not_allowed`), refused to describe those sites as if that were
+research, verified everything it *did* claim by opening the workbook
+and counting formula cells, and **reported two bugs in its own
+tooling** (a units detector matching across label boundaries, which
+had produced a phantom currency reading, and an unresolved oddity it
+declined to explain away). Numbers below were re-verified
+independently from these containers.
+
+### Verified reachable and formula-bearing (git route; the GitHub API is proxy-blocked, `git ls-remote` is not)
+
+| corpus | verified here | what it is |
+|---|---|---|
+| `vincichan1089/solar-project-finance-model-mini-perm` | 5 sheets, 11,623 cells, **8,485 formulas (73%)** — the researcher's count reproduced **exactly** | one dense PF model: DSCR, LLCR/PLCR, CFADS, reserve accounts, debt schedule |
+| `Charlie-Hill/Financial-Models` | **157 of 166** carry formulas, 40,311 formula cells — the researcher's 157 reproduced exactly | real listed companies (ASOS, Snowflake, Delta, Nike…); statement-driven and **thin**, ≈257 formulas per file, some in single figures |
+| `SheetJS/enron_xls` | reachable; **not fetched** | 9,145 real workbooks; independently counted 5,391 with live formulas and **818 with >1,500 formulas and PF vocabulary** — 2.8 GB, **all `.xls`** |
+
+### The strategic fact this produces
+
+**A6 is no longer « one published model in three cannot be opened ».
+It is the gate on the only deep, real, unseen project-finance corpus
+that exists.** The Enron set holds gas project financings, wind
+portfolio valuations and acquisition models at 46–91% formula
+density — the exact shape of the models Swens is for, written by
+practitioners under deadline, never seen by this engine, and
+impossible to accuse us of curating. All of it is `.xls`.
+
+What is usable *today* is honestly narrower: one excellent PF model
+and 157 thin corporate ones. Enough to start Proof 1B's registration
+and to test a second dialect; **not** enough for the proof's depth.
+
+### One find that is its own answer key
+
+`E08`/`E09` in the Enron set are a **genuine version pair** — same
+15 sheets, 45,274 identical formulas, 920 differing, one of them a
+discount rate moved from 0.09 to 0.10, and error-value counts moving
+92 → 115. A real revision of a real model by its original authors:
+an external answer key for the Watch that nobody planted. Blocked on
+A6 with the rest.
+
+### Mandatory before any of it scores anything
+
+Both the Enron corpus and our CUSTODES/EUSES subjects draw on
+turn-of-the-century business spreadsheets. **Every candidate is
+hashed against every corpus we hold before it enters a proof
+sample** — the closed-deal round is the precedent, where four of
+seven candidates turned out to be files we already had. The fetcher
+(`scripts/corpus_formulas.py`) states this rule in its docstring.
+
+---
+
+## Addendum, 28 August 2026 (second) — the source→model corpus is US utility regulation
+
+The founder's researcher went looking for the document→model pairs
+D3 has failed six rounds for want of, and found the structural
+reason we kept coming up empty: **in project finance the populated
+model is the commercially sensitive part.** Governments publish the
+feasibility study and the draft contract and keep the model; PPP
+portals publish *template* models — blank forms. The asymmetry is
+structural, not accidental, and no amount of searching will surface
+what is deliberately withheld. That closes a search we have run
+three separate ways.
+
+Where the opposite is true: **US regulated utility ratemaking**, and
+the report's own sentence is the finding — « regulated utility
+filings beat project finance decisively, and it is not close ».
+
+### Why FERC formula rates are the strongest pairing found anywhere
+
+A transmission owner files an annual spreadsheet computing its
+revenue requirement. Its inputs come from the **FERC Form 1**, a
+separate public annual filing. Three independent pieces of evidence
+put the direction beyond doubt — the calendar (Form 1 filed April,
+the model filed 15 May), the model's own step list (« populate the
+formula with the prior year's data from FERC Form 1 »), and the
+direction of citation (the model cites the Form 1; the Form 1 knows
+nothing of any model).
+
+**And the model prints its own provenance.** Every input row carries
+a reference like `p354.21.b` — page 354, line 21, column b — with
+the convention stated in the model's header, and the template marks
+which cells are inputs (« shaded cells are input cells »). That is a
+model that documents which values were typed and where each came
+from: D3's ground truth, written by the filer, at scale — on the
+order of a hundred filings a year across PJM/MISO/SPP/ISO-NE/NYISO/
+CAISO, going back roughly fifteen years, all on the same template.
+
+The researcher verified one filing (Duquesne Light, rate year
+2025/26) properly: **40 cited inputs mapped**, and it re-computed 22
+of the model's relationships in Python — **20 tie exactly** (wage
+allocator 19.0699%, composite tax rate 27.7071%, cost of debt 4.93%,
+final rate $63,150.03/MW-year), and the two that do not are a
+probable interest transposition between two 3.93% bonds and a
+rounded month-count label. It flagged both as needing the native
+file before anyone calls them errors. **A corpus that contains real
+anomalies, not textbook cases.**
+
+It also drew the line honestly: « I never opened a single `.xlsx` …
+I am not going to pretend otherwise », and every claim about sheet
+names or cell addresses is marked unverified.
+
+### Verified from these containers (28 Aug)
+
+- **`www.pjm.com` serves the filings** — the Duquesne template
+  downloads (4,070,119 bytes, `application/pdf`).
+- **A trap, found and recorded:** requesting the same path with
+  `.xlsx`, `.xls` or `.xlsm` returns **HTTP 200 and the identical
+  PDF** — byte-for-byte the same sha256. PJM's CDN ignores the
+  extension. **A 200 on that host is not evidence a native workbook
+  exists**; only the bytes are. Any fetcher for this corpus checks
+  content, never status.
+- **`www.mcc.gov` answers from here** (the researcher's sandbox was
+  blocked), but its files sit on `assets.mcc.gov`, which fails
+  certificate verification from these containers — retried with the
+  proxy CA bundle, still fails. MCC stays unreachable for us.
+
+### Verdicts adopted
+
+- **MCC is a model corpus, not a pair corpus** — rated Tier 4 as
+  pairs on evidence: the researcher opened a compact page and listed
+  every document, finding Star Reports and post-compact evaluations
+  and *no* feasibility, engineering or tariff study. Model →
+  narrative, the wrong direction, exactly as our own Ofgem and Finch
+  rounds found twice before. Its ~100 models remain worth having as
+  parser material if they ever become reachable.
+- **PPP portals and development banks: closed.** Stop looking.
+
+### The open gap, and it is small
+
+Nobody has yet held the **native workbook**. The model side of this
+pair is published as PDF; the filed original is a spreadsheet. Until
+one native file is in hand, every mapping is a printed line number
+rather than a cell address, and D3 needs cell addresses. That —
+plus confirming five of the forty citations actually appear in the
+Form 1 — is the whole remaining distance, and both are hours of
+work rather than weeks.
+
+---
+
+## Addendum, 28 August 2026 (third) — versioned corpora, and the design finding inside them
+
+The founder's third research round. It mined git history live rather
+than citing papers — cloned 13 repositories, pulled every historical
+version of each workbook, wrote a diff engine and ran it — and
+separated verified work from page-reading as sharply as the previous
+two. **Four things it produced matter to us.**
+
+### 1. A bug we do not have, and the reason we do not
+
+Its first run reported 203 changed cells for a commit whose message
+was « Update version number in sheet ». **202 were false alarms**:
+openpyxl hands back array formulas as objects, not strings starting
+with `=`, and two objects are never equal in Python unless told how
+to compare — so every array formula looked changed in every version.
+Fixed, the same commit reports **2**. About 600 false alarms in
+17,200 across one chain, ~3.5%.
+
+Checked here immediately: **`watch/diff.py::_formula_text` already
+extracts `.text` from `ArrayFormula` and `DataTableFormula`.** We
+do not have this bug — because we met the same class in the
+correction gate in the RIIO-3 round and `changeset.py::comparable()`
+carries the same lesson. Worth recording as a case where a paid-for
+lesson transferred to a lane that never hit the original.
+
+### 2. The design finding, and it changes how the Watch should think
+
+Splitting one equity model's 70 transitions by commit message:
+
+| measure | quarterly results (n=11), median | everything else (n=59), median |
+|---|---|---|
+| changed cells | 1,169 | 93 |
+| formula → hardcode | **83** | **0** |
+| reference changed | 228 | 0 |
+| formulas added | 181 | 1 |
+
+The separation is near-total. **A raw threshold on « formulas
+replaced by hardcodes » is the wrong design**: 83 is routine in a
+quarterly reforecast and a five-alarm fire on a Tuesday. The number
+alone carries no information; the number *against the expected
+profile for that kind of update on that model* does — and that
+profile is learnable from history, which is the argument for a Watch
+that reads a model over time rather than auditing one file once.
+That is a product claim now supported by measurement rather than
+asserted.
+
+Two specimens worth keeping: a vertical column sum that became a
+horizontal row sum (`=SUM(AM4:AM8)` → `=SUM(S9:V9)`) — a formula
+that did not move but *changed meaning*, where flagging it and
+asking is the entire product; and a reference that moved one column
+and two rows inside a copied block, where the **asymmetry itself** is
+a cheap, strong defect signal.
+
+### 3. Ground-truth chains with the author's own words
+
+`hickeng/financial` — 16 versions of a VMware/Broadcom tax model.
+Transition v10→v11's commit message says « Fixes row skewed
+formula », and the diff shows **98 reference changes, 1 formula
+change, zero hardcodes**: every formula in a block was reading the
+row below itself (`AV7` referencing `AE8`, `C8`, `AT8`). An
+off-by-one producing plausible numbers and no error — level-A ground
+truth, 98 labelled instances, written down by the author. The same
+chain also contains transitions of 1, 2 and 4 cells (version-string
+bumps): **signal and required silence in one file.**
+
+### 4. Licensing, stated plainly — including a correction to the lead
+
+The report is blunt where it matters: **« no license » does not mean
+free** (all rights reserved is the default; a public repo is readable,
+not reusable), and **a CC BY tag on a *collection* does not clear the
+underlying documents** — Hermans could license her gathering work,
+not Enron's copyright.
+
+**The lead's omission, corrected:** `corpus_formulas.py` was written
+an hour earlier recording formula counts and saying nothing about
+rights. Terms are now in its docstring per source — Charlie-Hill has
+no LICENSE at all (research and internal measurement only, never a
+shipped product or training material), Enron's underlying documents
+were never the collector's to license. Nothing is committed, nothing
+ships, and any published number names its corpus and terms.
+
+### Verdicts adopted
+
+- **VEnron2**: research-only by its terms, download behind a form,
+  page last updated 2017, the `tcse.cn` mirror 404s (we found the
+  same). And the deeper catch: **its groups are inferred, at 78.5%
+  precision** — so roughly one file in five in a group may not be a
+  version of the others, and a strange Watch result would be
+  unattributable. Not a precision instrument for us.
+- **Modified EUSES** (576 pairs, one planted fault each, per-cell
+  answer key) is the accuracy instrument; the git chains are the
+  *judgement* instrument. Different tests, both needed.
+- **Build our own** is the right long answer, and it is what our
+  planting discipline already does — now with **measured real-world
+  change rates** to plant at instead of invented ones.
+
+---
+
+## Addendum, 28 August 2026 (fourth) — unit conventions, and a gap in our corpus now measured
+
+The founder's fourth research round, and the most directly
+actionable: 23 repositories downloaded, 31 workbooks opened, **27
+distinct models** after catching that two repos publish the same
+toll-road model (6,490 cells compared, zero differences) — every
+claim from reading cells, with hosts it could not reach named.
+
+### The headline, and it is a trap we would have walked into
+
+**The same unit text means opposite things in different real
+workbooks, and only the number format tells you which.** Six models
+declare `%` explicitly. Three store `0.005` / `0.65`; three store
+`70` / `25.17` / `9.25`. Both conventions, both written down by
+their authors.
+
+The cell that kills any value-based rule: an Indian 1 GW solar
+model, `Module Degradation`, unit `% p.a.`, value **`0.5`** —
+meaning half of one percent. A rule reading « below 1 next to `%`
+means a decimal fraction » is out by **100×**, on a row that decays
+output for 25 years. What separates the conventions cleanly in six
+of six models is the **number format**: percent-style format means
+decimal fraction, `General` means whole number of percent.
+
+And a file that defeats any per-sheet or per-column inference: an
+Australian model with `Input!E25` (unit `%`, value `65`, format
+`General`) and `Input!E61` (unit `p.a.`, value `0.065`, format
+`#,##0.0%`) — **same column, same sheet, opposite conventions**.
+
+### Verified here: our corpus carries only one of the two conventions
+
+The report was careful to mark this as inferred from our notes
+rather than from our files, and invited us to check. Done, on
+`ofgem_riio3/final_wacc.xlsx`: **183,987 percent-formatted cells,
+and not one with an absolute value above 1.5.** Every percentage in
+it is a decimal fraction. So the gap is real and now measured, not
+assumed: an inference tuned only on our corpus would read a
+whole-number-percent model as 100× wrong, and nothing in our own
+files would ever have shown us.
+
+### The other gaps, each with the file that closes it
+
+1. **Units in a column of their own** — nine of the 27 keep units in
+   a dedicated column beside the value, not in the label; 698
+   declarations extracted that way. Our regulator models put units in
+   labels and headers. An engine that only parses labels finds
+   nothing in those nine files **and reports full coverage on all of
+   them** — silent blindness, the worst failure shape we have.
+2. **Scale words we have never seen**: `$MM`, `$M`, `$K`,
+   `USD Billions`, and non-Western `crore` (10,000,000), `lakh`
+   (100,000), `千`, `百万`. One Indian model puts `Lakh/MW/year` and
+   `Cr/year` **three rows apart** — a 100× step with no currency
+   symbol on either.
+3. **The unit label is itself a formula** — `=Applied_currency &
+   "'000"`, computed from a dropdown; and a whole 49-row cost block
+   whose row labels are references (`=D373`) with no typed text at
+   all. Read without cached values, that model looks unlabelled.
+4. **Real vs nominal where the unit string is identical** — both
+   blocks labelled `EUR'000`; the only discriminator is a section
+   heading thirty rows above.
+5. **Energy-price collisions**, all verified in one sheet:
+   `$/MWh` vs `$/kWh` (1,000×), `$/Wdc` vs `$/kWh` (1,000×),
+   `$/kW-month` vs `$/kW-year` (12×), and `MWac` vs `MWdc` — both
+   « MW », physically different.
+6. **Units carried only by the number format**: `#,##0.000"B"`
+   (billions, 374 cells, row label says only « Revenue »),
+   `yyyy"E"` / `yyyy"A"` (estimate vs actual, 270 cells, nothing in
+   any label says which years are history), `" bps"`, `"x"`.
+7. **Non-units inside units columns**: `Choice`, `Index`, `Check`,
+   `[1,0]`, `Toggle YES/NO`, `Days of Revenue`, `of margin`,
+   `3% inflation`. Switches and qualifiers must never enter
+   dimensional arithmetic, and « declared but not parseable » has to
+   be its own reportable class.
+8. **Time bases**: not one monthly model in the 27; one semi-annual;
+   **twenty-four have no date axis at all** — their columns are text
+   like « Year 1 ». Monthly construction phases are standard in
+   project finance and absent from everything we or they hold.
+
+### Two positive test cases worth keeping — the engine must stay quiet
+
+- Australian model: row 45 is `AUD/MWac/yr`, row 46 is `AUD/yr` and
+  its formula is `=E45*E12` where E12 is `MWac`. **The MWac cancels.**
+  The workbook demonstrates a correct unit multiplication; delete the
+  `*E12` and the declared units prove it wrong.
+- UK toll road: `veh/year × £/vehicle ÷ 1000 = k£`, all three
+  declared and the divide-by-1000 present. Correct — the checker
+  must say nothing.
+
+And the same file carries **two wrong unit labels written by its own
+author** (an arrangement fee labelled `per year`; a fee labelled
+`of margin`, which is not a unit). Real ground truth is not always
+right, and any measurement we publish says so.

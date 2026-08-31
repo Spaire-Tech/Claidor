@@ -258,3 +258,52 @@ visible, not a substitution. This is registered today, before any
 seeded corpus exists, precisely so it cannot be read as a reaction
 to a bad number — and the bad number that prompted the thinking is
 kept above, unedited.
+
+---
+
+## The instrument, committed; the replication (24 Aug)
+
+The scorer that produced every number above lived only in a session
+scratchpad — the same one-recycle-from-gone exposure the archive
+README records for the data. It is now in the repository as
+`server/scripts/custodes_score.py`: the 23 August scoring logic
+verbatim (paths and the unpack/convert stages added; the printed
+engine row says Swens, per the rename), running end-to-end from the
+archived tarballs, which it sha256-checks against the README before
+trusting. `uv run python -m scripts.custodes_score` reproduces the
+whole record from the repository alone.
+
+Replication result on a fresh machine, LibreOffice 24.2.7: **every
+number identical.** Truth 1,973 mapped, none unmapped; coverage
+283/1,973 = 14.3% with the identical per-rule split; agreement
+239/1,166 = 20.5%, per-rule identical down to long-formula 0/4;
+out-of-scope 7/8/6; the truth cross-check's 7-only-file /
+6-only-comments; and the six-row table digit for digit (CUSTODES
+2,443 flagged / 1,583 hits / 80.2% / 64.8% … engine 3,941 / 283 /
+14.3% / 7.2%). The record above is now reproducible from the
+repository alone — tarballs in, table out.
+
+## ExceLint run registration (24 Aug, before the tool is obtained)
+
+Fixed now, while the code itself is still unobtained (this
+container's network policy blocks the fetch; the run happens when the
+repository is approved or on a machine that has it):
+
+1. **Source:** the ExceLint authors' own open implementation
+   (OOPSLA 2018), exact repository and commit recorded here at
+   obtainment, before any run.
+2. **Files:** the same 70 converted subjects the table used.
+3. **Configuration: shipped defaults only.** No threshold, knob or
+   preprocessing tuned against this corpus, in either direction.
+4. **Truth and axes:** the results file's own Ground truth column and
+   the same two axes — both published or nothing.
+5. **Flag set, cell-level:** whatever the tool itself presents as
+   suspected cells counts, unfiltered by us; where its output is
+   region-shaped (proposed-fix pairs), the suspect side's cells
+   count. The one sentence mapping its actual output schema to a
+   cell set is appended here after the schema is inspected and
+   **before** any score against truth is computed.
+6. **Refusals are counted:** a sheet the tool errors or times out on
+   is reported as such, never silently dropped from the denominator.
+7. The addendum's frame travels with the result: calibration on
+   foreign ground, not a result about Swens.

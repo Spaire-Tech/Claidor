@@ -120,7 +120,9 @@ class TestTheHappyPath:
             says("No indemnity."),
         )
 
-        outcome = await run(client, TOOLSET, workspace(document("nothing here")), "Indemnity?")
+        outcome = await run(
+            client, TOOLSET, workspace(document("nothing here")), "Indemnity?"
+        )
 
         assert [step.tool for step in outcome.steps] == [
             "list_documents",
@@ -181,7 +183,9 @@ class TestWhenItCannotFinish:
             says("never reached"),
         )
 
-        outcome = await run(client, TOOLSET, workspace(document("x")), "Go", max_steps=3)
+        outcome = await run(
+            client, TOOLSET, workspace(document("x")), "Go", max_steps=3
+        )
 
         assert len(outcome.steps) == 2
         assert outcome.stopped == Stopped.step_limit

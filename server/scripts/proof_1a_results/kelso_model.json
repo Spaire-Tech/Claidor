@@ -1,0 +1,93 @@
+{
+ "file": "kelso_model.xlsm",
+ "bytes": 4231503,
+ "cells": 470594,
+ "sheets": 55,
+ "formulas": 814,
+ "values_pasted": true,
+ "analytical": [],
+ "abstentions": [
+  {
+   "rule": "balance-sheet",
+   "why": "ReportFinStatsAnnual: the net-assets and equity rows are not unique (2 and 1 candidates) \u2014 not paired, not guessed."
+  },
+  {
+   "rule": "balance-sheet",
+   "why": "ReportFinStatsSA: the net-assets and equity rows are not unique (2 and 1 candidates) \u2014 not paired, not guessed."
+  }
+ ],
+ "tallies": {
+  "model-own-check": {
+   "total": 16,
+   "clean": 16
+  },
+  "time-axis": {
+   "total": 27,
+   "clean": 27
+  },
+  "cash-continuity": {
+   "total": 13,
+   "clean": 13
+  }
+ },
+ "structural_count": 2,
+ "audit_tallies": {
+  "long-formula": {
+   "total": 814,
+   "raised": 0
+  },
+  "volatile": {
+   "total": 814,
+   "raised": 0
+  },
+  "hardcode-in-formula": {
+   "total": 814,
+   "raised": 0
+  },
+  "inconsistent-anchoring": {
+   "total": 814,
+   "raised": 0
+  },
+  "inconsistent-row": {
+   "total": 814,
+   "raised": 0
+  },
+  "external-link": {
+   "total": 814,
+   "raised": 0
+  },
+  "error-value": {
+   "total": 470594,
+   "raised": 0
+  },
+  "typed-over-formula": {
+   "total": 469780,
+   "raised": 0
+  },
+  "typed-over-edge": {
+   "total": 469780,
+   "raised": 0
+  },
+  "skipped-cell": {
+   "total": 5,
+   "raised": 0
+  },
+  "inconsistent-total": {
+   "total": 5,
+   "raised": 0
+  },
+  "range-over-block": {
+   "total": 5,
+   "raised": 0
+  },
+  "circular": {
+   "total": 814,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 55,
+   "raised": 1
+  }
+ },
+ "seconds": 18.9
+}

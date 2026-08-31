@@ -188,6 +188,9 @@ export interface DealListItem {
    * share a word would be claiming a check nobody ran.
    */
   checked_at: string | null
+  /** The model is a values-pasted copy: « Nothing failing » on such a
+   *  row is true and misleading at once. */
+  values_only?: boolean
   visited_at: string | null
   arrived_since_visit: number
   findings_since_visit: number
@@ -505,6 +508,15 @@ export interface Asked {
   steps: AskedStep[]
   /** The cells behind the answer, from the last tool that returned any. */
   rows?: AskedRow[]
+  /**
+   * Which model this answer is about, off the artifacts rather than the
+   * prose. A deal-scoped question narrows to one model, and on a deal
+   * carrying two the narrowing used to be silent.
+   */
+  model?: string | null
+  model_version?: number | null
+  /** The deal's other models — empty on the ordinary deal. */
+  other_models?: string[]
 }
 
 export interface GridCell {
@@ -564,6 +576,181 @@ export interface Version {
   uploaded_by: { id: string; name: string; avatar_url: string | null } | null
   uploaded_at: string
   counts: Record<string, unknown>
+}
+
+/** Where a fact sits on its page, in the PDF's own point coordinates
+ *  — position as fractions of `page_width`/`page_height`, so a screen
+ *  scales without knowing the render resolution. */
+export interface FactBox {
+  x0: number
+  top: number
+  x1: number
+  bottom: number
+}
+
+/** One extracted number, cited to a page and a box — the Chain's D2
+ *  contract. `line` is the sentence around it, so a list can say what
+ *  the number is *of* without paraphrasing the document. */
+export interface ChainFact {
+  id: string
+  document_id: string
+  document_version_id: string
+  page: number
+  page_width: number
+  page_height: number
+  box: FactBox
+  text: string
+  value: number
+  line: string
+  extractor: { name: string; version: string }
+}
+
+/** A page the extractor refused, and why, in words — coverage said
+ *  out loud, never a silent gap. */
+export interface ChainRefusal {
+  document_version_id: string
+  page: number
+  reason: string
+}
+
+/** One document version's whole record: facts, refusals, coverage. */
+export interface DocumentFacts {
+  document_id: string
+  document_version_id: string
+  facts: ChainFact[]
+  refusals: ChainRefusal[]
+}
+
+/** One reviewed change from the Watch — one authoring decision where
+ *  possible. `kind` is one of its eight classes, already ranked by
+ *  the engine; the screen renders in order and never re-ranks. */
+export interface DeltaItem {
+  kind:
+    | 'new_defect'
+    | 'class_change'
+    | 'relabelled_line'
+    | 'methodology_change'
+    | 'moved_assumption'
+    | 'material_output'
+    | 'structure'
+    | 'repaired_defect'
+  sheet: string
+  /** Old-side row block for row-shaped items; 0 when not row-shaped. */
+  first_row: number
+  last_row: number
+  columns: string[]
+  /** The Watch's own sentence for the item, when it wrote one. */
+  detail: string
+  weight: number
+  /** Finding keys folded into this item — the class-change join. */
+  findings: string[]
+}
+
+/**
+ * What one revision did, in review language — the Watch, served.
+ *
+ * Computed on request from the two versions' stored bytes, persisted
+ * nowhere. Findings are matched by rule + sheet + name — never the
+ * address — and the nameless are counted apart, never guessed at; a
+ * screen shows that count when it is not zero.
+ */
+/** One printed figure, and what a model revision did to it. */
+export interface DeckDeltaItem {
+  slide: number
+  /** What the deck prints, as printed. */
+  printed: string
+  location: string
+  /** The model row it agreed with *before* the revision. */
+  old_ref: string
+  /** What the new model says it should read now. */
+  expected: string
+  name: string
+  /** One unit at the printed precision — a rounding convention. */
+  one_tick: boolean
+  /** The model change underneath the break, in the Watch's words.
+   *  **Empty where it could not be attributed** — the screen says so
+   *  rather than filling it with the nearest change. */
+  cause: string
+}
+
+/**
+ * What a model revision did to the deliverables.
+ *
+ * Four lists, four different sentences, never summed: only `broken` is
+ * the revision's doing, `still_drifting` is explicitly not, and
+ * `coverage_changed` is « I lost sight of it », which is not « it
+ * broke ».
+ */
+export interface DeckDelta {
+  old_artifact_id: string
+  old_version: number
+  new_artifact_id: string
+  new_version: number
+  deck_artifact_id: string
+  deck_filename: string
+  computed_at: string
+  checked_old: number
+  checked_new: number
+  broken: DeckDeltaItem[]
+  repaired: DeckDeltaItem[]
+  still_drifting: DeckDeltaItem[]
+  coverage_changed: DeckDeltaItem[]
+}
+
+export interface VersionDelta {
+  old_artifact_id: string
+  old_version: number
+  old_uploaded_at: string
+  old_uploaded_by: {
+    id: string
+    name: string
+    avatar_url: string | null
+  } | null
+  new_artifact_id: string
+  new_version: number
+  new_uploaded_at: string
+  new_uploaded_by: {
+    id: string
+    name: string
+    avatar_url: string | null
+  } | null
+  computed_at: string
+  new_defects: number
+  repaired_defects: number
+  persistent_defects: number
+  unmatched_old: number
+  unmatched_new: number
+  sheets_added: string[]
+  sheets_removed: string[]
+  items: DeltaItem[]
+}
+
+/**
+ * The audit re-run on one stored version, persisted nowhere.
+ *
+ * What the version dropdown re-scopes the page to. The findings carry
+ * no durable identity — they cannot be accepted, dismissed or
+ * corrected, because rulings belong to the current version — and
+ * `checked_at` is the moment the answer was computed, not a stored
+ * run's date.
+ */
+export interface VersionAudit {
+  artifact_id: string
+  version: number
+  filename: string
+  uploaded_by: { id: string; name: string; avatar_url: string | null } | null
+  uploaded_at: string
+  checked_at: string
+  summary: {
+    errors: number
+    smells: number
+    tiers: Record<string, number>
+    cells: number
+    rules_off: string[]
+    values_only: boolean
+    abstentions: { rule: string; why: string }[]
+  }
+  findings: Finding[]
 }
 
 /** One place a file states a figure, for the check-a-file card. */
@@ -722,7 +909,11 @@ export interface TeamMember {
   email: string
   avatar_url: string | null
   you: boolean
-  deals: string[]
+  /** How many of this organization's deals they are on — a number,
+   *  never a name. Deal names left this payload by the founder's
+   *  decision (26 August): which deals a colleague is on is the
+   *  deal's business, not the organization's. */
+  deal_count: number
 }
 
 export interface Team {
@@ -739,6 +930,47 @@ export interface RecentCheck {
   against: string
   checked_at: string
   counts: Record<string, number>
+}
+
+/** One cell the recalculation engine did not reproduce — both numbers. */
+export interface RecalcDiff {
+  ref: string
+  stored: number | null
+  computed: number | string | null
+  tolerance: number | null
+}
+
+/** One construct the engine may not honestly compute, in words. */
+export interface RecalcRefusal {
+  ref: string
+  category: string
+  target: string
+  route: 'arbiter' | 'refuse' | string
+}
+
+/** The fidelity gate's answer for one stored version — the mark.
+ *  `verdict` is the gate's own: `pass` is the only one that reads
+ *  « validated by recalculation »; `refused` carries its reasons in
+ *  `refusals`; `fail` names the differing cells; `nothing-compared`
+ *  means the formula cells carry no stored values to certify. */
+export interface RecalcMark {
+  verdict: 'pass' | 'fail' | 'refused' | 'nothing-compared' | string
+  engine: string | null
+  computed_at: string
+  compared: number
+  matched: number
+  match_rate: number | null
+  mismatches: RecalcDiff[]
+  mismatch_count: number
+  engine_errors: RecalcDiff[]
+  engine_error_count: number
+  not_computed: number
+  no_stored_value: number
+  refusals: RecalcRefusal[]
+  refusal_count: number
+  route: string | null
+  volatile_roots: number
+  volatile_cone: number
 }
 
 export class ApiError extends Error {
@@ -855,6 +1087,41 @@ export class TieOutApi {
   /** A link to the file itself — the corrected deck, in particular. */
   download(artifactId: string): Promise<{ url: string; filename: string }> {
     return this.call(`/artifacts/${artifactId}/download`)
+  }
+
+  /**
+   * The marked-up model — generated on request, never stored. The
+   * response is the file itself, so this returns a blob for the browser
+   * to save; the filename is the server's (« … — marked up.xlsx »). A
+   * 404 carries the server's own sentence — no model yet, or nothing
+   * open to mark up — and is shown to the person as it stands.
+   */
+  async markedUpModel(
+    dealId: string,
+  ): Promise<{ blob: Blob; filename: string }> {
+    const token = this.options.token?.() ?? null
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/deals/${dealId}/markup`,
+      {
+        credentials: 'include',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      },
+    )
+    if (!response.ok) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ?? 'something went wrong',
+      )
+    }
+    const disposition = response.headers.get('content-disposition') ?? ''
+    const match = /filename\*=UTF-8''([^;]+)/.exec(disposition)
+    const filename = match
+      ? decodeURIComponent(match[1])
+      : 'model — marked up.xlsx'
+    return { blob: await response.blob(), filename }
   }
 
   chain(findingId: string): Promise<Chain> {
@@ -1040,6 +1307,82 @@ export class TieOutApi {
   /** Every figure in a document, by page, and what became of each. */
   versions(artifactId: string): Promise<Version[]> {
     return this.call(`/artifacts/${artifactId}/versions`)
+  }
+
+  /** The audit re-run on one stored version — computed on request,
+   *  persisted nowhere. What picking a version re-scopes the page to. */
+  versionAudit(artifactId: string): Promise<VersionAudit> {
+    return this.call(`/artifacts/${artifactId}/audit`)
+  }
+
+  /** What a revision did, in review language — the Watch, served.
+   *  `null` for a first version: no revision to report, not an error.
+   *  A version whose bytes were dropped answers 404 with the storage
+   *  sentence, shown to the person as it stands. */
+  versionDelta(
+    artifactId: string,
+    against?: string,
+  ): Promise<VersionDelta | null> {
+    const query = against ? `?against=${against}` : ''
+    return this.call(`/artifacts/${artifactId}/delta${query}`)
+  }
+
+  /** What a revision did to the deliverables — the same deck tied out
+   *  against both versions. `null` when there is no earlier version or
+   *  the deal holds no deck: both are absences, not errors. */
+  deckDelta(artifactId: string, against?: string): Promise<DeckDelta | null> {
+    const query = against ? `?against=${against}` : ''
+    return this.call(`/artifacts/${artifactId}/deck-delta${query}`)
+  }
+
+  /** A source document's stored record — every extracted number with
+   *  its page and box, refusals alongside. Both lists empty usually
+   *  means the document has not been read into the Chain yet. */
+  documentFacts(artifactId: string): Promise<DocumentFacts> {
+    return this.at(`/v1/chain/documents/${artifactId}/facts`)
+  }
+
+  /** Read a stored source PDF and write its facts down — idempotent,
+   *  so re-reading replaces the earlier extraction wholesale. */
+  extractDocument(artifactId: string): Promise<DocumentFacts> {
+    return this.at(`/v1/chain/documents/${artifactId}/extract`, {
+      method: 'POST',
+    })
+  }
+
+  /** One page of a stored source PDF as pixels, for the viewer. The
+   *  caller owns the object URL and revokes it when done. */
+  async pageImage(artifactId: string, page: number): Promise<string> {
+    const token = this.options.token?.() ?? null
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/artifacts/${artifactId}/page/${page}`,
+      {
+        credentials: 'include',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      },
+    )
+    if (!response.ok) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ?? 'something went wrong',
+      )
+    }
+    return URL.createObjectURL(await response.blob())
+  }
+
+  /** Run the fidelity gate on this version and keep its mark —
+   *  deliberate and heavy: the whole model is recalculated through the
+   *  engine and compared cell by cell, unless the prescan refuses it
+   *  first. The stored mark then travels on the artifact's `counts`
+   *  under `recalc`. A machine without an adequate engine answers 503
+   *  with the sentence saying so. */
+  recalculate(artifactId: string): Promise<RecalcMark> {
+    return this.call(`/artifacts/${artifactId}/recalculate`, {
+      method: 'POST',
+    })
   }
 
   /** What travels with this file that is not on its screen. */

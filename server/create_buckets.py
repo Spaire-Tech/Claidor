@@ -1,4 +1,5 @@
 import boto3
+
 from polar.config import settings
 
 s3 = boto3.client(
@@ -21,7 +22,9 @@ for bucket in buckets:
         kwargs = {"Bucket": bucket}
         # us-east-1 must NOT include LocationConstraint
         if settings.AWS_REGION != "us-east-1":
-            kwargs["CreateBucketConfiguration"] = {"LocationConstraint": settings.AWS_REGION}
+            kwargs["CreateBucketConfiguration"] = {
+                "LocationConstraint": settings.AWS_REGION
+            }
         s3.create_bucket(**kwargs)
         print(f"Created: {bucket}")
     except s3.exceptions.BucketAlreadyOwnedByYou:

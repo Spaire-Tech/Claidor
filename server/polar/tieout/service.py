@@ -14,10 +14,13 @@ both the offline scripts and the running product.
 
 import hashlib
 import re
+import tempfile
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import structlog
 
@@ -32,6 +35,7 @@ from polar.models import (
     Dossier,
     FindingKind,
     FindingSeverity,
+    FindingState,
     LinkState,
     OneOffCheck,
 )
@@ -380,6 +384,672 @@ class TieOutService:
         }
         return await repository.finish_run(run, summary=summary)
 
+    def _audit_one(
+        self,
+        model: Artifact,
+        cells: Sequence[Any],
+        *,
+        dossier_id: UUID,
+        check_run_id: UUID | None,
+        rules_off: set[str],
+    ) -> tuple[list[FindingRow], dict[str, Any]]:
+        """One model's audit, computed from its stored cells.
+
+        Everything a run keeps per model — the findings and the record
+        (errors, smells, values-only, abstentions, tallies) — computed
+        here and **persisted nowhere**, so that :meth:`run_audit` and
+        the version-scoped read (:meth:`audit_of_version`) are one
+        computation with two callers, never two computations that can
+        drift apart.
+        """
+        from .analytics import (
+            ANALYTIC_RULE_NAMES,
+            ANALYTIC_STANDARD_SENTENCES,
+            ANALYTIC_STANDARDS,
+            run_analytics,
+        )
+        from .audit import HEADLINES, plain_words
+        from .audit import audit as run_rules
+        from .structure import read_structure
+
+        statement_keys = set(ANALYTIC_RULE_NAMES) - rules_off
+        findings: list[FindingRow] = []
+        errors = smells = 0
+        abstentions: list[dict[str, str]] = []
+        tallies: dict[str, dict[str, int]] = {}
+
+        book = _workbook_of(cells)
+        _restore_file_facts(book, model.counts)
+        structure = read_structure(book)
+        result = run_rules(book, axes=structure.axes)
+        result.findings = [one for one in result.findings if one.rule not in rules_off]
+        errors += len(result.errors)
+        smells += len(result.smells)
+        for defect in result.findings:
+            findings.append(
+                FindingRow(
+                    dossier_id=dossier_id,
+                    check_run_id=check_run_id,
+                    artifact_id=model.id,
+                    kind=FindingKind.audit,
+                    severity=FindingSeverity(defect.severity),
+                    fingerprint=_fingerprint(
+                        "audit", model.lineage_id, defect.ref, defect.rule
+                    ),
+                    rule=defect.rule,
+                    standard=defect.source,
+                    printed=defect.ref,
+                    #: The plain sentence is the title — what a
+                    #: person reads first; the formula stays in the
+                    #: detail as evidence beneath it.
+                    title=plain_words(defect, structure.axes),
+                    detail=defect.detail,
+                    location=defect.ref,
+                    # An audit finding already sits at a cell, which
+                    # is a coordinate Excel selects as it stands.
+                    anchor={
+                        "kind": "cell",
+                        "ref": defect.ref,
+                        "sheet": defect.sheet,
+                    },
+                    evidence={
+                        "sheet": defect.sheet,
+                        "name": defect.name,
+                        "headline": HEADLINES.get(defect.rule, ""),
+                        "tier": defect.tier,
+                        "weight": defect.weight,
+                        "basis": defect.basis,
+                        "cells": defect.cells,
+                        "chain": render_chain(book, defect.ref),
+                        "figure": defect.figure,
+                        "figure_unit": defect.figure_unit,
+                        "flow": defect.flow,
+                        "fix": defect.fix,
+                        "fix_before": defect.fix_before,
+                        "grid": _neighbourhood(
+                            book,
+                            defect.sheet,
+                            defect.ref,
+                            axes=structure.axes,
+                        ),
+                    },
+                )
+            )
+
+        #: The statement checks, on the same workbook. They read
+        #: values, not formulas, so a values-pasted close copy —
+        #: where the rules above are nearly blind — is exactly
+        #: where they earn their keep.
+        if statement_keys:
+            told = run_analytics(book, structure)
+            for claim in told.findings:
+                if claim.rule not in statement_keys:
+                    continue
+                if claim.severity == "smell":
+                    smells += 1
+                else:
+                    errors += 1
+                findings.append(
+                    FindingRow(
+                        dossier_id=dossier_id,
+                        check_run_id=check_run_id,
+                        artifact_id=model.id,
+                        kind=FindingKind.audit,
+                        severity=FindingSeverity(claim.severity),
+                        fingerprint=_fingerprint(
+                            "audit", model.lineage_id, claim.ref, claim.rule
+                        ),
+                        rule=claim.rule,
+                        standard=ANALYTIC_STANDARDS.get(claim.rule, ""),
+                        printed=claim.figure,
+                        title=(f"{ANALYTIC_RULE_NAMES[claim.rule]} at {claim.ref}"),
+                        detail=claim.detail,
+                        location=claim.ref,
+                        anchor={
+                            "kind": "cell",
+                            "ref": claim.ref,
+                            "sheet": claim.sheet,
+                        },
+                        evidence={
+                            "sheet": claim.sheet,
+                            "name": claim.row_label,
+                            "headline": ANALYTIC_RULE_NAMES[claim.rule],
+                            "period": claim.period,
+                            "value": claim.value,
+                            "figure": claim.figure,
+                            "figure_unit": claim.figure_unit,
+                            "grid": _neighbourhood(
+                                book,
+                                claim.sheet,
+                                claim.ref,
+                                axes=structure.axes,
+                            ),
+                            "standard_sentence": (
+                                ANALYTIC_STANDARD_SENTENCES.get(claim.rule, "")
+                            ),
+                        },
+                    )
+                )
+            abstentions.extend(
+                {"rule": one.rule, "why": one.why}
+                for one in told.abstentions
+                if one.rule in statement_keys
+            )
+            for rule, tally in told.tallies.items():
+                if rule not in statement_keys:
+                    continue
+                merged = tallies.setdefault(rule, {"total": 0, "clean": 0})
+                merged["total"] += tally["total"]
+                merged["clean"] += tally["clean"]
+
+        return findings, {
+            "errors": errors,
+            "smells": smells,
+            "values_only": structure.values_pasted,
+            "abstentions": abstentions,
+            "tallies": tallies,
+        }
+
+    @staticmethod
+    def _tiers_of(findings: Sequence[FindingRow]) -> dict[str, int]:
+        """The attention-tier tally. Same fallback as the deal list: a
+        finding without a carried tier reads by its severity."""
+        tiers = {"1": 0, "2": 0, "3": 0}
+        for one in findings:
+            carried = int((one.evidence or {}).get("tier") or 0)
+            if not carried:
+                carried = 1 if one.severity is FindingSeverity.error else 3
+            tiers[str(min(max(carried, 1), 3))] += 1
+        return tiers
+
+    async def audit_of_version(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> dict[str, Any] | None:
+        """The audit, re-run on one stored version and written nowhere.
+
+        The version dropdown's re-scoping: picking an older version
+        shows what the audit says about *that* upload — computed now,
+        from the cells stored at its ingest, with the firm's house
+        rules applied exactly as a real run applies them. Nothing is
+        persisted: the deal's findings, runs and rulings all belong to
+        the current version, and a look at history must never move
+        them. That is also why the findings here carry no durable
+        identity — they cannot be accepted, dismissed or corrected,
+        and the screen says so instead of offering dead buttons.
+
+        `None` when the artifact is not this deal's, not a model, or
+        not readable — the caller turns that into the same 404 as
+        everywhere else.
+        """
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if (
+            artifact is None
+            or artifact.dossier_id != dossier_id
+            or artifact.kind is not ArtifactKind.model
+            or artifact.status is not ArtifactStatus.ready
+        ):
+            return None
+        rules_off = await self._rules_off(repository, dossier_id)
+        cells = await repository.cells_for_graph(artifact.id)
+        findings, record = self._audit_one(
+            artifact,
+            cells,
+            dossier_id=dossier_id,
+            check_run_id=None,
+            rules_off=rules_off,
+        )
+        #: In-memory rows, never flushed — the column defaults that
+        #: would land at flush are supplied here so the renderer can
+        #: read them.
+        now = datetime.now(UTC)
+        for one in findings:
+            one.id = uuid4()
+            one.created_at = now
+            one.state = FindingState.open
+            one.note = ""
+            one.one_tick = False
+            one.page = 0
+            one.printed = one.printed or ""
+            one.expected = one.expected or ""
+        return {
+            "artifact": artifact,
+            "checked_at": now,
+            "findings": findings,
+            "summary": {
+                "errors": int(record["errors"]),
+                "smells": int(record["smells"]),
+                "tiers": self._tiers_of(findings),
+                "cells": int(artifact.counts.get("cells", 0)),
+                "rules_off": sorted(rules_off),
+                "values_only": bool(record["values_only"]),
+                "abstentions": record["abstentions"],
+                "tallies": record["tallies"],
+            },
+        }
+
+    async def version_delta(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        against_id: UUID | None = None,
+    ) -> dict[str, Any] | None:
+        """The Watch's delta report between two stored versions.
+
+        The Versions screen's answer to « what did this revision do »:
+        the Watch (`polar.tieout.watch`, a read-only library here per
+        lanes.md) reads both files and reports in review language —
+        what broke, what changed class, where the method moved, which
+        assumptions moved, which outputs moved materially, the
+        structure, then the repairs. Computed on request and persisted
+        nowhere, same posture as the version audit and the marked-up
+        copy.
+
+        The Watch reads *files*, not rows — that is its own design (a
+        cell the ingest labeller skipped is still a cell the Watch
+        reports) — so this needs both versions' stored bytes. A version
+        whose bytes were dropped under « keep the chain, drop the
+        documents » raises :class:`storage.FileNotKept` with the
+        sentence that says what to do; the caller shows it as it
+        stands.
+
+        `against_id` picks the old side; left out, the version before
+        the given one. Returns None when there is nothing earlier —
+        a first upload has no revision to report, which is not an
+        error. Both sides must be ready models of the same lineage in
+        this deal; anything else reads as not found to the caller.
+        """
+        repository = TieOutRepository.from_session(session)
+        sides = await self._delta_pair(
+            repository,
+            dossier_id=dossier_id,
+            artifact_id=artifact_id,
+            against_id=against_id,
+        )
+        if sides is None:
+            return None
+        old_side, new_side = sides
+
+        return {
+            "old": old_side,
+            "new": new_side,
+            "computed_at": datetime.now(UTC),
+            "report": delta_between(old_side, new_side),
+        }
+
+    @staticmethod
+    def identical_upload(old_side: Artifact, new_side: Artifact) -> bool:
+        """Whether two versions are the same file, byte for byte.
+
+        **The one thing about a revision that can be known without
+        reading anything.** Measured: the Watch spends 158 seconds on a
+        432,596-cell model to conclude that a re-upload changed
+        nothing — 58 of those reading the two files, 5 auditing them,
+        and the rest aligning sheets, 87% of it in two large sheets.
+        Two equal digests answer the same question in a string
+        comparison, and answer it *exactly*: identical bytes are
+        identical workbooks.
+
+        This is not a faster comparison. It is not comparing — the
+        successor to « compute the delta from stored cells », which was
+        measured, found to lose an `unmatched_new` on a real pair, and
+        refused (`logs/atelier/delta_stored.py`).
+
+        Ingest has recorded the digest since 28 Aug; a version stored
+        before that has none and is simply compared as before. No
+        migration, and no guessing that two files match because two
+        absences do — hence the explicit emptiness check.
+        """
+        old_sha = str((old_side.counts or {}).get("sha256") or "")
+        new_sha = str((new_side.counts or {}).get("sha256") or "")
+        return bool(old_sha) and old_sha == new_sha
+
+    async def deck_delta(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        deck_id: UUID | None = None,
+        against_id: UUID | None = None,
+    ) -> dict[str, Any] | None:
+        """What this model revision did to the deliverables.
+
+        **The realistic failure this product exists for.** Not one typo:
+        a model revision the deck never caught up with, because nobody
+        knows which of its hundred printed figures the revision touched.
+        The Watch's `deck_delta` (C5) ties the *same* deck out against
+        both versions and reads the difference in review language:
+
+        - **broken** — agreed before, drifts now. The revision did this.
+        - **repaired** — drifted before, agrees now. The revision came
+          to the deck.
+        - **still drifting** — disagrees with both, so it is not this
+          revision's fault and is kept off its account.
+        - **coverage changed** — reconcilable against one version only.
+          « I lost sight of it » is not « it broke », and folding the
+          two together is how a checker earns a reputation for crying
+          wolf.
+
+        Each break carries the model change underneath it in the delta
+        report's own words, or **nothing** where the Watch could not
+        attribute it — never the nearest change, which would be a guess
+        printed as a cause.
+
+        `version_delta` answers « what did this revision do to the
+        model »; this answers « and what did that do to what we sent
+        out ». The deals list's `stale_figures` count approximates it
+        from links on changed cells; this is the real reconciliation,
+        and it disagrees with that count whenever a changed cell had no
+        link or a link survived the change.
+
+        Three files, read on request and persisted nowhere — the same
+        posture as the version delta and for the same reason. Returns
+        None when there is no earlier version or the deal holds no
+        deck; either is an absence, not an error. A file whose bytes
+        were dropped raises :class:`storage.FileNotKept`.
+        """
+        from .watch import deck_delta as watch_deck_delta
+
+        repository = TieOutRepository.from_session(session)
+        sides = await self._delta_pair(
+            repository,
+            dossier_id=dossier_id,
+            artifact_id=artifact_id,
+            against_id=against_id,
+        )
+        if sides is None:
+            return None
+        old_side, new_side = sides
+
+        current = await repository.current_artifacts(dossier_id)
+        decks = [one for one in current if one.kind is ArtifactKind.deck]
+        if deck_id is not None:
+            decks = [one for one in decks if one.id == deck_id]
+        deck = decks[0] if decks else None
+        if deck is None:
+            return None
+
+        old_bytes = storage.fetch(old_side)
+        new_bytes = storage.fetch(new_side)
+        deck_bytes = storage.fetch(deck)
+        paths: list[str] = []
+        try:
+            for payload, source in (
+                (old_bytes, old_side),
+                (new_bytes, new_side),
+                (deck_bytes, deck),
+            ):
+                suffix = Path(source.filename).suffix or ".xlsx"
+                with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                    f.write(payload)
+                    paths.append(f.name)
+            report = watch_deck_delta(paths[0], paths[1], paths[2])
+        finally:
+            for path in paths:
+                Path(path).unlink(missing_ok=True)
+
+        return {
+            "old": old_side,
+            "new": new_side,
+            "deck": deck,
+            "computed_at": datetime.now(UTC),
+            "report": report,
+        }
+
+    async def _delta_pair(
+        self,
+        repository: TieOutRepository,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        against_id: UUID | None,
+    ) -> tuple[Artifact, Artifact] | None:
+        """The old and new sides of a revision, both checked.
+
+        One gate for both delta answers, so « which pairs may be
+        compared » cannot come to mean two different things — a route
+        that admitted a pair the other refused would be a membership
+        hole wearing a feature's clothes.
+        """
+        new_side = await repository.get_artifact(artifact_id)
+        if (
+            new_side is None
+            or new_side.dossier_id != dossier_id
+            or new_side.kind is not ArtifactKind.model
+            or new_side.status is not ArtifactStatus.ready
+        ):
+            return None
+        if against_id is None:
+            old_side = await repository.previous_version(new_side)
+            if old_side is None:
+                return None
+            return old_side, new_side
+        old_side = await repository.get_artifact(against_id)
+        if (
+            old_side is None
+            or old_side.dossier_id != dossier_id
+            or old_side.lineage_id != new_side.lineage_id
+            or old_side.kind is not ArtifactKind.model
+            or old_side.status is not ArtifactStatus.ready
+            or old_side.id == new_side.id
+        ):
+            return None
+        return old_side, new_side
+
+    async def delta_sides(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> tuple[Artifact, Artifact] | None:
+        """The two versions :func:`delta_between` would read, resolved.
+
+        Split out for a caller that must decide *whether* to pay for the
+        report separately from paying for it. The model assistant is
+        one: it loads a workspace before its loop starts, and reading
+        two workbooks to answer a question nobody asked would put that
+        cost on every question. It resolves the sides here, in async
+        context, and calls :func:`delta_between` only if the `versions`
+        tool is actually reached.
+        """
+        repository = TieOutRepository.from_session(session)
+        new_side = await repository.get_artifact(artifact_id)
+        if (
+            new_side is None
+            or new_side.dossier_id != dossier_id
+            or new_side.kind is not ArtifactKind.model
+            or new_side.status is not ArtifactStatus.ready
+        ):
+            return None
+        old_side = await repository.previous_version(new_side)
+        if old_side is None:
+            return None
+        return old_side, new_side
+
+    async def page_image(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        page: int,
+    ) -> bytes | None:
+        """One page of a stored source PDF, as pixels.
+
+        The source viewer's ground: the Chain's facts carry page
+        numbers and boxes in the PDF's own point coordinates, and this
+        renders the page those coordinates live on, at 2× for legible
+        text. Computed on request from the stored bytes, cached
+        nowhere — the same posture as every other derived answer here.
+
+        None when the artifact is not this deal's or not a PDF — the
+        caller turns that into the same 404 as everywhere. A page
+        outside the document raises :class:`ValueError` with the honest
+        range; missing bytes raise :class:`storage.FileNotKept` with
+        the upload-it-again sentence.
+        """
+        import io
+
+        #: The Chain's own approved reader (lanes.md, lead decision) —
+        #: its rendering backend included. Nothing here imports a
+        #: transitive dependency directly.
+        import pdfplumber
+
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if (
+            artifact is None
+            or artifact.dossier_id != dossier_id
+            or not artifact.filename.lower().endswith(".pdf")
+        ):
+            return None
+        payload = storage.fetch(artifact)
+
+        with pdfplumber.open(io.BytesIO(payload)) as document:
+            total = len(document.pages)
+            if page < 1 or page > total:
+                raise ValueError(
+                    f"{artifact.filename} has {total} page"
+                    f"{'' if total == 1 else 's'}; there is no page {page}."
+                )
+            #: 144dpi is 2× the PDF's own 72dpi points — the facts' box
+            #: coordinates scale onto these pixels by exactly ×2.
+            image = document.pages[page - 1].to_image(resolution=144).original
+            buffer = io.BytesIO()
+            image.save(buffer, format="PNG")
+            return buffer.getvalue()
+
+    #: How many differing or refused cells the mark names outright; the
+    #: rest are counted. A screen that lists ten thousand refs answers
+    #: nothing — the counts stay exact and the worst are named.
+    RECALC_NAMED = 12
+
+    async def recalculate(
+        self,
+        session: AsyncSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> dict[str, Any] | None:
+        """Run the fidelity gate on one stored model and keep its mark.
+
+        The gate's question (`polar.tieout.recalc`, a read-only library
+        here per lanes.md): given this exact file, unchanged, does our
+        engine reproduce the values Excel left in it? The denylist
+        prescan runs first — a file carrying constructs no engine of
+        ours may honestly compute is **refused before any comparison**,
+        with each construct named and where it routes (real Excel via
+        the arbiter, or an honest no). Only a clean file is recalculated
+        through LibreOffice and diffed cell by cell.
+
+        Unlike the version delta this one is *persisted* — into the
+        artifact's own loose ``counts`` under ``recalc`` — because the
+        mark is a fact about a version that every screen must repeat
+        without re-running a calculation engine. A new upload is a new
+        artifact with no mark: the mark can never describe bytes other
+        than the ones it was computed from.
+
+        The engine work runs in a worker thread: one document at a time,
+        one soffice pair per call, torn down before returning — the
+        registered discipline for heavy workbook jobs on shared boxes.
+        Raises :class:`polar.tieout.recalc.CalculatorError` when no
+        adequate LibreOffice exists or the engine dies on the file; the
+        caller says that sentence rather than storing a guess. Returns
+        None when the artifact is not this deal's ready model.
+        """
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if (
+            artifact is None
+            or artifact.dossier_id != dossier_id
+            or artifact.kind is not ArtifactKind.model
+            or artifact.status is not ArtifactStatus.ready
+        ):
+            return None
+        payload = storage.fetch(artifact)
+        suffix = Path(artifact.filename).suffix or ".xlsx"
+
+        import asyncio
+
+        fidelity, engine = await asyncio.to_thread(
+            self._gate_stored_model, payload, suffix
+        )
+
+        named = self.RECALC_NAMED
+        mark: dict[str, Any] = {
+            "verdict": fidelity.verdict,
+            "engine": engine,
+            "computed_at": datetime.now(UTC).isoformat(),
+            "compared": fidelity.compared,
+            "matched": fidelity.matched,
+            "match_rate": fidelity.match_rate,
+            "mismatches": [_diff_fact(one) for one in fidelity.mismatches[:named]],
+            "mismatch_count": len(fidelity.mismatches),
+            "engine_errors": [
+                _diff_fact(one) for one in fidelity.engine_errors[:named]
+            ],
+            "engine_error_count": len(fidelity.engine_errors),
+            "not_computed": len(fidelity.not_computed),
+            "no_stored_value": len(fidelity.no_stored_value),
+            "refusals": [
+                {
+                    "ref": hit.ref,
+                    "category": str(hit.category),
+                    "target": hit.target,
+                    "route": str(hit.route),
+                }
+                for hit in fidelity.refusals[:named]
+            ],
+            "refusal_count": len(fidelity.refusals),
+            "route": str(fidelity.route) if fidelity.route is not None else None,
+            "volatile_roots": len(fidelity.volatile_roots),
+            "volatile_cone": fidelity.volatile_cone,
+        }
+        artifact.counts = {**artifact.counts, "recalc": mark}
+        return mark
+
+    @staticmethod
+    def _gate_stored_model(payload: bytes, suffix: str) -> tuple[Any, str | None]:
+        """Prescan, recalculate and gate one file's bytes. Blocking; threaded."""
+        from .recalc import gate_file, prescan
+        from .recalc.denylist import route_for
+        from .recalc.gate import read_calc_settings
+        from .recalc.uno_calc import UnoCalculator
+        from .workbook import read_workbook
+
+        path = ""
+        try:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                f.write(payload)
+                path = f.name
+            cells = read_workbook(path).cells
+            hits = prescan(cells)
+            route = route_for(hits)
+            if route is not None:
+                #: Refused before comparison: no engine runs, and the
+                #: mark carries the constructs and the route in words.
+                return gate_file(cells, {}, refusals=hits, route=route), None
+            settings = read_calc_settings(path)
+            calculator = UnoCalculator()
+            calculator.start()
+            try:
+                result = calculator.recalculate(path)
+            finally:
+                calculator.stop()
+            fidelity = gate_file(cells, result.values, settings=settings)
+            return fidelity, result.engine
+        finally:
+            if path:
+                Path(path).unlink(missing_ok=True)
+
     async def run_audit(
         self, session: AsyncSession, *, dossier_id: UUID, user_id: UUID | None
     ) -> CheckRun:
@@ -398,16 +1068,6 @@ class TieOutService:
         summary says when a model is such a copy, what each check
         examined, and where one abstained rather than guess.
         """
-        from .analytics import (
-            ANALYTIC_RULE_NAMES,
-            ANALYTIC_STANDARD_SENTENCES,
-            ANALYTIC_STANDARDS,
-            run_analytics,
-        )
-        from .audit import HEADLINES, plain_words
-        from .audit import audit as run_rules
-        from .structure import read_structure
-
         repository = TieOutRepository.from_session(session)
         rules_off = await self._rules_off(repository, dossier_id)
         models = [
@@ -431,152 +1091,31 @@ class TieOutService:
         values_only = False
         abstentions: list[dict[str, str]] = []
         tallies: dict[str, dict[str, int]] = {}
-        statement_keys = set(ANALYTIC_RULE_NAMES) - rules_off
         for model in models:
-            cells = await repository.cells_of(model.id)
-            book = _workbook_of(cells)
-            #: The cells cannot say what the workbook hides — that fact
-            #: was kept on the artifact at ingest, and the audit needs
-            #: it back before it runs.
-            book.hidden_sheets = tuple(model.counts.get("hidden_sheets", []))
-            book.very_hidden_sheets = tuple(model.counts.get("very_hidden_sheets", []))
-            structure = read_structure(book)
-            result = run_rules(book, axes=structure.axes)
-            result.findings = [
-                one for one in result.findings if one.rule not in rules_off
-            ]
-            errors += len(result.errors)
-            smells += len(result.smells)
-            for defect in result.findings:
-                findings.append(
-                    FindingRow(
-                        dossier_id=dossier_id,
-                        check_run_id=run.id,
-                        artifact_id=model.id,
-                        kind=FindingKind.audit,
-                        severity=FindingSeverity(defect.severity),
-                        fingerprint=_fingerprint(
-                            "audit", model.lineage_id, defect.ref, defect.rule
-                        ),
-                        rule=defect.rule,
-                        standard=defect.source,
-                        printed=defect.ref,
-                        #: The plain sentence is the title — what a
-                        #: person reads first; the formula stays in the
-                        #: detail as evidence beneath it.
-                        title=plain_words(defect, structure.axes),
-                        detail=defect.detail,
-                        location=defect.ref,
-                        # An audit finding already sits at a cell, which
-                        # is a coordinate Excel selects as it stands.
-                        anchor={
-                            "kind": "cell",
-                            "ref": defect.ref,
-                            "sheet": defect.sheet,
-                        },
-                        evidence={
-                            "sheet": defect.sheet,
-                            "name": defect.name,
-                            "headline": HEADLINES.get(defect.rule, ""),
-                            "tier": defect.tier,
-                            "weight": defect.weight,
-                            "basis": defect.basis,
-                            "cells": defect.cells,
-                            "chain": render_chain(book, defect.ref),
-                            "figure": defect.figure,
-                            "figure_unit": defect.figure_unit,
-                            "flow": defect.flow,
-                            "fix": defect.fix,
-                            "fix_before": defect.fix_before,
-                            "grid": _neighbourhood(
-                                book,
-                                defect.sheet,
-                                defect.ref,
-                                axes=structure.axes,
-                            ),
-                        },
-                    )
-                )
-
-            #: The statement checks, on the same workbook. They read
-            #: values, not formulas, so a values-pasted close copy —
-            #: where the rules above are nearly blind — is exactly
-            #: where they earn their keep.
-            values_only = values_only or structure.values_pasted
-            if statement_keys:
-                told = run_analytics(book, structure)
-                for claim in told.findings:
-                    if claim.rule not in statement_keys:
-                        continue
-                    if claim.severity == "smell":
-                        smells += 1
-                    else:
-                        errors += 1
-                    findings.append(
-                        FindingRow(
-                            dossier_id=dossier_id,
-                            check_run_id=run.id,
-                            artifact_id=model.id,
-                            kind=FindingKind.audit,
-                            severity=FindingSeverity(claim.severity),
-                            fingerprint=_fingerprint(
-                                "audit", model.lineage_id, claim.ref, claim.rule
-                            ),
-                            rule=claim.rule,
-                            standard=ANALYTIC_STANDARDS.get(claim.rule, ""),
-                            printed=claim.figure,
-                            title=(f"{ANALYTIC_RULE_NAMES[claim.rule]} at {claim.ref}"),
-                            detail=claim.detail,
-                            location=claim.ref,
-                            anchor={
-                                "kind": "cell",
-                                "ref": claim.ref,
-                                "sheet": claim.sheet,
-                            },
-                            evidence={
-                                "sheet": claim.sheet,
-                                "name": claim.row_label,
-                                "headline": ANALYTIC_RULE_NAMES[claim.rule],
-                                "period": claim.period,
-                                "value": claim.value,
-                                "figure": claim.figure,
-                                "figure_unit": claim.figure_unit,
-                                "grid": _neighbourhood(
-                                    book,
-                                    claim.sheet,
-                                    claim.ref,
-                                    axes=structure.axes,
-                                ),
-                                "standard_sentence": (
-                                    ANALYTIC_STANDARD_SENTENCES.get(claim.rule, "")
-                                ),
-                            },
-                        )
-                    )
-                abstentions.extend(
-                    {"rule": one.rule, "why": one.why}
-                    for one in told.abstentions
-                    if one.rule in statement_keys
-                )
-                for rule, tally in told.tallies.items():
-                    if rule not in statement_keys:
-                        continue
-                    merged = tallies.setdefault(rule, {"total": 0, "clean": 0})
-                    merged["total"] += tally["total"]
-                    merged["clean"] += tally["clean"]
+            cells = await repository.cells_for_graph(model.id)
+            found, record = self._audit_one(
+                model,
+                cells,
+                dossier_id=dossier_id,
+                check_run_id=run.id,
+                rules_off=rules_off,
+            )
+            findings.extend(found)
+            errors += int(record["errors"])
+            smells += int(record["smells"])
+            values_only = values_only or bool(record["values_only"])
+            abstentions.extend(record["abstentions"])
+            for rule, tally in record["tallies"].items():
+                merged = tallies.setdefault(rule, {"total": 0, "clean": 0})
+                merged["total"] += tally["total"]
+                merged["clean"] += tally["clean"]
 
         await repository.replace_findings(dossier_id, CheckKind.audit, findings)
 
         # The attention tiers, tallied per run so the trend over versions
         # can be drawn from run history — errors and smells alone cannot
-        # separate a defect from hygiene. Same fallback as the deal list:
-        # a finding without a carried tier reads by its severity.
-        tiers = {"1": 0, "2": 0, "3": 0}
-        for one in findings:
-            carried = int((one.evidence or {}).get("tier") or 0)
-            if not carried:
-                carried = 1 if one.severity is FindingSeverity.error else 3
-            tiers[str(min(max(carried, 1), 3))] += 1
+        # separate a defect from hygiene.
+        tiers = self._tiers_of(findings)
 
         return await repository.finish_run(
             run,
@@ -1513,12 +2052,137 @@ class TieOutService:
 # --- adapters ------------------------------------------------------------
 
 
-def _workbook_of(cells: Sequence[CellRow]) -> Workbook:
+def models_of(artifacts: Sequence[Artifact]) -> list[Artifact]:
+    """The deal's models, most recently uploaded first.
+
+    Sorted here rather than taken in the order `current_artifacts`
+    happens to return, which follows `list_artifacts`' ordering and
+    promises nothing about it. Three callers used to write
+    `next(one for one in current if one.kind is model)` and get
+    whichever lineage came first — the right file most of the time, by
+    luck, and silently the wrong one on a deal carrying two models.
+    """
+    models = [one for one in artifacts if one.kind is ArtifactKind.model]
+    models.sort(
+        key=lambda one: (one.created_at, one.version),
+        reverse=True,
+    )
+    return models
+
+
+def subject_model(artifacts: Sequence[Artifact]) -> Artifact | None:
+    """The one model a deal-scoped answer is about.
+
+    **The most recently uploaded**, because that is the file the team is
+    working on: a deal picks up an old lender's model or a bidder's copy
+    and the subject is still the one that just arrived.
+
+    This is a choice, not a fact, and the rule for choices in this
+    product is that they are said out loud. Every caller that narrows a
+    deal to one model owes the reader the file's name — the assistant
+    says which model it read and what else the deal holds, because a
+    paragraph of prose about the wrong workbook is worse than a refusal.
+    The audit does not use this at all: it reads **every** model.
+    """
+    models = models_of(artifacts)
+    return models[0] if models else None
+
+
+def delta_between(old_side: Artifact, new_side: Artifact) -> Any:
+    """The Watch's delta report between two stored versions.
+
+    **Blocking and not cheap** — it fetches both files and reads both
+    workbooks — so it is a plain function rather than a method: the
+    caller decides when to pay, and every caller so far pays it inside
+    the request that asked for it. A version whose bytes were dropped
+    raises :class:`storage.FileNotKept`, whose sentence says what to do.
+    """
+    from .watch import delta_report
+
+    old_bytes = storage.fetch(old_side)
+    new_bytes = storage.fetch(new_side)
+    suffix = Path(new_side.filename).suffix or ".xlsx"
+    old_path = new_path = ""
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            f.write(old_bytes)
+            old_path = f.name
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            f.write(new_bytes)
+            new_path = f.name
+        return delta_report(old_path, new_path)
+    finally:
+        for path in (old_path, new_path):
+            if path:
+                Path(path).unlink(missing_ok=True)
+
+
+def _restore_file_facts(book: Workbook, counts: dict[str, Any]) -> None:
+    """Put back what the reader took off the file and the cells cannot say.
+
+    **The product never audits a file.** It audits a `Workbook` rebuilt
+    from stored rows, and a rule that reads anything the reader filled
+    at *open* time — the error values Excel cached, the defined names
+    pointing at `#REF!`, whether iterative calculation is declared —
+    reads an empty field and finds nothing. It found nothing quietly:
+    over the nine readable corpus models the rebuilt workbook lost 41
+    of the 116 findings the same files produce, and took four of them
+    to « nothing failing ». One of those four prints `#N/A` across
+    forty-eight cells of a live repayment column.
+
+    `hidden_sheets` was the first of these anybody noticed and was
+    fixed alone. This is the rest of the family, kept on the artifact
+    by `ingest.py` under `counts["workbook"]`.
+
+    **A model ingested before that key existed simply has no facts to
+    put back**, and reads exactly as it did before — no migration, and
+    no pretending an old artifact knows something it does not. Uploading
+    it again is what teaches it.
+
+    `row_words` is here for the opposite reason to the others: the
+    audit reads it to *honour* numbers a sheet's own words already
+    state, so without it the product reports findings the engine
+    suppresses.
+    """
+    #: Kept flat since the first version, and never restored until now.
+    book.hidden_sheets = tuple(counts.get("hidden_sheets", []))
+    book.very_hidden_sheets = tuple(counts.get("very_hidden_sheets", []))
+    book.iterative = bool(counts.get("iterative", False))
+
+    facts = counts.get("workbook") or {}
+    if not isinstance(facts, dict):
+        return
+    book.broken_names = list(facts.get("broken_names") or [])
+    book.foreign_names = [
+        (str(pair[0]), str(pair[1]))
+        for pair in (facts.get("foreign_names") or [])
+        if len(pair) == 2
+    ]
+    book.errors = dict(facts.get("error_cells") or {})
+    book.unparseable = list(facts.get("unparseable") or [])
+    book.populated = {
+        str(sheet): int(count)
+        for sheet, count in (facts.get("populated") or {}).items()
+    }
+    #: JSON gave the row numbers back as strings.
+    book.row_words = {
+        str(sheet): {int(row): text for row, text in rows.items()}
+        for sheet, rows in (facts.get("row_words") or {}).items()
+    }
+
+
+def _workbook_of(cells: Sequence[Any]) -> Workbook:
     """The engine's `Workbook`, rebuilt from stored rows.
 
     Everything downstream — the audit, the chain, the candidate list —
     takes a `Workbook`, so rebuilding one is what lets a check run without
     the file it came from.
+
+    Takes `ModelCell` entities or the lighter rows
+    `repository.cells_for_graph` returns: it reads attributes and keeps
+    none of the objects, which is exactly why the light read is worth
+    having. On a 470,594-cell model the ORM read costs 16.0 seconds and
+    the light one 4.0, for the same cells.
     """
     book = Workbook()
     for row in cells:
@@ -1565,6 +2229,17 @@ class _Candidates:
         #: with no Outputs tab, which is most of them.
         self.workbook = workbook
         self.cells = cells
+
+
+def _diff_fact(diff: Any) -> dict[str, Any]:
+    """One gate `CellDiff` as JSON facts — stored, computed, tolerance."""
+    stored = diff.stored
+    return {
+        "ref": diff.ref,
+        "stored": float(stored) if stored is not None else None,
+        "computed": diff.computed,
+        "tolerance": diff.tolerance,
+    }
 
 
 def _statement_json(statement: Statement) -> dict[str, Any]:

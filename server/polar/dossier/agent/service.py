@@ -51,9 +51,7 @@ def build_client() -> Client:
     return cast(Client, anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY))
 
 
-async def load_workspace(
-    session: AsyncSession, dossier_id: UUID
-) -> Workspace:
+async def load_workspace(session: AsyncSession, dossier_id: UUID) -> Workspace:
     """Every document in the matter, readable or not.
 
     `list_readable_documents` would be the tempting call and it is the

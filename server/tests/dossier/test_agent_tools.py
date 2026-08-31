@@ -245,7 +245,8 @@ class TestDispatch:
         assert result.ok is False
 
     @pytest.mark.parametrize(
-        "name", ["list_documents", "read_document", "check_document", "search_documents"]
+        "name",
+        ["list_documents", "read_document", "check_document", "search_documents"],
     )
     def test_every_advertised_tool_can_be_dispatched(self, name: str) -> None:
         from polar.dossier.agent.tools import DEFINITIONS, TOOLS

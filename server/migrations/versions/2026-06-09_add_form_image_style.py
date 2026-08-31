@@ -20,9 +20,7 @@ depends_on: tuple[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "forms", sa.Column("image_url", sa.String(1024), nullable=True)
-    )
+    op.add_column("forms", sa.Column("image_url", sa.String(1024), nullable=True))
     op.add_column(
         "forms",
         sa.Column(

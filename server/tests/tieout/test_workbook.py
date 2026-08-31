@@ -6,7 +6,12 @@ import pytest
 
 from polar.tieout.model import read_outputs
 from polar.tieout.provenance import chain, outputs_from_workbook, verify_outputs
-from polar.tieout.workbook import precedents_of, read_workbook, references_of
+from polar.tieout.workbook import (
+    MAX_RANGE,
+    precedents_of,
+    read_workbook,
+    references_of,
+)
 
 CASCADE = Path(__file__).resolve().parents[2] / "scripts" / "cascade"
 MODEL = str(CASCADE / "cascade_model.xlsx")
@@ -192,9 +197,15 @@ def test_the_range_cap_says_when_it_bit(names) -> None:
     """A cap that truncates silently is the same failure this file is
     about, moved from « dropped » to « quietly shortened »."""
     read = references_of("=SUM(Inflation!M:M)", "Other", names)
-    assert len(read.refs) == 200
+    # Against the constant, not a literal: the cap is a tuning number
+    # (200 until 28 Aug, then 50 — measured, gate-clean, 5x less memory)
+    # and a test that pins the tuning rather than the promise fails for
+    # the wrong reason every time somebody improves it. The promise is
+    # « it followed exactly as many as it is allowed, and it said in
+    # words how many it did not ».
+    assert len(read.refs) == MAX_RANGE
     assert read.unresolved == (
-        ("Inflation!M:M", "352 cells, of which the first 200 were followed"),
+        ("Inflation!M:M", f"352 cells, of which the first {MAX_RANGE} were followed"),
     )
 
 
@@ -349,9 +360,7 @@ def test_the_label_column_is_the_one_with_the_most_different_things_to_say() -> 
     """
     from polar.tieout.workbook import _label_column
 
-    grid = _sheet(
-        [["Allowed revenue", "£m", None], ["Actual opex", "£m", None]] * 6
-    )
+    grid = _sheet([["Allowed revenue", "£m", None], ["Actual opex", "£m", None]] * 6)
     assert _label_column(grid, grid.last_row, grid.last_column) == 1
 
 

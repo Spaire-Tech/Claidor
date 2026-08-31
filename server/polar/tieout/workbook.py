@@ -35,6 +35,8 @@ import datetime
 import re
 from dataclasses import dataclass, field
 from decimal import Decimal
+from functools import cache
+from sys import intern
 from typing import Any
 
 from openpyxl import load_workbook
@@ -42,7 +44,10 @@ from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.formula import ArrayFormula
 
+from .binary import converted_copy, unartifact
+from .calculation import Calculation, read_calculation
 from .legacy import read_legacy
+from .sheets import cells_of, open_workbook
 
 #: How many text cells a row must have, outside the label column, before
 #: it is read as the header naming the columns. Two is enough to tell a
@@ -65,10 +70,25 @@ DERIVED_ROW = re.compile(
 
 #: How many cells a range in a formula is expanded to. `SUM(A1:A20)` is
 #: worth knowing cell by cell; `SUM(A1:IV65536)` is sixteen million
-#: strings and says nothing the first two hundred do not. The cap bounds
-#: the work on a workbook built by somebody who selected whole columns,
-#: which is most workbooks in the wild and none of the models seen so far.
-MAX_RANGE = 200
+#: strings and says nothing the first fifty do not. The cap bounds the
+#: work on a workbook built by somebody who selected whole columns, which
+#: is most workbooks in the wild and none of the models seen so far.
+#:
+#: **200 until 28 August, and the 150 extra were never used.** Tested
+#: against the golden master — a byte-exact oracle over 27 published
+#: regulator models — the corpus reports *identically, finding for
+#: finding* at 50. On the heaviest model (`final_gd3_bpfm.xlsm`):
+#:
+#:     cap    read time    peak      corpus sweep
+#:     200        252 s    6,290 MB       3,300 s
+#:      50        121 s    1,255 MB       2,463 s
+#:
+#: 10 was also tested and also clean, and is **deliberately not taken**:
+#: a twelve-month sum and a thirty-year schedule are units a modeller
+#: thinks of as whole, so truncating them would be real loss even where
+#: this corpus cannot see it. 50 keeps every ordinary range intact and
+#: only bites the whole-column selections the cap was written for.
+MAX_RANGE = 50
 
 #: A whole column — `$M:$M`, `A:C`. Real models are full of them: the
 #: 2026 Ofgem distribution model averages over `'Monthly Inflation'!$M:$M`
@@ -257,6 +277,13 @@ class Workbook:
     #: True when the workbook has iterative calculation switched on, which
     #: is a model saying its circular references are deliberate.
     iterative: bool = False
+    #: Whether Excel maintains the values this workbook stored — see
+    #: :mod:`polar.tieout.calculation`. Under manual calculation it does
+    #: not, and every check that compares two stored numbers refuses
+    #: rather than reporting a difference it cannot distinguish from a
+    #: stale cache (`swens.md` § 5). The default is the format's own:
+    #: a file that says nothing is not claiming its numbers are stale.
+    calculation: Calculation = field(default_factory=Calculation)
     #: Raw populated cells per sheet, counted at read time — `cells`
     #: holds only what the reader could name, and « is this sheet
     #: empty » must be answered from the file, not from what survived
@@ -330,8 +357,51 @@ class _Grid:
             self.last_column = column
 
 
-def _grid_of(written_sheet: Any, values_sheet: Any) -> _Grid:
-    """One sheet from both loads, streamed into a :class:`_Grid`."""
+def _grid_from(cells: Any, converted: bool = False) -> _Grid:
+    """A :class:`_Grid` from one pass over the sheet XML.
+
+    The same grid `_grid_of` builds, filled from
+    :func:`polar.tieout.sheets.cells_of` instead of from two openpyxl
+    loads. Proven cell for cell against openpyxl on the whole corpus —
+    formulas, values and number formats alike — before it was wired in.
+    """
+    grid = _Grid()
+    for at, value in cells.written.items():
+        grid.written[at] = unartifact(value) if converted else value
+        grid.formats[at] = cells.formats.get(at)
+        grid._saw(*at)
+    for at, value in cells.values.items():
+        grid.values[at] = value
+        grid._saw(*at)
+    return grid
+
+
+def _grid_of(
+    written_sheet: Any,
+    values_sheet: Any,
+    converted: bool = False,
+    toggle: Any = None,
+) -> _Grid:
+    """One sheet from both loads, streamed into a :class:`_Grid`.
+
+    **The fallback path.** Most workbooks are read by
+    :func:`polar.tieout.sheets.cells_of` in a single pass and never come
+    here; this serves a legacy `.xls` and anything the fast reader
+    declines, so it must stay correct and it is worth keeping quick.
+
+    `converted` marks a workbook that reached us through LibreOffice
+    rather than from its author — a `.xlsb`. The converter writes
+    booleans out as `=TRUE()` and `=FALSE()`, and those are undone here,
+    at the one place every value passes through. See
+    :mod:`polar.tieout.binary`.
+
+    `toggle` is the openpyxl workbook whose `data_only` flag is flipped
+    between the two passes when both sheets come from **one** load —
+    Scribe's measurement, kept when the fast reader superseded the path
+    it was written for. openpyxl decides formula-text against
+    cached-value per *iteration* rather than per open, so one workbook
+    serves both passes and the stylesheet is parsed once.
+    """
     grid = _Grid()
     cells = getattr(written_sheet, "cells", None)
     if isinstance(cells, dict):
@@ -348,20 +418,42 @@ def _grid_of(written_sheet: Any, values_sheet: Any) -> _Grid:
             grid._saw(row, column)
         return grid
 
+    formulas_here = False
     for row in written_sheet.iter_rows():
         for cell in row:
-            if cell.value is None:
+            value = cell.value
+            if value is None:
                 continue
             at = (cell.row, cell.column)
-            grid.written[at] = cell.value
+            grid.written[at] = unartifact(value) if converted else value
             grid.formats[at] = getattr(cell, "number_format", None)
             grid._saw(*at)
-    for row in values_sheet.iter_rows():
-        for cell in row:
-            if cell.value is None:
-                continue
-            grid.values[(cell.row, cell.column)] = cell.value
-            grid._saw(cell.row, cell.column)
+            if not formulas_here and isinstance(value, str) and value[:1] == "=":
+                formulas_here = True
+    if not formulas_here:
+        # **Scribe's skip, kept.** The two loads differ *only* where a
+        # cell holds a formula: one gives the text, the other Excel's
+        # cached answer. On a sheet with no formula at all they agree
+        # cell for cell, so a second parse of the same XML buys nothing.
+        # Not rare and not cheap: the corpus's biggest file is 496,478
+        # cells with **three** formulas across twenty-seven sheets, and
+        # openpyxl was parsing 3.1 million cell elements twice to learn
+        # those three.
+        grid.values.update(grid.written)
+        return grid
+
+    if toggle is not None:
+        toggle._data_only = True
+    try:
+        for row in values_sheet.iter_rows():
+            for cell in row:
+                if cell.value is None:
+                    continue
+                grid.values[(cell.row, cell.column)] = cell.value
+                grid._saw(cell.row, cell.column)
+    finally:
+        if toggle is not None:
+            toggle._data_only = False
     return grid
 
 
@@ -375,13 +467,69 @@ def read_workbook(path: str) -> Workbook:
     be, because the corpora with real spreadsheets in them are all the
     old format and the models a bank sends are all the new one.
     """
+    converted = path.lower().endswith(".xlsb")
+    folder = None
+    if converted:
+        # Excel's binary format, which openpyxl refuses outright. It is
+        # converted to `.xlsx` and read like anything else; the folder
+        # holding the conversion has to outlive the load, so it is kept
+        # until the reading below is done with it.
+        path, folder = converted_copy(path)
+
+    fast: dict[str, Any] | None = None
+    #: The workbook whose `data_only` flag the fallback flips between
+    #: its two passes; `None` on every path that does not need it.
+    toggle: Any = None
+    #: What has to be closed at the end. One entry when the fast path
+    #: read the cells, two when openpyxl was asked for both layers.
+    close: tuple[Any, ...] | None = None
     if path.lower().endswith((".xls", ".xlt")):
         formulas, values = read_legacy(path)
         close = None
     else:
-        formulas = load_workbook(path, data_only=False, read_only=True)
-        values = load_workbook(path, data_only=True, read_only=True)
-        close = (formulas, values)
+        # Opened without its stylesheet: a real model carries a 13.5 MB
+        # `styles.xml` whose 55,808 records openpyxl turns into fonts,
+        # fills, borders and colours nobody here reads — 5.62 s of a
+        # 9.2 s read, before a single cell. `sheets.open_workbook` runs
+        # openpyxl's own reader stage by stage without that one step and
+        # `sheets.number_formats` takes the one attribute we do want.
+        formulas = open_workbook(path)
+        # One pass instead of two. `cells_of` reads the formula layer and
+        # the value layer together straight from the sheet XML; the
+        # openpyxl workbook above stays open for what is cheap there —
+        # sheet order, sheet state, defined names, the style table — and
+        # is never iterated. Anything it cannot read falls back to the
+        # two loads, so a workbook we do not understand is slow rather
+        # than wrong.
+        try:
+            fast = cells_of(path, formulas)
+        except Exception:
+            fast = None
+        if fast is None:
+            # **The fallback re-opens with the stylesheet, and must.**
+            # `open_workbook` skips `apply_stylesheet` because the fast
+            # path takes number formats from the XML itself — but this
+            # path reads `cell.number_format` off openpyxl's own cells,
+            # and without the stylesheet every one of them would come
+            # back as the default. Nothing in the corpus reaches here,
+            # so no test and no gate would have caught it; it was found
+            # by reading Scribe's diff against this file.
+            formulas.close()
+            formulas = load_workbook(path, data_only=False, read_only=True)
+            # **One open, not two — Scribe's measurement, kept.** openpyxl
+            # decides formula-text against cached-value per *iteration*
+            # rather than per open (`_cells_by_row` reads
+            # `self.parent.data_only` when it builds its parser), so one
+            # workbook serves both passes and the stylesheet is parsed
+            # once. Scribe measured that at 7.9 s of a 23.5 s read on a
+            # real price-control model, where opening cost 15.5 s and
+            # iterating only 4.5 s.
+            values = formulas
+            toggle = formulas
+            close = (formulas,)
+        else:
+            values = None
+            close = (formulas,)
 
     try:
         book = Workbook(
@@ -397,6 +545,7 @@ def read_workbook(path: str) -> Workbook:
                 if getattr(formulas[name], "sheet_state", "visible") == "veryHidden"
             ),
             iterative=bool(getattr(formulas.calculation, "iterate", False)),
+            calculation=read_calculation(formulas),
         )
         grids: dict[str, _Grid] = {}
         for name in formulas.sheetnames:
@@ -407,7 +556,13 @@ def read_workbook(path: str) -> Workbook:
             # sort of thing only a real model tells you.
             if not hasattr(sheet, "max_row"):
                 continue
-            grids[name] = _grid_of(sheet, values[name])
+            if fast is not None and name in fast:
+                grids[name] = _grid_from(fast[name], converted)
+            else:
+                # Only reachable when the fast path declined, which is
+                # exactly when the second load was made.
+                assert values is not None
+                grids[name] = _grid_of(sheet, values[name], converted, toggle)
             book.populated[name] = len(grids[name].written)
         names = _names_of(formulas, grids)
         every_name = list(names.book.items()) + [
@@ -433,6 +588,10 @@ def read_workbook(path: str) -> Workbook:
         if close is not None:
             for one in close:
                 one.close()
+        # The conversion is only ever needed for the load above; the
+        # temporary copy of somebody's model does not outlive the read.
+        if folder is not None:
+            folder.cleanup()
 
 
 def _names_of(formulas: Any, grids: dict[str, "_Grid"]) -> Names:
@@ -661,6 +820,21 @@ RUNTIME_TARGET = {
 LOOKUP_TABLE = frozenset({"INDEX"})
 
 
+@cache
+def tokens_of(formula: str) -> list[Any]:
+    """One parse per formula text, shared by the reader and the audit.
+
+    The A1 profile showed the reader tokenizing every formula and the
+    audit tokenizing the same texts again — two full passes over the
+    grammar for one file. The list is shared and never mutated by any
+    caller (checked in both modules); grammar rejections raise exactly
+    as `Tokenizer` does, uncached, so unparseable formulas keep their
+    per-call behaviour. The audit clears this cache when it finishes,
+    which keeps a corpus sweep's memory flat; the key is the formula
+    text alone, so there is nothing to go stale."""
+    return list(Tokenizer(formula).items)
+
+
 def references_of(formula: str, sheet: str, names: Names | None = None) -> Precedents:
     """Everything a formula reads, and everything it reads that we cannot.
 
@@ -713,7 +887,13 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
         return None
 
     try:
-        tokens = Tokenizer(formula).items
+        #: Deliberately NOT the shared cache: the A1 round measured
+        #: sharing and rejected it — the reader passes each formula
+        #: once, so it gains almost nothing from caching, and storing
+        #: 640k token lists mid-read cost ~80-100s of allocation
+        #: pressure on the biggest model, more than the audit saved.
+        #: The audit caches for itself; the reader parses and moves on.
+        tokens = list(Tokenizer(formula).items)
     except Exception:
         #: The grammar rejected the whole formula. Report the fact and
         #: keep reading the rest of the workbook.
@@ -925,9 +1105,28 @@ def _cells(
     `SUM(A1:IV65536)` does not become sixteen million strings, and a cap
     that truncates without saying so is the same silent loss this module
     was just fixed for — moved from « dropped » to « quietly shortened ».
+
+    **Every reference string in the engine is born here, and they are
+    interned, which is worth eight lines of explanation because it is
+    worth gigabytes.** A workbook can only contain as many distinct cell
+    references as it has cells, so the same handful of inputs is named
+    over and over by the thousands of formulas that read them. Measured
+    on Ofgem's GD3 business plan model (`final_gd3_bpfm.xlsm`, 693,753
+    cells), before this line existed:
+
+    - **74,491,268** precedent strings held,
+    - **825,694** of them distinct *by value*,
+    - **74,491,268** distinct *by identity* — every duplicate its own
+      allocation, ninety copies of the average reference,
+    - at 22.9 characters each, ~5.4 GB of string objects, which was
+      essentially the whole 6,290 MB the reader peaked at.
+
+    `sys.intern` collapses those ninety copies into one object and leaves
+    the lists holding pointers to it. It costs a dictionary lookup per
+    reference — against an allocation it now usually avoids.
     """
     if not row2:
-        return [f"{where}!{column}{row}"], 1
+        return [intern(f"{where}!{column}{row}")], 1
     first_column = _column_index(column)
     last_column = _column_index(column2 or "")
     span = (row2 - row + 1) * max(last_column - first_column + 1, 0)
@@ -936,7 +1135,7 @@ def _cells(
         for two in range(first_column, last_column + 1):
             if len(refs) >= MAX_RANGE:
                 return refs, span
-            refs.append(f"{where}!{get_column_letter(two)}{one}")
+            refs.append(intern(f"{where}!{get_column_letter(two)}{one}"))
     return refs, span
 
 

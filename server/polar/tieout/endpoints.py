@@ -17,11 +17,14 @@ carries a `processing` status and the screen polls it: the shape is
 already right for the day the work moves.
 """
 
-from datetime import timedelta
+from collections.abc import Sequence
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import Depends, File, HTTPException, Query, UploadFile
+from fastapi import Depends, File, HTTPException, Query, Response, UploadFile
 
 from polar.auth.dependencies import WebUserWrite
 from polar.auth.scope import Scope
@@ -34,6 +37,7 @@ from polar.models import (
     ArtifactKind,
     CheckKind,
     CheckRun,
+    CheckStatus,
     Correction,
     CorrectionState,
     Dossier,
@@ -58,7 +62,8 @@ from . import auth
 from .agent import service as agent
 from .analytics import ANALYTIC_PASS_NAMES, ANALYTIC_RULE_NAMES
 from .audit import RULE_NAMES
-from .ingest import Unreadable, kind_for
+from .ingest import SUFFIXES, Unreadable, kind_for
+from .markup import MarkupFinding, MarkupRefused, marked_up_copy, marked_up_name
 from .repository import TieOutRepository
 from .schemas import (
     AcceptCheck,
@@ -80,6 +85,9 @@ from .schemas import (
     DealListItem,
     DealPage,
     DecisionRead,
+    DeckDeltaItemRead,
+    DeckDeltaRead,
+    DeltaItemRead,
     FigureMap,
     FigureRead,
     FindingCounts,
@@ -104,15 +112,19 @@ from .schemas import (
     OneOffDrift,
     OneOffResult,
     PanelToken,
+    RecalcMarkRead,
     RecentCheck,
     SlideFigures,
     SoloFindingRead,
     TeamMember,
     TeamRead,
     Uploader,
+    VersionAudit,
+    VersionAuditSummary,
+    VersionDeltaRead,
     VersionRead,
 )
-from .service import tieout
+from .service import models_of, subject_model, tieout
 from .storage import FileNotKept, download_url, fetch
 from .writing import NotCorrectable, writing
 
@@ -333,7 +345,19 @@ def _finding(
             filename=filenames.get(finding.artifact_id)
             if finding.artifact_id
             else None,
-            label=f"slide {finding.page}" if finding.page else finding.location,
+            #: Where this is, in the shortest true words. A finding
+            #: about the *workbook* rather than a cell — the defined
+            #: names pointing into other files, say — carries no
+            #: location at all, and the screens drew an empty pill
+            #: beside a real finding on a real model. It is not
+            #: nowhere: the engine names what it is about, and saying
+            #: « defined names » is both shorter and truer than a
+            #: blank.
+            label=(
+                f"slide {finding.page}"
+                if finding.page
+                else finding.location or str(evidence.get("name") or "")
+            ),
             detail=finding.location,
             anchor=finding.anchor or {},
         ),
@@ -572,7 +596,35 @@ async def list_deals(
     items: list[DealListItem] = []
     for deal in deals:
         counts = await repository.count_findings(deal.id)
-        run = await repository.latest_run(deal.id, CheckKind.tieout)
+        #: The last check of **any** kind that actually completed —
+        #: which is what the column says and what a reader means by it.
+        #: Two corrections in one line. Taking the tie-out alone made a
+        #: model-only deal (no deck to reconcile against, which is most
+        #: of the real corpus) read « Not checked yet » beside its own
+        #: eight findings, and left it permanently un-stale however many
+        #: versions arrived after its audit. And a *failed* run is not a
+        #: check: it carries a finishing time but checked nothing, so it
+        #: must not date the row. Where the newest run of a kind failed
+        #: over an older one that succeeded this under-claims rather
+        #: than over-claims, which is the right direction to be wrong.
+        audit_run = await repository.latest_run(deal.id, CheckKind.audit)
+        values_only = bool(
+            audit_run is not None
+            and audit_run.status is CheckStatus.done
+            and (audit_run.summary or {}).get("values_only")
+        )
+        dated: list[tuple[datetime, CheckRun]] = []
+        for candidate in (
+            await repository.latest_run(deal.id, CheckKind.tieout),
+            audit_run,
+        ):
+            if (
+                candidate is not None
+                and candidate.status is CheckStatus.done
+                and candidate.finished_at is not None
+            ):
+                dated.append((candidate.finished_at, candidate))
+        run = max(dated, key=lambda pair: pair[0])[1] if dated else None
         current = await repository.current_artifacts(deal.id)
 
         # **Stale is a fact about timestamps, not a judgement.** A current
@@ -617,11 +669,11 @@ async def list_deals(
         # them, which is right: they are all the same check failing.
         failing_checks = len({finding.rule for finding in open_findings})
 
-        # The row's model column: the latest ready workbook, by name and
-        # version. Null when there is none — the screen says so.
-        model = next(
-            (one for one in current if one.kind is ArtifactKind.model), None
-        )
+        # The row's model column: the deal's subject model, by name and
+        # version. Null when there is none — the screen says so. A deal
+        # carrying two models names the newest, the same one every other
+        # deal-scoped answer takes.
+        model = subject_model(current)
 
         # The row's dot: the worst attention tier among what is open.
         # Audit findings carry their tier in evidence; anything stored
@@ -645,6 +697,7 @@ async def list_deals(
                 # The run's own finishing time, not the row's: a run that
                 # was started and never finished has not checked anything.
                 checked_at=run.finished_at if run else None,
+                values_only=values_only,
                 stale=stale_at is not None,
                 stale_kind=stale_kind,
                 stale_at=stale_at,
@@ -771,6 +824,47 @@ async def identify(
 # --- files ---------------------------------------------------------------
 
 
+#: Excel ships more formats than this reads, and a person who has one
+#: needs the way out rather than the list.
+#:
+#: **`.xlsb` was the first entry here and is no longer refused** (28
+#: Aug): `polar.tieout.binary` converts it through LibreOffice and the
+#: reader takes it like anything else. It was the format the corpus
+#: actually arrived in — two of eleven eligible models, found by the
+#: corpus rather than by a customer (`population-proof.md`) — so the
+#: refusal it used to get was the most-earned one on this list.
+UNREADABLE_EXCEL = {
+    ".csv": (
+        "a .csv carries values with no formulas, and the checks read "
+        "formulas. Upload the workbook it came from"
+    ),
+    ".numbers": (
+        "a .numbers file is Apple's format. Export it as .xlsx and upload that"
+    ),
+}
+
+
+def _unreadable_format(filename: str) -> str:
+    """Why this file was not taken, and what to do — read off `SUFFIXES`.
+
+    The list is derived rather than written out, because the sentence
+    that names the formats has to be the formats: it said « models are
+    .xlsx or .xls » while the reader had been taking `.xlsm` all along,
+    which is the format most project-finance models actually arrive in.
+    """
+    suffix = Path(filename).suffix.lower()
+    said = "; ".join(
+        f"{kind.value}s are {', '.join(suffixes[:-1])} or {suffixes[-1]}"
+        if len(suffixes) > 1
+        else f"a {kind.value} is {suffixes[0]}"
+        for kind, suffixes in SUFFIXES.items()
+    )
+    known = UNREADABLE_EXCEL.get(suffix)
+    if known is not None:
+        return f"{filename} was not taken — {known}. What this reads: {said}."
+    return f"{filename} is not a file this can read. {said[0].upper()}{said[1:]}."
+
+
 @router.post("/deals/{dossier_id}/artifacts", response_model=ArtifactRead)
 async def upload_artifact(
     dossier_id: UUID,
@@ -804,14 +898,7 @@ async def upload_artifact(
     filename = upload.filename or "upload"
     resolved = kind or kind_for(filename)
     if resolved is None:
-        raise HTTPException(
-            status_code=415,
-            detail=(
-                f"{filename} is not a file this can read — models are "
-                ".xlsx or .xls, decks are .pptx, memos are .docx, and a "
-                "source document is a .pdf"
-            ),
-        )
+        raise HTTPException(status_code=415, detail=_unreadable_format(filename))
 
     artifact = await tieout.ingest(
         session,
@@ -1071,6 +1158,307 @@ async def get_model_diff(
     return ModelDiff(**diff) if diff else None
 
 
+@router.get("/artifacts/{artifact_id}/audit", response_model=VersionAudit)
+async def version_audit(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> VersionAudit:
+    """The audit, re-run on this stored version and persisted nowhere.
+
+    The version dropdown's re-scoping: pick an older upload and the
+    page shows what the audit says about *that* one — computed on
+    request from the cells stored at its ingest, house rules applied
+    exactly as a real run applies them. Nothing lands in the findings
+    table: rulings, corrections and the report belong to the current
+    version, so these findings carry no durable identity and the
+    response's own docstring-on-the-screen is « checked just now ».
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    result = await tieout.audit_of_version(
+        session, dossier_id=artifact.dossier_id, artifact_id=artifact_id
+    )
+    if result is None:
+        raise ResourceNotFound("This version has no model audit to show.")
+
+    uploader = await UserRepository.from_session(session).get_by_id(
+        artifact.uploaded_by_id
+    )
+    filenames = {artifact.id: artifact.filename}
+    summary = result["summary"]
+    return VersionAudit(
+        artifact_id=artifact.id,
+        version=artifact.version,
+        filename=artifact.filename,
+        uploaded_by=_uploader(uploader),
+        uploaded_at=artifact.created_at,
+        checked_at=result["checked_at"],
+        summary=VersionAuditSummary(
+            errors=summary["errors"],
+            smells=summary["smells"],
+            tiers=summary["tiers"],
+            cells=summary["cells"],
+            rules_off=summary["rules_off"],
+            values_only=summary["values_only"],
+            abstentions=summary["abstentions"],
+        ),
+        findings=[_finding(one, filenames) for one in result["findings"]],
+    )
+
+
+@router.get("/artifacts/{artifact_id}/deck-delta", response_model=DeckDeltaRead | None)
+async def deck_delta(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    against: UUID | None = Query(
+        default=None,
+        description="The older version to compare against. Left out, the "
+        "version before this one.",
+    ),
+    deck: UUID | None = Query(
+        default=None,
+        description="Which deliverable to re-tie. Left out, the deal's current deck.",
+    ),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> DeckDeltaRead | None:
+    """What this model revision did to the deliverables.
+
+    The failure this product exists for: not one typo, but a model
+    revision the deck never caught up with — because nobody knows
+    which of its hundred printed figures the revision touched. The
+    same deck is tied out against both versions and the difference
+    read in review language: what the revision **broke**, what it
+    **repaired**, what was **already drifting** against both (never
+    this revision's account), and what became reconcilable against
+    only one version, which is « I lost sight of it » and not « it
+    broke ».
+
+    Each break carries the model change underneath it in the Watch's
+    own words — or nothing, where it could not be attributed. The
+    nearest change is not a cause.
+
+    `null` when there is no earlier version or the deal holds no deck:
+    both are absences rather than errors. A file whose bytes were
+    dropped under « keep the chain, drop the documents » is a 404
+    carrying the storage sentence; an `against` outside this model's
+    own lineage reads as not found, the same gate the version delta
+    uses.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        result = await tieout.deck_delta(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+            deck_id=deck,
+            against_id=against,
+        )
+    except FileNotKept as problem:
+        # The storage sentence talks about correcting a file; this route
+        # compares three. Same fact, this route's own words — and it
+        # names which of the three is missing, because « upload it
+        # again » is useless without that.
+        missing = str(problem).split(" is not stored", 1)[0]
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"{missing} is not stored here any more, so this revision "
+                "cannot be re-tied against the deck. Upload it again."
+            ),
+        ) from problem
+    if result is None:
+        if against is not None or artifact.kind is not ArtifactKind.model:
+            raise ResourceNotFound("Nothing to compare against.")
+        return None
+
+    old, new, deck_artifact = result["old"], result["new"], result["deck"]
+    report = result["report"]
+
+    def items(rows: list[Any]) -> list[DeckDeltaItemRead]:
+        return [
+            DeckDeltaItemRead(
+                slide=one.slide,
+                printed=one.printed,
+                location=one.location,
+                old_ref=one.old_ref,
+                expected=one.expected,
+                name=one.name,
+                one_tick=one.one_tick,
+                cause=one.cause,
+            )
+            for one in rows
+        ]
+
+    return DeckDeltaRead(
+        old_artifact_id=old.id,
+        old_version=old.version,
+        new_artifact_id=new.id,
+        new_version=new.version,
+        deck_artifact_id=deck_artifact.id,
+        deck_filename=deck_artifact.filename,
+        computed_at=result["computed_at"],
+        checked_old=report.checked_old,
+        checked_new=report.checked_new,
+        broken=items(report.broken),
+        repaired=items(report.repaired),
+        still_drifting=items(report.still_drifting),
+        coverage_changed=items(report.coverage_changed),
+    )
+
+
+@router.get("/artifacts/{artifact_id}/delta", response_model=VersionDeltaRead | None)
+async def version_delta(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    against: UUID | None = Query(
+        default=None,
+        description="The older version to compare against. Left out, the "
+        "version before this one.",
+    ),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> VersionDeltaRead | None:
+    """What this revision did, in review language — the Watch, served.
+
+    The Versions screen's report: what broke, what changed class, where
+    the method moved, which assumptions moved, which outputs moved
+    materially, the structure, then the repairs — ranked by the engine,
+    computed on request from the two versions' stored bytes, persisted
+    nowhere.
+
+    `null` when this is the first version: there is no revision to
+    report, which is not an error — the same sentence as the raw diff.
+    A version whose bytes were dropped under « keep the chain, drop the
+    documents » is a 404 carrying the storage sentence (upload it
+    again); an `against` outside this model's own lineage reads as not
+    found.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        result = await tieout.version_delta(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+            against_id=against,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    if result is None:
+        if against is not None or artifact.kind is not ArtifactKind.model:
+            raise ResourceNotFound("Nothing to compare against.")
+        return None
+
+    users = UserRepository.from_session(session)
+    old, new = result["old"], result["new"]
+    report = result["report"]
+    return VersionDeltaRead(
+        old_artifact_id=old.id,
+        old_version=old.version,
+        old_uploaded_at=old.created_at,
+        old_uploaded_by=_uploader(await users.get_by_id(old.uploaded_by_id)),
+        new_artifact_id=new.id,
+        new_version=new.version,
+        new_uploaded_at=new.created_at,
+        new_uploaded_by=_uploader(await users.get_by_id(new.uploaded_by_id)),
+        computed_at=result["computed_at"],
+        new_defects=report.new_defects,
+        repaired_defects=report.repaired_defects,
+        persistent_defects=report.persistent_defects,
+        unmatched_old=report.unmatched_old,
+        unmatched_new=report.unmatched_new,
+        sheets_added=list(report.sheets_added),
+        sheets_removed=list(report.sheets_removed),
+        items=[
+            DeltaItemRead(
+                kind=item.kind,
+                sheet=item.sheet,
+                first_row=item.first_row,
+                last_row=item.last_row,
+                columns=list(item.columns),
+                detail=item.detail,
+                weight=item.weight,
+                findings=list(item.findings),
+            )
+            for item in report.items
+        ],
+    )
+
+
+@router.get("/artifacts/{artifact_id}/page/{page}", response_model=None)
+async def source_page(
+    artifact_id: UUID,
+    page: int,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> Response:
+    """One page of a stored source PDF, rendered — the viewer's ground.
+
+    The Chain's facts cite pages and boxes in the PDF's own points;
+    this serves the pixels those citations sit on, rendered fresh from
+    the stored bytes and cached nowhere. A non-PDF answers the same 404
+    as an artifact outside the caller's deals; a page outside the
+    document answers with the honest range; dropped bytes answer the
+    storage sentence.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        image = await tieout.page_image(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+            page=page,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    except ValueError as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    if image is None:
+        raise ResourceNotFound("This document has no pages to render.")
+    return Response(
+        content=image,
+        media_type="image/png",
+        # Same bytes for the same version forever, so the browser may
+        # keep them for the session; a new upload is a new artifact id.
+        headers={"cache-control": "private, max-age=3600"},
+    )
+
+
+@router.post("/artifacts/{artifact_id}/recalculate", response_model=RecalcMarkRead)
+async def recalculate_artifact(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> RecalcMarkRead:
+    """Run the fidelity gate on this version and keep its mark.
+
+    Deliberate, and heavy: the file's formulas are prescanned for
+    constructs no engine of ours may honestly compute, and a clean file
+    is then recalculated whole through LibreOffice and compared cell by
+    cell against the values Excel left in it. The resulting mark —
+    validated, failed with the differing cells named, refused in words,
+    or nothing to compare — is stored on this version and served with
+    the artifact from then on. A machine without an adequate engine
+    answers 503 with the sentence saying so; it never stores a guess.
+    """
+    from .recalc import CalculatorError
+
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    if artifact.kind is not ArtifactKind.model:
+        raise ResourceNotFound("Only a model can be recalculated.")
+    try:
+        mark = await tieout.recalculate(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    except CalculatorError as problem:
+        raise HTTPException(status_code=503, detail=str(problem)) from problem
+    if mark is None:
+        raise ResourceNotFound("Only a ready model can be recalculated.")
+    return RecalcMarkRead(**mark)
+
+
 # --- checks --------------------------------------------------------------
 
 
@@ -1230,7 +1618,14 @@ async def get_team(
     organization_id: UUID = Query(),
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> TeamRead:
-    """Who's on the team, and which of this organization's deals each is on."""
+    """Who's on the team, and how many deals each is on — never which.
+
+    Deal names left this response by the founder's decision (26
+    August): a colleague's deals are the deal's business, not the
+    organization's, and the count is the most this screen may say.
+    The names never leave the server — the repository still knows
+    them; this route reduces to a number before anything is sent.
+    """
     await _in_organization(session, organization_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
     people = await repository.team_of(organization_id)
@@ -1242,7 +1637,7 @@ async def get_team(
                 email=person.email,
                 avatar_url=person.avatar_url,
                 you=person.id == auth_subject.subject.id,
-                deals=deals,
+                deal_count=len(deals),
             )
             for person, deals in people
         ],
@@ -1867,6 +2262,74 @@ async def download_artifact(
         raise HTTPException(status_code=404, detail=str(problem)) from problem
 
 
+@router.get("/deals/{dossier_id}/markup", response_model=None)
+async def marked_up_model(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> Response:
+    """The model back, with every problem marked in place.
+
+    The founder's § 4 file: a first sheet listing the open findings so
+    they can be sorted and ticked off, and the model itself — unchanged,
+    not one formula, not one number — with the problem cells coloured by
+    severity and the finding's own sentence stuck on each as a note.
+
+    Generated fresh from the stored model and the open findings on it,
+    and never persisted: it is colour and notes on the caller's own
+    file, verified unaltered before it is released, with a different
+    filename so the original is never at risk.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    current = await repository.current_artifacts(deal.id)
+    model = subject_model(current)
+    if model is None:
+        raise HTTPException(status_code=404, detail="this deal has no model yet")
+
+    marks: list[MarkupFinding] = []
+    for finding in await repository.findings_of(deal.id, state=FindingState.open):
+        anchor = finding.anchor or {}
+        if anchor.get("kind") != "cell" or finding.artifact_id != model.id:
+            continue
+        sheet = str(anchor.get("sheet") or "")
+        ref = str(anchor.get("ref") or "").rsplit("!", 1)[-1]
+        if not sheet or not ref:
+            continue
+        marks.append(
+            MarkupFinding(
+                severity=finding.severity.value,
+                sheet=sheet,
+                ref=ref,
+                text=finding.title or finding.detail,
+            )
+        )
+    if not marks:
+        raise HTTPException(
+            status_code=404,
+            detail="no open findings sit on the model — nothing to mark up",
+        )
+    try:
+        payload = fetch(model)
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    try:
+        copy = marked_up_copy(payload, marks)
+    except MarkupRefused as problem:
+        raise HTTPException(status_code=422, detail=str(problem)) from problem
+
+    filename = marked_up_name(model.filename or "model.xlsx")
+    return Response(
+        content=copy,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+        headers={
+            "content-disposition": f"attachment; filename*=UTF-8''{quote(filename)}"
+        },
+    )
+
+
 __all__ = ["router"]
 
 
@@ -1941,7 +2404,27 @@ async def ask(
 MOST_TURNS = 6
 
 
-def _conversation(body: Ask, finding: Finding | None) -> str:
+def _scope_line(model: Artifact, others: Sequence[Artifact]) -> str:
+    """Which model the assistant is reading, when the deal holds more.
+
+    The tools only ever see one model, so without this the assistant
+    cannot know it is on a deal with others and will answer « that line
+    is not in this model » about a line sitting in the file next to it.
+    Named rather than counted: a reader has to be able to tell whether
+    the one that was read is the one they meant.
+    """
+    if not others:
+        return ""
+    named = ", ".join(f"{one.filename} (v{one.version})" for one in others)
+    return (
+        f"You are reading {model.filename} (version {model.version}), the "
+        f"most recently uploaded model on this deal. The deal also holds "
+        f"{named}, which you cannot see. Say which model you read when it "
+        f"could matter, and never answer about the others."
+    )
+
+
+def _conversation(body: Ask, finding: Finding | None, scope: str = "") -> str:
     """One prompt for the loop, carrying the chat's context.
 
     The loop takes a single prompt, so the finding the chat was opened
@@ -1951,6 +2434,8 @@ def _conversation(body: Ask, finding: Finding | None) -> str:
     reply.
     """
     parts: list[str] = []
+    if scope:
+        parts.append(scope)
     if finding is not None:
         about = (
             f"This conversation is about one finding: « {finding.title} » — "
@@ -1995,12 +2480,24 @@ async def assist(
     except AgentNotConfigured as problem:
         raise HTTPException(status_code=503, detail=str(problem)) from problem
 
+    #: Which model the answer will be about, resolved here so the reply
+    #: can state it off the artifacts rather than off the prose. The
+    #: loader narrows to the same one through the same helper, so the
+    #: two cannot disagree.
+    repository = TieOutRepository.from_session(session)
+    models = models_of(await repository.current_artifacts(deal.id))
+    subject, others = (models[0], models[1:]) if models else (None, [])
+
     try:
         task, outcome = await agent.ask_model(
             session,
             dossier_id=deal.id,
             user_id=auth_subject.subject.id,
-            prompt=_conversation(body, None),
+            prompt=_conversation(
+                body,
+                None,
+                _scope_line(subject, others) if subject is not None else "",
+            ),
             client=client,
             name=deal.name,
         )
@@ -2038,6 +2535,9 @@ async def assist(
             for step in outcome.steps
         ],
         rows=rows,
+        model=subject.filename if subject is not None else None,
+        model_version=subject.version if subject is not None else None,
+        other_models=[f"{one.filename} (v{one.version})" for one in others],
     )
 
 

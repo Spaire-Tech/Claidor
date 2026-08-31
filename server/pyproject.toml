@@ -71,6 +71,7 @@ dependencies = [
   # part by part, and a direct import on a transitive dependency breaks
   # the day the dependency that carried it changes its mind.
   "lxml>=5.0",
+  "pdfplumber>=0.11",
 ]
 
 [dependency-groups]
@@ -130,6 +131,10 @@ extend_platform_trial = { cmd = "python -m scripts.extend_platform_trial", help 
 pre_deploy = { cmd = "task db_migrate && task seed_platform_products", help = "Pre-deploy command run by Render. Migrates DB then re-seeds platform tier products so the startup check passes against any new code." }
 
 [tool.pytest.ini_options]
+# locust's bundled pytest plugin defines a global `session` fixture; under
+# --noconftest it can shadow the app's DB-session fixture and its lazy gevent
+# import deadlocks the run. This suite never drives locust through pytest.
+addopts = "-p no:locust"
 markers = ["auth"]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
@@ -157,7 +162,13 @@ ignore = [
 "migrations/*" = [
   "F401", # remove unused import
 ]
-"scripts/*" = ["T20"]
+# Measurement scripts, not library code. They print (that is their whole
+# output) and several must install a `warnings` filter or extend
+# `sys.path` before importing the readers — otherwise openpyxl's warnings
+# drown the numbers the script exists to produce. Waived here rather than
+# with a noqa on every line, because the alternative is re-discovering it
+# at every sweep.
+"scripts/*" = ["T20", "E402"]
 
 [tool.mypy]
 ignore_missing_imports = true

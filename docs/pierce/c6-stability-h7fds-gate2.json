@@ -1,0 +1,18 @@
+{
+ "model": "h7_new_debt_indexation_fds.xlsx",
+ "runs": 200,
+ "typing": "inferred",
+ "seed_stability": "not re-run \u2014 see the prior record",
+ "cosmetic_invariance": {
+  "variant": "h7_new_debt_indexation_fds-cosmetic.xlsx",
+  "edits": "3 blank rows inserted at the top, sheet renamed",
+  "rules_original": 4,
+  "rules_variant": 4,
+  "identical_by_label": true,
+  "only_in_original": 0,
+  "only_in_variant": 0,
+  "jaccard_by_reference": 0.0,
+  "differences": []
+ },
+ "seconds": 9973.2
+}

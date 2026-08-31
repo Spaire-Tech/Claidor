@@ -1,0 +1,107 @@
+{
+ "ed2-v5": {
+  "rows_scored": 3431,
+  "per_dimension": {
+   "kind": {
+    "right": 3309,
+    "abstained": 122
+   },
+   "b5_type": {
+    "right": 1068,
+    "abstained": 2363
+   },
+   "currency": {
+    "right": 1068,
+    "abstained": 2363
+   },
+   "scale": {
+    "right": 1068,
+    "abstained": 2363
+   },
+   "period": {
+    "wrong": 856,
+    "right": 2453,
+    "abstained": 122
+   },
+   "rate_form": {
+    "right": 3309,
+    "abstained": 122
+   }
+  },
+  "top_confusions": [
+   [
+    "period: said annual, was none",
+    828
+   ],
+   [
+    "period: said none, was annual",
+    28
+   ]
+  ]
+ },
+ "gd3-pcfm": {
+  "rows_scored": 365,
+  "per_dimension": {
+   "kind": {
+    "wrong": 2,
+    "right": 351,
+    "abstained": 12
+   },
+   "b5_type": {
+    "wrong": 2,
+    "abstained": 120,
+    "right": 243
+   },
+   "currency": {
+    "wrong": 2,
+    "abstained": 120,
+    "right": 243
+   },
+   "scale": {
+    "wrong": 2,
+    "abstained": 120,
+    "right": 243
+   },
+   "period": {
+    "wrong": 234,
+    "right": 119,
+    "abstained": 12
+   },
+   "rate_form": {
+    "right": 352,
+    "abstained": 12,
+    "wrong": 1
+   }
+  },
+  "top_confusions": [
+   [
+    "period: said annual, was none",
+    232
+   ],
+   [
+    "kind: said categorical, was continuous",
+    2
+   ],
+   [
+    "b5_type: said date, was money",
+    2
+   ],
+   [
+    "currency: said none, was GBP",
+    2
+   ],
+   [
+    "scale: said units, was millions",
+    2
+   ],
+   [
+    "period: said point-in-time, was annual",
+    2
+   ],
+   [
+    "rate_form: said not-a-rate, was percent",
+    1
+   ]
+  ]
+ }
+}

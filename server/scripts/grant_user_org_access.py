@@ -68,9 +68,7 @@ async def run(
     user: str | None = typer.Option(
         None, "--user", help="User UUID (alternative to --email)."
     ),
-    org: str = typer.Option(
-        ..., "--org", help="Organization slug or UUID."
-    ),
+    org: str = typer.Option(..., "--org", help="Organization slug or UUID."),
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Show intended change without writing."
     ),
@@ -130,9 +128,7 @@ async def run(
         session.add(membership)
         await session.commit()
 
-        typer.echo(
-            f"✓ Granted {target_user.email} access to '{target_org.slug}'."
-        )
+        typer.echo(f"✓ Granted {target_user.email} access to '{target_org.slug}'.")
 
 
 if __name__ == "__main__":

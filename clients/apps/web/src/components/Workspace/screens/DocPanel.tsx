@@ -26,13 +26,16 @@
  * because the contract does.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ago } from '../files'
 import {
   Artifact,
+  ChainFact,
+  DocumentFacts,
   Finding,
   HiddenReport,
   ModelGrid,
+  RecalcMark,
   TieOutApi,
   Version,
 } from './../api'
@@ -52,6 +55,26 @@ const OPEN_LABEL: Record<string, string> = {
   model: 'Open in Excel',
   message: 'Open in Outlook',
   source: 'Open',
+}
+
+//: The denylist's categories, said in words a person can act on. The
+//: category names are the engine's own (`polar.tieout.recalc.denylist`).
+const REFUSAL_WORDS: Record<string, string> = {
+  rtd: 'a real-time feed — its value was gone the moment the file was saved',
+  udf: 'a macro or add-in function — the code is not in the cells',
+  'external-link': 'a reference reaching outside this file',
+  lambda: 'a LAMBDA — a construct our free engine does not have',
+  cube: 'an OLAP cube connection a headless engine does not have',
+  'engine-gap': 'a function our engine measurably cannot compute',
+}
+
+//: The mark's ink, one colour per verdict — the same palette the rest
+//: of the workspace speaks.
+const VERDICT_INK: Record<string, string> = {
+  pass: '#1f8a4c',
+  fail: '#e0322d',
+  refused: '#e8a300',
+  'nothing-compared': '#8f96a0',
 }
 
 const panelHead = {
@@ -102,6 +125,29 @@ export const DocPanel = ({
   const [traced, setTraced] = useState<{ yes: number; no: number } | null>(null)
   const [grid, setGrid] = useState<ModelGrid | null>(null)
   const [open, setOpen] = useState<string | null>(null)
+  //: The source viewer (source PDFs only): the Chain's stored facts,
+  //: the fact whose page is on screen, and that page's pixels. Page
+  //: object URLs are cached per page and revoked when the panel moves
+  //: to another document.
+  const isSourcePdf =
+    doc.kind === 'source' && doc.filename.toLowerCase().endsWith('.pdf')
+  const [chain, setChain] = useState<DocumentFacts | null>(null)
+  const [chainWord, setChainWord] = useState<string | null>(null)
+  const [reading, setReading] = useState(false)
+  //: The recalculation mark (ready models only): the stored verdict
+  //: arrives on the artifact's own counts; running the gate replaces
+  //: it live and the server keeps it for every later read.
+  const isModel = doc.kind === 'model' && doc.status === 'ready'
+  const [mark, setMark] = useState<RecalcMark | null>(
+    (doc.counts['recalc'] as RecalcMark | undefined) ?? null,
+  )
+  const [recalcing, setRecalcing] = useState(false)
+  const [recalcWord, setRecalcWord] = useState<string | null>(null)
+  const [activeFact, setActiveFact] = useState<string | null>(null)
+  const [pageShown, setPageShown] = useState<number | null>(null)
+  const [pageUrl, setPageUrl] = useState<string | null>(null)
+  const [pageWord, setPageWord] = useState<string | null>(null)
+  const pageCache = useRef<Map<number, string>>(new Map())
 
   useEffect(() => {
     let live = true
@@ -142,6 +188,109 @@ export const DocPanel = ({
       live = false
     }
   }, [api, dealId, doc.id])
+
+  //: The Chain's stored record for a source PDF, loaded with the
+  //: panel; page pixels cached per page, revoked when the document
+  //: changes.
+  useEffect(() => {
+    setChain(null)
+    setChainWord(null)
+    setActiveFact(null)
+    setPageShown(null)
+    setPageUrl(null)
+    setPageWord(null)
+    const cache = pageCache.current
+    if (!isSourcePdf) return
+    let live = true
+    api
+      .documentFacts(doc.id)
+      .then((got) => live && setChain(got))
+      .catch(
+        (problem: unknown) =>
+          live &&
+          setChainWord(
+            problem instanceof Error ? problem.message : 'something went wrong',
+          ),
+      )
+    return () => {
+      live = false
+      for (const url of cache.values()) URL.revokeObjectURL(url)
+      cache.clear()
+    }
+  }, [api, doc.id, isSourcePdf])
+
+  //: The mark travels with the artifact, so a panel opened on a marked
+  //: version starts from the stored verdict rather than a blank.
+  useEffect(() => {
+    setMark((doc.counts['recalc'] as RecalcMark | undefined) ?? null)
+    setRecalcing(false)
+    setRecalcWord(null)
+  }, [doc.id, doc.counts])
+
+  //: « Run the recalculation » — deliberate and heavy: the whole model
+  //: goes through the engine. The failure sentence is the server's own
+  //: (no adequate LibreOffice, a file the engine died on) and is shown
+  //: as it stands; nothing is stored on failure.
+  const runRecalc = () => {
+    if (recalcing) return
+    setRecalcing(true)
+    setRecalcWord(null)
+    api
+      .recalculate(doc.id)
+      .then((got) => {
+        setMark(got)
+        onChanged()
+      })
+      .catch((problem: unknown) =>
+        setRecalcWord(
+          problem instanceof Error ? problem.message : 'something went wrong',
+        ),
+      )
+      .finally(() => setRecalcing(false))
+  }
+
+  //: Click a number, see the page: fetch (or reuse) that page's
+  //: pixels and put the fact's box on top. A refusal is the server's
+  //: own sentence, shown where the page would be.
+  const showFact = (fact: ChainFact) => {
+    setActiveFact(fact.id)
+    setPageWord(null)
+    setPageShown(fact.page)
+    const held = pageCache.current.get(fact.page)
+    if (held) {
+      setPageUrl(held)
+      return
+    }
+    setPageUrl(null)
+    api
+      .pageImage(doc.id, fact.page)
+      .then((url) => {
+        pageCache.current.set(fact.page, url)
+        setPageUrl(url)
+      })
+      .catch((problem: unknown) =>
+        setPageWord(
+          problem instanceof Error ? problem.message : 'something went wrong',
+        ),
+      )
+  }
+
+  //: « Read the document » — the deliberate write that fills the
+  //: store. Idempotent server-side, so a re-read replaces wholesale.
+  const readDocument = () => {
+    if (reading) return
+    setReading(true)
+    setChainWord(null)
+    api
+      .extractDocument(doc.id)
+      .then((got) => setChain(got))
+      .catch((problem: unknown) =>
+        setChainWord(
+          problem instanceof Error ? problem.message : 'something went wrong',
+        ),
+      )
+      .finally(() => setReading(false))
+  }
 
   //: « Open the cell » from a finding's modal: the panel arrives with
   //: that finding open, scrolled into view — the cell and its
@@ -191,7 +340,29 @@ export const DocPanel = ({
             ? `${figures} across ${pages} pages`
             : String(figures),
     })
-  if (cells > 0) facts.push({ label: 'Named cells', value: String(cells) })
+  const formulas = Number(doc.counts['formulas'] ?? 0)
+  const named = Number(doc.counts['named'] ?? 0)
+  //: A published model is often a *printout* of a model: the formulas
+  //: are stripped before release and only values remain. Measured on
+  //: the real corpus (27 Aug): eight of eleven closed-deal models hold
+  //: under 0.1% formulas — one holds three. The panel used to show
+  //: « Named cells 432,596 » for such a file, which is both the wrong
+  //: label for that number and the wrong impression of the file.
+  const formulaShare = cells > 0 ? formulas / cells : 0
+  const valuesOnly = cells > 0 && formulaShare < 0.01
+
+  if (cells > 0)
+    facts.push({ label: 'Cells read', value: cells.toLocaleString() })
+  if (cells > 0)
+    facts.push({
+      label: 'Formulas',
+      value:
+        formulas === 0
+          ? 'none — values only'
+          : `${formulas.toLocaleString()} of ${cells.toLocaleString()} cells`,
+    })
+  if (named > 0)
+    facts.push({ label: 'Named cells', value: named.toLocaleString() })
   if (traced !== null && figures > 0) {
     facts.push({ label: 'Traced to the model', value: String(traced.yes) })
     facts.push({ label: 'Not traced', value: String(traced.no) })
@@ -229,7 +400,13 @@ export const DocPanel = ({
               ? fileIcon.xls
               : doc.kind === 'deck'
                 ? fileIcon.ppt
-                : fileIcon.doc
+                : doc.kind === 'memo'
+                  ? fileIcon.doc
+                  : //: A source document is a PDF, and the room's own
+                    //: list already says so — the panel header showing
+                    //: it as a Word file was the older three-kind
+                    //: mapping, from before sources could be opened.
+                    '/workspace/pdf.webp'
           }
           alt=""
           style={{
@@ -341,9 +518,716 @@ export const DocPanel = ({
           </button>
         </div>
 
+        {/* The recalculation mark — agent-designed (no founder drawing
+            covers it). The gate's four verdicts, each with its honest
+            face: validated names the engine and the count; a failure
+            names the differing cells; a refusal says, in words, which
+            constructs no engine of ours may honestly compute and where
+            that routes the file. Never run is a state too, with the
+            deliberate button — recalculation is heavy and is never
+            done behind anyone's back. */}
+        {isModel && (
+          <>
+            <div style={panelHead}>Validated by recalculation</div>
+            <div style={{ ...panelCard, padding: '14px 16px' }}>
+              {mark === null ? (
+                <>
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      color: ink.secondary,
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    This version has not been recalculated. The engine re-runs
+                    every formula from the file&rsquo;s own inputs and compares
+                    what Excel left behind, cell by cell — or refuses, in words,
+                    a file it may not honestly compute.
+                  </div>
+                  {recalcWord !== null && (
+                    <div
+                      style={{
+                        paddingTop: 10,
+                        fontSize: 13,
+                        color: '#c9302c',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {recalcWord}
+                    </div>
+                  )}
+                  <button
+                    onClick={runRecalc}
+                    disabled={recalcing}
+                    style={{
+                      marginTop: 12,
+                      border: 0,
+                      background: recalcing ? '#eceef1' : ink.accent,
+                      color: recalcing ? ink.secondary : '#fff',
+                      borderRadius: 9,
+                      padding: '9px 14px',
+                      font: 'inherit',
+                      fontSize: 13.5,
+                      fontWeight: 500,
+                      cursor: recalcing ? 'default' : 'pointer',
+                    }}
+                  >
+                    {recalcing ? (
+                      //: A run can take minutes on a large model, so the
+                      //: label breathes — the workspace's own working
+                      //: idiom, not a dead grey control.
+                      <span style={{ animation: 'pcDim 1.4s infinite' }}>
+                        Recalculating — the whole model is going through the
+                        engine…
+                      </span>
+                    ) : (
+                      'Run the recalculation'
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: 9 }}
+                  >
+                    <span
+                      style={{
+                        flex: '0 0 auto',
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: VERDICT_INK[mark.verdict] ?? '#8f96a0',
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        letterSpacing: '-.01em',
+                        color: ink.primary,
+                      }}
+                    >
+                      {mark.verdict === 'pass'
+                        ? 'Validated by recalculation'
+                        : mark.verdict === 'fail'
+                          ? 'The engine could not reproduce this file'
+                          : mark.verdict === 'refused'
+                            ? 'Not recalculated — refused, in words'
+                            : 'Nothing to compare'}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      paddingTop: 8,
+                      fontSize: 13.5,
+                      color: ink.secondary,
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    {mark.verdict === 'pass' && (
+                      <>
+                        The engine re-ran the file&rsquo;s formulas from their
+                        own inputs and reproduced all {mark.matched} compared
+                        cells exactly.
+                        {mark.volatile_cone > 0 &&
+                          ` ${mark.volatile_cone} live cells (TODAY, NOW, RAND and their dependents) were set aside — their stored values belong to the moment the file was saved.`}
+                      </>
+                    )}
+                    {mark.verdict === 'fail' && (
+                      <>
+                        {mark.mismatch_count > 0 &&
+                          `${mark.mismatch_count} of ${mark.compared} compared cells came back different. `}
+                        {mark.engine_error_count > 0 &&
+                          `${mark.engine_error_count} cells returned engine errors against stored numbers — the engine's measured inability on those constructs, not the model's defect. `}
+                        {mark.not_computed > 0 &&
+                          `${mark.not_computed} formula cells came back with nothing.`}
+                      </>
+                    )}
+                    {mark.verdict === 'refused' && (
+                      <>
+                        The prescan found constructs no engine of ours may
+                        honestly compute, so no number is claimed:
+                      </>
+                    )}
+                    {mark.verdict === 'nothing-compared' && (
+                      <>
+                        The file&rsquo;s formula cells carry no stored values —
+                        a generator wrote it and Excel never computed it — so
+                        there was nothing to compare and nothing is certified.
+                      </>
+                    )}
+                  </div>
+                  {mark.verdict === 'fail' &&
+                    [...mark.mismatches, ...mark.engine_errors].length > 0 && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          borderTop: hairline,
+                          paddingTop: 4,
+                        }}
+                      >
+                        {[...mark.mismatches, ...mark.engine_errors]
+                          .slice(0, 12)
+                          .map((diff) => (
+                            <div
+                              key={diff.ref}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                gap: 10,
+                                padding: '6px 0',
+                                fontFamily: font.mono,
+                                fontSize: 12,
+                              }}
+                            >
+                              <span style={{ color: ink.primary }}>
+                                {diff.ref}
+                              </span>
+                              <span
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                  textAlign: 'right',
+                                  color: ink.secondary,
+                                }}
+                              >
+                                {diff.stored ?? '—'} stored
+                              </span>
+                              <span
+                                style={{ color: '#c9302c', textAlign: 'right' }}
+                              >
+                                {diff.computed ?? 'nothing'} recalculated
+                              </span>
+                            </div>
+                          ))}
+                        {/* Never a silent cap: when more cells differ than
+                            the panel names, it says how many it is not
+                            showing rather than letting the list read as
+                            the whole truth. */}
+                        {mark.mismatch_count + mark.engine_error_count >
+                          [...mark.mismatches, ...mark.engine_errors].slice(
+                            0,
+                            12,
+                          ).length && (
+                          <div
+                            style={{
+                              padding: '6px 0 2px',
+                              fontSize: 12.5,
+                              color: ink.faint,
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            …and{' '}
+                            {mark.mismatch_count +
+                              mark.engine_error_count -
+                              [...mark.mismatches, ...mark.engine_errors].slice(
+                                0,
+                                12,
+                              ).length}{' '}
+                            more not named here.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  {mark.verdict === 'refused' && (
+                    <>
+                      <div
+                        style={{
+                          marginTop: 10,
+                          borderTop: hairline,
+                          paddingTop: 4,
+                        }}
+                      >
+                        {mark.refusals.map((refusal) => (
+                          <div
+                            key={`${refusal.ref}-${refusal.target}`}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'baseline',
+                              gap: 10,
+                              padding: '6px 0',
+                            }}
+                          >
+                            <span
+                              style={{
+                                flex: '0 0 auto',
+                                fontFamily: font.mono,
+                                fontSize: 12,
+                                color: ink.primary,
+                              }}
+                            >
+                              {refusal.ref}
+                            </span>
+                            <span
+                              style={{
+                                flex: 1,
+                                minWidth: 0,
+                                fontSize: 12.5,
+                                color: ink.secondary,
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {refusal.target} —{' '}
+                              {REFUSAL_WORDS[refusal.category] ??
+                                refusal.category}
+                            </span>
+                          </div>
+                        ))}
+                        {mark.refusal_count > mark.refusals.length && (
+                          <div
+                            style={{
+                              padding: '6px 0',
+                              fontSize: 12.5,
+                              color: ink.faint,
+                            }}
+                          >
+                            …and {mark.refusal_count - mark.refusals.length}{' '}
+                            more.
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          paddingTop: 8,
+                          fontSize: 13,
+                          color: ink.secondary,
+                          lineHeight: 1.55,
+                        }}
+                      >
+                        {mark.route === 'arbiter'
+                          ? 'Real Excel could settle this file. Until an arbiter run exists, the honest answer is « we did not check this ».'
+                          : 'Nothing we could run recomputes these, so the honest answer is « we did not check this ».'}
+                      </div>
+                    </>
+                  )}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 10,
+                      marginTop: 12,
+                      borderTop: hairline,
+                      paddingTop: 10,
+                    }}
+                  >
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontFamily: font.mono,
+                        fontSize: 11,
+                        color: ink.faint,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      run {ago(mark.computed_at)}
+                      {mark.engine ? ` · ${mark.engine}` : ''}
+                    </span>
+                    <button
+                      onClick={runRecalc}
+                      disabled={recalcing}
+                      style={{
+                        flex: '0 0 auto',
+                        border: 0,
+                        background: 'transparent',
+                        padding: 0,
+                        font: 'inherit',
+                        fontSize: 12.5,
+                        fontWeight: 500,
+                        color: recalcing ? ink.faint : ink.accent,
+                        cursor: recalcing ? 'default' : 'pointer',
+                      }}
+                    >
+                      {recalcing ? (
+                        <span style={{ animation: 'pcDim 1.4s infinite' }}>
+                          Recalculating…
+                        </span>
+                      ) : (
+                        'Run again'
+                      )}
+                    </button>
+                  </div>
+                  {recalcWord !== null && (
+                    <div
+                      style={{
+                        paddingTop: 8,
+                        fontSize: 13,
+                        color: '#c9302c',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {recalcWord}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* The source viewer — agent-designed (no founder drawing
+            covers it). The click-a-number, see-the-highlighted-page
+            moment: the Chain's stored facts, each cited to a page and
+            a box; the page rendered from the stored bytes with the
+            fact's box ringed. Coverage is part of the answer — pages
+            the extractor refused are listed in its own words. */}
+        {isSourcePdf && (
+          <>
+            <div style={panelHead}>Every number, cited to its page</div>
+            {pageShown !== null && (
+              <div style={{ ...panelCard, padding: 10 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 10,
+                    padding: '2px 6px 10px',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: font.mono,
+                      fontSize: 12,
+                      color: ink.secondary,
+                    }}
+                  >
+                    p. {pageShown}
+                  </span>
+                  <span style={{ fontSize: 12.5, color: ink.faint }}>
+                    rendered from the stored file, the cited box ringed
+                  </span>
+                </div>
+                {pageWord !== null ? (
+                  <div
+                    style={{
+                      padding: '18px 6px',
+                      fontSize: 13.5,
+                      color: ink.secondary,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {pageWord}
+                  </div>
+                ) : pageUrl === null ? (
+                  <div
+                    style={{
+                      minHeight: 220,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 13.5,
+                      color: ink.faint,
+                      background: well,
+                      borderRadius: 9,
+                    }}
+                  >
+                    Rendering page {pageShown}…
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      position: 'relative',
+                      borderRadius: 9,
+                      overflow: 'hidden',
+                      boxShadow: cardRing,
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={pageUrl}
+                      alt={`Page ${pageShown} of ${doc.filename}`}
+                      style={{ display: 'block', width: '100%' }}
+                    />
+                    {(chain?.facts ?? [])
+                      .filter(
+                        (fact) =>
+                          fact.page === pageShown && fact.id === activeFact,
+                      )
+                      .map((fact) => (
+                        //: Percent coordinates off the page's own point
+                        //: size, so the ring lands regardless of render
+                        //: resolution. Padded a hair so the glyphs
+                        //: breathe inside the ring.
+                        <span
+                          key={fact.id}
+                          style={{
+                            position: 'absolute',
+                            left: `${((fact.box.x0 - 2) / fact.page_width) * 100}%`,
+                            top: `${((fact.box.top - 2) / fact.page_height) * 100}%`,
+                            width: `${((fact.box.x1 - fact.box.x0 + 4) / fact.page_width) * 100}%`,
+                            height: `${((fact.box.bottom - fact.box.top + 4) / fact.page_height) * 100}%`,
+                            border: '2px solid #0060d0',
+                            borderRadius: 4,
+                            boxShadow:
+                              '0 0 0 3px rgba(0,96,208,.18), 0 0 18px rgba(0,96,208,.25)',
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={panelCard}>
+              {chainWord !== null && (
+                //: A read that failed says why and offers another go —
+                //: and the « not read yet » invitation below stands
+                //: down, because promising a read we have just been
+                //: told cannot happen is the one thing worse than the
+                //: failure itself.
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 10,
+                    padding: '13px 16px',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 13.5,
+                      color: ink.secondary,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {chainWord}
+                  </span>
+                  <button
+                    onClick={readDocument}
+                    disabled={reading}
+                    style={{
+                      border: 0,
+                      background: 'transparent',
+                      padding: 0,
+                      font: 'inherit',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: reading ? ink.faint : ink.accent,
+                      cursor: reading ? 'default' : 'pointer',
+                    }}
+                  >
+                    {reading ? 'Reading…' : 'Try reading it again'}
+                  </button>
+                </div>
+              )}
+              {chainWord === null && chain === null && (
+                <div
+                  style={{
+                    padding: '13px 16px',
+                    fontSize: 13.5,
+                    color: ink.faint,
+                  }}
+                >
+                  Looking up what the Chain holds…
+                </div>
+              )}
+              {chainWord === null &&
+                chain !== null &&
+                chain.facts.length === 0 &&
+                chain.refusals.length === 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      padding: '14px 16px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 13.5,
+                        color: ink.secondary,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      This document has not been read into the Chain yet.
+                      Reading it extracts every number with its page and
+                      highlight box — nothing is sent anywhere.
+                    </span>
+                    <button
+                      onClick={readDocument}
+                      style={{
+                        alignSelf: 'flex-start',
+                        border: 0,
+                        background: ink.accent,
+                        color: '#fff',
+                        borderRadius: 11,
+                        padding: '9px 16px',
+                        font: 'inherit',
+                        fontSize: 13.5,
+                        fontWeight: 500,
+                        cursor: reading ? 'progress' : 'pointer',
+                      }}
+                    >
+                      {reading ? 'Reading…' : 'Read the document'}
+                    </button>
+                  </div>
+                )}
+              {chain !== null && chain.facts.length > 0 && (
+                //: How much is here, before the reader scrolls it —
+                //: a long list arriving unframed is the same silence
+                //: as a truncated one.
+                <div
+                  style={{
+                    padding: '11px 16px 10px',
+                    borderBottom: hairline,
+                    fontSize: 12.5,
+                    color: ink.faint,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {chain.facts.length} number
+                  {chain.facts.length === 1 ? '' : 's'} read from this document,
+                  each cited to its page. Click one to see it on the page.
+                </div>
+              )}
+              {chain !== null &&
+                chain.facts
+                  .slice()
+                  .sort((a, b) => a.page - b.page || a.box.top - b.box.top)
+                  .map((fact, index) => {
+                    const on = activeFact === fact.id
+                    return (
+                      <button
+                        key={fact.id}
+                        onClick={() => showFact(fact)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          gap: 10,
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 0,
+                          borderTop: index === 0 ? 0 : hairline,
+                          background: on
+                            ? 'rgba(0,96,208,.045)'
+                            : 'transparent',
+                          font: 'inherit',
+                          cursor: 'pointer',
+                          padding: '10px 16px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            flex: '0 0 auto',
+                            fontFamily: font.mono,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: on ? '#0060d0' : ink.primary,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {fact.text}
+                        </span>
+                        <span
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            fontSize: 12.5,
+                            color: ink.secondary,
+                            lineHeight: 1.45,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {fact.line}
+                        </span>
+                        <span
+                          style={{
+                            flex: '0 0 auto',
+                            fontSize: 11.5,
+                            color: ink.faint,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          p. {fact.page}
+                        </span>
+                      </button>
+                    )
+                  })}
+              {chain !== null && chain.refusals.length > 0 && (
+                <div
+                  style={{
+                    borderTop: hairline,
+                    padding: '11px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                  }}
+                >
+                  {/* Coverage said out loud: the pages the extractor
+                      refused, each with its reason — a gap is part of
+                      the answer, never a silence. */}
+                  {chain.refusals.map((refusal) => (
+                    <span
+                      key={`${refusal.page}-${refusal.reason}`}
+                      style={{
+                        fontSize: 12.5,
+                        color: ink.faint,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      p. {refusal.page} not read — {refusal.reason}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {facts.length > 0 && (
           <>
             <div style={panelHead}>What Swens found in it</div>
+            {/* A published model is often a printout of a model. Saying
+                so where a person meets the file — not only in the
+                report — because « ready » and no findings on a
+                400,000-cell file reads as « clean », and the reason it
+                is empty is that there was almost nothing to read.
+                Agent-designed; the engine's own `values_only` is what
+                the report speaks from, this is the same fact from the
+                artifact's counts. */}
+            {isModel && valuesOnly && (
+              <div
+                style={{
+                  ...panelCard,
+                  display: 'flex',
+                  gap: 11,
+                  padding: '13px 16px',
+                  marginBottom: 8,
+                  background: '#fdf6e7',
+                  boxShadow: 'inset 0 0 0 1px rgba(232,163,0,.28)',
+                }}
+              >
+                <span
+                  style={{
+                    flex: '0 0 auto',
+                    width: 7,
+                    height: 7,
+                    marginTop: 7,
+                    borderRadius: '50%',
+                    background: '#e8a300',
+                  }}
+                />
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: 13.5,
+                    lineHeight: 1.55,
+                    color: '#5a4a1f',
+                  }}
+                >
+                  {formulas === 0
+                    ? 'This copy carries values only — not one cell holds a formula. The rules that read how a model is built have nothing to read here; the checks that read values still ran.'
+                    : `This copy carries values, not formulas — ${formulas.toLocaleString()} of ${cells.toLocaleString()} cells hold one. The rules that read how a model is built can see almost none of it; the checks that read values still ran.`}
+                </span>
+              </div>
+            )}
             <div style={panelCard}>
               {facts.map((fact, index) => (
                 <div

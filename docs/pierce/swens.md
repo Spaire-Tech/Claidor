@@ -6,8 +6,12 @@ disagrees with it — a plan, a screen, a docstring, an opinion of
 mine — this wins.
 
 It supersedes the name in the older files (Antford → Ances → Ambre →
-**Swens**) and the product definition inside `ambre-plan.md`, whose
-tracks and method still stand but whose name and framing do not.
+**Swens**) and every older product definition. The plan — the step
+list from today to « complete » — is `swens-plan.md`, and only
+`swens-plan.md`: the plan the founder asked for and approved (written
+as `ambre-plan.md`; this document superseded its name and framing,
+never its tracks or method). The other planning documents are deleted
+(git history keeps them).
 
 **Read this before answering any question about what Swens is, what
 it does, what it sells, or what a screen should contain.** Today

@@ -1,0 +1,62 @@
+{
+ "rows": 100,
+ "rows_without_a_workbook": 20,
+ "isolated": {
+  "kind": {
+   "right": 97,
+   "abstained": 3
+  },
+  "b5_type": {
+   "wrong": 30,
+   "right": 54,
+   "abstained": 16
+  },
+  "currency": {
+   "abstained": 46,
+   "right": 54
+  },
+  "scale": {
+   "abstained": 46,
+   "right": 54
+  },
+  "period": {
+   "right": 71,
+   "wrong": 13,
+   "abstained": 16
+  },
+  "rate_form": {
+   "right": 80,
+   "abstained": 16,
+   "wrong": 4
+  }
+ },
+ "as_used": {
+  "kind": {
+   "right": 97,
+   "abstained": 3
+  },
+  "b5_type": {
+   "wrong": 30,
+   "right": 54,
+   "abstained": 16
+  },
+  "currency": {
+   "abstained": 46,
+   "right": 54
+  },
+  "scale": {
+   "abstained": 46,
+   "right": 54
+  },
+  "period": {
+   "right": 69,
+   "wrong": 15,
+   "abstained": 16
+  },
+  "rate_form": {
+   "right": 80,
+   "abstained": 16,
+   "wrong": 4
+  }
+ }
+}

@@ -1,0 +1,72 @@
+#!/bin/bash
+# Kill a long-running job by command pattern, without killing the shell
+# that asked for it.
+#
+# Why this exists, and why it is a script rather than a rule. `pkill -f
+# <pattern>` matches every process whose *full command line* contains the
+# pattern — which includes the shell running the pkill, because the
+# pattern is in its command line too. It exits 144, the session dies, and
+# the job usually survives. That has caught this team three times in one
+# week in three different variants, each time after the previous one was
+# written down as a lesson. A paragraph in a document cannot help at the
+# moment someone is moving fast; a wrapper that cannot make the mistake
+# can. Any rule we keep re-breaking belongs in code, not in prose.
+#
+#   dev/kill-job scripts.watch_delta         # signal TERM
+#   dev/kill-job corpus_gate KILL            # something else
+#   dev/kill-job scripts.watch_delta --dry   # show, do not kill
+set -euo pipefail
+
+if [ $# -lt 1 ]; then
+    echo "usage: dev/kill-job <pattern> [signal|--dry]" >&2
+    exit 2
+fi
+
+pattern="$1"
+signal="TERM"
+dry=""
+case "${2:-}" in
+    --dry) dry="yes" ;;
+    "") ;;
+    *) signal="$2" ;;
+esac
+
+# Our own ancestry is off limits: this script, the shell that invoked it,
+# that shell's parent, and so on up to init. This is the whole point of
+# the file — the pattern is in every one of their command lines.
+declare -A protected=()
+walk=$$
+while [ -n "${walk}" ] && [ "${walk}" -gt 1 ]; do
+    protected["${walk}"]=1
+    walk="$(ps -o ppid= -p "${walk}" 2>/dev/null | tr -d ' ')"
+done
+
+targets=()
+while read -r pid; do
+    [ -n "${pid}" ] || continue
+    [ -n "${protected[${pid}]:-}" ] && continue
+    targets+=("${pid}")
+done < <(pgrep -f -- "${pattern}" 2>/dev/null || true)
+
+if [ ${#targets[@]} -eq 0 ]; then
+    echo "no process matches '${pattern}' (excluding this shell's own ancestry)"
+    exit 0
+fi
+
+# Always say what is about to die, with its size, because the usual reason
+# to kill a job here is that it is eating the memory another job needs.
+echo "matching '${pattern}':"
+for pid in "${targets[@]}"; do
+    line="$(ps -o pid=,etime=,rss=,cmd= -p "${pid}" 2>/dev/null | cut -c1-100 || true)"
+    [ -n "${line}" ] && echo "  ${line}"
+done
+
+if [ -n "${dry}" ]; then
+    echo "(--dry: nothing killed)"
+    exit 0
+fi
+
+for pid in "${targets[@]}"; do
+    kill -"${signal}" "${pid}" 2>/dev/null || true
+done
+echo "sent SIG${signal} to ${#targets[@]} process(es)"

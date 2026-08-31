@@ -9,7 +9,7 @@ Create Date: 2026-05-08 12:32:00.000000
 
 """
 
-from alembic import op  # noqa: F401
+from alembic import op
 
 revision = "a6b7c8d9e0f1"
 down_revision = "z5a6b7c8d9e0"

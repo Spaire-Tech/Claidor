@@ -2,6 +2,10 @@
 
 Legal research platform for OHADA law (see README.md). Monorepo with Python/FastAPI backend and Next.js frontend. NOTE: the backend Python package keeps the internal name `polar` (inherited from upstream).
 
+## Swens — read this first
+
+This repository carries the Swens build (a model review platform for finance). Before answering any question about what Swens is, what the plan is, or what a screen should contain, open `docs/pierce/notes.md` — it names the documents of record (`docs/pierce/swens.md` for the product, `docs/pierce/swens-plan.md` for the plan, `docs/pierce/design-swens/` for the design). Never answer those questions from memory.
+
 ## Quick Start
 
 ```bash

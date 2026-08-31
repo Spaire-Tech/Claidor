@@ -1,0 +1,106 @@
+{
+ "file": "inverurie_foresterhill_model.xlsm",
+ "bytes": 1186947,
+ "cells": 99601,
+ "sheets": 20,
+ "formulas": 3,
+ "values_pasted": true,
+ "analytical": [
+  {
+   "rule": "model-own-check",
+   "severity": "smell",
+   "ref": "SG ASP Proforma!BG38",
+   "sheet": "SG ASP Proforma",
+   "detail": "The model's own check row \u00ab Check \u00bb reports -2.323 \u2014 a row that is zero everywhere else."
+  },
+  {
+   "rule": "model-own-check",
+   "severity": "smell",
+   "ref": "SG ASP Proforma!BG67",
+   "sheet": "SG ASP Proforma",
+   "detail": "The model's own check row \u00ab Check \u00bb reports -2.323 \u2014 a row that is zero everywhere else."
+  },
+  {
+   "rule": "model-own-check",
+   "severity": "smell",
+   "ref": "SG ASP Proforma!AF91",
+   "sheet": "SG ASP Proforma",
+   "detail": "The model's own check row \u00ab Check \u00bb reports -2.323 \u2014 a row that is zero everywhere else."
+  },
+  {
+   "rule": "model-own-check",
+   "severity": "smell",
+   "ref": "SG ASP Proforma!AF121",
+   "sheet": "SG ASP Proforma",
+   "detail": "The model's own check row \u00ab Check \u00bb reports -2.32 \u2014 a row that is zero everywhere else."
+  }
+ ],
+ "abstentions": [
+  {
+   "rule": "balance-sheet",
+   "why": "No balance sheet was located."
+  }
+ ],
+ "tallies": {
+  "model-own-check": {
+   "total": 20,
+   "clean": 16
+  },
+  "time-axis": {
+   "total": 3,
+   "clean": 3
+  },
+  "cash-continuity": {
+   "total": 6,
+   "clean": 6
+  }
+ },
+ "structural_count": 5,
+ "audit_tallies": {
+  "long-formula": {
+   "total": 3,
+   "raised": 1
+  },
+  "volatile": {
+   "total": 3,
+   "raised": 1
+  },
+  "hardcode-in-formula": {
+   "total": 3,
+   "raised": 0
+  },
+  "inconsistent-anchoring": {
+   "total": 3,
+   "raised": 0
+  },
+  "inconsistent-row": {
+   "total": 3,
+   "raised": 0
+  },
+  "external-link": {
+   "total": 3,
+   "raised": 0
+  },
+  "error-value": {
+   "total": 99601,
+   "raised": 2
+  },
+  "typed-over-formula": {
+   "total": 99598,
+   "raised": 0
+  },
+  "typed-over-edge": {
+   "total": 99598,
+   "raised": 0
+  },
+  "circular": {
+   "total": 3,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 20,
+   "raised": 0
+  }
+ },
+ "seconds": 3.4
+}

@@ -1,0 +1,33 @@
+#!/bin/bash
+# Install LibreOffice 25.8.7 (Calc + UNO) into /opt for Track B's
+# recalculator. Session containers are ephemeral, so this runs once
+# per fresh container; it is idempotent and verifies before claiming.
+# Proven end to end on 26 Aug 2026: headless socket + calculateAll()
+# recomputed an uncached formula correctly (see docs/pierce/worklog.md).
+set -euo pipefail
+
+VERSION="25.8.7"
+TARGET="/opt/libreoffice25.8"
+URL="https://download.documentfoundation.org/libreoffice/stable/${VERSION}/deb/x86_64/LibreOffice_${VERSION}_Linux_x86-64_deb.tar.gz"
+
+if [ -x "${TARGET}/program/soffice" ]; then
+    echo "already installed: $(${TARGET}/program/soffice --version | head -1)"
+else
+    workdir="$(mktemp -d)"
+    trap 'rm -rf "${workdir}"' EXIT
+    echo "downloading LibreOffice ${VERSION} (~200MB)..."
+    curl -sSL -o "${workdir}/lo.tar.gz" "${URL}"
+    tar xzf "${workdir}/lo.tar.gz" -C "${workdir}"
+    dpkg -i "${workdir}"/LibreOffice_${VERSION}*/DEBS/*.deb > /dev/null
+    echo "installed: $(${TARGET}/program/soffice --version | head -1)"
+fi
+
+# Verify the three things B1 needs: the UNO bridge imports in the
+# bundled interpreter, and Calc loads files headlessly.
+"${TARGET}/program/python" -c "import uno" && echo "ok uno (bundled python)"
+smoke="$(mktemp -d)"
+trap 'rm -rf "${smoke}"' EXIT
+printf '1,2\n' > "${smoke}/smoke.csv"
+"${TARGET}/program/soffice" --headless --convert-to xlsx --outdir "${smoke}" "${smoke}/smoke.csv" > /dev/null 2>&1
+[ -f "${smoke}/smoke.xlsx" ] && echo "ok calc (headless conversion)"
+echo "ready: point the recalc driver at ${TARGET}/program"

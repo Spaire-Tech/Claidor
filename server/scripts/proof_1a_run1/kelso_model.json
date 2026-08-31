@@ -1,0 +1,122 @@
+{
+ "file": "kelso_model.xlsm",
+ "bytes": 4231503,
+ "cells": 470594,
+ "sheets": 55,
+ "formulas": 814,
+ "values_pasted": true,
+ "analytical": [
+  {
+   "rule": "model-own-check",
+   "severity": "error",
+   "ref": "ReportRatiosSA!E352",
+   "sheet": "ReportRatiosSA",
+   "detail": "The model's own check row \u00ab Check: Minimum - forward looking ADSCR > breach level \u00bb reports 1.15 \u2014 a row that is zero everywhere else."
+  },
+  {
+   "rule": "model-own-check",
+   "severity": "error",
+   "ref": "ReportRatiosSA!E353",
+   "sheet": "ReportRatiosSA",
+   "detail": "The model's own check row \u00ab Check: Minimum - backward looking ADSCR > breach level \u00bb reports 1.15 \u2014 a row that is zero everywhere else."
+  },
+  {
+   "rule": "model-own-check",
+   "severity": "error",
+   "ref": "ReportRatiosSA!E356",
+   "sheet": "ReportRatiosSA",
+   "detail": "The model's own check row \u00ab Check: Look forward ADSCR > distribution lockup level \u00bb reports 1.1 \u2014 a row that is zero everywhere else."
+  },
+  {
+   "rule": "model-own-check",
+   "severity": "error",
+   "ref": "ReportRatiosSA!E357",
+   "sheet": "ReportRatiosSA",
+   "detail": "The model's own check row \u00ab Check: Look backward ADSCR > distribution lockup level \u00bb reports 1.1 \u2014 a row that is zero everywhere else."
+  }
+ ],
+ "abstentions": [
+  {
+   "rule": "balance-sheet",
+   "why": "ReportFinStatsAnnual: the net-assets and equity rows are not unique (2 and 1 candidates) \u2014 not paired, not guessed."
+  },
+  {
+   "rule": "balance-sheet",
+   "why": "ReportFinStatsSA: the net-assets and equity rows are not unique (2 and 1 candidates) \u2014 not paired, not guessed."
+  }
+ ],
+ "tallies": {
+  "model-own-check": {
+   "total": 16,
+   "clean": 12
+  },
+  "time-axis": {
+   "total": 27,
+   "clean": 27
+  },
+  "cash-continuity": {
+   "total": 13,
+   "clean": 13
+  }
+ },
+ "structural_count": 2,
+ "audit_tallies": {
+  "long-formula": {
+   "total": 814,
+   "raised": 0
+  },
+  "volatile": {
+   "total": 814,
+   "raised": 0
+  },
+  "hardcode-in-formula": {
+   "total": 814,
+   "raised": 0
+  },
+  "inconsistent-anchoring": {
+   "total": 814,
+   "raised": 0
+  },
+  "inconsistent-row": {
+   "total": 814,
+   "raised": 0
+  },
+  "external-link": {
+   "total": 814,
+   "raised": 0
+  },
+  "error-value": {
+   "total": 470594,
+   "raised": 0
+  },
+  "typed-over-formula": {
+   "total": 469780,
+   "raised": 0
+  },
+  "typed-over-edge": {
+   "total": 469780,
+   "raised": 0
+  },
+  "skipped-cell": {
+   "total": 5,
+   "raised": 0
+  },
+  "inconsistent-total": {
+   "total": 5,
+   "raised": 0
+  },
+  "range-over-block": {
+   "total": 5,
+   "raised": 0
+  },
+  "circular": {
+   "total": 814,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 55,
+   "raised": 1
+  }
+ },
+ "seconds": 20.4
+}

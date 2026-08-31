@@ -29,12 +29,17 @@
  *   material findings written out, the rest one line each, the
  *   abstentions — and no generated prose. The narrative writer is a
  *   later phase, by the founder's decision.
- * - « Download the marked-up model » is present as drawn and
- *   disabled, saying what it will hand over — the workbook copy with
- *   problem cells coloured and noted. No substitute file.
- * - Version rows in the dropdown are facts (who, when); picking one
- *   does not yet re-scope the page, so the rows do not pretend to be
- *   buttons.
+ * - « Download the marked-up model » is live: the server builds the
+ *   workbook copy on request — problem cells coloured and noted,
+ *   nothing altered — and refusals surface as the server's own
+ *   sentence in the card.
+ * - Version rows in the dropdown are buttons, as drawn: picking an
+ *   older upload re-scopes Overview and Findings to *that* version —
+ *   the audit re-run on its stored cells, computed on request and
+ *   persisted nowhere. Those findings carry no durable identity, so
+ *   the row actions (fix, dismiss, open) give way to the sentence
+ *   saying rulings live on the current version; the report sheet and
+ *   the marked-up download stay the current version's and say so.
  */
 
 import {
@@ -49,12 +54,17 @@ import {
   Artifact,
   auditRecord,
   CheckRun,
+  Coverage,
   DealListItem,
   DealPage as DealPageData,
+  DeckDelta,
   Finding,
   Link,
+  RecalcMark,
   TieOutApi,
   Version,
+  VersionAudit,
+  VersionDelta,
 } from '../api'
 import { fileIcon, font, ink } from '../design'
 import { categoryOfKey } from '../files'
@@ -67,6 +77,41 @@ export const sevOf = (f: Finding): 1 | 2 | 3 => {
 }
 const SEV_WORD = { 1: 'Material', 2: 'Significant', 3: 'Observation' } as const
 const SEV_DOT = { 1: '#e0322d', 2: '#e8a300', 3: '#2b6cf5' } as const
+
+/** The Watch's eight classes, in the screen's words — the same
+ *  attention inks the rest of the workspace uses: red for a defect,
+ *  amber for an assumption or method at risk, blue for information,
+ *  green for a repair, grey for structure. */
+/** A count with its thousands grouped, for anything a person reads on
+ *  a printed page. Non-numbers pass through as they came. */
+const grouped = (value: unknown): string =>
+  typeof value === 'number' ? value.toLocaleString() : String(value ?? '')
+
+//: The deck-delta panel's own quiet line — loading, and the server's
+//: refusal sentence when a version's bytes were dropped.
+const deckNote: React.CSSProperties = {
+  padding: '18px 4px 0',
+  fontSize: 13.5,
+  color: '#77808c',
+  lineHeight: 1.55,
+}
+
+const DELTA_KIND = {
+  new_defect: { word: 'New defect', dot: '#e0322d' },
+  class_change: { word: 'Changed class', dot: '#e0322d' },
+  relabelled_line: { word: 'Relabelled line', dot: '#2b6cf5' },
+  methodology_change: { word: 'Methodology change', dot: '#e8a300' },
+  moved_assumption: { word: 'Assumption moved', dot: '#e8a300' },
+  //: The Watch's C3 pair, merged in the seventeenth sweep: a cell that
+  //: was empty now holds a value, and a cell that held one is now
+  //: empty. Emptying carries the amber of an assumption at risk — a
+  //: removed input changes an answer silently; filling is information.
+  emptied_cell: { word: 'Cell emptied', dot: '#e8a300' },
+  filled_cell: { word: 'Cell filled', dot: '#2b6cf5' },
+  material_output: { word: 'Output moved', dot: '#2b6cf5' },
+  structure: { word: 'Structure', dot: '#8f96a0' },
+  repaired_defect: { word: 'Repaired', dot: '#1f8a4c' },
+} as const
 
 /** « Today 11:40 » — the checked column's phrasing, shared shape with
  *  the project list. */
@@ -154,15 +199,45 @@ export const ProjectPage = ({
   const [runs, setRuns] = useState<CheckRun[] | null>(null)
   const [versions, setVersions] = useState<Version[] | null>(null)
   const [links, setLinks] = useState<Link[] | null>(null)
-  const [tab, setTab] = useState<'Overview' | 'Findings' | 'Sources'>(
-    'Overview',
-  )
+  const [tab, setTab] = useState<
+    'Overview' | 'Findings' | 'Versions' | 'Sources'
+  >('Overview')
   const [srcView, setSrcView] = useState<'map' | 'list'>('map')
   const [sev, setSev] = useState<0 | 1 | 2 | 3>(0)
   const [openId, setOpenId] = useState<string | null>(null)
   const [verOpen, setVerOpen] = useState(false)
+  //: The picked version, when it is not the current one. Null means
+  //: the page speaks about the current version, as it always did.
+  const [pastVer, setPastVer] = useState<number | null>(null)
+  //: The Versions tab: which revision's delta is open (the new side's
+  //: artifact id), and every delta computed so far — cached, because
+  //: the server computes each one fresh from the stored bytes. A
+  //: string value that is not 'loading' is the server's own refusal
+  //: sentence, shown as it stands.
+  const [deltaFor, setDeltaFor] = useState<string | null>(null)
+  const [deltas, setDeltas] = useState<
+    Record<
+      string,
+      VersionDelta | null | 'loading' | 'identical' | { refused: string }
+    >
+  >({})
+  //: The same revision's effect on what was *sent out* — the deck tied
+  //: out against both versions. Cached the same way and for the same
+  //: reason: three files are read to answer it.
+  const [deckDeltas, setDeckDeltas] = useState<
+    Record<string, DeckDelta | null | 'loading' | { refused: string }>
+  >({})
+  //: Version audits by artifact id — computed server-side on request,
+  //: cached here so re-picking a version does not re-run it.
+  const [pastAudits, setPastAudits] = useState<
+    Record<string, VersionAudit | 'loading' | 'failed'>
+  >({})
   const [checking, setChecking] = useState(false)
   const [repOpen, setRepOpen] = useState(false)
+  const [markingUp, setMarkingUp] = useState(false)
+  //: The marked-up download's word to the person — the server's own
+  //: refusal sentence, shown as it stands; null when all is well.
+  const [markupWord, setMarkupWord] = useState<string | null>(null)
   //: « Not a finding » asks for the reason; the save gates on more
   //: than two characters — the design's own threshold.
   const [noteFor, setNoteFor] = useState<string | null>(null)
@@ -209,11 +284,155 @@ export const ProjectPage = ({
     }
   }, [api, model])
 
+  //: The marked-up model: the server builds the copy on request and
+  //: this hands it to the browser as a download. A refusal (no model,
+  //: nothing open to mark up) is the server's own sentence, shown in
+  //: the card's subtitle as it stands.
+  const downloadMarkup = () => {
+    if (markingUp) return
+    setMarkingUp(true)
+    setMarkupWord(null)
+    api
+      .markedUpModel(deal.id)
+      .then(({ blob, filename }) => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+      })
+      .catch((problem: unknown) => {
+        setMarkupWord(
+          problem instanceof Error ? problem.message : 'something went wrong',
+        )
+      })
+      .finally(() => setMarkingUp(false))
+  }
+
+  //: The Versions tab's selection: fetch a revision's delta once and
+  //: keep it. The server computes fresh from the stored bytes; a
+  //: refusal (bytes dropped under the retention policy) is its own
+  //: sentence, kept and shown as it stands.
+  //: Two uploads with the same digest are the same file, so there is
+  //: nothing to compare and no reason to ask. Measured, this is what
+  //: it saves: the server spends **158 seconds** on a 432,596-cell
+  //: model to conclude that a re-upload changed nothing — 58 of them
+  //: reading the two files and most of the rest aligning two large
+  //: sheets against themselves. Identical bytes are identical
+  //: workbooks, so the answer is exact rather than quick.
+  //:
+  //: A version uploaded before the digest was recorded has none, and
+  //: is compared as before: two absences are not a match.
+  const sameFileAsBefore = useCallback(
+    (artifactId: string): boolean => {
+      const ordered = [...(versions ?? [])].sort(
+        (a, b) => a.version - b.version,
+      )
+      const at = ordered.findIndex((one) => one.id === artifactId)
+      if (at <= 0) return false
+      const mine = ordered[at]?.counts?.['sha256']
+      const before = ordered[at - 1]?.counts?.['sha256']
+      return typeof mine === 'string' && mine.length > 0 && mine === before
+    },
+    [versions],
+  )
+
+  const selectDelta = useCallback(
+    (artifactId: string) => {
+      setDeltaFor(artifactId)
+      if (sameFileAsBefore(artifactId)) {
+        setDeltas((held) =>
+          artifactId in held ? held : { ...held, [artifactId]: 'identical' },
+        )
+        setDeckDeltas((held) =>
+          artifactId in held ? held : { ...held, [artifactId]: null },
+        )
+        return
+      }
+      setDeltas((held) => {
+        if (artifactId in held) return held
+        api
+          .versionDelta(artifactId)
+          .then((got) => setDeltas((now) => ({ ...now, [artifactId]: got })))
+          .catch((problem: unknown) =>
+            setDeltas((now) => ({
+              ...now,
+              [artifactId]: {
+                refused:
+                  problem instanceof Error
+                    ? problem.message
+                    : 'something went wrong',
+              },
+            })),
+          )
+        return { ...held, [artifactId]: 'loading' }
+      })
+      setDeckDeltas((held) => {
+        if (artifactId in held) return held
+        api
+          .deckDelta(artifactId)
+          .then((got) =>
+            setDeckDeltas((now) => ({ ...now, [artifactId]: got })),
+          )
+          .catch((problem: unknown) =>
+            setDeckDeltas((now) => ({
+              ...now,
+              [artifactId]: {
+                refused:
+                  problem instanceof Error
+                    ? problem.message
+                    : 'something went wrong',
+              },
+            })),
+          )
+        return { ...held, [artifactId]: 'loading' }
+      })
+    },
+    [api, sameFileAsBefore],
+  )
+  //: Opening the tab lands on the newest revision without a click —
+  //: « what did the last upload do » is the question the tab answers.
+  //: Deferred a tick so the selection's setState never runs
+  //: synchronously inside the effect (the cascading-render lint rule).
+  useEffect(() => {
+    if (tab !== 'Versions' || deltaFor !== null) return
+    const newest = (versions ?? [])
+      .slice()
+      .sort((a, b) => b.version - a.version)[0]
+    if (!newest) return
+    const handle = setTimeout(() => selectDelta(newest.id), 0)
+    return () => clearTimeout(handle)
+  }, [tab, versions, deltaFor, selectDelta])
+
+  //: Picking a version. The current one returns the page to its
+  //: ordinary self; an older one fetches that version's audit — the
+  //: server computes it from the version's stored cells and persists
+  //: nothing — once, and re-scopes Overview and Findings to it.
+  const pickVersion = (v: Version) => {
+    setVerOpen(false)
+    if (!model || v.version === model.version) {
+      setPastVer(null)
+      return
+    }
+    setPastVer(v.version)
+    const held = pastAudits[v.id]
+    if (!held || held === 'failed') {
+      setPastAudits((s) => ({ ...s, [v.id]: 'loading' }))
+      api
+        .versionAudit(v.id)
+        .then((got) => setPastAudits((s) => ({ ...s, [v.id]: got })))
+        .catch(() => setPastAudits((s) => ({ ...s, [v.id]: 'failed' })))
+    }
+  }
+
   //: Re-check: the real run, polled until it lands. The button reads
-  //: « Checking » while it does — the chip carries the state.
+  //: « Checking » while it does — the chip carries the state. A check
+  //: is an act on the current version, so the page returns to it.
   const poll = useRef<ReturnType<typeof setInterval> | null>(null)
   const reCheck = () => {
     if (checking) return
+    setPastVer(null)
     setChecking(true)
     api
       .check(deal.id)
@@ -244,9 +463,30 @@ export const ProjectPage = ({
     [],
   )
 
-  const open = useMemo(
+  //: The picked version's artifact and its computed audit. `null`
+  //: everywhere while the page speaks about the current version.
+  const pastArtifact = useMemo(
+    () =>
+      pastVer !== null && model && pastVer !== model.version
+        ? ((versions ?? []).find((one) => one.version === pastVer) ?? null)
+        : null,
+    [pastVer, model, versions],
+  )
+  const past = pastArtifact ? (pastAudits[pastArtifact.id] ?? null) : null
+  const viewingPast = pastArtifact !== null
+  const pastData = typeof past === 'object' && past !== null ? past : null
+  const pastReady = pastData !== null
+
+  const openCurrent = useMemo(
     () => (findings ?? []).filter((one) => one.state === 'open'),
     [findings],
+  )
+  //: What the page speaks about — the current findings, or the picked
+  //: version's freshly computed ones. Every count, chip and family
+  //: group downstream reads this and re-scopes with it.
+  const open = useMemo(
+    () => (viewingPast ? (pastData ? pastData.findings : []) : openCurrent),
+    [viewingPast, pastData, openCurrent],
   )
   const counts = useMemo(() => {
     const c = { 1: 0, 2: 0, 3: 0 }
@@ -261,41 +501,74 @@ export const ProjectPage = ({
     done.sort((a, b) => (a.finished_at! < b.finished_at! ? -1 : 1))
     return done[done.length - 1] ?? null
   }, [runs])
-  const checkedAt = lastRun?.finished_at ?? deal.checked_at
+  const checkedAt = viewingPast
+    ? (pastData?.checked_at ?? null)
+    : (lastRun?.finished_at ?? deal.checked_at)
 
   //: The verdict chip. « Not ready to send » is the drawn state; the
   //: others are real states the demo data never shows, in the page's
   //: own inks — never-checked muted, clean green.
-  const verdict = checking
-    ? { text: 'Checking', fg: '#6b7280' }
-    : !checkedAt
-      ? { text: 'Not checked yet', fg: '#9aa1ab' }
-      : counts[1] > 0
-        ? { text: 'Not ready to send', fg: '#c8790a' }
-        : open.length > 0
-          ? { text: 'Findings open', fg: '#c8790a' }
-          : { text: 'Nothing failing', fg: '#1f8a4c' }
+  const verdict =
+    viewingPast && past === 'failed'
+      ? { text: 'Could not check this version', fg: '#9aa1ab' }
+      : checking || (viewingPast && !pastReady)
+        ? { text: 'Checking', fg: '#6b7280' }
+        : !checkedAt
+          ? { text: 'Not checked yet', fg: '#9aa1ab' }
+          : counts[1] > 0
+            ? { text: 'Not ready to send', fg: '#c8790a' }
+            : open.length > 0
+              ? { text: 'Findings open', fg: '#c8790a' }
+              : { text: 'Nothing failing', fg: '#1f8a4c' }
+
+  //: A values-pasted copy — the published-model case the real corpus
+  //: is full of — must say so on the *landing* screen too. It said it
+  //: on the report and on the document panel, and here, where a person
+  //: arrives, it said « Nothing failing » over « Every check that
+  //: applies to this model ran to the end » on a file where 224 of
+  //: 432,596 cells held a formula.
+  const blindCopy = viewingPast
+    ? Boolean(pastData?.summary.values_only)
+    : lastRun
+      ? auditRecord(lastRun).values_only
+      : false
+  const blindSaid = (() => {
+    const f = model?.counts['formulas']
+    const c = model?.counts['cells']
+    const numbers =
+      typeof f === 'number' && typeof c === 'number'
+        ? ` — ${f.toLocaleString()} of ${c.toLocaleString()} cells hold a formula —`
+        : ''
+    return `This copy carries values only${numbers} so the rules that read how the model is built could not see it. The checks that read values still ran.`
+  })()
 
   //: « Five material, five significant, one observation. » — the
   //: sentence under the title, from the real counts.
-  const sevSentence = !checkedAt
-    ? 'This model has not been checked. Re-check reads every sheet and reports what it finds.'
-    : open.length === 0
-      ? `Nothing failing as of ${when(checkedAt).toLowerCase()}.`
-      : `${[
-          counts[1] ? `${word(counts[1]).toLowerCase()} material` : '',
-          counts[2] ? `${word(counts[2]).toLowerCase()} significant` : '',
-          counts[3]
-            ? `${word(counts[3]).toLowerCase()} observation${counts[3] === 1 ? '' : 's'}`
-            : '',
-        ]
-          .filter(Boolean)
-          .join(', ')
-          .replace(/^./, (c) => c.toUpperCase())}.${
-          counts[1] > 0
-            ? ' Material findings should clear before the model leaves the deal team.'
-            : ''
-        }`
+  const sevSentence =
+    viewingPast && past === 'failed'
+      ? 'This version could not be checked — its stored cells did not answer. The current version is unaffected.'
+      : viewingPast && !pastReady
+        ? `Checking version ${pastVer} on the cells stored at its upload.`
+        : !checkedAt
+          ? 'This model has not been checked. Re-check reads every sheet and reports what it finds.'
+          : open.length === 0
+            ? `Nothing failing as of ${when(checkedAt).toLowerCase()}${
+                blindCopy ? ' — but little could be checked' : ''
+              }.`
+            : `${[
+                counts[1] ? `${word(counts[1]).toLowerCase()} material` : '',
+                counts[2] ? `${word(counts[2]).toLowerCase()} significant` : '',
+                counts[3]
+                  ? `${word(counts[3]).toLowerCase()} observation${counts[3] === 1 ? '' : 's'}`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(', ')
+                .replace(/^./, (c) => c.toUpperCase())}.${
+                counts[1] > 0
+                  ? ' Material findings should clear before the model leaves the deal team.'
+                  : ''
+              }`
 
   //: The three summary bullets — deterministic, from the findings and
   //: the latest run. No generated prose.
@@ -326,26 +599,52 @@ export const ProjectPage = ({
           : 'No open finding is material.',
       )
     }
-    if (model)
+    if (viewingPast && pastArtifact)
+      out.push(
+        `This is version ${pastArtifact.version}, uploaded ${when(pastArtifact.uploaded_at).toLowerCase()}${
+          pastArtifact.uploaded_by ? ` by ${pastArtifact.uploaded_by.name}` : ''
+        }, checked just now on the cells stored at its upload.` +
+          (model
+            ? ` Rulings and corrections are recorded on the current version (v${model.version}).`
+            : ''),
+      )
+    else if (model)
       out.push(
         `The current model is version ${model.version}, uploaded ${when(model.uploaded_at).toLowerCase()}.${
           deal.stale ? ' Files changed after the last check.' : ''
         }`,
       )
-    const record = lastRun ? auditRecord(lastRun) : null
-    if (record && record.abstentions.length > 0)
+    const abstentions = viewingPast
+      ? (pastData?.summary.abstentions ?? null)
+      : lastRun
+        ? auditRecord(lastRun).abstentions
+        : null
+    if (abstentions && abstentions.length > 0)
       out.push(
-        `${word(record.abstentions.length)} check${
-          record.abstentions.length === 1 ? '' : 's'
-        } could not run: ${record.abstentions
+        `${word(abstentions.length)} check${
+          abstentions.length === 1 ? '' : 's'
+        } could not run: ${abstentions
           .slice(0, 2)
           .map((one) => one.why)
-          .join('; ')}${record.abstentions.length > 2 ? '; and more' : ''}.`,
+          .join('; ')}${abstentions.length > 2 ? '; and more' : ''}.`,
       )
-    else if (record)
+    else if (abstentions && !blindCopy)
       out.push('Every check that applies to this model ran to the end.')
+    if (blindCopy) out.push(blindSaid)
     return out
-  }, [checkedAt, counts, open, model, deal.stale, lastRun])
+  }, [
+    checkedAt,
+    counts,
+    open,
+    model,
+    deal.stale,
+    lastRun,
+    viewingPast,
+    pastArtifact,
+    pastData,
+    blindCopy,
+    blindSaid,
+  ])
 
   //: The chart: tier tallies per finished audit run, oldest first.
   //: Runs recorded before tallies fall back on errors/smells.
@@ -630,30 +929,32 @@ export const ProjectPage = ({
             </button>
           </span>
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
-          {(['Overview', 'Findings', 'Sources'] as const).map((label) => {
-            const on = tab === label
-            return (
-              <button
-                key={label}
-                onClick={() => setTab(label)}
-                style={{
-                  border: 0,
-                  background: on ? 'rgba(21,23,27,.055)' : 'transparent',
-                  borderRadius: 22,
-                  padding: '11px 26px',
-                  font: 'inherit',
-                  fontSize: 14.5,
-                  fontWeight: on ? 500 : 400,
-                  letterSpacing: '-.01em',
-                  color: on ? '#0060d0' : '#5b6068',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {label}
-              </button>
-            )
-          })}
+          {(['Overview', 'Findings', 'Versions', 'Sources'] as const).map(
+            (label) => {
+              const on = tab === label
+              return (
+                <button
+                  key={label}
+                  onClick={() => setTab(label)}
+                  style={{
+                    border: 0,
+                    background: on ? 'rgba(21,23,27,.055)' : 'transparent',
+                    borderRadius: 22,
+                    padding: '11px 26px',
+                    font: 'inherit',
+                    fontSize: 14.5,
+                    fontWeight: on ? 500 : 400,
+                    letterSpacing: '-.01em',
+                    color: on ? '#0060d0' : '#5b6068',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            },
+          )}
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
         </div>
 
@@ -756,7 +1057,7 @@ export const ProjectPage = ({
                         cursor: 'pointer',
                       }}
                     >
-                      <span>Version {model.version}</span>
+                      <span>Version {pastVer ?? model.version}</span>
                       <svg
                         width="11"
                         height="11"
@@ -840,11 +1141,13 @@ export const ProjectPage = ({
                               .sort((a, b) => b.version - a.version)
                               .slice(0, 6)
                               .map((v, i) => (
-                                //: Facts, not controls: picking a version
-                                //: does not yet re-scope the page, so the
-                                //: rows do not pretend to be buttons.
-                                <span
+                                //: Buttons, as drawn: picking a version
+                                //: re-scopes Overview and Findings to it —
+                                //: the audit re-run on its stored cells,
+                                //: persisted nowhere.
+                                <button
                                   key={v.id}
+                                  onClick={() => pickVersion(v)}
                                   style={{
                                     display: 'grid',
                                     gridTemplateColumns: '44px 1fr auto',
@@ -852,14 +1155,17 @@ export const ProjectPage = ({
                                     alignItems: 'center',
                                     width: '100%',
                                     textAlign: 'left',
+                                    border: 0,
                                     borderTop:
                                       i === 0
                                         ? 0
                                         : '.5px solid rgba(16,22,35,.06)',
                                     background:
-                                      v.version === model.version
-                                        ? '#fbfbfc'
+                                      v.version === (pastVer ?? model.version)
+                                        ? 'rgba(0,96,208,.045)'
                                         : 'transparent',
+                                    font: 'inherit',
+                                    cursor: 'pointer',
                                     padding: '0 18px',
                                     minHeight: 58,
                                   }}
@@ -869,7 +1175,7 @@ export const ProjectPage = ({
                                       fontFamily: font.mono,
                                       fontSize: 12.5,
                                       color:
-                                        v.version === model.version
+                                        v.version === (pastVer ?? model.version)
                                           ? '#0060d0'
                                           : '#9aa1ab',
                                     }}
@@ -901,9 +1207,31 @@ export const ProjectPage = ({
                                   >
                                     {when(v.uploaded_at)}
                                   </span>
-                                </span>
+                                </button>
                               ))}
                           </span>
+                          {/* The design's own verAll intent: the
+                              dropdown opens the Versions tab, where the
+                              Watch reports what each revision did. */}
+                          <button
+                            onClick={() => {
+                              setVerOpen(false)
+                              setTab('Versions')
+                            }}
+                            style={{
+                              border: 0,
+                              background: 'transparent',
+                              font: 'inherit',
+                              fontSize: 14,
+                              letterSpacing: '-.01em',
+                              color: '#0060d0',
+                              cursor: 'pointer',
+                              padding: '12px 8px 6px',
+                              textAlign: 'left',
+                            }}
+                          >
+                            See all versions
+                          </button>
                         </span>
                       </>
                     )}
@@ -1046,7 +1374,9 @@ export const ProjectPage = ({
                         textWrap: 'pretty',
                       }}
                     >
-                      Every finding written out in plain English.
+                      {viewingPast && model
+                        ? `Every finding written out in plain English. On the current version (v${model.version}).`
+                        : 'Every finding written out in plain English.'}
                     </span>
                   </span>
                   <svg
@@ -1309,11 +1639,13 @@ export const ProjectPage = ({
                   )
                 })}
               </div>
-              {/* Present as drawn, disabled until the write pass ships —
-                  the file it promises is the workbook copy with problem
-                  cells coloured and noted, nothing altered. */}
-              <div
-                title="Coming — the workbook copy with every problem cell coloured and noted. Nothing in the model altered."
+              {/* The workbook copy with problem cells coloured and
+                  noted — generated by the server on request, nothing in
+                  the model altered. The server's refusal sentences (no
+                  model, nothing open) are shown as they stand. */}
+              <button
+                type="button"
+                onClick={downloadMarkup}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1327,7 +1659,8 @@ export const ProjectPage = ({
                     '0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset 0 1px 0 rgba(255,255,255,.7)',
                   borderRadius: 18,
                   padding: '15px 18px',
-                  opacity: 0.6,
+                  cursor: markingUp ? 'progress' : 'pointer',
+                  font: 'inherit',
                 }}
               >
                 <span
@@ -1369,13 +1702,20 @@ export const ProjectPage = ({
                   <span
                     style={{
                       fontSize: 13.5,
-                      color: '#6b7280',
+                      color: markupWord ? ink.danger : '#6b7280',
                       lineHeight: 1.5,
                       textWrap: 'pretty',
                     }}
                   >
-                    Your model back, with every problem marked in place. Coming
-                    — nothing to download yet.
+                    {markupWord ??
+                      (markingUp
+                        ? 'Building the copy…'
+                        : (viewingPast && model
+                            ? `On the current version (v${model.version}). `
+                            : '') +
+                          'Your model back, with every problem cell ' +
+                          'coloured and noted. A copy — the original is ' +
+                          'never at risk.')}
                   </span>
                 </span>
                 <svg
@@ -1393,8 +1733,28 @@ export const ProjectPage = ({
                   <polyline points="6.5,11.5 12,17 17.5,11.5" />
                   <path d="M5 20h14" />
                 </svg>
-              </div>
+              </button>
             </div>
+
+            {/* The version-scoped state, said on this tab too: a list
+                shorter than the current one must never read as the
+                deck agreeing — only the model audit is re-computed for
+                a past version. */}
+            {viewingPast && model && (
+              <div
+                style={{
+                  fontSize: 13.5,
+                  color: '#8f96a0',
+                  lineHeight: 1.5,
+                  margin: '-8px 4px 16px',
+                  textWrap: 'pretty',
+                }}
+              >
+                Version {pastArtifact?.version}&apos;s model audit, checked just
+                now on its stored cells. The deck reconciliation and every
+                ruling live on the current version (v{model.version}).
+              </div>
+            )}
 
             <div style={{ ...frameCard, padding: 14 }}>
               <div
@@ -1410,7 +1770,7 @@ export const ProjectPage = ({
                 <span style={pillHead}>Severity</span>
                 <span />
               </div>
-              {findings === null ? (
+              {findings === null || (viewingPast && past === 'loading') ? (
                 <div style={{ minHeight: 80 }} />
               ) : groups.length === 0 ? (
                 <div
@@ -1426,13 +1786,15 @@ export const ProjectPage = ({
                   }}
                 >
                   <span style={{ fontSize: 14.5, color: '#4a4f57' }}>
-                    {checkedAt
-                      ? sev === 0
-                        ? 'Nothing failing.'
-                        : `No ${SEV_WORD[sev as 1 | 2 | 3].toLowerCase()} findings open.`
-                      : 'This model has not been checked yet.'}
+                    {viewingPast && past === 'failed'
+                      ? 'This version could not be checked — its stored cells did not answer.'
+                      : checkedAt
+                        ? sev === 0
+                          ? 'Nothing failing.'
+                          : `No ${SEV_WORD[sev as 1 | 2 | 3].toLowerCase()} findings open.`
+                        : 'This model has not been checked yet.'}
                   </span>
-                  {!checkedAt && (
+                  {!checkedAt && !viewingPast && (
                     <span style={{ fontSize: 13, color: '#8f96a0' }}>
                       Re-check on the Overview tab reads every sheet.
                     </span>
@@ -1471,8 +1833,16 @@ export const ProjectPage = ({
                           const n = sevOf(f)
                           const opened = openId === f.id
                           const grid = f.grid
+                          //: A finding about the *workbook* rather than a
+                          //: cell — the defined names pointing into other
+                          //: files, say — carries no sheet and no ref, and
+                          //: the column sat empty beside a real finding on
+                          //: a real model. It is not nowhere: the engine
+                          //: says what it is about in `where.label`, and an
+                          //: empty column reads as a rendering fault
+                          //: rather than as « the whole workbook ».
                           const sheet = String(
-                            f.where.anchor.sheet ?? f.where.label ?? '',
+                            f.where.anchor.sheet || f.where.label || '',
                           )
                           const ref = String(f.where.anchor.ref ?? '')
                           const hasPair = !!f.fix && !!f.fix_before
@@ -2072,7 +2442,25 @@ export const ProjectPage = ({
                                           minWidth: 12,
                                         }}
                                       />
-                                      {noteFor === f.id ? (
+                                      {viewingPast ? (
+                                        //: A past version's findings have
+                                        //: no durable identity — nothing
+                                        //: here can be ruled on, and the
+                                        //: sentence says so instead of
+                                        //: offering dead buttons.
+                                        <span
+                                          style={{
+                                            fontSize: 14,
+                                            lineHeight: 1.5,
+                                            color: '#8f96a0',
+                                          }}
+                                        >
+                                          Checked just now on version{' '}
+                                          {pastArtifact?.version}. Rulings and
+                                          fixes are recorded on the current
+                                          version.
+                                        </span>
+                                      ) : noteFor === f.id ? (
                                         //: The dismissal reason — the save
                                         //: gates on more than two
                                         //: characters, the design's own
@@ -2292,6 +2680,788 @@ export const ProjectPage = ({
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* The Versions tab — agent-designed (no founder drawing exists;
+            the design's own vtCols declare the table's columns, kept
+            verbatim: Version · What changed · Saved · By · Findings).
+            Rows are the uploads, newest first; selecting one shows the
+            Watch's delta report for that revision — computed by the
+            server from the two versions' stored bytes, persisted
+            nowhere, rendered in the engine's own rank. */}
+        {tab === 'Versions' && (
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 1040,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              paddingBottom: 44,
+            }}
+          >
+            <div style={{ ...frameCard, padding: 14 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '74px 1fr 150px 170px 110px',
+                  gap: 10,
+                  padding: '2px 20px 14px',
+                }}
+              >
+                <span style={pillHead}>Version</span>
+                <span style={pillHead}>What changed</span>
+                <span style={pillHead}>Saved</span>
+                <span style={pillHead}>By</span>
+                <span style={{ ...pillHead, textAlign: 'right' }}>
+                  Findings
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: '#fff',
+                  borderRadius: 18,
+                  boxShadow: '0 1px 2px rgba(16,22,35,.04)',
+                  overflow: 'hidden',
+                }}
+              >
+                {(versions ?? [])
+                  .slice()
+                  .sort((a, b) => b.version - a.version)
+                  .map((v, index, sorted) => {
+                    const on = deltaFor === v.id
+                    const held = deltas[v.id]
+                    const isFirst = index === sorted.length - 1
+                    const changed = isFirst
+                      ? 'First upload — nothing earlier to compare'
+                      : held === 'identical'
+                        ? 'The same file again — byte for byte'
+                        : held === 'loading'
+                          ? 'Comparing with the version before…'
+                          : held &&
+                              typeof held === 'object' &&
+                              'refused' in held
+                            ? //: The column is a summary, so it carries the
+                              //: fact, not the paragraph — the server's own
+                              //: sentence, and what to do about it, is
+                              //: printed under the table in full.
+                              'Not comparable — the file was dropped'
+                            : held === null
+                              ? 'Nothing earlier was readable to compare'
+                              : held
+                                ? `${word(held.new_defects)} defect${
+                                    held.new_defects === 1 ? '' : 's'
+                                  } introduced · ${
+                                    held.repaired_defects === 0
+                                      ? 'none'
+                                      : word(
+                                          held.repaired_defects,
+                                        ).toLowerCase()
+                                  } repaired · ${
+                                    held.persistent_defects === 0
+                                      ? 'none'
+                                      : word(
+                                          held.persistent_defects,
+                                        ).toLowerCase()
+                                  } standing`
+                                : 'Select to compare'
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => selectDelta(v.id)}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '74px 1fr 150px 170px 110px',
+                          gap: 10,
+                          alignItems: 'center',
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 0,
+                          borderTop:
+                            index === 0 ? 0 : '.5px solid rgba(16,22,35,.06)',
+                          background: on
+                            ? 'rgba(0,96,208,.045)'
+                            : 'transparent',
+                          font: 'inherit',
+                          cursor: 'pointer',
+                          padding: '0 20px',
+                          minHeight: 58,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: font.mono,
+                            fontSize: 12.5,
+                            color: on ? '#0060d0' : '#9aa1ab',
+                          }}
+                        >
+                          v{v.version}
+                        </span>
+                        <span
+                          style={{
+                            minWidth: 0,
+                            fontSize: 14.5,
+                            letterSpacing: '-.01em',
+                            color:
+                              held && held !== 'loading'
+                                ? '#1c1f23'
+                                : '#8f96a0',
+                            lineHeight: 1.4,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {changed}
+                        </span>
+                        <span style={{ fontSize: 13, color: '#8f96a0' }}>
+                          {when(v.uploaded_at)}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 13.5,
+                            color: '#4a4f57',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {v.uploaded_by?.name ?? 'Uploaded'}
+                        </span>
+                        <span
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: 8,
+                            fontFamily: font.mono,
+                            fontSize: 12.5,
+                          }}
+                        >
+                          {held &&
+                          typeof held === 'object' &&
+                          'items' in held ? (
+                            <>
+                              <span
+                                style={{
+                                  color:
+                                    held.new_defects > 0
+                                      ? '#e0322d'
+                                      : '#b6bac1',
+                                }}
+                              >
+                                +{held.new_defects}
+                              </span>
+                              <span
+                                style={{
+                                  color:
+                                    held.repaired_defects > 0
+                                      ? '#1f8a4c'
+                                      : '#b6bac1',
+                                }}
+                              >
+                                −{held.repaired_defects}
+                              </span>
+                            </>
+                          ) : (
+                            <span style={{ color: '#b6bac1' }}>—</span>
+                          )}
+                        </span>
+                      </button>
+                    )
+                  })}
+                {(versions ?? []).length === 0 && (
+                  <div
+                    style={{
+                      padding: '36px 24px',
+                      textAlign: 'center',
+                      fontSize: 14.5,
+                      color: '#4a4f57',
+                    }}
+                  >
+                    {model
+                      ? 'One moment — the versions are loading.'
+                      : 'This deal has no model yet, so there are no versions to show.'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {deltaFor !== null &&
+              (() => {
+                const held = deltas[deltaFor]
+                if (held === 'identical')
+                  //: Nothing was compared, and the reason is stronger
+                  //: than a comparison would have been: the two
+                  //: uploads are the same bytes, so no comparison
+                  //: could find anything. The Watch would have spent
+                  //: two and a half minutes on a real model arriving
+                  //: at the same answer with less certainty.
+                  return (
+                    <div
+                      style={{
+                        fontSize: 14.5,
+                        color: '#4a4f57',
+                        lineHeight: 1.55,
+                        padding: '8px 4px',
+                        maxWidth: '78ch',
+                      }}
+                    >
+                      This upload is{' '}
+                      <strong>byte for byte the same file</strong> as the
+                      version before it, so there is nothing to compare — no
+                      cell, formula, label or sheet can differ. Nothing was read
+                      to answer this.
+                    </div>
+                  )
+                if (held === undefined || held === 'loading') {
+                  //: How long this actually takes, said in the model's
+                  //: own numbers. The comparison reads both workbooks
+                  //: and aligns them cell by cell: measured, a
+                  //: 313-cell fixture is instant, a 4,800-cell model
+                  //: about three seconds, and a real 432,596-cell
+                  //: project-finance model **two and a half minutes**.
+                  //: A screen that says « comparing… » for that long
+                  //: and nothing else has stopped being honest and
+                  //: started looking broken.
+                  const cells =
+                    typeof model?.counts?.['cells'] === 'number'
+                      ? (model.counts['cells'] as number)
+                      : 0
+                  return (
+                    <div
+                      style={{
+                        fontSize: 14.5,
+                        color: '#8f96a0',
+                        padding: '8px 4px',
+                        lineHeight: 1.55,
+                        maxWidth: '78ch',
+                      }}
+                    >
+                      Reading both versions and comparing…
+                      {cells >= 50_000 && (
+                        <>
+                          {' '}
+                          This model has {cells.toLocaleString()} cells, and a
+                          comparison that size takes a few minutes. It is
+                          computed fresh every time — nothing here is a saved
+                          answer.
+                        </>
+                      )}
+                    </div>
+                  )
+                }
+                if (held && typeof held === 'object' && 'refused' in held)
+                  //: The server's own sentence — bytes dropped under the
+                  //: retention policy, most likely — shown as it stands.
+                  return (
+                    <div
+                      style={{
+                        fontSize: 14.5,
+                        color: '#4a4f57',
+                        lineHeight: 1.55,
+                        padding: '8px 4px',
+                        maxWidth: '82ch',
+                      }}
+                    >
+                      {held.refused}
+                    </div>
+                  )
+                if (held === null)
+                  return (
+                    <div
+                      style={{
+                        fontSize: 14.5,
+                        color: '#4a4f57',
+                        padding: '8px 4px',
+                      }}
+                    >
+                      This is the first upload — there is no revision to report.
+                    </div>
+                  )
+                const delta = held
+                return (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontSize: 16.5,
+                          fontWeight: 600,
+                          letterSpacing: '-.014em',
+                          padding: '10px 0 6px',
+                          background:
+                            'linear-gradient(96deg,#0060d0 0%,#3b6ee0 42%,#5b52e0 100%)',
+                          WebkitBackgroundClip: 'text',
+                          backgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          color: '#0060d0',
+                          width: 'fit-content',
+                        }}
+                      >
+                        What v{delta.new_version} changed
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: ink.secondary,
+                          lineHeight: 1.55,
+                          maxWidth: '82ch',
+                          textWrap: 'pretty',
+                        }}
+                      >
+                        Compared with v{delta.old_version}, uploaded{' '}
+                        {when(delta.old_uploaded_at).toLowerCase()}
+                        {delta.old_uploaded_by
+                          ? ` by ${delta.old_uploaded_by.name}`
+                          : ''}
+                        . Computed just now from both stored files — nothing
+                        here is a saved answer.
+                        {delta.unmatched_old + delta.unmatched_new > 0 &&
+                          ` ${word(
+                            delta.unmatched_old + delta.unmatched_new,
+                          )} finding${
+                            delta.unmatched_old + delta.unmatched_new === 1
+                              ? ' carries'
+                              : 's carry'
+                          } no name to match by and ${
+                            delta.unmatched_old + delta.unmatched_new === 1
+                              ? 'is'
+                              : 'are'
+                          } counted apart, never guessed at.`}
+                        {(delta.sheets_added.length > 0 ||
+                          delta.sheets_removed.length > 0) &&
+                          ` Sheets: ${[
+                            ...delta.sheets_added.map((one) => `+${one}`),
+                            ...delta.sheets_removed.map((one) => `−${one}`),
+                          ].join(', ')}.`}
+                      </div>
+                    </div>
+                    <div style={{ ...frameCard, padding: 14 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          background: '#fff',
+                          borderRadius: 18,
+                          boxShadow: '0 1px 2px rgba(16,22,35,.04)',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {delta.items.length === 0 && (
+                          <div
+                            style={{
+                              padding: '36px 24px',
+                              textAlign: 'center',
+                              fontSize: 14.5,
+                              color: '#4a4f57',
+                            }}
+                          >
+                            No reviewed changes — the two versions read the same
+                            to the Watch.
+                          </div>
+                        )}
+                        {delta.items.map((item, index) => {
+                          const kind = DELTA_KIND[item.kind] ?? {
+                            word: item.kind,
+                            dot: '#8f96a0',
+                          }
+                          //: The place, as a banker would name it: one
+                          //: cell reads « Model!F16 », a block reads
+                          //: « Model rows 16–24 », a keyed finding with
+                          //: no aligned position reads as its sheet.
+                          const where =
+                            item.first_row > 0 &&
+                            item.first_row === item.last_row &&
+                            item.columns.length === 1
+                              ? `${item.sheet}!${item.columns[0]}${item.first_row}`
+                              : item.first_row > 0
+                                ? `${item.sheet} rows ${item.first_row}${
+                                    item.first_row === item.last_row
+                                      ? ''
+                                      : `–${item.last_row}`
+                                  }${
+                                    item.columns.length > 0 &&
+                                    item.columns.length <= 4
+                                      ? ` · ${item.columns.join(' ')}`
+                                      : ''
+                                  }`
+                                : item.sheet
+                          return (
+                            <div
+                              key={index}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 14,
+                                borderTop:
+                                  index === 0
+                                    ? 0
+                                    : '.5px solid rgba(16,22,35,.06)',
+                                padding: '14px 20px',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  flex: '0 0 168px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  marginTop: 1,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    flex: '0 0 7px',
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: '50%',
+                                    background: kind.dot,
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    fontSize: 13.5,
+                                    fontWeight: 500,
+                                    letterSpacing: '-.01em',
+                                    color: '#1c1f23',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {kind.word}
+                                </span>
+                              </span>
+                              <span
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 3,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontSize: 14.5,
+                                    letterSpacing: '-.01em',
+                                    color: '#1c1f23',
+                                    lineHeight: 1.45,
+                                    textWrap: 'pretty',
+                                  }}
+                                >
+                                  {item.detail ||
+                                    `${kind.word} on ${item.sheet}`}
+                                </span>
+                                {item.findings.length > 0 && (
+                                  <span
+                                    style={{
+                                      fontFamily: font.mono,
+                                      fontSize: 11.5,
+                                      color: '#9aa1ab',
+                                      lineHeight: 1.5,
+                                    }}
+                                  >
+                                    {item.findings.join(' · ')}
+                                  </span>
+                                )}
+                              </span>
+                              <span
+                                style={{
+                                  flex: '0 0 auto',
+                                  fontFamily: font.mono,
+                                  fontSize: 11.5,
+                                  color: '#9aa1ab',
+                                  whiteSpace: 'nowrap',
+                                  marginTop: 3,
+                                }}
+                              >
+                                {where}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {(() => {
+                        //: And what the revision did to what was *sent
+                        //: out*. The model delta above answers « what
+                        //: changed »; this answers the question a
+                        //: banker actually loses sleep over — which of
+                        //: the deck's hundred printed figures the
+                        //: revision just made wrong.
+                        const sent = deckDeltas[delta.new_artifact_id]
+                        if (sent === undefined || sent === null) return null
+                        if (sent === 'loading')
+                          return (
+                            <div style={deckNote}>
+                              Re-tying the deck against both versions…
+                            </div>
+                          )
+                        if ('refused' in sent)
+                          return <div style={deckNote}>{sent.refused}</div>
+                        //: The four lists, in the order a reader needs
+                        //: them: what this revision did, then what it
+                        //: undid, then what can no longer be judged,
+                        //: then what was already wrong. Empty groups do
+                        //: not draw.
+                        const every = [
+                          {
+                            key: 'broken',
+                            rows: sent.broken,
+                            dot: '#d0342c',
+                            head: 'This revision broke',
+                            says: 'agreed with the model before, disagrees now',
+                          },
+                          {
+                            key: 'repaired',
+                            rows: sent.repaired,
+                            dot: '#2e7d54',
+                            head: 'This revision fixed',
+                            says: 'disagreed before, agrees now',
+                          },
+                          {
+                            key: 'coverage_changed',
+                            rows: sent.coverage_changed,
+                            dot: '#b4802a',
+                            head: 'No longer checkable',
+                            says:
+                              'reconcilable against one version only — lost ' +
+                              'sight of, which is not the same as broken',
+                          },
+                          {
+                            key: 'still_drifting',
+                            rows: sent.still_drifting,
+                            dot: '#8f96a0',
+                            head: 'Already disagreeing',
+                            says:
+                              'disagrees with both versions, so not this ' +
+                              "revision's doing",
+                          },
+                        ]
+                        const groups = every.filter(
+                          (one) => one.rows.length > 0,
+                        )
+                        return (
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 10,
+                              paddingTop: 22,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 15.5,
+                                fontWeight: 500,
+                                letterSpacing: '-.014em',
+                                color: '#1c1f23',
+                              }}
+                            >
+                              And what it did to {sent.deck_filename}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 13,
+                                color: '#77808c',
+                                lineHeight: 1.55,
+                                textWrap: 'pretty',
+                              }}
+                            >
+                              The same deck reconciled against both versions.{' '}
+                              {sent.checked_new === sent.checked_old
+                                ? `${sent.checked_old} of its printed figures could be checked against either.`
+                                : `${sent.checked_old} of its printed figures could be checked against v${sent.old_version}; ${sent.checked_new} against v${sent.new_version}.`}
+                            </span>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                background: '#fff',
+                                borderRadius: 18,
+                                boxShadow: '0 1px 2px rgba(16,22,35,.04)',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {groups.length === 0 && (
+                                <div
+                                  style={{
+                                    padding: '36px 24px',
+                                    textAlign: 'center',
+                                    fontSize: 14.5,
+                                    color: '#4a4f57',
+                                  }}
+                                >
+                                  Nothing in the deck moved with this revision.
+                                </div>
+                              )}
+                              {groups.map((group) => (
+                                <div key={group.key}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'baseline',
+                                      gap: 9,
+                                      padding: '13px 20px 9px',
+                                      background: '#fbfbfc',
+                                      borderTop:
+                                        '.5px solid rgba(16,22,35,.06)',
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        flex: '0 0 7px',
+                                        width: 7,
+                                        height: 7,
+                                        borderRadius: '50%',
+                                        background: group.dot,
+                                        alignSelf: 'center',
+                                      }}
+                                    />
+                                    <span
+                                      style={{
+                                        fontSize: 13.5,
+                                        fontWeight: 500,
+                                        letterSpacing: '-.01em',
+                                        color: '#1c1f23',
+                                      }}
+                                    >
+                                      {group.head} {group.rows.length}
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: 12.5,
+                                        color: '#8b939e',
+                                        lineHeight: 1.5,
+                                      }}
+                                    >
+                                      — {group.says}
+                                    </span>
+                                  </div>
+                                  {group.rows.slice(0, 12).map((one, index) => (
+                                    <div
+                                      key={index}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: 14,
+                                        borderTop:
+                                          '.5px solid rgba(16,22,35,.045)',
+                                        padding: '12px 20px',
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          flex: '0 0 78px',
+                                          fontSize: 12.5,
+                                          color: '#77808c',
+                                          marginTop: 2,
+                                        }}
+                                      >
+                                        Slide {one.slide}
+                                      </span>
+                                      <span
+                                        style={{
+                                          flex: 1,
+                                          minWidth: 0,
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: 3,
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontSize: 14.5,
+                                            letterSpacing: '-.01em',
+                                            color: '#1c1f23',
+                                            lineHeight: 1.45,
+                                          }}
+                                        >
+                                          {one.name ? `${one.name}: ` : ''}
+                                          <span
+                                            style={{ fontFamily: font.mono }}
+                                          >
+                                            {one.printed}
+                                          </span>
+                                          {one.expected ? (
+                                            <>
+                                              {' — the model now says '}
+                                              <span
+                                                style={{
+                                                  fontFamily: font.mono,
+                                                }}
+                                              >
+                                                {one.expected}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            ''
+                                          )}
+                                          {one.one_tick
+                                            ? ' (one unit at the printed precision — a rounding convention)'
+                                            : ''}
+                                        </span>
+                                        {group.key === 'broken' && (
+                                          <span
+                                            style={{
+                                              fontSize: 12.5,
+                                              color: one.cause
+                                                ? '#77808c'
+                                                : '#9aa1ab',
+                                              lineHeight: 1.5,
+                                              fontStyle: one.cause
+                                                ? 'normal'
+                                                : 'italic',
+                                            }}
+                                          >
+                                            {one.cause ||
+                                              'No model change could be attributed to this break.'}
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span
+                                        style={{
+                                          flex: '0 0 auto',
+                                          fontFamily: font.mono,
+                                          fontSize: 11.5,
+                                          color: '#9aa1ab',
+                                          whiteSpace: 'nowrap',
+                                          marginTop: 3,
+                                        }}
+                                      >
+                                        {one.old_ref || one.location}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {group.rows.length > 12 && (
+                                    <div
+                                      style={{
+                                        padding: '10px 20px 12px',
+                                        fontSize: 12.5,
+                                        color: '#8b939e',
+                                        borderTop:
+                                          '.5px solid rgba(16,22,35,.045)',
+                                      }}
+                                    >
+                                      and {group.rows.length - 12} more.
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                )
+              })()}
           </div>
         )}
 
@@ -2778,9 +3948,17 @@ export const ProjectPage = ({
           version={model?.version ?? deal.model_version ?? null}
           checkedAt={checkedAt}
           counts={counts}
-          open={open}
+          open={openCurrent}
           lastRun={lastRun}
           versions={versions ?? []}
+          recalc={(model?.counts['recalc'] as RecalcMark | undefined) ?? null}
+          coverage={page?.coverage ?? null}
+          modelCounts={model?.counts ?? null}
+          stale={
+            page?.stale
+              ? { kind: page.stale_kind ?? null, at: page.stale_at ?? null }
+              : null
+          }
           onClose={() => setRepOpen(false)}
         />
       )}
@@ -2803,6 +3981,10 @@ const Report = ({
   open,
   lastRun,
   versions,
+  recalc,
+  coverage,
+  modelCounts,
+  stale,
   onClose,
 }: {
   modelName: string
@@ -2812,38 +3994,337 @@ const Report = ({
   open: Finding[]
   lastRun: CheckRun | null
   versions: Version[]
+  /** The current version's stored recalculation mark, when it has one. */
+  recalc: RecalcMark | null
+  /** What the last tie-out reconciled and what it did not — the line
+   *  that keeps the report honest. Null before any deal page loads. */
+  coverage: Coverage | null
+  /** The model's own ingest counts — cells, formulas, named cells. */
+  modelCounts: Record<string, unknown> | null
+  /** A current document arrived after the last run finished, so this
+   *  report describes a deal that has already moved on. */
+  stale: { kind: string | null; at: string | null } | null
   onClose: () => void
 }) => {
   const total = open.length
   const material = open.filter((one) => sevOf(one) === 1)
   const rest = open.filter((one) => sevOf(one) !== 1)
+
+  //: **One place to act is one entry.** Kelso's report listed three
+  //: material findings — `calcFundingSA!M712`, `!N712`, `!O712` — as
+  //: 01, 02, 03, with the same heading and near-identical sentences
+  //: three times. That is one check row failing in three periods, and
+  //: a partner reads it as three problems and spends a third of the
+  //: page on it.
+  //:
+  //: The count above does not change: three findings *are* three
+  //: findings and the tally says so. What changes is that the section
+  //: numbers **places**, and every finding keeps its own sentence and
+  //: its own cell beneath. Nothing is composed, summarised or dropped
+  //: — grouping is the only thing happening here.
+  //: The one sentence a place shares, or empty when its findings
+  //: really do say different things. Each title is compared with its
+  //: *own* reference taken out, because that is the only part a
+  //: repeated rule varies — so this collapses « … firing at !M712 »
+  //: and « … firing at !N712 » and refuses to collapse two genuinely
+  //: different sentences that happen to sit on one row.
+  //: A finding carries two things that identify *it* rather than what
+  //: is wrong: its reference and its name. Take both out and what is
+  //: left is the statement. When every statement in a group is the
+  //: same, the group is one statement about the model — whether that
+  //: is one row in three columns, or fifty-three sheets each hidden
+  //: the same way.
   const record = lastRun ? auditRecord(lastRun) : null
   const summary = lastRun?.summary ?? {}
+
+  //: « Nothing failing » must never stand alone on a copy the rules
+  //: could not read. Measured on a real corpus model (Levenmouth
+  //: Academy, 27 Aug): 432,596 cells, **224 of them formulas** — a
+  //: values-pasted publication — reported nothing, and the reason it
+  //: found nothing sat a page away under « what could not be
+  //: checked ». A partner reads « nothing failing » as « checked and
+  //: clean », which is the one conclusion this file cannot support.
+  //: The blindness matters whether or not the checks found something
+  //: — arguably more when they did, because a reader now trusts them.
+  //: Measured on Kelso (a real corpus model): 814 formulas in 470,594
+  //: cells, seven material findings, and nothing on the verdict page
+  //: said the construction rules had seen almost none of the file.
+  const blind = record?.values_only === true
+  const formulaCount =
+    typeof modelCounts?.['formulas'] === 'number'
+      ? (modelCounts['formulas'] as number)
+      : null
+  const cellCount =
+    typeof modelCounts?.['cells'] === 'number'
+      ? (modelCounts['cells'] as number)
+      : null
 
   const verdictLead =
     counts[1] > 0
       ? `Not ready to send. ${word(total)} finding${total === 1 ? '' : 's'}, ${word(counts[1]).toLowerCase()} of them material.`
       : total > 0
         ? `${word(total)} finding${total === 1 ? '' : 's'} open, none material.`
-        : 'Nothing failing.'
+        : blind
+          ? 'Nothing failing — but little could be checked.'
+          : 'Nothing failing.'
+
+  //: Some engine sentences stop inside the formula that proves them —
+  //: stored that way, and not this lane's to rewrite. An ellipsis says
+  //: « abbreviated » where a bare cut says « broken »; nothing is
+  //: invented and nothing is dropped.
+  const saidOf = (text: string): string => {
+    const said = text.trim()
+    if (!said.includes('=')) return said
+    const tail = said.slice(said.lastIndexOf('='))
+    const opens = (tail.match(/\(/g) ?? []).length
+    const closes = (tail.match(/\)/g) ?? []).length
+    const dangling = opens > closes || /[<>=+\-*/,(]$/.test(said)
+    return dangling ? `${said}…` : said
+  }
+
+  //: What class a finding belongs to, for the verdict's summary, in
+  //: both numbers — « figures … that disagree » is not the singular
+  //: with an « s » on the end, and a partner reads the difference.
+  const classOf = (one: Finding): { one: string; many: string } => {
+    //: Some headlines are clauses, not names — « The model's own check
+    //: rows are firing ». Appending an « s » to one produced « seven
+    //: the model's own check rows are firings ». A clause is grouped
+    //: by its family instead, which is always a noun phrase; the
+    //: sentence itself is overleaf, per finding.
+    const clauseLike = (said: string) =>
+      /^(the|a|an) /i.test(said) || / (is|are|was|were|does|do) /i.test(said)
+    if (one.headline && !clauseLike(one.headline)) {
+      const said = one.headline.toLowerCase()
+      return { one: said, many: said.endsWith('s') ? said : `${said}s` }
+    }
+    if (one.kind === 'drift')
+      return {
+        one: 'figure in the deliverables that disagrees with the model',
+        many: 'figures in the deliverables that disagree with the model',
+      }
+    //: The families are named in the plural (« Probable formula
+    //: defects »), so the singular is the trim, not the append —
+    //: « one probable formula defects » was the giveaway.
+    const family = (categoryOfKey(one.rule ?? '') || 'finding').toLowerCase()
+    return {
+      one: family.endsWith('s') ? family.slice(0, -1) : family,
+      many: family.endsWith('s') ? family : `${family}s`,
+    }
+  }
+
+  //: Grouped, not enumerated: fifteen material findings listed one by
+  //: one made the verdict a wall of numbers before the reader reached
+  //: a verb. Counted by class, largest first.
+  const byClass = new Map<string, { n: number; one: string; many: string }>()
+  for (const finding of material) {
+    const cls = classOf(finding)
+    const held = byClass.get(cls.one)
+    byClass.set(cls.one, { ...cls, n: (held?.n ?? 0) + 1 })
+  }
+  const materialClauses = [...byClass.values()]
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 3)
+    .map(
+      ({ n, one, many }) => `${word(n).toLowerCase()} ${n === 1 ? one : many}`,
+    )
+  const blindNumbers =
+    formulaCount !== null && cellCount !== null
+      ? ` — ${formulaCount.toLocaleString()} of ${cellCount.toLocaleString()} cells hold a formula —`
+      : ''
+
+  const blindBody = blind
+    ? `This copy carries values only${
+        formulaCount !== null && cellCount !== null
+          ? `: ${formulaCount.toLocaleString()} of ${cellCount.toLocaleString()} cells hold a formula`
+          : ''
+      }, so the rules that read how the model is built had almost nothing to read. The checks that read values — the statements, the model's own check rows — found nothing failing. Ask for the working copy if the construction matters.`
+    : ''
+
   const verdictBody =
     material.length > 0
-      ? `${material
-          .slice(0, 2)
-          .map((one) => one.plain || one.title)
-          .join(
-            ' ',
-          )} ${material.length === 1 ? 'It' : 'These'} should clear before this model leaves the deal team.`
+      ? `${blind ? `This copy carries values only${blindNumbers} so the rules that read how the model is built saw almost none of it. What the value-reading checks did find: ` : ''}${
+          materialClauses.length > 0
+            ? `${materialClauses.slice(0, -1).join(', ')}${
+                materialClauses.length > 1 ? ', and ' : ''
+              }${materialClauses[materialClauses.length - 1]}${
+                byClass.size > materialClauses.length ? ', among others' : ''
+              }. `
+            : ''
+        }${material.length === 1 ? 'It is' : 'Each is'} named with its cell or page overleaf, and ${material.length === 1 ? 'it' : 'they'} should clear before this model leaves the deal team.`
       : total > 0
         ? 'The open findings are worth reading, but none of them on its own would stop the model going out.'
-        : ''
+        : blindBody
+
+  //: The body is its own paragraph under the lead, so it starts a
+  //: sentence — « two inconsistent formulas … » opened lowercase under
+  //: a full stop until this.
+  const verdictSaid =
+    verdictBody.length > 0
+      ? verdictBody.charAt(0).toUpperCase() + verdictBody.slice(1)
+      : verdictBody
+
+  //: Every claim on this page carries where it came from: the cell
+  //: when the finding sits in the model, the document and page when it
+  //: sits in a deck or a memo. A claim with nothing to cite is not
+  //: printed as a bare sentence — it says the file it came from.
+  const citeOf = (one: Finding): string => {
+    //: The engine's anchor already reads « Balance Sheet!D13 » — only a
+    //: bare ref needs its sheet put back, or the citation says the
+    //: sheet twice.
+    if (one.where.anchor.ref)
+      return one.where.anchor.ref.includes('!')
+        ? one.where.anchor.ref
+        : `${one.where.anchor.sheet ?? ''}!${one.where.anchor.ref}`
+    if (one.where.filename)
+      return one.page > 0
+        ? `${one.where.filename} · p. ${one.page}`
+        : one.where.filename
+    return one.where.label || ''
+  }
+
+  const statementOf = (one: Finding): string => {
+    let said = saidOf(one.plain || one.title)
+    const ref = citeOf(one)
+    const name = String(one.where.anchor.sheet ?? one.source?.name ?? '')
+    if (ref) said = said.split(ref).join('')
+    if (name) said = said.split(name).join('')
+    return said
+      .replace(/«\s*»/g, '')
+      .replace(/\s+at\s*$/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  }
+  //: The one sentence a group shares, ready to print — or empty when
+  //: printing it would break it.
+  //:
+  //: Stripping a finding's own name is right for *comparing* and wrong
+  //: for *displaying* when the name is the sentence's subject: fifty-
+  //: three hidden sheets collapsed to « is very hidden — it does not
+  //: appear in Excel's unhide menu », a sentence with nothing to be
+  //: about. So the shared line is used only when the name sits inside
+  //: the sentence rather than at its head; where it is the subject,
+  //: the group keeps each finding's own sentence and the reader sees
+  //: the count in the heading.
+  const sharedSentence = (place: Finding[]): string => {
+    if (place.length < 2) return ''
+    const first = statementOf(place[0]!)
+    if (!first) return ''
+    if (!place.every((one) => statementOf(one) === first)) return ''
+    //: Whether the name is the sentence's *subject*. « BID PRICE » is
+    //: very hidden — take the name out and nothing is left to be about.
+    const heads = place.some((one) => {
+      const said = saidOf(one.plain || one.title)
+      const name = String(one.where.anchor.sheet ?? '')
+      const ref = citeOf(one)
+      return (
+        (!!name && said.startsWith(name)) ||
+        (!!ref && said.startsWith(ref)) ||
+        said.startsWith('«')
+      )
+    })
+    //: They still collapse — the group is one statement either way.
+    //: What changes is what gets printed: the stripped statement when
+    //: it survives stripping, and otherwise the first finding's own
+    //: sentence with the rest rostered beneath it. That is the shape
+    //: the engine already uses for `broken-name`: « 338 defined names
+    //: point into other workbooks … and 332 more ».
+    return heads ? saidOf(place[0]!.plain || place[0]!.title) : first
+  }
+
+  const placeOf = (one: Finding): string => {
+    const ref = String(one.where.anchor.ref ?? '')
+    const row = ref.match(/(\d+)$/)?.[1] ?? ''
+    if (!one.rule || !row) return `solo:${one.id}`
+    return `${one.rule}|${one.where.anchor.sheet ?? ''}|${row}`
+  }
+  const materialPlaces = (() => {
+    //: **First, one statement is one entry.** Newbattle hides 53 of
+    //: its 54 sheets, and the report printed 53 numbered entries
+    //: carrying the same sentence with a different sheet name in it —
+    //: section 3 ran to 267 lines. That is one act by one person and
+    //: a reader acts on it once.
+    //:
+    //: A rule collapses only when *every* one of its findings makes
+    //: the identical statement once its own reference and name are
+    //: removed. Where they genuinely differ, the sheet-and-row
+    //: grouping below still applies and nothing is merged. The tally
+    //: above is untouched either way: 66 material findings are 66,
+    //: and the engine's count is not this screen's to edit.
+    const byRule = new Map<string, Finding[]>()
+    for (const one of material) {
+      const key = one.rule ?? ''
+      if (!key) continue
+      byRule.set(key, [...(byRule.get(key) ?? []), one])
+    }
+    const collapsed = new Set<string>()
+    const wholeRule: Finding[][] = []
+    for (const group of byRule.values()) {
+      if (group.length > 1 && sharedSentence(group)) {
+        wholeRule.push(group)
+        for (const one of group) collapsed.add(one.id)
+      }
+    }
+
+    const byPlace = new Map<string, Finding[]>()
+    for (const one of material) {
+      if (collapsed.has(one.id)) continue
+      const key = placeOf(one)
+      byPlace.set(key, [...(byPlace.get(key) ?? []), one])
+    }
+    for (const group of wholeRule) byPlace.set(`rule:${group[0]!.rule}`, group)
+    //: Within a place, in the order a person reads a model: down the
+    //: columns, left to right. They arrived N712, M712, O712.
+    const at = (one: Finding) => {
+      const coordinate =
+        String(one.where.anchor.ref ?? '')
+          .split('!')
+          .pop() ?? ''
+      const column = coordinate.replace(/[^A-Za-z]/g, '')
+      const row = Number(coordinate.replace(/[^0-9]/g, '')) || 0
+      return { column, row }
+    }
+    return [...byPlace.values()].map((group) =>
+      [...group].sort((a, b) => {
+        const one = at(a)
+        const two = at(b)
+        if (one.column.length !== two.column.length)
+          return one.column.length - two.column.length
+        if (one.column !== two.column) return one.column < two.column ? -1 : 1
+        return one.row - two.row
+      }),
+    )
+  })()
+  //: A drift finding is a claim about two places at once — the printed
+  //: figure and the cell it should have matched. Both are cited.
+  const againstOf = (one: Finding): string =>
+    one.source.ref && !one.where.anchor.ref
+      ? `against ${one.source.name ? `${one.source.name} · ` : ''}${one.source.ref}`
+      : ''
+
+  //: Coverage, in the words the schema itself uses: « 102 of 128
+  //: figures reconciled · 26 not checked ». A deal with no deck or memo
+  //: checked has no figures at all, and says so rather than printing a
+  //: meaningless « 0 of 0 » — the tie-out is what fills this line.
+  const figuresSeen = coverage ? coverage.reconciled + coverage.unlinked : 0
 
   const facts: [string, string][] = [
     ['Model', modelName + (version ? `, version ${version}` : '')],
     ['Checked', when(checkedAt)],
   ]
   if (typeof summary['cells'] === 'number')
-    facts.push(['Formulas read', String(summary['cells'])])
+    facts.push([
+      'Cells read',
+      //: `summary.cells` is cells — the row said « formulas read » over
+      //: it, which is a false claim on a document a partner keeps. The
+      //: model's own counts carry the formula count, so both are said.
+      //:
+      //: Grouped, because the verdict overleaf already says « 224 of
+      //: 432,596 cells » and this row was printing « 432596 » — the
+      //: same number twice on one page, one of them unreadable.
+      typeof modelCounts?.['formulas'] === 'number'
+        ? `${grouped(summary['cells'])} · ${grouped(modelCounts['formulas'])} of them formulas`
+        : grouped(summary['cells']),
+    ])
   if (Array.isArray(summary['rules_off']) && summary['rules_off'].length > 0)
     facts.push([
       'Rules switched off',
@@ -2852,7 +4333,11 @@ const Report = ({
 
   const notChecked: string[] = []
   if (record) {
-    for (const one of record.abstentions) notChecked.push(one.why)
+    //: Two rules can abstain for one reason (« No debt schedule was
+    //: located » answers both the debt and the interest checks). The
+    //: reason is the same fact; printing it twice reads as carelessness.
+    for (const one of [...new Set(record.abstentions.map((a) => a.why))])
+      notChecked.push(one)
     if (record.values_only)
       notChecked.push(
         'This copy carries values only, so the construction rules could not read its formulas.',
@@ -2861,6 +4346,83 @@ const Report = ({
   notChecked.push(
     'Model inputs that are judgement calls are not checked — only their sourcing is.',
   )
+
+  //: The recalculation mark, spoken in report prose. Four verdicts,
+  //: four faces — and no mark is a fact too, listed with everything
+  //: else that was not checked rather than passed over in silence.
+  const REFUSAL_SHORT: Record<string, string> = {
+    rtd: 'a real-time feed',
+    udf: 'a macro or add-in function',
+    'external-link': 'a reference outside the file',
+    lambda: 'a LAMBDA',
+    cube: 'a cube connection',
+    'engine-gap': 'a function the engine measurably cannot compute',
+  }
+  let recalcHead: string | null = null
+  let recalcBody = ''
+  if (recalc === null) {
+    notChecked.push(
+      'The arithmetic has not been re-run through the recalculation engine — the mark can be earned from the model’s own page.',
+    )
+  } else if (recalc.verdict === 'pass') {
+    recalcHead = 'Validated by recalculation'
+    recalcBody =
+      `Beyond reading the model, its arithmetic was re-run: ${recalc.engine ?? 'the engine'} ` +
+      `recomputed every formula from the file’s own inputs and reproduced all ` +
+      `${recalc.matched} compared cells exactly.` +
+      (recalc.volatile_cone > 0
+        ? ` ${recalc.volatile_cone} live cells (TODAY, NOW, RAND and their dependents) were set aside — their stored values belong to the moment the file was saved.`
+        : '')
+  } else if (recalc.verdict === 'fail') {
+    recalcHead = 'The recalculation disagreed'
+    recalcBody =
+      (recalc.mismatch_count > 0
+        ? `${recalc.mismatch_count} of ${recalc.compared} compared cells came back different when the file’s formulas were re-run. `
+        : '') +
+      (recalc.engine_error_count > 0
+        ? `${recalc.engine_error_count} cells returned engine errors against stored numbers — the engine’s measured inability on those constructs, not the model’s defect. `
+        : '') +
+      (recalc.not_computed > 0
+        ? `${recalc.not_computed} formula cells came back with nothing. `
+        : '') +
+      //: A printed report cannot send its reader to a screen. The cells
+      //: are named here, with both numbers, so the disagreement can be
+      //: judged rather than taken on trust.
+      (recalc.mismatches.length > 0
+        ? `The differing cells: ${recalc.mismatches
+            .slice(0, 6)
+            .map(
+              (d) =>
+                `${d.ref} (${d.stored ?? '—'} stored, ${d.computed ?? 'nothing'} recalculated)`,
+            )
+            .join('; ')}${
+            recalc.mismatch_count > recalc.mismatches.slice(0, 6).length
+              ? `; and ${recalc.mismatch_count - recalc.mismatches.slice(0, 6).length} more not named here`
+              : ''
+          }.`
+        : '')
+  } else if (recalc.verdict === 'refused') {
+    const kinds = [
+      ...new Set(
+        recalc.refusals.map(
+          (one) => REFUSAL_SHORT[one.category] ?? one.category,
+        ),
+      ),
+    ]
+    recalcHead = 'Not recalculated — refused, in words'
+    recalcBody =
+      `The file carries ${recalc.refusal_count === 1 ? 'a construct' : `${recalc.refusal_count} constructs`} ` +
+      `no engine of ours may honestly compute` +
+      (kinds.length > 0 ? ` (${kinds.join(', ')})` : '') +
+      `, so its arithmetic was not re-run and no verdict is claimed. ` +
+      (recalc.route === 'arbiter'
+        ? 'Real Excel could settle this file; until an arbiter run exists, the honest answer is « we did not check this ».'
+        : 'Nothing we could run recomputes these, so the honest answer is « we did not check this ».')
+  } else if (recalc.verdict === 'nothing-compared') {
+    recalcHead = 'Recalculated, with nothing to compare'
+    recalcBody =
+      'The file’s formula cells carry no stored values — a generator wrote it and Excel never computed it — so a recalculation had nothing to compare against and nothing is certified.'
+  }
 
   const families = new Map<string, Finding[]>()
   for (const one of rest) {
@@ -2885,7 +4447,13 @@ const Report = ({
       </span>
       <span style={{ flex: 1, height: 1, background: 'rgba(16,22,35,.08)' }} />
       <span style={{ fontFamily: font.mono, fontSize: 10.5, color: '#b6bac1' }}>
-        Page {page} of {of}
+        {/* Section, not page. A sheet is one section of the report and
+            fits one printed page only while it is short: fifteen
+            material findings run to three pages, and « Page 3 of 4 »
+            then sat on physical page five, with pages four and five
+            carrying no number at all. The section number is true at
+            any length; the printer numbers the paper. */}
+        Section {page} of {of}
       </span>
     </div>
   )
@@ -2935,17 +4503,45 @@ const Report = ({
     </div>
   )
 
+  //: The report is the artifact a partner actually receives, and what
+  //: they receive is this PDF — so the print document has to be the
+  //: report, not an approximation of it. Measured on the real model:
+  //: without the three rules below the PDF came out set in Liberation
+  //: Serif and DejaVu (the product's faces are self-hosted and the
+  //: print window loaded none of them), the severity dots vanished
+  //: entirely because browsers drop background colour when printing,
+  //: and a trailing blank page followed the last sheet.
   const print = () => {
     const sheets = [...document.querySelectorAll('[data-report="sheet"]')]
     if (!sheets.length) return
     const w = window.open('', '_blank', 'width=900,height=1200')
     if (!w) return
+    const origin = window.location.origin
+    const face = (family: string, file: string, weight: string) =>
+      `@font-face{font-family:'${family}';src:url('${origin}/workspace/${file}') format('woff2');font-weight:${weight};font-display:block;font-style:normal}`
     w.document.write(
       '<!doctype html><meta charset="utf-8"><title>' +
         document.title +
         '</title>' +
-        '<style>body{margin:0;font-family:ui-sans-serif,system-ui,sans-serif}' +
-        '[data-report="sheet"]{box-shadow:none!important;border-radius:0!important;max-width:none!important;break-after:page}' +
+        '<style>' +
+        //: The report's own faces, carried over so the delivered
+        //: document is set in the typography it was designed in.
+        face('Instrument Sans', 'instrument-sans-var.woff2', '400 700') +
+        face('Newsreader', 'newsreader-var.woff2', '400 500') +
+        face('JetBrains Mono', 'jetbrains-mono-var.woff2', '400 500') +
+        "body{margin:0;font-family:'Instrument Sans',ui-sans-serif,system-ui,sans-serif}" +
+        //: Severity reads by colour, and a browser drops background
+        //: colour on print unless it is told not to.
+        '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+        //: The screen's sheet carries its own generous padding; on
+        //: paper the @page margin already provides it, and keeping
+        //: both pushed sheet one over the page — its footer orphaned
+        //: onto a page of its own, which also made « Page 1 of 3 »
+        //: false on a four-page document. Measured, not guessed.
+        '[data-report="sheet"]{box-shadow:none!important;border-radius:0!important;' +
+        'max-width:none!important;padding:0!important;break-after:page;break-inside:avoid}' +
+        //: …but not after the last one, which is a blank page.
+        '[data-report="sheet"]:last-of-type{break-after:auto}' +
         '@page{margin:16mm}</style>' +
         '<body>' +
         sheets.map((s) => s.outerHTML).join('') +
@@ -2953,10 +4549,29 @@ const Report = ({
     )
     w.document.close()
     w.focus()
-    setTimeout(() => w.print(), 250)
+    //: Print once the faces are actually in, or the document prints in
+    //: fallbacks anyway; the timeout is the backstop for a browser
+    //: whose `fonts.ready` never settles.
+    const go = () => w.print()
+    let printed = false
+    const once = () => {
+      if (printed) return
+      printed = true
+      go()
+    }
+    if (w.document.fonts?.ready) {
+      w.document.fonts.ready.then(once).catch(once)
+      setTimeout(once, 3000)
+    } else {
+      setTimeout(once, 250)
+    }
   }
 
-  const pages = 3
+  //: Four sheets since G4: the verdict page could not hold the
+  //: coverage and the refusals as well and still fit one printed
+  //: page — measured in the PDF, where its footer orphaned onto a
+  //: page of its own and « Page 1 of 3 » became false.
+  const pages = 4
   return (
     <div
       style={{
@@ -3145,14 +4760,112 @@ const Report = ({
                   margin: '28px 0 30px',
                 }}
               />
+              {/* A report that describes a superseded version, without
+                  saying so, is the one way this document can be quietly
+                  wrong — the deal page has a stale banner and the
+                  printed artifact had nothing. It sits above the
+                  verdict because a reader has to meet it before
+                  believing anything below. Agent-designed (G4). */}
+              {stale && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    padding: '14px 16px',
+                    marginBottom: 4,
+                    background: '#fdf6e7',
+                    border: '1px solid rgba(232,163,0,.28)',
+                    borderRadius: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      flex: '0 0 auto',
+                      width: 7,
+                      height: 7,
+                      marginTop: 7,
+                      borderRadius: '50%',
+                      background: '#e8a300',
+                    }}
+                  />
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 14,
+                      lineHeight: 1.55,
+                      color: '#5a4a1f',
+                      textWrap: 'pretty',
+                    }}
+                  >
+                    {`This check ran before the current ${stale.kind ?? 'document'} was uploaded${
+                      stale.at ? ` ${when(stale.at).toLowerCase()}` : ''
+                    }. What follows describes the deal as it stood at the check, and a re-check may change it.`}
+                  </span>
+                </div>
+              )}
               {heading('The verdict')}
               {serif(verdictLead, 19)}
-              {verdictBody && (
-                <div style={{ paddingTop: 14 }}>{serif(verdictBody)}</div>
+              {verdictSaid && (
+                <div style={{ paddingTop: 14 }}>{serif(verdictSaid)}</div>
               )}
+              {/* Severity at a glance — the three tiers as counts, so a
+                  partner sees the shape of the answer before reading a
+                  word of it. Agent-designed (G4). */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 34,
+                  paddingTop: 26,
+                }}
+              >
+                {([1, 2, 3] as const).map((tier) => (
+                  <span
+                    key={tier}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
+                  >
+                    <span
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: '50%',
+                          background:
+                            counts[tier] > 0 ? SEV_DOT[tier] : '#d6d9de',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 12.5,
+                          color: '#6b7280',
+                          letterSpacing: '-.004em',
+                        }}
+                      >
+                        {SEV_WORD[tier]}
+                      </span>
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: font.serif,
+                        fontSize: 27,
+                        lineHeight: 1,
+                        color: counts[tier] > 0 ? '#1c1f23' : '#b6bac1',
+                      }}
+                    >
+                      {counts[tier]}
+                    </span>
+                  </span>
+                ))}
+              </div>
               {heading('What was checked', 40)}
               {serif(
-                'Read against the FAST and ICAEW conventions and against the model’s own check rows. Every finding carries the cell it came from.',
+                'Read against the FAST and ICAEW conventions and against the model’s own check rows. Every finding carries the cell — or the document and page — it came from.',
               )}
               <div
                 style={{
@@ -3190,6 +4903,74 @@ const Report = ({
                   </span>
                 ))}
               </div>
+              {recalcHead !== null && (
+                <>
+                  {heading(recalcHead, 34)}
+                  {serif(recalcBody)}
+                </>
+              )}
+              {foot(1, pages, 'Swens')}
+            </>,
+          )}
+
+          {sheet(
+            <>
+              {/* Coverage on the report's face — G4's own requirement,
+                  and the line the schema calls « what keeps the product
+                  honest ». It comes from the tie-out, so a deal with no
+                  deck or memo checked says that rather than printing a
+                  meaningless « 0 of 0 ». Agent-designed. */}
+              {heading('How much was covered')}
+              {serif(
+                figuresSeen > 0 && coverage
+                  ? `${coverage.reconciled} of ${figuresSeen} figures in the deliverables were reconciled against the model · ${coverage.unlinked} not checked.` +
+                      (coverage.drifting > 0
+                        ? ` ${word(coverage.drifting)} of the reconciled disagree with the model.`
+                        : coverage.reconciled > 0
+                          ? ' Every reconciled figure agrees with the model.'
+                          : '')
+                  : 'No deck or memo has been reconciled against this model, so no figures were checked. What follows is the model read against itself.',
+              )}
+              {figuresSeen > 0 &&
+                coverage !== null &&
+                coverage.reasons.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      paddingTop: 16,
+                    }}
+                  >
+                    {coverage.reasons.map((one, i) => (
+                      <span
+                        key={one.reason}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 46px',
+                          gap: 16,
+                          alignItems: 'baseline',
+                          borderTop:
+                            i === 0 ? 0 : '1px solid rgba(16,22,35,.05)',
+                          padding: '10px 0',
+                        }}
+                      >
+                        <span style={{ fontSize: 14, color: '#4a4f57' }}>
+                          {one.reason}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: font.mono,
+                            fontSize: 12.5,
+                            color: '#9aa1ab',
+                            textAlign: 'right',
+                          }}
+                        >
+                          {one.count}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               {heading('What could not be checked', 34)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {notChecked.map((text, i) => (
@@ -3208,7 +4989,73 @@ const Report = ({
                   </span>
                 ))}
               </div>
-              {foot(1, pages, 'Swens')}
+              {versions.length > 0 && (
+                <>
+                  {heading('The versions this report covers', 34)}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      paddingTop: 2,
+                    }}
+                  >
+                    {versions
+                      .slice()
+                      .sort((a, b) => b.version - a.version)
+                      .slice(0, 4)
+                      .map((v, i) => (
+                        <span
+                          key={v.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            gap: 14,
+                            borderTop:
+                              i === 0 ? 0 : '1px solid rgba(16,22,35,.05)',
+                            padding: '11px 0',
+                          }}
+                        >
+                          <span
+                            style={{
+                              flex: '0 0 46px',
+                              fontFamily: font.mono,
+                              fontSize: 12.5,
+                              color: '#0060d0',
+                            }}
+                          >
+                            v{v.version}
+                          </span>
+                          <span
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontSize: 14.5,
+                              color: '#3a3a3c',
+                            }}
+                          >
+                            {v.uploaded_by
+                              ? `Uploaded by ${v.uploaded_by.name}`
+                              : 'Uploaded'}
+                          </span>
+                          <span
+                            style={{
+                              flex: '0 0 auto',
+                              fontSize: 13,
+                              color: '#9aa1ab',
+                            }}
+                          >
+                            {when(v.uploaded_at)}
+                          </span>
+                        </span>
+                      ))}
+                  </div>
+                </>
+              )}
+              {foot(
+                2,
+                pages,
+                modelName + (version ? `, version ${version}` : ''),
+              )}
             </>,
           )}
 
@@ -3217,7 +5064,7 @@ const Report = ({
               {heading('The material findings')}
               {serif(
                 material.length > 0
-                  ? `${word(material.length)} finding${material.length === 1 ? '' : 's'} that change a number someone will act on. The cell reference is given so the model owner can go straight to it.`
+                  ? `${word(material.length)} finding${material.length === 1 ? '' : 's'} that change a number someone will act on. Each is cited — the cell, or the document and page — so the owner can go straight to it.`
                   : 'No open finding is material.',
               )}
               <div
@@ -3228,8 +5075,8 @@ const Report = ({
                   paddingTop: 28,
                 }}
               >
-                {material.map((m, i) => (
-                  <div key={m.id} style={{ display: 'flex', gap: 16 }}>
+                {materialPlaces.map((place, i) => (
+                  <div key={place[0]!.id} style={{ display: 'flex', gap: 16 }}>
                     <span
                       style={{
                         flex: '0 0 auto',
@@ -3264,69 +5111,181 @@ const Report = ({
                         minWidth: 0,
                         display: 'flex',
                         flexDirection: 'column',
+                        gap: 14,
                       }}
                     >
-                      <span
-                        style={{
-                          fontSize: 16.5,
-                          letterSpacing: '-.012em',
-                          lineHeight: 1.35,
-                          color: '#1c1f23',
-                          textWrap: 'pretty',
-                        }}
-                      >
-                        {m.plain || m.title}
-                      </span>
-                      <span
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: 7,
-                          paddingTop: 9,
-                        }}
-                      >
-                        {m.where.anchor.ref && (
+                      {/* The heading once for the place, not once per
+                          cell — and not at all when the sentence
+                          beneath simply repeats it: « THE MODEL'S OWN
+                          CHECK ROWS ARE FIRING » over « The model's own
+                          check rows are firing at ReportRatiosSA!E356 »
+                          is the same words twice. */}
+                      {(() => {
+                        const lead = place[0]!
+                        const said =
+                          lead.headline || categoryOfKey(lead.rule ?? '')
+                        const repeats = saidOf(lead.plain || lead.title)
+                          .toLowerCase()
+                          .startsWith(
+                            (lead.headline || '').toLowerCase().slice(0, 24),
+                          )
+                        if (!said || repeats) return null
+                        return (
+                          //: The scan line first — a partner reads the
+                          //: headlines down the page, then stops on one.
+                          //: A check with no headline of its own is named
+                          //: by its family, which is derived from the rule.
                           <span
                             style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              background: '#f4f5f7',
-                              borderRadius: 999,
-                              padding: '4px 11px',
-                              fontFamily: font.mono,
-                              fontSize: 11.5,
-                              color: '#4a4f57',
-                            }}
-                          >
-                            {`'${m.where.anchor.sheet ?? ''}'!${m.where.anchor.ref}`}
-                          </span>
-                        )}
-                        {m.figure && (
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              background: '#fdeceb',
-                              borderRadius: 999,
-                              padding: '4px 11px',
                               fontSize: 12.5,
-                              color: '#c92a25',
+                              letterSpacing: '.02em',
+                              textTransform: 'uppercase',
+                              color: '#9aa1ab',
                             }}
                           >
-                            {m.figure}
-                            {m.figure_unit ? ` ${m.figure_unit}` : ''}
+                            {said}
+                            {/* Not « cells »: a group may be cells, rows
+                                or whole sheets, and the heading must
+                                not name the wrong thing. */}
+                            {place.length > 1
+                              ? ` · ${place.length} in all`
+                              : ''}
                           </span>
-                        )}
-                      </span>
-                      <div style={{ paddingTop: 12 }}>
-                        {serif(m.context || m.title)}
-                      </div>
+                        )
+                      })()}
+                      {/* When every sentence in the place is the same
+                          once its own cell is taken out of it, say it
+                          once. Kelso printed « The model's own check
+                          rows are firing at calcFundingSA!N712 » three
+                          times over, differing only in the cell already
+                          printed beside it. Checked rather than
+                          assumed: the titles are compared with each
+                          finding's own reference removed, so a place
+                          whose sentences really differ keeps all of
+                          them. */}
+                      {(() => {
+                        const shared = sharedSentence(place)
+                        if (!shared) return null
+                        return (
+                          <span
+                            style={{
+                              fontSize: 16.5,
+                              letterSpacing: '-.012em',
+                              lineHeight: 1.35,
+                              color: '#1c1f23',
+                              textWrap: 'pretty',
+                            }}
+                          >
+                            {shared}
+                          </span>
+                        )
+                      })()}
+                      {place.map((m) => {
+                        const shared = sharedSentence(place)
+                        //: The citation pill, unless the sentence has
+                        //: already printed the very same reference — the
+                        //: report was saying « … firing at
+                        //: calcFundingSA!N712 » and then printing
+                        //: « calcFundingSA!N712 » underneath it.
+                        const cite = citeOf(m)
+                        const doubled =
+                          !!cite && saidOf(m.plain || m.title).includes(cite)
+                        return (
+                          <span
+                            key={m.id}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                            }}
+                          >
+                            {!shared && (
+                              <span
+                                style={{
+                                  fontSize: 16.5,
+                                  letterSpacing: '-.012em',
+                                  lineHeight: 1.35,
+                                  color: '#1c1f23',
+                                  textWrap: 'pretty',
+                                }}
+                              >
+                                {saidOf(m.plain || m.title)}
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 7,
+                                paddingTop: shared ? 0 : 9,
+                              }}
+                            >
+                              {cite && (!doubled || !!shared) && (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    background: '#f4f5f7',
+                                    borderRadius: 999,
+                                    padding: '4px 11px',
+                                    fontFamily: font.mono,
+                                    fontSize: 11.5,
+                                    color: '#4a4f57',
+                                  }}
+                                >
+                                  {cite}
+                                </span>
+                              )}
+                              {againstOf(m) && (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    background: '#f4f5f7',
+                                    borderRadius: 999,
+                                    padding: '4px 11px',
+                                    fontFamily: font.mono,
+                                    fontSize: 11.5,
+                                    color: '#4a4f57',
+                                  }}
+                                >
+                                  {againstOf(m)}
+                                </span>
+                              )}
+                              {m.figure && (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    background: '#fdeceb',
+                                    borderRadius: 999,
+                                    padding: '4px 11px',
+                                    fontSize: 12.5,
+                                    color: '#c92a25',
+                                  }}
+                                >
+                                  {m.figure}
+                                  {m.figure_unit ? ` ${m.figure_unit}` : ''}
+                                </span>
+                              )}
+                            </span>
+                            {/* The evidence, only when it says something
+                                the sentence above did not — several
+                                checks store the same words in both. */}
+                            {(m.context || m.title) !==
+                              (m.plain || m.title) && (
+                              <div style={{ paddingTop: 12 }}>
+                                {serif(saidOf(m.context || m.title))}
+                              </div>
+                            )}
+                          </span>
+                        )
+                      })}
                     </span>
                   </div>
                 ))}
               </div>
               {foot(
-                2,
+                3,
                 pages,
                 modelName + (version ? `, version ${version}` : ''),
               )}
@@ -3395,9 +5354,9 @@ const Report = ({
                             textWrap: 'pretty',
                           }}
                         >
-                          {one.plain || one.title}
+                          {saidOf(one.plain || one.title)}
                         </span>
-                        {one.where.anchor.ref && (
+                        {citeOf(one) && (
                           <span
                             style={{
                               flex: '0 0 auto',
@@ -3406,7 +5365,7 @@ const Report = ({
                               color: '#9aa1ab',
                             }}
                           >
-                            {`'${one.where.anchor.sheet ?? ''}'!${one.where.anchor.ref}`}
+                            {citeOf(one)}
                           </span>
                         )}
                       </span>
@@ -3414,68 +5373,6 @@ const Report = ({
                   </div>
                 ))}
               </div>
-              {versions.length > 0 && (
-                <>
-                  {heading('The versions', 40)}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      paddingTop: 2,
-                    }}
-                  >
-                    {versions
-                      .slice()
-                      .sort((a, b) => b.version - a.version)
-                      .slice(0, 4)
-                      .map((v, i) => (
-                        <span
-                          key={v.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'baseline',
-                            gap: 14,
-                            borderTop:
-                              i === 0 ? 0 : '1px solid rgba(16,22,35,.05)',
-                            padding: '11px 0',
-                          }}
-                        >
-                          <span
-                            style={{
-                              flex: '0 0 46px',
-                              fontFamily: font.mono,
-                              fontSize: 12.5,
-                              color: '#0060d0',
-                            }}
-                          >
-                            v{v.version}
-                          </span>
-                          <span
-                            style={{
-                              flex: 1,
-                              minWidth: 0,
-                              fontSize: 14.5,
-                              color: '#3a3a3c',
-                            }}
-                          >
-                            {v.uploaded_by
-                              ? `Uploaded by ${v.uploaded_by.name}`
-                              : 'Uploaded'}
-                          </span>
-                          <span
-                            style={{
-                              flex: '0 0 auto',
-                              fontSize: 13,
-                              color: '#9aa1ab',
-                            }}
-                          >
-                            {when(v.uploaded_at)}
-                          </span>
-                        </span>
-                      ))}
-                  </div>
-                </>
-              )}
               {heading("What this doesn't tell you", 40)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {[
@@ -3497,7 +5394,7 @@ const Report = ({
                   </span>
                 ))}
               </div>
-              {foot(3, pages, 'Swens')}
+              {foot(4, pages, 'Swens')}
             </>,
           )}
         </div>

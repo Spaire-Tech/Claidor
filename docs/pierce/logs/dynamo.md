@@ -1,0 +1,4135 @@
+# Dynamo — lane log (Track B, the recalculator)
+
+Branch `swens/dynamo`, based on `claude/pierce-phase-6-writing-mjkaj6`
+at `265bfeb`. This lane owns `server/polar/tieout/recalc/`,
+`server/tests/tieout/test_recalc*`, `server/scripts/recalc_*`, and this
+file — nothing else. The engine is a read-only library here.
+
+## 25 August 2026 — the environment audit (first task, for the founder)
+
+Every claim below was measured in this container today, with the
+command that produced it. This is the container's state, not a promise
+about any other machine.
+
+### What B1 needs (per `ambre-toolbox.md` §2 and `swens-plan.md` B1)
+
+1. **LibreOffice ≥ 25.8** (hard floor 25.2; 24.8 is where XLOOKUP,
+   LET, FILTER and the array stack arrived — a model using any of
+   them cannot recalculate on anything older), **with the Calc
+   component**, headless.
+2. **python-uno** matched to that LibreOffice, so a driver can open
+   the UNO socket, push the file's own `calcPr` iteration settings,
+   and call `calculateAll()` — the CLI convert path does not reliably
+   recalc, so the socket path is not optional.
+3. Room for a pool of long-lived soffice workers, one document per
+   process, recycled every N files.
+
+### What this container has
+
+- **LibreOffice 24.2.7.2** (`soffice --version`) — below the floor,
+  and **without Calc**: only `libreoffice-{core,common,style-colibre,
+  uiconfig-common}` are installed (`dpkg -l`). Proof it cannot open a
+  spreadsheet at all: `soffice --headless --convert-to xlsx` on a
+  two-cell CSV fails with « Error: source file could not be loaded ».
+- **python3-uno 24.2.7** for the *system* Python (3.11.15):
+  `import uno` succeeds there.
+- The project venv runs **Python 3.14.0rc2** (`requires-python
+  >=3.14.0`), and `import uno` fails there. It always will:
+  python-uno is not on PyPI — it ships with a LibreOffice build,
+  compiled against one interpreter. The venv will never import uno
+  directly, whatever gets installed.
+- Resources: 4 CPUs, 15 GB RAM, ~30 GB free disk. Enough for a small
+  worker pool; the standing rule that heavy workbook jobs run alone
+  still applies.
+
+### What it lacks, and the observed remedies (founder's decision — nothing installed)
+
+- **Calc.** `apt-get install -s libreoffice-calc` resolves cleanly to
+  4:24.2.7 and the Ubuntu archive answers (HTTP 200) — one command
+  away, but it lands on **24.2**, below the floor: no XLOOKUP, no
+  LET, so any modern model would fail its recalc for engine reasons,
+  not model reasons. Good enough only for smoke-testing the wiring.
+- **25.8 itself.** Ubuntu 24.04's archive tops out at 24.2.7 — no apt
+  path to 25.x. `download.documentfoundation.org` is reachable from
+  here (HTTP 200), so installing TDF's own 25.8 deb bundle into
+  `/opt/libreoffice25.8` is feasible in principle; TDF builds bundle
+  their own Python with uno, which sidesteps the distro python3-uno
+  version lock. Not attempted: the lane rules route new dependencies
+  through the log for approval first, and this container is
+  ephemeral — the install that matters is on the machine B1 will
+  actually live on.
+
+### What the audit decides about the architecture
+
+Because the venv can never import uno, the UNO client is
+**out-of-process by construction**: a small driver script executed
+under the LibreOffice-matched interpreter (system python3 today, the
+TDF-bundled python under 25.8), speaking to the venv over
+stdin/stdout. So the recalc package is built behind a `Calculator`
+interface now, with a fake calculator for tests; when the machine
+exists, the real UNO wiring is one adapter class plus one driver
+script, and nothing above the interface changes.
+
+### While blocked on the machine (charter work, no machine results)
+
+- The fidelity gate's tolerance and denylist logic per
+  `ambre-toolbox.md`, tested against synthetic stored-vs-computed
+  fixtures.
+- The worker pool behind the `Calculator` interface with a fake
+  calculator.
+- B4's planted-defect registrations — written and committed before
+  any result is looked at.
+
+**No fidelity number, match rate, or catch rate in this log is a
+machine result until a LibreOffice ≥ 25.8 with Calc has actually run.
+None exists yet.**
+
+## 25 August 2026 — the while-blocked build
+
+New package `server/polar/tieout/recalc/` (gate, denylist, pool,
+laws), tests in `server/tests/tieout/test_recalc_*.py`, and
+`server/scripts/recalc_probe.py`. No new Python dependency was added —
+openpyxl's tokenizer is already the engine's, and everything else is
+the standard library. Everything reads the frozen surfaces only
+(`Workbook.cells`, `Cell.formula/.value/.precedents`); no engine file
+was touched.
+
+- **`gate.py` (B2's rules).** Stored-vs-recalculated comparison,
+  formula cells only: relative 1e-9 on plain chains with an absolute
+  floor of 1e-12 at zero; inside iterative cycles, the file's own
+  `calcPr` delta (Excel's default 0.001 when the file iterates
+  silently) — the bound is the file's declared convergence threshold,
+  never our invention. Cycle membership by strongly-connected
+  components over the cells' own precedents. Verdicts: `refused` /
+  `pass` / `fail` / `nothing-compared` (a generator-written file with
+  no stored values cannot be certified). A formula cell the engine
+  returned nothing for fails the gate — a gate cannot pass around a
+  hole.
+- **`denylist.py` (B2's routing).** Tokenized prescan (never
+  substring — a sheet named « RTD data » must not trip it): LAMBDA
+  and its helper family → arbiter; CUBE* → arbiter; RTD, UDFs,
+  external references → refusal. Routing policy is data, movable by
+  the lead. UDFs are detected by `_xludf.` stubs and by absence from
+  a curated function catalogue, which errs the honest way: an
+  unknown genuine function refuses rather than passing silently, and
+  the catalogue grows through this log when real corpus files name
+  the gaps.
+- **`pool.py` (B1's mechanics, no machine).** `WorkerPool` behind a
+  `Calculator` protocol: one document per worker, workers recycled
+  after N documents (soffice leaks), a dead calculator replaced and
+  its document retried exactly once on a fresh one. Proven against
+  fakes only — every fake result carries an `engine` label naming it
+  fake, so nothing can be mistaken for a recalculation. The real UNO
+  adapter is one class plus one driver script under the
+  LibreOffice-matched interpreter, per the audit above.
+- **`scripts/recalc_probe.py`.** The audit, repeatable: run on any
+  machine, it prints ok/LACK per prerequisite and exits 0 only when
+  B1 could be wired there. On this container today:
+  `LACK soffice (24.2 < 25.8)`, `LACK calc`,
+  `ok uno via /usr/bin/python3` — exit 1, as expected.
+
+Validation, run here: the 38 new tests pass; the standing tieout
+suite still passes beside them (`uv run pytest tests/tieout/
+--noconftest`: 447 passed, 4 skipped, excluding five files —
+test_agent_tools, test_corrections, test_routes, test_source,
+test_spine — whose *collection* fails identically with and without
+this lane's changes; a pre-existing pydantic-vs-Python-3.14.0rc2
+issue in this container, reported here, not fixed, not mine to fix).
+Ruff format/check and mypy are clean on every lane file; mypy also
+reports two pre-existing errors in `polar/tieout/audit.py` (lines
+2367, 2993) — Sentinel's file, noted for the lead, untouched.
+
+## 25 August 2026 — B4 registrations, before any result
+
+Registered now, while no machine can produce a number, so the rules
+cannot bend to results. The laws' arithmetic is `recalc/laws.py`,
+pinned by hand-worked tests; the selectors (which cells are volume,
+price, revenue, ratio, segment) will come from the engine's labelled
+reading plus per-model configuration, and are argued separately from
+the rules below, which are frozen by this entry.
+
+1. **Zero input.** Perturbation: every volume-class input set to 0.
+   Pass rule: every revenue-class output reads **exactly** 0 — the
+   plan's word, no tolerance. Predicted catch: the
+   hardcode-in-the-tail class (a constant pasted into a chain),
+   invisible to static reading.
+2. **Proportionality.** Perturbation: every price-class input ×2.
+   Pass rule: every revenue-class output ×2 within same-engine
+   tolerance (relative 1e-9, floor 1e-12 — both runs come from the
+   same calculator, only float dust is forgiven). Predicted catch:
+   the same hardcode class, plus caps/overrides wired into revenue
+   lines without being declared inputs.
+3. **Scale invariance.** Perturbation: every monetary input ×100
+   (cents for pounds). Pass rule: every ratio-class output unchanged
+   within same-engine tolerance. Predicted catch: a hardcoded leg
+   inside a ratio (a pasted denominator), and mixed-unit chains.
+4. **Consolidation.** No perturbation: one run; each declared total
+   equals the sum of its declared segments within same-engine
+   tolerance. Predicted catch: the omitted or double-counted segment.
+
+Measurement protocol, fixed now: laws run **only** on files that
+passed their fidelity gate (a violated law on an ungated file indicts
+the engine, not the model). Defects are planted per class on gated
+corpus files before any check runs; catch rate and false-positive
+price are measured per class against the planted truth; a violated
+law is a symptom, and the narrowing to one responsible cell (delta
+debugging over the dependency slice) is registered as future work —
+its absence today is a recorded gap. **No catch rate exists yet, and
+none is claimed.**
+
+## 26 August 2026 — the machine, and the real adapter
+
+The lead resolved the machine question (`lanes.md`, lead decisions):
+`dev/setup-libreoffice` puts TDF's 25.8.7 in `/opt` per fresh
+container. Ran it here; `scripts.recalc_probe` (now taught to look in
+`/opt` past the distro 24.2 that shadows it on PATH, and to prefer
+the interpreter *matched* to the chosen install) reports three oks
+and exit 0 on this container.
+
+The UNO wiring landed exactly as designed — one adapter class, one
+driver script, nothing above the `Calculator` interface changed:
+
+- `recalc/uno_driver.py` — stdlib + uno only, runs under
+  `/opt/libreoffice25.8/program/python`, JSON lines over pipes. The
+  toolbox's hard-won rules encoded: the file's own `calcPr` pushed
+  explicitly, `calculateAll()` on the socket (never the convert
+  path), macros never execute, links never update. Cell errors come
+  back as `#ERR:<code>` — a different kind, as the gate treats them.
+- `recalc/uno_calc.py` — `UnoCalculator`: per instance one headless
+  soffice on its own named pipe with its own user profile, plus one
+  driver process. Timeouts kill the pair and raise; the pool
+  replaces and retries once, per its registered discipline.
+
+**Machine results now exist, and these are the first:** the four
+integration tests in `tests/tieout/test_recalc_uno.py` passed on this
+container (skipped honestly anywhere without the machine):
+
+1. an openpyxl-written workbook with **no stored answers** came back
+   computed (`SUM(2,3)*10 = 50`, an error cell as `#ERR:`, a string
+   result as itself) — reproducing the lead's proof inside the suite;
+2. a circular pair converged to 4/3 and 2/3 **only because** the
+   file's own iteration settings were pushed — LibreOffice's default
+   would have errored both cells;
+3. the full B2 round trip: recalculate-and-store gave a file with
+   stored values, the gate passed it at match rate 1.0 against a
+   fresh recalculation, then a one-cell lie planted in the stored
+   values (formula intact) was caught and named (`M!B4`), verdict
+   fail;
+4. B1's DONE sentence verbatim — a changed input produced changed
+   downstream values through the worker pool, unattended (price 2 →
+   50, price 5 → 80).
+
+## 26 August 2026 — B2 sweep registration, committed before the numbers
+
+The harness is `scripts/recalc_gate.py`, committed with this entry
+**before any corpus number has been looked at**. Registered:
+
+- **Scope, this round:** the golden-master corpus — the 27 files
+  `scripts.corpus_au_uk` rebuilds (fetched fresh here today; 27/27
+  present). The model corpus (`scripts.model_corpus`) and the
+  archived CUSTODES `.xls` (which need one-time conversion) are
+  later, separately registered rounds.
+- **Procedure, per file, strictly one at a time (the heavy-job
+  rule):** engine reader for cells → denylist prescan (a routed file
+  is never gated by LibreOffice; its hits and route are the record)
+  → fresh `UnoCalculator` per file (recycle at its most
+  conservative, N=1) → registered tolerance rules with the file's
+  own `calcPr`.
+- **What will be claimed:** per file — verdict (`pass` / `fail` /
+  `refused` / `nothing-compared` / `reader-failed` /
+  `recalc-failed`), formula cells compared, matched, match rate,
+  mismatching refs with both values and the allowed tolerance,
+  uncached and unreturned counts. Timings are noise on this shared
+  box and are recorded only as coarse context.
+- **What a `fail` means:** a symptom, not a verdict on anyone. The
+  registered reading order for mismatches: (1) our reader mis-read
+  the stored value, (2) LibreOffice computed differently than Excel
+  (engine gap → arbiter's jurisdiction, B3), (3) the file's stored
+  values were genuinely stale in Excel itself. Deciding among them
+  is the round *after* this one; this sweep only measures.
+- The raw JSON stays uncommitted (like the corpus); the per-file
+  table lands in this log.
+
+## 26 August 2026 — amendment to the denylist, registered before round 2
+
+Round 1 (running as this is written; 19 of 27 files recorded when the
+amendment was drafted) exposed two defects in **the scan, not the
+engine**, and one timeout. The round-1 records stand as taken; this
+amendment is committed before the affected files are re-run, and the
+re-run is round 2, reported separately.
+
+1. **Range-combinator false positive.** `AA116:INDEX(...)` — a range
+   whose end is computed by INDEX — is tokenized as one function
+   token `AA116:INDEX(`, which the scan read as an unknown function
+   and refused as a UDF (both H7 PCM files, 504 cells each, every
+   hit of this shape). The canonicalizer now takes the name after
+   the last range colon. Regression test committed.
+2. **Catalogue growth, evidenced:** `SINGLE` — Excel's own implicit-
+   intersection wrapper (`@`, stored `_xlfn.SINGLE`), met in Ofgem's
+   GT3 draft PCFM — added to the known catalogue per this log's
+   stated procedure. If LibreOffice cannot in fact compute it, the
+   gate will say so as mismatches or `#ERR` cells in round 2 — the
+   addition cannot hide a failure, only route the file to a
+   measurement.
+3. **Timeout, not a verdict:** the RIIO ET3 draft BPFM produced no
+   answer in 1800 s. The harness now takes a per-document timeout
+   argument and accepts a single file; round 2 re-runs the BPFMs at
+   7200 s. If it still produces nothing, that is recorded as its
+   outcome. Reader-side: the BPFM files also take the engine reader
+   tens of minutes — Sentinel's A1 territory (the range-expansion
+   storm), noted here for the lead, engine untouched.
+
+Round 2 scope, fixed now: the two H7 PCM files, the GT3 draft PCFM,
+and any BPFM whose round-1 outcome was `recalc-failed`, at 7200 s.
+Nothing else is re-run; round 1's numbers are not revised.
+
+## 26 August 2026 — B2 round 1: the fidelity report, golden-master corpus
+
+Sweep of all 27 files, machine: LibreOffice 25.8 (UNO) on this
+container, rules exactly as registered. **Zero mismatching cells.**
+
+**Summary: 18 pass · 0 fail · 6 refused · 3 recalc-failed —
+723,192 formula cells compared, 723,192 matched (100%, relative
+1e-9).** No file that was gated showed even one cell LibreOffice
+could not reproduce.
+
+| File | Outcome | Compared | Match rate |
+|---|---|---|---|
+| h7_new_debt_indexation_fds.xlsx | pass | 2,233 | 1.000000 |
+| h7_new_debt_indexation_fp.xlsx | pass | 2,772 | 1.000000 |
+| h7_pcm_v2-10_final_proposals.xlsm | refused (504 range-INDEX hits — scan artifact, amendment above) | — | — |
+| h7_pcm_v2-11_final_determination.xlsm | refused (ditto) | — | — |
+| ofgem_ed2 v1 2023-02 | pass | 19,513 | 1.000000 |
+| ofgem_ed2 v2 2023-07-14 | pass | 19,398 | 1.000000 |
+| ofgem_ed2 v2 2023-07-31 | pass | 19,398 | 1.000000 |
+| ofgem_ed2 v3 2023-10 | pass | 19,298 | 1.000000 |
+| ofgem_ed2 v3 2023-11 | pass | 19,298 | 1.000000 |
+| ofgem_ed2 v3 2024-01 (.xlsm) | pass | 19,264 | 1.000000 |
+| ofgem_ed2 v4 2024-07 | pass | 19,261 | 1.000000 |
+| ofgem_ed2 v4 2025-01 | pass | 19,261 | 1.000000 |
+| ofgem_ed2 v4 2025-07 | pass | 19,261 | 1.000000 |
+| ofgem_ed2 v4 2026-01 | pass | 19,261 | 1.000000 |
+| ofgem_ed2 v5 2026-06 | pass | 19,261 | 1.000000 |
+| DRAFT ET3 PCFM Jun25 | pass | 13,878 | 1.000000 |
+| DRAFT GD3 PCFM Jun25 | pass | 8,185 | 1.000000 |
+| DRAFT GT3 PCFM Jun25 | refused (29 SINGLE hits — catalogue gap, amendment above) | — | — |
+| RIIO ET3 BPFM draft (.xlsm) | recalc-failed (no answer in 1800 s) | — | — |
+| RIIO GD3 BPFM draft (.xlsm) | recalc-failed (no answer in 1800 s) | — | — |
+| RIIO GDT3 RoE Summary | pass | 304 | 1.000000 |
+| RIIO GDT3 WACC Rates Model | pass | **243,285** | 1.000000 |
+| RIIO GT3 BPFM draft (.xlsm) | recalc-failed (no answer in 1800 s) | — | — |
+| final_et3_bpfm.xlsm | refused (10 SINGLE hits) | — | — |
+| final_gd3_bpfm.xlsm | refused (10 SINGLE hits) | — | — |
+| final_gt3_bpfm.xlsm | refused (10 SINGLE hits) | — | — |
+| final_wacc.xlsx | pass | 240,061 | 1.000000 |
+
+Honest margins on the claim: uncached formula cells (present in the
+file with no stored value — a generator or a saved-without-recalc
+tab) are counted per file in the raw record and were not comparable
+(ED2 carries ~1,224 per version; the PCFM drafts 6–10k); the two
+quarter-million-cell WACC models each took ~19 coarse minutes
+end-to-end on this shared box (timings are noise; the match rates
+are the result). The refusals and timeouts are exactly the amendment's
+three cases; every one of the six refusals' recorded hits is a scan
+artifact shape (the H7 lists are truncated at 25 in the record, so
+round 2's re-prescan under the fixed scan is the decider — anything
+genuine will refuse again and be recorded as such).
+
+**Round 2 scope addendum, registered before it runs** (extending the
+amendment's scope line, since four more files finished after it was
+written): round 2 re-runs, at 7200 s per document, with the amended
+scan — the two H7 PCMs, the GT3 draft PCFM, the three final BPFMs
+(refused solely on SINGLE), and the three draft BPFMs
+(`recalc-failed` at 1800 s). Round 1's numbers stand as recorded
+above.
+
+## 26 August 2026 — SINGLE is a measured engine gap, not a catalogue entry
+
+Round 2's first record answered the SINGLE question exactly as the
+amendment said it would: the GT3 draft PCFM **failed** its gate with
+976 mismatches, every one `#ERR:525` — LibreOffice's #NAME?. A
+five-cell probe then settled it beyond the corpus: LibreOffice 25.8
+returns #NAME? for `SINGLE(...)` and `_xlfn.SINGLE(...)` alike. So
+the toolbox's « no LAMBDA » gap has a sibling: **no implicit
+intersection**. The catalogue addition is reverted; SINGLE now has
+its own denylist category, `engine-gap` — a genuine Excel function
+LibreOffice measurably cannot compute — routed to the **arbiter**
+(real Excel settles it), never a silent fail. Regression test
+updated; the probe and the 976-cell fail are the evidence, both on
+this machine, today.
+
+Consequence for the corpus: the GT3 draft PCFM and the three final
+BPFMs are *arbiter files* until B3 exists — their fidelity is real
+Excel's to certify, and LibreOffice's verdict on them is recorded as
+« engine gap », not as a model defect. The gate's discipline held:
+no behavioural check will run on them here.
+
+## 26 August 2026 — B2 round 2 recorded, and what the mismatches are
+
+Nine files, amended scan, 7200 s per document. Totals: 6 gated (all
+fail, as measurement — see classes below), 3 recalc-failed;
+**1,821,772 further cells compared, 1,818,698 matched (99.83%)**.
+
+| File | Outcome | Compared | Match rate | The mismatches are |
+|---|---|---|---|---|
+| DRAFT GT3 PCFM | fail | 15,182 | 0.935713 | 976 × `#ERR:525` — the SINGLE gap and its downstream cone |
+| RIIO ET3 BPFM draft | recalc-failed | — | — | UNO load returned nothing (see below — the file itself loads) |
+| RIIO GD3 BPFM draft | recalc-failed | — | — | ditto |
+| RIIO GT3 BPFM draft | recalc-failed | — | — | ditto |
+| final_et3_bpfm.xlsm | fail | 444,530 | 0.998396 | sample: `#ERR:502` (invalid argument — a construct to identify) + near-zero dust (stored ~1.8e-12 vs computed 0, just over the registered 1e-12 floor) |
+| final_gd3_bpfm.xlsm | fail | 454,281 | 0.998508 | sample: all `#ERR:502` |
+| final_gt3_bpfm.xlsm | fail | 453,007 | 0.998616 | sample: all `#ERR:502` |
+| h7_pcm_v2-10 (range-INDEX fix proved: it gates now) | fail | 227,367 | 0.999784 | 49 cells, all numeric: `TODAY()`-class volatiles (stored date serial 44741 vs today's 46259) + a few ~1e-8-relative real differences |
+| h7_pcm_v2-11 | fail | 227,405 | 0.999864 | 31 cells, same two classes |
+
+Readings, in the registered order (reader wrong / engine gap / file
+stale), plus one class the registration did not anticipate:
+
+- **Volatile functions are a fourth reading.** A stored `TODAY()`
+  result is the authoring day's; a recalculation's is today's. Both
+  are right. The H7 « Version log » cells are this class, and
+  counting them as mismatches is a rules gap: the next registered
+  rules round should prescan volatiles (TODAY, NOW, RAND,
+  RANDBETWEEN, RANDARRAY) and report their downstream cone
+  separately, not as fidelity loss. Not changed now — round 2's
+  numbers stand under round 2's rules.
+- **`#ERR:502` on the final BPFMs** is an unidentified engine gap
+  (LibreOffice computes an argument invalid where Excel stored a
+  number). Naming the construct (pull the erroring cells' formulas)
+  is the next diagnostic; those files stay arbiter-bound meanwhile.
+- **The near-zero dust** (|stored| ≈ 1.8e-12 against computed 0) sits
+  just over the registered absolute floor of 1e-12. Whether the floor
+  should widen for near-zero residue is a tolerance-registration
+  question for the lead/founder — flagged, not changed.
+- **The three draft BPFMs load fine through the CLI convert path**
+  (measured: ET3 draft converts in minutes) — so « could not load »
+  indicts the UNO load call, not the files. Cause consistent with an
+  unanswered load-time interaction request; the driver now passes a
+  do-nothing `InteractionHandler` (it can only decline prompts:
+  macros stay off, links stay stale, repair is never accepted). The
+  four UNO integration tests still pass with it.
+
+**Round 3, registered before it runs:** the three draft BPFMs only,
+same harness, same rules, 7200 s, with the interaction-handler
+driver. Anything still failing is recorded as its outcome.
+
+## 26 August 2026 — B2 round 3, and the corpus fidelity report is whole
+
+The interaction handler was the whole story: all three draft BPFMs
+loaded, calculated, and gated.
+
+| File | Compared | Match rate | Sample classes |
+|---|---|---|---|
+| RIIO ET3 BPFM draft | 432,940 | 0.998725 | `#ERR:502` + a little numeric |
+| RIIO GD3 BPFM draft | 436,275 | 0.998735 | same |
+| RIIO GT3 BPFM draft | 448,233 | 0.998842 | same |
+
+**The B2 fidelity report now covers every file of the golden-master
+corpus — 27 of 27 gated.** Across the three rounds:
+**3,862,412 stored-vs-recalculated cell comparisons; 3,857,715
+matched — 99.88% overall.** Eighteen files match at exactly 1.0
+(zero mismatching cells, ~723k comparisons); the other nine sit
+between 0.9357 and 0.9999 with **every mismatch in a named class**:
+the SINGLE `#NAME?` cone (GT3 draft PCFM and the three finals —
+arbiter files until B3), the unidentified `#ERR:502` construct on
+all six BPFMs (next diagnostic), TODAY/NOW volatiles (a registered
+rules gap, not a fidelity loss), near-floor dust (~1.8e-12 vs 0),
+and a residue of ~1e-8-relative real differences.
+
+What this does and does not claim, per the plan's B2 sentence:
+
+- It **does**: the fidelity report exists for the golden-master
+  corpus and gates everything downstream — the 18 clean-pass files
+  are eligible for B4's behavioural laws; the nine others are not,
+  until the arbiter (B3) or the named engine gaps resolve them.
+- It does **not**: cover the model corpus (`scripts.model_corpus`)
+  or the archived CUSTODES `.xls` — each is its own later,
+  separately-registered round, as the round-1 registration said.
+- Timings stayed noise throughout (shared box); the coarse context:
+  a draft BPFM runs ~35–45 min end to end, dominated by the engine
+  reader (Sentinel's A1 storm, noted for the lead) and LibreOffice's
+  own load of a ~40MB xlsm.
+
+Next in the lane, in order: name the `#ERR:502` construct from the
+erroring cells' formulas; the volatile-functions rules round
+(registered before any number moves); then B4's laws on the 18
+gated files — planted defects first, per the standing registration.
+
+## 26 August 2026 — standing orders acknowledged
+
+The lead's standing arrangement is in force for this lane: at the
+start of every working turn, fetch the integration branch and read
+`docs/pierce/orders/dynamo.md` — the current orders, maintained at
+every sweep. Do what they say, push to `swens/dynamo`, stop. The
+founder's « go » means exactly that. This entry is the requested
+confirmation; the tenth-sweep orders (name the 502; the volatile
+rules round; then B4 on the 18; a B3 design note) are the work now
+in progress, in that order.
+
+## 26 August 2026 — the volatile rules, registered before any number moves
+
+Per orders item 2, the rules first, committed before any re-derived
+number is looked at:
+
+- **The volatile set**, exactly as ordered: TODAY, NOW, RAND,
+  RANDBETWEEN, RANDARRAY. A stored value under any of these is the
+  authoring moment's answer; a recalculation's is this moment's.
+  Both are right, so their disagreement is **not fidelity loss** and
+  must never be counted as such — nor silently dropped.
+- **The cone**: a volatile *root* is a formula cell whose own
+  formula calls a volatile function (tokenized, same scanner
+  discipline as the denylist — never substring). The *cone* is the
+  roots plus every formula cell whose precedent chain reaches a
+  root (transitive dependents over the reader's own precedents).
+- **The gate's arithmetic changes thus**: cone cells are excluded
+  from compared/matched/mismatch counts and reported in their own
+  bucket — count of roots, count of cone cells, and the roots
+  named. A mismatch outside the cone still fails the file exactly
+  as before. Verdict logic is otherwise unchanged.
+- **What gets re-derived**: the two H7 PCM match rates, as a
+  separate table beside (never replacing) the round-2 numbers.
+  Expected under the new rules: the `Version log`/`O_FinStats`
+  TODAY-class mismatches move to the volatile bucket; whatever
+  numeric residue remains is the honest open question.
+
+## 26 August 2026 — the `#ERR:502` construct named: OFFSET with a negative extent
+
+Orders item 1, done with the SINGLE discipline — trace, then probe,
+then category. The trace: a diagnostic recalc of `final_et3_bpfm`
+dumped every error cell (2,423; codes 532/502/524/525/32767 — most
+match stored errors and are not mismatches); the 502 cone roots — 60
+cells whose own precedents are clean — are all one shape, in
+`RatingSimulator`:
+
+    =AVERAGE( OFFSET(AP64, 0, 0, 1, MAX((YEAR($AP$4)-1) - YEAR(AP$4), -$G$55)))
+
+The width argument goes **negative**. Excel reads a negative
+height/width as extending backward from the anchor; LibreOffice
+returns Err:502. The probe (five cells, this machine):
+`OFFSET(A10,0,0,-3,1)` and `OFFSET(E10,0,0,1,-3)` → `#ERR:502`,
+computed-negative `MAX(-1,-3)` width → `#ERR:502`, positive control →
+computes. Everything else 502-flagged in the BPFMs is this cone
+propagating (plain references through `OutputSummary` and
+`ScenarioRun_AllOutputData`).
+
+The mechanism, in two honest halves:
+
+1. **Statically knowable** — a negative *literal* height/width — is
+   now a denylist `engine-gap` hit (`OFFSET(negative-extent)`,
+   arbiter route), exactly detected by walking OFFSET's argument
+   list; a computed extent or a negative *row/column offset* (which
+   both engines accept) never trips it. Regression tests committed.
+2. **Only measurable** — a computed extent that goes negative, like
+   the BPFMs' `MAX(..., -$G$55)` — cannot be statically denied
+   without refusing dynamic-OFFSET files that measurably pass at
+   1.0. So the gate grew an **engine-errors bucket**: a computed
+   `#ERR:*` against a stored number is recorded per cell as the
+   engine's inability, still fails the file, and marks it an
+   arbiter candidate. The six BPFMs' 502 mismatches are exactly
+   this bucket under the new reporting.
+
+So the toolbox's LibreOffice gap list, measured on this corpus, now
+reads: no LAMBDA (documented), no implicit intersection (SINGLE,
+probed), no negative OFFSET extents (probed). All three route to the
+arbiter; none can silently pass.
+
+## 26 August 2026 — B3, the arbiter: a design for the lead (orders item 4)
+
+Four corpus files wait on real Excel (the SINGLE cone), and every
+gate fail needs an adjudicator. The design, for review — no code
+until the lead approves:
+
+- **Shape: an `ArbiterCalculator` behind the same frozen
+  `Calculator` protocol.** `start` = ensure a token (the existing
+  delegated flow in `polar/connector/graph.py` — its `GraphClient`
+  already does exchange/refresh/drives/download); `recalculate` =
+  upload the file to a dedicated arbiter folder in the connected
+  drive (resumable upload session — the BPFMs are ~40 MB),
+  `workbook/createSession` with `persistChanges: false`, POST
+  `workbook/application/calculate` with `calculationType:
+  FullRebuild` (the arbiter's whole point is Excel's own fresh
+  answer), then per worksheet read `usedRange` values+formulas in
+  row blocks (the API's ~4 MB payload cap makes chunking
+  non-optional), map to `Sheet!Ref`, close the session, delete the
+  upload. Same protocol ⇒ `gate_file` and the sweep harness run
+  unchanged with real Excel as the engine string.
+- **Two uses, kept distinct in reports:** (1) *certification* of a
+  file LibreOffice cannot honestly compute (engine-gap routes) —
+  the arbiter's stored-vs-Excel-recalc diff is that file's fidelity
+  report; (2) *adjudication* of a LibreOffice mismatch — a
+  three-way read (stored / LibreOffice / Excel-now) that names
+  whose number moved.
+- **What it needs that we lack, for the lead/founder to decide:**
+  the connector's scopes are read-only today (`Files.Read.All`);
+  the arbiter needs `Files.ReadWrite.All` (upload + workbook
+  session), which is a consent-screen change on the connected
+  account, and a designated Microsoft 365 account/drive to host the
+  arbiter folder. No new Python dependency (httpx is present).
+- **Honest limits, from the toolbox and kept:** 5-minute sessions,
+  one workbook at a time, undocumented throttling — the arbiter
+  adjudicates and certifies the few; it is never the batch engine.
+  Every arbiter result names real Excel as its engine; none exists
+  until the scopes and account exist.
+
+## 26 August 2026 — the H7 rates re-derived under the volatile rules (orders item 2)
+
+The registered prediction held exactly. Beside the round-2 numbers
+(which stand):
+
+| File | Round 2 (old rules) | Under volatile rules | Volatile bucket |
+|---|---|---|---|
+| h7_pcm_v2-10 | 227,318/227,367 = 0.999784, mm 49 | 227,318/227,365 = **0.999793**, mm 47 | roots 2, cone 2 |
+| h7_pcm_v2-11 | 227,374/227,405 = 0.999864, mm 29* | 227,374/227,403 = **0.999872**, mm 29 | roots 2, cone 2 |
+
+*Round 2 recorded 31 for v2-11; two were the volatile roots. The
+roots are the same pair in both files — `Version log!F10` (TODAY)
+and `O_FinStats!G3` (NOW-class) — and they feed nothing (cone =
+roots), so exactly two comparisons moved per file, as predicted.
+
+What honestly remains, all of it now visible:
+
+- **Near-floor dust**: `O_FinStats!*186` cells, |stored| ≈ 5e-12
+  against computed 0 (or −1.8e-11) — the standing tolerance-floor
+  question, unchanged, still flagged for the lead/founder.
+- **A small genuine cluster**: `Macros!Y98` / `C_Revenue!Y369` /
+  `C_Fin_Summ!F253` differ at ~2e-8–5e-8 relative — a real
+  engine-difference residue above the 1e-9 line, a handful of cells
+  per file, honest and open. Adjudication is the arbiter's (B3).
+- Engine errors: none in either file under the new bucket.
+
+## 26 August 2026 — B4 measurement protocol, registered (orders item 3)
+
+The laws are registered (25 Aug); this registers **how they will be
+measured**, before any harness runs. Committed before any catch rate
+exists; none exists as this is written.
+
+- **Pilot first, then scale.** Selector curation (which cells are
+  volume/price/revenue/ratio/segments) is per-model, from the
+  model's own labels, and honest curation cannot be rushed across
+  eighteen files at once. Round 1 is a pilot on **one** gated file
+  — `ofgem_ed2/v5_2026-06.xlsx`, the flagship of the passing set —
+  with its selector map written into the harness config and quoted
+  in this log before any planting. Subsequent rounds extend
+  file-by-file; each file's selector map is committed before its
+  defects are planted.
+- **Planting.** Defects are planted by rewriting one formula (or
+  one input) per planted copy with openpyxl — the planted file's
+  stored values are discarded, which is irrelevant: B4 compares a
+  LibreOffice baseline against a LibreOffice perturbation of the
+  same planted file, so stored values never enter. One defect per
+  copy, class and target cell recorded at planting time.
+- **The classes, from the standing registration:**
+  hardcode-in-the-tail (constant added into a revenue chain — the
+  class static reading cannot see), the hardcoded ratio leg, the
+  omitted segment, the cap/override wired in without being a
+  declared input. Per class: N planted copies (N registered per
+  round before planting), catch = the law names the planted cell's
+  output cone; false positive = a violation reported on the
+  unplanted baseline pair.
+- **Procedure per planted copy:** baseline copy (inputs untouched)
+  and perturbed copy (the law's perturbation applied to the
+  selector-named inputs), both recalculated by `UnoCalculator`,
+  gate discipline inherited (a planted file that fails its own
+  baseline recalc is recorded, not measured), law checkers from
+  `recalc/laws.py` applied verbatim. Heavy jobs alone, one file at
+  a time, as ever.
+- **What will be claimed:** catch rate per class per law,
+  false-positive price per law, each catch naming its cell. The
+  ddmin narrowing to one responsible cell stays registered future
+  work.
+
+## 26 August 2026 — the ED2 v5 selector map, quoted before planting
+
+Curated from the model's own labels (`AR`, `Legacy`,
+`SelectedInputs`, the 14 licensee sheets), and committed in
+`scripts/recalc_behave.py` before any planting run:
+
+- **An honest narrowing first**: the ED2 PCFM makes **no
+  volume-times-price promise** — it computes allowed revenue from
+  expenditure, indices and adjustments. Mapping proportionality or
+  scale invariance onto it would invent promises the model never
+  made, so the pilot measures the two laws it *does* promise;
+  proportionality and scale invariance will be measured on a model
+  whose structure carries them (the H7 debt-indexation pair is the
+  named candidate for the next selector round).
+- **Zero-input**, on the licence-fee adjustment:
+  `(AP83/AP13 − AP84) × …` (`Legacy!AR85`) is exactly 0 when both
+  licence-fee inputs are 0. Inputs: `<DNO>!AP384` (payments) and
+  `<DNO>!AP385` (allowance) across all 14 licensee sheets (the true
+  constants behind `SelectedInputs`' CHOOSE — all 28 verified
+  constants). Must-be-zero: `Legacy!AR85` and `AR!AR33` (the
+  Licence Fee adjustment line, FY2024).
+- **Consolidation**, three instances on `AR`, FY2024 column:
+  `AR!AR45 = SUM(AR22:AR44)` (Legacy AR over its 23 components),
+  `AR!AR53 = SUM(AR49:AR52)` (Allowed revenue over Calculated
+  revenue + Correction term + Forecasting penalty + Legacy AR),
+  `AR!AR58 = AR57 + AR53` (combined RIIO-1 + RIIO-2).
+- **Plants, one per copy**: omitted-segment (`AR!AR53 =
+  SUM(AR49:AR51)`, dropping Legacy AR ≈ 18.3), hardcode-in-the-tail
+  on the combined total (`AR!AR58 = AR57 + AR53 + 3.12`), and
+  hardcode-in-the-tail on the zero-input path (`AR!AR33 =
+  Legacy!AR85 + 1.2`).
+- Predictions, registered: plant 1 → consolidation flags `AR!AR53`;
+  plant 2 → consolidation flags `AR!AR58`; plant 3 → zero-input
+  flags `AR!AR33`; the unplanted control is clean on all measured
+  laws. **No result exists as this is written.**
+
+## 26 August 2026 — B4 pilot result: three plants, three catches, zero noise
+
+Run on this machine (eight LibreOffice recalculations, one at a
+time, ~10 coarse minutes end to end). Against the registered
+predictions, exactly:
+
+| Copy | Planted | Law verdicts |
+|---|---|---|
+| control | — | zero-input clean, consolidation clean |
+| plant 0 | omitted segment at `AR!AR53` | consolidation flags **`AR!AR53`**: expected 720.0939, actual 701.7959 — the dropped Legacy AR (≈18.3), to the penny |
+| plant 1 | `+3.12` in the tail of `AR!AR58` | consolidation flags **`AR!AR58`**: actual 723.2139 vs expected 720.0939 — the 3.12, exactly |
+| plant 2 | `+1.2` in the tail of `AR!AR33` | zero-input flags **`AR!AR33`**: 1.2 where exactly 0 was required |
+
+**Catch rate 3/3 (each catch naming its planted cell), false
+positives 0** on the control's two law runs, and no cross-law noise
+(every plant was flagged only by its predicted law). Plant 2 is the
+class that matters most: a constant pasted into an adjustment chain
+is invisible to static reading, and the zero-input law caught it by
+recalculating — the first measured instance of B4's founding claim,
+on a real regulator model.
+
+Honest bounds on this number: it is a **pilot** — one file, three
+plants, two laws; a 3/3 on three plants is a mechanism proof, not a
+catch-rate estimate. Next per the registered protocol: N plants per
+class registered before the next run; the H7 debt-indexation pair
+for proportionality and scale invariance (the two laws ED2 does not
+promise); then file-by-file extension across the 18 gated files,
+each selector map committed before its plants. ddmin narrowing
+stays registered future work.
+
+## 26 August 2026 — the H7 debt-pair selector round, quoted before any run
+
+Eleventh-sweep orders, item 1. Both files
+(`h7_new_debt_indexation_{fds,fp}.xlsx`) share the layout
+ref-for-ref (verified); one map serves both, committed in
+`scripts/recalc_behave.py` before this round runs.
+
+- **The structure, from the model's own cells**: `Average RAB`
+  (row 26, I:M — verified inputs) feeds *only*
+  `Notional new debt (in year)` (row 72 = RAB × gearing × share),
+  which feeds `Variance (£)` (row 73 = Variance(%) × notional),
+  compounded through the WACC factors into `Total adjustment`
+  (`F86`). The rate rows — `Variance (%)` (69) and `Nominal,
+  pre-tax WACC` (77) — do not reference row 26 (checked: rows 72
+  I–M are its only dependents).
+- **Proportionality**: RAB ×2 ⇒ rows 72, 73 and `F86` exactly ×2
+  (binary-exact doubling; same-engine tolerance applies).
+- **Scale invariance**: RAB ×100 (cents for pounds) ⇒ rows 69 and
+  77 unchanged. In the clean file this holds trivially — which is
+  exactly why the planted contamination is the measurement.
+- **Plants, one per copy, both files**: hardcode-in-the-tail on the
+  money chain (`J73 = J69 * J72 + 0.5`) and a hardcoded-ratio-leg
+  (`J69 = J65 - J7 + J72/20000` — absolute money pasted inside a
+  rate).
+- **Predictions, registered**: plant 1 → proportionality flags
+  `J73` and `F86` (the additive 0.5 breaks exact doubling through
+  the compound); plant 2 → scale invariance flags `J69` (the
+  money leg moves ×100); cross-law flags on a planted copy's own
+  downstream are possible and are noted, not scored; the unplanted
+  control is clean on both laws in both files. **No result exists
+  as this is written.**
+
+## 26 August 2026 — H7 debt-pair result: 4/4, both files, zero noise
+
+Run on this machine (~2 coarse minutes per file), against the
+registered predictions, exactly:
+
+| File | Control | Money hardcode (`J73 + 0.5`) | Contaminated ratio (`J69 + J72/20000`) |
+|---|---|---|---|
+| fds | both laws clean | proportionality flags **J73, F86** | scale invariance flags **J69** (0.0294 → 2.9874 under cents) |
+| fp | both laws clean | proportionality flags **J73, F86** (6.6243 expected vs 6.1243 — the 0.5, exactly) | scale invariance flags **J69** (0.0243 → 1.4796) |
+
+**Catches 4/4 (each naming its planted cell), false positives 0**
+across four control law-runs. The cross-law flags on plant 2's own
+downstream (`J73`/`F86` under proportionality) appeared exactly as
+the registration noted and are not scored. Scale invariance stayed
+correctly silent on the money hardcode — the laws separate the
+classes, not just detect them.
+
+With this round, **all four registered laws have caught their
+planted class on real corpus files**: zero-input and consolidation
+on ED2 v5, proportionality and scale invariance on the H7 pair —
+seven catches, seven named cells, zero false positives in total.
+Still mechanism proofs, not catch-rate estimates. Next (orders item
+2): widen file-by-file across the remaining gated files, N plants
+per class registered before each run, toward the plan's B4 DONE —
+the hardcode-in-the-tail class measured across hosts.
+
+## 26 August 2026 — twelfth-sweep orders: the widening round, registered
+
+Orders note first: **item 2 (the volatile rules round, H7 folded
+in) was completed under the eleventh-sweep work and is in the
+integration tip** — the registration, the implementation behind
+tests, and the H7 re-derivation table all merged; nothing is redone
+here. Item 3 complied with: B3 stays design-only.
+
+**Item 1, the widening — ED2 family round, registered before any
+run.** Every other ED2 version was verified against the v5 anchors
+by formula shape, not assumption: `AR!AR33 = Legacy!AR85`,
+`AR!AR45 = SUM(AR22:AR44)`, `AR!AR53 = SUM(AR49:AR52)`,
+`AR!AR58 = AR57+AR53`, `Legacy!AR85` on AP83/AP84, and all 28
+licence-fee inputs constants. **All ten MATCH** (v1 through
+v4_2026-01, the .xlsm included), so the v5 selector map and the
+same three plants carry verbatim to each; v5 itself re-runs as a
+repeat measurement. Predictions per file, identical to the pilot's:
+omitted segment → consolidation flags `AR!AR53`; tail hardcode →
+consolidation flags `AR!AR58`; zero-input tail hardcode →
+zero-input flags `AR!AR33`; control clean. Eleven files, 33 plants,
+22 control law-runs. **No result from this round exists as this is
+written.**
+
+## 26 August 2026 — ED2 family run 1: 33/33 catches, and a selector
+defect of my own, caught by its control
+
+The run (eleven files, ~9.5 coarse minutes each): **all 33 planted
+defects were caught at their named cells**, and all eleven
+consolidation control runs were clean. But the six v1–v3 files
+showed zero-input **control violations** — `Legacy!AR85`/`AR!AR33`
+read 1.2356 with the supposed inputs zeroed — and the trace shows
+the defect is **mine, not the models'**: the DNO-sheet licence-fee
+input rows drift by version (v1: AP382/383, v2–v3: AP385/386,
+v4–v5: AP384/385, each found by chasing `Legacy!AP83/84` through
+`SelectedInputs` per file). My anchor verification checked that
+`Legacy!AR85` computes from AP83/AP84 but assumed the input rows —
+so on v1–v3 I zeroed the wrong constants (on v2–v3, the payments
+row but not the allowance). The residual was the un-zeroed genuine
+input.
+
+Scored honestly, run 1 therefore reads:
+
+- **Valid — v4/v5 quintet**: 15/15 catches at named cells, 0 false
+  positives across 10 control law-runs.
+- **Valid — consolidation on all eleven files** (it uses no input
+  map): 22/22 catches (`AR!AR53`, `AR!AR58` per file), 11/11
+  controls clean.
+- **Invalid — zero-input on v1–v3** (6 files): the law executed
+  correctly on wrong inputs; its catches there are contaminated and
+  are not counted. This is the control doing its registered job —
+  the false-positive check caught the harness, which is exactly the
+  kind of error it exists to catch.
+
+The verification standard is upgraded in the harness: input rows
+are chased through the model's own formulas per file, never carried
+by assumption. **Corrected re-run registered now**: the six v1–v3
+files, corrected input rows (v1: 382/383; v2–v3: 385/386), same
+plants, same predictions, controls expected clean. No result from
+the re-run exists as this is written.
+
+## 26 August 2026 — corrected re-run clean, and the B4 per-class table
+
+The six corrected files: **18/18 catches at named cells, all
+controls clean, no extra flags.** The residual that run 1's controls
+caught was, as diagnosed, only my mis-mapping.
+
+**The per-class table across every valid measured round** (ED2
+pilot + family with corrections, H7 debt pair — 13 of the 18 gated
+files):
+
+| Planted class | Law that owns it | Host files | Plants | Catches | Control FPs |
+|---|---|---|---|---|---|
+| hardcode-in-the-tail, additive adjustment chain | zero-input | 11 ED2 | 11 | **11** | 0 |
+| hardcode-in-the-tail, total line | consolidation | 11 ED2 | 11 | **11** | 0 |
+| hardcode-in-the-tail, multiplicative money chain | proportionality | 2 H7 | 2 | **2** | 0 |
+| omitted segment | consolidation | 11 ED2 | 11 | **11** | 0 |
+| hardcoded ratio leg | scale invariance | 2 H7 | 2 | **2** | 0 |
+
+**Totals: 37 plants, 37 catches — every catch naming its planted
+cell — and 0 false positives across 26 valid control law-runs.**
+The hardcode-in-the-tail class, the one static reading cannot see,
+now stands at 24/24 across 13 host files and three structural
+guises — the plan's B4 DONE sentence measured in the direction it
+asks, across hosts.
+
+Honest bounds, standing: one plant per class per file (single-digit
+Ns per class per host); the five remaining gated files (the RIIO-3
+set: two draft PCFMs, the RoE summary, both WACC models) await
+their own selector curation — the WACC pair at ~19 min per
+recalculation makes theirs the expensive round. And run 1's v1–v3
+zero-input results remain recorded as invalid; nothing from them is
+counted anywhere.
+
+## 27 August 2026 — the narrowing round, registered before it runs
+
+Fourteenth-sweep orders, item 1: the plan's B4 sentence — *a
+violated law is a symptom; delta debugging over the dependency
+slice narrows it to the one responsible cell*. Registered here,
+committed before any narrowing number is looked at. (Orders item 2,
+the fidelity gate's volatile rules round, was registered,
+implemented and measured under the tenth/eleventh sweeps and is in
+the integration tip — not redone. Item 3: B3 stays design-only.)
+
+**Two methods, and they answer different questions.**
+
+1. **The frontier walk** (`recalc/narrow.py::frontier`), no extra
+   recalculation. Under a law-perturbation every cell in the broken
+   output's precedent cone may legitimately be *zeroed*,
+   *unchanged*, or *scaled by the law's factor*; anything else is
+   **anomalous**. The culprit frontier is the anomalous cells whose
+   own in-cone precedents are all clean — the shallowest place the
+   model stopped obeying its own law. A cell that is anomalous only
+   because something upstream is never appears.
+2. **ddmin** (`recalc/narrow.py::ddmin`), Zeller's minimizing delta
+   debugging with a real oracle: pin a candidate subset to the
+   values the law predicts, **recalculate**, ask whether the law
+   holds; return a 1-minimal set. One recalculation per test, so it
+   runs on a registered subsample — the H7 pair, whose files are
+   fast. This is what makes the narrowing an algorithm rather than
+   an artifact of simple plants: the frontier proposes, ddmin
+   proves minimality against the engine.
+
+**Consolidation is deliberately outside both** and says so: it is a
+one-run identity with no perturbation to walk, and pinning the
+total trivially « restores » it. Its narrowing is structural —
+which declared segment the total's own formula never reaches.
+
+**Scoring, fixed now**: *exact* = the answer is the planted cell
+alone; *hit* = the planted cell is inside a larger set; *miss* =
+not there. The set's size is recorded either way, because a
+narrowing that names forty cells has narrowed nothing.
+
+**Scope**: every plant already registered — the eleven ED2 files
+(3 each) and the H7 pair (2 each), 37 in total, the same population
+the per-class table was measured on. ddmin on the H7 four.
+
+**Predictions, per plant class:**
+
+- zero-input tail hardcode (`AR!AR33 = Legacy!AR85 + 1.2`) →
+  frontier **exact** at `AR!AR33`.
+- proportionality tail hardcode (`J73 = J69*J72 + 0.5`) → frontier
+  **exact** at `J73` for both violated outputs (`J73`, `F86`), and
+  ddmin 1-minimal on the same cell.
+- contaminated ratio (`J69 = J65-J7+J72/20000`) → frontier
+  **exact** at `J69` under scale invariance; its cross-law
+  proportionality breaks should also narrow to `J69`.
+- omitted segment (`AR53 = SUM(AR49:AR51)`) → structural, **exact**
+  at `AR!AR53`, naming `AR!AR52` as the unreached segment.
+- consolidation tail hardcode (`AR58 = AR57+AR53+3.12`) →
+  **predicted wide**: the total still reaches both declared
+  segments, so the structural method cannot say where the identity
+  broke and must answer with the whole set (`AR58`, `AR57`, `AR53`)
+  — a *hit* of size 3, not an exact. This limit is predicted, not
+  discovered afterwards: a pasted constant inside a total is
+  exactly the case where one run cannot localize, and honest
+  reporting is the point. **No narrowing result exists as this is
+  written.**
+
+## 27 August 2026 — the narrowing result: 43 narrowings, 0 misses
+
+Every registered prediction held, including the one predicted to
+fail. Across all 37 plants (each violated output is one narrowing,
+so 43 in total):
+
+| Planted class | Law violated | Narrowings | Exact | Hit | Miss |
+|---|---|---|---|---|---|
+| omitted segment | consolidation (structural) | 11 | **11** | — | 0 |
+| hardcode-in-the-tail (adjustment chain) | zero-input | 11 | **11** | — | 0 |
+| hardcode-in-the-tail (total line) | consolidation (structural) | 11 | — | 11 | 0 |
+| hardcode-in-the-tail (money chain) | proportionality | 4 | **4** | — | 0 |
+| hardcoded ratio leg | proportionality (cross-law) | 4 | **4** | — | 0 |
+| hardcoded ratio leg | scale invariance | 2 | **2** | — | 0 |
+| **Total** | | **43** | **32** | **11** | **0** |
+
+Every exact answer is a set of size **one** — the planted cell and
+nothing else. Every hit is a set of size **three**, and all eleven
+are the single predicted case: a constant pasted inside a total
+that still reaches every declared segment, where one run cannot
+localize and the method says so instead of guessing. Nothing landed
+outside its prediction; there were no misses and no unmeasurable
+plants.
+
+**ddmin agreed with the frontier on every one of the ten H7
+narrowings** (one confirmation test each): pinning the frontier's
+single cell to its law-predicted value and recalculating restored
+the law, and there is no proper subset of a singleton. That is a
+real check — the engine, not the algorithm, says the cell is
+responsible — but an honest reading is that ddmin's *search* value
+was never exercised here, because the frontier never proposed a
+wide candidate set. Its worth will show on a defect the frontier
+cannot resolve alone; that case has not been measured yet.
+
+The cross-law rows are the most interesting result. When the
+contaminated ratio broke **proportionality** two cells downstream
+(`J73`, `F86`), the frontier still named `J69` — the planted cell —
+rather than the cells that visibly moved. That is the whole point
+of the plan's sentence: one authoring decision, one finding, even
+when the symptom appears somewhere else.
+
+Bounds, stated: 37 plants is single-digit N per class per host; the
+frontier walk depends on the reader's precedent lists, which cap
+range expansion at 200 cells, so a defect reached only through a
+larger range could hide from the cone (not yet observed, recorded
+as a known edge); and consolidation's structural limit is now
+measured rather than predicted — closing it needs either a second
+run under perturbation or B6's diagnosis layer, which is exactly
+what B6 is for.
+
+## 27 August 2026 — B5 registered: relation mining, the Monday experiment
+
+Founder-approved (`swens-plan.md` B5, 27 Aug); the binding design
+laws are `swens-aha.md`'s, adopted verbatim below. Registered
+before any mining code runs; **no mined rule and no score exists as
+this is written.**
+
+### Clean-room declaration
+
+This implementation derives from three sources and no others: the
+plan's own B5 paragraph, `swens-aha.md`, and standard published
+mathematics (integer-relation detection; least-squares residuals).
+**The ICSME 2019 reference implementation is LGPL-3.0 and has not
+been read, fetched, or consulted, and will not be** — its licence
+is incompatible with in-tenant delivery, which is the whole reason
+the plan says clean-room. Nothing in this lane is a port.
+
+### 1. The input typing policy (where the engineering lives)
+
+The AHA's first law: a confident false rule came from a model run
+in a mode it never occupies. So inputs are **typed before they are
+perturbed**, by hand for round 1 (to price the typing honestly),
+and each type has one perturbation policy:
+
+| Type | Policy |
+| --- | --- |
+| money / continuous quantity | sampled log-uniform around the file's own value (×[0.5, 2] by default), the workhorse |
+| rate / ratio / percentage | sampled within its own plausible band, never scaled by a money factor |
+| count / volume | sampled non-negative, integers kept integral |
+| flag / boolean | **held**, or stepped through both states as separate strata — never scaled |
+| selector / enum / scenario index | **held**, or stepped through its real states — never interpolated |
+| date / period | held for round 1 (period arithmetic is its own round) |
+| formula-driven | not an input; never written |
+
+A cell whose type cannot be decided is **not perturbed** and is
+recorded as untyped — an honest gap, never a guess.
+
+### 2. Run protocol
+
+- **Gate precondition (standing rule, restated)**: only files that
+  pass their fidelity gate at 1.0 are mined. A gate-refused or
+  gate-failed file is never mined, and the refusal is the report.
+- Each run: sample the typed inputs, recalculate through
+  `UnoCalculator`, capture every formula cell's value.
+- **Non-converged or errored runs are dropped, never data** — a run
+  that returns an engine error in a watched cell, or that fails to
+  converge in an iterative file, is discarded with its reason
+  counted. If drops exceed 10% of runs the round is reported as
+  unreliable rather than scored.
+- Heavy jobs alone, as ever; this is the overnight pass, never the
+  interactive path.
+
+### 3. The candidate engine, and the measurement that chooses it
+
+Round 1 mines **signed-sum relations** — Σ ±xᵢ = 0 over small cell
+subsets — because accounting identities are exactly ±1-coefficient
+cancellations. Two engines:
+
+- **Naive enumeration** (pure Python, no dependency): the baseline,
+  built and run first.
+- **PSLQ** (integer-relation detection, `mpmath.pslq` — one call).
+
+The AHA's law is that PSLQ is *measured against* naive enumeration
+before adoption: same runs, same cells, compare rules found and
+wall-clock. **`mpmath` is not installed here and I have not
+installed it** — new dependencies are the lead's (`lanes.md`,
+frozen interface 5). **Proposed to the lead: `mpmath>=1.3`** (BSD,
+pure Python, no transitive dependencies). Round 1 therefore runs on
+the naive engine alone and reports what it costs; the PSLQ half
+follows approval. `numpy` (SVD) and `z3` are **not** proposed yet —
+Z3 belongs with Prism's tier-1 proposal so the dependency lands
+once, and round 1's rule family does not need either.
+
+### 4. Cleansing and stability
+
+- A candidate becomes a **rule** only if it holds across every kept
+  run within same-engine tolerance (relative 1e-9, floor 1e-12).
+- **Subsumption**: a rule implied by a smaller rule already in the
+  set is dropped (a 4-term identity that is two 3-term ones).
+- **Triviality**: relations among cells that are constant across
+  all runs are dropped — they are arithmetic about frozen numbers,
+  not laws of the model.
+- **Stability criterion (the plan's DONE)**: the whole mining is
+  run **twice with independent samples**; a rule counts only if
+  both runs find it. Agreement between the two sets is reported as
+  a number.
+
+### 5. Round 1 — the Monday experiment, exactly as the AHA names it
+
+- **Three gate-clean models**: `h7_new_debt_indexation_fds.xlsx`,
+  `h7_new_debt_indexation_fp.xlsx` (both 1.000000 on the fidelity
+  gate) and `DRAFT_GD3 PCFM_Jun25.xlsx` (1.000000, 8,185 cells) —
+  two rate models and one price-control model, so the rule sets are
+  not all one shape.
+- Inputs typed **by hand**, and the typing effort recorded (that
+  cost is a result: it is what productizing this would need).
+- **200 runs** per model, twice for stability.
+- **Print the rule set and read it before anything is scored.** The
+  test of round 1 is whether a modeller recognises the model in its
+  own discovered laws — not a number. Round 1 reports: the rule
+  set, the typing cost, the drop rate, the naive engine's
+  wall-clock, and my honest reading of whether the rules are
+  recognisable.
+- **No catch rate in round 1.** Catch-rate plants come in round 2,
+  and per the AHA they are drawn from the **PR24 draft→final real
+  diffs** (regressions nobody designed for us) as well as designed
+  plants — the designer-knows-the-detector bias, named.
+- **Detectors**: mined-rule violation, plus the **inert-reference
+  check** (a named edge the graph sees live that recalculation
+  shows dead) joins B5's list per the AHA.
+
+### 6. What gates what
+
+C6 (Prism's) and B6 (mine — diagnosis over broken rules) both
+consume B5's output, and the AHA is explicit that round 1's
+rule-set quality gates all three. **Nothing downstream registers
+until a modeller-recognisable rule set exists**, and if round 1's
+rules are not recognisable I will say so plainly and that is the
+result.
+
+## 27 August 2026 — the review's gates, registered before they run
+
+The plan's third amendment is binding on B5 and this entry answers
+all four of its points. Registered before any of these numbers
+exist; **no stability result exists as this is written.**
+
+### The engineering that made these cheap, and its own check
+
+A mining round re-solves one model hundreds of times while changing
+a handful of input cells. Reloading the workbook each time cost
+**8.8 s per run**; holding the document open, writing only the named
+input cells, and reading back only the watched sheet costs
+**0.38 s** — 23× — which is the difference between these gates being
+a two-hour job and a five-minute one.
+
+Because it is my own optimization, it was checked before it was
+used: three draws through both paths, **9,828 cell-values compared,
+zero differences**. The in-place path writes only cells the caller
+names, so no formula is ever overwritten and every untouched
+constant keeps its value.
+
+### 1. Seed stability (gate on C6)
+
+One unmodified model (`h7_new_debt_indexation_fds.xlsx`, gate-clean
+at 1.000000), mined **five times under five seeds** (11, 22, 33, 44,
+55), 200 runs each. Registered claim shape: the five rule sets, how
+many rules appear in all five, and whether the five sets are
+**identical**. Prediction: identical, or the difference is named
+rule by rule. If they are not identical, « v12 broke a rule » is
+seed noise and I will say so — that is the point of the gate.
+
+### 2. Cosmetic invariance (gate on C6)
+
+A variant of the same model with **three blank rows inserted above
+the modelled block and the sheet renamed** — made by LibreOffice
+itself, so every formula and reference moves with them. Mined with
+the same seed and run count.
+
+**The comparison is by label, never by cell reference.** That is the
+test's whole substance: inserting rows moves every watched cell, so
+a reference-keyed comparison would report total disagreement for a
+model that behaves identically — exactly the failure of positional
+diffing that behavioural mining exists to escape. A rule's identity
+is the (sign, row label, column label) triples of its terms.
+Registered claim: identical by label, or the differences counted in
+both directions.
+
+### 3. The input-typing classifier as a shared component (interface
+proposed for the lead)
+
+The amendment is right that this is E2's unit inference wearing
+another hat, and it should be built once. What exists today is
+`polar/tieout/recalc/mine.py`'s `InputType` / `TypedInput` /
+`sample` — a policy, hand-fed. **Proposed interface**, for the lead
+to place and for Track E to consume:
+
+```
+classify_inputs(cells: Mapping[str, Cell]) -> dict[str, TypedInput]
+    # one typed input per constant cell, from number format,
+    # row/column labels, value range and neighbours
+
+class TypedInput: ref, type, base, states, band, confidence, why
+    # `why` is the evidence sentence; `confidence` gates auto-use
+InputType: MONEY | RATE | COUNT | FLAG | SELECTOR | DATE | UNTYPED
+```
+
+Three properties I would hold it to, from what the hand-typing
+taught: an undecidable cell returns **UNTYPED and is never
+perturbed** (a guess is worse than a gap); every type carries its
+evidence in words; and **constrained families are declared, not
+inferred cell by cell** — the H7 weight rows sum to one, and typing
+them independently would licence runs in a capital structure the
+model never occupies. Where this module should live is the lead's
+call, not mine; I have not built it deep pending that word.
+
+### 4. The catch-rate protocol, both directions (B5 round 2)
+
+Registered now so neither number can be chosen later:
+
+- **Direction A — overlap**: of the 84 static-found PR24
+  draft→final regressions, how many break at least one mined rule.
+- **Direction B — the half that matters**: everything B5 flags on
+  those pairs that the static engine did **not**, hand-verified as a
+  registered sample, each classified as a real defect, a legitimate
+  change, or a false alarm.
+
+**The two numbers are reported separately and never blended**, and
+Direction B's sample size and selection rule are registered before
+the verification begins.
+
+### 5. Rules broken per real regression (decides B6)
+
+While the PR24 pairs run, the count of **mined rules broken per real
+regression** is recorded as its own distribution. Per the amendment
+this decides B6: if real regressions typically break one or two
+rules, blame-the-changed-cell wins and Reiter's minimal diagnosis is
+over-engineering; if they break many, B6 is exactly right. I have no
+prediction to register here — the honest position is that I do not
+know, which is why it is being measured.
+
+## 27 August 2026 — the two gates: both pass, and the rule set read
+
+### Seed stability — **PASSES**
+
+`h7_new_debt_indexation_fds.xlsx` (gate-clean at 1.000000), mined
+five times under seeds 11/22/33/44/55, 200 runs each, **zero dropped
+runs in all five**. Each mining found 36 raw signed-sum relations
+which cleanse to **8 distinct rules by label**, and the five sets
+are **identical**. Repeated across three separate executions of the
+whole gate, identical every time. So a rule that breaks between two
+versions is not seed noise — the precondition C6 was waiting on.
+
+### Cosmetic invariance — **PASSES, under a stated caveat**
+
+A variant with **three blank rows inserted above the modelled block
+and the sheet renamed**, made by LibreOffice so every formula moved
+with its cells. Mined with the same seed and run count: **8 rules
+versus 8, identical by label, zero in either direction only, zero
+drops.** Every watched cell has a different address in the variant,
+and the mined laws are the same laws — which is the property
+positional diffing cannot have.
+
+**The caveat, because it weakens what this proves**: the comparison
+key is (sign, row label, column label), and on this sheet the reader
+finds **no header row at all** — 144 formula cells carry 32 distinct
+row labels and only 2 distinct column labels. So the key cannot tell
+`I52` from `J52`, and « identical by label » is coarser here than
+« identical laws ». The pass is real but weaker than the words
+suggest, and strengthening the key — the period header read from the
+sheet's own layout, or the column's position in the modelled block —
+is registered as work before this gate is quoted as decisive.
+
+### Two harness defects of my own, both found by implausibly clean results
+
+Neither was a finding about the model; both were mine, and the run
+that exposed each is recorded rather than quietly re-run:
+
+1. **The un-shifted typing** — the variant's typed inputs were
+   shifted three rows down without un-shifting the lookup, so
+   nothing was perturbed, every watched cell was frozen, and a model
+   with no varying cells has no laws: 0 rules, reported as an
+   invariance failure that was not one. Fixed by typing once on the
+   original and translating the typing to the variant's coordinates.
+2. **The truncated sheet name** — Excel caps a sheet name at 31
+   characters and truncates on save, so `… (renamed)` landed as a
+   name the harness never addressed and **all 200 variant runs
+   failed**. The cosmetic edit itself had been correct all along.
+   Fixed by reading the new name back from the stored file.
+
+### The rule set, printed and read — **not yet modeller-recognisable**
+
+The AHA's test for round 1 is not a number: it is whether a modeller
+recognises the model in its own discovered laws. I printed the eight
+and read them. **They are not recognisable, and I am not going to
+present them as if they were.** They are pairwise equalities of the
+form « Nominal cost of fixed-rate debt (in-year) − Nominal cost of
+new index-linked debt (in-year) = 0 » — true across every run, and
+uninformative. Why, from the model itself:
+
+- The watched sheet is **144 formula cells**, mostly rate rows that
+  are equal to each other by construction in years where a weight is
+  zero. The signed-sum family over such a sheet finds equalities,
+  not accounting identities.
+- **The money chain is one row deep.** The identities a modeller
+  would recognise (« notional new debt × variance = the £ figure »)
+  are **products, not signed sums** — outside round 1's rule family
+  by design.
+- Cleansing works as registered and makes this visible rather than
+  hiding it: three-term shadows are subsumed, leaving the bare
+  two-term equalities.
+
+**What this gates.** Per the AHA, round 1's rule-set quality gates
+C6 and B6, so on this model the answer is: **not yet**. What changes
+for round 2, proposed here and not yet run:
+
+1. **Mine a model whose sheet carries real additive structure** —
+   the ED2 `AR` sheet, where allowed revenue is a sum of named
+   components, is the obvious candidate and is gate-clean.
+2. **Widen the rule family beyond signed sums** to ratio relations
+   (`a / b` constant across runs), which is where a rate model's
+   laws actually live. Registered as a family before it runs.
+3. **Fix the labels first** — an unrecognisable sentence is a
+   product defect even when the mathematics is right.
+
+The seed and cosmetic gates stand on their own: they are about the
+mining's *stability*, and both pass. What does not yet stand is the
+claim that mined rules read as a model's own laws.
+
+## 27 August 2026 — round 1b registered: what the ED2 typing cost, and what changes
+
+Round 1's reading said the rules were not recognisable and named
+three fixes. Two of them are registered here, before running; the
+third produced a measurement worth more than the round.
+
+### The ED2 typing was priced, and it is not hand-typeable
+
+The obvious answer to « mine a sheet with real additive structure »
+was ED2's `AR` sheet, where allowed revenue is a sum of named
+components. Measured before attempting it: the AR sheet's 408
+formula cells have a precedent cone of **39,865 cells containing
+21,638 constants across 3,279 distinct (sheet, label) groups**, and
+the largest groups carry **no row label at all**.
+
+Hand-typing that is not a long job, it is the wrong job. So the
+honest conclusion, and it strengthens the amendment's own point:
+**the input-typing classifier is not a convenience for Track E, it
+is the gate on B5 running against real price-control models.** Until
+it exists, B5's models are the small ones. This is now the concrete
+argument behind the interface I proposed for the lead.
+
+### The third model: the RIIO GDT3 Allowed Return on Equity summary
+
+Gate-clean at 1.000000 (B2 round 1), 304 compared cells, and its
+`One-Off Wedge` sheet is a rate model laid out plainly: years down
+column A, `RPI` and `CPI` across, a « % of legacy RPI » share, and
+193 formula cells carrying 32 row labels and 6 column labels — a
+sheet whose sentences can actually be read.
+
+Hand-typed, and the typing is quoted so it can be argued with:
+`C6:C14` (RPI) and `D6:D14` (CPI) are RATE in band; `E6:E13`, the
+legacy share, is RATE **bounded at 1.0** — a proportion above 100%
+is a state the model never occupies; **column A is the year index
+and is HELD**, because a date index is not a quantity and stepping
+it would rewrite the model's periods; `J3`, `K3`, `Q22`, `R22` and
+the whole `P` column carry no labels and are therefore **UNTYPED and
+never perturbed**, recorded as gaps rather than guessed at.
+
+### The ratio family, registered before it runs
+
+Round 1's finding was that a rate model's laws are proportions, not
+cancellations, so signed sums can only find equalities. Added:
+**`mine_ratios` — pairs whose ratio never moves across runs**,
+`numerator = k × denominator`, with `k` taken from the first run and
+then **tested against every other run**, so a pair that lined up
+once is discarded. `k = 1` is kept: « these two are always the same
+number » is a real law and often the interesting one. Three tests
+pin it, including the discard case.
+
+**Predictions for round 1b**, registered: on the RoE model I expect
+ratio rules that a modeller would recognise (a CPI/RPI wedge
+relation, and shares that hold their proportion across periods), and
+I expect signed sums to remain thin there. On the H7 pair I expect
+the ratio family to surface the weight-and-premium proportions that
+round 1's equalities were shadows of. **If the sentences are still
+not recognisable I will say so again** — the gate on C6 and B6 does
+not move because a second family was tried.
+
+## 27 August 2026 — round 1b: still not recognisable, and now I know why
+
+Three gate-clean models, both rule families, 200 runs under each of
+two seeds, zero dropped runs anywhere. The predictions I registered
+were wrong in a way worth more than being right.
+
+| Model | Typed inputs | Watched cells | Signed sums | Ratios |
+|---|---|---|---|---|
+| RoE `One-Off Wedge` | 57 | 193 | **0** | **0** |
+| H7 fds | 65 | 144 | 36 | 36 |
+| H7 fp | 55 | 161 | 167 | 167 |
+
+### The zero is not « this model has no laws »
+
+That is what it would have been easy to write. I measured instead:
+on the RoE model, **10 of 193 watched cells moved at all** across
+the runs — 183 sat frozen. The typed inputs (RPI, CPI, the legacy
+share) feed one small block; everything else on that sheet is driven
+by inputs I deliberately left UNTYPED because they carry no labels.
+So « 0 rules » says nothing about the model and everything about the
+perturbation.
+
+### And the H7 rules are the same artifact wearing a different face
+
+Read the sentences and they are not accounting identities:
+
+    Nominal cost of fixed-rate debt (in-year) [J52]
+        = Nominal cost of fixed-rate debt (in-year) [K52]
+    Nominal cost of fixed-rate debt (in-year) [J52]
+        = Nominal cost of new index-linked debt (in-year) [J58]
+
+Whole rows equal across every year, and two different cost rows
+equal to each other. They are true, stable under five seeds, and
+invariant to cosmetic edits — and they are **consequences of how
+little I let vary**. With few inputs moving, many outputs are
+functionally identical, so the mining finds equalities. The ratio
+family found exactly the same relations at k = 1, which is itself
+the proof: there were no proportions to find, only sameness.
+
+### The finding: coverage is the binding constraint, and typing governs it
+
+Three measurements from three directions now say one thing:
+
+- ED2's `AR` sheet: **21,638 constants across 3,279 label groups**
+  in its cone — not hand-typeable at all.
+- RoE: hand-typed honestly, and the typing reached **10 of 193**
+  cells.
+- H7: hand-typed honestly, and the rules are artifacts of the
+  frozen remainder.
+
+**B5's next step is not a third rule family.** It is the input-typing
+classifier — the shared component the amendment already identified
+and asked me to propose. Round 1b is the evidence for it: without
+automatic typing, perturbation coverage stays low, and at low
+coverage a rule set is not a finding about the model.
+
+Adopted now, and cheap: **`coverage(runs, refs)` is reported beside
+every rule set**, and a round whose coverage is low is **reported as
+uninformative rather than as a result** — the same discipline that
+makes the gate refuse a file rather than guess at it.
+
+### What this does and does not change
+
+- **The two stability gates still stand.** They are about the
+  mining's determinism, not its richness: identical rule sets under
+  five seeds, identical under inserted rows and a renamed sheet.
+  Those properties hold whatever the coverage.
+- **C6 and B6 remain gated**, exactly as the AHA requires: no
+  modeller-recognisable rule set exists yet, on any of the three
+  models, and I am not going to claim one because the mathematics
+  behaved.
+- **The honest summary for the founder**: the recalculator can run
+  these models thousands of times and the mining is stable and
+  clean — but until the typing is automatic, we are only perturbing
+  the corner of the model we could label by hand, and laws found in
+  a corner are not the model's laws.
+
+## 27 August 2026 — E1 registered: the ground truth, before any inference
+
+The lane is redirected by its own evidence: coverage is the binding
+constraint on B5, coverage is governed by input typing, and typing
+is E1/E2's unit inference wearing another hat. So Track E's first
+half is mine. **This entry is committed before a single row is
+drawn, and the sample is committed unlabelled before a single label
+is written** — a ground truth chosen after seeing what would be easy
+to label is not a ground truth.
+
+### The population and the sample
+
+- **Population**: every *input row* — a (sheet, row) that holds at
+  least one constant numeric cell and no formula in that cell — on
+  gate-clean corpus models. **Unlabelled rows are eligible.** They
+  are the hard cases (ED2's largest constant groups carry no row
+  label at all), and a truth set without them would flatter any
+  inference that guesses.
+- **Five models, registered, spanning shapes** — all gate-clean at
+  1.000000 in B2 round 1: `ofgem_ed2/v5_2026-06.xlsx` (price
+  control), `caa_h7/h7_new_debt_indexation_fds.xlsx` (rates),
+  `ofgem_riio3/draft/…Allowed Return on Equity Summary…xlsx`
+  (rates), `ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx` (price
+  control), `ofgem_riio3/final_wacc.xlsx` (WACC).
+- **20 rows per model, 100 in total**, drawn uniformly at random
+  from each model's population with **seed 1727** — registered here
+  so the draw cannot be re-rolled. Twenty per model is chosen to be
+  large enough that a per-dimension accuracy has a real denominator
+  and small enough that every row can be labelled carefully by
+  hand; E1 is a protocol, not a census.
+
+### The dimensions, and who needs them
+
+| Dimension | Values | Consumer |
+|---|---|---|
+| `kind` | continuous · categorical · unknown | B5 (perturb or hold) |
+| `b5_type` | money · rate · count · flag · selector · date · untyped | B5 (the perturbation policy) |
+| `currency` | GBP · USD · EUR · none · unknown | E2/E3 |
+| `scale` | units · thousands · millions · unknown | E2/E3 |
+| `period` | none · annual · quarterly · monthly · point-in-time · unknown | E2/E3 |
+| `rate_form` | percent · decimal · not-a-rate · unknown | E2/E3 |
+
+### The labelling rules
+
+1. **Evidence allowed**: the row's own label text, the column
+   headers above it, the cells' number formats, the values
+   themselves, and the labels of neighbouring rows in the same
+   block. Nothing else — no reading of the formulas that consume the
+   row, because E2 gets that as *propagation* and E1 must not be
+   contaminated by it.
+2. **`unknown` is a real label, not a failure.** Where the evidence
+   above does not decide, the answer is `unknown`, and E2 abstaining
+   on that row will count as **correct**. An inference that guesses
+   where a careful human abstains is worse than one that says
+   nothing.
+3. **A percent format decides `rate_form`**: `0.0%` means the stored
+   value is a decimal displayed as percent → `decimal`. A value near
+   5.8 labelled « RPI » with a plain format is `percent`.
+4. **Scale comes from the label or the header**, never from the
+   magnitude alone — « £m » says millions; a big number does not.
+5. **Categorical** covers flags, scenario selectors, indices and
+   year numbers: anything whose values name a state rather than
+   measure a quantity.
+6. Every row's label carries a **one-line reason**, so the truth set
+   can be argued with rather than trusted.
+
+### What gets reported as cost
+
+The AHA asks the typing cost to be priced. E1 reports: rows
+labelled, how many were decidable from label and format alone, how
+many needed the surrounding block, how many stayed `unknown`, and
+how long the pass took. That number is the argument for E2 existing.
+
+## 27 August 2026 — E1 done: the ground truth, its cost, and two findings
+
+100 rows labelled across the five registered models, seed 1727, the
+sample committed unlabelled first. The truth set is
+`docs/pierce/logs/dynamo/e1-ground-truth.json`; the labelling
+decisions and their evidence sentences are
+`server/scripts/recalc_units_label.py`, written out so the set can
+be argued with rather than trusted.
+
+| Dimension | Distribution |
+|---|---|
+| `kind` | continuous 69 · categorical 16 · **mixed 13** · unknown 2 |
+| `b5_type` | rate 51 · money 18 · date 16 · untyped 15 |
+| `currency` | none 67 · GBP 18 · unknown 15 |
+| `scale` | units 67 · millions 18 · unknown 15 |
+| `period` | annual 50 · point-in-time 20 · none 15 · unknown 15 |
+| `rate_form` | not-a-rate 43 · decimal 36 · percent 6 · unknown 15 |
+
+### The cost, since the AHA asked for it priced
+
+**31 of 100 rows were decided by the model telling me** — ED2 and
+GD3 carry a `Units` column of their own (« £m 20/21 prices », « £m
+nominal », « annual real % »), and those rows label themselves. The
+other 69 needed the column headers, the number format, the values
+and the sheet's own top matter, read together. **Two rows I could
+not decide and abstained on**; 13 more turned out not to be single
+quantities at all (below). One pass over 100 rows, with two rounds
+of correction, inside a single working session — so the honest
+figure is that a careful human can label of the order of a hundred
+rows an hour on models like these, and a real model has tens of
+thousands of input rows. That ratio is E2's whole justification.
+
+### Finding 1 — the models that declare their units are a different problem
+
+A third of the sample is self-describing: the sheet says « £m 20/21
+prices » beside the row. E2 will be nearly perfect there and the
+number will mean little. The other two thirds — H7, the RoE summary,
+the WACC model — **declare nothing anywhere**, and that is where
+inference is actually tested. **Registered now: E2's accuracy is
+reported split by whether the model declares units**, never as one
+blended figure, for the same reason B5's two catch-rate directions
+are never blended.
+
+### Finding 2 — a row is not always a quantity, and E2 must detect orientation
+
+I labelled the WACC model's curve sheets as rates and then re-read
+them: a row of `SONIA_Fwd_Curve` is **a record** — `Date | Maturity
+| rate` side by side — so calling the row « a rate » is simply
+false. **13 rows are now labelled `mixed`**, meaning the quantities
+live in the columns and the row has no single unit.
+
+This is a finding about the whole approach, not a labelling
+detail. A financial model sheet reads down the side and across the
+top; a data table reads the other way. **E2 must decide a sheet's
+orientation before it types anything**, and B5's perturbation
+inherits the same requirement. I would rather have found this in a
+hundred hand-labelled rows than in a rule set six weeks from now.
+
+### E2's interface, proposed for the lead (unchanged in shape, sharper now)
+
+Still proposed rather than built, per the amendment:
+
+```
+polar/tieout/units/          # the module name I propose
+    classify(cells) -> dict[str, TypedInput]   # per constant cell
+    orientation(cells, sheet) -> Orientation   # row-wise | column-wise
+```
+
+with the three properties the hand pass confirmed: **abstention is a
+first-class outcome** (2 rows here, and E2 abstaining where I
+abstained counts as correct); **every label carries its evidence in
+words**; **constrained families are declared, not inferred**. Added
+by finding 2: **orientation is decided before typing, and reported**.
+
+## 28 August 2026 — E2 registered: the blind rule, and an external truth set
+
+Building E2 as `polar/tieout/units/` (the name the orders offered,
+the interface proposed in my log on the 27th and unchanged since).
+Registered before the inference is measured.
+
+### The circularity I have to answer
+
+E1's 100 labels and E2's inference have the same author. If E2
+reproduces my labelling rules, agreement measures nothing except
+that I re-implemented myself. Naming it is not enough, so:
+
+**The primary measurement is against an external truth set I did not
+write.** ED2 and GD3 declare units in a `Units` column of their own,
+authored by Ofgem's modellers — « £m 20/21 prices », « £m nominal »,
+« annual real % », « % ». Every input row on those models carries
+one. So:
+
+- **E2 is forbidden to read the Units column.** It infers from
+  number formats, row labels, column headers, values and
+  propagation only. The Units column is held back as the answer key
+  and parsed only by the scorer.
+- That gives thousands of externally-authored labelled rows instead
+  of my hundred, and the accuracy on them is not self-graded.
+
+The E1 set stays as the **secondary** measurement — it is the only
+truth available for the three models that declare nothing (H7, the
+RoE summary, the WACC model), and it carries the human judgement my
+decision table alone did not have (the `mixed` record rows, the
+LIBOR curve). Its numbers are reported **with the shared-author
+caveat stated every time**, never as independent validation.
+
+### What is measured, per dimension
+
+Accuracy, abstention rate and error rate — separately, because an
+inference that abstains is not wrong in the way a confident mistake
+is wrong. **Reported split by declared/undeclared**, as registered
+on the 27th. A dimension where E2 is right 60% of the time and
+abstains 35% is a different (and better) instrument than one that is
+right 60% and wrong 40%, and the report must show the difference.
+
+### The predictions I am registering before running
+
+- **`scale` and `currency` on ED2/GD3 will be the hard ones blind.**
+  The £m is declared in the Units column and nowhere else — not in
+  the number format (`#,##0.0_);(#,##0.0)` says nothing about
+  millions), not in the row label. My honest expectation is that
+  E2 will abstain on most of them, and that abstention is the
+  correct behaviour, not a failure. If it guesses « units » and
+  scores well by luck, I will say so.
+- **`rate_form` will be the easy one**: a percent number format
+  decides it, and it is the dimension E3's « percent as decimal »
+  check needs most.
+- **`kind` (continuous vs categorical) — B5's need — should be
+  reachable**: dates, year indices and flags have formats and value
+  ranges that give them away.
+
+## 28 August 2026 — E2 built and measured: 3,796 externally-authored rows
+
+`polar/tieout/units/` exists, with 11 tests on hand-built evidence
+whose right answer is known — including the cases where the right
+answer is « nothing ». Measured blind, exactly as registered.
+
+### Primary: against Ofgem's own Units column (E2 never reads it)
+
+| Dimension | ED2 v5 (3,431 rows) | GD3 PCFM (365 rows) |
+|---|---|---|
+| `kind` (B5's need) | **96.4% right, 0.0% wrong**, 3.6% abstained | **96.2% right, 0.5% wrong**, 3.3% abstained |
+| `rate_form` | **96.4% right, 0.0% wrong** | **96.4% right, 0.3% wrong** |
+| `b5_type` / `currency` / `scale` | 31.1% right, **0.0% wrong**, 68.9% abstained | 66.6% right, 0.5% wrong, 32.9% abstained |
+| `period` | 71.5% right, **24.9% wrong** | 32.6% right, **64.1% wrong** |
+
+**3,796 rows whose answer key was written by the models' own
+authors, not by me.** The two predictions I registered both held:
+`rate_form` is the easy one, and blind inference **abstains rather
+than guesses on scale and currency** — 2,363 abstentions on ED2 and
+**not one wrong answer** among them. The £m lives in a column E2 was
+forbidden to read and nowhere else; abstaining is the correct
+behaviour and the number says so.
+
+`kind` at 96% with essentially no errors is the result B5 needed:
+the thing that governs perturbation coverage is now inferable.
+
+### The one bad number, and I am not explaining it away
+
+`period` is wrong on a quarter of ED2's rows and two thirds of
+GD3's. The confusion is one shape — **« said annual, was none »,
+828 of 856 on ED2 and 232 of 234 on GD3** — and it lands on rows the
+Units column describes only as « % ». My inference calls a rate
+under `FY2024` headers annual; my answer key calls it `none` because
+the model's own text does not say « annual ».
+
+I think the key is the weaker of the two, not the inference. But
+**that is an argument, not a measurement**, so the number stands as
+measured and `period` is **not to be quoted** until it has a key
+worth grading against — which means reading how the model uses the
+row, not how it labels it. Registered as the next E2 round.
+
+### Secondary: against E1's hundred, with the caveat restated
+
+E1 and E2 share an author, so this is **not independent
+validation** — it is a check that the inference reproduces careful
+human reading at scale.
+
+| | `kind` | `rate_form` | `b5_type`/`currency`/`scale` | `period` |
+|---|---|---|---|---|
+| Declares units (31 rows) | 96.8% / 0% wrong | 96.8% / 0% | 41.9% right, 0% wrong, 58% abstained | 67.7% / 29% wrong |
+| Declares nothing (69 rows) | 97.1% / 0% wrong | 72.5% / 5.8% | 59.4% right, 0% wrong, 41% abstained | 72.5% / 5.8% |
+
+The split I registered was worth having: the undeclared models are
+where the instrument is actually tested, and `rate_form` drops from
+96.8% to 72.5% there — the WACC model's curve sheets, where 13 of
+the 20 rows are records and E2 correctly refuses to type them.
+
+### What this unlocks, and what it does not
+
+- **B5 round 2 can now type automatically**: `kind` is 96% accurate
+  with near-zero confident errors, which is what decides hold vs
+  perturb. Coverage will be reported beside the rule set, per
+  standing practice.
+- **E3 stays unarmed.** The plan says the mismatch checks are armed
+  only where inference is measured accurate; `period` is not, and
+  `scale` is an abstention rather than an answer on two thirds of
+  ED2. A « monthly figure in an annual line » check cannot be built
+  on a period dimension that is wrong a quarter of the time — and
+  that is Sentinel's call to make with these numbers, not mine to
+  pre-empt.
+- **The propagation half is not built yet.** E2 today reads formats,
+  labels, headers and values; inheriting units through the
+  dependency graph is the Williams-2020 half still owed, and it is
+  the obvious way to rescue `scale` — a cell that sums £m rows is in
+  £m whether or not anyone wrote it down.
+
+---
+
+## E2's second half — propagation, and the bugs it took to report a zero honestly
+
+*28 Aug. Standing arrangement confirmed: I fetch
+`origin/claude/pierce-phase-6-writing-mjkaj6` and read
+`docs/pierce/orders/dynamo.md` at the start of every working turn,
+do what it says, push to `swens/dynamo`, and stop.*
+
+### The hypothesis I wrote down last time was wrong, and I measured
+### it before building on it
+
+I ended the last entry with « a cell that sums £m rows is in £m
+whether or not anyone wrote it down », and said propagation was the
+obvious way to rescue `scale`. The first thing I did was count the
+anchors a *blind* propagation would have.
+
+**Zero.** Not one currency-bearing number format on ED2 (43,178
+cells) or GD3 (16,656). The « £m » exists in the Units column and
+nowhere else in either file. So blind propagation has nothing to
+spread: it cannot rescue `scale`, and the sentence I wrote last time
+was a guess that the file disproves.
+
+What propagation *can* do is carry the **declared** units — the ones
+in that column — from the input rows into the tens of thousands of
+formula cells that consume them. That is what E3 would need and what
+B5 needs to read its watched cells, so that is what I built, with
+the seeds supplied by the caller rather than inferred.
+
+### The rules, and the reach
+
+`propagate(cells, seeds)` in `polar/tieout/units/inference.py`. A
+sum carries the unit of its terms. A formula that is *nothing but*
+one amount over another of the same currency is dimensionless. An
+amount times a dimensionless factor keeps the amount's unit. Where
+the terms do not settle it, **nothing is claimed** — a conclusion
+drawn from part of a formula is a guess about the rest.
+
+| | seeds | formula cells | reached | reach |
+|---|---|---|---|---|
+| ED2 v5 | 15,140 | 20,485 | 13,065 | **63.8%** |
+| GD3 PCFM | 1,837 | 14,399 | 6,250 | **43.4%** |
+
+`docs/pierce/logs/dynamo/propagate3.json`.
+
+### The part worth reading: five bugs, all mine
+
+The first run reported **216 « unit conflicts » on ED2**. I did not
+report them. I hand-read one — `InputSummary!AR124`,
+`= -SUMPRODUCT($I$117:$I$119,AR117:AR119)`, whose six precedents all
+declare « £m 20/21 prices » — and it was my detector's fault, not the
+model's. Then I kept going, because one artifact means the rest are
+suspect too. Every one of the following was found by reading a
+conflict the workbooks produced, and each is now a test carrying the
+formula that caught it:
+
+1. **`SUMPRODUCT` read as additive.** It contains no `*` character
+   and is a product all the same. Fixed → and the count went *up*,
+   to 276, which is the reason I kept reading rather than shipping.
+2. **A `SUM` leading a product read as a sum.**
+   `=SUM(AP65:AP67) * AP$16 * AQ$16 * AR$13` opens with SUM. 240 of
+   the 276.
+3. **A product taking the unit of its first *known* factor rather
+   than its first *moneyed* one.** « rate × £m » came out
+   dimensionless whenever the rate came first, and every sum below
+   it then read as a conflict.
+4. **A product with an unlabelled factor claiming
+   « dimensionless ».** `-(SUM($AI101:AQ101))*AR98` — the amounts
+   row is blank in this file and only the rate is labelled. It is
+   money × rate whose money happens to be zero.
+5. **« there is a `/` in here » read as a ratio.**
+   `(AP83/AP$13 - AP84) * AP$16 * AQ$16 * AR$13` is £m over an
+   inflation index, less £m, times factors. It is money. This one
+   alone was the last 18.
+
+After all five: **0 conflicts on ED2, 0 on GD3.**
+
+### A zero is worth nothing without a control, so here is the control
+
+« The detector found no unit mismatches » and « the detector cannot
+find a unit mismatch » produce the same number. So, registered
+before the run and then run: take each model's own declared units,
+corrupt **one row's scale** — a « £ » row summed into a « £m »
+column, the mistake a modeller actually makes — and ask whether
+propagation names the sum that adds them. A plant counts as caught
+only when the conflict is reported **at the planted formula's own
+ref**. Predicted ≥ 90%.
+
+| | plants | caught at the sum | unobservable | missed | from the declared row |
+|---|---|---|---|---|---|
+| ED2 v5 | 20 of 837 candidate sums | 20 | 0 | 0 | 13 of 13 |
+| GD3 PCFM | 20 of 797 | 18 | 2 | 0 | 14 of 14 |
+
+`docs/pierce/logs/dynamo/units-control.json`.
+
+**« Unobservable » is measured, not argued.** Both GD3 cases are
+sums whose *other* term is computed from the planted one
+(`=SUM(AN36:AN37)` where `AN37 = ((AN28+AN29)/PCf-AN36)*RIIO3`): the
+corruption reaches both sides, they agree, and there is no
+disagreement left to see. The script tests for that by walking the
+precedent graph rather than taking my word for it.
+
+The control also found a sixth bug, and the worst one: the first
+version of it caught **6 of 20**. A sum is reached before some of
+its own terms in a 20k-cell walk, and a conclusion drawn from two of
+five terms was never revisited. Propagation now **revises** a
+conclusion when more of its terms arrive. That went to 38 of 40.
+
+### What I am handing over, and what I am not
+
+- **The reach numbers and the control are results.** 63.8% and
+  43.4% of formula cells carry a declared unit; the instrument
+  catches a planted mismatch 38 times out of 38 observable.
+- **The zero is a result about these two files**: no unit mismatch
+  survives propagation from their own declared units. It is a
+  negative finding and it is Sentinel's to use or not — E3's
+  mismatch findings cannot be sourced from these two models.
+- **I am handing Sentinel nothing that looks like a finding**,
+  because there is nothing. Had I pushed the first run, I would have
+  handed over 216 of them, and all 216 were mine.
+- **`period` is still not to be quoted**, unchanged from last entry.
+- **Abstention got more expensive and I am keeping it**: GD3's reach
+  is 43.4% where the guessing version reached 47.4%. Four points of
+  reach is the price of not making things up.
+
+Next, per orders item 3: B5 round 2 with typing driven by E2's
+`kind`, coverage reported beside the rule set.
+
+---
+
+## B5 round 2 — registration, before the machine is touched
+
+*28 Aug, orders item 3. Nothing below is a result. The typing map,
+the coverage threshold and the predictions are committed first, and
+the numbers land in the entry after this one.*
+
+Round 1b's finding was that a rule set is an artifact of which
+inputs were allowed to move, and that hand-typing reached **10 of
+193 watched cells** on the H7 pair and is not attemptable on a model
+with 21,638 constants. E2 exists to remove that constraint. This
+round replaces the hand-written `H7_MONEY_ROWS`/`H7_RATE_ROWS`
+tables with typing driven by inference.
+
+### The typing map
+
+E2's vocabulary is not B5's, so the translation is written down
+here rather than buried in the runner. `b5_type` decides first,
+`kind` decides what is left:
+
+| E2 says | B5 perturbs it as |
+|---|---|
+| `b5_type=money` | `MONEY` — multiplicative band |
+| `b5_type=rate` | `RATE` — its own band, never a money factor |
+| `b5_type=date`, or `kind=categorical` with date evidence | `DATE` — **held** |
+| `kind=categorical`, ≤ 4 distinct values in the row | `SELECTOR` — **stepped through the row's own observed values** |
+| `kind=categorical`, more than 4 | `FLAG` with no states — **held** |
+| `kind=mixed` or `unknown`, `b5_type` untyped | `UNTYPED` — **held, and counted as a gap** |
+
+Two things in that table are load-bearing and both come from the
+AHA's typing law. **A selector's states are the values that row
+actually takes in the file** — never invented, never scaled; a
+categorical row with many distinct values is not a selector I
+understand, so it is held. And **`unknown` still means held**: E2
+abstaining is not a licence to guess, it is the same refusal
+arriving automatically instead of by hand.
+
+The hand-typed tables stay in the runner as `--hand`, because the
+comparison between hand and inferred typing is the point of the
+round.
+
+### The coverage threshold, fixed now
+
+A round is **informative only at coverage ≥ 50%** of watched cells.
+Below that the rule set is reported as uninformative and no rule
+from it is quoted — the standing practice from round 1b, given a
+number now so it cannot be negotiated after seeing the output.
+
+### Predictions
+
+1. **Automatic typing types more input cells than the hand tables
+   did** on the H7 pair — more than 10 of 193 watched cells move.
+2. **It clears the 50% bar on at least one of the three models.** I
+   am genuinely unsure of this one: H7's inputs are mostly rates,
+   and a rate model's watched cells may move on very few of them.
+3. **The stability gates still pass** — five seeds identical, two
+   independent minings agreeing above 0.5 — because nothing about
+   the mining changed, only which cells move.
+4. **The rule sets get bigger and mostly worse.** More movement
+   means more true relations *and* more three-term coincidences;
+   I expect the stability filter to carry most of that weight, and
+   I expect to still be unable to say the rule set is
+   modeller-recognisable. Recording that in advance so that a
+   recognisable set is a real surprise and not a story told
+   afterwards.
+5. **At least one rule will name a cell E2 typed wrongly.** `kind`
+   is 96.4% accurate, which on 193 cells is several errors, and a
+   money row perturbed as a rate is exactly the failure the typing
+   law exists to prevent. If I cannot find such a rule I will say
+   so.
+
+Judging recognisability is a judgement and is recorded as one: I
+print the rule set, read it, and write what I think — no metric is
+being invented for it.
+
+---
+
+## E2 generalisation onto the closed-deal corpus — registration
+
+*28 Aug, nineteenth-sweep addendum item 2. The lead asked me to
+judge whether the value-only corpus is worth E2's time. It is, and
+here is the round, registered before a single one of those files is
+opened.*
+
+### Why it is worth it
+
+E2's 96.4% was measured on **two files written by one organisation**
+under one house convention. Ofgem puts a `Units` column on nearly
+every sheet and writes « £m » in it; that convention is the answer
+key, and it may also be most of the reason the inference works.
+Sixteen Scottish Futures Trust closed-deal models are a different
+idiom entirely — different authors, different decades, private
+sector, no shared style guide — and E2 has never seen any of them.
+(The *engine* was tuned against six of them in another lane's
+rounds; E2 is not the engine and has never read them. Stating that
+because « unseen » is a claim, not a mood.)
+
+The hostility the lead names is the point: **value-only files cannot
+be propagated through**, so this round measures the label-and-format
+half alone. I will not report a reach number for these files, and
+the propagation half stays measured on ED2 and GD3.
+
+### The order of measurement — the key first, always
+
+The last two rounds both turned on measuring the anchor before
+building on it (zero currency-bearing formats on ED2 killed a
+hypothesis I had already written down). So, in order:
+
+1. **Count the answer key.** How many rows across the sixteen models
+   carry a declared unit E2 can be graded against — a `Units`
+   column, or a currency in the number format. This number is
+   reported whatever it is.
+2. **Only then, accuracy.** Per dimension, blind, exactly as on
+   ED2/GD3.
+
+**The bar, fixed now: no per-dimension accuracy is quoted on fewer
+than 100 keyed rows.** Below that the round is reported as
+unmeasurable — « the corpus has no key » is a finding about the
+corpus, and inventing one by reading titles and calling it truth
+would be the same mistake as grading myself.
+
+Independent of any key, three things are measurable and will be
+reported: **how often E2 declines**, whether **orientation** still
+decides correctly on these layouts, and whether `kind` — the one
+dimension B5 actually consumes — survives the change of idiom.
+
+### Predictions
+
+1. **The key is much thinner here.** Ofgem's Units column is a
+   regulatory artifact; a project-finance model more often puts
+   « £000s » in a sheet title or a header and nothing on the row. I
+   expect **fewer than 100 keyed rows on most of the sixteen**, and
+   I think there is a real chance the whole round comes back
+   unmeasurable on currency and scale.
+2. **Abstention rises.** Whatever the key says, E2 will decline more
+   often here than on ED2, because it was built where the evidence
+   was rich.
+3. **Orientation holds.** These are financial models laid out the
+   usual way — periods across, labels down — so `row-wise` on the
+   large majority of sheets. If this fails, the sheet-level
+   machinery is wrong and not just the dimensions.
+4. **At least one systematic failure Ofgem's convention hid.** I
+   expect to name it and I expect it to be embarrassing; the last
+   two rounds each produced one.
+5. `kind` **degrades but stays usable** — above 85%, against
+   whatever key exists. This is the prediction I would least like to
+   be wrong about, because B5 round 2's typing rests on it.
+
+Cold-run conditions, borrowed from the population proof because they
+are right: **E2 is frozen at the commit named when the run starts**,
+no detector change between the first file and the last, and anything
+the run exposes becomes a later round rather than a fix mid-flight.
+
+---
+
+## E2 on the closed-deal corpus — the round came back unmeasurable, and that is the result
+
+*28 Aug. E2 frozen at `c6430687` for the whole run, per the
+registration; nothing in the module changed between the first file
+and the last, and the two failures named below are a **later**
+round, not a fix made mid-flight.*
+
+Eight readable Scottish Futures Trust models rebuilt with
+`scripts/corpus_sft_models.py` (three more are format-blocked
+`.xlsb`/`.xls`, and the founder-supplied trio is not fetchable from
+this container — so eight, not sixteen, and I am not going to round
+that up).
+
+### Step 1: count the key. It is zero.
+
+| model | rows with a `Units` column | cells with a currency-bearing format |
+|---|---|---|
+| baldragon | **0** | 836 of 406,942 |
+| forfar | **0** | 1,591 of 383,497 |
+| glasgow_college | **0** | 4,793 of 321,227 |
+| inverurie_foresterhill | **0** | 64 of 105,953 |
+| kelso | **0** | 507 of 502,587 |
+| levenmouth | **0** | 8 of 446,663 |
+| newbattle | **0** | 505 of 503,754 |
+| oban_campbeltown | **0** | 316 of 99,227 |
+
+`docs/pierce/logs/dynamo/units-key-sft.json`. Not one of the eight
+declares its units in a column. **Zero gradeable rows against a
+100-row bar, so no per-dimension accuracy is quoted for this
+corpus** — and prediction 5, that `kind` would hold above 85%, is
+**unresolvable rather than confirmed**. There is nothing to score it
+against, and inventing a key by reading titles would be grading
+myself.
+
+Prediction 1 said the key would be thinner here. It is not thinner;
+it is absent.
+
+**The complementary finding is the one worth keeping.** ED2 and GD3
+declare units in text and have **zero** currency-bearing number
+formats. These eight have currency formats and **zero**
+declarations. The two corpora anchor opposite halves of E2's
+evidence and neither has both — which argues for keeping both halves
+far better than a good score on one would have.
+
+### Step 2: what is measurable without a key
+
+53,832 input rows across 295 sheets.
+
+| | measured |
+|---|---|
+| orientation | **248 row-wise, 32 column-wise, 15 unknown** (84% row-wise) |
+| abstained on `kind` | 17.2% |
+| abstained on `b5_type` | 32.5% |
+| abstained on `currency` / `scale` | **77.4% / 81.3%** |
+| **rows B5 could perturb** (money or rate) | **8,484 of 53,832 — 15.8%** |
+
+`docs/pierce/logs/dynamo/units-sft.json`. Prediction 3 (orientation
+holds) confirmed at 84%. Prediction 2 (abstention rises) confirmed:
+currency and scale abstained on 62% of ED2's rows and on ~79% here.
+
+**The 15.8% is the number Track B has to live with.** On the H7
+regulator file automatic typing typed 3,203 of 3,210 input *cells*
+and moved 144 of 144 watched cells; on a project-finance model only
+**15.8% of input rows** are typed as perturbable. Different
+denominators — rows against cells — so it is a contrast, not a
+ratio, and the honest reading is: B5 leaving the regulator corpus
+means mining a model where five sixths of the inputs are held.
+
+### Step 3: prediction 4, and it is as embarrassing as promised
+
+I predicted at least one systematic failure that Ofgem's house style
+had hidden. There are two, both found by reading twelve rows of
+`glasgow_college_model.xlsm`
+(`scripts/recalc_units_spot.py`, seed 11):
+
+**(A) A record table whose headers avoid six particular words reads
+as row-wise.** `Swap profile!81` has the row label `FY2028` and the
+headers `Period end · Balance b/f · Drawdown · Capitalised
+Interest`. That is a record table — a row is one period, and its
+cells are a date serial (47208), a balance (25,131) and a drawdown
+(−691), three different units. `orientation` looks for
+`date|maturity|tenor|ticker|code|id` and finds none of them, so it
+returns row-wise and E2 then asserts one `period` for the whole row.
+This is the exact thing orientation exists to prevent, and **B5
+would perturb that row as one quantity** — the typing law broken by
+an orientation error rather than by a typing error.
+
+**(B) One percent format among a row's several decides the row.**
+`Outputs!36`, `Project IRR, pre-tax`, holds `0.0776, 0.0515, 1.15,
+1.2302, 1.2295` under three different formats. One of the three is a
+percent format, so E2 says `rate_form=decimal` for all of it — but
+1.23 is a cover ratio, not an IRR. Ofgem writes one format per row;
+this corpus does not, and `number_formats` being a *set* of up to
+four with « any percent wins » is a confident wrong answer waiting
+for a mixed row.
+
+Both are hidden by uniformity. Neither would ever have appeared on
+ED2 or GD3, which is precisely why the lead was right that this
+corpus is worth the time.
+
+### What I am not doing
+
+Not fixing either of them in this entry. The run was registered
+frozen and it stays frozen; **the fix is the next round**, with the
+usual shape — register the change and the prediction, then measure.
+The two fixes I will propose are: orientation reading a *record
+table* from the shape of its headers rather than from a word list,
+and a mixed-format row being an **abstention** rather than a vote.
+
+Registered as the next E2 round. `period` remains not to be quoted.
+
+---
+
+## B5 round 2 — coverage 100%, and the typing broke the law it was built to keep
+
+*28 Aug, orders addendum item 1: coverage first.*
+
+### Coverage, first, as the addendum asks
+
+| | round 1b (hand-typed) | round 2 (typed by E2) |
+|---|---|---|
+| typed inputs, whole workbook | 65 | **3,210** (3,203 rate, 7 held) |
+| watched formula cells | 144 | 144 |
+| **coverage** | artifacts of the frozen remainder | **144 of 144 — 100.0%** |
+| runs kept | 200 + 200, zero drops | 200 + 200, **zero drops** |
+| stable signed sums | 36 | **11 — 3 distinct sentences** |
+
+`docs/pierce/logs/dynamo/round2-h7fds.json`. Predictions 1 and 2
+hold: automatic typing types far more than the hand tables did, and
+it clears the registered 50% bar outright.
+
+**Prediction 4 was wrong, and wrong in the good direction.** I
+registered that the rule sets would get *bigger and mostly worse*.
+They got **smaller and better**: 36 stable rules became 11. Round
+1b's rules were equalities among cells that never moved
+(`J52 = K52`, whole rows equal across years); with everything
+moving, those coincidences die. That is the coverage argument
+working exactly as round 1b predicted it would, and I did not
+predict the direction.
+
+### What the three surviving sentences actually are
+
+I read them against the formulas rather than admiring them:
+
+    Nominal cost of fixed-rate debt (incl. HAL adj.) [42]
+      = Nominal cost of index-linked debt (excl. IL premium) [46]
+        I42: = SUM( I$9, $G$10 )
+        I46: = SUM( I$9, $G$10 )
+
+    Nominal cost of fixed-rate debt (in-year) [52]
+      = Nominal cost of new index-linked debt (in-year, excl. IL premium) [58]
+        J52: = SUM( J37, $G$12 )
+        J58: = SUM( J37, $G$12 )
+
+They are **identical formulas under different names**. The mining is
+right, the rules are true, and they are not accounting identities —
+they are duplicate calculations. Whether « these two differently
+named cost rows are the same calculation » is worth a reviewer's
+time is a real question and not mine to answer; it is at least a
+*checkable statement about the file*, which round 1b's set was not.
+The third sentence, `Real cost (in-year) = Real cost (cumulative)`
+in the first year only, is a boundary condition.
+
+So: still **not modeller-recognisable as accounting law**, but for a
+different and better reason than last time.
+
+### Prediction 5, and it is the finding of the round
+
+I registered that at least one rule would name a cell E2 typed
+wrongly. What happened is worse and more useful.
+
+**The weight rows were perturbed independently, and they are a
+constrained family.** Rows 15–20 are « Weight on embedded debt »,
+« Weight on new debt », « Weight on index linked debt », « Weight on
+fixed-rate debt ». The hand typing **held** them, for the reason
+written into `mine.py` in round 1: embedded + new = 1. E2 sees
+`0.00%` and says `rate`, correctly — a weight *is* a rate — and the
+typing map then perturbs each one on its own.
+
+Measured, not argued:
+
+| | I | J | K | L | M |
+|---|---|---|---|---|---|
+| the file: embedded + new | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 |
+
+    one draw under the inferred typing:
+      I: embedded 1.1333 + new 0.0058 = 1.1391
+      J: embedded 1.4452 + new 0.0634 = 1.5085
+
+**An embedded-debt weight of 113%.** The model was run in a capital
+structure that cannot exist — precisely the failure the AHA's typing
+law exists to prevent, and the failure the hand typing was written
+to avoid. 100% coverage is partly *because* of it.
+
+And the mirror error: **`Average RAB` (row 26), the sheet's only
+money row, came back `untyped` and was held.** E2 abstained — no
+decisive format, no currency in the label — so automatic typing
+loses the one MONEY input the hand typing had. It over-perturbs the
+weights and under-perturbs the money.
+
+### What this means, and the gap it names
+
+The three sentences survive: they are provable from the formulas and
+do not depend on the perturbation being legal. **What does not
+survive is any claim of completeness.** At illegal capital
+structures a true law that holds only on the simplex is broken and
+therefore never found, so « these are the model's laws » is exactly
+what round 2 may **not** say — the same sentence my own registration
+reserved for a round that earns it.
+
+The gap has a name now, and it is not a units gap:
+**constraint membership**. E1 and E2 label a row's *dimension* —
+this is a rate, in percent, per year. Nothing in that vocabulary can
+say **« rows 15 and 16 sum to 1 »**. A units classifier cannot
+express a simplex, and B5's typing needs both. That is a new
+dimension for Track E, or a separate detector for Track B, and it is
+the lead's call which; I will register whichever is chosen before
+building it.
+
+Registered as the next B5 round: **detect constrained families from
+the file itself** — rows that sum to a constant across every year
+column are the obvious first shape — and sample them jointly on
+their simplex rather than holding them, which is what round 1
+promised « when it comes ».
+
+`roe` is running under the same typing, because the question round
+1b left open — does a 0-rule model produce rules once coverage
+rises? — is worth answering even under a typing I have just shown to
+be unconstrained. Its result will carry the same caveat.
+
+---
+
+## A loss to declare: the earlier rounds' raw run files are gone
+
+*28 Aug. This is my mistake and it is worth stating plainly rather
+than leaving for a successor to discover.*
+
+The container restarted mid-session and the repository was re-cloned.
+Everything committed survived; everything untracked did not. And the
+raw output of **every round before this session was untracked**:
+
+- `fidelity-au-uk*.json` — B2's fidelity sweeps over the golden-master
+  corpus (27 files, 3,862,412 comparisons)
+- `b4-*.json` — the behavioural-law plants and controls
+- `narrow-*.json` — the 43 ddmin narrowings
+- `stability-h7*.json` — B5's five-seed and cosmetic-invariance runs
+- `round1b.json` — the round this week's redirection was based on
+
+I wrote them into `docs/pierce/logs/dynamo/` and treated them as
+records without ever committing them. They were not in `.gitignore`;
+they were simply never added, and each sweep's numbers went into this
+log's tables instead.
+
+**What survives**: every number, in the tables written when the runs
+finished, in this log. The log cites no file path that no longer
+resolves — I checked — so nothing here is a dangling reference.
+
+**What does not**: the ability to re-derive those tables without
+re-running the machine. Anyone who wants to check B2's 99.88% must
+re-run the sweep; my word and my table are all that stand behind it
+today.
+
+Neither of those is good enough for numbers this lane asks other
+people to rely on, so:
+
+- **Every result file is committed the moment it is produced**, from
+  the propagation round onward. The eight JSONs now in
+  `docs/pierce/logs/dynamo/` are all tracked.
+- The re-runs are hours of machine time each and I am not going to
+  spend them on my own initiative while the orders point elsewhere.
+  **B2's fidelity sweep is the one worth re-running** — it is the
+  lane's headline number and the one most likely to be quoted — and
+  I will do it on the lead's word, or when the machine is otherwise
+  idle.
+- The 6-run smoke file `round2-smoke.json` is deleted rather than
+  left beside a 400-run result to be mistaken for one.
+
+### RoE under the same typing: coverage went **down**, 10 of 193 → 0 of 193
+
+The question round 1b left open was whether a model that produced
+zero rules would produce some once coverage rose. It did not,
+because coverage did not rise — it collapsed.
+
+    coverage: 0 of 193 watched cells moved (0.0%)
+      — UNINFORMATIVE — not a result
+    0 stable rules
+
+`docs/pierce/logs/dynamo/round2-roe.json`. 400 runs, zero drops, and
+**not one watched cell moved in any of them**. Hand typing reached
+10 of 193; automatic typing reached none. Reported as uninformative
+per the registered bar, which is the whole point of having fixed the
+bar in advance.
+
+**The cause, measured.** Every one of the 26 cells the hand typing
+perturbed — `C6:C14` (RPI), `D6:D14` (CPI), `E6:E13` (the legacy
+share) — came back typed `date` and was held:
+
+| | hand | inferred |
+|---|---|---|
+| `C6`…`C14`, `D6`…`D14`, `E6`…`E13` (26 cells) | rate | **date** |
+
+E2's reason is sound in isolation: « the row is a year (« 2025/26 »)
+holding its own year number ». Row 6 *is* labelled `2021/22` and
+*does* hold 2022.0 in column A. It also holds RPI 5.8, CPI 4.0 and a
+share of 1.0 in the next three columns, under headers `RPI · CPI ·
+% of 'legacy' RPI`. **It is a record row: one period, several
+fields, several units.** E2 gives the row one label, the year wins,
+and three real rates are typed as a date and frozen.
+
+### The same bug twice, from two different corpora
+
+This is failure (A) from the closed-deal round — `Swap profile!81`,
+a record table read as a model row — arriving again on a regulator
+file, and it is now the most load-bearing defect I have found:
+**row-level labelling cannot represent a row whose cells carry
+different units.**
+
+And there is a second, sharper part that is **my** fault, not E2's.
+`orientation` returned **`unknown`** for this sheet. E2's own
+contract says an unknown orientation means the caller must not treat
+a row as a quantity. My typing map is that caller, and it keys on
+`b5_type` and `kind` alone — it never asks the orientation. Had it
+asked, it would have refused the sheet honestly instead of freezing
+it by accident.
+
+On a record sheet the unit lives in the **column** — the RPI column
+is the rate, which is exactly what the hand typing perturbed. E2
+labels rows only; there is no column-wise path in either the
+inference or my map.
+
+### Registered as the next round, in this order
+
+1. **The typing map reads the orientation.** A sheet whose
+   orientation is `unknown` or `column-wise` is refused, loudly, as
+   an untyped sheet — not silently frozen. Cheap, and it turns this
+   accident into a stated refusal.
+2. **A column-wise path**: on a record sheet, classify the column
+   and let B5 perturb it. This is what makes the RoE model
+   mineable at all, and it is the same fix that keeps
+   `Swap profile!81` from being perturbed as one quantity.
+3. **Constrained families** (from the H7 round above), which is
+   independent of both.
+
+Round 2's verdict across the three models, stated plainly: **on H7
+the typing works and over-reaches; on RoE it fails closed.** Neither
+result may be called the model's laws, and the reasons are now
+specific enough to fix.
+
+---
+
+## The record-table round — registration
+
+*28 Aug. The two fixes the RoE collapse and `Swap profile!81` both
+point at, registered with predictions before either is written. E2's
+reported numbers stand as measured at `c6430687`; this changes E2
+after that run, not during it.*
+
+### What is being built
+
+1. **The typing map reads the orientation.** `type_from_units` is
+   given the sheet's orientation. A sheet that is `unknown` is
+   **refused as untyped and the refusal is counted**, instead of
+   being frozen by accident because every row happened to look like
+   a date. A stated refusal and a silent freeze produce the same
+   coverage number and are not the same thing.
+
+2. **A column-wise path, by transposition.** On a record sheet the
+   unit lives in the column: `RPI` is the rate, `2021/22` is the
+   record. So the evidence is transposed — the **column header
+   becomes the label**, the row labels become the headers, the
+   column's cells become the values and formats — and the existing
+   `classify_row` is run on that. No second classifier: if the
+   inference is right about what evidence decides a unit, it should
+   work equally well down a column, and if it does not, that is
+   worth knowing too.
+
+### Predictions
+
+1. **RoE's rate columns come back as rates.** `C6:C14`, `D6:D14`,
+   `E6:E13` — 26 cells the hand typing perturbed and automatic
+   typing froze — are typed `rate` again on at least **24 of 26**.
+2. **RoE's coverage clears round 1b's 10 of 193.** I will not
+   predict it clears the 50% bar; the sheet has 193 watched cells
+   and only three input columns, and round 1b's evidence says the
+   rest are driven from elsewhere.
+3. **H7 is untouched.** Its sheet is row-wise, so the orientation
+   gate does not fire and `h7-fds` returns the same 144 of 144 and
+   the same 11 stable rules. If it does not, the change has a
+   side-effect I did not intend and the round stops there.
+4. **The transposition finds at least one new systematic problem.**
+   Registered in advance for the third time; the last two rounds
+   each produced one and I would be surprised if reading a model
+   sideways did not.
+5. **Constrained families stay unfixed** and the H7 weights stay
+   illegal — that is the round after this one, and no number from
+   this round may be read as though it were solved.
+
+### `h7-fp` under round 2's typing: 167 stable rules became 17
+
+| | round 1b (hand) | round 2 (inferred) |
+|---|---|---|
+| typed inputs | 55 | **3,978** (3,971 rate, 7 held) |
+| watched cells | 161 | 161 |
+| coverage | artifacts of the frozen remainder | **161 of 161 — 100.0%** |
+| runs kept | 200 + 200 | 200 + 200, **zero drops** |
+| stable signed sums | **167** | **17 — 7 distinct sentences** |
+
+`docs/pierce/logs/dynamo/round2-h7fp.json`. The same movement as on
+`h7-fds`, and the same direction: **the rule set shrank by a factor
+of ten.** Round 1b's 167 were overwhelmingly equalities among cells
+that never moved; at full coverage they die. Prediction 4 of the
+round-2 registration — bigger and worse — is wrong on both models,
+and wrong the good way.
+
+The seven survivors are the same shape as `h7-fds`'s three:
+duplicate calculations under different names, plus first-year
+boundary conditions (`in-year = cumulative` in column I only). The
+weights are still perturbed illegally on this file too, so the
+completeness caveat stands unchanged: **these are true sentences
+about the file, not the model's laws.**
+
+---
+
+## The record-table round — measured, and the prediction I got wrong
+
+*28 Aug, against the registration two entries above.*
+
+### Prediction 1 — **failed, twice, and the second failure is the finding**
+
+Registered: 24 of the 26 RoE rate cells come back as rates.
+
+**First failure — the design was wrong.** As registered, an
+`unknown`-orientation sheet is refused. RoE's `One-Off Wedge` *is*
+`unknown` — its headers are `RPI · CPI · % of 'legacy' RPI`, none in
+the record-header word list, and its row labels are years — so the
+refusal fired and the column path never ran on the one sheet it was
+built for. **0 of 26.** Amended: an undecidable sheet is transposed
+and asked again, and if the sideways view is decisive it is read
+column-wise. Recorded here rather than quietly corrected.
+
+**Second failure — the measurement.** With the amendment the sheet
+is read column-wise, and the recovery is **8 of 26, not 24**:
+
+| column | label | format | E2 |
+|---|---|---|---|
+| E6:E13 | `% of 'legacy' RPI in the RPI Figure` | `0%` | **rate** ✓ |
+| C6:C14 | `RPI` | `0.00` | `unknown-quantity` — held |
+| D6:D14 | `CPI` | `0.00` | `unknown-quantity` — held |
+
+RPI is stored as `5.8` under a plain `0.00` format with a
+three-letter label. There is no percent format to key on, and `RPI`
+means nothing to the inference. **My hand typing knew RPI is an
+inflation rate; E2 has no vocabulary of named rates**, and that —
+not the orientation — is what holds two of the three input columns.
+The column path was necessary and is not sufficient.
+
+### Prediction 3 — **confirmed, and settled without the machine**
+
+Registered: H7 is untouched. Verified by comparing the old and new
+typing directly rather than by re-running an hour of mining: on
+`h7-fds` the typed-input list is **identical in order and in value**
+(3,210 inputs, 3,203 rate, 7 held; no sheet refused, none read
+column-wise), and `h7-fp` likewise. The perturbation is
+`random.Random(seed)` walked over that exact list, so identical
+inputs in identical order give identical runs. The argument is only
+valid because the order matched too, which is why I checked it.
+
+### Prediction 4 — **confirmed, on the real file as well as a fixture**
+
+The registered surprise arrived: read sideways, the year column
+comes back `unknown-quantity`, **not** `date`. The year-index rule
+reads a *row label*, and a transposed column's label is its header —
+blank, here. B5 holds an `unknown-quantity`, so it costs no
+coverage: the right outcome for the wrong reason. Registered for the
+next round rather than patched inside this one.
+
+### What this names for Track E
+
+A third gap, beside constraint membership: **a vocabulary of named
+rates.** `RPI`, `CPI`, `WACC`, `gearing`, `IRR`, `yield` — a
+modeller reads the label and knows; E2 reads `0.00` and abstains,
+correctly by its own rules and uselessly for B5. This is cheap to
+build and easy to get wrong (a list of words is exactly the kind of
+thing that quietly becomes a guess), so it is registered as its own
+round with its own answer key rather than added to this one.
+
+### Prediction 2 — **failed, and the failure is completely explained**
+
+Registered: RoE's coverage clears round 1b's 10 of 193.
+
+    sheets: 5 read, 1 column-wise, 0 refused
+    coverage: 0 of 193 watched cells moved (0.0%)
+      — UNINFORMATIVE — not a result
+    0 stable rules
+
+`docs/pierce/logs/dynamo/round3-roe.json`. 400 runs, zero drops,
+nothing moved. The column path fixed the reading and did not fix the
+coverage.
+
+**Why, measured rather than guessed.** Of the 193 watched formula
+cells, the number that reference `E6:E13` — the one column the fix
+recovered — is **zero**. Their precedents are `C` and `D`, 31 cells
+each, and the sheet's own formulas say what those are:
+
+    F6 = GEOMEAN(1+(C6:C25/100)) / GEOMEAN(1+(D6:D25/100)) - 1
+
+The model divides by 100 itself, which is the file stating outright
+that `RPI` is a rate in percent-of-100 form — the exact fact E2 has
+no way to know from `0.00` and a three-letter label, and a value
+`rate_form` already has a name for.
+
+So on this model the blocker is **one missing capability, and it is
+now identified precisely**: the two columns that drive the entire
+watched sheet are the two E2 cannot type. Round 1b concluded « 0
+rules says nothing about the model and everything about the
+perturbation ». That still holds, and the perturbation is now
+blocked by a named-rate vocabulary rather than by hand-typing
+capacity.
+
+### The round's scorecard, against what I registered
+
+| prediction | outcome |
+|---|---|
+| 1 — 24 of 26 rate cells recovered | **failed**: 0 as designed, 8 as amended |
+| 2 — coverage clears 10 of 193 | **failed**: 0 of 193 |
+| 3 — H7 untouched | **confirmed**, verified without the machine |
+| 4 — one new systematic problem | **confirmed**: the transposed year column |
+| 5 — constrained families stay unfixed | holds; unchanged and still illegal |
+
+Two of five registered predictions failed. Both failures were
+instructive and neither was hidden: the design was wrong in a way
+the machine showed me, and the amendment was wrong about how much it
+would buy. What the round bought is a **precisely named blocker**
+instead of a vague one, which is worth more than the coverage number
+I predicted and did not get.
+
+---
+
+## The constrained-families round — registration
+
+*28 Aug. This is the one standing between round 2 and orders item
+3's own condition: « only then a rule set that may be called the
+model's ». Registered before a line of it is written.*
+
+### The problem, restated from measurement
+
+On both H7 files E2 types the weight rows as `rate` — correctly, a
+weight is a rate — and the typing map then perturbs each on its own.
+`embedded + new = 1.0` in every year of the file; one draw gave
+`1.1333 + 0.0058 = 1.1391`. The mining then runs on a model in a
+capital structure that cannot exist, so a law that holds only on the
+simplex is broken in every run and can never be found. That is why
+round 2's rule sets are true sentences about a file and **not** the
+model's laws.
+
+Round 1's `mine.py` said sampling such a family jointly « is a later
+round, registered when it comes ». It has come.
+
+### What is being built
+
+1. **Detection, from the file itself.** A *constrained family* is a
+   set of input rows whose values sum to the same constant in every
+   period column of the sheet. Searched among rows E2 typed
+   perturbable, sizes 2 and 3, with the constant taken from the file
+   and required to hold in **every** column — one column agreeing is
+   a coincidence, which is the same anti-coincidence rule the mining
+   itself uses.
+2. **Joint sampling on the simplex.** A detected family is drawn as
+   one object: shares sampled together and rescaled so the family's
+   own constant is preserved exactly, and every member kept inside
+   `[0, constant]`. No member is ever drawn independently again.
+3. **Reported beside coverage**, like everything else: families
+   found, members held jointly, and — the number that matters —
+   whether any draw still leaves the simplex.
+
+### Predictions
+
+1. **The detector finds the family the hand typing knew**:
+   `{embedded, new}` (rows 15 and 16) on both H7 files, with
+   constant 1.0.
+2. **Zero false families on the H7 sheet.** Every family reported is
+   one I can confirm by reading the rows. If it reports a family I
+   cannot justify, that is a false positive and I will say so.
+3. **No draw leaves the simplex**: across 400 runs, every family's
+   sum stays at its constant to within the same 1e-9 relative
+   tolerance this lane uses everywhere, and no member goes negative
+   or above the constant. This is the whole point and it is
+   checkable exactly.
+4. **Coverage stays at 100%** on both H7 files — the weights still
+   move, legally.
+5. **At least one new stable rule appears on `h7-fp`**, having been
+   broken in round 2 by illegal draws. This is the genuinely
+   uncertain one: the alternative is that the model's real laws
+   involve rows the perturbation still cannot reach, in which case
+   the set is unchanged and the round has bought legality without
+   buying a single law. I would rather be wrong here in public than
+   quietly not check.
+6. **The three round-2 sentences survive**, because they are
+   duplicate formulas and independent of whether a draw was legal.
+
+---
+
+## Rate form from usage, not from a word list — registration
+
+*28 Aug. Last entry I registered « a vocabulary of named rates » as
+the fix for the RoE blocker. Before building it I looked again at
+what the file actually says, and the word list is the worse idea.*
+
+### Why the obvious design is the wrong one
+
+The blocker is that `RPI` is stored as `5.8` under a plain `0.00`
+format, so E2 abstains and B5 holds the column that drives the
+entire sheet. A vocabulary — `RPI`, `CPI`, `WACC`, `gearing`,
+`IRR` — would fix that model and would be **a guess wearing a
+lookup table**: it is right because I know what those words mean,
+it fails silently on the next model's house abbreviations, and
+nothing in it is checkable from the file.
+
+The file already states the fact outright:
+
+    F6 = GEOMEAN(1 + (C6:C25/100)) / GEOMEAN(1 + (D6:D25/100)) - 1
+
+**A row whose consumers divide it by 100 and add 1 is a rate in
+percent-of-100 form.** That is evidence, not vocabulary. It is read
+from the dependency graph E2 already walks for propagation, it
+generalises to any model that does the same arithmetic whatever its
+rows are called, and when it is wrong the formula is there to show
+why.
+
+### What is being built
+
+`rate_form` inferred from **how a row is consumed**:
+
+- consumed as `x/100`, especially inside `1 + x/100` → `percent-of-100`
+- consumed as `1 + x` or `x *` an amount, with no division → `decimal`
+- consumed both ways, or by nothing → **abstain**, as always
+
+Read from the same precedents map propagation uses, so it costs no
+new machinery and no new file reading.
+
+### The honest limit, stated up front
+
+**This cannot help the closed-deal corpus.** Those eight models are
+value-only; there are no consumer formulas to read. So the two
+designs are complementary rather than rival — usage evidence for
+formula-bearing files, and something else, later, for files without
+formulas. That is the third time this week two corpora have failed
+in opposite directions, and it is worth the lead noticing as a
+pattern rather than as three separate remarks.
+
+### Predictions
+
+1. **RoE's `C` and `D` columns come back as rates in
+   `percent-of-100` form**, from the `GEOMEAN(1+(C6:C25/100))`
+   consumers. This is the whole point and I expect it.
+2. **RoE's coverage finally clears round 1b's 10 of 193.** Genuinely
+   uncertain: C and D drive 62 of the 224 precedents of the watched
+   cells, and `Q` and `R` — 48 each — are still untyped, so the
+   sheet may stay mostly frozen even with its two real inputs
+   moving. I am not predicting the 50% bar.
+3. **Measured against E1's hundred hand-labelled rows, `rate_form`
+   does not get worse.** Usage evidence must not overturn a
+   format-based answer that was already right; where E2 abstained it
+   may now decide. If accuracy falls anywhere, the round fails and
+   the change comes out.
+4. **It fires somewhere it should not, at least once** — a value
+   divided by 100 for display, or a percentage consumed by something
+   that is not a rate calculation. Fourth round running that I have
+   registered this and it has happened three times; I will hunt for
+   it deliberately rather than wait to be surprised.
+
+## Rate form from usage — built, and the gate did its job twice
+
+### Prediction 1 — confirmed
+
+RoE's `C6:C14` and `D6:D14` come back as rates in `percent` form,
+read from `GEOMEAN(1 + (C6:C25/100))`. **26 of 26** cells the hand
+typing perturbed are now typed automatically, from the file's own
+arithmetic and not from a list of words I happen to know.
+
+### Prediction 3 — the gate fired, and the change came out
+
+Registered: measured against E1's hundred rows, `rate_form` must not
+get worse or the change comes out. The first version made it much
+worse:
+
+| dimension | before | after the first version |
+|---|---|---|
+| `rate_form` | 80 right / 4 wrong | **71 / 14** |
+| `kind` | 97 / 0 | 97 / 1 |
+| `currency`, `scale` | 54 / 0 | 63 / 1 |
+
+Ten of E1's rows flipped, all the same shape: GD3's `Inflation`
+sheet rows — inflation **index** levels, hand-labelled `not-a-rate` —
+became « decimal rates ». The cause was that my `decimal` test
+matched a bare « 1 + » **anywhere** in a consumer formula, which is
+not evidence about any particular row. That half came out, exactly
+as registered, and was replaced by a test that requires the
+consumer to *name the cell*: `1 + <this row>`.
+
+Then it fired twice more before it was right, both regex
+backtracking, both caught by the same two measurements:
+
+- `1+(C6:C25/100)` backtracked to match `C6`, saw `:C25/100`
+  instead of `/100`, and called RoE's percent rows decimals —
+  **8 of 26**.
+- With `:` rejected it backtracked inside the digits to `C6:C2`,
+  saw `5`, and did it again — **8 of 26**.
+
+Anchored against `:`, a following digit and `/100`, all four shapes
+now read correctly, including the one the docstring had been
+promising and the code had not delivered: a row divided by 100 in
+one consumer and added to 1 in another is **an abstention**, not a
+percent. An `elif` had been letting « percent » win silently.
+
+**Final state, all three gates green:**
+
+| check | result |
+|---|---|
+| RoE cells recovered | **26 of 26** |
+| E1, every dimension | **unchanged** — 0 rows flipped |
+| H7 typing | **unchanged** — 3,203 and 3,971 rate, 7 held |
+
+### Prediction 4 — confirmed, three times over
+
+I registered that it would fire somewhere it should not, and said I
+would hunt for it rather than wait. The hunt is what found all three
+defects: E1's hundred rows caught the loose « 1 + », and the RoE
+recovery count caught both backtracking bugs. **Neither measurement
+alone would have caught both** — E1 stayed green through the two
+regex failures, and the RoE count stayed green through the loose
+« 1 + ». That is the argument for keeping a regression set and a
+target measurement pointed at every change, and it is now paid for.
+
+Prediction 2 — whether RoE's coverage finally moves — needs the
+machine, and the constrained-families runs have it.
+
+## Constrained families measured — `h7-fp` legal, and the rule set is identical
+
+### Prediction 5 — **failed, and the failure is the result**
+
+Registered: at least one new stable rule appears on `h7-fp`, having
+been broken in round 2 by illegal draws. I also registered the
+alternative — « the round has bought legality without buying a
+single law » — and that is what happened.
+
+| | round 2 (illegal draws) | round 4 (legal draws) |
+|---|---|---|
+| coverage | 161 of 161 | 161 of 161 |
+| families detected | — | 5, all `{embedded, new} = 1.0` |
+| stable rules | 17 | 17 |
+| distinct sentences | 7 | 7 |
+| **rule sets identical** | | **yes — 0 added, 0 lost** |
+
+Not merely the same counts: the same rules, term for term.
+
+**What that overturns is my own caveat.** Round 2 said the sets could
+not be called complete because « at illegal capital structures a law
+that holds only on the simplex is broken and therefore never found ».
+That worry was sound and, on this file, **not the operative one**:
+the same rules are found either way. So `h7-fp`'s seven sentences are
+now legally obtained and the completeness caveat comes off them.
+
+It does not make them the model's accounting laws. They are still
+duplicate calculations and first-year boundary conditions. What the
+round establishes is that **legality was not the blocker on
+recognisability** — which is worth knowing precisely because I had
+been treating it as one.
+
+### What the blocker looks like now
+
+At 100% coverage, under legal draws, over 400 runs, the signed-sum
+family finds equalities and nothing else on a rate model. Round 1b
+guessed at this — « there were no proportions to find, only
+sameness » — from a starved perturbation. It is now the reading from
+a full one, which makes it a much stronger claim: **on a cost-of-debt
+model the signed-sum family may simply be the wrong family.**
+
+So the runner now mines **both families every run** and prints the
+ratio rules that are real proportions (k ≠ 1) rather than the
+sameness the signed sums already found. It also writes each run's
+**run matrices** beside its result, so a new rule family can be
+mined against the same runs without spending the machine again —
+which is the direct, cheap answer to having lost every earlier
+round's raw output to a container restart.
+
+Predictions 1, 2, 3, 4 and 6 of that registration all held: the
+family the hand typing knew was found on both files, the three false
+families were caught by reading and fixed, no draw left the simplex
+across 300 checks and 400 runs, coverage stayed at 100%, and the
+round-2 sentences survived.
+
+### `h7-fds`: coverage bought down to 96.5%, rule set again identical
+
+The other half of the contrast, and the one where holding bites.
+`h7-fds` has two families that share the embedded weight, so the
+whole component is held rather than drawn:
+
+| | round 2 (illegal draws) | round 4 (component held) |
+|---|---|---|
+| coverage | 144 of 144 (100%) | **139 of 144 (96.5%)** |
+| families detected | — | 10 instances, 2 row-sets |
+| stable rules | 11 | 11 |
+| **rule sets identical** | | **yes — 0 added, 0 lost** |
+
+Five watched cells stopped moving, which is exactly the price of
+refusing to half-satisfy overlapping constraints, and it is a price
+worth naming: **holding a constraint system costs coverage that a
+proper polytope sampler would keep.** Registered as the next round
+if a rate model ever turns out to need it — and after prediction 5,
+there is no evidence yet that it would buy a single rule.
+
+So on both H7 files, across two different ways of making the draws
+legal — jointly sampled on `h7-fp`, held on `h7-fds` — **the rule
+set does not move at all**. That is now three independent
+measurements saying the same thing, and it is the strongest form of
+the finding: whatever stops these rule sets from being
+modeller-recognisable, it is not the legality of the perturbation.
+
+*Both runs started before the ratio family and run-matrix saving
+went in, so neither produced them. Not re-running an hour of machine
+time for an artifact when RoE's coverage — the open question that
+unblocks a whole model — needs the machine now; the next runs carry
+both.*
+
+### Prediction 2 of the usage round — confirmed, and the bar still refuses the result
+
+Registered: RoE's coverage clears round 1b's 10 of 193. It does.
+
+| | round 1b (hand) | round 2/3 (inferred) | round 5 (usage) |
+|---|---|---|---|
+| coverage | 10 of 193 | **0 of 193** | **55 of 193 — 28.5%** |
+| verdict | — | uninformative | **uninformative** |
+
+`docs/pierce/logs/dynamo/round5-roe.json`. The model that could not
+be perturbed at all now moves a quarter of its watched sheet, from
+inputs typed entirely by inference. And **28.5% is below the 50% bar
+I fixed before any of this**, so the round is reported as
+uninformative and its 903 « stable rules » are **not results**.
+
+Which is just as well, because they are the sameness pathology in
+its purest form yet: `2031/32 − 2032/33 = 0`, `2031/32 − 2033/34 =
+0`, and so on across a whole block that moves as one. The ratio
+family, mined on the same runs, returned **903 stable rules and 0
+real proportions** — every one of them k = 1. Round 1b said « there
+were no proportions to find, only sameness »; at nearly three times
+the coverage, still true.
+
+### Why the other 138 cells are frozen — measured, not guessed
+
+Of the 138 watched cells that did not move, **136 have no
+perturbable input anywhere upstream** (walked through the precedent
+graph, depth 8). They are not frozen because the perturbation is too
+timid; they are frozen because nothing that moves reaches them.
+
+69 inputs remain untyped: 34 on `One-Off Wedge`, 26 on
+`Beta Estimates`, 9 on `Step-1 Cost of Equity`. That is the next
+number to attack on this model, and it is a different problem again
+from named rates — those 69 are cells with no label, no header and
+no decisive format, where the file genuinely says nothing. Whether
+anything can be inferred for them, or whether the honest answer is
+that a model with 69 undocumented inputs cannot be fully mined, is a
+question I would rather put to the lead than answer by inventing a
+rule.
+
+### The scorecard for the usage round
+
+| prediction | outcome |
+|---|---|
+| 1 — RoE's C and D typed as percent rates | **confirmed**, 26 of 26 |
+| 2 — coverage clears 10 of 193 | **confirmed**, 55 of 193 |
+| 3 — E1 no worse on any dimension | **confirmed** after the gate fired once |
+| 4 — it fires where it should not | **confirmed**, three times, all fixed |
+
+Four for four, with the two failures inside prediction 3 and 4 doing
+the work. The coverage bar refused the rule set anyway, which is the
+bar behaving exactly as designed: a real improvement in typing does
+not entitle a rule set to be believed.
+
+---
+
+## E2's shippable verdict — the arming criteria, registered before the numbers
+
+*28 Aug, twenty-third sweep orders item 1, the single highest-value
+thing on my board. Sentinel cannot build E3 until this verdict
+exists, so the criteria go down **before** I re-run anything.*
+
+### Why the numbers in this log are not yet the verdict
+
+Every E2 accuracy figure above was measured before propagation, the
+column-wise reading and usage evidence went in. Worse, the E1 scorer
+classifies each row **row-wise in isolation**, which is not how the
+caller uses E2 at all: the real path decides the sheet's reading
+first and may read it sideways. A verdict Sentinel arms a finding on
+has to be measured through the path the product actually runs.
+
+So both scorers are re-run at HEAD, and the E1 scorer is upgraded to
+go through `sheet_reading` exactly as `inferred_inputs` does.
+
+### The two keys, and which one decides
+
+- **The author key** — 3,796 rows on ED2 and GD3 whose units were
+  written by Ofgem's own modellers in a `Units` column E2 never
+  reads. Not self-graded. **This decides.**
+- **E1's hundred** — hand-labelled by me. Same author as the
+  inference, so it *informs* and does not decide; its job is
+  regression, and it has already caught one change that had to come
+  out.
+
+### The criteria, fixed now
+
+A finding shown to a banker is wrong if the unit behind it is wrong,
+so **precision decides arming and reach does not**:
+
+| verdict | condition, on the author key |
+|---|---|
+| **arm** | wrong ≤ **1%** of decided rows, and ≥ 100 decided rows |
+| **arm with care** | wrong ≤ **5%** of decided rows |
+| **do not arm** | wrong > 5%, or fewer than 100 decided rows |
+
+« Decided » excludes abstentions throughout. Reach — what share of
+rows the dimension decides at all — is reported beside every verdict
+because it says how *often* a finding could fire, but a dimension
+that abstains constantly and is never wrong is safe to arm; one that
+answers constantly and is wrong 10% of the time is not, however
+useful it looks.
+
+### Predictions
+
+1. `kind` and `rate_form` **arm**. They were 96.4% before these
+   changes with essentially no wrong answers.
+2. `currency` and `scale` **arm** on precision and read as nearly
+   useless on reach — they abstain on most rows and, when they
+   answer, they have not yet been wrong.
+3. `period` **does not arm.** It was wrong on 24.9% and 64.1% of
+   rows and I have said since that it is not to be quoted; I expect
+   the criteria to say so formally.
+4. `b5_type` is the one I cannot call. E1 had it at 54 right / 30
+   wrong, which is nowhere near arming, but the author key is a
+   different and larger population.
+5. **At least one dimension moved since it was last measured** — the
+   three changes touched labels, and if none of them moved anything
+   I have been reporting numbers that no longer describe the code.
+
+---
+
+## E2's shippable verdict — per dimension, with what the evidence cannot cover
+
+*28 Aug, orders item 1. Measured at HEAD through the path
+`inferred_inputs` runs. Criteria registered before the numbers, two
+entries above.*
+
+### The author key, 3,796 Ofgem-labelled rows
+
+| dimension | right | wrong | abstained | **wrong of decided** | reach |
+|---|---|---|---|---|---|
+| `kind` | 3,660 | 2 | 134 | **0.05%** | 96.5% |
+| `rate_form` | 3,661 | 1 | 134 | **0.03%** | 96.5% |
+| `currency` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `scale` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `b5_type` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `period` | 2,572 | 1,090 | 134 | **29.8%** | 96.5% |
+
+### E1's hundred, as the caller uses E2
+
+| dimension | right | wrong | abstained | **wrong of decided** |
+|---|---|---|---|---|
+| `kind` | 97 | 0 | 3 | **0.0%** |
+| `currency`, `scale` | 54 | 0 | 46 | **0.0%** |
+| `rate_form` | 80 | 4 | 16 | **4.8%** |
+| `period` | 69 | 15 | 16 | **17.9%** |
+| `b5_type` | 54 | 30 | 16 | **35.7%** |
+
+### The finding that reshapes the verdict: the big key is a small test
+
+I registered « the author key decides ». Measuring what that key can
+*contain* shows why it cannot decide alone:
+
+| | values the key can hold |
+|---|---|
+| author key, `kind` | **`continuous`, and nothing else** — 6,226 rows, one value |
+| author key, `b5_type` | `money` or `rate`, nothing else |
+| E1, `kind` | `continuous` 69, `categorical` 16, `mixed` 13, `unknown` 2 |
+| E1, `b5_type` | `rate` 51, `money` 18, `date` 16, `untyped` 15 |
+
+The key is built from rows whose Units text is `£m …` or `%`, so
+**every row in it is continuous by construction.** `kind`'s 96.4% —
+the number these orders call the strongest foundation laid this week,
+and which I reported four times without noticing — was never evidence
+that E2 can tell a continuous row from a categorical one. It is
+evidence of precision *on rows that declare money or a percentage*,
+which is a narrower claim than I have been making.
+
+E1 is the only key containing the hard cases. It has a hundred rows
+and I graded it myself. **That is the true state of the evidence**,
+and the verdict below takes the worse of the two keys everywhere.
+
+### The verdict
+
+| dimension | verdict | on what |
+|---|---|---|
+| `kind` | **ARM** | 0.05% wrong on 3,662 decided; 0 of 97 on E1's categorical and mixed rows. Two keys, both clean. |
+| `currency` | **ARM** | 0.15% wrong, 0 of 54 on E1 — but **reach 34.6%**: it answers on a third of rows and abstains on the rest. |
+| `scale` | **ARM** | as `currency`. |
+| `rate_form` | **ARM WITH CARE** | 0.03% on the author key, **4.8% on E1** — inside the 5% band, and the worse number governs. |
+| `b5_type` | **DO NOT ARM** | the author key only tests money-vs-rate; E1, which tests the rest, is **35.7% wrong**. |
+| `period` | **DO NOT ARM** | 29.8% wrong on the author key, 17.9% on E1, and E1's own labels contradict themselves on identical year rows. |
+
+### What this means for E3, in Sentinel's terms
+
+- **A « £ figure in a £m line » check is armable.** `scale` and
+  `currency` are never wrong when they answer. It will only see
+  about a third of rows, so it will find less than it looks like it
+  should — that is a reach limit, not a correctness one.
+- **A « monthly figure in an annual line » check cannot be built.**
+  `period` is wrong on a quarter to two thirds of rows depending on
+  the model. There is no version of this that is safe today.
+- **Anything keyed on `b5_type`** — « a rate where money belongs » —
+  **cannot be built** either.
+- `kind` is safe, which is what B5 consumes; it is not by itself a
+  finding.
+
+### Against the registered predictions
+
+| prediction | outcome |
+|---|---|
+| 1 — `kind` and `rate_form` arm | `kind` **arms**; `rate_form` **arms with care** |
+| 2 — `currency`/`scale` arm, poor reach | **confirmed**, 34.6% |
+| 3 — `period` does not arm | **confirmed** |
+| 4 — `b5_type` I could not call | resolved: **does not arm** |
+| 5 — a dimension moved since last measured | **confirmed**, and it was a regression I had registered as costless |
+
+### What I would want before calling any of this settled
+
+E1 is a hundred rows, graded by the same person who wrote the
+inference. Every hard case in this verdict — categorical, date,
+mixed, the whole of `b5_type` — rests on it. **A second hand-labelled
+set, drawn by someone other than me, is the single thing that would
+most improve this verdict**, and I would rather say that than let a
+3,796-row number carry weight it cannot hold.
+
+---
+
+## Two corrections to the verdict I published an hour ago
+
+*28 Aug, on reading the founder's fourth research round
+(`corpus-sources.md`, 28 Aug fourth addendum) as the URGENT addendum
+orders. Both corrections narrow claims I made; neither is a change
+of code.*
+
+### 1. `rate_form`'s verdict is measured on a corpus with one convention
+
+The research found that `%` means opposite things in different real
+workbooks — three of six models store `0.005`, three store `70` —
+and that the **number format** separates them six times out of six.
+The lead verified our corpus carries only one. I re-derived it
+rather than take it on trust, because it decides whether my own
+number means anything:
+
+    final_wacc.xlsx: 183,987 percent-formatted, 0 above 1.5,
+                     largest exactly 1
+
+Confirmed to the cell. `scripts/recalc_units_convention.py`, now
+committed so anyone can re-run it on any corpus.
+
+**So `rate_form` — ARM WITH CARE — is armed on evidence that
+contains only decimal-fraction percentages.** The whole-number
+convention is not tested anywhere in my measurement, and on a model
+that uses it E2 would be **100× wrong while reporting no
+abstention**. The verdict line stands as written but must be read
+with this attached, and I would not have found it from our files:
+the research did.
+
+**This is the same failure as the one I found this morning**, and I
+want the pair named together because they rhyme: the author key
+holds one value for `kind` (everything in it is continuous by
+construction), and the corpus holds one value for the percent
+convention. Twice in one day a number of mine turned out to measure
+a narrower thing than its name suggested. The lesson I am taking is
+that **the shape of a key must be measured before its accuracy is
+quoted**, and I have added that check to the handoff rather than
+just to my own habits.
+
+### 2. Build order item (b) will kill my author key — a structural warning
+
+The orders make a **units-column detector** the second thing I
+build. My 3,796-row author key **is** those models' Units column,
+read by the scorer and forbidden to the inference.
+
+**The moment E2 reads units columns, scoring E2 against them is
+circular** and the key is worth nothing. That is not an argument
+against building the detector — nine of 27 real models put units in
+a column and an engine that ignores them is silently blind, which is
+worse. It means the key has to be replaced *before* the detector
+lands, not after.
+
+After (b), the only non-circular evidence I hold is **E1's hundred
+rows, hand-labelled by me**. That is a thin foundation for a
+shippable verdict, and it makes the request I ended the verdict with
+urgent rather than nice-to-have: **a second hand-labelled set drawn
+by someone other than me.** I am raising it now because the build
+order will otherwise consume the key I have been quoting all week.
+
+### What I have not changed
+
+No code. Both of these narrow what my numbers mean; neither makes
+E2 wrong today on the files it has been measured on. Item (a) —
+number format decides the percent convention — is the next round and
+is registered separately.
+
+## The percent sweep, widened — and the exceptions prove the report's point
+
+Whole corpus, `scripts/recalc_units_convention.py`:
+
+| file | percent-formatted | above 1.5 | largest |
+|---|---|---|---|
+| `final_wacc.xlsx` | 183,987 | 0 | 1.0 |
+| `RIIO GDT3 WACC Rates` | 183,941 | 0 | 1.0 |
+| `RIIO GD3 BPFM` | 118,874 | 0 | 1.111 |
+| `final_et3_bpfm.xlsm` | 106,400 | **6** | 4.518 |
+| `RIIO ET3 BPFM` | 95,864 | **9** | 4.518 |
+| `final_gt3_bpfm.xlsm` | 91,717 | **5** | 2.0 |
+| `RIIO GT3 BPFM` | 89,856 | 0 | 1.111 |
+| `DRAFT_ET3 PCFM` | 4,598 | **3** | 6.473 |
+| `DRAFT_GD3 PCFM` | 2,809 | **1** | 1.512 |
+| …every other file | | 0 | ≤ 1.111 |
+| **total** | **1,213,460** | **24** | |
+
+Twenty-four exceptions in 1.21 million cells — 0.002%.
+
+I read the exceptions rather than reporting a count:
+
+    Tax!AU56 = 6.4733  fmt '0.0%;(0.0%);"-"'  « Actual gearing »
+    Tax!AV56 = 2.1627  « Actual gearing »
+    Tax!AW56 = 1.8258  « Actual gearing »
+    Tax!AU56 = 1.5121  « Actual gearing »   (GD3)
+
+**Those four are gearing above 100%** — debt exceeding RAV, which is
+a real thing a regulated company does — stored as decimal fractions
+and formatted as percentages. Not whole-number-percent
+counterexamples: decimal fractions that happen to exceed 1.5.
+
+**And the other twenty are not the same thing**, which I only found
+by reading them too:
+
+    ScenarioRun_AllOutputData!AR62 = 4.5180  fmt '0.00%'
+        « Shrinkage Management ODI »
+    ScenarioRun_AllOutputData!AQ61 = 2.2435  fmt '0.00%'
+        « Unplanned Interruption Mean Duration ODI [Cadent only] »
+
+Incentive values, not ratios. I had written « all 24 are Actual
+gearing » from the first four before the larger files finished
+reading, and it was wrong — the correction is here rather than in a
+quiet edit because it is the same over-generalising this entry is
+about. Read in full, the twenty fall into two more classes:
+
+    ScenarioRun_AllOutputData!AR62 = 4.5180  « Shrinkage Management ODI »
+    ScenarioRun_AllOutputData!AQ61 = 2.2435  « Quality of connections ODI »
+    SPTL!AP1868 = 1.6949   « Spare UM 3 »
+    SPTL!AP1870 = -1.6942  « Spare UM 3 »
+
+incentive rows and an uncertainty-mechanism placeholder, all under
+percent formats.
+
+**What I can state and what I cannot.** Every one of the 24 sits
+between 1.5 and 6.5 — not in the tens, where a whole-number percent
+would live — so nothing here looks like the second convention. But
+`4.518` under `0.00%` displays as **451.8%**, and I cannot tell from
+the file whether its author meant that or meant 4.518%. The format
+says decimal fraction and E2 reads it as 451.8%; **whether the
+author meant it is a question about the file, not about E2.** The
+research made the same point about a toll-road model carrying two
+unit labels its own author got wrong, and it applies to our corpus
+too: real ground truth is not always right, and this lane says so
+rather than quietly assuming our regulator files are.
+
+And then the last file changed the picture again:
+
+    PCFMInterface_SO!AU113 = 2  fmt '0.0%;(0.0%);"-"'
+        « Office, gas national control centre and emergency control »
+    …AV113, AW113, AX113, AY113 — all exactly 2
+
+**Exactly `2`, five times, under a percent format** — displaying as
+200% on a cost-allocation row. A 2% allocation written as `2` is
+precisely the second convention, and it is also precisely the slip a
+modeller makes. I cannot tell which from the file, and I am not
+going to decide it by preference.
+
+So the conclusion is narrower than the one I was about to write.
+**As far as any evidence shows, our corpus carries the
+decimal-fraction convention — with five cells that may be the other
+one and cannot be resolved from the file.** The 24 exceptions are a
+reason to distrust magnitude tests in both directions, and one small
+reason to stop saying our corpus is uniform without qualification.
+
+`scripts/recalc_units_exceptions.py` prints every outlier with its
+label, so the next person reads them rather than trusting a count —
+including mine.
+
+Which is the research's own point, arriving from the other side. The
+report's killer cell was `Module Degradation = 0.5` under `% p.a.`,
+where « below 1 means a fraction » is 100× wrong. My corpus supplies
+the mirror: **13 cells where « above 1.5 means a whole number »
+would also be 100× wrong.** A magnitude threshold fails in both
+directions, on real files, in the same week. The number format is
+the only instrument that works, and I now have my own evidence for
+it rather than only the report's.
+
+The summary sentence my script prints — « this corpus contains ONE
+of the two conventions » — is therefore correct and its trigger
+condition was too strict: it fires only at zero exceptions, so on
+the four files above it said nothing at all. Fixed to report the
+exceptions and say what they are, because « 9 cells above 1.5 » with
+no follow-up is exactly the kind of unexplained number this lane is
+not supposed to publish.
+
+---
+
+## Build order (a) — the number format decides the percent convention
+
+*28 Aug, URGENT addendum item 3(a). Registered before the code.*
+
+### What the rule is
+
+From the research, six models of six: **percent-style number format
+→ the stored value is a decimal fraction; a non-percent format under
+a declared `%` → the stored value is a whole number of percent.**
+Neither the value nor the label may be consulted, and the killer
+cases prove why in both directions — their `Module Degradation = 0.5`
+under `% p.a.`, and our own 24 outliers above 1.5.
+
+Two places in this lane assume `%` means decimal without looking at
+the format, and both are wrong in general:
+
+- `_from_declared` in the inference, used when a caller supplies a
+  units text.
+- `truth_from_units` in the scorer — **the answer key itself**. On a
+  whole-number-percent model my key would be wrong, which would make
+  every accuracy number computed against it wrong in the same
+  direction. Fixing the key matters more than fixing the inference.
+
+### What is built
+
+One function, `percent_convention(number_format, declared)`,
+returning `decimal`, `percent`, or an abstention, used by both. A
+declared `%` with **no** format information abstains rather than
+assuming — that is the whole lesson.
+
+### Predictions
+
+1. **On our corpus this changes nothing.** Every declared-`%` row we
+   hold is percent-formatted, so both the inference and the key
+   should return exactly what they returned before: **0 rows changed
+   on the 3,796-row author key, 0 on E1.** If anything moves, my
+   reading of the corpus is wrong and I would rather find that out
+   here.
+2. The research's six cells classify correctly in tests — the three
+   decimal-fraction models and the three whole-number ones,
+   including `Module Degradation = 0.5` and the Australian file's
+   `E25`/`E61` pair that share a column and disagree.
+3. **The five ambiguous `= 2` cells classify as `decimal`** — 200%,
+   which is what the format says. If their author meant 2%, the rule
+   cannot know that and neither can I; a format-based rule inherits
+   the file's own errors, and that is a property to state rather
+   than a defect to hide.
+4. No dimension moves on either key, so the verdict published today
+   stands unchanged — with its caveat that the second convention
+   remains untested by any measurement I hold.
+
+## Item (a) measured — and it found the second convention in our own corpus
+
+### The predictions
+
+| prediction | outcome |
+|---|---|
+| 1 — nothing changes on our corpus | **almost**: every tally identical, **one row's key changed** |
+| 2 — the research's six cells classify correctly | **confirmed**, in tests |
+| 3 — the five ambiguous `= 2` cells read `decimal` | **confirmed** |
+| 4 — no dimension moves, the verdict stands | **confirmed** |
+
+Both keys re-run at HEAD are identical to the run before the change,
+dimension for dimension. The only difference in the whole output is
+one line, and it is the interesting one:
+
+    - "rate_form: said not-a-rate, was decimal"
+    + "rate_form: said not-a-rate, was percent"
+
+### What that one row is
+
+    gd3-pcfm  Input!442   units « % »
+      format  '#,##0.0;\(#,##0.0\);"-"'   — not a percent format
+      values  11.5847, 10.0364, 5.7118, 1.5500
+      label   « CPI Forecast »
+
+**CPI of 11.58%, written as `11.58`.** That is the whole-number
+convention, in a regulator model, in our own corpus — and UK CPI
+peaked near 11% in 2022, so the reading is not in doubt the way the
+five `= 2` cells were.
+
+**So the sentence I published earlier today is wrong**: « as far as
+any evidence shows, our corpus carries the decimal-fraction
+convention ». It carries both. I could not see it while my key and
+my inference each assumed `%` meant decimal — the row was simply
+scored against a wrong answer and the disagreement went to E2's
+column instead of the key's.
+
+**And my answer key was wrong on this row until an hour ago.** That
+is the concrete case for having done item (a) on the key rather than
+only on the inference, and it is a sharper argument than the one I
+registered: I wrote that a wrong key « would » make numbers wrong on
+a whole-number-percent model, hypothetically, elsewhere. It was
+already wrong here.
+
+The tallies did not move because E2 says `not-a-rate` for that row
+either way — wrong before, wrong now, wrong for its own reasons. The
+key is right now, which is what a key is for.
+
+### What this changes upstream
+
+The verdict's `rate_form` caveat gets weaker in one direction and
+stronger in another. Our corpus is **not** single-convention, so a
+measurement here is not automatically blind to whole-number
+percentages — but the second convention is represented by **one row
+of 3,796**, which is far too thin to claim `rate_form` is tested
+against it. The caveat stands, with the count attached.
+
+---
+
+## Build order (b) — units in a column of their own — registration
+
+*28 Aug, URGENT addendum item 3(b). Nine of 27 real models keep
+units in a dedicated column beside the value rather than in the
+label; 698 declarations were extracted that way. An engine that
+parses only labels finds nothing in those nine **and reports full
+coverage on all of them** — the silent-blindness shape.*
+
+### The circularity, handled before it bites
+
+My 3,796-row author key **is** ED2's and GD3's Units column. The
+moment E2 reads units columns, scoring E2 against them is circular.
+So this round is built with that constraint written into it:
+
+- The detector is **measured on what it finds**, never on whether
+  what it finds agrees with itself. Its number is *recall of
+  declarations* — how many unit declarations exist and how many it
+  reaches — verified by hand-reading a sample.
+- **No accuracy number is reported against a units column**, then or
+  ever, once E2 can read one.
+- The measured configuration for the verdict stays **blind**: E2
+  with units-column reading off. The verdict published today keeps
+  its meaning, and a new verdict waits for a key that is not the
+  thing being read.
+
+That is the honest arrangement and it is also a smaller claim than
+« E2 got better », which is what a circular measurement would have
+let me say.
+
+### What is built
+
+A detector for a units column that does **not** rely on a `Units`
+header, because the models that need it do not have one: a narrow,
+mostly-text column adjacent to a block of numbers, whose entries are
+short and match unit-shaped patterns, bound to the row beside it. It
+returns declarations per row, with the column it came from, so a
+reader can check it.
+
+### Predictions
+
+1. **On ED2 and GD3 it finds the same columns the header-based
+   finder finds.** If it disagrees on models where I know the
+   answer, it is not ready for models where I do not.
+2. **It finds units columns in the closed-deal corpus, where my
+   header-based finder found zero.** This is the one I care about:
+   I reported « **zero** rows carry a declared unit » across eight
+   models and used it to declare the generalisation round
+   unmeasurable. If a header-free detector finds declarations there,
+   **that finding was partly an artifact of my finder**, and I would
+   rather discover it myself than have it stand.
+3. **It fires on something that is not a units column** — a comment
+   column, a category column. Registered for the fifth time; hunted
+   for deliberately, by hand-reading a sample rather than by
+   trusting a count.
+4. The verdict's dimensions do not move, because the measured
+   configuration stays blind.
+
+## Item (b) measured — and it overturns a finding I closed a round on
+
+### Prediction 1 — confirmed, after three failures
+
+| model | detector | header-based | both | detector-only | header-only |
+|---|---|---|---|---|---|
+| ED2 v5 | 4,565 | 5,954 | 4,565 | 0 | 1,389 |
+| GD3 PCFM | 1,370 | 1,393 | 1,308 | 62 | 85 |
+
+It agrees with the finder I trust on the models where I know the
+answer. The header-only remainder is rows carrying text but no
+numbers — headings, notes — which the detector deliberately skips
+because a declaration with nothing to describe is not a declaration.
+
+### Prediction 2 — confirmed, and it is a correction
+
+| closed-deal model | declarations | commonest |
+|---|---|---|
+| `baldragon` | **3,959** | `£m` 3,174 · `Flag` 300 · `%` 84 |
+| `kelso` | **3,587** | `£'000s` 2,664 · `£'000` 531 · `Flag` 190 |
+| `newbattle` | **3,587** | `£'000s` 2,664 · `£'000` 531 |
+| `levenmouth` | **1,871** | `£m` 1,177 · `%` 383 |
+| `forfar` | **1,847** | `£m` 1,207 · `%` 371 |
+| `glasgow_college` | **98** | `kWh` 44 · `£/kWh` 18 · `kWh / m2` 12 |
+| `inverurie_foresterhill`, `oban_campbeltown` | 0 | |
+
+**Roughly 14,900 declarations across six of the eight models.** I
+published « **zero** rows carry a declared unit » on this corpus and
+used that zero to declare the generalisation round **unmeasurable**,
+with the whole round reported on that basis. It was an artifact of my
+header-based finder, not a fact about the files — exactly the failure
+I registered as the thing I most wanted to catch, which is the only
+reason it is being caught by me.
+
+Glasgow College is carrying the research's energy-price family in the
+open: `kWh`, `kWh / m2`, `£/kWh`, `kgCO2/m2`, `m2`. That is build
+item (f)'s material sitting in a corpus I own.
+
+### Prediction 3 — I looked, and did not find one
+
+I hand-read the largest columns rather than trusting the counts:
+`InpC` col 7 beside col 6 (`Days in Year` → `Days`), `CalcSA` col 7
+(`First model column flag` → `flag`), `FixedAssetSA` col 7 (135 rows
+of `£m` against construction cost lines). Every column I read is a
+units column.
+
+What is *inside* them includes non-units — `Flag`, `Factor`,
+`Indexing at 0%`, `Date / £m` — which is the research's finding 7 and
+is handled as « declared, not a unit » rather than counted as a
+false positive of the column detector. **So: no false positive found,
+and I am reporting « I looked at six columns and did not find one »,
+not « there are none ».**
+
+### What this changes, and it is the biggest thing on my board
+
+My verdict ended by asking for **a second labelled set drawn by
+someone other than me**, because every hard case rested on E1's
+hundred rows that I graded myself. This is better than what I asked
+for:
+
+- **~14,900 declarations**, four times the current author key
+- written by **the models' own authors**, not by me
+- from a corpus **E2 has never seen**, in a different idiom
+- and **not circular**, because E2's blind pass — the configuration
+  the verdict is measured in — does not read units columns
+
+The one caveat, stated before I use it: these declarations were
+extracted by **my** detector, so a systematic bias in what it finds
+becomes a systematic bias in the key. That is a weaker objection than
+self-grading, and the answer to it is the hand-reading above plus
+publishing the detector, not a claim that it cannot happen.
+
+**Next: score E2's blind pass against this key.** It is the
+non-circular measurement the verdict has been missing, and it may
+move dimensions I have already published — which is the point.
+
+---
+
+## E2 blind against the closed-deal author key — registration
+
+*28 Aug. The non-circular measurement the verdict has been missing.
+Registered before the key is even parseable, let alone scored.*
+
+### Why this round matters more than its size
+
+My verdict published today **ARMs `kind`** on the strength of 3,662
+decided rows at 0.05% wrong. Then I measured the key's shape and
+found it holds **one value** — every row in it declares £m or %, so
+all of them are continuous. `kind`'s job is to tell continuous from
+categorical, and the big key **cannot test that at all**.
+
+The closed-deal key can. Its columns carry `Flag`, `Factor`, `Date`
+beside `£m` and `£'000s`. **This is the first measurement in this
+lane that puts `kind` in front of rows a model's own author declared
+non-continuous** — and `kind` being right is what B5's typing rests
+on and what the ARM verdict says.
+
+### What must be built first, and the honesty problem in it
+
+The key parser only understands `£m`, `£`, `%`. This corpus says
+`£'000s`, `£'000`, `kWh`, `£/kWh`, `Flag`. So:
+
+- **the scale ladder** (build item c): `'000`, `000s`, `k`, `m`,
+  `bn`, `MM`, and the non-Western `crore`, `lakh`, `千`, `百万`
+- **the non-unit class** (build item g): `Flag`, `Factor`, `Date`,
+  `Choice`, `Index`, `Check`, `Toggle`, `[1,0]` — kept, counted,
+  **excluded from the scored key**, and reported as « declared but
+  not a unit » rather than guessed at
+
+**The honesty problem: the key parser is mine.** A wrong parse is a
+wrong key, and this key has no independent check the way the Ofgem
+one had my hand labels. So a sample of parses is hand-read and the
+count of unparseable declarations is published, not dropped.
+
+### Predictions
+
+1. **`kind` is worse here than 0.05% wrong**, because for the first
+   time it faces rows declared `Flag` and `Date`. I do not know by
+   how much. **If it is bad enough, the ARM verdict on `kind`
+   changes and B5's automatic typing loses its foundation** — which
+   is why this is worth doing before anyone builds on it.
+2. **`scale` abstains even more than the 65–81% it does today.** The
+   corpus is largely `£'000s`, and E2 reads scale from a units text
+   it is blind to and a number format that rarely carries one.
+3. **`currency` stays at or near 0% wrong** on whatever it decides.
+4. **Some declarations will not parse.** Reported as their own
+   count, never dropped, because « declared but not parseable » is a
+   real answer about a corpus.
+5. **At least one of my parses is wrong**, found by hand-reading a
+   sample. Sixth round running I have registered this; it has
+   happened every time.
+
+## The closed-deal key measured — and E2's verdict changes
+
+*The non-circular measurement. Two of the three ARM verdicts do not
+survive it.*
+
+### The numbers, after the orientation bug came out
+
+| dimension | Ofgem key | **closed-deal key** | decided |
+|---|---|---|---|
+| `kind` | 0.05% | **7.77%** | 13,418 |
+| `rate_form` | 0.03% | **2.22%** | 12,408 |
+| `b5_type` | 0.15% | **23.89%** | 1,515 |
+| `currency` | 0.15% | **24.62%** | 1,515 |
+| `scale` | 0.15% | **23.32%** | 1,462 |
+| `period` | 29.8% | **40.35%** | 1,197 |
+
+`docs/pierce/logs/dynamo/units-sft-key.json`. 15,220 declarations
+across six models, 1,140 of them declared non-units and reported as
+such, 580 the parser refuses by name.
+
+### What the wrong answers actually are
+
+    770  kind: said continuous, was categorical   (declared « Flag »)
+    287  period: said annual, was none            (declared « % »)
+    155  currency: said none, was GBP             (declared « £m »)
+    145  scale: said units, was millions          (declared « £m »)
+    142  kind: said categorical, was continuous   (declared « £m »)
+    142  b5_type: said date, was money            (declared « £m »)
+    108  rate_form: said decimal, was not-a-rate  (declared « £'000s »)
+
+**Seventy-four per cent of `kind`'s failure is one case: a row the
+author declared `Flag`, holding 1/1/0/0, read as a continuous
+quantity.** That is not an artifact and not a key defect — it is
+exactly the categorical case the Ofgem key could not contain, failing
+exactly as the verdict warned it might and could not check.
+
+The 142 in the other direction (`£m` read as categorical) are the
+mixed-row problem: a row holding a date serial beside an amount gets
+one label. Those are **contested** — the row genuinely is not
+homogeneous — so I discount them entirely, and `kind` is still 6.7%
+wrong. The verdict change does not depend on the contested cases.
+
+### The revised verdict
+
+| dimension | this morning | **now** | why |
+|---|---|---|---|
+| `kind` | ARM | **DO NOT ARM** | 7.77%, and 74% of it is genuine categorical failure |
+| `currency` | ARM | **DO NOT ARM** | 24.62% — it says « none » on rows declaring `£m` |
+| `scale` | ARM | **DO NOT ARM** | 23.32% |
+| `rate_form` | ARM WITH CARE | **ARM WITH CARE** | 2.22% here, 4.8% on E1 — inside the band |
+| `b5_type` | DO NOT ARM | **DO NOT ARM** | unchanged |
+| `period` | DO NOT ARM | **DO NOT ARM** | unchanged |
+
+**Only `rate_form` is armable, and only with care.** Everything I
+published this morning as safe is not.
+
+### What this costs, said plainly
+
+- **E3 has almost nothing to stand on.** The « £ in a £m line » check
+  I said was armable rests on `scale` and `currency`, and both are
+  wrong on a quarter of what they decide outside our corpus. That
+  check cannot be built today. Sentinel should not wait on me to
+  soften this.
+- **B5's automatic typing loses its foundation.** `kind` decides hold
+  versus perturb, and its dominant failure is reading a **flag row as
+  a continuous quantity** — which is precisely the AHA typing law
+  violation the whole B5 design exists to prevent. Round 2's coverage
+  numbers were obtained with a typing that would perturb flags on any
+  model that has them; H7 happens not to.
+- **The morning's verdict was measured on a corpus that could not
+  test its own headline claim.** I said so at the time, and I still
+  published ARM on `kind`. The right lesson is not « I flagged it »;
+  it is that **a dimension whose key cannot contain its failure case
+  must not be armed at all** until one can. That rule goes in the
+  handoff.
+
+### What is now the strongest thing E2 has
+
+Not an accuracy number. It is that the second corpus exists, is
+author-labelled, is unseen, and **found in one afternoon two defects
+the first corpus structurally could not**: an orientation bug worth
+18 points of `kind`, and a flag-blindness worth 770 rows.
+
+---
+
+# ⚠ STOP — `currency` and `scale` are being armed on a superseded verdict
+
+*28 Aug, written the moment I read the period addendum. Not a
+finding; a collision.*
+
+The addendum says **« Sentinel is arming only `currency` and `scale`
+on it (E3a) »**. That is the verdict I published this morning. I
+revised it the same day, and the revision is **not yet in the
+integration tip** — so the order was written without it, in good
+faith, on numbers I have since withdrawn.
+
+| dimension | the verdict being armed | **the revision** |
+|---|---|---|
+| `currency` | ARM — 0.15% wrong | **DO NOT ARM — 24.62% wrong** |
+| `scale` | ARM — 0.15% wrong | **DO NOT ARM — 23.32% wrong** |
+
+Measured on 1,515 decided rows of the closed-deal corpus, against
+declarations written by those models' own authors, with E2 blind to
+them. The dominant error is `currency: said none, was GBP` on rows
+declaring `£m` — 263 of them. Not an artifact: the orientation bug
+that inflated the first run came out before these numbers, and the
+contested mixed-row cases are excluded.
+
+**So E3a as ordered would ship a check whose unit is wrong on
+roughly a quarter of the rows it fires on.** A « £ figure in a £m
+line » finding shown to a banker is worth nothing if the £m was
+inferred wrongly a quarter of the time.
+
+I am not asking anyone to take my word for the revision over my own
+earlier word — that is the problem, not the solution. The evidence is
+`docs/pierce/logs/dynamo/units-sft-key.json` and the entry above it,
+both pushed to `swens/dynamo`. **Whoever integrates next should read
+the revision before E3a is built**, and if the lead judges the
+closed-deal key unfit to overturn the Ofgem one, that is a legitimate
+call — but it should be made deliberately, not by a merge order.
+
+---
+
+## The `period` answer key — registration, and I am asking the lead to judge it
+
+*28 Aug, orders addendum: « build the period answer key properly,
+and do not grade your own homework ».*
+
+### Taking the offer, explicitly
+
+The orders say: *if the honest way to avoid self-grading is to have
+the lead draw or judge the sample, say so and I will do it.*
+
+**I am saying so.** I wrote the inference; I must not write its
+answer key. E1 was mine and it is why every hard case in this lane
+rests on a hundred rows I graded myself, and the closed-deal key —
+which is not mine to label, being the authors' own words — is what
+overturned two of three ARM verdicts within a day.
+
+The arrangement I propose, and will prepare either way:
+
+1. **I draw the sample mechanically** by a rule registered below, and
+   commit it **unlabelled**, with a fixed seed, before any label
+   exists. The draw is auditable; if I had drawn it to flatter E2, the
+   rule would show it.
+2. **The lead labels `period`** on those rows — or the founder does.
+   The labeller sees the row's evidence and never sees E2's answer.
+3. **I score, and never see the labels before scoring.**
+
+That is the arrangement I would want if I were checking someone
+else's work, so it is the one I am asking for.
+
+### The draw, fixed now
+
+- **Stratified by corpus dialect**, because the orders require
+  accuracy per dialect and not blended: Ofgem regulator models,
+  the H7 pair, the RoE/WACC rate models, and the closed-deal
+  project-finance models.
+- **Rows that carry a period answer at all**: rows with numeric
+  cells under column headers, excluding rows whose declaration is a
+  non-unit.
+- **40 rows per dialect, seeded at 11**, uniformly from the eligible
+  rows of each — not from rows E2 answered, and not from rows where
+  it abstained, because either would shape the key around the
+  instrument.
+- Committed as `docs/pierce/logs/dynamo/e3-period-sample.json`, with
+  each row's sheet, row, label, headers, formats and first values —
+  **and no E2 output of any kind.**
+
+### The prior question, measured first
+
+Before a key is drawn: the research reports **no monthly model among
+27**, one semi-annual, and twenty-four with no date axis at all. If
+that holds for our corpora too, then « a monthly figure in an annual
+line » has **no positive example in anything we hold**, and no key
+drawn from these files can test the flagship check — only its
+false-positive half.
+
+That is the same trap as a `kind` key holding one value, and this
+time I am measuring it **before** building the key rather than after
+publishing a verdict on it. `scripts/recalc_units_periods.py`
+classifies every column header in both corpora by shape. The result
+lands in the next entry, and the draw waits on it.
+
+## The prior question answered: we do hold a monthly model
+
+*And the research's gap list is wrong on this one, in our favour.*
+
+`scripts/recalc_units_periods.py`, every column header in both
+corpora classified by shape:
+
+| axis | headers |
+|---|---|
+| **monthly** | **1,334** |
+| annual | 277 |
+| relative (« Year 1 ») | 263 |
+| half-yearly | 1 |
+
+The research reported « **not one monthly model** among 27 » and
+« monthly construction phases are standard in project finance and
+absent from everything we or they hold ». **We hold one.**
+`kelso_model.xlsm` carries 1,320 monthly headers and 80 annual, and
+the two axes meet inside a single sheet:
+
+    sysTimeline!H13 « Apr 15 »  I13 « May 15 »  J13 « Jun 15 »   (120 months)
+    sysTimeline!H39 « 2015/16 » I39 « 2016/17 » J39 « 2017/18 »  (40 years)
+
+with `inputCapexM`, `inputOpexM`, `calcFundingM`, `Interface Constn`
+and `Interf Constn Ops costs` all on the monthly grid — the `M`
+suffix is the modeller's own word for it.
+
+**This is the flagship check's positive example.** « A monthly figure
+in an annual line » needs a model where both exist and can be
+confused; Kelso is a monthly project-finance model with an annual
+reporting layer, which is precisely that. The check is testable
+after all, and it is testable on a file we already hold and have
+already used.
+
+The rest is thinner than it looks and I am saying so: the other
+monthly counts are 4, 4 and 1 headers — stray month names, not axes.
+**One model carries this entire capability.** A `period` key drawn
+across dialects will therefore be almost all annual and relative
+rows, with Kelso the only source of the case that matters, so the
+draw below strata Kelso's monthly sheets separately rather than
+letting 40 uniform rows drown it.
+
+That is also the honest limit: **a check validated on one model is
+validated on one model.** It is enough to build and measure; it is
+not enough to claim the check generalises, and I will not say it
+does.
+
+## The first draw was discarded, and here is why
+
+*Stated plainly because discarding a sample is exactly the move that
+could hide a cherry-pick. **The first draw was never labelled**, by
+me or anyone, so nothing is contaminated — and the seed is unchanged
+at 11, so the second draw is not a retry until I liked it.*
+
+The draw was clean of E2 output — 197 rows, `period` null on every
+one, no inference field anywhere. It was still unfit to hand to a
+labeller, for two reasons I found by reading the rows rather than
+the counts:
+
+**1. The evidence showed the wrong axis on the one stratum that
+matters.** `kelso_model.xlsm inputCapexM!159` came out with
+
+    headers: ['end date', 'FY2015', 'FY2015', 'FY2015', 'FY2015']
+
+but that sheet's real axis is monthly — `Apr 15`, `May 15`, `Jun 15`
+at row 2, which is why the file calls it `inputCapexM`. The reader
+picks **one** header row per sheet and picked an annual one. A
+labeller shown `FY2015` for a monthly row labels it annual, and the
+key comes back wrong **in exactly the direction that hides the
+flagship case** — a monthly figure recorded as annual is the finding
+E3 is supposed to make.
+
+That would have been a self-inflicted version of the trap I have hit
+twice already: a key that cannot contain the case it exists to test.
+The sample now carries **every** candidate header row from the top
+twelve, in the row's own columns, and says in its instructions that
+the reader can pick the wrong one.
+
+**2. Rows of nothing but zeros.** `Spare 9`, five zeros, drawn into
+the monthly stratum. There is nothing there for a human to judge. An
+all-zero row is now ineligible.
+
+Both changes are to *eligibility and evidence*, not to which rows the
+rule prefers, and both are in the committed script.
+
+---
+
+## The successors I owe — every open refusal in this lane, answered
+
+*28 Aug, the founder's correction (`lanes.md`, « Refusal is not the
+finish line »). It lands on me squarely. I closed the generalisation
+round « unmeasurable » and moved on; the successor existed, and it
+was found because the **lead** ordered a units-column detector, not
+because I proposed one. Fourteen thousand nine hundred declarations
+were sitting in files I had already read. That is the drift, exactly
+as named.*
+
+**And habit 3, in the same hour I read it**: « read your own
+handoff's lessons before any long job ». I ran `pkill -f
+period_sample` and killed the relaunch I had started in the same
+command. Two runs dead, both mine, from not thinking about a shell
+waiter — the specific thing the correction warns about.
+
+### 1. `period` — DO NOT ARM, and the successor is structural
+
+**Diagnosis**: the row label does not say the period, the headers say
+it only when the reader picks the right header row, and my own key
+cannot say it either.
+
+**What evidence *would* decide it, and it is in the file**: the
+model's own aggregation. `=SUM(H5:S5)` across twelve monthly columns
+into one annual column **proves** the period relationship without any
+label at all. Kelso carries both axes and its annual sheets aggregate
+its monthly ones. So: **infer `period` from the shape of the
+formulas that consume a row, not from words above it.** A row whose
+consumers sum exactly twelve of its cells into one is monthly; four
+is quarterly; a row consumed one-for-one is the same period as its
+consumer. That is evidence of a different *kind* — structural rather
+than lexical — and it is reachable from files we hold.
+
+It also gives the flagship check its teeth: « a monthly figure in an
+annual line » is exactly a **broken** aggregation, so the same
+machinery that infers the period detects the defect.
+
+### 2. `kind` — 770 flag rows read as quantities
+
+**Diagnosis**: a 0/1 row under period headers looks like a quantity
+to any format-and-label rule.
+
+**Successor**: **usage again, and it already works once.** A row
+consumed as the condition of an `IF`, or multiplied against another
+row as a mask, is a switch whatever its format says. The rate-form
+round proved this kind of evidence pays; this is the same instrument
+pointed at a different dimension, and there are 770 author-labelled
+flag rows to measure it against.
+
+### 3. `currency`/`scale` — « said none, was GBP » on 263 £m rows
+
+**Diagnosis**: E2 conflates two different statements — « this has no
+currency » (a ratio) and « I cannot tell » — under one word.
+
+**Successor**: **currency by propagation, not by declaration.** A row
+summed into a row that carries a currency has that currency; the
+propagation machinery for declared units already exists and is
+measured (38 of 38 planted mismatches caught). Point it at inferring
+currency rather than only carrying it. Different in kind from reading
+a format or a label: it uses the dependency graph.
+
+### 4. B5 — « the signed-sum family may be the wrong family »
+
+I closed round 2 with that sentence and added ratio mining, which is
+a degree change, not a kind change. **The successor: mine across
+sheets.** The miner watches one sheet's formula cells, and a
+project-finance model's real identities cross sheets — `calcFundingM`
+into `ReportFinStatsAnnual`. Every rule it has ever found is
+intra-sheet because that is all it was ever shown.
+
+### The three designs I did not try, for the period round
+
+1. **Read the period from the number format**, not the header —
+   `mmm-yy` on a cell is a monthly stamp, and the research already
+   found `yyyy"E"`/`yyyy"A"` carrying estimate-vs-actual in formats
+   alone. Cheaper than the structural design and probably weaker;
+   worth measuring first because it costs an afternoon.
+2. **Ask the model's defined names.** `sysTimeline`, `inputCapexM` —
+   modellers name their monthly sheets and ranges. Nobody in this
+   lane has read a workbook's defined names at all.
+3. **Derive the period from the column count.** A block of 120
+   columns spanning ten years is monthly by arithmetic; 40 columns
+   over 40 years is annual. No labels needed, and it would have
+   caught Kelso without the header row.
+
+### What I am not claiming
+
+None of these is measured. They are designs, registered before any
+of them is built, and the next round takes the one the lead ranks
+highest — my own ranking is (1) period-from-aggregation, because it
+serves the flagship check and the dimension in the same pass.
+
+---
+
+## `period` from the model's own aggregation — registration
+
+*28 Aug. The successor I ranked first, registered before it is
+built. It serves the flagship check and the dimension in one pass,
+which is why it is first.*
+
+### The idea, and why it is a different kind of thing
+
+Every attempt at `period` so far has read **words**: the row label,
+the column headers, the units text. All of them are wrong often
+enough that `period` has never been armable, and the last round
+showed the reader can hand a labeller the wrong header row entirely.
+
+A model states its periods **in its arithmetic**. Twelve monthly
+columns summed into one annual column is a monthly row, and it says
+so without a single word. Kelso proves the structure exists in a
+file we hold: `sysTimeline` carries `Apr 15 … Mar 25` at row 13 and
+`2015/16 … 2024/25` at row 39, with `inputCapexM`, `inputOpexM` and
+`calcFundingM` on the monthly grid feeding annual reporting sheets.
+
+**And the same machinery is the flagship check.** « A monthly figure
+in an annual line » is a *broken aggregation* — an annual cell that
+takes one month instead of twelve. So inferring the period and
+detecting the defect are the same computation, which is the reason
+to build this one rather than the two cheaper designs on my list.
+
+### What is built
+
+1. **Column blocks and their granularity**, from column count and
+   span rather than from header words: a block of 120 columns
+   covering ten years is monthly by arithmetic; 40 columns over 40
+   years is annual. This is design 3 from « the three I did not
+   try », folded in because the structural pass needs it anyway.
+2. **The aggregation map**: for each formula cell, which blocks it
+   references and how many cells of each. A cell in a coarser block
+   that sums exactly twelve cells of a finer one is a correct
+   monthly-to-annual aggregation.
+3. **The defect**: a cell in a coarser block referencing a finer
+   block with **fewer cells than the ratio requires** — an annual
+   line taking one month.
+
+### Predictions
+
+1. **Kelso's monthly-to-annual aggregations are detectable**: at
+   least one annual row is found taking exactly twelve monthly
+   cells. If none is, the structural signal is not there and the
+   design fails at its first step, which I would rather learn in one
+   afternoon than after building the check on top of it.
+2. **Zero defects found on Kelso.** It is a published
+   financial-close model that banks lent against; a check that finds
+   real defects in it is far more likely to be finding mine. Any
+   defect it reports, I hand-read before it is called a finding —
+   the B4 discipline, applied to E3.
+3. **A planted defect is caught**: replace a twelve-cell aggregation
+   with a one-cell reference and the check names that cell. Without
+   this the round proves nothing, because a check that reports
+   nothing on a clean file and a check that reports nothing ever are
+   the same measurement.
+4. **It fires falsely somewhere.** Seventh round running I have
+   registered this and it has happened every time; hunted for by
+   hand-reading, not by trusting a count.
+
+## The `period` sample is drawn and is ready to be labelled — by someone else
+
+197 rows, `docs/pierce/logs/dynamo/e3-period-sample.json`. Verified
+by reading the file, not by trusting the run: **`period` is null on
+every row, and no E2 output of any kind appears anywhere in it.**
+
+| dialect | eligible | drawn |
+|---|---|---|
+| ofgem-regulator | 3,401 | 40 |
+| caa-h7 | 2,353 | 40 |
+| rate-models | 37 | 37 (all of them) |
+| closed-deal | 6,669 | 40 |
+| **closed-deal-monthly** (Kelso) | 107 | 40 |
+
+### The discard was worth it, and here is the proof
+
+`kelso_model.xlsm calcFundingM!105`, « TOTAL FUNDING REQUIREMENT »:
+
+    what the reader picked : FY2015  FY2015  FY2015  FY2015
+    candidate header rows  : ['', 'period',  'Apr 15', 'May 15']
+                             ['', 'length',  'Monthly', 'Monthly']
+                             ['', 'section', 'Construction', …]
+
+**The model says « Monthly » in its own header block**, and the
+reader handed back `FY2015`. A labeller shown only the reader's pick
+labels that row annual — and a `period` key that calls Kelso's
+monthly rows annual cannot contain the flagship case, which is the
+whole reason the key exists. Sixty-three of the 197 rows carry more
+than one candidate header row, so this is not a single unlucky row.
+
+### What I am asking for
+
+The file is ready for **the lead or the founder** to label. Its own
+instructions say: set `period` to `annual`, `monthly`, `quarterly`,
+`half-yearly`, `point-in-time`, `none` or `unknown`, judging from
+the row label, the candidate header rows and the values — and it
+warns in writing that the reader picks one header row and can pick
+the wrong one.
+
+I have not looked at what E2 says about these rows and will not
+before the labels exist. When they do, I score and report per
+dialect rather than blended, as the orders require.
+
+## The aggregation check measured — three predictions failed, and the design is wrong
+
+| prediction | outcome |
+|---|---|
+| 1 — Kelso's monthly-to-annual aggregations are detectable | **failed**: 0 correct found |
+| 2 — zero defects on Kelso | **failed**: 36 reported, all false |
+| 3 — a planted break is caught | **could not run**: no correct aggregation to break |
+| 4 — it fires falsely somewhere | **confirmed**, at 100% of what it reported |
+
+`docs/pierce/logs/dynamo/period-check-kelso.json`.
+
+### What the 36 actually are, hand-read as registered
+
+    Swap Profiles!H18  « Senior Debt 2 »
+        = calcFundingM!H222 * 1000
+
+Not an aggregation. A **unit conversion** — one monthly cell
+restated from `£'000s` into `£`. Two independent errors produced it:
+
+1. **`Swap Profiles` is not quarterly.** My detector found a date row
+   and computed three months per period; it is a swap schedule with
+   irregular dates. The block granularity is simply wrong.
+2. **A one-to-one reference is not a broken aggregation.** The check
+   assumes every coarse cell referencing a finer block must sum the
+   full ratio. That is false for **stocks**: a closing balance at
+   year end is the December figure, not the sum of twelve months.
+   It is false for restatements. It is only true for **flows**.
+
+I registered « a check that finds real defects in a model banks lent
+against is far likelier to be finding mine ». It was, and the
+control is the only reason I know.
+
+### The root cause, and it kills the design as registered
+
+**Kelso has 814 formula cells out of 470,594.** Its calculation layer
+is essentially stripped — the published file is values with a thin
+crust of formulas. A design that reads *arithmetic* cannot work on a
+corpus that ships *numbers*, and the one model carrying the monthly
+capability is the one with no arithmetic to read.
+
+That is not a threshold to loosen. It is the design being the wrong
+shape for the files we have.
+
+### The successor, and it differs in kind
+
+**Read the aggregation from the values, not from the formulas.**
+
+If an annual cell's value equals the sum of twelve monthly cells'
+values, that *is* the aggregation — proved arithmetically, with no
+formula required. The corpus's weakness becomes the signal: 470,594
+values on Kelso and 1,320 monthly headers, all of it readable. And
+the flagship defect states itself in the same terms — **an annual
+cell whose value equals one month rather than the sum of twelve**.
+
+It brings its own hazard, which I will register before building:
+matching by value invites coincidence, so a match must hold across
+many periods and the search must be anchored by row, not free. That
+is a real objection to answer with a control, not a reason to stop.
+
+### The two I am not taking, and why
+
+- *Loosen the ratio, or allow one-to-one as valid.* That is a
+  parameter change and would have silently accepted all 36.
+- *Wait for a corpus with formulas.* The population proof says
+  published closed-deal models are values; waiting is waiting
+  forever.
+
+---
+
+## Aggregation from values — registration
+
+*The successor to the failed formula design. Registered before it is
+built, with the control for the hazard I named when I proposed it.*
+
+### The shape
+
+Kelso ships 470,594 values and 814 formulas. So: **if an annual
+cell's value equals the sum of twelve monthly cells' values, that is
+the aggregation** — arithmetic proves it and no formula is needed.
+
+Two rules keep it from being a coincidence machine:
+
+- **Anchored by row label, never searched free.** A row is paired
+  with a row of the same label on a coarser sheet. Pairing every row
+  with every row is where spurious matches live.
+- **It must hold across many periods.** A pair counts as an
+  aggregation only when the sum matches in **at least six** of the
+  coarse periods, at this lane's usual 1e-9 relative tolerance.
+
+### The defect, restated in the same terms
+
+The flagship finding becomes a **within-row inconsistency**: a row
+that aggregates twelve-to-one in every year except one, where the
+annual figure equals a single month. That is far stronger than a
+cross-model rule, because the model's own other years are the
+control — the row is being judged against itself.
+
+### Predictions
+
+1. **At least one Kelso row aggregates 12:1 by value across six or
+   more years.** If none does, values carry no more signal than
+   formulas did and the whole line of attack is finished — which is
+   worth knowing in an afternoon.
+2. **Zero defects on clean Kelso**, same reasoning as last time: a
+   published financial-close model is a control, not a hunting
+   ground. Every reported defect is hand-read before it is called
+   anything.
+3. **A planted defect is caught by name**: overwrite one year's
+   annual value with one month's value, and the row must be reported
+   with that year named.
+4. **The coincidence control**: re-run with rows paired to the
+   *wrong* partners — same numbers, deliberately mismatched labels —
+   and near-zero aggregations must survive. This measures the hazard
+   I registered when I proposed the design rather than asserting it
+   away. If shuffled pairs match nearly as often as real ones, the
+   evidence is coincidence and I will say so.
+
+## Aggregation from values — the control killed it, and I know why
+
+| prediction | outcome |
+|---|---|
+| 1 — a row aggregates across six or more periods | 655 rows did — **but see 4** |
+| 2 — zero defects on clean Kelso | **failed**: 65 reported |
+| 3 — a planted defect is caught | **not run**: pointless once 4 failed |
+| 4 — **the coincidence control** | **failed**: 503 of 655 |
+
+`docs/pierce/logs/dynamo/period-values-kelso.json`. Pairing rows
+with **deliberately wrong partners** still produced 503 aggregating
+rows against the real 655 — **77%**. The registration said: « if
+shuffled pairs match nearly as often as real ones, the evidence is
+coincidence and I will say so ». They did. It is.
+
+### Why, and it is embarrassing in a familiar way
+
+**Most rows are mostly zeros, and zero aggregates with zero.**
+`0 = 0 + 0 + … ` holds for forty periods, so any sparse row pairs
+with any other sparse row and clears a six-period bar effortlessly.
+The bar measured nothing.
+
+And the 65 « defects » are `retained earnings`, `carried forward
+retained earnings`, `MRA`, `cash bank`, `deferred tax liability` —
+**stocks**. A closing balance is not the sum of twelve months. That
+is the *same conceptual error I named one entry above*, in the
+post-mortem of the previous design, and I then built a check that
+makes it again. Naming a failure is evidently not the same as
+carrying it forward.
+
+### The successor, and the bar it must clear
+
+Two corrections, both about what the row *is* rather than about any
+threshold:
+
+1. **A row must actually vary.** `varying()` already exists in
+   `recalc/mine.py` for exactly this — « a relation among frozen
+   cells is arithmetic about constants, not a law ». The same rule,
+   applied here, removes every zero-with-zero match.
+2. **Classify each row as flow or stock, from its own behaviour.**
+   A flow satisfies `coarse = sum(fine)`; a stock satisfies
+   `coarse = last(fine)`. Test both across all periods and let the
+   row declare which it is. Then a defect is a break **in the row's
+   own established pattern** — a flow row that takes one month, or a
+   stock row that suddenly sums — which is the « judge the row
+   against itself » idea done properly instead of assumed.
+
+**The bar does not move**: the shuffle control runs again, and
+unless mismatched pairs fall to near zero the line of attack is
+dead and I will report it dead. I am not lowering a bar I set two
+hours ago because my design failed it.

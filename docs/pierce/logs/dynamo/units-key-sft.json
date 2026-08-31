@@ -1,0 +1,100 @@
+{
+ "baldragon_model.xlsm": {
+  "rows_with_units_text": 0,
+  "rows_gradeable": 0,
+  "cells_with_currency_format": 836,
+  "cells_seen": 406942,
+  "top_currency_formats": {
+   "_-[$\u20ac-2]* #,##0.00_-;\\-[$\u20ac-2]* #,##0.00_-;_-[$\u20ac-2]* \"-\"??_-": 828,
+   "[$-F800]dddd\\,\\ mmmm\\ dd\\,\\ yyyy": 7,
+   "[$-409]dd\\ mmm\\ yy\\ \\ h:mm;@": 1
+  },
+  "sample_units_text": []
+ },
+ "forfar_model.xlsm": {
+  "rows_with_units_text": 0,
+  "rows_gradeable": 0,
+  "cells_with_currency_format": 1591,
+  "cells_seen": 383497,
+  "top_currency_formats": {
+   "_-[$\u20ac-2]* #,##0.00_-;\\-[$\u20ac-2]* #,##0.00_-;_-[$\u20ac-2]* \"-\"??_-": 1583,
+   "\"\u00a3\"#,##0.000\"m\"_-;\\-* #,##0.000_-;_-* \"-\"??_-;_-@_-": 7,
+   "[$-409]dd\\ mmm\\ yy\\ \\ h:mm;@": 1
+  },
+  "sample_units_text": []
+ },
+ "glasgow_college_model.xlsm": {
+  "rows_with_units_text": 0,
+  "rows_gradeable": 0,
+  "cells_with_currency_format": 4793,
+  "cells_seen": 321227,
+  "top_currency_formats": {
+   "\"\u00a3\"#,##0.00_);[Red]\\(\"\u00a3\"#,##0.00\\)": 2812,
+   "[$-409]dd\\-mmm\\-yy;@": 521,
+   "\"\u00a3\"#,##0.00_);\\(\"\u00a3\"#,##0.00\\)": 457
+  },
+  "sample_units_text": []
+ },
+ "inverurie_foresterhill_model.xlsm": {
+  "rows_with_units_text": 0,
+  "rows_gradeable": 0,
+  "cells_with_currency_format": 64,
+  "cells_seen": 105953,
+  "top_currency_formats": {
+   "\"\u00a3\"#,##0_);[Red]\"\u00a3\"\\(#,##0\\);\\-": 43,
+   "[$-F800]dddd\\,\\ mmmm\\ dd\\,\\ yyyy": 15,
+   "\"\u00a3\"#,##0.00_);[Red]\"\u00a3\"\\(#,##0.00\\);\\-": 5
+  },
+  "sample_units_text": []
+ },
+ "kelso_model.xlsm": {
+  "rows_with_units_text": 0,
+  "rows_gradeable": 0,
+  "cells_with_currency_format": 507,
+  "cells_seen": 502587,
+  "top_currency_formats": {
+   "[$-F800]dddd\\,\\ mmmm\\ dd\\,\\ yyyy": 472,
+   "_-[$\u00a3-809]* #,##0.00_-;\\-[$\u00a3-809]* #,##0.00_-;_-[$\u00a3-809]* \"-\"??_-;_-@_-": 26,
+   "\"\u00a3\"* #,##0_);[Red]\"\u00a3\"* \\(#,##0\\);\"\u00a3\"* \"-\"_);[Blue]\"Error-\"@": 3
+  },
+  "sample_units_text": []
+ },
+ "levenmouth_model.xlsm": {
+  "rows_with_units_text": 0,
+  "rows_gradeable": 0,
+  "cells_with_currency_format": 8,
+  "cells_seen": 446663,
+  "top_currency_formats": {
+   "\"\u00a3\"#,##0.000\"m\"_-;\\-* #,##0.000_-;_-* \"-\"??_-;_-@_-": 5,
+   "\"\u00a3\"#,##0.000000\"m\"_-;\\-* #,##0.000000_-;_-* \"-\"??_-;_-@_-": 2,
+   "[$-409]dd\\ mmm\\ yy\\ \\ h:mm;@": 1
+  },
+  "sample_units_text": []
+ },
+ "newbattle_model.xlsm": {
+  "rows_with_units_text": 0,
+  "rows_gradeable": 0,
+  "cells_with_currency_format": 505,
+  "cells_seen": 503754,
+  "top_currency_formats": {
+   "[$-F800]dddd\\,\\ mmmm\\ dd\\,\\ yyyy": 470,
+   "_-[$\u00a3-809]* #,##0.00_-;\\-[$\u00a3-809]* #,##0.00_-;_-[$\u00a3-809]* \"-\"??_-;_-@_-": 26,
+   "\"\u00a3\"* #,##0_);[Red]\"\u00a3\"* \\(#,##0\\);\"\u00a3\"* \"-\"_);[Blue]\"Error-\"@": 3
+  },
+  "sample_units_text": []
+ },
+ "oban_campbeltown_model.xlsm": {
+  "rows_with_units_text": 0,
+  "rows_gradeable": 0,
+  "cells_with_currency_format": 316,
+  "cells_seen": 99227,
+  "top_currency_formats": {
+   "\"\u00a3\"#,##0_);[Red]\"\u00a3\"\\(#,##0\\);\\-": 201,
+   "\"\u00a3\"#,##0.00_);[Red]\"\u00a3\"\\(#,##0.00\\);\\-": 107,
+   "\"\u00a3\"#,##0.00;[Red]\"\u00a3\"#,##0.00": 3
+  },
+  "sample_units_text": []
+ },
+ "_total_gradeable_rows": 0,
+ "_verdict": "UNMEASURABLE \u2014 no key worth grading"
+}

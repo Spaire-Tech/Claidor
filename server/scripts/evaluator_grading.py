@@ -18,7 +18,7 @@ from polar.tieout.evaluate import evaluate
 from polar.tieout.workbook import read_workbook
 
 HERE = Path(__file__).parent
-CORPORA = [HERE / 'corpus_pr24dd', HERE / 'corpus_sft']
+CORPORA = [HERE / "corpus_pr24dd", HERE / "corpus_sft"]
 
 
 def agree(computed: float, cached: float) -> bool:
@@ -34,7 +34,7 @@ def main() -> None:
         if not corpus.exists():
             continue
         for path in sorted(corpus.iterdir()):
-            if path.suffix.lower() not in ('.xlsx', '.xlsm', '.xls'):
+            if path.suffix.lower() not in (".xlsx", ".xlsm", ".xls"):
                 continue
             if only and not any(word in path.name.lower() for word in only):
                 continue
@@ -66,29 +66,25 @@ def main() -> None:
             coverage = claimed / formulas * 100 if formulas else 0.0
             accuracy = agreed / claimed * 100 if claimed else 0.0
             print(
-                f'{path.name:42} formulas={formulas:>8,} '
-                f'claimed={claimed:>8,} ({coverage:5.1f}%) '
-                f'agree={accuracy:7.3f}%'
+                f"{path.name:42} formulas={formulas:>8,} "
+                f"claimed={claimed:>8,} ({coverage:5.1f}%) "
+                f"agree={accuracy:7.3f}%"
             )
 
     print()
-    total_coverage = (
-        grand_claimed / grand_formulas * 100 if grand_formulas else 0.0
-    )
-    total_accuracy = (
-        grand_agreed / grand_claimed * 100 if grand_claimed else 0.0
-    )
+    total_coverage = grand_claimed / grand_formulas * 100 if grand_formulas else 0.0
+    total_accuracy = grand_agreed / grand_claimed * 100 if grand_claimed else 0.0
     print(
-        f'TOTAL: formulas={grand_formulas:,} claimed={grand_claimed:,} '
-        f'({total_coverage:.1f}%) agreement={total_accuracy:.4f}% '
-        f'(bar: 99.5%)'
+        f"TOTAL: formulas={grand_formulas:,} claimed={grand_claimed:,} "
+        f"({total_coverage:.1f}%) agreement={total_accuracy:.4f}% "
+        f"(bar: 99.5%)"
     )
     if disagreements:
-        print('\nDisagreement sample (hand-read before anything ships):')
+        print("\nDisagreement sample (hand-read before anything ships):")
         for name, ref, formula, computed, cached in disagreements[:15]:
-            print(f'  {name} {ref}: {formula}')
-            print(f'    computed {computed:,.6g}  cached {cached:,.6g}')
+            print(f"  {name} {ref}: {formula}")
+            print(f"    computed {computed:,.6g}  cached {cached:,.6g}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -32,6 +32,7 @@ import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from .calculation import refusal
 from .structure import Structure, _canon
 from .workbook import Cell, Workbook
 
@@ -108,8 +109,7 @@ ANALYTIC_STANDARD_SENTENCES: dict[str, str] = {
         "must be the same number on both sides of the join."
     ),
     "debt-terminal": (
-        "FAST Standard C4: a debt schedule repays in full by its "
-        "maturity date."
+        "FAST Standard C4: a debt schedule repays in full by its maturity date."
     ),
     "interest-consistency": (
         "FAST Standard C4: interest accrues on the balance it is "
@@ -120,8 +120,7 @@ ANALYTIC_STANDARD_SENTENCES: dict[str, str] = {
         "model agrees with itself."
     ),
     "time-axis": (
-        "FAST Standard B1: one time axis, running in order, shared by "
-        "every sheet."
+        "FAST Standard B1: one time axis, running in order, shared by every sheet."
     ),
 }
 
@@ -201,7 +200,7 @@ def _graded(book: Workbook, result: Analytics) -> None:
         return
     scale = median(magnitudes)
     result.findings = [
-        replace(finding, severity='smell')
+        replace(finding, severity="smell")
         if finding.rule in _MONEY_RULES
         and abs(finding.value) < scale * MATERIALITY_SHARE
         else finding
@@ -216,7 +215,7 @@ def _deduplicated(result: Analytics) -> None:
     fired_periods: set[str] = set()
     fired_sheets: set[str] = set()
     for finding in result.findings:
-        if finding.rule != 'model-own-check':
+        if finding.rule != "model-own-check":
             continue
         if not _BALANCE_FLAVOURED.search(finding.row_label):
             continue
@@ -230,7 +229,7 @@ def _deduplicated(result: Analytics) -> None:
         finding
         for finding in result.findings
         if not (
-            finding.rule == 'balance-sheet'
+            finding.rule == "balance-sheet"
             and (
                 (finding.period and finding.period in fired_periods)
                 or finding.sheet in fired_sheets
@@ -239,8 +238,39 @@ def _deduplicated(result: Analytics) -> None:
     ]
 
 
+#: The rules whose claim is « this number disagrees with that number ».
+#: Every one of them reads Excel's stored values, so every one of them
+#: refuses when Excel does not maintain them (`swens.md` § 5). The time
+#: axis is deliberately absent: it reads the structure's periods, and a
+#: period out of order is out of order whatever the cache holds.
+_RECONCILING = (
+    "model-own-check",
+    "balance-sheet",
+    "cash-continuity",
+    "debt-terminal",
+    "interest-consistency",
+)
+
+
 def run_analytics(book: Workbook, structure: Structure) -> Analytics:
     result = Analytics(findings=[], abstentions=[])
+    stale = refusal(book.calculation)
+    if stale is not None:
+        # Not a check that runs and finds nothing — a check that declines
+        # to run, once per rule, each saying why and what would fix it.
+        #
+        # Sentence case by hand: `str.capitalize` lowercases the rest and
+        # printed « excel does not maintain ». The unit tests asserted on
+        # a substring and passed; running it against a real model showed
+        # it in one line.
+        said = stale[0].upper() + stale[1:]
+        result.abstentions.extend(Abstention(rule, said) for rule in _RECONCILING)
+        # The time axis still runs: it reads the structure's periods, not
+        # the cache, so a period out of order is out of order either way.
+        # `_graded` and `_deduplicated` are skipped because there is
+        # nothing to grade or deduplicate.
+        _time_axis(structure, result)
+        return result
     _own_checks(book, structure, result)
     _balance(book, structure, result)
     _time_axis(structure, result)
@@ -279,6 +309,28 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
         rows.setdefault(key, []).append((cell, float(cell.value)))
         labels.setdefault(key, label)
 
+    #: The period restriction (docs/pierce/own-check-periods.md).
+    #: A check row's verdict is a statement about periods, so only the
+    #: sheet's own period columns are judged. Proof 1A failed on this:
+    #: Kelso and Newbattle park their covenant breach level (1.15) and
+    #: lockup level (1.1) in a scalar column beside a period grid that
+    #: starts four columns later, and both were quoted as failing
+    #: periods while the real series was zero throughout.
+    #:
+    #: Applied *before* the admission tests, so the zero-share and
+    #: cell-count rules are computed on the same cells the verdict
+    #: uses — admitting on one population and judging another is how a
+    #: threshold quietly changes meaning. A sheet whose axis the
+    #: structure layer could not read keeps today's behaviour: « we
+    #: cannot see the axis » must never silently become « we stop
+    #: checking ».
+    for key, valued in list(rows.items()):
+        axis = structure.axes.get(key[0])
+        if axis is None:
+            continue
+        periods = {column for column, _ in axis.columns}
+        rows[key] = [one for one in valued if one[0].column in periods]
+
     examined = clean = 0
     for key, valued in sorted(rows.items()):
         if len(valued) < ZERO_CELLS:
@@ -303,7 +355,7 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
         sheet, _ = key
         axis = structure.axes.get(sheet)
         for cell, value in fired:
-            period = ''
+            period = ""
             if axis is not None:
                 for column, printed in axis.columns:
                     if column == cell.column:
@@ -311,7 +363,7 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
                         break
             result.findings.append(
                 AnalyticFinding(
-                    rule='model-own-check',
+                    rule="model-own-check",
                     sheet=sheet,
                     ref=cell.ref,
                     row_label=labels[key],
@@ -320,26 +372,23 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
                     detail=(
                         f"The model's own check row « {labels[key]} » reports "
                         f"{value:,.4g}"
-                        + (f' in {period}' if period else '')
-                        + ' — a row that is zero everywhere else.'
+                        + (f" in {period}" if period else "")
+                        + " — a row that is zero everywhere else."
                     ),
-                    figure=f'{value:,.4g}',
+                    figure=f"{value:,.4g}",
                     figure_unit=(
-                        f"on the model's own « {labels[key]} » row, "
-                        'built to read zero'
+                        f"on the model's own « {labels[key]} » row, built to read zero"
                     ),
                 )
             )
     if examined:
-        result.tallies['model-own-check'] = {'total': examined, 'clean': clean}
+        result.tallies["model-own-check"] = {"total": examined, "clean": clean}
 
 
 # --- the balance sheet ---------------------------------------------------
 
 _NET_ASSETS = re.compile(r"^net assets\b", re.IGNORECASE)
-_EQUITY = re.compile(
-    r"^(?:total equity|shareholders'? funds?)\b", re.IGNORECASE
-)
+_EQUITY = re.compile(r"^(?:total equity|shareholders'? funds?)\b", re.IGNORECASE)
 
 
 def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
@@ -355,10 +404,10 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
     failing our pairing means our pairing measured the wrong two rows
     (seen on AFW: 0.86 apart on rows whose own check reads zero).
     """
-    located = [one for one in structure.located if one.kind == 'balance-sheet']
+    located = [one for one in structure.located if one.kind == "balance-sheet"]
     if not located:
         result.abstentions.append(
-            Abstention('balance-sheet', 'No balance sheet was located.')
+            Abstention("balance-sheet", "No balance sheet was located.")
         )
         return
 
@@ -374,25 +423,31 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
         if len(net_rows) != 1 or len(equity_rows) != 1:
             result.abstentions.append(
                 Abstention(
-                    'balance-sheet',
-                    f'{block.sheet}: the net-assets and equity rows are not '
-                    f'unique ({len(net_rows)} and {len(equity_rows)} candidates) '
-                    '— not paired, not guessed.',
+                    "balance-sheet",
+                    f"{block.sheet}: the net-assets and equity rows are not "
+                    f"unique ({len(net_rows)} and {len(equity_rows)} candidates) "
+                    "— not paired, not guessed.",
                 )
             )
             continue
 
-        net = {c.column: float(c.value) for c in cells
-               if c.row == net_rows[0] and isinstance(c.value, Decimal)}
-        equity = {c.column: float(c.value) for c in cells
-                  if c.row == equity_rows[0] and isinstance(c.value, Decimal)}
+        net = {
+            c.column: float(c.value)
+            for c in cells
+            if c.row == net_rows[0] and isinstance(c.value, Decimal)
+        }
+        equity = {
+            c.column: float(c.value)
+            for c in cells
+            if c.row == equity_rows[0] and isinstance(c.value, Decimal)
+        }
         axis = structure.axes.get(block.sheet)
         shared = sorted(set(net) & set(equity))
         if not shared:
             result.abstentions.append(
                 Abstention(
-                    'balance-sheet',
-                    f'{block.sheet}: the paired rows share no valued periods.',
+                    "balance-sheet",
+                    f"{block.sheet}: the paired rows share no valued periods.",
                 )
             )
             continue
@@ -416,13 +471,13 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
             if own_zero:
                 result.abstentions.append(
                     Abstention(
-                        'balance-sheet',
-                        f'{block.sheet}: our arithmetic and the model\'s own '
-                        'check row disagree — not reported.',
+                        "balance-sheet",
+                        f"{block.sheet}: our arithmetic and the model's own "
+                        "check row disagree — not reported.",
                     )
                 )
                 break
-            period = ''
+            period = ""
             if axis is not None:
                 for at, printed in axis.columns:
                     if at == column:
@@ -432,28 +487,28 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
 
             result.findings.append(
                 AnalyticFinding(
-                    rule='balance-sheet',
+                    rule="balance-sheet",
                     sheet=block.sheet,
-                    ref=f'{block.sheet}!{get_column_letter(column)}{net_rows[0]}',
-                    row_label='Net assets against equity',
+                    ref=f"{block.sheet}!{get_column_letter(column)}{net_rows[0]}",
+                    row_label="Net assets against equity",
                     period=period,
                     value=difference,
                     detail=(
-                        'The balance sheet does not balance'
-                        + (f' in {period}' if period else '')
-                        + f': net assets and equity differ by {difference:,.6g}.'
+                        "The balance sheet does not balance"
+                        + (f" in {period}" if period else "")
+                        + f": net assets and equity differ by {difference:,.6g}."
                     ),
-                    figure=f'{abs(difference):,.6g}',
+                    figure=f"{abs(difference):,.6g}",
                     figure_unit=(
-                        'between net assets and equity'
-                        + (f' in {period}' if period else '')
+                        "between net assets and equity"
+                        + (f" in {period}" if period else "")
                     ),
                 )
             )
     if compared:
-        result.tallies['balance-sheet'] = {
-            'total': compared,
-            'clean': agreeing,
+        result.tallies["balance-sheet"] = {
+            "total": compared,
+            "clean": agreeing,
         }
 
 
@@ -529,8 +584,11 @@ def _time_axis(structure: Structure, result: Analytics) -> None:
     examined = clean = 0
     for sheet, axis in structure.axes.items():
         canon = [(column, _canon(label), label) for column, label in axis.columns]
-        years = [(column, int(text), label) for column, text, label in canon
-                 if year.match(text)]
+        years = [
+            (column, int(text), label)
+            for column, text, label in canon
+            if year.match(text)
+        ]
         if len(years) >= 3:
             examined += 1
         fired = False
@@ -540,28 +598,26 @@ def _time_axis(structure: Structure, result: Analytics) -> None:
                 fired = True
                 result.findings.append(
                     AnalyticFinding(
-                        rule='time-axis',
+                        rule="time-axis",
                         sheet=sheet,
-                        ref=f'{sheet}!{here[0]}',
-                        row_label='Period order',
+                        ref=f"{sheet}!{here[0]}",
+                        row_label="Period order",
                         period=here[2],
                         value=float(here[1] - before[1]),
                         detail=(
-                            f'{sheet}\'s period columns dip out of order: '
-                            f'« {here[2]} » sits between « {before[2]} » and '
-                            f'« {after[2]} ».'
+                            f"{sheet}'s period columns dip out of order: "
+                            f"« {here[2]} » sits between « {before[2]} » and "
+                            f"« {after[2]} »."
                         ),
                         figure=here[2],
-                        figure_unit=(
-                            f'between « {before[2]} » and « {after[2]} »'
-                        ),
+                        figure_unit=(f"between « {before[2]} » and « {after[2]} »"),
                     )
                 )
                 break
         if len(years) >= 3 and not fired:
             clean += 1
     if examined:
-        result.tallies['time-axis'] = {'total': examined, 'clean': clean}
+        result.tallies["time-axis"] = {"total": examined, "clean": clean}
 
 
 # --- cash tie-through -----------------------------------------------------
@@ -600,7 +656,7 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
     """
     if not structure.pairs:
         result.abstentions.append(
-            Abstention('cash-continuity', 'No opening/closing pairs were found.')
+            Abstention("cash-continuity", "No opening/closing pairs were found.")
         )
         return
 
@@ -660,9 +716,7 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
         #: goes dormant (hand-read, 15 August); nothing there is a
         #: defect, and zero-against-zero tails do not count as life.
         breaks = [
-            one
-            for one in breaks
-            if any(later > one[1] for later in live_agreements)
+            one for one in breaks if any(later > one[1] for later in live_agreements)
         ]
 
         compared = agreed + len(breaks)
@@ -677,10 +731,10 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
             #: model's. One abstention per pair, named.
             result.abstentions.append(
                 Abstention(
-                    'cash-continuity',
-                    f'{pair.sheet} rows {pair.opening_row}/{pair.closing_row} '
-                    f'(« {pair.label} »): {len(breaks)} of {compared} periods '
-                    'disagree — treated as a mispairing, not reported.',
+                    "cash-continuity",
+                    f"{pair.sheet} rows {pair.opening_row}/{pair.closing_row} "
+                    f"(« {pair.label} »): {len(breaks)} of {compared} periods "
+                    "disagree — treated as a mispairing, not reported.",
                 )
             )
             continue
@@ -690,27 +744,25 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
         for previous_column, column, label, was, now in breaks:
             result.findings.append(
                 AnalyticFinding(
-                    rule='cash-continuity',
+                    rule="cash-continuity",
                     sheet=pair.sheet,
-                    ref=f'{pair.sheet}!{get_column_letter(column)}{pair.opening_row}',
-                    row_label=pair.label or 'balance',
+                    ref=f"{pair.sheet}!{get_column_letter(column)}{pair.opening_row}",
+                    row_label=pair.label or "balance",
                     period=label,
                     value=now - was,
                     detail=(
-                        f'« {pair.label or "This account"} » does not carry '
-                        f'forward into {label}: closing {was:,.6g} against '
-                        f'opening {now:,.6g}.'
+                        f"« {pair.label or 'This account'} » does not carry "
+                        f"forward into {label}: closing {was:,.6g} against "
+                        f"opening {now:,.6g}."
                     ),
-                    figure=f'{was:,.6g}',
-                    figure_unit=(
-                        f'closing, while {label} opens at {now:,.6g}'
-                    ),
+                    figure=f"{was:,.6g}",
+                    figure_unit=(f"closing, while {label} opens at {now:,.6g}"),
                 )
             )
     if walked:
-        result.tallies['cash-continuity'] = {
-            'total': walked,
-            'clean': carried,
+        result.tallies["cash-continuity"] = {
+            "total": walked,
+            "clean": carried,
         }
 
 
@@ -741,11 +793,11 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
     repayment — so the finding quotes the peak, and the reader judges.
     """
     debt_sheets = {
-        block.sheet for block in structure.located if block.kind == 'debt-schedule'
+        block.sheet for block in structure.located if block.kind == "debt-schedule"
     }
     if not debt_sheets:
         result.abstentions.append(
-            Abstention('debt-terminal', 'No debt schedule was located.')
+            Abstention("debt-terminal", "No debt schedule was located.")
         )
         return
 
@@ -767,9 +819,7 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
             and cell.row == pair.closing_row
             and isinstance(cell.value, Decimal)
         }
-        series = [
-            closing[column] for column, _ in axis.columns if column in closing
-        ]
+        series = [closing[column] for column, _ in axis.columns if column in closing]
         if len(series) < DECLINE_STEPS + 2:
             continue
         peak = max(abs(value) for value in series)
@@ -782,7 +832,7 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
             continue
         #: Was it amortising into the end? Strictly-declining magnitudes
         #: over the last DECLINE_STEPS+1 values.
-        tail = series[-(DECLINE_STEPS + 1):]
+        tail = series[-(DECLINE_STEPS + 1) :]
         declining = all(
             abs(tail[at]) > abs(tail[at + 1]) for at in range(len(tail) - 1)
         )
@@ -793,31 +843,31 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
             continue
         judged += 1
         last_column = [column for column, _ in axis.columns if column in closing][-1]
-        last_label = dict(axis.columns).get(last_column, '')
+        last_label = dict(axis.columns).get(last_column, "")
         result.findings.append(
             AnalyticFinding(
-                rule='debt-terminal',
+                rule="debt-terminal",
                 sheet=pair.sheet,
-                ref=f'{pair.sheet}!{get_column_letter(last_column)}{pair.closing_row}',
-                row_label=pair.label or 'debt balance',
+                ref=f"{pair.sheet}!{get_column_letter(last_column)}{pair.closing_row}",
+                row_label=pair.label or "debt balance",
                 period=last_label,
                 value=terminal,
                 detail=(
-                    f'« {pair.label or "This tranche"} » amortises to the end '
-                    f'of the model but finishes at {terminal:,.6g}, not zero'
-                    + (f' ({last_label})' if last_label else '')
-                    + f' — against a peak of {peak:,.6g}.'
+                    f"« {pair.label or 'This tranche'} » amortises to the end "
+                    f"of the model but finishes at {terminal:,.6g}, not zero"
+                    + (f" ({last_label})" if last_label else "")
+                    + f" — against a peak of {peak:,.6g}."
                 ),
-                figure=f'{abs(terminal):,.6g}',
+                figure=f"{abs(terminal):,.6g}",
                 figure_unit=(
-                    'still outstanding at '
-                    + (last_label or 'the end of the model')
-                    + f', against a peak of {peak:,.6g}'
+                    "still outstanding at "
+                    + (last_label or "the end of the model")
+                    + f", against a peak of {peak:,.6g}"
                 ),
             )
         )
     if judged:
-        result.tallies['debt-terminal'] = {'total': judged, 'clean': repaid}
+        result.tallies["debt-terminal"] = {"total": judged, "clean": repaid}
 
 
 # --- interest self-consistency --------------------------------------------
@@ -853,11 +903,11 @@ def _interest_consistency(
     model produces them by convention.
     """
     debt_sheets = {
-        block.sheet for block in structure.located if block.kind == 'debt-schedule'
+        block.sheet for block in structure.located if block.kind == "debt-schedule"
     }
     if not debt_sheets:
         result.abstentions.append(
-            Abstention('interest-consistency', 'No debt schedule was located.')
+            Abstention("interest-consistency", "No debt schedule was located.")
         )
         return
 
@@ -910,10 +960,10 @@ def _interest_consistency(
             if len(live_rows) > 1:
                 result.abstentions.append(
                     Abstention(
-                        'interest-consistency',
-                        f'{pair.sheet} « {pair.label} »: '
-                        f'{len(live_rows)} interest rows inside the tranche '
-                        '— no single row associates, not guessed.',
+                        "interest-consistency",
+                        f"{pair.sheet} « {pair.label} »: "
+                        f"{len(live_rows)} interest rows inside the tranche "
+                        "— no single row associates, not guessed.",
                     )
                 )
             continue
@@ -938,10 +988,10 @@ def _interest_consistency(
             #: exist and does carry interest.
             result.abstentions.append(
                 Abstention(
-                    'interest-consistency',
-                    f'{pair.sheet} « {pair.label} »: only {len(rated)} '
-                    f'rated period{"s" if len(rated) != 1 else ""} — too '
-                    'short to have a convention.',
+                    "interest-consistency",
+                    f"{pair.sheet} « {pair.label} »: only {len(rated)} "
+                    f"rated period{'s' if len(rated) != 1 else ''} — too "
+                    "short to have a convention.",
                 )
             )
             continue
@@ -956,11 +1006,11 @@ def _interest_consistency(
             judged -= 1
             result.abstentions.append(
                 Abstention(
-                    'interest-consistency',
-                    f'{pair.sheet} « {pair.label} »: no stable interest '
-                    f'convention ({agreeing} of {len(rated)} periods agree) '
-                    '— nothing measured against a convention that does '
-                    'not exist.',
+                    "interest-consistency",
+                    f"{pair.sheet} « {pair.label} »: no stable interest "
+                    f"convention ({agreeing} of {len(rated)} periods agree) "
+                    "— nothing measured against a convention that does "
+                    "not exist.",
                 )
             )
             continue
@@ -973,30 +1023,30 @@ def _interest_consistency(
             ):
                 continue
             fired = True
-            period = labels.get(column, '')
+            period = labels.get(column, "")
             result.findings.append(
                 AnalyticFinding(
-                    rule='interest-consistency',
+                    rule="interest-consistency",
                     sheet=pair.sheet,
-                    ref=f'{pair.sheet}!{get_column_letter(column)}{interest_row}',
+                    ref=f"{pair.sheet}!{get_column_letter(column)}{interest_row}",
                     row_label=interest_label,
                     period=period,
                     value=rate,
                     detail=(
-                        f'« {interest_label} » implies a rate of '
-                        f'{rate * 100:,.3g}%'
-                        + (f' in {period}' if period else '')
+                        f"« {interest_label} » implies a rate of "
+                        f"{rate * 100:,.3g}%"
+                        + (f" in {period}" if period else "")
                         + f" against the schedule's own "
-                        f'{convention * 100:,.3g}% — a factor of '
-                        f'{max(rate / convention, convention / rate):,.1f} off '
-                        'its own convention.'
+                        f"{convention * 100:,.3g}% — a factor of "
+                        f"{max(rate / convention, convention / rate):,.1f} off "
+                        "its own convention."
                     ),
-                    figure=f'{rate * 100:,.3g}%',
+                    figure=f"{rate * 100:,.3g}%",
                     figure_unit=(
-                        'implied'
-                        + (f' in {period}' if period else '')
+                        "implied"
+                        + (f" in {period}" if period else "")
                         + f", against the schedule's own "
-                        f'{convention * 100:,.3g}%'
+                        f"{convention * 100:,.3g}%"
                     ),
                 )
             )
@@ -1012,35 +1062,32 @@ def _interest_consistency(
                 if charged is None or abs(charged) <= FLOOR:
                     continue
                 fired = True
-                period = labels.get(column, '')
+                period = labels.get(column, "")
                 result.findings.append(
                     AnalyticFinding(
-                        rule='interest-consistency',
+                        rule="interest-consistency",
                         sheet=pair.sheet,
-                        ref=(
-                            f'{pair.sheet}!'
-                            f'{get_column_letter(column)}{interest_row}'
-                        ),
+                        ref=(f"{pair.sheet}!{get_column_letter(column)}{interest_row}"),
                         row_label=interest_label,
                         period=period,
                         value=charged,
                         detail=(
-                            f'« {interest_label} » charges {abs(charged):,.6g}'
-                            + (f' in {period}' if period else '')
-                            + ' — after the tranche was repaid.'
+                            f"« {interest_label} » charges {abs(charged):,.6g}"
+                            + (f" in {period}" if period else "")
+                            + " — after the tranche was repaid."
                         ),
-                        figure=f'{abs(charged):,.6g}',
+                        figure=f"{abs(charged):,.6g}",
                         figure_unit=(
-                            'of interest'
-                            + (f' in {period}' if period else '')
-                            + ', after the tranche was repaid'
+                            "of interest"
+                            + (f" in {period}" if period else "")
+                            + ", after the tranche was repaid"
                         ),
                     )
                 )
         if not fired:
             clean += 1
     if judged:
-        result.tallies['interest-consistency'] = {
-            'total': judged,
-            'clean': clean,
+        result.tallies["interest-consistency"] = {
+            "total": judged,
+            "clean": clean,
         }

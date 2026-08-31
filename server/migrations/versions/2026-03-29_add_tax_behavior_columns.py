@@ -19,9 +19,15 @@ depends_on = None
 def upgrade() -> None:
     op.add_column("checkouts", sa.Column("tax_behavior", sa.String(), nullable=True))
     op.add_column("orders", sa.Column("tax_behavior", sa.String(), nullable=True))
-    op.add_column("organizations", sa.Column("default_tax_behavior", sa.String(), nullable=True))
-    op.add_column("product_prices", sa.Column("tax_behavior", sa.String(), nullable=True))
-    op.add_column("subscriptions", sa.Column("tax_behavior", sa.String(), nullable=True))
+    op.add_column(
+        "organizations", sa.Column("default_tax_behavior", sa.String(), nullable=True)
+    )
+    op.add_column(
+        "product_prices", sa.Column("tax_behavior", sa.String(), nullable=True)
+    )
+    op.add_column(
+        "subscriptions", sa.Column("tax_behavior", sa.String(), nullable=True)
+    )
 
     # Backfill default_tax_behavior for existing organizations
     op.execute(

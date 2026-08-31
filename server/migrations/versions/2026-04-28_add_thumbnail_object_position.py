@@ -27,9 +27,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute(
-        "ALTER TABLE course_lessons "
-        "DROP COLUMN IF EXISTS thumbnail_object_position"
+        "ALTER TABLE course_lessons DROP COLUMN IF EXISTS thumbnail_object_position"
     )
-    op.execute(
-        "ALTER TABLE courses DROP COLUMN IF EXISTS thumbnail_object_position"
-    )
+    op.execute("ALTER TABLE courses DROP COLUMN IF EXISTS thumbnail_object_position")

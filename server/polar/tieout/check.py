@@ -19,6 +19,7 @@ from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from typing import Any
 
+from .calculation import refusal
 from .deck import read_deck
 from .figures import Figure
 from .link import Link, Unlinked, link
@@ -174,7 +175,18 @@ def tie_out_both(
     through **this** code rather than through a replica of it. A measured
     number is worth what the thing it measured is worth, and a harness
     that re-implements the merge measures the harness.
+
+    Refuses outright when Excel does not maintain the model's stored
+    values (`swens.md` § 5, :mod:`polar.tieout.calculation`). Every
+    figure comes back unlinked with the reason: a deck disagreeing with
+    a stale cache is not a deck that is wrong, and « the deck says 48.9
+    and the model says 51.2 » would be exactly the comparison that means
+    nothing.
     """
+    stale = refusal(book.calculation)
+    if stale is not None:
+        return TieOut(unlinked=[Unlinked(figure, stale) for figure in figures])
+
     from_workbook = tie_out_against(figures, outputs_from_workbook(book))
     if not published:
         return from_workbook

@@ -39,12 +39,12 @@ import math
 import re
 from collections import Counter
 from dataclasses import dataclass, field
+from functools import cache
 from typing import Any
 
-from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils import get_column_letter
 
-from .workbook import REFERENCE, Cell, Workbook
+from .workbook import REFERENCE, Cell, Workbook, tokens_of
 
 #: Error values that are always a defect: a deleted row, a mistyped
 #: function name, a reference into a range that no longer exists.
@@ -203,11 +203,33 @@ class Finding:
     cells: str = ""
 
 
+@dataclass(frozen=True)
+class Abstention:
+    """A check that had nothing to look at, with the reason why.
+
+    Deliberately the same shape and the same field names as the
+    analytics layer's `Abstention`, so the product meets one
+    vocabulary rather than two (A4, docs/pierce/a4-coverage.md).
+    """
+
+    rule: str
+    why: str
+
+
 @dataclass
 class Audit:
     findings: list[Finding] = field(default_factory=list)
     #: Cells examined, so silence can be told apart from not looking.
     examined: int = 0
+    #: A4 — what each rule actually walked, keyed by rule. « No
+    #: findings » and « nothing to look at » are different sentences,
+    #: and without this the report cannot tell them apart. Absent
+    #: means the rule counted nothing.
+    tallies: dict[str, dict[str, int]] = field(default_factory=dict)
+    #: A4 — the rules whose denominator is zero for a nameable
+    #: reason. A rule with a non-zero denominator never appears here:
+    #: it looked, and silence means clean.
+    abstentions: list[Abstention] = field(default_factory=list)
 
     @property
     def errors(self) -> list[Finding]:
@@ -232,10 +254,14 @@ RULE_NAMES: dict[str, str] = {
     "long-formula": "Formulas too long to follow",
     "hardcode-in-formula": "Hardcoded values inside formulas",
     "typed-over-formula": "Values typed over formulas",
+    "typed-over-edge": "Values typed over a series' edge",
     "inconsistent-anchoring": "Anchoring that changes along a row",
     "inconsistent-row": "Formulas inconsistent across a row",
     "circular": "Circular references",
     "skipped-cell": "Sum ranges that miss a cell",
+    "range-over-block": "Ranges that reach past their block",
+    "inconsistent-total": "Totals that disagree with their siblings",
+    "broken-aggregation": "Period totals that take one sub-period",
     "hidden-sheet": "Hidden sheets",
 }
 
@@ -256,10 +282,14 @@ HEADLINES: dict[str, str] = {
     "long-formula": "Complex formula",
     "hardcode-in-formula": "Hardcoded assumption",
     "typed-over-formula": "Unexpected hardcode",
+    "typed-over-edge": "Typed series edge",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
     "circular": "Circular reference",
     "skipped-cell": "Incomplete total",
+    "range-over-block": "Range past its block",
+    "inconsistent-total": "Disagreeing totals",
+    "broken-aggregation": "Broken aggregation",
     "hidden-sheet": "Hidden sheet",
 }
 
@@ -268,9 +298,11 @@ def _tokens(formula: str) -> list[Any]:
     """The formula's tokens, or nothing when the grammar rejects it.
 
     The reader already records rejected formulas on the workbook and
-    the audit reports each once — every other pass just skips them."""
+    the audit reports each once — every other pass just skips them.
+    Delegates to the reader's shared `tokens_of` cache, so a formula
+    the reader already parsed is never parsed again by the audit."""
     try:
-        return list(Tokenizer(formula).items)
+        return tokens_of(formula)
     except Exception:
         return []
 
@@ -416,16 +448,41 @@ def _elevated(book: Workbook, result: Audit) -> None:
             "designed layout can excuse one",
         ),
         "inconsistent-row": (0.9, "the row's own pattern shows the break"),
+        "range-over-block": (
+            0.9,
+            "both formulas are in the file — the inner total's rows are "
+            "inside the outer's range, so they are added twice",
+        ),
+        "inconsistent-total": (
+            0.9,
+            "the family's own agreement shows the break — a family can "
+            "be wrong together",
+        ),
         "inconsistent-anchoring": (0.9, "the row's own anchoring shows the break"),
         "typed-over-formula": (
             0.8,
             "a typed value sits where the series calculates — overrides "
             "are sometimes deliberate",
         ),
+        "typed-over-edge": (
+            0.7,
+            "the series ends in a typed value — a one-sided witness, "
+            "and overrides are sometimes deliberate",
+        ),
         "circular": (
             0.9,
             "the loop is in the dependency graph and the workbook does "
             "not declare iteration",
+        ),
+        #: Below the row-pattern rules, and deliberately. The evidence is
+        #: as direct as theirs — the row's own behaviour over twenty-five
+        #: periods — but **arithmetic cannot tell a defect from a house
+        #: convention**, and the one surviving finding of the round that
+        #: built this check was held for a person rather than decided.
+        "broken-aggregation": (
+            0.85,
+            "the row aggregates its sub-periods everywhere else, though "
+            "a house convention can look like a break",
         ),
     }
     #: Rules whose figure is money rather than a count or a constant —
@@ -559,6 +616,37 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         return (
             f"{subject} does not follow the formula the rest of the row "
             "uses. Check whether the departure is deliberate."
+        )
+    if finding.rule == "typed-over-edge":
+        lead = f"{label} is" if label else f"The cell at {at} is"
+        return (
+            f"{lead} a typed value at the edge of a row that otherwise "
+            "calculates — the series runs out in a typed number. Check "
+            "whether the late adjustment is intentional."
+        )
+    if finding.rule == "range-over-block":
+        if finding.severity == "error":
+            lead = f"{label}'s total" if label else f"The total at {at}"
+            return (
+                f"{lead} reaches over a subtotal of its own rows, so those "
+                "rows are counted twice. Check the range against the block "
+                "it is meant to add."
+            )
+        lead = f"{label}" if label else f"The range at {at}"
+        return (
+            f"{lead} spans a label inside its own range — the range has "
+            "left the block it is meant to cover. Check where the block "
+            "starts."
+        )
+    if finding.rule == "inconsistent-total":
+        lead = (
+            f"{label} disagrees with the sibling totals beside it"
+            if label
+            else f"The total at {at} disagrees with the sibling totals beside it"
+        )
+        return (
+            f"{lead} — a line of totals is one formula dragged across, "
+            "and this cell departs from it. Check which one is right."
         )
     if finding.rule == "skipped-cell":
         leaving = (
@@ -725,11 +813,31 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _selector_drift(book, result)
     _mutations(book, result)
     _typed_islands(book, result)
+    _typed_edges(book, result)
+    #: `_typed_beats` is implemented and unit-tested but NOT wired:
+    #: the whole 27-file corpus holds zero plantable beat lattices,
+    #: so its catch rate cannot be measured here, and an unmeasured
+    #: check does not report to anyone. The registered verdict is in
+    #: docs/pierce/a3-beat-families.md; wiring it is a new round on a
+    #: corpus that can host the measurement.
     _circularity(book, result)
     _skipped_cells(book, result)
+    _sibling_totals(book, result)
+    _range_over_block(book, result)
     _gapped_tests(book, result)
+    #: `_unit_mismatch` is implemented and unit-tested but NOT wired.
+    #: Measured on the closed-deal corpus it raised 103 findings on
+    #: one model and **every one was a false alarm** — each of the
+    #: form « GBP, none », where `none` is the inference saying a
+    #: quantity has no currency at all (a rate, a count), not that it
+    #: is in a different one. A dimensionless term added to a money
+    #: term is not a currency mismatch, and I had counted `none` as a
+    #: currency that could disagree. The registered verdict is in
+    #: docs/pierce/e3a-unit-mismatch.md; the correction is its own
+    #: round, registered before it is measured again.
     _hidden_sheets(book, result)
     _names_table(book, result)
+    _broken_aggregation(book, result)
 
     _quantified(book, result, axes)
     result.findings = _collapsed(book, result.findings, axes)
@@ -740,7 +848,112 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     result.findings.sort(
         key=lambda f: (-f.weight, f.severity != "error", f.sheet, f.rule, f.ref)
     )
+    #: The caches exist for the passes above; dropping them here keeps
+    #: a corpus sweep's memory flat file after file. Content-keyed, so
+    #: clearing is about memory only, never correctness.
+    #: A4 last, so its « raised » counts describe the report as it
+    #: actually leaves the engine — after every fold has settled.
+    _coverage(book, result)
+    tokens_of.cache_clear()
+    _shape_of.cache_clear()
+    _literal_scan.cache_clear()
     return result
+
+
+#: A4 — which population each rule walks. The right-hand names are
+#: computed once in `_coverage`; a rule absent here is one whose
+#: denominator the reader surface cannot supply (`broken-name`, per
+#: the round's amendment).
+COVERAGE_OF: dict[str, str] = {
+    "long-formula": "formulas",
+    "volatile": "formulas",
+    "hardcode-in-formula": "formulas",
+    "inconsistent-anchoring": "formulas",
+    "inconsistent-row": "formulas",
+    "external-link": "formulas",
+    "error-value": "valued",
+    "typed-over-formula": "typed",
+    "typed-over-edge": "typed",
+    "skipped-cell": "aggregations",
+    "inconsistent-total": "aggregations",
+    "range-over-block": "aggregations",
+    "circular": "connected",
+    "hidden-sheet": "sheets",
+}
+
+#: A4 — rules that supply their own denominator instead of drawing one
+#: from `COVERAGE_OF`, because no count of cells is the population they
+#: walk. `broken-aggregation` judges **rows that declared a kind across
+#: a pair of dated blocks**; a cell count cannot say how many those
+#: are, and a cell count standing in for one would be a number wearing
+#: a denominator's hat — the same objection that keeps `broken-name`
+#: out of `COVERAGE_OF` entirely.
+#:
+#: Such a rule records its tally where it computed it, or appends its
+#: own abstention naming the reason in the file's own terms. The
+#: obligation is unchanged and `test_audit_coverage.py` holds it:
+#: **every rule here still lands in exactly one of tallies or
+#: abstentions, never both and never neither.**
+SELF_COUNTED: frozenset[str] = frozenset({"broken-aggregation"})
+
+
+#: A4 — why a denominator is zero, in the file's own terms. Ordered:
+#: the first matching reason wins, so the most informative sentence
+#: is the one that reaches the report.
+def _why_empty(population: str, formulas: int) -> str:
+    if population == "formulas" or (population != "sheets" and formulas == 0):
+        return "the workbook holds no formulas — a values-pasted copy"
+    return "nothing of this kind is present in the file"
+
+
+def _coverage(book: Workbook, result: Audit) -> None:
+    """A4 — what each rule walked, so « no findings » and « nothing to
+    look at » stop being the same sentence.
+
+    Registered in docs/pierce/a4-coverage.md. The populations are
+    counted from the reader's own cells, never estimated, and each is
+    the set the rule draws from — so a tally can never be smaller
+    than the findings it explains. A rule whose population is
+    non-empty never abstains: it looked, and silence means clean.
+    """
+    formulas = typed = valued = connected = aggregations = 0
+    for cell in book.cells.values():
+        if cell.formula:
+            formulas += 1
+            if BARE_SUM.match(cell.formula) or BARE_RANGE.match(cell.formula):
+                aggregations += 1
+        elif cell.value is not None:
+            typed += 1
+        if cell.value is not None:
+            valued += 1
+        if cell.precedents:
+            connected += 1
+    sizes = {
+        "formulas": formulas,
+        "typed": typed,
+        "valued": valued,
+        "connected": connected,
+        "aggregations": aggregations,
+        "sheets": len(book.sheets),
+    }
+    raised = Counter(finding.rule for finding in result.findings)
+    #: A rule that counts its own population — `broken-aggregation`
+    #: walks rows across dated blocks, which no count of cells can
+    #: supply — records the tally where it computed it and has its
+    #: `raised` filled in here, once the folds have settled.
+    for rule, tally in result.tallies.items():
+        tally["raised"] = raised.get(rule, 0)
+    for rule, population in COVERAGE_OF.items():
+        total = sizes[population]
+        if total:
+            result.tallies[rule] = {"total": total, "raised": raised.get(rule, 0)}
+        else:
+            result.abstentions.append(
+                Abstention(
+                    rule=rule,
+                    why=_why_empty(population, formulas),
+                )
+            )
 
 
 def _flows(book: Workbook, result: Audit) -> None:
@@ -1869,6 +2082,7 @@ def _literals(book: Workbook, result: Audit) -> None:
             )
 
 
+@cache
 def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
     """Every number typed in a formula, sorted into what it is doing.
 
@@ -2642,9 +2856,7 @@ def _mutations(book: Workbook, result: Audit) -> None:
     #: decision; the fold says it once, with the roster.
     grouped: dict[tuple[str, int], list[tuple[Cell, str]]] = {}
     for deviant, what in caught:
-        grouped.setdefault((deviant.sheet, deviant.column), []).append(
-            (deviant, what)
-        )
+        grouped.setdefault((deviant.sheet, deviant.column), []).append((deviant, what))
     for (sheet, _), members in sorted(grouped.items()):
         if len(members) >= 3:
             first, lead = members[0]
@@ -2920,6 +3132,19 @@ def _typed_islands(book: Workbook, result: Audit) -> None:
         _island_findings(sheet, run, leftmost, already, result)
 
 
+def _substantive(cell: Cell) -> bool:
+    """False for the values that carry no override: 0 is a template's
+    spare cell and ±1 is a base value or a switch. The edge pass has
+    tested this since candidate 2's round 2; the column-orientation
+    round carries it into the interior waiver on sixteen cells of
+    evidence."""
+    try:
+        value = float(cell.value) if cell.value is not None else None
+    except (TypeError, ValueError):
+        return False
+    return value is not None and value != 0 and abs(value) != 1
+
+
 def _island_findings(
     sheet: str,
     run: list[Cell],
@@ -2948,20 +3173,52 @@ def _island_findings(
             end += 1
         island = run[index:end]
         # Maximal by construction, so any neighbour inside the run is a
-        # formula; it must carry the column's repeating shape.
+        # formula; it must carry a shape the column *repeats* — any
+        # repeating family, not the single crowned majority, which the
+        # A7 round showed can flip on a tie and lose the finding to
+        # insertion order.
         edges = [run[at] for at in (index - 1, end) if 0 <= at < len(run)]
+        witness = next(
+            (shape for edge in edges if shapes.get(shape := _shape(edge), 0) >= 2),
+            None,
+        )
         if (
             len(island) <= TYPED_BLOCK
             and len(island) < len(run)
-            and any(_shape(edge) == usual for edge in edges)
+            and witness is not None
             #: A column whose repeating formula is one bare defined name
             #: — `=price_label` down a mnemonic column — is the sheet's
             #: text scaffolding, and a value typed between its rows is
             #: a heading, not a paste over a calculation.
-            and not _mnemonic(usual)
-            and all(
-                leftmost.get((sheet, cell.row), 1 << 20) < cell.column
-                for cell in island
+            and not _mnemonic(witness)
+            #: The left-formula history test, waived for *interior*
+            #: islands by the column-orientation round
+            #: (docs/pierce/a3-column-typed.md): a typed cell with the
+            #: run's formulas above and below it is vertically
+            #: sandwiched by the calculation it interrupts, which is
+            #: not how typed history is laid out in any orientation —
+            #: the sandwich is the anti-history evidence. The run's
+            #: edges keep the guard: column-major models genuinely put
+            #: typed history at the top of a column, and waiving it
+            #: there is the flood the guard exists to prevent.
+            #: The waiver carries candidate 2's identity guard inward
+            #: with it (round 3): a typed 0 or ±1 admitted *only* by
+            #: the waiver is template scaffolding or a base value —
+            #: sixteen of the round's twenty-six new findings were
+            #: zero rows inside formula bands, the « template of
+            #: zeros » the mining round rejected by name. Islands that
+            #: pass the left-formula test on their own are untouched,
+            #: so this can only narrow what the waiver added.
+            and (
+                (
+                    index > 0
+                    and end < len(run)
+                    and all(_substantive(cell) for cell in island)
+                )
+                or all(
+                    leftmost.get((sheet, cell.row), 1 << 20) < cell.column
+                    for cell in island
+                )
             )
             and not _seed(island, run[end] if end < len(run) else None)
         ):
@@ -2978,7 +3235,7 @@ def _island_findings(
                         detail=(
                             f"{shown_number(float(cell.value))} typed into "
                             "a column that is otherwise calculated: "
-                            f"{_example(calculated, usual)}"
+                            f"{_example(calculated, witness)}"
                         ),
                         source="ICAEW P14, FAST",
                     )
@@ -2991,6 +3248,240 @@ def _island_findings(
 #: verbatim). A cell reference never fits: shapes render those in
 #: R/C form, which the second test excludes.
 MNEMONIC = re.compile(r"[A-Za-z_\\][A-Za-z0-9_.\\]*")
+
+
+def _typed_edges(book: Workbook, result: Audit) -> None:
+    """A series that runs out in a typed number.
+
+    The interior typed-over pass demands a formula on both sides, so
+    a constant at a run's head or tail — the A3 mining round's
+    family-edge class, the typed last period over a computed row — is
+    invisible to it by construction. Here the witness is one-sided: a
+    lone constant (or the evidence class's own pair) at the edge of a
+    stretch of at least three same-shape formulas, with nothing
+    beyond it.
+
+    The guards, registered in docs/pierce/a3-family-edge.md before
+    any measurement: head-side cells are flagged only on a sheet with
+    a detected historical/forecast boundary and only at or right of
+    it — typed actuals lead rows from the left, and flagging the
+    typed-meets-computed boundary is the mining round's own rejected
+    class; the run must read as over-time; a typed 0 is template
+    scaffolding; the stacked and counter-seed exemptions apply as in
+    the interior pass; and a cell the interior or island pass already
+    reported keeps that finding. Runs after the island pass for
+    exactly that dedup.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("typed-over-formula", "typed-over-edge")
+    }
+    rows: dict[tuple[str, int], list[Cell]] = {}
+    for cell in book.cells.values():
+        rows.setdefault((cell.sheet, cell.row), []).append(cell)
+    boundaries = _boundaries(rows)
+
+    def disqualified(sheet: str, cell: Cell, stretch: list[Cell]) -> bool:
+        if cell.ref in already:
+            return True
+        try:
+            #: Round 2's identity guard: 0 is template scaffolding and
+            #: ±1 is how an index row spells its base period — ten of
+            #: ten corpus findings in round 1 were typed 1s heading
+            #: cumulative-index series, verified at the cells.
+            if (
+                cell.value is None
+                or float(cell.value) == 0
+                or abs(float(cell.value)) == 1
+            ):
+                return True
+        except (TypeError, ValueError):
+            return True
+        #: Round 2's horizontal seed guard: a series whose adjacent
+        #: formula *reads* the typed cell is continuing from its own
+        #: starting value, whatever the number — the vertical
+        #: counter-seed exemption, turned 90° (the deflator chain
+        #: `=AU466/(1+AU530)` walking right from its typed base).
+        if cell.ref in stretch[0].precedents:
+            return True
+        if _stacked(book, cell):
+            return True
+        below = book.get(f"{sheet}!{get_column_letter(cell.column)}{cell.row + 1}")
+        return (
+            below is not None and _seed([cell], below) and _column_series(book, below)
+        )
+
+    for (sheet, row), cells in sorted(rows.items()):
+        cells.sort(key=lambda c: c.column)
+        boundary = boundaries.get(sheet)
+        for run in _runs(cells):
+            if len(run) < MIN_SERIES + 1 or not _over_time(run):
+                continue
+            for side in ("head", "tail"):
+                ordered = run if side == "head" else run[::-1]
+                typed: list[Cell] = []
+                for cell in ordered:
+                    if cell.formula is not None:
+                        break
+                    typed.append(cell)
+                #: One or two typed cells are an edge; three or more
+                #: are a region of data meeting a calculation.
+                if not 1 <= len(typed) <= 2:
+                    continue
+                stretch = ordered[len(typed) : len(typed) + 3]
+                if len(stretch) < 3 or any(c.formula is None for c in stretch):
+                    continue
+                shapes = {_shape(c) for c in stretch}
+                if len(shapes) != 1:
+                    continue
+                if side == "head" and (
+                    boundary is None or any(c.column < boundary for c in typed)
+                ):
+                    continue
+                if any(disqualified(sheet, cell, list(stretch)) for cell in typed):
+                    continue
+                usual = next(iter(shapes))
+                where = "start" if side == "head" else "end"
+                pair = sorted(typed, key=lambda c: c.column)
+                values = " and ".join(
+                    shown_number(float(one.value or 0)) for one in pair
+                )
+                result.findings.append(
+                    Finding(
+                        rule="typed-over-edge",
+                        severity="error",
+                        ref=typed[0].ref,
+                        sheet=sheet,
+                        name=typed[0].name,
+                        detail=(
+                            f"{values} typed at the {where} of a series "
+                            "that is otherwise calculated: "
+                            f"{_example(stretch, usual)}"
+                        ),
+                        source="ICAEW P14, FAST",
+                        cells=_roster([one.ref.rsplit("!", 1)[-1] for one in pair])
+                        if len(pair) > 1
+                        else "",
+                    )
+                )
+                already.update(one.ref for one in typed)
+
+
+def _typed_beats(book: Workbook, result: Audit) -> None:
+    """A value typed into a series that computes on a stride.
+
+    Financial models lay one calculation out every second or third
+    column — value/% pairs, split-year layouts — and the row pass's
+    runs bridge one spacer column and no more, so a stride-3 family
+    is invisible to it and a stride-2 family over data columns is
+    too. Here the lattice is the run: the columns of one residue
+    class, each holding a cell, judged by the interior typed-over
+    discipline transposed whole — calculated majority, a formula on
+    both stride-neighbours, a flanking shape that repeats, the
+    over-time test.
+
+    Guards, registered in docs/pierce/a3-beat-families.md before any
+    measurement: the lattice must be real (no formula of a flanking
+    shape in the columns between the stride-neighbours — a dense run
+    wearing a stride belongs to the plain row pass); nothing left of
+    a detected historical/forecast boundary; a typed 0 or ±1 is
+    scaffolding or a base value; the stacked and counter-seed
+    exemptions apply as in the interior pass; and a cell any
+    typed-over rule already reported keeps that finding — this pass
+    runs after all three.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("typed-over-formula", "typed-over-edge", "typed-over-beat")
+    }
+    rows: dict[tuple[str, int], dict[int, Cell]] = {}
+    for cell in book.cells.values():
+        rows.setdefault((cell.sheet, cell.row), {})[cell.column] = cell
+    listed = {
+        key: sorted(cells.values(), key=lambda one: one.column)
+        for key, cells in rows.items()
+    }
+    boundaries = _boundaries(listed)
+
+    for (sheet, row), by_column in sorted(rows.items()):
+        columns = sorted(by_column)
+        boundary = boundaries.get(sheet)
+        for stride in (2, 3):
+            taken: set[int] = set()
+            for start in columns:
+                if start in taken:
+                    continue
+                chain = [start]
+                while chain[-1] + stride in by_column:
+                    chain.append(chain[-1] + stride)
+                taken.update(chain)
+                if len(chain) < MIN_SERIES + 1:
+                    continue
+                run = [by_column[c] for c in chain]
+                calculated = [one for one in run if one.formula]
+                if len(calculated) < len(run) - len(calculated) + 1:
+                    continue
+                if not _over_time(run):
+                    continue
+                shapes = Counter(_shape(one) for one in calculated)
+                for index in range(1, len(run) - 1):
+                    cell = run[index]
+                    if cell.formula is not None or cell.ref in already:
+                        continue
+                    if boundary is not None and cell.column < boundary:
+                        continue
+                    left, right = run[index - 1], run[index + 1]
+                    if left.formula is None or right.formula is None:
+                        continue
+                    flanks = (_shape(left), _shape(right))
+                    if all(shapes.get(flank, 0) < 2 for flank in flanks):
+                        continue
+                    between = [
+                        by_column.get(at)
+                        for at in range(left.column + 1, right.column)
+                        if at != cell.column
+                    ]
+                    if any(
+                        one is not None and one.formula and _shape(one) in flanks
+                        for one in between
+                    ):
+                        continue
+                    try:
+                        value = float(cell.value) if cell.value is not None else None
+                    except (TypeError, ValueError):
+                        value = None
+                    if value is None or value == 0 or abs(value) == 1:
+                        continue
+                    if _stacked(book, cell):
+                        continue
+                    below = book.get(
+                        f"{sheet}!{get_column_letter(cell.column)}{cell.row + 1}"
+                    )
+                    if (
+                        below is not None
+                        and _seed([cell], below)
+                        and _column_series(book, below)
+                    ):
+                        continue
+                    usual = flanks[0] if shapes.get(flanks[0], 0) >= 2 else flanks[1]
+                    result.findings.append(
+                        Finding(
+                            rule="typed-over-beat",
+                            severity="error",
+                            ref=cell.ref,
+                            sheet=sheet,
+                            name=cell.name,
+                            detail=(
+                                f"{shown_number(value)} typed into a series "
+                                f"that computes every {stride} columns: "
+                                f"{_example(calculated, usual)}"
+                            ),
+                            source="ICAEW P14, FAST",
+                        )
+                    )
+                    already.add(cell.ref)
 
 
 def _mnemonic(usual: str) -> bool:
@@ -3037,50 +3528,249 @@ def _shape(cell: Cell, anchoring: bool = True) -> str:
     calculation, and the point of the check is to notice when one of them
     is not. Numbers become `#` so that a buried assumption is reported once,
     by the rule that is about buried assumptions, rather than twice.
+
+    On top of that, the A7 normalizations (registered in
+    `docs/pierce/a7-normalization-protocol.md`): all-plus and
+    all-times chains and symmetric-function arguments sort, constant
+    shapes fold (`#*#` is `#`), the Lotus-era unary plus is erased,
+    and the structural re-render carries no whitespace — so
+    `=+C26+C31`, `=C31+C26` and `= C26 + C31` are one authoring
+    decision with one shape. A formula the mini-parser cannot parse
+    falls back to the plain token join, never to an error.
+
+    Cached by (formula, row, column, anchoring) — the four inputs that
+    fully determine the shape — because the A1 profile showed 1.7
+    million calls per big-model audit for a few hundred thousand
+    distinct cells. Cleared with the token cache at the end of each
+    audit, for memory alone.
     """
     if cell.formula is None:
         return ""
+    return _shape_of(cell.formula, cell.row, cell.column, anchoring)
+
+
+@cache
+def _shape_of(formula: str, row: int, column: int, anchoring: bool) -> str:
     out = []
     try:
-        tokens = _tokens(cell.formula)
+        tokens = _tokens(formula)
     except Exception:
         return ""
+    pieces: list[tuple[str, str]] = []
     for token in tokens:
         if token.type == "OPERAND" and token.subtype == "RANGE":
-            out.append(_offset(token.value, cell.row, cell.column, anchoring))
+            text = _offset(token.value, row, column, anchoring)
+            out.append(text)
+            pieces.append(("atom", text))
         elif token.type == "OPERAND" and token.subtype == "NUMBER":
             out.append("#")
+            pieces.append(("atom", "#"))
         elif token.type == "OPERAND" and token.subtype == "TEXT":
             out.append('"..."')
+            pieces.append(("atom", '"..."'))
         else:
             out.append(token.value)
-    return "".join(out)
+            if token.type == "OPERAND":
+                pieces.append(("atom", token.value))
+            elif token.type == "FUNC" and token.subtype == "OPEN":
+                pieces.append(("func", token.value))
+            elif token.type == "PAREN" and token.subtype == "OPEN":
+                pieces.append(("open", token.value))
+            elif token.subtype == "CLOSE":
+                pieces.append(("close", token.value))
+            elif token.type == "SEP" and token.subtype == "ARG":
+                pieces.append(("sep", token.value))
+            elif token.type == "OPERATOR-PREFIX":
+                pieces.append(("pre", token.value))
+            elif token.type == "OPERATOR-INFIX":
+                pieces.append(("op", token.value))
+            elif token.type == "OPERATOR-POSTFIX":
+                pieces.append(("post", token.value))
+            elif token.type == "WHITE-SPACE":
+                continue
+            else:
+                pieces.append(("other", token.value))
+    normalized = _normal_form(pieces)
+    return normalized if normalized is not None else "".join(out)
+
+
+#: Functions whose arguments carry no order — the only calls whose
+#: argument lists the shape may sort.
+_SYMMETRIC = frozenset({"SUM", "MIN", "MAX", "AVERAGE", "COUNT", "COUNTA", "PRODUCT"})
+
+
+def _normal_form(pieces: list[tuple[str, str]]) -> str | None:
+    """The shape re-rendered from a structural parse, or None.
+
+    A tiny recursive-descent pass over the normalized tokens: sorts
+    all-plus and all-times chains and symmetric-function arguments,
+    folds constant shapes, drops unary plus. Anything the grammar
+    does not expect — array literals, stray tokens — returns None and
+    the caller keeps the plain join.
+    """
+    position = 0
+
+    def peek() -> tuple[str, str] | None:
+        return pieces[position] if position < len(pieces) else None
+
+    def take() -> tuple[str, str]:
+        nonlocal position
+        piece = pieces[position]
+        position += 1
+        return piece
+
+    def compare() -> str:
+        parts = [chain()]
+        joins = []
+        while (
+            (p := peek())
+            and p[0] == "op"
+            and p[1] in {"=", "<", ">", "<=", ">=", "<>", "&"}
+        ):
+            joins.append(take()[1])
+            parts.append(chain())
+        return _interleave(parts, joins)
+
+    def chain() -> str:
+        parts = [term()]
+        joins = []
+        while (p := peek()) and p[0] == "op" and p[1] in {"+", "-"}:
+            joins.append(take()[1])
+            parts.append(term())
+        if joins and all(j == "+" for j in joins):
+            return "+".join(_folded(parts))
+        return _interleave(parts, joins)
+
+    def term() -> str:
+        parts = [unary()]
+        joins = []
+        while (p := peek()) and p[0] == "op" and p[1] in {"*", "/"}:
+            joins.append(take()[1])
+            parts.append(unary())
+        if joins and all(j == "*" for j in joins):
+            return "*".join(_folded(parts))
+        return _interleave(parts, joins)
+
+    def unary() -> str:
+        signs = ""
+        while (p := peek()) and p[0] == "pre":
+            sign = take()[1]
+            if sign == "-":
+                signs += "-"
+            elif sign != "+":
+                raise ValueError(sign)
+        rendered = power()
+        while (p := peek()) and p[0] == "post":
+            rendered += take()[1]
+        return signs + rendered
+
+    def power() -> str:
+        rendered = primary()
+        while (p := peek()) and p[0] == "op" and p[1] == "^":
+            take()
+            rendered += "^" + primary()
+        return rendered
+
+    def primary() -> str:
+        p = peek()
+        if p is None:
+            raise ValueError("end")
+        kind, text = take()
+        if kind == "atom":
+            return text
+        if kind == "open":
+            inner = compare()
+            if not (peek() and take() == ("close", ")")):
+                raise ValueError("paren")
+            return inner if inner == "#" else f"({inner})"
+        if kind == "func":
+            arguments = []
+            if (q := peek()) and q[0] == "close":
+                take()
+                return f"{text})"
+            arguments.append(compare())
+            while (q := peek()) and q[0] == "sep":
+                if take()[1] != ",":
+                    raise ValueError("sep")
+                arguments.append(compare())
+            if not (peek() and take()[0] == "close"):
+                raise ValueError("call")
+            name = text[:-1].upper()
+            if name in _SYMMETRIC:
+                arguments = sorted(arguments)
+            return f"{text}{','.join(arguments)})"
+        raise ValueError(kind)
+
+    try:
+        rendered = compare()
+    except (ValueError, IndexError):
+        return None
+    if position != len(pieces):
+        return None
+    return rendered
+
+
+def _interleave(parts: list[str], joins: list[str]) -> str:
+    rendered = parts[0]
+    for join, part in zip(joins, parts[1:]):
+        rendered += join + part
+    return rendered
+
+
+def _folded(parts: list[str]) -> list[str]:
+    """Sorted chain operands with the constant shapes folded into one `#`."""
+    kept = sorted(p for p in parts if p != "#")
+    return (["#"] if len(kept) < len(parts) else []) + kept
+
+
+#: `_offset`'s grammar, compiled once. It used to be handed to
+#: `re.fullmatch` as a string on every call, and this function is the
+#: hottest in the engine: **6,979,159 calls on one regulator model**,
+#: 39.5 s of its own time inside an audit of 518 s. A pattern string
+#: costs a cache lookup per call before any matching begins.
+OFFSET_PIECE = re.compile(
+    r"(?:(?P<sheet>'[^']+'|[A-Za-z0-9_.]+)!)?"
+    r"(?P<ca>\$?)(?P<column>[A-Z]{1,3})(?P<ra>\$?)(?P<row>\d+)"
+)
+
+#: Column letters to their 1-based index, built once. The inner loop
+#: computed this arithmetically per call, per piece, for every one of
+#: those seven million calls; there are only 18,278 possible three-letter
+#: columns and Excel stops at XFD, so the answer is worth remembering.
+_COLUMN_INDEX: dict[str, int] = {}
+
+
+def _column_number(letters: str) -> int:
+    number = _COLUMN_INDEX.get(letters)
+    if number is None:
+        number = 0
+        for letter in letters:
+            number = number * 26 + (ord(letter) - 64)
+        _COLUMN_INDEX[letters] = number
+    return number
 
 
 def _offset(reference: str, row: int, column: int, anchoring: bool = True) -> str:
     """`E6` seen from `F7` is `R[-1]C[-1]`; `$B$19` stays `$B$19`."""
     parts = []
     for piece in reference.split(":"):
-        match = re.fullmatch(
-            r"(?:(?P<sheet>'[^']+'|[A-Za-z0-9_.]+)!)?"
-            r"(?P<ca>\$?)(?P<column>[A-Z]{1,3})(?P<ra>\$?)(?P<row>\d+)",
-            piece.strip(),
-        )
+        match = OFFSET_PIECE.fullmatch(piece.strip())
         if match is None:
             return reference
-        sheet = f"{match.group('sheet')}!" if match.group("sheet") else ""
-        target_column = 0
-        for letter in match.group("column"):
-            target_column = target_column * 26 + (ord(letter) - 64)
+        # One unpack rather than six separate `.group()` calls: each is a
+        # Python-level call, and at seven million invocations the count
+        # is the cost.
+        name, column_anchor, letters, row_anchor, digits = match.group(
+            "sheet", "ca", "column", "ra", "row"
+        )
+        sheet = f"{name}!" if name else ""
         text_column = (
-            f"C{match.group('column')}"
-            if match.group("ca") and anchoring
-            else f"C[{target_column - column:+d}]"
+            f"C{letters}"
+            if column_anchor and anchoring
+            else f"C[{_column_number(letters) - column:+d}]"
         )
         text_row = (
-            f"R{match.group('row')}"
-            if match.group("ra") and anchoring
-            else f"R[{int(match.group('row')) - row:+d}]"
+            f"R{digits}" if row_anchor and anchoring else f"R[{int(digits) - row:+d}]"
         )
         parts.append(f"{sheet}{text_row}{text_column}")
     return ":".join(parts)
@@ -3645,6 +4335,563 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                 )
 
 
+#: How many sibling totals must agree before their consensus can accuse
+#: a deviant. Two agreeing cells are a coincidence; three are a dragged
+#: design. Registered in docs/pierce/a3-sibling-totals.md.
+TOTAL_CONSENSUS = 3
+
+#: A totals cell the sibling check can compare: an optional sign, one
+#: SUM call whose arguments are references, and an optional paren-free
+#: surround — nothing else. A tail with its own call is a different
+#: calculation and stays out of the family.
+SIBLING_TOTAL = re.compile(
+    r"^=\s*(?P<prefix>[+-]?)\s*SUM\((?P<args>[^()]+)\)(?P<tail>[^()]*)$",
+    re.IGNORECASE,
+)
+
+#: A bare A1 reference inside a surround, for offset rewriting.
+SURROUND_REF = re.compile(r"(?<![A-Za-z0-9_$!])(\$?)([A-Z]{1,3})(\$?)(\d+)(?![0-9(])")
+
+
+def _surround_shape(prefix: str, tail: str, row: int, column: int) -> str:
+    """The formula outside the SUM call, comparable across siblings:
+    uppercased, whitespace gone, the Lotus-era leading `+` dropped,
+    relative references rewritten to offsets from the holding cell,
+    absolute parts and numbers kept literal — a plug's value is the
+    evidence, not noise to erase."""
+
+    def rewrite(m: re.Match[str]) -> str:
+        c_dollar, letters, r_dollar, digits = m.groups()
+        c = 0
+        for letter in letters:
+            c = c * 26 + ord(letter) - 64
+        c_part = f"${letters}" if c_dollar else f"C[{c - column}]"
+        r_part = f"${digits}" if r_dollar else f"R[{int(digits) - row}]"
+        return c_part + r_part
+
+    text = SURROUND_REF.sub(rewrite, tail.upper())
+    head = "" if prefix == "+" else prefix
+    return "".join((head + "Σ" + text).split())
+
+
+def _total_coverage(
+    cell: Cell, across: str
+) -> tuple[frozenset[tuple[int, int]], str] | None:
+    """The cells a sibling total covers, as (own-axis offset, cross-axis
+    position) pairs, plus its surround shape — or None when the formula
+    is not a clean own-line total entirely before its cell."""
+    m = SIBLING_TOTAL.match(cell.formula or "")
+    if m is None:
+        return None
+    covered: set[tuple[int, int]] = set()
+    multi = False
+    for arg in m.group("args").split(","):
+        span = REFERENCE.fullmatch(arg.strip())
+        if span is None:
+            return None
+        sheet = (span.group("sheet") or cell.sheet).strip("'")
+        if sheet != cell.sheet:
+            return None
+        c1 = 0
+        for letter in span.group("column"):
+            c1 = c1 * 26 + ord(letter) - 64
+        c2 = c1
+        if span.group("column2"):
+            c2 = 0
+            for letter in span.group("column2"):
+                c2 = c2 * 26 + ord(letter) - 64
+        r1 = int(span.group("row"))
+        r2 = int(span.group("row2") or r1)
+        c1, c2 = min(c1, c2), max(c1, c2)
+        r1, r2 = min(r1, r2), max(r1, r2)
+        if across == "row":
+            #: A column total in a row of column totals: the argument
+            #: columns include the cell's own, every row is above.
+            if not (c1 <= cell.column <= c2) or r2 >= cell.row:
+                return None
+            if c1 <= cell.column <= c2 and r2 > r1:
+                multi = True
+            covered.update(
+                (c - cell.column, r)
+                for c in range(c1, c2 + 1)
+                for r in range(r1, r2 + 1)
+            )
+        else:
+            if not (r1 <= cell.row <= r2) or c2 >= cell.column:
+                return None
+            if r1 <= cell.row <= r2 and c2 > c1:
+                multi = True
+            covered.update(
+                (r - cell.row, c) for r in range(r1, r2 + 1) for c in range(c1, c2 + 1)
+            )
+    if not multi:
+        return None
+    return frozenset(covered), _surround_shape(
+        m.group("prefix"), m.group("tail"), cell.row, cell.column
+    )
+
+
+def _sibling_totals(book: Workbook, result: Audit) -> None:
+    """A total that disagrees with the sibling totals beside it.
+
+    A row of column totals is one authoring decision dragged across,
+    and the siblings should agree with each other after translation.
+    The A3 mining round's richest defect bucket is exactly the
+    disagreements: an arithmetic plug (`=SUM(E10:E22)-1000` beside
+    clean siblings), a range off-by-one (`=SUM(L8:L29)` beside
+    `=SUM(I7:I29)`), a cross-column bleed (`=SUM(C6:D13)` beside
+    `=SUM(E6:E13)`), a mis-dragged extra term. Within-column analysis
+    structurally cannot see any of them — the witness is the family's
+    own agreement, which is why the consensus must be wide (three
+    siblings sharing one signature) and the deviants a strict
+    minority. The same claim, turned 90°, for a column of row totals.
+
+    Guards, registered before any measurement
+    (docs/pierce/a3-sibling-totals.md): a deviant must overlap at
+    least half the consensus's own-line range, or it is a total about
+    a different block and stays silent; a deviant covering two or more
+    sibling columns is a block total summarising the family, not a
+    member disagreeing; a deviant already reported by the row passes
+    or the skipped-cell check keeps that finding; and nothing here
+    reads a cell's value — the only number quoted is a constant in
+    the deviant's own formula text.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule
+        in ("inconsistent-row", "inconsistent-anchoring", "skipped-cell")
+    }
+    for across in ("row", "column"):
+        lines: dict[
+            tuple[str, int], list[tuple[Cell, frozenset[tuple[int, int]], str]]
+        ] = {}
+        for cell in book.cells.values():
+            if not cell.formula:
+                continue
+            got = _total_coverage(cell, across)
+            if got is None:
+                continue
+            key = (cell.sheet, cell.row if across == "row" else cell.column)
+            lines.setdefault(key, []).append((cell, got[0], got[1]))
+        for _, members in sorted(lines.items()):
+            if len(members) <= TOTAL_CONSENSUS:
+                continue
+            tally = Counter((coverage, surround) for _, coverage, surround in members)
+            (usual_cov, usual_sur), votes = tally.most_common(1)[0]
+            if votes < TOTAL_CONSENSUS:
+                continue
+            family = [m for m in members if (m[1], m[2]) == (usual_cov, usual_sur)]
+            deviants = [m for m in members if (m[1], m[2]) != (usual_cov, usual_sur)]
+            if not deviants or len(deviants) >= votes:
+                continue
+            family.sort(key=lambda m: m[0].column if across == "row" else m[0].row)
+            witness = family[0][0]
+            usual_own = {at for off, at in usual_cov if off == 0}
+            axis_of = (
+                (lambda one: one.column) if across == "row" else (lambda one: one.row)
+            )
+            family_axis = {axis_of(m[0]) for m in family}
+            #: Round 2's fold: deviants sharing one signature are one
+            #: authoring decision, reported once with the roster.
+            grouped: dict[tuple[frozenset[tuple[int, int]], str], list[Cell]] = {}
+            for cell, coverage, surround in deviants:
+                grouped.setdefault((coverage, surround), []).append(cell)
+            for (coverage, surround), group in sorted(
+                grouped.items(), key=lambda kv: min(axis_of(one) for one in kv[1])
+            ):
+                own = {at for off, at in coverage if off == 0}
+                survivors: list[Cell] = []
+                for cell in sorted(group, key=axis_of):
+                    if cell.ref in already:
+                        continue
+                    if len(own & usual_own) * 2 < len(usual_own):
+                        continue
+                    reach = {axis_of(cell) + off for off, _ in coverage if off != 0}
+                    if len(reach & family_axis) >= 2:
+                        continue
+                    if (
+                        coverage != usual_cov
+                        and surround == usual_sur
+                        and not {off for off, _ in coverage}
+                        - {off for off, _ in usual_cov}
+                    ):
+                        #: Round 2's consequence guard: a range
+                        #: disagreement is reported only when the
+                        #: deviant misses a live cell the consensus
+                        #: spelling covers, in the deviant's own line.
+                        #: A staircase total that merely over-reaches
+                        #: empty rows — or covers *more* live rows, as
+                        #: a designed depreciation triangle's later
+                        #: columns must — computes what its siblings'
+                        #: spelling would, and stays silent. Occupancy,
+                        #: never values.
+                        if across == "row":
+                            missed_live = any(
+                                f"{cell.sheet}!{get_column_letter(cell.column)}{at}"
+                                in book.cells
+                                for at in usual_own - own
+                            )
+                        else:
+                            missed_live = any(
+                                f"{cell.sheet}!{get_column_letter(at)}{cell.row}"
+                                in book.cells
+                                for at in usual_own - own
+                            )
+                        if not missed_live:
+                            continue
+                    survivors.append(cell)
+                if not survivors:
+                    continue
+                first = survivors[0]
+                n = votes
+                where = witness.ref.rsplit("!", 1)[-1]
+                figure = ""
+                figure_unit = ""
+                if coverage == usual_cov:
+                    clause = (
+                        "the arithmetic outside the shared SUM is this cell's alone"
+                    )
+                    plug = re.fullmatch(r"Σ([+-]\d+(?:\.\d+)?)", surround)
+                    if plug and usual_sur == "Σ":
+                        figure = shown_number(float(plug.group(1)))
+                        figure_unit = "outside the family's shared range"
+                elif surround == usual_sur and {off for off, _ in coverage} - {
+                    off for off, _ in usual_cov
+                }:
+                    clause = (
+                        "its range reaches a neighbouring "
+                        + ("column" if across == "row" else "row")
+                        + " where theirs each stay in their own"
+                    )
+                elif surround == usual_sur:
+                    if across == "row":
+                        reads = f"rows {min(own)}–{max(own)}"
+                        theirs = f"{min(usual_own)}–{max(usual_own)}"
+                    else:
+                        reads = (
+                            f"columns {get_column_letter(min(own))}–"
+                            f"{get_column_letter(max(own))}"
+                        )
+                        theirs = (
+                            f"{get_column_letter(min(usual_own))}–"
+                            f"{get_column_letter(max(usual_own))}"
+                        )
+                    clause = f"it reads {reads} where they read {theirs}"
+                else:
+                    clause = "both its range and its arithmetic depart from theirs"
+                roster = ""
+                if len(survivors) > 1:
+                    locals_ = [one.ref.rsplit("!", 1)[-1] for one in survivors]
+                    clause += (
+                        f" — the same disagreement in {len(survivors)} cells "
+                        f"({', '.join(locals_[:6])}"
+                        + (", …" if len(locals_) > 6 else "")
+                        + ")"
+                    )
+                    roster = _roster([one.ref.rsplit("!", 1)[-1] for one in survivors])
+                result.findings.append(
+                    Finding(
+                        rule="inconsistent-total",
+                        severity="error",
+                        ref=first.ref,
+                        sheet=first.sheet,
+                        name=first.name,
+                        detail=(
+                            f"{first.formula} beside {n} sibling totals like "
+                            f"{witness.formula} at {where} — {clause}"
+                        ),
+                        source="FAST, ICAEW P12",
+                        figure=figure,
+                        figure_unit=figure_unit,
+                        cells=roster,
+                    )
+                )
+                already.update(one.ref for one in survivors)
+
+
+#: One bare aggregation over a single own-column range — the shape
+#: this round judges. A tail, a second call or mixed arithmetic makes
+#: a different claim and stays out.
+BARE_RANGE = re.compile(
+    r"^=\s*\+?\s*(?P<fn>SUM|AVERAGE|COUNT|COUNTA|MIN|MAX|PRODUCT)\("
+    r"\s*\$?(?P<c1>[A-Z]{1,3})\$?(?P<r1>\d+)\s*:\s*"
+    r"\$?(?P<c2>[A-Z]{1,3})\$?(?P<r2>\d+)\s*\)\s*$",
+    re.IGNORECASE,
+)
+
+
+def _own_column_span(cell: Cell) -> tuple[int, int] | None:
+    """(first row, last row) when the cell is a bare aggregation over a
+    multi-row range in its own column, entirely above itself."""
+    m = BARE_RANGE.match(cell.formula or "")
+    if m is None:
+        return None
+    if m.group("c1").upper() != m.group("c2").upper():
+        return None
+    if m.group("c1").upper() != get_column_letter(cell.column):
+        return None
+    first, last = sorted((int(m.group("r1")), int(m.group("r2"))))
+    #: A cell inside its own range is the circularity check's business.
+    if last - first < 1 or first <= cell.row <= last:
+        return None
+    return first, last
+
+
+def _range_over_block(book: Workbook, result: Audit) -> None:
+    """A range that reaches past the block it is meant to cover.
+
+    The skipped-cell check asks what a total left *out*; nothing asked
+    what a range wrongly took *in*, and every mention of double
+    counting in this module until now was an exemption protecting that
+    check from accusing a correct total. This asks the other half,
+    registered in docs/pierce/a3-range-block.md.
+
+    **The double count** (error): the range contains a cell that is
+    itself a bare aggregation over a strict subrange of the same
+    range in the same column, so those rows are added twice — once
+    directly and once through the subtotal. Wrong arithmetic however
+    the model is used, and both formulas are in the file.
+
+    The round's second class — a range spanning a *label* — was
+    withdrawn before any result: the reader does not elect text
+    cells, so a detector on that surface cannot tell a label from a
+    blank, and blanks are ordinary layout. It needs a reader change,
+    which is a frozen interface and its own round.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("skipped-cell", "inconsistent-total")
+    }
+    spans: dict[tuple[str, int], list[tuple[Cell, int, int]]] = {}
+    for cell in book.cells.values():
+        got = _own_column_span(cell)
+        if got is not None:
+            spans.setdefault((cell.sheet, cell.column), []).append(
+                (cell, got[0], got[1])
+            )
+
+    for (sheet, column), members in sorted(spans.items()):
+        letters = get_column_letter(column)
+        for cell, first, last in sorted(members, key=lambda one: one[0].row):
+            if cell.ref in already:
+                continue
+            inner = next(
+                (
+                    other
+                    for other, o_first, o_last in members
+                    if other.ref != cell.ref
+                    and first <= other.row <= last
+                    and first <= o_first
+                    and o_last <= last
+                    and (o_first, o_last) != (first, last)
+                ),
+                None,
+            )
+            if inner is not None:
+                result.findings.append(
+                    Finding(
+                        rule="range-over-block",
+                        severity="error",
+                        ref=cell.ref,
+                        sheet=sheet,
+                        name=cell.name,
+                        detail=(
+                            f"{cell.formula} reaches over {inner.ref.rsplit('!', 1)[-1]}"
+                            f" — {inner.formula} — which already adds rows inside "
+                            "that range, so they are counted twice"
+                        ),
+                        source="ICAEW P19, EuSpRIG",
+                    )
+                )
+                already.add(cell.ref)
+
+
+def _unit_mismatch(book: Workbook, result: Audit) -> None:
+    """Adding pounds to dollars, or thousands to millions.
+
+    E3a, registered in docs/pierce/e3a-unit-mismatch.md. The evidence
+    is Dynamo's: `units.propagate` carries a row's inferred units into
+    the formulas that read it and records a `Conflict` where a formula
+    that only adds and subtracts has terms whose units disagree. This
+    turns two of those into findings and **nothing else**.
+
+    **Armed on the dimensions E2 measured, and only those.** Dynamo's
+    verdict is per-dimension: `currency` and `scale` answer on 34.6%
+    of rows and are wrong on none, so they are armed. `period` is
+    wrong on a quarter to two thirds of rows and « is not to be
+    quoted », so « a monthly figure in an annual line » — the finding
+    a reader would most want — **is not raised at all**. That is E3b,
+    blocked on measurement rather than on code.
+
+    Four guards, each registered before any result:
+
+    * a finding may rest only on a dimension E2 **answered**. One
+      answered value against an `unknown` is an abstention, not a
+      mismatch: `unknown` means the evidence did not decide, and a
+      check resting on it would be inventing the disagreement.
+    * **two distinct answered values** on the dimension, minimum.
+    * **row-wise sheets only.** A data table's row is a record —
+      `Date | Maturity | rate` — with no single unit, and Dynamo's
+      `orientation` exists because typing one would be a lie.
+    * `Conflict.units` merges currencies with scales into one tuple,
+      so which dimension disagreed is derived here from the precedent
+      labels, through the library's public surface. The `units`
+      package is Dynamo's and is not edited from this lane.
+    """
+    from .units import Orientation, classify_sheet, orientation, propagate
+    from .units.inference import rows_from_cells
+
+    #: Indexed once. Seeding by scanning every cell per row is
+    #: quadratic, and this runs on workbooks of half a million cells.
+    inputs: dict[tuple[str, int], list[Cell]] = {}
+    for cell in book.cells.values():
+        if cell.formula is None:
+            inputs.setdefault((cell.sheet, cell.row), []).append(cell)
+
+    seeds: dict[str, Any] = {}
+    row_wise: set[str] = set()
+    for sheet in book.sheets:
+        rows = rows_from_cells(book.cells, sheet)
+        if not rows:
+            continue
+        if orientation(rows) is not Orientation.ROW_WISE:
+            continue
+        row_wise.add(sheet)
+        for (_sheet, row), label in classify_sheet(rows).items():
+            for cell in inputs.get((sheet, row), ()):
+                seeds[cell.ref] = label
+
+    if not seeds:
+        for rule_name in ("currency-mismatch", "scale-mismatch"):
+            result.abstentions.append(
+                Abstention(
+                    rule=rule_name,
+                    why="no row-wise sheet carried rows the unit inference could read",
+                )
+            )
+        return
+
+    labels, conflicts = propagate(book.cells, seeds)
+
+    examined = 0
+    raised_by: dict[str, int] = {}
+    for conflict in conflicts:
+        found = book.cells.get(conflict.ref)
+        if found is None or found.sheet not in row_wise:
+            continue
+        cell = found
+        examined += 1
+        terms = [labels[p] for p in (cell.precedents or ()) if p in labels]
+        for dimension, rule_name, noun in (
+            ("currency", "currency-mismatch", "currency"),
+            ("scale", "scale-mismatch", "scale"),
+        ):
+            answered = {term.get(dimension) for term in terms}
+            if "unknown" in answered:
+                #: E2 declined on at least one term. The disagreement
+                #: may well be real and we cannot say that it is.
+                continue
+            #: `none` and `unknown` are different abstentions, and
+            #: conflating them cost this round its first measurement.
+            #: `unknown` is « the evidence did not decide »; `none` is
+            #: « decided: this quantity has no currency » — a rate, a
+            #: count. A dimensionless term added to a money term is
+            #: ordinary arithmetic, not a mismatch, and counting
+            #: `none` as a competing currency made every cashflow on
+            #: one model a finding: 103 raised of 103 examined, all
+            #: « GBP, none », all wrong.
+            answered.discard("none")
+            if len(answered) < 2:
+                continue
+            spread = ", ".join(sorted(answered))
+            raised_by[rule_name] = raised_by.get(rule_name, 0) + 1
+            result.findings.append(
+                Finding(
+                    rule=rule_name,
+                    severity="error",
+                    ref=cell.ref,
+                    sheet=cell.sheet,
+                    name=cell.name,
+                    detail=(
+                        f"{cell.formula} adds terms of different {noun}: "
+                        f"{spread}. A sum may only carry one {noun}."
+                    ),
+                    source="Williams 2020, EuSpRIG",
+                    figure=spread,
+                    figure_unit=f"the {noun}s added together in one sum",
+                )
+            )
+
+    #: A4's contract: each rule reports its coverage exactly once,
+    #: as a tally or as an abstention, never both and never neither.
+    _dimension_coverage(
+        result,
+        rule="currency-mismatch",
+        examined=examined,
+        answered=any(label.currency != "unknown" for label in labels.values()),
+        raised=raised_by.get("currency-mismatch", 0),
+        why=(
+            "no row carried a currency the inference could read — the "
+            "number formats name none and no Units column was supplied"
+        ),
+    )
+    #: Scale is a *structural* abstention on today's inference, not a
+    #: quiet zero. `classify_row` answers scale only from a declared
+    #: Units column — the number-format branch says in as many words
+    #: that « scale is not stated anywhere and is not guessed from
+    #: magnitude » — and `rows_from_cells` does not carry declared
+    #: units, so a blind read can never hold two different answered
+    #: scales. Saying so is the difference between « clean » and
+    #: « never looked », which is the whole of A4.
+    _dimension_coverage(
+        result,
+        rule="scale-mismatch",
+        examined=examined,
+        answered=any(
+            label.scale not in ("unknown", "units") for label in labels.values()
+        ),
+        raised=raised_by.get("scale-mismatch", 0),
+        why=(
+            "the unit inference answers scale only from a declared Units "
+            "column, which this read does not carry — so a "
+            "thousands-into-millions mix cannot be judged here"
+        ),
+    )
+
+
+def _dimension_coverage(
+    result: Audit,
+    *,
+    rule: str,
+    examined: int,
+    answered: bool,
+    raised: int,
+    why: str,
+) -> None:
+    """One coverage line for a unit rule — tally or abstention, never
+    both, per A4's contract.
+
+    A rule tallies when there was something it could have judged: sums
+    whose terms disagree *and* a dimension the inference answered
+    somewhere. Otherwise it abstains and says which of the two was
+    missing, because « no mismatches » and « could not tell » are
+    different sentences and the report must not merge them.
+    """
+    if examined and answered:
+        result.tallies[rule] = {"total": examined, "raised": raised}
+    else:
+        result.abstentions.append(
+            Abstention(
+                rule=rule,
+                why=(
+                    "no formula added terms whose units disagree" if answered else why
+                ),
+            )
+        )
+
+
 def _hidden_sheets(book: Workbook, result: Audit) -> None:
     """Sheets the workbook is hiding — the document panel's fact,
     folded into the audit so it reaches the model page, the panel and
@@ -3877,3 +5124,171 @@ __all__ = [
     "Finding",
     "audit",
 ]
+
+
+def _broken_aggregation(book: Workbook, result: Audit) -> None:
+    """E3c — a row that takes one period where it takes the whole window.
+
+    The flagship finding of `swens.md` § 3a: « a formula that adds a
+    monthly figure to an annual one is a perfectly valid formula. It is
+    only wrong in meaning. » Nothing here reads a header word. A row's
+    kind — flow, opening balance, closing balance — is read from what
+    the row *does* across forty periods, and a defect is a break in the
+    row's own established pattern.
+
+    Measured before wiring (`docs/pierce/e3c-flow-stock.md`), on the
+    22-model closed-deal corpus:
+
+    - **planted recall 165 of 178 sites (92.7%)** — one coarse period
+      of each clean flow row overwritten with a single fine cell's
+      value, planted in the reader's own cells with the whole path
+      re-run;
+    - **zero false alarms** across 855 patterned rows;
+    - **coincidence control 0.33%** at the exact 95% bound, on 10,827
+      mismatched pairs, against 77% for the design before this one.
+
+    Two limits travel with it and belong in any sentence quoting the
+    numbers. **It is silent on 6 of the 22 models** — 27% of real close
+    models lay out no two dated blocks sharing labels, and silence with
+    a reason is the honest answer there. And **13 of the misses are
+    unexplained**, clustered at one period index in one model, which is
+    one blind spot rather than thirteen faults.
+    """
+    from .units.periods import (
+        COARSENESS,
+        FLOW,
+        RATIOS,
+        Block,
+        PeriodFinding,
+        blocks_from_dates,
+        classify_row,
+        date_axes,
+        fold,
+        series_by_label,
+    )
+
+    blocks = blocks_from_dates(date_axes(book.cells))
+    if len(blocks) < 2:
+        #: **The 27% is said out loud, not hidden as silence.** Six of
+        #: the twenty-two closed-deal models lay out no second dated
+        #: block for the check to read a row against, and a report that
+        #: printed nothing there would be claiming a clean bill it
+        #: never earned.
+        result.abstentions.append(
+            Abstention(
+                rule="broken-aggregation",
+                why=(
+                    "the file lays out no two sheets of dated columns to "
+                    "read one row against the other"
+                ),
+            )
+        )
+        return
+    by_sheet = {block.sheet: block for block in blocks}
+
+    #: One block per sheet, so reading a block's rows once and keeping
+    #: it is the same computation the measured scripts do per pair —
+    #: only not repeated for every partner the sheet is compared with.
+    rows_of: dict[str, dict[str, tuple[int, list[float]]]] = {}
+
+    def _rows(block: Block) -> dict[str, tuple[int, list[float]]]:
+        if block.sheet not in rows_of:
+            rows_of[block.sheet] = series_by_label(
+                book.cells, block.sheet, block.columns
+            )
+        return rows_of[block.sheet]
+
+    #: A4's denominator: rows that **declared a kind**, which is the
+    #: population this rule actually judges. A row whose two series
+    #: never establish a pattern was not examined and must not inflate
+    #: a coverage number.
+    patterned = 0
+    reports: list[tuple[PeriodFinding, list[float]]] = []
+    for fine in blocks:
+        for coarse in blocks:
+            if fine.sheet == coarse.sheet:
+                continue
+            if COARSENESS[fine.granularity] >= COARSENESS[coarse.granularity]:
+                continue
+            ratio = RATIOS.get((fine.granularity, coarse.granularity))
+            if ratio is None:
+                continue
+            fine_rows = _rows(fine)
+            coarse_rows = _rows(coarse)
+            for label in sorted(set(fine_rows) & set(coarse_rows)):
+                fine_row, fine_values = fine_rows[label]
+                coarse_row, coarse_values = coarse_rows[label]
+                pattern = classify_row(fine_values, coarse_values, ratio)
+                if pattern is None:
+                    continue
+                patterned += 1
+                if not pattern.single_period:
+                    continue
+                reports.append(
+                    (
+                        PeriodFinding(
+                            label=label,
+                            fine=f"{fine.sheet}!{fine_row}",
+                            coarse=f"{coarse.sheet}!{coarse_row}",
+                            ratio=ratio,
+                            kind=pattern.kind,
+                            kept=len(pattern.kept),
+                            single_period=pattern.single_period,
+                        ),
+                        list(coarse_values),
+                    )
+                )
+
+    if not patterned:
+        result.abstentions.append(
+            Abstention(
+                rule="broken-aggregation",
+                why=(
+                    "no row on the file's dated sheets holds still long "
+                    "enough across its periods to establish a pattern"
+                ),
+            )
+        )
+        return
+    #: `raised` is refreshed in `_coverage`, after every fold has
+    #: settled, so this number can never disagree with the report.
+    result.tallies["broken-aggregation"] = {"total": patterned, "raised": 0}
+
+    #: One number published on several rows is one authoring decision.
+    for one in fold(reports):
+        sheet, row = one.coarse.split("!")
+        block = by_sheet[sheet]
+        #: `single_period` indexes the coarse series, which was read
+        #: straight off `block.columns` — so the index names the cell,
+        #: and the finding can point at it rather than at the row.
+        broken = [
+            f"{get_column_letter(block.columns[index])}{row}"
+            for index in one.single_period
+            if index < len(block.columns)
+        ]
+        if not broken:
+            continue
+        rest = (
+            f" It does the same at {', '.join(broken[1:])}." if len(broken) > 1 else ""
+        )
+        also = (
+            f" The same figure is published at {', '.join(one.also)}."
+            if one.also
+            else ""
+        )
+        verb = "adds up" if one.kind == FLOW else "carries"
+        result.findings.append(
+            Finding(
+                rule="broken-aggregation",
+                severity="error",
+                ref=f"{sheet}!{broken[0]}",
+                sheet=sheet,
+                name=one.label,
+                detail=(
+                    f"this row {verb} its {one.ratio} sub-periods in "
+                    f"{one.kept} periods, and here it takes a single one "
+                    f"instead.{rest}{also}"
+                ),
+                source="the row's own behaviour across its time axis",
+            )
+        )

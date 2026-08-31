@@ -41,7 +41,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index(
-        op.f("ix_saved_prompts_organization_id"), table_name="saved_prompts"
-    )
+    op.drop_index(op.f("ix_saved_prompts_organization_id"), table_name="saved_prompts")
     op.drop_table("saved_prompts")

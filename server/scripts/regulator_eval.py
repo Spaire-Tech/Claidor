@@ -44,16 +44,16 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-from polar.tieout.check import compare  # noqa: E402
-from polar.tieout.ingest import (  # noqa: E402
+from polar.tieout.check import compare
+from polar.tieout.ingest import (
     Ingested,
     Unreadable,
     kind_for,
     read_artifact,
 )
-from polar.tieout.link import link as propose_links  # noqa: E402
-from polar.tieout.provenance import outputs_from_workbook  # noqa: E402
-from polar.tieout.workbook import Workbook  # noqa: E402
+from polar.tieout.link import link as propose_links
+from polar.tieout.provenance import outputs_from_workbook
+from polar.tieout.workbook import Workbook
 
 
 def _read(path: Path) -> tuple[Ingested, float]:

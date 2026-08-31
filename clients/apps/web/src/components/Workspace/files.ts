@@ -74,7 +74,16 @@ export const initialsOf = (name: string): string =>
     .slice(0, 2)
     .join('')
 
-/** The design's finding families — the group heading over a row. */
+/**
+ * The design's finding families — the group heading over a row.
+ *
+ * Checked against what the engine *emits*, not against the rule
+ * catalogues: a rule missing from `RULE_NAMES` and
+ * `ANALYTIC_RULE_NAMES` is exactly the rule most likely to be missing
+ * here too, and reading the catalogues finds nothing wrong with it.
+ * `TestTheCategoryMap` (server/tests/tieout/test_routes.py) holds the
+ * two sides together.
+ */
 const CATEGORY_OF: Record<string, string> = {
   'inconsistent-row': 'Probable formula defects',
   'skipped-cell': 'Probable formula defects',
@@ -82,14 +91,65 @@ const CATEGORY_OF: Record<string, string> = {
   'error-value': 'Probable formula defects',
   circular: 'Probable formula defects',
   'time-axis': 'Probable formula defects',
+  //: Sentinel's A3 adoptions (eleventh sweep), routed here by the
+  //: lead's order once they merged — same family as their siblings.
+  'inconsistent-total': 'Probable formula defects',
+  'typed-over-edge': 'Probable formula defects',
+  'range-over-block': 'Probable formula defects',
+  //: The three below are emitted by the engine but are in neither
+  //: RULE_NAMES nor ANALYTIC_RULE_NAMES, so Settings cannot list them
+  //: and a firm cannot switch them off — reported to the lead.
+  //: Mapped here so a finding the engine calls an error is not filed
+  //: under « Other findings » on a partner's report.
+  //:
+  //: `gapped-test`: a check formula that walks cells one by one and
+  //: skips a live block. `typed-over-beat`: Sentinel's column-direction
+  //: extension of `typed-over-edge`, and it sits with it. `broken-name`:
+  //: defined names storing #REF! or pointing into another workbook —
+  //: the same defect `external-link` names, one level up in the file.
+  'gapped-test': 'Probable formula defects',
+  'typed-over-beat': 'Probable formula defects',
   'balance-sheet': 'Structural exceptions',
   'cash-continuity': 'Structural exceptions',
   'debt-terminal': 'Structural exceptions',
   'model-own-check': 'Structural exceptions',
-  interest: 'Structural exceptions',
+  //: Renamed in the merged catalogue (was `interest`).
+  'interest-consistency': 'Structural exceptions',
   'typed-over-formula': 'Embedded hardcodes',
   'hardcode-in-formula': 'Embedded hardcodes',
   'external-link': 'Auditability risks',
+  'broken-name': 'Auditability risks',
+  //: **A new family, and the first added since this map was written.**
+  //: Sentinel's unit checks report a sum that adds dollars to euros,
+  //: or thousands to millions. That is not a « probable formula
+  //: defect »: the formula is mechanically perfect and the answer is
+  //: nonsense — a meaning error, not a mechanical one. Nor is it a
+  //: « structural exception », which in this map means the statements
+  //: not holding together, one relationship at a time.
+  //:
+  //: « Units that do not agree » says the whole of it in words a
+  //: banker uses, and it extends to the unit checks that follow —
+  //: currency, scale, per-unit against total. A later check about a
+  //: *basis* rather than a unit (real against nominal, say) earns its
+  //: own family rather than stretching this one; families are named
+  //: for what the reader is being told.
+  //:
+  //: Neither rule is in `RULE_NAMES` or `HEADLINES` on the engine
+  //: side, so until they are, **this family name is the only name a
+  //: reader sees for the defect** — which is why it has to carry the
+  //: meaning on its own.
+  'currency-mismatch': 'Units that do not agree',
+  'scale-mismatch': 'Units that do not agree',
+  //: The period unit, and it belongs here on the founder's own
+  //: grouping rather than on a judgement of mine: swens.md lists « a
+  //: monthly figure used where an annual one belongs » in the same
+  //: breath as dollars added to pounds and thousands mixed with
+  //: millions, and the unit-checks paragraph names the same pair.
+  //:
+  //: The note above reserved a new family for a check about a *basis*
+  //: rather than a unit. A period is a unit — the row's own time
+  //: axis says which one — so this is the family, not a stretch of it.
+  'broken-aggregation': 'Units that do not agree',
   volatile: 'Auditability risks',
   'long-formula': 'Auditability risks',
   'hidden-sheet': 'Auditability risks',

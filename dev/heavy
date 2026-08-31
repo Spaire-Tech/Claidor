@@ -1,0 +1,46 @@
+#!/bin/bash
+# Run a memory-heavy job under an exclusive lock, so two of them can never
+# run at once.
+#
+# Why this exists, and why it is a script rather than a rule. This
+# container has about 15 GB. The golden-master gate takes ~9 GB and a
+# Watch run on a large pair takes ~9 GB, so two at once means one gets
+# OOM-killed partway through — which has happened, to the person who had
+# written the rule saying it must not. A rule you have to remember while
+# you are busy is not a guardrail. This is: the second job waits instead
+# of dying, and it says what it is waiting for.
+#
+#   dev/heavy uv run python -m scripts.corpus_gate sweep
+#   dev/heavy --try uv run ...   # give up immediately if one is running
+set -euo pipefail
+
+LOCK="/tmp/claidor-heavy.lock"
+WHO="${LOCK}.who"
+
+impatient=""
+if [ "${1:-}" = "--try" ]; then
+    impatient="yes"
+    shift
+fi
+
+if [ $# -lt 1 ]; then
+    echo "usage: dev/heavy [--try] <command> [args...]" >&2
+    exit 2
+fi
+
+exec 9>"${LOCK}"
+if ! flock -n 9; then
+    echo "a heavy job already holds the lock: $(cat "${WHO}" 2>/dev/null || echo unknown)" >&2
+    if [ -n "${impatient}" ]; then
+        exit 75
+    fi
+    echo "waiting for it to finish (dev/kill-job if it is stuck)..." >&2
+    flock 9
+fi
+
+# Whoever waits next gets told what they are waiting for, not just that
+# they are waiting.
+printf '%s (pid %s, since %s)\n' "$*" "$$" "$(date -u +%H:%M:%S)" > "${WHO}"
+trap 'rm -f "${WHO}"' EXIT
+
+"$@"
