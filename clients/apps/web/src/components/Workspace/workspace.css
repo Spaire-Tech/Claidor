@@ -134,6 +134,45 @@
   }
 }
 
+/* The chat's three motions, copied from the design's own stylesheet
+   (`design-swens/Swens_Workspace_2.html`) rather than approximated.
+
+   `aShimmer` was already being *referenced* by the status line and had
+   never been defined here, so the sweep across the working text has
+   never once moved — the gradient sat still and looked deliberate.
+   Found while building the run states, which need the other two. */
+
+/* The status line's light, travelling left across the words. */
+@keyframes aShimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+/* The green ring beside a step that is still running. */
+@keyframes aRing {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* A placeholder breathing while the thing it stands for is unnamed. */
+@keyframes aFade {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 @keyframes pcSpin {
   to {
     transform: rotate(360deg);

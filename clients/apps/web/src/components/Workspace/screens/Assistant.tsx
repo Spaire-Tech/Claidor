@@ -32,8 +32,36 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Asked, AskedRow, AskTurn, DealListItem, TieOutApi } from './../api'
 import { font, ink } from './../design'
 
+/**
+ * One choice offered on a clarifying question.
+ *
+ * The design's rule, from `REV_ASKS`: **the last option is the
+ * primary one** — dark, filled, 9px radius — and every option before
+ * it is a grey text pill. That is why the expensive, wider action
+ * ends the row rather than opening it: « Run Workflow » after « From
+ * scratch », « All 20 » after « Just this cell », « Run Excel-exact »
+ * after « Leave as refused ».
+ */
+export interface AskOption {
+  label: string
+  /** What running this choice means. Only the person may pick. */
+  pick: () => void
+}
+
+/** A step in a run, as the design draws it: title, sub-line, state. */
+export interface RunStage {
+  icon: string
+  title: string
+  sub: string
+  /** Green ring while running, green tick when this step is done. */
+  done?: boolean
+  /** The thing the step produced, named. Absent while it is pending. */
+  art?: string
+  artIcon?: string
+}
+
 interface Message {
-  role: 'you' | 'working' | 'answer'
+  role: 'you' | 'working' | 'answer' | 'ask' | 'run' | 'verdict'
   text: string
   rows?: AskedRow[]
   /** The boundary paragraph — the answer's last, drawn in grey. */
@@ -44,6 +72,35 @@ interface Message {
    *  drawn only where the deal carries more than one model, because on
    *  every other deal it is noise. Off the artifacts, not the prose. */
   scope?: { model: string; version: number | null; others: string[] }
+
+  // --- the clarifying question (role 'ask') ------------------------
+  //
+  // The founder's pattern: the person asks, the chat asks **one**
+  // question back, and the card names what it would do. `text` is the
+  // question; the card is what running it produces.
+  /** « Model Review », « Version Comparison », « Determined Fix ». */
+  cardTitle?: string
+  /** One line under the title, saying what the run actually does. */
+  cardBlurb?: string
+  /** File-kind icons, overlapped by -7px after the first. */
+  cardIcons?: string[]
+  /** The choices. Last is primary. Empty once one has been picked. */
+  options?: AskOption[]
+
+  // --- the run (role 'run') ----------------------------------------
+  /** Every step; the live one is the last not `done`. */
+  stages?: RunStage[]
+
+  // --- the verdict (role 'verdict') --------------------------------
+  /** The lines behind the answer, hidden until the person opens them. */
+  traceLines?: string[]
+  /** Counts by kind, with the design's dot colours. */
+  tallies?: { label: string; n: number; dot: string }[]
+  /** What the run produced, as cards. */
+  outputs?: { icon: string; name: string }[]
+  /** The dark button, and the blue text link beside it. */
+  primaryAction?: string
+  altAction?: string
 }
 
 /** A finished conversation, kept on this machine — the rail's rows
@@ -86,21 +143,625 @@ const freshId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
 /** The serif S — the design's mark on everything Swens says. */
+/**
+ * The swan — the assistant's mark wherever it speaks.
+ *
+ * Revision 2 of the design replaced the serif « S » with this drawn
+ * bird at 26px, and the three paths below are the file's own, copied
+ * rather than redrawn: the neck and head, the beak, the body. Stroke
+ * `#15171b` at 4.6, round caps and joins, `margin-left:-4px` so the
+ * bird's optical left edge lines up with the text column above it.
+ *
+ * `top` is the design's per-state nudge, and the states really do
+ * differ: a status line sets 1, an answer 5, a verdict 4 — the mark
+ * sits against the first line of text in each, not against the box.
+ */
 const Mark = ({ top = 0 }: { top?: number }) => (
-  <span
+  <svg
+    width={26}
+    height={26}
+    viewBox="0 0 100 100"
+    fill="none"
+    stroke="#15171b"
+    strokeWidth={4.6}
+    strokeLinecap="round"
+    strokeLinejoin="round"
     style={{
-      flex: '0 0 18px',
-      width: 18,
-      fontFamily: font.brand,
-      fontSize: 16,
-      lineHeight: 1,
-      color: '#15171b',
+      flex: '0 0 26px',
+      marginLeft: -4,
+      display: 'block',
       marginTop: top,
     }}
+    aria-hidden
   >
-    S
-  </span>
+    <path d="M68,74 C68,46 64,25 50,25 C38,25 32.5,36 38.5,45 C43,51.5 53,51.5 56,43.5" />
+    <path d="M56,43.5 L48.5,48.5" />
+    <path d="M20,55 C44,50 65,57 70,77 C48,86 26,74 20,55" />
+  </svg>
 )
+
+/**
+ * The clarifying question's card and its choices.
+ *
+ * The founder's flow, in one shape: the person asks, the chat asks
+ * **one** question back — never two — and names what it would do
+ * before doing it. The question is the serif line above; this is the
+ * card beneath, and nothing runs until a choice is picked.
+ *
+ * Every value here is the design's own. The card is `#f6f6f4` at 16px
+ * radius; the title 14.5px near-black; the blurb 13.5px in `#9aa1ab`;
+ * the file icons 22px, overlapping by 7px after the first. The
+ * choices sit **right-aligned under the card**, and the last one is
+ * the primary — dark fill, 9px radius, 500 weight — while the rest
+ * are grey text pills at 999px.
+ */
+const Choices = ({
+  title,
+  blurb,
+  icons,
+  options,
+}: {
+  title: string
+  blurb: string
+  icons: string[]
+  options: AskOption[]
+}) => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: 12,
+      maxWidth: 420,
+      animation: 'pcIn .3s ease both',
+    }}
+  >
+    <div
+      style={{
+        alignSelf: 'stretch',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        background: '#f6f6f4',
+        borderRadius: 16,
+        padding: '15px 18px',
+      }}
+    >
+      <span
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 14.5,
+            letterSpacing: '-.01em',
+            color: '#15171b',
+          }}
+        >
+          {title}
+        </span>
+        <span
+          style={{
+            fontSize: 13.5,
+            lineHeight: 1.45,
+            color: '#9aa1ab',
+            textWrap: 'pretty',
+          }}
+        >
+          {blurb}
+        </span>
+      </span>
+      <span
+        style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center' }}
+      >
+        {icons.map((src, i) => (
+          <span
+            key={`${src}-${i}`}
+            style={{
+              width: 22,
+              height: 22,
+              marginLeft: i === 0 ? 0 : -7,
+              backgroundImage: `url(${src})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+            }}
+          />
+        ))}
+      </span>
+    </div>
+    <div
+      style={{
+        alignSelf: 'flex-end',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      {options.map((o, i) => {
+        const primary = i === options.length - 1
+        return (
+          <button
+            key={o.label}
+            onClick={o.pick}
+            style={{
+              border: 0,
+              background: primary ? '#1f2937' : 'transparent',
+              color: primary ? '#fff' : '#8f96a0',
+              borderRadius: primary ? 9 : 999,
+              height: 36,
+              padding: primary ? '0 16px' : '0 12px',
+              font: 'inherit',
+              fontSize: 14,
+              fontWeight: primary ? 500 : 400,
+              cursor: 'pointer',
+            }}
+          >
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  </div>
+)
+
+/**
+ * A run in progress: « Thinking », then the live step and its result.
+ *
+ * The design shows one step at a time rather than a list — the step's
+ * title in 16px, its sub-line under a **green ring that becomes a
+ * green tick**, and the thing it produced in a raised card that
+ * starts as a grey skeleton and fills in when the name is known.
+ * Steps are indented 36px so they sit under the mark's text column.
+ */
+const Run = ({ stages }: { stages: RunStage[] }) => {
+  const live = stages.find((s) => !s.done) ?? stages[stages.length - 1]
+  if (!live) return null
+  const finished = !!live.done
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        <Mark top={1} />
+        <span
+          style={{
+            fontSize: 15,
+            letterSpacing: '-.006em',
+            background:
+              'linear-gradient(100deg,#c9ccd2 20%,#6b7280 42%,#c9ccd2 64%)',
+            backgroundSize: '220% 100%',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            animation: 'aShimmer 1.8s linear infinite',
+          }}
+        >
+          Thinking
+        </span>
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          paddingLeft: 36,
+        }}
+      >
+        <div
+          key={live.title}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 13,
+            animation: 'pcIn .4s ease both',
+          }}
+        >
+          <span
+            style={{
+              flex: '0 0 18px',
+              width: 18,
+              height: 18,
+              backgroundImage: `url(${live.icon})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+            }}
+          />
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 500,
+              letterSpacing: '-.012em',
+              color: '#31353b',
+            }}
+          >
+            {live.title}
+          </span>
+        </div>
+        <div
+          key={live.sub}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            animation: 'pcIn .4s ease both',
+          }}
+        >
+          {finished ? (
+            <svg
+              width={15}
+              height={15}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#1f8a4c"
+              strokeWidth={2.1}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ flex: '0 0 15px' }}
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="9.4" />
+              <polyline points="7.9,12.5 10.8,15.4 16.3,9.2" />
+            </svg>
+          ) : (
+            <span
+              style={{
+                flex: '0 0 15px',
+                width: 15,
+                height: 15,
+                borderRadius: '50%',
+                border: '1.8px solid rgba(31,138,76,.16)',
+                borderTopColor: '#1f8a4c',
+                animation: 'aRing 1s linear infinite',
+              }}
+            />
+          )}
+          <span
+            style={{ fontSize: 14, color: '#9aa1ab', textWrap: 'pretty' }}
+          >
+            {live.sub}
+          </span>
+        </div>
+        <div
+          style={{
+            alignSelf: 'flex-start',
+            minWidth: 'min(380px,100%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            background: '#fff',
+            borderRadius: 16,
+            boxShadow:
+              '0 0 0 .5px rgba(30,32,38,.07), 0 8px 24px rgba(16,20,28,.05)',
+            padding: '13px 18px 13px 15px',
+            animation: 'pcIn .4s ease both',
+          }}
+        >
+          {live.art ? (
+            <>
+              <span
+                style={{
+                  flex: '0 0 20px',
+                  width: 20,
+                  height: 20,
+                  backgroundImage: `url(${live.artIcon ?? live.icon})`,
+                  backgroundSize: 'contain',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center',
+                }}
+              />
+              <span
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  fontSize: 14.5,
+                  letterSpacing: '-.01em',
+                  color: '#31353b',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  animation: 'pcIn .4s ease both',
+                }}
+              >
+                {live.art}
+              </span>
+            </>
+          ) : (
+            //: The skeleton. It is not decoration — it is the honest
+            //: shape of « something is coming and I cannot name it
+            //: yet », and it becomes the real name in place.
+            <>
+              <span
+                style={{
+                  flex: '0 0 24px',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 8,
+                  background: '#f1f2f4',
+                  animation: 'aFade 1.6s ease-in-out infinite',
+                }}
+              />
+              <span
+                style={{
+                  flex: 1,
+                  height: 10,
+                  maxWidth: 290,
+                  borderRadius: 999,
+                  background: '#f1f2f4',
+                  animation: 'aFade 1.6s ease-in-out infinite',
+                }}
+              />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The verdict: what the run concluded, and everything behind it.
+ *
+ * Read top to bottom the way the design draws it, and the order is the
+ * founder's voice rule made visual — **the answer leads, the evidence
+ * follows**. The trace toggle sits *above* the lead but collapsed, so
+ * the working is available without being in the way; then the lead
+ * sentence in the reading serif; then the counts; then what was
+ * produced; then what to do next.
+ *
+ * The tallies never add up into a score. Three errors and five
+ * warnings are three errors and five warnings — a defect and a
+ * judgement call do not sum, which is why each keeps its own dot.
+ */
+const Verdict = ({
+  lead,
+  traceLines,
+  tallies,
+  outputs,
+  primaryAction,
+  altAction,
+  onPrimary,
+  onAlt,
+}: {
+  lead: string
+  traceLines: string[]
+  tallies: { label: string; n: number; dot: string }[]
+  outputs: { icon: string; name: string }[]
+  primaryAction?: string
+  altAction?: string
+  onPrimary?: () => void
+  onAlt?: () => void
+}) => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
+      <Mark top={4} />
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
+        }}
+      >
+        {traceLines.length > 0 && (
+          <button
+            onClick={() => setOpen((v) => !v)}
+            style={{
+              alignSelf: 'flex-start',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              border: 0,
+              background: 'transparent',
+              padding: 0,
+              font: 'inherit',
+              fontSize: 14.5,
+              color: '#8f96a0',
+              cursor: 'pointer',
+            }}
+          >
+            <span>
+              {open ? 'Hide the working' : `Show the working`}
+            </span>
+            <svg
+              width={14}
+              height={14}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                flex: '0 0 14px',
+                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform .2s ease',
+              }}
+              aria-hidden
+            >
+              <polyline points="6,9 12,15 18,9" />
+            </svg>
+          </button>
+        )}
+        {open && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              borderLeft: '1.5px solid #ecebe8',
+              padding: '2px 0 2px 16px',
+              animation: 'pcIn .3s ease both',
+            }}
+          >
+            {traceLines.map((t) => (
+              <span
+                key={t}
+                style={{
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  color: '#9aa1ab',
+                  textWrap: 'pretty',
+                }}
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+        <span
+          style={{
+            fontFamily: font.serif,
+            fontSize: 17.5,
+            lineHeight: 1.55,
+            color: '#1c1f23',
+            maxWidth: '60ch',
+            textWrap: 'pretty',
+          }}
+        >
+          {lead}
+        </span>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 26,
+            animation: 'pcIn .4s ease both',
+          }}
+        >
+          {tallies.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+              {tallies.map((c) => (
+                <span
+                  key={c.label}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    fontSize: 14,
+                    color: '#6b7280',
+                  }}
+                >
+                  <span
+                    style={{
+                      flex: '0 0 8px',
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: c.dot,
+                    }}
+                  />
+                  <span>
+                    {c.n} {c.label}
+                  </span>
+                </span>
+              ))}
+            </div>
+          )}
+          {outputs.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+              {outputs.map((o) => (
+                <button
+                  key={o.name}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    background: '#fff',
+                    border: 0,
+                    borderRadius: 14,
+                    boxShadow:
+                      '0 0 0 .5px rgba(30,32,38,.07), 0 8px 22px rgba(16,20,28,.05)',
+                    padding: '12px 18px 12px 14px',
+                    font: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span
+                    style={{
+                      flex: '0 0 20px',
+                      width: 20,
+                      height: 20,
+                      backgroundImage: `url(${o.icon})`,
+                      backgroundSize: 'contain',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'center',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 14.5,
+                      letterSpacing: '-.008em',
+                      color: '#31353b',
+                    }}
+                  >
+                    {o.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {(primaryAction || altAction) && (
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 10,
+                paddingTop: 16,
+              }}
+            >
+              {primaryAction && (
+                <button
+                  onClick={onPrimary}
+                  style={{
+                    border: 0,
+                    background: '#1f2937',
+                    color: '#fff',
+                    borderRadius: 9,
+                    height: 38,
+                    padding: '0 17px',
+                    font: 'inherit',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {primaryAction}
+                </button>
+              )}
+              {altAction && (
+                <button
+                  onClick={onAlt}
+                  style={{
+                    border: 0,
+                    background: 'transparent',
+                    color: '#0060d0',
+                    borderRadius: 999,
+                    height: 38,
+                    padding: '0 12px',
+                    font: 'inherit',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {altAction}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /** The answer split for the design: prose, then the grey ends-line. */
 const split = (answer: string): { text: string; ends: string } => {
@@ -875,6 +1536,62 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                     </span>
                   </div>
                 )}
+                {m.role === 'ask' && (
+                  //: The chat asking one question back. The card names
+                  //: what it would do; nothing runs until a choice is
+                  //: picked, and the options vanish once one is.
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 18,
+                      alignItems: 'flex-start',
+                      animation: 'pcIn .3s ease both',
+                    }}
+                  >
+                    <Mark top={5} />
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 22,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: font.serif,
+                          fontSize: 17.5,
+                          lineHeight: 1.55,
+                          color: '#1c1f23',
+                          maxWidth: '56ch',
+                          textWrap: 'pretty',
+                        }}
+                      >
+                        {m.text}
+                      </span>
+                      {(m.options?.length ?? 0) > 0 && (
+                        <Choices
+                          title={m.cardTitle ?? ''}
+                          blurb={m.cardBlurb ?? ''}
+                          icons={m.cardIcons ?? []}
+                          options={m.options ?? []}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+                {m.role === 'run' && <Run stages={m.stages ?? []} />}
+                {m.role === 'verdict' && (
+                  <Verdict
+                    lead={m.text}
+                    traceLines={m.traceLines ?? []}
+                    tallies={m.tallies ?? []}
+                    outputs={m.outputs ?? []}
+                    primaryAction={m.primaryAction}
+                    altAction={m.altAction}
+                  />
+                )}
                 {m.role === 'answer' && (
                   <div
                     style={{
@@ -883,7 +1600,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                       alignItems: 'flex-start',
                     }}
                   >
-                    <Mark top={6} />
+                    <Mark top={5} />
                     <div
                       style={{
                         flex: 1,
@@ -895,9 +1612,14 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                     >
                       <span
                         style={{
-                          fontSize: 16,
-                          lineHeight: 1.7,
-                          color: '#1d1d1f',
+                          //: Revision 2's reading serif, not the UI
+                          //: face: the answer is the one thing on this
+                          //: screen a person reads rather than scans.
+                          fontFamily: font.serif,
+                          fontSize: 17.5,
+                          lineHeight: 1.55,
+                          color: '#1c1f23',
+                          maxWidth: '56ch',
                           whiteSpace: 'pre-wrap',
                           textWrap: 'pretty',
                         }}
