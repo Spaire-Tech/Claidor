@@ -215,8 +215,11 @@ def main() -> int:
         for ref, cell in cells.items()
         if cell.sheet == sheet and cell.formula is not None
     )
-    print(f"{source.name}: {len(rules)} committed stable rules, "
-          f"{len(watched)} watched formula cells", flush=True)
+    print(
+        f"{source.name}: {len(rules)} committed stable rules, "
+        f"{len(watched)} watched formula cells",
+        flush=True,
+    )
 
     # --- M1: the rule graph's field of view -------------------------
     started = time.monotonic()
@@ -242,65 +245,103 @@ def main() -> int:
     )
     zero_candidates = [ref for ref in watched if reach.get(ref, 0) == 0]
     control_site = zero_candidates[0] if zero_candidates else None
-    print(f"  sites: best-case {best} (R={reach.get(best)}), "
-          f"R=0 control {control_site}", flush=True)
+    print(
+        f"  sites: best-case {best} (R={reach.get(best)}), R=0 control {control_site}",
+        flush=True,
+    )
 
     # --- M2: plants, runs, rules ------------------------------------
     typed, _how = inferred_inputs(cells)
     families = families_of(cells, typed, sheet)
-    stored = {ref: cells[ref].value for ref in term_cells}
 
     plants = [("a1", best, "constant-overwrite"), ("b1", best, "tail-hardcode")]
     if control_site is not None:
         plants.append(("c1", control_site, "tail-hardcode"))
 
-    calculator = UnoCalculator(document_timeout=1800)
-    calculator.start()
-    conditions: dict[str, dict] = {}
-    try:
-        conditions["control"] = run_condition(
-            calculator, source, work, "control", typed, families,
-            watched, rules, SEED_CONTROL,
-        )
-        print(f"  control: {conditions['control']}", flush=True)
-        if conditions["control"]["rules_failed_any"]:
-            print("  CONTROL FAILED — harness defective, stopping", flush=True)
-            out.write_text(json.dumps(
-                {"model": source.name, "m1": m1, "control": conditions["control"],
-                 "verdict": "control failed — no plant result is valid"}, indent=1))
-            return 1
-        for tag, site, kind in plants:
-            planted_file = work / f"{source.stem}-{tag}.xlsx"
-            base = stored[site]
-            edit = plant(source, planted_file, site, kind, float(base))
-            changed = formula_diff(source, planted_file)
-            inject = {site: float(base)} if kind == "constant-overwrite" else None
-            result = run_condition(
-                calculator, planted_file, work, tag, typed, families,
-                watched, rules, SEED_PLANTS, inject=inject,
-            )
-            result.update({
-                "site": site, "class": kind, "edit": edit,
-                "reach_ceiling": reach.get(site, 0),
-                "diff_changed_cells": changed,
-                "diff_names_plant_alone": changed == [site],
-            })
-            conditions[tag] = result
-            print(f"  {tag} [{kind} at {site}]: broke {result['rules_broken']} "
-                  f"of {len(rules)} rules (any-run {result['rules_failed_any']}); "
-                  f"diff sees {len(changed)} changed cell(s)", flush=True)
-    finally:
-        calculator.stop()
-
-    out.write_text(json.dumps({
+    record: dict = {
         "model": source.name,
         "rules": len(rules),
         "watched": len(watched),
         "m1": m1,
-        "sites": {"best": best, "best_reach": reach.get(best, 0),
-                  "zero_control": control_site},
-        "conditions": conditions,
-    }, indent=1))
+        "sites": {
+            "best": best,
+            "best_reach": reach.get(best, 0),
+            "zero_control": control_site,
+        },
+        "conditions": {},
+    }
+
+    def checkpoint() -> None:
+        # A container restart must cost the remainder, not the run —
+        # the standing lesson, paid for again when the first version
+        # of this script crashed after b1 and wrote nothing at all.
+        out.write_text(json.dumps(record, indent=1))
+
+    calculator = UnoCalculator(document_timeout=1800)
+    calculator.start()
+    conditions = record["conditions"]
+    try:
+        conditions["control"] = run_condition(
+            calculator,
+            source,
+            work,
+            "control",
+            typed,
+            families,
+            watched,
+            rules,
+            SEED_CONTROL,
+        )
+        print(f"  control: {conditions['control']}", flush=True)
+        checkpoint()
+        if conditions["control"]["rules_failed_any"]:
+            record["verdict"] = "control failed — no plant result is valid"
+            checkpoint()
+            print("  CONTROL FAILED — harness defective, stopping", flush=True)
+            return 1
+        for tag, site, kind in plants:
+            planted_file = work / f"{source.stem}-{tag}.xlsx"
+            # The site's stored value, from the workbook itself — the
+            # first version looked it up in a term-cells-only table and
+            # crashed on the R = 0 control site, which is not a term.
+            base = cells[site].value
+            edit = plant(source, planted_file, site, kind, float(base))  # type: ignore[arg-type]
+            changed = formula_diff(source, planted_file)
+            inject = {site: float(base)} if kind == "constant-overwrite" else None
+            result = run_condition(
+                calculator,
+                planted_file,
+                work,
+                tag,
+                typed,
+                families,
+                watched,
+                rules,
+                SEED_PLANTS,
+                inject=inject,
+            )
+            result.update(
+                {
+                    "site": site,
+                    "class": kind,
+                    "edit": edit,
+                    "reach_ceiling": reach.get(site, 0),
+                    "diff_changed_cells": changed,
+                    "diff_names_plant_alone": changed == [site],
+                }
+            )
+            conditions[tag] = result
+            checkpoint()
+            print(
+                f"  {tag} [{kind} at {site}]: broke {result['rules_broken']} "
+                f"of {len(rules)} rules (any-run {result['rules_failed_any']}); "
+                f"diff sees {len(changed)} changed cell(s)",
+                flush=True,
+            )
+    finally:
+        calculator.stop()
+
+    checkpoint()
     print(f"wrote {out}", flush=True)
     return 0
 
