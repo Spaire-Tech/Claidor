@@ -78,3 +78,9 @@ typing 0 against a cited document cell printing $704,462 — with 30 of
 and a wrongly stated convention flagged rather than absorbed. The
 founder's order — class 1 right before anything else — is met with
 its numbers.
+
+**Gate status:** `dev/verify` on the wired state: **pass** — lint,
+format and types clean, **1,199 passed, 11 skipped** (the six new
+credit-convention tests included). The golden master stands from
+round 1's sweep: this round touched the chain package only, and the
+engine's audit path is unchanged.
