@@ -191,13 +191,49 @@ nothing.**
   with every strong label (circular evidence), and the 0.5 floor
   rejects statutory phrasing that shares one word in three. Zero
   wrong answers throughout — the honesty held.
+- Round 11 (`chain-round11.md`) then took the founder's decision — a
+  floor derived from deliberately-shuffled labels, never chosen — and
+  the control **refused a lower floor and proved the refusal
+  correct**: the one-shared-word truths score exactly what
+  deliberately-wrong pairings score (0.333 against 0.333). Label
+  overlap inside a selected page is now exhausted by measurement; the
+  unplayed evidence is model-side (account numbers, the formula
+  graph) and the spread's label-half question, both put to the
+  founder in that document.
 - The abstention instrument is genuinely good (30 of 30, 109 true
   abstentions) and the product already tells the truth about itself
   in-band.
-- **Waiting on:** three Kelso contract PDFs (a browser and a minute,
-  closes the best external test we own); Sentinel's
+- **Waiting on:** the Kelso **Project Agreement PDF** (see the intake
+  note below — the model half is in hand and verified); Sentinel's
   `Cell.column_label` stacked-header fix (still the thing between D3
   and part of its recall); and a first real confirmed deal for D4/D5.
+
+## 4a. Kelso intake — 31 August, the founder's upload, verified
+
+The founder sent `KelsoHighSchoolFinancialModel.xlsm` (4,231,503
+bytes, sha256 `e35ec98254a8…`). Verified rather than assumed:
+**byte-identical to the public bucket copy** the committed fetcher
+(`corpus_sft_models.py`) already reaches — same sha256, fetched and
+compared this session — so the model needs no upload in future, and
+nothing about round 4's blocker changed on the model side.
+
+What the file settles is better than reachability: the answer sheet
+round 4's registration rests on is confirmed **in** it. The tab is
+named **`Gaps List`** — 73 rows, columns « No. · Clause No. ·
+Information Required · Information from Model · Description of
+Document » (« Schedule 1 → Base Credit Facility Commitment →
+21,461,602.52 ») — the deal team's own clause → term → figure map.
+Two sibling tabs (`Credit Agreement Gaps`, `DBFM Gaps`) carry the
+same shape with document references.
+
+**Round 4 still needs its document half:** the signed **Project
+Agreement PDF** from the SFT portal (one browser download). Some
+Gaps List rows cite the **Credit Agreement**, which was never
+published — those score as the registered
+`unreachable (unpublished paper)` condition, exactly as round 4's
+registration foresaw. The harness
+(`scripts/corpus_documents_kelso_round`) is committed and tested; the
+round runs the day the agreement lands.
 
 ## 5. Corrections this audit owes the record
 

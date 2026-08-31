@@ -97,3 +97,79 @@ scores sit; that is exactly why the floor is not mine to pick. The
 control is the guard: the number comes out of the shuffled pairs
 mechanically, with the overlap exclusion applied to the control side
 only, and it is committed beside the verdicts either way.
+
+---
+
+# Measured. The control refuses a lower floor — and proves the refusal correct.
+
+*Run as registered, once. Verdicts and the full control distribution:
+`scribe-d3-round11-verdicts.json`; harness:
+`server/scripts/corpus_d3_round11.py`.*
+
+**The derived floor is 1.0.** 82 deliberately-wrong pairings were
+scored (9 more were excluded because their pages overlapped the true
+section's — the shuffle-that-isn't guard, applied as registered), and
+two of them achieved a **perfect 1.0**. Both are the same row: r41,
+whose label is the single word « General », fully covered by lines in
+the depreciation schedule and the salaries schedule alike. At the bar
+where deliberately-wrong pairs stop getting through, nothing gets
+through:
+
+| | result | bar |
+|---|---|---|
+| correct | 0 | ≥ 3 and > wrong — **NOT CLEARED** |
+| wrong | 0 | kill rule (wrong > correct) — **does not fire** |
+| abstained | 14 | — |
+| unreachable-page | 1 | — |
+
+**And the pooling is not what blocked it.** One generic label setting
+the bar for all fifteen was worth checking, so the same control was
+re-read per row — each label barred only by its *own* wrong
+pairings' maximum — as a labelled counterfactual, not the round's
+result. **Per-row floors also produce zero correct:** ten rows sit at
+or below their own floor, four clear it and land on a **tie**.
+
+**The sentence the control earned, and it is the round's finding:**
+for the one-shared-word rows, **the truth's score equals the score
+deliberately-wrong pairings achieve — 0.333 against 0.333** (r10,
+r12, r59: their own floors are exactly their truth's coverage). The
+evidence the matcher is allowed to use genuinely cannot tell the
+right line from a wrong-section line at that coverage, so *any* floor
+that admits those truths admits equal-scoring garbage. Being less
+picky here is now **measured unsafe**, not assumed unsafe — which is
+exactly what the founder's control was for.
+
+**What the four surviving ties are**, read at the lines:
+
+- r19 « Electric Plant in Service »: a « tie » of two **facts on the
+  same printed line** — the two dollar figures of « 104TOTAL Electric
+  Plant in Service… » on the **label half of the spread** (truth is
+  that same line 104, cited on the continuation page). Under the
+  round's own declared line granularity that is one candidate, not a
+  tie — and it is a label-half, which the strict rule counts wrong
+  anyway. The tie rule and the verdict granularity disagree, worth
+  one line in the record.
+- r21, r88: genuine cross-line ties — a two-or-three-word label
+  matching sibling lines (« Plant Materials and Operating Supplies »
+  against its own TOTAL row) at equal coverage.
+- r57: eleven lines tie at 0.33 **on the correct page** — a two-word
+  label is everywhere even once the page is right.
+
+## Where rounds 10 and 11 leave the design, together
+
+Page selection is solved well enough (11 of 15, title-to-section).
+Within the page, label overlap is now **exhausted by measurement**:
+the floor cannot come down (this round), the ties cannot be broken
+blind (the oracle bound), and the strongest matches land on the label
+half of a spread the verdict rule cannot credit. The evidence that
+remains unplayed is on the **model side** — the FERC account number
+(shared on 2 of 15 rows), the formula graph, what the cell feeds —
+and the **spread reconstruction** question, which round 10 reopened:
+with the pool narrowed and titles excluded, the label half of the
+cited line is frequently the top candidate, and whether that counts
+as finding the source is a product question about what the citation
+must point at, not a matching question. Both go to the founder;
+neither is patched here.
+
+**Nothing shipped. Zero wrong answers across both rounds — the
+honesty held under a bar built to let more through.**
