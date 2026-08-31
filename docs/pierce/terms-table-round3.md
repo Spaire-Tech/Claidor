@@ -170,3 +170,14 @@ population (one filer's lineage is one filer), and the typed route's
 document-side blindness is a standing, stated cost — 4 of 15 terms
 here cannot see the document move, priced by the facing-page spread
 that forced typing in the first place.
+
+**Gate status:** `dev/verify` on the final state: **pass** — lint,
+format and types clean, 1,199 passed, 11 skipped. (Its first run
+this round reported fixture errors again; the cause was the
+container quietly reaping the Minio process mid-run — the third such
+environment death this session, postgres and redis surviving this
+time. The re-run supervises Minio inside the gate's own process
+scope and passed whole. No code changed between the two runs.) The
+golden master stands from round 1's sweep: this round added a
+harness, a fetcher extension and documents; the audit path is
+untouched.
