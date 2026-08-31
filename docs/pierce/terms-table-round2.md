@@ -209,8 +209,13 @@ tracks.
 
 **Gate status:** no product code changed in this round (a harness
 script and documents only), so round 1's golden-master result stands
-for this tree; `dev/verify` re-run on the final state, recorded in
-the worklog with the push.
+for this tree. `dev/verify` on the final state: **pass** — lint,
+format and types clean, 1,193 passed, 11 skipped. Its first run
+reported 1,193 *errors*; that was Postgres, Redis and Minio dying
+together in the container mid-run, not code — restarted, the same
+tree passed whole. Recorded because a test result taken against dead
+services is not a test result, and the gate's own re-run-alone rule
+is what separated the two.
 
 ## What is measured now, after both rounds
 
