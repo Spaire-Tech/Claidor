@@ -62,7 +62,7 @@ cannot honestly measure it.
 | --- | --- |
 | Raw version diff (cells added, removed, changed) | **DONE** |
 | Shift detection — one inserted row reads as one change, not two hundred | **DONE** — anchor decomposition 10–73× on 11 of 12 real sheets |
-| Delta report in review language (new defects, repaired, moved assumptions) | **HALF** — 3× too slow, and its acceptance test never run. Piece 9 |
+| Delta report in review language (new defects, repaired, moved assumptions) | **HALF** — speed fixed 31 Aug (3.8× on the comparison, output byte-identical; `delta-speed.md`), but its acceptance test has still never run: the Welsh Water pair it names is unreachable from this container. Piece 9 |
 | Proving what did **not** change — the three tiers | **BUILT, not measured** |
 | The Watch on documents — model moved, deck did not | **DONE** |
 | **Behavioural version diffing** — the laws v8 obeyed vs the laws v12 obeys | **NOT BUILT — deliberately.** See § 2 |
@@ -211,7 +211,7 @@ green, number written down.
 | **6** | **The Chain's page geometry** (D3/D4) | Six failed rounds, and the diagnosis says it is document geometry, not matching | days |
 | **7** | **The terms table** (§ 3d) | Missing from the plan entirely, and probably the real fix for the Chain's scale problem | days |
 | **8** | **B5 measured**, then B6 decided | The measurement decides whether Reiter is right or over-engineering | days |
-| **9** | The delta report's speed + its acceptance test | 3× over the line; the biggest cost is the engine throwing away work it just did | days |
+| **9** | The delta report's speed + its acceptance test | **Speed measured 31 Aug** — cold comparison 319.7 → 83.9 s on the GD3 pair (3.8×), report byte-identical on every pair tried; the two biggest costs were the engine throwing away its parse caches between phases and ~100 s of garbage-collector churn over the caches it kept (`delta-speed.md`). The corpus gate verdict on the change is recorded there. The acceptance test itself (Welsh Water pair) is still never run — the pair is unreachable from this container | days |
 | **10** | The unsourced-number finding (D5) | Depends on the Chain having a store to ask | days |
 | **11** | The panel end to end (G3) | Exists, never verified | days |
 | **12** | Determined corrections (F3) | The mechanism exists; the classes and their refusal cases do not | weeks |

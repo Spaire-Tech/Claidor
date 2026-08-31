@@ -273,6 +273,43 @@ already forbids wrapping a sweep.
 pair lands at 90–125 s — under the bar. The A/B (B then A, back to
 back, digests compared) decides.*
 
-## A/B results, final
+## A/B results, final (back to back, same hour, same box)
 
-*to be filled; every change gated on the digest and the corpus gate*
+| quantity | A (main) | B (branch) | |
+| --- | --- | --- | --- |
+| **cold `delta_of`, findings in hand, GD3** | 319.7 s | **83.9 s** | **3.8×** |
+| `delta_report` whole — reads, audits, comparison | ~1,098 s (224 + 554 + 320) | **387.4 s** | ~2.8× |
+| reads (control) | 223.7 s | 233.4 s | the box was comparable |
+
+**The bar was ≤ 150 s. B is 83.9 s — met, with margin the ±30% box
+cannot take away.** Digest `8128e2b2…` on every run, A and B, cold
+and warm, comparison-only and whole-path: the report never moved by
+one character. My registered prediction for 5′ was 90–125 s; the
+result is *below* the range — wrong in the conservative direction,
+recorded as wrong.
+
+The whole-path number says why the collector was the story: B's
+`delta_report` (387 s) beats B's own reads + audits measured
+*outside* the scope (233 + 376 = 609 s) — the GC tax was falling on
+the reads and the audits too, and the retained scope lifts it from
+all of them at once.
+
+Scaled to the registered test's 12 MB pair by prism's own rule, the
+comparison sits around **67 s against the two-minute line** — but
+that sentence is a projection from a bigger pair on a noisy box, not
+a measurement of Welsh Water, and the actual WSH run stays owed
+exactly as before.
+
+## Verification
+
+- **Corpus gate**: 27-file sweep against
+  `docs/pierce/corpus-golden-master.json` — *(verdict recorded below
+  when the sweep lands)*.
+- **Report digests**: identical A↔B on GD3 (three runs), ED2
+  v4→v5, and H7 debt indexation FP→FDS.
+- **Tests**: the tieout suite plus 11 new pins — retention semantics
+  (4), collector state (3, in the same class), the align identity
+  path against the DP oracle (3), the bit-parallel LCS against the
+  quadratic oracle (3 + a thousand random cases).
+- ruff and format clean on every touched file; mypy reports only the
+  two pre-existing `audit.py` errors recorded in `pieces.md` § 4a.
