@@ -35,8 +35,41 @@ LABEL_WEIGHT = 0.5
 
 
 def lcs_length(a: Sequence[str], b: Sequence[str]) -> int:
-    """Classic O(|a|·|b|) longest-common-subsequence length, two rows
-    of memory."""
+    """Longest-common-subsequence **length**, bit-parallel.
+
+    The standard bit-vector formulation (Crochemore/Hyyrö): one
+    machine word — a Python int — carries a whole DP row, so the cost
+    is O(|a|·|b| / word) instead of O(|a|·|b|) Python steps. The
+    profiled reality that forced this: `lcs_length` was 256 of 267
+    seconds under the GD3 alignment, two-thirds of it one unanchorable
+    data sheet. Same length by definition —
+    `lcs_length_quadratic` stays below as the oracle and the
+    differential test runs both.
+    """
+    if not a or not b:
+        return 0
+    if len(a) > len(b):
+        a, b = b, a
+    positions: dict[str, int] = {}
+    bit = 1
+    for item in a:
+        positions[item] = positions.get(item, 0) | bit
+        bit <<= 1
+    ones = bit - 1
+    row = ones
+    for item in b:
+        matches = positions.get(item)
+        if matches:
+            keep = row & matches
+            row = (row + keep) | (row - keep)
+    #: Each cleared bit inside the |a| window is one matched element.
+    return len(a) - (row & ones).bit_count()
+
+
+def lcs_length_quadratic(a: Sequence[str], b: Sequence[str]) -> int:
+    """The classic O(|a|·|b|) two-row DP — kept beside the
+    bit-parallel version as the oracle it is tested against, the same
+    way `align_lines_dp` stands oracle to the anchoring."""
     if not a or not b:
         return 0
     previous = [0] * (len(b) + 1)

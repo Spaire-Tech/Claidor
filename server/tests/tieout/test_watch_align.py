@@ -194,6 +194,42 @@ class TestCrossSheetAbsolute:
         )
 
 
+class TestBitParallelLcsAgreesWithTheQuadraticOracle:
+    """`lcs_length` went bit-parallel for speed; the quadratic DP
+    stays as the oracle and every case runs both."""
+
+    def both(self, a: list[str], b: list[str]) -> None:
+        from polar.tieout.watch.align import lcs_length, lcs_length_quadratic
+
+        assert lcs_length(a, b) == lcs_length_quadratic(a, b)
+        assert lcs_length(b, a) == lcs_length_quadratic(a, b)
+
+    def test_the_edges(self) -> None:
+        self.both([], [])
+        self.both(["S1"], [])
+        self.both(["S1"], ["S1"])
+        self.both(["S1"], ["S2"])
+        self.both(["S1"] * 40, ["S1"] * 25)
+        self.both([f"S{i}" for i in range(30)], [f"T{i}" for i in range(30)])
+
+    def test_sequences_longer_than_a_machine_word(self) -> None:
+        """The row vector spans multiple 64-bit words for a real
+        column line — 1,600 rows on the sheet that forced this."""
+        a = [f"S{i % 7}" for i in range(300)]
+        b = [f"S{(i * 3) % 7}" for i in range(211)]
+        self.both(a, b)
+
+    def test_a_thousand_random_cases(self) -> None:
+        import random
+
+        rolls = random.Random(20260831)
+        for _ in range(1000):
+            alphabet = rolls.randint(1, 8)
+            a = [f"S{rolls.randint(0, alphabet)}" for _ in range(rolls.randint(0, 60))]
+            b = [f"S{rolls.randint(0, alphabet)}" for _ in range(rolls.randint(0, 60))]
+            self.both(a, b)
+
+
 class TestAnchoringAgreesWithTheDynamicProgramme:
     """Anchoring exists to make most comparisons never happen. It is
     only allowed to do that if it reaches the same verdict, so the DP
