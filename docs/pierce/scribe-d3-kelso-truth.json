@@ -1,0 +1,2899 @@
+[
+ {
+  "row": 5,
+  "text": "Schedule 1 | Base Credit Facility Commitment",
+  "figure": 21461602.520285793,
+  "located": [
+   {
+    "ref": "ReportSummary!G128",
+    "labels": "Total UP (Before Indexation)"
+   },
+   {
+    "ref": "ReportSummary!G131",
+    "labels": ""
+   },
+   {
+    "ref": "Schedule 1- Lenders!D7",
+    "labels": "Senior Lender Base Credit Facility Commitment"
+   },
+   {
+    "ref": "Swap Profiles!AM16",
+    "labels": "Senior Debt 1 FY2017"
+   },
+   {
+    "ref": "Swap Profiles!AY16",
+    "labels": "Senior Debt 1 FY2017"
+   },
+   {
+    "ref": "Swap Profiles!AZ16",
+    "labels": "Senior Debt 1 FY2018"
+   },
+   {
+    "ref": "Swap Profiles!E56",
+    "labels": "FY2017"
+   },
+   {
+    "ref": "Swap Profiles!E66",
+    "labels": "FY2017"
+   },
+   {
+    "ref": "Swap Profiles!E67",
+    "labels": "FY2018"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 6,
+  "text": "Schedule 1 | Subordinated Debt Bridge Facility Commitment",
+  "figure": 1297871.719391022,
+  "located": [
+   {
+    "ref": "Schedule 1- Lenders!E7",
+    "labels": "Senior Lender Subordinated Debt Bridge Facility Commitment*"
+   },
+   {
+    "ref": "Schedule 7 - Repayment Schedule!C85",
+    "labels": "FY2017"
+   },
+   {
+    "ref": "Schedule 12 - Drawdown Schedule!R17",
+    "labels": "FY2016"
+   },
+   {
+    "ref": "Schedule 12 - Drawdown Schedule!D58",
+    "labels": "FY2016"
+   },
+   {
+    "ref": "Swap Profiles!R20",
+    "labels": "Equity Bridge Facility FY2016"
+   },
+   {
+    "ref": "Swap Profiles!S20",
+    "labels": "Equity Bridge Facility FY2016"
+   },
+   {
+    "ref": "Swap Profiles!T20",
+    "labels": "Equity Bridge Facility FY2016"
+   },
+   {
+    "ref": "Swap Profiles!U20",
+    "labels": "Equity Bridge Facility FY2016"
+   },
+   {
+    "ref": "Swap Profiles!V20",
+    "labels": "Equity Bridge Facility FY2016"
+   },
+   {
+    "ref": "Swap Profiles!W20",
+    "labels": "Equity Bridge Facility FY2016"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 7,
+  "text": "Schedule 1 | Debt Service Reserve Facility Commitment",
+  "figure": 750000.0,
+  "located": [
+   {
+    "ref": "Schedule 1- Lenders!F7",
+    "labels": "Senior Lender Debt Service Reserve Facility Commitment"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 8,
+  "text": "Schedule 7 | Repayment Schedule | Dates and Amounts - Various",
+  "figure": 4.0,
+  "located": [
+   {
+    "ref": "BID PRICE!N7",
+    "labels": "Data Set: Reference 0.000 FY2018"
+   },
+   {
+    "ref": "BID PRICE!O7",
+    "labels": "Data Set: Reference 0.000 FY2019"
+   },
+   {
+    "ref": "BID PRICE!K9",
+    "labels": "FY2017"
+   },
+   {
+    "ref": "ReportCharts!N7",
+    "labels": "Data Set: Reference 0.000 FY2018"
+   },
+   {
+    "ref": "ReportCharts!O7",
+    "labels": "Data Set: Reference 0.000 FY2019"
+   },
+   {
+    "ref": "ReportCharts!K9",
+    "labels": "FY2017"
+   },
+   {
+    "ref": "ReportCharts!AR193",
+    "labels": "FY2033"
+   },
+   {
+    "ref": "ReportCharts!AS193",
+    "labels": "FY2034"
+   },
+   {
+    "ref": "ReportCharts!AT193",
+    "labels": "FY2034"
+   },
+   {
+    "ref": "ReportCharts!AU193",
+    "labels": "FY2035"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|6",
+    "text": "4.",
+    "line": "4. PROJECT DOCUMENTS .............................................................................................................. 2"
+   },
+   {
+    "key": "p2|56",
+    "text": "4",
+    "line": "29. DELAY EVENTS ..........................................................................................................................4 4"
+   },
+   {
+    "key": "p3|137",
+    "text": "04",
+    "line": "69. SEVERABILITY ..........................................................................................................................1 04"
+   },
+   {
+    "key": "p3|141",
+    "text": "04",
+    "line": "71. COSTS AND EXPENSES ..........................................................................................................1 04"
+   },
+   {
+    "key": "p4|160",
+    "text": "4",
+    "line": "SCHEDULE PART 4 FUNDERS' DIRECT AGREEMENT ....................................................................... 144"
+   },
+   {
+    "key": "p5|217",
+    "text": "4",
+    "line": "Construction and Regeneration Act 1996 by operation of paragraph 4 of the Construction"
+   },
+   {
+    "key": "p6|236",
+    "text": "4.",
+    "line": "4. PROJECT DOCUMENTS"
+   },
+   {
+    "key": "p7|260",
+    "text": "4",
+    "line": "4.6 Wtthout prejudice to the provisions of this Clause 4 (Project Documents), if at"
+   },
+   {
+    "key": "p7|264",
+    "text": "4.",
+    "line": "4.8 The Authority may, in circumstances referred to in Clause 4. 7 above"
+   },
+   {
+    "key": "p8|277",
+    "text": "4",
+    "line": "4"
+   },
+   {
+    "key": "p26|498",
+    "text": "4",
+    "line": "drawing reference AL(00)003, Revision F set out In Section 4 (S ite Plans) of"
+   },
+   {
+    "key": "p30|547",
+    "text": "4:",
+    "line": "PART 4: QUALITY ASSURANCE"
+   },
+   {
+    "key": "p74|1136",
+    "text": "4",
+    "line": "Section 4 ( Corrupt Gifts and Fraud, Breach of Refinancing) of Schedule Part 17"
+   },
+   {
+    "key": "p87|1304",
+    "text": "4",
+    "line": "maintained in accordance with Section 4 of Schedule Part 15 (Insurance"
+   },
+   {
+    "key": "p87|1323",
+    "text": "4",
+    "line": "Section 4 of Schedule Part 15 (Insurance Requirements)), DBFM Co shall"
+   },
+   {
+    "key": "p91|1356",
+    "text": "4",
+    "line": "53.15 4 DBFM Co shall notify the Authority as soon as reasonably practicable"
+   },
+   {
+    "key": "p119|1679",
+    "text": "4",
+    "line": "Act 197 4 by virtue of the exemptions specified in"
+   },
+   {
+    "key": "p119|1688",
+    "text": "4",
+    "line": "\"DBFM Co's Proposals\" means the document at Section 4 (DBFM Co's"
+   },
+   {
+    "key": "p124|1731",
+    "text": "4",
+    "line": "in the form identified in Schedule Part 4 (Funders'"
+   },
+   {
+    "key": "p127|1773",
+    "text": "4.",
+    "line": "4. details of the discussions held between"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 10,
+  "text": "Schedule 7 | Repayment Schedule | Dates and Amounts \u2013 Various",
+  "figure": 5.0,
+  "located": [
+   {
+    "ref": "BID PRICE!P7",
+    "labels": "Data Set: Reference 0.000 FY2019"
+   },
+   {
+    "ref": "BID PRICE!Q7",
+    "labels": "Data Set: Reference 0.000 FY2020"
+   },
+   {
+    "ref": "BID PRICE!L9",
+    "labels": "FY2017"
+   },
+   {
+    "ref": "BID PRICE!BG58",
+    "labels": "ADSCR (12m forward looking) FY2041"
+   },
+   {
+    "ref": "BID PRICE!BI59",
+    "labels": "ADSCR (12m bwd looking) FY2042"
+   },
+   {
+    "ref": "ReportCharts!P7",
+    "labels": "Data Set: Reference 0.000 FY2019"
+   },
+   {
+    "ref": "ReportCharts!Q7",
+    "labels": "Data Set: Reference 0.000 FY2020"
+   },
+   {
+    "ref": "ReportCharts!L9",
+    "labels": "FY2017"
+   },
+   {
+    "ref": "ReportCharts!AU58",
+    "labels": "NPAT FY2035"
+   },
+   {
+    "ref": "ReportCharts!BG120",
+    "labels": "ADSCR FY2041"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|8",
+    "text": "5.",
+    "line": "5. THE PROJECT OPERATIONS ................................................................................................... ..4"
+   },
+   {
+    "key": "p2|10",
+    "text": "5",
+    "line": "6. GENERAL OBLIGATIONS AND RESPONSIBILITIES OF DBFM C0 .......................................... 5"
+   },
+   {
+    "key": "p2|12",
+    "text": "5",
+    "line": "7. AUTHORITY'S DATA. .................................................................................................................... 5"
+   },
+   {
+    "key": "p2|66",
+    "text": "5",
+    "line": "34. PAYMENT ....................................................................................................................................5 5"
+   },
+   {
+    "key": "p4|162",
+    "text": "5",
+    "line": "SCHEDULE PART 5 LAND MATTERS .................................................................................................... 145"
+   },
+   {
+    "key": "p8|270",
+    "text": "5.",
+    "line": "5. THE PROJECT OPERATIONS"
+   },
+   {
+    "key": "p9|288",
+    "text": "5",
+    "line": "5"
+   },
+   {
+    "key": "p26|499",
+    "text": "5",
+    "line": "Schedule Part 5 (Land Matters), any landscaping areas, which cannot be turfed,"
+   },
+   {
+    "key": "p32|585",
+    "text": "5:",
+    "line": "PART 5: INFORMATION TECHNOLOGY"
+   },
+   {
+    "key": "p36|647",
+    "text": "5",
+    "line": "5 Year Maintenance Plan"
+   },
+   {
+    "key": "p36|651",
+    "text": "5",
+    "line": "the latest version of the 5 Year Maintenance Plan."
+   },
+   {
+    "key": "p49|799",
+    "text": "5",
+    "line": "Schedule Part 5 (Land Matters);"
+   },
+   {
+    "key": "p75|1166",
+    "text": "5",
+    "line": "46.13 Subject to the provisions of paragraph 2.1 of Section 5 (General) of Schedule"
+   },
+   {
+    "key": "p85|1266",
+    "text": "5",
+    "line": "5 (Land Matters)."
+   },
+   {
+    "key": "p87|1307",
+    "text": "5",
+    "line": "substantially in the form set out in Section 5 (Broker's Letter of Undertaking) of"
+   },
+   {
+    "key": "p104|1519",
+    "text": "5",
+    "line": "set out in section 10 of the FOl(S)A or Regulation 5 of the Environmental"
+   },
+   {
+    "key": "p113|1618",
+    "text": "5%",
+    "line": "(i) 5% of the Original Senior"
+   },
+   {
+    "key": "p114|1625",
+    "text": "5",
+    "line": "(Ancillary Rights) of Schedule Part 5 (Land"
+   },
+   {
+    "key": "p127|1774",
+    "text": "5.",
+    "line": "5. detail of the intentions (in so far as they"
+   },
+   {
+    "key": "p129|1794",
+    "text": "5",
+    "line": "Plans) of Schedule Part Schedule Part 5 (Land"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 12,
+  "text": "Schedule 12 Part 1 | Drawdown Schedule \u2013 Base Credit Facility | Dates and Amounts \u2013 Various",
+  "figure": 6.0,
+  "located": [
+   {
+    "ref": "BID PRICE!R7",
+    "labels": "Data Set: Reference 0.000 FY2020"
+   },
+   {
+    "ref": "BID PRICE!S7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "BID PRICE!M9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!R7",
+    "labels": "Data Set: Reference 0.000 FY2020"
+   },
+   {
+    "ref": "ReportCharts!S7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "ReportCharts!M9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!J158",
+    "labels": "Number of periods during Construction period FY2016"
+   },
+   {
+    "ref": "ReportCharts!K158",
+    "labels": "Number of periods during Construction period FY2017"
+   },
+   {
+    "ref": "ReportCharts!L158",
+    "labels": "Number of periods during Construction period FY2017"
+   },
+   {
+    "ref": "ReportCharts!J177",
+    "labels": "Sub debt tranche - FC Injection - Number of periods during construction period FY2016"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|9",
+    "text": "6.",
+    "line": "6. GENERAL OBLIGATIONS AND RESPONSIBILITIES OF DBFM C0 .......................................... 5"
+   },
+   {
+    "key": "p2|38",
+    "text": "6",
+    "line": "20. QUALITY ASSURANCE ..............................................................................................................2 6"
+   },
+   {
+    "key": "p3|117",
+    "text": "6",
+    "line": "59, MITIGATION ................................................................................................................................9 6"
+   },
+   {
+    "key": "p4|164",
+    "text": "6",
+    "line": "SCHEDULE PART 6 CONSTRUCTION MAT IERS ................................................................................. 149"
+   },
+   {
+    "key": "p9|282",
+    "text": "6.",
+    "line": "6. GENERAL OBLIGATIONS AND RESPONSIBILITIES OF DBFM CO"
+   },
+   {
+    "key": "p10|293",
+    "text": "6",
+    "line": "6"
+   },
+   {
+    "key": "p21|415",
+    "text": "6",
+    "line": "13.9 The provisions of Section 2 (Safety During Construction) of Schedule Part 6"
+   },
+   {
+    "key": "p33|588",
+    "text": "6:",
+    "line": "PART 6: SERVICES"
+   },
+   {
+    "key": "p51|842",
+    "text": "6",
+    "line": "29.13.2 in all other cases in accordance with Section 6 (Changing the Financial"
+   },
+   {
+    "key": "p63|1009",
+    "text": "6",
+    "line": "paragraph 6 of the Regulations, whether the sub-contractor is registered"
+   },
+   {
+    "key": "p90|1347",
+    "text": "6",
+    "line": "3.1 of Section 6 (Pass Through Costs) of Schedule Part 14"
+   },
+   {
+    "key": "p105|1535",
+    "text": "6",
+    "line": "under Part 6 of the Freedom of Information (Scotland) Act 2002 (the \"Code\"),"
+   },
+   {
+    "key": "p108|1575",
+    "text": "6",
+    "line": "73.2 The relevant discharge terms within the meaning of section 6 of the Local"
+   },
+   {
+    "key": "p109|1592",
+    "text": "6",
+    "line": "Schedule Part 6 (Construction Matters) (the \"Community Benefits"
+   },
+   {
+    "key": "p115|1639",
+    "text": "6",
+    "line": "Requirements) of Schedule Part 6 ( Construction"
+   },
+   {
+    "key": "p115|1647",
+    "text": "6",
+    "line": "\"Base Senior Debt Termination Amount\" has the meaning given in Section 6 (Definitions)"
+   },
+   {
+    "key": "p116|1652",
+    "text": "6",
+    "line": "During Construction) of Schedule Part 6"
+   },
+   {
+    "key": "p118|1671",
+    "text": "6",
+    "line": "(Design and Construction)) of Schedule Part 6"
+   },
+   {
+    "key": "p119|1689",
+    "text": "6",
+    "line": "Proposals) of Schedule Part 6 (Construction"
+   },
+   {
+    "key": "p120|1700",
+    "text": "6",
+    "line": "(Design and Construction))of Schedule Part 6"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 14,
+  "text": "Schedule 12 Part 2 | Drawdown Schedule \u2013 Subordinated Debt Bridge Facility | Dates and Amounts \u2013 Various",
+  "figure": 7.0,
+  "located": [
+   {
+    "ref": "BID PRICE!T7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "BID PRICE!U7",
+    "labels": "Data Set: Reference 0.000 FY2022"
+   },
+   {
+    "ref": "BID PRICE!N9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!T7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "ReportCharts!U7",
+    "labels": "Data Set: Reference 0.000 FY2022"
+   },
+   {
+    "ref": "ReportCharts!N9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!AV58",
+    "labels": "NPAT FY2035"
+   },
+   {
+    "ref": "ReportCharts!AZ132",
+    "labels": "Sub debt principal FY2037"
+   },
+   {
+    "ref": "ReportCharts!CB193",
+    "labels": "FY2051"
+   },
+   {
+    "ref": "ReportCharts!CC193",
+    "labels": "FY2052"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|11",
+    "text": "7.",
+    "line": "7. AUTHORITY'S DATA. .................................................................................................................... 5"
+   },
+   {
+    "key": "p2|14",
+    "text": "7",
+    "line": "8. REPRESENTATIVES .................................................................................................................... 7"
+   },
+   {
+    "key": "p2|58",
+    "text": "7",
+    "line": "30. RELIEF EVENTS .........................................................................................................................4 7"
+   },
+   {
+    "key": "p3|84",
+    "text": "7",
+    "line": "43. EXPIRY ........................................................................................................................................6 7"
+   },
+   {
+    "key": "p3|86",
+    "text": "7",
+    "line": "44. CORRUPT GIFTS AND PAYMENTS ..........................................................................................6 7"
+   },
+   {
+    "key": "p3|121",
+    "text": "7",
+    "line": "61. CONFIDENTIALITY .....................................................................................................................9 7"
+   },
+   {
+    "key": "p4|166",
+    "text": "7",
+    "line": "SCHEDULE PART 7 THE PROGRAMME ................................................................................................ 161"
+   },
+   {
+    "key": "p7|265",
+    "text": "7",
+    "line": "4.8 The Authority may, in circumstances referred to in Clause 4. 7 above"
+   },
+   {
+    "key": "p9|286",
+    "text": "7,",
+    "line": "7, AUTHORITY'S DATA"
+   },
+   {
+    "key": "p10|290",
+    "text": "7",
+    "line": "Authority to DBFM Co pursuant to this Clause 7 .2B shall be deemed to be an"
+   },
+   {
+    "key": "p11|304",
+    "text": "7",
+    "line": "7"
+   },
+   {
+    "key": "p20|406",
+    "text": "7",
+    "line": "13. 7 If, following the exercise by the Authority's Representative of his right pursuant"
+   },
+   {
+    "key": "p21|424",
+    "text": "7",
+    "line": "14.3 The initial Programme is set out at Schedule Part 7 (The Programme). Any"
+   },
+   {
+    "key": "p35|645",
+    "text": "7,",
+    "line": "Authority's Representative under Clause 23. 7, DBFM Co shall not be treated as"
+   },
+   {
+    "key": "p44|749",
+    "text": "7,",
+    "line": "effect) and consult with DBFM Co. Subject to Clause 27. 7, such change shall"
+   },
+   {
+    "key": "p47|779",
+    "text": "7",
+    "line": "28. 7 The Authority shall:"
+   },
+   {
+    "key": "p48|783",
+    "text": "7:",
+    "line": "PART 7: DELAY EVENTS, RELIEF EVENTS AND FORCE MAJEURE"
+   },
+   {
+    "key": "p55|910",
+    "text": "7,",
+    "line": "to in Clause 29.3. 7, in which case the relevant date shall be the later to"
+   },
+   {
+    "key": "p76|1180",
+    "text": "7",
+    "line": "47.2. 7 DBFM Co shall deliver to the Authority (as far as not already delivered to"
+   },
+   {
+    "key": "p81|1235",
+    "text": "7",
+    "line": "49.3. 7 provided that there shall be no obligation on the Beneficiary lo pursue"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 17,
+  "text": "\u201cNoteholder Commitment Percentage\u201d | (a) Galliford Try Investments Limited | % of Total Noteholder Commitment Amount at the date of this Agreement",
+  "figure": 0.5092096950157526,
+  "located": [
+   {
+    "ref": "ReportFinStatsAnnual!O225",
+    "labels": "Discount Rate - % FY2023"
+   },
+   {
+    "ref": "ReportFinStatsSA!AK45",
+    "labels": "Interest receivable - Operations period FY2030"
+   },
+   {
+    "ref": "ReportFinStatsSA!AK116",
+    "labels": "Interest Income FY2030"
+   },
+   {
+    "ref": "ReportRatiosSA!BH115",
+    "labels": "Nominal discount factor FY2041"
+   },
+   {
+    "ref": "ReportRatiosSA!BI115",
+    "labels": "Nominal discount factor FY2042"
+   },
+   {
+    "ref": "ReportRatiosSA!AK309",
+    "labels": "Interest received on cash deposits FY2030"
+   },
+   {
+    "ref": "ReportRatiosSA!AK366",
+    "labels": "Interest received on cash deposits FY2030"
+   },
+   {
+    "ref": "ReportRatiosSA!BB384",
+    "labels": "Discount factor FY2038"
+   },
+   {
+    "ref": "ReportRatiosSA!AK415",
+    "labels": "Interest received on cash deposits FY2030"
+   },
+   {
+    "ref": "ReportRatiosSA!BB432",
+    "labels": "Discount factor FY2038"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 18,
+  "text": "(b) PPDI AssetCo Limited",
+  "figure": 0.2918877795706965,
+  "located": [
+   {
+    "ref": "ReportFinStatsAnnual!Z210",
+    "labels": "Discount Rate - % FY2034"
+   },
+   {
+    "ref": "ReportFinStatsAnnual!W225",
+    "labels": "Discount Rate - % FY2031"
+   },
+   {
+    "ref": "ReportFinStatsSA!AA45",
+    "labels": "Interest receivable - Operations period FY2025"
+   },
+   {
+    "ref": "ReportFinStatsSA!AB45",
+    "labels": "Interest receivable - Operations period FY2025"
+   },
+   {
+    "ref": "ReportFinStatsSA!AJ45",
+    "labels": "Interest receivable - Operations period FY2029"
+   },
+   {
+    "ref": "ReportFinStatsSA!AA116",
+    "labels": "Interest Income FY2025"
+   },
+   {
+    "ref": "ReportFinStatsSA!AB116",
+    "labels": "Interest Income FY2025"
+   },
+   {
+    "ref": "ReportFinStatsSA!AJ116",
+    "labels": "Interest Income FY2029"
+   },
+   {
+    "ref": "ReportRatiosSA!AA309",
+    "labels": "Interest received on cash deposits FY2025"
+   },
+   {
+    "ref": "ReportRatiosSA!AB309",
+    "labels": "Interest received on cash deposits FY2025"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 19,
+  "text": "(c) Scottish Borders Council",
+  "figure": 0.10225094277424751,
+  "located": [
+   {
+    "ref": "BID PRICE!BH120",
+    "labels": "WACC FY2041"
+   },
+   {
+    "ref": "ReportCharts!I110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!J110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!K110",
+    "labels": "Equity FY2017"
+   },
+   {
+    "ref": "ReportCharts!L110",
+    "labels": "Equity FY2017"
+   },
+   {
+    "ref": "ReportCharts!M110",
+    "labels": "Equity FY2018"
+   },
+   {
+    "ref": "ReportCharts!N110",
+    "labels": "Equity FY2018"
+   },
+   {
+    "ref": "ReportCharts!O110",
+    "labels": "Equity FY2019"
+   },
+   {
+    "ref": "ReportCharts!P110",
+    "labels": "Equity FY2019"
+   },
+   {
+    "ref": "ReportCharts!Q110",
+    "labels": "Equity FY2020"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 20,
+  "text": "(d) SFTI",
+  "figure": 0.09665158263930347,
+  "located": [
+   {
+    "ref": "BID PRICE!BG120",
+    "labels": "WACC FY2041"
+   },
+   {
+    "ref": "BID PRICE!BH120",
+    "labels": "WACC FY2041"
+   },
+   {
+    "ref": "ReportCharts!I110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!J110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!K110",
+    "labels": "Equity FY2017"
+   },
+   {
+    "ref": "ReportCharts!L110",
+    "labels": "Equity FY2017"
+   },
+   {
+    "ref": "ReportCharts!M110",
+    "labels": "Equity FY2018"
+   },
+   {
+    "ref": "ReportCharts!N110",
+    "labels": "Equity FY2018"
+   },
+   {
+    "ref": "ReportCharts!O110",
+    "labels": "Equity FY2019"
+   },
+   {
+    "ref": "ReportCharts!P110",
+    "labels": "Equity FY2019"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 21,
+  "text": "\u201cTotal Noteholder Commitment Amount\u201d | Amount",
+  "figure": 2122576.0730599356,
+  "located": [
+   {
+    "ref": "Schedule 1 - NH Commitment!D19",
+    "labels": "Total Noteholder Commitment Amount Noteholder Commitment*\n\u00a3"
+   },
+   {
+    "ref": "Schools proforma!U54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 22,
+  "text": "Clause 6.2(d) (Requirements for a Qualifying L/C) | (a) Galliford Try Investments Limited | Letter of Credit to be no less than this amount",
+  "figure": 1080836.3148105836,
+  "located": [
+   {
+    "ref": "Schedule 1 - NH Commitment!D13",
+    "labels": "Galliford Try Investments Limited Noteholder Commitment*\n\u00a3"
+   },
+   {
+    "ref": "Schedule 1 - NH Commitment!D23",
+    "labels": "Letter of Credit Amount for Noteholder Support Agreement Definition and clause 6.2 (d)"
+   },
+   {
+    "ref": "Loan Note Instruments!D166",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Schools proforma!AP27",
+    "labels": "ASP - extract from FC financial model \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!AQ27",
+    "labels": "ASP - extract from FC financial model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 23,
+  "text": "Schedule 1 | (a) Galliford Try Investments Limited | Noteholder Commitment",
+  "figure": 1080836.3148105836,
+  "located": [
+   {
+    "ref": "Schedule 1 - NH Commitment!D13",
+    "labels": "Galliford Try Investments Limited Noteholder Commitment*\n\u00a3"
+   },
+   {
+    "ref": "Schedule 1 - NH Commitment!D23",
+    "labels": "Letter of Credit Amount for Noteholder Support Agreement Definition and clause 6.2 (d)"
+   },
+   {
+    "ref": "Loan Note Instruments!D166",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Schools proforma!AP27",
+    "labels": "ASP - extract from FC financial model \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!AQ27",
+    "labels": "ASP - extract from FC financial model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 24,
+  "text": "(b) PPDI AssetCo Limited",
+  "figure": 619554.016935353,
+  "located": [
+   {
+    "ref": "Schedule 12 - Drawdown Schedule!U13",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "Schedule 12 - Drawdown Schedule!D27",
+    "labels": "FY2016"
+   },
+   {
+    "ref": "Schedule 1 - NH Commitment!D14",
+    "labels": "PPDI AssetCo Limited Noteholder Commitment*\n\u00a3"
+   },
+   {
+    "ref": "Loan Note Instruments!D68",
+    "labels": "FY2042"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 25,
+  "text": "(c) Scottish Borders Council",
+  "figure": 217035.40458043848,
+  "located": [
+   {
+    "ref": "Schedule 1 - NH Commitment!D15",
+    "labels": "Scottish Borders Council Noteholder Commitment*\n\u00a3"
+   },
+   {
+    "ref": "Loan Note Instruments!D298",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D366",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Schools proforma!BI27",
+    "labels": "ASP - extract from FC financial model \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!H76",
+    "labels": "Payable by Authority \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 26,
+  "text": "(d) SFTI",
+  "figure": 205150.3367335606,
+  "located": [
+   {
+    "ref": "Schedule 1 - NH Commitment!D16",
+    "labels": "SFTI Noteholder Commitment*\n\u00a3"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 27,
+  "text": "(f) Total",
+  "figure": 2122576.0730599356,
+  "located": [
+   {
+    "ref": "Schedule 1 - NH Commitment!D19",
+    "labels": "Total Noteholder Commitment Amount Noteholder Commitment*\n\u00a3"
+   },
+   {
+    "ref": "Schools proforma!U54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 29,
+  "text": "\u201cAdvance\u201d | Noteholder Commitment at FC from PPDI",
+  "figure": 619554.016935353,
+  "located": [
+   {
+    "ref": "Schedule 12 - Drawdown Schedule!U13",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "Schedule 12 - Drawdown Schedule!D27",
+    "labels": "FY2016"
+   },
+   {
+    "ref": "Schedule 1 - NH Commitment!D14",
+    "labels": "PPDI AssetCo Limited Noteholder Commitment*\n\u00a3"
+   },
+   {
+    "ref": "Loan Note Instruments!D68",
+    "labels": "FY2042"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 30,
+  "text": "\u201cMargin\u201d | Construction interest rate",
+  "figure": 0.03349,
+  "located": [
+   {
+    "ref": "Checks!M58",
+    "labels": "Contract Debtor or Finance Asset interest rate > Cost of Funds"
+   },
+   {
+    "ref": "BID PRICE!J120",
+    "labels": "WACC FY2016"
+   },
+   {
+    "ref": "BID PRICE!K120",
+    "labels": "WACC FY2017"
+   },
+   {
+    "ref": "BID PRICE!L120",
+    "labels": "WACC FY2017"
+   },
+   {
+    "ref": "BID PRICE!M120",
+    "labels": "WACC FY2018"
+   },
+   {
+    "ref": "ReportCharts!I166",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "ReportCharts!J166",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "ReportCharts!K166",
+    "labels": "Senior Debt 1 FY2017"
+   },
+   {
+    "ref": "ReportCharts!L166",
+    "labels": "Senior Debt 1 FY2017"
+   },
+   {
+    "ref": "ReportCharts!M166",
+    "labels": "Senior Debt 1 FY2018"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 32,
+  "text": "\u201cAdvance\u201d | Noteholder Commitment at FC from SFTI",
+  "figure": 205150.3367335606,
+  "located": [
+   {
+    "ref": "Schedule 1 - NH Commitment!D16",
+    "labels": "SFTI Noteholder Commitment*\n\u00a3"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 33,
+  "text": "\u201cMargin\u201d | Construction interest rate (same as C2)",
+  "figure": 0.03349,
+  "located": [
+   {
+    "ref": "Checks!M58",
+    "labels": "Contract Debtor or Finance Asset interest rate > Cost of Funds"
+   },
+   {
+    "ref": "BID PRICE!J120",
+    "labels": "WACC FY2016"
+   },
+   {
+    "ref": "BID PRICE!K120",
+    "labels": "WACC FY2017"
+   },
+   {
+    "ref": "BID PRICE!L120",
+    "labels": "WACC FY2017"
+   },
+   {
+    "ref": "BID PRICE!M120",
+    "labels": "WACC FY2018"
+   },
+   {
+    "ref": "ReportCharts!I166",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "ReportCharts!J166",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "ReportCharts!K166",
+    "labels": "Senior Debt 1 FY2017"
+   },
+   {
+    "ref": "ReportCharts!L166",
+    "labels": "Senior Debt 1 FY2017"
+   },
+   {
+    "ref": "ReportCharts!M166",
+    "labels": "Senior Debt 1 FY2018"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 35,
+  "text": "\u201cAdvance\u201d | Total Noteholder Commitment at FC (C1,D1)",
+  "figure": 824704.3536689137,
+  "located": [
+   {
+    "ref": "Schools proforma!R36",
+    "labels": "SG contribution \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!S36",
+    "labels": "SG contribution \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!T36",
+    "labels": "SG contribution \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!U36",
+    "labels": "SG contribution \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 36,
+  "text": "\u201cMargin\u201d | Construction interest rate (same as C2)",
+  "figure": 0.03349,
+  "located": [
+   {
+    "ref": "Checks!M58",
+    "labels": "Contract Debtor or Finance Asset interest rate > Cost of Funds"
+   },
+   {
+    "ref": "BID PRICE!J120",
+    "labels": "WACC FY2016"
+   },
+   {
+    "ref": "BID PRICE!K120",
+    "labels": "WACC FY2017"
+   },
+   {
+    "ref": "BID PRICE!L120",
+    "labels": "WACC FY2017"
+   },
+   {
+    "ref": "BID PRICE!M120",
+    "labels": "WACC FY2018"
+   },
+   {
+    "ref": "ReportCharts!I166",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "ReportCharts!J166",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "ReportCharts!K166",
+    "labels": "Senior Debt 1 FY2017"
+   },
+   {
+    "ref": "ReportCharts!L166",
+    "labels": "Senior Debt 1 FY2017"
+   },
+   {
+    "ref": "ReportCharts!M166",
+    "labels": "Senior Debt 1 FY2018"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 38,
+  "text": "Front Page | (a) board resolution date",
+  "figure": 1.0,
+  "located": [
+   {
+    "ref": "BID PRICE!H7",
+    "labels": "Data Set: Reference 0.000 FY2015"
+   },
+   {
+    "ref": "BID PRICE!I7",
+    "labels": "Data Set: Reference 0.000 FY2016"
+   },
+   {
+    "ref": "BID PRICE!H8",
+    "labels": "Back to Contents FY2015"
+   },
+   {
+    "ref": "BID PRICE!J8",
+    "labels": "Back to Contents FY2016"
+   },
+   {
+    "ref": "BID PRICE!L8",
+    "labels": "Back to Contents FY2017"
+   },
+   {
+    "ref": "BID PRICE!N8",
+    "labels": "Back to Contents FY2018"
+   },
+   {
+    "ref": "BID PRICE!P8",
+    "labels": "Back to Contents FY2019"
+   },
+   {
+    "ref": "BID PRICE!R8",
+    "labels": "Back to Contents FY2020"
+   },
+   {
+    "ref": "BID PRICE!T8",
+    "labels": "Back to Contents FY2021"
+   },
+   {
+    "ref": "BID PRICE!V8",
+    "labels": "Back to Contents FY2022"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|0",
+    "text": "1.",
+    "line": "1. DEFINITIONS AND INTERPRETATION ....................................................................................... 1"
+   },
+   {
+    "key": "p2|1",
+    "text": "1",
+    "line": "1. DEFINITIONS AND INTERPRETATION ....................................................................................... 1"
+   },
+   {
+    "key": "p2|3",
+    "text": "1",
+    "line": "2. EXECUTION AND DELIVERY OF DOCUMENTS ........................................................................ 1"
+   },
+   {
+    "key": "p2|62",
+    "text": "1",
+    "line": "32. CHANGES IN LAW ......................................................................................................................5 1"
+   },
+   {
+    "key": "p4|154",
+    "text": "1",
+    "line": "SCHEDULE PART 1 DEFINITIONS AND INTERPRETATION ................................................................ 108"
+   },
+   {
+    "key": "p5|213",
+    "text": "1",
+    "line": "stage 1 submission and stage 2 submission as required by the approval process for new"
+   },
+   {
+    "key": "p5|219",
+    "text": "1:",
+    "line": "PART 1: GENERAL"
+   },
+   {
+    "key": "p5|220",
+    "text": "1.",
+    "line": "1. DEFINITIONS AND INTERPRETATION"
+   },
+   {
+    "key": "p5|221",
+    "text": "1",
+    "line": "Schedule Part 1 (Definitions and Interpretation) shall apply."
+   },
+   {
+    "key": "p5|224",
+    "text": "1",
+    "line": "2.1 DBFM Co shall deliver to the Authority the documents referred to in Section 1"
+   },
+   {
+    "key": "p5|232",
+    "text": "1",
+    "line": "1"
+   },
+   {
+    "key": "p13|316",
+    "text": "1",
+    "line": "9.3 The rights referred to at Clauses 9, 1 (Access During Construction) and 9.2"
+   },
+   {
+    "key": "p14|331",
+    "text": "1",
+    "line": "10.1. 1 carried out a Ground Physical and Geophysical Investigation and to have"
+   },
+   {
+    "key": "p15|349",
+    "text": "1",
+    "line": "11, 1 DBFM Co shall be responsible for:"
+   },
+   {
+    "key": "p15|351",
+    "text": "1.",
+    "line": "11. 1. 1 obtaining all Consents which may be required for the performance of the"
+   },
+   {
+    "key": "p15|352",
+    "text": "1",
+    "line": "11. 1. 1 obtaining all Consents which may be required for the performance of the"
+   },
+   {
+    "key": "p18|371",
+    "text": "1",
+    "line": "to paragraph 1,3, 1 or paragraph 4.3 of Schedule Part 8"
+   },
+   {
+    "key": "p18|376",
+    "text": "1",
+    "line": "1 of Schedule Part 8 (Review Procedure);"
+   },
+   {
+    "key": "p18|381",
+    "text": "1",
+    "line": "12.7. 1 DBFM Co's Proposals shall satisfy the Authority's Construction"
+   },
+   {
+    "key": "p19|392",
+    "text": "1.",
+    "line": "13. 1. 1 subject to complying with all relevant safety procedures, which shall"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 39,
+  "text": "(b) Amount | (b) Total amount of sub-debt outstanding at construction completion.",
+  "figure": 2170354.0456584403,
+  "located": [
+   {
+    "ref": "Loan Note Instruments!D7",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Loan Note Instruments!D70",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D75",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Schools proforma!X54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 41,
+  "text": "Recital | (a) Amount | As per G1",
+  "figure": 2170354.0456584403,
+  "located": [
+   {
+    "ref": "Loan Note Instruments!D7",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Loan Note Instruments!D70",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D75",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Schools proforma!X54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 43,
+  "text": "\u201cLoan Notes\u201d | (a) Amount | As per G1",
+  "figure": 2170354.0456584403,
+  "located": [
+   {
+    "ref": "Loan Note Instruments!D7",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Loan Note Instruments!D70",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D75",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Schools proforma!X54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 45,
+  "text": "2.1 Constitution of Loan Notes | Amount | As per G1",
+  "figure": 2170354.0456584403,
+  "located": [
+   {
+    "ref": "Loan Note Instruments!D7",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Loan Note Instruments!D70",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D75",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Schools proforma!X54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 46,
+  "text": "Schedule Part 2 Paragraph 2.1 | Interest Rate | Post construction interest rate.",
+  "figure": 0.105,
+  "located": [
+   {
+    "ref": "Checks!K13",
+    "labels": "Master Check IFRS - Financial Asset"
+   },
+   {
+    "ref": "Checks!K56",
+    "labels": "Required Blended Equity IRR within parameters IFRS - Financial Asset"
+   },
+   {
+    "ref": "Checks!M56",
+    "labels": "Required Blended Equity IRR within parameters"
+   },
+   {
+    "ref": "BID PRICE!E16",
+    "labels": "Galliford Try Investments Limited Blended Equity IRR"
+   },
+   {
+    "ref": "BID PRICE!F16",
+    "labels": "Galliford Try Investments Limited Blended Equity IRR"
+   },
+   {
+    "ref": "BID PRICE!E68",
+    "labels": "Manual Sculpting Factor"
+   },
+   {
+    "ref": "ReportCharts!I110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!J110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!K110",
+    "labels": "Equity FY2017"
+   },
+   {
+    "ref": "ReportCharts!L110",
+    "labels": "Equity FY2017"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 47,
+  "text": "Schedule Part 5 | Redemption Table | Attached at Appendix E",
+  "figure": 6.0,
+  "located": [
+   {
+    "ref": "BID PRICE!R7",
+    "labels": "Data Set: Reference 0.000 FY2020"
+   },
+   {
+    "ref": "BID PRICE!S7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "BID PRICE!M9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!R7",
+    "labels": "Data Set: Reference 0.000 FY2020"
+   },
+   {
+    "ref": "ReportCharts!S7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "ReportCharts!M9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!J158",
+    "labels": "Number of periods during Construction period FY2016"
+   },
+   {
+    "ref": "ReportCharts!K158",
+    "labels": "Number of periods during Construction period FY2017"
+   },
+   {
+    "ref": "ReportCharts!L158",
+    "labels": "Number of periods during Construction period FY2017"
+   },
+   {
+    "ref": "ReportCharts!J177",
+    "labels": "Sub debt tranche - FC Injection - Number of periods during construction period FY2016"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|9",
+    "text": "6.",
+    "line": "6. GENERAL OBLIGATIONS AND RESPONSIBILITIES OF DBFM C0 .......................................... 5"
+   },
+   {
+    "key": "p2|38",
+    "text": "6",
+    "line": "20. QUALITY ASSURANCE ..............................................................................................................2 6"
+   },
+   {
+    "key": "p3|117",
+    "text": "6",
+    "line": "59, MITIGATION ................................................................................................................................9 6"
+   },
+   {
+    "key": "p4|164",
+    "text": "6",
+    "line": "SCHEDULE PART 6 CONSTRUCTION MAT IERS ................................................................................. 149"
+   },
+   {
+    "key": "p9|282",
+    "text": "6.",
+    "line": "6. GENERAL OBLIGATIONS AND RESPONSIBILITIES OF DBFM CO"
+   },
+   {
+    "key": "p10|293",
+    "text": "6",
+    "line": "6"
+   },
+   {
+    "key": "p21|415",
+    "text": "6",
+    "line": "13.9 The provisions of Section 2 (Safety During Construction) of Schedule Part 6"
+   },
+   {
+    "key": "p33|588",
+    "text": "6:",
+    "line": "PART 6: SERVICES"
+   },
+   {
+    "key": "p51|842",
+    "text": "6",
+    "line": "29.13.2 in all other cases in accordance with Section 6 (Changing the Financial"
+   },
+   {
+    "key": "p63|1009",
+    "text": "6",
+    "line": "paragraph 6 of the Regulations, whether the sub-contractor is registered"
+   },
+   {
+    "key": "p90|1347",
+    "text": "6",
+    "line": "3.1 of Section 6 (Pass Through Costs) of Schedule Part 14"
+   },
+   {
+    "key": "p105|1535",
+    "text": "6",
+    "line": "under Part 6 of the Freedom of Information (Scotland) Act 2002 (the \"Code\"),"
+   },
+   {
+    "key": "p108|1575",
+    "text": "6",
+    "line": "73.2 The relevant discharge terms within the meaning of section 6 of the Local"
+   },
+   {
+    "key": "p109|1592",
+    "text": "6",
+    "line": "Schedule Part 6 (Construction Matters) (the \"Community Benefits"
+   },
+   {
+    "key": "p115|1639",
+    "text": "6",
+    "line": "Requirements) of Schedule Part 6 ( Construction"
+   },
+   {
+    "key": "p115|1647",
+    "text": "6",
+    "line": "\"Base Senior Debt Termination Amount\" has the meaning given in Section 6 (Definitions)"
+   },
+   {
+    "key": "p116|1652",
+    "text": "6",
+    "line": "During Construction) of Schedule Part 6"
+   },
+   {
+    "key": "p118|1671",
+    "text": "6",
+    "line": "(Design and Construction)) of Schedule Part 6"
+   },
+   {
+    "key": "p119|1689",
+    "text": "6",
+    "line": "Proposals) of Schedule Part 6 (Construction"
+   },
+   {
+    "key": "p120|1700",
+    "text": "6",
+    "line": "(Design and Construction))of Schedule Part 6"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 49,
+  "text": "Front Page | (a) board resolution date | As per Holdco Loan Note Instrument",
+  "figure": 1.0,
+  "located": [
+   {
+    "ref": "BID PRICE!H7",
+    "labels": "Data Set: Reference 0.000 FY2015"
+   },
+   {
+    "ref": "BID PRICE!I7",
+    "labels": "Data Set: Reference 0.000 FY2016"
+   },
+   {
+    "ref": "BID PRICE!H8",
+    "labels": "Back to Contents FY2015"
+   },
+   {
+    "ref": "BID PRICE!J8",
+    "labels": "Back to Contents FY2016"
+   },
+   {
+    "ref": "BID PRICE!L8",
+    "labels": "Back to Contents FY2017"
+   },
+   {
+    "ref": "BID PRICE!N8",
+    "labels": "Back to Contents FY2018"
+   },
+   {
+    "ref": "BID PRICE!P8",
+    "labels": "Back to Contents FY2019"
+   },
+   {
+    "ref": "BID PRICE!R8",
+    "labels": "Back to Contents FY2020"
+   },
+   {
+    "ref": "BID PRICE!T8",
+    "labels": "Back to Contents FY2021"
+   },
+   {
+    "ref": "BID PRICE!V8",
+    "labels": "Back to Contents FY2022"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|0",
+    "text": "1.",
+    "line": "1. DEFINITIONS AND INTERPRETATION ....................................................................................... 1"
+   },
+   {
+    "key": "p2|1",
+    "text": "1",
+    "line": "1. DEFINITIONS AND INTERPRETATION ....................................................................................... 1"
+   },
+   {
+    "key": "p2|3",
+    "text": "1",
+    "line": "2. EXECUTION AND DELIVERY OF DOCUMENTS ........................................................................ 1"
+   },
+   {
+    "key": "p2|62",
+    "text": "1",
+    "line": "32. CHANGES IN LAW ......................................................................................................................5 1"
+   },
+   {
+    "key": "p4|154",
+    "text": "1",
+    "line": "SCHEDULE PART 1 DEFINITIONS AND INTERPRETATION ................................................................ 108"
+   },
+   {
+    "key": "p5|213",
+    "text": "1",
+    "line": "stage 1 submission and stage 2 submission as required by the approval process for new"
+   },
+   {
+    "key": "p5|219",
+    "text": "1:",
+    "line": "PART 1: GENERAL"
+   },
+   {
+    "key": "p5|220",
+    "text": "1.",
+    "line": "1. DEFINITIONS AND INTERPRETATION"
+   },
+   {
+    "key": "p5|221",
+    "text": "1",
+    "line": "Schedule Part 1 (Definitions and Interpretation) shall apply."
+   },
+   {
+    "key": "p5|224",
+    "text": "1",
+    "line": "2.1 DBFM Co shall deliver to the Authority the documents referred to in Section 1"
+   },
+   {
+    "key": "p5|232",
+    "text": "1",
+    "line": "1"
+   },
+   {
+    "key": "p13|316",
+    "text": "1",
+    "line": "9.3 The rights referred to at Clauses 9, 1 (Access During Construction) and 9.2"
+   },
+   {
+    "key": "p14|331",
+    "text": "1",
+    "line": "10.1. 1 carried out a Ground Physical and Geophysical Investigation and to have"
+   },
+   {
+    "key": "p15|349",
+    "text": "1",
+    "line": "11, 1 DBFM Co shall be responsible for:"
+   },
+   {
+    "key": "p15|351",
+    "text": "1.",
+    "line": "11. 1. 1 obtaining all Consents which may be required for the performance of the"
+   },
+   {
+    "key": "p15|352",
+    "text": "1",
+    "line": "11. 1. 1 obtaining all Consents which may be required for the performance of the"
+   },
+   {
+    "key": "p18|371",
+    "text": "1",
+    "line": "to paragraph 1,3, 1 or paragraph 4.3 of Schedule Part 8"
+   },
+   {
+    "key": "p18|376",
+    "text": "1",
+    "line": "1 of Schedule Part 8 (Review Procedure);"
+   },
+   {
+    "key": "p18|381",
+    "text": "1",
+    "line": "12.7. 1 DBFM Co's Proposals shall satisfy the Authority's Construction"
+   },
+   {
+    "key": "p19|392",
+    "text": "1.",
+    "line": "13. 1. 1 subject to complying with all relevant safety procedures, which shall"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 50,
+  "text": "(b) Amount",
+  "figure": 2170354.0456584403,
+  "located": [
+   {
+    "ref": "Loan Note Instruments!D7",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Loan Note Instruments!D70",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D75",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Schools proforma!X54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 52,
+  "text": "Recital | (a) Amount | As per Holdco Loan Note Instrument",
+  "figure": 2170354.0456584403,
+  "located": [
+   {
+    "ref": "Loan Note Instruments!D7",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Loan Note Instruments!D70",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D75",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Schools proforma!X54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 54,
+  "text": "\u201cLoan Notes\u201d | (a) Amount | As per Holdco Loan Note Instrument",
+  "figure": 2170354.0456584403,
+  "located": [
+   {
+    "ref": "Loan Note Instruments!D7",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Loan Note Instruments!D70",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D75",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Schools proforma!X54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 56,
+  "text": "2.1 Constitution of Loan Notes | Amount | As per Holdco Loan Note Instrument",
+  "figure": 2170354.0456584403,
+  "located": [
+   {
+    "ref": "Loan Note Instruments!D7",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Loan Note Instruments!D70",
+    "labels": "Total Loan Note Repayment"
+   },
+   {
+    "ref": "Loan Note Instruments!D75",
+    "labels": "Loan Note Amount"
+   },
+   {
+    "ref": "Schools proforma!X54",
+    "labels": "ASP - formula driven from above \u00a3'0 or hard extract from FC model \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 57,
+  "text": "Schedule Part 2 Paragraph 2.1 | Interest Rate | As per Holdco Loan Note Instrument",
+  "figure": 0.105,
+  "located": [
+   {
+    "ref": "Checks!K13",
+    "labels": "Master Check IFRS - Financial Asset"
+   },
+   {
+    "ref": "Checks!K56",
+    "labels": "Required Blended Equity IRR within parameters IFRS - Financial Asset"
+   },
+   {
+    "ref": "Checks!M56",
+    "labels": "Required Blended Equity IRR within parameters"
+   },
+   {
+    "ref": "BID PRICE!E16",
+    "labels": "Galliford Try Investments Limited Blended Equity IRR"
+   },
+   {
+    "ref": "BID PRICE!F16",
+    "labels": "Galliford Try Investments Limited Blended Equity IRR"
+   },
+   {
+    "ref": "BID PRICE!E68",
+    "labels": "Manual Sculpting Factor"
+   },
+   {
+    "ref": "ReportCharts!I110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!J110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!K110",
+    "labels": "Equity FY2017"
+   },
+   {
+    "ref": "ReportCharts!L110",
+    "labels": "Equity FY2017"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ },
+ {
+  "row": 58,
+  "text": "Schedule Part 5 | Redemption Table | Attached at Appendix F | As per Holdco Loan Note Instrument",
+  "figure": 6.0,
+  "located": [
+   {
+    "ref": "BID PRICE!R7",
+    "labels": "Data Set: Reference 0.000 FY2020"
+   },
+   {
+    "ref": "BID PRICE!S7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "BID PRICE!M9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!R7",
+    "labels": "Data Set: Reference 0.000 FY2020"
+   },
+   {
+    "ref": "ReportCharts!S7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "ReportCharts!M9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!J158",
+    "labels": "Number of periods during Construction period FY2016"
+   },
+   {
+    "ref": "ReportCharts!K158",
+    "labels": "Number of periods during Construction period FY2017"
+   },
+   {
+    "ref": "ReportCharts!L158",
+    "labels": "Number of periods during Construction period FY2017"
+   },
+   {
+    "ref": "ReportCharts!J177",
+    "labels": "Sub debt tranche - FC Injection - Number of periods during construction period FY2016"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|9",
+    "text": "6.",
+    "line": "6. GENERAL OBLIGATIONS AND RESPONSIBILITIES OF DBFM C0 .......................................... 5"
+   },
+   {
+    "key": "p2|38",
+    "text": "6",
+    "line": "20. QUALITY ASSURANCE ..............................................................................................................2 6"
+   },
+   {
+    "key": "p3|117",
+    "text": "6",
+    "line": "59, MITIGATION ................................................................................................................................9 6"
+   },
+   {
+    "key": "p4|164",
+    "text": "6",
+    "line": "SCHEDULE PART 6 CONSTRUCTION MAT IERS ................................................................................. 149"
+   },
+   {
+    "key": "p9|282",
+    "text": "6.",
+    "line": "6. GENERAL OBLIGATIONS AND RESPONSIBILITIES OF DBFM CO"
+   },
+   {
+    "key": "p10|293",
+    "text": "6",
+    "line": "6"
+   },
+   {
+    "key": "p21|415",
+    "text": "6",
+    "line": "13.9 The provisions of Section 2 (Safety During Construction) of Schedule Part 6"
+   },
+   {
+    "key": "p33|588",
+    "text": "6:",
+    "line": "PART 6: SERVICES"
+   },
+   {
+    "key": "p51|842",
+    "text": "6",
+    "line": "29.13.2 in all other cases in accordance with Section 6 (Changing the Financial"
+   },
+   {
+    "key": "p63|1009",
+    "text": "6",
+    "line": "paragraph 6 of the Regulations, whether the sub-contractor is registered"
+   },
+   {
+    "key": "p90|1347",
+    "text": "6",
+    "line": "3.1 of Section 6 (Pass Through Costs) of Schedule Part 14"
+   },
+   {
+    "key": "p105|1535",
+    "text": "6",
+    "line": "under Part 6 of the Freedom of Information (Scotland) Act 2002 (the \"Code\"),"
+   },
+   {
+    "key": "p108|1575",
+    "text": "6",
+    "line": "73.2 The relevant discharge terms within the meaning of section 6 of the Local"
+   },
+   {
+    "key": "p109|1592",
+    "text": "6",
+    "line": "Schedule Part 6 (Construction Matters) (the \"Community Benefits"
+   },
+   {
+    "key": "p115|1639",
+    "text": "6",
+    "line": "Requirements) of Schedule Part 6 ( Construction"
+   },
+   {
+    "key": "p115|1647",
+    "text": "6",
+    "line": "\"Base Senior Debt Termination Amount\" has the meaning given in Section 6 (Definitions)"
+   },
+   {
+    "key": "p116|1652",
+    "text": "6",
+    "line": "During Construction) of Schedule Part 6"
+   },
+   {
+    "key": "p118|1671",
+    "text": "6",
+    "line": "(Design and Construction)) of Schedule Part 6"
+   },
+   {
+    "key": "p119|1689",
+    "text": "6",
+    "line": "Proposals) of Schedule Part 6 (Construction"
+   },
+   {
+    "key": "p120|1700",
+    "text": "6",
+    "line": "(Design and Construction))of Schedule Part 6"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 60,
+  "text": "Part 14 Payment Mechanism, Section 1 | Indexation Factor",
+  "figure": 0.2185,
+  "located": [
+   {
+    "ref": "ReportFinStatsAnnual!AE210",
+    "labels": "Discount Rate - % FY2039"
+   },
+   {
+    "ref": "ReportFinStatsSA!AN138",
+    "labels": "Issue costs Change in Net Working Capital FY2031"
+   },
+   {
+    "ref": "ReportFinStatsSA!AN139",
+    "labels": "TOTAL INVESTING CASHFLOWS FY2031"
+   },
+   {
+    "ref": "ReportRatiosSA!AN107",
+    "labels": "Changes in working capital FY2031"
+   },
+   {
+    "ref": "ReportRatiosSA!AN318",
+    "labels": "Net movements in working capital  - operations FY2031"
+   },
+   {
+    "ref": "ReportRatiosSA!AN375",
+    "labels": "Net movements in working capital - operations FY2031"
+   },
+   {
+    "ref": "ReportRatiosSA!BB520",
+    "labels": "Discount Rate - % FY2038"
+   },
+   {
+    "ref": "ReportRatiosSA!BC520",
+    "labels": "Discount Rate - % FY2039"
+   },
+   {
+    "ref": "ReportSummary!D115",
+    "labels": "Proportion of UC indexed at RPI IFRS - Financial Asset"
+   },
+   {
+    "ref": "Interface Timing Finance!G126",
+    "labels": "UC - Indexed at RPI"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-ocr",
+  "note": "p193: handwritten 21.85 in the executed copy; OCR read it as garbage"
+ },
+ {
+  "row": 61,
+  "text": "Part 14 Payment Mechanism, Section 2 | Indexation Factor",
+  "figure": 0.2185,
+  "located": [
+   {
+    "ref": "ReportFinStatsAnnual!AE210",
+    "labels": "Discount Rate - % FY2039"
+   },
+   {
+    "ref": "ReportFinStatsSA!AN138",
+    "labels": "Issue costs Change in Net Working Capital FY2031"
+   },
+   {
+    "ref": "ReportFinStatsSA!AN139",
+    "labels": "TOTAL INVESTING CASHFLOWS FY2031"
+   },
+   {
+    "ref": "ReportRatiosSA!AN107",
+    "labels": "Changes in working capital FY2031"
+   },
+   {
+    "ref": "ReportRatiosSA!AN318",
+    "labels": "Net movements in working capital  - operations FY2031"
+   },
+   {
+    "ref": "ReportRatiosSA!AN375",
+    "labels": "Net movements in working capital - operations FY2031"
+   },
+   {
+    "ref": "ReportRatiosSA!BB520",
+    "labels": "Discount Rate - % FY2038"
+   },
+   {
+    "ref": "ReportRatiosSA!BC520",
+    "labels": "Discount Rate - % FY2039"
+   },
+   {
+    "ref": "ReportSummary!D115",
+    "labels": "Proportion of UC indexed at RPI IFRS - Financial Asset"
+   },
+   {
+    "ref": "Interface Timing Finance!G126",
+    "labels": "UC - Indexed at RPI"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-ocr",
+  "note": "p198: handwritten 21.85; OCR dropped it entirely"
+ },
+ {
+  "row": 62,
+  "text": "Part 14 Payment Mechanism, Appendix 1 | Base Value for ASP",
+  "figure": 1901275.0,
+  "located": [
+   {
+    "ref": "ReportSummary!D114",
+    "labels": "Real Annual Service Payment (\u00a3's) IFRS - Financial Asset"
+   },
+   {
+    "ref": "ReportSummary!D124",
+    "labels": "SBC IFRS - Financial Asset"
+   },
+   {
+    "ref": "ReportSummary!D128",
+    "labels": "Total UP (Before Indexation) IFRS - Financial Asset"
+   },
+   {
+    "ref": "LADs!B46",
+    "labels": "Annual UP per Model"
+   },
+   {
+    "ref": "LADs!B53",
+    "labels": "Annual UP relating to KHS"
+   },
+   {
+    "ref": "LADs!B55",
+    "labels": "TOTAL"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-ocr",
+  "note": "p206: handwritten 1,901,275.00; OCR shredded it"
+ },
+ {
+  "row": 63,
+  "text": "Schedule Part 21 | Nominal Value of Loan Stock of PPDI AssetCo Limited",
+  "figure": 619554.016935353,
+  "located": [
+   {
+    "ref": "Schedule 12 - Drawdown Schedule!U13",
+    "labels": "Senior Debt 1 FY2016"
+   },
+   {
+    "ref": "Schedule 12 - Drawdown Schedule!D27",
+    "labels": "FY2016"
+   },
+   {
+    "ref": "Schedule 1 - NH Commitment!D14",
+    "labels": "PPDI AssetCo Limited Noteholder Commitment*\n\u00a3"
+   },
+   {
+    "ref": "Loan Note Instruments!D68",
+    "labels": "FY2042"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "redacted",
+  "note": "p283: full black redaction block over Part 21 details"
+ },
+ {
+  "row": 64,
+  "text": "Schedule Part 21 | Nominal Value of Loan Stock of SFTI",
+  "figure": 205150.3367335606,
+  "located": [
+   {
+    "ref": "Schedule 1 - NH Commitment!D16",
+    "labels": "SFTI Noteholder Commitment*\n\u00a3"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "redacted",
+  "note": "p283: same block"
+ },
+ {
+  "row": 65,
+  "text": "Schedule Part 21 | Nominal Value of Loan Stock of HoldCo",
+  "figure": 824704.3536689137,
+  "located": [
+   {
+    "ref": "Schools proforma!R36",
+    "labels": "SG contribution \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!S36",
+    "labels": "SG contribution \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!T36",
+    "labels": "SG contribution \u00a3'0"
+   },
+   {
+    "ref": "Schools proforma!U36",
+    "labels": "SG contribution \u00a3'0"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "redacted",
+  "note": "p283: same block"
+ },
+ {
+  "row": 66,
+  "text": "Schedule Part 1, Section 1 | Expiry Date",
+  "figure": 7.0,
+  "located": [
+   {
+    "ref": "BID PRICE!T7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "BID PRICE!U7",
+    "labels": "Data Set: Reference 0.000 FY2022"
+   },
+   {
+    "ref": "BID PRICE!N9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!T7",
+    "labels": "Data Set: Reference 0.000 FY2021"
+   },
+   {
+    "ref": "ReportCharts!U7",
+    "labels": "Data Set: Reference 0.000 FY2022"
+   },
+   {
+    "ref": "ReportCharts!N9",
+    "labels": "FY2018"
+   },
+   {
+    "ref": "ReportCharts!AV58",
+    "labels": "NPAT FY2035"
+   },
+   {
+    "ref": "ReportCharts!AZ132",
+    "labels": "Sub debt principal FY2037"
+   },
+   {
+    "ref": "ReportCharts!CB193",
+    "labels": "FY2051"
+   },
+   {
+    "ref": "ReportCharts!CC193",
+    "labels": "FY2052"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|11",
+    "text": "7.",
+    "line": "7. AUTHORITY'S DATA. .................................................................................................................... 5"
+   },
+   {
+    "key": "p2|14",
+    "text": "7",
+    "line": "8. REPRESENTATIVES .................................................................................................................... 7"
+   },
+   {
+    "key": "p2|58",
+    "text": "7",
+    "line": "30. RELIEF EVENTS .........................................................................................................................4 7"
+   },
+   {
+    "key": "p3|84",
+    "text": "7",
+    "line": "43. EXPIRY ........................................................................................................................................6 7"
+   },
+   {
+    "key": "p3|86",
+    "text": "7",
+    "line": "44. CORRUPT GIFTS AND PAYMENTS ..........................................................................................6 7"
+   },
+   {
+    "key": "p3|121",
+    "text": "7",
+    "line": "61. CONFIDENTIALITY .....................................................................................................................9 7"
+   },
+   {
+    "key": "p4|166",
+    "text": "7",
+    "line": "SCHEDULE PART 7 THE PROGRAMME ................................................................................................ 161"
+   },
+   {
+    "key": "p7|265",
+    "text": "7",
+    "line": "4.8 The Authority may, in circumstances referred to in Clause 4. 7 above"
+   },
+   {
+    "key": "p9|286",
+    "text": "7,",
+    "line": "7, AUTHORITY'S DATA"
+   },
+   {
+    "key": "p10|290",
+    "text": "7",
+    "line": "Authority to DBFM Co pursuant to this Clause 7 .2B shall be deemed to be an"
+   },
+   {
+    "key": "p11|304",
+    "text": "7",
+    "line": "7"
+   },
+   {
+    "key": "p20|406",
+    "text": "7",
+    "line": "13. 7 If, following the exercise by the Authority's Representative of his right pursuant"
+   },
+   {
+    "key": "p21|424",
+    "text": "7",
+    "line": "14.3 The initial Programme is set out at Schedule Part 7 (The Programme). Any"
+   },
+   {
+    "key": "p35|645",
+    "text": "7,",
+    "line": "Authority's Representative under Clause 23. 7, DBFM Co shall not be treated as"
+   },
+   {
+    "key": "p44|749",
+    "text": "7,",
+    "line": "effect) and consult with DBFM Co. Subject to Clause 27. 7, such change shall"
+   },
+   {
+    "key": "p47|779",
+    "text": "7",
+    "line": "28. 7 The Authority shall:"
+   },
+   {
+    "key": "p48|783",
+    "text": "7:",
+    "line": "PART 7: DELAY EVENTS, RELIEF EVENTS AND FORCE MAJEURE"
+   },
+   {
+    "key": "p55|910",
+    "text": "7,",
+    "line": "to in Clause 29.3. 7, in which case the relevant date shall be the later to"
+   },
+   {
+    "key": "p76|1180",
+    "text": "7",
+    "line": "47.2. 7 DBFM Co shall deliver to the Authority (as far as not already delivered to"
+   },
+   {
+    "key": "p81|1235",
+    "text": "7",
+    "line": "49.3. 7 provided that there shall be no obligation on the Beneficiary lo pursue"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 67,
+  "text": "Schedule Part 1, Section 1 | Subordinated Debt Rate",
+  "figure": 0.105,
+  "located": [
+   {
+    "ref": "Checks!K13",
+    "labels": "Master Check IFRS - Financial Asset"
+   },
+   {
+    "ref": "Checks!K56",
+    "labels": "Required Blended Equity IRR within parameters IFRS - Financial Asset"
+   },
+   {
+    "ref": "Checks!M56",
+    "labels": "Required Blended Equity IRR within parameters"
+   },
+   {
+    "ref": "BID PRICE!E16",
+    "labels": "Galliford Try Investments Limited Blended Equity IRR"
+   },
+   {
+    "ref": "BID PRICE!F16",
+    "labels": "Galliford Try Investments Limited Blended Equity IRR"
+   },
+   {
+    "ref": "BID PRICE!E68",
+    "labels": "Manual Sculpting Factor"
+   },
+   {
+    "ref": "ReportCharts!I110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!J110",
+    "labels": "Equity FY2016"
+   },
+   {
+    "ref": "ReportCharts!K110",
+    "labels": "Equity FY2017"
+   },
+   {
+    "ref": "ReportCharts!L110",
+    "labels": "Equity FY2017"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "redacted",
+  "note": "p138: black bar - 'Subordinated Debt Rate means [bar] %'"
+ },
+ {
+  "row": 68,
+  "text": "Schedule 1, Section 1 | Base Case IRR",
+  "figure": 0.10750163197517393,
+  "located": [
+   {
+    "ref": "Checks!K13",
+    "labels": "Master Check IFRS - Financial Asset"
+   },
+   {
+    "ref": "Checks!K56",
+    "labels": "Required Blended Equity IRR within parameters IFRS - Financial Asset"
+   },
+   {
+    "ref": "Checks!M56",
+    "labels": "Required Blended Equity IRR within parameters"
+   },
+   {
+    "ref": "BID PRICE!E16",
+    "labels": "Galliford Try Investments Limited Blended Equity IRR"
+   },
+   {
+    "ref": "BID PRICE!F16",
+    "labels": "Galliford Try Investments Limited Blended Equity IRR"
+   },
+   {
+    "ref": "BID PRICE!E68",
+    "labels": "Manual Sculpting Factor"
+   },
+   {
+    "ref": "ReportCharts!M173",
+    "labels": "Subordinated Debt - Private Sector - Operational Period (annualised) FY2018"
+   },
+   {
+    "ref": "ReportCharts!N173",
+    "labels": "Subordinated Debt - Private Sector - Operational Period (annualised) FY2018"
+   },
+   {
+    "ref": "ReportCharts!O173",
+    "labels": "Subordinated Debt - Private Sector - Operational Period (annualised) FY2019"
+   },
+   {
+    "ref": "ReportCharts!P173",
+    "labels": "Subordinated Debt - Private Sector - Operational Period (annualised) FY2019"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "redacted",
+  "note": "p115: black bar - 'Base Case IRR means [bar] %'"
+ },
+ {
+  "row": 69,
+  "text": "Schedule 1, Section 1 | Project IRR",
+  "figure": 0.023269057525225456,
+  "located": [
+   {
+    "ref": "BID PRICE!I120",
+    "labels": "WACC FY2016"
+   },
+   {
+    "ref": "ReportCharts!I85",
+    "labels": "Construction FY2016"
+   },
+   {
+    "ref": "ReportCharts!J85",
+    "labels": "Construction FY2016"
+   },
+   {
+    "ref": "ReportCharts!K85",
+    "labels": "Construction FY2017"
+   },
+   {
+    "ref": "ReportCharts!L85",
+    "labels": "Construction FY2017"
+   },
+   {
+    "ref": "ReportCharts!M85",
+    "labels": "Construction FY2018"
+   },
+   {
+    "ref": "ReportCharts!N185",
+    "labels": "Weighted average cost of capital for debt FY2018"
+   },
+   {
+    "ref": "ReportCharts!P185",
+    "labels": "Weighted average cost of capital for debt FY2019"
+   },
+   {
+    "ref": "ReportCharts!Q185",
+    "labels": "Weighted average cost of capital for debt FY2020"
+   },
+   {
+    "ref": "ReportCharts!R185",
+    "labels": "Weighted average cost of capital for debt FY2020"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "redacted",
+  "note": "p133: black bar - 'Project IRR means [bar] %'"
+ },
+ {
+  "row": 71,
+  "text": "Part 6 Payment Mechanism Section 1 | Indexation Factor",
+  "figure": 1.0,
+  "located": [
+   {
+    "ref": "BID PRICE!H7",
+    "labels": "Data Set: Reference 0.000 FY2015"
+   },
+   {
+    "ref": "BID PRICE!I7",
+    "labels": "Data Set: Reference 0.000 FY2016"
+   },
+   {
+    "ref": "BID PRICE!H8",
+    "labels": "Back to Contents FY2015"
+   },
+   {
+    "ref": "BID PRICE!J8",
+    "labels": "Back to Contents FY2016"
+   },
+   {
+    "ref": "BID PRICE!L8",
+    "labels": "Back to Contents FY2017"
+   },
+   {
+    "ref": "BID PRICE!N8",
+    "labels": "Back to Contents FY2018"
+   },
+   {
+    "ref": "BID PRICE!P8",
+    "labels": "Back to Contents FY2019"
+   },
+   {
+    "ref": "BID PRICE!R8",
+    "labels": "Back to Contents FY2020"
+   },
+   {
+    "ref": "BID PRICE!T8",
+    "labels": "Back to Contents FY2021"
+   },
+   {
+    "ref": "BID PRICE!V8",
+    "labels": "Back to Contents FY2022"
+   }
+  ],
+  "value_hits": [
+   {
+    "key": "p2|0",
+    "text": "1.",
+    "line": "1. DEFINITIONS AND INTERPRETATION ....................................................................................... 1"
+   },
+   {
+    "key": "p2|1",
+    "text": "1",
+    "line": "1. DEFINITIONS AND INTERPRETATION ....................................................................................... 1"
+   },
+   {
+    "key": "p2|3",
+    "text": "1",
+    "line": "2. EXECUTION AND DELIVERY OF DOCUMENTS ........................................................................ 1"
+   },
+   {
+    "key": "p2|62",
+    "text": "1",
+    "line": "32. CHANGES IN LAW ......................................................................................................................5 1"
+   },
+   {
+    "key": "p4|154",
+    "text": "1",
+    "line": "SCHEDULE PART 1 DEFINITIONS AND INTERPRETATION ................................................................ 108"
+   },
+   {
+    "key": "p5|213",
+    "text": "1",
+    "line": "stage 1 submission and stage 2 submission as required by the approval process for new"
+   },
+   {
+    "key": "p5|219",
+    "text": "1:",
+    "line": "PART 1: GENERAL"
+   },
+   {
+    "key": "p5|220",
+    "text": "1.",
+    "line": "1. DEFINITIONS AND INTERPRETATION"
+   },
+   {
+    "key": "p5|221",
+    "text": "1",
+    "line": "Schedule Part 1 (Definitions and Interpretation) shall apply."
+   },
+   {
+    "key": "p5|224",
+    "text": "1",
+    "line": "2.1 DBFM Co shall deliver to the Authority the documents referred to in Section 1"
+   },
+   {
+    "key": "p5|232",
+    "text": "1",
+    "line": "1"
+   },
+   {
+    "key": "p13|316",
+    "text": "1",
+    "line": "9.3 The rights referred to at Clauses 9, 1 (Access During Construction) and 9.2"
+   },
+   {
+    "key": "p14|331",
+    "text": "1",
+    "line": "10.1. 1 carried out a Ground Physical and Geophysical Investigation and to have"
+   },
+   {
+    "key": "p15|349",
+    "text": "1",
+    "line": "11, 1 DBFM Co shall be responsible for:"
+   },
+   {
+    "key": "p15|351",
+    "text": "1.",
+    "line": "11. 1. 1 obtaining all Consents which may be required for the performance of the"
+   },
+   {
+    "key": "p15|352",
+    "text": "1",
+    "line": "11. 1. 1 obtaining all Consents which may be required for the performance of the"
+   },
+   {
+    "key": "p18|371",
+    "text": "1",
+    "line": "to paragraph 1,3, 1 or paragraph 4.3 of Schedule Part 8"
+   },
+   {
+    "key": "p18|376",
+    "text": "1",
+    "line": "1 of Schedule Part 8 (Review Procedure);"
+   },
+   {
+    "key": "p18|381",
+    "text": "1",
+    "line": "12.7. 1 DBFM Co's Proposals shall satisfy the Authority's Construction"
+   },
+   {
+    "key": "p19|392",
+    "text": "1.",
+    "line": "13. 1. 1 subject to complying with all relevant safety procedures, which shall"
+   }
+  ],
+  "truth": [],
+  "condition": "no-figure-in-row",
+  "note": "the deal row's term is a date/table/'Various'; the harness picked up the row's own index number"
+ },
+ {
+  "row": 73,
+  "text": "Schedule Part 27 Delay Damages | Delay Damages | \u00a3 per day",
+  "figure": 5372.197586018353,
+  "located": [
+   {
+    "ref": "LADs!B13",
+    "labels": "LADs"
+   },
+   {
+    "ref": "LADs!B39",
+    "labels": "Relevant LADs  (nominal)"
+   }
+  ],
+  "value_hits": [],
+  "truth": [],
+  "condition": "unreachable-unpublished"
+ }
+]
