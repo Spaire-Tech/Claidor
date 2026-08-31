@@ -211,7 +211,31 @@ def align_lines(
 
     `align_lines_dp` is kept beside this as the oracle it was
     measured against.
+
+    Equal sequences take the identity path outright — the answer the
+    anchors + DP provably give them. For a pair of equal lines the
+    registered formula is exactly 1.0 (equal labels score
+    0.5 + 0.5·1; absent ones fall to the `a == b` branch), so on
+    equal sequences every anchor pairs `(i, i)` and inside each gap
+    the diagonal scores strictly above either skip and wins the
+    traceback's `>=` tie rule — all-diagonal, similarity 1.0, nothing
+    deleted or inserted. Between two versions of a model most sheets
+    are line-identical (a re-forecast moves values, and signatures
+    are shapes, not values), so most of the alignment bill is spent
+    proving the identity map; this returns it instead. Guarded on
+    threshold ≤ 1.0, which is what lets similarity 1.0 through the
+    DP's diagonal in the proof.
     """
+    if (
+        threshold <= 1.0
+        and len(old) == len(new)
+        and all(x == y for x, y in zip(old, new))
+    ):
+        return LineAlignment(
+            matched=tuple(Match(line.index, line.index, 1.0) for line in old),
+            deleted=(),
+            inserted=(),
+        )
     anchors = _anchors(old, new)
     if not anchors:
         return align_lines_dp(old, new, threshold)

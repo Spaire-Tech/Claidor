@@ -21,7 +21,7 @@ from collections import Counter
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
-from polar.tieout.audit import Finding, _shape, audit
+from polar.tieout.audit import Finding, _shape, audit, retained_parse_caches
 from polar.tieout.structure import period_axes
 from polar.tieout.workbook import Cell, Workbook, read_workbook
 
@@ -286,11 +286,20 @@ def _block_item(
 
 
 def delta_report(old_path: str, new_path: str) -> DeltaReport:
-    old_book = read_workbook(old_path)
-    new_book = read_workbook(new_path)
-    return delta_of(old_book, new_book, old_name=old_path, new_name=new_path)
+    #: One retained scope over the whole pipeline: the reads populate
+    #: the token cache, the audits the shape cache, and the grids and
+    #: the comparison inherit both instead of re-parsing 1.3M cells.
+    with retained_parse_caches():
+        old_book = read_workbook(old_path)
+        new_book = read_workbook(new_path)
+        return delta_of(old_book, new_book, old_name=old_path, new_name=new_path)
 
 
+#: The decorator form of the retained scope: the audits this runs (or
+#: the caller's, one frame up in `delta_report`) leave the parse
+#: caches warm for the grids and signatures below, and the scope
+#: clears them once on the way out — reentrant, so the two nest.
+@retained_parse_caches()
 def delta_of(
     old_book: Workbook,
     new_book: Workbook,
@@ -347,8 +356,21 @@ def delta_of(
     report.sheets_added = tuple(s for s in new_grids if s not in old_grids)
     report.sheets_removed = tuple(s for s in old_grids if s not in new_grids)
 
-    old_cells = {(c.sheet, c.row, c.column): c for c in old_book.cells.values()}
-    new_cells = {(c.sheet, c.row, c.column): c for c in new_book.cells.values()}
+    #: sheet → row → column → cell, so the comparison walks the cells
+    #: that exist instead of probing every matched row × column pair —
+    #: on the GD3 pair the cross product is ~30M probes for ~1.3M
+    #: occupied positions. The record() sequence is unchanged: a
+    #: position empty on both sides never recorded anything.
+    old_sheet_cells: dict[str, dict[int, dict[int, Cell]]] = {}
+    for cell in old_book.cells.values():
+        old_sheet_cells.setdefault(cell.sheet, {}).setdefault(cell.row, {})[
+            cell.column
+        ] = cell
+    new_sheet_cells: dict[str, dict[int, dict[int, Cell]]] = {}
+    for cell in new_book.cells.values():
+        new_sheet_cells.setdefault(cell.sheet, {}).setdefault(cell.row, {})[
+            cell.column
+        ] = cell
 
     #: (kind, sheet) -> old row -> [(old column, detail, weight)]
     events: dict[tuple[str, str], dict[int, list[tuple[int, str, float]]]] = {}
@@ -420,18 +442,31 @@ def delta_of(
                         )
                     )
 
+        #: Only positions where at least one side holds a cell can
+        #: record anything, and their processing order must not move —
+        #: the report's final sort is stable, so tie order descends
+        #: from record() order. `column_rank` replays the mapping's own
+        #: iteration order over exactly the occupied columns.
+        column_rank = {column: rank for rank, column in enumerate(column_map)}
+        old_of_new = {after: before for before, after in column_map.items()}
+        old_rows_here = old_sheet_cells.get(sheet, {})
+        new_rows_here = new_sheet_cells.get(sheet, {})
         for old_row, new_row in row_map.items():
-            for old_column, new_column in column_map.items():
-                before = old_cells.get((sheet, old_row, old_column))
-                after = new_cells.get((sheet, new_row, new_column))
+            olds = old_rows_here.get(old_row, {})
+            news = new_rows_here.get(new_row, {})
+            occupied = {column for column in olds if column in column_rank}
+            occupied.update(
+                old_of_new[column] for column in news if column in old_of_new
+            )
+            for old_column in sorted(occupied, key=column_rank.__getitem__):
+                before = olds.get(old_column)
+                after = news.get(column_map[old_column])
                 #: The C3 deferral, now due: a cell that exists on one
                 #: side only *at a matched position* — the new period's
                 #: actual typed into an existing row. The row and column
                 #: are matched by construction here, so an inserted
                 #: line's cells stay `structure` and are never counted
                 #: twice.
-                if before is None and after is None:
-                    continue
                 if before is None:
                     assert after is not None
                     record(

@@ -233,6 +233,29 @@ class TestAnchoringAgreesWithTheDynamicProgramme:
         tail = [self.line(i, "fy1999", "SAME") for i in range(6, 14)]
         self.both([*head, *tail], [*head[:2], *head[3:], *tail])
 
+    def test_equal_sequences_with_no_anchors_at_all(self) -> None:
+        """Every line unlabelled and identical — nothing anchors, the
+        identity fast path answers, and the DP must agree."""
+        old = [self.line(i, "", "SAME") for i in range(1, 9)]
+        new = [self.line(i, "", "SAME") for i in range(1, 9)]
+        self.both(old, new)
+
+    def test_equal_sequences_of_mixed_labelled_and_bare_lines(self) -> None:
+        rows = [
+            self.line(1, "revenue", "S1"),
+            self.line(2, "", "S1"),
+            self.line(3, "cost", "S1", "S2"),
+            self.line(4, "cost", "S1", "S2"),
+            self.line(5, "", "TAIL"),
+        ]
+        self.both(rows, list(rows))
+
+    def test_one_changed_line_keeps_the_pair_off_the_identity_path(self) -> None:
+        old = [self.line(i, f"row {i}", f"S{i}") for i in range(1, 9)]
+        new = list(old)
+        new[4] = self.line(5, "row 5", "S5", "EXTRA")
+        self.both(old, new)
+
     def test_labels_are_part_of_the_key(self) -> None:
         """Same shape, different labels: the rows are distinguishable
         and must anchor — this is what took the licensee sheets from

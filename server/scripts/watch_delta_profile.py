@@ -33,7 +33,7 @@ from polar.tieout.watch.signature import sheet_grids
 from polar.tieout.workbook import read_workbook
 
 
-def report_payload(report: DeltaReport) -> dict:
+def report_payload(report: DeltaReport) -> dict[str, object]:
     """The whole report, deterministically — the differential's subject."""
     return {
         "old": report.old,
@@ -97,7 +97,7 @@ def main() -> int:
     Path(out_path).write_text(
         json.dumps({"digest": digest, "phases": phases, "report": payload}, indent=1)
     )
-    print(f"report digest {digest[:16]}  items {len(payload['items'])}")
+    print(f"report digest {digest[:16]}  items {len(report.items)}")
     return 0
 
 
