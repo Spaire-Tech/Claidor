@@ -687,6 +687,36 @@ class AskedClarify(Schema):
     options: list[str]
 
 
+class AskedStage(Schema):
+    """One step of a run, in the shape the run screen draws.
+
+    The same tool call as `AskedStep`, dressed for a different job.
+    `AskedStep` is the trace — what was done, kept with the answer so a
+    reader can check it. This is the *live* view: what is happening
+    right now, named, while it is happening. They carry the same
+    `ordinal` and the same `summary`, so a screen can hold both without
+    them ever disagreeing about what took place.
+    """
+
+    ordinal: int
+    tool: str
+    ok: bool
+    #: `model` or `source` — which file icon sits beside the step.
+    kind: str
+    #: The activity: « Reading the workbook ».
+    title: str
+    #: What is being done right now, naming the real object — the
+    #: assistant's own status line where it wrote one, otherwise built
+    #: from the arguments it actually passed.
+    sub: str
+    #: The tool's own line, shown once the step is finished.
+    summary: str
+    #: What the step produced, named. **Empty is meaningful**: the
+    #: design draws a skeleton there, which is the honest shape of
+    #: « something happened and there is no name for it yet ».
+    art: str = ""
+
+
 class Asked(Schema):
     """An answer, and every step it took to get there.
 
@@ -724,6 +754,11 @@ class Asked(Schema):
     #: The deal's other models, named and versioned. Empty on the
     #: ordinary deal, which is why the screen only speaks when it is not.
     other_models: list[str] = []
+    #: The run, step by step, for the screen that draws a run rather
+    #: than a spinner. The streaming route sends these one at a time as
+    #: they happen; the plain route sends them all at the end, so a
+    #: caller that cannot stream still gets the same record.
+    stages: list[AskedStage] = []
 
 
 class AskTurn(Schema):
