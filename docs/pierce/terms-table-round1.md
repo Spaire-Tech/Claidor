@@ -140,5 +140,23 @@ sha-verified RMU pair, 31 Aug 2026.
   column anchor.
 
 **Golden-master gate:** prediction registered above is an empty diff.
-Result: _recorded below when the sweep and diff complete; not looked
-at before this line was written._
+Result: **PASS — « gate clean: every file reports identically,
+finding for finding »**, full 27-file corpus rebuilt from the
+manifest and swept on this container, diffed against the committed
+baseline. The prediction held. `dev/verify` on the finished state:
+lint, format and types clean, **1,193 passed, 11 skipped** across
+the tieout suite.
+
+## The round's honest summary
+
+Built to the founder-approved shape and the three answered
+decisions; all bars passed with the bars unmoved; the one prediction
+registered was exactly right, which is worth stating plainly because
+the last several rounds in this repository were not. What is
+**measured**: the table can carry all 15 of the corpus rows that
+defeated the per-cell matcher (11 picked, 4 typed — the typed
+route's whole price here is the facing-page spread), extraction sees
+every one, and the engine's reports did not move. What is **not yet
+measured** and is not claimed: the check's verdicts on a real
+document-model pair — round 2, disagreeing-input class first, to be
+registered before it runs.
