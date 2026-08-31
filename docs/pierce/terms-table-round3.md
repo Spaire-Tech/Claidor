@@ -100,3 +100,73 @@ file, run once after this commit; it prints everything the
 hand-verification needs (old value, new value, the re-found line or
 row). Verdicts: `terms-table-round3-verdicts.json`, committed
 whatever they say.
+
+---
+
+# Results (one run, after the registration commit; the bars did not move)
+
+Run 31 Aug 2026. Full verdicts: `terms-table-round3-verdicts.json`.
+
+## Leg A — class 3, the source moved
+
+**All 11 extracted terms re-anchored** in the CY2016 filing (top of
+the predicted 9–11), every one position-resolved on its own printed
+page, 0 ambiguous, 0 broken — the form's fixed wording held, as
+predicted. **All 11 report « the source moved »** (bar ≥ 8), 0
+« agrees » — every line of this filer's annual data moved, including
+the quiet ones (advertising expense 11,671 → 540). The four typed
+rows report their blindness on the face (bar R4): a typed term
+cannot see a document revision, and says so rather than pretending.
+
+**The hand-verification, with the filer as judge:** the 2017 annual
+update cites the same cells, so the filer's own next-year inputs are
+an independent key — and **all 11 re-read CY2016 values equal the
+filer's 2017 inputs exactly, citation for citation**, the negate
+rows matching as magnitudes of the printed credits. Zero silent
+re-points (bar R1); zero wrong verdicts (bar R2).
+
+## Leg B — class 2, the model moved
+
+**14 of 15 re-anchored by name** in the 2017 workbook (top of the
+predicted 11–14); **all 14 report « the model moved »**, each
+verified true against the 2017 column H (bar R2). The one refusal is
+row 36, « Transmission Plant In Service » — **verified true: the
+label appears at appendix rows 36 and 247**, two cells one name, and
+the anchor refused rather than guessed (bar R3).
+
+**One named prediction was wrong, and plainly:** I predicted
+« General » (row 41) as the likeliest ambiguity. It re-anchored
+uniquely — within Appendix A's label column « General » occurs once
+with a value — while the collision hit a two-word label instead.
+Round 11's generic-label lesson holds directionally (a shared label
+cannot anchor), but which label collides is a property of the
+specific sheet, not of word count.
+
+## The finding that closes a loop
+
+**Row 44 in the 2017 model is 704,462.** Round 2 flagged the 2016
+model typing 0 against a cited document cell printing $704,462; the
+filer's own next annual update enters exactly 704,462. The check's
+one real-world finding is corroborated by the filer's subsequent
+correction — the strongest verification this corpus can give.
+
+## The bars, all four
+
+| bar | result |
+| --- | --- |
+| R1 — no silent re-points | **PASS — 0 of 25 re-points wrong**, 11 verified by the filer's own inputs, 14 by exact name |
+| R2 — verdict correctness | **PASS — 0 wrong of 29 verdicts** (11 + 14 moved, 4 typed-blind agrees) |
+| R3 — honest refusals | **PASS — 1 refusal, verified true** (two cells share the name) |
+| R4 — the typed price on the face | **PASS — stated per row** |
+
+## What is measured now, and what is not
+
+All three finding classes now carry numbers from real files: class 1
+(rounds 2/2b — one true flag, zero noise, 30/30 plants), class 3
+(this round's leg A — 11/11 re-reads correct against the filer's own
+key), class 2 (leg B — 14/15 re-anchored, 1 honest refusal, 14/14
+verdicts true). Still not claimed: any of this on a second
+population (one filer's lineage is one filer), and the typed route's
+document-side blindness is a standing, stated cost — 4 of 15 terms
+here cannot see the document move, priced by the facing-page spread
+that forced typing in the first place.

@@ -1,0 +1,372 @@
+{
+ "leg_a": [
+  {
+   "row": 10,
+   "typed": false,
+   "transformation": "identity",
+   "old_document": "44,016",
+   "old_value": 44016.0,
+   "refound": {
+    "printed_page": 354,
+    "line": "21Transmission (Enter Total of lines 4 and 14) $ 102,030 $ 102,030",
+    "text": "102,030",
+    "value": 102030.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, 44016 \u2192 102030 and the pair no longer ties out."
+  },
+  {
+   "row": 12,
+   "typed": false,
+   "transformation": "identity",
+   "old_document": "2,120,257",
+   "old_value": 2120257.0,
+   "refound": {
+    "printed_page": 354,
+    "line": "28TOTAL Oper. and Maint. (Total of lines 20 thru 27) $ 2,105,449 $ 2,105,449",
+    "text": "2,105,449",
+    "value": 2105449.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, 2.12026e+06 \u2192 2.10545e+06 and the pair no longer ties out."
+  },
+  {
+   "row": 13,
+   "typed": false,
+   "transformation": "identity",
+   "old_document": "343,349",
+   "old_value": 343349.0,
+   "refound": {
+    "printed_page": 354,
+    "line": "27Administrative and General (Enter Total of lines 10 and 17) $ 354,902 $ 354,902",
+    "text": "354,902",
+    "value": 354902.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, 343349 \u2192 354902 and the pair no longer ties out."
+  },
+  {
+   "row": 19,
+   "typed": true,
+   "transformation": "identity",
+   "old_document": "73,315,883",
+   "old_value": 73315883.0,
+   "refound": null,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 21,
+   "typed": false,
+   "transformation": "negate",
+   "old_document": "(41,209,384)",
+   "old_value": -41209384.0,
+   "refound": {
+    "printed_page": 219,
+    "line": "29 TOTAL (Enter Total of lines 20 thru 28) $ (43,894,453) $ (43,894,453)",
+    "text": "(43,894,453)",
+    "value": -43894453.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, -4.12094e+07 \u2192 -4.38945e+07 and the pair no longer ties out."
+  },
+  {
+   "row": 36,
+   "typed": true,
+   "transformation": "identity",
+   "old_document": "10,895,809",
+   "old_value": 10895809.0,
+   "refound": null,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 41,
+   "typed": true,
+   "transformation": "identity",
+   "old_document": "6,741,539",
+   "old_value": 6741539.0,
+   "refound": null,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 44,
+   "typed": true,
+   "transformation": "identity",
+   "old_document": "704,462",
+   "old_value": 704462.0,
+   "refound": null,
+   "verdict": "agrees",
+   "ties_out": false,
+   "detail": "Neither side has moved since binding, and the pair does not tie out: the document states 704,462 and the model holds 0."
+  },
+  {
+   "row": 57,
+   "typed": false,
+   "transformation": "negate",
+   "old_document": "(6,046,528)",
+   "old_value": -6046528.0,
+   "refound": {
+    "printed_page": 219,
+    "line": "25 Transmission $ (6,456,085) $ (6,456,085)",
+    "text": "(6,456,085)",
+    "value": -6456085.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, -6.04653e+06 \u2192 -6.45608e+06 and the pair no longer ties out."
+  },
+  {
+   "row": 59,
+   "typed": false,
+   "transformation": "negate",
+   "old_document": "(919,728)",
+   "old_value": -919728.0,
+   "refound": {
+    "printed_page": 219,
+    "line": "28 General $ (987,134) $ (987,134)",
+    "text": "(987,134)",
+    "value": -987134.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, -919728 \u2192 -987134 and the pair no longer ties out."
+  },
+  {
+   "row": 88,
+   "typed": false,
+   "transformation": "identity",
+   "old_document": "39,294",
+   "old_value": 39294.0,
+   "refound": {
+    "printed_page": 227,
+    "line": "8Transmission Plant (Estimated) $ 39,294 $ 32,399",
+    "text": "32,399",
+    "value": 32399.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, 39294 \u2192 32399 and the pair no longer ties out."
+  },
+  {
+   "row": 119,
+   "typed": false,
+   "transformation": "identity",
+   "old_document": "91,502",
+   "old_value": 91502.0,
+   "refound": {
+    "printed_page": 323,
+    "line": "185(924) Property Insurance $ 101,746 $ 91,502",
+    "text": "101,746",
+    "value": 101746.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, 91502 \u2192 101746 and the pair no longer ties out."
+  },
+  {
+   "row": 121,
+   "typed": false,
+   "transformation": "identity",
+   "old_document": "11,671",
+   "old_value": 11671.0,
+   "refound": {
+    "printed_page": 323,
+    "line": "191(930.1) General Advertising Expenses $ 540 $ 11,671",
+    "text": "540",
+    "value": 540.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, 11671 \u2192 540 and the pair no longer ties out."
+  },
+  {
+   "row": 179,
+   "typed": false,
+   "transformation": "identity",
+   "old_document": "42,926,441.00",
+   "old_value": 42926441.0,
+   "refound": {
+    "printed_page": 112,
+    "line": "16 Total Proprietary Capital (lines 2 through 15) $ 44,772,783.00 $ 42,926,441.00",
+    "text": "44,772,783.00",
+    "value": 44772783.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, 4.29264e+07 \u2192 4.47728e+07 and the pair no longer ties out."
+  },
+  {
+   "row": 187,
+   "typed": false,
+   "transformation": "identity",
+   "old_document": "312,696",
+   "old_value": 312696.0,
+   "refound": {
+    "printed_page": 111,
+    "line": "81 Unamortized Loss on Reaquired Debt (189) $ 286,579 $ 312,696",
+    "text": "286,579",
+    "value": 286579.0,
+    "how": "position-resolved"
+   },
+   "verdict": "the source moved",
+   "ties_out": false,
+   "detail": "The source moved, 312696 \u2192 286579 and the pair no longer ties out."
+  }
+ ],
+ "leg_b": [
+  {
+   "row": 10,
+   "label": "Transmission Wages Expense",
+   "old_model": 44016.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H10",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 44016 \u2192 102030 and the pair no longer ties out."
+  },
+  {
+   "row": 12,
+   "label": "Total Wages Expense",
+   "old_model": 2120257.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H12",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 2.12026e+06 \u2192 2.10545e+06 and the pair no longer ties out."
+  },
+  {
+   "row": 13,
+   "label": "Less A&G Wages Expense",
+   "old_model": 343349.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H13",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 343349 \u2192 354902 and the pair no longer ties out."
+  },
+  {
+   "row": 19,
+   "label": "Electric Plant in Service",
+   "old_model": 73315883.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H19",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 7.33159e+07 \u2192 8.07555e+07 and the pair no longer ties out."
+  },
+  {
+   "row": 21,
+   "label": "Accumulated Depreciation (Total Electric Plant)",
+   "old_model": 41209384.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H21",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 4.12094e+07 \u2192 4.38945e+07 and the pair no longer ties out."
+  },
+  {
+   "row": 36,
+   "label": "Transmission Plant In Service",
+   "old_model": 10895809.0,
+   "model_ref_now": null,
+   "verdict": "ambiguous",
+   "ties_out": null,
+   "detail": "2 cells in this version are called \u00ab Transmission Plant In Service \u00bb. The name cannot tell them apart and this link will not guess between them."
+  },
+  {
+   "row": 41,
+   "label": "General",
+   "old_model": 6741539.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H41",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 6.74154e+06 \u2192 6.76373e+06 and the pair no longer ties out."
+  },
+  {
+   "row": 44,
+   "label": "Less:  General Plant Account 397 -- Communications",
+   "old_model": 0.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H44",
+   "verdict": "the model moved",
+   "ties_out": true,
+   "detail": "The model moved, 0 \u2192 704462 and the pair still ties out."
+  },
+  {
+   "row": 57,
+   "label": "Transmission Accumulated Depreciation",
+   "old_model": 6046528.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H57",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 6.04653e+06 \u2192 6.45608e+06 and the pair no longer ties out."
+  },
+  {
+   "row": 59,
+   "label": "Accumulated General Depreciation",
+   "old_model": 919728.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H59",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 919728 \u2192 987134 and the pair no longer ties out."
+  },
+  {
+   "row": 88,
+   "label": "Transmission Materials & Supplies",
+   "old_model": 39294.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H88",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 39294 \u2192 32399 and the pair no longer ties out."
+  },
+  {
+   "row": 119,
+   "label": "Less Property Insurance Account 924",
+   "old_model": 91502.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H119",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 91502 \u2192 101746 and the pair no longer ties out."
+  },
+  {
+   "row": 121,
+   "label": "Less General Advertising Exp Account 930.1",
+   "old_model": 11671.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H121",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 11671 \u2192 540 and the pair no longer ties out."
+  },
+  {
+   "row": 179,
+   "label": "Proprietary Capital",
+   "old_model": 42926441.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H179",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 4.29264e+07 \u2192 4.47728e+07 and the pair no longer ties out."
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "old_model": 312696.0,
+   "model_ref_now": "'Appendix A - TSRR Summary'!H187",
+   "verdict": "the model moved",
+   "ties_out": false,
+   "detail": "The model moved, 312696 \u2192 286579 and the pair no longer ties out."
+  }
+ ]
+}
