@@ -121,10 +121,9 @@ def main(argv: list[str]) -> int:
 
     import pdfplumber
 
-    from scripts.corpus_d3_oracle import FOOTER, _anchors
-
     from polar.tieout.chain.anchor import _printed_decimals
     from polar.tieout.chain.extract import extract_pdf
+    from scripts.corpus_d3_oracle import FOOTER, _anchors
 
     sample = [
         s

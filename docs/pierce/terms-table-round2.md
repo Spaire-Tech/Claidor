@@ -171,3 +171,53 @@ Harness: `server/scripts/terms_table_round2.py` (committed with
 this file; run once, after this commit). Verdicts:
 `docs/pierce/terms-table-round2-verdicts.json`, committed with the
 results whatever they say.
+
+---
+
+# Results (one run, after the registration commit; the bars did not move)
+
+Run: `uv run python -m scripts.terms_table_round2 <corpus-dir>` on the
+sha-verified RMU pair, 31 Aug 2026. Full verdicts:
+`terms-table-round2-verdicts.json`.
+
+| leg | bar | result |
+| --- | --- | --- |
+| selection resolves | ≥ 14 of 15 | **PASS — 15 of 15**, none unresolvable |
+| control: false alarms | 0 flags without a printed difference | **PASS — 4 flags, every one verified at the page**: row 44 (document prints 704,462, model types 0 — the true class-1 finding) and rows 21/57/59 (document prints credits in parentheses, model holds magnitudes — `sign-convention`, exactly as registered). 11 of 15 tie out |
+| plants caught | 30 of 30 | **PASS — 30 of 30**, both P1 (slipped magnitude) and P2 (one unit at the document's own printed precision) on every row |
+| quiet under plants | 0 changed verdicts | **PASS — 0 of 420** non-planted row-checks changed |
+| scale probe | wrong stated scale flagged | **PASS — flagged** (44,016 × 1000 against 44,016; nothing inferred around the person's statement) |
+
+**Every registered prediction held exactly** — 15/15 resolving, four
+flags and no fifth, 30/30, 0/420, probe flagged.
+
+**The result that matters most, in one sentence:** on a real filing,
+the check found a genuine wrong input — a model typing 0 against a
+cited document cell that prints $704,462 — while raising zero false
+alarms in the arithmetic sense, and the only other flags are the
+three rows whose printed sign convention the binding schema cannot
+yet express, each flagged with the parenthesised credit visible in
+the flag itself.
+
+**The founder's open question from this round** (recorded in the
+registration, unpatched): whether terms gain `ChainLink`'s
+`transformation` column so a person can state « the document prints
+this as a credit » and silence the three sign-convention flags
+legitimately. Three of fifteen real rows need it; the check applying
+it would be new machinery for D4 too, so it is one decision for both
+tracks.
+
+**Gate status:** no product code changed in this round (a harness
+script and documents only), so round 1's golden-master result stands
+for this tree; `dev/verify` re-run on the final state, recorded in
+the worklog with the push.
+
+## What is measured now, after both rounds
+
+Class 1 — a model input disagreeing with a confirmed term — is
+measured on a real document-model pair: caught at 30 of 30 planted,
+zero arithmetic false alarms, one true finding in the wild, quiet
+everywhere else. Classes 2 and 3 remain unmeasured on real
+revisions (no second version of a real pair exists in the corpus)
+and stay unclaimed; the route-level planted tests pin their
+behaviour but are not numbers.
