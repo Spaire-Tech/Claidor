@@ -279,3 +279,196 @@ START HERE, IN THIS ORDER:
 Report to the founder in plain English: are we close, what are we
 waiting on. No jargon.
 ```
+
+---
+
+# Follow-up prompts — « check your docs »
+
+Send this to an agent once it has read the brief. It isolates the audit
+mandate into one demand with one deliverable, so the founder can see the
+audit actually happened rather than take it on trust.
+
+Each names the documents that piece genuinely depends on, found by
+searching the repository rather than by memory. **The agent must still
+search for more** — a list handed to it is a starting point, and
+treating it as complete is the failure this exercise exists to catch.
+
+---
+
+## To the Piece 6 agent (the Chain)
+
+```
+Before building anything, audit the documents your piece depends on
+against the actual code, and report what you find.
+
+Read at least: docs/pierce/d3-reckoning.md, docs/pierce/logs/scribe.md,
+docs/pierce/logs/scribe-decisions.md,
+docs/pierce/scribe-answer-key-protocol.md, docs/pierce/corpus-sources.md,
+and the Chain sections of docs/pierce/swens.md and swens-plan.md.
+Then SEARCH for the ones I have not listed — this piece has six failed
+rounds and their records are scattered.
+
+For each document, answer three questions:
+1. What does it CLAIM is built, measured or decided?
+2. Is that claim TRUE in the code today? Open the file. Run it.
+3. If it is not true, what is actually the case?
+
+Then answer directly: is the "document geometry, not matching"
+diagnosis actually supported by a measurement, or is it a story told
+after six failures? Quote the evidence either way.
+
+Deliver: one plain-English list of every claim that is wrong or stale,
+with the evidence. Commit it as a round document. Tell me in simple
+words what you found before you propose any plan.
+```
+
+---
+
+## To the Piece 7 agent (the terms table)
+
+```
+Before building anything, audit the documents your piece depends on
+against the actual code, and report what you find.
+
+Read at least: docs/pierce/swens.md section 3 (the founder's own
+product document — it wins over everything), docs/pierce/platform.md,
+docs/pierce/logs/scribe.md, and the extraction parts of
+docs/pierce/swens-plan.md. Then SEARCH for more.
+
+For each document, answer three questions:
+1. What does it CLAIM is built, measured or decided?
+2. Is that claim TRUE in the code today? Open the file. Run it.
+3. If it is not true, what is actually the case?
+
+Then answer directly: exactly how much of the extraction this piece
+needs ALREADY EXISTS in polar/tieout/chain/extract.py and the document
+corpus work? Building a second extractor beside the first is the main
+way this piece fails.
+
+Deliver: one plain-English list of every claim that is wrong or stale,
+with the evidence, plus a clear statement of what exists versus what
+must be built. Commit it. Tell me in simple words before you plan.
+```
+
+---
+
+## To the Piece 8 agent (is the diagnosis worth it)
+
+```
+Before measuring anything, audit the documents your piece depends on
+against the actual code, and report what you find.
+
+Read at least: docs/pierce/logs/dynamo.md IN FULL — it is long, it
+contains several complete rounds, and it holds results people have
+already forgotten — plus docs/pierce/c6-stability.md,
+docs/pierce/swens-aha.md, docs/pierce/serious-mining.md,
+docs/pierce/research-brief.md, and the B5/B6/C6 sections of
+docs/pierce/swens-plan.md. Then SEARCH for more.
+
+For each document, answer three questions:
+1. What does it CLAIM is built, measured or decided?
+2. Is that claim TRUE in the code today? Open the file. Run it.
+3. If it is not true, what is actually the case?
+
+Pay particular attention to this: the status file recently claimed two
+required measurements had "never been measured" when they had been done
+a week earlier and passed. Assume more of that. Your single most useful
+output may be a list of things already measured that nobody remembers.
+
+Deliver: one plain-English list of every claim that is wrong or stale,
+with the evidence, and a list of what has ALREADY been measured. Commit
+it. Tell me in simple words before you register a round.
+```
+
+---
+
+## To the Piece 9 agent (make the delta report faster)
+
+```
+Before optimising anything, audit the documents your piece depends on
+against the actual code, and report what you find.
+
+Read at least: docs/pierce/a1-performance.md (an earlier speed round —
+its measurement protocol is the one you must follow),
+docs/pierce/logs/prism.md, docs/pierce/logs/atelier.md,
+docs/pierce/tier-table.md, and the C-track sections of
+docs/pierce/swens-plan.md. Then SEARCH for more.
+
+For each document, answer three questions:
+1. What does it CLAIM is built, measured or decided?
+2. Is that claim TRUE in the code today? Open the file. Run it.
+3. If it is not true, what is actually the case?
+
+Then answer directly, with evidence: where does the time ACTUALLY go?
+The record says "the engine throws away work it just did". Profile it
+and confirm or refute that before you act on it. And tell me what the
+current timing really is — the "3x too slow" figure needs checking,
+because timings on this machine are noise and a single measurement
+means nothing.
+
+Deliver: one plain-English list of every claim that is wrong or stale,
+plus a real profile. Commit it. Tell me in simple words before you
+change any code.
+```
+
+---
+
+## To the Piece 11 agent (the Excel sidebar)
+
+```
+Before testing anything, audit the documents your piece depends on
+against the actual code, and report what you find.
+
+Read at least: docs/pierce/microsoft-hour.md, docs/pierce/platform.md,
+docs/pierce/logs/atelier.md, docs/pierce/security-posture.md,
+docs/pierce/how-antford-checks-a-model.md, docs/pierce/design-reference.md,
+and clients/apps/panel/README.md and SIDELOAD.md. Then SEARCH for more.
+
+For each document, answer three questions:
+1. What does it CLAIM is built, measured or decided?
+2. Is that claim TRUE in the code today? Open the file. Build it. Run it.
+3. If it is not true, what is actually the case?
+
+Three specific things to establish, because the lead got one of them
+wrong and told the founder the opposite of the truth:
+- Is the Microsoft connection configured and working? (The lead said
+  no; it is actually yes. Verify for yourself.)
+- What permission scopes do we request, and what do they permit?
+- Which is the real Excel add-in — clients/apps/panel or
+  clients/apps/word-addin — and what is the other one for?
+
+Deliver: one plain-English list of every claim that is wrong or stale,
+and a clear split of what CAN be verified from this container versus
+what genuinely needs real Excel. Commit it. Tell me in simple words.
+```
+
+---
+
+## To the Piece 13 agent (firm-specific rules)
+
+```
+Before building anything, audit the documents your piece depends on
+against the actual code, and report what you find.
+
+Read at least: docs/pierce/a4-coverage.md, docs/pierce/engine.md,
+docs/pierce/tier-table.md, docs/pierce/surface-inventory.md,
+docs/pierce/security-posture.md, docs/pierce/swens-build.md, and the A5
+sections of docs/pierce/swens-plan.md. Then SEARCH for more.
+
+For each document, answer three questions:
+1. What does it CLAIM is built, measured or decided?
+2. Is that claim TRUE in the code today? Open the file. Run it.
+3. If it is not true, what is actually the case?
+
+Then do this one concretely, because it is the heart of your piece:
+list EVERY rule the engine can actually emit, and cross it against the
+catalogues a firm can switch off (RULE_NAMES and HEADLINES in
+polar/tieout/audit.py, ANALYTIC_RULE_NAMES in analytics.py) and against
+what the settings screen shows. Any rule that reaches a report but
+cannot be switched off is a defect and it is yours. Several were
+recorded as missing; confirm whether that is still true.
+
+Deliver: that cross-check as a table, plus one plain-English list of
+every claim that is wrong or stale. Commit it. Tell me in simple words
+before you build the demonstration.
+```
