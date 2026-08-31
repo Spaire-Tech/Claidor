@@ -45,6 +45,7 @@ from .anchor import (
     BOTH_MOVED,
     MODEL_MOVED,
     SOURCE_MOVED,
+    TRANSFORMS,
     Anchored,
     Broken,
     DocumentAnchor,
@@ -661,7 +662,7 @@ async def confirm_link(
         "model_ref": cell.ref,
         "cell_name": cell.name or f"{cell.row_label} {cell.column_label}".strip(),
         "model_value_at_confirmation": float(cell.value),
-        "transformation": body.transformation,
+        "transformation": _named_transformation(body.transformation),
         "scale": body.scale,
         "basis": body.basis,
         "note": body.note,
@@ -847,6 +848,7 @@ async def recheck_links(
                 model_side.value,
                 float(document_side.value),
                 scale=link.scale,
+                transformation=link.transformation,
             )
             model_ref_now = model_side.key
             document_key_now = document_side.key
@@ -1001,6 +1003,7 @@ class TermRead(Schema):
     superseded: bool
     superseded_note: str
     model: dict[str, object] | None
+    transformation: str
     scale: float
     basis: str
     note: str
@@ -1041,6 +1044,7 @@ class TermRead(Schema):
                 if bound
                 else None
             ),
+            transformation=term.transformation,
             scale=term.scale,
             basis=term.basis,
             note=term.note,
@@ -1254,15 +1258,36 @@ async def delete_term(
 class TermBind(Schema):
     """What a person states when binding a model input to a term.
 
-    Nothing here is inferred: the scale, the basis and the note are the
-    person's words, exactly as on a confirmed link.
+    Nothing here is inferred: the transformation, the scale, the basis
+    and the note are the person's words, exactly as on a confirmed
+    link.
     """
 
     cell_id: UUID
+    #: A named function from the registry — « identity », or « negate »
+    #: when the document prints this figure as a credit. The person
+    #: states it; an unnamed one is refused in words.
+    transformation: str = "identity"
     #: document value × scale = model value. The person states it.
     scale: float = 1.0
     basis: str = ""
     note: str = ""
+
+
+def _named_transformation(name: str) -> str:
+    """The stated transformation, or a 422 that lists the legal names."""
+    if name not in TRANSFORMS:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"« {name} » is not a named transformation; they are: "
+                + ", ".join(sorted(TRANSFORMS))
+                + ". « negate » is the credit convention — the document "
+                "prints the figure as a credit, the model holds its "
+                "magnitude."
+            ),
+        )
+    return name
 
 
 @router.post("/terms/{term_id}/model", response_model=TermRead)
@@ -1325,6 +1350,7 @@ async def bind_term(
             "model_ref": cell.ref,
             "cell_name": cell.name or f"{cell.row_label} {cell.column_label}".strip(),
             "model_value_at_confirmation": float(cell.value),
+            "transformation": _named_transformation(body.transformation),
             "scale": body.scale,
             "basis": body.basis,
             "note": body.note,
@@ -1552,6 +1578,7 @@ def _check_term(
         model_side.value,
         document_now,
         scale=term.scale,
+        transformation=term.transformation,
     )
     return (
         verdict,
@@ -1583,6 +1610,11 @@ def _term_detail(
             f"tie out: the document states {term.printed_text} and the "
             f"model holds {model_now:g}"
             + (f" (at scale {term.scale:g})" if term.scale != 1.0 else "")
+            + (
+                f" (stated transformation: {term.transformation})"
+                if term.transformation != "identity"
+                else ""
+            )
             + "."
         )
     moved = []

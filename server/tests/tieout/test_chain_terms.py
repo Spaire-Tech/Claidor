@@ -863,3 +863,112 @@ class TestTheTableCheck:
         )
         assert foreign_model.status_code == 404
         assert "not on this deal" in foreign_model.text
+
+
+# --- the credit convention (founder-approved, 31 Aug) ---------------------
+
+
+@pytest.mark.asyncio
+class TestTheCreditConvention:
+    """The document prints (2,340) — a credit — and the model holds the
+    magnitude. The person states « negate » at binding and the check
+    applies it; unstated, the same pair honestly does not tie; and a
+    transformation the registry does not name is refused in words."""
+
+    @pytest.mark.auth
+    async def test_negate_stated_at_binding_makes_the_credit_tie(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        artifact_id, extracted = await _extracted_deal(
+            client, session, save_fixture, user
+        )
+        credit = extracted["facts"][1]  # (2,340) on « Loss (2,340) recorded »
+        assert credit["value"] == -2340.0
+        term = await _picked_term(client, credit, name="Loss recorded")
+        pdf = await TieOutRepository.from_session(session).get_artifact(
+            UUID(artifact_id)
+        )
+        assert pdf is not None
+        cell = await _model_cell(
+            session, pdf.dossier_id, user, row_label="Loss", value=Decimal("2340")
+        )
+
+        bound = await client.post(
+            f"/v1/chain/terms/{term['id']}/model",
+            json={"cell_id": str(cell.id), "transformation": "negate"},
+        )
+        assert bound.status_code == 200, bound.text
+        assert bound.json()["transformation"] == "negate"
+
+        response = await client.post(
+            f"/v1/chain/dossiers/{pdf.dossier_id}/terms/check"
+            f"?model_version_id={cell.artifact_id}"
+        )
+        result = response.json()["results"][0]
+        assert result["verdict"] == "agrees"
+        assert result["ties_out_now"] is True
+        assert result["detail"] == ""
+
+    @pytest.mark.auth
+    async def test_unstated_the_same_credit_honestly_does_not_tie(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        artifact_id, extracted = await _extracted_deal(
+            client, session, save_fixture, user
+        )
+        term = await _picked_term(client, extracted["facts"][1])
+        pdf = await TieOutRepository.from_session(session).get_artifact(
+            UUID(artifact_id)
+        )
+        assert pdf is not None
+        cell = await _model_cell(
+            session, pdf.dossier_id, user, row_label="Loss", value=Decimal("2340")
+        )
+        await client.post(
+            f"/v1/chain/terms/{term['id']}/model", json={"cell_id": str(cell.id)}
+        )
+
+        response = await client.post(
+            f"/v1/chain/dossiers/{pdf.dossier_id}/terms/check"
+            f"?model_version_id={cell.artifact_id}"
+        )
+        result = response.json()["results"][0]
+        assert result["verdict"] == "agrees"  # neither side moved…
+        assert result["ties_out_now"] is False  # …and signs differ
+        assert "does not tie out" in result["detail"]
+
+    @pytest.mark.auth
+    async def test_an_unnamed_transformation_is_refused_with_the_legal_names(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        artifact_id, extracted = await _extracted_deal(
+            client, session, save_fixture, user
+        )
+        term = await _picked_term(client, extracted["facts"][0])
+        pdf = await TieOutRepository.from_session(session).get_artifact(
+            UUID(artifact_id)
+        )
+        assert pdf is not None
+        cell = await _model_cell(session, pdf.dossier_id, user, row_label="Revenue")
+
+        response = await client.post(
+            f"/v1/chain/terms/{term['id']}/model",
+            json={"cell_id": str(cell.id), "transformation": "reciprocal"},
+        )
+
+        assert response.status_code == 422
+        assert "not a named transformation" in response.text
+        assert "identity" in response.text
+        assert "negate" in response.text

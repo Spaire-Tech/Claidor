@@ -70,11 +70,20 @@ def _select(entry: dict[str, Any], truths: list[Any]) -> Any | None:
     return truths[-rule]
 
 
-def _term(entry: dict[str, Any], fact: Any, model_value: float, scale: float) -> Any:
+def _term(
+    entry: dict[str, Any],
+    fact: Any,
+    model_value: float,
+    scale: float,
+    transformation: str = "identity",
+) -> Any:
     """A bound ChainTerm exactly as the routes would persist it.
 
     Constructed, not flushed, so every column the check reads is set
-    explicitly — SQLAlchemy defaults apply at flush, not here.
+    explicitly — SQLAlchemy defaults apply at flush, not here. The
+    `transformation` default keeps round 2's registered runs
+    byte-identical; round 2b binds the credit-convention rows with
+    « negate » through this same parameter.
     """
     from polar.tieout.chain.terms import (
         STATED_EXTRACTED,
@@ -97,6 +106,7 @@ def _term(entry: dict[str, Any], fact: Any, model_value: float, scale: float) ->
         model_ref=f"row {entry['row']}",
         cell_name=entry["label"],
         model_value_at_confirmation=model_value,
+        transformation=transformation,
         scale=scale,
         basis="",
         note="",

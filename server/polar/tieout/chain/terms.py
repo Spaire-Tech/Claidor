@@ -164,6 +164,16 @@ class ChainTerm(RecordModel):
 
     # --- what the person stated at binding ------------------------------
 
+    #: A named deterministic function from `anchor.TRANSFORMS`, applied
+    #: to the document's value before the scale at check time.
+    #: « identity » by default; « negate » is the credit convention —
+    #: the document prints this figure as a credit in parentheses, the
+    #: model holds its magnitude. The person states it at binding;
+    #: Swens never infers it. Same vocabulary as
+    #: `ChainLink.transformation`, so one re-check serves both.
+    transformation: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="identity"
+    )
     #: document value × scale = model value. Stated, never inferred —
     #: unit inference is Track E's, and this column is the boundary.
     scale: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
