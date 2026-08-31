@@ -100,10 +100,7 @@ def main(argv: list[str]) -> int:
     pdf_to_printed = {pdf: printed for printed, pdf in new_printed.items()}
     new_numbers = extract_pdf(corpus / "cor-2016-form1.pdf").numbers
     new_facts = with_ordinals(new_numbers)
-    fact_by_key = {
-        key: (line, value, text)
-        for key, line, _, value, text in new_facts
-    }
+    fact_by_key = {key: (line, value, text) for key, line, _, value, text in new_facts}
 
     # --- terms exactly as round 2b confirmed them, with true ordinals ----
     terms: dict[int, Any] = {}
@@ -128,9 +125,7 @@ def main(argv: list[str]) -> int:
             #: must carry which number within its line it is — computed
             #: by the same rule confirmation uses, over the same
             #: extraction the fact came from.
-            position = next(
-                index for index, n in enumerate(old_numbers) if n is fact
-            )
+            position = next(index for index, n in enumerate(old_numbers) if n is fact)
             term.ordinal_in_line = old_ordinals[position][2]
         term.document_id = DOCUMENT_LINEAGE
         terms[entry["row"]] = term
@@ -147,8 +142,11 @@ def main(argv: list[str]) -> int:
         )
         found = None
         if entry["row"] not in TYPED_ROWS:
-            from polar.tieout.chain.anchor import Anchored, DocumentAnchor
-            from polar.tieout.chain.anchor import reanchor_document
+            from polar.tieout.chain.anchor import (
+                Anchored,
+                DocumentAnchor,
+                reanchor_document,
+            )
 
             outcome = reanchor_document(
                 DocumentAnchor(
