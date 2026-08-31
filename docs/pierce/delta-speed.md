@@ -16,6 +16,50 @@ cells). Prism's last measurement on it: `delta_of` with findings
 handed in **438 s**, scaled to 12 MB roughly **350 s — about 3× over
 the two-minute line**. That 3× is this piece's opening position.
 
+## The starting-state audit — code first, docs second
+
+Every line below was checked in the tree this session, not inherited.
+
+**What exists and runs.** The delta machinery is where the lead
+believed: `polar/tieout/watch/` — `delta.py` (the report), `align.py`
+(anchor decomposition + DP), `signature.py` (grids), `diff.py`,
+`tiers.py`. The report's semantics are pinned by 16 tests in
+`tests/tieout/test_watch_delta.py`, including one that pins « passing
+findings gives the same report as running them ». The tieout suite at
+main's tip: 914 passed, 10 skipped, one pre-existing failure in the
+Chain's extract test (not this piece's path), 8 collection errors from
+the container's known pydantic breakage.
+
+**What was already built for this problem, and is not wired.**
+`delta_of` already takes `old_findings` / `new_findings` — the old
+Prism lane built it and measured 2.55× on the GD3 pair. But the
+product's one real caller, `service.delta_between`
+(`service.py:2091`), calls `delta_report(old_path, new_path)` and
+hands nothing in — even though `ingest.py:185` audits every upload as
+it arrives. The optimisation exists; the product does not use it.
+
+**The recorded diagnosis, verified in code.** `audit()` clears the
+shared parse caches when it finishes (`audit.py:857-859`), so a delta
+that runs two audits and then builds grids pays the cold shape pass
+up to three times. The clear is content-keyed housekeeping — memory
+only, never correctness — which is what makes retaining it across a
+pipeline safe by construction.
+
+**What is claimed but absent.** The registered acceptance test — the
+Welsh Water pair under two minutes, parity EXACT — has **never been
+run**: the pair is unreachable from this container (Ofwat 403s,
+recorded in the prism log). Prism's 438 s / « 3× over » numbers are
+measurements from a previous session's tip; this round re-measures
+them on today's main before acting on them.
+
+**The gate.** Corpus rebuilt from the manifest (27 files, 159 MB);
+the sweep on untouched main is **gate clean, 27 of 27**, finding for
+finding — the baseline this round's identity claims stand on.
+
+**One document error corrected.** `pieces.md` § 1c called the delta
+report's speed « Piece 5 » while its own order-of-work table numbers
+it 9; the row now says Piece 9.
+
 ## The hard constraint
 
 This is optimisation, so the output is **identical** before and after
