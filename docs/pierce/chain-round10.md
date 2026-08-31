@@ -119,3 +119,70 @@ independent discovery. The title rule's constants come from the 96
 non-cited calibration pages only. The judge is nobody: the truth was
 written by the filer in 2016. The one number that would be genuinely
 new information is the stage-1 hit count, and it is reported first.
+
+---
+
+# Measured. Stage 1 clears its bar; the round does not clear, and the prediction was wrong.
+
+*Run once, as registered, nothing tuned after. Verdicts:
+`scribe-d3-round10-verdicts.json`; harness:
+`server/scripts/corpus_d3_round10.py`.*
+
+| | result | bar |
+|---|---|---|
+| stage 1 — truth page among selected | **11 of 15** | ≥ 8 — **PASS** |
+| correct | **0** | ≥ 3 and > wrong — **NOT CLEARED** |
+| wrong | **0** | kill criterion (wrong > correct) — did not fire |
+| abstained | 14 | — |
+| unreachable-page | 1 | — |
+
+**Page selection by title works.** Eleven of fifteen rows, from a
+six-line rule and a section-header column — against 3 of 15 for every
+bag-of-words page scorer previously tried. The four misses are the
+rows whose real key is the FERC account number (r119 « Account 924 »,
+r121 « Account 930.1 »), a section the titles do not speak
+(« Proprietary Capital »), and one empty-title page (r187).
+
+**And the prediction was wrong — 5 to 8 correct predicted, zero
+delivered — for a reason I should have caught at registration.** The
+« 9 of 15 alone at the top of its own page » ceiling this round was
+aimed at was measured **without the floor**. Under the frozen
+`FLOOR = 0.5`, the ordinary Form 1 truth line shares one word in
+three with the model's label (« Transmission Wages Expense » against
+« 21Transmission (Enter Total of lines 4 and 14) » — 0.33) and is
+unreachable by construction, right page or not. I registered a
+prediction against a ceiling whose rules were not the rules I froze.
+
+**The two causes, read at the lines, not asserted:**
+
+1. **The title line is circular evidence and it ties everything.**
+   Stage 1 selects every page of a multi-page schedule; each carries
+   the schedule's own title as a line; a model label like « Electric
+   Plant in Service » then ties at 1.00 with *the very string stage 1
+   already consumed* — eleven copies. A successor must exclude a
+   page's title line from stage-2 candidacy: a heading names the
+   table, it does not state a value.
+2. **The floor rejects statutory phrasing.** Seven rows abstain at
+   the floor with the truth page correctly selected — coverage 0.33
+   against the bar of 0.5. Whether the floor may be different when
+   the pool is one schedule instead of a whole document is a design
+   decision of the same class as the « unchanged vs undamaged » bar —
+   registered for a successor round with the founder's word, never
+   slid quietly.
+
+**One finding that changes round 9's arithmetic.** On the tie rows,
+the best *non-title* candidate is the **left half of the spread
+itself** — « 104TOTAL Electric Plant in Service (Enter Total of
+lines… » — the same schedule line whose column-(g) figure the filer
+cites on the continuation page. The registered verdict rule counts
+that as wrong (different printed page), and a human would call it the
+right row read at its label half. Round 9 measured that a perfect
+spread reconstruction buys zero **against the whole document**; with
+the pool narrowed to one schedule and titles excluded, that bound no
+longer applies. Spread reconstruction is worth re-pricing *inside*
+this design — as its own registration, not as a patch here.
+
+**Nothing ships.** `chain/propose.py` is untouched; the standing
+sentence does not change (no registered number about the product
+route moved). The design stayed honest under pressure: zero confident
+wrong answers.

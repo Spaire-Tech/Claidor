@@ -183,9 +183,14 @@ nothing.**
   What it lacks is not code — it is **one real deal with a person
   confirming links**.
 - The propose half has never been right, but the failure is now
-  **located, bounded and priced**: given the right page, labels
-  already resolve 9 of 15 on the hardest corpus. The next round is
-  page selection, not page geometry.
+  **located, bounded and priced** — and round 10 (registered and run
+  after this audit, `chain-round10.md`) moved one piece of it: page
+  selection by schedule title works, **11 of 15**, against 3 of 15
+  for every earlier page scorer. End-to-end recall is still zero, for
+  two newly named causes: the schedule's own repeated title line ties
+  with every strong label (circular evidence), and the 0.5 floor
+  rejects statutory phrasing that shares one word in three. Zero
+  wrong answers throughout — the honesty held.
 - The abstention instrument is genuinely good (30 of 30, 109 true
   abstentions) and the product already tells the truth about itself
   in-band.
