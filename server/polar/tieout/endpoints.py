@@ -20,6 +20,7 @@ already right for the day the work moves.
 import asyncio
 import json
 from collections.abc import AsyncGenerator, Sequence
+from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -72,6 +73,7 @@ from .agent.service import ASSISTANT_EFFORT
 from .agent.status import stage as run_stage
 from .analytics import ANALYTIC_PASS_NAMES, ANALYTIC_RULE_NAMES
 from .audit import RULE_NAMES
+from .checks import checks_of
 from .ingest import SUFFIXES, Unreadable, kind_for
 from .markup import MarkupFinding, MarkupRefused, marked_up_copy, marked_up_name
 from .repository import TieOutRepository
@@ -90,6 +92,7 @@ from .schemas import (
     CellRead,
     ChainRead,
     ChainStep,
+    CheckRead,
     CheckRunRead,
     CorrectionDecision,
     CorrectionRead,
@@ -218,9 +221,17 @@ def _artifact(artifact: Artifact, uploader: User | None) -> ArtifactRead:
     )
 
 
-def _run(run: CheckRun | None) -> CheckRunRead | None:
+def _run(
+    run: CheckRun | None, open_by_rule: dict[str, int] | None = None
+) -> CheckRunRead | None:
     if run is None:
         return None
+    checks: list[CheckRead] = []
+    if run.kind is CheckKind.audit and run.status is CheckStatus.done:
+        checks = [
+            CheckRead(**asdict(one))
+            for one in checks_of(run.summary or {}, open_by_rule or {})
+        ]
     return CheckRunRead(
         id=run.id,
         kind=run.kind,
@@ -229,6 +240,7 @@ def _run(run: CheckRun | None) -> CheckRunRead | None:
         error=run.error,
         started_at=run.started_at,
         finished_at=run.finished_at,
+        checks=checks,
     )
 
 
@@ -1510,7 +1522,10 @@ async def run_checks(
         runs.append(
             await tieout.run_crosscheck(session, dossier_id=dossier_id, user_id=user_id)
         )
-    return [one for one in (_run(run) for run in runs) if one is not None]
+    by_rule = await TieOutRepository.from_session(session).open_findings_by_rule(
+        dossier_id
+    )
+    return [one for one in (_run(run, by_rule) for run in runs) if one is not None]
 
 
 @router.get("/deals/{dossier_id}/runs", response_model=list[CheckRunRead])
@@ -1527,6 +1542,20 @@ async def list_runs(
         await repository.latest_run(dossier_id, CheckKind.audit),
         await repository.latest_run(dossier_id, CheckKind.crosscheck),
     ]
+    by_rule = await repository.open_findings_by_rule(dossier_id)
+    return [one for one in (_run(run, by_rule) for run in runs) if one is not None]
+
+
+@router.get("/deals/{dossier_id}/runs/history", response_model=list[CheckRunRead])
+async def run_history(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[CheckRunRead]:
+    """Every finished audit run, oldest first — what the trend is drawn from."""
+    await _deal(session, dossier_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    runs = await repository.finished_runs(dossier_id, CheckKind.audit)
     return [one for one in (_run(run) for run in runs) if one is not None]
 
 
@@ -1552,6 +1581,7 @@ def _house_rules(rules: HouseRules | None) -> HouseRulesRead:
         rounding="separate" if rules and rules.rounding == "separate" else "together",
         writing=dict(rules.writing) if rules else {},
         grounding=rules.grounding if rules else True,
+        materiality=rules.materiality if rules else None,
         rules=[
             AuditRuleRead(key=key, label=label, on=key not in off)
             for key, label in RULE_NAMES.items()
@@ -1635,6 +1665,8 @@ async def put_house_rules(
         rules.writing = dict(update.writing)
     if update.grounding is not None:
         rules.grounding = update.grounding
+    if update.materiality is not None:
+        rules.materiality = update.materiality if update.materiality > 0 else None
     if update.audit_rules_off is not None:
         rules.audit_rules_off = sorted(set(update.audit_rules_off))
     return _house_rules(await repository.save_house_rules(rules))

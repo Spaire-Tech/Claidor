@@ -702,6 +702,54 @@ export const Settings = ({
           {tab === 'rules' && rules !== null && (
             <div>
               <div style={{ ...sectionHead, padding: '0 4px 9px' }}>
+                Materiality
+              </div>
+              <div
+                style={{ ...listCard, padding: '16px 20px 17px', marginBottom: 26 }}
+              >
+                <div style={{ fontSize: 15.5, lineHeight: 1.5 }}>
+                  A finding that leaves this much money out reads as
+                  Material. Below it, Significant. Leave it empty and each
+                  model sets its own line: half a percent of its largest
+                  total.
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    marginTop: 12,
+                  }}
+                >
+                  <input
+                    inputMode="decimal"
+                    defaultValue={rules.materiality ?? ''}
+                    placeholder="the model's own scale"
+                    onBlur={(e) => {
+                      const typed = e.currentTarget.value.trim().replace(/,/g, '')
+                      const number = typed === '' ? 0 : Number(typed)
+                      if (Number.isNaN(number)) return
+                      if ((rules.materiality ?? 0) !== number)
+                        change({ materiality: number })
+                    }}
+                    style={{
+                      border: 0,
+                      background: '#f0f0f2',
+                      borderRadius: 10,
+                      height: 38,
+                      padding: '0 13px',
+                      font: 'inherit',
+                      fontSize: 14,
+                      width: 220,
+                      outline: 'none',
+                    }}
+                  />
+                  <span style={{ fontSize: 13, color: ink.dock }}>
+                    in the model&apos;s own units
+                  </span>
+                </div>
+              </div>
+              <div style={{ ...sectionHead, padding: '0 4px 9px' }}>
                 Rounding differences
               </div>
               <div style={{ ...listCard, padding: '16px 20px 17px' }}>

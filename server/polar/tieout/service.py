@@ -392,6 +392,7 @@ class TieOutService:
         dossier_id: UUID,
         check_run_id: UUID | None,
         rules_off: set[str],
+        materiality: float | None = None,
     ) -> tuple[list[FindingRow], dict[str, Any]]:
         """One model's audit, computed from its stored cells.
 
@@ -421,7 +422,7 @@ class TieOutService:
         book = _workbook_of(cells)
         _restore_file_facts(book, model.counts)
         structure = read_structure(book)
-        result = run_rules(book, axes=structure.axes)
+        result = run_rules(book, axes=structure.axes, materiality=materiality)
         result.findings = [one for one in result.findings if one.rule not in rules_off]
         errors += len(result.errors)
         smells += len(result.smells)
@@ -604,6 +605,7 @@ class TieOutService:
         ):
             return None
         rules_off = await self._rules_off(repository, dossier_id)
+        materiality = await self._materiality(repository, dossier_id)
         cells = await repository.cells_for_graph(artifact.id)
         findings, record = self._audit_one(
             artifact,
@@ -611,6 +613,7 @@ class TieOutService:
             dossier_id=dossier_id,
             check_run_id=None,
             rules_off=rules_off,
+            materiality=materiality,
         )
         #: In-memory rows, never flushed — the column defaults that
         #: would land at flush are supplied here so the renderer can
@@ -1079,6 +1082,7 @@ class TieOutService:
         """
         repository = TieOutRepository.from_session(session)
         rules_off = await self._rules_off(repository, dossier_id)
+        materiality = await self._materiality(repository, dossier_id)
         models = [
             one
             for one in await repository.current_artifacts(dossier_id)
@@ -1108,6 +1112,7 @@ class TieOutService:
                 dossier_id=dossier_id,
                 check_run_id=run.id,
                 rules_off=rules_off,
+                materiality=materiality,
             )
             findings.extend(found)
             errors += int(record["errors"])
@@ -1153,6 +1158,16 @@ class TieOutService:
             return set()
         rules = await repository.house_rules_for(organization_id)
         return set(rules.audit_rules_off) if rules else set()
+
+    async def _materiality(
+        self, repository: TieOutRepository, dossier_id: UUID
+    ) -> float | None:
+        """The firm's own materiality, or None for the model's scale."""
+        organization_id = await repository.organization_of(dossier_id)
+        if organization_id is None:
+            return None
+        rules = await repository.house_rules_for(organization_id)
+        return rules.materiality if rules else None
 
     async def grounding_on(self, session: AsyncSession, *, dossier_id: UUID) -> bool:
         """Whether the firm runs the grounding pass with the others."""

@@ -168,7 +168,7 @@ class TestBalance:
         )
         result = _run(cells)
         assert [f for f in result.findings if f.rule == "balance-sheet"] == []
-        assert any("not unique" in a.why for a in result.abstentions)
+        assert any("more than one row answers" in a.why for a in result.abstentions)
 
     def test_rounding_residue_stays_silent(self) -> None:
         result = _run(

@@ -56,6 +56,7 @@ from uuid import UUID
 from sqlalchemy import (
     TIMESTAMP,
     Boolean,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -795,6 +796,15 @@ class HouseRules(RecordModel):
     #: enforced only if the House style check is on » — and that check
     #: is not built yet, which the screen says too.
     writing: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+
+    #: The firm's materiality, in the model's own units: a money finding
+    #: at or above it reads « Material », below it « Significant ». Null
+    #: means the engine takes the model's own scale — half a percent of
+    #: its largest total — and the finding's basis sentence says which
+    #: was used, so the label is never an unexplained word.
+    materiality: Mapped[float | None] = mapped_column(
+        Float, nullable=True, default=None
+    )
 
     #: Whether the grounding pass — model inputs against the deal's
     #: source documents — runs with the others. On by default.

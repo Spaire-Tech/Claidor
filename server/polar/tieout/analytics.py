@@ -34,7 +34,7 @@ from decimal import Decimal
 
 from .audit import shown_number
 from .calculation import refusal
-from .structure import Structure, _canon
+from .structure import Structure, _canon, reason_unlocated
 from .workbook import Cell, Workbook
 
 #: The tolerance floor, in the model's own working units. The protocol
@@ -390,6 +390,16 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
 
 _NET_ASSETS = re.compile(r"^net assets\b", re.IGNORECASE)
 _EQUITY = re.compile(r"^(?:total equity|shareholders'? funds?)\b", re.IGNORECASE)
+#: The other presentation of the same identity — assets on one side,
+#: liabilities and equity on the other — which is how an American
+#: model states it. « Liabilit\w* » because the founder's own sheet
+#: spells it « Liabilites », and a misspelling is not a reason to
+#: refuse a balance sheet.
+_TOTAL_ASSETS = re.compile(r"^total assets\b", re.IGNORECASE)
+_LIABILITIES_AND_EQUITY = re.compile(
+    r"^total liabilit\w*\s*(?:and|&|\+)\s*(?:net worth|equity|shareholders'? funds?|stockholders'? equity)\b",
+    re.IGNORECASE,
+)
 
 
 def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
@@ -408,7 +418,14 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
     located = [one for one in structure.located if one.kind == "balance-sheet"]
     if not located:
         result.abstentions.append(
-            Abstention("balance-sheet", "No balance sheet was located.")
+            Abstention(
+                "balance-sheet",
+                reason_unlocated(
+                    structure,
+                    "balance-sheet",
+                    "I could not find a balance sheet to check.",
+                ),
+            )
         )
         return
 
@@ -421,15 +438,35 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
         equity_rows = sorted(
             {c.row for c in cells if _EQUITY.match(c.row_label.strip())}
         )
-        if len(net_rows) != 1 or len(equity_rows) != 1:
-            result.abstentions.append(
-                Abstention(
-                    "balance-sheet",
-                    f"{block.sheet}: the net-assets and equity rows are not "
-                    f"unique ({len(net_rows)} and {len(equity_rows)} candidates) "
-                    "— not paired, not guessed.",
-                )
+        if not net_rows and not equity_rows:
+            #: The American presentation: total assets against total
+            #: liabilities and net worth. One identity, two spellings.
+            net_rows = sorted(
+                {c.row for c in cells if _TOTAL_ASSETS.match(c.row_label.strip())}
             )
+            equity_rows = sorted(
+                {
+                    c.row
+                    for c in cells
+                    if _LIABILITIES_AND_EQUITY.match(c.row_label.strip())
+                }
+            )
+        if len(net_rows) != 1 or len(equity_rows) != 1:
+            #: Said as what was looked for, in a sentence a person can
+            #: act on, rather than a candidate count.
+            if not net_rows or not equity_rows:
+                why = (
+                    f"On « {block.sheet} » I could not find both sides to "
+                    "compare: a net assets or total assets row, and a "
+                    "total equity or liabilities-and-equity row."
+                )
+            else:
+                why = (
+                    f"On « {block.sheet} » more than one row answers to "
+                    "net assets or to equity, so I did not guess which "
+                    "pair to compare."
+                )
+            result.abstentions.append(Abstention("balance-sheet", why))
             continue
 
         net = {
@@ -657,7 +694,12 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
     """
     if not structure.pairs:
         result.abstentions.append(
-            Abstention("cash-continuity", "No opening/closing pairs were found.")
+            Abstention(
+                "cash-continuity",
+                "I could not find an opening balance row paired with a "
+                "closing one on any sheet with period columns, so cash "
+                "carry-forward was not checked.",
+            )
         )
         return
 
@@ -773,7 +815,7 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
 # --- debt repays to zero --------------------------------------------------
 
 _DEBTISH_LABEL = re.compile(
-    r"\b(?:debt|loan|senior|sub[- ]?debt|bond|tranche|facilit|mezz)\b",
+    r"\b(?:debt|loan|senior|sub[- ]?debt|bond|tranche|facilit|mezz|principal|outstanding)\b",
     re.IGNORECASE,
 )
 
@@ -801,7 +843,14 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
     }
     if not debt_sheets:
         result.abstentions.append(
-            Abstention("debt-terminal", "No debt schedule was located.")
+            Abstention(
+                "debt-terminal",
+                reason_unlocated(
+                    structure,
+                    "debt-schedule",
+                    "I could not find a debt schedule to check.",
+                ),
+            )
         )
         return
 
@@ -873,6 +922,19 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
         )
     if judged:
         result.tallies["debt-terminal"] = {"total": judged, "clean": repaid}
+    else:
+        #: A located schedule with nothing judged used to be silence —
+        #: no tally, no abstention, a check that neither passed nor
+        #: failed nor said why. A4's rule: say which.
+        result.abstentions.append(
+            Abstention(
+                "debt-terminal",
+                "I found a debt schedule on "
+                + ", ".join(f"« {one} »" for one in sorted(debt_sheets)[:2])
+                + " but no debt balance row long enough to read to "
+                "maturity, so repayment to zero was not checked.",
+            )
+        )
 
 
 # --- interest self-consistency --------------------------------------------
@@ -912,7 +974,14 @@ def _interest_consistency(
     }
     if not debt_sheets:
         result.abstentions.append(
-            Abstention("interest-consistency", "No debt schedule was located.")
+            Abstention(
+                "interest-consistency",
+                reason_unlocated(
+                    structure,
+                    "debt-schedule",
+                    "I could not find a debt schedule to check.",
+                ),
+            )
         )
         return
 
@@ -1095,3 +1164,13 @@ def _interest_consistency(
             "total": judged,
             "clean": clean,
         }
+    else:
+        result.abstentions.append(
+            Abstention(
+                "interest-consistency",
+                "I found a debt schedule on "
+                + ", ".join(f"« {one} »" for one in sorted(debt_sheets)[:2])
+                + " but no interest row beside an opening balance, so "
+                "interest was not checked against the balance.",
+            )
+        )

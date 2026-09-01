@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..structure import PeriodAxis
+from ..structure import sections as _sections
 from ..workbook import Workbook
 
 #: How a thing was got. `READ` means it is on the page; `WORKED_OUT`
@@ -105,6 +106,16 @@ class Sheet:
     role: str
     formulas: int
     hidden: str = ""
+    #: The row labels on a statement sheet, as the file names them —
+    #: so an answer cannot say « there is no depreciation line on the
+    #: income statement » about a sheet whose rows include « Total
+    #: Depreciation Expense ». The assistant said exactly that.
+    rows: tuple[str, ...] = ()
+    #: A sheet built as one block repeated: (how many, rows per block).
+    #: Read off the model's own totals — the assistant called six
+    #: blocks of twenty rows « four blocks ». (0, 0) when there is no
+    #: repeat to read.
+    blocks: tuple[int, int] = (0, 0)
 
 
 @dataclass
@@ -229,6 +240,39 @@ def _term(axes: dict[str, PeriodAxis]) -> Known:
     return Known()
 
 
+#: How many row labels a statement sheet is told with. Enough for a
+#: three-statement model's lines; a 400-row schedule is not a statement.
+ROWS_TOLD = 60
+
+
+def _blocks(book: Workbook) -> dict[str, tuple[int, int]]:
+    """Sheets built as one block repeated, from the model's own totals.
+
+    Three or more sections of the same height at a constant stride is
+    one block stamped down the sheet: the depreciation schedule's six
+    asset blocks, twenty rows each, twenty-seven apart. Anything less
+    regular is not claimed.
+    """
+    by_sheet: dict[str, list[tuple[int, int]]] = {}
+    for one in _sections(book):
+        by_sheet.setdefault(one.sheet, []).append(
+            (one.first_row, one.last_row - one.first_row + 1)
+        )
+    out: dict[str, tuple[int, int]] = {}
+    for sheet, found in by_sheet.items():
+        heights: dict[int, list[int]] = {}
+        for first, height in found:
+            heights.setdefault(height, []).append(first)
+        for height, starts in heights.items():
+            starts = sorted(set(starts))
+            if len(starts) < 3:
+                continue
+            strides = {b - a for a, b in zip(starts, starts[1:], strict=False)}
+            if len(strides) == 1:
+                out[sheet] = (len(starts), height)
+    return out
+
+
 def picture_of(
     book: Workbook,
     *,
@@ -244,21 +288,33 @@ def picture_of(
         if cell.formula:
             per_sheet[cell.sheet] = per_sheet.get(cell.sheet, 0) + 1
 
-    sheets = [
-        Sheet(
-            name=name,
-            role=_role(name, per_sheet.get(name, 0), book.populated.get(name, 0)),
-            formulas=per_sheet.get(name, 0),
-            hidden=(
-                "very hidden"
-                if name in book.very_hidden_sheets
-                else "hidden"
-                if name in book.hidden_sheets
-                else ""
-            ),
+    labels_by_sheet: dict[str, list[str]] = {}
+    for cell in sorted(book.cells.values(), key=lambda c: (c.sheet, c.row, c.column)):
+        label = cell.row_label.strip()
+        if label and label not in labels_by_sheet.setdefault(cell.sheet, []):
+            labels_by_sheet[cell.sheet].append(label)
+    blocks = _blocks(book)
+    sheets = []
+    for name in book.sheets:
+        role = _role(name, per_sheet.get(name, 0), book.populated.get(name, 0))
+        sheets.append(
+            Sheet(
+                name=name,
+                role=role,
+                formulas=per_sheet.get(name, 0),
+                hidden=(
+                    "very hidden"
+                    if name in book.very_hidden_sheets
+                    else "hidden"
+                    if name in book.hidden_sheets
+                    else ""
+                ),
+                rows=tuple(labels_by_sheet.get(name, [])[:ROWS_TOLD])
+                if role == "statements"
+                else (),
+                blocks=blocks.get(name, (0, 0)),
+            )
         )
-        for name in book.sheets
-    ]
 
     line, where = _cover_line(book)
     if line:
@@ -345,6 +401,19 @@ def as_prompt(picture: Picture) -> str:
         if bands.get(role):
             lines.append(f"Sheets — {role}: {', '.join(bands[role])}.")
 
+    for sheet in picture.sheets:
+        if sheet.rows:
+            lines.append(
+                f"Rows on « {sheet.name} »: {'; '.join(sheet.rows)}. These are "
+                "read off the sheet — do not say a line is missing from it "
+                "unless it is missing from this list."
+            )
+        if sheet.blocks[0]:
+            lines.append(
+                f"« {sheet.name} » is one block of {sheet.blocks[1]} rows "
+                f"repeated {sheet.blocks[0]} times."
+            )
+
     lines.append("")
     lines.append(
         "Circular calculation is on in this file."
@@ -398,6 +467,8 @@ def as_dict(picture: Picture) -> dict[str, Any]:
                 "name": one.name,
                 "role": one.role,
                 "formulas": one.formulas,
+                "rows": list(one.rows),
+                "blocks": list(one.blocks),
                 "hidden": one.hidden,
             }
             for one in picture.sheets

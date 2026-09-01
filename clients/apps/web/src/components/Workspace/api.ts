@@ -362,6 +362,24 @@ export interface ConnectedFolder {
 }
 
 /** One pass of one checker over named versions of named files. */
+/** One check of an audit run, in one of four states — the server's
+ *  own derivation from what the run recorded and the findings table.
+ *  `off`: switched off in the house rules. `abstained`: declined, with
+ *  its own sentence in `why`. `found`: ran, open findings under it.
+ *  `clean`: ran, nothing found; `total`/`clean` say what it walked
+ *  when it counted. */
+export interface CheckRead {
+  key: string
+  label: string
+  pass_label: string
+  analytical: boolean
+  state: 'off' | 'abstained' | 'found' | 'clean'
+  why: string
+  total: number
+  clean: number
+  findings: number
+}
+
 export interface CheckRun {
   id: string
   kind: 'tieout' | 'audit' | 'crosscheck'
@@ -371,6 +389,8 @@ export interface CheckRun {
   error: string | null
   started_at: string | null
   finished_at: string | null
+  /** Audit runs only: every rule in one state each. Empty otherwise. */
+  checks: CheckRead[]
 }
 
 /** The statement-check record inside an audit run's summary — read
@@ -966,6 +986,10 @@ export interface HouseRules {
   /** Ranges, fiscal years, units, negatives — as the firm writes them. */
   writing: Record<string, string>
   grounding: boolean
+  /** The firm's materiality in the model's own units, or null for the
+   *  model's own scale (half a percent of its largest total). A money
+   *  finding at or above it reads Material; below it, Significant. */
+  materiality: number | null
   /** The audit's own catalogue with the firm's switches — never a list
    *  the screen invented. */
   rules: AuditRule[]
@@ -1615,6 +1639,11 @@ export class TieOutApi {
     return this.call(`/deals/${dealId}/runs`)
   }
 
+  /** Every finished audit run, oldest first — the trend's points. */
+  runHistory(dealId: string): Promise<CheckRun[]> {
+    return this.call(`/deals/${dealId}/runs/history`)
+  }
+
   /**
    * Check a loose file without putting it in any deal.
    *
@@ -1707,6 +1736,7 @@ export class TieOutApi {
       writing?: Record<string, string>
       grounding?: boolean
       audit_rules_off?: string[]
+      materiality?: number
     },
   ): Promise<HouseRules> {
     return this.call(`/house-rules?organization_id=${organizationId}`, {
