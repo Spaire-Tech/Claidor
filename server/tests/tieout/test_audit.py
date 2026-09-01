@@ -512,7 +512,10 @@ def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
     #: An empty, unreferenced very-hidden sheet is a note, not a threat.
     hidden = next(f for f in result.findings if f.rule == "hidden-sheet")
     assert hidden.severity == "smell"
-    assert "empty and nothing in the model reads it" in hidden.detail
+    #: The founder's own worked example from `findings-voice.md`
+    #: rule 5, adopted verbatim on 1 September.
+    assert "very hidden but empty" in hidden.detail
+    assert "safe to delete" in hidden.detail
 
     #: A bound tested twice reads once.
     validation = next(f for f in result.findings if f.ref == "Control Panel!E56")
@@ -1390,8 +1393,8 @@ def test_external_link_speaks_a_whole_sentence() -> None:
     result = _tmp_book(many)
     finding = next(f for f in result.findings if f.rule == "external-link")
     sentence = plain_words(finding)
-    assert sentence.startswith("This workbook reads another workbook, [1] — ")
-    assert "7 cells pull values from it" in sentence
+    assert sentence.startswith("This workbook reads another workbook, [1]. ")
+    assert "7 cells pull their values from there" in sentence
     assert "  " not in sentence
 
     def just_one(sheet) -> None:
@@ -1400,7 +1403,7 @@ def test_external_link_speaks_a_whole_sentence() -> None:
     result = _tmp_book(just_one)
     finding = next(f for f in result.findings if f.rule == "external-link")
     sentence = plain_words(finding)
-    assert "1 cell pulls values from it, and it cannot be traced" in sentence
+    assert "One cell pulls its values from there" in sentence
     assert "1 cells" not in sentence
 
 

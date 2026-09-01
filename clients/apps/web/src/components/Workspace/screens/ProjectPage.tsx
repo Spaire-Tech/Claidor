@@ -1873,12 +1873,15 @@ export const ProjectPage = ({
                           const opened = openId === f.id
                           const grid = f.grid
                           const at = whereOf(f)
-                          //: Never the row's own sentence again.
+                          //: Never the row's own sentence again. Some
+                          //: rules write their plain sentence *out of*
+                          //: the detail — the claim is the detail with
+                          //: the row's name in front of it — so equality
+                          //: is not enough: containment is the test.
                           const said = f.plain || f.title
+                          const detail = (f.context || '').trim()
                           const why =
-                            f.context && f.context.trim() !== said.trim()
-                              ? f.context
-                              : ''
+                            detail && !said.trim().includes(detail) ? detail : ''
                           const hasPair = !!f.fix && !!f.fix_before
                           const correction = f.correction
                           return (

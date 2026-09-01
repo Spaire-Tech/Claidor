@@ -13,7 +13,7 @@ cries wolf is worse than none at all.
 import tempfile
 from pathlib import Path
 
-from polar.tieout.audit import audit
+from polar.tieout.audit import audit, plain_words
 from polar.tieout.workbook import read_workbook
 
 
@@ -66,9 +66,9 @@ def test_pounds_added_to_dollars_is_an_error() -> None:
     found = _found(result, "currency-mismatch")
     assert found, [f.rule for f in result.findings]
     assert found[0].severity == "error"
-    assert "GBP" in found[0].detail
-    assert "USD" in found[0].detail
-    assert "may only carry one currency" in found[0].detail
+    assert "GBP" in plain_words(found[0])
+    assert "USD" in plain_words(found[0])
+    assert "may only carry one currency" in plain_words(found[0])
 
 
 def test_one_currency_throughout_is_silent() -> None:

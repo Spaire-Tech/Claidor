@@ -159,6 +159,15 @@ MACHINE_VOICE: list[tuple[str, str]] = [
         r"\bbanded order\b",
         "Say « inputs, then the calculations, then the statements ».",
     ),
+    #: « The model's own check row reports 1.234e+06 » reached a
+    #: founder's screen. Scientific notation is the engine talking to
+    #: itself; `audit.shown_number` is the one printer, and it says
+    #: 1.234m. The pattern needs a digit before the `e` so « take-e »
+    #: and « the-e » cannot trip it.
+    (
+        r"\d[eE][+-]\d",
+        "Nobody reads an exponent. Print it through `shown_number`: 1.234m.",
+    ),
 ]
 
 #: « Use words a banker says out loud. » The left column is

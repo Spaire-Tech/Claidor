@@ -142,7 +142,12 @@ def test_the_answer_sheet_never_reaches_the_model_side(harness, pair) -> None:
 
 def test_the_sheet_phase_carries_no_matcher_output(harness, pair, capsys) -> None:
     model, contract = pair
-    assert harness.sheet(model, contract, "Clause references", frozenset({"Clause references"})) == 0
+    assert (
+        harness.sheet(
+            model, contract, "Clause references", frozenset({"Clause references"})
+        )
+        == 0
+    )
     written = json.loads((contract.parent / "kelso-round-sheet.json").read_text())
 
     assert len(written) == 3
@@ -164,7 +169,9 @@ def test_the_sheet_phase_carries_no_matcher_output(harness, pair, capsys) -> Non
 def test_conditions_are_counted_and_never_scored(harness, pair, capsys) -> None:
     """Unpublished paper and OCR loss leave the table, as registered."""
     model, contract = pair
-    harness.sheet(model, contract, "Clause references", frozenset({"Clause references"}))
+    harness.sheet(
+        model, contract, "Clause references", frozenset({"Clause references"})
+    )
     written = json.loads((contract.parent / "kelso-round-sheet.json").read_text())
 
     for row in written:
