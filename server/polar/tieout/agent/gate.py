@@ -95,7 +95,13 @@ async def written(
     first = answer
     ask = ask or _one_call
     for attempt in range(1, MOST_TRIES + 1):
-        note = style.rewrite_note(style.errors(alerts))
+        #: Errors are what triggered the rewrite; the warnings ride
+        #: along because the call is already being made. A sentence of
+        #: thirty words is not worth a model call on its own and is
+        #: absolutely worth fixing while one is happening — and long
+        #: sentences are the single biggest lever on whether a smart
+        #: person who has never opened Excel can read this.
+        note = style.rewrite_note(alerts)
         try:
             again = await ask(client, model, ASK.format(alerts=note, answer=answer))
         except Exception as problem:

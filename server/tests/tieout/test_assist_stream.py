@@ -188,12 +188,19 @@ class TestWhatTheRunSaysItProduced:
         assert answer.stages[0].art == ""
         assert answer.model is None
 
-    def test_the_assistants_own_line_reaches_the_screen(self) -> None:
-        one = _stage(a_step(1, said="Reading the debt schedule"), "Northbank.xlsx", 22)
+    def test_the_line_is_short_and_derived_not_the_model_prose(self) -> None:
+        #: The model writes paragraphs, not status lines. Painting one
+        #: into a one-line slot is what the founder saw: a line that
+        #: grew and never cleared.
+        one = _stage(
+            a_step(1, said="Let me walk this one back through the schedule."),
+            "Northbank.xlsx",
+            22,
+        )
 
-        assert one.sub == "Reading the debt schedule"
+        assert one.sub == "Walking back from Debt!F44"
 
-    def test_a_silent_step_still_names_the_cell(self) -> None:
+    def test_a_silent_step_names_the_cell_the_same_way(self) -> None:
         one = _stage(a_step(1), "Northbank.xlsx", 22)
 
         assert one.sub == "Walking back from Debt!F44"
