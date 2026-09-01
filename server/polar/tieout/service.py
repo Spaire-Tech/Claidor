@@ -2148,6 +2148,15 @@ def _restore_file_facts(book: Workbook, counts: dict[str, Any]) -> None:
     book.hidden_sheets = tuple(counts.get("hidden_sheets", []))
     book.very_hidden_sheets = tuple(counts.get("very_hidden_sheets", []))
     book.iterative = bool(counts.get("iterative", False))
+    #: The file's own tab order. `_workbook_of` derives an order from
+    #: whatever order the database returned the rows, which is not
+    #: stable between two runs of the same bytes — piece 13's
+    #: demonstration caught the same model showing two different
+    #: sheet-tab strips in its findings' little grids. An artifact
+    #: ingested before the key existed keeps the derived order.
+    order = [str(sheet) for sheet in counts.get("sheet_order") or []]
+    if order:
+        book.sheets = order
 
     facts = counts.get("workbook") or {}
     if not isinstance(facts, dict):

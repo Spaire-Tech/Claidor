@@ -253,6 +253,9 @@ class Audit:
 RULE_NAMES: dict[str, str] = {
     "error-value": "Cells showing an error value",
     "external-link": "Links into other workbooks",
+    #: The same defect one level up in the file — a defined name
+    #: storing #REF! or pointing into a workbook that is not here.
+    "broken-name": "Defined names that are broken",
     "volatile": "Volatile functions",
     "long-formula": "Formulas too long to follow",
     "hardcode-in-formula": "Hardcoded values inside formulas",
@@ -262,6 +265,9 @@ RULE_NAMES: dict[str, str] = {
     "inconsistent-row": "Formulas inconsistent across a row",
     "circular": "Circular references",
     "skipped-cell": "Sum ranges that miss a cell",
+    #: A check formula that walks cells one by one and skips a live
+    #: block — the author's own test, not covering what it walks.
+    "gapped-test": "Check formulas that skip live cells",
     "range-over-block": "Ranges that reach past their block",
     "inconsistent-total": "Totals that disagree with their siblings",
     "broken-aggregation": "Period totals that take one sub-period",
@@ -281,6 +287,7 @@ PeriodAxes = dict[str, Any]
 HEADLINES: dict[str, str] = {
     "error-value": "Error value",
     "external-link": "External link",
+    "broken-name": "Broken name",
     "volatile": "Volatile function",
     "long-formula": "Complex formula",
     "hardcode-in-formula": "Hardcoded assumption",
@@ -290,6 +297,7 @@ HEADLINES: dict[str, str] = {
     "inconsistent-row": "Inconsistent formula",
     "circular": "Circular reference",
     "skipped-cell": "Incomplete total",
+    "gapped-test": "Gapped test",
     "range-over-block": "Range past its block",
     "inconsistent-total": "Disagreeing totals",
     "broken-aggregation": "Broken aggregation",

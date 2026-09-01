@@ -414,8 +414,16 @@ class TieOutRepository(RepositoryBase[Artifact]):
         the callers that only rebuild the workbook, `cells_for_graph`
         below reads the same cells six times faster.
         """
-        statement = select(ModelCell).where(
-            ModelCell.artifact_id == artifact_id, ModelCell.deleted_at.is_(None)
+        statement = (
+            select(ModelCell)
+            .where(ModelCell.artifact_id == artifact_id, ModelCell.deleted_at.is_(None))
+            #: Row-major within each sheet, always. Without an order the
+            #: database returns the rows however it likes, the rebuilt
+            #: workbook's dict iterates in that order, and every pass
+            #: that keeps « the first of a family » — the audit's
+            #: collapse above all — can pick a different representative
+            #: cell for the same defect on two runs of the same bytes.
+            .order_by(ModelCell.sheet, ModelCell.row, ModelCell.column)
         )
         return (await self.session.execute(statement)).scalars().all()
 
@@ -449,6 +457,9 @@ class TieOutRepository(RepositoryBase[Artifact]):
             ModelCell.unresolved,
             ModelCell.alias_of,
         ).where(ModelCell.artifact_id == artifact_id, ModelCell.deleted_at.is_(None))
+        #: Same order as `cells_of`, same reason: a deterministic
+        #: workbook, whichever read built it.
+        statement = statement.order_by(ModelCell.sheet, ModelCell.row, ModelCell.column)
         return (await self.session.execute(statement)).all()
 
     async def figures_by_id(self, ids: Sequence[UUID]) -> dict[UUID, Figure]:

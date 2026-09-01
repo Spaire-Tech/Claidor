@@ -1,0 +1,2637 @@
+{
+  "model": "example_preapp_model.xlsx",
+  "firm_a": {
+    "summary": {
+      "errors": 4,
+      "smells": 8,
+      "tiers": {
+        "1": 4,
+        "2": 2,
+        "3": 6
+      },
+      "models": 1,
+      "cells": 6186,
+      "rules_off": [],
+      "values_only": false,
+      "abstentions": [
+        {
+          "rule": "balance-sheet",
+          "why": "No balance sheet was located."
+        },
+        {
+          "rule": "cash-continuity",
+          "why": "No opening/closing pairs were found."
+        },
+        {
+          "rule": "debt-terminal",
+          "why": "No debt schedule was located."
+        },
+        {
+          "rule": "interest-consistency",
+          "why": "No debt schedule was located."
+        }
+      ],
+      "tallies": {
+        "model-own-check": {
+          "total": 1,
+          "clean": 1
+        }
+      }
+    },
+    "findings": [
+      {
+        "id": "f4b23679-7de8-4f29-b6a5-fd739f78d0bf",
+        "kind": "audit",
+        "severity": "error",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E41",
+        "expected": "",
+        "title": "Total Senior Debt Service is incomplete: the formula at E41 excludes rows immediately above it, leaving 12.5m outside the total.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E41",
+          "detail": "Assumptions Processing!E41",
+          "anchor": {
+            "ref": "Assumptions Processing!E41",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Total Senior Debt Service",
+          "basis": "defect: the gap is in the formula's own range arithmetic, though a designed layout can excuse one; carries real money (12.5m)",
+          "artifact_id": null
+        },
+        "context": "=SUM(E37:E37) leaves out Assumptions Processing!E40 above it \u2014 worth 12.5m together \u2014 one formula filled across 40 cells (Assumptions Processing!E41 to Assumptions Processing!X51)",
+        "standard": "ICAEW P19, EuSpRIG",
+        "rule": "skipped-cell",
+        "created_at": "2026-08-31T17:59:27.022590Z",
+        "note": "",
+        "correction": null,
+        "figure": "12.5m",
+        "figure_unit": "filled across Assumptions Processing!E41 to Assumptions Processing!X51",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Incomplete total",
+        "plain": "",
+        "tier": 1,
+        "weight": 1.0,
+        "basis": "defect: the gap is in the formula's own range arithmetic, though a designed layout can excuse one; carries real money (12.5m)",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E41",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 39,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 40,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "12,500,000",
+                  "hot": false
+                },
+                {
+                  "v": "37,500,000",
+                  "hot": false
+                }
+              ],
+              "label": "Senior Debt Interest"
+            },
+            {
+              "n": 41,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Total Senior Debt Service"
+            },
+            {
+              "n": 42,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=SUM(E37:E37)"
+        }
+      },
+      {
+        "id": "79be920d-f393-4f7b-951d-dba40dc4bd93",
+        "kind": "audit",
+        "severity": "error",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E50",
+        "expected": "",
+        "title": "Subordinated Debt Interest is the same formula as its 19 siblings with one pinned reference out of step \u2014 they read 'Control Panel'!$C$51, it reads 'Control Panel'!$D$51: =(E45+E48)/2*'Control Panel'!$D$51. Check which row it should be reading.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E50",
+          "detail": "Assumptions Processing!E50",
+          "anchor": {
+            "ref": "Assumptions Processing!E50",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Subordinated Debt Interest",
+          "basis": "defect: the row's own pattern shows the break; feeds Total Interest Income (Expense) \u2192 +Interest & Fee Expense \u2192 Total CADS",
+          "artifact_id": null
+        },
+        "context": "the same formula as its 19 siblings with one pinned reference out of step \u2014 they read 'Control Panel'!$C$51, it reads 'Control Panel'!$D$51: =(E45+E48)/2*'Control Panel'!$D$51",
+        "standard": "EuSpRIG, ICAEW P11",
+        "rule": "inconsistent-row",
+        "created_at": "2026-08-31T17:59:27.022596Z",
+        "note": "",
+        "correction": null,
+        "figure": "20m",
+        "figure_unit": "typed, where the row would calculate 12.5m",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Total Interest Income (Expense) \u2192 +Interest & Fee Expense \u2192 Total CADS",
+        "fix": "",
+        "headline": "Inconsistent formula",
+        "plain": "",
+        "tier": 1,
+        "weight": 0.9,
+        "basis": "defect: the row's own pattern shows the break; feeds Total Interest Income (Expense) \u2192 +Interest & Fee Expense \u2192 Total CADS",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E50",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 48,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "1,000,000,000",
+                  "hot": false
+                }
+              ],
+              "label": "Outstanding Principal (End of Year)"
+            },
+            {
+              "n": 49,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 50,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "20,000,000",
+                  "hot": true
+                },
+                {
+                  "v": "37,500,000",
+                  "hot": false
+                }
+              ],
+              "label": "Subordinated Debt Interest"
+            },
+            {
+              "n": 51,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Total Subordinated Debt Service"
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=(E45+E48)/2*'Control Panel'!$D$51"
+        }
+      },
+      {
+        "id": "71ec1d47-5692-4a1a-9840-7dc75eb02e9c",
+        "kind": "audit",
+        "severity": "error",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Balance Sheet!D13",
+        "expected": "",
+        "title": "Inventory is the same formula as its 19 siblings with one pinned reference out of step \u2014 they read 'Control Panel'!R[+73]C[+1], it reads 'Control Panel'!$C$86: =('Income Statement'!E14/360)*'Control Panel'!$C$86. Check which row it should be reading.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Balance Sheet!D13",
+          "detail": "Balance Sheet!D13",
+          "anchor": {
+            "ref": "Balance Sheet!D13",
+            "kind": "cell",
+            "sheet": "Balance Sheet"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Inventory",
+          "basis": "defect: the row's own pattern shows the break; feeds Total Current Assets \u2192 Total Assets \u2192 Reconciliation",
+          "artifact_id": null
+        },
+        "context": "the same formula as its 19 siblings with one pinned reference out of step \u2014 they read 'Control Panel'!R[+73]C[+1], it reads 'Control Panel'!$C$86: =('Income Statement'!E14/360)*'Control Panel'!$C$86",
+        "standard": "EuSpRIG, ICAEW P11",
+        "rule": "inconsistent-row",
+        "created_at": "2026-08-31T17:59:27.022601Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Total Current Assets \u2192 Total Assets \u2192 Reconciliation",
+        "fix": "",
+        "headline": "Inconsistent formula",
+        "plain": "",
+        "tier": 1,
+        "weight": 0.9,
+        "basis": "defect: the row's own pattern shows the break; feeds Total Current Assets \u2192 Total Assets \u2192 Reconciliation",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "D13",
+          "cols": [
+            {
+              "l": "B",
+              "p": ""
+            },
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 11,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Debt Service Reserve/Restricted Cash"
+            },
+            {
+              "n": 12,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "106,666,667",
+                  "hot": false
+                }
+              ],
+              "label": "Accounts Receivable"
+            },
+            {
+              "n": 13,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Inventory"
+            },
+            {
+              "n": 14,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "1,937,916,667",
+                  "hot": false
+                },
+                {
+                  "v": "2,317,020,222",
+                  "hot": false
+                }
+              ],
+              "label": "Total Current Assets"
+            }
+          ],
+          "sheet": "Balance Sheet",
+          "sheets": [
+            "Income Statement",
+            "CashFlow",
+            "Balance Sheet",
+            "Other >>",
+            "Drop-Downs"
+          ],
+          "formula": "=('Income Statement'!E14/360)*'Control Panel'!$C$86"
+        }
+      },
+      {
+        "id": "83db0769-efb4-4c1e-95c8-953fd106efe7",
+        "kind": "audit",
+        "severity": "error",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Balance Sheet!D7",
+        "expected": "",
+        "title": "the formula walks 12 cells one by one, then jumps \u2014 it never reads P10 to V10, 7 live cells a failure could hide in: =IF(OR(D10<0,E10<0,F10<0,G10<0,H10<0,I10<0,J10<0,K10<0,L10<0",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Balance Sheet!D7",
+          "detail": "Balance Sheet!D7",
+          "anchor": {
+            "ref": "Balance Sheet!D7",
+            "kind": "cell",
+            "sheet": "Balance Sheet"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Assets",
+          "basis": "defect: the defect is structural",
+          "artifact_id": null
+        },
+        "context": "the formula walks 12 cells one by one, then jumps \u2014 it never reads P10 to V10, 7 live cells a failure could hide in: =IF(OR(D10<0,E10<0,F10<0,G10<0,H10<0,I10<0,J10<0,K10<0,L10<0",
+        "standard": "EuSpRIG, ICAEW P11",
+        "rule": "gapped-test",
+        "created_at": "2026-08-31T17:59:27.022599Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Gapped test",
+        "plain": "",
+        "tier": 1,
+        "weight": 0.9,
+        "basis": "defect: the defect is structural",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "D7",
+          "cols": [
+            {
+              "l": "B",
+              "p": ""
+            },
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 5,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 6,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 7,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": true
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": "Assets"
+            },
+            {
+              "n": 8,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            }
+          ],
+          "sheet": "Balance Sheet",
+          "sheets": [
+            "Income Statement",
+            "CashFlow",
+            "Balance Sheet",
+            "Other >>",
+            "Drop-Downs"
+          ],
+          "formula": "=IF(OR(D10<0,E10<0,F10<0,G10<0,H10<0,I10<0,J10<0,K10<0,L10<0,M10<0,N10<0,O10<0,W10<0),\"WARNING:  CASH BALANCE IS NEGATIVE IN ONE OR MORE PERIODS\",\"   \")"
+        }
+      },
+      {
+        "id": "d4e7fab9-e471-4396-9b60-423d4f7bdff5",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "",
+        "expected": "",
+        "title": "50 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (BegChgRecs, BegFSC, BegFSO, Changes, ChartFooter200mm, ChartFooter300mm and 44 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "defined names",
+          "detail": "",
+          "anchor": {
+            "ref": "",
+            "kind": "cell",
+            "sheet": ""
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "defined names",
+          "basis": "hygiene: a departure from the standards, often deliberate",
+          "artifact_id": null
+        },
+        "context": "50 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (BegChgRecs, BegFSC, BegFSO, Changes, ChartFooter200mm, ChartFooter300mm and 44 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+        "standard": "EuSpRIG",
+        "rule": "broken-name",
+        "created_at": "2026-08-31T17:59:27.022607Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Broken name",
+        "plain": "",
+        "tier": 3,
+        "weight": 0.21,
+        "basis": "hygiene: a departure from the standards, often deliberate",
+        "cells": "",
+        "fix_before": "",
+        "grid": null
+      },
+      {
+        "id": "ed31e278-70c8-4f3d-813a-ce391aa58e58",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "",
+        "expected": "",
+        "title": "39 defined names point into other workbooks that are not here (BegChgRecs, Capacity, Consumables, DSCR_min, Fed_Grants, Fed_loans and 33 more) \u2014 BegChgRecs reads '[1]Summary of Changes'!#REF!. They raise update prompts on open and cannot be checked.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "defined names",
+          "detail": "",
+          "anchor": {
+            "ref": "",
+            "kind": "cell",
+            "sheet": ""
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "defined names",
+          "basis": "hygiene: a departure from the standards, often deliberate",
+          "artifact_id": null
+        },
+        "context": "39 defined names point into other workbooks that are not here (BegChgRecs, Capacity, Consumables, DSCR_min, Fed_Grants, Fed_loans and 33 more) \u2014 BegChgRecs reads '[1]Summary of Changes'!#REF!. They raise update prompts on open and cannot be checked.",
+        "standard": "EuSpRIG, ICAEW P16",
+        "rule": "broken-name",
+        "created_at": "2026-08-31T17:59:27.022609Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Broken name",
+        "plain": "",
+        "tier": 3,
+        "weight": 0.21,
+        "basis": "hygiene: a departure from the standards, often deliberate",
+        "cells": "",
+        "fix_before": "",
+        "grid": null
+      },
+      {
+        "id": "bc102444-16ba-4ef6-9702-5a648fab5c14",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E17",
+        "expected": "",
+        "title": "The formula at E17 has 240000 typed directly into it across Assumptions Processing!E17 to Assumptions Processing!X17. If the assumption moves, this cell will not.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E17",
+          "detail": "Assumptions Processing!E17",
+          "anchor": {
+            "ref": "Assumptions Processing!E17",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Production",
+          "basis": "assumption at risk: an assumption typed where nobody will find it to change it; feeds Net Sales \u2192 Total Revenue \u2192 Accounts Receivable",
+          "artifact_id": null
+        },
+        "context": "240000 inside =IF(E2<'Control Panel'!$C$34,0,MIN('Control Panel'!$C$29*12, \u2014 one formula filled across 20 cells (Assumptions Processing!E17 to Assumptions Processing!X17)",
+        "standard": "ICAEW P14, FAST",
+        "rule": "hardcode-in-formula",
+        "created_at": "2026-08-31T17:59:27.022603Z",
+        "note": "",
+        "correction": null,
+        "figure": "240000",
+        "figure_unit": "filled across Assumptions Processing!E17 to Assumptions Processing!X17",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Net Sales \u2192 Total Revenue \u2192 Accounts Receivable",
+        "fix": "",
+        "headline": "Hardcoded assumption",
+        "plain": "",
+        "tier": 2,
+        "weight": 0.48,
+        "basis": "assumption at risk: an assumption typed where nobody will find it to change it; feeds Net Sales \u2192 Total Revenue \u2192 Accounts Receivable",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E17",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 15,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 16,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 17,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "80,000",
+                  "hot": false
+                }
+              ],
+              "label": "Production"
+            },
+            {
+              "n": 18,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "16,000",
+                  "hot": false
+                },
+                {
+                  "v": "16,000",
+                  "hot": false
+                }
+              ],
+              "label": "Price per Unit (USD)"
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=IF(E2<'Control Panel'!$C$34,0,MIN('Control Panel'!$C$29*12,240000*((E2+1)-'Control Panel'!$C$34)/(('Control Panel'!$D$34+1)-'Control Panel'!$C$34)))"
+        }
+      },
+      {
+        "id": "21919d60-9966-469e-a993-14ba98c7e553",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E23",
+        "expected": "",
+        "title": "E23 contains an unusually complex formula. Its logic is difficult to trace and verify by hand.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E23",
+          "detail": "Assumptions Processing!E23",
+          "anchor": {
+            "ref": "Assumptions Processing!E23",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Materials / Consumables / Chemicals",
+          "basis": "hygiene: a departure from the standards, often deliberate; feeds Total Operating Costs",
+          "artifact_id": null
+        },
+        "context": "267 characters \u2014 one formula filled across 160 cells (Assumptions Processing!E23 to Assumptions Processing!X30)",
+        "standard": "FAST 2.02, ICAEW P13",
+        "rule": "long-formula",
+        "created_at": "2026-08-31T17:59:27.022611Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "filled across Assumptions Processing!E23 to Assumptions Processing!X30",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Total Operating Costs",
+        "fix": "",
+        "headline": "Complex formula",
+        "plain": "",
+        "tier": 3,
+        "weight": 0.21,
+        "basis": "hygiene: a departure from the standards, often deliberate; feeds Total Operating Costs",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E23",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 21,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 22,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 23,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "166,666,667",
+                  "hot": false
+                }
+              ],
+              "label": "Materials / Consumables / Chemicals"
+            },
+            {
+              "n": 24,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "133,333,333",
+                  "hot": false
+                }
+              ],
+              "label": "Labor"
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=IF(AND(E$2>='Control Panel'!$C$34,E$2<='Control Panel'!$D$34),'Control Panel'!$C39*(E$2+1-'Control Panel'!$C$34)/'Control Panel'!$E$34,IF('Assumptions Processing'!E$2<'Control Panel'!$C$34,0,'Control Panel'!$C39*(1+'Control Panel'!$D39)^(E$2-'Control Panel'!$D$34)))"
+        }
+      },
+      {
+        "id": "306ad2a5-518f-44e7-ad50-bfef38630087",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E37",
+        "expected": "",
+        "title": "E37 contains an unusually complex formula. Its logic is difficult to trace and verify by hand.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E37",
+          "detail": "Assumptions Processing!E37",
+          "anchor": {
+            "ref": "Assumptions Processing!E37",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Senior Debt Principal Repayments",
+          "basis": "hygiene: a departure from the standards, often deliberate; feeds Outstanding Principal (End of Year) \u2192 Outstanding Principal (Start of Year) \u2192 Senior Debt Interest",
+          "artifact_id": null
+        },
+        "context": "276 characters \u2014 one formula filled across 20 cells (Assumptions Processing!E37 to Assumptions Processing!X37)",
+        "standard": "FAST 2.02, ICAEW P13",
+        "rule": "long-formula",
+        "created_at": "2026-08-31T17:59:27.022613Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "filled across Assumptions Processing!E37 to Assumptions Processing!X37",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Outstanding Principal (End of Year) \u2192 Outstanding Principal (Start of Year) \u2192 Senior Debt Interest",
+        "fix": "",
+        "headline": "Complex formula",
+        "plain": "",
+        "tier": 3,
+        "weight": 0.21,
+        "basis": "hygiene: a departure from the standards, often deliberate; feeds Outstanding Principal (End of Year) \u2192 Outstanding Principal (Start of Year) \u2192 Senior Debt Interest",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E37",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 35,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                }
+              ],
+              "label": "Outstanding Principal (Start of Year)"
+            },
+            {
+              "n": 36,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                }
+              ],
+              "label": "Draws on Principal"
+            },
+            {
+              "n": 37,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Senior Debt Principal Repayments"
+            },
+            {
+              "n": 38,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "1,000,000,000",
+                  "hot": false
+                }
+              ],
+              "label": "Outstanding Principal (End of Year)"
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=IF('Control Panel'!$C$54=\"Bullet\",IF(E$2='Control Panel'!$C$52,'Control Panel'!$C$55,0),-IF(OR(E$2<'Control Panel'!$C$53,E$2>'Control Panel'!$C$52),0,PPMT('Control Panel'!$C$51,E$2-'Control Panel'!$C$53+1,'Control Panel'!$C$52-'Control Panel'!$C$53+1,'Control Panel'!$C$55)))"
+        }
+      },
+      {
+        "id": "4f3849f2-fb9b-41b3-aa30-95fa2bfbe848",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E47",
+        "expected": "",
+        "title": "E47 contains an unusually complex formula. Its logic is difficult to trace and verify by hand.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E47",
+          "detail": "Assumptions Processing!E47",
+          "anchor": {
+            "ref": "Assumptions Processing!E47",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Subordinated Debt Principal Repayments",
+          "basis": "hygiene: a departure from the standards, often deliberate; feeds Outstanding Principal (End of Year) \u2192 Outstanding Principal (Start of Year) \u2192 Subordinated Debt Interest",
+          "artifact_id": null
+        },
+        "context": "276 characters \u2014 one formula filled across 20 cells (Assumptions Processing!E47 to Assumptions Processing!X47)",
+        "standard": "FAST 2.02, ICAEW P13",
+        "rule": "long-formula",
+        "created_at": "2026-08-31T17:59:27.022615Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "filled across Assumptions Processing!E47 to Assumptions Processing!X47",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Outstanding Principal (End of Year) \u2192 Outstanding Principal (Start of Year) \u2192 Subordinated Debt Interest",
+        "fix": "",
+        "headline": "Complex formula",
+        "plain": "",
+        "tier": 3,
+        "weight": 0.21,
+        "basis": "hygiene: a departure from the standards, often deliberate; feeds Outstanding Principal (End of Year) \u2192 Outstanding Principal (Start of Year) \u2192 Subordinated Debt Interest",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E47",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 45,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                }
+              ],
+              "label": "Outstanding Principal (Start of Year)"
+            },
+            {
+              "n": 46,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                }
+              ],
+              "label": "Draws on Principal"
+            },
+            {
+              "n": 47,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Subordinated Debt Principal Repayments"
+            },
+            {
+              "n": 48,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "1,000,000,000",
+                  "hot": false
+                }
+              ],
+              "label": "Outstanding Principal (End of Year)"
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=IF('Control Panel'!$D$54=\"Bullet\",IF(E$2='Control Panel'!$D$52,'Control Panel'!$D$55,0),-IF(OR(E$2<'Control Panel'!$D$53,E$2>'Control Panel'!$D$52),0,PPMT('Control Panel'!$D$51,E$2-'Control Panel'!$D$53+1,'Control Panel'!$D$52-'Control Panel'!$D$53+1,'Control Panel'!$D$55)))"
+        }
+      },
+      {
+        "id": "d371b135-8bf1-4478-bde9-95e71e1dca0b",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Control Panel!E56",
+        "expected": "",
+        "title": "The formula at E56 has 20 typed directly into it across Control Panel!E56 to Control Panel!E57. If the assumption moves, this cell will not.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Control Panel!E56",
+          "detail": "Control Panel!E56",
+          "anchor": {
+            "ref": "Control Panel!E56",
+            "kind": "cell",
+            "sheet": "Control Panel"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Loan disbursement start",
+          "basis": "assumption at risk: an assumption typed where nobody will find it to change it",
+          "artifact_id": null
+        },
+        "context": "20 inside =IF(OR(C56<0,D56<0,C56>20,D56>20),1,0) \u2014 one formula filled across 2 cells (Control Panel!E56 to Control Panel!E57)",
+        "standard": "ICAEW P14, FAST",
+        "rule": "hardcode-in-formula",
+        "created_at": "2026-08-31T17:59:27.022605Z",
+        "note": "",
+        "correction": null,
+        "figure": "20",
+        "figure_unit": "filled across Control Panel!E56 to Control Panel!E57",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Hardcoded assumption",
+        "plain": "",
+        "tier": 2,
+        "weight": 0.48,
+        "basis": "assumption at risk: an assumption typed where nobody will find it to change it",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E56",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 54,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 55,
+              "cells": [
+                {
+                  "v": "1,500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "1,500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": "Total loan amount"
+            },
+            {
+              "n": 56,
+              "cells": [
+                {
+                  "v": "1",
+                  "hot": false
+                },
+                {
+                  "v": "1",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": "Loan disbursement start"
+            },
+            {
+              "n": 57,
+              "cells": [
+                {
+                  "v": "3",
+                  "hot": false
+                },
+                {
+                  "v": "3",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": "Loan disbursement end"
+            }
+          ],
+          "sheet": "Control Panel",
+          "sheets": [
+            "Overview",
+            "Inputs >>",
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing"
+          ],
+          "formula": "=IF(OR(C56<0,D56<0,C56>20,D56>20),1,0)"
+        }
+      },
+      {
+        "id": "44772adc-1511-4ed2-8e11-728bc1b2011e",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Module1!A1",
+        "expected": "",
+        "title": "\u00ab Module1 \u00bb is very hidden \u2014 invisible in Excel's unhide menu \u2014 but it is empty and nothing in the model reads it. Most likely left over from an older file format, and worth deleting rather than fearing.",
+        "where": {
+          "artifact_id": "6c6d4f30-fec1-417d-9d6d-7d74a87ab64c",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Module1!A1",
+          "detail": "Module1!A1",
+          "anchor": {
+            "ref": "Module1!A1",
+            "kind": "cell",
+            "sheet": "Module1"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Module1",
+          "basis": "hygiene: a departure from the standards, often deliberate",
+          "artifact_id": null
+        },
+        "context": "\u00ab Module1 \u00bb is very hidden \u2014 invisible in Excel's unhide menu \u2014 but it is empty and nothing in the model reads it. Most likely left over from an older file format, and worth deleting rather than fearing.",
+        "standard": "EuSpRIG",
+        "rule": "hidden-sheet",
+        "created_at": "2026-08-31T17:59:27.022617Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Hidden sheet",
+        "plain": "",
+        "tier": 3,
+        "weight": 0.21,
+        "basis": "hygiene: a departure from the standards, often deliberate",
+        "cells": "",
+        "fix_before": "",
+        "grid": null
+      }
+    ]
+  },
+  "firm_b": {
+    "rules_off": [
+      "balance-sheet",
+      "broken-name",
+      "gapped-test",
+      "long-formula",
+      "model-own-check"
+    ],
+    "summary": {
+      "errors": 3,
+      "smells": 3,
+      "tiers": {
+        "1": 3,
+        "2": 2,
+        "3": 1
+      },
+      "models": 1,
+      "cells": 6186,
+      "rules_off": [
+        "balance-sheet",
+        "broken-name",
+        "gapped-test",
+        "long-formula",
+        "model-own-check"
+      ],
+      "values_only": false,
+      "abstentions": [
+        {
+          "rule": "cash-continuity",
+          "why": "No opening/closing pairs were found."
+        },
+        {
+          "rule": "debt-terminal",
+          "why": "No debt schedule was located."
+        },
+        {
+          "rule": "interest-consistency",
+          "why": "No debt schedule was located."
+        }
+      ],
+      "tallies": {}
+    },
+    "findings": [
+      {
+        "id": "5b3f3e3d-a9fa-40f4-bfa4-4b96e60bee3f",
+        "kind": "audit",
+        "severity": "error",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E41",
+        "expected": "",
+        "title": "Total Senior Debt Service is incomplete: the formula at E41 excludes rows immediately above it, leaving 12.5m outside the total.",
+        "where": {
+          "artifact_id": "1fe2f352-7348-4f36-b9fc-8c84cf7c65a4",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E41",
+          "detail": "Assumptions Processing!E41",
+          "anchor": {
+            "ref": "Assumptions Processing!E41",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Total Senior Debt Service",
+          "basis": "defect: the gap is in the formula's own range arithmetic, though a designed layout can excuse one; carries real money (12.5m)",
+          "artifact_id": null
+        },
+        "context": "=SUM(E37:E37) leaves out Assumptions Processing!E40 above it \u2014 worth 12.5m together \u2014 one formula filled across 40 cells (Assumptions Processing!E41 to Assumptions Processing!X51)",
+        "standard": "ICAEW P19, EuSpRIG",
+        "rule": "skipped-cell",
+        "created_at": "2026-08-31T17:59:28.563540Z",
+        "note": "",
+        "correction": null,
+        "figure": "12.5m",
+        "figure_unit": "filled across Assumptions Processing!E41 to Assumptions Processing!X51",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Incomplete total",
+        "plain": "",
+        "tier": 1,
+        "weight": 1.0,
+        "basis": "defect: the gap is in the formula's own range arithmetic, though a designed layout can excuse one; carries real money (12.5m)",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E41",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 39,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 40,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "12,500,000",
+                  "hot": false
+                },
+                {
+                  "v": "37,500,000",
+                  "hot": false
+                }
+              ],
+              "label": "Senior Debt Interest"
+            },
+            {
+              "n": 41,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Total Senior Debt Service"
+            },
+            {
+              "n": 42,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=SUM(E37:E37)"
+        }
+      },
+      {
+        "id": "8e3dddbd-6380-4de8-8799-7ffbf7464477",
+        "kind": "audit",
+        "severity": "error",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E50",
+        "expected": "",
+        "title": "Subordinated Debt Interest is the same formula as its 19 siblings with one pinned reference out of step \u2014 they read 'Control Panel'!$C$51, it reads 'Control Panel'!$D$51: =(E45+E48)/2*'Control Panel'!$D$51. Check which row it should be reading.",
+        "where": {
+          "artifact_id": "1fe2f352-7348-4f36-b9fc-8c84cf7c65a4",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E50",
+          "detail": "Assumptions Processing!E50",
+          "anchor": {
+            "ref": "Assumptions Processing!E50",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Subordinated Debt Interest",
+          "basis": "defect: the row's own pattern shows the break; feeds Total Interest Income (Expense) \u2192 +Interest & Fee Expense \u2192 Total CADS",
+          "artifact_id": null
+        },
+        "context": "the same formula as its 19 siblings with one pinned reference out of step \u2014 they read 'Control Panel'!$C$51, it reads 'Control Panel'!$D$51: =(E45+E48)/2*'Control Panel'!$D$51",
+        "standard": "EuSpRIG, ICAEW P11",
+        "rule": "inconsistent-row",
+        "created_at": "2026-08-31T17:59:28.563547Z",
+        "note": "",
+        "correction": null,
+        "figure": "20m",
+        "figure_unit": "typed, where the row would calculate 12.5m",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Total Interest Income (Expense) \u2192 +Interest & Fee Expense \u2192 Total CADS",
+        "fix": "",
+        "headline": "Inconsistent formula",
+        "plain": "",
+        "tier": 1,
+        "weight": 0.9,
+        "basis": "defect: the row's own pattern shows the break; feeds Total Interest Income (Expense) \u2192 +Interest & Fee Expense \u2192 Total CADS",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E50",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 48,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "1,000,000,000",
+                  "hot": false
+                }
+              ],
+              "label": "Outstanding Principal (End of Year)"
+            },
+            {
+              "n": 49,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 50,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "20,000,000",
+                  "hot": true
+                },
+                {
+                  "v": "37,500,000",
+                  "hot": false
+                }
+              ],
+              "label": "Subordinated Debt Interest"
+            },
+            {
+              "n": 51,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Total Subordinated Debt Service"
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=(E45+E48)/2*'Control Panel'!$D$51"
+        }
+      },
+      {
+        "id": "d4d61e6a-f360-458a-ae50-f2f3f5c947e9",
+        "kind": "audit",
+        "severity": "error",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Balance Sheet!D13",
+        "expected": "",
+        "title": "Inventory is the same formula as its 19 siblings with one pinned reference out of step \u2014 they read 'Control Panel'!R[+73]C[+1], it reads 'Control Panel'!$C$86: =('Income Statement'!E14/360)*'Control Panel'!$C$86. Check which row it should be reading.",
+        "where": {
+          "artifact_id": "1fe2f352-7348-4f36-b9fc-8c84cf7c65a4",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Balance Sheet!D13",
+          "detail": "Balance Sheet!D13",
+          "anchor": {
+            "ref": "Balance Sheet!D13",
+            "kind": "cell",
+            "sheet": "Balance Sheet"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Inventory",
+          "basis": "defect: the row's own pattern shows the break; feeds Total Current Assets \u2192 Total Assets \u2192 Reconciliation",
+          "artifact_id": null
+        },
+        "context": "the same formula as its 19 siblings with one pinned reference out of step \u2014 they read 'Control Panel'!R[+73]C[+1], it reads 'Control Panel'!$C$86: =('Income Statement'!E14/360)*'Control Panel'!$C$86",
+        "standard": "EuSpRIG, ICAEW P11",
+        "rule": "inconsistent-row",
+        "created_at": "2026-08-31T17:59:28.563549Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Total Current Assets \u2192 Total Assets \u2192 Reconciliation",
+        "fix": "",
+        "headline": "Inconsistent formula",
+        "plain": "",
+        "tier": 1,
+        "weight": 0.9,
+        "basis": "defect: the row's own pattern shows the break; feeds Total Current Assets \u2192 Total Assets \u2192 Reconciliation",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "D13",
+          "cols": [
+            {
+              "l": "B",
+              "p": ""
+            },
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 11,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Debt Service Reserve/Restricted Cash"
+            },
+            {
+              "n": 12,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "106,666,667",
+                  "hot": false
+                }
+              ],
+              "label": "Accounts Receivable"
+            },
+            {
+              "n": 13,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                }
+              ],
+              "label": "Inventory"
+            },
+            {
+              "n": 14,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "1,937,916,667",
+                  "hot": false
+                },
+                {
+                  "v": "2,317,020,222",
+                  "hot": false
+                }
+              ],
+              "label": "Total Current Assets"
+            }
+          ],
+          "sheet": "Balance Sheet",
+          "sheets": [
+            "Income Statement",
+            "CashFlow",
+            "Balance Sheet",
+            "Other >>",
+            "Drop-Downs"
+          ],
+          "formula": "=('Income Statement'!E14/360)*'Control Panel'!$C$86"
+        }
+      },
+      {
+        "id": "1bb2dacd-5d7a-4c06-bb5e-910c574f4853",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Assumptions Processing!E17",
+        "expected": "",
+        "title": "The formula at E17 has 240000 typed directly into it across Assumptions Processing!E17 to Assumptions Processing!X17. If the assumption moves, this cell will not.",
+        "where": {
+          "artifact_id": "1fe2f352-7348-4f36-b9fc-8c84cf7c65a4",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Assumptions Processing!E17",
+          "detail": "Assumptions Processing!E17",
+          "anchor": {
+            "ref": "Assumptions Processing!E17",
+            "kind": "cell",
+            "sheet": "Assumptions Processing"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Production",
+          "basis": "assumption at risk: an assumption typed where nobody will find it to change it; feeds Net Sales \u2192 Total Revenue \u2192 Accounts Receivable",
+          "artifact_id": null
+        },
+        "context": "240000 inside =IF(E2<'Control Panel'!$C$34,0,MIN('Control Panel'!$C$29*12, \u2014 one formula filled across 20 cells (Assumptions Processing!E17 to Assumptions Processing!X17)",
+        "standard": "ICAEW P14, FAST",
+        "rule": "hardcode-in-formula",
+        "created_at": "2026-08-31T17:59:28.563552Z",
+        "note": "",
+        "correction": null,
+        "figure": "240000",
+        "figure_unit": "filled across Assumptions Processing!E17 to Assumptions Processing!X17",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "Net Sales \u2192 Total Revenue \u2192 Accounts Receivable",
+        "fix": "",
+        "headline": "Hardcoded assumption",
+        "plain": "",
+        "tier": 2,
+        "weight": 0.48,
+        "basis": "assumption at risk: an assumption typed where nobody will find it to change it; feeds Net Sales \u2192 Total Revenue \u2192 Accounts Receivable",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E17",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 15,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 16,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 17,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "80,000",
+                  "hot": false
+                }
+              ],
+              "label": "Production"
+            },
+            {
+              "n": 18,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "16,000",
+                  "hot": false
+                },
+                {
+                  "v": "16,000",
+                  "hot": false
+                }
+              ],
+              "label": "Price per Unit (USD)"
+            }
+          ],
+          "sheet": "Assumptions Processing",
+          "sheets": [
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing",
+            "Depreciation Schedule",
+            "Outputs >>"
+          ],
+          "formula": "=IF(E2<'Control Panel'!$C$34,0,MIN('Control Panel'!$C$29*12,240000*((E2+1)-'Control Panel'!$C$34)/(('Control Panel'!$D$34+1)-'Control Panel'!$C$34)))"
+        }
+      },
+      {
+        "id": "d3ea8adb-2aa2-46ba-8d2f-4a188e7b39ee",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Control Panel!E56",
+        "expected": "",
+        "title": "The formula at E56 has 20 typed directly into it across Control Panel!E56 to Control Panel!E57. If the assumption moves, this cell will not.",
+        "where": {
+          "artifact_id": "1fe2f352-7348-4f36-b9fc-8c84cf7c65a4",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Control Panel!E56",
+          "detail": "Control Panel!E56",
+          "anchor": {
+            "ref": "Control Panel!E56",
+            "kind": "cell",
+            "sheet": "Control Panel"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Loan disbursement start",
+          "basis": "assumption at risk: an assumption typed where nobody will find it to change it",
+          "artifact_id": null
+        },
+        "context": "20 inside =IF(OR(C56<0,D56<0,C56>20,D56>20),1,0) \u2014 one formula filled across 2 cells (Control Panel!E56 to Control Panel!E57)",
+        "standard": "ICAEW P14, FAST",
+        "rule": "hardcode-in-formula",
+        "created_at": "2026-08-31T17:59:28.563554Z",
+        "note": "",
+        "correction": null,
+        "figure": "20",
+        "figure_unit": "filled across Control Panel!E56 to Control Panel!E57",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Hardcoded assumption",
+        "plain": "",
+        "tier": 2,
+        "weight": 0.48,
+        "basis": "assumption at risk: an assumption typed where nobody will find it to change it",
+        "cells": "",
+        "fix_before": "",
+        "grid": {
+          "sel": "E56",
+          "cols": [
+            {
+              "l": "C",
+              "p": ""
+            },
+            {
+              "l": "D",
+              "p": ""
+            },
+            {
+              "l": "E",
+              "p": ""
+            },
+            {
+              "l": "F",
+              "p": ""
+            }
+          ],
+          "rows": [
+            {
+              "n": 54,
+              "cells": [
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": ""
+            },
+            {
+              "n": 55,
+              "cells": [
+                {
+                  "v": "1,500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "1,500,000,000",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": "Total loan amount"
+            },
+            {
+              "n": 56,
+              "cells": [
+                {
+                  "v": "1",
+                  "hot": false
+                },
+                {
+                  "v": "1",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": true
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": "Loan disbursement start"
+            },
+            {
+              "n": 57,
+              "cells": [
+                {
+                  "v": "3",
+                  "hot": false
+                },
+                {
+                  "v": "3",
+                  "hot": false
+                },
+                {
+                  "v": "0",
+                  "hot": false
+                },
+                {
+                  "v": "",
+                  "hot": false
+                }
+              ],
+              "label": "Loan disbursement end"
+            }
+          ],
+          "sheet": "Control Panel",
+          "sheets": [
+            "Overview",
+            "Inputs >>",
+            "Control Panel",
+            "Processing >>",
+            "Assumptions Processing"
+          ],
+          "formula": "=IF(OR(C56<0,D56<0,C56>20,D56>20),1,0)"
+        }
+      },
+      {
+        "id": "45388344-70e8-46ee-ab98-c91d5130158e",
+        "kind": "audit",
+        "severity": "smell",
+        "state": "open",
+        "confidence": null,
+        "one_tick": false,
+        "page": 0,
+        "printed": "Module1!A1",
+        "expected": "",
+        "title": "\u00ab Module1 \u00bb is very hidden \u2014 invisible in Excel's unhide menu \u2014 but it is empty and nothing in the model reads it. Most likely left over from an older file format, and worth deleting rather than fearing.",
+        "where": {
+          "artifact_id": "1fe2f352-7348-4f36-b9fc-8c84cf7c65a4",
+          "filename": "example_preapp_model.xlsx",
+          "label": "Module1!A1",
+          "detail": "Module1!A1",
+          "anchor": {
+            "ref": "Module1!A1",
+            "kind": "cell",
+            "sheet": "Module1"
+          }
+        },
+        "source": {
+          "ref": null,
+          "name": "Module1",
+          "basis": "hygiene: a departure from the standards, often deliberate",
+          "artifact_id": null
+        },
+        "context": "\u00ab Module1 \u00bb is very hidden \u2014 invisible in Excel's unhide menu \u2014 but it is empty and nothing in the model reads it. Most likely left over from an older file format, and worth deleting rather than fearing.",
+        "standard": "EuSpRIG",
+        "rule": "hidden-sheet",
+        "created_at": "2026-08-31T17:59:28.563556Z",
+        "note": "",
+        "correction": null,
+        "figure": "",
+        "figure_unit": "",
+        "period": "",
+        "standard_sentence": "",
+        "flow": "",
+        "fix": "",
+        "headline": "Hidden sheet",
+        "plain": "",
+        "tier": 3,
+        "weight": 0.21,
+        "basis": "hygiene: a departure from the standards, often deliberate",
+        "cells": "",
+        "fix_before": "",
+        "grid": null
+      }
+    ]
+  }
+}

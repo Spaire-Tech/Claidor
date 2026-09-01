@@ -13,7 +13,11 @@ the scope and forgets the membership is the widest hole this product could
 have.
 """
 
+import json
+import os
+from collections import Counter
 from pathlib import Path
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -41,6 +45,7 @@ from tests.fixtures.random_objects import create_organization, create_user
 CASCADE = Path(__file__).resolve().parents[2] / "scripts" / "cascade"
 CLEAN = CASCADE / "cascade_deck.pptx"
 MODEL = CASCADE / "cascade_model.xlsx"
+PREAPP = CASCADE / "example_preapp_model.xlsx"
 
 DECK_MEDIA = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 NOWHERE = "00000000-0000-0000-0000-000000000000"
@@ -1483,6 +1488,154 @@ class TestHouseRules:
         )
         runs = (await client.post(f"/v1/tieout/deals/{deal.id}/check")).json()
         assert sorted(one["kind"] for one in runs) == ["audit", "tieout"]
+
+    @pytest.mark.auth
+    async def test_two_firms_one_model_two_reports(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """Piece 13's demonstration, criteria frozen first in
+        docs/pierce/house-rules-demo.md § 2.
+
+        Two firms, the founder's own pre-app model in both, one firm on
+        shipped defaults and one with five rules off — spanning both
+        catalogue families and all three layers of the report (findings,
+        pass tallies, abstentions). The two reports must differ by
+        exactly what the configuration says, and nothing else: every
+        finding the stricter firm keeps is byte-for-byte the other
+        firm's, the counters count the filtered list, and the switched
+        rules are named on the record under ``rules_off``.
+        """
+        off = [
+            "balance-sheet",
+            "broken-name",
+            "gapped-test",
+            "long-formula",
+            "model-own-check",
+        ]
+
+        async def firm() -> Dossier:
+            deal = await _deal_for(session, save_fixture, user)
+            await tieout.ingest(
+                session,
+                dossier_id=deal.id,
+                kind=ArtifactKind.model,
+                filename=PREAPP.name,
+                payload=PREAPP.read_bytes(),
+                user_id=user.id,
+            )
+            await session.flush()
+            return deal
+
+        firm_a, firm_b = await firm(), await firm()
+
+        #: Criterion 2 — the settings surface serves every rule the
+        #: engine runs (the two adopted rules included), and accepts
+        #: switching them off. Before the catalogue carried them, this
+        #: PUT was refused with a 422 calling `broken-name` « not a
+        #: rule the audit runs » — criterion 1, kept on the record in
+        #: the round document.
+        response = await client.put(
+            f"/v1/tieout/house-rules?organization_id={firm_b.organization_id}",
+            json={"audit_rules_off": off},
+        )
+        assert response.status_code == 200, response.json()
+        assert {one["key"] for one in response.json()["rules"] if not one["on"]} == set(
+            off
+        )
+        for rule in ("gapped-test", "broken-name"):
+            served = (
+                await client.get(
+                    f"/v1/tieout/house-rules?organization_id={firm_a.organization_id}"
+                )
+            ).json()["rules"]
+            assert any(one["key"] == rule and one["on"] for one in served)
+
+        reports = {}
+        for deal in (firm_a, firm_b):
+            runs = (await client.post(f"/v1/tieout/deals/{deal.id}/check")).json()
+            audit = next(one for one in runs if one["kind"] == "audit")
+            findings = (
+                await client.get(f"/v1/tieout/deals/{deal.id}/findings?kind=audit")
+            ).json()
+            reports[deal.id] = (audit["summary"], findings)
+
+        summary_a, found_a = reports[firm_a.id]
+        summary_b, found_b = reports[firm_b.id]
+
+        #: The two reports, verbatim, for the round document's evidence
+        #: section — written only when asked for, never during CI, and
+        #: before the criteria below so a failed run is still evidence.
+        out = os.environ.get("HOUSE_RULES_DEMO_OUT")
+        if out:
+            Path(out).write_text(
+                json.dumps(
+                    {
+                        "model": PREAPP.name,
+                        "firm_a": {"summary": summary_a, "findings": found_a},
+                        "firm_b": {
+                            "rules_off": off,
+                            "summary": summary_b,
+                            "findings": found_b,
+                        },
+                    },
+                    indent=2,
+                )
+            )
+
+        #: Criterion 3 — Firm A's report is the conscience test's,
+        #: through HTTP: twelve findings, the counters counting them,
+        #: nothing switched off, the pass row and all four abstentions.
+        assert Counter(one["rule"] for one in found_a) == {
+            "broken-name": 2,
+            "gapped-test": 1,
+            "long-formula": 3,
+            "hardcode-in-formula": 2,
+            "hidden-sheet": 1,
+            "inconsistent-row": 2,
+            "skipped-cell": 1,
+        }
+        assert (summary_a["errors"], summary_a["smells"]) == (4, 8)
+        assert summary_a["rules_off"] == []
+        assert "model-own-check" in summary_a["tallies"]
+        assert [one["rule"] for one in summary_a["abstentions"]] == [
+            "balance-sheet",
+            "cash-continuity",
+            "debt-terminal",
+            "interest-consistency",
+        ]
+
+        #: Criteria 4 and 5 — Firm B's report is Firm A's minus exactly
+        #: the switched-off rules. Identity is checked field-for-field:
+        #: a rule off must not reword, re-grade or reorder what remains.
+        def carried(finding: dict[str, Any]) -> dict[str, Any]:
+            #: Everything but the per-deal identifiers: `id` and
+            #: `created_at` are the row's own, and the artifact id
+            #: inside `where` differs per upload of the same bytes.
+            return {
+                key: (
+                    {at: it for at, it in value.items() if at != "artifact_id"}
+                    if key == "where"
+                    else value
+                )
+                for key, value in finding.items()
+                if key not in ("id", "created_at")
+            }
+
+        assert [carried(one) for one in found_b] == [
+            carried(one) for one in found_a if one["rule"] not in off
+        ]
+        assert (summary_b["errors"], summary_b["smells"]) == (3, 3)
+        assert summary_b["rules_off"] == off
+        assert summary_b["tallies"] == {}
+        assert [one["rule"] for one in summary_b["abstentions"]] == [
+            "cash-continuity",
+            "debt-terminal",
+            "interest-consistency",
+        ]
 
 
 @pytest.mark.asyncio
