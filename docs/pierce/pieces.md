@@ -208,7 +208,7 @@ green, number written down.
 | ~~**3**~~ | ~~**Units** (E2 → E3)~~ | **WIRED 30 Aug — and silent on every regulator model.** Four criteria met, gate clean 27/27, and it speaks on 0 of 27 here against 16 of 22 on close models. See § 4c below | — |
 | ~~**4**~~ | ~~**C6's stability, re-measured**~~ | **BOTH GATES PASS 31 Aug** on the rules the product now makes — five sets identical (11 rules each, no flicker by label *or* by cell), and identical by label after three rows are inserted and a sheet renamed, where the by-cell match is **0.0000**. See `c6-stability.md`. **C6 is still not buildable**: the rules are not modeller-recognisable, and the label key cannot tell one year from another, so neither keying alone suffices | — |
 | **5** | **The arbiter** (B3) | Four corpus files are refused and waiting. Check the LibreOffice 24.2 → 25.8 version gap first — part of the queue may be that | days |
-| **6** | **The Chain's page geometry** (D3/D4) | Six failed rounds, and the diagnosis says it is document geometry, not matching | days |
+| **6** | **The Chain's proposal side** (D3/D4) | Six failed rounds. The recorded « document geometry » diagnosis did not survive audit: a hand-perfect geometry repair was measured at 0 of 15, and the located gaps are page selection and tie-breaking — see `chain-piece6-audit.md` § 3 | days |
 | **7** | **The terms table** (§ 3d) | Missing from the plan entirely, and probably the real fix for the Chain's scale problem | days |
 | **8** | **B5 measured**, then B6 decided | The measurement decides whether Reiter is right or over-engineering | days |
 | **9** | The delta report's speed + its acceptance test | 3× over the line; the biggest cost is the engine throwing away work it just did | days |
