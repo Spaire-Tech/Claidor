@@ -54,7 +54,7 @@ cannot honestly measure it.
 | Model number → the deck/memo built on it | every printed figure matched back to its source cell | **DONE** — measured 100%/100% on planted errors |
 | A typed number with **no** source | its own finding class — « a number nobody can defend » | **NOT BUILT.** Piece 9 |
 | Outward — filings, rates, company records | « the model says 412, the filing says 409 » | **NOT BUILT.** Piece 14 |
-| Terms into a structured table | test the model's inputs at scale, not one at a time | **NOT BUILT, and was missing from the plan.** Piece 10 |
+| Terms into a structured table | test the model's inputs at scale, not one at a time | **IN BUILD** on the piece-7 session branch — shape founder-approved (`terms-table-shape.md`), routes+store built and gated there, round 1 registered (`terms-table-round1.md`). Piece 7 (this row said Piece 10 — stale against § 4's queue) |
 
 ## c) The Watch — what changed, and what it broke
 
@@ -73,9 +73,11 @@ Findings with rule, sheet, cell, evidence, severity; sortable,
 filterable; materiality and rounding tolerance as the firm's settings.
 **DONE** — the Grid renders entirely from the findings API.
 
-Two parts of § 3d and § 7 are **not** built: the terms table
-(Piece 10) and findings mapped to the named modelling standards, so a
-reviewer reads them in their own vocabulary (Piece 7).
+Two parts of § 3d and § 7 are **not** live: the terms table
+(Piece 7 — in build on its session branch, shape founder-approved)
+and findings mapped to the named modelling standards, so a reviewer
+reads them in their own vocabulary (Piece 13 in § 4's queue; this
+paragraph previously carried the pre-renumber piece numbers).
 
 ## e) Chat — about this model, not about the world
 

@@ -32,7 +32,7 @@ one, because nobody goes looking for it.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -44,6 +44,21 @@ AGREES = "agrees"
 MODEL_MOVED = "the model moved"
 SOURCE_MOVED = "the source moved"
 BOTH_MOVED = "both moved"
+
+#: The named deterministic functions a person may state when they
+#: confirm a link or bind a term — the schema's `transformation`
+#: column, given its meaning at last (founder-approved 31 Aug, from
+#: terms round 2: three of fifteen real rows print credits in
+#: parentheses that scale alone cannot express). « identity » is the
+#: default; « negate » is the credit convention — the document prints
+#: this figure as a credit, the model holds its magnitude. Applied to
+#: the document's value before the stated scale, at re-check only:
+#: nothing here is ever inferred, and which-side-moved is still judged
+#: on the raw values the document and the model actually state.
+TRANSFORMS: dict[str, "Callable[[float], float]"] = {
+    "identity": lambda value: value,
+    "negate": lambda value: -value,
+}
 
 
 @dataclass(frozen=True)
@@ -236,6 +251,7 @@ def recheck(
     model_now: Decimal | float,
     document_now: float,
     scale: float = 1.0,
+    transformation: str = "identity",
 ) -> tuple[str, bool]:
     """Which side moved, and whether the pair still ties out.
 
@@ -246,13 +262,28 @@ def recheck(
     those read very differently to a reviewer.
 
     Comparison is at the document's own printed precision, under the
-    scale the person stated at confirmation — never a scale this code
-    inferred.
+    scale and the named transformation the person stated at
+    confirmation (:data:`TRANSFORMS`) — never anything this code
+    inferred. Which side moved is judged on the raw stated values;
+    the transformation bears only on whether the pair ties out. An
+    unnamed transformation is refused in words, never treated as
+    identity — the write routes validate, so reaching this is a
+    defect worth the noise.
     """
+    if transformation not in TRANSFORMS:
+        raise ValueError(
+            f"« {transformation} » is not a named transformation; they "
+            f"are: {', '.join(sorted(TRANSFORMS))}. Refusing to guess "
+            "what it means."
+        )
     places = _printed_decimals(anchor_document.printed_text)
     model_moved = not _same(float(anchor_model.value), float(model_now), places)
     source_moved = not _same(anchor_document.value, document_now, places)
-    ties_out = _same(float(document_now) * scale, float(model_now), places)
+    ties_out = _same(
+        TRANSFORMS[transformation](float(document_now)) * scale,
+        float(model_now),
+        places,
+    )
 
     if model_moved and source_moved:
         return BOTH_MOVED, ties_out
