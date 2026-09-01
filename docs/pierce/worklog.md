@@ -4815,30 +4815,75 @@ toward it anyway. 865 tests green at the tip.
 
 ---
 
-## 31 August — piece 13: house rules demonstrated, and what the identity check caught
+## 31 August — Piece 11: the panel driven end to end, as far as a box with no Excel can
 
-The criteria went into `house-rules-demo.md` and were committed before
-anything ran. Then the run: two firms, the founder's pre-app model in
-both, one on defaults and one with five rules off. First finding, as
-predicted by the audit: the PUT for the second firm was **refused** —
-`broken-name, gapped-test is not a rule the audit runs` — which was
-false on the very model in hand. The two rules were adopted into
-`RULE_NAMES` and `HEADLINES` (the three deliberately-unwired rules
-stayed out, per their registered verdicts), with a guard test pinning
-both directions of that line.
+The panel's claim was « exists, never verified end to end ». Now it is
+verified to the exact boundary Office draws, and the boundary is
+written down instead of rounded up.
 
-The demonstration then failed its own identity criterion for a reason
-house rules never touched: **the same bytes were not giving the same
-report run to run.** The cell reads had no `ORDER BY`, so which cell
-of a collapsed family fronted a finding depended on the database's
-row order (`skipped-cell` at E41 one run, G41 the next); and the
-audit path never restored `sheet_order`, so the little grids drew the
-sheet-tab strip in database order — the exact failure `ingest.py`'s
-own comment predicted. Both fixed; a demonstration comparing counts
-instead of fields would have noticed neither.
+**Proven, on this container, against the live stack** — Postgres,
+Redis, Minio, the real API, the panel's own build: the stamped
+manifest validates clean against Microsoft's acceptance service
+(Excel on the web, Excel 2016+ on Windows); `pnpm build` and the
+dashboard's `embed-panel` both produce the `/panel/` deploy with
+stamped manifests; `/v1/tieout/panel/token` mints the 30-day
+two-scope token from a real browser session; the panel in headless
+Chromium — token in, real workbook bytes in through the dev bridge —
+walks signed-out → allow-access → checking → checked, renders 11
+findings from the planted-defect fixture with the engine's own
+sentences, the « 12 checks pass » catalogue line, re-check, and
+refuses the jump honestly outside Office. Re-runnable:
+`clients/apps/panel/scripts/verify-headless.mjs`, four PASS lines.
 
-Final state: two reports differing by exactly the configuration —
-12 findings to 6, the pass row and one abstention gone, the switch
-named on the run — every kept finding field-for-field identical, the
-whole tieout suite green (1161), and the demonstration living on as a
-route test. Reports verbatim in `house-rules-demo-reports.json`.
+**Three defects the drive surfaced, all fixed and pinned:**
+
+1. **« N checks pass » could never render, for anyone.** The panel
+   asked `/v1/organizations/` for the caller's firm, and the panel
+   token holds tieout scopes only — 403, every user, always, eaten by
+   a `catch`. The API log said it in one line. Fix on both sides:
+   `GET /house-rules` now resolves the caller's own organization when
+   none is named (a person in no organization gets the defaults), and
+   the panel asks it directly. Two new route tests.
+2. **The external-link finding spoke a broken sentence** — « This
+   workbook  another workbook, [1] — 1 cells pull values »: the
+   composer stripped the verb out of the detail and re-added nothing,
+   and one took a plural. Fixed in `plain_words`, pinned as whole
+   sentences; the golden master stores `detail`, not `plain`, so no
+   baseline moved.
+3. **A refused jump still read « Selected in the sheet ».** The label
+   was unconditional; the refusal sat in the problem strip two inches
+   below the claim. The row now says it only when the sheet agreed.
+
+**Not provable from here, named exactly:** everything on Office's side
+of the boundary — the ribbon button appearing, `Office.js` handing
+over the open workbook's bytes, selecting the finding's cell, « Fix
+the cell » writing back and the re-check after it, the sign-in dialog
+(`displayDialogAsync`/`messageParent`), and Outlook's dormant
+manifest. One earlier build did load inside real Word on the web
+(14 Aug), so the CSP and sign-in-URL classes are already paid; the
+Excel-only panel as it stands has never been opened in a real Excel.
+`SIDELOAD.md` § « First sideload: Excel on the web » is the ten-minute
+test, and it needs a human with a Microsoft 365 work account.
+
+Housekeeping the audit forced: the panel README and SIDELOAD.md still
+described the pre-pivot app (four hosts, placeholder screen,
+choose-a-deal) — the same words that had misled the lead — both
+rewritten to what the code does. For the record: `clients/apps/panel`
+is the product's add-in; `clients/apps/word-addin` is an unrelated
+Apache-2.0 fork of Vaquill's Word dictation add-in (see its FORK.md)
+and no part of this piece. Branding note, founder's call, not taken
+here: the manifest and ribbon still say « Ances », one name behind
+Swens. 219 tieout server tests green, 16 panel tests green,
+type-check and both manifest validations clean.
+
+**Postscript, same day — the gate run instead of reasoned about.** The
+entry above said no baseline moved because the golden master stores
+`detail`, not `plain`. That was reasoning, and the brief's whole point
+is that reasoning is not running. So: corpus rebuilt from the committed
+fetcher (27 of 27, one truncated-zip retry), full sweep on this
+container, diff against `corpus-golden-master.json` — **gate clean,
+every file reports identically, finding for finding.** The empty-diff
+prediction was registered in the session before the diff ran, and held.
+Also corrected against the brief: the pushed commit's co-author line
+carried a model identifier, which the constitution forbids in any
+pushed artifact — amended and re-pushed to both branches.

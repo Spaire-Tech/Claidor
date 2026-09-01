@@ -114,8 +114,12 @@ def provenance_rows(path: Path, sheet_name: str) -> list[dict]:
     return rows
 
 
-def model_cells(path: Path, provenance_sheet: str):
-    """Every numeric cell EXCEPT the answer sheet's own."""
+def model_cells(path: Path, excluded: frozenset[str]):
+    """Every numeric cell EXCEPT the answer sheet's own — and, per the
+    amendment registered in ``chain-kelso-round.md`` before the round
+    ran, any sibling tab of the same hand-written extract class named
+    with ``--also-exclude``: cells that exist only because a person
+    already did the linking by hand are answer material, not model."""
     from polar.models.tieout import ArtifactKind
     from polar.tieout.ingest import read_artifact
 
@@ -123,7 +127,7 @@ def model_cells(path: Path, provenance_sheet: str):
     return [
         cell
         for cell in got.cells
-        if cell.sheet != provenance_sheet and cell.value is not None
+        if cell.sheet not in excluded and cell.value is not None
     ]
 
 
@@ -144,9 +148,11 @@ def _close(a: float, b: float) -> bool:
     return abs(a - b) <= 0.005 * scale
 
 
-def sheet(model: Path, contract: Path, provenance: str) -> int:
+def sheet(
+    model: Path, contract: Path, provenance: str, excluded: frozenset[str]
+) -> int:
     rows = provenance_rows(model, provenance)
-    cells = model_cells(model, provenance)
+    cells = model_cells(model, excluded)
     facts, extraction = contract_facts(contract)
     print(
         f"provenance rows: {len(rows)} | model cells (answer sheet excluded): "
@@ -197,9 +203,11 @@ def sheet(model: Path, contract: Path, provenance: str) -> int:
     return 0
 
 
-def score(truth_path: Path, model: Path, contract: Path, provenance: str) -> int:
+def score(
+    truth_path: Path, model: Path, contract: Path, excluded: frozenset[str]
+) -> int:
     entries = json.loads(truth_path.read_text())
-    cells = model_cells(model, provenance)
+    cells = model_cells(model, excluded)
     by_ref = {cell.ref: cell for cell in cells}
     facts, _ = contract_facts(contract)
     candidates = [(key, number.line, number.text) for key, number in facts]
@@ -300,12 +308,17 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    also = _argument("--also-exclude") or ""
+    excluded = frozenset(
+        {provenance} | {s.strip() for s in also.split(",") if s.strip()}
+    )
     print(
-        f"answer sheet (excluded from the model side): {provenance!r}", file=sys.stderr
+        f"answer sheet(s) excluded from the model side: {sorted(excluded)!r}",
+        file=sys.stderr,
     )
     if sys.argv[1] == "sheet":
-        return sheet(model, contract, provenance)
-    return score(Path(sys.argv[2]), model, contract, provenance)
+        return sheet(model, contract, provenance, excluded)
+    return score(Path(sys.argv[2]), model, contract, excluded)
 
 
 if __name__ == "__main__":

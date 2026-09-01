@@ -35,9 +35,12 @@ A **smell** is a departure from the standards that is often deliberate,
 and the two are never added into one number.
 """
 
+import gc
 import math
 import re
 from collections import Counter
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import cache
 from typing import Any
@@ -770,12 +773,14 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             "is difficult to trace and verify by hand."
         )
 
+    pulls = (
+        "1 cell pulls values from it, and it cannot be traced or checked here."
+        if finding.figure == "1"
+        else f"{finding.figure or 'its'} cells pull values from it, and "
+        "none of them can be traced or checked here."
+    )
     sentence = {
-        "external-link": (
-            f"This workbook {finding.detail.split(' — ')[0].removeprefix('reads')} "
-            f"— {finding.figure or 'its'} cells pull values from it, and "
-            "none of them can be traced or checked here."
-        ),
+        "external-link": (f"This workbook {finding.detail.split(' — ')[0]} — {pulls}"),
         "volatile": (
             f"{at} recalculates every time anything in the workbook "
             "changes, so its value never sits still."
@@ -798,6 +803,69 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         #: detail as a sentence — it is the plain words.
         return finding.detail
     return sentence
+
+
+#: How many `retained_parse_caches` scopes are open. While any is,
+#: `audit()` leaves the parse caches in place for the next phase.
+_cache_retainers = 0
+#: Whether the cyclic collector was on when the outermost scope
+#: opened, so the exit restores exactly what it found.
+_collector_was_enabled = True
+
+
+def _clear_parse_caches() -> None:
+    tokens_of.cache_clear()
+    _shape_of.cache_clear()
+    _literal_scan.cache_clear()
+    _normal_form.cache_clear()
+
+
+@contextmanager
+def retained_parse_caches() -> Iterator[None]:
+    """Keep the content-keyed parse caches warm across several engine
+    passes, clearing once on the way out.
+
+    The caches exist because one audit asks for the same parse
+    millions of times; the clear at the end of `audit()` exists so a
+    corpus sweep's memory stays flat file after file. A version
+    comparison broke that trade: it runs two audits and then builds
+    signature grids over the same cells, and the clear between phases
+    made it pay the cold parse pass up to three times over
+    (`docs/pierce/delta-speed.md`). Inside this scope the clear is
+    deferred to the scope's exit — correctness is untouched either
+    way, because every one of these caches is keyed on the full
+    inputs of the thing it stores.
+
+    The scope also holds the cyclic garbage collector. Measured on
+    the GD3 pair (`docs/pierce/delta-speed.md`, « what the 94 s
+    really was »): tokenizing the pair's 616k distinct formulas costs
+    28 s discarded, 128.7 s kept with the collector on, 31.0 s kept
+    with it off — the supposed parse floor was ~100 s of the
+    collector re-scanning an ever-growing heap of cached lists. The
+    collector frees memory and changes no value, so holding it is
+    output-identical by definition; the outermost exit restores its
+    prior state and runs one collect over what the scope accrued.
+
+    Reentrant: nested scopes clear once, when the outermost closes.
+    The cost is memory — both books' tokens and shapes held at once,
+    and cycles uncollected until the exit — so the scope belongs
+    around one comparison, never around a sweep.
+    """
+    global _cache_retainers, _collector_was_enabled
+    if _cache_retainers == 0:
+        _collector_was_enabled = gc.isenabled()
+        if _collector_was_enabled:
+            gc.disable()
+    _cache_retainers += 1
+    try:
+        yield
+    finally:
+        _cache_retainers -= 1
+        if _cache_retainers == 0:
+            _clear_parse_caches()
+            if _collector_was_enabled:
+                gc.enable()
+                gc.collect()
 
 
 def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
@@ -862,9 +930,8 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     #: A4 last, so its « raised » counts describe the report as it
     #: actually leaves the engine — after every fold has settled.
     _coverage(book, result)
-    tokens_of.cache_clear()
-    _shape_of.cache_clear()
-    _literal_scan.cache_clear()
+    if _cache_retainers == 0:
+        _clear_parse_caches()
     return result
 
 
@@ -3598,7 +3665,7 @@ def _shape_of(formula: str, row: int, column: int, anchoring: bool) -> str:
                 continue
             else:
                 pieces.append(("other", token.value))
-    normalized = _normal_form(pieces)
+    normalized = _normal_form(tuple(pieces))
     return normalized if normalized is not None else "".join(out)
 
 
@@ -3607,7 +3674,8 @@ def _shape_of(formula: str, row: int, column: int, anchoring: bool) -> str:
 _SYMMETRIC = frozenset({"SUM", "MIN", "MAX", "AVERAGE", "COUNT", "COUNTA", "PRODUCT"})
 
 
-def _normal_form(pieces: list[tuple[str, str]]) -> str | None:
+@cache
+def _normal_form(pieces: tuple[tuple[str, str], ...]) -> str | None:
     """The shape re-rendered from a structural parse, or None.
 
     A tiny recursive-descent pass over the normalized tokens: sorts
@@ -3615,6 +3683,12 @@ def _normal_form(pieces: list[tuple[str, str]]) -> str | None:
     folds constant shapes, drops unary plus. Anything the grammar
     does not expect — array literals, stray tokens — returns None and
     the caller keeps the plain join.
+
+    Cached by the pieces themselves — the function's entire input, so
+    equality is by construction. The pieces are already relative
+    (`_offset` ran), which is what gives the cache its reuse: every
+    row of a filled block renders the same pieces, where the formula
+    *text* differs cell by cell. Cleared with the other parse caches.
     """
     position = 0
 

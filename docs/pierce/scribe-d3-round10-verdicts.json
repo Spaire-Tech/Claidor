@@ -1,0 +1,244 @@
+[
+ {
+  "row": 10,
+  "label": "Transmission Wages Expense",
+  "section": "Wages & Salary Allocation Factor",
+  "citation": "p354.21.b",
+  "truth_pdf_page": 108,
+  "selected_pages": [
+   108,
+   109
+  ],
+  "page_score": 0.25,
+  "truth_page_selected": true,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 12,
+  "label": "Total Wages Expense",
+  "section": "Wages & Salary Allocation Factor",
+  "citation": "p354.28.b",
+  "truth_pdf_page": 108,
+  "selected_pages": [
+   108,
+   109
+  ],
+  "page_score": 0.25,
+  "truth_page_selected": true,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 13,
+  "label": "Less A&G Wages Expense",
+  "section": "Wages & Salary Allocation Factor",
+  "citation": "p354.27.b",
+  "truth_pdf_page": 108,
+  "selected_pages": [
+   108,
+   109
+  ],
+  "page_score": 0.25,
+  "truth_page_selected": true,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 19,
+  "label": "Electric Plant in Service",
+  "section": "Plant Allocation Factors",
+  "citation": "p207.104.g",
+  "truth_pdf_page": 47,
+  "selected_pages": [
+   40,
+   41,
+   44,
+   45,
+   46,
+   47,
+   48,
+   49,
+   51,
+   60,
+   102,
+   103,
+   118,
+   119,
+   120,
+   121,
+   122,
+   123,
+   124,
+   125
+  ],
+  "page_score": 0.3333333333333333,
+  "truth_page_selected": true,
+  "outcome": "abstained (tie of 11)"
+ },
+ {
+  "row": 21,
+  "label": "Accumulated Depreciation (Total Electric Plant)",
+  "section": "Plant Allocation Factors",
+  "citation": "p219.29.c",
+  "truth_pdf_page": 51,
+  "selected_pages": [
+   40,
+   41,
+   44,
+   45,
+   46,
+   47,
+   48,
+   49,
+   51,
+   60,
+   102,
+   103,
+   118,
+   119,
+   120,
+   121,
+   122,
+   123,
+   124,
+   125
+  ],
+  "page_score": 0.3333333333333333,
+  "truth_page_selected": true,
+  "outcome": "abstained (tie of 6)"
+ },
+ {
+  "row": 36,
+  "label": "Transmission Plant In Service",
+  "section": "Plant In Service",
+  "citation": "p207.58.g",
+  "truth_pdf_page": 47,
+  "selected_pages": [
+   44,
+   46,
+   47
+  ],
+  "page_score": 1.0,
+  "truth_page_selected": true,
+  "outcome": "abstained (tie of 9)"
+ },
+ {
+  "row": 41,
+  "label": "General",
+  "section": "Plant In Service",
+  "citation": "p207.99.g",
+  "truth_pdf_page": 47,
+  "selected_pages": [
+   44,
+   46,
+   47
+  ],
+  "page_score": 1.0,
+  "truth_page_selected": true,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 44,
+  "label": "Less:  General Plant Account 397 -- Communications",
+  "section": "Plant In Service",
+  "citation": "p207.94.g",
+  "truth_pdf_page": 47,
+  "selected_pages": [
+   44,
+   46,
+   47
+  ],
+  "page_score": 1.0,
+  "truth_page_selected": true,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 57,
+  "label": "Transmission Accumulated Depreciation",
+  "section": "Accumulated Depreciation",
+  "citation": "p219.25.c",
+  "truth_pdf_page": 51,
+  "selected_pages": [
+   40,
+   51
+  ],
+  "page_score": 1.0,
+  "truth_page_selected": true,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 59,
+  "label": "Accumulated General Depreciation",
+  "section": "Accumulated Depreciation",
+  "citation": "p219.28.c",
+  "truth_pdf_page": 51,
+  "selected_pages": [
+   40,
+   51
+  ],
+  "page_score": 1.0,
+  "truth_page_selected": true,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 88,
+  "label": "Transmission Materials & Supplies",
+  "section": "Materials and Supplies",
+  "citation": "p227.8.c",
+  "truth_pdf_page": 54,
+  "selected_pages": [
+   54
+  ],
+  "page_score": 1.0,
+  "truth_page_selected": true,
+  "outcome": "abstained (tie of 4)"
+ },
+ {
+  "row": 119,
+  "label": "Less Property Insurance Account 924",
+  "section": "Allocated Administrative & General Expenses",
+  "citation": "p323.185.b",
+  "truth_pdf_page": 93,
+  "selected_pages": [
+   101
+  ],
+  "page_score": 0.5,
+  "truth_page_selected": false,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 121,
+  "label": "Less General Advertising Exp Account 930.1",
+  "section": "Allocated Administrative & General Expenses",
+  "citation": "p323.191.b",
+  "truth_pdf_page": 93,
+  "selected_pages": [
+   101
+  ],
+  "page_score": 0.5,
+  "truth_page_selected": false,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 179,
+  "label": "Proprietary Capital",
+  "section": "Common Stock",
+  "citation": "p112.16.c",
+  "truth_pdf_page": 26,
+  "selected_pages": [
+   68
+  ],
+  "page_score": 0.5,
+  "truth_page_selected": false,
+  "outcome": "abstained (floor)"
+ },
+ {
+  "row": 187,
+  "label": "Less Loss on Reacquired Debt",
+  "section": "Capitalization",
+  "citation": "p111.81.c",
+  "truth_pdf_page": 25,
+  "selected_pages": [],
+  "page_score": 0.0,
+  "truth_page_selected": false,
+  "outcome": "unreachable-page"
+ }
+]

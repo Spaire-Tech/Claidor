@@ -1,0 +1,423 @@
+{
+ "selection": {
+  "resolved": 15,
+  "unresolvable": []
+ },
+ "control": [
+  {
+   "row": 10,
+   "citation": "p354.21.b",
+   "stated": "extracted",
+   "document_text": "44,016",
+   "document_value": 44016.0,
+   "model_value": 44016.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 12,
+   "citation": "p354.28.b",
+   "stated": "extracted",
+   "document_text": "2,120,257",
+   "document_value": 2120257.0,
+   "model_value": 2120257.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 13,
+   "citation": "p354.27.b",
+   "stated": "extracted",
+   "document_text": "343,349",
+   "document_value": 343349.0,
+   "model_value": 343349.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 19,
+   "citation": "p207.104.g",
+   "stated": "typed",
+   "document_text": "73,315,883",
+   "document_value": 73315883.0,
+   "model_value": 73315883.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 21,
+   "citation": "p219.29.c",
+   "stated": "extracted",
+   "document_text": "(41,209,384)",
+   "document_value": -41209384.0,
+   "model_value": 41209384.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "detail": "Neither side has moved since binding, and the pair does not tie out: the document states (41,209,384) and the model holds 4.12094e+07."
+  },
+  {
+   "row": 36,
+   "citation": "p207.58.g",
+   "stated": "typed",
+   "document_text": "10,895,809",
+   "document_value": 10895809.0,
+   "model_value": 10895809.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 41,
+   "citation": "p207.99.g",
+   "stated": "typed",
+   "document_text": "6,741,539",
+   "document_value": 6741539.0,
+   "model_value": 6741539.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 44,
+   "citation": "p207.94.g",
+   "stated": "typed",
+   "document_text": "704,462",
+   "document_value": 704462.0,
+   "model_value": 0.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "detail": "Neither side has moved since binding, and the pair does not tie out: the document states 704,462 and the model holds 0."
+  },
+  {
+   "row": 57,
+   "citation": "p219.25.c",
+   "stated": "extracted",
+   "document_text": "(6,046,528)",
+   "document_value": -6046528.0,
+   "model_value": 6046528.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "detail": "Neither side has moved since binding, and the pair does not tie out: the document states (6,046,528) and the model holds 6.04653e+06."
+  },
+  {
+   "row": 59,
+   "citation": "p219.28.c",
+   "stated": "extracted",
+   "document_text": "(919,728)",
+   "document_value": -919728.0,
+   "model_value": 919728.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "detail": "Neither side has moved since binding, and the pair does not tie out: the document states (919,728) and the model holds 919728."
+  },
+  {
+   "row": 88,
+   "citation": "p227.8.c",
+   "stated": "extracted",
+   "document_text": "39,294",
+   "document_value": 39294.0,
+   "model_value": 39294.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 119,
+   "citation": "p323.185.b",
+   "stated": "extracted",
+   "document_text": "91,502",
+   "document_value": 91502.0,
+   "model_value": 91502.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 121,
+   "citation": "p323.191.b",
+   "stated": "extracted",
+   "document_text": "11,671",
+   "document_value": 11671.0,
+   "model_value": 11671.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 179,
+   "citation": "p112.16.c",
+   "stated": "extracted",
+   "document_text": "42,926,441.00",
+   "document_value": 42926441.0,
+   "model_value": 42926441.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  },
+  {
+   "row": 187,
+   "citation": "p111.81.c",
+   "stated": "extracted",
+   "document_text": "312,696",
+   "document_value": 312696.0,
+   "model_value": 312696.0,
+   "verdict": "agrees",
+   "ties_out": true,
+   "detail": ""
+  }
+ ],
+ "plants": [
+  {
+   "row": 10,
+   "plant": "P1",
+   "planted_value": 440160.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 10,
+   "plant": "P2",
+   "planted_value": 44017.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 12,
+   "plant": "P1",
+   "planted_value": 21202570.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 12,
+   "plant": "P2",
+   "planted_value": 2120258.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 13,
+   "plant": "P1",
+   "planted_value": 3433490.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 13,
+   "plant": "P2",
+   "planted_value": 343350.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 19,
+   "plant": "P1",
+   "planted_value": 733158830.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 19,
+   "plant": "P2",
+   "planted_value": 73315884.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 21,
+   "plant": "P1",
+   "planted_value": 412093840.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 21,
+   "plant": "P2",
+   "planted_value": 41209385.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 36,
+   "plant": "P1",
+   "planted_value": 108958090.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 36,
+   "plant": "P2",
+   "planted_value": 10895810.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 41,
+   "plant": "P1",
+   "planted_value": 67415390.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 41,
+   "plant": "P2",
+   "planted_value": 6741540.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 44,
+   "plant": "P1",
+   "planted_value": 100000.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 44,
+   "plant": "P2",
+   "planted_value": 1.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 57,
+   "plant": "P1",
+   "planted_value": 60465280.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 57,
+   "plant": "P2",
+   "planted_value": 6046529.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 59,
+   "plant": "P1",
+   "planted_value": 9197280.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 59,
+   "plant": "P2",
+   "planted_value": 919729.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 88,
+   "plant": "P1",
+   "planted_value": 392940.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 88,
+   "plant": "P2",
+   "planted_value": 39295.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 119,
+   "plant": "P1",
+   "planted_value": 915020.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 119,
+   "plant": "P2",
+   "planted_value": 91503.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 121,
+   "plant": "P1",
+   "planted_value": 116710.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 121,
+   "plant": "P2",
+   "planted_value": 11672.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 179,
+   "plant": "P1",
+   "planted_value": 429264410.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 179,
+   "plant": "P2",
+   "planted_value": 42926441.01,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 187,
+   "plant": "P1",
+   "planted_value": 3126960.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  },
+  {
+   "row": 187,
+   "plant": "P2",
+   "planted_value": 312697.0,
+   "verdict": "agrees",
+   "ties_out": false,
+   "caught": true
+  }
+ ],
+ "quiet": {
+  "checks": 420,
+  "breaks": 0
+ },
+ "scale_probe": {
+  "stated_scale": 1000.0,
+  "ties_out": false
+ }
+}

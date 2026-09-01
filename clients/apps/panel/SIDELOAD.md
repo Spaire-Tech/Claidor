@@ -1,8 +1,10 @@
 # Getting the panel into real Office
 
 The runbook. The [README](README.md) explains how the panel works; this
-page is only about getting it loaded into PowerPoint, Excel, Word and
-Outlook — first on your own machine, then for the team.
+page is only about getting it loaded into Excel — first on your own
+machine, then for the team. (The manifest registers Excel only since the
+pivot; the Word/PowerPoint/Outlook steps below are kept for the day a
+dormant host wakes.)
 
 ## What is already true, and what is not yet
 
@@ -17,35 +19,34 @@ Proven, in this repository:
   into both manifests and serves them at **`/panel/manifest.xml`** and
   **`/panel/manifest.outlook.xml`**. Both stamped manifests validate
   clean against Microsoft's validator (`pnpm validate:manifest` runs it).
-- **The panel works against the real API.** Verified in a browser: sign
-  in, identify, choose a deal once, findings listed with live numbers.
+- **The panel works against the real API.** Re-proven headlessly 31 Aug
+  2026 on this exact code: token minted through `/v1/tieout/panel/token`
+  from a real session, the open workbook's bytes through
+  `/v1/tieout/check-file`, 11 findings rendered with live sentences,
+  « N checks pass » from the house-rules catalogue, re-check, and honest
+  refusals for everything that needs Office.
 
-Not yet proven, honestly: **no real Office application has loaded this
-add-in yet** — the machine this was built on has no Office. Everything
-Office-specific (the ribbon button, `Office.js` handing over the
-filename, the stamp written into the document, jumping to a shape) is
-built and unit-tested but has not been watched running inside PowerPoint.
-The first sideload below is that test. Expect it to surface something;
-that is what it is for.
+Not yet proven, honestly: **no real Excel has loaded this build of the
+add-in.** An earlier build's pane did load inside real Word on the web
+(14 Aug — it surfaced the CSP and sign-in-URL bugs, both fixed), but the
+Excel-only panel as it stands — ribbon button, workbook bytes read
+through `Office.js`, jump to a cell, « Fix the cell » — is built and
+unit-tested and has never been watched running inside Excel. The first
+sideload below is that test. Expect it to surface something; that is
+what it is for.
 
-Also worth knowing: `src/Panel.tsx` is deliberately a plain placeholder —
-plumbing first, the panel's real design is a separate round.
-
-## First sideload: Office on the web (10 minutes, no install)
+## First sideload: Excel on the web (10 minutes, no install)
 
 The gentlest full test, because upload-a-manifest is built into the UI:
 
 1. Download `https://<your-dashboard-domain>/panel/manifest.xml`.
-2. Open any deck at powerpoint.office.com (same Microsoft account tier —
+2. Open any workbook at excel.office.com (same Microsoft account tier —
    add-ins need a work/school or Microsoft 365 account).
 3. **Home → Add-ins → More Add-ins → My Add-ins → Upload My Add-in** and
    pick the downloaded file.
-4. A **Claidor** group appears on the Home tab. Open it: you should get
-   the sign-in screen, then — for a file whose name matches a deal
-   document — the findings list.
-
-The same manifest covers Word and Excel on the web, uploaded the same
-way from each application.
+4. An **Ances** group appears on the Home tab. Open it: the sign-in
+   screen, then « Allow access », then the check of the workbook you
+   have open.
 
 ## Desktop
 
@@ -120,15 +121,15 @@ cd clients && pnpm --filter @claidor/panel dev   # http://127.0.0.1:3100
 
 - `server/.env` needs `CLAIDOR_CORS_ORIGINS=["http://127.0.0.1:3100"]`
   (already there for dev).
-- Open `http://127.0.0.1:3100/?filename=cascade_deck.pptx` — outside
-  Office there is no document, so `?filename=` (dev builds only) tells
-  the detached host bridge what to pretend it is looking at. Sign in
-  goes through `signin.html`, which needs a dashboard session cookie in
-  the same browser.
-- Two things behave differently out here, both by design: the stamp
-  cannot be written (no document), so the panel asks « which deal? » on
-  every open instead of once; and « jump to it » answers that it is not
-  running inside Office.
+- Open `http://127.0.0.1:3100/?file=<url-of-an-xlsx>` — outside Office
+  there is no workbook, so `?file=` (dev builds only) hands the detached
+  bridge real bytes and the whole checked face runs: findings, the
+  catalogue line, re-check. Sign in goes through `signin.html`, which
+  needs a dashboard session cookie in the same browser — or put a token
+  minted by `POST /v1/tieout/panel/token` into `localStorage` under
+  `claidor.panel.token`, which is exactly what the dialog would do.
+- One thing behaves differently out here, by design: « jump to it » and
+  « Fix the cell » answer that they are not running inside Office.
 
 ## What to look at when it fails
 

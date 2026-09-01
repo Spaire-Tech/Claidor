@@ -327,26 +327,19 @@ export class TieOutApi {
   }
 
   /** The audit's own catalogue with the firm's switches — what
-   *  « N checks pass » counts against. */
-  async auditRules(organizationId: string): Promise<AuditRule[]> {
+   *  « N checks pass » counts against.
+   *
+   *  No organization id: the server resolves the caller's own firm.
+   *  It has to be this way round — the panel's token holds the tieout
+   *  scopes only, so asking `/v1/organizations/` answers 403 for
+   *  every panel user, always. It did, silently, until the headless
+   *  drive of 31 Aug read the API log. */
+  async auditRules(organizationId?: string): Promise<AuditRule[]> {
+    const query = organizationId ? `?organization_id=${organizationId}` : ''
     const rules = await this.call<{ rules: AuditRule[] }>(
-      `/house-rules?organization_id=${organizationId}`,
+      `/house-rules${query}`,
     )
     return rules.rules
-  }
-
-  /** The signed-in person's organization, for the catalogue. */
-  async organization(): Promise<string | null> {
-    const token = this.options.token()
-    const response = await fetch(`${this.options.baseUrl}/v1/organizations/`, {
-      headers: token ? { authorization: `Bearer ${token}` } : {},
-    })
-    if (!response.ok) return null
-    const body = (await response.json()) as
-      | { id: string }[]
-      | { items?: { id: string }[] }
-    const rows = Array.isArray(body) ? body : (body.items ?? [])
-    return rows[0]?.id ?? null
   }
 
   /**

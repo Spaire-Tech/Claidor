@@ -93,10 +93,7 @@ export function usePanel(
       //: The catalogue arrives second and quietly — the findings list
       //: does not wait on a settings read to render.
       api
-        .organization()
-        .then((organizationId) =>
-          organizationId ? api.auditRules(organizationId) : null,
-        )
+        .auditRules()
         .then((rules) => rules && setState((was) => ({ ...was, rules })))
         .catch(() => undefined)
     } catch (error) {

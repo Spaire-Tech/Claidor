@@ -877,6 +877,25 @@ class TieOutRepository(RepositoryBase[Artifact]):
         await self.session.flush()
         return rules
 
+    async def first_organization_for(self, user_id: UUID) -> UUID | None:
+        """The caller's own organization, for callers that name none.
+
+        The panel's token holds the tieout scopes only, so it cannot ask
+        the organizations API which firm the person belongs to — that
+        endpoint wants a scope the token must never hold. Oldest
+        membership wins, deterministically.
+        """
+        statement = (
+            select(UserOrganization.organization_id)
+            .where(
+                UserOrganization.user_id == user_id,
+                UserOrganization.deleted_at.is_(None),
+            )
+            .order_by(UserOrganization.created_at)
+            .limit(1)
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
     async def organization_of(self, dossier_id: UUID) -> UUID | None:
         """Whose policy applies to this deal."""
         statement = select(Dossier.organization_id).where(Dossier.id == dossier_id)

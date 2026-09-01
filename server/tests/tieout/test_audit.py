@@ -1376,6 +1376,34 @@ def test_external_links_are_one_event_per_source_workbook() -> None:
     assert one.cells.count(",") == 6
 
 
+def test_external_link_speaks_a_whole_sentence() -> None:
+    """The panel showed « This workbook  another workbook, [1] — 1 cells
+    pull values from it »: the composer stripped the verb out of the
+    detail and re-added nothing, and a count of one took a plural. Both
+    pinned here as sentences, not substrings."""
+    from polar.tieout.audit import plain_words
+
+    def many(sheet) -> None:
+        for row in range(2, 9):
+            sheet[f"B{row}"] = f"=[1]Outputs!C{row}"
+
+    result = _tmp_book(many)
+    finding = next(f for f in result.findings if f.rule == "external-link")
+    sentence = plain_words(finding)
+    assert sentence.startswith("This workbook reads another workbook, [1] — ")
+    assert "7 cells pull values from it" in sentence
+    assert "  " not in sentence
+
+    def just_one(sheet) -> None:
+        sheet["B2"] = "=[1]Outputs!C2*1.5"
+
+    result = _tmp_book(just_one)
+    finding = next(f for f in result.findings if f.rule == "external-link")
+    sentence = plain_words(finding)
+    assert "1 cell pulls values from it, and it cannot be traced" in sentence
+    assert "1 cells" not in sentence
+
+
 def test_a_flipped_operator_in_a_short_run_is_seen() -> None:
     """Round 4's zero: `=Revenue+Costs` flipped to `=Revenue-Costs`
     beside two identical siblings went unseen where the row pass's
