@@ -183,6 +183,7 @@ async def run(
     model: str = AGENT_MODEL,
     max_steps: int = MAX_STEPS,
     effort: str = EFFORT,
+    known: str = "",
     on_step: Callable[[Step], None] | None = None,
     on_text: Callable[[str], None] | None = None,
 ) -> Outcome:
@@ -227,7 +228,7 @@ async def run(
                 system=[
                     {
                         "type": "text",
-                        "text": toolset.prompt(),
+                        "text": toolset.prompt(known),
                         "cache_control": {"type": "ephemeral"},
                     }
                 ],

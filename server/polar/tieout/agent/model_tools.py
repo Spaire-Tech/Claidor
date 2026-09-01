@@ -84,6 +84,12 @@ class ModelWorkspace:
     #: cascade_model.xlsx; this deal also holds macro_model.xlsm » is
     #: an answer, and silence is a paragraph about the wrong workbook.
     others: list[str] = field(default_factory=list)
+    #: The model's resolved picture — what it is, how it is built, what
+    #: could not be found — read once from the file and handed to every
+    #: answer. **The cure for three answers contradicting each other**:
+    #: without it each question builds its own reading and nothing
+    #: carries between them.
+    picture: Any = None
     #: A zero-argument call returning the Watch's `DeltaReport` for this
     #: version against the one before, or None when there is no earlier
     #: version. **Deliberately not called by the loader**: it fetches
@@ -1218,6 +1224,12 @@ MODEL_TOOLSET = Toolset(
     #: The founder's own words on how Swens talks — quoted, not
     #: paraphrased, and read last so it wins where it disagrees.
     voice_path=Path(__file__).parent / "prompt_voice.md",
+    #: And the house style: the four moves, the plain-word bar, the
+    #: words a banker says out loud. Quoted from
+    #: `docs/pierce/house-style/findings-voice.md`, and enforced on the
+    #: way out by `style.py` — so this is the same rule stated twice,
+    #: once as a request and once as a gate.
+    also=(Path(__file__).parent / "prompt_house.md",),
 )
 
 
@@ -1236,6 +1248,7 @@ def build_workspace(
     delta: Any = None,
     counts: dict[str, Any] | None = None,
     others: list[str] | None = None,
+    picture: Any = None,
 ) -> ModelWorkspace:
     """The workspace, with the dependents index built once up front.
 
@@ -1257,6 +1270,7 @@ def build_workspace(
         delta=delta,
         counts=counts or {},
         others=others or [],
+        picture=picture,
     )
 
 

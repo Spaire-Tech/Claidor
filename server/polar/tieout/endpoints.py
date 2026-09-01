@@ -29,7 +29,7 @@ from uuid import UUID
 from fastapi import Depends, File, HTTPException, Query, Response, UploadFile
 from fastapi.responses import StreamingResponse
 
-from polar.agent import Outcome, Step
+from polar.agent import AGENT_MODEL, Outcome, Step
 from polar.agent import run as agent_run
 from polar.auth.dependencies import WebUserWrite
 from polar.auth.scope import Scope
@@ -64,8 +64,10 @@ from polar.routing import APIRouter
 from polar.user.repository import UserRepository
 
 from . import auth
+from .agent import gate
 from .agent import service as agent
 from .agent.model_tools import MODEL_TOOLSET
+from .agent.picture import as_prompt
 from .agent.service import ASSISTANT_EFFORT
 from .agent.status import stage as run_stage
 from .analytics import ANALYTIC_PASS_NAMES, ANALYTIC_RULE_NAMES
@@ -2731,6 +2733,11 @@ async def assist_stream(
                 workspace,
                 prompt,
                 effort=ASSISTANT_EFFORT,
+                #: The one picture, resolved from the file before the
+                #: question was asked. Every answer about this model
+                #: reads from it, which is what stops two of them
+                #: describing different files.
+                known=as_prompt(workspace.picture) if workspace.picture else "",
                 on_step=did,
                 on_text=wrote,
             )
@@ -2744,6 +2751,12 @@ async def assist_stream(
         except Exception as problem:  # pragma: no cover — the loop catches its own
             yield _ndjson({"kind": "error", "detail": str(problem)})
             return
+
+        #: The house style, before anybody reads it. This is why the
+        #: answer is not streamed: prose that may be sent back to be
+        #: written again must not be on screen while it is judged.
+        checked = await gate.written(client, outcome.answer, model=AGENT_MODEL)
+        outcome.answer = checked.answer
 
         #: A session of this route's own. The request's is committed
         #: when its dependency unwinds, and that happens before this

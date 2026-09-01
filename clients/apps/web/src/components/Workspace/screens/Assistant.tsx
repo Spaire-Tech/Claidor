@@ -112,6 +112,10 @@ interface Message {
    *  writes it. Cleared when a step lands, because that prose has just
    *  become the step's own status line. */
   live?: string
+  /** How much of `live` is on screen. **The gap between the two is the
+   *  whole point.** Tokens land in bursts; this advances steadily, so
+   *  the reader sees writing rather than lurching. */
+  shown?: number
 
   // --- the verdict (role 'verdict') --------------------------------
   /** The lines behind the answer, hidden until the person opens them. */
@@ -512,43 +516,53 @@ const Cells = ({ rows, label }: { rows: AskedRow[]; label?: string }) => {
 }
 
 /**
- * The answer as it is being written.
+ * The one line the model is writing, out of everything it has written.
  *
- * Same face, same measure and same colour as the finished answer, on
- * purpose: nothing moves when the last word lands, so a person can
- * start reading the first sentence while the third is still arriving.
- * The caret is the only sign it is not done.
+ * Prose arrives from the model continuously. Before a tool call it is a
+ * status line and belongs on screen whole; in the last turn it is the
+ * answer, which nobody may read until it has been checked. Showing the
+ * **most recent sentence** works for both: the status line is one
+ * sentence, and the answer being written reads as a line that keeps
+ * moving — a person can see it is writing without reading a draft that
+ * may be sent back and rewritten.
  */
-const Writing = ({ text }: { text: string }) => (
-  <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
-    <Mark top={5} />
-    <span
-      style={{
-        flex: 1,
-        minWidth: 0,
-        fontFamily: font.serif,
-        fontSize: 17.5,
-        lineHeight: 1.55,
-        color: '#1c1f23',
-        maxWidth: '56ch',
-        whiteSpace: 'pre-wrap',
-        textWrap: 'pretty',
-      }}
-    >
-      {text}
-      <span
-        style={{
-          display: 'inline-block',
-          width: 2,
-          height: '1em',
-          marginLeft: 2,
-          verticalAlign: '-0.15em',
-          background: '#1c1f23',
-          animation: 'aCaret 1.05s steps(1) infinite',
-        }}
-      />
-    </span>
-  </div>
+const saying = (live?: string): string => {
+  const said = (live ?? '').trim()
+  if (!said) return ''
+  const sentences = said.split(/(?<=[.!?])\s+/)
+  const last = sentences[sentences.length - 1] ?? said
+  return last.length > 120 ? `…${last.slice(-118)}` : last
+}
+
+/**
+ * Words arriving, each fading up out of a blur.
+ *
+ * **This is the piece the design had and I removed.** `asType` in
+ * `Swens_Workspace_2.html` walked a finished string forward at a
+ * constant rate. When real streaming replaced it, the screen began
+ * painting tokens the instant they landed — and tokens land in bursts,
+ * so it lurched. Nothing was wrong with the stream. What was missing
+ * was the clock in front of it.
+ *
+ * Each word is its own span with a stable key, so React mounts a new
+ * span only for a word that has just appeared and leaves the rest
+ * alone. That is what makes the animation run once per word instead of
+ * restarting the paragraph on every frame.
+ */
+const Words = ({ text }: { text: string }) => (
+  <>
+    {/* Split keeping the whitespace, so line breaks survive and only
+        the words animate. */}
+    {text.split(/(\s+)/).map((part, at) =>
+      /^\s+$/.test(part) ? (
+        part
+      ) : (
+        <span key={at} style={{ animation: 'aWordIn .34s ease both' }}>
+          {part}
+        </span>
+      ),
+    )}
+  </>
 )
 
 /**
@@ -575,7 +589,7 @@ const Run = ({
   //: line, or there is genuinely nothing to read — and « Thinking »
   //: alone is the honest screen for the second, because a step drawn
   //: before one has happened would be a step this file invented.
-  if (!live) return writing ? <Writing text={writing} /> : <Thinking />
+  if (!live) return writing ? <Shimmer text={writing} top={1} /> : <Thinking />
   //: The ring belongs to the *run*, not to this step — every step
   //: here has already finished. While more is coming it spins over the
   //: line the assistant wrote for the work it is doing; when the run
@@ -1151,6 +1165,41 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
   const [pjMenu, setPjMenu] = useState(false)
   const scroll = useRef<HTMLDivElement | null>(null)
 
+  /**
+   * The reveal, paced.
+   *
+   * **This is the piece the design had and I removed.** The design's
+   * own `asType` walked a finished string forward at a constant rate;
+   * when real streaming replaced it, the screen started painting
+   * tokens the instant they landed — and tokens land in bursts, so it
+   * lurched. Nothing was wrong with the stream; what was missing was
+   * the clock in front of it.
+   *
+   * The step is proportional to the backlog, which does two things at
+   * once: it never stalls while there are words waiting, and it never
+   * empties the buffer in one jump. A long burst is spread over a few
+   * frames; a slow trickle is drawn as it arrives and no faster,
+   * because inventing pace the model has not earned is its own kind of
+   * lie about how fast the answer came.
+   */
+  useEffect(() => {
+    const tick = window.setInterval(() => {
+      setMessages((was) => {
+        const last = was[was.length - 1]
+        if (!last || last.role !== 'answer') return was
+        const full = last.text.length
+        const at = last.shown ?? full
+        if (at >= full) return was
+        const step = Math.max(2, Math.ceil((full - at) / 6))
+        return [
+          ...was.slice(0, -1),
+          { ...last, shown: Math.min(full, at + step) },
+        ]
+      })
+    }, 24)
+    return () => window.clearInterval(tick)
+  }, [])
+
   //: The rail: **closed until it is asked for**, which is what the
   //: design does — `histOpen` is never initialised in
   //: `Swens_Workspace_2.html`, so it opens at `0px` and the composer
@@ -1423,8 +1472,8 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
       ...was,
       { role: 'you', text: q },
       asRun
-        ? { role: 'run', text: '', live: '', stages: [], busy: true }
-        : { role: 'working', text: 'Thinking', live: '' },
+        ? { role: 'run', text: '', live: '', shown: 0, stages: [], busy: true }
+        : { role: 'working', text: 'Thinking', live: '', shown: 0 },
     ])
 
     //: The prose, as the model writes it.
@@ -1472,10 +1521,18 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
         if (last.role === 'run')
           return [
             ...was.slice(0, -1),
-            { ...last, live: '', stages: [...(last.stages ?? []), one] },
+            {
+              ...last,
+              live: '',
+              shown: 0,
+              stages: [...(last.stages ?? []), one],
+            },
           ]
         if (last.role === 'working')
-          return [...was.slice(0, -1), { ...last, live: '', text: stage.sub }]
+          return [
+            ...was.slice(0, -1),
+            { ...last, live: '', shown: 0, text: stage.sub },
+          ]
         return was
       })
     }
@@ -1545,6 +1602,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
           {
             role: 'answer',
             text: main,
+            shown: 0,
             ends,
             rows: answer.rows ?? [],
             rowsLabel: answer.rows_label,
@@ -2207,17 +2265,14 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                     {m.text}
                   </div>
                 )}
-                {m.role === 'working' &&
-                  //: Once words are arriving they *are* the answer, so
-                  //: they are drawn as the answer and nothing moves
-                  //: when the last one lands. The shimmering line is
-                  //: for the part of the wait where there is genuinely
-                  //: nothing to read yet.
-                  (m.live ? (
-                    <Writing text={m.live} />
-                  ) : (
-                    <Shimmer text={m.text} />
-                  ))}
+                {m.role === 'working' && (
+                  //: The line the model is writing right now, one
+                  //: sentence at a time. **Never drawn as the answer**:
+                  //: the answer is checked against the house rules
+                  //: before anybody sees it, and half of an unchecked
+                  //: one on screen is what that check exists to stop.
+                  <Shimmer text={saying(m.live) || m.text} />
+                )}
                 {m.role === 'ask' && (
                   //: The chat asking one question back. The card names
                   //: what it would do; nothing runs until a choice is
@@ -2246,7 +2301,6 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                           fontSize: 17.5,
                           lineHeight: 1.55,
                           color: '#1c1f23',
-                          maxWidth: '56ch',
                           textWrap: 'pretty',
                         }}
                       >
@@ -2264,7 +2318,11 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                   </div>
                 )}
                 {m.role === 'run' && (
-                  <Run stages={m.stages ?? []} busy={m.busy} live={m.live} />
+                  <Run
+                    stages={m.stages ?? []}
+                    busy={m.busy}
+                    live={saying(m.live)}
+                  />
                 )}
                 {m.role === 'verdict' && (
                   <Verdict
@@ -2305,16 +2363,24 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                           //: Revision 2's reading serif, not the UI
                           //: face: the answer is the one thing on this
                           //: screen a person reads rather than scans.
+                          //: No character cap — the founder's call, and
+                          //: it runs the width of the column.
                           fontFamily: font.serif,
                           fontSize: 17.5,
                           lineHeight: 1.55,
                           color: '#1c1f23',
-                          maxWidth: '56ch',
                           whiteSpace: 'pre-wrap',
                           textWrap: 'pretty',
                         }}
                       >
-                        {m.text}
+                        {m.shown === undefined || m.shown >= m.text.length ? (
+                          m.text
+                        ) : (
+                          //: Still arriving. Same face, same measure,
+                          //: same place — only the words are not all
+                          //: here yet, and each fades in as it lands.
+                          <Words text={m.text.slice(0, m.shown)} />
+                        )}
                       </span>
                       {m.scope !== undefined && (
                         //: Which workbook this paragraph is about. A

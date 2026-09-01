@@ -202,15 +202,22 @@
   }
 }
 
-/* The caret at the end of an answer still being written. `steps(1)`
-   rather than a fade: a cursor blinks, it does not breathe. */
-@keyframes aCaret {
-  0%,
-  50% {
-    opacity: 1;
-  }
-  50.01%,
-  100% {
+/* One word of the answer arriving.
+
+   The founder asked for "a stream of fading in", and this is it: each
+   word comes up out of a blur rather than snapping on. The blur is
+   what separates it from a typewriter — a typewriter reveals, this
+   resolves. Kept short (.34s) because a slow fade on every word reads
+   as lag, which is the thing being fixed. */
+@keyframes aWordIn {
+  from {
     opacity: 0;
+    filter: blur(4px);
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
   }
 }
