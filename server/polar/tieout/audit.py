@@ -762,12 +762,14 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             "is difficult to trace and verify by hand."
         )
 
+    pulls = (
+        "1 cell pulls values from it, and it cannot be traced or checked here."
+        if finding.figure == "1"
+        else f"{finding.figure or 'its'} cells pull values from it, and "
+        "none of them can be traced or checked here."
+    )
     sentence = {
-        "external-link": (
-            f"This workbook {finding.detail.split(' — ')[0].removeprefix('reads')} "
-            f"— {finding.figure or 'its'} cells pull values from it, and "
-            "none of them can be traced or checked here."
-        ),
+        "external-link": (f"This workbook {finding.detail.split(' — ')[0]} — {pulls}"),
         "volatile": (
             f"{at} recalculates every time anything in the workbook "
             "changes, so its value never sits still."

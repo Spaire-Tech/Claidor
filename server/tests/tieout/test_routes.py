@@ -1361,6 +1361,45 @@ class TestHouseRules:
         )
 
     @pytest.mark.auth
+    async def test_no_organization_named_means_the_callers_own(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The panel's token holds tieout scopes only, so it cannot ask
+        the organizations API which firm the caller is in — this endpoint
+        resolves it. Proven against the caller's own stored rules, not
+        just the defaults."""
+        deal = await _deal_for(session, save_fixture, user)
+        stored = await client.put(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}",
+            json={"audit_rules_off": ["volatile"]},
+        )
+        assert stored.status_code == 200
+        response = await client.get("/v1/tieout/house-rules")
+        assert response.status_code == 200
+        rules = {rule["key"]: rule["on"] for rule in response.json()["rules"]}
+        assert rules["volatile"] is False
+
+    @pytest.mark.auth
+    async def test_a_caller_in_no_organization_gets_the_defaults(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """No membership at all is not an error: the audit that ran for
+        them used every rule, and the catalogue says so."""
+        response = await client.get("/v1/tieout/house-rules")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["rules"]
+        assert all(rule["on"] for rule in body["rules"])
+
+    @pytest.mark.auth
     async def test_a_stranger_finds_no_organization(
         self,
         client: AsyncClient,

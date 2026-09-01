@@ -1558,12 +1558,26 @@ def _house_rules(rules: HouseRules | None) -> HouseRulesRead:
 @router.get("/house-rules", response_model=HouseRulesRead)
 async def get_house_rules(
     auth_subject: auth.TieOutRead,
-    organization_id: UUID = Query(),
+    organization_id: UUID | None = Query(
+        default=None,
+        description="Whose rules. Left out, the caller's own organization "
+        "answers — the panel's token cannot ask the organizations API "
+        "which firm that is, so this endpoint resolves it itself.",
+    ),
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> HouseRulesRead:
     """How this firm wants Pierce to behave. No row yet means defaults."""
-    await _in_organization(session, organization_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
+    if organization_id is None:
+        organization_id = await repository.first_organization_for(
+            auth_subject.subject.id
+        )
+        if organization_id is None:
+            #: A person in no organization gets the defaults — every
+            #: rule on. That is what their audit actually ran.
+            return _house_rules(None)
+    else:
+        await _in_organization(session, organization_id, auth_subject.subject.id)
     return _house_rules(await repository.house_rules_for(organization_id))
 
 
