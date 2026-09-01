@@ -512,7 +512,10 @@ def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
     #: An empty, unreferenced very-hidden sheet is a note, not a threat.
     hidden = next(f for f in result.findings if f.rule == "hidden-sheet")
     assert hidden.severity == "smell"
-    assert "empty and nothing in the model reads it" in hidden.detail
+    #: The founder's own worked example from `findings-voice.md`
+    #: rule 5, adopted verbatim on 1 September.
+    assert "very hidden but empty" in hidden.detail
+    assert "safe to delete" in hidden.detail
 
     #: A bound tested twice reads once.
     validation = next(f for f in result.findings if f.ref == "Control Panel!E56")

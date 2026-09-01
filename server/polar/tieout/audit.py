@@ -258,7 +258,7 @@ RULE_NAMES: dict[str, str] = {
     "broken-name": "Defined names that are broken",
     "volatile": "Volatile functions",
     "long-formula": "Formulas too long to follow",
-    "hardcode-in-formula": "Hardcoded values inside formulas",
+    "hardcode-in-formula": "Numbers typed inside formulas",
     "typed-over-formula": "Values typed over formulas",
     "typed-over-edge": "Values typed over a series' edge",
     "inconsistent-anchoring": "Anchoring that changes along a row",
@@ -269,7 +269,7 @@ RULE_NAMES: dict[str, str] = {
     #: block — the author's own test, not covering what it walks.
     "gapped-test": "Check formulas that skip live cells",
     "range-over-block": "Ranges that reach past their block",
-    "inconsistent-total": "Totals that disagree with their siblings",
+    "inconsistent-total": "Totals that disagree with the ones beside them",
     "broken-aggregation": "Period totals that take one sub-period",
     "hidden-sheet": "Hidden sheets",
 }
@@ -288,14 +288,14 @@ HEADLINES: dict[str, str] = {
     "error-value": "Error value",
     "external-link": "External link",
     "broken-name": "Broken name",
-    "volatile": "Volatile function",
+    "volatile": "Always recalculating",
     "long-formula": "Complex formula",
-    "hardcode-in-formula": "Hardcoded assumption",
-    "typed-over-formula": "Unexpected hardcode",
+    "hardcode-in-formula": "Typed-in assumption",
+    "typed-over-formula": "Typed over a formula",
     "typed-over-edge": "Typed series edge",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
-    "circular": "Circular reference",
+    "circular": "Cells in a loop",
     "skipped-cell": "Incomplete total",
     "gapped-test": "Gapped test",
     "range-over-block": "Range past its block",
@@ -571,25 +571,20 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         if finding.detail.startswith("the same value typed across"):
             #: The row fold: one value pasted across one row's columns.
             lead = f"{label} has" if label else "One row has"
-            return (
-                f"{lead} {finding.detail} — one paste. Check whether "
-                "the override is intentional."
-            )
+            return f"{lead} {finding.detail}. It was one paste."
         if " different values typed across " in finding.detail:
             #: The run fold: adjacent columns typed over in one gesture,
             #: each holding its own number.
             lead = f"{label} has" if label else "One row has"
             return (
-                f"{lead} {finding.detail} — one paste, each cell holding "
-                "its own number. Check whether the overrides are "
-                "intentional."
+                f"{lead} {finding.detail}. It was one paste, and each "
+                "cell holds its own number."
             )
         if finding.detail.startswith("typed over a block"):
             #: The block fold: a two-dimensional paste, one rectangle.
             return (
-                f"« {finding.sheet} » is {finding.detail} — one paste "
-                "over the block's formulas. Check whether the override "
-                "is intentional."
+                f"« {finding.sheet} » is {finding.detail}. One paste "
+                "went over the block's formulas."
             )
         if finding.detail.startswith("typed over in "):
             #: The block collapse: one decision, made once per repeated
@@ -598,14 +593,14 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             coords = finding.detail.split(": ", 1)[-1]
             lead = f"{label} is" if label else "One column is"
             return (
-                f"{lead} typed over in {len(coords.split(', '))} places — "
-                f"{coords} — while the rest of each row is calculated. "
-                "Check whether these are intentional overrides."
+                f"{lead} typed in at {len(coords.split(', '))} places — "
+                f"{coords}. Every other cell in those rows calculates."
             )
-        return (
-            f"{subject} contains a fixed value while the rest of the row "
-            "is calculated. Check whether this is an intentional override."
-        )
+        #: The founder's own swap, from the table in
+        #: `findings-voice.md`: « contains a fixed value while the rest
+        #: of the row is calculated » becomes « is typed in; every other
+        #: year calculates ».
+        return f"{subject} is typed in. Every other cell in the row calculates."
     if finding.rule == "inconsistent-row":
         if finding.detail.startswith("the same calculation as"):
             return (
@@ -613,41 +608,39 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
                 "changes the answer everywhere this cell flows."
             )
         if finding.detail.startswith("the same formula as"):
-            return (
-                f"{subject} is {finding.detail}. Check which row it should be reading."
-            )
+            #: « Subordinated Debt Interest is the same formula as its 19
+            #: siblings with one pinned reference out of step — they read
+            #: 'Control Panel'!$C$51, it reads $D$51: =(E45+E48)/2*… Check
+            #: which row it should be reading. » Forty words, two banned
+            #: terms, a formula dump and a « check which ». The founder
+            #: read that on a live model and asked who could read it.
+            return f"{subject} reads a different cell from the rest of its row."
+
         if finding.detail.startswith("tests "):
             #: The selector drift: same formula, different switch value.
             what = finding.detail.split(":", 1)[0]
             return (
-                f"{subject} {what} — the same formula with a different "
-                "switch setting. Check whether the exception is deliberate "
-                "or a stale copy."
+                f"{subject} {what}. It is the same formula as its row "
+                "with a different switch setting."
             )
-        return (
-            f"{subject} does not follow the formula the rest of the row "
-            "uses. Check whether the departure is deliberate."
-        )
+        return f"{subject} breaks the pattern of its row."
     if finding.rule == "typed-over-edge":
         lead = f"{label} is" if label else f"The cell at {at} is"
         return (
-            f"{lead} a typed value at the edge of a row that otherwise "
-            "calculates — the series runs out in a typed number. Check "
-            "whether the late adjustment is intentional."
+            f"{lead} typed in at the end of a row that calculates. "
+            "The series runs out in a typed number."
         )
     if finding.rule == "range-over-block":
         if finding.severity == "error":
             lead = f"{label}'s total" if label else f"The total at {at}"
             return (
-                f"{lead} reaches over a subtotal of its own rows, so those "
-                "rows are counted twice. Check the range against the block "
-                "it is meant to add."
+                f"{lead} reaches over a subtotal of its own rows. "
+                "Those rows are counted twice."
             )
         lead = f"{label}" if label else f"The range at {at}"
         return (
-            f"{lead} spans a label inside its own range — the range has "
-            "left the block it is meant to cover. Check where the block "
-            "starts."
+            f"{lead} spans a label inside its own range. The range has "
+            "left the block it should cover."
         )
     if finding.rule == "inconsistent-total":
         lead = (
@@ -656,19 +649,19 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             else f"The total at {at} disagrees with the sibling totals beside it"
         )
         return (
-            f"{lead} — a line of totals is one formula dragged across, "
-            "and this cell departs from it. Check which one is right."
+            f"{lead}. A line of totals is one formula dragged across, "
+            "and this one breaks the pattern."
         )
     if finding.rule == "skipped-cell":
-        leaving = (
-            f", leaving {finding.figure} outside the total" if finding.figure else ""
-        )
-        opening = (
-            f"{label} is incomplete: the formula at {at}"
-            if label
-            else f"The total at {at}"
-        )
-        return f"{opening} excludes rows immediately above it{leaving}."
+        #: `findings-voice.md`, rule 2: « The amount is the most
+        #: important word in the finding. It must not sit at the end of
+        #: a trailing clause. » The founder's own worked example is this
+        #: rule: « Total Operating Costs misses 512.5m. » — then the
+        #: mechanism in its own sentence.
+        named = label or f"The total at {at}"
+        if finding.figure:
+            return f"{named} misses {finding.figure}."
+        return f"{named} leaves out rows it should cover."
     if finding.rule == "hardcode-in-formula":
         if finding.figure_unit.endswith("each with its own number"):
             #: The sibling-sheet fold over differing numbers: one
@@ -768,10 +761,7 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         or finding.figure_unit.startswith("repeated on")
     ):
         #: The row and sibling-sheet folds for long formulas.
-        return (
-            f"An unusually complex formula, {finding.detail}. Its logic "
-            "is difficult to trace and verify by hand."
-        )
+        return f"A formula here is too long to check by eye, {finding.detail}."
 
     pulls = (
         "1 cell pulls values from it, and it cannot be traced or checked here."
@@ -785,10 +775,10 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             f"{at} recalculates every time anything in the workbook "
             "changes, so its value never sits still."
         ),
-        "long-formula": (
-            f"{at} contains an unusually complex formula. Its logic is "
-            "difficult to trace and verify by hand."
-        ),
+        #: Never opens with a cell address — `findings-voice.md` rule 1,
+        #: « `E42` means nothing until the file is open ». The address
+        #: rides in the sentence, not at the head of it.
+        "long-formula": (f"The formula at {at} is too long to check by eye."),
         "inconsistent-anchoring": (
             f"{at} anchors its references differently from the rest of "
             "its row, so filling the row again would change its result."
@@ -5010,19 +5000,26 @@ def _hidden_sheets(book: Workbook, result: Audit) -> None:
         )
         if concealed and not holds and not read:
             severity = "smell"
+            #: `findings-voice.md` rule 5, and this is the founder's own
+            #: worked example: « Module1 is very hidden but empty.
+            #: Nothing in the model reads it — safe to delete. » What
+            #: was here guessed at a cause (« most likely left over from
+            #: an older file format ») that nothing had read.
             detail = (
-                f"« {sheet} » is very hidden — invisible in Excel's "
-                "unhide menu — but it is empty and nothing in the model "
-                "reads it. Most likely left over from an older file "
-                "format, and worth deleting rather than fearing."
+                f"« {sheet} » is very hidden but empty. Nothing in the "
+                "model reads it — safe to delete."
             )
         elif concealed:
             severity = "error"
+            #: The other half of rule 5, and the sentence the founder
+            #: quoted as *bad*: « Whatever it holds feeds the model
+            #: without being on any screen » is a consequence nobody
+            #: verified. Their replacement: « Module1 is very hidden and
+            #: has not been read. It does not appear in Excel's unhide
+            #: menu. »
             detail = (
-                f"« {sheet} » is very hidden — it does not appear in "
-                "Excel's unhide menu and can only be reached through "
-                "the VBA editor. Whatever it holds feeds the model "
-                "without being on any screen."
+                f"« {sheet} » is very hidden and has not been read. It "
+                "does not appear in Excel's unhide menu."
             )
         else:
             severity = "smell"
