@@ -17,7 +17,9 @@ carries a `processing` status and the screen polls it: the shape is
 already right for the day the work moves.
 """
 
-from collections.abc import Sequence
+import asyncio
+import json
+from collections.abc import AsyncGenerator, Sequence
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -25,13 +27,16 @@ from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import Depends, File, HTTPException, Query, Response, UploadFile
+from fastapi.responses import StreamingResponse
 
+from polar.agent import Outcome, Step
+from polar.agent import run as agent_run
 from polar.auth.dependencies import WebUserWrite
 from polar.auth.scope import Scope
 from polar.dossier.agent.service import AgentNotConfigured
 from polar.dossier.agent.service import build_client as agent_client
 from polar.exceptions import ClaidorRequestValidationError, ResourceNotFound
-from polar.kit.db.postgres import AsyncReadSession, AsyncSession
+from polar.kit.db.postgres import AsyncReadSession, AsyncSession, AsyncSessionMaker
 from polar.models import (
     Artifact,
     ArtifactKind,
@@ -54,12 +59,14 @@ from polar.models import (
     User,
 )
 from polar.openapi import APITag
-from polar.postgres import get_db_read_session, get_db_session
+from polar.postgres import get_db_read_session, get_db_session, get_db_sessionmaker
 from polar.routing import APIRouter
 from polar.user.repository import UserRepository
 
 from . import auth
 from .agent import service as agent
+from .agent.model_tools import MODEL_TOOLSET
+from .agent.status import stage as run_stage
 from .analytics import ANALYTIC_PASS_NAMES, ANALYTIC_RULE_NAMES
 from .audit import RULE_NAMES
 from .ingest import SUFFIXES, Unreadable, kind_for
@@ -72,7 +79,9 @@ from .schemas import (
     ArtifactRead,
     Ask,
     Asked,
+    AskedClarify,
     AskedRow,
+    AskedStage,
     AskedStep,
     AuditRuleRead,
     CellRead,
@@ -2470,6 +2479,116 @@ def _conversation(body: Ask, finding: Finding | None, scope: str = "") -> str:
     return body.prompt
 
 
+def _answer_rows(outcome: Outcome) -> list[AskedRow]:
+    """The cells behind the answer — the last tool that returned any.
+
+    Verbatim from the tool's own payload; nothing here passes through
+    the language model, which is what keeps a listed figure a looked-up
+    figure.
+    """
+    rows: list[AskedRow] = []
+    for step in outcome.steps:
+        step_rows = step.data.get("rows") if step.ok else None
+        if step_rows:
+            rows = [
+                AskedRow(
+                    ref=str(one.get("ref", "")),
+                    what=str(one.get("what", "")),
+                    value=str(one.get("value", "")),
+                )
+                for one in step_rows
+            ]
+    return rows
+
+
+def _answer_clarify(outcome: Outcome) -> AskedClarify | None:
+    """Did the assistant stop to ask something?
+
+    Read off the tool call rather than the prose, and **the last one
+    wins**: a turn that asked, was answered and asked again is showing
+    its latest question, not its first.
+    """
+    clarify: AskedClarify | None = None
+    for step in outcome.steps:
+        if not step.ok or not step.data.get("await_person"):
+            continue
+        card = step.data.get("card") or {}
+        options = [str(o) for o in (step.data.get("options") or [])]
+        if len(options) < 2:
+            #: The tool refuses this itself; if one ever reaches here,
+            #: drawing a card with nothing to choose would be worse
+            #: than drawing no card at all.
+            continue
+        clarify = AskedClarify(
+            question=str(step.data.get("question", "")),
+            title=str(card.get("title", "")),
+            blurb=str(card.get("blurb", "")),
+            options=options,
+        )
+    return clarify
+
+
+def _asked(
+    task: Any,
+    outcome: Outcome,
+    subject: Artifact | None,
+    others: Sequence[Artifact],
+) -> Asked:
+    """One answer on the wire, however it was asked for.
+
+    Both assist routes build their payload here, deliberately: the
+    streaming one and the plain one differ in *when* a screen learns
+    what happened, never in what happened. Two constructions would
+    eventually disagree about that, and the disagreement would be
+    invisible until somebody compared two screens.
+    """
+    return Asked(
+        clarify=_answer_clarify(outcome),
+        id=task.id,
+        prompt=task.prompt,
+        answer=task.answer,
+        stopped=task.stopped,
+        error=task.error,
+        steps=[
+            AskedStep(
+                ordinal=step.ordinal,
+                tool=step.tool,
+                ok=step.ok,
+                summary=step.summary,
+                milliseconds=step.milliseconds,
+            )
+            for step in outcome.steps
+        ],
+        stages=[
+            _stage(
+                step,
+                subject.filename if subject is not None else "",
+                subject.version if subject is not None else None,
+            )
+            for step in outcome.steps
+        ],
+        rows=_answer_rows(outcome),
+        model=subject.filename if subject is not None else None,
+        model_version=subject.version if subject is not None else None,
+        other_models=[f"{one.filename} (v{one.version})" for one in others],
+    )
+
+
+def _stage(step: Step, model: str, version: int | None) -> AskedStage:
+    """One tool call in the shape the run screen draws it."""
+    one = run_stage(step, model=model, version=version)
+    return AskedStage(
+        ordinal=one.ordinal,
+        tool=one.tool,
+        ok=one.ok,
+        kind=one.kind,
+        title=one.title,
+        sub=one.sub,
+        summary=one.summary,
+        art=one.art,
+    )
+
+
 @router.post("/deals/{dossier_id}/assist", response_model=Asked, status_code=201)
 async def assist(
     dossier_id: UUID,
@@ -2518,41 +2637,160 @@ async def assist(
     except ValueError as problem:
         raise HTTPException(status_code=409, detail=str(problem)) from problem
 
-    #: The last tool that returned rows carries the cells the answer is
-    #: about; the screen draws them from here, never from the prose.
-    rows: list[AskedRow] = []
-    for step in outcome.steps:
-        step_rows = step.data.get("rows") if step.ok else None
-        if step_rows:
-            rows = [
-                AskedRow(
-                    ref=str(one.get("ref", "")),
-                    what=str(one.get("what", "")),
-                    value=str(one.get("value", "")),
-                )
-                for one in step_rows
-            ]
-    return Asked(
-        id=task.id,
-        prompt=task.prompt,
-        answer=task.answer,
-        stopped=task.stopped,
-        error=task.error,
-        steps=[
-            AskedStep(
-                ordinal=step.ordinal,
-                tool=step.tool,
-                ok=step.ok,
-                summary=step.summary,
-                milliseconds=step.milliseconds,
-            )
-            for step in outcome.steps
-        ],
-        rows=rows,
-        model=subject.filename if subject is not None else None,
-        model_version=subject.version if subject is not None else None,
-        other_models=[f"{one.filename} (v{one.version})" for one in others],
+    return _asked(task, outcome, subject, others)
+
+
+@router.post("/deals/{dossier_id}/assist/stream")
+async def assist_stream(
+    dossier_id: UUID,
+    body: Ask,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+    sessionmaker: AsyncSessionMaker = Depends(get_db_sessionmaker),
+) -> StreamingResponse:
+    """The same answer as `/assist`, but while it is being worked out.
+
+    A model question is slow — it is a model call with tool calls inside
+    it, and a real workbook question runs several. The founder's design
+    does not draw a spinner over that: it draws the run, one live step
+    at a time, each line naming the real object it is reading. That is
+    only possible if the steps leave the server *as they happen*, which
+    is what this route is for.
+
+    **Newline-delimited JSON, not SSE.** One object per line, each with
+    a `kind`: `stage` while the run goes on, then exactly one `done`
+    carrying the whole `Asked` payload — the same object `/assist`
+    returns, built by the same function, so the two routes cannot come
+    to disagree about what took place. A run that breaks sends `error`
+    with the server's own sentence and no `done`.
+
+    The plain route stays. A caller that cannot stream — the Office
+    panel behind a proxy that buffers, a test, anything holding an
+    `Asked` and nothing else — asks there and gets the identical answer
+    in one piece, `stages` and all.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    try:
+        client = agent_client()
+    except AgentNotConfigured as problem:
+        raise HTTPException(status_code=503, detail=str(problem)) from problem
+
+    repository = TieOutRepository.from_session(session)
+    models = models_of(await repository.current_artifacts(deal.id))
+    subject, others = (models[0], models[1:]) if models else (None, [])
+    prompt = _conversation(
+        body, None, _scope_line(subject, others) if subject is not None else ""
     )
+
+    #: Loaded here rather than inside the stream, and on purpose: this
+    #: is the one slow thing that can fail in a way the caller should
+    #: hear as an HTTP status. « This deal holds no model » is a 409
+    #: before a byte of the body is written, not an `error` line half
+    #: way down a stream nobody is checking.
+    workspace = await agent.load_model_workspace(session, deal.id, deal.name)
+    if workspace is None:
+        raise HTTPException(
+            status_code=409, detail="this deal holds no model to ask about"
+        )
+
+    user_id = auth_subject.subject.id
+    named = subject.filename if subject is not None else ""
+    version = subject.version if subject is not None else None
+
+    async def lines() -> AsyncGenerator[str, None]:
+        queue: asyncio.Queue[Step] = asyncio.Queue()
+        #: The loop calls this synchronously from inside itself, so it
+        #: hands the step over and returns. Anything slower here would
+        #: slow the run down to the speed of the screen watching it.
+        runner = asyncio.ensure_future(
+            agent_run(
+                client,
+                MODEL_TOOLSET,
+                workspace,
+                prompt,
+                on_step=queue.put_nowait,
+            )
+        )
+
+        def sent(step: Step) -> str:
+            return _ndjson(
+                {"kind": "stage", **_stage(step, named, version).model_dump()}
+            )
+
+        async for step in _as_they_happen(runner, queue):
+            yield sent(step)
+
+        try:
+            outcome = await runner
+        except Exception as problem:  # pragma: no cover — the loop catches its own
+            yield _ndjson({"kind": "error", "detail": str(problem)})
+            return
+
+        #: A session of this route's own. The request's is committed
+        #: when its dependency unwinds, and that happens before this
+        #: body is written — so the one write this route makes opens,
+        #: commits and closes here, where it can be seen to.
+        async with sessionmaker() as writing:
+            task = await agent.record(
+                writing,
+                dossier_id=deal.id,
+                user_id=user_id,
+                prompt=prompt,
+                outcome=outcome,
+            )
+            answer = _asked(task, outcome, subject, others)
+            await writing.commit()
+        yield _ndjson({"kind": "done", **answer.model_dump(mode="json")})
+
+    return StreamingResponse(
+        lines(),
+        media_type="application/x-ndjson",
+        #: Nginx buffers a proxied response by default, which would hold
+        #: every line back until the run ended and turn this route into
+        #: the plain one with extra steps.
+        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-store"},
+    )
+
+
+def _ndjson(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, ensure_ascii=False, default=str) + "\n"
+
+
+async def _as_they_happen(
+    runner: "asyncio.Future[Outcome]",
+    queue: "asyncio.Queue[Step]",
+) -> AsyncGenerator[Step, None]:
+    """Each step the moment it is put down, then the ones left over.
+
+    The whole point of the streaming route is in these few lines, and
+    they are here rather than inside the endpoint so they can be driven
+    on their own. Two things have to hold and neither is obvious.
+
+    **A step leaves before the run ends.** Waiting on the queue *and*
+    on the run together is what makes that true; waiting on the run
+    first would send every line at the end, which is the plain route
+    with more machinery.
+
+    **A step queued as the run finished is still sent.** The last tool
+    call and the model's closing answer land within milliseconds of each
+    other, so the race is the normal case rather than the edge one —
+    and a step dropped there would leave the run and the trace
+    disagreeing about work that actually happened.
+    """
+    while True:
+        waiting = asyncio.ensure_future(queue.get())
+        #: The two futures answer different questions — « is there a
+        #: step » and « is the run over » — so the set is annotated
+        #: rather than inferred down to their only common ancestor.
+        racing: set[asyncio.Future[Any]] = {waiting, runner}
+        done, _ = await asyncio.wait(racing, return_when=asyncio.FIRST_COMPLETED)
+        if waiting in done:
+            yield waiting.result()
+            continue
+        waiting.cancel()
+        break
+    while not queue.empty():
+        yield queue.get_nowait()
 
 
 @router.post("/check-file/{check_id}/ask", response_model=Asked, status_code=201)

@@ -1,0 +1,1128 @@
+{
+ "summary": {
+  "files": 27,
+  "pass": 18,
+  "fail": 4,
+  "refused": 4,
+  "nothing_compared": 0,
+  "reader_failed": 0,
+  "recalc_failed": 1,
+  "cells_compared": 2058595,
+  "cells_matched": 2057986
+ },
+ "files": [
+  {
+   "file": "h7_new_debt_indexation_fds.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 2233,
+   "matched": 2233,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 0,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 21.1
+  },
+  {
+   "file": "h7_new_debt_indexation_fp.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 2772,
+   "matched": 2772,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 0,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 15.2
+  },
+  {
+   "file": "h7_pcm_v2-10_final_proposals.xlsm",
+   "outcome": "fail",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 227365,
+   "matched": 227318,
+   "match_rate": 0.9997932839267257,
+   "mismatched": 47,
+   "mismatches": [
+    {
+     "ref": "Macros!Y98",
+     "stored": "0.00015756726497784257",
+     "computed": 0.00015756726861582138,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "C_Fin_Summ!F253",
+     "stored": "0.12205083966255187",
+     "computed": 0.12205084552668384,
+     "tolerance": 1.2205084552668386e-10
+    },
+    {
+     "ref": "C_Revenue!Y369",
+     "stored": "0.00015756726497784257",
+     "computed": 0.00015756726861582138,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AP186",
+     "stored": "-5.4569682106375694E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AQ186",
+     "stored": "-4.547473508864641E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AS186",
+     "stored": "-5.002220859751105E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AT186",
+     "stored": "-6.366462912410498E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AV186",
+     "stored": "-7.73070496506989E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AW186",
+     "stored": "0",
+     "computed": -1.000444171950221e-11,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AX186",
+     "stored": "-4.547473508864641E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AZ186",
+     "stored": "-3.637978807091713E-12",
+     "computed": -9.094947017729282e-12,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BA186",
+     "stored": "-5.002220859751105E-12",
+     "computed": -9.094947017729282e-12,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BB186",
+     "stored": "0",
+     "computed": -8.185452315956354e-12,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BC186",
+     "stored": "-4.547473508864641E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BE186",
+     "stored": "-5.4569682106375694E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BF186",
+     "stored": "4.547473508864641E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BH186",
+     "stored": "-7.275957614183426E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BI186",
+     "stored": "-7.275957614183426E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BJ186",
+     "stored": "-1.3642420526593924E-11",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AX192",
+     "stored": "-1.3642420526593924E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AZ192",
+     "stored": "-1.8189894035458565E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BB192",
+     "stored": "-1.3642420526593924E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BD192",
+     "stored": "-1.3642420526593924E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BE192",
+     "stored": "-1.3642420526593924E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BF192",
+     "stored": "-1.3642420526593924E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    }
+   ],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [
+    "O_FinStats!G3",
+    "Version log!F10"
+   ],
+   "volatile_roots_count": 2,
+   "volatile_cone": 2,
+   "no_stored_value": 17559,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 766.7
+  },
+  {
+   "file": "h7_pcm_v2-11_final_determination.xlsm",
+   "outcome": "fail",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 227403,
+   "matched": 227374,
+   "match_rate": 0.99987247309842,
+   "mismatched": 29,
+   "mismatches": [
+    {
+     "ref": "C_Fin_Summ!F253",
+     "stored": "0.11870334744453431",
+     "computed": 0.11870334872446474,
+     "tolerance": 1.1870334872446474e-10
+    },
+    {
+     "ref": "O_FinStats!AT186",
+     "stored": "-5.4569682106375694E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AU186",
+     "stored": "-5.9117155615240335E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AW186",
+     "stored": "-4.547473508864641E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AX186",
+     "stored": "-6.821210263296962E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AY186",
+     "stored": "-1.000444171950221E-11",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!AZ186",
+     "stored": "-1.000444171950221E-11",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BC186",
+     "stored": "-7.275957614183426E-12",
+     "computed": -1.77351466845721e-11,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BD186",
+     "stored": "-5.4569682106375694E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BE186",
+     "stored": "-1.8189894035458565E-11",
+     "computed": -1.4551915228366852e-11,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BF186",
+     "stored": "-2.1827872842550278E-11",
+     "computed": -1.7280399333685637e-11,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BG186",
+     "stored": "-1.1823431123048067E-11",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BH186",
+     "stored": "-1.1823431123048067E-11",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats!BJ186",
+     "stored": "-1.9099388737231493E-11",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!AT186",
+     "stored": "4.547473508864641E-13",
+     "computed": 5.9117155615240335e-12,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!AU186",
+     "stored": "-5.9117155615240335E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!AW186",
+     "stored": "-4.547473508864641E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!AX186",
+     "stored": "-6.821210263296962E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!AY186",
+     "stored": "-1.000444171950221E-11",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!AZ186",
+     "stored": "-5.4569682106375694E-12",
+     "computed": 4.547473508864641e-12,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!BC186",
+     "stored": "-2.2737367544323206E-12",
+     "computed": -1.2732925824820995e-11,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!BD186",
+     "stored": "4.547473508864641E-13",
+     "computed": 5.9117155615240335e-12,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!BE186",
+     "stored": "-1.0913936421275139E-11",
+     "computed": -7.275957614183426e-12,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!BF186",
+     "stored": "-1.2732925824820995E-11",
+     "computed": -8.185452315956354e-12,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "O_FinStats - Deltas!BG186",
+     "stored": "-4.547473508864641E-12",
+     "computed": 7.275957614183426e-12,
+     "tolerance": 1e-12
+    }
+   ],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [
+    "O_FinStats!G3",
+    "Version log!F10"
+   ],
+   "volatile_roots_count": 2,
+   "volatile_cone": 2,
+   "no_stored_value": 17459,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 764.4
+  },
+  {
+   "file": "v1_2023-02.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19513,
+   "matched": 19513,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1225,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 96.5
+  },
+  {
+   "file": "v2_2023-07-14.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19398,
+   "matched": 19398,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1225,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 96.0
+  },
+  {
+   "file": "v2_2023-07-31.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19398,
+   "matched": 19398,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1225,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 94.5
+  },
+  {
+   "file": "v3_2023-10.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19298,
+   "matched": 19298,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1224,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 94.4
+  },
+  {
+   "file": "v3_2023-11.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19298,
+   "matched": 19298,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1224,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 91.9
+  },
+  {
+   "file": "v3_2024-01.xlsm",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19264,
+   "matched": 19264,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1224,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 98.3
+  },
+  {
+   "file": "v4_2024-07.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19261,
+   "matched": 19261,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1224,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 92.7
+  },
+  {
+   "file": "v4_2025-01.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19261,
+   "matched": 19261,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1224,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 90.6
+  },
+  {
+   "file": "v4_2025-07.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19261,
+   "matched": 19261,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1224,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 89.8
+  },
+  {
+   "file": "v4_2026-01.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19261,
+   "matched": 19261,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1224,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 89.6
+  },
+  {
+   "file": "v5_2026-06.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 19261,
+   "matched": 19261,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 1224,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 92.8
+  },
+  {
+   "file": "DRAFT_ET3 PCFM_Jun25.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 13878,
+   "matched": 13878,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 10007,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 77.0
+  },
+  {
+   "file": "DRAFT_GD3 PCFM_Jun25.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 8185,
+   "matched": 8185,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 6214,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 46.8
+  },
+  {
+   "file": "DRAFT_GT3 PCFM_Jun25.xlsx",
+   "outcome": "refused",
+   "route": "arbiter",
+   "denylist": [
+    "engine-gap:SINGLE"
+   ],
+   "denylist_cells": 29
+  },
+  {
+   "file": "RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+   "outcome": "fail",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 432658,
+   "matched": 432388,
+   "match_rate": 0.9993759505198101,
+   "mismatched": 9,
+   "mismatches": [
+    {
+     "ref": "Depn!CN87",
+     "stored": "1.1368683772161603E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "Depn!CP89",
+     "stored": "2.7284841053187847E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "Depn!CQ90",
+     "stored": "2.7284841053187847E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "Depn!CN190",
+     "stored": "1.1368683772161603E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "Depn!CP192",
+     "stored": "2.7284841053187847E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "Depn!CQ193",
+     "stored": "2.7284841053187847E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "Depn!CN395",
+     "stored": "1.1368683772161603E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "Depn!CP397",
+     "stored": "2.7284841053187847E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "Depn!CQ398",
+     "stored": "2.7284841053187847E-12",
+     "computed": 0.0,
+     "tolerance": 1e-12
+    }
+   ],
+   "engine_errors": 261,
+   "engine_errors_sample": [
+    {
+     "ref": "RatingSimulator!F19",
+     "stored": "8.162747239412692",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AU22",
+     "stored": "7.902439024390245",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AV22",
+     "stored": "7.902439024390245",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AW22",
+     "stored": "7.902439024390245",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AX22",
+     "stored": "8.343283582089551",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AY22",
+     "stored": "8.343283582089551",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AP57",
+     "stored": "1.8163625804580448",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AQ57",
+     "stored": "1.4641900039000881",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AR57",
+     "stored": "1.3918225930468517",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AS57",
+     "stored": "1.103786295359366",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AT57",
+     "stored": "1.0133793401356543",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AU57",
+     "stored": "1.8409631830228357",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AV57",
+     "stored": "1.8014827574615087",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AW57",
+     "stored": "1.7767055766893594",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AX57",
+     "stored": "1.7324384193393039",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AY57",
+     "stored": "1.7104211320136014",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AP58",
+     "stored": "0.5630138620890993",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AQ58",
+     "stored": "0.547173459114461",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AR58",
+     "stored": "0.5542160480870336",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AS58",
+     "stored": "0.5812677367737197",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AT58",
+     "stored": "0.6242231821033029",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AU58",
+     "stored": "0.5500171024875055",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AV58",
+     "stored": "0.5500203655568399",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AW58",
+     "stored": "0.5500228719406829",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AX58",
+     "stored": "0.5500277159157677",
+     "computed": "#ERR:502"
+    }
+   ],
+   "volatile_roots": [
+    "ScenarioRun_AllOutputData!G27"
+   ],
+   "volatile_roots_count": 1,
+   "volatile_cone": 282,
+   "no_stored_value": 133894,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 1878.1
+  },
+  {
+   "file": "RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+   "outcome": "recalc-failed",
+   "error": "CalculatorError: no answer for scripts/corpus_au_uk/ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm within 1800s"
+  },
+  {
+   "file": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 304,
+   "matched": 304,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 0,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 3.4
+  },
+  {
+   "file": "RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 243285,
+   "matched": 243285,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 95737,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 1092.7
+  },
+  {
+   "file": "RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+   "outcome": "fail",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 447977,
+   "matched": 447714,
+   "match_rate": 0.999412916288113,
+   "mismatched": 2,
+   "mismatches": [
+    {
+     "ref": "Checks!AQ11",
+     "stored": "-6.821210263296962E-13",
+     "computed": 5.115907697472721e-13,
+     "tolerance": 1e-12
+    },
+    {
+     "ref": "FinancialStatements!AQ96",
+     "stored": "-6.821210263296962E-13",
+     "computed": 5.115907697472721e-13,
+     "tolerance": 1e-12
+    }
+   ],
+   "engine_errors": 261,
+   "engine_errors_sample": [
+    {
+     "ref": "RatingSimulator!F19",
+     "stored": "6.230769230769231",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AU22",
+     "stored": "6.230769230769231",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AV22",
+     "stored": "6.230769230769231",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AW22",
+     "stored": "6.230769230769231",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AX22",
+     "stored": "6.230769230769231",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AY22",
+     "stored": "6.230769230769231",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AP58",
+     "stored": "1.7950952579755108",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AQ58",
+     "stored": "1.727785360312463",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AR58",
+     "stored": "1.7357199147282956",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AS58",
+     "stored": "1.9135175642490074",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AT58",
+     "stored": "2.1201659871878937",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AU58",
+     "stored": "1.924785342697764",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AV58",
+     "stored": "1.9242532411955335",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AW58",
+     "stored": "1.924793845857418",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AX58",
+     "stored": "1.9351778294211417",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AY58",
+     "stored": "1.9236006703377602",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AP59",
+     "stored": "0.5672780375875601",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AQ59",
+     "stored": "0.5445776252813701",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AR59",
+     "stored": "0.5264935187491818",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AS59",
+     "stored": "0.49787372724022805",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AT59",
+     "stored": "0.4833793600381103",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AU59",
+     "stored": "0.5929781651436116",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AV59",
+     "stored": "0.5902997045631457",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AW59",
+     "stored": "0.5862778423749856",
+     "computed": "#ERR:502"
+    },
+    {
+     "ref": "RatingSimulator!AX59",
+     "stored": "0.5743760363489869",
+     "computed": "#ERR:502"
+    }
+   ],
+   "volatile_roots": [
+    "ScenarioRun_AllOutputData!G27"
+   ],
+   "volatile_roots_count": 1,
+   "volatile_cone": 256,
+   "no_stored_value": 130937,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 1905.2
+  },
+  {
+   "file": "final_et3_bpfm.xlsm",
+   "outcome": "refused",
+   "route": "arbiter",
+   "denylist": [
+    "engine-gap:SINGLE"
+   ],
+   "denylist_cells": 10
+  },
+  {
+   "file": "final_gd3_bpfm.xlsm",
+   "outcome": "refused",
+   "route": "arbiter",
+   "denylist": [
+    "engine-gap:SINGLE"
+   ],
+   "denylist_cells": 10
+  },
+  {
+   "file": "final_gt3_bpfm.xlsm",
+   "outcome": "refused",
+   "route": "arbiter",
+   "denylist": [
+    "engine-gap:SINGLE"
+   ],
+   "denylist_cells": 10
+  },
+  {
+   "file": "final_wacc.xlsx",
+   "outcome": "pass",
+   "engine": "LibreOffice 25.8 (UNO, /opt/libreoffice25.8/program)",
+   "iterative_file": false,
+   "compared": 240061,
+   "matched": 240061,
+   "match_rate": 1.0,
+   "mismatched": 0,
+   "mismatches": [],
+   "engine_errors": 0,
+   "engine_errors_sample": [],
+   "volatile_roots": [],
+   "volatile_roots_count": 0,
+   "volatile_cone": 0,
+   "no_stored_value": 95656,
+   "not_computed": 0,
+   "not_computed_sample": [],
+   "seconds_coarse": 1058.0
+  }
+ ]
+}

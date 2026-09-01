@@ -498,6 +498,50 @@ export interface AskedRow {
   value: string
 }
 
+/**
+ * The chat asking one question back, before it does the work.
+ *
+ * Read off the assistant's own tool call, never off its prose — an
+ * option it narrated but did not put in the call is an option the
+ * screen must not offer.
+ */
+export interface AskedClarify {
+  question: string
+  /** Two or three words naming the work — « Targeted Check ». */
+  title: string
+  /** One line saying what that work produces. */
+  blurb: string
+  /** Two to four choices. **The last is drawn as the primary.** */
+  options: string[]
+}
+
+/**
+ * One step of a run, in the shape the run screen draws.
+ *
+ * The same tool call as `AskedStep`, dressed for a different job.
+ * `AskedStep` is the trace, kept with the answer so a reader can check
+ * it; this is the live view — what is happening right now, named, while
+ * it is happening. They share an `ordinal` and a `summary`, so the two
+ * can never disagree about what took place.
+ */
+export interface AskedStage {
+  ordinal: number
+  tool: string
+  ok: boolean
+  /** `model` or `source` — which file icon sits beside the step. */
+  kind: string
+  /** The activity: « Reading the workbook ». */
+  title: string
+  /** What is being done right now, naming the real object — the
+   *  assistant's own status line where it wrote one. */
+  sub: string
+  /** The tool's own line, shown once the run is finished. */
+  summary: string
+  /** What the step produced, named. **Empty is meaningful**: the design
+   *  draws a skeleton there rather than a guess. */
+  art: string
+}
+
 export interface Asked {
   id: string
   prompt: string
@@ -506,6 +550,10 @@ export interface Asked {
   stopped: 'answered' | 'step_limit' | 'failed'
   error: string | null
   steps: AskedStep[]
+  /** Set when the assistant stopped to settle one thing first. The
+   *  screen draws the card and waits; the pick returns as the next
+   *  message, so the model never guesses which way the person went. */
+  clarify?: AskedClarify | null
   /** The cells behind the answer, from the last tool that returned any. */
   rows?: AskedRow[]
   /**
@@ -517,6 +565,9 @@ export interface Asked {
   model_version?: number | null
   /** The deal's other models — empty on the ordinary deal. */
   other_models?: string[]
+  /** The run, step by step. The streaming call delivers these one at a
+   *  time as they happen; they arrive again, complete, with the answer. */
+  stages?: AskedStage[]
 }
 
 export interface GridCell {
@@ -1302,6 +1353,94 @@ export class TieOutApi {
       method: 'POST',
       body: JSON.stringify({ prompt, history: options.history ?? [] }),
     })
+  }
+
+  /**
+   * The same answer as `assist`, but while it is being worked out.
+   *
+   * A model question is a model call with tool calls inside it, and a
+   * real workbook question runs several — tens of seconds, sometimes
+   * more. The design does not draw a spinner over that: it draws the
+   * run, one live step at a time, each line naming the real object.
+   * `onStage` is called with each step **as the server finishes it**,
+   * which is the whole reason this exists beside `assist`.
+   *
+   * Newline-delimited JSON: one object per line, `stage` while the run
+   * goes on and one `done` carrying the answer. A stream that ends
+   * without a `done` is a run that broke, and that is thrown rather
+   * than resolved with a half answer — an answer built from the stages
+   * alone would be a summary this client wrote, not one the model did.
+   */
+  async assistStream(
+    dealId: string,
+    prompt: string,
+    options: { history?: AskTurn[] } = {},
+    onStage?: (stage: AskedStage) => void,
+  ): Promise<Asked> {
+    const token = this.options.token?.() ?? null
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/deals/${dealId}/assist/stream`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          prompt,
+          history: options.history ?? [],
+          finding_id: null,
+        }),
+      },
+    )
+    if (!response.ok || response.body === null) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ??
+          (response.ok
+            ? 'the answer could not be read'
+            : 'something went wrong'),
+      )
+    }
+
+    const reader = response.body.getReader()
+    const decode = new TextDecoder()
+    let rest = ''
+    let answer: Asked | null = null
+    let failed = ''
+
+    // One line may arrive split across two chunks, and two lines may
+    // arrive in one — so the tail is carried rather than assumed whole.
+    const take = (line: string) => {
+      const trimmed = line.trim()
+      if (!trimmed) return
+      const event = JSON.parse(trimmed) as
+        | ({ kind: 'stage' } & AskedStage)
+        | ({ kind: 'done' } & Asked)
+        | { kind: 'error'; detail: string }
+      if (event.kind === 'stage') onStage?.(event)
+      else if (event.kind === 'done') answer = event
+      else failed = event.detail
+    }
+
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      rest += decode.decode(value, { stream: true })
+      const lines = rest.split('\n')
+      rest = lines.pop() ?? ''
+      for (const line of lines) take(line)
+    }
+    if (rest.trim()) take(rest)
+
+    if (failed) throw new ApiError(500, failed)
+    if (answer === null)
+      throw new ApiError(500, 'the answer ended before it arrived')
+    return answer
   }
 
   /** Every figure in a document, by page, and what became of each. */

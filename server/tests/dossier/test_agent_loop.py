@@ -332,3 +332,137 @@ class TestTheFakeIsNotLying:
         assert outcome.answer == "One document."
         assert outcome.input_tokens == 22
         assert outcome.output_tokens == 14
+
+
+def says_and_calls(text: str, name: str, arguments: dict[str, Any] | None = None):
+    """A turn where the assistant speaks *and* reaches for a tool.
+
+    The shape the founder's status lines actually arrive in: « Reading
+    the debt schedule », then the call that reads it.
+    """
+    return FakeMessage(
+        [
+            FakeBlock(type="text", text=text),
+            FakeBlock(
+                type="tool_use",
+                id=f"call_{name}",
+                name=name,
+                input=arguments or {},
+            ),
+        ],
+        stop_reason="tool_use",
+    )
+
+
+@pytest.mark.asyncio
+class TestWatchingTheRunHappen:
+    """The run reaches the screen while it runs, not after it.
+
+    A model question takes tens of seconds and several tool calls. The
+    founder's design does not draw a spinner over that — it draws the
+    steps, live. That is only possible if the loop says something as
+    each one finishes, which is what `on_step` is.
+    """
+
+    async def test_each_step_is_announced_as_it_finishes(self) -> None:
+        client = FakeClient(
+            calls("list_documents"),
+            calls("search_documents", {"query": "indemnity"}),
+            says("No indemnity."),
+        )
+        seen: list[str] = []
+
+        outcome = await run(
+            client,
+            TOOLSET,
+            workspace(document("nothing here")),
+            "Indemnity?",
+            on_step=lambda step: seen.append(step.tool),
+        )
+
+        assert seen == ["list_documents", "search_documents"]
+        assert [step.tool for step in outcome.steps] == seen
+
+    async def test_the_announcement_carries_the_finished_step(self) -> None:
+        #: Announced *after* the tool ran, not before: a step handed
+        #: over with no summary would put an empty line on the screen
+        #: and call it progress.
+        client = FakeClient(calls("list_documents"), says("Done."))
+        seen: list[Any] = []
+
+        await run(
+            client,
+            TOOLSET,
+            workspace(document("x")),
+            "Go",
+            on_step=seen.append,
+        )
+
+        assert len(seen) == 1
+        assert seen[0].summary
+        assert seen[0].ordinal == 1
+
+    async def test_a_run_that_is_not_watched_behaves_identically(self) -> None:
+        script = [calls("list_documents"), says("Done.")]
+        watched = await run(
+            FakeClient(*script),
+            TOOLSET,
+            workspace(document("x")),
+            "Go",
+            on_step=lambda step: None,
+        )
+        alone = await run(
+            FakeClient(*[calls("list_documents"), says("Done.")]),
+            TOOLSET,
+            workspace(document("x")),
+            "Go",
+        )
+
+        assert watched.answer == alone.answer
+        assert [s.tool for s in watched.steps] == [s.tool for s in alone.steps]
+
+
+@pytest.mark.asyncio
+class TestTheAssistantsOwnStatusLine:
+    """What it said before it called the tool, kept with the call.
+
+    The founder asks the assistant for « one short status line per
+    step ». It arrives as text in the same turn as the tool call, and
+    the loop is the only place that can pair the two.
+    """
+
+    async def test_what_it_said_travels_with_the_call(self) -> None:
+        client = FakeClient(
+            says_and_calls("Reading the documents", "list_documents"),
+            says("Done."),
+        )
+
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
+
+        assert outcome.steps[0].said == "Reading the documents"
+
+    async def test_a_silent_call_says_nothing_rather_than_something(self) -> None:
+        client = FakeClient(calls("list_documents"), says("Done."))
+
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
+
+        assert outcome.steps[0].said == ""
+
+    async def test_one_line_covers_the_turn_it_was_written_for(self) -> None:
+        #: Two calls in one turn share one status line, and repeating it
+        #: on both would draw two steps that claim to be doing the same
+        #: thing. The first carries it; the second is honest about
+        #: having none of its own.
+        turn = FakeMessage(
+            [
+                FakeBlock(type="text", text="Reading the documents"),
+                FakeBlock(type="tool_use", id="a", name="list_documents", input={}),
+                FakeBlock(type="tool_use", id="b", name="list_documents", input={}),
+            ],
+            stop_reason="tool_use",
+        )
+        client = FakeClient(turn, says("Done."))
+
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
+
+        assert [step.said for step in outcome.steps] == ["Reading the documents", ""]

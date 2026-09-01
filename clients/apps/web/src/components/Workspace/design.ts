@@ -174,6 +174,7 @@ export const fileIcon = {
   doc: '/workspace/word.webp',
   xls: '/workspace/excel.webp',
   mail: '/workspace/outlook.webp',
+  pdf: '/workspace/pdf.webp',
 } as const
 
 export const microsoftLogo = '/workspace/microsoft.webp'

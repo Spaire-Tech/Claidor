@@ -29,11 +29,50 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Asked, AskedRow, AskTurn, DealListItem, TieOutApi } from './../api'
-import { font, ink } from './../design'
+import {
+  Asked,
+  AskedRow,
+  AskedStage,
+  AskTurn,
+  DealListItem,
+  TieOutApi,
+} from './../api'
+import { fileIcon, font, ink } from './../design'
+
+/**
+ * One choice offered on a clarifying question.
+ *
+ * The design's rule, from `REV_ASKS`: **the last option is the
+ * primary one** — dark, filled, 9px radius — and every option before
+ * it is a grey text pill. That is why the expensive, wider action
+ * ends the row rather than opening it: « Run Workflow » after « From
+ * scratch », « All 20 » after « Just this cell », « Run Excel-exact »
+ * after « Leave as refused ».
+ */
+export interface AskOption {
+  label: string
+  /** What running this choice means. Only the person may pick. */
+  pick: () => void
+}
+
+/** A step in a run, as the design draws it: title, sub-line, state. */
+export interface RunStage {
+  icon: string
+  title: string
+  sub: string
+  /** The tool's own line — « Walked back from Debt!F44 (6 inputs) ».
+   *  Shown in place of `sub` once the run has finished, because by then
+   *  what it *found* beats what it was setting out to do. */
+  summary?: string
+  /** Green ring while running, green tick when this step is done. */
+  done?: boolean
+  /** The thing the step produced, named. Absent while it is pending. */
+  art?: string
+  artIcon?: string
+}
 
 interface Message {
-  role: 'you' | 'working' | 'answer'
+  role: 'you' | 'working' | 'answer' | 'ask' | 'run' | 'verdict'
   text: string
   rows?: AskedRow[]
   /** The boundary paragraph — the answer's last, drawn in grey. */
@@ -44,6 +83,44 @@ interface Message {
    *  drawn only where the deal carries more than one model, because on
    *  every other deal it is noise. Off the artifacts, not the prose. */
   scope?: { model: string; version: number | null; others: string[] }
+
+  // --- the clarifying question (role 'ask') ------------------------
+  //
+  // The founder's pattern: the person asks, the chat asks **one**
+  // question back, and the card names what it would do. `text` is the
+  // question; the card is what running it produces.
+  /** « Model Review », « Version Comparison », « Determined Fix ». */
+  cardTitle?: string
+  /** One line under the title, saying what the run actually does. */
+  cardBlurb?: string
+  /** File-kind icons, overlapped by -7px after the first. */
+  cardIcons?: string[]
+  /** The choices. Last is primary. Empty once one has been picked. */
+  options?: AskOption[]
+
+  // --- the run (role 'run') ----------------------------------------
+  /** Every step; the live one is the last not `done`. */
+  stages?: RunStage[]
+  /** The run is still going. The steps here have all finished — they
+   *  arrive finished — so this is what the spinning ring means: more
+   *  is coming, not that this step is unfinished. */
+  busy?: boolean
+
+  // --- the verdict (role 'verdict') --------------------------------
+  /** The lines behind the answer, hidden until the person opens them. */
+  traceLines?: string[]
+  /** Counts by kind, with the design's dot colours. */
+  tallies?: { label: string; n: number; dot: string }[]
+  /** What the counts are *of*, and when they were last true. The
+   *  design's tally row is bare numbers; these are the model's stored
+   *  findings rather than something this answer produced, and a reader
+   *  is owed the difference in one line. */
+  talliesNote?: string
+  /** What the run produced, as cards. */
+  outputs?: { icon: string; name: string; pick?: () => void }[]
+  /** The dark button, and the blue text link beside it. */
+  primaryAction?: string
+  altAction?: string
 }
 
 /** A finished conversation, kept on this machine — the rail's rows
@@ -86,6 +163,51 @@ const freshId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
 /** The serif S — the design's mark on everything Swens says. */
+/**
+ * The swan — revision 2's mark, drawn but **not currently used**.
+ *
+ * The founder's design replaced the serif « S » with this bird, and
+ * then asked for the S back « for now ». The drawing is kept here
+ * rather than deleted, because it is theirs and the decision was
+ * explicitly temporary: switching is one line in `Mark` below.
+ *
+ * The three paths are the design file's own, copied rather than
+ * redrawn — the neck and head, the beak, the body — at `#15171b`,
+ * 4.6 stroke, with `margin-left:-4px` so the bird's optical left edge
+ * lines up with the text column above it.
+ */
+export const SwanMark = ({ top = 0 }: { top?: number }) => (
+  <svg
+    width={26}
+    height={26}
+    viewBox="0 0 100 100"
+    fill="none"
+    stroke="#15171b"
+    strokeWidth={4.6}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{
+      flex: '0 0 26px',
+      marginLeft: -4,
+      display: 'block',
+      marginTop: top,
+    }}
+    aria-hidden
+  >
+    <path d="M68,74 C68,46 64,25 50,25 C38,25 32.5,36 38.5,45 C43,51.5 53,51.5 56,43.5" />
+    <path d="M56,43.5 L48.5,48.5" />
+    <path d="M20,55 C44,50 65,57 70,77 C48,86 26,74 20,55" />
+  </svg>
+)
+
+/**
+ * The assistant's mark wherever it speaks — the serif « S », by the
+ * founder's instruction (« bring back the S actually. For now. »).
+ *
+ * `top` is the per-state nudge: the mark sits against the first line
+ * of text in each state rather than against the box, so a status line,
+ * an answer and a verdict each set their own.
+ */
 const Mark = ({ top = 0 }: { top?: number }) => (
   <span
     style={{
@@ -101,6 +223,722 @@ const Mark = ({ top = 0 }: { top?: number }) => (
     S
   </span>
 )
+
+/**
+ * The clarifying question's card and its choices.
+ *
+ * The founder's flow, in one shape: the person asks, the chat asks
+ * **one** question back — never two — and names what it would do
+ * before doing it. The question is the serif line above; this is the
+ * card beneath, and nothing runs until a choice is picked.
+ *
+ * Every value here is the design's own. The card is `#f6f6f4` at 16px
+ * radius; the title 14.5px near-black; the blurb 13.5px in `#9aa1ab`;
+ * the file icons 22px, overlapping by 7px after the first. The
+ * choices sit **right-aligned under the card**, and the last one is
+ * the primary — dark fill, 9px radius, 500 weight — while the rest
+ * are grey text pills at 999px.
+ */
+const Choices = ({
+  title,
+  blurb,
+  icons,
+  options,
+}: {
+  title: string
+  blurb: string
+  icons: string[]
+  options: AskOption[]
+}) => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: 12,
+      maxWidth: 420,
+      animation: 'pcIn .3s ease both',
+    }}
+  >
+    <div
+      style={{
+        alignSelf: 'stretch',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        background: '#f6f6f4',
+        borderRadius: 16,
+        padding: '15px 18px',
+      }}
+    >
+      <span
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 14.5,
+            letterSpacing: '-.01em',
+            color: '#15171b',
+          }}
+        >
+          {title}
+        </span>
+        <span
+          style={{
+            fontSize: 13.5,
+            lineHeight: 1.45,
+            color: '#9aa1ab',
+            textWrap: 'pretty',
+          }}
+        >
+          {blurb}
+        </span>
+      </span>
+      <span style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center' }}>
+        {icons.map((src, i) => (
+          <span
+            key={`${src}-${i}`}
+            style={{
+              width: 22,
+              height: 22,
+              marginLeft: i === 0 ? 0 : -7,
+              backgroundImage: `url(${src})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+            }}
+          />
+        ))}
+      </span>
+    </div>
+    <div
+      style={{
+        alignSelf: 'flex-end',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      {options.map((o, i) => {
+        const primary = i === options.length - 1
+        return (
+          <button
+            key={o.label}
+            onClick={o.pick}
+            style={{
+              border: 0,
+              background: primary ? '#1f2937' : 'transparent',
+              color: primary ? '#fff' : '#8f96a0',
+              borderRadius: primary ? 9 : 999,
+              height: 36,
+              padding: primary ? '0 16px' : '0 12px',
+              font: 'inherit',
+              fontSize: 14,
+              fontWeight: primary ? 500 : 400,
+              cursor: 'pointer',
+            }}
+          >
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  </div>
+)
+
+/**
+ * The assistant's own line, shimmering while it works.
+ *
+ * The design's one moving thing on this screen: a gradient swept across
+ * the text rather than a spinner beside it. The words are never this
+ * file's — they are the assistant's status line for the step it is on,
+ * and « Thinking » only before there is one.
+ */
+const Shimmer = ({ text, top = 0 }: { text: string; top?: number }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+    <Mark top={top} />
+    <span
+      style={{
+        fontSize: 15,
+        letterSpacing: '-.006em',
+        background:
+          'linear-gradient(100deg,#c9ccd2 20%,#6b7280 42%,#c9ccd2 64%)',
+        backgroundSize: '220% 100%',
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        color: 'transparent',
+        animation: 'aShimmer 1.8s linear infinite',
+      }}
+    >
+      {text}
+    </span>
+  </div>
+)
+
+const Thinking = () => <Shimmer text="Thinking" top={1} />
+
+/**
+ * A run in progress: « Thinking », then the live step and its result.
+ *
+ * The design shows one step at a time rather than a list — the step's
+ * title in 16px, its sub-line under a **green ring that becomes a
+ * green tick**, and the thing it produced in a raised card that
+ * starts as a grey skeleton and fills in when the name is known.
+ * Steps are indented 36px so they sit under the mark's text column.
+ */
+const Run = ({ stages, busy }: { stages: RunStage[]; busy?: boolean }) => {
+  const live = stages[stages.length - 1]
+  //: Nothing has come back yet. « Thinking » alone is the honest
+  //: screen: a step drawn before one has happened would be a step this
+  //: file invented.
+  if (!live) return <Thinking />
+  //: The ring belongs to the *run*, not to this step — every step
+  //: here has already finished. While more is coming it spins over the
+  //: line the assistant wrote for the work it is doing; when the run
+  //: ends it becomes a tick over what the tool actually found.
+  const finished = !busy
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
+      <Thinking />
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          paddingLeft: 36,
+        }}
+      >
+        <div
+          key={live.title}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 13,
+            animation: 'pcIn .4s ease both',
+          }}
+        >
+          <span
+            style={{
+              flex: '0 0 18px',
+              width: 18,
+              height: 18,
+              backgroundImage: `url(${live.icon})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+            }}
+          />
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 500,
+              letterSpacing: '-.012em',
+              color: '#31353b',
+            }}
+          >
+            {live.title}
+          </span>
+        </div>
+        <div
+          key={live.sub}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            animation: 'pcIn .4s ease both',
+          }}
+        >
+          {finished ? (
+            <svg
+              width={15}
+              height={15}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#1f8a4c"
+              strokeWidth={2.1}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ flex: '0 0 15px' }}
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="9.4" />
+              <polyline points="7.9,12.5 10.8,15.4 16.3,9.2" />
+            </svg>
+          ) : (
+            <span
+              style={{
+                flex: '0 0 15px',
+                width: 15,
+                height: 15,
+                borderRadius: '50%',
+                border: '1.8px solid rgba(31,138,76,.16)',
+                borderTopColor: '#1f8a4c',
+                animation: 'aRing 1s linear infinite',
+              }}
+            />
+          )}
+          <span style={{ fontSize: 14, color: '#9aa1ab', textWrap: 'pretty' }}>
+            {finished ? (live.summary ?? live.sub) : live.sub}
+          </span>
+        </div>
+        <div
+          style={{
+            alignSelf: 'flex-start',
+            minWidth: 'min(380px,100%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            background: '#fff',
+            borderRadius: 16,
+            boxShadow:
+              '0 0 0 .5px rgba(30,32,38,.07), 0 8px 24px rgba(16,20,28,.05)',
+            padding: '13px 18px 13px 15px',
+            animation: 'pcIn .4s ease both',
+          }}
+        >
+          {live.art ? (
+            <>
+              <span
+                style={{
+                  flex: '0 0 20px',
+                  width: 20,
+                  height: 20,
+                  backgroundImage: `url(${live.artIcon ?? live.icon})`,
+                  backgroundSize: 'contain',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center',
+                }}
+              />
+              <span
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  fontSize: 14.5,
+                  letterSpacing: '-.01em',
+                  color: '#31353b',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  animation: 'pcIn .4s ease both',
+                }}
+              >
+                {live.art}
+              </span>
+            </>
+          ) : (
+            //: The skeleton. It is not decoration — it is the honest
+            //: shape of « something is coming and I cannot name it
+            //: yet », and it becomes the real name in place.
+            <>
+              <span
+                style={{
+                  flex: '0 0 24px',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 8,
+                  background: '#f1f2f4',
+                  animation: 'aFade 1.6s ease-in-out infinite',
+                }}
+              />
+              <span
+                style={{
+                  flex: 1,
+                  height: 10,
+                  maxWidth: 290,
+                  borderRadius: 999,
+                  background: '#f1f2f4',
+                  animation: 'aFade 1.6s ease-in-out infinite',
+                }}
+              />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The verdict: what the run concluded, and everything behind it.
+ *
+ * Read top to bottom the way the design draws it, and the order is the
+ * founder's voice rule made visual — **the answer leads, the evidence
+ * follows**. The trace toggle sits *above* the lead but collapsed, so
+ * the working is available without being in the way; then the lead
+ * sentence in the reading serif; then the counts; then what was
+ * produced; then what to do next.
+ *
+ * The tallies never add up into a score. Three errors and five
+ * warnings are three errors and five warnings — a defect and a
+ * judgement call do not sum, which is why each keeps its own dot.
+ */
+const Verdict = ({
+  lead,
+  traceLines,
+  tallies,
+  talliesNote,
+  outputs,
+  primaryAction,
+  altAction,
+  onPrimary,
+  onAlt,
+}: {
+  lead: string
+  traceLines: string[]
+  tallies: { label: string; n: number; dot: string }[]
+  talliesNote?: string
+  outputs: { icon: string; name: string; pick?: () => void }[]
+  primaryAction?: string
+  altAction?: string
+  onPrimary?: () => void
+  onAlt?: () => void
+}) => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
+      <Mark top={4} />
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
+        }}
+      >
+        {traceLines.length > 0 && (
+          <button
+            onClick={() => setOpen((v) => !v)}
+            style={{
+              alignSelf: 'flex-start',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              border: 0,
+              background: 'transparent',
+              padding: 0,
+              font: 'inherit',
+              fontSize: 14.5,
+              color: '#8f96a0',
+              cursor: 'pointer',
+            }}
+          >
+            <span>{open ? 'Hide the working' : `Show the working`}</span>
+            <svg
+              width={14}
+              height={14}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                flex: '0 0 14px',
+                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform .2s ease',
+              }}
+              aria-hidden
+            >
+              <polyline points="6,9 12,15 18,9" />
+            </svg>
+          </button>
+        )}
+        {open && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              borderLeft: '1.5px solid #ecebe8',
+              padding: '2px 0 2px 16px',
+              animation: 'pcIn .3s ease both',
+            }}
+          >
+            {traceLines.map((t) => (
+              <span
+                key={t}
+                style={{
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  color: '#9aa1ab',
+                  textWrap: 'pretty',
+                }}
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+        <span
+          style={{
+            fontFamily: font.serif,
+            fontSize: 17.5,
+            lineHeight: 1.55,
+            color: '#1c1f23',
+            maxWidth: '60ch',
+            textWrap: 'pretty',
+          }}
+        >
+          {lead}
+        </span>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 26,
+            animation: 'pcIn .4s ease both',
+          }}
+        >
+          {tallies.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                {tallies.map((c) => (
+                  <span
+                    key={c.label}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 9,
+                      fontSize: 14,
+                      color: '#6b7280',
+                    }}
+                  >
+                    <span
+                      style={{
+                        flex: '0 0 8px',
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: c.dot,
+                      }}
+                    />
+                    <span>
+                      {c.n} {c.label}
+                    </span>
+                  </span>
+                ))}
+              </div>
+              {!!talliesNote && (
+                <span
+                  style={{
+                    fontSize: 12.5,
+                    lineHeight: 1.5,
+                    color: '#b6bac1',
+                    textWrap: 'pretty',
+                  }}
+                >
+                  {talliesNote}
+                </span>
+              )}
+            </div>
+          )}
+          {outputs.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+              {outputs.map((o) => (
+                <button
+                  key={o.name}
+                  onClick={o.pick}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    background: '#fff',
+                    border: 0,
+                    borderRadius: 14,
+                    boxShadow:
+                      '0 0 0 .5px rgba(30,32,38,.07), 0 8px 22px rgba(16,20,28,.05)',
+                    padding: '12px 18px 12px 14px',
+                    font: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span
+                    style={{
+                      flex: '0 0 20px',
+                      width: 20,
+                      height: 20,
+                      backgroundImage: `url(${o.icon})`,
+                      backgroundSize: 'contain',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'center',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 14.5,
+                      letterSpacing: '-.008em',
+                      color: '#31353b',
+                    }}
+                  >
+                    {o.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {(primaryAction || altAction) && (
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 10,
+                paddingTop: 16,
+              }}
+            >
+              {primaryAction && (
+                <button
+                  onClick={onPrimary}
+                  style={{
+                    border: 0,
+                    background: '#1f2937',
+                    color: '#fff',
+                    borderRadius: 9,
+                    height: 38,
+                    padding: '0 17px',
+                    font: 'inherit',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {primaryAction}
+                </button>
+              )}
+              {altAction && (
+                <button
+                  onClick={onAlt}
+                  style={{
+                    border: 0,
+                    background: 'transparent',
+                    color: '#0060d0',
+                    borderRadius: 999,
+                    height: 38,
+                    padding: '0 12px',
+                    font: 'inherit',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {altAction}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The composer's pop-over, in the design's own materials: the frosted
+ * white card at 13px radius with the two-part shadow.
+ *
+ * Anchored to the bottom of the « + » rather than positioned in
+ * viewport coordinates. The design measures and places these because it
+ * has one composer at a known place on the page; here the composer
+ * moves — it is centred on an empty chat and pinned to the bottom on a
+ * full one — and an anchored menu follows it without arithmetic.
+ */
+const menuCard = (width: number): React.CSSProperties => ({
+  position: 'absolute',
+  bottom: 'calc(100% + 10px)',
+  left: 0,
+  zIndex: 50,
+  width,
+  display: 'flex',
+  flexDirection: 'column',
+  background: 'rgba(255,255,255,.96)',
+  backdropFilter: 'blur(30px) saturate(1.8)',
+  WebkitBackdropFilter: 'blur(30px) saturate(1.8)',
+  borderRadius: 13,
+  boxShadow: '0 18px 44px rgba(0,0,0,.19), 0 0 0 .5px rgba(0,0,0,.08)',
+  padding: 6,
+  animation: 'pcIn .14s ease both',
+})
+
+const menuRow: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+  width: '100%',
+  textAlign: 'left',
+  border: 0,
+  background: 'transparent',
+  borderRadius: 8,
+  font: 'inherit',
+  cursor: 'pointer',
+  padding: '9px 11px',
+}
+
+const menuNote: React.CSSProperties = {
+  padding: '10px 11px',
+  fontSize: 13,
+  lineHeight: 1.5,
+  color: '#8f96a0',
+  textWrap: 'pretty',
+}
+
+/**
+ * The design's dot colour per attention tier — 1 defect, 2 assumption
+ * at risk, 3 hygiene, and the grey for a deal whose worst tier predates
+ * the elevation layer.
+ */
+const TIER_DOT = ['#6b7280', '#e0322d', '#e8a300', '#2b6cf5'] as const
+
+/**
+ * The verdict's counts, and they are the model's own.
+ *
+ * The design draws « 3 errors · 5 warnings · 2 suggestions » under the
+ * lead, and the temptation is to fill that row whatever the run
+ * produced. These come off the deal's stored check instead — the
+ * findings that are open and the checks that fail — and a deal nobody
+ * has checked has **no row at all**, because « 0 errors » and « nobody
+ * looked » are different sentences and only one of them is true.
+ *
+ * They deliberately never add up. A defect and a judgement call do not
+ * sum, which is the founder's own rule, and each keeps its own dot.
+ */
+const tallies = (
+  deal: DealListItem,
+): { label: string; n: number; dot: string }[] => {
+  if (deal.checked_at === null) return []
+  const counts: { label: string; n: number; dot: string }[] = []
+  if (deal.open_findings > 0)
+    counts.push({
+      n: deal.open_findings,
+      label: deal.open_findings === 1 ? 'open finding' : 'open findings',
+      dot: TIER_DOT[deal.worst_tier] ?? TIER_DOT[0],
+    })
+  if (deal.failing_checks > 0)
+    counts.push({
+      n: deal.failing_checks,
+      label: deal.failing_checks === 1 ? 'check failing' : 'checks failing',
+      dot: '#e8a300',
+    })
+  return counts
+}
+
+/** What the counts are of, and when they were last true. */
+const talliesNote = (deal: DealListItem): string => {
+  if (deal.checked_at === null) return ''
+  const when = new Date(deal.checked_at)
+  const named = deal.model_name ?? 'this project'
+  const stale = deal.stale ? ', and a document has arrived since' : ''
+  return `On ${named}, as of the check on ${when.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+  })}${stale}.`
+}
 
 /** The answer split for the design: prose, then the grey ends-line. */
 const split = (answer: string): { text: string; ends: string } => {
@@ -165,7 +1003,11 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
     if (picked === null) return
     const asked = messages.filter((one) => one.role === 'you')
     const last = messages[messages.length - 1]
-    if (asked.length === 0 || !last || last.role !== 'answer') return
+    //: A run ends in a verdict rather than an answer, and a chat that
+    //: ended that way is just as finished — leaving it out of the rail
+    //: would lose exactly the conversations worth reopening.
+    if (asked.length === 0 || !last) return
+    if (last.role !== 'answer' && last.role !== 'verdict') return
     const title = asked[0]!.text.slice(0, 80)
     setPast((was) => {
       const record: PastChat = {
@@ -188,14 +1030,208 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
   }, [messages])
 
   const history: AskTurn[] = messages
-    .filter((one) => one.role !== 'working')
+    //: A run in flight has no text yet, and a turn with nothing in it
+    //: would replay to the model as though somebody had said nothing.
+    .filter((one) => one.role !== 'working' && one.role !== 'run')
     .slice(-6)
     .map((one) => ({
       who: one.role === 'you' ? ('you' as const) : ('pierce' as const),
       text: one.text,
     }))
 
-  const ask = (text: string) => {
+  // --- the composer's « + » ---------------------------------------
+  //
+  // Three items, and the design fixed all three: Attach a file (⌘⇧A),
+  // Mention (@), Use my Excel selection. Each is wired to a real
+  // capability or says plainly that it has none here.
+
+  const [plusOpen, setPlusOpen] = useState(false)
+  const [mentionOpen, setMentionOpen] = useState(false)
+  const fileBox = useRef<HTMLInputElement | null>(null)
+
+  /** What can be mentioned, off this project — never a fixed list. */
+  const [mentions, setMentions] = useState<
+    { label: string; items: { token: string; note: string }[] }[] | null
+  >(null)
+
+  //: A file dropped into the chat is a file put into the project: it is
+  //: read, checked and kept, and the reply says what became of it in
+  //: the server's own words. Nothing here pretends to have read a file
+  //: it only received.
+  const attach = (file: File) => {
+    if (picked === null) return
+    setPlusOpen(false)
+    setMessages((was) => [
+      ...was,
+      { role: 'you', text: `Added ${file.name}` },
+      { role: 'working', text: `Reading ${file.name}` },
+    ])
+    api
+      .upload(picked.id, file)
+      .then((made) => {
+        const said =
+          made.status === 'failed'
+            ? (made.error ?? `${made.filename} could not be read.`)
+            : made.status === 'ready'
+              ? `${made.filename} is in ${picked.name}, read as version ${made.version}. Ask me about it.`
+              : `${made.filename} is in ${picked.name} and still being read.`
+        setMessages((was) => [
+          ...was.slice(0, -1),
+          { role: 'answer', text: said, rows: [], ends: '' },
+        ])
+      })
+      .catch((problem: unknown) =>
+        setMessages((was) => [
+          ...was.slice(0, -1),
+          {
+            role: 'answer',
+            text:
+              problem instanceof Error
+                ? problem.message
+                : 'that file could not be added',
+            rows: [],
+            ends: '',
+          },
+        ]),
+      )
+  }
+
+  //: ⌘⇧A — the shortcut the design prints beside the menu item, and a
+  //: printed shortcut that does nothing is a lie in 13px type.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'a' || !e.shiftKey) return
+      if (!(e.metaKey || e.ctrlKey)) return
+      e.preventDefault()
+      fileBox.current?.click()
+    }
+    document.addEventListener('keydown', key)
+    return () => document.removeEventListener('keydown', key)
+  }, [])
+
+  /**
+   * What this project holds that a question can point at.
+   *
+   * Fetched when the menu opens rather than kept fresh: it is a list of
+   * names, and a name that is one upload out of date costs nothing,
+   * where three background polls per chat cost the whole screen.
+   */
+  const openMentions = () => {
+    setPlusOpen(false)
+    setMentionOpen(true)
+    if (picked === null || mentions !== null) return
+    Promise.all([
+      api.deal(picked.id).catch(() => null),
+      api
+        .findings(picked.id)
+        .catch(() => [] as Awaited<ReturnType<TieOutApi['findings']>>),
+    ]).then(async ([page, found]) => {
+      const groups: {
+        label: string
+        items: { token: string; note: string }[]
+      }[] = []
+      const model = (page?.documents ?? []).find((one) => one.kind === 'model')
+      if (model) {
+        const past = await api.versions(model.id).catch(() => [])
+        if (past.length > 1)
+          groups.push({
+            label: 'Versions',
+            items: past.slice(0, 6).map((one) => ({
+              token: `@v${one.version}`,
+              note: new Date(one.uploaded_at).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'long',
+              }),
+            })),
+          })
+      }
+      const documents = (page?.documents ?? []).filter(
+        (one) => one.kind !== 'model',
+      )
+      if (documents.length > 0)
+        groups.push({
+          label: 'Documents',
+          items: documents.slice(0, 6).map((one) => ({
+            token: `@${one.filename}`,
+            note: `${one.kind} · v${one.version}`,
+          })),
+        })
+      if (found.length > 0)
+        groups.push({
+          label: 'Findings',
+          items: found.slice(0, 6).map((one) => ({
+            token: `@${one.source.ref ?? one.where.label}`,
+            note: one.headline || one.title,
+          })),
+        })
+      setMentions(groups)
+    })
+  }
+
+  /** Put a mention where the person was typing. */
+  const mention = (token: string) => {
+    setMentionOpen(false)
+    setPrompt((was) => `${was.replace(/(^|\s)@[^\s]*$/, '$1')}${token} `)
+  }
+
+  //: The marked-up model: the server builds the copy on request and
+  //: this hands it to the browser. A refusal — no model, nothing open
+  //: to mark up — is the server's own sentence, shown as it stands.
+  const [markupWord, setMarkupWord] = useState('')
+  const downloadMarkup = (dealId: string) => {
+    setMarkupWord('')
+    api
+      .markedUpModel(dealId)
+      .then(({ blob, filename }) => {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        link.click()
+        URL.revokeObjectURL(url)
+      })
+      .catch((problem: unknown) =>
+        setMarkupWord(
+          problem instanceof Error ? problem.message : 'something went wrong',
+        ),
+      )
+  }
+
+  /**
+   * What the run produced, as cards — and only what it really did.
+   *
+   * The design shows « proposed v23 » and « Review Memo » here. Swens
+   * writes neither: it does not author the thing it reviews. What it
+   * *does* produce is the model with every finding written into the
+   * cells beside it, which is a real file the server builds on request
+   * — so that is the card, and there is no second one invented to fill
+   * the row.
+   */
+  const produced = (
+    answer: Asked,
+  ): { icon: string; name: string; pick?: () => void }[] => {
+    if (!answer.model || picked === null) return []
+    const dealId = picked.id
+    return [
+      {
+        icon: fileIcon.xls,
+        name: `${answer.model} — marked up`,
+        pick: () => downloadMarkup(dealId),
+      },
+    ]
+  }
+
+  /**
+   * Ask, and draw what happens while it is being answered.
+   *
+   * `asRun` is the difference between the two shapes the design has for
+   * work in progress. An ordinary question shows one shimmering line —
+   * the assistant's own status line, replaced as each step lands. A
+   * question the person answered a clarifying card for shows the run:
+   * the step, its result, and the thing it produced. Both are fed by
+   * the same real steps; only the drawing differs.
+   */
+  const ask = (text: string, asRun = false) => {
     const q = text.trim()
     if (!q || busy || picked === null) return
     setPrompt('')
@@ -203,13 +1239,96 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
     setMessages((was) => [
       ...was,
       { role: 'you', text: q },
-      { role: 'working', text: 'Reading the model' },
+      asRun
+        ? { role: 'run', text: '', stages: [], busy: true }
+        : { role: 'working', text: 'Thinking' },
     ])
+
+    //: One step, as it lands. The line is the assistant's own where it
+    //: wrote one — never « Reading the model » on every step of every
+    //: run, which is the placeholder this replaced.
+    const landed = (stage: AskedStage) => {
+      const one: RunStage = {
+        icon: stage.kind === 'source' ? fileIcon.pdf : fileIcon.xls,
+        title: stage.title,
+        sub: stage.sub,
+        summary: stage.summary,
+        art: stage.art || undefined,
+        done: true,
+      }
+      setMessages((was) => {
+        const last = was[was.length - 1]
+        if (!last) return was
+        if (last.role === 'run')
+          return [
+            ...was.slice(0, -1),
+            { ...last, stages: [...(last.stages ?? []), one] },
+          ]
+        if (last.role === 'working')
+          return [...was.slice(0, -1), { ...last, text: stage.sub }]
+        return was
+      })
+    }
+
     api
-      .assist(picked.id, q, { history })
+      .assistStream(picked.id, q, { history }, landed)
       .then((answer: Asked) => {
+        //: The assistant stopped to settle one thing first. Draw its
+        //: question and the card, and wait — picking a choice is just
+        //: the next message, so the model is told which way rather
+        //: than left to guess.
+        //
+        //: The question comes off the tool call, not the prose: an
+        //: option narrated but not offered is one the screen must
+        //: not draw.
+        const clarify = answer.clarify
+        if (clarify && clarify.options.length >= 2) {
+          setMessages((was) => [
+            ...was.slice(0, -1),
+            {
+              role: 'ask',
+              text: clarify.question,
+              cardTitle: clarify.title,
+              cardBlurb: clarify.blurb,
+              //: The file kinds the run would touch, read off the
+              //: model the deal actually holds — never a pair of icons
+              //: chosen to make the card look full.
+              cardIcons: answer.model ? [fileIcon.xls] : [],
+              options: clarify.options.map((label) => ({
+                label,
+                //: A pick is the next message, and it runs — so it is
+                //: drawn as a run rather than as a shimmering line.
+                pick: () => ask(label, true),
+              })),
+            },
+          ])
+          return
+        }
         const { text: main, ends } = split(answer.answer)
         const used = answer.steps.filter((one) => one.ok).length
+        if (asRun) {
+          //: The verdict: what the run concluded, and everything behind
+          //: it. Every part of it is the run's own — the lead is the
+          //: assistant's first paragraph, the working is the tools'
+          //: own lines, the tallies are the model's stored findings.
+          setMessages((was) => [
+            ...was.slice(0, -1),
+            {
+              role: 'verdict',
+              text: main,
+              ends,
+              rows: answer.rows ?? [],
+              traceLines: (answer.stages ?? [])
+                .filter((one) => one.summary)
+                .map((one) => one.summary),
+              tallies: tallies(picked),
+              talliesNote: talliesNote(picked),
+              outputs: produced(answer),
+              primaryAction: onOpenModel ? 'Open the model' : undefined,
+            },
+          ])
+          return
+        }
         setMessages((was) => [
           ...was.slice(0, -1),
           {
@@ -753,6 +1872,29 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
             </svg>
           </button>
           <span style={{ flex: 1, minWidth: 0 }} />
+          {!!markupWord && (
+            //: The server's own refusal — no model, nothing open to
+            //: mark up — shown where it happened rather than swallowed
+            //: into a download that silently never arrives.
+            <span
+              style={{
+                flex: '0 1 auto',
+                pointerEvents: 'auto',
+                fontSize: 12.5,
+                lineHeight: 1.5,
+                letterSpacing: '-.01em',
+                color: '#6b7280',
+                background: '#fff',
+                borderRadius: 12,
+                boxShadow:
+                  '0 0 0 .5px rgba(30,32,38,.07), 0 6px 18px rgba(16,22,35,.05)',
+                padding: '6px 12px',
+                textWrap: 'pretty',
+              }}
+            >
+              {markupWord}
+            </span>
+          )}
           {shareSaid && (
             <span
               style={{
@@ -853,27 +1995,70 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                     {m.text}
                   </div>
                 )}
-                {m.role === 'working' && (
+                {m.role === 'working' && <Shimmer text={m.text} />}
+                {m.role === 'ask' && (
+                  //: The chat asking one question back. The card names
+                  //: what it would do; nothing runs until a choice is
+                  //: picked, and the options vanish once one is.
                   <div
-                    style={{ display: 'flex', alignItems: 'center', gap: 18 }}
+                    style={{
+                      display: 'flex',
+                      gap: 18,
+                      alignItems: 'flex-start',
+                      animation: 'pcIn .3s ease both',
+                    }}
                   >
-                    <Mark />
-                    <span
+                    <Mark top={5} />
+                    <div
                       style={{
-                        fontSize: 15,
-                        letterSpacing: '-.006em',
-                        background:
-                          'linear-gradient(100deg,#c9ccd2 20%,#6b7280 42%,#c9ccd2 64%)',
-                        backgroundSize: '220% 100%',
-                        WebkitBackgroundClip: 'text',
-                        backgroundClip: 'text',
-                        color: 'transparent',
-                        animation: 'aShimmer 1.8s linear infinite',
+                        flex: 1,
+                        minWidth: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 22,
                       }}
                     >
-                      {m.text}
-                    </span>
+                      <span
+                        style={{
+                          fontFamily: font.serif,
+                          fontSize: 17.5,
+                          lineHeight: 1.55,
+                          color: '#1c1f23',
+                          maxWidth: '56ch',
+                          textWrap: 'pretty',
+                        }}
+                      >
+                        {m.text}
+                      </span>
+                      {(m.options?.length ?? 0) > 0 && (
+                        <Choices
+                          title={m.cardTitle ?? ''}
+                          blurb={m.cardBlurb ?? ''}
+                          icons={m.cardIcons ?? []}
+                          options={m.options ?? []}
+                        />
+                      )}
+                    </div>
                   </div>
+                )}
+                {m.role === 'run' && (
+                  <Run stages={m.stages ?? []} busy={m.busy} />
+                )}
+                {m.role === 'verdict' && (
+                  <Verdict
+                    lead={m.text}
+                    traceLines={m.traceLines ?? []}
+                    tallies={m.tallies ?? []}
+                    talliesNote={m.talliesNote}
+                    outputs={m.outputs ?? []}
+                    primaryAction={m.primaryAction}
+                    altAction={m.altAction}
+                    onPrimary={
+                      picked !== null && onOpenModel
+                        ? () => onOpenModel(picked)
+                        : undefined
+                    }
+                  />
                 )}
                 {m.role === 'answer' && (
                   <div
@@ -883,7 +2068,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                       alignItems: 'flex-start',
                     }}
                   >
-                    <Mark top={6} />
+                    <Mark top={5} />
                     <div
                       style={{
                         flex: 1,
@@ -895,9 +2080,14 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                     >
                       <span
                         style={{
-                          fontSize: 16,
-                          lineHeight: 1.7,
-                          color: '#1d1d1f',
+                          //: Revision 2's reading serif, not the UI
+                          //: face: the answer is the one thing on this
+                          //: screen a person reads rather than scans.
+                          fontFamily: font.serif,
+                          fontSize: 17.5,
+                          lineHeight: 1.55,
+                          color: '#1c1f23',
+                          maxWidth: '56ch',
                           whiteSpace: 'pre-wrap',
                           textWrap: 'pretty',
                         }}
@@ -1087,12 +2277,284 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                 '0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09), inset 0 1px 0 rgba(255,255,255,.7)',
             }}
           >
+            <input
+              ref={fileBox}
+              type="file"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                e.target.value = ''
+                if (file) attach(file)
+              }}
+            />
+            <div
+              style={{
+                order: 2,
+                position: 'relative',
+                flex: '0 0 auto',
+                display: 'flex',
+              }}
+            >
+              <button
+                onClick={() => {
+                  setMentionOpen(false)
+                  setPlusOpen((was) => !was)
+                }}
+                title="Add"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  border: 0,
+                  background: 'transparent',
+                  color: '#6b7280',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+              {plusOpen && (
+                <>
+                  <span
+                    onClick={() => setPlusOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+                  />
+                  <div style={menuCard(328)}>
+                    <button
+                      onClick={() => {
+                        setPlusOpen(false)
+                        fileBox.current?.click()
+                      }}
+                      style={menuRow}
+                    >
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#4a4f57"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ flex: '0 0 17px' }}
+                      >
+                        <path d="M21 11.5 12.5 20a4.6 4.6 0 0 1-6.5-6.5l8-8a3 3 0 0 1 4.3 4.3l-8 8a1.4 1.4 0 0 1-2-2l7.4-7.4" />
+                      </svg>
+                      <span
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          fontSize: 14.5,
+                          color: '#15171b',
+                        }}
+                      >
+                        Attach a file
+                      </span>
+                      <span
+                        style={{
+                          flex: '0 0 auto',
+                          fontSize: 13,
+                          color: '#9a9a95',
+                        }}
+                      >
+                        ⌘⇧A
+                      </span>
+                    </button>
+                    <button onClick={openMentions} style={menuRow}>
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#4a4f57"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ flex: '0 0 17px' }}
+                      >
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M16 8v5a3 3 0 0 0 5 -2.2A9 9 0 1 0 16.5 19.4" />
+                      </svg>
+                      <span
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          fontSize: 14.5,
+                          color: '#15171b',
+                        }}
+                      >
+                        Mention
+                      </span>
+                      <span
+                        style={{
+                          flex: '0 0 auto',
+                          fontFamily: font.mono,
+                          fontSize: 12.5,
+                          letterSpacing: 0,
+                          color: '#9a9a95',
+                        }}
+                      >
+                        @
+                      </span>
+                    </button>
+                    {/* The design draws this greyed when the Excel
+                        panel is not connected, and on the web it never
+                        is — the panel is the add-in, a different
+                        surface. Shown and disabled rather than hidden:
+                        « not here » is the answer, and a person who
+                        heard about it should find out where it lives
+                        rather than wonder if they imagined it. */}
+                    <button
+                      disabled
+                      title="Open Swens in the Excel side panel to use your selection"
+                      style={{ ...menuRow, cursor: 'default', opacity: 0.45 }}
+                    >
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#4a4f57"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ flex: '0 0 17px' }}
+                      >
+                        <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+                        <line x1="3.5" y1="9.5" x2="20.5" y2="9.5" />
+                        <line x1="9" y1="9.5" x2="9" y2="19.5" />
+                      </svg>
+                      <span
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 2,
+                          textAlign: 'left',
+                        }}
+                      >
+                        <span style={{ fontSize: 14.5, color: '#15171b' }}>
+                          Use my Excel selection
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: font.mono,
+                            fontSize: 11.5,
+                            letterSpacing: 0,
+                            color: '#9a9a95',
+                          }}
+                        >
+                          Excel panel not connected
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </>
+              )}
+              {mentionOpen && (
+                <>
+                  <span
+                    onClick={() => setMentionOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+                  />
+                  <div
+                    style={{
+                      ...menuCard(344),
+                      maxHeight: 420,
+                      overflow: 'auto',
+                      background: '#fff',
+                    }}
+                  >
+                    {mentions === null && (
+                      <span style={menuNote}>Reading the project…</span>
+                    )}
+                    {mentions !== null && mentions.length === 0 && (
+                      <span style={menuNote}>
+                        Nothing to mention yet — this project holds no
+                        documents, versions or findings to point at.
+                      </span>
+                    )}
+                    {(mentions ?? []).map((group) => (
+                      <div
+                        key={group.label}
+                        style={{ display: 'flex', flexDirection: 'column' }}
+                      >
+                        <span
+                          style={{
+                            padding: '9px 11px 5px',
+                            fontSize: 12,
+                            color: '#a2a29c',
+                          }}
+                        >
+                          {group.label}
+                        </span>
+                        {group.items.map((one) => (
+                          <button
+                            key={one.token}
+                            onClick={() => mention(one.token)}
+                            style={{ ...menuRow, gap: 11, padding: '8px 11px' }}
+                          >
+                            <span
+                              style={{
+                                flex: '0 0 auto',
+                                fontFamily: font.mono,
+                                fontSize: 12.5,
+                                letterSpacing: 0,
+                                color: '#2b6cf5',
+                              }}
+                            >
+                              {one.token}
+                            </span>
+                            <span
+                              style={{
+                                flex: 1,
+                                minWidth: 0,
+                                fontSize: 14,
+                                color: '#4a4f57',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {one.note}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <textarea
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => {
+                setPrompt(e.target.value)
+                //: Typing « @ » is the same request as picking Mention
+                //: off the menu, and the design opens the same list.
+                if (/(^|\s)@[^\s]*$/.test(e.target.value)) openMentions()
+                else setMentionOpen(false)
+              }}
               onKeyDown={(e) => {
+                if (e.key === 'Escape') setMentionOpen(false)
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault()
+                  setMentionOpen(false)
                   ask(prompt)
                 }
               }}

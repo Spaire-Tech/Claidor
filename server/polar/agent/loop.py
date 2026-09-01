@@ -25,7 +25,7 @@ when a model misbehaves.
 """
 
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -86,6 +86,18 @@ class Step:
     #: rows read them from here — never from the model's narration —
     #: which is what keeps a listed figure a looked-up figure.
     data: dict[str, Any] = field(default_factory=dict)
+    #: What the assistant said in the turn that made this call — its own
+    #: status line, « Reading the debt schedule », written *before* the
+    #: tool ran. Empty when it called the tool without a word, and empty
+    #: on every call after the first in the same turn: one line covers
+    #: the turn, and repeating it three times would read as three steps
+    #: that all did the same thing.
+    #:
+    #: This is prose, and it is deliberately the one piece of model text
+    #: a screen may show while work is in flight. It is not evidence and
+    #: nothing is derived from it — the summary underneath is the tool's
+    #: own, and that is what the trace keeps.
+    said: str = ""
 
 
 class Stopped:
@@ -143,6 +155,7 @@ async def run(
     *,
     model: str = AGENT_MODEL,
     max_steps: int = MAX_STEPS,
+    on_step: Callable[[Step], None] | None = None,
 ) -> Outcome:
     """Work the prompt with one toolset, and report what was done.
 
@@ -151,6 +164,14 @@ async def run(
     reconciling a deck or reading a contract. What differs between the two
     products is *what the agent can do*, and that belongs in a toolset
     rather than in a second copy of the control flow.
+
+    `on_step` is called with each step **as it finishes**, which is what
+    lets a screen show the run happening rather than a spinner and then
+    everything at once. It is a notification and nothing more: the
+    outcome returned at the end is unchanged by it, and a caller that
+    passes nothing gets exactly the behaviour it always had. It is
+    called inside the loop, so it must not block — the streaming
+    endpoint hands the step to a queue and returns.
     """
     outcome = Outcome(answer="")
     messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
@@ -198,6 +219,10 @@ async def run(
 
         messages.append({"role": "assistant", "content": response.content})
         results: list[dict[str, Any]] = []
+        #: The assistant's own words in this turn — its status line for
+        #: the work it is about to do. Carried on the first step of the
+        #: turn only; see `Step.said`.
+        said = _text_of(response)
 
         for use in uses:
             ordinal += 1
@@ -206,17 +231,20 @@ async def run(
             result = toolset.run(workspace, use.name, arguments)
             elapsed = int((time.monotonic() - started) * 1000)
 
-            outcome.steps.append(
-                Step(
-                    ordinal=ordinal,
-                    tool=use.name,
-                    arguments=arguments,
-                    ok=result.ok,
-                    summary=result.summary,
-                    milliseconds=elapsed,
-                    data=result.data,
-                )
+            step = Step(
+                ordinal=ordinal,
+                tool=use.name,
+                arguments=arguments,
+                ok=result.ok,
+                summary=result.summary,
+                milliseconds=elapsed,
+                data=result.data,
+                said=said,
             )
+            said = ""
+            outcome.steps.append(step)
+            if on_step is not None:
+                on_step(step)
             results.append(
                 {
                     "type": "tool_result",
