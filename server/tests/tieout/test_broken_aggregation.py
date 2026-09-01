@@ -101,7 +101,7 @@ class TestTheFindingReachesTheReport:
         assert found[0].ref == f"Year!{get_column_letter(2 + 7)}3"
         assert found[0].severity == "error"
         assert found[0].name == "revenue"
-        assert "takes a single one instead" in found[0].detail
+        assert "adds up one half-year" in found[0].detail
         assert found[0].source == "the row's own behaviour across its time axis"
 
     def test_the_detail_says_what_the_row_does_everywhere_else(self) -> None:
@@ -110,9 +110,10 @@ class TestTheFindingReachesTheReport:
 
         found = _findings(_audit_of(lambda b: _two_blocks(b, broken)))
 
-        #: « adds up its 2 sub-periods in 11 periods » — the pattern the
-        #: break departs from, stated before the break is named.
-        assert "adds up its 2 sub-periods in 11 periods" in found[0].detail
+        #: « adds up one half-year where the row adds all 2 » — the
+        #: pattern the break departs from, stated in the same breath
+        #: as the break, in the period words the model itself uses.
+        assert "the row adds all 2" in found[0].detail
 
     def test_a_clean_pair_of_blocks_reports_nothing(self) -> None:
         result = _audit_of(lambda b: _two_blocks(b, list(COARSE)))

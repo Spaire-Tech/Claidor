@@ -1393,8 +1393,8 @@ def test_external_link_speaks_a_whole_sentence() -> None:
     result = _tmp_book(many)
     finding = next(f for f in result.findings if f.rule == "external-link")
     sentence = plain_words(finding)
-    assert sentence.startswith("This workbook reads another workbook, [1] — ")
-    assert "7 cells pull values from it" in sentence
+    assert sentence.startswith("This workbook reads another workbook, [1]. ")
+    assert "7 cells pull their values from there" in sentence
     assert "  " not in sentence
 
     def just_one(sheet) -> None:
@@ -1403,7 +1403,7 @@ def test_external_link_speaks_a_whole_sentence() -> None:
     result = _tmp_book(just_one)
     finding = next(f for f in result.findings if f.rule == "external-link")
     sentence = plain_words(finding)
-    assert "1 cell pulls values from it, and it cannot be traced" in sentence
+    assert "One cell pulls its values from there" in sentence
     assert "1 cells" not in sentence
 
 

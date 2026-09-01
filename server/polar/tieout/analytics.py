@@ -32,6 +32,7 @@ import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from .audit import shown_number
 from .calculation import refusal
 from .structure import Structure, _canon
 from .workbook import Cell, Workbook
@@ -370,12 +371,12 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
                     period=period,
                     value=value,
                     detail=(
-                        f"The model's own check row « {labels[key]} » reports "
-                        f"{value:,.4g}"
+                        f"« {labels[key]} » reports "
+                        + shown_number(value)
                         + (f" in {period}" if period else "")
-                        + " — a row that is zero everywhere else."
+                        + ". The model built that row to read zero."
                     ),
-                    figure=f"{value:,.4g}",
+                    figure=shown_number(value),
                     figure_unit=(
                         f"on the model's own « {labels[key]} » row, built to read zero"
                     ),
@@ -494,11 +495,11 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
                     period=period,
                     value=difference,
                     detail=(
-                        "The balance sheet does not balance"
+                        f"The balance sheet is out by {shown_number(abs(difference))}"
                         + (f" in {period}" if period else "")
-                        + f": net assets and equity differ by {difference:,.6g}."
+                        + ". Net assets and equity do not agree."
                     ),
-                    figure=f"{abs(difference):,.6g}",
+                    figure=shown_number(abs(difference)),
                     figure_unit=(
                         "between net assets and equity"
                         + (f" in {period}" if period else "")
@@ -605,7 +606,7 @@ def _time_axis(structure: Structure, result: Analytics) -> None:
                         period=here[2],
                         value=float(here[1] - before[1]),
                         detail=(
-                            f"{sheet}'s period columns dip out of order: "
+                            f"{sheet} has a period column out of order. "
                             f"« {here[2]} » sits between « {before[2]} » and "
                             f"« {after[2]} »."
                         ),
@@ -751,12 +752,15 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
                     period=label,
                     value=now - was,
                     detail=(
-                        f"« {pair.label or 'This account'} » does not carry "
-                        f"forward into {label}: closing {was:,.6g} against "
-                        f"opening {now:,.6g}."
+                        f"« {pair.label or 'This account'} » is out by "
+                        f"{shown_number(abs(now - was))} on the way into "
+                        f"{label}. It closes at {shown_number(was)} and "
+                        f"opens at {shown_number(now)}."
                     ),
-                    figure=f"{was:,.6g}",
-                    figure_unit=(f"closing, while {label} opens at {now:,.6g}"),
+                    figure=shown_number(was),
+                    figure_unit=(
+                        f"closing, while {label} opens at {shown_number(now)}"
+                    ),
                 )
             )
     if walked:
@@ -853,16 +857,17 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
                 period=last_label,
                 value=terminal,
                 detail=(
-                    f"« {pair.label or 'This tranche'} » amortises to the end "
-                    f"of the model but finishes at {terminal:,.6g}, not zero"
-                    + (f" ({last_label})" if last_label else "")
-                    + f" — against a peak of {peak:,.6g}."
+                    f"« {pair.label or 'This tranche'} » still owes "
+                    f"{shown_number(abs(terminal))} at "
+                    + (last_label or "the end of the model")
+                    + f". It is written down from a peak of "
+                    f"{shown_number(peak)} but never reaches zero."
                 ),
-                figure=f"{abs(terminal):,.6g}",
+                figure=shown_number(abs(terminal)),
                 figure_unit=(
                     "still outstanding at "
                     + (last_label or "the end of the model")
-                    + f", against a peak of {peak:,.6g}"
+                    + f", against a peak of {shown_number(peak)}"
                 ),
             )
         )
@@ -1033,13 +1038,12 @@ def _interest_consistency(
                     period=period,
                     value=rate,
                     detail=(
-                        f"« {interest_label} » implies a rate of "
-                        f"{rate * 100:,.3g}%"
+                        f"« {interest_label} » works out at {rate * 100:,.3g}%"
                         + (f" in {period}" if period else "")
-                        + f" against the schedule's own "
-                        f"{convention * 100:,.3g}% — a factor of "
-                        f"{max(rate / convention, convention / rate):,.1f} off "
-                        "its own convention."
+                        + f", where the schedule says "
+                        f"{convention * 100:,.3g}%. That is "
+                        f"{max(rate / convention, convention / rate):,.1f} "
+                        "times the model's own rate."
                     ),
                     figure=f"{rate * 100:,.3g}%",
                     figure_unit=(
@@ -1072,11 +1076,11 @@ def _interest_consistency(
                         period=period,
                         value=charged,
                         detail=(
-                            f"« {interest_label} » charges {abs(charged):,.6g}"
+                            f"« {interest_label} » charges {shown_number(abs(charged))}"
                             + (f" in {period}" if period else "")
-                            + " — after the tranche was repaid."
+                            + ", after the tranche was repaid."
                         ),
-                        figure=f"{abs(charged):,.6g}",
+                        figure=shown_number(abs(charged)),
                         figure_unit=(
                             "of interest"
                             + (f" in {period}" if period else "")

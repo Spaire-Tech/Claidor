@@ -18,6 +18,7 @@ from polar.tieout.audit import (
     _typed_beats,
     _typed_edges,
     _typed_islands,
+    plain_words,
 )
 from polar.tieout.workbook import read_workbook
 
@@ -58,7 +59,7 @@ def test_a_typed_stride_two_beat_is_caught() -> None:
     _, found = _run(lambda s: _pairs(s, "CEGIK", deviant="G"))
     assert len(found) == 1
     assert found[0].ref == "Sheet!G15"
-    assert "every 2 columns" in found[0].detail
+    assert "every 2 columns" in plain_words(found[0])
     assert found[0].severity == "error"
 
 
@@ -66,7 +67,7 @@ def test_a_typed_stride_three_beat_is_caught() -> None:
     _, found = _run(lambda s: _pairs(s, "CFILO", deviant="I"))
     assert len(found) == 1
     assert found[0].ref == "Sheet!I15"
-    assert "every 3 columns" in found[0].detail
+    assert "every 3 columns" in plain_words(found[0])
 
 
 def test_percentage_flanks_are_the_interior_pass_and_not_a_beat() -> None:

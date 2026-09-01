@@ -502,7 +502,14 @@ class TieOutService:
                         rule=claim.rule,
                         standard=ANALYTIC_STANDARDS.get(claim.rule, ""),
                         printed=claim.figure,
-                        title=(f"{ANALYTIC_RULE_NAMES[claim.rule]} at {claim.ref}"),
+                        #: The claim, not the rule's own name with a
+                        #: coordinate stuck on the end. « Balance sheet
+                        #: does not balance at Balance Sheet!E41 » is a
+                        #: category heading and a cell address, which is
+                        #: the two openings `findings-voice.md` bans; the
+                        #: rule name still rides in `evidence.headline`
+                        #: for the screens that group by check.
+                        title=claim.detail,
                         detail=claim.detail,
                         location=claim.ref,
                         anchor={

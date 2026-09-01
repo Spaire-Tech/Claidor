@@ -303,7 +303,7 @@ class TestDebtTerminal:
         fired = [f for f in result.findings if f.rule == "debt-terminal"]
         assert len(fired) == 1
         assert fired[0].value == 4.2
-        assert "not zero" in fired[0].detail
+        assert "never reaches zero" in fired[0].detail
 
     def test_a_revolver_abstains_silently(self) -> None:
         result = _run(self._tranche([100, 40, 90, 30, 80, 20]))
@@ -404,7 +404,9 @@ class TestInterestConsistency:
         fired = self._fired(self._tranche(opening, interest))
         assert len(fired) == 1
         assert fired[0].period == "FY2021"
-        assert "convention" in fired[0].detail
+        #: The claim names the schedule's own rate beside the implied
+        #: one — « works out at 32.1% … where the schedule says 5% ».
+        assert "where the schedule says" in fired[0].detail
 
     def test_interest_after_repayment_is_the_finding(self) -> None:
         opening = [100, 80, 60, 40, 20, 10, 0, 0]
