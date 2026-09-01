@@ -55,19 +55,39 @@ class Toolset:
     #: talks is one edit, not four — and so a toolset that has its own
     #: reasons to sound different simply leaves it unset.
     voice_path: Path | None = None
+    #: More prose, appended in order after the voice. Where a product
+    #: has house rules that are not about *this* toolset — how it
+    #: writes rather than what it can reach — they belong here rather
+    #: than pasted into the toolset's own file, so one edit changes
+    #: every place they apply.
+    also: tuple[Path, ...] = ()
 
-    def prompt(self) -> str:
-        """The system prompt: the toolset's own, then the shared voice.
+    def prompt(self, known: str = "") -> str:
+        """The system prompt: the toolset's own, the voice, then facts.
 
-        **The voice comes last on purpose.** It is the founder's own
-        words about how Swens talks, and a later instruction wins over
-        an earlier one — so where a toolset's prose and the voice
-        disagree, the voice is what the model reads most recently.
+        **The voice comes last of the prose on purpose.** It is the
+        founder's own words about how Swens talks, and a later
+        instruction wins over an earlier one — so where a toolset's
+        prose and the voice disagree, the voice is what the model reads
+        most recently.
+
+        `known` is what has already been established about the subject
+        — the model's resolved picture. It goes after everything,
+        because it is not an instruction competing with the others: it
+        is the ground the instructions are applied to, and the last
+        thing read before the question.
+
+        It is also **the same bytes on every turn of a conversation**,
+        which is what keeps the whole prompt cacheable.
         """
         text = self.prompt_path.read_text(encoding="utf-8")
-        if self.voice_path is None:
-            return text
-        return text + "\n\n---\n\n" + self.voice_path.read_text(encoding="utf-8")
+        if self.voice_path is not None:
+            text += "\n\n---\n\n" + self.voice_path.read_text(encoding="utf-8")
+        for extra in self.also:
+            text += "\n\n---\n\n" + extra.read_text(encoding="utf-8")
+        if known:
+            text += "\n\n---\n\n" + known
+        return text
 
 
 __all__ = ["ToolResult", "Toolset"]

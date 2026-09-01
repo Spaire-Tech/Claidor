@@ -183,6 +183,7 @@ async def load_model_workspace(
     from ..service import _workbook_of, delta_between, models_of
     from ..structure import period_axes
     from .model_tools import build_workspace
+    from .picture import picture_of
 
     repository = TieOutRepository.from_session(session)
     artifacts = await repository.current_artifacts(dossier_id)
@@ -241,13 +242,25 @@ async def load_model_workspace(
         session, dossier_id=dossier_id, model_artifact_id=model_artifact.id
     )
 
+    axes = period_axes(book)
     return build_workspace(
         dossier_id=dossier_id,
         name=name,
         filename=model_artifact.filename,
         version=model_artifact.version,
         book=book,
-        axes=period_axes(book),
+        axes=axes,
+        #: The one picture. Derived here rather than per question, so
+        #: every answer about this file starts from the same reading —
+        #: and derived from the file rather than from the conversation,
+        #: so it cannot drift as a chat goes on.
+        picture=picture_of(
+            book,
+            filename=model_artifact.filename,
+            version=model_artifact.version,
+            axes=axes,
+            macros=list((model_artifact.counts or {}).get("macros") or []),
+        ),
         versions_list=versions_list,
         diff=diff,
         sources_map=sources_map,
@@ -365,7 +378,9 @@ async def ask_model(
     max_steps: int = MAX_STEPS,
 ) -> tuple[AgentTask, Outcome]:
     """Answer one question about one model — the assistant's loop."""
+    from . import gate
     from .model_tools import MODEL_TOOLSET
+    from .picture import as_prompt
 
     workspace = await load_model_workspace(session, dossier_id, name)
     if workspace is None:
@@ -378,7 +393,13 @@ async def ask_model(
         model=model,
         max_steps=max_steps,
         effort=ASSISTANT_EFFORT,
+        known=as_prompt(workspace.picture) if workspace.picture else "",
     )
+    #: The house style, enforced rather than requested. An answer that
+    #: breaks a rule goes back to be written again before anybody reads
+    #: it; see `gate.py` for why the chat stopped streaming its answer.
+    checked = await gate.written(client, outcome.answer, model=model)
+    outcome.answer = checked.answer
     task = await record(
         session,
         dossier_id=dossier_id,
