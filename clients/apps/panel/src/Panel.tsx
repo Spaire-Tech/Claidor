@@ -246,6 +246,12 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
   const [problem, setProblem] = useState<string | null>(null)
   //: The picked finding — selected here, selected in the sheet.
   const [sel, setSel] = useState<string | null>(null)
+  //: Whether the jump for the picked finding actually landed. The row
+  //: says « Selected in the sheet » only when the sheet agrees — a
+  //: refused jump keeps its reason on the problem strip and no claim
+  //: here, so a panel that failed to move never reads like one that
+  //: moved.
+  const [landed, setLanded] = useState(false)
 
   const signedIn = current() !== null
 
@@ -617,7 +623,9 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
 
   const jump = (defect: PanelDefect) => {
     setProblem(null)
+    setLanded(false)
     void panel.goTo(defect).then((moved) => {
+      setLanded(moved.moved)
       setProblem(moved.moved ? null : (moved.reason ?? 'could not go there'))
     })
   }
@@ -823,7 +831,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                           color: '#c7c7cc',
                         }}
                       >
-                        Selected in the sheet
+                        {landed ? 'Selected in the sheet' : ''}
                       </span>
                       {/* The fix, where one is derivable: the row's own
                           formula goes back and Excel recalculates in

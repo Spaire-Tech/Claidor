@@ -1,0 +1,230 @@
+{
+ "model": "h7_new_debt_indexation_fds.xlsx",
+ "rules": 11,
+ "watched": 144,
+ "m1": {
+  "all_cells": {
+   "cells": 5443,
+   "r_zero": 5156,
+   "r_at_least_one": 287,
+   "share_reachable": 0.0527,
+   "median": 0,
+   "max": 6
+  },
+  "formula_cells": {
+   "cells": 2233,
+   "r_zero": 2106,
+   "r_at_least_one": 127,
+   "share_reachable": 0.0569,
+   "median": 0,
+   "max": 4
+  },
+  "constant_cells": {
+   "cells": 3210,
+   "r_zero": 3050,
+   "r_at_least_one": 160,
+   "share_reachable": 0.0498,
+   "median": 0,
+   "max": 6
+  },
+  "seconds": 0.0
+ },
+ "sites": {
+  "best": "H7 Cost of debt indexation!I42",
+  "best_reach": 2,
+  "zero_control": "H7 Cost of debt indexation!F86"
+ },
+ "conditions": {
+  "control": {
+   "runs": 40,
+   "kept": 40,
+   "drops": 0,
+   "rules_failed_any": 0,
+   "rules_broken": 0,
+   "broken": []
+  },
+  "a1": {
+   "runs": 40,
+   "kept": 40,
+   "drops": 0,
+   "rules_failed_any": 2,
+   "rules_broken": 2,
+   "broken": [
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!G42",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!G46",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    },
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!I42",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!I46",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    }
+   ],
+   "site": "H7 Cost of debt indexation!I42",
+   "class": "constant-overwrite",
+   "edit": "H7 Cost of debt indexation!I42: '= SUM( I$9, $G$10 )' -> 0.0422286867810625",
+   "reach_ceiling": 2,
+   "diff_changed_cells": [
+    "H7 Cost of debt indexation!J6",
+    "H7 Cost of debt indexation!L6",
+    "H7 Cost of debt indexation!J7",
+    "H7 Cost of debt indexation!M7",
+    "H7 Cost of debt indexation!G13",
+    "H7 Cost of debt indexation!L16",
+    "H7 Cost of debt indexation!L19",
+    "H7 Cost of debt indexation!I20",
+    "H7 Cost of debt indexation!J20",
+    "H7 Cost of debt indexation!K20",
+    "H7 Cost of debt indexation!L20",
+    "H7 Cost of debt indexation!J26",
+    "H7 Cost of debt indexation!K26",
+    "H7 Cost of debt indexation!M26",
+    "H7 Cost of debt indexation!G27",
+    "H7 Cost of debt indexation!I30",
+    "H7 Cost of debt indexation!I33",
+    "H7 Cost of debt indexation!J33",
+    "H7 Cost of debt indexation!K33",
+    "H7 Cost of debt indexation!L33",
+    "H7 Cost of debt indexation!M33",
+    "H7 Cost of debt indexation!K34",
+    "H7 Cost of debt indexation!L34",
+    "H7 Cost of debt indexation!M34",
+    "H7 Cost of debt indexation!I42",
+    "H7 Cost of debt indexation!I52",
+    "H7 Cost of debt indexation!I59",
+    "H7 Cost of debt indexation!I60"
+   ],
+   "diff_names_plant_alone": false
+  },
+  "b1": {
+   "runs": 40,
+   "kept": 40,
+   "drops": 0,
+   "rules_failed_any": 2,
+   "rules_broken": 2,
+   "broken": [
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!G42",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!G46",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    },
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!I42",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!I46",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    }
+   ],
+   "site": "H7 Cost of debt indexation!I42",
+   "class": "tail-hardcode",
+   "edit": "H7 Cost of debt indexation!I42: '= SUM( I$9, $G$10 )' -> '= SUM( I$9, $G$10 )-0.490096707821704'",
+   "reach_ceiling": 2,
+   "diff_changed_cells": [
+    "H7 Cost of debt indexation!J6",
+    "H7 Cost of debt indexation!L6",
+    "H7 Cost of debt indexation!J7",
+    "H7 Cost of debt indexation!M7",
+    "H7 Cost of debt indexation!G13",
+    "H7 Cost of debt indexation!L16",
+    "H7 Cost of debt indexation!L19",
+    "H7 Cost of debt indexation!I20",
+    "H7 Cost of debt indexation!J20",
+    "H7 Cost of debt indexation!K20",
+    "H7 Cost of debt indexation!L20",
+    "H7 Cost of debt indexation!J26",
+    "H7 Cost of debt indexation!K26",
+    "H7 Cost of debt indexation!M26",
+    "H7 Cost of debt indexation!G27",
+    "H7 Cost of debt indexation!I30",
+    "H7 Cost of debt indexation!I33",
+    "H7 Cost of debt indexation!J33",
+    "H7 Cost of debt indexation!K33",
+    "H7 Cost of debt indexation!L33",
+    "H7 Cost of debt indexation!M33",
+    "H7 Cost of debt indexation!K34",
+    "H7 Cost of debt indexation!L34",
+    "H7 Cost of debt indexation!M34",
+    "H7 Cost of debt indexation!I42",
+    "H7 Cost of debt indexation!I52",
+    "H7 Cost of debt indexation!I59",
+    "H7 Cost of debt indexation!I60"
+   ],
+   "diff_names_plant_alone": false
+  },
+  "c1": {
+   "runs": 40,
+   "kept": 40,
+   "drops": 0,
+   "rules_failed_any": 0,
+   "rules_broken": 0,
+   "broken": [],
+   "site": "H7 Cost of debt indexation!F86",
+   "class": "tail-hardcode",
+   "edit": "H7 Cost of debt indexation!F86: '=SUM(J81:M84)' -> '=SUM(J81:M84)-0.490096707821704'",
+   "reach_ceiling": 0,
+   "diff_changed_cells": [
+    "H7 Cost of debt indexation!J6",
+    "H7 Cost of debt indexation!L6",
+    "H7 Cost of debt indexation!J7",
+    "H7 Cost of debt indexation!M7",
+    "H7 Cost of debt indexation!G13",
+    "H7 Cost of debt indexation!L16",
+    "H7 Cost of debt indexation!L19",
+    "H7 Cost of debt indexation!I20",
+    "H7 Cost of debt indexation!J20",
+    "H7 Cost of debt indexation!K20",
+    "H7 Cost of debt indexation!L20",
+    "H7 Cost of debt indexation!J26",
+    "H7 Cost of debt indexation!K26",
+    "H7 Cost of debt indexation!M26",
+    "H7 Cost of debt indexation!G27",
+    "H7 Cost of debt indexation!I30",
+    "H7 Cost of debt indexation!I33",
+    "H7 Cost of debt indexation!J33",
+    "H7 Cost of debt indexation!K33",
+    "H7 Cost of debt indexation!L33",
+    "H7 Cost of debt indexation!M33",
+    "H7 Cost of debt indexation!K34",
+    "H7 Cost of debt indexation!L34",
+    "H7 Cost of debt indexation!M34",
+    "H7 Cost of debt indexation!I52",
+    "H7 Cost of debt indexation!I59",
+    "H7 Cost of debt indexation!I60",
+    "H7 Cost of debt indexation!F86"
+   ],
+   "diff_names_plant_alone": false
+  }
+ }
+}

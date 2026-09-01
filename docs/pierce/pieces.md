@@ -88,8 +88,12 @@ judged the answers.** Piece 3.
 
 ## f) The Excel panel — findings beside the cell, corrections that follow
 
-The panel exists: 3,420 lines, Excel/Word/PowerPoint/Outlook hosts,
-wired to the API. **Never verified end to end.** Piece 11.
+The panel exists — Excel-only by posture since the pivot, the other
+hosts dormant — and is now **verified to the exact boundary Office
+draws** (31 Aug, § 4d): everything headless proven against the live
+stack, three defects found and fixed on the way, and the Office-side
+remainder named precisely. What is left of Piece 11 is one ten-minute
+sideload by a human with a Microsoft 365 work account.
 
 The write path underneath it — byte-preserving edits, apply/undo,
 re-audit gate, custody — is **DONE**. The *classes* of determined fix
@@ -119,7 +123,7 @@ below was checked in the tree before it was written.
 | **mine behavioral invariants** — hand-written laws | B4 — zero-input (volume 0 ⇒ revenue exactly 0), proportionality, scale invariance, consolidation | **BUILT AND MEASURED: 37 plants, 37 catches, 0 false positives** across 26 control runs. The hardcode-in-the-tail class — the one static reading cannot see — stands at **24/24 across 13 host files** and three structural guises |
 | **mine behavioral invariants** — laws *discovered*, not written | B5 — run the model blind under perturbations, keep the equations that never stop holding. Clean-room from the ICSME 2019 paper (the reference code is LGPL and has not been read) | **BUILT, NOT MEASURED.** `recalc/mine.py`. Piece 8 |
 | **trace dynamic math execution / model-slicing for root cause** | B4's amendment — delta debugging (ddmin) plus a frontier walk over the dependency slice between the perturbed input and the broken output, so a violated law names **one** cell | **BUILT.** `recalc/narrow.py` |
-| **Reiter's framework** specifically | B6 — Reiter minimal-diagnosis + spectrum-based fault localisation over broken mined rules | **NOT BUILT — HELD by the founder-relayed amendment of 27 August**, pending evidence: if real regressions break one or two rules, blame-the-changed-cell wins and Reiter is over-engineering; if they break many, B6 is exactly right. The Ofwat run decides |
+| **Reiter's framework** specifically | B6 — Reiter minimal-diagnosis + spectrum-based fault localisation over broken mined rules | **NOT BUILT — MEASURED AS OVER-ENGINEERING, 31 Aug** (`b6-decision.md`, registered bars): on the rule sets the product produces, real-class regressions at B6's *best-case* sites break 2–3 rules (bar for « many »: ≥ 5), the rule sets can see only 2–5% of each model's cells (bar: 25%), and the plain cell diff named the culprit in 6 of 6. Blame-the-changed-cell wins. Reopens only if mining ever produces dense, modeller-recognisable rule sets, or the real PR24 run becomes possible (files need a human browser — Ofwat 403 + archive captcha, re-probed 31 Aug) |
 | **behavioral version diffing** | C6 — mine v8's laws and v12's, then diff the law sets: « v12 obeys all 47 rules v8 obeyed, adds 2, broke 1 — cash closing no longer ties to its flows in periods 14–15 ». Compares behaviour, not positions, so it survives inserted rows and renamed sheets by construction | **NOT BUILT — GATED by the founder-relayed third amendment**, on two preconditions measured *before* any diff code exists: (1) **seed stability** — mine one unmodified model five times under five seeds; the rule sets must agree, or « v12 broke a rule » is seed noise. (2) **cosmetic invariance** — insert blank rows, rename a sheet, reformat a block; the mined sets must be identical, or the claimed advantage over positional diff is unproven. **BOTH WERE MEASURED 27 Aug and both passed** — five seeds (11/22/33/44/55) × 200 runs on gate-clean `h7_new_debt_indexation_fds.xlsx` gave identical rule sets, and three inserted rows plus a renamed sheet, compared by label rather than by cell reference, gave identical sets too (`logs/dynamo.md`). **This file said « neither has been measured » and that was wrong.** What is true is worse and more specific: both were measured under *hand* typing, when coverage reached 10 of 193 cells and the rules were « artifacts of the frozen remainder ». Automatic typing then took coverage to 144 of 144 and changed the rule sets outright — 36 stable rules became 11 on one model, 167 became 17 on the other. **The stability gates have never been run on the rule sets the product now produces**; that was predicted to still pass and, on the log's evidence, never tested. That is what C6 actually needs |
 | *(also relevant, not asked)* | C4 — verifying-trace fingerprints: hash each cell's formula shape and its inputs' values, so matching fingerprints prove a cell could not have changed at hash cost, no evaluation | **BUILT.** `watch/trace.py` |
 
@@ -210,12 +214,12 @@ green, number written down.
 | ~~**3**~~ | ~~**Units** (E2 → E3)~~ | **WIRED 30 Aug — and silent on every regulator model.** Four criteria met, gate clean 27/27, and it speaks on 0 of 27 here against 16 of 22 on close models. See § 4c below | — |
 | ~~**4**~~ | ~~**C6's stability, re-measured**~~ | **BOTH GATES PASS 31 Aug** on the rules the product now makes — five sets identical (11 rules each, no flicker by label *or* by cell), and identical by label after three rows are inserted and a sheet renamed, where the by-cell match is **0.0000**. See `c6-stability.md`. **C6 is still not buildable**: the rules are not modeller-recognisable, and the label key cannot tell one year from another, so neither keying alone suffices | — |
 | **5** | **The arbiter** (B3) | Four corpus files are refused and waiting. Check the LibreOffice 24.2 → 25.8 version gap first — part of the queue may be that | days |
-| **6** | **The Chain's page geometry** (D3/D4) | Six failed rounds, and the diagnosis says it is document geometry, not matching | days |
-| **7** | **The terms table** (§ 3d) | Missing from the plan entirely. « Probably the real fix for the Chain's scale problem » was tested against the record and half-refused — the failed rounds broke on evidence and page geometry, not scale; the table is a route around depending on them, not a repair (`terms-table-shape.md`). Shape founder-approved 31 Aug; in build on the piece branch | days |
-| **8** | **B5 measured**, then B6 decided | The measurement decides whether Reiter is right or over-engineering | days |
+| **6** | **The Chain's proposal side** (D3/D4) | Six failed rounds. The recorded « document geometry » diagnosis did not survive audit: a hand-perfect geometry repair was measured at 0 of 15, and the located gaps are page selection and tie-breaking — see `chain-piece6-audit.md` § 3 | days |
+| **7** | **The terms table** (§ 3d) | Missing from the plan entirely, and probably the real fix for the Chain's scale problem | days |
+| ~~**8**~~ | ~~**B5 measured**, then B6 decided~~ | **B6 DECIDED 31 Aug: over-engineering on today's rule sets, stays unbuilt** — see `b6-decision.md` and § 2's B6 row. B5's half is partial: its rules catch planted real-class regressions 4/4 inside their field of view with 0 false alarms, but that field of view is 2–5% of a model's cells, and the registered Ofwat catch-rate round (both directions over the real 84) stays blocked on the PR24 files needing a human browser | — |
 | **9** | The delta report's speed + its acceptance test | 3× over the line; the biggest cost is the engine throwing away work it just did | days |
 | **10** | The unsourced-number finding (D5) | Depends on the Chain having a store to ask | days |
-| **11** | The panel end to end (G3) | Exists, never verified | days |
+| **11** | The panel end to end (G3) | **VERIFIED HEADLESSLY 31 Aug** — see § 4d. Remainder: one real-Excel sideload, founder's ten minutes | — |
 | **12** | Determined corrections (F3) | The mechanism exists; the classes and their refusal cases do not | weeks |
 | **13** | House rules proven + standards vocabulary (A5) | Built and wired, never demonstrated | days |
 | **14** | Outward checks (D6/D7) | Four free integrations, none built | weeks |
@@ -444,6 +448,41 @@ constant in the engine with a second test holding the behaviour the
 widened assertion cannot; and a sheet whose only date row is its
 header row hands this check no axis, because the reader keeps header
 cells out of the audit.
+
+---
+
+## 4d. Piece 11, verified to the boundary — the panel (31 August)
+
+Full record in `worklog.md` (31 Aug); re-runnable via
+`clients/apps/panel/scripts/verify-headless.mjs`.
+
+**What « verified » means here, exactly.** On this container, against
+the live stack: manifest stamped and validated clean by Microsoft's
+acceptance service; both build paths produce the `/panel/` deploy;
+the token endpoint mints from a real session; headless Chromium
+walks every face — signed-out, allow-access, checking, checked with
+11 findings and the « 12 checks pass » line, one finding open,
+re-check — on real workbook bytes through the real check endpoint.
+Four PASS assertions, screenshots kept.
+
+**What « verified » does not mean, exactly.** Nothing on Office's own
+side has run: ribbon button, workbook bytes via `Office.js`, cell
+selection, « Fix the cell » writing back, the sign-in dialog. This
+box has no Excel. The remainder is `SIDELOAD.md`'s ten-minute
+Excel-on-the-web test, and it needs a human with a Microsoft 365
+work account. Piece 11 is not DONE until that sideload has been
+watched working; an earlier build did load inside real Word once
+(14 Aug), so the first-load bug classes are already paid.
+
+**Three defects the drive found, fixed, pinned:** the catalogue call
+that 403'd for every panel user, silently, forever (fix on both
+sides of the API); the external-link finding's verbless sentence and
+wrong plural; a refused jump that still claimed « Selected in the
+sheet ». **Golden-master gate run, not reasoned about: clean, 27 of
+27, finding for finding** — corpus rebuilt from the committed
+fetcher, prediction (empty diff, because the baseline stores
+`detail` and the fix touched only `plain_words`) registered before
+the diff and held.
 
 ---
 
