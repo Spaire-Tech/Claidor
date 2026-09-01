@@ -1151,8 +1151,12 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
   const [pjMenu, setPjMenu] = useState(false)
   const scroll = useRef<HTMLDivElement | null>(null)
 
-  //: The rail: open by default as drawn, collapsible from the header.
-  const [histOpen, setHistOpen] = useState(true)
+  //: The rail: **closed until it is asked for**, which is what the
+  //: design does — `histOpen` is never initialised in
+  //: `Swens_Workspace_2.html`, so it opens at `0px` and the composer
+  //: has the whole width. The comment here used to say « open by
+  //: default as drawn » and that was simply not what the file drew.
+  const [histOpen, setHistOpen] = useState(false)
   const [histFind, setHistFind] = useState(false)
   const [histQ, setHistQ] = useState('')
   const [histScope, setHistScope] = useState<'project' | 'all'>('project')
