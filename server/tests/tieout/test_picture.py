@@ -187,3 +187,38 @@ class TestOnePictureIsOnePicture:
         second = as_prompt(picture_of(book, filename="n.xlsx", version=3))
 
         assert first == second
+
+
+class TestThePictureCarriesTheRows:
+    """The assistant said the income statement had no depreciation line.
+    It has one. The picture now carries a statement sheet's rows, so an
+    answer that claims a line is missing contradicts its own prompt."""
+
+    def test_a_statement_sheet_tells_its_rows(self) -> None:
+        from decimal import Decimal
+
+        from polar.tieout.agent.picture import as_prompt, picture_of
+        from polar.tieout.workbook import Cell, Workbook
+
+        book = Workbook()
+        for row, label in ((7, "Revenue"), (9, "Total Depreciation Expense")):
+            ref = f"Income Statement!E{row}"
+            book.cells[ref] = Cell(
+                sheet="Income Statement",
+                ref=ref,
+                row=row,
+                column=5,
+                value=Decimal(1),
+                formula=None,
+                row_label=label,
+                column_label="Year 1",
+            )
+        book.sheets = ["Income Statement"]
+        #: A statement sheet, not a divider: the role reads the sheet's
+        #: population and formulas, and an empty fixture reads as a tab.
+        book.populated = {"Income Statement": 40}
+        text = as_prompt(picture_of(book))
+        assert (
+            "Rows on « Income Statement »: Revenue; Total Depreciation Expense." in text
+        )
+        assert "do not say a line is missing" in text

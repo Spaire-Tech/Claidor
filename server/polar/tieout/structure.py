@@ -32,7 +32,7 @@ only failure; abstention never is.
 import re
 from dataclasses import dataclass, field
 
-from .workbook import Cell, Workbook
+from .workbook import PERIOD_LABEL, Cell, Workbook
 
 # --- the period axis ------------------------------------------------------
 
@@ -41,17 +41,7 @@ from .workbook import Cell, Workbook
 #: header rows (« 31-Mar-25 », « Mar 2025 », « 2025/26 », « 30 June
 #: 2025 », plain serial years) — measured against the Time sheets of
 #: the Ofwat suite and the timing sheets of the Scottish close models.
-PERIOD_LABEL = re.compile(
-    r"""^\s*(?:
-        (?:FY|CY|AY|LTM|NTM)?\s*(?:19|20)\d{2}(?:\s*/\s*\d{2})?\s*[AEPF]?
-      | Q[1-4](?:\s*(?:19|20)\d{2})?
-      | (?:Year|Yr|Period|Sem|Semester)\s*\d+
-      | (?:Half\s*[12]|H[12])(?:\s*(?:19|20)\d{2})?
-      | \d{1,2}[-/\s](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s](?:19|20)?\d{2}
-      | (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s](?:19|20)\d{2}
-    )\s*$""",
-    re.VERBOSE | re.IGNORECASE,
-)
+#: `PERIOD_LABEL` lives in the reader now — one definition, imported above.
 
 
 @dataclass(frozen=True)
@@ -463,6 +453,14 @@ class Structure:
     values_pasted: bool = False
 
 
+def reason_unlocated(structure: "Structure", kind: str, fallback: str) -> str:
+    """The structure layer's own sentence for a thing it could not find."""
+    for found, why in structure.unlocated:
+        if found == kind:
+            return why
+    return fallback
+
+
 def read_structure(book: Workbook) -> Structure:
     """The whole layer, in dependency order."""
     axes = period_axes(book)
@@ -481,6 +479,11 @@ def read_structure(book: Workbook) -> Structure:
 
     balance_hits: list[Located] = []
     debt_hits: list[Located] = []
+    #: Sheets that answered to the name or the rows but had no period
+    #: axis to read them along — so the reason can name the sheet it
+    #: found rather than deny it exists.
+    balance_axisless: list[str] = []
+    debt_axisless: list[str] = []
     for sheet in book.sheets:
         rows = words_by_sheet.get(sheet, set())
         anchors: list[str] = []
@@ -494,6 +497,8 @@ def read_structure(book: Workbook) -> Structure:
         #: is one whose name alone looks right while its rows do not.
         if len(anchors) >= 2 and sheet in result.axes:
             balance_hits.append(Located("balance-sheet", sheet, tuple(anchors)))
+        elif len(anchors) >= 2:
+            balance_axisless.append(sheet)
 
         anchors = []
         if _DEBT_SHEET_NAME.search(sheet):
@@ -506,6 +511,8 @@ def read_structure(book: Workbook) -> Structure:
             anchors.append("carries an opening/closing pair")
         if len(anchors) >= 2 and sheet in result.axes:
             debt_hits.append(Located("debt-schedule", sheet, tuple(anchors)))
+        elif len(anchors) >= 2:
+            debt_axisless.append(sheet)
 
         if _CHECK_SHEET_NAME.search(sheet):
             checkish = sum(1 for row in rows if "check" in row or "alert" in row)
@@ -521,22 +528,49 @@ def read_structure(book: Workbook) -> Structure:
     result.located.extend(balance_hits)
     result.located.extend(debt_hits)
 
+    #: **The reason is about the review, never about the model.**
+    #: « No balance sheet was located » reached a founder whose sheet is
+    #: called Balance Sheet, and the summary that carried it sat under
+    #: a line saying the findings sit in Balance Sheet. What had
+    #: happened was that the reader found no period columns. So each
+    #: sentence says what was looked for and what was found instead —
+    #: the sheet by name, when there is one — in the words
+    #: `findings-voice.md` prescribes: « I could not find », never
+    #: « the model does not have ».
     if not axes:
         result.unlocated.append(
-            ("time-axis", "No period axis: no sheet has three period-labelled columns.")
+            (
+                "time-axis",
+                "I could not read the period columns: no sheet has a row "
+                "of years, quarters or a 1, 2, 3 counter across three or "
+                "more columns.",
+            )
         )
     if not balance_hits:
-        result.unlocated.append(
-            (
-                "balance-sheet",
-                "The balance sheet could not be located with two independent anchors.",
+        if balance_axisless:
+            named = ", ".join(f"« {one} »" for one in balance_axisless[:2])
+            why = (
+                f"I found {named} but could not read its period columns, "
+                "so the balance check did not run."
             )
-        )
+        else:
+            why = (
+                "I could not find a balance sheet: no sheet is named like "
+                "one, and none carries net assets and equity rows together."
+            )
+        result.unlocated.append(("balance-sheet", why))
     if not debt_hits:
-        result.unlocated.append(
-            (
-                "debt-schedule",
-                "No debt schedule could be located with two independent anchors.",
+        if debt_axisless:
+            named = ", ".join(f"« {one} »" for one in debt_axisless[:2])
+            why = (
+                f"I found debt rows on {named} but could not read its "
+                "period columns, so the debt checks did not run."
             )
-        )
+        else:
+            why = (
+                "I could not find a debt schedule: no sheet carries "
+                "repayment, principal and interest rows together with an "
+                "opening and closing balance."
+            )
+        result.unlocated.append(("debt-schedule", why))
     return result

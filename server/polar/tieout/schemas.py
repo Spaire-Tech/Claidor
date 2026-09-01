@@ -102,6 +102,26 @@ class FindingCounts(Schema):
     fixed: int
 
 
+class CheckRead(Schema):
+    """One check of an audit run, in one of four states.
+
+    `off` — switched off in the house rules. `abstained` — declined,
+    with its own sentence in `why`. `found` — ran, open findings under
+    it. `clean` — ran, nothing found; `total` and `clean` say what it
+    walked when it counted.
+    """
+
+    key: str
+    label: str
+    pass_label: str = ""
+    analytical: bool = False
+    state: str
+    why: str = ""
+    total: int = 0
+    clean: int = 0
+    findings: int = 0
+
+
 class CheckRunRead(Schema):
     id: UUID
     kind: CheckKind
@@ -110,6 +130,9 @@ class CheckRunRead(Schema):
     error: str | None
     started_at: datetime | None
     finished_at: datetime | None
+    #: Audit runs only: every rule in both catalogues, in one state
+    #: each — the list the Overview prints. Never derived on a screen.
+    checks: list[CheckRead] = []
 
 
 class ArtifactPage(Schema):
@@ -1160,6 +1183,9 @@ class HouseRulesRead(Schema):
     rounding: Literal["together", "separate"]
     #: Ranges, fiscal years, units, negatives — as the firm writes them.
     writing: dict[str, str]
+    #: The firm's materiality in the model's own units, or null for the
+    #: model's own scale (half a percent of its largest total).
+    materiality: float | None = None
     #: Whether the grounding pass runs with the others.
     grounding: bool
     rules: list[AuditRuleRead]
@@ -1171,6 +1197,8 @@ class HouseRulesUpdate(Schema):
     rounding: Literal["together", "separate"] | None = None
     writing: dict[str, str] | None = None
     grounding: bool | None = None
+    #: A number sets it; zero clears it back to the model's own scale.
+    materiality: float | None = None
     #: Rule keys to switch off, replacing the previous set whole.
     audit_rules_off: list[str] | None = None
 

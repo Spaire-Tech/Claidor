@@ -681,6 +681,24 @@ def _read_sheet(
             named = _shown(grid, header_row, column)
             if named:
                 headers[column] = named.strip()
+    #: A text row that names no period — a units line, a section
+    #: banner — is not the header when a counter row is there to be
+    #: read. The founder's balance sheet has both: a row of words at
+    #: row 7 and « 1 2 3 4 5 » at row 4, and the words won.
+    if (
+        not any(PERIOD_LABEL.match(one) for one in headers.values())
+        and (counted := _counter_header(grid, last_column, label_column)) is not None
+    ):
+        #: **A row of 1, 2, 3 … is a period header.** The founder's own
+        #: model heads every statement with a year counter and nothing
+        #: else, and a number is not a string, so the header row came
+        #: back empty, no sheet had a period axis, and four statement
+        #: checks reported « no balance sheet was located » about a
+        #: sheet called Balance Sheet. The counter is read as
+        #: « Year 1, Year 2, … » — the words the row's own label uses
+        #: where it has one — which is the spelling the axis already
+        #: understands.
+        header_row, headers = counted
 
     for (row, column), shown in grid.values.items():
         if isinstance(shown, str) and shown.strip() in ERROR_VALUES:
@@ -1213,6 +1231,78 @@ def _period_label(value: Any) -> str | None:
     if not isinstance(year, int) or not 1900 <= year <= 2200:
         return None
     return f"FY{year}"
+
+
+#: What a column label must look like to head a period. One definition,
+#: here, because the reader is the first thing that needs it: a text
+#: header that names no period must not stop a counter row underneath
+#: it from being read as the axis.
+PERIOD_LABEL = re.compile(
+    r"""^\s*(?:
+        (?:FY|CY|AY|LTM|NTM)?\s*(?:19|20)\d{2}(?:\s*/\s*\d{2})?\s*[AEPF]?
+      | Q[1-4](?:\s*(?:19|20)\d{2})?
+      | (?:Year|Yr|Period|Sem|Semester)\s*\d+
+      | (?:Half\s*[12]|H[12])(?:\s*(?:19|20)\d{2})?
+      | \d{1,2}[-/\s](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s](?:19|20)?\d{2}
+      | (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s](?:19|20)\d{2}
+    )\s*$""",
+    re.VERBOSE | re.IGNORECASE,
+)
+
+#: The words a counter row may be labelled with, in the label column —
+#: « Year », « Period », « Yr » — and the word used when it has none.
+_COUNTER_WORDS = re.compile(r"^\s*(year|yr|period|sem|semester)s?\s*$", re.IGNORECASE)
+
+
+def _counter_header(
+    grid: _Grid, last_column: int, label_column: int
+) -> tuple[int, dict[int, str]] | None:
+    """The row of consecutive integers that heads the periods, if any.
+
+    Two shapes count. A counter — 0 or 1 upward, one per column, at
+    least three wide — reads as « Year N ». A run of calendar years
+    (1900–2200) reads as the year itself. Anything else — a row of
+    percentages, a row of totals that happen to be 1, 2, 3 — has gaps
+    or repeats and is refused. The first such row in the header band
+    wins, because a sheet has one header.
+    """
+    for row in range(1, min(grid.last_row, HEADER_SEARCH) + 1):
+        found: list[tuple[int, int]] = []
+        others = 0
+        for column in range(label_column + 1, last_column + 1):
+            value = grid.values.get((row, column))
+            if isinstance(value, bool):
+                break
+            number = _decimal(value)
+            if number is None or number != number.to_integral_value():
+                if number is not None:
+                    others += 1
+                if found:
+                    break
+                continue
+            found.append((column, int(number)))
+        if len(found) < 3 or others:
+            #: **A header sits above the data.** The first row that
+            #: holds numbers right of the labels is either the counter
+            #: or the start of the data; a run of consecutive integers
+            #: further down is a row of values that happen to count —
+            #: a period index, a year-one-to-twenty row inside a
+            #: schedule — and reading it as the header would take a
+            #: data row out of the audit.
+            if found or others:
+                return None
+            continue
+        numbers = [n for _, n in found]
+        steps = {b - a for a, b in zip(numbers, numbers[1:], strict=False)}
+        if steps != {1}:
+            continue
+        named = _shown(grid, row, label_column) or ""
+        if all(1900 <= n <= 2200 for n in numbers):
+            return row, {column: str(n) for column, n in found}
+        if numbers[0] in (0, 1):
+            word = "Year" if not _COUNTER_WORDS.match(named) else named.strip().title()
+            return row, {column: f"{word} {n}" for column, n in found}
+    return None
 
 
 def _header_row(grid: _Grid, last_column: int) -> int | None:

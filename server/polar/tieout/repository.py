@@ -640,6 +640,32 @@ class TieOutRepository(RepositoryBase[Artifact]):
             statement = statement.where(CheckRun.kind == kind)
         return (await self.session.execute(statement)).scalars().first()
 
+    async def finished_runs(
+        self, dossier_id: UUID, kind: CheckKind, *, limit: int = 24
+    ) -> Sequence[CheckRun]:
+        """Every finished run of one kind, oldest first — the trend's data.
+
+        `latest_run` answers « when was this last true »; the trend
+        needs the run before that, and the one before. The Overview
+        chart used to read the latest-per-kind list and so could never
+        have two points: « the trend appears after the second check »
+        was printed for every deal, forever.
+        """
+        statement = (
+            select(CheckRun)
+            .where(
+                CheckRun.dossier_id == dossier_id,
+                CheckRun.deleted_at.is_(None),
+                CheckRun.kind == kind,
+                CheckRun.status == CheckStatus.done,
+            )
+            .order_by(CheckRun.created_at.desc())
+            .limit(limit)
+        )
+        rows = list((await self.session.execute(statement)).scalars().all())
+        rows.reverse()
+        return rows
+
     # --- findings -------------------------------------------------------
 
     async def replace_findings(
@@ -768,6 +794,22 @@ class TieOutRepository(RepositoryBase[Artifact]):
         for state, count in rows:
             counts[state if isinstance(state, str) else state.value] = int(count)
         return counts
+
+    async def open_findings_by_rule(self, dossier_id: UUID) -> dict[str, int]:
+        """Open audit findings per rule — what the checks list reads."""
+        statement = (
+            select(Finding.rule, func.count())
+            .where(
+                Finding.dossier_id == dossier_id,
+                Finding.deleted_at.is_(None),
+                Finding.kind == FindingKind.audit,
+                Finding.state == FindingState.open,
+                Finding.rule.is_not(None),
+            )
+            .group_by(Finding.rule)
+        )
+        rows = (await self.session.execute(statement)).all()
+        return {str(rule): int(count) for rule, count in rows if rule}
 
     async def get_finding(self, finding_id: UUID) -> Finding | None:
         statement = select(Finding).where(

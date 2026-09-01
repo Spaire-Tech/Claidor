@@ -466,7 +466,30 @@ TIER_NAMES: dict[int, str] = {
 }
 
 
-def _elevated(book: Workbook, result: Audit) -> None:
+#: The engine's own materiality when the firm has set none: half a
+#: percent of the largest absolute value in the model. Registered on
+#: the founder's own objection — « 8.513bn and 12.5m both read
+#: Material; a number 680 times bigger gets the same label » — so the
+#: label is derived from the amount and the finding's basis sentence
+#: says the threshold it was judged against. A firm's own number, from
+#: its house rules, replaces this whole.
+MATERIALITY_SHARE = 0.005
+
+
+def materiality_of(book: Workbook) -> float:
+    """The model's own materiality line: half a percent of its scale."""
+    largest = max(
+        (
+            abs(float(cell.value))
+            for cell in book.cells.values()
+            if cell.value is not None
+        ),
+        default=0.0,
+    )
+    return largest * MATERIALITY_SHARE
+
+
+def _elevated(book: Workbook, result: Audit, materiality: float | None = None) -> None:
     """Round 3 — Elevate. Rank every finding, and say why.
 
     The mentor's formula, adopted whole: attention = structural risk ×
@@ -528,16 +551,45 @@ def _elevated(book: Workbook, result: Audit) -> None:
         ),
     }
     #: Rules whose figure is money rather than a count or a constant —
-    #: the only findings magnitude may promote.
+    #: the only findings magnitude may promote, and the only ones the
+    #: materiality line may demote.
     money_figures = {"skipped-cell", "typed-over-formula"}
+    threshold = materiality if materiality and materiality > 0 else materiality_of(book)
+    threshold_said = (
+        f"the firm's materiality of {shown_number(threshold)}"
+        if materiality and materiality > 0
+        else f"the model's own materiality line of {shown_number(threshold)}"
+    )
 
     replaced: list[Finding] = []
     for finding in result.findings:
-        if finding.severity == "error":
+        money = 0.0
+        if finding.rule in money_figures and finding.figure:
+            first = finding.figure.split(", ")[0].replace(",", "")
+            scale = {"bn": 1e9, "m": 1e6}.get(first[-2:].lstrip("0123456789."), 1.0)
+            try:
+                money = abs(float(first.rstrip("bnm"))) * scale
+            except ValueError:
+                money = 0.0
+        if finding.severity == "error" and money and money < threshold:
+            #: A real defect whose money sits under the line. Still a
+            #: defect — the basis says so — but « Material » is a word
+            #: about the amount, and this amount does not earn it.
+            tier, risk = 2, 0.8
+            confidence, seen = seen_by_rule.get(
+                finding.rule, (0.9, "the defect is structural")
+            )
+            seen = (
+                f"{seen}; {shown_number(money)} sits under {threshold_said}, "
+                "so it is significant rather than material"
+            )
+        elif finding.severity == "error":
             tier, risk = 1, 1.0
             confidence, seen = seen_by_rule.get(
                 finding.rule, (0.9, "the defect is structural")
             )
+            if money:
+                seen = f"{seen}; {shown_number(money)} is at or above {threshold_said}"
         elif finding.rule == "hardcode-in-formula":
             tier, risk = 2, 0.6
             confidence, seen = (
@@ -555,15 +607,8 @@ def _elevated(book: Workbook, result: Audit) -> None:
             confidence, seen = 0.7, ("a departure from the standards, often deliberate")
 
         bonus = 0.0
-        if finding.rule in money_figures and finding.figure:
-            first = finding.figure.split(", ")[0].replace(",", "")
-            scale = {"bn": 1e9, "m": 1e6}.get(first[-2:].lstrip("0123456789."), 1.0)
-            try:
-                magnitude = abs(float(first.rstrip("bnm"))) * scale
-            except ValueError:
-                magnitude = 0.0
-            if magnitude:
-                bonus = min(0.1, 0.03 * math.log10(1 + magnitude))
+        if money:
+            bonus = min(0.1, 0.03 * math.log10(1 + money))
 
         weight = round(min(1.0, risk * confidence + bonus), 2)
         basis = f"{TIER_NAMES[tier].lower()}: {seen}"
@@ -980,7 +1025,12 @@ def retained_parse_caches() -> Iterator[None]:
                 gc.collect()
 
 
-def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
+def audit(
+    book: Workbook,
+    axes: "PeriodAxes | None" = None,
+    *,
+    materiality: float | None = None,
+) -> Audit:
     """Every mechanical defect in a model, graded.
 
     `axes` — each sheet's period axis, from the structure layer — lets
@@ -1030,7 +1080,7 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _quantified(book, result, axes)
     result.findings = _collapsed(book, result.findings, axes)
     _flows(book, result)
-    _elevated(book, result)
+    _elevated(book, result, materiality)
     #: Weight first — a defect leads, hygiene closes — with the old
     #: severity/sheet order breaking ties so equal weights stay stable.
     result.findings.sort(

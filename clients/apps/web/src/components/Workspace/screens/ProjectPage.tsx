@@ -42,14 +42,7 @@
  *   the marked-up download stay the current version's and say so.
  */
 
-import {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { Fragment, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Artifact,
   auditRecord,
@@ -77,6 +70,16 @@ export const sevOf = (f: Finding): 1 | 2 | 3 => {
 }
 const SEV_WORD = { 1: 'Material', 2: 'Significant', 3: 'Observation' } as const
 const SEV_DOT = { 1: '#e0322d', 2: '#e8a300', 3: '#2b6cf5' } as const
+
+/** A finding's money, as a number — « 12.5m » → 12,500,000. Zero when
+ *  the figure is a count or a constant rather than an amount. */
+export const magnitude = (f: Finding): number => {
+  const raw = String(f.figure ?? '').split(',')[0]!.trim().replace(/,/g, '')
+  const m = /^-?(\d+(?:\.\d+)?)\s*(bn|m|k)?$/i.exec(raw)
+  if (!m) return 0
+  const scale = { bn: 1e9, m: 1e6, k: 1e3 }[(m[2] ?? '').toLowerCase()] ?? 1
+  return Number(m[1]) * scale
+}
 
 /**
  * Where a finding is, as the design's Where column draws it.
@@ -111,8 +114,12 @@ const whereOf = (one: Finding): { label: string; extra: string } => {
 
   //: How many other cells this one finding stands for. `cells` is the
   //: family's roster; one entry is not a family.
+  //: Split on commas only. Splitting on spaces too counted every cell
+  //: on a sheet with a space in its name twice: thirty-nine cells on
+  //: « Assumptions Processing » showed « +77 ».
   const roster = String(one.cells ?? '')
-    .split(/[,\s]+/)
+    .split(',')
+    .map((one) => one.trim())
     .filter(Boolean)
   const extra = roster.length > 1 ? `+${roster.length - 1}` : ''
 
@@ -284,6 +291,13 @@ export const ProjectPage = ({
   const [noteFor, setNoteFor] = useState<string | null>(null)
   const [noteText, setNoteText] = useState('')
   const [tip, setTip] = useState<string | null>(null)
+  //: What the last ruling action could not do, per finding — shown in
+  //: the card. The three actions used to swallow every error.
+  const [rulingWord, setRulingWord] = useState<{ id: string; text: string } | null>(null)
+  //: What the last Re-check did, in one sentence — or why it could not.
+  const [recheckWord, setRecheckWord] = useState<string | null>(null)
+  //: Every finished audit run, oldest first — the trend's points.
+  const [history, setHistory] = useState<CheckRun[] | null>(null)
   const [at, setAt] = useState(0)
 
   useEffect(() => {
@@ -300,6 +314,10 @@ export const ProjectPage = ({
       .runs(deal.id)
       .then((got) => live && setRuns(got))
       .catch(() => live && setRuns([]))
+    api
+      .runHistory(deal.id)
+      .then((got) => live && setHistory(got))
+      .catch(() => live && setHistory([]))
     api
       .links(deal.id)
       .then((got) => live && setLinks(got))
@@ -475,9 +493,16 @@ export const ProjectPage = ({
     if (checking) return
     setPastVer(null)
     setChecking(true)
+    setRecheckWord(null)
+    //: What was open before, by id — a recurring finding keeps its id
+    //: across runs, so the difference after is real: new, cleared,
+    //: unchanged. A run that finds the same thirteen used to look
+    //: like a button that did nothing.
+    const before = new Set((findings ?? []).filter((f) => f.state === 'open').map((f) => f.id))
     api
       .check(deal.id)
-      .then(() => {
+      .then((runs) => {
+        const failed = runs.filter((one) => one.status === 'failed' && one.error)
         poll.current = setInterval(async () => {
           try {
             const now = await api.runs(deal.id)
@@ -486,6 +511,27 @@ export const ProjectPage = ({
             )
             if (!busy) {
               if (poll.current) clearInterval(poll.current)
+              const after = await api.findings(deal.id).catch(() => null)
+              if (after) {
+                const open = after.filter((f) => f.state === 'open')
+                const added = open.filter((f) => !before.has(f.id)).length
+                const kept = open.filter((f) => before.has(f.id)).length
+                const cleared = before.size - kept
+                const audit = runs.find((one) => one.kind === 'audit')
+                const stamp = audit?.finished_at
+                  ? ` at ${when(audit.finished_at).toLowerCase()}`
+                  : ''
+                setRecheckWord(
+                  added === 0 && cleared === 0
+                    ? `Checked again${stamp}: the same ${open.length} finding${
+                        open.length === 1 ? '' : 's'
+                      }, nothing new, nothing cleared.`
+                    : `Checked again${stamp}: ${added} new, ${cleared} cleared, ${kept} unchanged.` +
+                        (failed.length
+                          ? ` ${failed.map((one) => one.error).join(' ')}`
+                          : ''),
+                )
+              }
               setChecking(false)
               setAt((was) => was + 1)
               onChanged()
@@ -495,7 +541,14 @@ export const ProjectPage = ({
           }
         }, 2500)
       })
-      .catch(() => setChecking(false))
+      .catch((error: unknown) => {
+        setChecking(false)
+        setRecheckWord(
+          `The check did not run: ${
+            error instanceof Error ? error.message : 'something went wrong'
+          }.`,
+        )
+      })
   }
   useEffect(
     () => () => {
@@ -591,7 +644,7 @@ export const ProjectPage = ({
       : viewingPast && !pastReady
         ? `Checking version ${pastVer} on the cells stored at its upload.`
         : !checkedAt
-          ? 'This model has not been checked. Re-check reads every sheet and reports what it finds.'
+          ? 'This model has not been checked. Re-check runs every rule over the cells stored at upload.'
           : open.length === 0
             ? `Nothing failing as of ${when(checkedAt).toLowerCase()}${
                 blindCopy ? ' — but little could be checked' : ''
@@ -611,66 +664,84 @@ export const ProjectPage = ({
                   : ''
               }`
 
-  //: The three summary bullets — deterministic, from the findings and
-  //: the latest run. No generated prose.
+  //: The audit run the page speaks about, and its checks list — the
+  //: server's own derivation, one state per rule, never a list the
+  //: screen invented.
+  const auditRun = useMemo(
+    () =>
+      (runs ?? []).find(
+        (one) => one.kind === 'audit' && one.status === 'done',
+      ) ?? null,
+    [runs],
+  )
+  const checks = useMemo(
+    () => (viewingPast ? [] : (auditRun?.checks ?? [])),
+    [viewingPast, auditRun],
+  )
+
+  //: The summary — deterministic, from the findings and the run. What
+  //: is broken and how much comes first; then what was checked, every
+  //: check named; then coverage. Nothing here is generated prose, and
+  //: nothing here says « and more ».
   const bullets = useMemo(() => {
     if (!checkedAt) return []
     const out: string[] = []
-    if (counts[1] > 0) {
-      const sheets = new Map<string, number>()
-      for (const one of open) {
-        if (sevOf(one) !== 1) continue
-        const sheet = String(one.where.anchor.sheet ?? one.where.label ?? '')
-        if (sheet) sheets.set(sheet, (sheets.get(sheet) ?? 0) + 1)
-      }
-      const top = [...sheets.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2)
+    const bySize = [...open].sort(
+      (a, b) => magnitude(b) - magnitude(a) || sevOf(a) - sevOf(b),
+    )
+    const largest = bySize[0]
+    if (open.length === 0) {
       out.push(
-        `${word(counts[1])} finding${counts[1] === 1 ? ' is' : 's are'} material${
-          top.length
-            ? `. ${top.length === 1 ? 'Most sit' : 'Most sit'} in ${top
-                .map(([s]) => s)
-                .join(' and ')}.`
-            : '.'
-        }`,
+        viewingPast
+          ? 'No finding is open against this version.'
+          : 'Nothing is open against this model.',
       )
     } else {
+      const parts = [
+        counts[1] ? `${counts[1]} material` : '',
+        counts[2] ? `${counts[2]} significant` : '',
+        counts[3] ? `${counts[3]} observation${counts[3] === 1 ? '' : 's'}` : '',
+      ].filter(Boolean)
+      const lead =
+        largest && magnitude(largest) > 0
+          ? `The largest: ${largest.plain || largest.title}`
+          : largest
+            ? `First: ${largest.plain || largest.title}`
+            : ''
       out.push(
-        open.length === 0
-          ? 'No finding is open against this version.'
-          : 'No open finding is material.',
+        `${word(open.length)} finding${open.length === 1 ? '' : 's'} open (${parts.join(
+          ', ',
+        )}). ${lead}`.trim(),
       )
+    }
+    if (checks.length > 0) {
+      const n = (state: string) => checks.filter((c) => c.state === state).length
+      const ran = n('found') + n('clean')
+      out.push(
+        `${ran} of ${checks.length} checks ran: ${n('found')} found something, ${n(
+          'clean',
+        )} found nothing${n('abstained') ? `, ${n('abstained')} could not run` : ''}${
+          n('off') ? `, ${n('off')} switched off` : ''
+        }. Each is named below.`,
+      )
+    } else if (viewingPast && pastData) {
+      const abstentions = pastData.summary.abstentions ?? []
+      if (abstentions.length > 0)
+        out.push(
+          `${word(abstentions.length)} check${
+            abstentions.length === 1 ? '' : 's'
+          } could not run on this version: ${abstentions
+            .map((one) => one.why)
+            .join(' ')}`,
+        )
     }
     if (viewingPast && pastArtifact)
       out.push(
-        `This is version ${pastArtifact.version}, uploaded ${when(pastArtifact.uploaded_at).toLowerCase()}${
-          pastArtifact.uploaded_by ? ` by ${pastArtifact.uploaded_by.name}` : ''
-        }, checked just now on the cells stored at its upload.` +
+        `This is version ${pastArtifact.version}, checked just now on the cells stored at its upload.` +
           (model
             ? ` Rulings and corrections are recorded on the current version (v${model.version}).`
             : ''),
       )
-    else if (model)
-      out.push(
-        `The current model is version ${model.version}, uploaded ${when(model.uploaded_at).toLowerCase()}.${
-          deal.stale ? ' Files changed after the last check.' : ''
-        }`,
-      )
-    const abstentions = viewingPast
-      ? (pastData?.summary.abstentions ?? null)
-      : lastRun
-        ? auditRecord(lastRun).abstentions
-        : null
-    if (abstentions && abstentions.length > 0)
-      out.push(
-        `${word(abstentions.length)} check${
-          abstentions.length === 1 ? '' : 's'
-        } could not run: ${abstentions
-          .slice(0, 2)
-          .map((one) => one.why)
-          .join('; ')}${abstentions.length > 2 ? '; and more' : ''}.`,
-      )
-    else if (abstentions && !blindCopy)
-      out.push('Every check that applies to this model ran to the end.')
     if (blindCopy) out.push(blindSaid)
     return out
   }, [
@@ -678,11 +749,10 @@ export const ProjectPage = ({
     counts,
     open,
     model,
-    deal.stale,
-    lastRun,
     viewingPast,
     pastArtifact,
     pastData,
+    checks,
     blindCopy,
     blindSaid,
   ])
@@ -690,7 +760,11 @@ export const ProjectPage = ({
   //: The chart: tier tallies per finished audit run, oldest first.
   //: Runs recorded before tallies fall back on errors/smells.
   const series = useMemo(() => {
-    const done = (runs ?? [])
+    //: From the history, not the latest-per-kind list: that list can
+    //: hold one audit run at most, so a chart read off it could never
+    //: have two points and « the trend appears after the second check »
+    //: was false for every deal.
+    const done = (history ?? [])
       .filter(
         (one) =>
           one.kind === 'audit' && one.status === 'done' && one.finished_at,
@@ -713,7 +787,7 @@ export const ProjectPage = ({
       }),
     )
     return { points: tiers, ticks }
-  }, [runs])
+  }, [history])
 
   const chart = useMemo(() => {
     const { points } = series
@@ -754,50 +828,75 @@ export const ProjectPage = ({
     })
   }, [series])
 
-  //: Findings, grouped the design's way — by family, filtered by the
-  //: severity chips.
+  //: One list, biggest amount first — `findings-voice.md` rule 6:
+  //: « Order by size, not by category. A reader who reads one line
+  //: should read the largest one. » The family headings put the
+  //: weakest findings in their own labelled section and pushed the
+  //: money down the page; they are gone. Ties break on tier, then on
+  //: the engine's own weight.
   const groups = useMemo(() => {
-    const seen = new Map<string, Finding[]>()
-    for (const one of open) {
-      if (sev !== 0 && sevOf(one) !== sev) continue
-      const family = categoryOfKey(one.rule ?? '')
-      const list = seen.get(family) ?? []
-      list.push(one)
-      seen.set(family, list)
-    }
-    return [...seen.entries()].map(([name, items]) => ({ name, items }))
+    const items = open
+      .filter((one) => sev === 0 || sevOf(one) === sev)
+      .sort(
+        (a, b) =>
+          magnitude(b) - magnitude(a) ||
+          sevOf(a) - sevOf(b) ||
+          (b.weight ?? 0) - (a.weight ?? 0),
+      )
+    return items.length ? [{ name: '', items }] : []
   }, [open, sev])
 
   const rule = (finding: Finding) => {
     setNoteFor(finding.id)
     setNoteText('')
   }
+  const said = (error: unknown) =>
+    error instanceof Error ? error.message : 'something went wrong'
   const saveNote = (finding: Finding) => {
     if (noteText.trim().length <= 2) return
+    setRulingWord(null)
     api
       .dismiss(finding.id, 'dismissed', noteText.trim())
       .then(() => {
         setNoteFor(null)
+        setNoteText('')
         setAt((was) => was + 1)
         onChanged()
       })
-      .catch(() => undefined)
+      .catch((error: unknown) =>
+        setRulingWord({ id: finding.id, text: `Not saved: ${said(error)}.` }),
+      )
   }
   const applyFix = (finding: Finding) => {
+    setRulingWord(null)
     api
       .propose(finding.id)
       .then(() => setAt((was) => was + 1))
-      .catch(() => undefined)
+      .catch((error: unknown) =>
+        setRulingWord({ id: finding.id, text: `No fix prepared: ${said(error)}.` }),
+      )
   }
   const decide = (finding: Finding, accept: boolean) => {
     if (!finding.correction) return
+    setRulingWord(null)
     api
       .decideCorrection(finding.correction.id, accept ? 'accept' : 'reject')
-      .then(() => {
+      .then((got) => {
+        //: A write that did not land comes back 200 with `failed` and
+        //: the writer's sentence — it is not an exception, and reading
+        //: it as success showed the plain « Apply the fix » again as
+        //: if nothing had happened.
+        if (got.state === 'failed')
+          setRulingWord({
+            id: finding.id,
+            text: `Not written: ${got.error || 'the writer refused'}.`,
+          })
         setAt((was) => was + 1)
         onChanged()
       })
-      .catch(() => undefined)
+      .catch((error: unknown) =>
+        setRulingWord({ id: finding.id, text: `Not decided: ${said(error)}.` }),
+      )
   }
 
   //: --- the Sources map geometry, ported from the design's own
@@ -970,7 +1069,7 @@ export const ProjectPage = ({
             </button>
           </span>
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
-          {(['Overview', 'Findings', 'Sources'] as const).map((label) => {
+          {(['Overview', 'Findings', 'Versions', 'Sources'] as const).map((label) => {
             const on = tab === label
             return (
               <button
@@ -1032,9 +1131,41 @@ export const ProjectPage = ({
                 >
                   {verdict.text}
                 </span>
+                {model && (
+                  //: File facts belong beside the file name, not in the
+                  //: summary of the check.
+                  <span
+                    style={{
+                      flex: '0 0 auto',
+                      fontSize: 13,
+                      color: '#8f96a0',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    v{model.version} · uploaded{' '}
+                    {when(model.uploaded_at).toLowerCase()}
+                    {model.uploaded_by ? ` by ${model.uploaded_by.name}` : ''}
+                    {deal.stale ? ' · files changed since the last check' : ''}
+                  </span>
+                )}
+                {recheckWord && (
+                  <span
+                    style={{
+                      flex: '0 0 auto',
+                      fontSize: 13,
+                      color: recheckWord.startsWith('The check did not run')
+                        ? ink.danger
+                        : '#1f8a4c',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {recheckWord}
+                  </span>
+                )}
                 <span style={{ flex: 1 }} />
                 <button
                   onClick={reCheck}
+                  title="Runs every rule again over the cells stored when this version was uploaded. It does not open the file: to check a changed file, upload it again."
                   style={{
                     flex: '0 0 auto',
                     display: 'inline-flex',
@@ -1339,6 +1470,70 @@ export const ProjectPage = ({
                       </div>
                     ))}
                   </div>
+                  {checks.length > 0 && (
+                    //: Every check, in one of four states. The reader's
+                    //: own rule for this page: what was checked, what was
+                    //: not, and why — all of it, never « and more ».
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'auto 1fr',
+                        gap: '9px 18px',
+                        marginTop: 22,
+                        paddingTop: 18,
+                        borderTop: '1px solid rgba(16,22,35,.07)',
+                        fontSize: 13.5,
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {(
+                        [
+                          ['found', 'Found something', '#e0322d'],
+                          ['clean', 'Ran, found nothing', '#1f8a4c'],
+                          ['abstained', 'Could not run', '#c8790a'],
+                          ['off', 'Switched off', '#9aa1ab'],
+                        ] as const
+                      ).map(([state, head, ink]) => {
+                        const rows = checks.filter((c) => c.state === state)
+                        if (rows.length === 0) return null
+                        return (
+                          <Fragment key={state}>
+                            <span
+                              style={{
+                                color: ink,
+                                fontWeight: 500,
+                                whiteSpace: 'nowrap',
+                                paddingTop: 1,
+                              }}
+                            >
+                              {head} · {rows.length}
+                            </span>
+                            <span style={{ color: '#3a3a3c', minWidth: 0 }}>
+                              {rows.map((c, i) => (
+                                <span key={c.key}>
+                                  {i > 0 ? ' · ' : ''}
+                                  {state === 'clean' && c.pass_label
+                                    ? c.pass_label
+                                    : c.label}
+                                  {state === 'found'
+                                    ? ` (${c.findings})`
+                                    : state === 'clean' && c.total > 0
+                                      ? ` (${c.clean} of ${c.total})`
+                                      : ''}
+                                  {state === 'abstained' && c.why ? (
+                                    <span style={{ color: '#6b7078' }}>
+                                      {' — '}
+                                      {c.why}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              ))}
+                            </span>
+                          </Fragment>
+                        )
+                      })}
+                    </div>
+                  )}
                 </>
               )}
 
@@ -1835,7 +2030,7 @@ export const ProjectPage = ({
                   </span>
                   {!checkedAt && !viewingPast && (
                     <span style={{ fontSize: 13, color: '#8f96a0' }}>
-                      Re-check on the Overview tab reads every sheet.
+                      Re-check on the Overview tab runs every rule over the stored cells.
                     </span>
                   )}
                 </div>
@@ -1852,15 +2047,17 @@ export const ProjectPage = ({
                         gap: 9,
                       }}
                     >
-                      <span
-                        style={{
-                          fontSize: 13,
-                          color: '#2b6cf5',
-                          padding: '2px 20px 0',
-                        }}
-                      >
-                        {group.name}
-                      </span>
+                      {group.name && (
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: '#2b6cf5',
+                            padding: '2px 20px 0',
+                          }}
+                        >
+                          {group.name}
+                        </span>
+                      )}
                       <div
                         style={{
                           background: '#fff',
@@ -2041,6 +2238,17 @@ export const ProjectPage = ({
                                         face. An empty card beats an
                                         echo — the grid beneath it is the
                                         evidence either way. */}
+                                    {rulingWord?.id === f.id && (
+                                      <div
+                                        style={{
+                                          fontSize: 13.5,
+                                          color: ink.danger,
+                                          marginBottom: 12,
+                                        }}
+                                      >
+                                        {rulingWord.text}
+                                      </div>
+                                    )}
                                     {!!why && (
                                       <div
                                         style={{
@@ -2495,7 +2703,13 @@ export const ProjectPage = ({
                                             padding: '0 8px',
                                           }}
                                         >
-                                          {grid.sheets.map((name) => (
+                                          {/* Only the sheet this grid shows.
+                                              Every sheet used to be drawn as a
+                                              tab, styled active or not, with
+                                              nothing behind a click. */}
+                                          {grid.sheets
+                                            .filter((name) => name === grid.sheet)
+                                            .map((name) => (
                                             <span
                                               key={name}
                                               style={{
@@ -2636,6 +2850,12 @@ export const ProjectPage = ({
                                           />
                                           <button
                                             onClick={() => saveNote(f)}
+                                            disabled={noteText.trim().length <= 2}
+                                            title={
+                                              noteText.trim().length <= 2
+                                                ? 'A reason needs a few words.'
+                                                : undefined
+                                            }
                                             style={{
                                               border: 0,
                                               background:
@@ -2658,7 +2878,10 @@ export const ProjectPage = ({
                                             Save
                                           </button>
                                           <button
-                                            onClick={() => setNoteFor(null)}
+                                            onClick={() => {
+                                              setNoteFor(null)
+                                              setNoteText('')
+                                            }}
                                             style={{
                                               border: 0,
                                               background: 'transparent',
@@ -2725,7 +2948,7 @@ export const ProjectPage = ({
                                               cursor: 'pointer',
                                             }}
                                           >
-                                            Undo
+                                            Withdraw
                                           </button>
                                         </div>
                                       ) : correction &&
@@ -4088,7 +4311,7 @@ export const ProjectPage = ({
           version={model?.version ?? deal.model_version ?? null}
           checkedAt={checkedAt}
           counts={counts}
-          open={openCurrent}
+          open={open}
           lastRun={lastRun}
           versions={versions ?? []}
           recalc={(model?.counts['recalc'] as RecalcMark | undefined) ?? null}
@@ -4651,11 +4874,20 @@ const Report = ({
   //: print window loaded none of them), the severity dots vanished
   //: entirely because browsers drop background colour when printing,
   //: and a trailing blank page followed the last sheet.
+  const [printWord, setPrintWord] = useState<string | null>(null)
   const print = () => {
+    setPrintWord(null)
     const sheets = [...document.querySelectorAll('[data-report="sheet"]')]
-    if (!sheets.length) return
+    if (!sheets.length) {
+      setPrintWord('Nothing to print yet.')
+      return
+    }
     const w = window.open('', '_blank', 'width=900,height=1200')
-    if (!w) return
+    if (!w) {
+      //: A blocked popup used to produce nothing and say nothing.
+      setPrintWord('Your browser blocked the print window. Allow pop-ups for this site and try again.')
+      return
+    }
     const origin = window.location.origin
     const face = (family: string, file: string, weight: string) =>
       `@font-face{font-family:'${family}';src:url('${origin}/workspace/${file}') format('woff2');font-weight:${weight};font-display:block;font-style:normal}`
@@ -4767,6 +4999,11 @@ const Report = ({
           >
             Model review report
           </span>
+          {printWord && (
+            <span style={{ fontSize: 13, color: ink.danger, marginRight: 12 }}>
+              {printWord}
+            </span>
+          )}
           <button
             onClick={print}
             style={{
