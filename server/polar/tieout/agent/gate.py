@@ -88,6 +88,10 @@ async def written(
     without a network: it takes the client, the model and the prompt,
     and returns the rewritten text.
     """
+    #: The markdown comes out here rather than costing a model call.
+    #: The screen prints asterisks literally, so they are punctuation
+    #: nobody meant to send — and removing them changes no word.
+    answer = style.tidy(answer)
     alerts = style.check(answer)
     if not style.errors(alerts):
         return Written(answer=answer, alerts=alerts)

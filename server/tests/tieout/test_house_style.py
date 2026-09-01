@@ -206,3 +206,53 @@ class TestTheGate:
 
         assert written.answer == WROTE
         assert not written.clean
+
+
+class TestWhatCostsAModelCallAndWhatDoesNot:
+    """Markdown is taken out; everything else is sent back.
+
+    The distinction is whether fixing it changes a word. An asterisk
+    does not — the screen prints it literally and nobody meant to send
+    it — so removing it here saves a whole model call, which is a
+    second or ten of somebody's wait. A hedge deleted changes a
+    sentence, so that goes to the model where it can see what it is
+    doing.
+    """
+
+    def test_the_asterisks_come_out_and_the_words_stay(self) -> None:
+        said = style.tidy("It is a **three-statement** model with `Debt!F44`.")
+
+        assert said == "It is a three-statement model with Debt!F44."
+
+    def test_a_bulleted_line_becomes_a_sentence(self) -> None:
+        assert style.tidy("- Depreciation holds 3,000 formulas.") == (
+            "Depreciation holds 3,000 formulas."
+        )
+
+    def test_tidying_alone_never_reaches_the_model(self) -> None:
+        #: Markdown and nothing else must not cost a rewrite.
+        assert style.errors(style.check(style.tidy("A **clean** sentence."))) == []
+
+
+class TestTheTwoTermsOfArt:
+    def test_very_hidden_keeps_its_very(self) -> None:
+        #: Excel's own name for a sheet absent from the unhide menu.
+        #: Deleting the « very » turns a fact into a weaker, wrong one.
+        assert style.errors(style.check("Module1 is very hidden.")) == []
+
+    def test_very_anything_else_is_still_a_hedge(self) -> None:
+        alerts = style.check("The schedule is very large.")
+
+        assert "Hedges" in {one.rule for one in alerts}
+
+
+class TestTheClosingOffer:
+    """« The person knows they can ask. »"""
+
+    def test_the_exact_sentence_the_founder_pointed_at(self) -> None:
+        said = (
+            "I also have not opened Module1. Nor have I checked which typed "
+            "inputs are backed by a source document. Ask and I will."
+        )
+
+        assert "Offers" in {one.rule for one in style.check(said)}

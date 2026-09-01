@@ -78,10 +78,6 @@ interface Message {
   /** What those cells are, in the tool's own words — the label the
    *  fold over them carries. */
   rowsLabel?: string
-  /** The boundary paragraph — the answer's last, drawn in grey. */
-  ends?: string
-  /** « Used 3 tools » — the trace's one-line summary. */
-  trace?: string
   /** Which model the answer was about, and what the deal also holds —
    *  drawn only where the deal carries more than one model, because on
    *  every other deal it is noise. Off the artifacts, not the prose. */
@@ -391,125 +387,6 @@ const Shimmer = ({ text, top = 0 }: { text: string; top?: number }) => (
 )
 
 const Thinking = () => <Shimmer text="Thinking" top={1} />
-
-/**
- * The cells behind an answer — folded, and named.
- *
- * These are the tool's own rows, verbatim, never re-typed by the
- * language model, and they are the evidence for what was said. They
- * used to be poured out under every answer, and the founder saw what
- * that does: a question about a model in general came back with three
- * good paragraphs and then twelve cell references with nothing saying
- * what they were, which reads as the machine emptying its pockets.
- *
- * So they are folded, with the tool's own sentence as the label —
- * « 308 typed inputs across 13 sheets ». Nothing is lost: one click
- * opens them, and a reader checking a figure is a click away rather
- * than scrolling past a table they did not ask for.
- */
-const Cells = ({ rows, label }: { rows: AskedRow[]; label?: string }) => {
-  const [open, setOpen] = useState(false)
-  const named =
-    label || `${rows.length} ${rows.length === 1 ? 'cell' : 'cells'}`
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <button
-        onClick={() => setOpen((was) => !was)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          alignSelf: 'flex-start',
-          border: 0,
-          background: 'transparent',
-          padding: 0,
-          font: 'inherit',
-          fontSize: 13.5,
-          color: '#8f96a0',
-          cursor: 'pointer',
-          textAlign: 'left',
-        }}
-      >
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{
-            flex: '0 0 10px',
-            transform: open ? 'rotate(90deg)' : 'none',
-            transition: 'transform .16s ease',
-          }}
-        >
-          <polyline points="9,5 16,12 9,19" />
-        </svg>
-        <span>{named}</span>
-      </button>
-      {open && (
-        <div
-          style={{
-            background: '#fbfbfc',
-            border: '.5px solid #f0eff1',
-            borderRadius: 14,
-            overflow: 'hidden',
-            animation: 'pcIn .18s ease both',
-          }}
-        >
-          {rows.slice(0, 12).map((row, ri) => (
-            <div
-              key={ri}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '110px 1fr auto',
-                gap: 12,
-                alignItems: 'center',
-                borderTop: ri === 0 ? 0 : '.5px solid #f0eff1',
-                padding: '10px 14px',
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: font.mono,
-                  fontSize: 12,
-                  color: '#0060d0',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {row.ref}
-              </span>
-              <span
-                style={{
-                  minWidth: 0,
-                  fontSize: 13.5,
-                  color: '#4a4f57',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {row.what}
-              </span>
-              <span
-                style={{
-                  fontFamily: font.mono,
-                  fontSize: 12.5,
-                  color: '#1c1f23',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {row.value}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 /**
  * Words arriving, each fading up out of a blur.
@@ -1098,19 +975,6 @@ const talliesNote = (deal: DealListItem): string => {
   })}${stale}.`
 }
 
-/** The answer split for the design: prose, then the grey ends-line. */
-const split = (answer: string): { text: string; ends: string } => {
-  const paragraphs = answer
-    .split(/\n{2,}/)
-    .map((one) => one.trim())
-    .filter(Boolean)
-  if (paragraphs.length < 2) return { text: answer.trim(), ends: '' }
-  return {
-    text: paragraphs.slice(0, -1).join('\n\n'),
-    ends: paragraphs[paragraphs.length - 1]!,
-  }
-}
-
 export interface AssistantProps {
   api: TieOutApi
   /** Null while loading. The chip lists every project this person is on. */
@@ -1131,21 +995,19 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
   const scroll = useRef<HTMLDivElement | null>(null)
 
   /**
-   * The reveal, paced.
+   * The reveal, paced — the design's own clock.
    *
-   * **This is the piece the design had and I removed.** The design's
-   * own `asType` walked a finished string forward at a constant rate;
-   * when real streaming replaced it, the screen started painting
-   * tokens the instant they landed — and tokens land in bursts, so it
-   * lurched. Nothing was wrong with the stream; what was missing was
-   * the clock in front of it.
+   * `asType` in `Swens_Workspace_2.html` advances
+   * `max(2, round(length / 90))` characters every 26ms. That is a
+   * **fixed duration**, not a fixed rate: whatever the answer's length,
+   * it takes about ninety ticks — a little over two seconds — so a
+   * short answer is not laboured and a long one does not crawl.
    *
-   * The step is proportional to the backlog, which does two things at
-   * once: it never stalls while there are words waiting, and it never
-   * empties the buffer in one jump. A long burst is spread over a few
-   * frames; a slow trickle is drawn as it arrives and no faster,
-   * because inventing pace the model has not earned is its own kind of
-   * lie about how fast the answer came.
+   * The first version of this stepped by a *fraction of what was left*,
+   * which is right while text is still arriving and catastrophic once
+   * it has all arrived: the backlog is the whole answer, so it emptied
+   * in six ticks — 150ms, which is a flash, not a stream. That was the
+   * « bursts at once, slight stream too fast to see » the founder saw.
    */
   useEffect(() => {
     const tick = window.setInterval(() => {
@@ -1155,13 +1017,13 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
         const full = last.text.length
         const at = last.shown ?? full
         if (at >= full) return was
-        const step = Math.max(2, Math.ceil((full - at) / 6))
+        const step = Math.max(2, Math.round(full / 90))
         return [
           ...was.slice(0, -1),
           { ...last, shown: Math.min(full, at + step) },
         ]
       })
-    }, 24)
+    }, 26)
     return () => window.clearInterval(tick)
   }, [])
 
@@ -1529,8 +1391,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
           ])
           return
         }
-        const { text: main, ends } = split(answer.answer)
-        const used = answer.steps.filter((one) => one.ok).length
+        const said = answer.answer.trim()
         if (asRun) {
           //: The verdict: what the run concluded, and everything behind
           //: it. Every part of it is the run's own — the lead is the
@@ -1540,8 +1401,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
             ...was.slice(0, -1),
             {
               role: 'verdict',
-              text: main,
-              ends,
+              text: said,
               rows: answer.rows ?? [],
               rowsLabel: answer.rows_label,
               traceLines: (answer.stages ?? [])
@@ -1559,13 +1419,10 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
           ...was.slice(0, -1),
           {
             role: 'answer',
-            text: main,
+            text: said,
             shown: 0,
-            ends,
             rows: answer.rows ?? [],
             rowsLabel: answer.rows_label,
-            trace:
-              used > 0 ? `Used ${used} ${used === 1 ? 'tool' : 'tools'}` : '',
             scope:
               answer.model && (answer.other_models ?? []).length > 0
                 ? {
@@ -2369,45 +2226,6 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                             {m.scope.others.join(', ')}, which this answer did
                             not read.
                           </span>
-                        </div>
-                      )}
-                      {m.rows !== undefined && m.rows.length > 0 && (
-                        <Cells rows={m.rows} label={m.rowsLabel} />
-                      )}
-                      {(!!m.ends || !!m.trace) && (
-                        //: The notes at the foot of the answer: what
-                        //: the review could not do, and how it was
-                        //: done. Both belong under the answer rather
-                        //: than in it — the founder's line, and the
-                        //: reason a walk's own log stopped appearing
-                        //: mid-sentence.
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 6,
-                            borderTop: '.5px solid #f0eff1',
-                            paddingTop: 12,
-                            marginTop: 2,
-                          }}
-                        >
-                          {!!m.ends && (
-                            <span
-                              style={{
-                                fontSize: 13,
-                                lineHeight: 1.55,
-                                color: '#9aa1ab',
-                                textWrap: 'pretty',
-                              }}
-                            >
-                              {m.ends}
-                            </span>
-                          )}
-                          {!!m.trace && (
-                            <span style={{ fontSize: 12, color: '#c2c6cc' }}>
-                              {m.trace}
-                            </span>
-                          )}
                         </div>
                       )}
                     </div>

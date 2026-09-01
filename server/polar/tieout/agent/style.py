@@ -87,7 +87,13 @@ HEDGES: list[tuple[str, str]] = [
         r"\bfairly\b",
         "Delete it. « fairly conventional » is either conventional or it is not.",
     ),
-    (r"\bvery\b", "Delete it, or use a word that does not need it."),
+    #: « very hidden » is Excel's own name for a sheet absent from the
+    #: unhide menu, not a hedge. Deleting the « very » there would
+    #: change a fact into a weaker, wrong one.
+    (
+        r"\bvery\b(?!\s+hidden\b)",
+        "Delete it, or use a word that does not need it.",
+    ),
     (r"\bsimply\b", "Delete it. Nothing is made simpler by being called simple."),
     (r"\bby far\b", "Give the comparison instead — « half the model »."),
     (r"\bquite\b", "Delete it."),
@@ -98,6 +104,17 @@ HEDGES: list[tuple[str, str]] = [
 #: « The whole report is a list of things to check. Saying it again
 #: carries no information, and it makes the engine sound unsure of its
 #: own work. »
+#: « The person knows they can ask. A closing offer is a sentence that
+#: carries nothing. »
+OFFERS: list[tuple[str, str]] = [
+    (r"\bask and I will\b", "Delete it. They know they can ask."),
+    (r"\blet me know if\b", "Delete it."),
+    (r"\bhappy to\b", "Delete it."),
+    (r"\bI can (?:also )?(?:walk|show|dig|check) ", "Delete the offer. Stop."),
+    (r"\bjust say the word\b", "Delete it."),
+    (r"\bwould you like me to\b", "Delete it, or ask the question properly."),
+]
+
 CHECK_WHETHER: list[tuple[str, str]] = [
     (r"\bcheck whether\b", "State the fact and stop."),
     (r"\bcheck which\b", "State the fact and stop."),
@@ -262,6 +279,7 @@ MARKDOWN: list[tuple[str, str]] = [
 RULES: list[tuple[str, str, list[tuple[str, str]]]] = [
     ("Hedges", "error", HEDGES),
     ("CheckWhether", "error", CHECK_WHETHER),
+    ("Offers", "error", OFFERS),
     ("MachineVoice", "error", MACHINE_VOICE),
     ("PlainWords", "error", PLAIN_WORDS),
     ("Unverified", "error", UNVERIFIED),
@@ -400,6 +418,36 @@ def check(text: str) -> list[Alert]:
     return found
 
 
+#: Markdown, taken out rather than sent back.
+#:
+#: Every other rule needs judgement — a hedge deleted changes a
+#: sentence, a claim rewritten changes what is claimed. These do not:
+#: the screen renders plain text, so an asterisk is punctuation the
+#: reader was never meant to see. Taking it out here costs nothing and
+#: saves a whole model call, which is a second or ten of somebody's
+#: wait.
+_TIDY: list[tuple[str, str]] = [
+    (r"\*\*([^*\n]+)\*\*", r"\1"),
+    (r"(?<![\w*])\*([^*\n]+)\*(?![\w*])", r"\1"),
+    (r"`([^`\n]+)`", r"\1"),
+    (r"^#{1,6}\s+", ""),
+    (r"^\s*[-*+]\s+", ""),
+]
+
+
+def tidy(text: str) -> str:
+    """Strip the markdown, and change nothing else.
+
+    Deliberately not a general cleaner. It removes characters the
+    screen would print literally and leaves every word where it was —
+    anything that alters a sentence belongs in the rewrite, where the
+    model can see what it is doing.
+    """
+    for pattern, into in _TIDY:
+        text = re.sub(pattern, into, text, flags=re.MULTILINE)
+    return text
+
+
 def errors(alerts: list[Alert]) -> list[Alert]:
     return [one for one in alerts if one.level == "error"]
 
@@ -440,4 +488,5 @@ __all__ = [
     "errors",
     "readability",
     "rewrite_note",
+    "tidy",
 ]
