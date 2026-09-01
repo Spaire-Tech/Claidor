@@ -62,7 +62,7 @@ cannot honestly measure it.
 | --- | --- |
 | Raw version diff (cells added, removed, changed) | **DONE** |
 | Shift detection — one inserted row reads as one change, not two hundred | **DONE** — anchor decomposition 10–73× on 11 of 12 real sheets |
-| Delta report in review language (new defects, repaired, moved assumptions) | **HALF** — 3× too slow, and its acceptance test never run. Piece 5 |
+| Delta report in review language (new defects, repaired, moved assumptions) | **HALF** — speed fixed 31 Aug (3.8× on the comparison, output byte-identical; `delta-speed.md`), but its acceptance test has still never run: the Welsh Water pair it names is unreachable from this container. Piece 9 |
 | Proving what did **not** change — the three tiers | **BUILT, not measured** |
 | The Watch on documents — model moved, deck did not | **DONE** |
 | **Behavioural version diffing** — the laws v8 obeyed vs the laws v12 obeys | **NOT BUILT — deliberately.** See § 2 |

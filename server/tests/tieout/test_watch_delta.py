@@ -353,3 +353,94 @@ class TestAuditsCanBeHandedIn:
         empty = Workbook(sheets=["M"])
         report = delta_of(empty, empty, old_findings=[], new_findings=[])
         assert report.persistent_defects == 0
+
+
+class TestRetainedParseCaches:
+    """The delta pipeline's fix for paying the cold parse pass three
+    times: inside a retained scope `audit()` leaves the content-keyed
+    caches warm for the next phase; outside one, nothing changes."""
+
+    def formulas(self) -> Workbook:
+        return book(
+            [
+                cell("B2", 2, 2, value="100", label="Revenue"),
+                cell("B3", 3, 2, value="40", formula="=B2*0.4", label="Cost"),
+                cell("B4", 4, 2, value="60", formula="=B2-B3", label="EBITDA"),
+            ]
+        )
+
+    def test_an_unretained_audit_clears_as_it_always_has(self) -> None:
+        from polar.tieout.audit import _shape_of, audit
+        from polar.tieout.workbook import tokens_of
+
+        audit(self.formulas())
+        assert tokens_of.cache_info().currsize == 0
+        assert _shape_of.cache_info().currsize == 0
+
+    def test_a_retained_scope_keeps_the_caches_then_clears_on_exit(self) -> None:
+        from polar.tieout.audit import _shape_of, audit, retained_parse_caches
+        from polar.tieout.workbook import tokens_of
+
+        with retained_parse_caches():
+            audit(self.formulas())
+            assert tokens_of.cache_info().currsize > 0
+            assert _shape_of.cache_info().currsize > 0
+        assert tokens_of.cache_info().currsize == 0
+        assert _shape_of.cache_info().currsize == 0
+
+    def test_nested_scopes_clear_once_when_the_outermost_closes(self) -> None:
+        from polar.tieout.audit import audit, retained_parse_caches
+        from polar.tieout.workbook import tokens_of
+
+        with retained_parse_caches():
+            with retained_parse_caches():
+                audit(self.formulas())
+            #: The inner exit must not clear — delta_of retains and
+            #: delta_report retains around it; the pair must nest.
+            assert tokens_of.cache_info().currsize > 0
+        assert tokens_of.cache_info().currsize == 0
+
+    def test_the_scope_clears_even_when_the_work_inside_raises(self) -> None:
+        import gc
+
+        from polar.tieout.audit import retained_parse_caches
+        from polar.tieout.workbook import tokens_of
+
+        try:
+            with retained_parse_caches():
+                tokens_of("=1+1")
+                raise RuntimeError("mid-pipeline failure")
+        except RuntimeError:
+            pass
+        assert tokens_of.cache_info().currsize == 0
+        assert gc.isenabled()
+
+    def test_the_scope_holds_the_collector_and_restores_it(self) -> None:
+        """The measured 100 s of a cold comparison was the cyclic
+        collector re-scanning the growing caches; the scope holds it
+        and puts back exactly the state it found — nested scopes
+        included."""
+        import gc
+
+        from polar.tieout.audit import retained_parse_caches
+
+        assert gc.isenabled()
+        with retained_parse_caches():
+            assert not gc.isenabled()
+            with retained_parse_caches():
+                assert not gc.isenabled()
+            assert not gc.isenabled()
+        assert gc.isenabled()
+
+    def test_a_collector_already_off_stays_off(self) -> None:
+        import gc
+
+        from polar.tieout.audit import retained_parse_caches
+
+        gc.disable()
+        try:
+            with retained_parse_caches():
+                assert not gc.isenabled()
+            assert not gc.isenabled()
+        finally:
+            gc.enable()
