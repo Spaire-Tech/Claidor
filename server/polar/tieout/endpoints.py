@@ -66,6 +66,7 @@ from polar.user.repository import UserRepository
 from . import auth
 from .agent import service as agent
 from .agent.model_tools import MODEL_TOOLSET
+from .agent.service import ASSISTANT_EFFORT
 from .agent.status import stage as run_stage
 from .analytics import ANALYTIC_PASS_NAMES, ANALYTIC_RULE_NAMES
 from .audit import RULE_NAMES
@@ -2479,14 +2480,23 @@ def _conversation(body: Ask, finding: Finding | None, scope: str = "") -> str:
     return body.prompt
 
 
-def _answer_rows(outcome: Outcome) -> list[AskedRow]:
+def _answer_rows(outcome: Outcome) -> tuple[list[AskedRow], str]:
     """The cells behind the answer — the last tool that returned any.
 
     Verbatim from the tool's own payload; nothing here passes through
     the language model, which is what keeps a listed figure a looked-up
     figure.
+
+    The second half of the return is **what those cells are**, in the
+    tool's own words: « 308 typed inputs across 13 sheets (no size
+    filter applied) ». Without it a screen has a table and no name for
+    it, and a table with no name under a paragraph about something else
+    is a dump — which is exactly what the founder saw when they asked a
+    question about the model in general and got twelve cells under the
+    answer with nothing saying why.
     """
     rows: list[AskedRow] = []
+    label = ""
     for step in outcome.steps:
         step_rows = step.data.get("rows") if step.ok else None
         if step_rows:
@@ -2498,7 +2508,8 @@ def _answer_rows(outcome: Outcome) -> list[AskedRow]:
                 )
                 for one in step_rows
             ]
-    return rows
+            label = step.summary
+    return rows, label
 
 
 def _answer_clarify(outcome: Outcome) -> AskedClarify | None:
@@ -2542,6 +2553,7 @@ def _asked(
     eventually disagree about that, and the disagreement would be
     invisible until somebody compared two screens.
     """
+    rows, rows_label = _answer_rows(outcome)
     return Asked(
         clarify=_answer_clarify(outcome),
         id=task.id,
@@ -2567,7 +2579,8 @@ def _asked(
             )
             for step in outcome.steps
         ],
-        rows=_answer_rows(outcome),
+        rows=rows,
+        rows_label=rows_label,
         model=subject.filename if subject is not None else None,
         model_version=subject.version if subject is not None else None,
         other_models=[f"{one.filename} (v{one.version})" for one in others],
@@ -2698,27 +2711,33 @@ async def assist_stream(
     version = subject.version if subject is not None else None
 
     async def lines() -> AsyncGenerator[str, None]:
-        queue: asyncio.Queue[Step] = asyncio.Queue()
-        #: The loop calls this synchronously from inside itself, so it
-        #: hands the step over and returns. Anything slower here would
-        #: slow the run down to the speed of the screen watching it.
+        queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+
+        #: Both callbacks run synchronously inside the loop, so both do
+        #: one thing and return. Anything slower here would hold the
+        #: run at the speed of the screen watching it.
+        def wrote(piece: str) -> None:
+            queue.put_nowait({"kind": "text", "text": piece})
+
+        def did(step: Step) -> None:
+            queue.put_nowait(
+                {"kind": "stage", **_stage(step, named, version).model_dump()}
+            )
+
         runner = asyncio.ensure_future(
             agent_run(
                 client,
                 MODEL_TOOLSET,
                 workspace,
                 prompt,
-                on_step=queue.put_nowait,
+                effort=ASSISTANT_EFFORT,
+                on_step=did,
+                on_text=wrote,
             )
         )
 
-        def sent(step: Step) -> str:
-            return _ndjson(
-                {"kind": "stage", **_stage(step, named, version).model_dump()}
-            )
-
-        async for step in _as_they_happen(runner, queue):
-            yield sent(step)
+        async for event in _as_they_happen(runner, queue):
+            yield _ndjson(event)
 
         try:
             outcome = await runner
@@ -2752,30 +2771,37 @@ async def assist_stream(
     )
 
 
+#: One thing the streaming route watched happen and passed on — a
+#: piece of prose as it was written, or a finished tool call. Named
+#: so the queue between the loop and the response says what it
+#: carries rather than « dict ».
+type Watched = dict[str, Any]
+
+
 def _ndjson(payload: dict[str, Any]) -> str:
     return json.dumps(payload, ensure_ascii=False, default=str) + "\n"
 
 
 async def _as_they_happen(
     runner: "asyncio.Future[Outcome]",
-    queue: "asyncio.Queue[Step]",
-) -> AsyncGenerator[Step, None]:
-    """Each step the moment it is put down, then the ones left over.
+    queue: "asyncio.Queue[Watched]",
+) -> AsyncGenerator[Watched, None]:
+    """Each event the moment it is put down, then the ones left over.
 
     The whole point of the streaming route is in these few lines, and
     they are here rather than inside the endpoint so they can be driven
     on their own. Two things have to hold and neither is obvious.
 
-    **A step leaves before the run ends.** Waiting on the queue *and*
+    **An event leaves before the run ends.** Waiting on the queue *and*
     on the run together is what makes that true; waiting on the run
     first would send every line at the end, which is the plain route
     with more machinery.
 
-    **A step queued as the run finished is still sent.** The last tool
-    call and the model's closing answer land within milliseconds of each
-    other, so the race is the normal case rather than the edge one —
-    and a step dropped there would leave the run and the trace
-    disagreeing about work that actually happened.
+    **An event queued as the run finished is still sent.** The last
+    words of the answer and the run's return land within milliseconds of
+    each other, so the race is the normal case rather than the edge one
+    — and an event dropped there would leave the screen showing an
+    answer with its last sentence missing.
     """
     while True:
         waiting = asyncio.ensure_future(queue.get())

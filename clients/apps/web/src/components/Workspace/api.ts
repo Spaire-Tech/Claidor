@@ -556,6 +556,10 @@ export interface Asked {
   clarify?: AskedClarify | null
   /** The cells behind the answer, from the last tool that returned any. */
   rows?: AskedRow[]
+  /** What those cells are, in the tool's own words. The screen folds
+   *  the table behind this line rather than pouring it out under the
+   *  answer. */
+  rows_label?: string
   /**
    * Which model this answer is about, off the artifacts rather than the
    * prose. A deal-scoped question narrows to one model, and on a deal
@@ -1362,20 +1366,23 @@ export class TieOutApi {
    * real workbook question runs several — tens of seconds, sometimes
    * more. The design does not draw a spinner over that: it draws the
    * run, one live step at a time, each line naming the real object.
-   * `onStage` is called with each step **as the server finishes it**,
-   * which is the whole reason this exists beside `assist`.
+   * `onStage` is called with each step **as the server finishes it**
+   * and `onText` with each piece of prose **as the model writes it** —
+   * which together are the whole reason this exists beside `assist`.
    *
-   * Newline-delimited JSON: one object per line, `stage` while the run
-   * goes on and one `done` carrying the answer. A stream that ends
+   * Newline-delimited JSON: `text` and `stage` objects while the run
+   * goes on, and one `done` carrying the answer. A stream that ends
    * without a `done` is a run that broke, and that is thrown rather
-   * than resolved with a half answer — an answer built from the stages
-   * alone would be a summary this client wrote, not one the model did.
+   * than resolved with a half answer — an answer stitched from the
+   * text pieces alone would be this client's transcript of a run that
+   * never finished, presented as though it had.
    */
   async assistStream(
     dealId: string,
     prompt: string,
     options: { history?: AskTurn[] } = {},
     onStage?: (stage: AskedStage) => void,
+    onText?: (piece: string) => void,
   ): Promise<Asked> {
     const token = this.options.token?.() ?? null
     const response = await fetch(
@@ -1419,10 +1426,12 @@ export class TieOutApi {
       const trimmed = line.trim()
       if (!trimmed) return
       const event = JSON.parse(trimmed) as
+        | { kind: 'text'; text: string }
         | ({ kind: 'stage' } & AskedStage)
         | ({ kind: 'done' } & Asked)
         | { kind: 'error'; detail: string }
-      if (event.kind === 'stage') onStage?.(event)
+      if (event.kind === 'text') onText?.(event.text)
+      else if (event.kind === 'stage') onStage?.(event)
       else if (event.kind === 'done') answer = event
       else failed = event.detail
     }

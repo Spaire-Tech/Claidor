@@ -47,6 +47,13 @@ MAX_STEPS = 24
 #: result, and the answer that follows it needs room.
 MAX_TOKENS = 4_000
 
+#: How hard the model works before it answers. `high` is the API's own
+#: default and what a review agent should have; a chat over a graph is a
+#: different job — the tools do the finding, and the thinking between
+#: calls is what a person watching a spinner is waiting on. Named here
+#: so raising it is one edit and a visible decision.
+EFFORT = "high"
+
 
 class Message(Protocol):
     content: Sequence[Any]
@@ -54,8 +61,22 @@ class Message(Protocol):
     usage: Any
 
 
+class Stream(Protocol):
+    """The SDK's streaming helper, in the two ways this loop uses it."""
+
+    @property
+    def text_stream(self) -> Any: ...
+
+    async def get_final_message(self) -> Message: ...
+
+
+class StreamManager(Protocol):
+    async def __aenter__(self) -> Stream: ...
+    async def __aexit__(self, *args: Any) -> None: ...
+
+
 class Messages(Protocol):
-    async def create(self, **kwargs: Any) -> Message: ...
+    def stream(self, **kwargs: Any) -> StreamManager: ...
 
 
 class Client(Protocol):
@@ -65,6 +86,12 @@ class Client(Protocol):
     that is what `anthropic.AsyncAnthropic` actually exposes — declared as
     a plain attribute the protocol looks satisfied to a reader and is
     rejected by the type checker, which is the useful way round.
+
+    **Streaming rather than a plain call**, and it is not an
+    optimisation. The model writes its answer over several seconds; a
+    non-streaming call holds all of it back and then puts a wall of text
+    on the screen at once. The words have to leave as they are written,
+    so `stream` is the only method here.
     """
 
     @property
@@ -155,7 +182,9 @@ async def run(
     *,
     model: str = AGENT_MODEL,
     max_steps: int = MAX_STEPS,
+    effort: str = EFFORT,
     on_step: Callable[[Step], None] | None = None,
+    on_text: Callable[[str], None] | None = None,
 ) -> Outcome:
     """Work the prompt with one toolset, and report what was done.
 
@@ -165,27 +194,51 @@ async def run(
     products is *what the agent can do*, and that belongs in a toolset
     rather than in a second copy of the control flow.
 
-    `on_step` is called with each step **as it finishes**, which is what
-    lets a screen show the run happening rather than a spinner and then
-    everything at once. It is a notification and nothing more: the
-    outcome returned at the end is unchanged by it, and a caller that
-    passes nothing gets exactly the behaviour it always had. It is
-    called inside the loop, so it must not block — the streaming
-    endpoint hands the step to a queue and returns.
+    `on_step` is called with each step **as it finishes** and `on_text`
+    with each piece of prose **as it is written**, which together are
+    what let a screen show the work happening rather than a spinner and
+    then everything at once. Both are notifications and nothing more:
+    the outcome returned at the end is unchanged by them, and a caller
+    that passes neither gets the same answer it always did. They are
+    called inside the loop, so neither may block — the streaming
+    endpoint hands what it is given to a queue and returns.
+
+    `effort` is how hard the model works before it answers, and it is
+    the honest lever on how long a person waits. It is not a smaller
+    model: the same model runs, and thinks for less of the wait.
     """
     outcome = Outcome(answer="")
     messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
     ordinal = 0
+    #: The tool-result block currently carrying the moving cache
+    #: breakpoint; see where it is set, below.
+    marked: dict[str, Any] | None = None
 
     while True:
         try:
-            response = await client.messages.create(
+            async with client.messages.stream(
                 model=model,
                 max_tokens=MAX_TOKENS,
-                system=toolset.prompt(),
+                #: A list rather than a string so the prompt can carry a
+                #: cache breakpoint. Tools are rendered before the
+                #: system prompt, so one mark here covers both — and
+                #: both are the same bytes on every turn of every
+                #: conversation, which is what makes them cacheable.
+                system=[
+                    {
+                        "type": "text",
+                        "text": toolset.prompt(),
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
                 tools=toolset.definitions,
                 messages=messages,
-            )
+                output_config={"effort": effort},
+            ) as stream:
+                async for piece in stream.text_stream:
+                    if on_text is not None:
+                        on_text(piece)
+                response = await stream.get_final_message()
         except Exception as error:
             # No answer is invented. A run that could not finish reports
             # that it could not finish.
@@ -254,6 +307,19 @@ async def run(
                 }
             )
 
+        #: A second, moving cache breakpoint at the end of what has
+        #: happened so far. Every turn re-sends the whole conversation
+        #: — a four-call answer sends three rounds of tool payloads
+        #: again on the fourth — and those bytes are identical each
+        #: time, so marking the newest one means the model reads the
+        #: history from cache instead of afresh. The previous mark is
+        #: cleared first: the API allows four breakpoints per request,
+        #: and a run of twelve steps would otherwise exceed it.
+        if marked is not None:
+            marked.pop("cache_control", None)
+        results[-1]["cache_control"] = {"type": "ephemeral"}
+        marked = results[-1]
+
         messages.append({"role": "user", "content": results})
 
 
@@ -265,6 +331,7 @@ def _serialise(data: dict[str, Any]) -> str:
 
 __all__ = [
     "AGENT_MODEL",
+    "EFFORT",
     "MAX_STEPS",
     "Client",
     "Outcome",

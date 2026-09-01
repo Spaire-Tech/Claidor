@@ -201,3 +201,16 @@
     opacity: 1;
   }
 }
+
+/* The caret at the end of an answer still being written. `steps(1)`
+   rather than a fade: a cursor blinks, it does not breathe. */
+@keyframes aCaret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}

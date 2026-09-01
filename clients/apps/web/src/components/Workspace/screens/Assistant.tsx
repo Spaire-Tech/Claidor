@@ -75,6 +75,9 @@ interface Message {
   role: 'you' | 'working' | 'answer' | 'ask' | 'run' | 'verdict'
   text: string
   rows?: AskedRow[]
+  /** What those cells are, in the tool's own words — the label the
+   *  fold over them carries. */
+  rowsLabel?: string
   /** The boundary paragraph — the answer's last, drawn in grey. */
   ends?: string
   /** « Used 3 tools » — the trace's one-line summary. */
@@ -105,6 +108,10 @@ interface Message {
    *  arrive finished — so this is what the spinning ring means: more
    *  is coming, not that this step is unfinished. */
   busy?: boolean
+  /** What the model has written so far in the turn it is on, as it
+   *  writes it. Cleared when a step lands, because that prose has just
+   *  become the step's own status line. */
+  live?: string
 
   // --- the verdict (role 'verdict') --------------------------------
   /** The lines behind the answer, hidden until the person opens them. */
@@ -386,6 +393,165 @@ const Shimmer = ({ text, top = 0 }: { text: string; top?: number }) => (
 const Thinking = () => <Shimmer text="Thinking" top={1} />
 
 /**
+ * The cells behind an answer — folded, and named.
+ *
+ * These are the tool's own rows, verbatim, never re-typed by the
+ * language model, and they are the evidence for what was said. They
+ * used to be poured out under every answer, and the founder saw what
+ * that does: a question about a model in general came back with three
+ * good paragraphs and then twelve cell references with nothing saying
+ * what they were, which reads as the machine emptying its pockets.
+ *
+ * So they are folded, with the tool's own sentence as the label —
+ * « 308 typed inputs across 13 sheets ». Nothing is lost: one click
+ * opens them, and a reader checking a figure is a click away rather
+ * than scrolling past a table they did not ask for.
+ */
+const Cells = ({ rows, label }: { rows: AskedRow[]; label?: string }) => {
+  const [open, setOpen] = useState(false)
+  const named =
+    label || `${rows.length} ${rows.length === 1 ? 'cell' : 'cells'}`
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <button
+        onClick={() => setOpen((was) => !was)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          alignSelf: 'flex-start',
+          border: 0,
+          background: 'transparent',
+          padding: 0,
+          font: 'inherit',
+          fontSize: 13.5,
+          color: '#8f96a0',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            flex: '0 0 10px',
+            transform: open ? 'rotate(90deg)' : 'none',
+            transition: 'transform .16s ease',
+          }}
+        >
+          <polyline points="9,5 16,12 9,19" />
+        </svg>
+        <span>{named}</span>
+      </button>
+      {open && (
+        <div
+          style={{
+            background: '#fbfbfc',
+            border: '.5px solid #f0eff1',
+            borderRadius: 14,
+            overflow: 'hidden',
+            animation: 'pcIn .18s ease both',
+          }}
+        >
+          {rows.slice(0, 12).map((row, ri) => (
+            <div
+              key={ri}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '110px 1fr auto',
+                gap: 12,
+                alignItems: 'center',
+                borderTop: ri === 0 ? 0 : '.5px solid #f0eff1',
+                padding: '10px 14px',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: font.mono,
+                  fontSize: 12,
+                  color: '#0060d0',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {row.ref}
+              </span>
+              <span
+                style={{
+                  minWidth: 0,
+                  fontSize: 13.5,
+                  color: '#4a4f57',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {row.what}
+              </span>
+              <span
+                style={{
+                  fontFamily: font.mono,
+                  fontSize: 12.5,
+                  color: '#1c1f23',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The answer as it is being written.
+ *
+ * Same face, same measure and same colour as the finished answer, on
+ * purpose: nothing moves when the last word lands, so a person can
+ * start reading the first sentence while the third is still arriving.
+ * The caret is the only sign it is not done.
+ */
+const Writing = ({ text }: { text: string }) => (
+  <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
+    <Mark top={5} />
+    <span
+      style={{
+        flex: 1,
+        minWidth: 0,
+        fontFamily: font.serif,
+        fontSize: 17.5,
+        lineHeight: 1.55,
+        color: '#1c1f23',
+        maxWidth: '56ch',
+        whiteSpace: 'pre-wrap',
+        textWrap: 'pretty',
+      }}
+    >
+      {text}
+      <span
+        style={{
+          display: 'inline-block',
+          width: 2,
+          height: '1em',
+          marginLeft: 2,
+          verticalAlign: '-0.15em',
+          background: '#1c1f23',
+          animation: 'aCaret 1.05s steps(1) infinite',
+        }}
+      />
+    </span>
+  </div>
+)
+
+/**
  * A run in progress: « Thinking », then the live step and its result.
  *
  * The design shows one step at a time rather than a list — the step's
@@ -394,12 +560,22 @@ const Thinking = () => <Shimmer text="Thinking" top={1} />
  * starts as a grey skeleton and fills in when the name is known.
  * Steps are indented 36px so they sit under the mark's text column.
  */
-const Run = ({ stages, busy }: { stages: RunStage[]; busy?: boolean }) => {
+const Run = ({
+  stages,
+  busy,
+  live: writing,
+}: {
+  stages: RunStage[]
+  busy?: boolean
+  /** What the model is writing right now, if anything. */
+  live?: string
+}) => {
   const live = stages[stages.length - 1]
-  //: Nothing has come back yet. « Thinking » alone is the honest
-  //: screen: a step drawn before one has happened would be a step this
-  //: file invented.
-  if (!live) return <Thinking />
+  //: Nothing has come back yet. Either the model is writing its first
+  //: line, or there is genuinely nothing to read — and « Thinking »
+  //: alone is the honest screen for the second, because a step drawn
+  //: before one has happened would be a step this file invented.
+  if (!live) return writing ? <Writing text={writing} /> : <Thinking />
   //: The ring belongs to the *run*, not to this step — every step
   //: here has already finished. While more is coming it spins over the
   //: line the assistant wrote for the work it is doing; when the run
@@ -407,7 +583,10 @@ const Run = ({ stages, busy }: { stages: RunStage[]; busy?: boolean }) => {
   const finished = !busy
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
-      <Thinking />
+      {/* The same slot answers the same question — what is it doing
+          right now — with the model's own words when it has written
+          any, and « Thinking » when it has not. */}
+      {writing ? <Shimmer text={writing} top={1} /> : <Thinking />}
       <div
         style={{
           display: 'flex',
@@ -972,8 +1151,12 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
   const [pjMenu, setPjMenu] = useState(false)
   const scroll = useRef<HTMLDivElement | null>(null)
 
-  //: The rail: open by default as drawn, collapsible from the header.
-  const [histOpen, setHistOpen] = useState(true)
+  //: The rail: **closed until it is asked for**, which is what the
+  //: design does — `histOpen` is never initialised in
+  //: `Swens_Workspace_2.html`, so it opens at `0px` and the composer
+  //: has the whole width. The comment here used to say « open by
+  //: default as drawn » and that was simply not what the file drew.
+  const [histOpen, setHistOpen] = useState(false)
   const [histFind, setHistFind] = useState(false)
   const [histQ, setHistQ] = useState('')
   const [histScope, setHistScope] = useState<'project' | 'all'>('project')
@@ -1240,9 +1423,36 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
       ...was,
       { role: 'you', text: q },
       asRun
-        ? { role: 'run', text: '', stages: [], busy: true }
-        : { role: 'working', text: 'Thinking' },
+        ? { role: 'run', text: '', live: '', stages: [], busy: true }
+        : { role: 'working', text: 'Thinking', live: '' },
     ])
+
+    //: The prose, as the model writes it.
+    //
+    //: Two things arrive down this callback and they are the same
+    //: thing at different moments: the line the assistant writes before
+    //: it reaches for a tool, and the answer it writes at the end. It
+    //: cannot be known which until the turn ends — so the words are
+    //: shown as they come, and when a step lands the buffer is cleared,
+    //: because that prose has just been claimed by the step as its
+    //: status line and showing it twice would read as two things
+    //: happening.
+    const wrote = (piece: string) => {
+      setMessages((was) => {
+        const last = was[was.length - 1]
+        if (!last) return was
+        if (last.role === 'working') {
+          const said = (last.live ?? '') + piece
+          return [...was.slice(0, -1), { ...last, text: said, live: said }]
+        }
+        if (last.role === 'run')
+          return [
+            ...was.slice(0, -1),
+            { ...last, live: (last.live ?? '') + piece },
+          ]
+        return was
+      })
+    }
 
     //: One step, as it lands. The line is the assistant's own where it
     //: wrote one — never « Reading the model » on every step of every
@@ -1262,16 +1472,16 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
         if (last.role === 'run')
           return [
             ...was.slice(0, -1),
-            { ...last, stages: [...(last.stages ?? []), one] },
+            { ...last, live: '', stages: [...(last.stages ?? []), one] },
           ]
         if (last.role === 'working')
-          return [...was.slice(0, -1), { ...last, text: stage.sub }]
+          return [...was.slice(0, -1), { ...last, live: '', text: stage.sub }]
         return was
       })
     }
 
     api
-      .assistStream(picked.id, q, { history }, landed)
+      .assistStream(picked.id, q, { history }, landed, wrote)
       .then((answer: Asked) => {
         //: The assistant stopped to settle one thing first. Draw its
         //: question and the card, and wait — picking a choice is just
@@ -1318,6 +1528,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
               text: main,
               ends,
               rows: answer.rows ?? [],
+              rowsLabel: answer.rows_label,
               traceLines: (answer.stages ?? [])
                 .filter((one) => one.summary)
                 .map((one) => one.summary),
@@ -1336,6 +1547,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
             text: main,
             ends,
             rows: answer.rows ?? [],
+            rowsLabel: answer.rows_label,
             trace:
               used > 0 ? `Used ${used} ${used === 1 ? 'tool' : 'tools'}` : '',
             scope:
@@ -1995,7 +2207,17 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                     {m.text}
                   </div>
                 )}
-                {m.role === 'working' && <Shimmer text={m.text} />}
+                {m.role === 'working' &&
+                  //: Once words are arriving they *are* the answer, so
+                  //: they are drawn as the answer and nothing moves
+                  //: when the last one lands. The shimmering line is
+                  //: for the part of the wait where there is genuinely
+                  //: nothing to read yet.
+                  (m.live ? (
+                    <Writing text={m.live} />
+                  ) : (
+                    <Shimmer text={m.text} />
+                  ))}
                 {m.role === 'ask' && (
                   //: The chat asking one question back. The card names
                   //: what it would do; nothing runs until a choice is
@@ -2042,7 +2264,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                   </div>
                 )}
                 {m.role === 'run' && (
-                  <Run stages={m.stages ?? []} busy={m.busy} />
+                  <Run stages={m.stages ?? []} busy={m.busy} live={m.live} />
                 )}
                 {m.role === 'verdict' && (
                   <Verdict
@@ -2137,64 +2359,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                         </div>
                       )}
                       {m.rows !== undefined && m.rows.length > 0 && (
-                        //: The tool's own rows, verbatim — the cells
-                        //: behind the answer, never re-typed by the
-                        //: language model.
-                        <div
-                          style={{
-                            background: '#fbfbfc',
-                            border: '.5px solid #f0eff1',
-                            borderRadius: 14,
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {m.rows.slice(0, 12).map((row, ri) => (
-                            <div
-                              key={ri}
-                              style={{
-                                display: 'grid',
-                                gridTemplateColumns: '110px 1fr auto',
-                                gap: 12,
-                                alignItems: 'center',
-                                borderTop: ri === 0 ? 0 : '.5px solid #f0eff1',
-                                padding: '10px 14px',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontFamily: font.mono,
-                                  fontSize: 12,
-                                  color: '#0060d0',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {row.ref}
-                              </span>
-                              <span
-                                style={{
-                                  minWidth: 0,
-                                  fontSize: 13.5,
-                                  color: '#4a4f57',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {row.what}
-                              </span>
-                              <span
-                                style={{
-                                  fontFamily: font.mono,
-                                  fontSize: 12.5,
-                                  color: '#1c1f23',
-                                  fontVariantNumeric: 'tabular-nums',
-                                }}
-                              >
-                                {row.value}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                        <Cells rows={m.rows} label={m.rowsLabel} />
                       )}
                       {!!m.ends && (
                         <span
