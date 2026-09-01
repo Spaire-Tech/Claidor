@@ -133,3 +133,38 @@ gets reliably clean.
 vocabulary. Every finance word that reaches a person is a line to add
 there — the README says so above, and the file is written to be added
 to rather than rewritten.
+
+---
+
+## The third document: open standards
+
+`findings-standards.md` sits beside this one. The founder downloaded and
+read SARIF (the OASIS standard for how any code-checking tool reports
+what it found) and the Rust compiler's error-message style guide, both
+open-licensed, on 31 August.
+
+Its conclusion is worth the space: **two independent groups reached the
+same rules we did.** SARIF's schema says the first sentence must stand
+alone when space is limited — the founder's « first view » rule, written
+into a standard. Rust's guide says « try not to emit multiple messages
+for the same error » — the one-authoring-situation-one-finding rule,
+arrived at here from the Ofwat flood.
+
+Three adoptions it names, none of them built yet:
+
+1. **`kind: review`** — a first-class state for « found it, could not
+   judge it ». This is the Module1 fix, and it is one field rather than
+   a sentence that has to be written carefully every time.
+2. **`partialFingerprints`** — a stable identity per finding across
+   runs. Fixes severity flapping *and* feeds the shift-aware version
+   diff; one mechanism, two wins.
+3. **The four applicability levels** for a correction —
+   `MachineApplicable`, `HasPlaceholders`, `MaybeIncorrect`,
+   `Unspecified` — where there are two today. The middle two are the
+   ones missing: a repair whose shape is known but not its value, and a
+   fix offered without pretending to be sure.
+
+Ledger's note: (1) and (3) are small and belong to the findings engine
+rather than to the writing, so they are not in `style.py`. (2) is not
+small — a fingerprint that survives an inserted row is the same problem
+as the version diff, and it should be built once for both.

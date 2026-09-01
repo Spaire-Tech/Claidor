@@ -78,6 +78,47 @@ export const sevOf = (f: Finding): 1 | 2 | 3 => {
 const SEV_WORD = { 1: 'Material', 2: 'Significant', 3: 'Observation' } as const
 const SEV_DOT = { 1: '#e0322d', 2: '#e8a300', 3: '#2b6cf5' } as const
 
+/**
+ * Where a finding is, as the design's Where column draws it.
+ *
+ * **The sheet, once.** The design puts sheet-name pills here —
+ * « Cashflow », « Cashflow · Covenants » — and nothing else; the cell
+ * reference belongs in the formula bar of the opened card, where there
+ * is room for it and a reason to read it.
+ *
+ * This column used to duplicate, two different ways, and both came
+ * from the same mistake: `where.label` **is the cell reference** for an
+ * audit finding (the server sets it from `finding.location`), and it
+ * was being used as a fallback for the sheet name. So a finding with
+ * no `anchor.sheet` drew the ref, then drew the ref again beside it;
+ * and a finding whose ref was a full `'Debt'!AR218` drew « Debt » next
+ * to « 'Debt'!AR218 ». Both read as a rendering fault, and both were.
+ *
+ * `extra` is the design's second half of the pill, and it is a count,
+ * never an address: a folded finding standing for twenty cells says
+ * « +19 » so the row admits it is one of a family.
+ */
+const whereOf = (one: Finding): { label: string; extra: string } => {
+  //: The sheet name, in the order it can be trusted: what the anchor
+  //: says, then the sheet half of a qualified ref, then the label —
+  //: but only when the label is *not* itself a reference.
+  const sheet = String(one.where.anchor.sheet ?? '').trim()
+  const ref = String(one.where.anchor.ref ?? one.where.label ?? '').trim()
+  const fromRef = ref.includes('!')
+    ? ref.split('!')[0]!.replace(/^'|'$/g, '')
+    : ''
+  const plain = /^\$?[A-Z]{1,3}\$?\d+$/i.test(ref) ? '' : ref
+
+  //: How many other cells this one finding stands for. `cells` is the
+  //: family's roster; one entry is not a family.
+  const roster = String(one.cells ?? '')
+    .split(/[,\s]+/)
+    .filter(Boolean)
+  const extra = roster.length > 1 ? `+${roster.length - 1}` : ''
+
+  return { label: sheet || fromRef || plain || 'the workbook', extra }
+}
+
 /** The Watch's eight classes, in the screen's words — the same
  *  attention inks the rest of the workspace uses: red for a defect,
  *  amber for an assumption or method at risk, blue for information,
@@ -929,32 +970,30 @@ export const ProjectPage = ({
             </button>
           </span>
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
-          {(['Overview', 'Findings', 'Versions', 'Sources'] as const).map(
-            (label) => {
-              const on = tab === label
-              return (
-                <button
-                  key={label}
-                  onClick={() => setTab(label)}
-                  style={{
-                    border: 0,
-                    background: on ? 'rgba(21,23,27,.055)' : 'transparent',
-                    borderRadius: 22,
-                    padding: '11px 26px',
-                    font: 'inherit',
-                    fontSize: 14.5,
-                    fontWeight: on ? 500 : 400,
-                    letterSpacing: '-.01em',
-                    color: on ? '#0060d0' : '#5b6068',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {label}
-                </button>
-              )
-            },
-          )}
+          {(['Overview', 'Findings', 'Sources'] as const).map((label) => {
+            const on = tab === label
+            return (
+              <button
+                key={label}
+                onClick={() => setTab(label)}
+                style={{
+                  border: 0,
+                  background: on ? 'rgba(21,23,27,.055)' : 'transparent',
+                  borderRadius: 22,
+                  padding: '11px 26px',
+                  font: 'inherit',
+                  fontSize: 14.5,
+                  fontWeight: on ? 500 : 400,
+                  letterSpacing: '-.01em',
+                  color: on ? '#0060d0' : '#5b6068',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {label}
+              </button>
+            )
+          })}
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
         </div>
 
@@ -1833,18 +1872,13 @@ export const ProjectPage = ({
                           const n = sevOf(f)
                           const opened = openId === f.id
                           const grid = f.grid
-                          //: A finding about the *workbook* rather than a
-                          //: cell — the defined names pointing into other
-                          //: files, say — carries no sheet and no ref, and
-                          //: the column sat empty beside a real finding on
-                          //: a real model. It is not nowhere: the engine
-                          //: says what it is about in `where.label`, and an
-                          //: empty column reads as a rendering fault
-                          //: rather than as « the whole workbook ».
-                          const sheet = String(
-                            f.where.anchor.sheet || f.where.label || '',
-                          )
-                          const ref = String(f.where.anchor.ref ?? '')
+                          const at = whereOf(f)
+                          //: Never the row's own sentence again.
+                          const said = f.plain || f.title
+                          const why =
+                            f.context && f.context.trim() !== said.trim()
+                              ? f.context
+                              : ''
                           const hasPair = !!f.fix && !!f.fix_before
                           const correction = f.correction
                           return (
@@ -1894,7 +1928,17 @@ export const ProjectPage = ({
                                 >
                                   <span
                                     style={{
+                                      //: `minWidth: 0` and the truncation
+                                      //: below are what stop a long sheet
+                                      //: name from pushing out of its
+                                      //: column and over Severity. The
+                                      //: pill is `nowrap` by the design;
+                                      //: without somewhere for the
+                                      //: overflow to go, `nowrap` in a
+                                      //: sized grid column is a spill.
                                       display: 'inline-flex',
+                                      minWidth: 0,
+                                      maxWidth: '100%',
                                       alignItems: 'center',
                                       gap: 6,
                                       background: '#f4f5f7',
@@ -1905,8 +1949,16 @@ export const ProjectPage = ({
                                       whiteSpace: 'nowrap',
                                     }}
                                   >
-                                    <span>{sheet || f.where.label}</span>
-                                    {ref && (
+                                    <span
+                                      style={{
+                                        minWidth: 0,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                      }}
+                                    >
+                                      {at.label}
+                                    </span>
+                                    {!!at.extra && (
                                       <span
                                         style={{
                                           fontFamily: font.mono,
@@ -1914,7 +1966,7 @@ export const ProjectPage = ({
                                           color: '#9aa1ab',
                                         }}
                                       >
-                                        {ref}
+                                        {at.extra}
                                       </span>
                                     )}
                                   </span>
@@ -1976,19 +2028,31 @@ export const ProjectPage = ({
                                       padding: '22px 24px 18px',
                                     }}
                                   >
-                                    <div
-                                      style={{
-                                        fontFamily: font.serif,
-                                        fontSize: 17.5,
-                                        lineHeight: 1.5,
-                                        color: '#2f333b',
-                                        maxWidth: '74ch',
-                                        textWrap: 'pretty',
-                                        paddingBottom: grid ? 20 : 4,
-                                      }}
-                                    >
-                                      {f.context || f.title}
-                                    </div>
+                                    {/* The design's « why »: the
+                                        explanation, which is a different
+                                        sentence from the row's own. It
+                                        used to fall back to the title
+                                        when there was no explanation, so
+                                        opening a row showed you the line
+                                        you had just clicked, in a bigger
+                                        face. An empty card beats an
+                                        echo — the grid beneath it is the
+                                        evidence either way. */}
+                                    {!!why && (
+                                      <div
+                                        style={{
+                                          fontFamily: font.serif,
+                                          fontSize: 17.5,
+                                          lineHeight: 1.5,
+                                          color: '#2f333b',
+                                          maxWidth: '74ch',
+                                          textWrap: 'pretty',
+                                          paddingBottom: grid ? 20 : 4,
+                                        }}
+                                      >
+                                        {why}
+                                      </div>
+                                    )}
                                     {grid && (
                                       <div
                                         style={{
