@@ -741,6 +741,13 @@ class Asked(Schema):
     #: The cells behind the answer, from the last tool that returned
     #: any — drawn under the prose, each one clickable.
     rows: list[AskedRow] = []
+    #: **What those cells are**, in the tool's own words — « 308 typed
+    #: inputs across 13 sheets (no size filter applied) ». The screen
+    #: folds the table behind this line rather than pouring it out
+    #: under the answer: a reader who wants the evidence opens it, and
+    #: a reader who asked a general question is not handed a wall of
+    #: refs they did not ask for.
+    rows_label: str = ""
     #: **Which model this answer is about**, and what else the deal
     #: holds. A deal-scoped question narrows to one model, and the
     #: narrowing used to be silent: on a deal carrying two, a confident

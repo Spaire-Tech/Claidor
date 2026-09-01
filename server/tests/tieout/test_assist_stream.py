@@ -25,7 +25,13 @@ from uuid import UUID, uuid4
 import pytest
 
 from polar.agent import Outcome, Step
-from polar.tieout.endpoints import _as_they_happen, _asked, _ndjson, _stage
+from polar.tieout.endpoints import (
+    Watched,
+    _as_they_happen,
+    _asked,
+    _ndjson,
+    _stage,
+)
 
 
 class FakeTask:
@@ -115,6 +121,61 @@ class TestTheTraceAndTheRunAreTheSameRun:
         assert answer.steps[0].ok is False
 
 
+class TestTheCellsAreNamedRatherThanPoured:
+    """A table under an answer needs a sentence saying what it is.
+
+    The founder asked a general question about a model and got three
+    good paragraphs followed by twelve cell references with nothing
+    saying why they were there. The rows were real; the silence around
+    them is what made it a dump. The tool's own summary is that
+    sentence, and the screen folds the table behind it.
+    """
+
+    def test_the_label_is_the_tools_own_sentence(self) -> None:
+        listing = a_step(
+            1,
+            "inventory",
+            summary="308 typed inputs across 13 sheets (no size filter applied)",
+            data={
+                "rows": [
+                    {"ref": "Control Panel!C18", "what": "Equipment", "value": "6bn"}
+                ]
+            },
+        )
+
+        answer = _asked(FakeTask(), an_outcome(listing), None, [])
+
+        assert answer.rows_label == (
+            "308 typed inputs across 13 sheets (no size filter applied)"
+        )
+        assert len(answer.rows) == 1
+
+    def test_the_label_follows_the_rows_it_belongs_to(self) -> None:
+        #: Rows come from the *last* tool that returned any, so the
+        #: label has to come from that same step — a name lifted off an
+        #: earlier one would describe a different set of cells.
+        first = a_step(
+            1, "locate", summary="Found 2 cells", data={"rows": [{"ref": "A1"}]}
+        )
+        second = a_step(
+            2,
+            "inventory",
+            summary="19 typed values on Debt Schedule",
+            data={"rows": [{"ref": "B2"}, {"ref": "B3"}]},
+        )
+
+        answer = _asked(FakeTask(), an_outcome(first, second), None, [])
+
+        assert answer.rows_label == "19 typed values on Debt Schedule"
+        assert [one.ref for one in answer.rows] == ["B2", "B3"]
+
+    def test_no_rows_means_no_label_to_hang_over_them(self) -> None:
+        answer = _asked(FakeTask(), an_outcome(a_step(1, "structure")), None, [])
+
+        assert answer.rows == []
+        assert answer.rows_label == ""
+
+
 class TestWhatTheRunSaysItProduced:
     def test_the_workbook_is_named_with_its_version(self) -> None:
         one = _stage(a_step(1, "structure"), "Northbank.xlsx", 22)
@@ -196,61 +257,63 @@ class TestTheClarifyStillComesThrough:
         assert answer.stages[0].tool == "ask_the_person"
 
 
-class TestTheStepsLeaveBeforeTheRunEnds:
+class TestTheEventsLeaveBeforeTheRunEnds:
     """The interleaving, driven on its own.
 
     Everything else in this file is about shapes. This is about timing,
-    which is the part the streaming route exists for: a step has to
-    reach the client while the run is still going, and a step queued in
-    the same instant the run finished must not be lost.
+    which is the part the streaming route exists for: a word of the
+    answer has to reach the screen while the model is still writing it,
+    and an event queued in the same instant the run finished must not
+    be lost.
     """
 
     @pytest.mark.asyncio
-    async def test_a_step_arrives_while_the_run_is_still_going(self) -> None:
-        queue: asyncio.Queue[Step] = asyncio.Queue()
+    async def test_an_event_arrives_while_the_run_is_still_going(self) -> None:
+        queue: asyncio.Queue[Watched] = asyncio.Queue()
         started = asyncio.Event()
 
         async def slow() -> Outcome:
-            queue.put_nowait(a_step(1))
+            queue.put_nowait({"kind": "text", "text": "The model "})
             await started.wait()
             return an_outcome(a_step(1))
 
         runner = asyncio.ensure_future(slow())
-        seen: list[Step] = []
-        async for step in _as_they_happen(runner, queue):
-            seen.append(step)
-            #: The first step is in hand and the run has not returned:
+        seen: list[Watched] = []
+        async for event in _as_they_happen(runner, queue):
+            seen.append(event)
+            #: The first words are in hand and the run has not returned:
             #: exactly the state the screen is drawn from.
             assert not runner.done()
             started.set()
 
-        assert [one.ordinal for one in seen] == [1]
+        assert seen == [{"kind": "text", "text": "The model "}]
 
     @pytest.mark.asyncio
-    async def test_a_step_queued_as_the_run_ended_is_still_sent(self) -> None:
-        #: The last tool call and the model's closing answer land within
-        #: milliseconds of each other, so this is the normal case.
-        queue: asyncio.Queue[Step] = asyncio.Queue()
+    async def test_the_last_words_are_not_lost_to_the_finish(self) -> None:
+        #: The closing words of an answer and the run's return land
+        #: within milliseconds of each other, so this is the normal
+        #: case — and dropping them would truncate the answer on screen.
+        queue: asyncio.Queue[Watched] = asyncio.Queue()
 
         async def quick() -> Outcome:
-            queue.put_nowait(a_step(1))
-            queue.put_nowait(a_step(2))
-            return an_outcome(a_step(1), a_step(2))
+            queue.put_nowait({"kind": "text", "text": "stops balancing "})
+            queue.put_nowait({"kind": "text", "text": "at FY28."})
+            return an_outcome(a_step(1))
 
         runner = asyncio.ensure_future(quick())
         await runner
 
-        seen = [step async for step in _as_they_happen(runner, queue)]
+        seen = [event async for event in _as_they_happen(runner, queue)]
 
-        assert [one.ordinal for one in seen] == [1, 2]
+        assert "".join(str(one["text"]) for one in seen) == ("stops balancing at FY28.")
 
     @pytest.mark.asyncio
-    async def test_a_run_with_no_steps_sends_none(self) -> None:
-        queue: asyncio.Queue[Step] = asyncio.Queue()
+    async def test_a_run_that_said_nothing_sends_nothing(self) -> None:
+        queue: asyncio.Queue[Watched] = asyncio.Queue()
 
         async def straight() -> Outcome:
             return an_outcome()
 
         runner = asyncio.ensure_future(straight())
 
-        assert [step async for step in _as_they_happen(runner, queue)] == []
+        assert [event async for event in _as_they_happen(runner, queue)] == []

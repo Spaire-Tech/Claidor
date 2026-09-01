@@ -66,19 +66,60 @@ def calls_many(*names: str) -> FakeMessage:
     )
 
 
+class FakeStream:
+    """The SDK's streaming helper, faked to the two things the loop uses.
+
+    Text comes out in pieces on purpose. The loop's contract is that
+    prose leaves *as it is written*, and a fake that handed over one
+    whole string would pass a test the real thing could fail.
+    """
+
+    def __init__(self, message: Any) -> None:
+        self.message = message
+
+    @property
+    def text_stream(self) -> Any:
+        async def pieces() -> Any:
+            for block in self.message.content:
+                if getattr(block, "type", "") != "text":
+                    continue
+                text = block.text
+                cut = max(1, len(text) // 2)
+                yield text[:cut]
+                if text[cut:]:
+                    yield text[cut:]
+
+        return pieces()
+
+    async def get_final_message(self) -> Any:
+        return self.message
+
+
+class FakeStreamManager:
+    def __init__(self, messages: "FakeMessages", kwargs: dict[str, Any]) -> None:
+        self.messages = messages
+        self.kwargs = kwargs
+
+    async def __aenter__(self) -> FakeStream:
+        self.messages.calls.append(self.kwargs)
+        if not self.messages.script:
+            raise AssertionError("the loop asked for more turns than were scripted")
+        nxt = self.messages.script.pop(0)
+        if isinstance(nxt, Exception):
+            raise nxt
+        return FakeStream(nxt)
+
+    async def __aexit__(self, *args: Any) -> None:
+        return None
+
+
 class FakeMessages:
     def __init__(self, script: list[Any]) -> None:
         self.script = list(script)
         self.calls: list[dict[str, Any]] = []
 
-    async def create(self, **kwargs: Any) -> FakeMessage:
-        self.calls.append(kwargs)
-        if not self.script:
-            raise AssertionError("the loop asked for more turns than were scripted")
-        nxt = self.script.pop(0)
-        if isinstance(nxt, Exception):
-            raise nxt
-        return nxt
+    def stream(self, **kwargs: Any) -> FakeStreamManager:
+        return FakeStreamManager(self, kwargs)
 
 
 class FakeClient:
@@ -259,7 +300,49 @@ class TestWhatTheModelIsGiven:
         await run(client, TOOLSET, workspace(), "Go")
 
         system = client.messages.calls[0]["system"]
-        assert "list_documents" in system
+        assert "list_documents" in system[0]["text"]
+
+    async def test_the_prompt_carries_a_cache_breakpoint(self) -> None:
+        #: The tools and the system prompt are the same bytes on every
+        #: turn of every conversation — thousands of tokens re-read from
+        #: scratch each time without this. Marked, they are read from
+        #: cache, and the person waits less.
+        client = FakeClient(says("Done."))
+        await run(client, TOOLSET, workspace(), "Go")
+
+        system = client.messages.calls[0]["system"]
+        assert system[-1]["cache_control"] == {"type": "ephemeral"}
+
+    async def test_the_history_carries_a_moving_breakpoint(self) -> None:
+        #: And **only one**: the mark moves to the newest tool result
+        #: rather than accumulating. Four breakpoints is the API's
+        #: limit, so a run of twelve steps that left every mark behind
+        #: would be rejected outright.
+        client = FakeClient(
+            calls("list_documents"),
+            calls("list_documents"),
+            calls("list_documents"),
+            calls("list_documents"),
+            calls("list_documents"),
+            says("Done."),
+        )
+        await run(client, TOOLSET, workspace(document("x")), "Go")
+
+        sent = client.messages.calls[-1]["messages"]
+        marked = [
+            block
+            for message in sent
+            if isinstance(message["content"], list)
+            for block in message["content"]
+            if isinstance(block, dict) and "cache_control" in block
+        ]
+        assert len(marked) == 1
+
+    async def test_the_effort_is_stated_rather_than_left_to_the_default(self) -> None:
+        client = FakeClient(says("Done."))
+        await run(client, TOOLSET, workspace(), "Go", effort="low")
+
+        assert client.messages.calls[0]["output_config"] == {"effort": "low"}
 
     async def test_tool_results_are_fed_back(self) -> None:
         client = FakeClient(calls("list_documents"), says("Done."))
@@ -318,8 +401,12 @@ class TestTheFakeIsNotLying:
                     ),
                 ]
 
-            async def create(self, **kwargs: Any) -> Message:
-                return self.script.pop(0)
+            def stream(self, **kwargs: Any) -> Any:
+                return FakeStreamManager(self, kwargs)  # type: ignore[arg-type]
+
+            #: `FakeStreamManager` reads these two off whatever it is
+            #: given; the messages it hands back are the SDK's own.
+            calls: list[dict[str, Any]] = []
 
         class RealShapedClient:
             def __init__(self) -> None:
@@ -466,3 +553,63 @@ class TestTheAssistantsOwnStatusLine:
         outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
 
         assert [step.said for step in outcome.steps] == ["Reading the documents", ""]
+
+
+@pytest.mark.asyncio
+class TestTheProseLeavesAsItIsWritten:
+    """The answer appears while it is being written, not after.
+
+    A model call takes tens of seconds. Holding every word back and
+    then putting the whole answer on screen at once is the difference
+    between reading along and staring at a spinner — and it is the
+    thing the founder saw and called out.
+    """
+
+    async def test_the_answer_arrives_in_pieces(self) -> None:
+        client = FakeClient(says("Nothing in this matter bears on that."))
+        pieces: list[str] = []
+
+        outcome = await run(
+            client,
+            TOOLSET,
+            workspace(),
+            "Anything?",
+            on_text=pieces.append,
+        )
+
+        assert len(pieces) > 1
+        assert "".join(pieces) == outcome.answer
+
+    async def test_a_status_line_is_written_before_its_tool_runs(self) -> None:
+        #: The prose of a turn that ends in a tool call is the status
+        #: line, and it reaches the screen before the tool has run —
+        #: which is the whole point of saying it.
+        client = FakeClient(
+            says_and_calls("Reading the documents", "list_documents"),
+            says("Done."),
+        )
+        order: list[str] = []
+
+        await run(
+            client,
+            TOOLSET,
+            workspace(document("x")),
+            "Go",
+            on_text=lambda piece: order.append(f"text:{piece}"),
+            on_step=lambda step: order.append(f"step:{step.tool}"),
+        )
+
+        assert order.index("step:list_documents") > 0
+        assert order[0].startswith("text:")
+
+    async def test_a_run_nobody_is_reading_answers_the_same(self) -> None:
+        watched = await run(
+            FakeClient(says("Done.")),
+            TOOLSET,
+            workspace(),
+            "Go",
+            on_text=lambda _: None,
+        )
+        alone = await run(FakeClient(says("Done.")), TOOLSET, workspace(), "Go")
+
+        assert watched.answer == alone.answer == "Done."

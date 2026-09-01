@@ -337,6 +337,22 @@ async def _sources_of(
     return {ref: held[2] for ref, held in ranked.items()}, len(documents)
 
 
+#: How hard the assistant thinks before it answers.
+#:
+#: **Low, deliberately, and it is not a smaller model.** The same model
+#: runs; it spends less of the person's wait deliberating. This chat is
+#: a different job from the review: the tools do the finding — they walk
+#: a stored graph and hand back cells — and the model's work is choosing
+#: which one to call and saying what came back. The founder tested it at
+#: the API's default and the first thing they said was that it thinks
+#: too long.
+#:
+#: One constant, so raising it is one edit. If answers get worse rather
+#: than slower, « medium » is the next stop and « high » is where this
+#: started.
+ASSISTANT_EFFORT = "low"
+
+
 async def ask_model(
     session: AsyncSession,
     *,
@@ -361,6 +377,7 @@ async def ask_model(
         prompt,
         model=model,
         max_steps=max_steps,
+        effort=ASSISTANT_EFFORT,
     )
     task = await record(
         session,

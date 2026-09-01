@@ -113,3 +113,40 @@ class TestWhatItRefuses:
         result = ask_the_person("q", "t", "b", ["Keep", "   "])
 
         assert not result.ok
+
+
+class TestTheModelIsToldWhatTheScreenDoes:
+    """Prose, because the chat renders prose.
+
+    The founder tested the assistant and the first answer came back
+    with `**bold**` in it — printed literally, asterisks and all,
+    because the answer is drawn as plain text in a serif face and
+    nothing parses Markdown on the way. The model could not have known;
+    now it is told.
+    """
+
+    def test_markdown_is_ruled_out_in_so_many_words(self) -> None:
+        prompt = MODEL_TOOLSET.prompt()
+
+        assert "The chat renders plain text" in prompt
+        assert "There is no Markdown" in prompt
+
+    def test_it_is_told_not_to_retype_the_cells(self) -> None:
+        #: The rows are drawn under the answer from the tool's own
+        #: payload. A model that lists them again in prose duplicates
+        #: the table and opens the one door a wrong digit could come
+        #: through.
+        assert "Do not repeat them in your prose" in MODEL_TOOLSET.prompt()
+
+    def test_the_founders_own_words_still_come_last(self) -> None:
+        #: The surface rules are mine and sit above the clarify
+        #: section; the founder's voice stays where it was, ahead of
+        #: both, and after the toolset's own prose.
+        prompt = MODEL_TOOLSET.prompt()
+
+        assert prompt.index("What you may claim") < prompt.index(
+            "Talk like a sharp colleague"
+        )
+        assert prompt.index("Talk like a sharp colleague") < prompt.index(
+            "The chat renders plain text"
+        )
