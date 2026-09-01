@@ -1,0 +1,798 @@
+{
+ "derived_floor": 1.0,
+ "control": [
+  {
+   "row": 10,
+   "label": "Transmission Wages Expense",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 10,
+   "label": "Transmission Wages Expense",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 10,
+   "label": "Transmission Wages Expense",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 10,
+   "label": "Transmission Wages Expense",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 10,
+   "label": "Transmission Wages Expense",
+   "wrong_section": "Plant Allocation Factors",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 10,
+   "label": "Transmission Wages Expense",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 12,
+   "label": "Total Wages Expense",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 12,
+   "label": "Total Wages Expense",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 12,
+   "label": "Total Wages Expense",
+   "wrong_section": "Common Stock",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 12,
+   "label": "Total Wages Expense",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 12,
+   "label": "Total Wages Expense",
+   "wrong_section": "Plant Allocation Factors",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 12,
+   "label": "Total Wages Expense",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 13,
+   "label": "Less A&G Wages Expense",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.2
+  },
+  {
+   "row": 13,
+   "label": "Less A&G Wages Expense",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 13,
+   "label": "Less A&G Wages Expense",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 13,
+   "label": "Less A&G Wages Expense",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.2
+  },
+  {
+   "row": 13,
+   "label": "Less A&G Wages Expense",
+   "wrong_section": "Plant Allocation Factors",
+   "top_score": 0.2
+  },
+  {
+   "row": 13,
+   "label": "Less A&G Wages Expense",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 19,
+   "label": "Electric Plant in Service",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 19,
+   "label": "Electric Plant in Service",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 19,
+   "label": "Electric Plant in Service",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.25
+  },
+  {
+   "row": 19,
+   "label": "Electric Plant in Service",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.25
+  },
+  {
+   "row": 21,
+   "label": "Accumulated Depreciation (Total Electric Plant)",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.2
+  },
+  {
+   "row": 21,
+   "label": "Accumulated Depreciation (Total Electric Plant)",
+   "wrong_section": "Common Stock",
+   "top_score": 0.2
+  },
+  {
+   "row": 21,
+   "label": "Accumulated Depreciation (Total Electric Plant)",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.2
+  },
+  {
+   "row": 21,
+   "label": "Accumulated Depreciation (Total Electric Plant)",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.4
+  },
+  {
+   "row": 36,
+   "label": "Transmission Plant In Service",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.5
+  },
+  {
+   "row": 36,
+   "label": "Transmission Plant In Service",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 36,
+   "label": "Transmission Plant In Service",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 36,
+   "label": "Transmission Plant In Service",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.25
+  },
+  {
+   "row": 36,
+   "label": "Transmission Plant In Service",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.25
+  },
+  {
+   "row": 41,
+   "label": "General",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 1.0
+  },
+  {
+   "row": 41,
+   "label": "General",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 41,
+   "label": "General",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 41,
+   "label": "General",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.0
+  },
+  {
+   "row": 41,
+   "label": "General",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 1.0
+  },
+  {
+   "row": 44,
+   "label": "Less:  General Plant Account 397 -- Communications",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.4
+  },
+  {
+   "row": 44,
+   "label": "Less:  General Plant Account 397 -- Communications",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 44,
+   "label": "Less:  General Plant Account 397 -- Communications",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 44,
+   "label": "Less:  General Plant Account 397 -- Communications",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.2
+  },
+  {
+   "row": 44,
+   "label": "Less:  General Plant Account 397 -- Communications",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.2
+  },
+  {
+   "row": 57,
+   "label": "Transmission Accumulated Depreciation",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 57,
+   "label": "Transmission Accumulated Depreciation",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 57,
+   "label": "Transmission Accumulated Depreciation",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.0
+  },
+  {
+   "row": 57,
+   "label": "Transmission Accumulated Depreciation",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 57,
+   "label": "Transmission Accumulated Depreciation",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.0
+  },
+  {
+   "row": 59,
+   "label": "Accumulated General Depreciation",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 59,
+   "label": "Accumulated General Depreciation",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 59,
+   "label": "Accumulated General Depreciation",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.0
+  },
+  {
+   "row": 59,
+   "label": "Accumulated General Depreciation",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 59,
+   "label": "Accumulated General Depreciation",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 88,
+   "label": "Transmission Materials & Supplies",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 88,
+   "label": "Transmission Materials & Supplies",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 88,
+   "label": "Transmission Materials & Supplies",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 88,
+   "label": "Transmission Materials & Supplies",
+   "wrong_section": "Plant Allocation Factors",
+   "top_score": 0.3333333333333333
+  },
+  {
+   "row": 88,
+   "label": "Transmission Materials & Supplies",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 88,
+   "label": "Transmission Materials & Supplies",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.0
+  },
+  {
+   "row": 119,
+   "label": "Less Property Insurance Account 924",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.25
+  },
+  {
+   "row": 119,
+   "label": "Less Property Insurance Account 924",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 119,
+   "label": "Less Property Insurance Account 924",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.25
+  },
+  {
+   "row": 119,
+   "label": "Less Property Insurance Account 924",
+   "wrong_section": "Plant Allocation Factors",
+   "top_score": 0.25
+  },
+  {
+   "row": 119,
+   "label": "Less Property Insurance Account 924",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 119,
+   "label": "Less Property Insurance Account 924",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.0
+  },
+  {
+   "row": 121,
+   "label": "Less General Advertising Exp Account 930.1",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.2
+  },
+  {
+   "row": 121,
+   "label": "Less General Advertising Exp Account 930.1",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 121,
+   "label": "Less General Advertising Exp Account 930.1",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.2
+  },
+  {
+   "row": 121,
+   "label": "Less General Advertising Exp Account 930.1",
+   "wrong_section": "Plant Allocation Factors",
+   "top_score": 0.2
+  },
+  {
+   "row": 121,
+   "label": "Less General Advertising Exp Account 930.1",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 121,
+   "label": "Less General Advertising Exp Account 930.1",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.2
+  },
+  {
+   "row": 179,
+   "label": "Proprietary Capital",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.0
+  },
+  {
+   "row": 179,
+   "label": "Proprietary Capital",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 179,
+   "label": "Proprietary Capital",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.0
+  },
+  {
+   "row": 179,
+   "label": "Proprietary Capital",
+   "wrong_section": "Plant Allocation Factors",
+   "top_score": 0.0
+  },
+  {
+   "row": 179,
+   "label": "Proprietary Capital",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 179,
+   "label": "Proprietary Capital",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.0
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "wrong_section": "Accumulated Depreciation",
+   "top_score": 0.2
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "wrong_section": "Allocated Administrative & General Expenses",
+   "top_score": 0.0
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "wrong_section": "Common Stock",
+   "top_score": 0.0
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "wrong_section": "Materials and Supplies",
+   "top_score": 0.0
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "wrong_section": "Plant Allocation Factors",
+   "top_score": 0.2
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "wrong_section": "Plant In Service",
+   "top_score": 0.0
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "wrong_section": "Wages & Salary Allocation Factor",
+   "top_score": 0.0
+  }
+ ],
+ "verdicts": [
+  {
+   "row": 10,
+   "label": "Transmission Wages Expense",
+   "section": "Wages & Salary Allocation Factor",
+   "citation": "p354.21.b",
+   "truth_pdf_page": 108,
+   "selected_pages": [
+    108,
+    109
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 12,
+   "label": "Total Wages Expense",
+   "section": "Wages & Salary Allocation Factor",
+   "citation": "p354.28.b",
+   "truth_pdf_page": 108,
+   "selected_pages": [
+    108,
+    109
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 13,
+   "label": "Less A&G Wages Expense",
+   "section": "Wages & Salary Allocation Factor",
+   "citation": "p354.27.b",
+   "truth_pdf_page": 108,
+   "selected_pages": [
+    108,
+    109
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 19,
+   "label": "Electric Plant in Service",
+   "section": "Plant Allocation Factors",
+   "citation": "p207.104.g",
+   "truth_pdf_page": 47,
+   "selected_pages": [
+    40,
+    41,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    51,
+    60,
+    102,
+    103,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 21,
+   "label": "Accumulated Depreciation (Total Electric Plant)",
+   "section": "Plant Allocation Factors",
+   "citation": "p219.29.c",
+   "truth_pdf_page": 51,
+   "selected_pages": [
+    40,
+    41,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    51,
+    60,
+    102,
+    103,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 36,
+   "label": "Transmission Plant In Service",
+   "section": "Plant In Service",
+   "citation": "p207.58.g",
+   "truth_pdf_page": 47,
+   "selected_pages": [
+    44,
+    46,
+    47
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 41,
+   "label": "General",
+   "section": "Plant In Service",
+   "citation": "p207.99.g",
+   "truth_pdf_page": 47,
+   "selected_pages": [
+    44,
+    46,
+    47
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 44,
+   "label": "Less:  General Plant Account 397 -- Communications",
+   "section": "Plant In Service",
+   "citation": "p207.94.g",
+   "truth_pdf_page": 47,
+   "selected_pages": [
+    44,
+    46,
+    47
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 57,
+   "label": "Transmission Accumulated Depreciation",
+   "section": "Accumulated Depreciation",
+   "citation": "p219.25.c",
+   "truth_pdf_page": 51,
+   "selected_pages": [
+    40,
+    51
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 59,
+   "label": "Accumulated General Depreciation",
+   "section": "Accumulated Depreciation",
+   "citation": "p219.28.c",
+   "truth_pdf_page": 51,
+   "selected_pages": [
+    40,
+    51
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 88,
+   "label": "Transmission Materials & Supplies",
+   "section": "Materials and Supplies",
+   "citation": "p227.8.c",
+   "truth_pdf_page": 54,
+   "selected_pages": [
+    54
+   ],
+   "truth_page_selected": true,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 119,
+   "label": "Less Property Insurance Account 924",
+   "section": "Allocated Administrative & General Expenses",
+   "citation": "p323.185.b",
+   "truth_pdf_page": 93,
+   "selected_pages": [
+    101
+   ],
+   "truth_page_selected": false,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 121,
+   "label": "Less General Advertising Exp Account 930.1",
+   "section": "Allocated Administrative & General Expenses",
+   "citation": "p323.191.b",
+   "truth_pdf_page": 93,
+   "selected_pages": [
+    101
+   ],
+   "truth_page_selected": false,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 179,
+   "label": "Proprietary Capital",
+   "section": "Common Stock",
+   "citation": "p112.16.c",
+   "truth_pdf_page": 26,
+   "selected_pages": [
+    68
+   ],
+   "truth_page_selected": false,
+   "outcome": "abstained (derived floor)"
+  },
+  {
+   "row": 187,
+   "label": "Less Loss on Reacquired Debt",
+   "section": "Capitalization",
+   "citation": "p111.81.c",
+   "truth_pdf_page": 25,
+   "selected_pages": [],
+   "truth_page_selected": false,
+   "outcome": "unreachable-page"
+  }
+ ],
+ "counterfactual_per_row_floor": [
+  {
+   "row": 10,
+   "own_floor": 0.3333333333333333,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 12,
+   "own_floor": 0.3333333333333333,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 13,
+   "own_floor": 0.2,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 19,
+   "own_floor": 0.25,
+   "outcome": "abstained (tie)"
+  },
+  {
+   "row": 21,
+   "own_floor": 0.4,
+   "outcome": "abstained (tie)"
+  },
+  {
+   "row": 36,
+   "own_floor": 0.5,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 41,
+   "own_floor": 1.0,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 44,
+   "own_floor": 0.4,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 57,
+   "own_floor": 0.0,
+   "outcome": "abstained (tie)"
+  },
+  {
+   "row": 59,
+   "own_floor": 0.3333333333333333,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 88,
+   "own_floor": 0.3333333333333333,
+   "outcome": "abstained (tie)"
+  },
+  {
+   "row": 119,
+   "own_floor": 0.25,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 121,
+   "own_floor": 0.2,
+   "outcome": "abstained (own floor)"
+  },
+  {
+   "row": 179,
+   "own_floor": 0.0,
+   "outcome": "abstained (own floor)"
+  }
+ ]
+}

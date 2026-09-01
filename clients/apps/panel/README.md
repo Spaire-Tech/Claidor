@@ -1,58 +1,49 @@
 # The panel
 
-Claidor inside Word, Excel, PowerPoint and Outlook. **One React app, four
-hosts** — the same findings list, the same chain, the same components. What
-differs between the hosts is which document API is called, and all of that
-lives in `src/host/`.
+Swens inside Excel: the audit of the workbook a person has open, beside
+the cells it names. **One React app, one live host** — the manifest
+registers Excel only, by the product's own posture (the customer lives in
+Excel, and the panel audits the model in front of them). The Word,
+PowerPoint and Outlook bridges stay in `src/host/`, dormant; re-adding a
+`<Host>` line to the manifest is all it takes to wake one. No screen
+imports `Office` — if one ever has to know which host it is running in,
+`src/host/` has failed.
 
 ## What is here, and what is not
 
-|                        |                                                   |
-| ---------------------- | ------------------------------------------------- |
-| `manifest.xml`         | Word · Excel · PowerPoint. One file, three hosts  |
-| `manifest.outlook.xml` | Outlook. Separate because it must be — see below  |
-| `src/host/`            | The four applications behind one interface        |
-| `src/api.ts`           | The tie-out API, typed                            |
-| `src/auth.ts`          | Bearer tokens via the sign-in dialog              |
-| `src/usePanel.ts`      | The state machine — sign in, identify, load, jump |
-| `src/Panel.tsx`        | **A placeholder. Replace this.**                  |
+|                        |                                                          |
+| ---------------------- | -------------------------------------------------------- |
+| `manifest.xml`         | Excel. Word and PowerPoint retired with the pivot        |
+| `manifest.outlook.xml` | Outlook. Dormant, separate because it must be — see below |
+| `src/host/`            | The host bridges behind one interface — Excel live       |
+| `src/api.ts`           | The tie-out API, typed                                   |
+| `src/auth.ts`          | Bearer tokens via the sign-in dialog                     |
+| `src/usePanel.ts`      | The state machine — sign in, read the workbook, check    |
+| `src/Panel.tsx`        | The panel, in the design's own language                  |
 
-`Panel.tsx` is ugly on purpose. It renders every stage the real panel needs
-with the data already wired to it, so the plumbing can be sideloaded and
-watched working before there is a design. Replacing it means styling what
-`usePanel` already returns.
+## What it does
 
-**No screen imports `Office`.** If one ever has to know which host it is
-running in, `src/host/` has failed.
+One job: **check the model that is open.** The panel reads the workbook's
+own bytes out of Excel, sends them to `/v1/tieout/check-file` — read,
+checked, dropped, nothing lands in a data room — and renders the answer:
+the findings, each one a jump to its cell, « Fix the cell » where the fix
+is derivable, and a re-check that runs against the workbook as it now
+stands.
 
-## The four states
+The deal-identification machinery this app used to carry — identify,
+stamp, choose-a-deal — went with that pivot. A model is checked on its
+own; nobody is asked which folder their file « belongs » to.
 
-Every screen needs all four, and the fourth is the one everyone forgets.
+## The faces
 
-- **Empty** — no findings. This is the _good_ outcome and must not look
-  like a failure. « Checked, and everything ties out. »
-- **Loading** — identification and extraction both take a moment.
-- **Error** — the server's messages are written to be shown as they stand.
-  « This .xls is password protected », not « request failed ».
-- **Too much** — a real deck reaches hundreds of findings, in a 320-pixel
-  column with no horizontal scroll available.
-
-## How a document knows which deal it belongs to
-
-The panel opens inside PowerPoint with a deck already on screen. Working
-out which artifact that is happens in three steps, in descending order of
-how much each can be trusted:
-
-1. **The stamp.** A lineage id in the document's own settings, written the
-   first time somebody chose a deal for it. It lives _inside the file_, so
-   it survives Save As, a rename, and being emailed onward. Not a guess.
-2. **The filename, inside a deal already chosen.** Marked as a guess, and
-   never consulted across deals — two deals holding a `model.xlsx` is the
-   normal case, not the edge case.
-3. **Nothing**, and the panel asks. Once per document, never again.
-
-The lineage id, not the artifact id: an artifact id changes on every
-upload and « this deck » does not.
+- **Signed out** — one button.
+- **Allow access** — Swens does not touch the workbook until asked once.
+- **No workbook** — a host with no workbook to check says so plainly.
+- **Checking** — the check is running on this workbook.
+- **Checked** — the verdict and the findings. Empty is the _good_ outcome
+  and must not look like a failure.
+- **Failed** — what went wrong, in the server's own words. « This .xls is
+  password protected », not « request failed ».
 
 ## Why Outlook has its own manifest
 
@@ -77,7 +68,11 @@ pnpm type-check
 
 Outside Office the host bridge answers « not running inside Office » to
 everything and the panel still renders, so a margin can be changed without
-sideloading into PowerPoint.
+sideloading into Excel. Dev builds take two query parameters the real
+bridge never needs: `?file=<url>` fetches workbook bytes so the whole
+checked face runs against the live API in a plain browser, and
+`?filename=` names a pretend document. Both are stripped from production
+builds.
 
 ### Sideloading
 
@@ -127,29 +122,17 @@ origins, same site, so the cookie _is_ sent once `CORS_ORIGINS` includes
 fails, because `fetch` reports « CORS refused this » and « the server is
 down » as the same bare error.
 
-## Selecting a shape, and one honest caveat
+## Jumping, and one honest rule
 
-The server reads a deck with `python-pptx`, which gives each shape an
-integer `shape_id` and a `name`. The JavaScript API gives `Shape.id` and
-`Shape.name`. **Only the name is documented to mean the same thing on both
-sides.** `Shape.id` is described as opaque, and while it often carries the
-same integer, a jump that lands on the wrong shape is worse than one that
-does not move — so the name is matched first and the id is a fallback.
-
-When both miss, the slide is still reached and the result says so. Every
-outcome carries how it got there: `text` · `shape` · `slide` · `cell` ·
-`search` · `none`. A panel that silently fails to move looks exactly like
-a panel that moved somewhere wrong.
+A finding names a sheet and a cell, and clicking it selects that cell in
+the open workbook. Every jump answers with how it went, and a refused one
+says why — a panel that silently fails to move looks exactly like a panel
+that moved somewhere wrong, so the row claims « Selected in the sheet »
+only when the sheet agreed.
 
 ## Requirement sets
 
 Nothing is hard-required in the manifest, deliberately. A high floor makes
-the add-in refuse to load on builds where most of it would work. Instead
-each capability is checked at run time and degraded:
-
-| Wanted                                   | Set                   | Without it                     |
-| ---------------------------------------- | --------------------- | ------------------------------ |
-| Select an exact figure inside a sentence | PowerPointApi 1.4     | Select the shape               |
-| Select a shape, select a slide           | PowerPointApi 1.5     | `goToByIdAsync` moves the view |
-| Read slides and shapes                   | PowerPointApi 1.3     | Slide only                     |
-| Sign-in dialog                           | Mailbox 1.5 (Outlook) | Required there, and stated     |
+the add-in refuse to load on builds where most of it would work. Each
+capability is checked at run time instead, and the dormant hosts keep
+their own degradations in `src/host/` for the day they wake.

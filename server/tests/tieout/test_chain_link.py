@@ -413,3 +413,32 @@ class TestTheRecheck:
 
         assert response.status_code == 404
         assert "not on this deal" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+class TestTheCreditConvention:
+    @pytest.mark.auth
+    async def test_a_link_confirmed_with_an_unnamed_transformation_is_refused(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """One vocabulary across both tracks: the registry names what a
+        person may state, and anything else is refused in words rather
+        than stored as a meaningless string."""
+        fact, cell = await _fact_and_cell(client, session, save_fixture, user)
+
+        response = await client.post(
+            "/v1/chain/links",
+            json={
+                "cell_id": str(cell.id),
+                "fact_id": fact["id"],
+                "transformation": "reciprocal",
+            },
+        )
+
+        assert response.status_code == 422
+        assert "not a named transformation" in response.text
+        assert "negate" in response.text

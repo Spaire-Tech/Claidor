@@ -4,6 +4,7 @@ from polar.kit.db.models import Model, TimestampedModel
 # tables register in the metadata alembic and the test harness build from.
 from polar.tieout.chain.link import ChainLink
 from polar.tieout.chain.store import ChainFact, ChainRefusal
+from polar.tieout.chain.terms import ChainTerm
 
 from .account import Account
 from .account_credit import AccountCredit
@@ -197,6 +198,7 @@ __all__ = [
     "ChainFact",
     "ChainLink",
     "ChainRefusal",
+    "ChainTerm",
     "CheckKind",
     "CheckRun",
     "CheckStatus",

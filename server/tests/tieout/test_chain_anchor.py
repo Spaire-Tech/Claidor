@@ -293,6 +293,50 @@ def test_the_person_states_the_scale_and_arithmetic_does_the_rest() -> None:
     assert ties_out is True
 
 
+def test_the_credit_convention_is_stated_and_applied_never_inferred() -> None:
+    """RMU's case, founder-approved from terms round 2: the schedule
+    prints (6,046,528) — a credit — and the model holds the positive
+    magnitude. « negate » stated at confirmation makes the pair tie;
+    without it, the same pair honestly does not."""
+    schedule = DocumentAnchor(
+        page=219,
+        printed_text="(6,046,528)",
+        value=-6_046_528.0,
+        anchor_line="25 Transmission $ (6,046,528) $ (6,046,528)",
+        ordinal_in_line=1,
+    )
+    model = ModelAnchor(
+        ref="Model!B2",
+        cell_name="Transmission Accumulated Depreciation",
+        value=6_046_528.0,
+    )
+
+    stated = recheck(
+        model, schedule, 6_046_528.0, -6_046_528.0, transformation="negate"
+    )
+    unstated = recheck(model, schedule, 6_046_528.0, -6_046_528.0)
+
+    assert stated == (AGREES, True)
+    assert unstated == (AGREES, False)
+
+
+def test_an_unnamed_transformation_is_refused_in_words() -> None:
+    """Never treated as identity: a name the registry does not carry
+    means somebody's statement was lost, and guessing what they meant
+    is exactly what this package never does."""
+    schedule = DocumentAnchor(
+        page=4,
+        printed_text="3.741",
+        value=3.741,
+        anchor_line="the Unitary Charge is 3.741",
+        ordinal_in_line=1,
+    )
+    model = ModelAnchor(ref="Model!B2", cell_name="Unitary Charge", value=3.741)
+
+    with pytest.raises(ValueError, match="not a named transformation"):
+        recheck(model, schedule, 3.741, 3.741, transformation="reciprocal")
+
+
 def test_the_package_calls_no_model_and_imports_no_client() -> None:
     """« No model call » as a structural fact, not a runtime promise.
 
