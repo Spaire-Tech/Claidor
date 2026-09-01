@@ -386,6 +386,8 @@ def _finding(
         note=finding.note,
         figure=str(evidence.get("figure") or ""),
         figure_unit=str(evidence.get("figure_unit") or ""),
+        formula=str(evidence.get("formula") or ""),
+        against=str(evidence.get("against") or ""),
         period=str(evidence.get("period") or ""),
         standard_sentence=str(evidence.get("standard_sentence") or ""),
         flow=str(evidence.get("flow") or ""),

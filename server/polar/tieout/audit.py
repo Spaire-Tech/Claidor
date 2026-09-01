@@ -204,6 +204,27 @@ class Finding:
     #: hides its members: a family is the sentence, this is the roster.
     #: Empty on a finding that is its own single cell.
     cells: str = ""
+    #: **The formulas, kept out of the prose.** A finding that compares
+    #: two formulas used to splice both into `detail`, and what reached
+    #: a person was « … they read 'Control Panel'!$C$51, it reads
+    #: 'Control Panel'!$D$51: =(E45+E48)/2*'Control Panel'!$D$51 ».
+    #: `findings-voice.md` allows two sentences and no formula in
+    #: either; a reviewer still wants the formula, so it goes here and
+    #: the screen shows it as a formula.
+    #:
+    #: `formula` is what this cell holds. `against` is what it is being
+    #: judged against — the rest of the row, the sibling total, the
+    #: shape the series repeats — empty when the finding compares the
+    #: cell with nothing.
+    formula: str = ""
+    against: str = ""
+    #: **Which branch of its rule this is**, as a fixed key the
+    #: sentence builder switches on. It was `figure_unit` for a while,
+    #: and `_quantified` overwrites that with the money phrase when it
+    #: can price a cell — so a priced finding silently fell through to
+    #: its rule's generic sentence. A key that doubles as prose is a
+    #: key that gets rewritten. This one is never shown.
+    kind: str = ""
 
 
 @dataclass(frozen=True)
@@ -578,46 +599,41 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
     subject = f"{label} {period}".strip() if label else at
 
     if finding.rule == "typed-over-formula":
-        if finding.detail.startswith("the same value typed across"):
+        if finding.kind == "one value across a row":
             #: The row fold: one value pasted across one row's columns.
             lead = f"{label} has" if label else "One row has"
-            return f"{lead} {finding.detail}. It was one paste."
-        if " different values typed across " in finding.detail:
+            return f"{lead} {finding.figure_unit} of one row."
+        if finding.kind == "a run of values":
             #: The run fold: adjacent columns typed over in one gesture,
             #: each holding its own number.
             lead = f"{label} has" if label else "One row has"
-            return (
-                f"{lead} {finding.detail}. It was one paste, and each "
-                "cell holds its own number."
-            )
-        if finding.detail.startswith("typed over a block"):
+            return f"{lead} {finding.figure_unit} of one row."
+        if finding.kind == "typed over a block":
             #: The block fold: a two-dimensional paste, one rectangle.
-            return (
-                f"« {finding.sheet} » is {finding.detail}. One paste "
-                "went over the block's formulas."
-            )
-        if finding.detail.startswith("typed over in "):
+            shape = finding.figure_unit.removeprefix("typed over a ").split(",")[0]
+            return f"« {finding.sheet} » is typed over a {shape}."
+        if finding.kind == "typed over down a column":
             #: The block collapse: one decision, made once per repeated
-            #: block or once per row of a paste — said once, with every
-            #: place in the sentence.
-            coords = finding.detail.split(": ", 1)[-1]
+            #: block or once per row of a paste — said once. The places
+            #: themselves are the roster, in `cells`.
+            places = finding.figure_unit.split()[3]
             lead = f"{label} is" if label else "One column is"
-            return (
-                f"{lead} typed in at {len(coords.split(', '))} places — "
-                f"{coords}. Every other cell in those rows calculates."
-            )
+            return f"{lead} typed in at {places} places."
         #: The founder's own swap, from the table in
         #: `findings-voice.md`: « contains a fixed value while the rest
         #: of the row is calculated » becomes « is typed in; every other
         #: year calculates ».
         return f"{subject} is typed in. Every other cell in the row calculates."
     if finding.rule == "inconsistent-row":
-        if finding.detail.startswith("the same calculation as"):
+        #: The branch key is `figure_unit`, never the detail's opening
+        #: words: the detail is prose that gets rewritten, and a
+        #: sentence builder keyed on prose breaks silently when it is.
+        if finding.kind == "one operator changed":
             return (
                 f"{subject} runs its row's calculation with the sign "
                 "flipped. That changes the answer everywhere this cell goes."
             )
-        if finding.detail.startswith("the same formula as"):
+        if finding.kind == "one reference out of step":
             #: « Subordinated Debt Interest is the same formula as its 19
             #: siblings with one pinned reference out of step — they read
             #: 'Control Panel'!$C$51, it reads $D$51: =(E45+E48)/2*… Check
@@ -625,13 +641,17 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             #: terms, a formula dump and a « check which ». The founder
             #: read that on a live model and asked who could read it.
             return f"{subject} reads a different cell from the rest of its row."
-
-        if finding.detail.startswith("tests "):
+        if finding.kind == "a different switch setting":
             #: The selector drift: same formula, different switch value.
-            what = finding.detail.split(":", 1)[0]
             return (
-                f"{subject} {what}. It is the same formula as its row "
-                "with a different switch setting."
+                f"{subject} tests a different switch. It is the same "
+                "formula as its row with one setting changed."
+            )
+        if finding.kind == "rows broken in one column":
+            rows = finding.figure_unit.split()[0]
+            return (
+                f"One column breaks the pattern of {rows} rows. Each row "
+                "reads one place and this column reads another."
             )
         return f"{subject} breaks the pattern of its row."
     if finding.rule == "typed-over-edge":
@@ -674,12 +694,12 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         )
 
     if finding.rule == "broken-aggregation":
-        #: The detail is already the claim — it is written where both
-        #: granularities are known, and nothing downstream can recover
-        #: « month » from a sheet name. All this adds is the subject,
-        #: because the row's label is what a person reads first.
+        #: The claim is written where both granularities are known —
+        #: nothing downstream can recover « month » from a sheet name —
+        #: and it rides in `figure_unit`, so the headline is built here
+        #: and the detail stays the finding's own second sentence.
         named = subject if label else f"The {period} figure" if period else "One row"
-        return f"{named} {finding.detail}"
+        return f"{named} {finding.figure_unit}."
     if finding.rule == "typed-over-beat":
         #: The beat: a series that calculates every N columns and holds
         #: a typed number on one of them. The detail carries a worked
@@ -700,6 +720,12 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         #: « GBP, EUR » is a list; « GBP and EUR » is a sentence.
         spread = " and ".join(finding.figure.rsplit(", ", 1))
         return f"{lead} {spread} together. A sum may only carry one {noun}."
+    if finding.rule == "hidden-sheet":
+        #: The claim is written where the sheet's state is known —
+        #: `findings-voice.md` rule 5 turns on the difference between
+        #: « has not been read » and « but empty », which only the
+        #: reader can tell. The detail is the second sentence.
+        return f"{finding.figure_unit}."
     if finding.rule == "broken-name":
         #: `ref` is empty — a name lives in the workbook, not in a
         #: cell — so the subject is the workbook, as it is for
@@ -744,9 +770,9 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
                 0
             ]
             return (
-                f"Each of {sheets} sheets has its own value typed into the "
-                f"formula at {at} — one layout decision, and none of the "
-                "values can be traced to an input."
+                f"Each of {sheets} sheets has its own number typed into "
+                f"the formula at {at}. None of them can be traced to an "
+                "input."
             )
         if finding.figure_unit.startswith("repeated on"):
             #: The sibling-sheet fold: one decision, one sheet per company.
@@ -764,17 +790,22 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
                 "cell. If the convention changes, each one must be found "
                 "by hand."
             )
-        span = (
-            f" across {finding.figure_unit.removeprefix('filled across ')}"
-            if finding.figure_unit.startswith("filled")
-            else f" in {period}"
-            if period
-            else ""
-        )
+        #: The fill's span used to ride in this sentence — « … across
+        #: Assumptions Processing!E17 to Assumptions Processing!X17 »,
+        #: the sheet name twice inside a 27-word headline. `cells` is
+        #: the roster; the sentence says how many, once.
         number = finding.figure or "a number"
+        if finding.figure_unit.startswith("filled"):
+            filled = len(finding.cells.split(", ")) if finding.cells else 0
+            across = f" in {filled} cells of one row" if filled > 1 else ""
+            return (
+                f"The formula at {at} has {number} typed into it{across}. "
+                "If the assumption moves, this cell will not."
+            )
+        where = f" in {period}" if period else ""
         return (
             f"The formula at {at} has {number} typed directly into it"
-            f"{span}. If the assumption moves, this cell will not."
+            f"{where}. If the assumption moves, this cell will not."
         )
 
     if finding.rule == "error-value":
@@ -782,27 +813,28 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             #: The sibling-sheet fold for designed tails: one pasted
             #: formula erroring identically on every copy.
             return (
-                f"{finding.detail}. One pasted formula — fix it once "
-                "and refill the sheets."
+                f"« {finding.sheet} » shows {finding.figure or 'an error'} "
+                "on every copy of one pasted formula. Fix it once and "
+                "refill the sheets."
             )
         if finding.figure_unit == "cells past the data's edge":
             #: The designed tail: the data ends and the lookups say so.
             return (
-                f"« {finding.sheet} » {finding.detail}. A lookup's "
-                "designed answer for missing data, not damage."
+                f"« {finding.sheet} » shows errors past the end of its "
+                "data. That is a lookup's designed answer for missing "
+                "data, not damage."
             )
-        if finding.figure_unit == "breaks a live column":
+        if finding.kind == "breaks a live column":
+            value = finding.figure_unit.split()[0]
             return (
-                f"{finding.detail.split(' inside ')[0]} interrupts an "
-                "otherwise live column — the cells beneath it calculate. "
-                "Check what broke the series."
+                f"{value} breaks a column that is live above and below it. "
+                f"The cells beneath {at} still calculate."
             )
         if finding.figure_unit == "cells sharing one broken formula":
             return (
-                f"{finding.figure} cells on « {finding.sheet} » show "
-                f"{finding.detail.split(' across ')[0].removeprefix('shows ')} "
-                "from one formula whose target was deleted, then filled "
-                "across the block. Repair the formula once and refill it."
+                f"{finding.figure} cells on « {finding.sheet} » share one "
+                "formula whose target was deleted. Repair it once and "
+                "refill the block."
             )
         return (
             f"{label or f'The cell at {at}'} shows an error instead of a "
@@ -811,14 +843,18 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
     if finding.rule == "circular" and finding.figure_unit.startswith("cells"):
         if "identical loops" in finding.figure_unit:
             loops = finding.figure_unit.split()[2]
+            #: « iterative calculation » is Excel's own phrase and is
+            #: on the founder's never-say list; the vocabulary table
+            #: swaps it for words that carry their own meaning.
             return (
-                f"The same calculation loop repeats {loops} times — "
-                f"{finding.figure} cells in all — and the workbook does "
-                "not declare iterative calculation."
+                f"The same loop repeats {loops} times, across "
+                f"{finding.figure} cells. The workbook has not been set "
+                "to allow that, so the numbers may be stale."
             )
         return (
-            f"A loop of {finding.figure} cells runs through {at}, and "
-            "the workbook does not declare iterative calculation."
+            f"A loop of {finding.figure} cells runs through {at}. The "
+            "workbook has not been set to allow that, so the number may "
+            "be stale."
         )
 
     if finding.rule == "volatile" and (
@@ -827,9 +863,8 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
     ):
         #: The idiom and sibling-sheet folds: one habit, said once.
         return (
-            f"« {finding.sheet} » {finding.detail}. Each one works itself "
-            "out again on every change, and what it reads cannot be "
-            "followed by eye."
+            f"« {finding.sheet} » repeats a formula that Excel works out "
+            "again on every change. Its value never sits still."
         )
     if finding.rule == "long-formula" and (
         finding.figure_unit.startswith("in ")
@@ -852,7 +887,7 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         "there, and none of them can be checked here."
     )
     sentence = {
-        "external-link": (f"This workbook {finding.detail.split(' — ')[0]}. {pulls}"),
+        "external-link": (f"This workbook reads a file that is not here. {pulls}"),
         "volatile": (
             f"{label or f'The cell at {at}'} works itself out again on "
             "every change to the file. Its value never sits still."
@@ -1201,13 +1236,22 @@ def _collapsed(
                 ref=first.ref,
                 sheet=first.sheet,
                 name=first.name,
+                #: The fill's own sentence, kept to one clause. The
+                #: roster used to be welded onto the end of the
+                #: member's detail with a dash — « … — one formula
+                #: filled across 39 cells (E51 to X51) » — which put
+                #: the finding at three clauses before anyone read it.
+                #: `cells` is where a fold's membership belongs.
                 detail=(
-                    f"{first.detail} — one formula filled across "
-                    f"{len(group)} cells ({span})"
+                    f"{first.detail} One formula, filled across {len(group)} cells."
                 ),
                 source=first.source,
                 figure=first.figure,
                 figure_unit=f"filled across {span}",
+                kind=first.kind,
+                formula=first.formula,
+                against=first.against,
+                cells=_roster(sorted(one.ref for one in group)),
             )
         )
     return _cross_folds(book, _typed_blocks(book, keep))
@@ -1292,11 +1336,14 @@ def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
             str(cell.value) if (cell := book.cells.get(one.ref)) else one.ref
             for one in run
         }
+        #: The detail is the finding's **second sentence** and stands
+        #: on its own — the headline is written in `plain_words` off
+        #: `figure_unit`, so neither has to be spliced into the other.
         what = (
-            f"the same value typed across {len(run)} cells "
+            "It was one paste."
             if len(held) == 1
-            else f"{len(held)} different values typed across {len(run)} cells "
-        ) + f"of one row ({coords[0]} to {coords[-1]})"
+            else "It was one paste, and each cell holds its own number."
+        )
         return Finding(
             rule=first.rule,
             severity=first.severity,
@@ -1305,7 +1352,12 @@ def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
             name=first.name,
             detail=what,
             source=first.source,
-            figure_unit=f"typed across {len(run)} cells",
+            figure_unit=(
+                f"one value typed across {len(run)} cells"
+                if len(held) == 1
+                else f"{len(held)} values typed across {len(run)} cells"
+            ),
+            kind="one value across a row" if len(held) == 1 else "a run of values",
             cells=_roster(coords),
         )
 
@@ -1357,12 +1409,10 @@ def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
             ref=first.ref,
             sheet=first.sheet,
             name=first.name if len(labels) == 1 else "",
-            detail=(
-                f"typed over in {len(group)} places down one column: "
-                f"{', '.join(coords)}"
-            ),
+            detail="Every other cell in those rows calculates.",
             source=first.source,
             figure_unit=f"typed over in {len(group)} places",
+            kind="typed over down a column",
             cells=_roster(coords),
         )
 
@@ -1434,12 +1484,13 @@ def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
             keep.append(
                 replace_finding(
                     first,
-                    detail=(
-                        f"typed over a block {len(stretch)} columns wide and "
-                        f"{len(rows)} rows deep "
-                        f"({first.ref.rsplit('!', 1)[-1]} to {corner})"
+                    detail="One paste went over the block's formulas.",
+                    figure_unit=(
+                        f"typed over a block {len(stretch)} columns wide "
+                        f"and {len(rows)} rows deep, "
+                        f"{first.ref.rsplit('!', 1)[-1]} to {corner}"
                     ),
-                    figure_unit=f"typed over {len(stretch) * len(rows)} cells",
+                    kind="typed over a block",
                     cells=_roster(roster),
                 )
             )
@@ -1481,7 +1532,17 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
     pool = [one for one in findings if sibling_pool(one)]
 
     def base_detail(finding: Finding) -> str:
-        return finding.detail.split(" — one formula filled")[0]
+        #: The member's own claim, with the fill fold's added sentence
+        #: taken back off — this is a grouping key, so it has to be the
+        #: same string for two findings that say the same thing.
+        for suffix in (
+            " One formula, filled across",
+            " The same formula sits on",
+            " The same decision sits on",
+            " The same one sits in",
+        ):
+            finding = replace_finding(finding, detail=finding.detail.split(suffix)[0])
+        return finding.detail
 
     def row_of(finding: Finding) -> int:
         return int(
@@ -1512,9 +1573,13 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 ref=first.ref,
                 sheet=first.sheet,
                 name=first.name,
-                detail=f"{base_detail(first)}, in {len(line)} cells of one row",
+                detail=(
+                    f"{base_detail(first)} The same one sits in "
+                    f"{len(line)} cells of this row."
+                ),
                 source=first.source,
                 figure_unit=f"in {len(line)} cells of one row",
+                kind=first.kind,
                 cells=_roster(sorted(one.ref for one in line)),
             )
         )
@@ -1558,21 +1623,23 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
             continue
         first = min(group, key=lambda one: one.sheet)
         shown = ", ".join(sheets[:4]) + (", …" if len(sheets) > 4 else "")
+        #: **A fold changes how many, never the sentence.** These used
+        #: to weld « — the same decision at E12 on 5 sheets (A, B, C) »
+        #: onto the member's own detail with a dash, which turned a
+        #: two-sentence finding into a four-clause one nobody finished
+        #: reading. The count and the sheets belong in `figure_unit` and
+        #: `cells`, where the screen can lay them out.
         details = {base_detail(one) for one in group}
-        if len(details) == 1:
-            what = (
-                f"{base_detail(first)} — the same formula at "
-                f"{first.ref.rsplit('!', 1)[-1]} on {len(sheets)} sheets "
-                f"({shown})"
-            )
-            unit = f"repeated on {len(sheets)} sheets"
-        else:
-            what = (
-                f"{base_detail(first)} — the same decision at "
-                f"{first.ref.rsplit('!', 1)[-1]} on {len(sheets)} sheets "
-                f"({shown}), each sheet holding its own number"
-            )
-            unit = f"repeated on {len(sheets)} sheets, each with its own number"
+        what = (
+            f"{base_detail(first)} The same "
+            + ("formula" if len(details) == 1 else "decision")
+            + f" sits on {len(sheets)} sheets: {shown}."
+        )
+        unit = (
+            f"repeated on {len(sheets)} sheets"
+            if len(details) == 1
+            else f"repeated on {len(sheets)} sheets, each with its own number"
+        )
         keep.append(
             Finding(
                 rule=first.rule,
@@ -1584,6 +1651,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 source=first.source,
                 figure=first.figure,
                 figure_unit=unit,
+                kind=first.kind,
                 cells=_roster(sorted(one.ref for one in group)),
             )
         )
@@ -1633,6 +1701,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 detail=what,
                 source=first.source,
                 figure_unit=f"in {len(group)} places",
+                kind=first.kind,
                 cells=_roster(sorted(one.ref for one in group)),
             )
         )
@@ -1662,9 +1731,9 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 sheet=first.sheet,
                 name=first.name,
                 detail=(
-                    f"{', '.join(numbers)} written into {len(group)} "
-                    f"different formulas on this sheet — a convention typed "
-                    f"everywhere rather than held in one cell"
+                    f"{', '.join(numbers)} is written into "
+                    f"{len(group)} different formulas rather than held in "
+                    "one cell."
                 ),
                 source=first.source,
                 figure=first.figure,
@@ -1692,8 +1761,8 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                     sheet=first.sheet,
                     name=first.name,
                     detail=(
-                        f"{what} in {len(group)} places across {len(rows)} "
-                        f"rows — the sheet is built on it"
+                        f"The sheet is built on it: {len(group)} places "
+                        f"across {len(rows)} rows."
                     ),
                     source=first.source,
                     figure_unit=f"in {len(group)} places on one sheet",
@@ -1716,7 +1785,10 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                     ref=first.ref,
                     sheet=first.sheet,
                     name=first.name,
-                    detail=f"{base_detail(first)} in {len(line)} cells of one row",
+                    detail=(
+                        f"{base_detail(first)} The same one sits in "
+                        f"{len(line)} cells of this row."
+                    ),
                     source=first.source,
                     figure_unit=f"in {len(line)} cells of one row",
                     cells=_roster(sorted(one.ref for one in line)),
@@ -1744,7 +1816,9 @@ def _unreadable_formulas(book: Workbook, result: Audit) -> None:
                 ref=ref,
                 sheet=ref.rsplit("!", 1)[0],
                 name=cell.name if cell else "",
-                detail=f"its formula could not be parsed: {shown}",
+                detail="Excel's own grammar cannot read this formula.",
+                formula=shown,
+                kind="a formula that cannot be read",
                 source="ISO/IEC 29500 formula grammar",
             )
         )
@@ -1804,14 +1878,14 @@ def _error_values(book: Workbook, result: Audit) -> None:
                     ref=refs[0],
                     sheet=sheet,
                     name="",
-                    detail=f"shows {value}",
+                    detail=f"The cell shows {value}.",
                     source="ICAEW P19",
                 )
             )
             continue
         span = f"{refs[0]} to {refs[-1].rsplit('!', 1)[-1]}"
         what = (
-            f"`{formula[:60]}` repeated over the block"
+            "one formula repeated over the block"
             if formula
             else "the same value pasted over the block"
         )
@@ -1822,10 +1896,8 @@ def _error_values(book: Workbook, result: Audit) -> None:
                 ref=refs[0],
                 sheet=sheet,
                 name="",
-                detail=(
-                    f"shows {value} across {len(refs):,} cells, {span} — "
-                    f"one broken formula, {what}"
-                ),
+                detail=f"One broken formula, {what}, from {span}.",
+                formula=formula[:120],
                 source="ICAEW P19",
                 figure=f"{len(refs):,}",
                 figure_unit="cells sharing one broken formula",
@@ -1988,13 +2060,11 @@ def _error_values(book: Workbook, result: Audit) -> None:
                         ref=f"{sheet}!{column}{start}",
                         sheet=sheet,
                         name="",
-                        detail=(
-                            f"{value} at {span} inside an otherwise live "
-                            f"column — values resume at {column}{end + 1}"
-                            f"{witness}"
-                        ),
+                        detail=(f"Values resume at {column}{end + 1}{witness}."),
+                        figure_unit=f"{value} breaks a live column",
+                        kind="breaks a live column",
+                        cells=span,
                         source="ICAEW P19",
-                        figure_unit="breaks a live column",
                     )
                 )
 
@@ -2012,11 +2082,7 @@ def _error_values(book: Workbook, result: Audit) -> None:
                 ref=fold["first"],
                 sheet=sheet,
                 name="",
-                detail=(
-                    f"carries {kinds} {' and '.join(where)} — "
-                    f"{fold['cells']:,} cells across "
-                    f"{len(fold['columns'])} columns"
-                ),
+                detail=f"« {sheet} » carries {kinds} {' and '.join(where)}.",
                 source="ICAEW P19",
                 figure=f"{fold['cells']:,}",
                 figure_unit="cells past the data's edge",
@@ -2063,10 +2129,8 @@ def _external_links(book: Workbook, result: Audit) -> None:
                 ref=first.ref,
                 sheet=first.sheet,
                 name=first.name,
-                detail=(
-                    f"reads another workbook, {source} — {where} — for "
-                    f"example {(first.formula or '')[:60]}"
-                ),
+                detail=f"It reads another workbook, {source}, {where}.",
+                formula=first.formula or "",
                 source="ICAEW P19",
                 figure=str(len(cells)),
                 figure_unit=f"cells reading {source}",
@@ -2103,7 +2167,11 @@ def _volatile(book: Workbook, result: Audit) -> None:
                     ref=cell.ref,
                     sheet=cell.sheet,
                     name=cell.name,
-                    detail=f"uses {', '.join(sorted(used))}",
+                    detail=(
+                        f"It uses {', '.join(sorted(used))}, which Excel "
+                        "works out again on every change."
+                    ),
+                    figure_unit=f"uses {', '.join(sorted(used))}",
                     source="FAST, SMART",
                 )
             )
@@ -2154,7 +2222,10 @@ def _long_formulas(book: Workbook, result: Audit) -> None:
                     ref=cell.ref,
                     sheet=cell.sheet,
                     name=cell.name,
-                    detail=f"{len(cell.formula)} characters",
+                    detail=(f"The formula runs to {len(cell.formula)} characters."),
+                    figure_unit=f"{len(cell.formula)} characters long",
+                    kind="one long formula",
+                    formula=cell.formula,
                     source="FAST 2.02, ICAEW P13",
                 )
             )
@@ -2227,7 +2298,13 @@ def _literals(book: Workbook, result: Audit) -> None:
                     ref=cell.ref,
                     sheet=cell.sheet,
                     name=cell.name,
-                    detail=f"{', '.join(distinct[:4])} inside {cell.formula[:60]}",
+                    #: The truncated formula used to sit in this
+                    #: sentence and reached a person cut off mid-bracket.
+                    detail=(
+                        f"{', '.join(distinct[:4])} sits inside the formula "
+                        "rather than in an input cell."
+                    ),
+                    formula=cell.formula,
                     source="ICAEW P14, FAST",
                     figure=", ".join(distinct[:2]),
                 )
@@ -2721,10 +2798,11 @@ def _rows(book: Workbook, result: Audit) -> None:
                         sheet=sheet,
                         name=cell.name,
                         detail=(
-                            f"{shown_number(float(cell.value))} typed into "
-                            "a series that is otherwise calculated: "
-                            f"{_example(calculated, usual)}"
+                            "The cell holds a typed "
+                            f"{shown_number(float(cell.value))} where the "
+                            "rest of the series calculates."
                         ),
+                        against=_example(calculated, usual),
                         source="ICAEW P14, FAST",
                     )
                 )
@@ -2764,9 +2842,11 @@ def _rows(book: Workbook, result: Audit) -> None:
                             sheet=sheet,
                             name=cell.name,
                             detail=(
-                                f"{cell.formula} is anchored differently from "
-                                f"{_example(calculated, usual)}"
+                                "This cell locks its references "
+                                "differently from the rest of the row."
                             ),
+                            formula=cell.formula or "",
+                            against=_example(calculated, usual),
                             source="FAST, ICAEW P12",
                         )
                     )
@@ -2795,9 +2875,11 @@ def _rows(book: Workbook, result: Audit) -> None:
                             sheet=sheet,
                             name=cell.name,
                             detail=(
-                                f"{cell.formula} where the series does "
-                                f"{_example(calculated, usual)}"
+                                "This cell is built differently from the "
+                                "rest of the series."
                             ),
+                            formula=cell.formula or "",
+                            against=_example(calculated, usual),
                             source="FAST, ICAEW P12",
                         )
                     )
@@ -2883,7 +2965,7 @@ def _mutations(book: Workbook, result: Audit) -> None:
         for finding in result.findings
         if finding.rule in ("inconsistent-row", "inconsistent-anchoring")
     }
-    caught: list[tuple[Cell, str]] = []
+    caught: list[tuple[Cell, str, str]] = []
 
     for (axis, _, _), cells in sorted(lines.items()):
         cells.sort(key=lambda one: one.column if axis == "row" else one.row)
@@ -2978,42 +3060,47 @@ def _mutations(book: Workbook, result: Audit) -> None:
                     >= 2
                 ):
                     continue
+            #: **The claim in words, the formulas in their own fields.**
+            #: This is where « … the same formula as its 19 siblings with
+            #: one pinned reference out of step — they read 'Control
+            #: Panel'!$C$51, it reads $D$51: =(E45+E48)/2*… » was
+            #: written. Two banned words, two cell refs and a formula in
+            #: one clause. The row's own count goes in the sentence, and
+            #: the formulas go where a screen can show them as formulas.
             if was in ARITHMETIC and now in ARITHMETIC:
+                drift = "one operator changed"
                 what = (
-                    f"the same calculation as its {n} siblings with one "
-                    f"operator changed — {was} became {now}: "
-                    f"{(deviant.formula or '')[:60]}"
-                )
-            elif displaced and not ("[" in was and "[" in now):
-                what = (
-                    f"the same formula as its {n} siblings with one pinned "
-                    f"reference out of step — they read {_unshaped(was)}, it "
-                    f"reads {_unshaped(now)}: {(deviant.formula or '')[:60]}"
+                    f"The other {n} cells in the row use {was} here. "
+                    f"This one uses {now}."
                 )
             elif displaced:
+                drift = "one reference out of step"
+                read_by_row = _token_target(was, deviant) or _unshaped(was)
+                read_here = _token_target(now, deviant) or _unshaped(now)
                 what = (
-                    f"the same formula as its {n} siblings with one "
-                    f"reference displaced — where they read {_unshaped(was)}, "
-                    f"it reads {_unshaped(now)}: {(deviant.formula or '')[:60]}"
+                    f"The other {n} cells in the row read {read_by_row}. "
+                    f"This one reads {read_here}."
                 )
             else:
                 continue
             already.add(deviant.ref)
-            caught.append((deviant, what))
+            caught.append((deviant, what, drift))
 
     #: One column breaking many rows' families is one authoring event —
     #: H7's C_Tax reads pinned input rows in its first forecast column
     #: while every filled year reads three rows higher, twenty-four
     #: times in block rhythm. Twenty-four findings would bury the one
     #: decision; the fold says it once, with the roster.
-    grouped: dict[tuple[str, int], list[tuple[Cell, str]]] = {}
-    for deviant, what in caught:
-        grouped.setdefault((deviant.sheet, deviant.column), []).append((deviant, what))
+    grouped: dict[tuple[str, int], list[tuple[Cell, str, str]]] = {}
+    for deviant, what, drift in caught:
+        grouped.setdefault((deviant.sheet, deviant.column), []).append(
+            (deviant, what, drift)
+        )
     for (sheet, _), members in sorted(grouped.items()):
         if len(members) >= 3:
-            first, lead = members[0]
+            first, lead, _ = members[0]
             column = get_column_letter(first.column)
-            roster = ", ".join(one.ref.rsplit("!", 1)[-1] for one, _ in members)
+            roster = ", ".join(one.ref.rsplit("!", 1)[-1] for one, _, _ in members)
             result.findings.append(
                 Finding(
                     rule="inconsistent-row",
@@ -3022,17 +3109,18 @@ def _mutations(book: Workbook, result: Audit) -> None:
                     sheet=sheet,
                     name=first.name,
                     detail=(
-                        f"column {column} breaks its rows' families in "
-                        f"{len(members)} rows — each row's fill reads one "
-                        f"place and its {column} cell another; the first: "
-                        f"{lead}"
+                        f"Every row here reads one place and its column "
+                        f"{column} cell another. {lead}"
                     ),
+                    figure_unit=(f"{len(members)} rows broken in column {column}"),
+                    kind="rows broken in one column",
+                    formula=first.formula or "",
                     source="EuSpRIG, ICAEW P11",
                     cells=roster[:400],
                 )
             )
         else:
-            for deviant, what in members:
+            for deviant, what, drift in members:
                 result.findings.append(
                     Finding(
                         rule="inconsistent-row",
@@ -3041,6 +3129,8 @@ def _mutations(book: Workbook, result: Audit) -> None:
                         sheet=deviant.sheet,
                         name=deviant.name,
                         detail=what,
+                        kind=drift,
+                        formula=deviant.formula or "",
                         source="EuSpRIG, ICAEW P11",
                     )
                 )
@@ -3096,9 +3186,12 @@ def _selector_drift(book: Workbook, result: Audit) -> None:
                 sheet=sheet,
                 name=odd.name,
                 detail=(
-                    f"tests {', '.join(few_key)} where {len(many)} sister "
-                    f"cells test {', '.join(many_key)}: {(odd.formula or '')[:70]}"
+                    f"The other {len(many)} cells in the row test "
+                    f"{', '.join(many_key)}. This one tests "
+                    f"{', '.join(few_key)}."
                 ),
+                kind="a different switch setting",
+                formula=odd.formula or "",
                 source="FAST, ICAEW P12",
             )
         )
@@ -3385,10 +3478,11 @@ def _island_findings(
                         sheet=sheet,
                         name=cell.name,
                         detail=(
-                            f"{shown_number(float(cell.value))} typed into "
-                            "a column that is otherwise calculated: "
-                            f"{_example(calculated, witness)}"
+                            "The cell holds a typed "
+                            f"{shown_number(float(cell.value))} where the "
+                            "rest of the column calculates."
                         ),
+                        against=_example(calculated, witness),
                         source="ICAEW P14, FAST",
                     )
                 )
@@ -3507,10 +3601,10 @@ def _typed_edges(book: Workbook, result: Audit) -> None:
                         sheet=sheet,
                         name=typed[0].name,
                         detail=(
-                            f"{values} typed at the {where} of a series "
-                            "that is otherwise calculated: "
-                            f"{_example(stretch, usual)}"
+                            f"The series holds a typed {values} at its "
+                            f"{where} where the rest of it calculates."
                         ),
+                        against=_example(stretch, usual),
                         source="ICAEW P14, FAST",
                         cells=_roster([one.ref.rsplit("!", 1)[-1] for one in pair])
                         if len(pair) > 1
@@ -3628,9 +3722,15 @@ def _typed_beats(book: Workbook, result: Audit) -> None:
                             #: The worked example stays evidence; the
                             #: sentence a person reads is built in
                             #: `plain_words` off `figure` and the stride.
-                            detail=_example(calculated, usual),
+                            detail=(
+                                "The rest of the row calculates on this "
+                                "beat; this cell holds a typed number."
+                            ),
+                            formula=cell.formula or "",
+                            against=_example(calculated, usual),
                             figure=shown_number(value),
                             figure_unit=f"typed into a beat of {stride} columns",
+                            kind="typed into a beat",
                             source="ICAEW P14, FAST",
                         )
                     )
@@ -4479,15 +4579,23 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                         ref=cell.ref,
                         sheet=cell.sheet,
                         name=cell.name,
+                        #: `findings-voice.md` rule 1's own worked
+                        #: example for the second sentence: « The sum at
+                        #: E42 starts below the rows it should cover. »
+                        #: The formula it says that about goes in
+                        #: `formula`, not into the sentence.
                         detail=(
-                            f"{cell.formula} leaves out "
-                            f"{', '.join(one.ref for one in missed[:3])} above it"
+                            "The sum starts below "
+                            + ", ".join(
+                                one.ref.rsplit("!", 1)[-1] for one in missed[:3]
+                            )
                             + (
-                                f" — worth {shown_number(worth)} together"
+                                f", worth {shown_number(worth)} together."
                                 if abs(worth) > 1e-9
-                                else ""
+                                else ", which it should cover."
                             )
                         ),
+                        formula=cell.formula or "",
                         source="ICAEW P19, EuSpRIG",
                         figure=shown_number(worth) if abs(worth) > 1e-9 else "",
                         figure_unit="left out of the total below it",
@@ -4758,9 +4866,12 @@ def _sibling_totals(book: Workbook, result: Audit) -> None:
                         sheet=first.sheet,
                         name=first.name,
                         detail=(
-                            f"{first.formula} beside {n} sibling totals like "
-                            f"{witness.formula} at {where} — {clause}"
+                            f"The {n} totals beside it at {where} are built "
+                            f"the same way as each other. {clause[0].upper()}"
+                            f"{clause[1:]}."
                         ),
+                        formula=first.formula or "",
+                        against=witness.formula or "",
                         source="FAST, ICAEW P12",
                         figure=figure,
                         figure_unit=figure_unit,
@@ -4858,10 +4969,12 @@ def _range_over_block(book: Workbook, result: Audit) -> None:
                         sheet=sheet,
                         name=cell.name,
                         detail=(
-                            f"{cell.formula} reaches over {inner.ref.rsplit('!', 1)[-1]}"
-                            f" — {inner.formula} — which already adds rows inside "
-                            "that range, so they are counted twice"
+                            "Those rows are already added by the total at "
+                            f"{inner.ref.rsplit('!', 1)[-1]}, so they count "
+                            "twice."
                         ),
+                        formula=cell.formula or "",
+                        against=inner.formula or "",
                         source="ICAEW P19, EuSpRIG",
                     )
                 )
@@ -4975,8 +5088,9 @@ def _unit_mismatch(book: Workbook, result: Audit) -> None:
                     sheet=cell.sheet,
                     name=cell.name,
                     #: The formula is evidence beneath the claim, never
-                    #: the head of the sentence.
-                    detail=f"The formula is {cell.formula}.",
+                    #: the head of the sentence — it rides in `formula`.
+                    detail=(f"The terms of this sum do not agree on their {noun}."),
+                    formula=cell.formula or "",
                     source="Williams 2020, EuSpRIG",
                     figure=spread,
                     figure_unit=f"the {noun}s added together in one sum",
@@ -5092,10 +5206,8 @@ def _hidden_sheets(book: Workbook, result: Audit) -> None:
             #: Nothing in the model reads it — safe to delete. » What
             #: was here guessed at a cause (« most likely left over from
             #: an older file format ») that nothing had read.
-            detail = (
-                f"« {sheet} » is very hidden but empty. Nothing in the "
-                "model reads it — safe to delete."
-            )
+            claim = f"« {sheet} » is very hidden but empty"
+            detail = "Nothing in the model reads it — safe to delete."
         elif concealed:
             severity = "error"
             #: The other half of rule 5, and the sentence the founder
@@ -5104,16 +5216,12 @@ def _hidden_sheets(book: Workbook, result: Audit) -> None:
             #: verified. Their replacement: « Module1 is very hidden and
             #: has not been read. It does not appear in Excel's unhide
             #: menu. »
-            detail = (
-                f"« {sheet} » is very hidden and has not been read. It "
-                "does not appear in Excel's unhide menu."
-            )
+            claim = f"« {sheet} » is very hidden and has not been read"
+            detail = "It does not appear in Excel's unhide menu."
         else:
             severity = "smell"
-            detail = (
-                f"« {sheet} » is hidden — it is in the workbook "
-                "and one right-click away from visible."
-            )
+            claim = f"« {sheet} » is hidden"
+            detail = "It is in the workbook, one right-click away from visible."
         result.findings.append(
             Finding(
                 rule="hidden-sheet",
@@ -5122,6 +5230,8 @@ def _hidden_sheets(book: Workbook, result: Audit) -> None:
                 sheet=sheet,
                 name=sheet,
                 detail=detail,
+                figure_unit=claim,
+                kind="a hidden sheet",
                 source="EuSpRIG",
             )
         )
@@ -5211,10 +5321,10 @@ def _gapped_tests(book: Workbook, result: Audit) -> None:
                                     #: cells the check walks past — is
                                     #: built in `plain_words` off `figure`.
                                     detail=(
-                                        f"it tests {run} cells one at a "
+                                        f"It tests {run} cells one at a "
                                         f"time and skips "
                                         f"{first.rsplit('!', 1)[-1]} to "
-                                        f"{final.rsplit('!', 1)[-1]}"
+                                        f"{final.rsplit('!', 1)[-1]}."
                                     ),
                                     figure=str(len(live)),
                                     figure_unit="skipped cells hold numbers",
@@ -5457,16 +5567,12 @@ def _broken_aggregation(book: Workbook, result: Audit) -> None:
             #: holds one month's figure. `_matches_one_cell` is what
             #: raised it, so the second sentence states what was
             #: measured rather than a consequence nobody verified.
-            claim = (
-                f"adds up one {small} where the row adds all {one.ratio}. "
-                f"The {big} carries one {small}'s figure"
-            )
+            claim = f"adds up one {small} where the row adds all {one.ratio}"
+            because = f"This {big} carries one {small}'s figure."
         else:
             edge = "first" if one.kind == OPENING else "last"
-            claim = (
-                f"takes the wrong {small}. Everywhere else the row takes "
-                f"each {big}'s {edge} {small}"
-            )
+            claim = f"takes the wrong {small}"
+            because = f"Everywhere else the row takes each {big}'s {edge} {small}."
         result.findings.append(
             Finding(
                 rule="broken-aggregation",
@@ -5474,7 +5580,13 @@ def _broken_aggregation(book: Workbook, result: Audit) -> None:
                 ref=f"{sheet}!{broken[0]}",
                 sheet=sheet,
                 name=one.label,
-                detail=f"{claim}.",
+                #: The detail stands alone as the finding's second
+                #: sentence; `figure_unit` carries the claim so
+                #: `plain_words` writes the headline without borrowing
+                #: prose from here.
+                detail=because,
+                figure_unit=claim,
+                kind="one period out of pattern",
                 cells=_roster([f"{sheet}!{ref}" for ref in broken] + list(one.also)),
                 source="the row's own behaviour across its time axis",
             )

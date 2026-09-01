@@ -317,6 +317,14 @@ class FindingRead(Schema):
     figure_unit: str = ""
     period: str = ""
     standard_sentence: str = ""
+    #: **The formulas, kept out of the prose.** `formula` is what this
+    #: cell holds; `against` is what it is judged against — the rest of
+    #: the row, the total beside it, the shape the series repeats.
+    #: Both empty where the finding compares nothing. They exist so the
+    #: sentences never have to carry a formula: the screen prints these
+    #: as formulas instead.
+    formula: str = ""
+    against: str = ""
     #: Where the cell's value goes, in the model's own words —
     #: « Opex total » → « Cashflow » → « Equity IRR ». Empty when
     #: nothing downstream reads the cell.
@@ -1271,6 +1279,14 @@ class OneOffDefect(Schema):
     figure: str = ""
     figure_unit: str = ""
     period: str = ""
+    #: **The formulas, kept out of the prose.** `formula` is what this
+    #: cell holds; `against` is what it is judged against — the rest of
+    #: the row, the total beside it, the shape the series repeats.
+    #: Both empty where the finding compares nothing. They exist so the
+    #: sentences never have to carry a formula: the screen prints these
+    #: as formulas instead.
+    formula: str = ""
+    against: str = ""
     #: Where the cell's value goes, in the model's own words —
     #: « Opex total » → « Cashflow » → « Equity IRR ». Empty when
     #: nothing downstream reads the cell.

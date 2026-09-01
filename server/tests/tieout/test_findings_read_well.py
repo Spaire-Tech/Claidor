@@ -168,13 +168,69 @@ def f(rule, **kw):
     return Finding(**base)
 
 
-#: One case per branch `plain_words` actually has. The `detail` values
-#: are the strings the branch keys on.
+#: One case per branch the engine actually has, carrying the fields
+#: that branch reads. **Both sentences are scored**: `plain_words`
+#: writes the headline and `detail` is the finding's second sentence,
+#: and until this round only the first was gated — which is how « … the
+#: same formula as its 19 siblings with one pinned reference out of
+#: step — they read 'Control Panel'!$C$51, it reads $D$51:
+#: =(E45+E48)/2*… » kept reaching a person when they expanded the card.
 CASES: list[tuple[str, Finding]] = [
-    ("error-value", f("error-value", detail="the cell shows #REF!")),
+    ("error-value", f("error-value", detail="The cell shows #REF!.")),
+    (
+        "error-value/torn",
+        f(
+            "error-value",
+            figure="6",
+            figure_unit="cells sharing one broken formula",
+            detail="One broken formula, repeated over the block, from E10 to E21.",
+            formula="=Inputs!#REF!",
+        ),
+    ),
+    (
+        "error-value/live",
+        f(
+            "error-value",
+            figure_unit="#REF! breaks a live column",
+            kind="breaks a live column",
+            detail="Values resume at E13.",
+        ),
+    ),
+    (
+        "error-value/tails",
+        f(
+            "error-value",
+            figure="40",
+            figure_unit="cells past the data's edge",
+            detail="« Debt Schedule » carries #N/A past its data's edge.",
+        ),
+    ),
+    (
+        "error-value/sheets",
+        f(
+            "error-value",
+            figure="#REF!",
+            figure_unit="repeated on 5 sheets",
+            detail="The same formula sits on 5 sheets: A, B, C.",
+        ),
+    ),
     (
         "external-link",
-        f("external-link", detail="reads a file nobody sent — 3 cells", figure="3"),
+        f(
+            "external-link",
+            figure="3",
+            detail="It reads another workbook, [1], in 3 cells of « Ops ».",
+            formula="=[1]Outputs!C2",
+        ),
+    ),
+    (
+        "external-link/one",
+        f(
+            "external-link",
+            figure="1",
+            detail="It reads another workbook, [1], at Ops!B2.",
+            formula="=[1]Outputs!C2",
+        ),
     ),
     (
         "broken-name",
@@ -197,7 +253,7 @@ CASES: list[tuple[str, Finding]] = [
             name="defined names",
             figure="1",
             figure_unit="point at deleted cells",
-            detail="Excel stores #REF! where their targets used to be (Tax_Rate).",
+            detail="Excel stores #REF! where its target used to be (Tax_Rate).",
         ),
     ),
     (
@@ -217,11 +273,10 @@ CASES: list[tuple[str, Finding]] = [
         f(
             "broken-aggregation",
             name="Revenue",
-            cells="Annual!G41, Annual!H41, Summary!C5",
-            detail=(
-                "adds up one month where the row adds all 12. The year "
-                "carries one month's figure."
-            ),
+            figure_unit="adds up one month where the row adds all 12",
+            kind="one period out of pattern",
+            detail="This year carries one month's figure.",
+            cells="Annual!G41, Annual!H41",
         ),
     ),
     (
@@ -229,24 +284,52 @@ CASES: list[tuple[str, Finding]] = [
         f(
             "broken-aggregation",
             name="Cash Balance",
-            detail=(
-                "takes the wrong month. Everywhere else the row takes each "
-                "year's last month."
-            ),
+            figure_unit="takes the wrong month",
+            kind="one period out of pattern",
+            detail="Everywhere else the row takes each year's last month.",
         ),
     ),
-    ("volatile", f("volatile")),
-    ("long-formula", f("long-formula")),
+    (
+        "volatile",
+        f(
+            "volatile",
+            figure_unit="uses INDIRECT",
+            detail="It uses INDIRECT, which Excel works out again on every change.",
+            formula="=INDIRECT($C$4)",
+        ),
+    ),
+    (
+        "volatile/fold",
+        f(
+            "volatile",
+            figure_unit="in 4 places",
+            detail="It uses INDIRECT. The same one sits in 4 cells of this row.",
+        ),
+    ),
+    (
+        "long-formula",
+        f(
+            "long-formula",
+            figure_unit="267 characters long",
+            kind="one long formula",
+            detail="The formula runs to 267 characters.",
+            formula="=IF(E2<1,0,MIN(E3*12,E4))",
+        ),
+    ),
     (
         "long-formula/fold",
-        f("long-formula", figure_unit="in 4 places", detail="312 characters"),
+        f(
+            "long-formula",
+            figure_unit="in 4 places",
+            detail="The formula runs to 267 characters. The same one sits in 4 cells.",
+        ),
     ),
     (
         "long-formula/sheets",
         f(
             "long-formula",
             figure_unit="repeated on 5 sheets",
-            detail="312 characters",
+            detail="The formula runs to 267 characters.",
         ),
     ),
     (
@@ -254,67 +337,275 @@ CASES: list[tuple[str, Finding]] = [
         f(
             "hardcode-in-formula",
             figure="240000",
-            detail="240000 typed directly into it",
+            detail="240000 sits inside the formula rather than in an input cell.",
+            formula="=IF(E2<1,0,MIN(240000,E4))",
         ),
     ),
-    ("typed-over-formula", f("typed-over-formula")),
+    (
+        "hardcode-in-formula/sheets",
+        f(
+            "hardcode-in-formula",
+            figure="240000",
+            figure_unit="repeated on 5 sheets",
+            detail="240000 sits inside the formula. The same formula sits on 5 sheets.",
+        ),
+    ),
+    (
+        "hardcode-in-formula/own-numbers",
+        f(
+            "hardcode-in-formula",
+            figure="240000",
+            figure_unit="repeated on 5 sheets, each with its own number",
+            detail="240000 sits inside the formula. The same decision sits on 5 sheets.",
+        ),
+    ),
+    (
+        "hardcode-in-formula/convention",
+        f(
+            "hardcode-in-formula",
+            figure="0.7",
+            figure_unit="in 5 formulas on one sheet",
+            detail="0.7 is written into 5 different formulas rather than held in one cell.",
+        ),
+    ),
+    (
+        "typed-over-formula",
+        f(
+            "typed-over-formula",
+            detail="The cell holds a typed 19,100 where the rest of the series calculates.",
+            against="=E41*1.03",
+        ),
+    ),
     (
         "typed-over-formula/row",
-        f("typed-over-formula", detail="the same value typed across 12 columns"),
+        f(
+            "typed-over-formula",
+            figure_unit="one value typed across 12 cells",
+            kind="one value across a row",
+            detail="It was one paste.",
+            cells="E12, F12, G12",
+        ),
     ),
     (
         "typed-over-formula/run",
-        f("typed-over-formula", detail="4 different values typed across 4 columns"),
+        f(
+            "typed-over-formula",
+            figure_unit="4 values typed across 4 cells",
+            kind="a run of values",
+            detail="It was one paste, and each cell holds its own number.",
+            cells="E12, F12, G12, H12",
+        ),
     ),
     (
         "typed-over-formula/block",
-        f("typed-over-formula", detail="typed over a block of 3 by 4"),
+        f(
+            "typed-over-formula",
+            figure_unit="typed over a block 3 columns wide and 4 rows deep, E12 to G15",
+            kind="typed over a block",
+            detail="One paste went over the block's formulas.",
+        ),
     ),
     (
         "typed-over-formula/places",
-        f("typed-over-formula", detail="typed over in 3 places: E12, F12, G12"),
-    ),
-    ("typed-over-edge", f("typed-over-edge")),
-    ("range-over-block", f("range-over-block")),
-    ("range-over-block/smell", f("range-over-block", severity="smell")),
-    ("inconsistent-total", f("inconsistent-total")),
-    ("inconsistent-anchoring", f("inconsistent-anchoring")),
-    ("inconsistent-row", f("inconsistent-row")),
-    (
-        "inconsistent-row/calc",
         f(
-            "inconsistent-row",
-            detail="the same calculation as its row with a flipped sign",
+            "typed-over-formula",
+            figure_unit="typed over in 3 places",
+            kind="typed over down a column",
+            detail="Every other cell in those rows calculates.",
+            cells="E12, E40, E77",
         ),
     ),
     (
-        "inconsistent-row/formula",
+        "typed-over-edge",
         f(
-            "inconsistent-row",
-            detail="the same formula as its row but reads a different column",
+            "typed-over-edge",
+            detail="The series holds a typed 19,100 at its end where the rest of it calculates.",
+            against="=E41*1.03",
         ),
     ),
     (
-        "inconsistent-row/tests",
-        f("inconsistent-row", detail="tests a different switch: E9 not E8"),
+        "typed-over-beat",
+        f(
+            "typed-over-beat",
+            figure="19,100",
+            figure_unit="typed into a beat of 3 columns",
+            kind="typed into a beat",
+            detail="The rest of the row calculates on this beat; this cell holds a typed number.",
+            formula="19100",
+            against="=E41*1.03",
+        ),
     ),
-    ("circular", f("circular")),
-    ("skipped-cell", f("skipped-cell", figure="12.5m")),
-    ("skipped-cell/nofigure", f("skipped-cell")),
+    (
+        "range-over-block",
+        f(
+            "range-over-block",
+            detail="Those rows are already added by the total at E40, so they count twice.",
+            formula="=SUM(E30:E45)",
+            against="=SUM(E30:E39)",
+        ),
+    ),
+    (
+        "range-over-block/smell",
+        f(
+            "range-over-block",
+            severity="smell",
+            detail="The range reaches past the block it should cover.",
+        ),
+    ),
+    (
+        "inconsistent-total",
+        f(
+            "inconsistent-total",
+            detail="The 5 totals beside it at E12 are built the same way as each other.",
+            formula="=SUM(E30:E45)",
+            against="=SUM(E30:E39)",
+        ),
+    ),
+    (
+        "inconsistent-anchoring",
+        f(
+            "inconsistent-anchoring",
+            detail="This cell locks its references differently from the rest of the row.",
+            formula="=$E$41*1.03",
+            against="=E41*1.03",
+        ),
+    ),
+    (
+        "inconsistent-row",
+        f(
+            "inconsistent-row",
+            detail="This cell is built differently from the rest of the series.",
+            formula="=E41*1.03",
+        ),
+    ),
+    (
+        "inconsistent-row/operator",
+        f(
+            "inconsistent-row",
+            kind="one operator changed",
+            detail="The other 19 cells in the row use + here. This one uses -.",
+            formula="=E45-E48",
+        ),
+    ),
+    (
+        "inconsistent-row/reference",
+        f(
+            "inconsistent-row",
+            kind="one reference out of step",
+            detail=(
+                "The other 19 cells in the row read Control Panel!C51. "
+                "This one reads Control Panel!D51."
+            ),
+            formula="=(E45+E48)/2*'Control Panel'!$D$51",
+        ),
+    ),
+    (
+        "inconsistent-row/switch",
+        f(
+            "inconsistent-row",
+            kind="a different switch setting",
+            detail="The other 12 cells in the row test 1, 2. This one tests 3.",
+            formula="=IF($C$9=3,E41,0)",
+        ),
+    ),
+    (
+        "inconsistent-row/column",
+        f(
+            "inconsistent-row",
+            figure_unit="3 rows broken in column E",
+            kind="rows broken in one column",
+            detail="Every row here reads one place and its column E cell another.",
+            cells="E5, E9, E13",
+        ),
+    ),
+    (
+        "circular",
+        f("circular", detail="The loop runs through 4 cells and back to this one."),
+    ),
+    (
+        "circular/loops",
+        f(
+            "circular",
+            figure="88",
+            figure_unit="cells in 22 identical loops",
+            detail="The same loop is repeated on every asset block.",
+        ),
+    ),
+    (
+        "skipped-cell",
+        f(
+            "skipped-cell",
+            figure="12.5m",
+            detail="The sum starts below E40, worth 12.5m together.",
+            formula="=SUM(E37:E37)",
+        ),
+    ),
+    (
+        "skipped-cell/nofigure",
+        f(
+            "skipped-cell",
+            detail="The sum starts below E40, which it should cover.",
+            formula="=SUM(E37:E37)",
+        ),
+    ),
     (
         "gapped-test",
         f(
             "gapped-test",
             figure="7",
             figure_unit="skipped cells hold numbers",
-            detail="it tests 12 cells one at a time and skips E30 to E36",
+            detail="It tests 12 cells one at a time and skips E30 to E36.",
+            formula="=IF(E10<0,1,0)",
         ),
     ),
     (
-        "hidden-sheet",
+        "currency-mismatch",
+        f(
+            "currency-mismatch",
+            figure="GBP, EUR",
+            figure_unit="the currencys added together in one sum",
+            detail="The terms of this sum do not agree on their currency.",
+            formula="=SUM(E10:E20)+F30",
+        ),
+    ),
+    (
+        "scale-mismatch",
+        f(
+            "scale-mismatch",
+            figure="thousands, millions",
+            figure_unit="the scales added together in one sum",
+            detail="The terms of this sum do not agree on their scale.",
+            formula="=SUM(E10:E20)+F30",
+        ),
+    ),
+    (
+        "hidden-sheet/empty",
         f(
             "hidden-sheet",
-            detail="« Module1 » is very hidden but empty. Nothing in the model reads it — safe to delete.",
+            name="Module1",
+            figure_unit="« Module1 » is very hidden but empty",
+            kind="a hidden sheet",
+            detail="Nothing in the model reads it — safe to delete.",
+        ),
+    ),
+    (
+        "hidden-sheet/unread",
+        f(
+            "hidden-sheet",
+            name="Module1",
+            figure_unit="« Module1 » is very hidden and has not been read",
+            kind="a hidden sheet",
+            detail="It does not appear in Excel's unhide menu.",
+        ),
+    ),
+    (
+        "hidden-sheet/plain",
+        f(
+            "hidden-sheet",
+            name="Workings",
+            figure_unit="« Workings » is hidden",
+            kind="a hidden sheet",
+            detail="It is in the workbook, one right-click away from visible.",
         ),
     ),
 ]
@@ -349,8 +640,13 @@ class TestEveryBranchOfEverySentence:
         #: and ends with a stop; a fragment does neither.
         said = plain_words(finding).strip()
 
+        #: A number or an error token may open a sentence — the
+        #: founder's own edge case is « Total Revenue misses 4 rows »,
+        #: and « #REF! breaks a column » names the thing a person sees.
+        #: What may not open one is a bare cell address, and `CellFirst`
+        #: is the rule that catches that.
         assert said, label
-        assert said[0].isupper() or said[0] in "«\"'", f"{label}: {said}"
+        assert said[0].isupper() or said[0] in "«\"'#0123456789", f"{label}: {said}"
         assert said.endswith((".", "!", "?")), f"{label}: {said}"
 
     @pytest.mark.parametrize(("label", "finding"), CASES, ids=[one[0] for one in CASES])
@@ -572,3 +868,86 @@ class TestTheStatementChecksSentences:
         assert set(ANALYTIC_RULE_NAMES) - covered == set(), sorted(
             set(ANALYTIC_RULE_NAMES) - covered
         )
+
+
+class TestTheSecondSentence:
+    """The detail — what the card shows when a person expands it.
+
+    **This is the surface that was never gated.** The headline went
+    through `plain_words` and through this file; `detail` went straight
+    from the engine to the screen. The founder expanded a finding on
+    their own model and read:
+
+        the same formula as its 19 siblings with one pinned reference
+        out of step — they read 'Control Panel'!$C$51, it reads
+        'Control Panel'!$D$51: =(E45+E48)/2*'Control Panel'!$D$51
+
+    Two banned words, two cell references and a formula, in one clause,
+    on the field the title had been carefully kept clear of.
+
+    `findings-voice.md` is explicit about the shape: « Every finding is
+    two sentences. 1. Headline … 2. Detail — one sentence with the
+    mechanism or the evidence. » So the detail is a *sentence*, held to
+    the same rules, and the formulas live in `formula` and `against`
+    where a screen can print them as formulas.
+    """
+
+    @pytest.mark.parametrize(("label", "finding"), CASES, ids=[o[0] for o in CASES])
+    def test_it_keeps_the_house_style(self, label: str, finding: Finding) -> None:
+        broke = style.errors(style.check(finding.detail))
+
+        assert broke == [], f"{label}: {finding.detail}\n  " + "\n  ".join(
+            f"« {one.found} » — {one.say}" for one in broke
+        )
+
+    @pytest.mark.parametrize(("label", "finding"), CASES, ids=[o[0] for o in CASES])
+    def test_it_is_a_sentence(self, label: str, finding: Finding) -> None:
+        said = finding.detail.strip()
+
+        assert said, label
+        assert said[0].isupper() or said[0] in "«\"'#0123456789", f"{label}: {said}"
+        assert said.endswith((".", "!", "?")), f"{label}: {said}"
+
+    @pytest.mark.parametrize(("label", "finding"), CASES, ids=[o[0] for o in CASES])
+    def test_it_carries_no_formula(self, label: str, finding: Finding) -> None:
+        #: The rule this whole class exists for. A formula in a sentence
+        #: is a formula nobody reads; `formula` and `against` are where
+        #: it goes, and the screen prints those as formulas.
+        assert not re.search(r"=[A-Z]{2,}\(", finding.detail), (
+            f"{label}: {finding.detail}"
+        )
+        assert not re.search(r"=[A-Z]{1,3}\d+[*+/-]", finding.detail), (
+            f"{label}: {finding.detail}"
+        )
+        assert "`" not in finding.detail, f"{label}: {finding.detail}"
+
+    @pytest.mark.parametrize(("label", "finding"), CASES, ids=[o[0] for o in CASES])
+    def test_the_whole_finding_reads_at_the_founders_bar(
+        self, label: str, finding: Finding
+    ) -> None:
+        """Both sentences together, which is how a person reads them.
+
+        The unit is the finding, not the field: « Every finding is two
+        sentences », and a headline that scores 6 beside a detail that
+        scores 12 is not a finding anybody wants. The row label is held
+        out for the reason given above — it is the model's naming, not
+        the engine's writing.
+        """
+        whole = f"{plain_words(finding)} {finding.detail}"
+        bare = whole.replace(finding.name, "X") if finding.name else whole
+        reading = style.readability(bare)
+
+        assert reading.grade <= style.GRADE_CEILING, (
+            f"{label}: grade {reading.grade:.1f} — {whole}"
+        )
+
+    @pytest.mark.parametrize(("label", "finding"), CASES, ids=[o[0] for o in CASES])
+    def test_the_two_sentences_do_not_repeat_each_other(
+        self, label: str, finding: Finding
+    ) -> None:
+        #: The card shows both. When the headline is built by splicing
+        #: the detail into it, the reader gets the same words twice —
+        #: which is what « things are duplicated » was about.
+        said = plain_words(finding).strip()
+
+        assert finding.detail.strip() not in said, f"{label}: {said}"
