@@ -487,11 +487,20 @@ def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
         ("hidden-sheet", "Module1!A1"),
         ("inconsistent-row", "Assumptions Processing!E50"),
         ("inconsistent-row", "Balance Sheet!D13"),
+        #: Three over-long formulas used to be three findings. Nothing
+        #: is wrong with any of them, so they are one line at the
+        #: bottom with the roster — the founder's instruction.
         ("long-formula", "Assumptions Processing!E23"),
-        ("long-formula", "Assumptions Processing!E37"),
-        ("long-formula", "Assumptions Processing!E47"),
+        #: Two total rows of the same shape — senior debt service at
+        #: row 41, subordinated at row 51 — are two decisions. Folded
+        #: together they read as one row's miss with a forty-cell
+        #: roster, and the founder saw the contradiction.
         ("skipped-cell", "Assumptions Processing!E41"),
+        ("skipped-cell", "Assumptions Processing!E51"),
     ]
+    long = next(f for f in result.findings if f.rule == "long-formula")
+    assert long.kind == "every long formula"
+    assert long.figure_unit.endswith("across 3 places")
 
     #: The dragged anchor: nineteen siblings on the senior rate, the
     #: seed on the subordinated rate it is labelled for.
@@ -504,11 +513,15 @@ def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
     assert "P10 to V10" in banner.detail
 
     #: The real miss is the interest row; the outstanding-balance row
-    #: between the components does not belong in a service total.
-    skipped = next(f for f in result.findings if f.rule == "skipped-cell")
-    assert skipped.figure == "12.5m"
-    assert "E40" in skipped.detail
+    #: between the components does not belong in a service total. The
+    #: headline carries the whole row's miss and the detail says what
+    #: the first period alone is worth, by the missed row's name.
+    skipped = next(f for f in result.findings if f.ref == "Assumptions Processing!E41")
+    assert skipped.figure == "389.6m"
+    assert "12.5m of it is in Year 1 alone" in skipped.detail
+    assert "« Senior Debt Interest »" in skipped.detail
     assert "E38" not in skipped.detail
+    assert len(skipped.cells.split(", ")) == 20
 
     #: An empty, unreferenced very-hidden sheet is a note, not a threat.
     hidden = next(f for f in result.findings if f.rule == "hidden-sheet")

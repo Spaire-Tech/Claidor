@@ -349,6 +349,27 @@ def _tokens(formula: str) -> list[Any]:
         return []
 
 
+#: Rules whose `figure` is money rather than a count or a constant —
+#: the findings a materiality line may judge, and the ones a fill
+#: fold may sum. `inconsistent-row` carries the delta against what
+#: the row would calculate, which is money too; it was left out, so a
+#: 20m difference ranked on structure alone.
+MONEY_RULES = frozenset({"skipped-cell", "typed-over-formula", "inconsistent-row"})
+
+
+def money_of(figure: str) -> float:
+    """A printed figure back as a number — « 12.5m » → 12,500,000. Zero
+    when the figure is empty, a count, or a list."""
+    first = (figure or "").split(", ")[0].replace(",", "").strip()
+    if not first:
+        return 0.0
+    scale = {"bn": 1e9, "m": 1e6}.get(first[-2:].lstrip("0123456789.-"), 1.0)
+    try:
+        return abs(float(first.rstrip("bnm"))) * scale
+    except ValueError:
+        return 0.0
+
+
 def shown_number(value: float) -> str:
     """A figure as a banker says it: 512.5m, 1.2bn, 19,100.
 
@@ -553,7 +574,7 @@ def _elevated(book: Workbook, result: Audit, materiality: float | None = None) -
     #: Rules whose figure is money rather than a count or a constant —
     #: the only findings magnitude may promote, and the only ones the
     #: materiality line may demote.
-    money_figures = {"skipped-cell", "typed-over-formula"}
+    money_figures = MONEY_RULES
     threshold = materiality if materiality and materiality > 0 else materiality_of(book)
     threshold_said = (
         f"the firm's materiality of {shown_number(threshold)}"
@@ -563,14 +584,7 @@ def _elevated(book: Workbook, result: Audit, materiality: float | None = None) -
 
     replaced: list[Finding] = []
     for finding in result.findings:
-        money = 0.0
-        if finding.rule in money_figures and finding.figure:
-            first = finding.figure.split(", ")[0].replace(",", "")
-            scale = {"bn": 1e9, "m": 1e6}.get(first[-2:].lstrip("0123456789."), 1.0)
-            try:
-                money = abs(float(first.rstrip("bnm"))) * scale
-            except ValueError:
-                money = 0.0
+        money = money_of(finding.figure) if finding.rule in money_figures else 0.0
         if finding.severity == "error" and money and money < threshold:
             #: A real defect whose money sits under the line. Still a
             #: defect — the basis says so — but « Material » is a word
@@ -590,6 +604,8 @@ def _elevated(book: Workbook, result: Audit, materiality: float | None = None) -
             )
             if money:
                 seen = f"{seen}; {shown_number(money)} is at or above {threshold_said}"
+            elif finding.rule in money_figures:
+                seen = f"{seen}; no amount could be computed for it"
         elif finding.rule == "hardcode-in-formula":
             tier, risk = 2, 0.6
             confidence, seen = (
@@ -714,8 +730,8 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             )
         lead = f"{label}" if label else f"The range at {at}"
         return (
-            f"{lead} spans a label inside its own range. The range has "
-            "left the block it should cover."
+            f"{lead} spans a label inside its own range, so it adds rows "
+            "from beyond the block it should cover."
         )
     if finding.rule == "inconsistent-total":
         lead = (
@@ -764,7 +780,11 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         lead = f"{subject} adds" if label else f"The sum at {at} adds"
         #: « GBP, EUR » is a list; « GBP and EUR » is a sentence.
         spread = " and ".join(finding.figure.rsplit(", ", 1))
-        return f"{lead} {spread} together. A sum may only carry one {noun}."
+        #: The second half: a sum of pounds and euros is in neither.
+        return (
+            f"{lead} {spread} together, so its answer is not in any one "
+            f"{noun}. A sum may only carry one {noun}."
+        )
     if finding.rule == "hidden-sheet":
         #: The claim is written where the sheet's state is known —
         #: `findings-voice.md` rule 5 turns on the difference between
@@ -804,6 +824,9 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         #: rule: « Total Operating Costs misses 512.5m. » — then the
         #: mechanism in its own sentence.
         named = label or f"The total at {at}"
+        periods = len(finding.cells.split(", ")) if finding.cells else 1
+        if finding.figure and periods > 1:
+            return f"{named} misses {finding.figure} across {periods} periods."
         if finding.figure:
             return f"{named} misses {finding.figure}."
         return f"{named} leaves out rows it should cover."
@@ -840,17 +863,22 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         #: the sheet name twice inside a 27-word headline. `cells` is
         #: the roster; the sentence says how many, once.
         number = finding.figure or "a number"
+        #: The row's name leads, never the cell — rule 1 — and the
+        #: consequence agrees in number with the claim: twenty cells,
+        #: « these 20 cells will not ».
+        lead = f"{label} has" if label else f"The formula at {at} has"
         if finding.figure_unit.startswith("filled"):
             filled = len(finding.cells.split(", ")) if finding.cells else 0
-            across = f" in {filled} cells of one row" if filled > 1 else ""
-            return (
-                f"The formula at {at} has {number} typed into it{across}. "
-                "If the assumption moves, this cell will not."
-            )
+            if filled > 1:
+                return (
+                    f"{lead} {number} typed into its formula in {filled} "
+                    f"cells. If the assumption changes, these {filled} cells "
+                    "will not."
+                )
         where = f" in {period}" if period else ""
         return (
-            f"The formula at {at} has {number} typed directly into it"
-            f"{where}. If the assumption moves, this cell will not."
+            f"{lead} {number} typed into its formula{where}. If the "
+            "assumption changes, this cell will not."
         )
 
     if finding.rule == "error-value":
@@ -878,8 +906,9 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         if finding.figure_unit == "cells sharing one broken formula":
             return (
                 f"{finding.figure} cells on « {finding.sheet} » share one "
-                "formula whose target was deleted. Repair it once and "
-                "refill the block."
+                "formula whose target was deleted, so every cell that reads "
+                "them builds on that error. Repair it once and refill the "
+                "block."
             )
         return (
             f"{label or f'The cell at {at}'} shows an error instead of a "
@@ -911,6 +940,9 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             f"« {finding.sheet} » repeats a formula that Excel works out "
             "again on every change. Its value never sits still."
         )
+    if finding.rule == "long-formula" and finding.kind == "every long formula":
+        count = finding.figure_unit.split()[0]
+        return f"{count} formulas are too long to check by hand."
     if finding.rule == "long-formula" and (
         finding.figure_unit.startswith("in ")
         or finding.figure_unit.startswith("repeated on")
@@ -940,7 +972,10 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         #: Never opens with a cell address — `findings-voice.md` rule 1,
         #: « `E42` means nothing until the file is open ». The address
         #: rides in the sentence, not at the head of it.
-        "long-formula": (f"The formula at {at} is too long to check by eye."),
+        "long-formula": (
+            f"The formula at {at} is too long to check by eye, so a "
+            "mistake inside it cannot be seen by hand."
+        ),
         "inconsistent-anchoring": (
             f"{label or f'The cell at {at}'} locks its references "
             "differently from the rest of its row. Filling the row again "
@@ -1080,6 +1115,7 @@ def audit(
     _quantified(book, result, axes)
     result.findings = _collapsed(book, result.findings, axes)
     _flows(book, result)
+    _one_long_formula_line(result)
     _elevated(book, result, materiality)
     #: Weight first — a defect leads, hygiene closes — with the old
     #: severity/sheet order breaking ties so equal weights stay stable.
@@ -1232,6 +1268,55 @@ FILLED_RULES = frozenset(
 )
 
 
+def _column_of(book: Workbook, finding: Finding) -> int:
+    cell = book.cells.get(finding.ref)
+    return cell.column if cell is not None else 0
+
+
+def _label_row(book: Workbook, finding: Finding) -> int:
+    """The row a total is labelled on: its own when it carries a
+    label, the row above when it sits one row under an otherwise
+    empty label — the skipped-cell check's own naming rule."""
+    cell = book.cells.get(finding.ref)
+    if cell is None:
+        return 0
+    if cell.row_label.strip():
+        return cell.row
+    above = book.cells.get(
+        f"{cell.sheet}!{get_column_letter(cell.column)}{cell.row - 1}"
+    )
+    above_label = book.row_words.get(cell.sheet, {}).get(cell.row - 1, "")
+    if above_label and (above is None or above.value is None):
+        return cell.row - 1
+    return cell.row
+
+
+def _missed_rows(finding: Finding) -> list[int]:
+    """The rows a skipped-cell finding says its sum starts below, as
+    row numbers, read off its own first clause (« The sum starts below
+    E38, E40 »)."""
+    return [
+        int(row)
+        for _column, row in re.findall(
+            r"\b([A-Z]{1,3})(\d+)\b", finding.detail.split(", worth")[0]
+        )
+    ]
+
+
+def _missed_rows_named(book: Workbook, finding: Finding) -> str:
+    """The rows a skipped-cell finding says its sum starts below, by
+    their labels — « Senior Debt Interest » — falling back to « the
+    same row » when the sheet gives them no label."""
+    cells = _missed_rows(finding)
+    labels = [
+        book.row_words.get(finding.sheet, {}).get(row, "").strip() for row in cells
+    ]
+    named = [f"« {label} »" for label in labels if label]
+    if not named or len(named) != len(cells):
+        return "the same row"
+    return " and ".join(named)
+
+
 def _collapsed(
     book: Workbook,
     findings: list[Finding],
@@ -1255,6 +1340,23 @@ def _collapsed(
         cell = book.cells.get(finding.ref)
         shape = _shape(cell) if cell is not None else finding.ref
         key: tuple[str, ...] = (finding.sheet, finding.rule, shape)
+        if finding.rule == "skipped-cell":
+            #: One total row dragged across is one decision; two total
+            #: rows with the same shape — senior debt service at row
+            #: 41, subordinated at row 51 — are two. Folding them
+            #: together named the second row after the first. The key
+            #: is the row the total is labelled on and the rows it
+            #: leaves out — not the formula's shape — so a first-period
+            #: total that slipped one row under its label (E42 summing
+            #: from row 37, where F41 to X41 sum from row 37) still
+            #: folds with the nineteen periods beside it. It is the
+            #: same miss, on the same row, in every period.
+            key = (
+                finding.sheet,
+                finding.rule,
+                str(_label_row(book, finding)),
+                ",".join(str(row) for row in _missed_rows(finding)),
+            )
         if finding.rule == "hardcode-in-formula":
             #: Same buried numbers = same decision. Keying on the whole
             #: detail — which contains the formula text — made twenty
@@ -1269,16 +1371,55 @@ def _collapsed(
         groups.setdefault(key, []).append(finding)
 
     for group in groups.values():
-        first = group[0]
         if len(group) == 1:
-            keep.append(first)
+            keep.append(group[0])
             continue
+        #: The first period leads — it is the one the sentence quotes
+        #: — and it is the leftmost column, not the first cell read.
+        group = sorted(group, key=lambda one: _column_of(book, one))
+        first = group[0]
         #: The span in the model's own time vocabulary when the axis
         #: knows these columns — « FY2014–FY2033 » beats « E17 to X17 ».
         edges = sorted(one.ref for one in group)
         start = _period(axes, first.sheet, edges[0])
         end = _period(axes, first.sheet, edges[-1])
         span = f"{start}–{end}" if start and end else f"{edges[0]} to {edges[-1]}"
+        #: **The money is the whole row's.** « Total Senior Debt
+        #: Service misses 37.5m » with « +38 » beside it read as one
+        #: year's miss against thirty-nine cells — the headline and
+        #: the fold count contradicted each other. Where every member
+        #: carries an amount, the fold carries their sum, and the
+        #: sentence says how many periods it runs across.
+        worths = [money_of(one.figure) for one in group]
+        summed = first.rule == "skipped-cell" and any(worths)
+        figure = shown_number(sum(worths)) if summed else first.figure
+        first_period = _period(axes, first.sheet, first.ref) or "the first period"
+        #: The row the sum leaves out, by its name — « Senior Debt
+        #: Interest » — because the member's own detail names it by
+        #: cell and a fold across twenty periods has no one cell.
+        below = _missed_rows_named(book, first)
+        #: A member that sits one row under its label keeps that fact
+        #: through the fold: it is the one cell a reader would not
+        #: find on the label's row.
+        slipped = [
+            _period(axes, one.sheet, one.ref) or one.ref.rsplit("!", 1)[-1]
+            for one in group
+            if "one row below its label" in one.detail
+        ]
+        detail = (
+            f"The sum starts below {below} in every period; "
+            f"{first.figure} of it is in {first_period} alone. One formula, "
+            f"filled across {len(group)} cells, so every period's total is "
+            "out by its own share."
+            + (
+                f" In {' and '.join(slipped)} the total also sits one row "
+                "below its label."
+                if slipped
+                else ""
+            )
+            if summed and first.figure
+            else f"{first.detail} One formula, filled across {len(group)} cells."
+        )
         keep.append(
             Finding(
                 rule=first.rule,
@@ -1292,11 +1433,9 @@ def _collapsed(
                 #: filled across 39 cells (E51 to X51) » — which put
                 #: the finding at three clauses before anyone read it.
                 #: `cells` is where a fold's membership belongs.
-                detail=(
-                    f"{first.detail} One formula, filled across {len(group)} cells."
-                ),
+                detail=detail,
                 source=first.source,
-                figure=first.figure,
+                figure=figure,
                 figure_unit=f"filled across {span}",
                 kind=first.kind,
                 formula=first.formula,
@@ -2258,6 +2397,38 @@ def _enumeration(formula: str) -> bool:
     return deepest <= 1
 
 
+def _one_long_formula_line(result: Audit) -> None:
+    """Every over-long formula in the workbook, as one sentence.
+
+    « The formula at E23 is too long to check by eye » three times,
+    with +40, +19 and +19 beside them, was eighty-two formulas flagged
+    for being long. Nothing is wrong with any of them, and nobody opens
+    a report to be told a formula is long. One line, at the bottom,
+    with the roster — the founder's own instruction.
+    """
+    long = [one for one in result.findings if one.rule == "long-formula"]
+    if len(long) <= 1:
+        return
+    rest = [one for one in result.findings if one.rule != "long-formula"]
+    count = sum(len(one.cells.split(", ")) if one.cells else 1 for one in long)
+    first = long[0]
+    rest.append(
+        Finding(
+            rule="long-formula",
+            severity="smell",
+            ref=first.ref,
+            sheet=first.sheet,
+            name="",
+            detail="Hand-checking them is impractical; nothing is known to be wrong.",
+            source=first.source,
+            figure_unit=f"{count} formulas across {len(long)} places",
+            kind="every long formula",
+            cells=_roster(sorted(one.ref for one in long)),
+        )
+    )
+    result.findings = rest
+
+
 def _long_formulas(book: Workbook, result: Audit) -> None:
     for cell in book.cells.values():
         if (
@@ -2849,7 +3020,7 @@ def _rows(book: Workbook, result: Audit) -> None:
                         name=cell.name,
                         detail=(
                             "The cell holds a typed "
-                            f"{shown_number(float(cell.value))} where the "
+                            f"{shown_number(float(cell.value or 0))} where the "
                             "rest of the series calculates."
                         ),
                         against=_example(calculated, usual),
@@ -2926,7 +3097,8 @@ def _rows(book: Workbook, result: Audit) -> None:
                             name=cell.name,
                             detail=(
                                 "This cell is built differently from the "
-                                "rest of the series."
+                                "rest of the series, so its number does not "
+                                "follow the same rule as its neighbours."
                             ),
                             formula=cell.formula or "",
                             against=_example(calculated, usual),
@@ -3121,7 +3293,7 @@ def _mutations(book: Workbook, result: Audit) -> None:
                 drift = "one operator changed"
                 what = (
                     f"The other {n} cells in the row use {was} here. "
-                    f"This one uses {now}."
+                    f"This one uses {now}, so its answer moves the wrong way."
                 )
             elif displaced:
                 drift = "one reference out of step"
@@ -3129,7 +3301,8 @@ def _mutations(book: Workbook, result: Audit) -> None:
                 read_here = _token_target(now, deviant) or _unshaped(now)
                 what = (
                     f"The other {n} cells in the row read {read_by_row}. "
-                    f"This one reads {read_here}."
+                    f"This one reads {read_here}, so it is worked out on a "
+                    "different input from the rest of its row."
                 )
             else:
                 continue
@@ -3160,7 +3333,9 @@ def _mutations(book: Workbook, result: Audit) -> None:
                     name=first.name,
                     detail=(
                         f"Every row here reads one place and its column "
-                        f"{column} cell another. {lead}"
+                        f"{column} cell another, so that column is worked "
+                        "out on different inputs from every other. "
+                        f"{lead}"
                     ),
                     figure_unit=(f"{len(members)} rows broken in column {column}"),
                     kind="rows broken in one column",
@@ -3238,7 +3413,8 @@ def _selector_drift(book: Workbook, result: Audit) -> None:
                 detail=(
                     f"The other {len(many)} cells in the row test "
                     f"{', '.join(many_key)}. This one tests "
-                    f"{', '.join(few_key)}."
+                    f"{', '.join(few_key)}, so it switches on a different "
+                    "case from the rest."
                 ),
                 kind="a different switch setting",
                 formula=odd.formula or "",
@@ -3529,7 +3705,7 @@ def _island_findings(
                         name=cell.name,
                         detail=(
                             "The cell holds a typed "
-                            f"{shown_number(float(cell.value))} where the "
+                            f"{shown_number(float(cell.value or 0))} where the "
                             "rest of the column calculates."
                         ),
                         against=_example(calculated, witness),
@@ -4622,13 +4798,28 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                 #: What the misses are worth, straight from the cells —
                 #: the number the founder's design leads the card with.
                 worth = sum(float(one.value or 0) for one in missed)
+                #: A total sitting one row below its label — E42 under
+                #: « Total Senior Debt Service » at row 41, with E41
+                #: empty — has no label of its own. The label above is
+                #: its name, and the misalignment is part of the story:
+                #: every other column keeps the total on the label's row.
+                name = cell.name
+                misaligned = False
+                if not cell.row_label.strip():
+                    above = book.cells.get(f"{cell.sheet}!{column}{cell.row - 1}")
+                    above_label = book.row_words.get(cell.sheet, {}).get(
+                        cell.row - 1, ""
+                    )
+                    if above_label and (above is None or above.value is None):
+                        name = above_label
+                        misaligned = True
                 result.findings.append(
                     Finding(
                         rule="skipped-cell",
                         severity="error",
                         ref=cell.ref,
                         sheet=cell.sheet,
-                        name=cell.name,
+                        name=name,
                         #: `findings-voice.md` rule 1's own worked
                         #: example for the second sentence: « The sum at
                         #: E42 starts below the rows it should cover. »
@@ -4639,10 +4830,22 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                             + ", ".join(
                                 one.ref.rsplit("!", 1)[-1] for one in missed[:3]
                             )
+                            #: The second half, mandatory: what the miss
+                            #: does to every number built on this total.
                             + (
-                                f", worth {shown_number(worth)} together."
+                                f", worth {shown_number(worth)} together, so "
+                                "every number built on this total is out by "
+                                "that amount."
                                 if abs(worth) > 1e-9
-                                else ", which it should cover."
+                                else ", which it should cover, so nothing "
+                                "built on this total counts that row."
+                            )
+                            + (
+                                " It also sits one row below its label, "
+                                "where every other column keeps the total "
+                                "on the label's row."
+                                if misaligned
+                                else ""
                             )
                         ),
                         formula=cell.formula or "",

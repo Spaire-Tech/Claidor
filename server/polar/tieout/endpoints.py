@@ -1556,7 +1556,22 @@ async def run_history(
     await _deal(session, dossier_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
     runs = await repository.finished_runs(dossier_id, CheckKind.audit)
-    return [one for one in (_run(run) for run in runs) if one is not None]
+    out: list[CheckRunRead] = []
+    for run in runs:
+        read = _run(run)
+        if read is None:
+            continue
+        versions = []
+        for raw in run.artifact_ids or []:
+            try:
+                artifact = await repository.get_artifact(UUID(str(raw)))
+            except ValueError:
+                artifact = None
+            if artifact is not None and artifact.kind is ArtifactKind.model:
+                versions.append(int(artifact.version))
+        read.version = max(versions) if versions else None
+        out.append(read)
+    return out
 
 
 # --- settings ------------------------------------------------------------

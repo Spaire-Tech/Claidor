@@ -435,7 +435,14 @@ class TieOutService:
                     kind=FindingKind.audit,
                     severity=FindingSeverity(defect.severity),
                     fingerprint=_fingerprint(
-                        "audit", model.lineage_id, defect.ref, defect.rule
+                        #: A finding with no cell — the two broken-name
+                        #: findings live in the workbook's names table —
+                        #: keyed on its unit instead, or the two share one
+                        #: fingerprint and every re-check adds a copy.
+                        "audit",
+                        model.lineage_id,
+                        defect.ref or defect.figure_unit,
+                        defect.rule,
                     ),
                     rule=defect.rule,
                     standard=defect.source,

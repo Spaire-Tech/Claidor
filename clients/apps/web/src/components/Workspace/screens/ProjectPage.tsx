@@ -71,6 +71,12 @@ export const sevOf = (f: Finding): 1 | 2 | 3 => {
 const SEV_WORD = { 1: 'Material', 2: 'Significant', 3: 'Observation' } as const
 const SEV_DOT = { 1: '#e0322d', 2: '#e8a300', 3: '#2b6cf5' } as const
 
+/** A note about the file rather than a defect in the model: an empty
+ *  hidden sheet, or the one line that counts the over-long formulas. */
+export const isHousekeeping = (f: Finding): boolean =>
+  f.rule === 'long-formula' ||
+  (f.rule === 'hidden-sheet' && /but empty/.test(f.plain || f.title))
+
 /** A finding's money, as a number — « 12.5m » → 12,500,000. Zero when
  *  the figure is a count or a constant rather than an amount. */
 export const magnitude = (f: Finding): number => {
@@ -502,7 +508,6 @@ export const ProjectPage = ({
     api
       .check(deal.id)
       .then((runs) => {
-        const failed = runs.filter((one) => one.status === 'failed' && one.error)
         poll.current = setInterval(async () => {
           try {
             const now = await api.runs(deal.id)
@@ -517,19 +522,20 @@ export const ProjectPage = ({
                 const added = open.filter((f) => !before.has(f.id)).length
                 const kept = open.filter((f) => before.has(f.id)).length
                 const cleared = before.size - kept
+                //: The audit's outcome, and only that. The other two
+                //: runs say « nothing to reconcile » and « nothing to
+                //: ground » on a deal with no deck and no source — that
+                //: is their normal state on this deal, not news, and it
+                //: was being pasted onto the end of this line.
                 const audit = runs.find((one) => one.kind === 'audit')
-                const stamp = audit?.finished_at
-                  ? ` at ${when(audit.finished_at).toLowerCase()}`
-                  : ''
                 setRecheckWord(
-                  added === 0 && cleared === 0
-                    ? `Checked again${stamp}: the same ${open.length} finding${
-                        open.length === 1 ? '' : 's'
-                      }, nothing new, nothing cleared.`
-                    : `Checked again${stamp}: ${added} new, ${cleared} cleared, ${kept} unchanged.` +
-                        (failed.length
-                          ? ` ${failed.map((one) => one.error).join(' ')}`
-                          : ''),
+                  audit?.status === 'failed' && audit.error
+                    ? `The check did not run: ${audit.error}.`
+                    : added === 0 && cleared === 0
+                      ? `Checked again. The same ${open.length} finding${
+                          open.length === 1 ? '' : 's'
+                        }.`
+                      : `Checked again. ${added} new, ${cleared} cleared, ${kept} unchanged.`,
                 )
               }
               setChecking(false)
@@ -757,76 +763,50 @@ export const ProjectPage = ({
     blindSaid,
   ])
 
-  //: The chart: tier tallies per finished audit run, oldest first.
-  //: Runs recorded before tallies fall back on errors/smells.
-  const series = useMemo(() => {
-    //: From the history, not the latest-per-kind list: that list can
-    //: hold one audit run at most, so a chart read off it could never
-    //: have two points and « the trend appears after the second check »
-    //: was false for every deal.
+  //: The trend, as the founder drew it: « Open findings by version »
+  //: — one bar per version, the count above, the version below, the
+  //: latest bar blue, and one sentence under it. From the run history:
+  //: each finished audit run that recorded which version it read.
+  const trend = useMemo(() => {
     const done = (history ?? [])
       .filter(
         (one) =>
           one.kind === 'audit' && one.status === 'done' && one.finished_at,
       )
       .sort((a, b) => (a.finished_at! < b.finished_at! ? -1 : 1))
-      .slice(-9)
-    const tiers = done.map((one) => {
+    //: One bar per version: the latest check of each. A version
+    //: checked twice is one bar, the second reading.
+    const byVersion = new Map<string, number>()
+    for (const one of done) {
       const t = one.summary['tiers'] as Record<string, number> | undefined
-      if (t) return [t['1'] ?? 0, t['2'] ?? 0, t['3'] ?? 0]
-      return [
-        Number(one.summary['errors'] ?? 0),
-        Number(one.summary['smells'] ?? 0),
-        0,
-      ]
-    })
-    const ticks = done.map((one) =>
-      new Date(one.finished_at!).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-      }),
-    )
-    return { points: tiers, ticks }
+      const n = t
+        ? (t['1'] ?? 0) + (t['2'] ?? 0) + (t['3'] ?? 0)
+        : Number(one.summary['errors'] ?? 0) + Number(one.summary['smells'] ?? 0)
+      byVersion.set(one.version !== null ? `v${one.version}` : 'run', n)
+    }
+    const raw = [...byVersion.entries()].slice(-6)
+    const max = Math.max(1, ...raw.map(([, n]) => n))
+    const bars = raw.map(([v, n], i) => ({
+      v,
+      n,
+      h: Math.max(6, Math.round((n / max) * 78)),
+      last: i === raw.length - 1,
+    }))
+    let note = ''
+    if (bars.length >= 2) {
+      const a = bars[bars.length - 2]!.n
+      const b = bars[bars.length - 1]!.n
+      note =
+        b > a
+          ? `Up ${b - a} since ${bars[bars.length - 2]!.v}.`
+          : b < a
+            ? `Down ${a - b} since ${bars[bars.length - 2]!.v}.`
+            : `Unchanged since ${bars[bars.length - 2]!.v}.`
+    } else if (bars.length === 1) {
+      note = 'One check so far. The next check adds a bar.'
+    }
+    return { bars, note }
   }, [history])
-
-  const chart = useMemo(() => {
-    const { points } = series
-    if (points.length < 2) return null
-    const defs = [
-      { i: 0, stroke: '#e0322d', fill: 'url(#gErr)', delay: '0s' },
-      { i: 1, stroke: '#e8a300', fill: 'url(#gWarn)', delay: '.12s' },
-      { i: 2, stroke: '#2b6cf5', fill: 'url(#gSug)', delay: '.24s' },
-    ]
-    const max = Math.max(1, ...points.flat())
-    const x0 = 30
-    const x1 = 980
-    const base = 220
-    const top = 30
-    return defs.map((d) => {
-      const pts = points.map((row) => row[d.i]!)
-      const xy = pts.map(
-        (v, i) =>
-          [
-            x0 + ((x1 - x0) * i) / (pts.length - 1),
-            base - (base - top) * (v / max),
-          ] as const,
-      )
-      let line = `M${xy[0]![0].toFixed(1)},${xy[0]![1].toFixed(1)}`
-      for (let i = 1; i < xy.length; i++) {
-        const [px, py] = xy[i - 1]!
-        const [cx, cy] = xy[i]!
-        const mx = (px + cx) / 2
-        line += ` C${mx.toFixed(1)},${py.toFixed(1)} ${mx.toFixed(1)},${cy.toFixed(1)} ${cx.toFixed(1)},${cy.toFixed(1)}`
-      }
-      return {
-        stroke: d.stroke,
-        fill: d.fill,
-        delay: d.delay,
-        line,
-        area: `${line} L${x1},${base} L${x0},${base} Z`,
-      }
-    })
-  }, [series])
 
   //: One list, biggest amount first — `findings-voice.md` rule 6:
   //: « Order by size, not by category. A reader who reads one line
@@ -843,8 +823,17 @@ export const ProjectPage = ({
           sevOf(a) - sevOf(b) ||
           (b.weight ?? 0) - (a.weight ?? 0),
       )
-    return items.length ? [{ name: '', items }] : []
+    //: Housekeeping is not a defect. « Module1 is very hidden but
+    //: empty » and « 81 formulas are too long to check by hand » are
+    //: notes about the file; they read under the list, one line each,
+    //: never among the findings a reviewer is paid to clear.
+    const defects = items.filter((one) => !isHousekeeping(one))
+    return defects.length ? [{ name: '', items: defects }] : []
   }, [open, sev])
+  const housekeeping = useMemo(
+    () => open.filter((one) => isHousekeeping(one) && (sev === 0 || sevOf(one) === sev)),
+    [open, sev],
+  )
 
   const rule = (finding: Finding) => {
     setNoteFor(finding.id)
@@ -1471,25 +1460,24 @@ export const ProjectPage = ({
                     ))}
                   </div>
                   {checks.length > 0 && (
-                    //: Every check, in one of four states. The reader's
-                    //: own rule for this page: what was checked, what was
-                    //: not, and why — all of it, never « and more ».
+                    //: Every check, in one of four states, each on its own
+                    //: line. The reader's rule for this page: what was
+                    //: checked, what was not, and why — all of it, never
+                    //: « and more », and never in one run-on line.
                     <div
                       style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'auto 1fr',
-                        gap: '9px 18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 18,
                         marginTop: 22,
-                        paddingTop: 18,
+                        paddingTop: 20,
                         borderTop: '1px solid rgba(16,22,35,.07)',
-                        fontSize: 13.5,
-                        lineHeight: 1.55,
                       }}
                     >
                       {(
                         [
                           ['found', 'Found something', '#e0322d'],
-                          ['clean', 'Ran, found nothing', '#1f8a4c'],
+                          ['clean', 'Ran and found nothing', '#1f8a4c'],
                           ['abstained', 'Could not run', '#c8790a'],
                           ['off', 'Switched off', '#9aa1ab'],
                         ] as const
@@ -1497,39 +1485,72 @@ export const ProjectPage = ({
                         const rows = checks.filter((c) => c.state === state)
                         if (rows.length === 0) return null
                         return (
-                          <Fragment key={state}>
-                            <span
+                          <div key={state}>
+                            <div
                               style={{
-                                color: ink,
+                                fontSize: 13,
                                 fontWeight: 500,
-                                whiteSpace: 'nowrap',
-                                paddingTop: 1,
+                                color: ink,
+                                paddingBottom: 6,
                               }}
                             >
                               {head} · {rows.length}
-                            </span>
-                            <span style={{ color: '#3a3a3c', minWidth: 0 }}>
-                              {rows.map((c, i) => (
-                                <span key={c.key}>
-                                  {i > 0 ? ' · ' : ''}
-                                  {state === 'clean' && c.pass_label
-                                    ? c.pass_label
-                                    : c.label}
-                                  {state === 'found'
-                                    ? ` (${c.findings})`
-                                    : state === 'clean' && c.total > 0
-                                      ? ` (${c.clean} of ${c.total})`
-                                      : ''}
-                                  {state === 'abstained' && c.why ? (
-                                    <span style={{ color: '#6b7078' }}>
-                                      {' — '}
-                                      {c.why}
-                                    </span>
-                                  ) : null}
-                                </span>
+                            </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 5,
+                              }}
+                            >
+                              {rows.map((c) => (
+                                <div
+                                  key={c.key}
+                                  style={{ display: 'flex', gap: 10 }}
+                                >
+                                  <span
+                                    style={{
+                                      flex: '0 0 auto',
+                                      width: 4,
+                                      height: 4,
+                                      marginTop: 9,
+                                      borderRadius: '50%',
+                                      background: ink,
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      flex: 1,
+                                      minWidth: 0,
+                                      fontSize: 13.5,
+                                      lineHeight: 1.55,
+                                      color: '#3a3a3c',
+                                    }}
+                                  >
+                                    {state === 'clean' && c.pass_label
+                                      ? c.pass_label
+                                      : c.label}
+                                    {state === 'found'
+                                      ? ` · ${c.findings}`
+                                      : state === 'clean' && c.total > 0
+                                        ? ` · ${c.clean} of ${c.total}`
+                                        : ''}
+                                    {state === 'abstained' && c.why ? (
+                                      <span
+                                        style={{
+                                          display: 'block',
+                                          color: '#6b7078',
+                                          fontSize: 13,
+                                        }}
+                                      >
+                                        {c.why}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </div>
                               ))}
-                            </span>
-                          </Fragment>
+                            </div>
+                          </div>
                         )
                       })}
                     </div>
@@ -1630,152 +1651,91 @@ export const ProjectPage = ({
               )}
             </div>
 
-            {/* The trend card. */}
+            {/* The trend card — the design's « Open findings by
+                version »: bars, count above, version below, the latest
+                in blue, one sentence beneath. */}
             <div style={{ ...frameCard, padding: 14 }}>
               <div
                 style={{
                   background: '#fff',
                   borderRadius: 18,
                   boxShadow: '0 1px 2px rgba(16,22,35,.04)',
-                  padding: '22px 20px 14px',
+                  padding: '22px 20px 18px',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
               >
-                {chart ? (
-                  <>
-                    <svg
-                      viewBox="0 0 1000 280"
-                      preserveAspectRatio="none"
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        height: 'clamp(180px,26vh,260px)',
-                      }}
-                    >
-                      <defs>
-                        <linearGradient id="gErr" x1="0" y1="0" x2="0" y2="1">
-                          <stop
-                            offset="0%"
-                            stopColor="#e0322d"
-                            stopOpacity=".16"
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#e0322d"
-                            stopOpacity="0"
-                          />
-                        </linearGradient>
-                        <linearGradient id="gWarn" x1="0" y1="0" x2="0" y2="1">
-                          <stop
-                            offset="0%"
-                            stopColor="#e8a300"
-                            stopOpacity=".18"
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#e8a300"
-                            stopOpacity="0"
-                          />
-                        </linearGradient>
-                        <linearGradient id="gSug" x1="0" y1="0" x2="0" y2="1">
-                          <stop
-                            offset="0%"
-                            stopColor="#2b6cf5"
-                            stopOpacity=".16"
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#2b6cf5"
-                            stopOpacity="0"
-                          />
-                        </linearGradient>
-                      </defs>
-                      {[40, 85, 130, 175, 220].map((y) => (
-                        <line
-                          key={y}
-                          x1="20"
-                          y1={y}
-                          x2="1000"
-                          y2={y}
-                          stroke="#f1f2f4"
-                          strokeWidth="1"
-                        />
-                      ))}
-                      {chart.map((s, i) => (
-                        <path key={`a${i}`} d={s.area} fill={s.fill} />
-                      ))}
-                      {chart.map((s, i) => (
-                        <path
-                          key={`l${i}`}
-                          d={s.line}
-                          fill="none"
-                          stroke={s.stroke}
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          pathLength={1}
-                          strokeDasharray="1"
-                          style={{
-                            animation: `aDraw 1.1s cubic-bezier(.4,0,.2,1) ${s.delay} both`,
-                          }}
-                        />
-                      ))}
-                    </svg>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '8px 2px 0',
-                      }}
-                    >
-                      <span
-                        style={{
-                          flex: '0 0 auto',
-                          fontSize: 13.5,
-                          color: '#b6bac1',
-                        }}
-                      >
-                        Check
-                      </span>
-                      <span
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        {series.ticks.map((label, i) => (
-                          <span
-                            key={i}
-                            style={{ fontSize: 12.5, color: '#9aa1ab' }}
-                          >
-                            {label}
-                          </span>
-                        ))}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  //: One check is a point, not a trend. The empty-state
-                  //: sentence, in the reference's own pattern.
-                  <div
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    letterSpacing: '-.004em',
+                    padding: '2px 0 13px',
+                  }}
+                >
+                  Open findings by version
+                </span>
+                {trend.bars.length > 0 ? (
+                  <span
                     style={{
-                      minHeight: 120,
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 4,
+                      alignItems: 'flex-end',
+                      gap: 14,
+                      maxWidth: 420,
                     }}
                   >
-                    <span style={{ fontSize: 14.5, color: '#4a4f57' }}>
-                      The trend appears after the second check.
-                    </span>
-                    <span style={{ fontSize: 13, color: '#8f96a0' }}>
-                      Each check adds a point: material, significant and
-                      observation counts over time.
-                    </span>
-                  </div>
+                    {trend.bars.map((t) => (
+                      <span
+                        key={t.v}
+                        style={{
+                          flex: '1 1 0',
+                          minWidth: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 12.5,
+                            color: t.last ? '#0060d0' : '#b6b6bc',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {t.n}
+                        </span>
+                        <span
+                          style={{
+                            width: '100%',
+                            height: t.h,
+                            borderRadius: 3,
+                            background: t.last ? '#0060d0' : '#e4ebf5',
+                          }}
+                        />
+                        <span style={{ fontSize: 11.5, color: '#b6b6bc' }}>
+                          {t.v}
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 13, color: '#8f96a0' }}>
+                    No check has finished yet.
+                  </span>
+                )}
+                {trend.note && (
+                  <span
+                    style={{
+                      fontSize: 12.5,
+                      color: '#a8a8ad',
+                      lineHeight: 1.5,
+                      paddingTop: 13,
+                      textWrap: 'pretty',
+                    }}
+                  >
+                    {trend.note}
+                  </span>
                 )}
               </div>
             </div>
@@ -3040,6 +3000,37 @@ export const ProjectPage = ({
                       </div>
                     </div>
                   ))}
+                  {housekeeping.length > 0 && (
+                    //: Housekeeping — file notes, not defects. One line
+                    //: each, under the list, in the muted ink.
+                    <div
+                      style={{
+                        padding: '6px 20px 0',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6,
+                      }}
+                    >
+                      <span style={{ fontSize: 12.5, color: '#8f96a0' }}>
+                        Housekeeping
+                      </span>
+                      {housekeeping.map((f) => (
+                        <span
+                          key={f.id}
+                          style={{
+                            fontSize: 13.5,
+                            lineHeight: 1.5,
+                            color: '#6b7078',
+                          }}
+                        >
+                          {f.plain || f.title}
+                          {f.context && f.context !== (f.plain || f.title)
+                            ? ` ${f.context}`
+                            : ''}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
