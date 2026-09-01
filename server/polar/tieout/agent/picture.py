@@ -317,20 +317,21 @@ def picture_of(
         )
 
     line, where = _cover_line(book)
+    title: Known
     if line:
-        name = Known(value=line, how=READ, where=where)
+        title = Known(value=line, how=READ, where=where)
     elif filename and _from_filename(filename):
-        name = Known(
+        title = Known(
             value=_from_filename(filename), how=WORKED_OUT, where="the file name"
         )
     else:
-        name = Known()
+        title = Known()
 
     formulas = sum(per_sheet.values())
     return Picture(
         filename=filename,
         version=version,
-        name=name,
+        name=title,
         produces=_produces(book),
         term=_term(axes),
         sheets=sheets,

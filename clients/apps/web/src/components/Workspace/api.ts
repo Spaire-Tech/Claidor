@@ -391,6 +391,9 @@ export interface CheckRun {
   finished_at: string | null
   /** Audit runs only: every rule in one state each. Empty otherwise. */
   checks: CheckRead[]
+  /** The model version the run read, where it recorded which files it
+   *  opened — the label under a bar on the trend. Null when unknown. */
+  version: number | null
 }
 
 /** The statement-check record inside an audit run's summary — read

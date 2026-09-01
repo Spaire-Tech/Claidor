@@ -133,6 +133,9 @@ class CheckRunRead(Schema):
     #: Audit runs only: every rule in both catalogues, in one state
     #: each — the list the Overview prints. Never derived on a screen.
     checks: list[CheckRead] = []
+    #: The model version the run read, where the run recorded which
+    #: artifacts it opened — the label under a bar on the trend.
+    version: int | None = None
 
 
 class ArtifactPage(Schema):

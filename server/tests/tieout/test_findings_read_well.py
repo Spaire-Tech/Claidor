@@ -325,6 +325,18 @@ CASES: list[tuple[str, Finding]] = [
         ),
     ),
     (
+        "long-formula/all",
+        f(
+            "long-formula",
+            severity="smell",
+            name="",
+            kind="every long formula",
+            figure_unit="81 formulas across 3 places",
+            detail="Hand-checking them is impractical; nothing is known to be wrong.",
+            cells="Assumptions Processing!E23, Assumptions Processing!E37",
+        ),
+    ),
+    (
         "long-formula/sheets",
         f(
             "long-formula",
@@ -483,7 +495,10 @@ CASES: list[tuple[str, Finding]] = [
         f(
             "inconsistent-row",
             kind="one operator changed",
-            detail="The other 19 cells in the row use + here. This one uses -.",
+            detail=(
+                "The other 19 cells in the row use + here. This one uses -, "
+                "so its answer moves the wrong way."
+            ),
             formula="=E45-E48",
         ),
     ),
@@ -536,15 +551,38 @@ CASES: list[tuple[str, Finding]] = [
         f(
             "skipped-cell",
             figure="12.5m",
-            detail="The sum starts below E40, worth 12.5m together.",
+            detail=(
+                "The sum starts below E40, worth 12.5m together, so every "
+                "number built on this total is out by that amount."
+            ),
             formula="=SUM(E37:E37)",
+        ),
+    ),
+    (
+        "skipped-cell/row",
+        f(
+            "skipped-cell",
+            figure="377.1m",
+            figure_unit="filled across Year 2–Year 20",
+            detail=(
+                "The sum starts below the same row in every period; 37.5m of "
+                "it is in Year 2 alone. One formula, filled across 19 cells, "
+                "so every period's total is out by its own share."
+            ),
+            formula="=SUM(F37:F37)",
+            cells=", ".join(
+                f"Assumptions Processing!{c}41" for c in "FGHIJKLMNOPQRSTUVWX"
+            ),
         ),
     ),
     (
         "skipped-cell/nofigure",
         f(
             "skipped-cell",
-            detail="The sum starts below E40, which it should cover.",
+            detail=(
+                "The sum starts below E40, which it should cover, so nothing "
+                "built on this total counts that row."
+            ),
             formula="=SUM(E37:E37)",
         ),
     ),
@@ -951,3 +989,48 @@ class TestTheSecondSentence:
         said = plain_words(finding).strip()
 
         assert finding.detail.strip() not in said, f"{label}: {said}"
+
+
+class TestEveryFindingSaysWhatItCosts:
+    """« Make the consequence mandatory. A finding with no second half
+    isn't finished. » Four findings told the reader what it cost them
+    and five just stated a fact. Every case here must carry the second
+    half — a cue that says what follows from the fact."""
+
+    CUES = (
+        "so ",
+        "breaks",
+        "will not",
+        "cannot",
+        "would pass",
+        "would change",
+        "counted twice",
+        "count twice",
+        "never",
+        "safe to delete",
+        "ask",
+        "stale",
+        "builds on",
+        "does not",
+        "not tested",
+        "carries",
+        "impractical",
+        "wrong",
+        "differs",
+        "moves",
+        "one paste",
+        "typed",
+        "calculates",
+        "the same",
+        "worked out",
+        "does not appear",
+        "one right-click",
+        "read",
+    )
+
+    @pytest.mark.parametrize(("label", "finding"), CASES, ids=[o[0] for o in CASES])
+    def test_the_two_sentences_carry_a_consequence(
+        self, label: str, finding: Finding
+    ) -> None:
+        whole = f"{plain_words(finding)} {finding.detail}".lower()
+        assert any(cue in whole for cue in self.CUES), f"{label}: {whole}"
