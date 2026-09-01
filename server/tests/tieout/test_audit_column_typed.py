@@ -43,7 +43,7 @@ def test_an_interior_island_needs_no_left_formula() -> None:
     result = _audit(build)
     found = [f for f in _typed(result) if f.ref == "Sheet!B6"]
     assert len(found) == 1
-    assert "typed into a column" in found[0].detail
+    assert "the rest of the column calculates" in found[0].detail
 
 
 def test_a_top_island_without_a_left_formula_keeps_the_guard() -> None:

@@ -92,6 +92,13 @@ export interface Finding {
   figure_unit: string
   period: string
   standard_sentence: string
+  /** **The formulas, kept out of the prose.** `formula` is what this
+   *  cell holds; `against` is what it is judged against — the rest of
+   *  the row, the total beside it, the shape the series repeats. Both
+   *  empty where the finding compares nothing. They exist so the two
+   *  sentences never carry a formula: the card prints these instead. */
+  formula: string
+  against: string
   /** Where the cell's value goes, in the model's own words —
    *  « Opex total » → « Cashflow » → « Equity IRR ». Empty when
    *  nothing downstream reads the cell. */
@@ -870,6 +877,13 @@ export interface OneOffDefect {
   figure: string
   figure_unit: string
   period: string
+  /** **The formulas, kept out of the prose.** `formula` is what this
+   *  cell holds; `against` is what it is judged against — the rest of
+   *  the row, the total beside it, the shape the series repeats. Both
+   *  empty where the finding compares nothing. They exist so the two
+   *  sentences never carry a formula: the card prints these instead. */
+  formula: string
+  against: string
   /** Where the cell's value goes, in the model's own words. Empty when
    *  nothing downstream reads the cell. */
   flow: string

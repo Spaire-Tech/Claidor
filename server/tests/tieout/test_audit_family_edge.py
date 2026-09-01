@@ -47,7 +47,7 @@ def test_a_typed_tail_is_caught() -> None:
     found = _edges(result)
     assert len(found) == 1
     assert found[0].ref == "Sheet!G15"
-    assert "typed at the end of a series" in found[0].detail
+    assert "at its end where the rest of it calculates" in found[0].detail
     assert found[0].severity == "error"
 
 
@@ -102,7 +102,7 @@ def test_a_head_right_of_the_boundary_is_caught() -> None:
     result = _audit(build)
     found = _edges(result)
     assert [f.ref for f in found] == ["Sheet!D6"]
-    assert "typed at the start of a series" in found[0].detail
+    assert "at its start where the rest of it calculates" in found[0].detail
 
 
 def test_a_series_reading_its_typed_head_is_a_seed() -> None:

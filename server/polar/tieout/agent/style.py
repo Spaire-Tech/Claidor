@@ -209,8 +209,14 @@ PLAIN_WORDS: list[tuple[str, str]] = [
 
 #: « `E42` means nothing until the file is open. Lead with the row label
 #: every time. »
+#: The sheet prefix is at most three words — « Assumptions
+#: Processing! », « Control Panel! ». Without that bound the branch
+#: swallowed whole sentences: « This one reads Control Panel!D51 » read
+#: as a sheet called « This one reads Control Panel », and a finding
+#: that leads with its row's name was failed for leading with a cell.
 CELL_FIRST = re.compile(
-    r"(?:^|(?<=[.!?]\s)|(?<=\n))\s*(?:[A-Za-z][\w ]{0,30}!)?\$?[A-Z]{1,3}\$?\d{1,5}\b"
+    r"(?:^|(?<=[.!?]\s)|(?<=\n))\s*(?:[A-Za-z]\w*(?: \w+){0,2}!)?"
+    r"\$?[A-Z]{1,3}\$?\d{1,5}\b"
 )
 
 #: « Never write a consequence you did not verify. Say only what you

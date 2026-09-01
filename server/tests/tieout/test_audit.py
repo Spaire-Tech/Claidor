@@ -120,7 +120,7 @@ def test_a_pasted_block_is_still_typed_over_formula() -> None:
     assert len(typed) == 1
     assert typed[0].ref == "Sheet!E2"
     for coordinate in ("E2", "E3", "E4", "E5"):
-        assert coordinate in typed[0].detail
+        assert coordinate in typed[0].cells
 
 
 def test_a_parameter_column_is_not_typed_over_formula() -> None:
@@ -179,8 +179,8 @@ def test_a_block_pasted_over_several_columns_is_caught_down_the_columns() -> Non
     #: one gesture, one finding, not five copies of the same news.
     assert len(typed) == 1, [(f.ref, f.detail) for f in typed]
     assert typed[0].ref == "Sheet!F3"
-    assert "5 columns wide and 4 rows deep" in typed[0].detail
-    assert "F3 to J6" in typed[0].detail
+    assert "5 columns wide and 4 rows deep" in typed[0].figure_unit
+    assert "F3 to J6" in typed[0].figure_unit
 
 
 def test_designed_error_tails_fold_and_interior_breaks_are_loud() -> None:
@@ -209,11 +209,11 @@ def test_designed_error_tails_fold_and_interior_breaks_are_loud() -> None:
     result = _tmp_book(build)
     errors = [f for f in result.findings if f.rule == "error-value"]
     tails = [f for f in errors if f.figure_unit == "cells past the data's edge"]
-    breaks = [f for f in errors if f.figure_unit == "breaks a live column"]
+    breaks = [f for f in errors if f.figure_unit.endswith("breaks a live column")]
     broken = [f for f in errors if "#REF!" in f.detail]
     assert len(tails) == 1
     assert tails[0].severity == "smell"
-    assert "4 cells" in tails[0].detail
+    assert tails[0].figure == "4"
     assert len(breaks) == 1
     assert breaks[0].severity == "error"
     assert breaks[0].ref == "Sheet!C4"
@@ -242,7 +242,7 @@ def test_a_daily_series_calendar_gaps_fold_quiet() -> None:
     assert len(errors) == 1
     assert errors[0].severity == "smell"
     assert "routine gaps" in errors[0].detail
-    assert "24 cells" in errors[0].detail
+    assert errors[0].figure == "24"
 
 
 def test_cross_column_agreement_tells_a_calendar_from_a_break() -> None:
@@ -268,13 +268,14 @@ def test_cross_column_agreement_tells_a_calendar_from_a_break() -> None:
 
     result = _tmp_book(build)
     errors = [f for f in result.findings if f.rule == "error-value"]
-    breaks = [f for f in errors if f.figure_unit == "breaks a live column"]
+    breaks = [f for f in errors if f.figure_unit.endswith("breaks a live column")]
     quiet = [f for f in errors if f.severity == "smell"]
     assert len(breaks) == 1
     assert breaks[0].ref == "Sheet!C13"
     assert "every sister column holds live values there" in breaks[0].detail
     assert len(quiet) == 1
-    assert "8 cells across 3 columns" in quiet[0].detail
+    assert quiet[0].figure == "8"
+    assert "in 8 routine gaps" in quiet[0].detail
 
 
 def test_broken_cells_sharing_one_formula_fold_to_one_loud_finding() -> None:
@@ -298,8 +299,8 @@ def test_broken_cells_sharing_one_formula_fold_to_one_loud_finding() -> None:
     folded = [f for f in broken if f.figure_unit == "cells sharing one broken formula"]
     assert len(folded) == 1
     assert folded[0].figure == "6"
-    assert "shows #REF! across 6 cells" in folded[0].detail
-    lone = [f for f in broken if f.detail == "shows #NAME?"]
+    assert "One broken formula" in folded[0].detail
+    lone = [f for f in broken if f.detail == "The cell shows #NAME?."]
     assert len(lone) == 1
 
 
@@ -320,7 +321,7 @@ def test_a_sparse_anchor_column_beside_a_daily_sister_is_not_broken() -> None:
 
     result = _tmp_book(build)
     errors = [f for f in result.findings if f.rule == "error-value"]
-    assert not [f for f in errors if f.figure_unit == "breaks a live column"]
+    assert not [f for f in errors if f.figure_unit.endswith("breaks a live column")]
     assert len(errors) == 1
     assert errors[0].severity == "smell"
 
@@ -379,9 +380,9 @@ def test_typed_over_the_same_line_of_repeating_blocks_is_one_finding() -> None:
     result = _tmp_book(build)
     typed = [f for f in result.findings if f.rule == "typed-over-formula"]
     assert len(typed) == 1
-    assert "typed over in 6 places" in typed[0].detail
-    assert "E4" in typed[0].detail
-    assert "E139" in typed[0].detail
+    assert typed[0].figure_unit == "typed over in 6 places"
+    assert "E4" in typed[0].cells
+    assert "E139" in typed[0].cells
     #: The collapsed finding claims no single figure and offers no
     #: one-cell fix — each place holds its own number.
     assert typed[0].figure == ""
@@ -495,8 +496,8 @@ def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
     #: The dragged anchor: nineteen siblings on the senior rate, the
     #: seed on the subordinated rate it is labelled for.
     rate = next(f for f in result.findings if f.ref == "Assumptions Processing!E50")
-    assert "$C$51" in rate.detail
-    assert "$D$51" in rate.detail
+    assert "Control Panel!C51" in rate.detail
+    assert "Control Panel!D51" in rate.detail
 
     #: The banner's own coverage gap, in its own words.
     banner = next(f for f in result.findings if f.rule == "gapped-test")
@@ -514,7 +515,7 @@ def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
     assert hidden.severity == "smell"
     #: The founder's own worked example from `findings-voice.md`
     #: rule 5, adopted verbatim on 1 September.
-    assert "very hidden but empty" in hidden.detail
+    assert "very hidden but empty" in hidden.figure_unit
     assert "safe to delete" in hidden.detail
 
     #: A bound tested twice reads once.
@@ -787,7 +788,7 @@ def test_one_value_pasted_across_a_row_folds_and_an_input_row_drops() -> None:
     result = _tmp_book(one_value)
     typed = [f for f in result.findings if f.rule == "typed-over-formula"]
     assert len(typed) == 1, [(f.ref, f.detail) for f in typed]
-    assert "10 cells" in typed[0].detail
+    assert "10 cells" in typed[0].figure_unit
 
     def input_series(sheet) -> None:
         from openpyxl.utils import get_column_letter
@@ -855,7 +856,7 @@ def test_a_convention_constant_across_many_formulas_is_one_finding() -> None:
     result = _tmp_book(build)
     hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
     assert len(hardcodes) == 1, [(f.ref, f.detail) for f in hardcodes]
-    assert "convention" in hardcodes[0].detail
+    assert "rather than held in one cell" in hardcodes[0].detail
 
 
 def test_an_array_formula_is_a_formula_not_a_typed_value() -> None:
@@ -924,7 +925,7 @@ def test_a_row_of_near_identical_long_formulas_is_one_finding() -> None:
     result = _tmp_book(build)
     lengthy = [f for f in result.findings if f.rule == "long-formula"]
     assert len(lengthy) == 1, [(f.ref, f.detail) for f in lengthy]
-    assert "4 cells of one row" in lengthy[0].detail
+    assert "4 cells of this row" in lengthy[0].detail
 
 
 def test_an_index_table_including_its_own_cell_is_not_a_loop() -> None:
@@ -968,7 +969,7 @@ def test_labelled_hardcodes_with_different_numbers_fold_across_sheets() -> None:
         result = audit(read_workbook(str(path)))
     hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
     assert len(hardcodes) == 1, [(f.ref, f.detail) for f in hardcodes]
-    assert "each sheet holding its own number" in hardcodes[0].detail
+    assert "The same decision sits on" in hardcodes[0].detail
 
 
 def test_the_same_check_row_repeated_down_a_sheet_is_one_finding() -> None:
@@ -1202,7 +1203,7 @@ def test_literal_spellings_fold_with_their_sibling_sheets() -> None:
         result = audit(read_workbook(str(path)))
     hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
     assert len(hardcodes) == 1, [(f.ref, f.detail) for f in hardcodes]
-    assert "each sheet holding its own number" in hardcodes[0].detail
+    assert "The same decision sits on" in hardcodes[0].detail
 
 
 def test_a_short_typed_row_run_is_one_gesture() -> None:
@@ -1224,8 +1225,8 @@ def test_a_short_typed_row_run_is_one_gesture() -> None:
     result = _tmp_book(five_wide)
     typed = [f for f in result.findings if f.rule == "typed-over-formula"]
     assert len(typed) == 1, [(f.ref, f.detail) for f in typed]
-    assert "5 different values" in typed[0].detail
-    assert "F4 to J4" in typed[0].detail
+    assert "5 values typed across" in typed[0].figure_unit
+    assert "F4" in typed[0].cells
 
     def three_wide(sheet) -> None:
         for row in range(2, 10):
@@ -1324,7 +1325,7 @@ def test_one_malformed_formula_is_one_finding_not_a_dead_workbook() -> None:
     broken = [
         f
         for f in result.findings
-        if f.rule == "error-value" and "could not be parsed" in f.detail
+        if f.rule == "error-value" and f.kind == "a formula that cannot be read"
     ]
     assert [f.ref for f in broken] == ["Sheet!B2"], [
         (f.ref, f.detail) for f in result.findings
@@ -1393,7 +1394,7 @@ def test_external_link_speaks_a_whole_sentence() -> None:
     result = _tmp_book(many)
     finding = next(f for f in result.findings if f.rule == "external-link")
     sentence = plain_words(finding)
-    assert sentence.startswith("This workbook reads another workbook, [1]. ")
+    assert sentence.startswith("This workbook reads a file that is not here. ")
     assert "7 cells pull their values from there" in sentence
     assert "  " not in sentence
 
@@ -1484,7 +1485,7 @@ def test_a_pinned_reference_out_of_step_is_seen() -> None:
     result = _tmp_book(build)
     breaks = [f for f in result.findings if f.rule == "inconsistent-row"]
     assert [f.ref for f in breaks] == ["Sheet!C5"], [(f.ref, f.detail) for f in breaks]
-    assert "pinned" in breaks[0].detail
+    assert "read" in breaks[0].detail
 
 
 def test_a_pinned_seed_beside_a_walking_family_is_seen() -> None:
@@ -1715,6 +1716,6 @@ def test_one_column_breaking_many_rows_folds_to_one_finding() -> None:
     result = _tmp_book(build)
     breaks = [f for f in result.findings if f.rule == "inconsistent-row"]
     assert len(breaks) == 1, [(f.ref, f.detail) for f in breaks]
-    assert "3 rows" in breaks[0].detail
+    assert breaks[0].figure_unit.startswith("3 rows broken")
     assert "C5" in breaks[0].cells
     assert "C9" in breaks[0].cells

@@ -2056,6 +2056,79 @@ export const ProjectPage = ({
                                         {why}
                                       </div>
                                     )}
+                                    {/* The formulas, as formulas. They used
+                                        to be spliced into the sentence above
+                                        — « … they read 'Control Panel'!$C$51,
+                                        it reads $D$51: =(E45+E48)/2*… » — so
+                                        the sentence carried what nobody reads
+                                        as prose and the reviewer still had to
+                                        squint at it. Two rows, monospace,
+                                        labelled: this cell, and what it is
+                                        judged against. */}
+                                    {!!f.formula && (
+                                      <div
+                                        style={{
+                                          display: 'grid',
+                                          gridTemplateColumns: 'auto 1fr',
+                                          gap: '6px 14px',
+                                          alignItems: 'baseline',
+                                          margin: '2px 0 18px',
+                                          padding: '11px 13px',
+                                          border:
+                                            '.5px solid rgba(16,22,35,.10)',
+                                          borderRadius: 10,
+                                          background: '#fbfbfc',
+                                          overflowX: 'auto',
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: 11,
+                                            letterSpacing: '.04em',
+                                            textTransform: 'uppercase',
+                                            color: '#8b8f98',
+                                            whiteSpace: 'nowrap',
+                                          }}
+                                        >
+                                          This cell
+                                        </div>
+                                        <code
+                                          style={{
+                                            fontFamily: font.mono,
+                                            fontSize: 12.5,
+                                            color: '#2f333b',
+                                            whiteSpace: 'pre',
+                                          }}
+                                        >
+                                          {f.formula}
+                                        </code>
+                                        {!!f.against && (
+                                          <>
+                                            <div
+                                              style={{
+                                                fontSize: 11,
+                                                letterSpacing: '.04em',
+                                                textTransform: 'uppercase',
+                                                color: '#8b8f98',
+                                                whiteSpace: 'nowrap',
+                                              }}
+                                            >
+                                              The rest
+                                            </div>
+                                            <code
+                                              style={{
+                                                fontFamily: font.mono,
+                                                fontSize: 12.5,
+                                                color: '#6b7078',
+                                                whiteSpace: 'pre',
+                                              }}
+                                            >
+                                              {f.against}
+                                            </code>
+                                          </>
+                                        )}
+                                      </div>
+                                    )}
                                     {grid && (
                                       <div
                                         style={{

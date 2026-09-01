@@ -44,7 +44,7 @@ def test_a_total_swallowing_its_own_subtotal_is_an_error() -> None:
     assert len(found) == 1
     assert found[0].ref == "Sheet!B8"
     assert found[0].severity == "error"
-    assert "counted twice" in found[0].detail
+    assert "they count twice" in found[0].detail
     assert "B7" in found[0].detail
 
 
