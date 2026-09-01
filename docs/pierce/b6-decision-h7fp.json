@@ -1,0 +1,235 @@
+{
+ "model": "h7_new_debt_indexation_fp.xlsx",
+ "rules": 17,
+ "watched": 161,
+ "m1": {
+  "all_cells": {
+   "cells": 6750,
+   "r_zero": 6600,
+   "r_at_least_one": 150,
+   "share_reachable": 0.0222,
+   "median": 0,
+   "max": 11
+  },
+  "formula_cells": {
+   "cells": 2772,
+   "r_zero": 2685,
+   "r_at_least_one": 87,
+   "share_reachable": 0.0314,
+   "median": 0,
+   "max": 11
+  },
+  "constant_cells": {
+   "cells": 3978,
+   "r_zero": 3915,
+   "r_at_least_one": 63,
+   "share_reachable": 0.0158,
+   "median": 0,
+   "max": 11
+  },
+  "seconds": 0.0
+ },
+ "sites": {
+  "best": "H7 Cost of debt indexation!I52",
+  "best_reach": 6,
+  "zero_control": "H7 Cost of debt indexation!F86"
+ },
+ "conditions": {
+  "control": {
+   "runs": 40,
+   "kept": 40,
+   "drops": 0,
+   "rules_failed_any": 0,
+   "rules_broken": 0,
+   "broken": []
+  },
+  "a1": {
+   "runs": 40,
+   "kept": 40,
+   "drops": 0,
+   "rules_failed_any": 3,
+   "rules_broken": 3,
+   "broken": [
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!G52",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!G58",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    },
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!I52",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!I58",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    },
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!I54",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!I58",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    }
+   ],
+   "site": "H7 Cost of debt indexation!I52",
+   "class": "constant-overwrite",
+   "edit": "H7 Cost of debt indexation!I52: '= SUM( I37, $G$12 )' -> 0.045971322021327025",
+   "reach_ceiling": 6,
+   "diff_changed_cells": [
+    "H7 Cost of debt indexation!I6",
+    "H7 Cost of debt indexation!L6",
+    "H7 Cost of debt indexation!I7",
+    "H7 Cost of debt indexation!K7",
+    "H7 Cost of debt indexation!M7",
+    "H7 Cost of debt indexation!G13",
+    "H7 Cost of debt indexation!I16",
+    "H7 Cost of debt indexation!L16",
+    "H7 Cost of debt indexation!M16",
+    "H7 Cost of debt indexation!G27",
+    "H7 Cost of debt indexation!M30",
+    "H7 Cost of debt indexation!I33",
+    "H7 Cost of debt indexation!J33",
+    "H7 Cost of debt indexation!K33",
+    "H7 Cost of debt indexation!L33",
+    "H7 Cost of debt indexation!M33",
+    "H7 Cost of debt indexation!I34",
+    "H7 Cost of debt indexation!K34",
+    "H7 Cost of debt indexation!L34",
+    "H7 Cost of debt indexation!M34",
+    "H7 Cost of debt indexation!I52"
+   ],
+   "diff_names_plant_alone": false
+  },
+  "b1": {
+   "runs": 40,
+   "kept": 40,
+   "drops": 0,
+   "rules_failed_any": 3,
+   "rules_broken": 3,
+   "broken": [
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!G52",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!G58",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    },
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!I52",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!I58",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    },
+    {
+     "terms": [
+      [
+       "H7 Cost of debt indexation!I54",
+       1
+      ],
+      [
+       "H7 Cost of debt indexation!I58",
+       -1
+      ]
+     ],
+     "failed_in": 40
+    }
+   ],
+   "site": "H7 Cost of debt indexation!I52",
+   "class": "tail-hardcode",
+   "edit": "H7 Cost of debt indexation!I52: '= SUM( I37, $G$12 )' -> '= SUM( I37, $G$12 )-0.490096707821704'",
+   "reach_ceiling": 6,
+   "diff_changed_cells": [
+    "H7 Cost of debt indexation!I6",
+    "H7 Cost of debt indexation!L6",
+    "H7 Cost of debt indexation!I7",
+    "H7 Cost of debt indexation!K7",
+    "H7 Cost of debt indexation!M7",
+    "H7 Cost of debt indexation!G13",
+    "H7 Cost of debt indexation!I16",
+    "H7 Cost of debt indexation!L16",
+    "H7 Cost of debt indexation!M16",
+    "H7 Cost of debt indexation!G27",
+    "H7 Cost of debt indexation!M30",
+    "H7 Cost of debt indexation!I33",
+    "H7 Cost of debt indexation!J33",
+    "H7 Cost of debt indexation!K33",
+    "H7 Cost of debt indexation!L33",
+    "H7 Cost of debt indexation!M33",
+    "H7 Cost of debt indexation!I34",
+    "H7 Cost of debt indexation!K34",
+    "H7 Cost of debt indexation!L34",
+    "H7 Cost of debt indexation!M34",
+    "H7 Cost of debt indexation!I52"
+   ],
+   "diff_names_plant_alone": false
+  },
+  "c1": {
+   "runs": 40,
+   "kept": 40,
+   "drops": 0,
+   "rules_failed_any": 0,
+   "rules_broken": 0,
+   "broken": [],
+   "site": "H7 Cost of debt indexation!F86",
+   "class": "tail-hardcode",
+   "edit": "H7 Cost of debt indexation!F86: '=SUM(I80:M84)' -> '=SUM(I80:M84)-0.490096707821704'",
+   "reach_ceiling": 0,
+   "diff_changed_cells": [
+    "H7 Cost of debt indexation!I6",
+    "H7 Cost of debt indexation!L6",
+    "H7 Cost of debt indexation!I7",
+    "H7 Cost of debt indexation!K7",
+    "H7 Cost of debt indexation!M7",
+    "H7 Cost of debt indexation!G13",
+    "H7 Cost of debt indexation!I16",
+    "H7 Cost of debt indexation!L16",
+    "H7 Cost of debt indexation!M16",
+    "H7 Cost of debt indexation!G27",
+    "H7 Cost of debt indexation!M30",
+    "H7 Cost of debt indexation!I33",
+    "H7 Cost of debt indexation!J33",
+    "H7 Cost of debt indexation!K33",
+    "H7 Cost of debt indexation!L33",
+    "H7 Cost of debt indexation!M33",
+    "H7 Cost of debt indexation!I34",
+    "H7 Cost of debt indexation!K34",
+    "H7 Cost of debt indexation!L34",
+    "H7 Cost of debt indexation!M34",
+    "H7 Cost of debt indexation!F86"
+   ],
+   "diff_names_plant_alone": false
+  }
+ }
+}
