@@ -16,11 +16,14 @@ from the arguments the assistant actually passed — the query it
 searched for, the ref it walked, the sheet it listed — and never from a
 template with nothing in it.
 
-**The assistant's own line wins.** When it wrote one before calling the
-tool, that is the line: it is the thing the prompt asks it for and it
-knows what it is doing better than a lookup table does. The derived
-phrase is the fallback for a turn where it called the tool without a
-word, so the screen is never blank while work is happening.
+**The line is derived, never the model's own prose.** It used to
+prefer whatever the assistant wrote before reaching for the tool, on
+the reasoning that it knows what it is doing better than a lookup table
+does. In practice it does not write a status line — it writes the
+opening of a paragraph, and painting that into a one-line slot produced
+exactly what the founder saw: a run-on that grew, ran words together
+and never cleared. The derived phrase is short, names the object, and
+is the same shape every time, which is the whole job.
 
 Nothing here is evidence. The trace keeps the tool's own `summary`, and
 that is what a person opens to check the answer; this is the sentence
@@ -151,7 +154,7 @@ def stage(step: Step, *, model: str = "", version: int | None = None) -> Stage:
         ok=step.ok,
         kind=KINDS.get(step.tool, "model"),
         title=TITLES.get(step.tool, "Working"),
-        sub=step.said.strip() or derived_line(step.tool, step.arguments),
+        sub=derived_line(step.tool, step.arguments),
         summary=step.summary,
         art=art,
     )

@@ -108,13 +108,9 @@ interface Message {
    *  arrive finished — so this is what the spinning ring means: more
    *  is coming, not that this step is unfinished. */
   busy?: boolean
-  /** What the model has written so far in the turn it is on, as it
-   *  writes it. Cleared when a step lands, because that prose has just
-   *  become the step's own status line. */
-  live?: string
-  /** How much of `live` is on screen. **The gap between the two is the
-   *  whole point.** Tokens land in bursts; this advances steadily, so
-   *  the reader sees writing rather than lurching. */
+  /** How much of the answer is on screen. **The gap is the whole
+   *  point.** The text arrives whole; this advances steadily, so the
+   *  reader sees writing rather than a wall. */
   shown?: number
 
   // --- the verdict (role 'verdict') --------------------------------
@@ -516,25 +512,6 @@ const Cells = ({ rows, label }: { rows: AskedRow[]; label?: string }) => {
 }
 
 /**
- * The one line the model is writing, out of everything it has written.
- *
- * Prose arrives from the model continuously. Before a tool call it is a
- * status line and belongs on screen whole; in the last turn it is the
- * answer, which nobody may read until it has been checked. Showing the
- * **most recent sentence** works for both: the status line is one
- * sentence, and the answer being written reads as a line that keeps
- * moving — a person can see it is writing without reading a draft that
- * may be sent back and rewritten.
- */
-const saying = (live?: string): string => {
-  const said = (live ?? '').trim()
-  if (!said) return ''
-  const sentences = said.split(/(?<=[.!?])\s+/)
-  const last = sentences[sentences.length - 1] ?? said
-  return last.length > 120 ? `…${last.slice(-118)}` : last
-}
-
-/**
  * Words arriving, each fading up out of a blur.
  *
  * **This is the piece the design had and I removed.** `asType` in
@@ -574,22 +551,13 @@ const Words = ({ text }: { text: string }) => (
  * starts as a grey skeleton and fills in when the name is known.
  * Steps are indented 36px so they sit under the mark's text column.
  */
-const Run = ({
-  stages,
-  busy,
-  live: writing,
-}: {
-  stages: RunStage[]
-  busy?: boolean
-  /** What the model is writing right now, if anything. */
-  live?: string
-}) => {
+const Run = ({ stages, busy }: { stages: RunStage[]; busy?: boolean }) => {
   const live = stages[stages.length - 1]
-  //: Nothing has come back yet. Either the model is writing its first
-  //: line, or there is genuinely nothing to read — and « Thinking »
-  //: alone is the honest screen for the second, because a step drawn
-  //: before one has happened would be a step this file invented.
-  if (!live) return writing ? <Shimmer text={writing} top={1} /> : <Thinking />
+  //: Nothing has come back yet. « Thinking » is the honest screen: a
+  //: step drawn before one has happened would be a step this file
+  //: invented, and the model's own prose in this slot is what made the
+  //: status line a run-on paragraph.
+  if (!live) return <Thinking />
   //: The ring belongs to the *run*, not to this step — every step
   //: here has already finished. While more is coming it spins over the
   //: line the assistant wrote for the work it is doing; when the run
@@ -597,10 +565,7 @@ const Run = ({
   const finished = !busy
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
-      {/* The same slot answers the same question — what is it doing
-          right now — with the model's own words when it has written
-          any, and « Thinking » when it has not. */}
-      {writing ? <Shimmer text={writing} top={1} /> : <Thinking />}
+      <Thinking />
       <div
         style={{
           display: 'flex',
@@ -1280,6 +1245,22 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
   const [plusOpen, setPlusOpen] = useState(false)
   const [mentionOpen, setMentionOpen] = useState(false)
   const fileBox = useRef<HTMLInputElement | null>(null)
+  const box = useRef<HTMLTextAreaElement | null>(null)
+
+  //: The composer grows to hold what is in it.
+  //
+  //: It was a fixed 22px tall with the overflow hidden, which is what
+  //: the design draws — the design grows it in script and this did
+  //: not. Pasting an answer back in put the text in the box and
+  //: showed one line of it, so the paste read as having failed. The
+  //: cap is 220px: past that it scrolls rather than swallowing the
+  //: screen.
+  useEffect(() => {
+    const field = box.current
+    if (!field) return
+    field.style.height = '22px'
+    field.style.height = `${Math.min(220, Math.max(22, field.scrollHeight))}px`
+  }, [prompt])
 
   /** What can be mentioned, off this project — never a fixed list. */
   const [mentions, setMentions] = useState<
@@ -1472,36 +1453,16 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
       ...was,
       { role: 'you', text: q },
       asRun
-        ? { role: 'run', text: '', live: '', shown: 0, stages: [], busy: true }
-        : { role: 'working', text: 'Thinking', live: '', shown: 0 },
+        ? { role: 'run', text: '', shown: 0, stages: [], busy: true }
+        : { role: 'working', text: 'Thinking', shown: 0 },
     ])
 
-    //: The prose, as the model writes it.
-    //
-    //: Two things arrive down this callback and they are the same
-    //: thing at different moments: the line the assistant writes before
-    //: it reaches for a tool, and the answer it writes at the end. It
-    //: cannot be known which until the turn ends — so the words are
-    //: shown as they come, and when a step lands the buffer is cleared,
-    //: because that prose has just been claimed by the step as its
-    //: status line and showing it twice would read as two things
-    //: happening.
-    const wrote = (piece: string) => {
-      setMessages((was) => {
-        const last = was[was.length - 1]
-        if (!last) return was
-        if (last.role === 'working') {
-          const said = (last.live ?? '') + piece
-          return [...was.slice(0, -1), { ...last, text: said, live: said }]
-        }
-        if (last.role === 'run')
-          return [
-            ...was.slice(0, -1),
-            { ...last, live: (last.live ?? '') + piece },
-          ]
-        return was
-      })
-    }
+    //: **The model's own prose is no longer shown while it works.**
+    //: It writes paragraphs, not status lines, and painting them into
+    //: one slot produced a run-on line that grew and never cleared.
+    //: The status line is the short derived one that comes with each
+    //: step — « Walking back from Debt!F44 » — and it replaces the one
+    //: before it.
 
     //: One step, as it lands. The line is the assistant's own where it
     //: wrote one — never « Reading the model » on every step of every
@@ -1529,16 +1490,13 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
             },
           ]
         if (last.role === 'working')
-          return [
-            ...was.slice(0, -1),
-            { ...last, live: '', shown: 0, text: stage.sub },
-          ]
+          return [...was.slice(0, -1), { ...last, shown: 0, text: stage.sub }]
         return was
       })
     }
 
     api
-      .assistStream(picked.id, q, { history }, landed, wrote)
+      .assistStream(picked.id, q, { history }, landed)
       .then((answer: Asked) => {
         //: The assistant stopped to settle one thing first. Draw its
         //: question and the card, and wait — picking a choice is just
@@ -2265,14 +2223,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                     {m.text}
                   </div>
                 )}
-                {m.role === 'working' && (
-                  //: The line the model is writing right now, one
-                  //: sentence at a time. **Never drawn as the answer**:
-                  //: the answer is checked against the house rules
-                  //: before anybody sees it, and half of an unchecked
-                  //: one on screen is what that check exists to stop.
-                  <Shimmer text={saying(m.live) || m.text} />
-                )}
+                {m.role === 'working' && <Shimmer text={m.text} />}
                 {m.role === 'ask' && (
                   //: The chat asking one question back. The card names
                   //: what it would do; nothing runs until a choice is
@@ -2318,11 +2269,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                   </div>
                 )}
                 {m.role === 'run' && (
-                  <Run
-                    stages={m.stages ?? []}
-                    busy={m.busy}
-                    live={saying(m.live)}
-                  />
+                  <Run stages={m.stages ?? []} busy={m.busy} />
                 )}
                 {m.role === 'verdict' && (
                   <Verdict
@@ -2427,22 +2374,41 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                       {m.rows !== undefined && m.rows.length > 0 && (
                         <Cells rows={m.rows} label={m.rowsLabel} />
                       )}
-                      {!!m.ends && (
-                        <span
+                      {(!!m.ends || !!m.trace) && (
+                        //: The notes at the foot of the answer: what
+                        //: the review could not do, and how it was
+                        //: done. Both belong under the answer rather
+                        //: than in it — the founder's line, and the
+                        //: reason a walk's own log stopped appearing
+                        //: mid-sentence.
+                        <div
                           style={{
-                            fontSize: 14,
-                            lineHeight: 1.6,
-                            color: '#8f96a0',
-                            textWrap: 'pretty',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 6,
+                            borderTop: '.5px solid #f0eff1',
+                            paddingTop: 12,
+                            marginTop: 2,
                           }}
                         >
-                          {m.ends}
-                        </span>
-                      )}
-                      {!!m.trace && (
-                        <span style={{ fontSize: 12.5, color: '#b6bac1' }}>
-                          {m.trace}
-                        </span>
+                          {!!m.ends && (
+                            <span
+                              style={{
+                                fontSize: 13,
+                                lineHeight: 1.55,
+                                color: '#9aa1ab',
+                                textWrap: 'pretty',
+                              }}
+                            >
+                              {m.ends}
+                            </span>
+                          )}
+                          {!!m.trace && (
+                            <span style={{ fontSize: 12, color: '#c2c6cc' }}>
+                              {m.trace}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -2790,6 +2756,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                 }
               }}
               placeholder="Ask anything"
+              ref={box}
               rows={1}
               style={{
                 order: 1,
@@ -2806,8 +2773,14 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                 background: 'transparent',
                 padding: 0,
                 margin: 0,
+                //: Grown to its content by the effect on `prompt`, and
+                //: capped so a pasted page does not eat the screen.
+                //: It was a fixed 22px with the overflow hidden, which
+                //: meant a pasted answer went in and could not be
+                //: seen — the paste looked like it had failed.
                 height: 22,
-                overflow: 'hidden',
+                maxHeight: 220,
+                overflowY: 'auto',
               }}
             />
             <button

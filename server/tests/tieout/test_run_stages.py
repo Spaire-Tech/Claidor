@@ -101,17 +101,42 @@ class TestTheLineNamesTheRealObject:
 
 
 class TestWhoseWordsTheseAre:
-    def test_the_assistants_own_line_is_the_one_shown(self) -> None:
+    """The derived line, always — never what the model happened to write.
+
+    This used to be the other way round, on the reasoning that the
+    assistant knows what it is doing better than a lookup table does.
+    It does. It also does not write a status line: it writes the
+    opening of a paragraph, and that in a one-line slot is what the
+    founder saw — a line that grew, ran words together and never
+    cleared.
+    """
+
+    def test_the_model_prose_is_not_the_status_line(self) -> None:
         one = stage(
-            a_step("trace_back", {"ref": "Debt!F44"}, said="Reading the debt schedule")
+            a_step(
+                "trace_back",
+                {"ref": "Debt!F44"},
+                said="Let me walk this back. The depreciation charge on the "
+                "income statement is fed by the schedule, so I will start "
+                "there and follow it up through the asset rows.",
+            )
         )
 
-        assert one.sub == "Reading the debt schedule"
+        assert one.sub == "Walking back from Debt!F44"
 
-    def test_silence_falls_back_to_the_arguments(self) -> None:
+    def test_the_line_is_the_same_shape_whatever_was_said(self) -> None:
+        #: Two runs of one tool give one shape. That is what makes it
+        #: replaceable — a slot whose contents change length and
+        #: register every step reads as a machine talking to itself.
+        loud = stage(a_step("trace_back", {"ref": "Debt!F44"}, said="A paragraph."))
+        quiet = stage(a_step("trace_back", {"ref": "Debt!F44"}))
+
+        assert loud.sub == quiet.sub
+
+    def test_it_stays_short_enough_to_replace_in_place(self) -> None:
         one = stage(a_step("trace_back", {"ref": "Debt!F44"}))
 
-        assert one.sub == "Walking back from Debt!F44"
+        assert len(one.sub.split()) <= 6
 
     def test_the_tools_own_summary_is_kept_beside_it(self) -> None:
         #: The line is prose and the summary is evidence. Showing one

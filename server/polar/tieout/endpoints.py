@@ -2715,12 +2715,14 @@ async def assist_stream(
     async def lines() -> AsyncGenerator[str, None]:
         queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
 
-        #: Both callbacks run synchronously inside the loop, so both do
-        #: one thing and return. Anything slower here would hold the
-        #: run at the speed of the screen watching it.
-        def wrote(piece: str) -> None:
-            queue.put_nowait({"kind": "text", "text": piece})
-
+        #: Runs synchronously inside the loop, so it does one thing
+        #: and returns. Anything slower here would hold the run at the
+        #: speed of the screen watching it.
+        #:
+        #: **Only steps go down this queue.** The model's prose used to
+        #: as well, and it was shown as the status line — but it writes
+        #: paragraphs, not status lines, so the line grew and ran
+        #: together. The status line is the step's own short phrase now.
         def did(step: Step) -> None:
             queue.put_nowait(
                 {"kind": "stage", **_stage(step, named, version).model_dump()}
@@ -2739,7 +2741,6 @@ async def assist_stream(
                 #: describing different files.
                 known=as_prompt(workspace.picture) if workspace.picture else "",
                 on_step=did,
-                on_text=wrote,
             )
         )
 
