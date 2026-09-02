@@ -109,3 +109,12 @@ the product's behaviour on these files beyond the static audit.
 # Results
 
 *(appended after the sweep; nothing above this line changes)*
+
+**Paused by the founder, 2 September 2026, before any result was
+read.** The sweep had recorded 1,480 of 20,872 files when it was
+stopped. No measure was computed and no row was looked at; the
+partial JSONL lives only in the session scratchpad and is not
+committed, so a resumed round starts the sweep again from the top
+under this same registration. The script is resumable by file name
+if that JSONL survives; if it does not, the population and the
+measures above still hold.
