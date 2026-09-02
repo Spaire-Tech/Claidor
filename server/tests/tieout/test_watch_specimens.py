@@ -73,7 +73,13 @@ class TestTheSumThatChangedDirection:
         #: offset varies and the column is fixed — a column of cells;
         #: on the right the row is fixed and the column offset varies
         #: — a row of cells. The direction change is legible.
-        assert detail == ("SUM(R[-5]C[+0]:R[-2]C[+0]) → SUM(R[-1]C[+1]:R[-1]C[+4])")
+        assert detail.startswith(
+            "SUM(R[-5]C[+0]:R[-2]C[+0]) → SUM(R[-1]C[+1]:R[-1]C[+4])"
+        )
+        #: And, since 2 September, tier 1's answer follows the shapes:
+        #: a column sum and a row sum are different functions, and the
+        #: solver says where.
+        assert "; differs at" in detail
 
     def test_the_stored_value_is_identical_so_a_value_diff_is_silent(
         self, tmp_path: Path

@@ -444,3 +444,40 @@ class TestRetainedParseCaches:
             assert not gc.isenabled()
         finally:
             gc.enable()
+
+
+class TestTierOneOnRewrites:
+    """A methodology change carries tier 1's answer: proved the same
+    function, or the assignment where the two differ, or an honest
+    refusal by construct."""
+
+    def test_an_equivalent_rewrite_is_proved(self) -> None:
+        revised = [
+            BASE[0],
+            cell("B3", 3, 2, value="40", formula="=B2*2/5", label="Cost"),
+            *BASE[2:],
+        ]
+        report = delta_of(book(BASE), book(revised))
+        item = next(i for i in report.items if i.kind == "methodology_change")
+        assert "proved the same function" in item.detail
+
+    def test_a_different_rewrite_is_refuted_with_the_assignment(self) -> None:
+        revised = [
+            BASE[0],
+            cell("B3", 3, 2, value="40", formula="=B2+7", label="Cost"),
+            *BASE[2:],
+        ]
+        report = delta_of(book(BASE), book(revised))
+        item = next(i for i in report.items if i.kind == "methodology_change")
+        assert "differs at" in item.detail
+        assert "M!B2=" in item.detail
+
+    def test_a_rewrite_outside_the_fragment_is_refused_by_name(self) -> None:
+        revised = [
+            BASE[0],
+            cell("B3", 3, 2, value="40", formula="=INDEX(B2:B2,1)*0.4", label="Cost"),
+            *BASE[2:],
+        ]
+        report = delta_of(book(BASE), book(revised))
+        item = next(i for i in report.items if i.kind == "methodology_change")
+        assert "not provable (lookup_or_selection: INDEX)" in item.detail

@@ -54,6 +54,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from polar.tieout.watch import read_raw
+from polar.tieout.watch.prove import ProofVerdict, prove
 from polar.tieout.watch.tiers import (
     CHANGED,
     PROVED,
@@ -71,6 +72,13 @@ from polar.tieout.watch.tiers import (
 )
 from polar.tieout.watch.trace import proved_unchanged
 from polar.tieout.workbook import read_workbook
+
+
+def _prover(old: str | None, new: str | None, sheet: str) -> ProofVerdict:
+    """Tier 1, approved 2 September 2026: the solver decides eligible pairs."""
+    return prove(old, new, sheet=sheet)
+
+
 from scripts.watch_stealth import (
     TIER2_SEED,
     TIER2_TRIALS,
@@ -113,6 +121,7 @@ def run_pair(old_path: str, new_path: str, out_path: str) -> int:
         proof=proof,
         oracle=None,
         ineligible=ineligible,
+        prover=_prover,
     )
     violations = gate_violations(ladder, new_book, old_raw, new_raw, proof)
 
@@ -524,6 +533,7 @@ def _run_oracle(
         proof=proof,
         oracle=oracle,
         ineligible=ineligible,
+        prover=_prover,
     )
     violations = gate_violations(ladder, new_book, old_raw, new_raw, proof)
     diverged = sorted(
@@ -748,6 +758,7 @@ def run_domain(old_path: str, new_path: str, out_path: str) -> int:
         proof=proof,
         oracle=oracle,
         ineligible=ineligible,
+        prover=_prover,
     )
     violations = gate_violations(ladder, new_book, old_raw, new_raw, proof)
     diverged = sorted(

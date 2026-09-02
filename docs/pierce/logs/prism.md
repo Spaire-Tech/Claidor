@@ -4783,3 +4783,29 @@ container's known pydantic breakage that has forced `--noconftest`
 on this lane since the first sweep. My own files: **ruff clean, 34
 files already formatted, mypy ok, 152 tests green.** I am not
 reporting verify green, because it is not.
+
+### Tier 1 — approved and implemented (2 September 2026)
+
+The `z3-solver` dependency proposed above was approved by the
+founder on 2 September (« implement it all », after the research
+round that proved the three use cases on hand-built expressions).
+Implemented in `polar/tieout/watch/prove.py`, exactly the fragment
+named above, over exact reals, division under named side
+conditions, ranges concrete and identical, the same cell the same
+variable on both sides, EQ / NEQ (with the assignment) / UNKNOWN /
+TIMEOUT (10 s) / REFUSED by construct. Wired in two places: the
+delta report's `methodology_change` items now carry tier 1's clause
+(« proved the same function », « differs at … », « not provable
+(construct) »), and the ladder accepts a prover and stops proved or
+refuted cells at its own rung with counts reported.
+
+The harness of this registration runs as `tests/tieout/test_watch_prove.py`:
+twelve equivalent pairs proved, six inequivalent pairs refuted with
+separating assignments, the hard gate (zero false proofs) held.
+
+**A constraint added from the research round, registered for any
+future use:** never ask the solver to optimise a ratio. Over
+nonlinear reals its optimiser returned a wrong minimum for a DSCR
+(1.277 against a true 0.851). A bound is found by multiplying the
+inequality through and binary-searching the threshold with plain
+satisfiability checks, each of which is a real proof.
