@@ -59,12 +59,14 @@ already there.
 
 ## Open, named
 
-* The gate's tolerance (relative 1e-9, absolute floor 1e-12,
-  registered 26 August) fails the founder's model on all three
-  engines over 1e-7 dust on cells Excel stored as 0. Whether a floor
-  scaled to the model's magnitude is the right correction is a
-  registered-criteria change and the founder's call; it is not made
-  here.
+* ~~The gate's tolerance fails the founder's model on all three
+  engines over 1e-7 dust.~~ **Decided by the founder, 2 September:
+  « ignore the specks ».** The speck rule (`SPECK_RELATIVE = 1e-13`
+  in `gate.py`) lifts the floor for near-zero cells in proportion to
+  the largest number in the file. On a model in the billions that
+  forgives differences under about a thousandth and still fails a
+  penny. Re-measured after the change: the real path on the
+  founder's model now believes IronCalc (see below).
 * Formualizer's legacy array-formula defect is worth reporting
   upstream; the project is active.
 * Neither Rust engine is ready for the biggest models. The size
