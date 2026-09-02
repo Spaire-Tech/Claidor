@@ -42,7 +42,14 @@
  *   the marked-up download stay the current version's and say so.
  */
 
-import { Fragment, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   Artifact,
   auditRecord,
@@ -80,7 +87,10 @@ export const isHousekeeping = (f: Finding): boolean =>
 /** A finding's money, as a number — « 12.5m » → 12,500,000. Zero when
  *  the figure is a count or a constant rather than an amount. */
 export const magnitude = (f: Finding): number => {
-  const raw = String(f.figure ?? '').split(',')[0]!.trim().replace(/,/g, '')
+  const raw = String(f.figure ?? '')
+    .split(',')[0]!
+    .trim()
+    .replace(/,/g, '')
   const m = /^-?(\d+(?:\.\d+)?)\s*(bn|m|k)?$/i.exec(raw)
   if (!m) return 0
   const scale = { bn: 1e9, m: 1e6, k: 1e3 }[(m[2] ?? '').toLowerCase()] ?? 1
@@ -299,11 +309,18 @@ export const ProjectPage = ({
   const [tip, setTip] = useState<string | null>(null)
   //: What the last ruling action could not do, per finding — shown in
   //: the card. The three actions used to swallow every error.
-  const [rulingWord, setRulingWord] = useState<{ id: string; text: string } | null>(null)
+  const [rulingWord, setRulingWord] = useState<{
+    id: string
+    text: string
+  } | null>(null)
   //: What the last Re-check did, in one sentence — or why it could not.
   const [recheckWord, setRecheckWord] = useState<string | null>(null)
   //: Every finished audit run, oldest first — the trend's points.
   const [history, setHistory] = useState<CheckRun[] | null>(null)
+  //: Which of the four check groups is dropped open. One at a time,
+  //: collapsed by default: the founder's rule is that a long list on
+  //: the Overview is worse than none.
+  const [openCheckGroup, setOpenCheckGroup] = useState<string | null>(null)
   const [at, setAt] = useState(0)
 
   useEffect(() => {
@@ -504,7 +521,9 @@ export const ProjectPage = ({
     //: across runs, so the difference after is real: new, cleared,
     //: unchanged. A run that finds the same thirteen used to look
     //: like a button that did nothing.
-    const before = new Set((findings ?? []).filter((f) => f.state === 'open').map((f) => f.id))
+    const before = new Set(
+      (findings ?? []).filter((f) => f.state === 'open').map((f) => f.id),
+    )
     api
       .check(deal.id)
       .then((runs) => {
@@ -706,7 +725,9 @@ export const ProjectPage = ({
       const parts = [
         counts[1] ? `${counts[1]} material` : '',
         counts[2] ? `${counts[2]} significant` : '',
-        counts[3] ? `${counts[3]} observation${counts[3] === 1 ? '' : 's'}` : '',
+        counts[3]
+          ? `${counts[3]} observation${counts[3] === 1 ? '' : 's'}`
+          : '',
       ].filter(Boolean)
       const lead =
         largest && magnitude(largest) > 0
@@ -721,7 +742,8 @@ export const ProjectPage = ({
       )
     }
     if (checks.length > 0) {
-      const n = (state: string) => checks.filter((c) => c.state === state).length
+      const n = (state: string) =>
+        checks.filter((c) => c.state === state).length
       const ran = n('found') + n('clean')
       out.push(
         `${ran} of ${checks.length} checks ran: ${n('found')} found something, ${n(
@@ -781,7 +803,8 @@ export const ProjectPage = ({
       const t = one.summary['tiers'] as Record<string, number> | undefined
       const n = t
         ? (t['1'] ?? 0) + (t['2'] ?? 0) + (t['3'] ?? 0)
-        : Number(one.summary['errors'] ?? 0) + Number(one.summary['smells'] ?? 0)
+        : Number(one.summary['errors'] ?? 0) +
+          Number(one.summary['smells'] ?? 0)
       byVersion.set(one.version !== null ? `v${one.version}` : 'run', n)
     }
     const raw = [...byVersion.entries()].slice(-6)
@@ -831,7 +854,10 @@ export const ProjectPage = ({
     return defects.length ? [{ name: '', items: defects }] : []
   }, [open, sev])
   const housekeeping = useMemo(
-    () => open.filter((one) => isHousekeeping(one) && (sev === 0 || sevOf(one) === sev)),
+    () =>
+      open.filter(
+        (one) => isHousekeeping(one) && (sev === 0 || sevOf(one) === sev),
+      ),
     [open, sev],
   )
 
@@ -862,7 +888,10 @@ export const ProjectPage = ({
       .propose(finding.id)
       .then(() => setAt((was) => was + 1))
       .catch((error: unknown) =>
-        setRulingWord({ id: finding.id, text: `No fix prepared: ${said(error)}.` }),
+        setRulingWord({
+          id: finding.id,
+          text: `No fix prepared: ${said(error)}.`,
+        }),
       )
   }
   const decide = (finding: Finding, accept: boolean) => {
@@ -1058,30 +1087,32 @@ export const ProjectPage = ({
             </button>
           </span>
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
-          {(['Overview', 'Findings', 'Versions', 'Sources'] as const).map((label) => {
-            const on = tab === label
-            return (
-              <button
-                key={label}
-                onClick={() => setTab(label)}
-                style={{
-                  border: 0,
-                  background: on ? 'rgba(21,23,27,.055)' : 'transparent',
-                  borderRadius: 22,
-                  padding: '11px 26px',
-                  font: 'inherit',
-                  fontSize: 14.5,
-                  fontWeight: on ? 500 : 400,
-                  letterSpacing: '-.01em',
-                  color: on ? '#0060d0' : '#5b6068',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {label}
-              </button>
-            )
-          })}
+          {(['Overview', 'Findings', 'Versions', 'Sources'] as const).map(
+            (label) => {
+              const on = tab === label
+              return (
+                <button
+                  key={label}
+                  onClick={() => setTab(label)}
+                  style={{
+                    border: 0,
+                    background: on ? 'rgba(21,23,27,.055)' : 'transparent',
+                    borderRadius: 22,
+                    padding: '11px 26px',
+                    font: 'inherit',
+                    fontSize: 14.5,
+                    fontWeight: on ? 500 : 400,
+                    letterSpacing: '-.01em',
+                    color: on ? '#0060d0' : '#5b6068',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            },
+          )}
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
         </div>
 
@@ -1460,42 +1491,97 @@ export const ProjectPage = ({
                     ))}
                   </div>
                   {checks.length > 0 && (
-                    //: Every check, in one of four states, each on its own
-                    //: line. The reader's rule for this page: what was
-                    //: checked, what was not, and why — all of it, never
-                    //: « and more », and never in one run-on line.
+                    //: Every check, in one of four states. The four groups
+                    //: sit on one line as drop-downs, collapsed by default;
+                    //: opening one shows its checks beneath the row. What
+                    //: was checked, what was not, and why — all of it,
+                    //: never « and more », and never as a wall.
                     <div
                       style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 18,
                         marginTop: 22,
                         paddingTop: 20,
                         borderTop: '1px solid rgba(16,22,35,.07)',
                       }}
                     >
-                      {(
-                        [
-                          ['found', 'Found something', '#e0322d'],
-                          ['clean', 'Ran and found nothing', '#1f8a4c'],
-                          ['abstained', 'Could not run', '#c8790a'],
-                          ['off', 'Switched off', '#9aa1ab'],
-                        ] as const
-                      ).map(([state, head, ink]) => {
-                        const rows = checks.filter((c) => c.state === state)
-                        if (rows.length === 0) return null
-                        return (
-                          <div key={state}>
-                            <div
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '8px 22px',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {(
+                          [
+                            ['found', 'Found something', '#e0322d'],
+                            ['clean', 'Ran and found nothing', '#1f8a4c'],
+                            ['abstained', 'Could not run', '#c8790a'],
+                            ['off', 'Switched off', '#9aa1ab'],
+                          ] as const
+                        ).map(([state, head, ink]) => {
+                          const rows = checks.filter((c) => c.state === state)
+                          if (rows.length === 0) return null
+                          const open = openCheckGroup === state
+                          return (
+                            <button
+                              key={state}
+                              type="button"
+                              aria-expanded={open}
+                              onClick={() =>
+                                setOpenCheckGroup(open ? null : state)
+                              }
                               style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: 0,
+                                border: 0,
+                                background: 'none',
+                                cursor: 'pointer',
                                 fontSize: 13,
                                 fontWeight: 500,
                                 color: ink,
-                                paddingBottom: 6,
+                                font: 'inherit',
                               }}
                             >
-                              {head} · {rows.length}
-                            </div>
+                              <span
+                                style={{
+                                  fontSize: 13,
+                                  fontWeight: 500,
+                                  color: ink,
+                                }}
+                              >
+                                {head} · {rows.length}
+                              </span>
+                              <span
+                                aria-hidden="true"
+                                style={{
+                                  display: 'inline-block',
+                                  fontSize: 10,
+                                  color: ink,
+                                  transform: open ? 'rotate(180deg)' : 'none',
+                                  transition: 'transform .15s',
+                                }}
+                              >
+                                ▾
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {(
+                        [
+                          ['found', '#e0322d'],
+                          ['clean', '#1f8a4c'],
+                          ['abstained', '#c8790a'],
+                          ['off', '#9aa1ab'],
+                        ] as const
+                      ).map(([state, ink]) => {
+                        if (openCheckGroup !== state) return null
+                        const rows = checks.filter((c) => c.state === state)
+                        if (rows.length === 0) return null
+                        return (
+                          <div key={state} style={{ marginTop: 12 }}>
                             <div
                               style={{
                                 display: 'flex',
@@ -1990,7 +2076,8 @@ export const ProjectPage = ({
                   </span>
                   {!checkedAt && !viewingPast && (
                     <span style={{ fontSize: 13, color: '#8f96a0' }}>
-                      Re-check on the Overview tab runs every rule over the stored cells.
+                      Re-check on the Overview tab runs every rule over the
+                      stored cells.
                     </span>
                   )}
                 </div>
@@ -2038,7 +2125,9 @@ export const ProjectPage = ({
                           const said = f.plain || f.title
                           const detail = (f.context || '').trim()
                           const why =
-                            detail && !said.trim().includes(detail) ? detail : ''
+                            detail && !said.trim().includes(detail)
+                              ? detail
+                              : ''
                           const hasPair = !!f.fix && !!f.fix_before
                           const correction = f.correction
                           return (
@@ -2668,33 +2757,35 @@ export const ProjectPage = ({
                                               tab, styled active or not, with
                                               nothing behind a click. */}
                                           {grid.sheets
-                                            .filter((name) => name === grid.sheet)
+                                            .filter(
+                                              (name) => name === grid.sheet,
+                                            )
                                             .map((name) => (
-                                            <span
-                                              key={name}
-                                              style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                height: 30,
-                                                padding: '0 14px',
-                                                background:
-                                                  name === grid.sheet
-                                                    ? '#fff'
-                                                    : 'transparent',
-                                                borderBottom:
-                                                  name === grid.sheet
-                                                    ? '2px solid #217346'
-                                                    : 'none',
-                                                fontSize: 12.5,
-                                                color:
-                                                  name === grid.sheet
-                                                    ? '#217346'
-                                                    : '#5f6368',
-                                              }}
-                                            >
-                                              {name}
-                                            </span>
-                                          ))}
+                                              <span
+                                                key={name}
+                                                style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  height: 30,
+                                                  padding: '0 14px',
+                                                  background:
+                                                    name === grid.sheet
+                                                      ? '#fff'
+                                                      : 'transparent',
+                                                  borderBottom:
+                                                    name === grid.sheet
+                                                      ? '2px solid #217346'
+                                                      : 'none',
+                                                  fontSize: 12.5,
+                                                  color:
+                                                    name === grid.sheet
+                                                      ? '#217346'
+                                                      : '#5f6368',
+                                                }}
+                                              >
+                                                {name}
+                                              </span>
+                                            ))}
                                         </div>
                                       </div>
                                     )}
@@ -2810,7 +2901,9 @@ export const ProjectPage = ({
                                           />
                                           <button
                                             onClick={() => saveNote(f)}
-                                            disabled={noteText.trim().length <= 2}
+                                            disabled={
+                                              noteText.trim().length <= 2
+                                            }
                                             title={
                                               noteText.trim().length <= 2
                                                 ? 'A reason needs a few words.'
@@ -4876,7 +4969,9 @@ const Report = ({
     const w = window.open('', '_blank', 'width=900,height=1200')
     if (!w) {
       //: A blocked popup used to produce nothing and say nothing.
-      setPrintWord('Your browser blocked the print window. Allow pop-ups for this site and try again.')
+      setPrintWord(
+        'Your browser blocked the print window. Allow pop-ups for this site and try again.',
+      )
       return
     }
     const origin = window.location.origin
