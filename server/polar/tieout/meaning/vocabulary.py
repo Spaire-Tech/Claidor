@@ -174,7 +174,10 @@ class Vocabulary:
     """The loaded dictionary. Build once; `vocabulary()` caches it."""
 
     def __init__(
-        self, concepts: Iterable[Concept], filer_labels: dict[str, dict[str, list[int]]]
+        self,
+        concepts: Iterable[Concept],
+        filer_labels: dict[str, dict[str, list[int]]],
+        uk_filer_labels: dict[str, dict[str, list[int]]] | None = None,
     ):
         self.by_name: dict[tuple[str, str], Concept] = {}
         self.by_label: dict[str, list[Concept]] = {}
@@ -184,7 +187,18 @@ class Vocabulary:
                 if text:
                     self.by_label.setdefault(normalise(text), []).append(one)
             self.by_label.setdefault(words_of(one.name), []).append(one)
-        self.filer_labels = filer_labels
+        #: How real filers wrote each line, by country: the SEC's
+        #: quarter for the US, Companies House's daily bulk for the UK
+        #: (uk-filer-labels.md). Each maps a normalised label to the
+        #: concepts it was tagged as, with line counts and sign flips.
+        self.filers: dict[str, dict[str, dict[str, list[int]]]] = {
+            "us-gaap": filer_labels,
+            "frc": uk_filer_labels or {},
+        }
+
+    @property
+    def filer_labels(self) -> dict[str, dict[str, list[int]]]:
+        return self.filers["us-gaap"]
 
     @property
     def size(self) -> int:
@@ -193,8 +207,64 @@ class Vocabulary:
     def concept(self, name: str, source: str = "us-gaap") -> Concept | None:
         return self.by_name.get((source, name))
 
-    def match(self, label: str, sources: tuple[str, ...] = ("us-gaap", "frc")) -> Match:
-        """Name one row label, or say it cannot be named."""
+    def _filers(self, key: str, source: str, found: Match) -> Match | None:
+        """One country's filers on one label: majority, split, or nothing."""
+        tags = self.filers.get(source) or {}
+        found_tags = tags.get(key)
+        if not found_tags:
+            return None
+        name, (count, flipped) = max(found_tags.items(), key=lambda kv: kv[1][0])
+        concept = self.by_name.get((source, name))
+        if concept is None:
+            return None
+        total = sum(v[0] for v in found_tags.values())
+        who = "UK filers" if source == "frc" else "US filers"
+        if count * 2 <= total:
+            #: The registration says « the concept most of them tagged
+            #: it as ». A plurality is not most: « Total revenue »
+            #: splits 307 of 616 between two revenue concepts, and
+            #: picking one would be a guess dressed as a count.
+            return Match(
+                label=found.label,
+                normalised=key,
+                qualifiers=found.qualifiers,
+                tier="none",
+                agreed=count,
+                disagreed=total - count,
+                why=(
+                    f"{who} split: {count} of {total} lines written this way "
+                    f"were tagged « {concept.words} », the rest otherwise"
+                ),
+            )
+        return Match(
+            label=found.label,
+            normalised=key,
+            qualifiers=found.qualifiers,
+            tier="uk-filers" if source == "frc" else "filers",
+            concept=concept,
+            agreed=count,
+            disagreed=total - count,
+            flipped=flipped,
+            why=(
+                f"{count} of {total} {who}' lines written this way were "
+                f"tagged « {concept.words} »"
+            ),
+        )
+
+    def match(
+        self,
+        label: str,
+        sources: tuple[str, ...] = ("us-gaap", "frc"),
+        dialect: str = "us",
+    ) -> Match:
+        """Name one row label, or say it cannot be named.
+
+        `dialect` orders the filers' tiers: `uk` asks the UK filers
+        before the US ones, `us` the reverse. The exact tier comes
+        first either way, and a split in the first country asked is
+        the answer — the second is not consulted to break a tie the
+        first could not.
+        """
         key = normalise(label)
         found = Match(
             label=label, normalised=key, qualifiers=qualifiers(label), tier="none"
@@ -225,45 +295,15 @@ class Vocabulary:
                     concept=chosen,
                     why=f"the label is the {source} name of « {chosen.words} »",
                 )
-        #: Filers: how real filers wrote it, majority concept.
-        tags = self.filer_labels.get(key)
-        if tags and "us-gaap" in sources:
-            name, (count, flipped) = max(tags.items(), key=lambda kv: kv[1][0])
-            concept = self.by_name.get(("us-gaap", name))
-            total = sum(v[0] for v in tags.values())
-            if concept is not None and count * 2 <= total:
-                #: The registration says « the concept most of them
-                #: tagged it as ». A plurality is not most: « Total
-                #: revenue » splits 307 of 616 between two revenue
-                #: concepts, and picking one would be a guess dressed
-                #: as a count.
-                return Match(
-                    label=label,
-                    normalised=key,
-                    qualifiers=found.qualifiers,
-                    tier="none",
-                    agreed=count,
-                    disagreed=total - count,
-                    why=(
-                        f"filers split: {count} of {total} lines written this way "
-                        f"were tagged « {concept.words} », the rest otherwise"
-                    ),
-                )
-            if concept is not None:
-                return Match(
-                    label=label,
-                    normalised=key,
-                    qualifiers=found.qualifiers,
-                    tier="filers",
-                    concept=concept,
-                    agreed=count,
-                    disagreed=total - count,
-                    flipped=flipped,
-                    why=(
-                        f"{count} of {total} filers' lines written this way were "
-                        f"tagged « {concept.words} »"
-                    ),
-                )
+        #: Filers: how real filers wrote it, majority concept, the
+        #: dialect's own country first.
+        order = ("frc", "us-gaap") if dialect == "uk" else ("us-gaap", "frc")
+        for source in order:
+            if source not in sources:
+                continue
+            answer = self._filers(key, source, found)
+            if answer is not None:
+                return answer
         return found
 
 
@@ -273,8 +313,13 @@ def _load_concepts() -> list[Concept]:
     return [Concept(*row) for row in rows]
 
 
-def _load_filer_labels() -> dict[str, dict[str, list[int]]]:
-    with gzip.open(_DATA / "filer_labels.json.gz", "rt", encoding="utf-8") as handle:
+def _load_filer_labels(
+    name: str = "filer_labels.json.gz",
+) -> dict[str, dict[str, list[int]]]:
+    path = _DATA / name
+    if not path.exists():
+        return {}
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
         loaded: dict[str, dict[str, list[int]]] = json.load(handle)
     return loaded
 
@@ -282,4 +327,8 @@ def _load_filer_labels() -> dict[str, dict[str, list[int]]]:
 @cache
 def vocabulary() -> Vocabulary:
     """The dictionary, loaded once per process."""
-    return Vocabulary(_load_concepts(), _load_filer_labels())
+    return Vocabulary(
+        _load_concepts(),
+        _load_filer_labels(),
+        _load_filer_labels("uk_filer_labels.json.gz"),
+    )

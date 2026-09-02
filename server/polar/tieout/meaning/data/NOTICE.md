@@ -26,3 +26,16 @@ fewer than three lines are dropped.
 
 Fetched and counted 2 September 2026; the record is
 `docs/pierce/materials-intake.md`.
+
+`uk_filer_labels.json.gz` is distilled from three days of the
+Companies House **Accounts Data Product** (the daily bulk zips of
+2026-08-29, 2026-09-01 and 2026-09-02; 61,486 accounts, 1.7 million
+tagged numbers): « The Accounts Data Product is a free downloadable
+ZIP file, which contains the individual data files (instance
+documents) of company accounts filed electronically. » « Each data
+file is provided free of charge and is not supported. » Each
+normalised printed row label maps to the FRC concepts it was tagged
+as, with line counts and sign flips; pairs seen on fewer than three
+lines are dropped. Built 2 September 2026 by
+`scripts/uk_filer_labels.py`; the record is
+`docs/pierce/uk-filer-labels.md`.

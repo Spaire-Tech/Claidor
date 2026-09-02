@@ -68,7 +68,10 @@ def measure(path: Path) -> dict[str, Any]:
         klass = sheet_class(sheet)
         if klass == "plumbing":
             continue
-        match = vocab.match(label)
+        #: Our corpora are British: the UK filers answer before the US
+        #: ones (uk-filer-labels.md). The product will read the dialect
+        #: off the file in a later round.
+        match = vocab.match(label, dialect="uk")
         by_class.setdefault(klass, Counter())[match.tier] += 1
         if match.named and match.concept is not None:
             mapped.append(
@@ -101,7 +104,7 @@ def main(argv: list[str]) -> None:
         for tiers in one["by_class"].values():
             pooled.update(tiers)
         total = sum(pooled.values())
-        named = pooled["exact"] + pooled["filers"]
+        named = pooled["exact"] + pooled["filers"] + pooled["uk-filers"]
         print(
             f"done {path.name}: {named}/{total} money rows named "
             f"({100 * named / max(total, 1):.1f}%) in {one['match_seconds']}s",
@@ -117,7 +120,7 @@ def main(argv: list[str]) -> None:
         rng = random.Random(20260902)
         pool = [(r["file"], m) for r in results for m in r["mapped"]]
         exact = [one for one in pool if one[1]["tier"] == "exact"]
-        filers = [one for one in pool if one[1]["tier"] == "filers"]
+        filers = [one for one in pool if one[1]["tier"] in ("filers", "uk-filers")]
         sample = rng.sample(exact, min(30, len(exact))) + rng.sample(
             filers, min(30, len(filers))
         )

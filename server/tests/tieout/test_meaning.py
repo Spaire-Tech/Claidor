@@ -87,7 +87,7 @@ class TestTheDictionary:
         match = vocabulary().match("Total revenue")
         assert match.tier == "none"
         assert match.concept is None
-        assert match.why.startswith("filers split:")
+        assert match.why.startswith("US filers split:")
         assert match.agreed > 0
         assert match.disagreed >= match.agreed
 
@@ -122,9 +122,90 @@ class TestTheDictionary:
         dialect, recorded on the match, not a rule to hack. The
         dialect question is named in taxonomy-coverage.md for its own
         round."""
-        match = vocabulary().match("Operating income - nominal (BR)")
+        match = vocabulary().match("Operating income - nominal (BR)", dialect="us")
         assert match.tier == "filers"
         assert match.concept is not None
         assert match.concept.name == "OperatingIncomeLoss"
         assert match.agreed > 500
         assert match.disagreed == 0
+
+
+class TestTheBritishSource:
+    """The UK filers' tier and the dialect order (uk-filer-labels.md),
+    on a small dictionary built in memory so the test says exactly
+    what each country's filers wrote."""
+
+    def _vocab(self) -> object:
+        from polar.tieout.meaning.vocabulary import Concept, Vocabulary
+
+        concepts = [
+            Concept(
+                "us-gaap",
+                "OperatingIncomeLoss",
+                "credit",
+                "duration",
+                "Operating Income (Loss)",
+                None,
+                None,
+            ),
+            Concept(
+                "frc", "TurnoverRevenue", "credit", "duration", "Turnover", None, None
+            ),
+            Concept(
+                "frc", "OperatingProfitLoss", "credit", "duration", None, None, None
+            ),
+            Concept("frc", "Creditors", "credit", "instant", "Creditors", None, None),
+        ]
+        us = {"operating income": {"OperatingIncomeLoss": [897, 0]}}
+        uk = {
+            "operating profit": {"OperatingProfitLoss": [40, 0]},
+            "creditors amounts falling due within one year": {"Creditors": [900, 0]},
+            "operating income": {"TurnoverRevenue": [4, 0]},
+        }
+        return Vocabulary(concepts, us, uk)
+
+    def test_uk_dialect_asks_uk_filers_first(self) -> None:
+        vocab = self._vocab()
+        match = vocab.match(
+            "Creditors: amounts falling due within one year", dialect="uk"
+        )  # type: ignore[attr-defined]
+        assert match.tier == "uk-filers"
+        assert match.concept is not None
+        assert match.concept.name == "Creditors"
+        assert "UK filers" in match.why
+
+    def test_the_dialect_order_decides_a_two_country_word(self) -> None:
+        vocab = self._vocab()
+        british = vocab.match("Operating income", dialect="uk")  # type: ignore[attr-defined]
+        american = vocab.match("Operating income", dialect="us")  # type: ignore[attr-defined]
+        assert british.tier == "uk-filers"
+        assert british.concept is not None
+        assert british.concept.name == "TurnoverRevenue"
+        assert american.tier == "filers"
+        assert american.concept is not None
+        assert american.concept.name == "OperatingIncomeLoss"
+
+    def test_a_label_only_one_country_writes_is_still_named_under_either_dialect(
+        self,
+    ) -> None:
+        vocab = self._vocab()
+        for dialect in ("uk", "us"):
+            match = vocab.match("Operating profit", dialect=dialect)  # type: ignore[attr-defined]
+            assert match.tier == "uk-filers", dialect
+            assert match.concept is not None
+            assert match.concept.name == "OperatingProfitLoss"
+
+    def test_the_shipped_uk_pairs_name_british_statement_lines(self) -> None:
+        """The distilled Companies House pairs, when present: the
+        British balance-sheet lines every small company files."""
+        vocab = vocabulary()
+        if not vocab.filers["frc"]:
+            import pytest
+
+            pytest.skip("uk_filer_labels.json.gz not built")
+        match = vocab.match(
+            "Creditors: amounts falling due within one year", dialect="uk"
+        )
+        assert match.tier in ("exact", "uk-filers")
+        assert match.concept is not None
+        assert match.concept.source == "frc"

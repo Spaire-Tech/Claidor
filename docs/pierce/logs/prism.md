@@ -4873,3 +4873,21 @@ Round record in `taxonomy-coverage.md`. For future rounds:
    place-words removed every C in the close-model sample.
 4. **Keep the sample by row.** A script that re-draws its sample on
    each run cannot re-judge the same rows; save the sample once.
+
+## 2 September — the British source
+
+Companies House's daily bulk is the UK's SEC pairs: three days,
+61,486 accounts, 1.7 million tagged numbers, 1,846 labels in two
+minutes of parsing (`uk-filer-labels.md`). Two things:
+
+1. **A filer source names statutory lines, never a regulator's.**
+   « Turnover », « Operating profit », « Creditors: amounts falling
+   due within one year » arrive with tens of thousands of witnesses;
+   « Opex », « Capex », « Retained cash balance » never will. Know
+   which vocabulary a corpus speaks before predicting coverage — the
+   30% prediction assumed Ofwat writes like an accountant.
+2. **Small companies tag the whole equity table as one concept.**
+   « Retained earnings », « Called up share capital », « Profit and
+   loss account » all map to `Equity` with a dimension the pair
+   cannot carry. A B by construction; a member-aware pair is the fix
+   if it ever matters.
