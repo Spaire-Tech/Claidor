@@ -1530,18 +1530,23 @@ export const ProjectPage = ({
                               onClick={() =>
                                 setOpenCheckGroup(open ? null : state)
                               }
+                              //: It has to look like a control, not a
+                              //: heading: a bordered pill with a chevron
+                              //: that turns when the group is open.
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: 6,
-                                padding: 0,
-                                border: 0,
-                                background: 'none',
+                                gap: 8,
+                                padding: '5px 10px 5px 12px',
+                                border: `1px solid ${ink}55`,
+                                borderRadius: 999,
+                                background: open ? `${ink}14` : '#fff',
                                 cursor: 'pointer',
                                 fontSize: 13,
                                 fontWeight: 500,
                                 color: ink,
                                 font: 'inherit',
+                                lineHeight: 1.2,
                               }}
                             >
                               <span
@@ -1553,18 +1558,26 @@ export const ProjectPage = ({
                               >
                                 {head} · {rows.length}
                               </span>
-                              <span
+                              <svg
                                 aria-hidden="true"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 16 16"
                                 style={{
-                                  display: 'inline-block',
-                                  fontSize: 10,
-                                  color: ink,
+                                  flex: '0 0 auto',
                                   transform: open ? 'rotate(180deg)' : 'none',
                                   transition: 'transform .15s',
                                 }}
                               >
-                                ▾
-                              </span>
+                                <path
+                                  d="M3.5 6 8 10.5 12.5 6"
+                                  fill="none"
+                                  stroke={ink}
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
                             </button>
                           )
                         })}
