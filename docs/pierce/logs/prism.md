@@ -4809,3 +4809,25 @@ nonlinear reals its optimiser returned a wrong minimum for a DSCR
 (1.277 against a true 0.851). A bound is found by multiplying the
 inequality through and binary-searching the threshold with plain
 satisfiability checks, each of which is a real proof.
+
+## 2 September — the regularity check closes; a switch-off that was not off
+
+The weight term is adopted; the proposed « island in a block » kind
+is not (it never fires: the row detector already accuses every
+enclosed island). On vs off across the 27 gate models: 17 findings
+gain weight, 15 change rank inside their file (3.3%), nothing else
+moves — the registered prediction holds. Full record in
+`regularity-check.md`.
+
+**For future use — two things this round taught:**
+
+1. `import polar.tieout.audit as X` binds the *function* `audit`
+   that the package re-exports under the same name, not the module.
+   A patch on it lands on a function attribute nobody reads, and the
+   « off » run is the « on » run. Take the module from `sys.modules`,
+   and never believe two arms that agree to the byte without a probe
+   that says they had to differ.
+2. A sentence that names the sheet puts *where* into any fold that
+   keys on the sentence. The cross-sheet error fold split four sheets
+   into four lines; the golden-master diff caught it. Fold keys are
+   the claim, never the address.

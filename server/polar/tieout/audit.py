@@ -47,6 +47,8 @@ from typing import Any
 
 from openpyxl.utils import get_column_letter
 
+from .regularity import bump_for
+from .regularity import islands as _islands
 from .workbook import REFERENCE, Cell, Workbook, tokens_of
 
 #: Error values that are always a defect: a deleted row, a mistyped
@@ -1117,6 +1119,7 @@ def audit(
     _flows(book, result)
     _one_long_formula_line(result)
     _elevated(book, result, materiality)
+    _regularity_weighted(book, result)
     #: Weight first — a defect leads, hygiene closes — with the old
     #: severity/sheet order breaking ties so equal weights stay stable.
     result.findings.sort(
@@ -1728,9 +1731,18 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
             " One formula, filled across",
             " The same formula sits on",
             " The same decision sits on",
+            " The same error sits on",
             " The same one sits in",
         ):
             finding = replace_finding(finding, detail=finding.detail.split(suffix)[0])
+        #: A sheet-level error fold opens with the sheet's own name
+        #: (« F4 » carries #VALUE! past its data's edge). The name is
+        #: where, not what: four sheets carrying the same stray error
+        #: at the same address are one finding, as they were before
+        #: the sentence named the sheet.
+        prefix = f"« {finding.sheet} » "
+        if finding.rule == "error-value" and finding.detail.startswith(prefix):
+            return finding.detail[len(prefix) :]
         return finding.detail
 
     def row_of(finding: Finding) -> int:
@@ -1819,11 +1831,18 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
         #: reading. The count and the sheets belong in `figure_unit` and
         #: `cells`, where the screen can lay them out.
         details = {base_detail(one) for one in group}
-        what = (
-            f"{base_detail(first)} The same "
-            + ("formula" if len(details) == 1 else "decision")
-            + f" sits on {len(sheets)} sheets: {shown}."
-        )
+        if first.rule == "error-value" and first.detail.startswith("« "):
+            #: The member's sentence keeps its own sheet's name; the
+            #: fold says which other sheets carry the same error.
+            what = (
+                f"{first.detail} The same error sits on {len(sheets)} sheets: {shown}."
+            )
+        else:
+            what = (
+                f"{base_detail(first)} The same "
+                + ("formula" if len(details) == 1 else "decision")
+                + f" sits on {len(sheets)} sheets: {shown}."
+            )
         unit = (
             f"repeated on {len(sheets)} sheets"
             if len(details) == 1
@@ -3359,6 +3378,39 @@ def _mutations(book: Workbook, result: Audit) -> None:
                         source="EuSpRIG, ICAEW P11",
                     )
                 )
+
+
+def _regularity_weighted(book: Workbook, result: Audit) -> None:
+    """The regularity check's weight term: a row or anchoring break
+    inside a large tidy block outranks the same break beside a
+    ragged run. Runs after `_elevated`, adds at most
+    `REGULARITY_BUMP`, and says so in the basis."""
+    by_ref = {
+        island.ref: island for island in _islands(book, _shape) if island.region_area
+    }
+    replaced: list[Finding] = []
+    for finding in result.findings:
+        island = by_ref.get(finding.ref)
+        if island is None or finding.rule not in (
+            "inconsistent-row",
+            "inconsistent-anchoring",
+        ):
+            replaced.append(finding)
+            continue
+        bump = bump_for(island)
+        replaced.append(
+            replace_finding(
+                finding,
+                weight=round(min(1.0, finding.weight + bump), 2),
+                basis=(
+                    f"{finding.basis}; breaks a block of {island.region_area} "
+                    "cells of one shape"
+                    if finding.basis
+                    else f"breaks a block of {island.region_area} cells of one shape"
+                ),
+            )
+        )
+    result.findings = replaced
 
 
 def _selector_drift(book: Workbook, result: Audit) -> None:
