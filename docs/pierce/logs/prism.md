@@ -4853,3 +4853,23 @@ Round record in `modern-excel.md`. Three things for future rounds:
    array in column E of the output sheet — never reaches the
    prescan. The byte-level scan sees it; whether the prescan should
    is a reader question for its own round.
+
+## 2 September — the accountants' dictionary: what a count taught
+
+Round record in `taxonomy-coverage.md`. For future rounds:
+
+1. **Normalise both sides with the same rule, and make the rule
+   about codes, not shapes.** Stripping every trailing parenthetical
+   turned the taxonomy's « Operating Income (Loss) » into « operating
+   income » and collided it with the British line of that name. A
+   parenthetical is a qualifier when it is a code — `(WR)` — not when
+   it is a word.
+2. **A majority-of-filers answer is a dialect answer.** 897 of 897
+   American lines say « operating income » is profit; in Ofwat's
+   model it is revenue. The count is true and the meaning is wrong.
+   Provenance is part of a vocabulary.
+3. **Schedule words are not lines.** « Opening balance » is equity
+   to the SEC and anything at all to a modeller. A stoplist of
+   place-words removed every C in the close-model sample.
+4. **Keep the sample by row.** A script that re-draws its sample on
+   each run cannot re-judge the same rows; save the sample once.
