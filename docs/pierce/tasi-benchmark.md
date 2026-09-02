@@ -366,3 +366,23 @@ This does not overturn any conclusion here; it sharpens two:
 
 The fix is routed to the lead: `legacy.py` is outside Sentinel's
 paths, and correcting it changes findings on every `.xls` file.
+
+### Re-run, 2 September 2026 — today's engine at commit `4f028d6`
+
+Same instrument, same truth, same seven-tool table (identical to
+the digit). The engine has moved since `eaa0153` (the fill fold keys
+skipped totals on their label row, long formulas fold to one line,
+the consequence sentence is mandatory):
+
+| engine | vs Tasi (3,702) | vs CUSTODES (1,974) | agreement vs Tasi |
+|---|---|---|---|
+| today (`4f028d6`) | 473 = **12.8%** | 437 = **22.1%** | 26.5% (344/1,297) |
+| 27 Aug (`eaa0153`) | 489 = 13.2% | 438 = 22.2% | 26.7% |
+
+Sixteen fewer Tasi cells covered, one fewer CUSTODES cell; the
+per-rule shape is unchanged (`typed-over-formula` 354 both times,
+`skipped-cell` 78 against 80, `hardcode-in-formula` 27). The drop is
+within what the fold changes would do to a roster-based coverage
+count and is not attributed further here. Unmapped rows: 0 of 291.
+The Tasi clone is pinned at commit `81b4366` (31 May 2021), read
+from the scratchpad, not committed — the licence note above stands.
