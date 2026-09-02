@@ -30,6 +30,7 @@ import sys
 import time
 import traceback
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -153,10 +154,11 @@ def main(argv: list[str]) -> int:
                     sink.write(
                         json.dumps({"file": name, "failed": "not fetched"}) + "\n"
                     )
-            # A small pool: each audit is its own process already, so the
-            # pool only bounds how many run at once.
-            with mp.get_context("fork").Pool(WORKERS) as pool:
-                results = pool.map(_sweep_one, [(n, str(p)) for n, p in pending])
+            # Threads, not a process pool: each audit already runs in its
+            # own forked process under a timeout, and a pool worker is
+            # daemonic and may not fork children of its own.
+            with ThreadPoolExecutor(WORKERS) as pool:
+                results = list(pool.map(_sweep_one, [(n, str(p)) for n, p in pending]))
             for row in results:
                 row_hash = row.get("md5", "")
                 row["held"] = row_hash in held
