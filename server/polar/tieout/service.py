@@ -1031,6 +1031,10 @@ class TieOutService:
             "route": str(fidelity.route) if fidelity.route is not None else None,
             "volatile_roots": len(fidelity.volatile_roots),
             "volatile_cone": fidelity.volatile_cone,
+            #: Which engines were asked and what each said, in order —
+            #: so « IronCalc » on a mark can be checked against the
+            #: attempt that earned it.
+            "attempts": list(getattr(fidelity, "attempts", []) or []),
         }
         artifact.counts = {**artifact.counts, "recalc": mark}
         return mark
@@ -1038,9 +1042,12 @@ class TieOutService:
     @staticmethod
     def _gate_stored_model(payload: bytes, suffix: str) -> tuple[Any, str | None]:
         """Prescan, recalculate and gate one file's bytes. Blocking; threaded."""
+        from dataclasses import asdict
+
         from .recalc import gate_file, prescan
         from .recalc.denylist import route_for
         from .recalc.gate import read_calc_settings
+        from .recalc.native import native_recalc
         from .recalc.uno_calc import UnoCalculator
         from .workbook import read_workbook
 
@@ -1057,6 +1064,15 @@ class TieOutService:
                 #: mark carries the constructs and the route in words.
                 return gate_file(cells, {}, refusals=hits, route=route), None
             settings = read_calc_settings(path)
+            #: The fast native engines first, each behind the gate; the
+            #: first one whose numbers match what Excel saved is
+            #: believed for this file. Otherwise LibreOffice, as before.
+            #: Every attempt is kept so the mark names who was asked.
+            native = native_recalc(path, cells, settings=settings)
+            attempts = [asdict(one) for one in native.attempts]
+            if native.fidelity is not None and native.engine is not None:
+                native.fidelity.attempts = attempts
+                return native.fidelity, native.engine
             calculator = UnoCalculator()
             calculator.start()
             try:
@@ -1064,6 +1080,7 @@ class TieOutService:
             finally:
                 calculator.stop()
             fidelity = gate_file(cells, result.values, settings=settings)
+            fidelity.attempts = attempts
             return fidelity, result.engine
         finally:
             if path:

@@ -34,6 +34,7 @@ either **passes** or **fails** with the differing cells named.
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
+from typing import Any
 
 from .denylist import DenylistHit, Route
 
@@ -206,6 +207,10 @@ class FileFidelity:
     #: Size of the excluded cone: the roots plus every formula cell
     #: downstream of one. Reported, never counted as compared.
     volatile_cone: int = 0
+    #: Every engine asked about this file, in order, with its verdict —
+    #: the native engines run first behind this same gate, and the
+    #: mark must be able to say who was asked and who was believed.
+    attempts: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def verdict(self) -> str:

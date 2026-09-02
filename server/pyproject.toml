@@ -72,6 +72,8 @@ dependencies = [
   # the day the dependency that carried it changes its mind.
   "lxml>=5.0",
   "pdfplumber>=0.11",
+  "formualizer>=0.8.4",
+  "ironcalc>=0.8.3",
 ]
 
 [dependency-groups]

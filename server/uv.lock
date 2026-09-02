@@ -863,6 +863,21 @@ wheels = [
 ]
 
 [[package]]
+name = "formualizer"
+version = "0.8.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/5a/9b13be108101a3664e82dac0ddd8f2ea69990460c26582405244795e897b/formualizer-0.8.4.tar.gz", hash = "sha256:0fe3aa59afbf93a3dfec9a5034ee8210801ba8a3045a96b6acf3795ca5f7065a", size = 2040552, upload-time = "2026-08-16T00:41:57.368Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8f/5f/e165d64ea67c84995ed1a33b0557fd8d88e167ba66bc666a07f63219e1d5/formualizer-0.8.4-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:5792bc67507a95f3146ece83a0f223bde31789dc94ee6ac595896183a702167e", size = 7478460, upload-time = "2026-08-16T00:41:42.34Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/1d/3b478706bbc74fb495f138dffdd7957802a4c88b1bee0141be09a5dbc0d3/formualizer-0.8.4-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:7e10f2afddc91818fa56def93c63a86a0baa3ed6b7ab74f8b974f57381a010e4", size = 7164430, upload-time = "2026-08-16T00:41:44.828Z" },
+    { url = "https://files.pythonhosted.org/packages/09/4a/1979d3cb29888becdd24b74ab33f29564b9f01fdcaafea2a15a7e4d2a107/formualizer-0.8.4-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4c75391086b6f9df7d38d05c7ebe50a87440cb53cb06f555fab6925b9c963483", size = 7516863, upload-time = "2026-08-16T00:41:46.777Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/56/fa50e8ec2864e74d36a805abbd7d92aeeb00482634c4ddd54e2288853752/formualizer-0.8.4-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5f1046e142308b72b7fa12839c2c02dd3699995ee0f81d9b0f946047be689b13", size = 7850105, upload-time = "2026-08-16T00:41:48.97Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/06/f6f93b5abd767b49f00fc7cd4d6ee7da1e6753548b8494258919a4db10fa/formualizer-0.8.4-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:04a4b86df34c69567c63d2167f0d9b9d6e58f13a367a4efd1697b898e94374d5", size = 7717215, upload-time = "2026-08-16T00:41:51.13Z" },
+    { url = "https://files.pythonhosted.org/packages/83/d5/557dc9683b36db24b76b126a3fba30008c3de4ddff3d2487d9e4cbf05120/formualizer-0.8.4-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:632a920c949d5f45e19477c61a8dba2ef4ef2b677bb82be892ad4a3c06996c0b", size = 8086604, upload-time = "2026-08-16T00:41:53.35Z" },
+    { url = "https://files.pythonhosted.org/packages/59/fe/1e71cdc9e747a66793d4fe9ae93f8898be6b2459d842e5dfb72335044bb4/formualizer-0.8.4-cp310-abi3-win_amd64.whl", hash = "sha256:5c7e12719a922f67fde50f9ffec2fbcb1092ec866e5a370eb91505d104aa4be5", size = 7440380, upload-time = "2026-08-16T00:41:55.69Z" },
+]
+
+[[package]]
 name = "fpdf2"
 version = "2.8.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1234,6 +1249,29 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fc/b0/adc6bad339e73367b2e22a52d88f81a4fa4cbc4a74cd9330c10dc9a58464/ipinfo_db-0.0.4.tar.gz", hash = "sha256:1465b94245eecf70e1dfb61b799460d1752475737cc2ac3bdfb4be19e1bd295a", size = 8024, upload-time = "2023-10-10T07:47:23.878Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/b9/d1800d4b2bc4a58c6e007cc9429eda40799faa623c329e47b64bfce4c405/ipinfo_db-0.0.4-py3-none-any.whl", hash = "sha256:4a6f219d274372b30ea7ae339f3494bbefd1cce41e20523f0e9ba1710629ee74", size = 7797, upload-time = "2023-10-10T07:47:22.947Z" },
+]
+
+[[package]]
+name = "ironcalc"
+version = "0.8.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/ff/562e97f9a717c8e280aa60e9b00b5aad0f6d650baab09f16f3010f9d78c1/ironcalc-0.8.3.tar.gz", hash = "sha256:03216b56acdd7baa8b5dda6ae535bac4707b593b75227bfd7ed4dc2b3d047714", size = 3005044, upload-time = "2026-07-31T18:50:46.765Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/07/534694356da018bc7627a12f220444e7a2ec4dda37034d2f1a45e6ebcd0b/ironcalc-0.8.3-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:c7154a195af533149ee0b5ef332cc10bc596e11332e242d47ed849cc2c44385d", size = 3415500, upload-time = "2026-07-31T18:50:45.281Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/2c/a1497e7076dffdb6a5a2e75b056e025bb86ea8edd44b05bc9e7e9742341d/ironcalc-0.8.3-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:3527b016f477512597e1a8e1c31a5532f03402cacafc94156267ea1fd2dda7c2", size = 3210055, upload-time = "2026-07-31T18:50:37.612Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/24/32e027532f56892ab25ca3b9ca0c1fcf12f1f6f874426bed0a9a00f8407d/ironcalc-0.8.3-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c7fcce3f6ede4087a55a4bb766e029e9c2014ef454b445caba3a52964fead0ef", size = 3492815, upload-time = "2026-07-31T18:49:28.134Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/da/9a4e487f6348fc86422c11f39783b03c29730fe2d0c9e1e573469f7a6794/ironcalc-0.8.3-cp314-cp314-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:e089665420c4558fdb8077dda27353a39f19402283d4320fbe4f4f864633cb37", size = 3430476, upload-time = "2026-07-31T18:49:37.935Z" },
+    { url = "https://files.pythonhosted.org/packages/de/50/f728e38f878ddf12ca9bf5890ffa92f2f8d69b5dc1ade3a4595c62060335/ironcalc-0.8.3-cp314-cp314-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:27c61093195ff4b2483d134e5af0b9e6bab5326eec1cf5a869cfe954963f0821", size = 3801704, upload-time = "2026-07-31T18:49:48.391Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/46/81f7d10257937920efc360958c6a86fada1f1b4fbed86e99009f572cada4/ironcalc-0.8.3-cp314-cp314-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:45ec84d38d5656945294e1598274a8a2c6e8d1c1f1776857f029520a7288ef2d", size = 4059766, upload-time = "2026-07-31T18:49:59.262Z" },
+    { url = "https://files.pythonhosted.org/packages/69/82/bb830ba9af1a7f67aacc0a218e710276446baf2ca2bd284944214cafe0af/ironcalc-0.8.3-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ba2f6dd22c3d4d3ea7f299ddcaff5991f5403a4bfca69df54bb1959f6c07f5a8", size = 3643903, upload-time = "2026-07-31T18:50:19.34Z" },
+    { url = "https://files.pythonhosted.org/packages/58/f3/ca12227196c1e8538449aa1d1512de2ca98a2f411c4ec4df170ccc6e7a4e/ironcalc-0.8.3-cp314-cp314-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:aa22a09029a5665d42a931788ec3aa19841cb1b4f7bf65075e3c849bd0ec9f6c", size = 3651339, upload-time = "2026-07-31T18:50:09Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/98/71f3fca4161c287ee1cd2b04026e9dd6330e1664f0e76208e69c956eea0a/ironcalc-0.8.3-cp314-cp314-win_amd64.whl", hash = "sha256:a509496bb63f83a146974731b5b24eba86cb5f821090a0446a3951126f061283", size = 3289684, upload-time = "2026-07-31T18:50:29.206Z" },
+    { url = "https://files.pythonhosted.org/packages/35/5e/ac09bc23167c65269866b2b6102ec1a7dfc4000c9c313c9f32c60c9cd91a/ironcalc-0.8.3-cp314-cp314t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:12514929dd84b40dde751e2926582720a3161ac7dc63f8d26c16f5cb4961502e", size = 3488515, upload-time = "2026-07-31T18:49:29.455Z" },
+    { url = "https://files.pythonhosted.org/packages/66/5e/dfc330e52fb7d128d823660596c313abe29cf96fa41cbcaefcca31f4cf24/ironcalc-0.8.3-cp314-cp314t-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:cb18cc90ab61728a7897f6c8c6a9a9111a4e275cbe988d6463912c1d35c11648", size = 3423235, upload-time = "2026-07-31T18:49:39.375Z" },
+    { url = "https://files.pythonhosted.org/packages/76/21/f30aeb5e4cf4d423c1babf62d98b02adb12afbd04461da6d60820fb0a981/ironcalc-0.8.3-cp314-cp314t-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:62b93a94e7ef443c1769dcfe1e270afb5272a316865b5becba4dc5ff45f888c7", size = 3799698, upload-time = "2026-07-31T18:49:49.952Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/85/1d815a95f38fbb732995b33b7501d9f685ad13acf1ae4fd0b29b8c1ad11f/ironcalc-0.8.3-cp314-cp314t-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:125cc2344a26d88d3ae31fa4935e94cc98c16f3db58b5e46659c8e690bd58fb0", size = 4060348, upload-time = "2026-07-31T18:50:00.662Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/f9/866c71755e016d0befe042d39a3685666a283a5f1c1af0a57e12577a1be8/ironcalc-0.8.3-cp314-cp314t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d5cbfce4e799c6eb69fd0a168ac27368f520dcf6edb27e0a30322778ed48a7d3", size = 3641497, upload-time = "2026-07-31T18:50:20.705Z" },
+    { url = "https://files.pythonhosted.org/packages/40/78/b31a21d6decad4ec4595319d36d0d6a01c85c91ffd0a49504bd136346d90/ironcalc-0.8.3-cp314-cp314t-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:25fb0d64cbc7dafead6a01a741751becc948ce109239d9e6ff662cbb8f566f7d", size = 3641847, upload-time = "2026-07-31T18:50:10.386Z" },
 ]
 
 [[package]]
@@ -2074,12 +2112,14 @@ dependencies = [
     { name = "email-validator" },
     { name = "exponent-server-sdk" },
     { name = "fastapi" },
+    { name = "formualizer" },
     { name = "fpdf2" },
     { name = "githubkit" },
     { name = "greenlet" },
     { name = "httpx" },
     { name = "httpx-oauth" },
     { name = "ipinfo-db" },
+    { name = "ironcalc" },
     { name = "itsdangerous" },
     { name = "logfire", extra = ["fastapi", "httpx", "redis", "sqlalchemy"] },
     { name = "lxml" },
@@ -2167,12 +2207,14 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.1.0.post1" },
     { name = "exponent-server-sdk", specifier = ">=2.1.0" },
     { name = "fastapi", specifier = ">=0.120.2" },
+    { name = "formualizer", specifier = ">=0.8.4" },
     { name = "fpdf2", specifier = ">=2.8.3" },
     { name = "githubkit", specifier = "==0.16.0" },
     { name = "greenlet", specifier = ">=3.1.1" },
     { name = "httpx", specifier = ">=0.23.0" },
     { name = "httpx-oauth", specifier = ">=0.16.0" },
     { name = "ipinfo-db", specifier = ">=0.0.4" },
+    { name = "ironcalc", specifier = ">=0.8.3" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
     { name = "logfire", extras = ["fastapi", "httpx", "sqlalchemy", "redis"], specifier = ">=2.6.0" },
     { name = "lxml", specifier = ">=5.0" },
