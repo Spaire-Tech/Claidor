@@ -236,6 +236,11 @@ class FileFidelity:
     #: the native engines run first behind this same gate, and the
     #: mark must be able to say who was asked and who was believed.
     attempts: list[dict[str, Any]] = field(default_factory=list)
+    #: What newer Excel put in the file — tables, spilling cells, named
+    #: LAMBDAs, the modern functions — from the construct scan of its
+    #: bytes (`constructs.py`). Information the mark carries whatever
+    #: the verdict, so a screen can say what the file is made of.
+    constructs: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def verdict(self) -> str:

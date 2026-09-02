@@ -1035,6 +1035,11 @@ class TieOutService:
             #: so « IronCalc » on a mark can be checked against the
             #: attempt that earned it.
             "attempts": list(getattr(fidelity, "attempts", []) or []),
+            #: What newer Excel put in the file — tables, spilling
+            #: cells, named LAMBDAs, the modern functions — so the
+            #: screen can say what the file is made of, whatever the
+            #: verdict (modern-excel.md).
+            "constructs": list(getattr(fidelity, "constructs", []) or []),
         }
         artifact.counts = {**artifact.counts, "recalc": mark}
         return mark
@@ -1044,7 +1049,8 @@ class TieOutService:
         """Prescan, recalculate and gate one file's bytes. Blocking; threaded."""
         from dataclasses import asdict
 
-        from .recalc import gate_file, prescan
+        from .recalc import Route, gate_file, prescan
+        from .recalc.constructs import scan_constructs
         from .recalc.denylist import route_for
         from .recalc.gate import read_calc_settings
         from .recalc.native import native_recalc
@@ -1057,22 +1063,48 @@ class TieOutService:
                 f.write(payload)
                 path = f.name
             cells = read_workbook(path).cells
-            hits = prescan(cells)
+            #: What newer Excel put in the file, from its bytes — the
+            #: scan runs before any engine is chosen (modern-excel.md):
+            #: named LAMBDAs feed the prescan, tables steer the engines,
+            #: and the whole list rides on the mark whatever the verdict.
+            scan = scan_constructs(path)
+            constructs = [asdict(one) for one in scan.constructs]
+            hits = prescan(cells, scan.named_lambdas)
             route = route_for(hits)
-            if route is not None:
-                #: Refused before comparison: no engine runs, and the
-                #: mark carries the constructs and the route in words.
-                return gate_file(cells, {}, refusals=hits, route=route), None
+            if route is Route.REFUSE:
+                #: Refused before comparison: a feed, a macro, a link
+                #: outside the file — nothing we run could recompute it.
+                #: No engine runs, and the mark carries the constructs
+                #: and the route in words.
+                fidelity = gate_file(cells, {}, refusals=hits, route=route)
+                fidelity.constructs = constructs
+                return fidelity, None
             settings = read_calc_settings(path)
             #: The fast native engines first, each behind the gate; the
             #: first one whose numbers match what Excel saved is
-            #: believed for this file. Otherwise LibreOffice, as before.
-            #: Every attempt is kept so the mark names who was asked.
-            native = native_recalc(path, cells, settings=settings)
+            #: believed for this file. Every attempt is kept so the mark
+            #: names who was asked.
+            #:
+            #: An arbiter-class hit (a spill reference, a LAMBDA, the
+            #: `@` operator) no longer refuses the file before the native
+            #: engines are asked — measured 2 September 2026, IronCalc
+            #: computes a spill and its `#` reference that LibreOffice
+            #: and Formualizer cannot, and the gate is the truth about
+            #: whether it did. Only when no native engine passes does
+            #: the file go to the arbiter, with every attempt on the
+            #: mark; LibreOffice is not asked, since the hit names what
+            #: it measurably cannot compute.
+            native = native_recalc(path, cells, settings=settings, constructs=scan)
             attempts = [asdict(one) for one in native.attempts]
             if native.fidelity is not None and native.engine is not None:
                 native.fidelity.attempts = attempts
+                native.fidelity.constructs = constructs
                 return native.fidelity, native.engine
+            if route is Route.ARBITER:
+                fidelity = gate_file(cells, {}, refusals=hits, route=route)
+                fidelity.attempts = attempts
+                fidelity.constructs = constructs
+                return fidelity, None
             calculator = UnoCalculator()
             calculator.start()
             try:
@@ -1081,6 +1113,7 @@ class TieOutService:
                 calculator.stop()
             fidelity = gate_file(cells, result.values, settings=settings)
             fidelity.attempts = attempts
+            fidelity.constructs = constructs
             return fidelity, result.engine
         finally:
             if path:

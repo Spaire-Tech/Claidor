@@ -38,6 +38,7 @@ from typing import Any
 
 from openpyxl.utils import column_index_from_string
 
+from .constructs import ConstructScan
 from .gate import CalcSettings, FileFidelity, gate_file
 from .pool import CalculatorError, RecalcResult
 
@@ -122,17 +123,23 @@ class IronCalcCalculator:
                 for one in model.get_worksheets_properties()
             ]
         except Exception as problem:
-            raise CalculatorError(f"IronCalc could not open the file: {problem}") from problem
+            raise CalculatorError(
+                f"IronCalc could not open the file: {problem}"
+            ) from problem
         values: dict[str, float | str | None] = {}
         for ref in self.refs:
             sheet, row, column = _split(ref)
             if sheet not in names:
                 continue
             try:
-                values[ref] = _plain(model.get_cell_value(names.index(sheet), row, column))
+                values[ref] = _plain(
+                    model.get_cell_value(names.index(sheet), row, column)
+                )
             except Exception:
                 continue
-        return RecalcResult(values=values, engine=f"{self.engine} {ironcalc.__version__}")
+        return RecalcResult(
+            values=values, engine=f"{self.engine} {ironcalc.__version__}"
+        )
 
 
 class FormualizerCalculator:
@@ -164,7 +171,9 @@ class FormualizerCalculator:
             book.evaluate_all()
             names = set(book.sheet_names)
         except Exception as problem:
-            raise CalculatorError(f"Formualizer could not calculate the file: {problem}") from problem
+            raise CalculatorError(
+                f"Formualizer could not calculate the file: {problem}"
+            ) from problem
         values: dict[str, float | str | None] = {}
         for ref in self.refs:
             sheet, row, column = _split(ref)
@@ -199,7 +208,9 @@ class NativeOutcome:
 
 
 def _run(kind: str, path: str, refs: list[str], out: Any) -> None:
-    calculator = (IronCalcCalculator if kind == "IronCalc" else FormualizerCalculator)(refs)
+    calculator = (IronCalcCalculator if kind == "IronCalc" else FormualizerCalculator)(
+        refs
+    )
     try:
         result = calculator.recalculate(path)
         out.put((dict(result.values), result.engine, None))
@@ -207,7 +218,9 @@ def _run(kind: str, path: str, refs: list[str], out: Any) -> None:
         out.put((None, kind, f"{type(problem).__name__}: {str(problem)[:300]}"))
 
 
-def _isolated(kind: str, path: str, refs: list[str]) -> tuple[dict[str, Any] | None, str, str | None]:
+def _isolated(
+    kind: str, path: str, refs: list[str]
+) -> tuple[dict[str, Any] | None, str, str | None]:
     """One engine in its own process, killed at `NATIVE_TIMEOUT`."""
     context = mp.get_context("fork")
     queue: Any = context.Queue()
@@ -230,6 +243,7 @@ def native_recalc(
     settings: CalcSettings | None = None,
     engines: tuple[str, ...] = ("IronCalc", "Formualizer"),
     isolate: bool = True,
+    constructs: ConstructScan | None = None,
 ) -> NativeOutcome:
     """Try each native engine in order; keep the first the gate passes.
 
@@ -237,8 +251,21 @@ def native_recalc(
     `.value`, `.precedents`). Every attempt is recorded, pass or fail,
     so the mark can say which engines were tried and why the chosen
     one was chosen — never « an engine said so ».
+
+    `constructs` is the scan of the file's bytes (modern-excel.md):
+    Formualizer is not asked about a file with tables, because it
+    refuses the whole workbook on one (measured 2 September 2026), and
+    the attempt says so in words instead of recording a failure that
+    reads like the file's fault.
     """
     outcome = NativeOutcome()
+    skipped: dict[str, str] = {}
+    if constructs is not None and constructs.has_tables:
+        tables = constructs.count("table")
+        skipped["Formualizer"] = (
+            f"skipped: the file has {tables} table{'' if tables == 1 else 's'} "
+            "and Formualizer refuses a workbook that carries one"
+        )
     try:
         size = os.path.getsize(path)
     except OSError:
@@ -252,21 +279,34 @@ def native_recalc(
             )
         )
         return outcome
-    refs = [ref for ref, cell in cells.items() if getattr(cell, "formula", None) is not None]
+    refs = [
+        ref for ref, cell in cells.items() if getattr(cell, "formula", None) is not None
+    ]
     for kind in engines:
+        if kind in skipped:
+            outcome.attempts.append(
+                Attempt(engine=kind, verdict="skipped", why=skipped[kind])
+            )
+            continue
         if isolate:
             values, engine, failure = _isolated(kind, path, refs)
         else:
             try:
-                calculator = (IronCalcCalculator if kind == "IronCalc" else FormualizerCalculator)(
-                    refs
-                )
+                calculator = (
+                    IronCalcCalculator if kind == "IronCalc" else FormualizerCalculator
+                )(refs)
                 result = calculator.recalculate(path)
                 values, engine, failure = dict(result.values), result.engine, None
             except Exception as problem:
-                values, engine, failure = None, kind, f"{type(problem).__name__}: {str(problem)[:300]}"
+                values, engine, failure = (
+                    None,
+                    kind,
+                    f"{type(problem).__name__}: {str(problem)[:300]}",
+                )
         if values is None:
-            outcome.attempts.append(Attempt(engine=engine, verdict="failed", why=failure or ""))
+            outcome.attempts.append(
+                Attempt(engine=engine, verdict="failed", why=failure or "")
+            )
             continue
         fidelity = gate_file(cells, values, settings=settings)
         outcome.attempts.append(

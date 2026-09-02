@@ -4831,3 +4831,25 @@ moves — the registered prediction holds. Full record in
    keys on the sentence. The cross-sheet error fold split four sheets
    into four lines; the golden-master diff caught it. Fold keys are
    the claim, never the address.
+
+## 2 September — modern Excel: the scan, the routing, and a measurement that measured the builder
+
+Round record in `modern-excel.md`. Three things for future rounds:
+
+1. **A test file proves only what its writer wrote.** openpyxl stores
+   a dynamic-array formula as a plain formula with no array metadata,
+   so « IronCalc returns an error on a spill reference » measured
+   openpyxl, not Excel. Written by IronCalc — the same parts Excel
+   writes — IronCalc computes the spill and its reference. Before
+   pinning an engine's behaviour on a construct, check the bytes the
+   fixture actually carries against the bytes a real file carries.
+2. **Current Excel marks every array-capable formula as a dynamic
+   array.** One RIIO-3 model has 125,060 such cells; nine of the
+   forty-four held files (the founder's among them) have a real
+   multi-cell spill. « Regulators publish classic workbooks » was a
+   guess and was wrong.
+3. **The reader carries a sheet's leftmost filled column as labels,
+   not cells.** A formula there — the RIIO-3 finals' FILTER/SORT
+   array in column E of the output sheet — never reaches the
+   prescan. The byte-level scan sees it; whether the prescan should
+   is a reader question for its own round.
