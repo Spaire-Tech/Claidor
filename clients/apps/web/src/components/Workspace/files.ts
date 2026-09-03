@@ -109,6 +109,9 @@ const CATEGORY_OF: Record<string, string> = {
   //: the same defect `external-link` names, one level up in the file.
   'gapped-test': 'Probable formula defects',
   'typed-over-beat': 'Probable formula defects',
+  //: A row reading a sibling row's switch while it owns one
+  //: (wrong-switch.md): a wrong reference with a plausible number.
+  'anchored-elsewhere': 'Probable formula defects',
   'balance-sheet': 'Structural exceptions',
   'cash-continuity': 'Structural exceptions',
   'debt-terminal': 'Structural exceptions',
