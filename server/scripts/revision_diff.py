@@ -2,9 +2,12 @@
 
 The revision-defect study's engine (docs/pierce/revision-defect-protocol.md):
 same audit, both sides, findings matched on rule + sheet + cell name —
-never the cell address, because rows move between versions. Findings
-whose name is empty cannot be matched with confidence and fall to
-UNMATCHED rather than being guessed at, on the matcher's own discipline.
+never the cell address, because rows move between versions. A finding
+folded down a column carries its row label in `flow` and no `name`;
+the label is the same thing the name is built from, so it stands in
+(truth-set.md, the matcher gap found on South West's base revenue).
+Findings with neither fall to UNMATCHED rather than being guessed at,
+on the matcher's own discipline.
 
 Usage:
     uv run python -m scripts.revision_diff DRAFT.xlsx FINAL.xlsx [label]
@@ -22,12 +25,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from scripts.regulator_eval import _read
 
 
+def name_of(finding) -> str:
+    """The finding's cell name, or the row label a column fold kept in
+    `flow`; empty when it carries neither."""
+    return (finding.name or "").strip() or (getattr(finding, "flow", "") or "").strip()
+
+
 def keyed(defects: list) -> tuple[Counter, int]:
     """Multiset of matchable keys, and the count that could not be keyed."""
     keys: Counter = Counter()
     unmatched = 0
     for finding in defects:
-        name = (finding.name or "").strip()
+        name = name_of(finding)
         if not name:
             unmatched += 1
             continue
@@ -68,9 +77,7 @@ def diff(draft_path: str, final_path: str, label: str = "") -> dict:
                 "refs": [
                     f.ref
                     for f in final.defects
-                    if f.rule == rule
-                    and f.sheet == sheet
-                    and (f.name or "").strip() == name
+                    if f.rule == rule and f.sheet == sheet and name_of(f) == name
                 ][:3],
             }
             for (rule, sheet, name) in list((final_keys - draft_keys).keys())[:40]

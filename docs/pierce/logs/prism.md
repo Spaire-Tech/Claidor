@@ -4911,3 +4911,30 @@ Record in `label-patterns.md`. Three lessons:
    nine of forty came back « right family, specifics lost ». Good
    enough to count conventions; a check that judges a formula will
    need the tree.
+
+## 3 September — the truth set: what the registry taught
+
+Record in `truth-set.md`. Three lessons:
+
+1. **A revision is not only a regression.** The PR24 study's frame —
+   what broke between draft and final — fit PR24 because Ofwat
+   edited cells inside a fixed template. Ofgem's finals *added*
+   blocks, and the real defects (tax thresholds typed into
+   formulas, a placeholder row, a 6% with no source) live inside
+   them. Two of twelve readings were regressions; six were defects
+   in new structure. The registry now records the defect and the
+   revision as two fields, and the prediction that assumed one
+   frame was wrong.
+2. **An independent label does not come from the engine, however
+   carefully a person reads what it flagged.** After a round built
+   to count them, the registry holds one independent cell-level
+   defect — a wrong switch anchor the hand saw beside the `/5` the
+   engine pointed at — and the engine misses it. The denominator
+   that would make recall a number is a cell-level diff graded
+   without the rules, or an outside corpus; nothing else.
+3. **A fold that drops its name drops the finding from every later
+   step.** South West's and Southern's base-revenue overwrites were
+   found and then lost, because the column fold keeps the row label
+   in `flow` and the matcher keys on `name`. The same empty name
+   would silence the Watch. Fixed in the matcher today; the audit's
+   side of it is a named reader question.
