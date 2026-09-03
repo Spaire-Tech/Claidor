@@ -1,0 +1,3 @@
+files/*
+!files/SHA256SUMS.txt
+logs/
