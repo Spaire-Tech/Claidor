@@ -199,3 +199,40 @@ def test_refusal_short_circuits_before_any_comparison() -> None:
     assert report.verdict == "refused"
     assert report.compared == 0
     assert report.route is Route.REFUSE
+
+
+def test_the_speck_rule_forgives_rounding_dust_in_proportion_to_the_file() -> None:
+    """The founder's decision, 2 September 2026: a balance check that
+    Excel stored as 3e-7 and an engine computed as 0, in a model
+    measured in billions, is the same number. A real imbalance of a
+    penny is not."""
+    from types import SimpleNamespace
+
+    from polar.tieout.recalc.gate import SPECK_RELATIVE
+
+    settings = CalcSettings()
+    #: Without a scale the old floor stands.
+    assert abs(0.0 - 3e-7) > tolerance_for(0.0, 3e-7, in_cycle=False, settings=settings)
+    #: With the file's magnitude the speck is forgiven and a penny is not.
+    big = 5e9
+    assert abs(3e-7 - 0.0) <= tolerance_for(
+        3e-7, 0.0, in_cycle=False, settings=settings, scale=big
+    )
+    assert abs(0.01 - 0.0) > tolerance_for(
+        0.01, 0.0, in_cycle=False, settings=settings, scale=big
+    )
+    assert SPECK_RELATIVE * big < 0.01
+
+    cells = {
+        "Model!B1": SimpleNamespace(formula=None, value=big, precedents=()),
+        "Model!B2": SimpleNamespace(formula=None, value=-big, precedents=()),
+        "Model!B3": SimpleNamespace(
+            formula="=B1+B2",
+            value=2.980232238769531e-07,
+            precedents=("Model!B1", "Model!B2"),
+        ),
+    }
+    report = gate_file(cells, {"Model!B3": 0.0})
+    assert report.verdict == "pass", report.mismatches
+    report = gate_file(cells, {"Model!B3": 0.01})
+    assert report.verdict == "fail"

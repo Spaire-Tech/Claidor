@@ -175,6 +175,14 @@ def read_sheet(
             written: Any = value
             if formula_element is not None:
                 written = _formula(formula_element, coordinate, shared_formulae)
+            elif isinstance(written, str) and written.startswith("="):
+                #: Typed text that looks like a formula — a « Key » sheet
+                #: listing where each name points, as words — is stored
+                #: the way Excel's own formula bar shows it, behind a
+                #: quote, so nothing downstream reads it as arithmetic
+                #: (reader-label-formulas.md: 61 such cells on the FHWA
+                #: tool were counted as formulas).
+                written = "'" + written
 
             if written is not None:
                 out.written[(row, column)] = written

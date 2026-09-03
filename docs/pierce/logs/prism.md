@@ -4783,3 +4783,166 @@ container's known pydantic breakage that has forced `--noconftest`
 on this lane since the first sweep. My own files: **ruff clean, 34
 files already formatted, mypy ok, 152 tests green.** I am not
 reporting verify green, because it is not.
+
+### Tier 1 — approved and implemented (2 September 2026)
+
+The `z3-solver` dependency proposed above was approved by the
+founder on 2 September (« implement it all », after the research
+round that proved the three use cases on hand-built expressions).
+Implemented in `polar/tieout/watch/prove.py`, exactly the fragment
+named above, over exact reals, division under named side
+conditions, ranges concrete and identical, the same cell the same
+variable on both sides, EQ / NEQ (with the assignment) / UNKNOWN /
+TIMEOUT (10 s) / REFUSED by construct. Wired in two places: the
+delta report's `methodology_change` items now carry tier 1's clause
+(« proved the same function », « differs at … », « not provable
+(construct) »), and the ladder accepts a prover and stops proved or
+refuted cells at its own rung with counts reported.
+
+The harness of this registration runs as `tests/tieout/test_watch_prove.py`:
+twelve equivalent pairs proved, six inequivalent pairs refuted with
+separating assignments, the hard gate (zero false proofs) held.
+
+**A constraint added from the research round, registered for any
+future use:** never ask the solver to optimise a ratio. Over
+nonlinear reals its optimiser returned a wrong minimum for a DSCR
+(1.277 against a true 0.851). A bound is found by multiplying the
+inequality through and binary-searching the threshold with plain
+satisfiability checks, each of which is a real proof.
+
+## 2 September — the regularity check closes; a switch-off that was not off
+
+The weight term is adopted; the proposed « island in a block » kind
+is not (it never fires: the row detector already accuses every
+enclosed island). On vs off across the 27 gate models: 17 findings
+gain weight, 15 change rank inside their file (3.3%), nothing else
+moves — the registered prediction holds. Full record in
+`regularity-check.md`.
+
+**For future use — two things this round taught:**
+
+1. `import polar.tieout.audit as X` binds the *function* `audit`
+   that the package re-exports under the same name, not the module.
+   A patch on it lands on a function attribute nobody reads, and the
+   « off » run is the « on » run. Take the module from `sys.modules`,
+   and never believe two arms that agree to the byte without a probe
+   that says they had to differ.
+2. A sentence that names the sheet puts *where* into any fold that
+   keys on the sentence. The cross-sheet error fold split four sheets
+   into four lines; the golden-master diff caught it. Fold keys are
+   the claim, never the address.
+
+## 2 September — modern Excel: the scan, the routing, and a measurement that measured the builder
+
+Round record in `modern-excel.md`. Three things for future rounds:
+
+1. **A test file proves only what its writer wrote.** openpyxl stores
+   a dynamic-array formula as a plain formula with no array metadata,
+   so « IronCalc returns an error on a spill reference » measured
+   openpyxl, not Excel. Written by IronCalc — the same parts Excel
+   writes — IronCalc computes the spill and its reference. Before
+   pinning an engine's behaviour on a construct, check the bytes the
+   fixture actually carries against the bytes a real file carries.
+2. **Current Excel marks every array-capable formula as a dynamic
+   array.** One RIIO-3 model has 125,060 such cells; nine of the
+   forty-four held files (the founder's among them) have a real
+   multi-cell spill. « Regulators publish classic workbooks » was a
+   guess and was wrong.
+3. **The reader carries a sheet's leftmost filled column as labels,
+   not cells.** A formula there — the RIIO-3 finals' FILTER/SORT
+   array in column E of the output sheet — never reaches the
+   prescan. The byte-level scan sees it; whether the prescan should
+   is a reader question for its own round.
+
+## 2 September — the accountants' dictionary: what a count taught
+
+Round record in `taxonomy-coverage.md`. For future rounds:
+
+1. **Normalise both sides with the same rule, and make the rule
+   about codes, not shapes.** Stripping every trailing parenthetical
+   turned the taxonomy's « Operating Income (Loss) » into « operating
+   income » and collided it with the British line of that name. A
+   parenthetical is a qualifier when it is a code — `(WR)` — not when
+   it is a word.
+2. **A majority-of-filers answer is a dialect answer.** 897 of 897
+   American lines say « operating income » is profit; in Ofwat's
+   model it is revenue. The count is true and the meaning is wrong.
+   Provenance is part of a vocabulary.
+3. **Schedule words are not lines.** « Opening balance » is equity
+   to the SEC and anything at all to a modeller. A stoplist of
+   place-words removed every C in the close-model sample.
+4. **Keep the sample by row.** A script that re-draws its sample on
+   each run cannot re-judge the same rows; save the sample once.
+
+## 2 September — the British source
+
+Companies House's daily bulk is the UK's SEC pairs: three days,
+61,486 accounts, 1.7 million tagged numbers, 1,846 labels in two
+minutes of parsing (`uk-filer-labels.md`). Two things:
+
+1. **A filer source names statutory lines, never a regulator's.**
+   « Turnover », « Operating profit », « Creditors: amounts falling
+   due within one year » arrive with tens of thousands of witnesses;
+   « Opex », « Capex », « Retained cash balance » never will. Know
+   which vocabulary a corpus speaks before predicting coverage — the
+   30% prediction assumed Ofwat writes like an accountant.
+2. **Small companies tag the whole equity table as one concept.**
+   « Retained earnings », « Called up share capital », « Profit and
+   loss account » all map to `Equity` with a dimension the pair
+   cannot carry. A B by construction; a member-aware pair is the fix
+   if it ever matters.
+
+## 3 September — volume times price: what the mine taught
+
+Record in `label-patterns.md`. Three lessons:
+
+1. **Independence is about authors, not folders.** Two folders held
+   the same Ofwat template as drafts and finals; « two folders » then
+   meant one author twice, and the confident count doubled for it.
+   The unit of independence must be named by *who wrote it*, and a
+   file's family should be read off its content, not its path.
+2. **A values-pasted corpus is silent.** Eighteen close models gave
+   the mine almost nothing: no formulas, no patterns. The engine has
+   been measuring project finance on the one corpus that cannot
+   teach it how project finance is computed.
+3. **The bag is honest about what it loses.** `INDEX MATCH` over a
+   table and a formula with an unlabelled operand read as B-grade
+   patterns; the bag says what a row is made of and not how, and
+   nine of forty came back « right family, specifics lost ». Good
+   enough to count conventions; a check that judges a formula will
+   need the tree.
+
+## 3 September — the truth set: what the registry taught
+
+Record in `truth-set.md`. Three lessons:
+
+1. **A revision is not only a regression.** The PR24 study's frame —
+   what broke between draft and final — fit PR24 because Ofwat
+   edited cells inside a fixed template. Ofgem's finals *added*
+   blocks, and the real defects (tax thresholds typed into
+   formulas, a placeholder row, a 6% with no source) live inside
+   them. Two of twelve readings were regressions; six were defects
+   in new structure. The registry now records the defect and the
+   revision as two fields, and the prediction that assumed one
+   frame was wrong.
+2. **An independent label does not come from the engine, however
+   carefully a person reads what it flagged.** After a round built
+   to count them, the registry holds one independent cell-level
+   defect — a wrong switch anchor the hand saw beside the `/5` the
+   engine pointed at — and the engine misses it. The denominator
+   that would make recall a number is a cell-level diff graded
+   without the rules, or an outside corpus; nothing else.
+3a. *(the label-column round, same day — `reader-label-formulas.md`)*
+   **Count against the file, not against the reader.** The gap
+   between the raw formula elements in a sheet's XML and what the
+   reader kept was one in thirty, all label formulas; closing it
+   exactly exposed sixty-one typed strings that begin with `=` and
+   had passed as formulas for months, one of them a finding on two
+   corpus files. A count that only compares the reader with itself
+   cannot see either.
+3. **A fold that drops its name drops the finding from every later
+   step.** South West's and Southern's base-revenue overwrites were
+   found and then lost, because the column fold keeps the row label
+   in `flow` and the matcher keys on `name`. The same empty name
+   would silence the Watch. Fixed in the matcher today; the audit's
+   side of it is a named reader question.

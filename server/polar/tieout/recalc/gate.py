@@ -34,6 +34,7 @@ either **passes** or **fails** with the differing cells named.
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
+from typing import Any
 
 from .denylist import DenylistHit, Route
 
@@ -44,6 +45,18 @@ PLAIN_RELATIVE = 1e-9
 #: where a relative tolerance admits nothing at all: a stored 0.0 and a
 #: recalculated 1e-17 are the same number in any model on earth.
 ABSOLUTE_FLOOR = 1e-12
+
+#: The speck rule, the founder's decision of 2 September 2026. A
+#: balance check that sums billions comes out as 3e-7 in Excel and 0
+#: in another engine: the same number, differing only in the order
+#: the terms were added. The floor for near-zero cells therefore
+#: scales with the largest number in the file — this share of it.
+#: At 1e-13, a model in the billions forgives specks under about a
+#: thousandth, and a genuine imbalance of a penny still fails.
+#: Registered before it was measured: on the founder's model this
+#: takes the gate from « trust nobody » to believing IronCalc, and
+#: changes nothing on a file whose engines truly disagree.
+SPECK_RELATIVE = 1e-13
 
 #: Excel's default iteration delta when a file turns iteration on
 #: without stating one (ECMA-376 `calcPr@iterateDelta`).
@@ -153,10 +166,23 @@ def iterative_cells(precedents: Mapping[str, Iterable[str]]) -> frozenset[str]:
 
 
 def tolerance_for(
-    stored: float, computed: float, *, in_cycle: bool, settings: CalcSettings
+    stored: float,
+    computed: float,
+    *,
+    in_cycle: bool,
+    settings: CalcSettings,
+    scale: float = 0.0,
 ) -> float:
-    """The permitted absolute difference for one cell."""
-    plain = max(ABSOLUTE_FLOOR, PLAIN_RELATIVE * max(abs(stored), abs(computed)))
+    """The permitted absolute difference for one cell.
+
+    `scale` is the largest absolute stored number in the file; the
+    speck rule lifts the floor for near-zero cells in proportion.
+    """
+    plain = max(
+        ABSOLUTE_FLOOR,
+        SPECK_RELATIVE * abs(scale),
+        PLAIN_RELATIVE * max(abs(stored), abs(computed)),
+    )
     if in_cycle and settings.iterative:
         return max(plain, settings.iterate_delta)
     return plain
@@ -206,6 +232,15 @@ class FileFidelity:
     #: Size of the excluded cone: the roots plus every formula cell
     #: downstream of one. Reported, never counted as compared.
     volatile_cone: int = 0
+    #: Every engine asked about this file, in order, with its verdict —
+    #: the native engines run first behind this same gate, and the
+    #: mark must be able to say who was asked and who was believed.
+    attempts: list[dict[str, Any]] = field(default_factory=list)
+    #: What newer Excel put in the file — tables, spilling cells, named
+    #: LAMBDAs, the modern functions — from the construct scan of its
+    #: bytes (`constructs.py`). Information the mark carries whatever
+    #: the verdict, so a screen can say what the file is made of.
+    constructs: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def verdict(self) -> str:
@@ -270,6 +305,13 @@ def gate_file(
             for ref, cell in formula_cells.items()
         }
     )
+    #: The file's magnitude, for the speck rule: the largest number
+    #: Excel stored anywhere in it.
+    scale = 0.0
+    for cell in cells.values():
+        number = _numeric(getattr(cell, "value", None))
+        if number is not None and abs(number) > scale:
+            scale = abs(number)
 
     for ref, cell in formula_cells.items():
         if ref in cone:
@@ -306,7 +348,11 @@ def gate_file(
                 )
             continue
         allowed = tolerance_for(
-            stored_n, result_n, in_cycle=ref in in_cycle, settings=settings
+            stored_n,
+            result_n,
+            in_cycle=ref in in_cycle,
+            settings=settings,
+            scale=scale,
         )
         if abs(stored_n - result_n) <= allowed:
             report.matched += 1

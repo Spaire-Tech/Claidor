@@ -985,6 +985,41 @@ def test_labelled_hardcodes_with_different_numbers_fold_across_sheets() -> None:
     assert "The same decision sits on" in hardcodes[0].detail
 
 
+def test_the_same_stray_error_on_several_sheets_is_one_finding() -> None:
+    """The RIIO-3 final BPFM carries one `#VALUE!` at A1 on four
+    sheets. That folded into one line until the sheet-level sentence
+    began with the sheet's own name, which put the *where* into the
+    fold's grouping key and split the line into four. The name is
+    where, not what: the fold keys on the claim without it."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    book.active.title = "Cover"
+    book.active["B2"] = "Model"
+    for name in ("F2b", "F4", "F5", "PCFMInterface"):
+        sheet = book.create_sheet(name)
+        sheet["A1"] = "#VALUE!"
+        for row in range(3, 8):
+            sheet.cell(row=row, column=2, value=row * 10)
+            sheet.cell(row=row, column=3, value=f"=B{row}*2")
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    errors = [f for f in result.findings if f.rule == "error-value"]
+    assert len(errors) == 1, [(f.ref, f.detail) for f in errors]
+    one = errors[0]
+    assert one.detail == (
+        "« F2b » carries #VALUE! past its data's edge. "
+        "The same error sits on 4 sheets: F2b, F4, F5, PCFMInterface."
+    )
+    assert one.figure_unit == "repeated on 4 sheets"
+    assert one.cells == "F2b!A1, F4!A1, F5!A1, PCFMInterface!A1"
+
+
 def test_the_same_check_row_repeated_down_a_sheet_is_one_finding() -> None:
     """The BPFM F1 sheet repeats its per-block check row every fifteen
     rows — same column, same length, block-anchored references that

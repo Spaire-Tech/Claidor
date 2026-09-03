@@ -187,7 +187,7 @@ SKIP** — and the SKIPs carry their reason.
 | EDGAR, Companies House + arelle, FRED / NY Fed / BoE / ECB | four free integrations | **Not built.** Piece 14 |
 | Williams 2020 (units) | the blueprint | `units/inference.py` — built, **never measured**. Piece 1 |
 | AutoMR (ICSME 2019) | plan amendment, approved 27 Aug | B5, clean-room. Built, unmeasured |
-| Tasi (ISSTA 2021) | second independent labelling of the same 70 files, **including an ExceLint column** | Ordered, **not run** — it largely settles what the blocked ExceLint run was for. Piece 16 |
+| Tasi (ISSTA 2021) | second independent labelling of the same 70 files, **including an ExceLint column** | **RUN 27 Aug and re-run 2 Sep** (`tasi-benchmark.md`): coverage 12.8% on Tasi's 3,702 cells, the seven tools tabulated on one scorer, the two label sets nest (99.4% of CUSTODES's cells inside Tasi's). This row said « not run » until 2 Sep and that was stale |
 | PaddleOCR, Univer, TableSense, WARDER, Auto-Formula | filed, low priority | Named with their slot, not started |
 | HyperFormula, pycel, xlcalculator, EPPlus, SpreadJS, PyMuPDF, marker/surya, unstructured.io, ForTaP/TUTA, GNN anomaly scoring | **SKIP** | Each with its reason on file — licence, dead, or « unexplainable suspicion is the opposite of defensible findings » |
 

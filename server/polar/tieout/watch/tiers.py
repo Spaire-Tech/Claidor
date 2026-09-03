@@ -38,6 +38,7 @@ not the driving of LibreOffice (`scripts/watch_tiers.py` does that).
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 from polar.tieout.workbook import Workbook
 
@@ -113,7 +114,12 @@ REFUSALS = frozenset(
 #: The rung a verdict was reached at.
 RUNG_TIER0 = "tier0"
 RUNG_RAW = "raw"
+#: Tier 1's rung: the solver proved the rewrite equivalent (PROVED)
+#: or refuted it with an assignment (CHANGED, `SOURCE_TIER1_REFUTED`).
+#: Only cells the fragment reaches ever stop here.
+RUNG_TIER1 = "tier1"
 RUNG_TIER2 = "tier2"
+SOURCE_TIER1_REFUTED = "tier1_refuted"
 
 #: What tier 2's oracle may answer about one cell.
 TIER2_SUPPORTED = "supported"
@@ -176,6 +182,12 @@ class Ladder:
     verdicts: dict[str, Verdict] = field(default_factory=dict)
     #: Cells that reached tier 1's rung — the declared hole's size.
     tier1_would_have_been_asked: int = 0
+    #: What tier 1 decided, when a prover was given: proved
+    #: equivalent, refuted with an assignment, and the rest handed
+    #: down (refused by the fragment, unknown, or timed out).
+    tier1_proved: int = 0
+    tier1_refuted: int = 0
+    tier1_passed_down: int = 0
     #: Cells the fingerprints proved and the raw grid overruled — the
     #: shape's literal blind spot, measured on every pair (G2b).
     tier0_overruled_by_raw: int = 0
@@ -258,6 +270,7 @@ def build_ladder(
     proof: Proof | None = None,
     oracle: Tier2Oracle | None = None,
     ineligible: Mapping[str, str] | None = None,
+    prover: Callable[[str | None, str | None, str], Any] | None = None,
 ) -> Ladder:
     """Assign every new-version cell exactly one verdict.
 
@@ -322,9 +335,59 @@ def build_ladder(
         )
         descending.append((ref, old_ref, blockage, DESCENDS_INPUTS_MOVED))
 
-    #: Tier 1's rung. It decides nothing — `z3-solver` is not a
-    #: dependency — and the count is the hole, reported every run.
+    #: Tier 1's rung. The count is reported every run; with a prover
+    #: (approved 2 September 2026, `watch/prove.py`) it also decides:
+    #: a proof stops the cell here as PROVED, a refutation as
+    #: CHANGED with the separating assignment, and everything the
+    #: fragment does not reach — or the solver could not settle —
+    #: descends to tier 2 exactly as before.
     ladder.tier1_would_have_been_asked = len(descending)
+    if prover is not None:
+        still_descending: list[tuple[str, str, str, str]] = []
+        for ref, old_ref, blockage, why in descending:
+            if ref in ineligible:
+                still_descending.append((ref, old_ref, blockage, why))
+                continue
+            sheet = ref.rsplit("!", 1)[0] if "!" in ref else ""
+            answer = prover(
+                old_book.cells[old_ref].formula, new_book.cells[ref].formula, sheet
+            )
+            if answer.verdict == "proved_equivalent":
+                ladder.tier1_proved += 1
+                ladder.verdicts[ref] = Verdict(
+                    ref=ref,
+                    verdict=PROVED,
+                    rung=RUNG_TIER1,
+                    tier0_blockage=blockage,
+                    old_ref=old_ref,
+                    detail=(
+                        "the same function of the same inputs under exact "
+                        "real arithmetic"
+                        + (
+                            f", provided {'; '.join(answer.conditions)}"
+                            if answer.conditions
+                            else ""
+                        )
+                    ),
+                )
+            elif answer.verdict == "refuted":
+                ladder.tier1_refuted += 1
+                shown = ", ".join(
+                    f"{k}={v:g}" for k, v in list(answer.counterexample.items())[:4]
+                )
+                ladder.verdicts[ref] = Verdict(
+                    ref=ref,
+                    verdict=CHANGED,
+                    rung=RUNG_TIER1,
+                    reason=SOURCE_TIER1_REFUTED,
+                    tier0_blockage=blockage,
+                    old_ref=old_ref,
+                    detail=f"the two formulas differ at {shown}",
+                )
+            else:
+                ladder.tier1_passed_down += 1
+                still_descending.append((ref, old_ref, blockage, why))
+        descending = still_descending
 
     refused_early = [item for item in descending if item[0] in ineligible]
     for ref, old_ref, blockage, _ in refused_early:

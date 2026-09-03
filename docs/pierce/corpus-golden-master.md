@@ -33,6 +33,25 @@ diff is then the review artifact, file by file, finding by finding,
 and the reviewer reads exactly what the change did to real models and
 nothing else.
 
+## Regenerations
+
+Each regeneration is committed with the change that meant it; the
+baseline's git diff is the review artifact. Where a regeneration
+carries more than one change, the accounting lives with the round:
+
+- **2 September 2026** — cut after the consequence round (house-style
+  sentences, the one-line long-formula fold, the skipped-cell fold
+  keyed on the missed rows) and the regularity check. Every line
+  traced by rule in `regularity-check.md`, « Measure 1 »; one
+  regression (the cross-sheet error fold split by the sheet's name in
+  the sentence) was found by this diff and fixed before the cut.
+- **3 September 2026** — cut after the label-column round
+  (`reader-label-formulas.md`). Two files change, both CAA H7
+  price-control models, each losing one `hardcode-in-formula` at
+  `I_Series!H352`: the cell is typed text that begins with `=`, not
+  a formula, and the reader no longer takes such text for
+  arithmetic. Nothing else moves across the 27 files.
+
 ## Honest bounds
 
 - The gate covers what the corpus covers. AER models are still absent

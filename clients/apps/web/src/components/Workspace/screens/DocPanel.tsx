@@ -800,6 +800,46 @@ export const DocPanel = ({
                       </div>
                     </>
                   )}
+                  {(() => {
+                    //: What newer Excel put in the file — from the
+                    //: construct scan of its bytes (modern-excel.md),
+                    //: whatever the verdict. Absent on older marks.
+                    const madeOf = (mark.constructs ?? [])
+                      .filter(
+                        (one) =>
+                          one.kind !== 'function' &&
+                          one.kind !== 'dynamic-array' &&
+                          one.kind !== 'unreadable',
+                      )
+                      .map((one) => {
+                        const n = one.count
+                        if (one.kind === 'table')
+                          return `${n} table${n === 1 ? '' : 's'}`
+                        if (one.kind === 'spill')
+                          return n === 1
+                            ? '1 cell that spills'
+                            : `${n} cells that spill`
+                        if (one.kind === 'named-lambda')
+                          return `${n} named LAMBDA${n === 1 ? '' : 's'}${
+                            one.examples.length > 0
+                              ? ` (${one.examples.join(', ')})`
+                              : ''
+                          }`
+                        return `${n} ${one.kind}`
+                      })
+                    return madeOf.length > 0 ? (
+                      <div
+                        style={{
+                          paddingTop: 8,
+                          fontSize: 12.5,
+                          color: ink.secondary,
+                          lineHeight: 1.55,
+                        }}
+                      >
+                        The file carries {madeOf.join(', ')}.
+                      </div>
+                    ) : null
+                  })()}
                   <div
                     style={{
                       display: 'flex',

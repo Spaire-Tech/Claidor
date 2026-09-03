@@ -4883,6 +4883,32 @@ const Report = ({
     recalcBody =
       'The file’s formula cells carry no stored values — a generator wrote it and Excel never computed it — so a recalculation had nothing to compare against and nothing is certified.'
   }
+  //: What newer Excel put in the file, whatever the verdict — the
+  //: construct scan of its bytes (modern-excel.md). A table steers
+  //: which engine is asked; a spill or a named LAMBDA is what an
+  //: engine had to prove it could do; naming them here is how the
+  //: reader knows what the file is made of without opening it.
+  const madeOf = (recalc?.constructs ?? [])
+    .filter(
+      (one) =>
+        one.kind !== 'function' &&
+        one.kind !== 'dynamic-array' &&
+        one.kind !== 'unreadable',
+    )
+    .map((one) => {
+      const n = one.count
+      if (one.kind === 'table') return `${n} table${n === 1 ? '' : 's'}`
+      if (one.kind === 'spill')
+        return n === 1 ? '1 cell that spills' : `${n} cells that spill`
+      if (one.kind === 'named-lambda')
+        return `${n} named LAMBDA${n === 1 ? '' : 's'}${
+          one.examples.length > 0 ? ` (${one.examples.join(', ')})` : ''
+        }`
+      return `${n} ${one.kind}`
+    })
+  if (recalcBody && madeOf.length > 0) {
+    recalcBody += ` The file carries ${madeOf.join(', ')}.`
+  }
 
   const families = new Map<string, Finding[]>()
   for (const one of rest) {

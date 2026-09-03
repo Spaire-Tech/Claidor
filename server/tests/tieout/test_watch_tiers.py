@@ -436,3 +436,49 @@ class TestTheDomainRoundsDrawsAreReproducible:
         inputs = self.inputs()
         for ref, value in _banded(inputs, 2, 3, (0.95, 1.05)).items():
             assert 0.95 * inputs[ref] <= value <= 1.05 * inputs[ref]
+
+
+class TestTierOneWithAProver:
+    """Tier 1 decides when a prover is given (approved 2 September
+    2026): a proof stops the cell as PROVED at its own rung, a
+    refutation as CHANGED with the assignment, and anything else
+    descends exactly as before."""
+
+    def test_the_prover_decides_at_its_own_rung(self) -> None:
+        from polar.tieout.watch.prove import ProofVerdict
+        from polar.tieout.watch.trace import Proof
+
+        old_book, new_book = book(BASE), book(BASE)
+        #: Nothing proved at tier 0 and identical raw grids, so every
+        #: formula cell reaches tier 1's rung.
+        proof = Proof(pairing={one.ref: one.ref for one in BASE}, proved={})
+
+        def prover(old: str | None, new: str | None, sheet: str) -> ProofVerdict:
+            if old == "=B2*0.4":
+                return ProofVerdict(
+                    "proved_equivalent", conditions=("M!B2 is not zero",)
+                )
+            if old == "=B2-B3":
+                return ProofVerdict(
+                    "refuted", counterexample={"M!B2": 1.0, "M!B3": 2.0}
+                )
+            return ProofVerdict("refused", "not a formula")
+
+        built = build_ladder(
+            old_book, new_book, raw(BASE), raw(BASE), proof=proof, prover=prover
+        )
+        assert built.tier1_would_have_been_asked == 3
+        assert built.tier1_proved == 1
+        assert built.tier1_refuted == 1
+        assert built.tier1_passed_down == 1
+        b3 = built.verdicts["M!B3"]
+        assert b3.verdict == PROVED
+        assert b3.rung == "tier1"
+        assert "provided M!B2 is not zero" in b3.detail
+        b4 = built.verdicts["M!B4"]
+        assert b4.verdict == CHANGED
+        assert b4.rung == "tier1"
+        assert b4.reason == "tier1_refuted"
+        assert "M!B2=1" in b4.detail
+        #: The literal B2 was refused by the prover and went on down.
+        assert built.verdicts["M!B2"].rung != "tier1"

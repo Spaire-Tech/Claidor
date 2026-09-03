@@ -26,7 +26,27 @@ from polar.tieout.structure import period_axes
 from polar.tieout.workbook import Cell, Workbook, read_workbook
 
 from .align import SheetAlignment, align_sheet, structural_changes
+from .prove import EQ, NEQ, REFUSED, prove
 from .signature import _absolute, sheet_grids
+
+
+def _proof_words(old: str | None, new: str | None, sheet: str) -> str:
+    """Tier 1's answer on a rewrite, as a clause for the reader."""
+    answer = prove(old, new, sheet=sheet)
+    if answer.verdict == EQ:
+        provided = (
+            f" provided {'; '.join(answer.conditions)}" if answer.conditions else ""
+        )
+        return f"; proved the same function of the same inputs{provided}"
+    if answer.verdict == NEQ:
+        shown = ", ".join(
+            f"{k}={v:g}" for k, v in list(answer.counterexample.items())[:4]
+        )
+        return f"; differs at {shown}"
+    if answer.verdict == REFUSED:
+        return f"; not provable ({answer.reason})"
+    return f"; not proved ({answer.verdict})"
+
 
 #: Registered materiality line for « the output moved »: 1% relative,
 #: scale = max(|old|, |new|). Moves only by a written round.
@@ -518,12 +538,17 @@ def delta_of(
                     #: one, where the shapes say it in one line and
                     #: the formula text would drown the reader in
                     #: absolute references.
+                    #: Tier 1 answers the reviewer's question about a
+                    #: rewrite — « did it change anything? » — with a
+                    #: proof, a separating assignment, or an honest
+                    #: refusal by construct. Approved 2 September 2026.
                     record(
                         "methodology_change",
                         sheet,
                         old_row,
                         old_column,
-                        _shape_change(_signature(before), _signature(after)),
+                        _shape_change(_signature(before), _signature(after))
+                        + _proof_words(before.formula, after.formula, sheet),
                         0.75,
                     )
                 else:

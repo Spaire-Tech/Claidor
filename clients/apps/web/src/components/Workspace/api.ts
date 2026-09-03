@@ -1067,6 +1067,16 @@ export interface RecalcMark {
   route: string | null
   volatile_roots: number
   volatile_cone: number
+  //: What newer Excel put in the file — tables, spilling cells, named
+  //: LAMBDAs, the modern functions — counted from its bytes. Absent on
+  //: marks computed before the construct scan existed.
+  constructs?: RecalcConstruct[]
+}
+
+export interface RecalcConstruct {
+  kind: 'table' | 'spill' | 'named-lambda' | 'function' | 'unreadable' | string
+  count: number
+  examples: string[]
 }
 
 export class ApiError extends Error {

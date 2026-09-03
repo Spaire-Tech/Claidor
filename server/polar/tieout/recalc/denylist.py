@@ -74,7 +74,12 @@ ROUTES: dict[Category, Route] = {
 #: `_xlfn.SINGLE`): probed 26 Aug 2026, both spellings error on
 #: LibreOffice 25.8 (lane log; the GT3 draft PCFM's 976-cell fail is
 #: the corpus-scale evidence).
-ENGINE_GAP_FUNCTIONS = frozenset({"SINGLE"})
+#: ANCHORARRAY is how Excel stores a spill reference (`E1#`). Measured
+#: 2 September 2026: IronCalc returns `#VALUE!`, Formualizer `#NAME?`,
+#: LibreOffice 25.8 error 525; real Excel computes it. An engine gap,
+#: routed to the arbiter — not a macro, which is what an unknown name
+#: used to be taken for.
+ENGINE_GAP_FUNCTIONS = frozenset({"SINGLE", "ANCHORARRAY"})
 
 #: Functions that imply a LAMBDA even when the word LAMBDA never
 #: appears — they take one as an argument.
@@ -103,7 +108,14 @@ def _canonical(name: str) -> str:
         name = name.rsplit(":", 1)[1]
     upper = name.upper()
     if upper.startswith("_XLFN."):
-        return upper[len("_XLFN.") :]
+        upper = upper[len("_XLFN.") :]
+    #: Excel stores FILTER, SORT, UNIQUE and their kin with a second
+    #: prefix, `_xlfn._xlws.FILTER(`. Until 2 September 2026 only the
+    #: first was stripped, so a file using FILTER was refused as if it
+    #: called a macro (modern-excel.md, the defects named before the
+    #: fix). Both are prefixes; neither is the name.
+    if upper.startswith("_XLWS."):
+        upper = upper[len("_XLWS.") :]
     return upper
 
 
@@ -183,8 +195,15 @@ def _is_negative_literal(arg_tokens: list[Token]) -> bool:
     )
 
 
-def scan_formula(ref: str, formula: str) -> list[DenylistHit]:
-    """Every denylist hit in one formula. Tokenized, never substring-matched."""
+def scan_formula(
+    ref: str, formula: str, named_lambdas: frozenset[str] = frozenset()
+) -> list[DenylistHit]:
+    """Every denylist hit in one formula. Tokenized, never substring-matched.
+
+    `named_lambdas` are the workbook's defined names whose definition
+    is a LAMBDA (upper-cased), from the construct scan: a bare call
+    `=DOUBLE(21)` is a LAMBDA, routed to the arbiter, not a macro.
+    """
     hits: list[DenylistHit] = []
     try:
         tokens = Tokenizer(formula).items
@@ -200,7 +219,7 @@ def scan_formula(ref: str, formula: str) -> list[DenylistHit]:
     for token in tokens:
         if token.type == Token.FUNC and token.subtype == Token.OPEN:
             name = _canonical(token.value)
-            if name in LAMBDA_FAMILY:
+            if name in LAMBDA_FAMILY or name in named_lambdas:
                 hits.append(DenylistHit(ref=ref, category=Category.LAMBDA, target=name))
             elif name in ENGINE_GAP_FUNCTIONS:
                 hits.append(
@@ -220,13 +239,20 @@ def scan_formula(ref: str, formula: str) -> list[DenylistHit]:
     return hits
 
 
-def prescan(cells: Mapping[str, object]) -> list[DenylistHit]:
-    """Scan a whole file's formulas — the frozen reader surface in, hits out."""
+def prescan(
+    cells: Mapping[str, object], named_lambdas: frozenset[str] = frozenset()
+) -> list[DenylistHit]:
+    """Scan a whole file's formulas — the frozen reader surface in, hits out.
+
+    Takes either the reader's cells or `Workbook.formulas()` (ref →
+    formula text), which is the whole file: the label column's
+    formulas never reach `cells` (reader-label-formulas.md).
+    """
     hits: list[DenylistHit] = []
     for ref, cell in cells.items():
-        formula = getattr(cell, "formula", None)
+        formula = cell if isinstance(cell, str) else getattr(cell, "formula", None)
         if formula:
-            hits.extend(scan_formula(ref, formula))
+            hits.extend(scan_formula(ref, formula, named_lambdas))
     return hits
 
 
