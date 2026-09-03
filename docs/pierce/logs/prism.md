@@ -4932,6 +4932,16 @@ Record in `truth-set.md`. Three lessons:
    engine pointed at — and the engine misses it. The denominator
    that would make recall a number is a cell-level diff graded
    without the rules, or an outside corpus; nothing else.
+3c. *(the cell diff, same day — `cell-diff-labels.md`)*
+   **The independent denominator came from the revision, not the
+   engine, and the engine failed it.** Fourteen cells in one pair
+   were links to the inputs sheet at draft and typed values at
+   final, found by a diff that compares what a reference reads
+   rather than where it points; the audit flags five. The misses
+   share one shape — a switch or a small block with no series
+   beside it — and the fix reads the version before, which only the
+   Watch can. A recall number that is real and low is worth more
+   than one that is high and owed to the rules.
 3b. *(the convention check, same day — `convention-check.md`)*
    **Write the rule, then code the rule you wrote.** The registration
    said « three files from two independent families computing it the
