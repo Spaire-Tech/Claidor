@@ -4932,6 +4932,20 @@ Record in `truth-set.md`. Three lessons:
    engine pointed at — and the engine misses it. The denominator
    that would make recall a number is a cell-level diff graded
    without the rules, or an outside corpus; nothing else.
+3d. *(the wrong-switch rule, same day — `wrong-switch.md`)*
+   **A rule written for one case must be tested on everything else
+   before it is trusted, and even then it has one data point.** The
+   row anchored on its sibling's switch is found, in the error tier,
+   with the sibling as evidence; across 27 regulator files, 16 Ofwat
+   drafts, two project-finance models and the founder's model it
+   fires nowhere else. Two things moved from the registration on the
+   way and are named: the band the switches live in (the reader's
+   eight label columns did not reach column I) and the test of
+   « same shape » (the audit's shape keeps absolute anchors absolute,
+   so two copies of one row never matched; the rule now compares the
+   formulas as fill-down copies). A quiet error-tier rule is the
+   right kind of wrong if it is wrong; its precision is one of one
+   and says so.
 3c. *(the cell diff, same day — `cell-diff-labels.md`)*
    **The independent denominator came from the revision, not the
    engine, and the engine failed it.** Fourteen cells in one pair

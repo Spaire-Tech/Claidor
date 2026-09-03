@@ -76,3 +76,105 @@ every change is read.
 # Results
 
 *(appended after the round; nothing above this line changes)*
+
+## Result — 3 September 2026
+
+**Two deviations from the registration, both made while the rule was
+being built against the registered case and named here.**
+
+1. *The band.* The registration said « the reader's `LABEL_COLUMNS`
+   band »; that band is eight columns wide and the GD3 switch sits
+   in column I, the ninth. A second attempt took « every column left
+   of the period axis » and lost the case again, because the GD3
+   header row carries a date in column I. The band is now a fixed
+   twelve columns (`SWITCH_COLUMNS`), and the sibling search reaches
+   twelve rows either side (`SIBLING_REACH`). Both are constants a
+   later round may have to move; neither was tuned on anything but
+   the one case.
+2. *The comparison.* The registration said « the audit's own relative
+   shape with the anchored reference replaced by a placeholder ». The
+   audit's shape keeps an absolute anchor absolute, so the GD3 row
+   (`$AU$471`) and its sibling two rows down (`$AU$473`) never shared
+   a shape. The rule compares the two formulas piece by piece
+   instead: every reference in the sibling must be the same text, or
+   the same column and anchoring with the row moved by the distance
+   between the two rows — a copy, in the sense Excel's fill-down
+   makes one. The claim in « The claim, fixed now » is unchanged; the
+   test of « same shape » is what moved.
+
+### Measure 1 — the case
+
+| | Found | Cells | Tier |
+| --- | --- | --- | --- |
+| GD3 final `MainInputs!AU472` « RIIO-2 legacy Adjustment Factor phasing » | **yes** | AU472:AY472 (5) | error, weight 0.9 |
+| ET3 final `MainInputs!AU619`, which reads its own `$I$619` | no | — | — |
+
+The finding reads: « RIIO-2 legacy Adjustment Factor phasing » reads
+the switch at I474, which belongs to « RIIO-2 legacy K Correction
+Factor phasing », while its own switch at I472 is populated and
+unread; the sibling row that does it the other way is named as the
+evidence. The GD3 *draft* has no finding: the row is new at final,
+as the truth-set round recorded.
+
+### Measure 2 — the golden master
+
+27 files swept under the rule and diffed against the baseline of
+3 September (label-column cut). **One file changes**: the GD3 final
+gains the one finding above. The other 26 report identically,
+finding for finding. Findings to read: one; genuine: one. The
+baseline is recut with this round (`corpus-golden-master.md`,
+regenerations).
+
+### Measure 3 — the PR24 drafts
+
+16 files, **0 findings each**. Nothing to sample. The Ofwat template
+keeps its switches on the inputs sheet as single cells that whole
+blocks read, and no row owns a switch in the band that a sibling
+reads instead.
+
+### Measure 4 — the two project-finance models and the founder's
+
+| Model | Findings |
+| --- | --- |
+| FHWA P3-VALUE 2.3 (782,093 formulas) | 0 |
+| Packt companion model (2,973 formulas) | 0 |
+| The founder's model | 0 |
+
+### Measure 5 — cost
+
+| Model | The rule alone |
+| --- | --- |
+| FHWA tool (registered) | 0.4 s (three runs: 0.46, 0.40, 0.39) |
+| GD3 final, for reference | 2.3 s |
+
+### Predictions, scored
+
+- Measure 1 found / not found — holds.
+- Golden master: 1–12 files gain findings — holds, at the floor (1);
+  at least half of the findings read genuine — holds on one of one.
+  The prediction's reasoning (« a regulator's template copies rows
+  and the anchor stays where the copy came from ») was not borne out
+  anywhere else in the corpus: the rule saw no second case in 27
+  regulator files.
+- PR24 under 5 per file, agreeing within ±2 — holds (0 everywhere).
+- Project-finance and founder under 3 — holds (0).
+- Cost under two seconds on the FHWA tool — holds (0.4 s).
+
+### What the round decides
+
+1. **The one independent cell-level defect the engine missed, it now
+   finds**, in the error tier, with the sibling as evidence. Recall
+   on that label is one of one and the number is that small.
+2. **The rule's precision has one data point.** Across 27 regulator
+   files, 16 Ofwat drafts, two project-finance models and the
+   founder's model it fires once, on the case a person found. It is
+   quiet, which is the right way for an error-tier rule to be wrong
+   if it is wrong; whether it is *too* quiet — whether other models
+   anchor on a sibling's switch in a way the copy test does not
+   accept — cannot be told from a corpus in which the class occurs
+   once. The registry line `riio3-gd3-maininputs-au472-switch` is
+   its test, and any second case found by hand is the next.
+3. **The constants are named, not proven.** A twelve-column band and
+   a twelve-row reach hold the one case; a model whose switches sit
+   further right, or whose like-shaped sibling sits further away, is
+   outside them by construction.

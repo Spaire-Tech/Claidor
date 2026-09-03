@@ -383,7 +383,7 @@
     "cells": "ScenDelta!AA8, ScenDelta!Y17"
    }
   ],
-  "seconds": 47.2
+  "seconds": 46.9
  },
  {
   "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
@@ -672,7 +672,7 @@
     "cells": "ScenDelta!AA8, ScenDelta!Y17"
    }
   ],
-  "seconds": 47.2
+  "seconds": 45.9
  },
  {
   "file": "ofgem_ed2/v1_2023-02.xlsx",
@@ -797,7 +797,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 8.0
+  "seconds": 8.1
  },
  {
   "file": "ofgem_ed2/v2_2023-07-14.xlsx",
@@ -912,7 +912,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 7.9
+  "seconds": 8.3
  },
  {
   "file": "ofgem_ed2/v2_2023-07-31.xlsx",
@@ -1027,7 +1027,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 7.8
+  "seconds": 8.0
  },
  {
   "file": "ofgem_ed2/v3_2023-10.xlsx",
@@ -1142,7 +1142,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 7.9
+  "seconds": 8.1
  },
  {
   "file": "ofgem_ed2/v3_2023-11.xlsx",
@@ -1257,7 +1257,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 7.9
+  "seconds": 8.0
  },
  {
   "file": "ofgem_ed2/v3_2024-01.xlsm",
@@ -1342,7 +1342,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 7.9
+  "seconds": 8.1
  },
  {
   "file": "ofgem_ed2/v4_2024-07.xlsx",
@@ -1427,7 +1427,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 8.2
+  "seconds": 8.3
  },
  {
   "file": "ofgem_ed2/v4_2025-01.xlsx",
@@ -1608,7 +1608,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 8.1
+  "seconds": 8.4
  },
  {
   "file": "ofgem_ed2/v4_2026-01.xlsx",
@@ -1704,7 +1704,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 8.6
+  "seconds": 8.2
  },
  {
   "file": "ofgem_ed2/v5_2026-06.xlsx",
@@ -1789,7 +1789,7 @@
     "cells": "EMID!AO74, EMID!AO75"
    }
   ],
-  "seconds": 8.3
+  "seconds": 8.6
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
@@ -2110,7 +2110,7 @@
     "cells": "Finance!D7, TO_MainInputs!AY75"
    }
   ],
-  "seconds": 3.3
+  "seconds": 3.2
  },
  {
   "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -2469,7 +2469,7 @@
     "cells": "F1 - Debt for BPFM!N27, F1 - Debt for BPFM!N42, F1 - Debt for BPFM!N57, F1 - Debt for BPFM!N72, F1 - Debt for BPFM!N87, F2a - Financial Summary (TWA)!K132, F2a - Financial Summary (TWA)!K133, F2b - Financial Summary (YE)!K131, F2b - Financial Summary (YE)!K50, F2b - Financial Summary (YE)!K57, F2b - Financial Summary (YE)!K64, F2b - Financial Summary (YE)!K78, F3 - Fixed Rate Debt!AP12, F3 - Fixed Rate Debt!FR12, F3 - Fixed Rate Debt!GJ12, F3 - Fixed Rate Debt!HT12, F4 - Floating Rate Debt!AM12, F4 - Floating Rate Debt!EF12, F4 - Floating Rate Debt!EX12, F4 - Floating Rate Debt!GH12, F5 - Inflation Linked Debt!BT12, F5 - Inflation Linked Debt!IR12, F5 - Inflation Linked Debt!KB12, F5 - Inflation Linked Debt!KT12, F5 - Inflation Linked Debt!MD12, F5 - Inflation Linked Debt!Q100, F6 - Debt Dataset!GI3, F6 - Debt Dataset!HL3, Finance&Tax!AP255, Finance&Tax!AP298, MainInputs!AP324, Return&RAV!AY64, ScenarioRun_AllOutputData!AS268, Scenarios!AU131, Scenarios!AV131"
    }
   ],
-  "seconds": 255.3
+  "seconds": 254.5
  },
  {
   "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -2979,7 +2979,7 @@
     "cells": "Depn!J83, F1 - Debt for BPFM!N27, F1 - Debt for BPFM!N42, F1 - Debt for BPFM!N57, F1 - Debt for BPFM!N72, F1 - Debt for BPFM!N87, F2a - Financial Summary (TWA)!K132, F2a - Financial Summary (TWA)!K133, F2b - Financial Summary (YE)!K131, F2b - Financial Summary (YE)!K50, F2b - Financial Summary (YE)!K57, F2b - Financial Summary (YE)!K64, F2b - Financial Summary (YE)!K78, F3 - Fixed Rate Debt!AP12, F3 - Fixed Rate Debt!FR12, F3 - Fixed Rate Debt!GJ12, F3 - Fixed Rate Debt!HT12, F4 - Floating Rate Debt!AM12, F4 - Floating Rate Debt!EF12, F4 - Floating Rate Debt!EX12, F4 - Floating Rate Debt!GH12, F5 - Inflation Linked Debt!BT12, F5 - Inflation Linked Debt!IR12, F5 - Inflation Linked Debt!KB12, F5 - Inflation Linked Debt!KT12, F5 - Inflation Linked Debt!MD12, F5 - Inflation Linked Debt!Q100, F6 - Debt Dataset!GI3, F6 - Debt Dataset!HL3, Finance&Tax!AP247, Finance&Tax!AP289, Return&RAV!AY68, ScenarioRun_AllOutputData!AS270, Scenarios!AU130, Scenarios!AV130, Totex!AP25"
    }
   ],
-  "seconds": 287.6
+  "seconds": 278.5
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
@@ -3032,7 +3032,7 @@
     "cells": "One-Off Wedge!R23, One-Off Wedge!R24, One-Off Wedge!R25, One-Off Wedge!R26, One-Off Wedge!R27, One-Off Wedge!R28, One-Off Wedge!R29, One-Off Wedge!R30, One-Off Wedge!R31, One-Off Wedge!R32, One-Off Wedge!R33, One-Off Wedge!R34, One-Off Wedge!R35, One-Off Wedge!R36, One-Off Wedge!R37, One-Off Wedge!R38, One-Off Wedge!R39, One-Off Wedge!R40, One-Off Wedge!R41, One-Off Wedge!R42, One-Off Wedge!R43"
    }
   ],
-  "seconds": 0.5
+  "seconds": 0.6
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
@@ -3148,7 +3148,7 @@
     "cells": ""
    }
   ],
-  "seconds": 91.1
+  "seconds": 99.7
  },
  {
   "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -3487,7 +3487,7 @@
     "cells": "Depn!J87, F1 - Debt for BPFM!N27, F1 - Debt for BPFM!N42, F1 - Debt for BPFM!N57, F1 - Debt for BPFM!N72, F1 - Debt for BPFM!N87, F2a - Financial Summary (TWA)!K132, F2a - Financial Summary (TWA)!K133, F2b - Financial Summary (YE)!K131, F2b - Financial Summary (YE)!K50, F2b - Financial Summary (YE)!K57, F2b - Financial Summary (YE)!K64, F2b - Financial Summary (YE)!K78, F3 - Fixed Rate Debt!AP12, F3 - Fixed Rate Debt!FR12, F3 - Fixed Rate Debt!GJ12, F3 - Fixed Rate Debt!HT12, F4 - Floating Rate Debt!AM12, F4 - Floating Rate Debt!EF12, F4 - Floating Rate Debt!EX12, F4 - Floating Rate Debt!GH12, F5 - Inflation Linked Debt!BT12, F5 - Inflation Linked Debt!IR12, F5 - Inflation Linked Debt!KB12, F5 - Inflation Linked Debt!KT12, F5 - Inflation Linked Debt!MD12, F5 - Inflation Linked Debt!Q100, F6 - Debt Dataset!GI3, F6 - Debt Dataset!HL3, Finance&Tax!AP281, Finance&Tax!AP323, ScenarioRun_AllOutputData!AS241, Scenarios!AU130, Scenarios!AV130"
    }
   ],
-  "seconds": 259.7
+  "seconds": 255.3
  },
  {
   "file": "ofgem_riio3/final_et3_bpfm.xlsm",
@@ -3927,18 +3927,19 @@
     "cells": "TaxPools!AP118, TaxPools!AQ118, TaxPools!AR118, TaxPools!AS118, TaxPools!AT118, TaxPools!AU118, TaxPools!AV118, TaxPools!AW118, TaxPools!AX118, TaxPools!AY118"
    }
   ],
-  "seconds": 255.2
+  "seconds": 255.5
  },
  {
   "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
   "sheets": 49,
   "cells": 693705,
-  "errors": 11,
+  "errors": 12,
   "smells": 41,
   "by_rule": {
    "error-value": 7,
    "inconsistent-row": 3,
    "skipped-cell": 1,
+   "anchored-elsewhere": 1,
    "typed-over-formula": 5,
    "hardcode-in-formula": 27,
    "broken-name": 1,
@@ -3995,6 +3996,16 @@
     "tier": 1,
     "weight": 0.9,
     "cells": "F2a - Financial Summary (TWA)!N195, F2a - Financial Summary (TWA)!O195, F2a - Financial Summary (TWA)!P195, F2a - Financial Summary (TWA)!Q195, F2a - Financial Summary (TWA)!R195, F2a - Financial Summary (TWA)!S195, F2a - Financial Summary (TWA)!T195"
+   },
+   {
+    "rule": "anchored-elsewhere",
+    "severity": "error",
+    "ref": "MainInputs!AU472",
+    "figure": "5",
+    "detail": "\u00ab RIIO-2 legacy Adjustment Factor phasing \u00bb reads the switch at I474, which belongs to \u00ab RIIO-2 legacy K Correction Factor phasing \u00bb, while its own switch at I472 is populated and unread. \u00ab RIIO-2 legacy K Correction Factor phasing \u00bb is built the same way and reads its own.",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": "MainInputs!AU472, MainInputs!AV472, MainInputs!AW472, MainInputs!AX472, MainInputs!AY472"
    },
    {
     "rule": "typed-over-formula",
@@ -4467,7 +4478,7 @@
     "cells": "TaxPools!AP103, TaxPools!AP115, TaxPools!AP118, TaxPools!AQ103, TaxPools!AQ115, TaxPools!AR103, TaxPools!AR115, TaxPools!AS103, TaxPools!AS115, TaxPools!AT103, TaxPools!AT115, TaxPools!AU103, TaxPools!AU115, TaxPools!AV103, TaxPools!AV115, TaxPools!AW103, TaxPools!AW115, TaxPools!AX103, TaxPools!AX115, TaxPools!AY103, TaxPools!AY115"
    }
   ],
-  "seconds": 287.5
+  "seconds": 295.2
  },
  {
   "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
@@ -4917,7 +4928,7 @@
     "cells": "TaxPools!AP118, TaxPools!AQ118, TaxPools!AR118, TaxPools!AS118, TaxPools!AT118, TaxPools!AU118, TaxPools!AV118, TaxPools!AW118, TaxPools!AX118, TaxPools!AY118"
    }
   ],
-  "seconds": 261.5
+  "seconds": 264.9
  },
  {
   "file": "ofgem_riio3/final_wacc.xlsx",
@@ -5033,6 +5044,6 @@
     "cells": ""
    }
   ],
-  "seconds": 99.0
+  "seconds": 101.1
  }
 ]
