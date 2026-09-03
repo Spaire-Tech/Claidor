@@ -115,6 +115,11 @@ const CATEGORY_OF: Record<string, string> = {
   'model-own-check': 'Structural exceptions',
   //: Renamed in the merged catalogue (was `interest`).
   'interest-consistency': 'Structural exceptions',
+  //: The convention check (convention-check.md): a line computed
+  //: unlike every model we hold that carries the same line name. A
+  //: reviewer's question rather than a defect, so it is its own
+  //: family, named for what the reader is being told.
+  convention: 'Computed unlike other models',
   'typed-over-formula': 'Embedded hardcodes',
   'hardcode-in-formula': 'Embedded hardcodes',
   'external-link': 'Auditability risks',

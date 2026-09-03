@@ -1589,23 +1589,30 @@ class TestHouseRules:
         #: Criterion 3 — Firm A's report is the conscience test's,
         #: through HTTP: twelve findings, the counters counting them,
         #: nothing switched off, the pass row and all four abstentions.
+        #: Counts under today's folds (consequence round, 2 September):
+        #: the three long formulas fold into one line, and the skipped
+        #: cells fold by the rows they miss — two groups here.
         assert Counter(one["rule"] for one in found_a) == {
             "broken-name": 2,
             "gapped-test": 1,
-            "long-formula": 3,
+            "long-formula": 1,
             "hardcode-in-formula": 2,
             "hidden-sheet": 1,
             "inconsistent-row": 2,
-            "skipped-cell": 1,
+            "skipped-cell": 2,
         }
-        assert (summary_a["errors"], summary_a["smells"]) == (4, 8)
+        #: Eleven findings under the folds, graded by the severity
+        #: tiers of the elevate round: five errors, six smells.
+        assert (summary_a["errors"], summary_a["smells"]) == (5, 6)
         assert summary_a["rules_off"] == []
         assert "model-own-check" in summary_a["tallies"]
+        #: Under today's structure layer the balance, cash and debt
+        #: checks run on this fixture (its year counter is a period
+        #: axis); interest still finds no schedule, and the convention
+        #: check holds nothing for the fixture's line names.
         assert [one["rule"] for one in summary_a["abstentions"]] == [
-            "balance-sheet",
-            "cash-continuity",
-            "debt-terminal",
             "interest-consistency",
+            "convention",
         ]
 
         #: Criteria 4 and 5 — Firm B's report is Firm A's minus exactly
@@ -1628,13 +1635,17 @@ class TestHouseRules:
         assert [carried(one) for one in found_b] == [
             carried(one) for one in found_a if one["rule"] not in off
         ]
-        assert (summary_b["errors"], summary_b["smells"]) == (3, 3)
+        assert (summary_b["errors"], summary_b["smells"]) == (4, 3)
         assert summary_b["rules_off"] == off
-        assert summary_b["tallies"] == {}
+        #: The checks left on still walk the fixture and count what
+        #: they saw, off rules or not.
+        assert summary_b["tallies"] == {
+            "cash-continuity": {"clean": 3, "total": 3},
+            "debt-terminal": {"clean": 2, "total": 2},
+        }
         assert [one["rule"] for one in summary_b["abstentions"]] == [
-            "cash-continuity",
-            "debt-terminal",
             "interest-consistency",
+            "convention",
         ]
 
 
@@ -1796,8 +1807,16 @@ class TestTheChat:
         # else — no deal tools to reach with.
         offered = {tool["name"] for tool in fake.messages.calls[0]["tools"]}
         assert offered == {"file_summary", "list_findings"}
-        # And the system prompt carries the boundary.
-        assert "one file" in fake.messages.calls[0]["system"]
+        # And the system prompt carries the boundary. The system is a
+        # list of cached text blocks, so the words are read from the
+        # blocks, not from the list.
+        system = fake.messages.calls[0]["system"]
+        text = (
+            system
+            if isinstance(system, str)
+            else " ".join(block.get("text", "") for block in system)
+        )
+        assert "one file" in text
 
     @pytest.mark.auth
     async def test_someone_elses_check_cannot_be_asked_about(
@@ -2505,7 +2524,14 @@ class TestTheRecalculation:
         # engine so a fake can never be mistaken for a machine result.
         assert body["verdict"] == "pass"
         assert body["engine"] is not None
-        assert "LibreOffice" in body["engine"]
+        #: The native engines run first and the first one whose numbers
+        #: match Excel's saved values is believed; LibreOffice is the
+        #: fallback (native-calculators round). Any of them is a real
+        #: engine, and the mark names which.
+        assert any(
+            name in body["engine"]
+            for name in ("IronCalc", "Formualizer", "LibreOffice")
+        )
         assert body["compared"] > 0
         assert body["matched"] == body["compared"]
         assert body["match_rate"] == 1.0

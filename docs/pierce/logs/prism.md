@@ -4932,6 +4932,19 @@ Record in `truth-set.md`. Three lessons:
    engine pointed at — and the engine misses it. The denominator
    that would make recall a number is a cell-level diff graded
    without the rules, or an outside corpus; nothing else.
+3b. *(the convention check, same day — `convention-check.md`)*
+   **Write the rule, then code the rule you wrote.** The registration
+   said « three files from two independent families computing it the
+   same way »; the first build counted the families that *used* the
+   label, and thirty-two copies of one template became a convention.
+   Read back against the sentence, the number fell from 930 to 753,
+   and to 668 once block sums — « the block above, added up », a
+   shape every total line shares and none is judged by — were
+   excluded too. Twenty-one lines survive three authors, and those
+   are the only ones a reviewer would call a convention. The
+   founder's model shares none of them, and neither project-finance
+   model shares one either — a reach of zero, now measured instead
+   of hoped.
 3a. *(the label-column round, same day — `reader-label-formulas.md`)*
    **Count against the file, not against the reader.** The gap
    between the raw formula elements in a sheet's XML and what the
