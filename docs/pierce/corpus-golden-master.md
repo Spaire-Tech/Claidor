@@ -45,6 +45,12 @@ carries more than one change, the accounting lives with the round:
   traced by rule in `regularity-check.md`, « Measure 1 »; one
   regression (the cross-sheet error fold split by the sheet's name in
   the sentence) was found by this diff and fixed before the cut.
+- **3 September 2026** — cut after the label-column round
+  (`reader-label-formulas.md`). Two files change, both CAA H7
+  price-control models, each losing one `hardcode-in-formula` at
+  `I_Series!H352`: the cell is typed text that begins with `=`, not
+  a formula, and the reader no longer takes such text for
+  arithmetic. Nothing else moves across the 27 files.
 
 ## Honest bounds
 

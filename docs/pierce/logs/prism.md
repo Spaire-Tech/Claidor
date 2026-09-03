@@ -4932,6 +4932,14 @@ Record in `truth-set.md`. Three lessons:
    engine pointed at — and the engine misses it. The denominator
    that would make recall a number is a cell-level diff graded
    without the rules, or an outside corpus; nothing else.
+3a. *(the label-column round, same day — `reader-label-formulas.md`)*
+   **Count against the file, not against the reader.** The gap
+   between the raw formula elements in a sheet's XML and what the
+   reader kept was one in thirty, all label formulas; closing it
+   exactly exposed sixty-one typed strings that begin with `=` and
+   had passed as formulas for months, one of them a finding on two
+   corpus files. A count that only compares the reader with itself
+   cannot see either.
 3. **A fold that drops its name drops the finding from every later
    step.** South West's and Southern's base-revenue overwrites were
    found and then lost, because the column fold keeps the row label

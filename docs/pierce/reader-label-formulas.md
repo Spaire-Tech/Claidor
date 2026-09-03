@@ -72,3 +72,66 @@ built by formula is a fact about the words, not about the numbers.
 # Results
 
 *(appended after the round; nothing above this line changes)*
+
+## Result — 3 September 2026
+
+### Measure 1 — the gap
+
+| File | Raw `<f>` cells | Reader before | Reader after |
+| --- | --- | --- | --- |
+| FHWA P3-VALUE 2.3 | 782,093 | 768,774 | **782,093** |
+| Affinity PR24 draft | 408,024 | 394,338 | **408,024** |
+| Packt companion model | 2,973 | 2,973 | 2,973 |
+
+Exact on all three. The first « after » run came back at 782,154 —
+sixty-one *more* than the file holds — and the sixty-one were read
+out: the FHWA « Key » sheet lists where each named range points, as
+typed text (`='Project Inputs'!$F$71`, a shared string, no `<f>`
+element), and the reader took any string beginning with `=` for a
+formula. **A second reader defect, found by the measurement and
+fixed in the same round**: the fast reader and the openpyxl fallback
+now keep such text behind a quote, as Excel's own formula bar does,
+so nothing downstream reads it as arithmetic. Named here as a
+deviation: the registration foresaw one fix, not two.
+
+### Measure 2 — the golden master
+
+The gate corpus (27 files) swept and diffed against the committed
+baseline. **Two files change, both by losing one finding**: the CAA
+H7 price-control model, final proposals and final determination,
+each reported `hardcode-in-formula` at `I_Series!H352`, « 5% sits
+inside the formula ». That cell is a typed string
+(`=5%*C_Fin_Summ!AL$191`, shared string 1209, no formula element) —
+a note in the units column saying where the row's figure comes from.
+The finding was a false positive of the second defect, and the
+baseline is regenerated without it. No file gains a finding: no
+label formula in the corpus carries an external link or a volatile
+function. The prediction (at most three files change, by gaining a
+finding) was right on the count and wrong on the direction.
+
+### Measure 3 — the prescan on the corpus
+
+Every corpus file read twice through the prescan, `book.cells`
+against `book.formulas()`: **0 of 27 routes change**; 86,138 label
+formulas across the corpus, none carrying a denylisted or unknown
+function. The prediction (at most two) holds; the gap was real and,
+in what we hold, harmless — which is a fact about the corpus, not
+about the gap.
+
+### Measure 4 — cost
+
+FHWA read on a quiet machine: 56.4 s before, 53.8 s after. No cost
+the measurement can see; the prediction holds.
+
+### What the round decides
+
+1. **Every formula in a file now reaches the prescan and the text
+   rules.** A refusal-class function or a link into another workbook
+   hidden in a label formula refuses or flags the file, which it
+   could not before; the test file holds both cases.
+2. **A string is not a formula.** Sixty-one cells on one file and
+   one false finding on two corpus files came from `=` at the start
+   of typed text. The rule is now in both readers.
+3. **The numeric grid is untouched by construction**, and the golden
+   master confirms it: the only change across 27 files is the false
+   positive removed.
