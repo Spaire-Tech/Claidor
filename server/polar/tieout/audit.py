@@ -1101,7 +1101,7 @@ def audit(
     _literals(book, result)
     _rows(book, result)
     _selector_drift(book, result)
-    _anchored_elsewhere(book, result, axes)
+    _anchored_elsewhere(book, result)
     _mutations(book, result)
     _typed_islands(book, result)
     _typed_edges(book, result)
@@ -2381,7 +2381,7 @@ _OWN_SHEET_ANCHOR = re.compile(r"(?<![A-Za-z0-9_!'\]])\$([A-Z]{1,3})\$(\d+)(?![\
 SWITCH_COLUMNS = 12
 
 
-def _anchored_elsewhere(book: Workbook, result: Audit, axes: PeriodAxes | None) -> None:
+def _anchored_elsewhere(book: Workbook, result: Audit) -> None:
     """A row anchored on a sibling row's switch (wrong-switch.md).
 
     The GD3 final business-plan model: « RIIO-2 legacy Adjustment
@@ -2406,21 +2406,16 @@ def _anchored_elsewhere(book: Workbook, result: Audit, axes: PeriodAxes | None) 
     from openpyxl.utils import get_column_letter
 
     #: One representative cell per row: the leftmost formula cell
-    #: carrying an own-sheet anchor into the switch band.
-    band_of: dict[str, int] = {}
+    #: carrying an own-sheet anchor into the switch band. The band is
+    #: a fixed width rather than « left of the period axis »: on the
+    #: GD3 inputs sheet the header row carries a date in column I,
+    #: the very column the switches live in, so an axis-based band
+    #: excluded the registered case.
+    band = SWITCH_COLUMNS
     rows: dict[tuple[str, int], Cell] = {}
     for cell in book.cells.values():
         if not cell.formula or not _OWN_SHEET_ANCHOR.search(cell.formula):
             continue
-        if cell.sheet not in band_of:
-            axis = (axes or {}).get(cell.sheet)
-            first_period = (
-                min(column for column, _ in axis.columns)
-                if axis is not None and getattr(axis, "columns", None)
-                else SWITCH_COLUMNS + 1
-            )
-            band_of[cell.sheet] = min(first_period - 1, SWITCH_COLUMNS)
-        band = band_of[cell.sheet]
         if not any(
             _column_number(letters) <= band and _column_number(letters) < cell.column
             for letters, _ in _OWN_SHEET_ANCHOR.findall(cell.formula)
@@ -2435,7 +2430,6 @@ def _anchored_elsewhere(book: Workbook, result: Audit, axes: PeriodAxes | None) 
         by_sheet.setdefault(sheet, {})[row] = cell
 
     for sheet, candidates in by_sheet.items():
-        band = band_of[sheet]
         for row, cell in sorted(candidates.items()):
             pieces = _reference_pieces(cell.formula or "")
             if pieces is None:
