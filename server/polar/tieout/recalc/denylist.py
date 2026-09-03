@@ -242,10 +242,15 @@ def scan_formula(
 def prescan(
     cells: Mapping[str, object], named_lambdas: frozenset[str] = frozenset()
 ) -> list[DenylistHit]:
-    """Scan a whole file's formulas — the frozen reader surface in, hits out."""
+    """Scan a whole file's formulas — the frozen reader surface in, hits out.
+
+    Takes either the reader's cells or `Workbook.formulas()` (ref →
+    formula text), which is the whole file: the label column's
+    formulas never reach `cells` (reader-label-formulas.md).
+    """
     hits: list[DenylistHit] = []
     for ref, cell in cells.items():
-        formula = getattr(cell, "formula", None)
+        formula = cell if isinstance(cell, str) else getattr(cell, "formula", None)
         if formula:
             hits.extend(scan_formula(ref, formula, named_lambdas))
     return hits

@@ -307,6 +307,27 @@ class Workbook:
     #: on arrival — a judged model carried dozens of both.
     broken_names: list[str] = field(default_factory=list)
     foreign_names: list[tuple[str, str]] = field(default_factory=list)
+    #: Formula cells the numeric grid leaves out: the label column's
+    #: formulas (`= "PSC - " & 'Risk Matrix'!E$14`, whose *value* is
+    #: the row's words) and header-row formulas that reach no other
+    #: row. One formula in thirty on the FHWA P3 tool and on a PR24
+    #: model (reader-label-formulas.md). Kept apart from `cells` on
+    #: purpose: the numeric rules never see them, but the recalc
+    #: prescan and the rules that judge formula text — external
+    #: links, volatile functions — read every formula in the file.
+    label_cells: dict[str, Cell] = field(default_factory=dict)
+
+    def formulas(self) -> dict[str, str]:
+        """Every formula in the file, numeric grid and label column alike."""
+        found = {ref: cell.formula for ref, cell in self.cells.items() if cell.formula}
+        found.update(
+            {
+                ref: cell.formula
+                for ref, cell in self.label_cells.items()
+                if cell.formula
+            }
+        )
+        return found
 
     def get(self, ref: str) -> Cell | None:
         return self.cells.get(ref)
@@ -425,6 +446,14 @@ def _grid_of(
             if value is None:
                 continue
             at = (cell.row, cell.column)
+            if (
+                isinstance(value, str)
+                and value[:1] == "="
+                and getattr(cell, "data_type", "f") != "f"
+            ):
+                #: Typed text that looks like a formula, kept behind a
+                #: quote as the fast reader keeps it (`sheets.cells_of`).
+                value = "'" + value
             grid.written[at] = unartifact(value) if converted else value
             grid.formats[at] = getattr(cell, "number_format", None)
             grid._saw(*at)
@@ -735,6 +764,32 @@ def _read_sheet(
                 return False
 
             numeric = [column for column in numeric if _reaches_out(column)]
+        #: The formulas the grid leaves out — the label column's, and a
+        #: header row's that stay on their row — are kept as label
+        #: cells so the prescan and the text rules see every formula.
+        for column in sorted(columns):
+            if column in numeric:
+                continue
+            formula = _formula(grid.written.get((row, column)))
+            if formula is None:
+                continue
+            read = references_of(formula, name, names)
+            ref = f"{name}!{get_column_letter(column)}{row}"
+            book.label_cells[ref] = Cell(
+                sheet=name,
+                ref=ref,
+                row=row,
+                column=column,
+                value=_decimal(grid.values.get((row, column))),
+                formula=formula,
+                row_label=labels.get(row, ""),
+                row_tags=tags.get(row, ()),
+                column_label="",
+                number_format=grid.formats.get((row, column)),
+                precedents=read.refs,
+                lookup_reads=read.via_lookup,
+                unresolved=read.unresolved,
+            )
         # A row carrying one number is a label and a value — « Enterprise
         # value | 489.5 » in a valuation bridge. A row carrying several is
         # a series, and only then does the header above a column name

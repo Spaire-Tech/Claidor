@@ -194,7 +194,7 @@ def _read_model(path: str) -> Ingested:
             # next.
             "sheet_order": list(book.sheets),
             "cells": len(book.cells),
-            "formulas": sum(1 for cell in book.cells.values() if cell.formula),
+            "formulas": len(book.formulas()),
             "named": sum(1 for cell in book.cells.values() if cell.row_label),
             "errors": len(result.errors),
             "smells": len(result.smells),

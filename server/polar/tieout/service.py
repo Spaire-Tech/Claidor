@@ -1062,14 +1062,18 @@ class TieOutService:
             with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
                 f.write(payload)
                 path = f.name
-            cells = read_workbook(path).cells
+            book = read_workbook(path)
+            cells = book.cells
             #: What newer Excel put in the file, from its bytes — the
             #: scan runs before any engine is chosen (modern-excel.md):
             #: named LAMBDAs feed the prescan, tables steer the engines,
             #: and the whole list rides on the mark whatever the verdict.
             scan = scan_constructs(path)
             constructs = [asdict(one) for one in scan.constructs]
-            hits = prescan(cells, scan.named_lambdas)
+            #: Every formula in the file, the label column's included —
+            #: a link or an unknown function in a label formula refuses
+            #: the file as surely as one in the grid.
+            hits = prescan(book.formulas(), scan.named_lambdas)
             route = route_for(hits)
             if route is Route.REFUSE:
                 #: Refused before comparison: a feed, a macro, a link

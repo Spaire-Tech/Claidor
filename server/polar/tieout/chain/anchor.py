@@ -55,7 +55,7 @@ BOTH_MOVED = "both moved"
 #: the document's value before the stated scale, at re-check only:
 #: nothing here is ever inferred, and which-side-moved is still judged
 #: on the raw values the document and the model actually state.
-TRANSFORMS: dict[str, "Callable[[float], float]"] = {
+TRANSFORMS: dict[str, Callable[[float], float]] = {
     "identity": lambda value: value,
     "negate": lambda value: -value,
 }

@@ -1192,7 +1192,10 @@ def _coverage(book: Workbook, result: Audit) -> None:
     than the findings it explains. A rule whose population is
     non-empty never abstains: it looked, and silence means clean.
     """
-    formulas = typed = valued = connected = aggregations = 0
+    #: The label column's formulas count as formulas: the text rules
+    #: draw from them (reader-label-formulas.md).
+    formulas = sum(1 for cell in book.label_cells.values() if cell.formula)
+    typed = valued = connected = aggregations = 0
     for cell in book.cells.values():
         if cell.formula:
             formulas += 1
@@ -2315,7 +2318,9 @@ def _external_links(book: Workbook, result: Audit) -> None:
     damage the model displays.
     """
     by_source: dict[str, list[Cell]] = {}
-    for cell in book.cells.values():
+    #: A workbook read from a label formula is still a workbook that
+    #: is not here (reader-label-formulas.md).
+    for cell in (*book.cells.values(), *book.label_cells.values()):
         if cell.formula and (m := EXTERNAL.search(cell.formula)):
             by_source.setdefault(m.group(0), []).append(cell)
     for source, cells in sorted(by_source.items()):
@@ -2351,9 +2356,9 @@ def _volatile(book: Workbook, result: Audit) -> None:
     #: Everything any formula reads, once — so a timestamp can know
     #: whether its value flows anywhere.
     read: set[str] = set()
-    for cell in book.cells.values():
+    for cell in (*book.cells.values(), *book.label_cells.values()):
         read.update(cell.precedents or ())
-    for cell in book.cells.values():
+    for cell in (*book.cells.values(), *book.label_cells.values()):
         if not cell.formula:
             continue
         used = {
