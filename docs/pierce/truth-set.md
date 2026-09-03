@@ -324,3 +324,41 @@ Both predictions hold.
    rows as labels; « carried forward » lines), plus one more from
    this round: the finding's name is empty on a column fold, which
    is the same gap as the matcher's, seen from the audit's side.
+
+### Post hoc — the twenty pairs again, with the fold's label as its name
+
+The deviation named under measure 3, run after the registered
+results were read (`scratchpad/pr24_pairs_v2*.log`,
+`riio_pairs_v2.log`). NEW per pair, registered run → fallback run:
+
+| Pair | NEW before | NEW after | What moved |
+| --- | --- | --- | --- |
+| Affinity | 8 | 9 | — |
+| Anglian | 2 | 2 | FIXED 1 → 2 |
+| Hafren Dyfrdwy | 2 | 2 | UNMATCHED 12/12 → 6/6; PERSISTENT 3 → 9 |
+| Northumbrian | 7 | 8 | |
+| Portsmouth | 4 | 4 | |
+| South West | 4 | **6** | the base-revenue fold now NEW |
+| SES | 5 | 5 | |
+| South East | 3 | 4 | |
+| Southern | 4 | **5** | the base-revenue fold now NEW |
+| South Staffs | 7 | 7 | |
+| Severn Trent | 8 | 9 | its own base-revenue fold, not in the study, now NEW |
+| Thames | 2 | 3 | |
+| United Utilities | 6 | 7 | |
+| Welsh | 2 | 2 | |
+| Wessex | 7 | 8 | |
+| Yorkshire | 43 | 43 | |
+| **PR24 total** | **114** | **124** | |
+| RIIO-3 ET3 | 11 | 11 | FIXED 6 → 9; UNMATCHED 7/10 → 4/10 |
+| RIIO-3 GD3 | 10 | 10 | FIXED 8 → 11; UNMATCHED 9/10 → 6/10 |
+| RIIO-3 GT3 | 14 | 14 | FIXED 5 → 8; UNMATCHED 7/9 → 4/9 |
+| WACC | 1 | 1 | PERSISTENT 6 → 8; UNMATCHED 3/3 → 1/1 |
+
+**Seven of seven named verified regressions now reach the pipeline
+as NEW.** The ten PR24 findings the fallback adds are all column
+folds that had no name; the RIIO-3 NEW counts do not move, and the
+unnamed findings on both sides become FIXED or PERSISTENT instead of
+falling out. Fifteen of sixteen PR24 pairs stay within ±5 of the
+study (Northumbrian at +8). The twelve readings above were graded on
+the registered run and are not re-graded.

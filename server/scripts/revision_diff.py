@@ -101,10 +101,8 @@ def main() -> None:
         flush=True,
     )
     for s in samples:
-        print(
-            f"  NEW [{s['rule']}] {s['sheet']}!{','.join(s['refs'])} {s['name'][:60]!r}",
-            flush=True,
-        )
+        where = ",".join(s["refs"]) or f"{s['sheet']}!"
+        print(f"  NEW [{s['rule']}] {where} {s['name'][:60]!r}", flush=True)
 
 
 if __name__ == "__main__":
