@@ -4891,3 +4891,23 @@ minutes of parsing (`uk-filer-labels.md`). Two things:
    loss account » all map to `Equity` with a dimension the pair
    cannot carry. A B by construction; a member-aware pair is the fix
    if it ever matters.
+
+## 3 September — volume times price: what the mine taught
+
+Record in `label-patterns.md`. Three lessons:
+
+1. **Independence is about authors, not folders.** Two folders held
+   the same Ofwat template as drafts and finals; « two folders » then
+   meant one author twice, and the confident count doubled for it.
+   The unit of independence must be named by *who wrote it*, and a
+   file's family should be read off its content, not its path.
+2. **A values-pasted corpus is silent.** Eighteen close models gave
+   the mine almost nothing: no formulas, no patterns. The engine has
+   been measuring project finance on the one corpus that cannot
+   teach it how project finance is computed.
+3. **The bag is honest about what it loses.** `INDEX MATCH` over a
+   table and a formula with an unlabelled operand read as B-grade
+   patterns; the bag says what a row is made of and not how, and
+   nine of forty came back « right family, specifics lost ». Good
+   enough to count conventions; a check that judges a formula will
+   need the tree.
