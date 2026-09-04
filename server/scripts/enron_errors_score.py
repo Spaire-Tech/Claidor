@@ -86,11 +86,23 @@ def main(argv: list[str]) -> None:
     errors = catalogue(corpus / "enron-errors.xlsx")
 
     #: Faulty cells per workbook number, resolved to (sheet name, A1).
+    #: The properties files give a sheet *index*, and the converted
+    #: workbook's order does not always match it (hidden and chart
+    #: sheets): error 27's « EGS EXP » is index 2 in the properties and
+    #: the sixth sheet after conversion. The catalogue's sheet name
+    #: wins when the workbook has it; the index is the fallback.
+    sheet_named: dict[str, str] = {}
+    for error in errors:
+        number = f"{int(error['Spreadsheet Nr']):02d}"
+        name = str(error["Faulty worksheet"])
+        if number in names and name in names[number]:
+            sheet_named.setdefault(number, name)
     faulty: dict[str, set[tuple[str, str]]] = defaultdict(set)
     for number, entry in labels.items():
         for token in entry["cells"]:
             index, col, row = token.split("!")
-            faulty[number].add((names[number][int(index)], f"{col}{row}"))
+            sheet = sheet_named.get(number) or names[number][int(index)]
+            faulty[number].add((sheet, f"{col}{row}"))
 
     started = time.time()
     touched: dict[str, dict[tuple[str, str], set[str]]] = {}
@@ -112,8 +124,15 @@ def main(argv: list[str]) -> None:
     #: Per catalogue error: its cells (from the properties file, by
     #: workbook number and sheet) and whether any is touched.
     scored = []
+    not_held: list[int] = []
     for error in errors:
         number = f"{int(error['Spreadsheet Nr']):02d}"
+        if number not in labels:
+            #: The catalogue names 30 workbooks; the archive packages 26.
+            #: An error whose workbook is not held is outside the
+            #: denominator, and reported as such.
+            not_held.append(int(error["Error Nr"]))
+            continue
         sheet = str(error["Faulty worksheet"])
         cells_text = str(error["Faulty cells"])
         cells = {c for c in faulty.get(number, set()) if c[0] == sheet}
@@ -143,6 +162,7 @@ def main(argv: list[str]) -> None:
 
     record = {
         "errors": len(scored),
+        "not_held": not_held,
         "covered": len(covered),
         "cells_total": cells_total,
         "cells_covered": cells_covered,
@@ -161,7 +181,7 @@ def main(argv: list[str]) -> None:
     }
     out.write_text(json.dumps(record, indent=1, ensure_ascii=False))
     print(
-        f"COVERAGE {len(covered)}/{len(scored)} errors; cells {cells_covered}/{cells_total}; findings raised {sum(raised.values())} in {seconds}s"
+        f"COVERAGE {len(covered)}/{len(scored)} errors (not held: {not_held}); cells {cells_covered}/{cells_total}; findings raised {sum(raised.values())} in {seconds}s"
     )
     for e in scored:
         mark = "HIT " if e["covered"] else "miss"

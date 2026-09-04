@@ -4912,6 +4912,29 @@ Record in `label-patterns.md`. Three lessons:
    enough to count conventions; a check that judges a formula will
    need the tree.
 
+## 4 September — two outside label sources: what the first score taught
+
+Records in `enron-errors.md` and `ofgem-errata.md`. Three lessons:
+
+1. **Touch is not detection.** Scored the way the CUSTODES round
+   scored, the engine covers fifteen of thirty-two real Enron faults;
+   read by hand, eight of those fifteen are a finding that names the
+   fault and seven are a typed-number finding that happened to sit in
+   the same cells. The number to carry is eight of thirty-two, and
+   the two earlier outside benchmarks were scored by touch too.
+2. **A regulator's errata log labels inputs and documents, not
+   formulas.** Two hundred and fifty corrections, two of them about
+   the models, both a right formula fed a wrong number. The
+   single-file rules cannot see that and never will; the version
+   comparison can, once the corrected files are held. The log is a
+   Watch test, not an audit test, and saying so before the files
+   arrive is the point of registering.
+3. **The misses are a to-do list, not a verdict.** Ten of seventeen
+   need a second version or a person. Seven are shapes with no rule
+   yet, four of them cheap and deterministic — a one-cell range, a
+   sum round arithmetic, a comparison in a numeric row, a two-cell
+   row — and this corpus is their test set.
+
 ## 3 September — the truth set: what the registry taught
 
 Record in `truth-set.md`. Three lessons:
