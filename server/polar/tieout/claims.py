@@ -419,9 +419,9 @@ def check(book: Workbook, claim: Claim) -> Verdict:
             if _covers(refs, claim.sheet, ref):
                 return fails(f"{claim.cell}'s formula does cover {ref}")
             holds(f"{claim.cell}'s formula leaves {ref} out")
-            if _value(_cell(book, claim.sheet, ref)) is None:
-                return fails(f"{ref} holds no number")
-            holds(f"{ref} holds a number")
+            if not _populated(book, claim.sheet, ref):
+                return fails(f"{ref} holds nothing")
+            holds(f"{ref} is populated")
         return Verdict(
             "confirmed",
             facts,

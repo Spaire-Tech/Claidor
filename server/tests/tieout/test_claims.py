@@ -20,6 +20,7 @@ def _book():
     s["A5"], s["B5"] = "Total", "=SUM(B2:B3)"
     s["A6"], s["B6"] = "Reads empty", "=B9*2"
     s["A7"], s["B7"] = "Compare", "=B2-1=SUM(B2:B3)"
+    s["A8"], s["B8"] = "Typed total", 30
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / "built.xlsx"
         book.save(path)
@@ -77,14 +78,16 @@ def test_a_top_level_comparison_is_malformed() -> None:
 
 def test_arithmetic_evaluates_the_alternative_and_compares() -> None:
     book = _book()
+    #: A workbook saved by openpyxl carries no cached values, so the
+    #: cell judged must be a typed number: 30 where the rows sum to 12.
     verdict = check(
         book,
         Claim(
             "Ops",
-            "B5",
+            "B8",
             "arithmetic",
-            alternative_formula="=SUM(B2:B4)",
-            expected_value="32",
+            alternative_formula="=SUM(B2:B3)",
+            expected_value="12",
         ),
     )
     assert verdict.status == "confirmed", verdict
@@ -92,9 +95,9 @@ def test_arithmetic_evaluates_the_alternative_and_compares() -> None:
         book,
         Claim(
             "Ops",
-            "B5",
+            "B8",
             "arithmetic",
-            alternative_formula="=SUM(B2:B4)",
+            alternative_formula="=SUM(B2:B3)",
             expected_value="99",
         ),
     )
