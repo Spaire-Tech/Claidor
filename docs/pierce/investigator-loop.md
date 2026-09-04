@@ -114,3 +114,102 @@ earlier instinct, which was wrong by a factor of three.
   and ranges. Anything else is unverifiable and says so.
 - No product wiring yet; this is the measurement that decides
   whether there is anything to wire.
+
+---
+
+# Results
+
+*(appended after the runs; nothing above this line changes)*
+
+## Part A — the Enron sheets, 4 September 2026
+
+**Deviation, named.** As in the first test, the tables and the
+evidence were delivered as two files to read, not inline; every
+report came back with exactly two tool uses.
+
+### Recall, strict
+
+| | Hit | Of | First test (blind) |
+| --- | --- | --- | --- |
+| Errors | **19** | 32 | 18 |
+| Of the 24 errors the rules did not name | **13** | 24 | 12 |
+| Of the 8 the rules named | 6 | 8 | 6 |
+| Rules and investigator together | **21** | 32 | 20 |
+| Sheets where it said nothing is wrong | 4 | 26 — all four hold a labelled fault (#19/#20, #22, #26, #35) | 3 |
+
+The evidence added one error (#15, the income statement's second
+wrong line, claimed as arithmetic with the right number) and lost
+none. It did not make the investigator repeat the engine: 26 of the
+74 claims sit on a cell the engine also named, mostly because the
+engine's `#REF!` and stopped-short-sum findings are real faults the
+investigator agreed with.
+
+### Precision — every claim read by hand
+
+| | Claims |
+| --- | --- |
+| Hit a labelled cell | 36 |
+| Real, unlabelled | **15** |
+| Arguable | 16 |
+| False | **7** |
+| Total | 74 |
+
+Precision, hits plus real over claims: **69%** (first test 72%).
+False claims 7 of 74 (first test 3 of 71). Four of the seven false
+claims are one sheet (wb09) where the investigator said four cells
+« should read » a row that turns out to hold nothing. **I had graded
+two of those four as real in the first test.** The prover caught
+all four; see below.
+
+### The prover against the grades — the number the round exists for
+
+| Grade | Confirmed | Refuted | Unverifiable |
+| --- | --- | --- | --- |
+| Hit a labelled cell (36) | **33** | 2 | 1 |
+| Real, unlabelled (15) | 12 | 2 | 1 |
+| Arguable (16) | 10 | 2 | 4 |
+| False (7) | 1 | **6** | 0 |
+
+- **Hits confirmed 33 of 36 (92%).** The two refuted hits are the
+  claim over-citing, not the fault being wrong: on wb30 M22 the
+  investigator listed eight omitted cells and one of them holds
+  nothing; on wb04 L16 it named four neighbours that are not built
+  the same way as each other. The fault is real in both; the claim
+  as written is not, and the prover said so.
+- **False claims refuted 6 of 7 (86%).** The one false claim that
+  passed is a value-contradiction whose facts are true (0.505 and
+  0.85 are both there) and whose judgment is wrong; the verdict's
+  note says the judgment is the reviewer's.
+- **Two real claims refuted, and that is a prover gap, named:** wb20
+  K54 and K138 differ from their neighbours only in a typed factor
+  (0.5895 against 0.5995), and the shape comparison erases typed
+  numbers by design, so it sees them as the same. The fix is a
+  second comparison with the numbers kept when the shapes agree;
+  it is not made in this round.
+- **One arguable claim refuted for the wrong reason:** wb21 B117 is
+  a label, and labels are not in the number grid the prover reads.
+
+**The prover corrected the grader.** In the first test I read wb09
+Y34 and Y35 as real (« pulls point at an empty row while the data
+sits above »). The prover checked the cells the investigator said
+they should read — B35, C35, B36, C36 — and every one holds
+nothing. My grade was wrong; the claims were wrong; the machine
+was right. That is the argument for the design in one line.
+
+### Predictions, scored
+
+- Recall 15–22 — holds (19); on the rules' misses 9–14 — holds (13).
+- Precision 60–80% — holds (69%); false under 8 — holds (7).
+- Hits confirmed ≥ 80% — holds (92%); false refuted or unverifiable
+  ≥ half — holds (6 of 7); hits refuted under 10% — holds (5.6%).
+- Claims repeating an engine finding under a quarter — **fails**
+  (35%), for the reason above: where the engine is right the
+  investigator agrees with it, and the brief did not forbid that.
+
+### Kinds, for the record
+
+Range-omits 23, wrong-reference 17, arithmetic 8, other 6,
+differs-from-neighbours 6, empty-reference 5, value-contradiction 4,
+error-value 4, malformed 1. Sixty-eight of seventy-four claims were
+checkable; the six « other » were labels, a day count and a stray
+value.
