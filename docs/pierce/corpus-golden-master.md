@@ -57,6 +57,13 @@ carries more than one change, the accounting lives with the round:
   the row that reads its sibling's phasing switch — the registered
   case, found by hand in the truth-set round. The other 26 files
   report identically.
+- **3 September 2026, later still** — cut after the previous-version
+  round (`overwritten-since.md`), whose rule abstains on every
+  single-file sweep and changes no finding. The one line that moves
+  is the wording of the GD3 `anchored-elsewhere` detail, rewritten
+  under the sentence gate (headline and detail as two sentences, no
+  « sibling »); the finding, its cells and its grade are unchanged.
+  The other 26 files report identically.
 
 ## Honest bounds
 
