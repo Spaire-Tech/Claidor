@@ -4935,6 +4935,31 @@ Records in `enron-errors.md` and `ofgem-errata.md`. Three lessons:
    sum round arithmetic, a comparison in a numeric row, a two-cell
    row — and this corpus is their test set.
 
+## 4 September — outside labels, and the investigator
+
+Records in `enron-errors.md`, `ofgem-errata.md`, `investigator-test.md`.
+
+1. **Score by the finding that names the fault, not the finding
+   that touches the cell.** Thirty-six outside-labelled Enron faults
+   scored under the CUSTODES touch convention gave 15 of 32; read
+   by hand, seven of the fifteen were a typed-number finding that
+   happened to share the cell. Eight of 32 is the number, and the
+   two earlier outside benchmarks were scored the flattering way.
+2. **A regulator's errata are input and document corrections.** Two
+   hundred and fifty entries, two about the models, both a right
+   formula fed the wrong month. Zero by construction for a
+   single-file rule; the Watch's measurement once the corrected
+   files are held.
+3. **The founder's question, answered against my prediction.** A
+   blind model reading each faulty sheet as a table named 18 of 32
+   faults, 12 of the 24 the rules missed, with three outright false
+   claims in seventy-one. I registered 4 to 8, and under 40%
+   precision. The reasons it gave were arithmetic, not pattern —
+   « 79,625 instead of 83,055 » — and every one is a claim the
+   engine can prove or deny. The design the founder proposed,
+   investigator proposes and engine proves, now has a measured
+   reason to exist, and its first test set.
+
 ## 3 September — the truth set: what the registry taught
 
 Record in `truth-set.md`. Three lessons:
