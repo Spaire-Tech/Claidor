@@ -316,6 +316,11 @@ class Workbook:
     #: prescan and the rules that judge formula text — external
     #: links, volatile functions — read every formula in the file.
     label_cells: dict[str, Cell] = field(default_factory=dict)
+    #: The defined names as read, kept so that a claim written against
+    #: a name (« reads TOpf ») can be checked against the cells the name
+    #: points at. The investigator loop's first run on our own models
+    #: refuted six true claims because the prover could not read a name.
+    names: Names = field(default_factory=Names)
 
     def formulas(self) -> dict[str, str]:
         """Every formula in the file, numeric grid and label column alike."""
@@ -594,6 +599,7 @@ def read_workbook(path: str) -> Workbook:
                 grids[name] = _grid_of(sheet, values[name], converted, toggle)
             book.populated[name] = len(grids[name].written)
         names = _names_of(formulas, grids)
+        book.names = names
         every_name = list(names.book.items()) + [
             (scoped, target) for (_, scoped), target in names.sheet.items()
         ]

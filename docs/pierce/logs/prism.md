@@ -4959,6 +4959,25 @@ Records in `enron-errors.md`, `ofgem-errata.md`, `investigator-test.md`.
    engine can prove or deny. The design the founder proposed,
    investigator proposes and engine proves, now has a measured
    reason to exist, and its first test set.
+4. *(the loop built and run, same day — `investigator-loop.md`)*
+   **The prover's refutations are a test of the prover first.** With
+   the engine's evidence in hand the investigator kept its Enron
+   score (19 of 32, 13 of the 24 the rules missed) and the checker
+   confirmed 33 of 36 hits and refuted 6 of 7 false claims — and
+   caught me: two claims I had graded real in the first test cite
+   cells that hold nothing. On our own RIIO-3 sheets it raised
+   forty-four claims, one false, and seven real faults the engine has
+   no rule for in Ofgem's published final models; the checker refuted
+   eleven of the true ones, and every one of those was a bug in the
+   checker — a sheet name upper-cased, `AP$9` read as a fixed column,
+   defined names unread. Three fixed with tests; the Enron verdicts
+   did not move. The lesson is the one the founder's design rests
+   on: a refuted true claim is the loudest signal the loop gives, and
+   it points at the machine before it points at the model.
+5. *(same round)* **A label the engine wrote is not a label the
+   investigator can be scored on.** Every hit on our own sheets sat
+   on a cell the evidence file had named. Recall there is a repeat
+   count until the errata pairs give an outside denominator.
 
 ## 3 September — the truth set: what the registry taught
 

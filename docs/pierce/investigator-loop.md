@@ -213,3 +213,209 @@ differs-from-neighbours 6, empty-reference 5, value-contradiction 4,
 error-value 4, malformed 1. Sixty-eight of seventy-four claims were
 checkable; the six « other » were labels, a day count and a stray
 value.
+
+## Part B — our own world, 4 September 2026
+
+**Deviations, named before the numbers.**
+
+1. **Twenty windows, not twenty-six.** The registration's count was
+   an estimate; the nine sheets cut into 250-row windows from row 1
+   give twenty (GD3 `MainInputs` seven, ET3 `Finance&Tax` two, GT3
+   `SystemOperator` five, the other six one each). Windows hold
+   between 294 and 4,165 occupied cells.
+2. **Thirteen registry lines, not ten.** The registration miscounted:
+   the registry holds twelve `engine-found-hand-verified` lines and
+   one `independent-real` on these nine sheets, and two of them
+   (the typed `/5` and the wrong switch) share the cells
+   `AU472:AY472`. Thirteen lines, twelve distinct faults, scored
+   against thirteen.
+3. **Read in pieces.** A window is longer than one read, so the
+   investigators read their two files in several pieces; one counted
+   its table's lines with a shell command, one searched its own table
+   with patterns. Every tool use in every transcript touched the two
+   files handed over and nothing else — checked, not assumed.
+4. **The evidence handed over the labels.** Twelve of the thirteen
+   labels are the engine's own findings, and the thirteenth is found
+   by the rule written the day before; the evidence file for each
+   window carried those findings. Every one of the eight hitting
+   claims sits on a cell the evidence named. Label recall here
+   measures whether the investigator repeats the evidence, not what
+   it sees; the number that means something in Part B is the
+   unlabelled column below.
+
+### Labels hit, strict
+
+| | Hit | Of |
+| --- | --- | --- |
+| Registry lines | **5** | 13 |
+| Distinct faults | 4 | 12 |
+| Windows that said nothing is wrong | 5 | 20 — one of them (ET3 RoRE) holds a label |
+
+Hit: the two final-year profiling cells (ET3 `Revenue!AY25`, GD3
+`Revenue!AY26`), the phasing row's typed `/5` and its wrong switch
+(`MainInputs!AU472:AY472`, one row, two lines), and the TaxPools
+straight-line row anchored on an empty cell (`AP106`). Missed: the
+three typed-over rows (ET3 RoRE `AP29:AY29`, ET3 `Revenue!AP16:AY16`,
+GT3 `PCFMInterface_SO!I184`), four typed numbers inside formulas
+(`Finance&Tax` `AP258`/`AP259`, `SystemOperator` `AP931`/`AP979`,
+the wedge's `E16:E17`), and the OFFSET row (`SystemOperator!AP731`).
+Those are the classes the brief tells the investigator to set aside
+« unless you believe the number itself is wrong », and it did.
+
+### Every claim read by hand
+
+| | Claims | Distinct issues |
+| --- | --- | --- |
+| Hit a labelled cell | 8 | 4 |
+| Real, unlabelled | **25** | **7** |
+| Arguable | 10 | 8 |
+| False | **1** | 1 |
+| Total | 44 | 20 |
+
+Precision, hits plus real over claims: **75%**; by distinct issue,
+11 of 20 (55%). One false claim in forty-four.
+
+**The seven real faults the engine has no rule for**, in four
+published Ofgem final-determination models, so the grade can be
+checked:
+
+1. ET3 `Finance&Tax` row 227, « Early equity issuance cost »,
+   FY2027–FY2031: `=AU223*AU225*$AP$119` where FY2022–FY2026 are
+   `=AP223*AP225`. The extra factor is the FY2022 equity issuance
+   amount, zero, so the 942.79 issued in FY2027 carries a cost of 0
+   where the rate gives 47. Five claims, one row.
+2. GT3 `PCFMInterface_SO` rows 99–116: every allocation percentage
+   is one INDEX/MATCH added to itself, `(INDEX(…))+(INDEX(…))` with
+   the same arguments. The interface shows 120%, 80% and 200% where
+   the `NGGT SO` sheet holds 60%, 40% and 100%. Nothing in this
+   workbook reads the rows; the sheet is the hand-over to the PCFM.
+   Six claims, one block.
+3. GT3 `SystemOperator` row 1012, « Profit impact of tax trigger (no
+   deadband) »: multiplies by `TOpf`, the transmission owner's price
+   factor (`MainInputs` row 376), where row 1011 and rows 1063–1064
+   use `SOpf` (row 215). Both factors are 0.871 today and the input
+   is 0, so nothing moves. Six claims, one row.
+4. GD3 `MainInputs` row 535, the typed date headers over the totex
+   allocation block: 31/03/2022 to 31/03/2026, then 31/03/2026 five
+   times over the RIIO-3 columns. Nothing reads the row; a label
+   fault. Five claims, one row.
+5. GT3 `SystemOperator!I287`, « Over/undercollection percentage for
+   penal rate adjustment »: the year-column switch pattern copied
+   into the scalar column, whose flags are empty, so 0 where the
+   identically labelled `I265` holds 0.12 and the cell it reads
+   holds 0.06. Nothing reads it.
+6. GT3 `SystemOperator!AO280`, SONIA in the RIIO-1 column: the switch
+   is `AO$10` alone where the block uses `(AO$9+AO$10)`, so 0 where
+   the input is 0.00056.
+7. GT3 `SystemOperator!AO286`, the K rate margin, the same way: 0
+   where the input is 0.0115.
+
+The ten arguable: a last-column flag built differently with the same
+result (`Finance&Tax!AY14`); an opening balance reading the empty
+column before the first year (`AP376`); a stray link without the
+price-base factor, worth 0 (`MainInputs!V1490`); a dead second term
+carrying the other price-base factor in columns whose flag is 0
+(`AO1505`, `AO1506`, `AO1508`); a TIM line that re-derives allowed
+totex past the multiplier row, equal while the multiplier is 1
+(`SystemOperator!AP627`); a typed 2.8 where the blend would give
+2.74 in the wedge's transition year (`C16`); a legacy link one row
+off a sequence, into an empty row either way (`AU61`); flag columns
+reading a numeric block (`BC47`). A reviewer would want to see each
+and would not call most of them errors.
+
+The one false claim: `MainInputs!AP1495` « should read InputSummary
+row 974 » — row 974 is empty, and row 243, the one it reads, is
+labelled « Disposals net proceeds ».
+
+### The prover against the grades — and what it found in itself
+
+| Grade | As run: confirmed / refuted / unverifiable | After the three fixes |
+| --- | --- | --- |
+| Hit (8) | 6 / **2** / 0 | **8** / 0 / 0 |
+| Real (25) | 8 / **11** / 6 | 14 / 5 / 6 |
+| Arguable (10) | 4 / 6 / 0 | 7 / 3 / 0 |
+| False (1) | 0 / 1 / 0 | 0 / 1 / 0 |
+
+As run, the prover refuted two hits and eleven real claims. Reading
+each refutation against the cells found **three bugs in the prover,
+not in the claims**, each fixed after the results were seen, each
+with a test, and named here as a change made after the fact:
+
+- The claim parser upper-cased the whole reference, sheet name and
+  all, so « reads `MainInputs!AZ461` » never matched the sheet
+  `MainInputs`. Two hits and one false claim refuted for the wrong
+  reason.
+- The shape comparison read `AP$9` as a fixed column, so two cells
+  filled across a row looked built differently. Three true claims
+  refuted.
+- Defined names were unread, so « reads `TOpf` » was « does not read
+  TOPF ». Six true claims refuted. The workbook now keeps its names
+  and the prover resolves them, sheet scope first.
+
+Part A re-run under the fixed prover gives the same verdicts as
+before, to the claim. After the fixes every hit is confirmed and
+14 of 25 real claims are. The eleven that are not:
+
+- **Five refuted rightly, by the letter.** The date headers were
+  filed as `value-contradiction` — « these hold the same value where
+  they should differ » — and the kind means the opposite. The facts
+  the investigator cited are true; the prover said the true thing
+  (they are the same) as a refutation. A kind for « repeats where it
+  should differ » is missing.
+- **Six unverifiable.** The doubled lookups were filed as `other`. A
+  kind for « a term repeated inside one formula » would make them
+  checkable from the formula text alone.
+
+The three arguable claims still refuted are refuted rightly: a typed
+cell has no shape to compare (`C16`), a « should read » into an
+empty cell (`AU61`), neighbours that are not built alike (`BC47`).
+
+### Cost
+
+Model tokens per window — every token the model read across its
+calls, cache reads included, from the transcripts: least 85,000,
+median 244,000, most 765,000; six million across the twenty. Under
+120,000: five of twenty. The windows were too long for one read, so
+each investigator read them in several pieces, and every piece read
+the whole context again. The prover checked the 44 claims in 0.02 s;
+reading the four workbooks took 279 s, which is the reader's cost on
+these models, not the prover's.
+
+### Predictions, scored
+
+- Labels hit 3–7 of ten — **holds in count** (5 of 13; 4 of 12
+  distinct), against a denominator the registration got wrong, and
+  every hit sits on a cell the evidence named, so the number does
+  not measure what it was registered to measure.
+- Claims 40–120 across the windows — holds (44 across 20).
+- Precision 40–70% — **fails, upward** by claim (75%); holds by
+  distinct issue (55%).
+- Cost under 120,000 tokens per window — **fails** (5 of 20).
+
+### What the round decides
+
+1. **On the customer's kind of model, the investigator found seven
+   real faults the engine has no rule for**, in four published Ofgem
+   final models, with one false claim in forty-four. Two of the
+   seven change a number in the file today (the issuance cost, the
+   interface percentages); one is masked by equal factors and a zero
+   input (the tax trigger); four are wrong cells that nothing in the
+   numeric grid reads. They are candidates for the registry
+   and are not entered: the registry's grades are the founder's
+   protocol, and none of them is « found by the investigator, read by
+   hand by the engineer ».
+2. **The loop found the prover's bugs.** Every wrongly refuted true
+   claim was a defect in the checker, and the checker is the part of
+   this design that has to be right. Three found, three fixed, three
+   tests; the Enron verdicts did not move.
+3. **Label recall on our own world is not a measure while the labels
+   are the engine's.** The independent denominator this needs is the
+   errata pairs (`ofgem-errata.md`), once the corrected files are held.
+4. **Two kinds are missing from the claim grammar**, and both are
+   checkable from the formula text: a repeated term, and a value
+   repeated where its neighbours step.
+5. **The cost is the window, not the model.** Two hundred and fifty
+   rows of a regulator model is up to four thousand cells; a table of
+   the cells that break their row's shape, with the engine's evidence,
+   would be a tenth of that. That is the next registered round, not
+   this one.

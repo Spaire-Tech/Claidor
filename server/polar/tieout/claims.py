@@ -48,6 +48,17 @@ KINDS = frozenset(
 _A1 = re.compile(
     r"^(?:(?P<sheet>'[^']+'|[^'!]+)!)?\$?(?P<col>[A-Za-z]{1,3})\$?(?P<row>\d+)$"
 )
+#: The cell half of a reference, with its two dollar signs told apart.
+_CELL = re.compile(r"^(?P<acol>\$?)(?P<col>[A-Za-z]{1,3})(?P<arow>\$?)(?P<row>\d+)$")
+
+
+def _upper(ref: str) -> str:
+    """« MainInputs!az461 » → « MainInputs!AZ461 ». The sheet keeps its
+    case: sheet names are looked up as written, and the first run on our
+    own models refuted two true claims because the whole reference had
+    been upper-cased, sheet and all."""
+    sheet, sep, cell = ref.rpartition("!")
+    return f"{sheet}{sep}{cell.upper()}" if sep else ref.upper()
 
 
 @dataclass(frozen=True)
@@ -80,17 +91,17 @@ class Claim:
         kind = text("kind") or "other"
         return cls(
             sheet=sheet,
-            cell=text("cell").upper(),
+            cell=_upper(text("cell")),
             kind=kind if kind in KINDS else "other",
             reason=text("reason"),
             confidence=text("confidence"),
-            reads=text("reads").upper(),
-            should_read=text("should_read").upper(),
-            omits=tuple(one.upper() for one in many("omits")),
-            neighbours=tuple(one.upper() for one in many("neighbours")),
+            reads=_upper(text("reads")),
+            should_read=_upper(text("should_read")),
+            omits=tuple(_upper(one) for one in many("omits")),
+            neighbours=tuple(_upper(one) for one in many("neighbours")),
             alternative_formula=text("alternative_formula"),
             expected_value=text("expected_value"),
-            other_cell=text("other_cell").upper(),
+            other_cell=_upper(text("other_cell")),
         )
 
 
@@ -126,9 +137,76 @@ def _cell(book: Workbook, sheet: str, ref: str) -> Cell | None:
     return book.cells.get(f"{target}!{get_column_letter(column)}{row}")
 
 
+def _name_target(
+    book: Workbook, sheet: str, name: str
+) -> tuple[str, int, int, int, int] | None:
+    """A defined name — sheet scope first, then the workbook's — as the
+    rectangle it points at, or None when the workbook has no such name."""
+    wanted = name.strip().lower()
+    target = next(
+        (
+            text
+            for (scope, one), text in book.names.sheet.items()
+            if scope == sheet and one.lower() == wanted
+        ),
+        None,
+    )
+    if target is None:
+        target = next(
+            (text for one, text in book.names.book.items() if one.lower() == wanted),
+            None,
+        )
+    if target is None:
+        return None
+    pieces = target.replace("$", "").split(":")
+    first = _parse(pieces[0], sheet)
+    if first is None:
+        return None
+    last = _parse(pieces[-1], first[0]) if len(pieces) > 1 else first
+    if last is None:
+        return None
+    return (
+        first[0],
+        min(first[1], last[1]),
+        min(first[2], last[2]),
+        max(first[1], last[1]),
+        max(first[2], last[2]),
+    )
+
+
 def _populated(book: Workbook, sheet: str, ref: str) -> bool:
+    """Whether the cell — or, for a defined name, any cell the name
+    points at — holds a formula or a value."""
+    if _parse(ref, sheet) is None:
+        target = _name_target(book, sheet, ref)
+        if target is None:
+            return False
+        name_sheet, r1, c1, r2, c2 = target
+        return any(
+            one.sheet == name_sheet
+            and r1 <= one.row <= r2
+            and c1 <= one.column <= c2
+            and (one.formula is not None or one.value is not None)
+            for one in book.cells.values()
+        )
     cell = _cell(book, sheet, ref)
     return cell is not None and (cell.formula is not None or cell.value is not None)
+
+
+def _names_read(formula: str) -> set[str]:
+    """The defined names a formula reads, lower-cased: every range
+    operand that is not an A1 reference."""
+    try:
+        tokens = tokens_of(formula)
+    except Exception:
+        return set()
+    return {
+        token.value.strip().lower()
+        for token in tokens
+        if token.type == "OPERAND"
+        and token.subtype == "RANGE"
+        and _parse(token.value.split(":")[0], "") is None
+    }
 
 
 def _references(formula: str, sheet: str) -> list[tuple[str, int, int, int, int]]:
@@ -160,10 +238,17 @@ def _references(formula: str, sheet: str) -> list[tuple[str, int, int, int, int]
     return out
 
 
-def _covers(refs: list[tuple[str, int, int, int, int]], sheet: str, ref: str) -> bool:
+def _covers(
+    refs: list[tuple[str, int, int, int, int]],
+    sheet: str,
+    ref: str,
+    names_read: set[str] | None = None,
+) -> bool:
+    """Whether the formula's references reach `ref` — a cell, or a
+    defined name the formula reads by that name."""
     parsed = _parse(ref, sheet)
     if parsed is None:
-        return False
+        return ref.strip().lower() in (names_read or set())
     target, row, column = parsed
     return any(
         s == target and r1 <= row <= r2 and c1 <= column <= c2
@@ -190,8 +275,13 @@ def _shape(cell: Cell) -> str:
                     pieces.append(piece)
                     continue
                 target, row, column = parsed
-                absolute_col = "$" in piece.split("!")[-1].split(str(row))[0]
-                absolute_row = piece.rstrip().endswith(f"${row}")
+                # `AP$9` fixes the row, not the column: the two dollar
+                # signs are read apart. The first run on our own models
+                # refuted three true claims by mistaking the one for
+                # the other.
+                halves = _CELL.match(piece.strip().rpartition("!")[2])
+                absolute_col = bool(halves and halves.group("acol"))
+                absolute_row = bool(halves and halves.group("arow"))
                 col_part = (
                     f"C{column}" if absolute_col else f"C[{column - cell.column}]"
                 )
@@ -411,12 +501,13 @@ def check(book: Workbook, claim: Claim) -> Verdict:
         if cell.formula is None:
             return fails(f"{claim.cell} holds no formula")
     refs = _references(cell.formula or "", claim.sheet)
+    names_read = _names_read(cell.formula or "")
 
     if claim.kind == "range-omits":
         if not claim.omits:
             return Verdict("unverifiable", facts, "no omitted cell was named")
         for ref in claim.omits:
-            if _covers(refs, claim.sheet, ref):
+            if _covers(refs, claim.sheet, ref, names_read):
                 return fails(f"{claim.cell}'s formula does cover {ref}")
             holds(f"{claim.cell}'s formula leaves {ref} out")
             if not _populated(book, claim.sheet, ref):
@@ -431,7 +522,7 @@ def check(book: Workbook, claim: Claim) -> Verdict:
     if claim.kind == "wrong-reference":
         if not claim.reads:
             return Verdict("unverifiable", facts, "the cell it reads was not named")
-        if not _covers(refs, claim.sheet, claim.reads):
+        if not _covers(refs, claim.sheet, claim.reads, names_read):
             return fails(f"{claim.cell}'s formula does not read {claim.reads}")
         holds(f"{claim.cell}'s formula reads {claim.reads}")
         if claim.should_read:
@@ -445,7 +536,7 @@ def check(book: Workbook, claim: Claim) -> Verdict:
     if claim.kind == "empty-reference":
         if not claim.reads:
             return Verdict("unverifiable", facts, "the cell it reads was not named")
-        if not _covers(refs, claim.sheet, claim.reads):
+        if not _covers(refs, claim.sheet, claim.reads, names_read):
             return fails(f"{claim.cell}'s formula does not read {claim.reads}")
         holds(f"{claim.cell}'s formula reads {claim.reads}")
         if _populated(book, claim.sheet, claim.reads):
