@@ -1609,11 +1609,22 @@ class TestHouseRules:
         #: Under today's structure layer the balance, cash and debt
         #: checks run on this fixture (its year counter is a period
         #: axis); interest still finds no schedule, and the convention
-        #: check holds nothing for the fixture's line names.
+        #: check holds nothing for the fixture's line names. The
+        #: previous-version rule abstains first: the fixture is the
+        #: deal's first upload, and since overwritten-since.md the
+        #: audit's own abstentions reach the record ahead of the
+        #: statement checks'. `broken-aggregation` abstains with it: the
+        #: fixture has no pair of dated blocks to judge, a fact the audit
+        #: always recorded and the record never carried until now.
         assert [one["rule"] for one in summary_a["abstentions"]] == [
+            "formula-overwritten",
+            "broken-aggregation",
             "interest-consistency",
             "convention",
         ]
+        assert summary_a["abstentions"][0]["why"].startswith(
+            "This is the first version we hold"
+        )
 
         #: Criteria 4 and 5 — Firm B's report is Firm A's minus exactly
         #: the switched-off rules. Identity is checked field-for-field:
@@ -1643,7 +1654,13 @@ class TestHouseRules:
             "cash-continuity": {"clean": 3, "total": 3},
             "debt-terminal": {"clean": 2, "total": 2},
         }
+        #: The audit's own abstentions, minus any rule Firm B switched
+        #: off — a rule off is « switched off », never « could not run ».
         assert [one["rule"] for one in summary_b["abstentions"]] == [
+            rule
+            for rule in ("formula-overwritten", "broken-aggregation")
+            if rule not in off
+        ] + [
             "interest-consistency",
             "convention",
         ]

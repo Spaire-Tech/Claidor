@@ -27,7 +27,7 @@ from decimal import Decimal
 
 from openpyxl.utils import column_index_from_string, get_column_letter
 
-from .workbook import Cell, Workbook
+from .workbook import Cell, Workbook, tokens_of
 
 RULE = "formula-overwritten"
 
@@ -87,8 +87,24 @@ class Meaning:
 
 def link_target(formula: str, sheet: str) -> tuple[str, int, int] | None:
     """(sheet, row, column) of the one cell a link reads, or None when
-    the formula is more than a link."""
-    match = _LINK.match(formula)
+    the formula reads more than one cell or none.
+
+    A link is a formula whose every reference is the same single cell:
+    `=Inputs!B2`, and also Ofwat's blank-guarded form
+    `=IF(F_Inputs!T1586="",0,F_Inputs!T1586)`, which reads one cell
+    twice and nothing else. The Affinity pair's fourteen overwrites are
+    all the guarded form, so a plain-text test would have said nothing
+    about where any of them came from."""
+    pieces: set[str] = set()
+    try:
+        for token in tokens_of(formula):
+            if token.type == "OPERAND" and token.subtype == "RANGE":
+                pieces.add(token.value.strip())
+    except Exception:
+        return None
+    if len(pieces) != 1:
+        return None
+    match = _LINK.match("=" + next(iter(pieces)))
     if match is None:
         return None
     target = (match.group("sheet") or sheet).strip("'")

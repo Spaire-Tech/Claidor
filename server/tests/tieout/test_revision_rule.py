@@ -110,6 +110,22 @@ def test_two_unrelated_models_abstain_rather_than_guess() -> None:
     assert whys[RULE] == NO_MATCH
 
 
+def test_a_blank_guarded_link_names_its_source() -> None:
+    """Ofwat's form — `=IF(x="",0,x)` — reads one cell twice and is a
+    link to it; the Affinity pair's fourteen overwrites are all this
+    shape, and the finding must still say what the source holds now."""
+
+    def guarded(book: Book) -> None:
+        _draft(book)
+        book["Calc"]["B2"] = '=IF(Inputs!B2="",0,Inputs!B2)'
+
+    draft, final = _read(guarded), _read(_final)
+    result = audit(final, previous=draft)
+    switch = next(f for f in result.findings if f.ref == "Calc!B3")
+    assert switch.rule == RULE
+    assert "now holds 1" in switch.detail
+
+
 def test_a_formula_that_became_another_formula_is_not_this_rule() -> None:
     def changed(book: Book) -> None:
         _final(book)
