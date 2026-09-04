@@ -4932,6 +4932,21 @@ Record in `truth-set.md`. Three lessons:
    engine pointed at — and the engine misses it. The denominator
    that would make recall a number is a cell-level diff graded
    without the rules, or an outside corpus; nothing else.
+3e. *(the previous-version rule, same day — `overwritten-since.md`)*
+   **A cell with no row beside it has one witness: the version
+   before.** Fourteen of fourteen now, from five, by matching cells
+   on what they mean across two versions and asking whether a typed
+   value sits where a formula was. The price is volume — every Ofwat
+   final pastes dozens to hundreds of typed values over its draft's
+   links, and the ten read by hand were ten real overwrites — and a
+   limit the rule states rather than hides: it cannot tell a decision
+   from a defect, so it says what the source holds now and lets the
+   reviewer decide. Two things about method: a link is « a formula
+   that reads exactly one cell », because the regulator's guarded
+   form `=IF(x="",0,x)` is the link every one of the fourteen used;
+   and a sentence gate that grades a finding as its reader hears it
+   caught a three-sentence, spliced, « sibling »-carrying finding
+   from the round before, which had never been through it.
 3d. *(the wrong-switch rule, same day — `wrong-switch.md`)*
    **A rule written for one case must be tested on everything else
    before it is trusted, and even then it has one data point.** The

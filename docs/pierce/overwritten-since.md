@@ -128,3 +128,139 @@ before, so:
   rows at every audit. The two are not reconciled here; the delta's
   alignment is by row similarity, this rule's by label, and where
   they disagree on a pair is a later measurement.
+
+## Result — 3 September 2026
+
+**Three deviations from the registration, named.**
+
+1. *What counts as a link.* The registration said « a plain link to
+   one cell ». Every one of the Affinity pair's fourteen overwrites
+   was Ofwat's blank-guarded form, `=IF(x="",0,x)`, which reads one
+   cell twice and nothing else — under the registered test none of
+   them would have said where it came from. A link is now a formula
+   whose every reference is the same single cell.
+2. *The sentences.* The sentence gate (`test_findings_read_well.py`)
+   holds every rule to a headline and a detail that do not repeat
+   each other, read under the founder's bar together, and say what
+   the fact costs. The wrong-switch rule of the round before had
+   never been through it, and its headline used « sibling », a banned
+   word. Both rules were rewritten to pass: the headline names the
+   fact (« holds a typed 2 where the version before held a formula »),
+   the detail the consequence (« The cell it used to read now holds
+   1, so this one will not follow it »). The wrong-switch finding's
+   detail changed with it, and the golden master is recut for that
+   one line.
+3. *The record.* The audit's own abstentions now reach the run
+   record beside the statement checks' — registered above as a fix,
+   done here. `broken-aggregation` appears on the fixtures' checks
+   lists as « could not run » for the first time, which it always
+   was.
+
+### Measure 1 — the test set
+
+| | Found | Of |
+| --- | --- | --- |
+| Registered cells (`pr24-afw-inps-*`, 14 cells) | **14** | 14 |
+| Registered rows | **12** | 12 (the registration's table wrote 10, grouping the two base-revenue rows and the two share-issue rows) |
+| Other cells flagged on the pair | **0** | — |
+
+Every finding carries the previous formula and, for the single-cell
+rows, what the source holds now: on `InpS!F101` « The cell it used
+to read now holds 1, so this one will not follow it » — the case the
+round was built on, said by the engine.
+
+### Measure 2 — the other fifteen PR24 pairs
+
+| Pair | Rows | Cells | | Pair | Rows | Cells |
+| --- | --- | --- | --- | --- | --- | --- |
+| Anglian | 11 | 27 | | South Staffs | 14 | 24 |
+| Hafren Dyfrdwy | 15 | 40 | | Severn Trent | 31 | 103 |
+| Northumbrian | 12 | 32 | | Thames | 24 | 72 |
+| Portsmouth | 11 | 28 | | United Utilities | 26 | 74 |
+| South West | 31 | 103 | | Welsh | 13 | 37 |
+| SES | 47 | 207 | | Wessex | 20 | 68 |
+| South East | 20 | 68 | | Yorkshire | 28 | 112 |
+| Southern | 35 | 131 | | | | |
+
+Ten rows drawn with seed 20260903 from the 338, read by hand: **10 of
+10 genuine** — every one a link from the model's inputs sheet
+(`InpS`) to the regulator's inputs sheet (`F_Inputs`), replaced at
+final by typed values: switches, base revenue, reprofiling revenue,
+share issues, the capitalised-revenue proportion. One of the ten has
+already drifted from its source: Thames' base revenue for 2024-25
+holds a typed 45.21 where the cell it used to read now says 45.79.
+The other single-cell row in the sample (Thames' share-issue switch)
+still agrees with its source, and the finding says so.
+
+### Measure 3 — the GD3 pair
+
+10 rows, 59 cells. All ten read by hand; **10 of 10 are formulas
+typed over**, which is the registered criterion, so the prediction
+« fewer than half genuine » fails — and fails because the criterion
+cannot tell a deliberate re-sourcing from an overwrite. A second
+reading, post hoc and named as such, of what a reviewer would make of
+them:
+
+| What the draft had | What the final has | Rows | A reviewer's reading |
+| --- | --- | --- | --- |
+| Interpolated inflation forecasts (`=0.75*(prev)+0.25*(next)`) | typed forecasts | 2 | re-sourced inputs |
+| Cadent capitalisation rates as the average of four networks | typed 0.25 / 0.7 / 1 | 3 | re-modelled — worth a question |
+| Network innovation allowance as `=6.2/10`, `=11.8/5` | typed 2.43, 3.696 | 3 | a typed number over a typed number — the draft was already a hardcode |
+| Scenario cap rate `=SUM(TIM!…)/5` across 20 cells; a user-defined switch | typed 0.7; typed 0.65 | 2 | overrides |
+
+The rule is right that every one of them stopped following its
+inputs. Whether that was a decision is the reviewer's to say, and
+the finding hands them the previous formula to say it with.
+
+### Measure 4 — the founder's model
+
+One version held. The rule abstains: « This is the first version we
+hold; the check needs the one before. » Zero findings.
+
+### Measure 5 — cost
+
+| | |
+| --- | --- |
+| The rule alone, Affinity pair (279,199 typed cells matched) | 3.5 s |
+| The rule alone, GD3 pair | 1.0 s |
+| Reading the previous version's stored cells in the product | not measured here; the light read is the cost, 4.0 s on 470,594 cells (`repository.cells_for_graph`, measured 28 August) |
+
+### Predictions, scored
+
+- Measure 1: 14 of 14 cells — **holds**; 10 of 10 rows — holds as 12
+  of 12 (the registration miscounted rows, not cells); other cells
+  0–5 — holds (0).
+- Measure 2: every pair flags something — holds; 3–40 cells per pair
+  — **fails**, eleven of fifteen pairs are above 40 (24 to 207); at
+  least 8 of 10 genuine — holds (10).
+- Measure 3: under 200 cells — holds (59); fewer than half genuine —
+  **fails** under the registered criterion (10 of 10), for the reason
+  given.
+- Measure 4: holds.
+- Measure 5: under 20 s — holds (3.5 s).
+
+### What the round decides
+
+1. **Recall on the cell-diff class is 14 of 14**, from 5 of 14. The
+   nine misses were cells no row rule could see, and the version
+   before sees all of them. This is the first rule in the audit that
+   reads anything but the file in front of it.
+2. **The class is common, and it is the regulator's own practice.**
+   Every Ofwat final pastes between 24 and 207 typed values over the
+   draft's inputs links. A firm that revises its own model the same
+   way will see the same volume, and the finding's second sentence —
+   whether the source has moved — is what separates the paste that
+   still agrees from the one that no longer does. The volume is a
+   fact about the models, not a false-positive rate; the ten read by
+   hand were ten overwrites.
+3. **The rule cannot see intent.** A forecast typed in place of an
+   interpolation is a decision; a switch typed in place of its link
+   is a defect; the rule reports both the same way, with the previous
+   formula as evidence. That is the honest scope, and a reviewer who
+   accepts a finding once has the ruling carried forward on every
+   re-check like any other.
+4. **The product wiring is the Watch's own resolution** — same
+   lineage, same deal, the highest lower ready version — and the
+   rule abstains by name on a first upload. The Overview's checks
+   list now carries the audit's abstentions as well as the statement
+   checks', which it should have since the A4 round.

@@ -178,3 +178,18 @@ reads instead.
    a twelve-row reach hold the one case; a model whose switches sit
    further right, or whose like-shaped sibling sits further away, is
    outside them by construction.
+
+### Post hoc — the finding's two sentences, 3 September (later)
+
+The sentence gate had not been run on this rule when the results
+above were written. It failed it three ways: « sibling » in the
+catalogue names, one three-sentence finding, and a headline that
+spliced the detail. The finding now reads, headline then detail:
+« In « RIIO-2 legacy Adjustment Factor phasing », 5 cells read the
+switch of « RIIO-2 legacy K Correction Factor phasing », not their
+own, which is filled in and unread. » — « The row « RIIO-2 legacy K
+Correction Factor phasing » reads its own, so this answer holds only
+while I474 and I472 agree. » The catalogue says « another row's
+switch ». The golden master is recut for the one detail line
+(`corpus-golden-master.md`). Nothing about what the rule finds
+changed.
