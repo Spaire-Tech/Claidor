@@ -284,6 +284,10 @@ RULE_NAMES: dict[str, str] = {
     "hardcode-in-formula": "Numbers typed inside formulas",
     "typed-over-formula": "Values typed over formulas",
     "typed-over-edge": "Values typed over a series' edge",
+    #: A typed value where the version before held a formula
+    #: (overwritten-since.md): the nine cell-diff misses, whose rows
+    #: carry no series for the typed-over rule to compare against.
+    "formula-overwritten": "Values typed over the version before's formulas",
     "inconsistent-anchoring": "Anchoring that changes along a row",
     "inconsistent-row": "Formulas inconsistent across a row",
     #: A row anchored on a sibling row's switch while it owns one
@@ -319,6 +323,7 @@ HEADLINES: dict[str, str] = {
     "long-formula": "Complex formula",
     "hardcode-in-formula": "Typed-in assumption",
     "typed-over-formula": "Typed over a formula",
+    "formula-overwritten": "Typed over since the version before",
     "typed-over-edge": "Typed series edge",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
@@ -561,6 +566,11 @@ def _elevated(book: Workbook, result: Audit, materiality: float | None = None) -
             0.8,
             "a typed value sits where the series calculates — overrides "
             "are sometimes deliberate",
+        ),
+        "formula-overwritten": (
+            0.85,
+            "the version before held a formula here — the file's own "
+            "history is the evidence, not a pattern",
         ),
         "typed-over-edge": (
             0.7,
@@ -998,6 +1008,12 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         "anchored-elsewhere": (
             f"{finding.detail} Its answer is right only while the two switches agree."
         ),
+        #: The detail names the typed value and, for a link, what its
+        #: source holds now; the plain words add what the loss costs.
+        "formula-overwritten": (
+            f"{finding.detail} A number typed over a formula stops following "
+            f"its inputs."
+        ),
         #: « iterative calculation » is Excel's phrase, not a
         #: banker's — the vocabulary table swaps it for « circular
         #: calculation », said in words that carry their own meaning.
@@ -1082,6 +1098,7 @@ def audit(
     axes: "PeriodAxes | None" = None,
     *,
     materiality: float | None = None,
+    previous: Workbook | None = None,
 ) -> Audit:
     """Every mechanical defect in a model, graded.
 
@@ -1090,7 +1107,13 @@ def audit(
     instead of a column letter) and lets a typed cell say what the row
     would calculate there. Absent, every sentence falls back to
     coordinates; nothing is guessed.
+
+    `previous` — the version before this one, when the caller holds
+    it. The one rule that reads it (`formula-overwritten`) abstains by
+    name without it; every other rule reads this workbook alone.
     """
+    from .revision import overwritten_since
+
     result = Audit(examined=len(book.cells))
 
     _unreadable_formulas(book, result)
@@ -1102,6 +1125,7 @@ def audit(
     _rows(book, result)
     _selector_drift(book, result)
     _anchored_elsewhere(book, result)
+    overwritten_since(book, previous, result)
     _mutations(book, result)
     _typed_islands(book, result)
     _typed_edges(book, result)
@@ -1187,7 +1211,10 @@ COVERAGE_OF: dict[str, str] = {
 #: obligation is unchanged and `test_audit_coverage.py` holds it:
 #: **every rule here still lands in exactly one of tallies or
 #: abstentions, never both and never neither.**
-SELF_COUNTED: frozenset[str] = frozenset({"broken-aggregation"})
+#: `formula-overwritten` walks **typed cells matched by meaning to the
+#: version before**, a population only the pair can supply; with no
+#: earlier version it abstains by name (overwritten-since.md).
+SELF_COUNTED: frozenset[str] = frozenset({"broken-aggregation", "formula-overwritten"})
 
 
 #: A4 — why a denominator is zero, in the file's own terms. Ordered:

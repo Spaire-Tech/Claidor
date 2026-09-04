@@ -393,6 +393,7 @@ class TieOutService:
         check_run_id: UUID | None,
         rules_off: set[str],
         materiality: float | None = None,
+        previous_cells: Sequence[Any] | None = None,
     ) -> tuple[list[FindingRow], dict[str, Any]]:
         """One model's audit, computed from its stored cells.
 
@@ -402,6 +403,10 @@ class TieOutService:
         the version-scoped read (:meth:`audit_of_version`) are one
         computation with two callers, never two computations that can
         drift apart.
+
+        `previous_cells` — the stored cells of the version before, for
+        the one rule that reads it (overwritten-since.md). None when
+        there is no earlier version; the rule then abstains by name.
         """
         from .analytics import (
             ANALYTIC_RULE_NAMES,
@@ -422,8 +427,20 @@ class TieOutService:
         book = _workbook_of(cells)
         _restore_file_facts(book, model.counts)
         structure = read_structure(book)
-        result = run_rules(book, axes=structure.axes, materiality=materiality)
+        previous = _workbook_of(previous_cells) if previous_cells is not None else None
+        result = run_rules(
+            book, axes=structure.axes, materiality=materiality, previous=previous
+        )
         result.findings = [one for one in result.findings if one.rule not in rules_off]
+        #: The audit's own abstentions, carried into the record with
+        #: the statement checks' — until overwritten-since.md only the
+        #: latter reached it, so a rule with nothing to walk read as
+        #: « Ran and found nothing » on the checks list.
+        abstentions.extend(
+            {"rule": one.rule, "why": one.why}
+            for one in result.abstentions
+            if one.rule not in rules_off
+        )
         errors += len(result.errors)
         smells += len(result.smells)
         for defect in result.findings:
@@ -621,6 +638,7 @@ class TieOutService:
             check_run_id=None,
             rules_off=rules_off,
             materiality=materiality,
+            previous_cells=await self._previous_cells(repository, artifact),
         )
         #: In-memory rows, never flushed — the column defaults that
         #: would land at flush are supplied here so the renderer can
@@ -1174,6 +1192,7 @@ class TieOutService:
                 check_run_id=run.id,
                 rules_off=rules_off,
                 materiality=materiality,
+                previous_cells=await self._previous_cells(repository, model),
             )
             findings.extend(found)
             errors += int(record["errors"])
@@ -1209,6 +1228,19 @@ class TieOutService:
                 "tallies": tallies,
             },
         )
+
+    @staticmethod
+    async def _previous_cells(
+        repository: TieOutRepository, model: Artifact
+    ) -> Sequence[Any] | None:
+        """The stored cells of the version before this one, for the
+        rule that reads them — resolved as the Watch resolves its old
+        side (same lineage, same deal, ready, the highest lower
+        version). None on a first upload, which is not an error."""
+        previous = await repository.previous_version(model)
+        if previous is None:
+            return None
+        return await repository.cells_for_graph(previous.id)
 
     async def _rules_off(
         self, repository: TieOutRepository, dossier_id: UUID

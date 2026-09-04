@@ -124,6 +124,10 @@ const CATEGORY_OF: Record<string, string> = {
   //: family, named for what the reader is being told.
   convention: 'Computed unlike other models',
   'typed-over-formula': 'Embedded hardcodes',
+  //: A typed value where the version before held a formula
+  //: (overwritten-since.md): the same family as its file-only
+  //: sibling, with the earlier version as the evidence.
+  'formula-overwritten': 'Embedded hardcodes',
   'hardcode-in-formula': 'Embedded hardcodes',
   'external-link': 'Auditability risks',
   'broken-name': 'Auditability risks',
