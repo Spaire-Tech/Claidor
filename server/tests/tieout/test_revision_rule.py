@@ -7,7 +7,7 @@ from pathlib import Path
 
 from openpyxl import Workbook as Book
 
-from polar.tieout.audit import audit
+from polar.tieout.audit import audit, plain_words
 from polar.tieout.revision import FIRST_VERSION, NO_MATCH, RULE
 from polar.tieout.workbook import read_workbook
 
@@ -71,7 +71,9 @@ def test_a_link_typed_over_is_found_across_an_inserted_row() -> None:
     assert set(found) == {"Calc!B3", "Calc!B5"}
     switch = found["Calc!B3"]
     assert switch.severity == "error"
-    assert "typed 2" in switch.detail
+    assert "holds a typed 2 where the version before held a formula" in plain_words(
+        switch
+    )
     assert "now holds 1" in switch.detail
     assert switch.against == "=Inputs!B2"
     balance = found["Calc!B5"]

@@ -354,8 +354,8 @@ def _convention(book: Workbook, result: Analytics) -> None:
                 detail=(
                     f"Here « {label} » is made of {words(row.pattern)}. "
                     f"In {convention.agreeing} of the {convention.files} models we "
-                    f"hold that carry this line, from {convention.families} "
-                    f"independent sources, it is made of {words(convention.pattern)}."
+                    f"hold, from {convention.families} sources, it is made of "
+                    f"{words(convention.pattern)}."
                 ),
                 figure=str(convention.agreeing),
                 figure_unit=f"of {convention.files} models compute it the other way",

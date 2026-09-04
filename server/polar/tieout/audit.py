@@ -293,7 +293,7 @@ RULE_NAMES: dict[str, str] = {
     #: A row anchored on a sibling row's switch while it owns one
     #: (wrong-switch.md): the GD3 phasing row that reads `$I$474`
     #: with its own `$I$472` populated and unread.
-    "anchored-elsewhere": "Rows that read a sibling's switch",
+    "anchored-elsewhere": "Rows that read another row's switch",
     "circular": "Circular references",
     "skipped-cell": "Sum ranges that miss a cell",
     #: A check formula that walks cells one by one and skips a live
@@ -327,7 +327,7 @@ HEADLINES: dict[str, str] = {
     "typed-over-edge": "Typed series edge",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
-    "anchored-elsewhere": "Reads a sibling's switch",
+    "anchored-elsewhere": "Reads another row's switch",
     "circular": "Cells in a loop",
     "skipped-cell": "Incomplete total",
     "gapped-test": "Gapped test",
@@ -1003,16 +1003,22 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             "differently from the rest of its row. Filling the row again "
             "would change its result."
         ),
-        #: The detail already names both switches and the sibling;
-        #: the plain words add what it costs.
+        #: Which switch the row reads and that its own is unread; the
+        #: detail names the row that does it the other way and what it
+        #: costs (wrong-switch.md).
         "anchored-elsewhere": (
-            f"{finding.detail} Its answer is right only while the two switches agree."
+            f"In « {finding.name or 'this row'} », {finding.figure} "
+            f"{finding.figure_unit}, not their own, which is filled in and unread."
         ),
-        #: The detail names the typed value and, for a link, what its
-        #: source holds now; the plain words add what the loss costs.
+        #: The typed value where the version before held a formula; the
+        #: detail says what the source holds now and that the cell will
+        #: not follow it (overwritten-since.md).
         "formula-overwritten": (
-            f"{finding.detail} A number typed over a formula stops following "
-            f"its inputs."
+            f"« {finding.name or 'This row'} » holds typed values in "
+            f"{finding.figure} cells where the version before held formulas."
+            if finding.kind == "row"
+            else f"« {finding.name or 'This cell'} » holds a typed {finding.figure} "
+            f"where the version before held a formula."
         ),
         #: « iterative calculation » is Excel's phrase, not a
         #: banker's — the vocabulary table swaps it for « circular
@@ -2529,17 +2535,23 @@ def _anchored_elsewhere(book: Workbook, result: Audit) -> None:
                     ref=cell.ref,
                     sheet=sheet,
                     name=cell.name,
+                    #: Two sentences, the second carrying what it costs —
+                    #: findings-voice allows two and the plain words add
+                    #: nothing to these.
+                    #: The headline (plain words) says which switch the row
+                    #: reads and that its own is unread; the detail names
+                    #: the row that does it the other way and what it costs.
+                    #: Opens with a word, not a « — the sentence splitter that
+                    #: grades the finding only breaks before a capital letter.
                     detail=(
-                        f"« {label} » reads the switch at {reads}, which belongs to "
-                        f"« {other} », while its own switch at {owns} is populated "
-                        f"and unread. « {sibling_label} » is built the same way and "
-                        f"reads its own."
+                        f"The row « {sibling_label} » reads its own, so this answer "
+                        f"holds only while {reads} and {owns} agree."
                     ),
                     formula=cell.formula or "",
                     against=sibling.formula or "",
                     source="FAST, ICAEW P12",
                     figure=str(len(members) or 1),
-                    figure_unit=f"cells read {reads} instead of {owns}",
+                    figure_unit=f"cells read the switch of « {other} »",
                     cells=_roster([one.ref for one in members] or [cell.ref]),
                 )
             )

@@ -160,33 +160,30 @@ def overwritten_since(book: Workbook, previous: Workbook | None, result) -> None
         cell, was = pairs[0]
         label = cell.row_label or f"row {row}"
         if len(pairs) == 1:
-            detail = (
-                f"« {label} » holds a typed {shown(cell.value)} where the version "
-                f"before held a formula."
-            )
             source = _source_now(was, before, now)
-            if source is not None:
-                detail += (
-                    f" The cell it used to read now holds {shown(source)}."
-                    if source != cell.value
-                    else f" The cell it used to read still holds {shown(source)}."
+            if source is None:
+                detail = "It will not follow its inputs any more."
+            elif source != cell.value:
+                detail = (
+                    f"The cell it used to read now holds {shown(source)}, so this "
+                    f"one will not follow it."
                 )
-            figure, unit = (
-                shown(cell.value),
-                "typed where the version before held a formula",
-            )
+            else:
+                detail = (
+                    f"The cell it used to read still holds {shown(source)}, so this "
+                    f"one will not move with it."
+                )
+            kind, figure = "one", shown(cell.value)
+            unit = "typed where the version before held a formula"
         else:
-            detail = (
-                f"« {label} » holds typed values in {len(pairs)} cells where the "
-                f"version before held formulas."
-            )
-            figure, unit = (
-                str(len(pairs)),
-                "cells typed over the version before's formulas",
-            )
+            detail = "They will not follow their inputs any more."
+            kind, figure = "row", str(len(pairs))
+            unit = "cells typed over the version before's formulas"
         result.findings.append(
             Finding(
-                rule=RULE,
+                #: The literal, not the constant: the category-map guard
+                #: finds a rule by scanning for `rule="…"` in the engine.
+                rule="formula-overwritten",
                 severity="error",
                 ref=cell.ref,
                 sheet=sheet,
@@ -197,6 +194,7 @@ def overwritten_since(book: Workbook, previous: Workbook | None, result) -> None
                 source="FAST, ICAEW P12",
                 figure=figure,
                 figure_unit=unit,
+                kind=kind,
                 cells=_roster([one.ref for one, _ in pairs]),
             )
         )

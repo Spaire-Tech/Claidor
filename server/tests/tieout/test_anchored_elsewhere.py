@@ -9,7 +9,7 @@ from pathlib import Path
 
 from openpyxl import Workbook as XlsxWorkbook
 
-from polar.tieout.audit import audit
+from polar.tieout.audit import audit, plain_words
 from polar.tieout.workbook import read_workbook
 
 
@@ -52,9 +52,14 @@ def test_a_row_reading_its_siblings_switch_is_found(tmp_path: Path) -> None:
     one = found[0]
     assert one.ref == "Inputs!E5"
     assert one.severity == "error"
-    assert "reads the switch at C3" in one.detail
-    assert "« Adjustment factor phasing »" in one.detail
-    assert "its own switch at C5 is populated and unread" in one.detail
+    #: The headline says which switch the row reads and that its own is
+    #: unread; the detail names the row that reads its own and the two
+    #: cells that must agree.
+    said = plain_words(one)
+    assert "cells read the switch of « Adjustment factor phasing »" in said
+    assert "not their own, which is filled in and unread" in said
+    assert "« Adjustment factor phasing » reads its own" in one.detail
+    assert "C3 and C5 agree" in one.detail
     assert one.figure == "5"
 
 
