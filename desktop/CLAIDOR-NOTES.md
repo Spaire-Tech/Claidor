@@ -98,6 +98,19 @@ CDN) have no entry point left in the UI; the model-provider registry in
 gateways keep their NetEase URLs. Delete these when a channel or engine
 round comes.
 
+Added, not from upstream: the personal library (`docs/swen/library.md`).
+An index of the person's documents built on the machine: the contract in
+`src/shared/library/contentConstants.ts`, the tables in
+`src/main/library/libraryMigrations.ts`, the store, indexer and document
+worker under `src/main/library/content/`, the `search_library` tool in
+`openclaw-extensions/search-library` calling back over the loopback
+bridge (`/library/search`), and Settings → Library
+(`src/renderer/components/library/`). The embedding model
+(`Xenova/bge-small-en-v1.5`, quantised) is fetched at build time by
+`scripts/fetch-embedding-model.cjs` into `resources/embedding-model/`
+(git-ignored, pinned revision and checksums) and shipped as an extra
+resource; the app never downloads it.
+
 Not done yet: no Slack, Teams, WhatsApp or iMessage channel (the founder's
 plan lists them; none is added). No signed build, no release, no update
 feed. The account links on the web app open its home page because the

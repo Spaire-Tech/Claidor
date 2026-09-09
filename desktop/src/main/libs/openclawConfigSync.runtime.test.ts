@@ -2593,6 +2593,46 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('never tell the user to enable Chrome remote debugging');
   });
 
+  test('enables the search-library plugin with its bridge config and writes the library paragraph', async () => {
+    const librarySearchCallbackUrl = 'http://127.0.0.1:43210/library/search';
+    const sync = await createSync({
+      getLibrarySearchCallbackUrl: () => librarySearchCallbackUrl,
+    });
+
+    const result = sync.sync('library-plugin');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.plugins.entries['search-library']).toEqual({
+      enabled: true,
+      config: {
+        callbackUrl: librarySearchCallbackUrl,
+        secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+      },
+    });
+
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## Personal Library');
+    expect(agentsMd).toContain('call `search_library` first');
+    expect(agentsMd).toContain('Name the file path exactly as the tool returned it, so the app can turn it into a link.');
+    expect(agentsMd).toContain('Do not invent the contents of a document you have not seen.');
+    // The library paragraph follows the web search policy.
+    expect(agentsMd.indexOf('## Personal Library')).toBeGreaterThan(agentsMd.indexOf('## Web Search'));
+    expect(agentsMd.indexOf('## Personal Library')).toBeLessThan(agentsMd.indexOf('## Browser Policy'));
+  });
+
+  test('keeps the search-library plugin enabled without a config when the bridge is not up', async () => {
+    const sync = await createSync({
+      getLibrarySearchCallbackUrl: () => null,
+    });
+
+    const result = sync.sync('library-plugin-no-bridge');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.plugins.entries['search-library']).toEqual({ enabled: true });
+  });
+
   test('enables managed OpenClaw tool loop detection', async () => {
     const sync = await createSync();
 

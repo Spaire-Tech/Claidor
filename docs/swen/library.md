@@ -98,3 +98,41 @@ WeKnora, step 10), re-ranking with a cross-encoder, multilingual models.
   answer to ten questions with the expected file and page.
 - The screenshot for the founder: a question about a document, the
   answer with the citation, the file opening from the link.
+
+## Where things stand, September 10
+
+Built as designed, with three things worth knowing.
+
+**Search is a blend, not a rerank.** Keyword candidates alone missed
+questions with no word in common with the passage (« remote working
+rules » against « work from home »). So the vectors are scanned as well,
+in memory, and the final order is roughly two thirds cosine and one third
+keyword rank. Question words (« how much is the ») are dropped from the
+keyword side. A passage with nothing in common with the question is never
+returned, however short the list.
+
+**The measured run**, on this build machine, all on the CPU, from the
+guarded test `libraryContent.measured.test.ts`
+(`SWEN_LIBRARY_MEASURE=1`): 340 generated office files of every kind, 340
+indexed, none failed, 713 passages, in under ten seconds, so a few
+thousand documents a minute; the index about 1.4 MB; the model loads in
+about a third of a second; a question takes ten to twenty milliseconds.
+All ten questions returned the right file and the right page, sheet,
+slide or heading first. Real documents are longer and slower than
+generated ones; the number to watch on a real disk is minutes for the
+first index, not seconds.
+
+**Seen running in the app.** The worker starts inside the built app as its
+own process, loads the model, and reads the files in Documents and
+Desktop; Settings → Library shows the switch, the folders and the status
+line. Not yet seen: the agent answering a question with a citation through
+the chat, which needs the real conversation of step 1 (a signed-in engine
+run on the founder's machine).
+
+**Not in the installer yet.** The macOS build on GitHub Actions has not
+been re-run since the model fetch was added to the build; the next run
+proves the packaging (the four model files as an extra resource, the ONNX
+runtime unpacked, the other platforms' binaries left out). One limit
+found on the way: the ONNX runtime package ships no binary for Intel
+Macs, so on those the library would report « could not start » until a
+build for them exists.

@@ -8,6 +8,12 @@ import crypto from 'crypto';
 import http from 'http';
 import net from 'net';
 
+import {
+  LIBRARY_BRIDGE_SEARCH_PATH,
+  LibraryContentLimits,
+  type LibrarySearchRequest,
+  type LibrarySearchResponse,
+} from '../../shared/library/contentConstants';
 import { serializeForLog } from './sanitizeForLog';
 
 const log = (level: string, msg: string) => {
@@ -73,6 +79,13 @@ export type BrowserToolResponse = {
   isError?: boolean;
 };
 
+/** A search from the search-library extension; sessionKey tells which session asked. */
+export type LibrarySearchBridgeRequest = LibrarySearchRequest & { sessionKey?: string };
+
+export type LibrarySearchHandler = (request: LibrarySearchBridgeRequest) => Promise<LibrarySearchResponse>;
+
+const LIBRARY_UNAVAILABLE_MESSAGE = 'The library is not available.';
+
 export class McpBridgeServer {
   private server: http.Server | null = null;
   private _port: number | null = null;
@@ -82,6 +95,7 @@ export class McpBridgeServer {
   private onAskUserDismissCallback: ((requestId: string) => void) | null = null;
   private onMediaGenerationCallback: ((request: MediaGenerationRequest) => Promise<MediaGenerationResponse>) | null = null;
   private onBrowserToolCallback: ((request: BrowserToolRequest) => Promise<BrowserToolResponse>) | null = null;
+  private onLibrarySearchCallback: LibrarySearchHandler | null = null;
 
   constructor(secret: string) {
     this.secret = secret;
@@ -102,6 +116,10 @@ export class McpBridgeServer {
 
   get browserCallbackUrl(): string | null {
     return this._port ? `http://127.0.0.1:${this._port}/browser/tool` : null;
+  }
+
+  get librarySearchCallbackUrl(): string | null {
+    return this._port ? `http://127.0.0.1:${this._port}${LIBRARY_BRIDGE_SEARCH_PATH}` : null;
   }
 
   /**
@@ -130,6 +148,15 @@ export class McpBridgeServer {
 
   onBrowserTool(callback: (request: BrowserToolRequest) => Promise<BrowserToolResponse>): void {
     this.onBrowserToolCallback = callback;
+  }
+
+  /**
+   * Register the handler for library searches from the search-library
+   * extension. The handler runs the search in the main process and returns
+   * the passages; until one is registered the route answers 503.
+   */
+  onLibrarySearch(callback: LibrarySearchHandler): void {
+    this.onLibrarySearchCallback = callback;
   }
 
   /**
@@ -266,8 +293,72 @@ export class McpBridgeServer {
       return;
     }
 
+    if (req.url?.startsWith(LIBRARY_BRIDGE_SEARCH_PATH)) {
+      await this.handleLibrarySearch(req, res);
+      return;
+    }
+
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));
+  }
+
+  private async handleLibrarySearch(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const startedAt = Date.now();
+    const sendJson = (status: number, payload: unknown) => {
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(payload));
+    };
+
+    let request: LibrarySearchBridgeRequest;
+    try {
+      const body = await this.readBody(req);
+      const input: unknown = body.trim() ? JSON.parse(body) : {};
+      const raw = input && typeof input === 'object' && !Array.isArray(input)
+        ? input as Record<string, unknown>
+        : {};
+
+      const query = typeof raw.query === 'string' ? raw.query.trim() : '';
+      if (!query) {
+        sendJson(400, { error: 'Missing or empty "query" field' });
+        return;
+      }
+      if (query.length > LibraryContentLimits.MaxQueryLength) {
+        sendJson(400, { error: `"query" is longer than ${LibraryContentLimits.MaxQueryLength} characters` });
+        return;
+      }
+      const folder = typeof raw.folder === 'string' && raw.folder.trim() ? raw.folder.trim() : undefined;
+      const rawLimit = typeof raw.limit === 'number' && Number.isFinite(raw.limit)
+        ? Math.trunc(raw.limit)
+        : LibraryContentLimits.DefaultSearchResults;
+      const limit = Math.min(LibraryContentLimits.MaxSearchResults, Math.max(1, rawLimit));
+      const sessionKey = typeof raw.sessionKey === 'string' && raw.sessionKey.trim()
+        ? raw.sessionKey.trim()
+        : undefined;
+      request = { query, folder, limit, sessionKey };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      sendJson(400, { error: `Invalid request body: ${message}` });
+      return;
+    }
+
+    if (!this.onLibrarySearchCallback) {
+      log('WARN', 'Library search callback not registered');
+      sendJson(503, { error: LIBRARY_UNAVAILABLE_MESSAGE });
+      return;
+    }
+
+    try {
+      const result = await this.onLibrarySearchCallback(request);
+      // The query text stays out of the logs: it is the person's own question.
+      log('INFO', `Library search: queryLength=${request.query.length} hits=${result.hits.length} tookMs=${Date.now() - startedAt}`);
+      sendJson(200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log('ERROR', `Library search failed after ${Date.now() - startedAt}ms: ${message}`);
+      if (!res.writableEnded) {
+        sendJson(500, { error: message });
+      }
+    }
   }
 
   private async handleAskUser(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {

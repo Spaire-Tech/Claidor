@@ -197,6 +197,9 @@ test('setConfig preserves loaded OpenClaw session policy', () => {
     dreamingFrequency: '0 3 * * *',
     dreamingModel: '',
     dreamingTimezone: '',
+    libraryEnabled: true,
+    libraryFolders: [],
+    libraryExcludedFolders: [],
     openClawSessionPolicy: {
       keepAlive: '365d',
     },

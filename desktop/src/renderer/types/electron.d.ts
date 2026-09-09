@@ -92,6 +92,12 @@ import type {
   ResolvedKitCapabilities,
 } from '../../shared/kit/constants';
 import type {
+  LibraryContentConfig,
+  LibraryContentStatus,
+  LibrarySearchRequest,
+  LibrarySearchResponse,
+} from '../../shared/library/contentConstants';
+import type {
   LibraryAddLocalFilesData,
   LibraryArtifactCandidate,
   LibraryBackfillState,
@@ -1523,6 +1529,20 @@ interface IElectronAPI {
       state: LibraryBackfillState,
     ) => Promise<LibraryResult<LibraryBackfillState>>;
     onChanged: (callback: (payload: LibraryChangedPayload) => void) => () => void;
+  };
+  /** The personal library: the index of the person's documents (docs/swen/library.md). */
+  libraryContent: {
+    getStatus: () => Promise<LibraryContentStatus>;
+    getConfig: () => Promise<LibraryContentConfig>;
+    setConfig: (update: Partial<LibraryContentConfig>) => Promise<LibraryContentConfig>;
+    /** The folder the person picked in the system dialog, or null when they cancelled. */
+    pickFolder: () => Promise<string | null>;
+    setPaused: (paused: boolean) => Promise<LibraryContentStatus>;
+    rebuild: () => Promise<LibraryContentStatus>;
+    search: (request: LibrarySearchRequest) => Promise<LibrarySearchResponse>;
+    openFile: (filePath: string) => Promise<void>;
+    revealFile: (filePath: string) => Promise<void>;
+    onStatusChanged: (callback: (status: LibraryContentStatus) => void) => () => void;
   };
   asr: {
     createRealtimeSession: (options: AsrRealtimeSessionRequest) => Promise<AsrRealtimeSessionResult>;

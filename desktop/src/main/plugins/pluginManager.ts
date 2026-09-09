@@ -837,6 +837,7 @@ export const __pluginManagerTestUtils = {
 const INTERNAL_PLUGIN_IDS = [
   // Core internal plugins
   'ask-user-question',
+  'search-library',
   'memory-core',
   'qwen-portal-auth',
   'qqbot',

@@ -82,5 +82,84 @@ export const initializeLibraryTables = (db: Database.Database): void => {
         added_at INTEGER NOT NULL
       );
     `);
+    initializeLibraryContentTables(db);
   })();
+};
+
+/**
+ * The personal library's content index (docs/swen/library.md): one row per
+ * document, its passages, an FTS5 table over the passage text for keywords,
+ * and one embedding blob per passage for the cosine rerank.
+ *
+ * `library_chunks_fts` is an external-content FTS5 table over
+ * `library_chunks`, kept in step by triggers, so the text is stored once.
+ */
+export const initializeLibraryContentTables = (db: Database.Database): void => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS library_documents (
+      id TEXT PRIMARY KEY,
+      path_key TEXT NOT NULL UNIQUE,
+      file_path TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      folder TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      title TEXT NOT NULL DEFAULT '',
+      size_bytes INTEGER NOT NULL,
+      file_mtime_ms INTEGER NOT NULL,
+      content_hash TEXT,
+      page_count INTEGER NOT NULL DEFAULT 0,
+      chunk_count INTEGER NOT NULL DEFAULT 0,
+      text_chars INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      error TEXT,
+      indexed_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_library_documents_status
+    ON library_documents(status, updated_at);
+
+    CREATE INDEX IF NOT EXISTS idx_library_documents_folder
+    ON library_documents(folder);
+
+    CREATE TABLE IF NOT EXISTS library_chunks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      document_id TEXT NOT NULL,
+      ordinal INTEGER NOT NULL,
+      locator TEXT NOT NULL DEFAULT '{}',
+      text TEXT NOT NULL,
+      FOREIGN KEY (document_id) REFERENCES library_documents(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_library_chunks_document
+    ON library_chunks(document_id, ordinal);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS library_chunks_fts
+    USING fts5(text, content='library_chunks', content_rowid='id', tokenize='unicode61 remove_diacritics 2');
+
+    CREATE TRIGGER IF NOT EXISTS library_chunks_ai AFTER INSERT ON library_chunks BEGIN
+      INSERT INTO library_chunks_fts(rowid, text) VALUES (new.id, new.text);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS library_chunks_ad AFTER DELETE ON library_chunks BEGIN
+      INSERT INTO library_chunks_fts(library_chunks_fts, rowid, text) VALUES ('delete', old.id, old.text);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS library_chunks_au AFTER UPDATE ON library_chunks BEGIN
+      INSERT INTO library_chunks_fts(library_chunks_fts, rowid, text) VALUES ('delete', old.id, old.text);
+      INSERT INTO library_chunks_fts(rowid, text) VALUES (new.id, new.text);
+    END;
+
+    CREATE TABLE IF NOT EXISTS library_chunk_vectors (
+      chunk_id INTEGER PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      vector BLOB NOT NULL,
+      FOREIGN KEY (chunk_id) REFERENCES library_chunks(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_library_chunk_vectors_document
+    ON library_chunk_vectors(document_id);
+  `);
 };

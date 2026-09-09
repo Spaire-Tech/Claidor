@@ -173,6 +173,9 @@ const initialState: CoworkState = {
     dreamingFrequency: '0 3 * * *',
     dreamingModel: '',
     dreamingTimezone: '',
+    libraryEnabled: true,
+    libraryFolders: [],
+    libraryExcludedFolders: [],
     openClawSessionPolicy: {
       keepAlive: '30d',
     },

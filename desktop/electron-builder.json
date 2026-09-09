@@ -65,6 +65,13 @@
     {
       "from": "build/icons/png/512x512.png",
       "to": "app-icon/512x512.png"
+    },
+    {
+      "from": "resources/embedding-model",
+      "to": "embedding-model",
+      "filter": [
+        "**/*"
+      ]
     }
   ],
   "protocols": [
@@ -85,6 +92,10 @@
     "gatekeeperAssess": false,
     "entitlements": "build/entitlements.mac.plist",
     "entitlementsInherit": "build/entitlements.mac.plist",
+    "files": [
+      "!node_modules/onnxruntime-node/bin/napi-v*/linux/**",
+      "!node_modules/onnxruntime-node/bin/napi-v*/win32/**"
+    ],
     "extendInfo": {
       "CFBundleIconName": "icon",
       "NSMicrophoneUsageDescription": "Swen needs access to your microphone to record voice input for speech recognition.",
@@ -167,6 +178,10 @@
     ],
     "icon": "build/icons/win/icon.ico",
     "requestedExecutionLevel": "asInvoker",
+    "files": [
+      "!node_modules/onnxruntime-node/bin/napi-v*/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v*/linux/**"
+    ],
     "extraResources": [
       {
         "from": "build-tar/win-resources.tar",
@@ -185,6 +200,10 @@
     ],
     "icon": "build/icons/png",
     "category": "Utility",
+    "files": [
+      "!node_modules/onnxruntime-node/bin/napi-v*/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v*/win32/**"
+    ],
     "extraResources": [
       {
         "from": "SKILLs",
@@ -267,7 +286,8 @@
     "node_modules/@img/**",
     "node_modules/better-sqlite3/**",
     "node_modules/node-nim/**",
-    "node_modules/npm/**"
+    "node_modules/npm/**",
+    "node_modules/onnxruntime-node/**"
   ],
   "asar": true
 }

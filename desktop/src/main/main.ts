@@ -150,6 +150,7 @@ import type {
 } from '../shared/kit/constants';
 import { KitStoreKey } from '../shared/kit/constants';
 import { LibraryChangeReason, LibraryIpc } from '../shared/library/constants';
+import { type LibraryContentConfig, LibraryContentIpc, type LibraryContentStatus } from '../shared/library/contentConstants';
 import {
   getLibraryThumbnailFailureDetails,
   isLibraryThumbnailFailureRetryable,
@@ -270,6 +271,11 @@ import {
 import { registerSessionDiagnosticsHandlers } from './ipcHandlers/sessionDiagnostics';
 import { registerSiteIpcHandlers } from './ipcHandlers/site';
 import { registerSkillHandlers } from './ipcHandlers/skills';
+import { LibraryDocumentWorkerClient } from './library/content/documentWorkerClient';
+import { LibraryContentIndexer } from './library/content/libraryContentIndexer';
+import { normalizeLibrarySearchRequest, registerLibraryContentIpcHandlers } from './library/content/libraryContentIpc';
+import { LibraryContentStore } from './library/content/libraryContentStore';
+import { resolveLibraryModelDir, resolveLibraryWorkerEntryPath } from './library/content/modelPath';
 import { LibraryIndexService } from './library/libraryIndexService';
 import { registerLibraryIpcHandlers } from './library/libraryIpc';
 import { LibraryLocalStore } from './library/libraryLocalStore';
@@ -2116,6 +2122,7 @@ let preventSleepBlockerId: number | null = null;
 let appUpdateCoordinator: AppUpdateCoordinator | null = null;
 let mainLogReporter: MainLogReporter | null = null;
 let libraryIndexService: LibraryIndexService | null = null;
+let libraryContentIndexer: LibraryContentIndexer | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
   if (enabled) {
@@ -2577,6 +2584,7 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         return getMcpRuntime().getResolvedServersCache();
       },
       getAskUserCallbackUrl: () => getMcpRuntime().getAskUserCallbackUrl(),
+      getLibrarySearchCallbackUrl: () => getMcpRuntime().getLibrarySearchCallbackUrl(),
       getMediaCallbackUrl: () => getMcpRuntime().getMediaCallbackUrl(),
       getBrowserCallbackUrl: () => getMcpRuntime().getBrowserCallbackUrl(),
       getLobsterBrowserMcpCommand: () => {
@@ -14059,6 +14067,7 @@ if (!gotTheLock) {
 
     sqliteBackupManager?.stopPeriodicBackupLoop();
     libraryIndexService?.stop();
+    libraryContentIndexer?.stop();
     libraryThumbnailRenderer.dispose();
 
     // Close the SQLite database to flush the WAL and release the file lock.
@@ -14222,6 +14231,58 @@ if (!gotTheLock) {
       },
     });
     libraryIndexService.start();
+
+    // The personal library: an index of the person's documents, built on
+    // this machine (docs/swen/library.md). The agent reaches it through the
+    // search_library tool over the loopback bridge.
+    const libraryContentStore = new LibraryContentStore(store.getDatabase());
+    const readLibraryContentConfig = (): LibraryContentConfig => {
+      const config = getCoworkStore().getConfig();
+      return {
+        enabled: config.libraryEnabled,
+        folders: config.libraryFolders,
+        excludedFolders: config.libraryExcludedFolders,
+      };
+    };
+    libraryContentIndexer = new LibraryContentIndexer({
+      store: libraryContentStore,
+      getConfig: readLibraryContentConfig,
+      createWorker: onExit => new LibraryDocumentWorkerClient({
+        modelDir: resolveLibraryModelDir(),
+        workerEntryPath: resolveLibraryWorkerEntryPath(),
+        onExit,
+      }),
+      onStatus: (status: LibraryContentStatus) => {
+        for (const window of BrowserWindow.getAllWindows()) {
+          if (!window.isDestroyed()) window.webContents.send(LibraryContentIpc.StatusChanged, status);
+        }
+      },
+      getMetadata: key => store?.get(key),
+      setMetadata: (key, value) => store?.set(key, value),
+      excludedRoots: [app.getPath('userData')],
+    });
+    const libraryContentIndexerInstance = libraryContentIndexer;
+    registerLibraryContentIpcHandlers({
+      indexer: libraryContentIndexerInstance,
+      store: libraryContentStore,
+      getConfig: readLibraryContentConfig,
+      setConfig: update => {
+        getCoworkStore().setConfig({
+          ...(update.enabled !== undefined ? { libraryEnabled: update.enabled } : {}),
+          ...(update.folders !== undefined ? { libraryFolders: update.folders } : {}),
+          ...(update.excludedFolders !== undefined ? { libraryExcludedFolders: update.excludedFolders } : {}),
+        });
+        return readLibraryContentConfig();
+      },
+      pickFolder: async () => {
+        const result = await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] });
+        return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
+      },
+    });
+    getMcpRuntime().setLibrarySearchHandler(request => (
+      libraryContentIndexerInstance.search(normalizeLibrarySearchRequest(request))
+    ));
+    libraryContentIndexer.start();
 
     // Dev/E2E convenience: boot the dsh engine once the app is ready and the
     // store can answer provider queries, so app-level checks can assert

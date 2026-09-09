@@ -19,6 +19,7 @@ import {
 } from '../../shared/browserWebAccess/constants';
 import { COWORK_TEMP_DIR_NAME } from '../../shared/cowork/constants';
 import { CoworkErrorModelSource } from '../../shared/cowork/errorDetail';
+import { LIBRARY_SEARCH_PLUGIN_ID, LIBRARY_SEARCH_TOOL_NAME } from '../../shared/library/contentConstants';
 import { normalizeMcpServerUrlInput } from '../../shared/mcp/url';
 import { OPENCLAW_PLUGIN_INDEX_MANAGED_KEYS } from '../../shared/openclawEngine/constants';
 import { OpenClawTranscriptSafetyLimit } from '../../shared/openclawTranscript/constants';
@@ -396,6 +397,15 @@ const MANAGED_WEB_SEARCH_POLICY_PROMPT = [
   '- Exception: the `imap-smtp-email` skill must always use `exec` to run its scripts, even in native channel sessions. Do not skip it because of exec restrictions.',
   '',
   'Do not claim you searched the web unless you actually used `browser`, `web_fetch`, or the Swen `web-search` skill.',
+].join('\n');
+
+const MANAGED_LIBRARY_PROMPT = [
+  '## Personal Library',
+  '',
+  'The person\'s own documents on this computer (contracts, budgets, minutes, reports, slides, notes) are indexed in a library.',
+  `- When a question may concern their files, call \`${LIBRARY_SEARCH_TOOL_NAME}\` first, before answering from memory or searching the web.`,
+  '- Answer with the file and the page, sheet or slide the passage comes from. Name the file path exactly as the tool returned it, so the app can turn it into a link.',
+  '- When the library returns nothing, say so plainly. Do not invent the contents of a document you have not seen.',
 ].join('\n');
 
 const BUNDLED_BROWSER_PLUGIN_ID = 'browser';
@@ -1857,6 +1867,8 @@ type OpenClawConfigSyncDeps = {
   getIMSettings?: () => IMSettings | null;
   getResolvedMcpServers?: () => ResolvedMcpServer[];
   getAskUserCallbackUrl?: () => string | null;
+  /** Bridge route the search-library extension posts to; null until the bridge is up. */
+  getLibrarySearchCallbackUrl?: () => string | null | undefined;
   getMediaCallbackUrl?: () => string | null;
   getBrowserCallbackUrl?: () => string | null;
   getLobsterBrowserMcpCommand?: () => string | null;
@@ -1888,6 +1900,7 @@ export class OpenClawConfigSync {
   private readonly getIMSettings?: () => IMSettings | null;
   private readonly getResolvedMcpServers?: () => ResolvedMcpServer[];
   private readonly getAskUserCallbackUrl?: () => string | null;
+  private readonly getLibrarySearchCallbackUrl?: () => string | null | undefined;
   private readonly getMediaCallbackUrl?: () => string | null;
   private readonly getBrowserCallbackUrl?: () => string | null;
   private readonly getLobsterBrowserMcpCommand?: () => string | null;
@@ -1920,6 +1933,7 @@ export class OpenClawConfigSync {
     this.getIMSettings = deps.getIMSettings;
     this.getResolvedMcpServers = deps.getResolvedMcpServers;
     this.getAskUserCallbackUrl = deps.getAskUserCallbackUrl;
+    this.getLibrarySearchCallbackUrl = deps.getLibrarySearchCallbackUrl;
     this.getMediaCallbackUrl = deps.getMediaCallbackUrl;
     this.getBrowserCallbackUrl = deps.getBrowserCallbackUrl;
     this.getLobsterBrowserMcpCommand = deps.getLobsterBrowserMcpCommand;
@@ -2342,6 +2356,10 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       preinstalledPlugins.some((plugin) => pluginMatches(plugin, ...ids))
     );
     const hasAskUserPlugin = isBundledPluginAvailable('ask-user-question');
+    // The library plugin stays enabled whether or not the library is switched
+    // on in Settings, so toggling it never restarts the gateway; the tool
+    // itself answers "the library is off" from the main process.
+    const hasLibraryPlugin = isBundledPluginAvailable(LIBRARY_SEARCH_PLUGIN_ID);
     // Runtime-bundled xai extension (dist/extensions/xai): provides the Grok
     // model compat hooks (e.g. only grok-4.3 accepts reasoningEffort) plus the
     // OAuth refresh hook for credentials in the auth-profiles store. Declare
@@ -2587,6 +2605,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             ? { feishu: { enabled: false } }
             : {}),
           ...(hasAskUserPlugin ? { 'ask-user-question': { enabled: true } } : {}),
+          ...(hasLibraryPlugin ? { [LIBRARY_SEARCH_PLUGIN_ID]: { enabled: true } } : {}),
           ...(hasModelCompatConfig
             ? {
                 [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]: {
@@ -2711,6 +2730,20 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         enabled: true,
         config: {
           callbackUrl: askUserCallbackUrl,
+          secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+        },
+      };
+    }
+
+    // Sync search-library plugin config (same bridge, same secret)
+    const librarySearchCallbackUrl = this.getLibrarySearchCallbackUrl?.();
+    if (hasLibraryPlugin && librarySearchCallbackUrl && managedConfig.plugins) {
+      const plugins = managedConfig.plugins as Record<string, unknown>;
+      const entries = plugins.entries as Record<string, Record<string, unknown>>;
+      entries[LIBRARY_SEARCH_PLUGIN_ID] = {
+        enabled: true,
+        config: {
+          callbackUrl: librarySearchCallbackUrl,
           secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
         },
       };
@@ -3783,6 +3816,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       // in openclaw.json, so we no longer embed the skills routing prompt here.
 
       sections.push(MANAGED_WEB_SEARCH_POLICY_PROMPT);
+      sections.push(MANAGED_LIBRARY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
       sections.push(MANAGED_DELIVERABLE_LINKS_PROMPT);
