@@ -29,6 +29,8 @@ jobs:
       # No certificate yet: produce an unsigned app instead of failing.
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
       ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: "true"
+      # The renderer bundle needs more heap than Node gives by default.
+      NODE_OPTIONS: "--max-old-space-size=6144"
     steps:
       - uses: actions/checkout@v4
 
