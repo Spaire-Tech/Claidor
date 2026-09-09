@@ -366,6 +366,14 @@ async def analytics_events() -> Response:
     return Response(status_code=204)
 
 
+@router.get("/api/enterprise/context", name="desktop:enterprise_context")
+async def enterprise_context() -> JSONResponse:
+    """Enterprise accounts do not exist on Claidor; every account is
+    personal. 41602 is the app's « not a member » code: it clears any
+    stale enterprise context and carries on."""
+    return _fail(41602, "This account is a personal account.", status=404)
+
+
 @router.get("/api/client-activities/slot", name="desktop:activity_slot")
 async def activity_slot() -> JSONResponse:
     """Promotional activities (daily check-in, startup credits). Swen runs none."""

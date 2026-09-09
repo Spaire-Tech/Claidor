@@ -47,21 +47,22 @@ const getClaidorAppBaseUrl = (): string => (
  * Used for auth exchange/refresh, models, proxy, etc.
  */
 export const getServerApiBaseUrl = (): string => {
-  const defaultBaseUrl = `${getClaidorApiBaseUrl()}/desktop`;
-  const serverBaseUrl = resolveDevelopmentServerBaseUrl({
-    defaultBaseUrl,
+  // The override is a bare loopback origin; the account protocol always
+  // lives under /desktop on whichever Claidor API answers.
+  const defaultOrigin = getClaidorApiBaseUrl();
+  const origin = resolveDevelopmentServerBaseUrl({
+    defaultBaseUrl: defaultOrigin,
     developmentOverride: process.env.SWEN_SERVER_BASE_URL,
     isDev: process.env.NODE_ENV === 'development',
     isPackaged: app.isPackaged,
   });
-  if (serverBaseUrl !== defaultBaseUrl
-      && loggedDevelopmentServerBaseUrl !== serverBaseUrl) {
+  if (origin !== defaultOrigin && loggedDevelopmentServerBaseUrl !== origin) {
     console.warn(
-      `[Endpoints] routing all Swen server traffic to development origin ${serverBaseUrl}`,
+      `[Endpoints] routing all Swen server traffic to development origin ${origin}`,
     );
-    loggedDevelopmentServerBaseUrl = serverBaseUrl;
+    loggedDevelopmentServerBaseUrl = origin;
   }
-  return serverBaseUrl;
+  return `${origin}/desktop`;
 };
 
 export const getHtmlSharePublicBaseUrl = (): string => {
