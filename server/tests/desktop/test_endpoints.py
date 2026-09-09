@@ -215,6 +215,11 @@ class TestSession:
         )
         assert pinged.status_code == 204
 
+    async def test_every_account_is_personal(self, client: httpx.AsyncClient) -> None:
+        response = await client.get("/desktop/api/enterprise/context")
+        assert response.status_code == 404
+        assert response.json()["code"] == 41602
+
     async def test_there_are_no_activities(self, client: httpx.AsyncClient) -> None:
         slot = (await client.get("/desktop/api/client-activities/slot")).json()
         assert slot["code"] == 0
@@ -520,3 +525,27 @@ class TestServiceEdges:
         rotated, _, _ = await desktop.refresh(session, refresh)
         assert isinstance(rotated, DesktopSession)
         assert rotated.refresh_expires_at < utc_now()  # the mocked TTL, on purpose
+
+
+@pytest.mark.asyncio
+class TestMiddleware:
+    async def test_a_desktop_bearer_is_nobody_to_the_api_s_own_auth(
+        self, session: AsyncSession
+    ) -> None:
+        """The API's auth middleware rejects unknown bearer tokens with a
+        401 before any endpoint runs. A desktop access token must pass
+        through as Anonymous so the desktop endpoints can check it."""
+        from starlette.requests import Request
+
+        from polar.auth.middlewares import get_auth_subject
+        from polar.auth.models import Anonymous
+
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/desktop/api/user/quota",
+            "headers": [(b"authorization", b"Bearer claidor_da_notevenreal")],
+            "query_string": b"",
+        }
+        subject = await get_auth_subject(Request(scope), session)
+        assert isinstance(subject.subject, Anonymous)

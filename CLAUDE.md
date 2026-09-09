@@ -12,6 +12,8 @@ This repository carried the Swens build (a model review platform for finance). I
 
 Its sign-in is wired to this API: `server/polar/desktop` serves the account protocol under `/desktop` (browser login through the web app, auth code, token exchange and refresh, profile, quota, the model list, a metered proxy to Anthropic on Claidor's key, and empty stubs for updates, skill store, kit store and client activities). The app talks only to `api.claidor.com` and `app.claidor.com` (`desktop/src/main/libs/endpoints.ts`, `desktop/src/renderer/services/endpoints.ts`). Settings: `DESKTOP_*` in `server/polar/config.py`.
 
+The plan of record for Swen (business, the four sentences we may say, the two-engine account, the library, pricing, order of work) is `docs/swen/plan.md`. Change it before changing direction. The macOS installer builds on GitHub Actions (`.github/workflows/desktop_mac.yml`), unsigned until an Apple certificate exists.
+
 ## Quick Start
 
 ```bash

@@ -224,3 +224,6 @@ server/scripts/corpus_formulas/
 # Partial output of a sweep still running — the consolidated JSON
 # beside it is the record; a half-written scratch file is not.
 docs/pierce/*.json.partial
+
+# The OpenClaw source checkout the desktop build clones next to desktop/
+/openclaw/

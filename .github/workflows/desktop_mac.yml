@@ -1,0 +1,63 @@
+name: Desktop app (macOS)
+
+# Builds the Swen desktop app for Apple Silicon Macs and keeps the
+# installer as a downloadable artifact of the run. The build is unsigned
+# until an Apple developer certificate is added, so the first launch needs
+# a right-click, Open (see desktop/README.md).
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/pierce-phase-6-writing-mjkaj6
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop_mac.yml"
+
+concurrency:
+  group: desktop-mac-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      # No certificate yet: produce an unsigned app instead of failing.
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: "true"
+      # The renderer bundle needs more heap than Node gives by default.
+      NODE_OPTIONS: "--max-old-space-size=6144"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install pnpm (builds the OpenClaw engine)
+        run: npm install -g pnpm@10
+
+      - name: Install dependencies
+        # The upstream project ignores its lockfile (desktop/.gitignore), so
+        # a plain install is the only option until one is committed.
+        run: npm install --no-audit --no-fund
+
+      - name: Build the installer (renderer, main, skills, engine, dmg)
+        run: npm run dist:mac:arm64
+
+      - name: List what was built
+        run: ls -la release | grep -v "\.blockmap"
+
+      - name: Keep the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Swen-macOS-arm64
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+          if-no-files-found: error
+          retention-days: 14

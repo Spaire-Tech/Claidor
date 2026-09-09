@@ -11,6 +11,7 @@ from polar.customer_session.service import (
 from polar.customer_session.service import (
     customer_session as customer_session_service,
 )
+from polar.desktop.tokens import is_desktop_access_token
 from polar.kit.utils import utc_now
 from polar.logging import Logger
 from polar.member_session.service import member_session as member_session_service
@@ -110,6 +111,11 @@ async def get_auth_subject(
     token = get_bearer_token(request)
     if token is not None:
         if is_registration_token_prefix(token):
+            return AuthSubject(Anonymous(), set(), None)
+
+        # The desktop app's access tokens are checked by the desktop
+        # endpoints themselves (polar.desktop); here they are nobody.
+        if is_desktop_access_token(token):
             return AuthSubject(Anonymous(), set(), None)
 
         # Try MemberSession first (claidor_mst_ prefix)

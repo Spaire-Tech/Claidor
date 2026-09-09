@@ -19,6 +19,11 @@ from typing import Any
 from uuid import UUID
 
 from polar.config import settings
+from polar.desktop.tokens import (
+    ACCESS_TOKEN_PREFIX,
+    AUTH_CODE_PREFIX,
+    REFRESH_TOKEN_PREFIX,
+)
 from polar.exceptions import PolarError
 from polar.kit.crypto import generate_token_hash_pair, get_token_hash
 from polar.kit.utils import utc_now
@@ -30,10 +35,6 @@ from .repository import (
     DesktopSessionRepository,
     DesktopUsageRepository,
 )
-
-AUTH_CODE_PREFIX = "claidor_dc_"
-ACCESS_TOKEN_PREFIX = "claidor_da_"
-REFRESH_TOKEN_PREFIX = "claidor_dr_"
 
 #: The app treats these numeric codes, inside a message or a payload,
 #: as « credits exhausted » (desktop/src/common/coworkErrorClassify.ts).
