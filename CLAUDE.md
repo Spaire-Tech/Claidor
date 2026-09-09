@@ -2,9 +2,13 @@
 
 Legal research platform for OHADA law (see README.md). Monorepo with Python/FastAPI backend and Next.js frontend. NOTE: the backend Python package keeps the internal name `polar` (inherited from upstream).
 
-## Swens — read this first
+## Swens — archived (September 2026)
 
-This repository carries the Swens build (a model review platform for finance). Before answering any question about what Swens is, what the plan is, or what a screen should contain, open `docs/pierce/notes.md` — it names the documents of record (`docs/pierce/swens.md` for the product, `docs/pierce/swens-plan.md` for the plan, `docs/pierce/design-swens/` for the design). Never answer those questions from memory.
+This repository carried the Swens build (a model review platform for finance). It is archived, switched off and kept as a record: the engine under `server/polar/tieout` (routes no longer mounted; tests not collected), the screens under `clients/apps/web/src/components/Workspace` (no longer rendered), the scripts under `server/scripts`, and the documents of record under `docs/pierce` (`swens.md`, `swens-plan.md`, `notes.md`). The last working state is the git tag `swens-final`. Do not extend it; answer questions about it from those documents, never from memory.
+
+## desktop/ — LobsterAI, vendored
+
+`desktop/` is the LobsterAI desktop app (NetEase Youdao, MIT), a window on top of the OpenClaw agent engine, vendored with `git subtree` (squashed; the upstream commit is named in the vendoring commit). It builds on its own with its own `package.json`; it is not part of the `clients/` pnpm workspace. Keep the MIT notices. See `desktop/CLAIDOR-NOTES.md`.
 
 ## Quick Start
 
