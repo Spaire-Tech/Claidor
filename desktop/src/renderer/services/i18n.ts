@@ -451,7 +451,7 @@ const translations: Record<'en', Record<string, string>> = {
     sidebarTaskOpenFailed: 'Failed to open the task. Please try again.',
     sidebarCarouselPrevious: 'Previous item',
     sidebarCarouselNext: 'Next item',
-    sidebarLoginFreeToken: 'Free tokens',
+    sidebarLoginFreeToken: 'Sign in to start',
     sidebarLoginNow: 'Log in now',
     dailyCheckInRewardPerDay: 'Claim {credits} credits daily',
     dailyCheckInProgress: '{claimed}/{total} claimed · {credits} credits in total',
@@ -1319,7 +1319,7 @@ const translations: Record<'en', Record<string, string>> = {
     mediaTokenPricingThinkingOutput: 'Thinking output',
     mediaTokenBillingEstimateNote:
       'Billed by actual tokens. List price is the estimate for the default 1-image output.',
-    modelSelectorNoModels: 'Please configure models in settings first',
+    modelSelectorNoModels: 'Sign in with Claidor to use the models',
     coworkModelRefreshing: 'Models are refreshing. Please try again shortly.',
     coworkApiConfigTitle: 'API Configuration',
     coworkApiConfigHint:
