@@ -40,7 +40,9 @@ jobs:
         run: npm install -g pnpm@10
 
       - name: Install dependencies
-        run: npm ci
+        # The upstream project ignores its lockfile (desktop/.gitignore), so
+        # a plain install is the only option until one is committed.
+        run: npm install --no-audit --no-fund
 
       - name: Build the installer (renderer, main, skills, engine, dmg)
         run: npm run dist:mac:arm64
