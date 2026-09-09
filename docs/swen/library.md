@@ -129,10 +129,13 @@ line. Not yet seen: the agent answering a question with a citation through
 the chat, which needs the real conversation of step 1 (a signed-in engine
 run on the founder's machine).
 
-**Not in the installer yet.** The macOS build on GitHub Actions has not
-been re-run since the model fetch was added to the build; the next run
-proves the packaging (the four model files as an extra resource, the ONNX
-runtime unpacked, the other platforms' binaries left out). One limit
-found on the way: the ONNX runtime package ships no binary for Intel
-Macs, so on those the library would report « could not start » until a
-build for them exists.
+**In the installer.** The macOS build on GitHub Actions (run 8, the
+library commit) packaged with the model fetch, the ONNX runtime unpacked
+and the other platforms' binaries left out, and produced the artifact.
+The installer grew from about 300 MB to about 455 MB. The model is 34 MB
+and the Mac ONNX binary 35 MB; the rest is the transformers.js package
+and its optional dependencies, which the next packaging round should
+trim (the browser runtime files and the image library it pulls in are
+not used). One limit found on the way: the ONNX runtime package ships no
+binary for Intel Macs, so on those the library would report « could not
+start » until a build for them exists.
