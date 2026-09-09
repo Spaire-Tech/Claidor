@@ -10,6 +10,8 @@ This repository carried the Swens build (a model review platform for finance). I
 
 `desktop/` is the LobsterAI desktop app (NetEase Youdao, MIT), a window on top of the OpenClaw agent engine, vendored with `git subtree` (squashed; the upstream commit is named in the vendoring commit). It builds on its own with its own `package.json`; it is not part of the `clients/` pnpm workspace. Keep the MIT notices. See `desktop/CLAIDOR-NOTES.md`.
 
+Its sign-in is wired to this API: `server/polar/desktop` serves the account protocol the app speaks in its server mode under `/desktop` (browser login through the web app, auth code, token exchange and refresh, profile, quota, the model list, and a metered proxy to Anthropic on Claidor's key). The app's server base URL points at `{BASE_URL}/desktop` (`desktop/src/main/libs/endpoints.ts`). Settings: `DESKTOP_*` in `server/polar/config.py`.
+
 ## Quick Start
 
 ```bash

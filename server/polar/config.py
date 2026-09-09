@@ -180,6 +180,16 @@ class Settings(BaseSettings):
 
     # User session
     USER_SESSION_TTL: timedelta = timedelta(days=31)
+
+    # The desktop app (desktop/, the vendored LobsterAI app) signing in to
+    # Claidor: the browser hands it a code, the code becomes a session,
+    # the session meters model calls against a monthly allowance.
+    DESKTOP_AUTH_CODE_TTL: timedelta = timedelta(minutes=5)
+    DESKTOP_ACCESS_TOKEN_TTL: timedelta = timedelta(hours=1)
+    DESKTOP_REFRESH_TOKEN_TTL: timedelta = timedelta(days=30)
+    # Credits per calendar month per person; see polar.desktop.service.
+    DESKTOP_MONTHLY_CREDITS: int = 3_000_000
+    DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
     USER_SESSION_COOKIE_KEY: str = "claidor_session"
     USER_SESSION_COOKIE_DOMAIN: str = "127.0.0.1"
 

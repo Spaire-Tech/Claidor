@@ -14,6 +14,7 @@ from polar.backoffice import app as backoffice_app
 from polar.checkout import ip_geolocation
 from polar.checkout_link.app import app as checkout_link_redirect_app
 from polar.config import settings
+from polar.desktop.endpoints import router as desktop_router
 from polar.exception_handlers import add_exception_handlers
 from polar.health.endpoints import router as health_router
 from polar.kit.cors import CORSConfig, CORSMatcherMiddleware, Scope
@@ -262,6 +263,9 @@ def create_app() -> FastAPI:
 
     # /search
     app.include_router(search_router)
+
+    # /desktop: the desktop app's sign-in and model proxy
+    app.include_router(desktop_router)
 
     if settings.BACKOFFICE_HOST is None:
         app.mount("/backoffice", backoffice_app)

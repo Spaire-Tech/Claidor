@@ -29,9 +29,10 @@ export const isTestModeEnabled = (): boolean => {
  * Used for auth exchange/refresh, models, proxy, etc.
  */
 export const getServerApiBaseUrl = (): string => {
+  // Claidor serves the account protocol under /desktop (server/polar/desktop).
   const defaultBaseUrl = isTestModeEnabled()
-    ? 'https://lobsterai-server.inner.youdao.com'
-    : 'https://lobsterai-server.youdao.com';
+    ? 'http://127.0.0.1:8000/desktop'
+    : 'https://api.claidor.com/desktop';
   const serverBaseUrl = resolveDevelopmentServerBaseUrl({
     defaultBaseUrl,
     developmentOverride: process.env.LOBSTER_SERVER_BASE_URL,

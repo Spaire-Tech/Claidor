@@ -7,7 +7,19 @@ OpenClaw agent engine underneath a window. It was added with
     git subtree add --prefix=desktop https://github.com/netease-youdao/LobsterAI.git main --squash
 
 from upstream commit `7592cd03` (version 2026.9.4, bundling OpenClaw
-v2026.6.1) on 9 September 2026. Nothing in it has been changed.
+v2026.6.1) on 9 September 2026.
+
+Two lines are changed from upstream, both to point the app at Claidor:
+
+- `src/main/libs/endpoints.ts`: the server base URL is
+  `https://api.claidor.com/desktop` (test mode:
+  `http://127.0.0.1:8000/desktop`) instead of NetEase's servers. The
+  Claidor side is `server/polar/desktop`.
+- `src/main/libs/authLocalCallbackServer.ts`: the post-login
+  « return to » check accepts claidor.com hosts as well as youdao.com.
+
+Everything else is upstream as is. The update-check, skill-store and
+kit-store URLs still point at NetEase and are not wired.
 
 To pull upstream later:
 

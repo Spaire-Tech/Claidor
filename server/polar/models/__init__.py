@@ -90,6 +90,7 @@ from .legal_article import LegalArticle, LegalArticleEquivalence
 from .librarian_question import LibrarianQuestion
 from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
+from .desktop import DesktopAuthCode, DesktopSession, DesktopUsage
 from .login_code import LoginCode
 from .member import Member, MemberRole
 from .member_session import MemberSession
@@ -292,6 +293,9 @@ __all__ = [
     "LicenseKey",
     "LicenseKeyActivation",
     "LinkState",
+    "DesktopAuthCode",
+    "DesktopSession",
+    "DesktopUsage",
     "LoginCode",
     "Member",
     "MemberRole",
