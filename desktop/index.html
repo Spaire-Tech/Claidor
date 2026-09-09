@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LobsterAI</title>
+    <title>Swen</title>
     <style>
       /* Pre-React splash: a static replica of EngineStartupOverlay so the whole
          startup (window shown -> renderer init -> engine starting) is one
@@ -20,7 +20,7 @@
         align-items: center;
         justify-content: center;
         background: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
       html.dark .splash {
         background: #1a1d27;
@@ -192,8 +192,8 @@
       }
     </style>
     <script>
-      // 在页面加载前预设主题，避免闪烁。
-      // 'lobster-theme-appearance' 由 theme-manager.ts 在每次应用主题时写入。
+      // Apply the theme before the page paints, to avoid a flash.
+      // 'lobster-theme-appearance' is written by theme-manager.ts every time a theme is applied.
       (function () {
         try {
           var appearance = localStorage.getItem('lobster-theme-appearance');
@@ -215,10 +215,10 @@
         <div class="splash-content">
           <div class="splash-logo-wrap">
             <div class="splash-logo-glow"></div>
-            <img class="splash-logo" src="logo.png" alt="LobsterAI" width="72" height="72" draggable="false" />
+            <img class="splash-logo" src="logo.png" alt="Swen" width="72" height="72" draggable="false" />
           </div>
-          <h1 class="splash-title" id="splash-title">AI 引擎启动中</h1>
-          <p class="splash-subtitle" id="splash-subtitle">加载中...</p>
+          <h1 class="splash-title" id="splash-title">Starting AI engine</h1>
+          <p class="splash-subtitle" id="splash-subtitle">Loading...</p>
           <div class="splash-bar"><div class="splash-bar-shimmer"></div></div>
           <div class="splash-bar-below"></div>
           <div class="splash-tips">
@@ -226,7 +226,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
               </svg>
-              <span id="splash-tips-label">小提示</span>
+              <span id="splash-tips-label">Tip</span>
             </div>
             <p class="splash-tip-text" id="splash-tip-text"></p>
             <div class="splash-tip-dots" id="splash-tip-dots"></div>
@@ -235,44 +235,23 @@
       </div>
     </div>
     <script>
-      // 本地化启动屏文案并随机选一条小提示。
-      // 'lobster-language' 由 i18n.ts 在语言确定后写入；首次启动回退到系统语言。
-      // 文案需与 src/renderer/services/i18n.ts 中的 engineStarting* / loading 保持同步。
+      // Fill the splash screen and pick the first tip. Swen is English-only.
+      // Keep the texts in sync with engineStarting* / loading in src/renderer/services/i18n.ts.
       (function () {
         try {
-          var lang = localStorage.getItem('lobster-language');
-          if (lang !== 'zh' && lang !== 'en') {
-            lang = navigator.language === 'zh-CN' ? 'zh' : 'en';
-          }
-          var texts = {
-            zh: {
-              title: 'AI 引擎启动中',
-              subtitle: '加载中...',
-              label: '小提示',
-              tips: [
-                '让 AI 生成 HTML、SVG 或 Mermaid 图表，右侧面板会实时预览效果',
-                '在「技能」中开启 Word、Excel、PPT 技能，AI 可以直接为你生成办公文档',
-                '用「定时任务」让 AI 在固定时间自动执行例行工作',
-                '接入微信、飞书、钉钉等聊天工具，在 IM 里随时召唤 AI',
-                '对 AI 说"记住……"，重要信息会写入长期记忆，下次对话自动生效',
-                'AI 执行敏感操作前会先请求你的确认，可以放心交给它'
-              ]
-            },
-            en: {
-              title: 'Starting AI engine',
-              subtitle: 'Loading...',
-              label: 'Tip',
-              tips: [
-                'Ask AI for HTML, SVG, or Mermaid diagrams — the side panel previews them live',
-                'Enable Word, Excel, and PPT skills in Skills, and AI can generate office documents for you',
-                'Use Scheduled Tasks to have AI run routine work automatically at fixed times',
-                'Connect WeChat, Feishu, DingTalk and more to summon AI right from your IM apps',
-                'Tell AI to "remember..." and it saves key facts to long-term memory for future chats',
-                'AI asks for your approval before sensitive operations, so you stay in control'
-              ]
-            }
+          var t = {
+            title: 'Starting AI engine',
+            subtitle: 'Loading...',
+            label: 'Tip',
+            tips: [
+              'Ask AI for HTML, SVG, or Mermaid diagrams — the side panel previews them live',
+              'Enable Word, Excel, and PPT skills in Skills, and AI can generate office documents for you',
+              'Use Scheduled Tasks to have AI run routine work automatically at fixed times',
+              'Connect Telegram, Discord or email to reach AI from your messaging apps',
+              'Tell AI to "remember..." and it saves key facts to long-term memory for future chats',
+              'AI asks for your approval before sensitive operations, so you stay in control'
+            ]
           };
-          var t = texts[lang];
           document.getElementById('splash-title').textContent = t.title;
           document.getElementById('splash-subtitle').textContent = t.subtitle;
           document.getElementById('splash-tips-label').textContent = t.label;
@@ -281,7 +260,7 @@
           var dots = document.getElementById('splash-tip-dots');
           var dotButtons = [];
 
-          // React 侧的 EngineStartupOverlay 会读取该值，从同一条小提示继续轮播
+          // EngineStartupOverlay on the React side reads this value and continues from the same tip.
           function selectTip(idx) {
             tipText.textContent = t.tips[idx];
             for (var j = 0; j < dotButtons.length; j++) {
@@ -304,10 +283,10 @@
             dotButtons.push(dot);
           }
 
-          // 固定从第一条开始，保证每次启动的阅读顺序一致
+          // Always start from the first tip so the reading order is the same on every launch.
           selectTip(0);
         } catch (e) {
-          /* keep default zh texts */
+          /* keep the default texts */
         }
       })();
     </script>

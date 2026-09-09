@@ -458,7 +458,7 @@ export class PluginManager {
   }
 
   private async packNpmPlugin(params: PluginInstallParams, onLog?: PluginInstallLogCallback): Promise<string> {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-plugin-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-plugin-'));
     const spec = params.version ? `${params.spec}@${params.version}` : params.spec;
     const npm = resolveNpmCommand();
     const args = [...npm.baseArgs, 'pack', spec, '--pack-destination', tmpDir];
@@ -491,7 +491,7 @@ export class PluginManager {
   }
 
   private async packGitPlugin(params: PluginInstallParams, onLog?: PluginInstallLogCallback): Promise<string> {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-plugin-git-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-plugin-git-'));
     const sourceDir = path.join(tmpDir, 'source');
 
     const gitUrl = params.spec;
@@ -618,7 +618,7 @@ export class PluginManager {
 
   /**
    * Sync plugins from OpenClaw's extensions directories and config into the
-   * local SQLite store. Discovers plugins installed outside of LobsterAI
+   * local SQLite store. Discovers plugins installed outside of Swen
    * (via AI conversation, CLI, or OpenClaw Web UI) and adds them so they
    * appear in the plugin management UI.
    */
@@ -867,9 +867,9 @@ const INTERNAL_PLUGIN_IDS = [
   'openrouter',
   'ollama',
   'lm-studio',
-  'lobsterai-server',
+  'swen-server',
   'github-copilot',
-  'lobsterai-copilot',
+  'swen-copilot',
   'lobster',
   'kimi',
 

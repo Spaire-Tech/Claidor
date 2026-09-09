@@ -1,6 +1,6 @@
 """The desktop app's account service.
 
-Everything the vendored LobsterAI app (`desktop/`) asks of its server in
+Everything the desktop app, Swen (`desktop/`), asks of its server in
 account mode, on Claidor's side: auth codes, sessions with rotating
 refresh tokens, the model catalogue the app may call, the monthly
 credit allowance, and the metering of every call made through the

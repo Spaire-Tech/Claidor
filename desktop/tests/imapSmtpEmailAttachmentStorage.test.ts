@@ -44,7 +44,7 @@ const {
 const temporaryDirectories: string[] = [];
 
 function createTemporaryDirectory(): string {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-email-attachment-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-email-attachment-'));
   temporaryDirectories.push(directory);
   return directory;
 }
@@ -73,7 +73,7 @@ afterEach(() => {
 });
 
 describe('sanitizeAttachmentFilename', () => {
-  test('preserves normal English, Chinese, spaces, and extensions', () => {
+  test('preserves normal ASCII names, non-ASCII (CJK) names, spaces, and extensions', () => {
     expect(sanitizeAttachmentFilename('report.pdf')).toBe('report.pdf');
     expect(sanitizeAttachmentFilename('季度报告.xlsx')).toBe('季度报告.xlsx');
     expect(sanitizeAttachmentFilename('photo 01.final.jpg')).toBe('photo 01.final.jpg');
@@ -126,6 +126,7 @@ describe('sanitizeAttachmentFilename', () => {
 
   test('limits long ASCII and Unicode filenames by UTF-8 byte length', () => {
     const longAscii = sanitizeAttachmentFilename(`${'a'.repeat(400)}.txt`);
+    // Multi-byte (3-byte UTF-8) CJK characters check that truncation counts bytes, not characters.
     const longUnicode = sanitizeAttachmentFilename(`${'文'.repeat(200)}.txt`);
 
     expect(Buffer.byteLength(longAscii, 'utf8')).toBeLessThanOrEqual(
@@ -140,7 +141,7 @@ describe('sanitizeAttachmentFilename', () => {
 
 describe('isPathInside', () => {
   test('accepts descendants and rejects equality, siblings, and parent traversal', () => {
-    const root = path.resolve('/tmp/lobsterai-attachment-root');
+    const root = path.resolve('/tmp/swen-attachment-root');
 
     expect(isPathInside(root, path.join(root, 'account', '42'))).toBe(true);
     expect(isPathInside(root, root)).toBe(false);

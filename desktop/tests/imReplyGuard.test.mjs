@@ -14,7 +14,7 @@ test('guards IM reminder commitment when no cron.add succeeded', () => {
     {
       id: 'assistant-1',
       type: 'assistant',
-      content: '好的，2分钟后会提醒你喝饮料。',
+      content: "Sure, I'll remind you to drink water in 2 minutes.",
       timestamp: Date.now(),
       metadata: {},
     },
@@ -52,7 +52,7 @@ test('preserves reminder reply when cron.add completed successfully', () => {
     {
       id: 'assistant-1',
       type: 'assistant',
-      content: '好的，2分钟后会提醒你喝饮料。',
+      content: "Sure, I'll remind you to drink water in 2 minutes.",
       timestamp: Date.now(),
       metadata: {},
     },
@@ -60,7 +60,7 @@ test('preserves reminder reply when cron.add completed successfully', () => {
 
   assert.equal(analysis.guardApplied, false);
   assert.equal(analysis.successfulCronAdds, 1);
-  assert.equal(analysis.text, '好的，2分钟后会提醒你喝饮料。');
+  assert.equal(analysis.text, "Sure, I'll remind you to drink water in 2 minutes.");
 });
 
 test('returns explicit failure when cron.add was attempted but failed', () => {
@@ -91,7 +91,7 @@ test('returns explicit failure when cron.add was attempted but failed', () => {
     {
       id: 'assistant-1',
       type: 'assistant',
-      content: '定时任务创建成功！到时间后我会自动提醒你。',
+      content: "Scheduled task created! I'll remind you automatically when the time comes.",
       timestamp: Date.now(),
       metadata: {},
     },
@@ -108,12 +108,12 @@ test('does not guard normal non-reminder assistant replies', () => {
     {
       id: 'assistant-1',
       type: 'assistant',
-      content: '今天上海多云，气温 18 到 24 度。',
+      content: 'London is cloudy today, 18 to 24 degrees.',
       timestamp: Date.now(),
       metadata: {},
     },
   ]);
 
   assert.equal(analysis.guardApplied, false);
-  assert.equal(analysis.text, '今天上海多云，气温 18 到 24 度。');
+  assert.equal(analysis.text, 'London is cloudy today, 18 to 24 degrees.');
 });

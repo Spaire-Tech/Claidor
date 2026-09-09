@@ -26,9 +26,9 @@ describe('parseCoworkBtwCommand', () => {
       matched: true,
       question: 'why?',
     });
-    expect(parseCoworkBtwCommand('/BtW 中文问题？')).toEqual({
+    expect(parseCoworkBtwCommand('/BtW ¿Por qué?')).toEqual({
       matched: true,
-      question: '中文问题？',
+      question: '¿Por qué?',
     });
     expect(parseCoworkBtwCommand('/btw null\u0000byte')).toEqual({
       matched: true,

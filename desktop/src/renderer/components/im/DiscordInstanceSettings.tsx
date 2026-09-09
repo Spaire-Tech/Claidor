@@ -105,7 +105,6 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
   onTestConnectivity,
   testingPlatform,
   connectivityResults,
-  language,
   headerLeading,
 }) => {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -322,7 +321,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || '添加'}
+                {i18nService.t('add') || 'Add'}
               </button>
             </div>
             {instance.allowFrom.length > 0 && (
@@ -409,7 +408,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                   }}
                   className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                 >
-                  {i18nService.t('add') || '添加'}
+                  {i18nService.t('add') || 'Add'}
                 </button>
               </div>
               {instance.groupAllowFrom.length > 0 && (
@@ -441,7 +440,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
           {/* Per-Guild Settings */}
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-secondary">
-              {language === 'zh' ? 'Guild 独立配置' : 'Per-Guild Settings'}
+              {'Per-Guild Settings'}
             </label>
             <div className="flex gap-2">
               <input
@@ -476,7 +475,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || '添加'}
+                {i18nService.t('add') || 'Add'}
               </button>
             </div>
             {Object.keys(instance.guilds).length > 0 && (
@@ -516,7 +515,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                     {/* Guild-level systemPrompt */}
                     <div className="space-y-1">
                       <label className="text-xs text-secondary">
-                        {language === 'zh' ? '系统提示词' : 'System Prompt'}
+                        {'System Prompt'}
                       </label>
                       <textarea
                         value={guildCfg.systemPrompt ?? ''}
@@ -528,7 +527,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                         onBlur={() => void onSave()}
                         rows={2}
                         className="block w-full rounded-lg bg-surface border-border-subtle border focus:border-primary focus:ring-1 focus:ring-primary/30 text-foreground px-3 py-2 text-xs transition-colors resize-y"
-                        placeholder={language === 'zh' ? '该 Guild 专属系统提示词（可选）' : 'Custom system prompt for this guild (optional)'}
+                        placeholder={'Custom system prompt for this guild (optional)'}
                       />
                     </div>
                   </div>

@@ -5,11 +5,12 @@
  * Safe to call multiple times — a kv flag prevents re-running.
  */
 
+import type Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
-import type Database from 'better-sqlite3';
+
+import { DefaultAgentId,DeliveryMode, GatewayStatus, MigrationKey, PayloadKind, ScheduleKind, SessionTarget, WakeMode } from './constants';
 import type { CronJobService } from './cronJobService';
-import { MigrationKey, ScheduleKind, PayloadKind, DeliveryMode, SessionTarget, WakeMode, GatewayStatus, DefaultAgentId } from './constants';
 import type { Schedule, ScheduledTaskDelivery, ScheduledTaskInput } from './types';
 
 // ---------------------------------------------------------------------------
@@ -113,8 +114,8 @@ function rowToInput(row: LegacyTaskRow): ScheduledTaskInput | null {
     description: row.description ?? '',
     enabled: row.enabled === 1,
     schedule,
-    // 旧任务都带有 prompt，使用 isolated session + agentTurn。
-    // main session 仅支持 systemEvent payload，不适用于迁移场景。
+    // Legacy tasks always carry a prompt, so use an isolated session + agentTurn.
+    // The main session only supports systemEvent payloads, which does not fit migration.
     sessionTarget: SessionTarget.Isolated,
     wakeMode: WakeMode.NextHeartbeat,
     payload: { kind: PayloadKind.AgentTurn, message: row.prompt },

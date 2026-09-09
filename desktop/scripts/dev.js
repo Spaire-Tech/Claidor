@@ -1,23 +1,22 @@
 const { spawn } = require('child_process');
 const { createServer } = require('vite');
 const electron = require('electron');
-const path = require('path');
 
 async function startApp() {
-  // 启动 Vite 开发服务器
+  // Start the Vite dev server
   const server = await createServer();
   await server.listen();
 
   console.log('Vite server started');
 
-  // 编译 Electron 主进程代码
+  // Compile the Electron main-process code
   require('child_process').execSync('tsc --project electron-tsconfig.json', {
     stdio: 'inherit',
   });
 
   console.log('Electron main process code compiled');
 
-  // 启动 Electron
+  // Launch Electron
   const proc = spawn(electron, ['.'], {
     stdio: 'inherit',
     env: {
@@ -31,7 +30,7 @@ async function startApp() {
     process.exit();
   });
 
-  // 处理进程终止
+  // Handle process termination
   process.on('SIGTERM', () => {
     proc.kill();
     server.close();

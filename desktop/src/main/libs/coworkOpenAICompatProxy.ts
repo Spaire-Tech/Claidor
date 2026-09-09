@@ -243,14 +243,14 @@ function toOptionalObject(value: unknown): Record<string, unknown> | null {
 
 function shouldRefreshProxyToken(status: number, provider?: string): boolean {
   if (status === 401) return true;
-  return status === 403 && provider !== ProviderName.LobsteraiServer;
+  return status === 403 && provider !== ProviderName.SwenServer;
 }
 
-function isTemporaryLobsterAIAuthRefreshFailure(
+function isTemporarySwenAuthRefreshFailure(
   provider: string | undefined,
   result: AuthTokenRefreshResult,
 ): boolean {
-  return provider === ProviderName.LobsteraiServer
+  return provider === ProviderName.SwenServer
     && result.outcome === AuthRefreshOutcome.TransientFailure;
 }
 
@@ -2559,7 +2559,7 @@ async function handleRequest(
                 body,
               });
               console.log(`[CoworkProxy] OpenAI passthrough: retry status=${upstreamResponse.status}`);
-            } else if (isTemporaryLobsterAIAuthRefreshFailure(
+            } else if (isTemporarySwenAuthRefreshFailure(
               upstreamConfig.provider,
               refreshResult,
             )) {
@@ -2641,9 +2641,9 @@ async function handleRequest(
   const upstreamAPIType = resolveUpstreamAPIType(upstreamConfig.provider);
   const openAIRequest = anthropicToOpenAI(parsedRequestBody);
 
-  // Inject session_id and user_message for lobsterai-server logging only.
+  // Inject session_id and user_message for swen-server logging only.
   // Strict providers (e.g. Gemini) reject unknown payload fields.
-  if (upstreamConfig.provider === 'lobsterai-server') {
+  if (upstreamConfig.provider === 'swen-server') {
     if (currentCoworkSessionId) {
       openAIRequest.session_id = currentCoworkSessionId;
     }
@@ -2764,7 +2764,7 @@ async function handleRequest(
             upstreamResponse = await sendUpstreamRequest(upstreamRequest, currentTargetURL);
             const retryDuration = Date.now() - fetchStartTime;
             console.log(`[CoworkProxy] Token refresh retry: status=${upstreamResponse.status}, ok=${upstreamResponse.ok}, fetchTime=${retryDuration}ms`);
-          } else if (isTemporaryLobsterAIAuthRefreshFailure(
+          } else if (isTemporarySwenAuthRefreshFailure(
             upstreamConfig.provider,
             refreshResult,
           )) {
@@ -2938,7 +2938,7 @@ export const __openAICompatProxyTestUtils = {
   processResponsesStreamEvent,
   convertChatCompletionsRequestToResponsesRequest,
   filterOpenAIToolsForProvider,
-  isTemporaryLobsterAIAuthRefreshFailure,
+  isTemporarySwenAuthRefreshFailure,
   isGeminiProvider,
   shouldRefreshProxyToken,
 };

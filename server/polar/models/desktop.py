@@ -1,6 +1,6 @@
 """The desktop app's sign-in and metering.
 
-The vendored LobsterAI app (`desktop/`) speaks a small server protocol
+The desktop app, Swen (`desktop/`), speaks a small server protocol
 in its account mode: a browser login that ends in an auth code, an
 exchange of that code for an access token and a refresh token, a
 refresh, a quota, and a model proxy. These three tables are the whole

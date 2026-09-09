@@ -124,7 +124,7 @@ describe('registerScheduledTaskHandlers', () => {
 
     const handler = registeredHandlers.get(ScheduledTaskIpc.Create);
     const result = await handler?.(undefined, {
-      name: '科技早报',
+      name: 'Tech morning brief',
       enabled: true,
       schedule: { kind: 'cron', expr: '0 13 * * *' },
       sessionTarget: SessionTarget.Main,
@@ -154,7 +154,7 @@ describe('registerScheduledTaskHandlers', () => {
       to: 'WxId_ZhangSan@im.wechat',
       accountId: 'weixin-bot-1',
     });
-    expect(result).toEqual({ success: true, task: { id: 'job-1', name: '科技早报' } });
+    expect(result).toEqual({ success: true, task: { id: 'job-1', name: 'Tech morning brief' } });
   });
 
   test('restores a WeCom group chat id from case-preserving origin metadata on create', async () => {
@@ -448,7 +448,7 @@ describe('registerScheduledTaskHandlers', () => {
 
     const handler = registeredHandlers.get(ScheduledTaskIpc.Create);
     await handler?.(undefined, {
-      name: '测试 popo',
+      name: 'popo test',
       enabled: true,
       schedule: { kind: 'cron', expr: '0 13 * * *' },
       payload: { kind: PayloadKind.AgentTurn, message: 'hi' },

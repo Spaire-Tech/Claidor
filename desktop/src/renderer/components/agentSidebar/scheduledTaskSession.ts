@@ -1,4 +1,4 @@
-const LEGACY_SCHEDULED_TASK_TITLE_RE = /^(\[(?:定时|cron)\])\s+/i;
+const LEGACY_SCHEDULED_TASK_TITLE_RE = /^(\[cron\])\s+/i;
 
 export const hasLegacyScheduledTaskTitle = (title: string): boolean => {
   return LEGACY_SCHEDULED_TASK_TITLE_RE.test(title);

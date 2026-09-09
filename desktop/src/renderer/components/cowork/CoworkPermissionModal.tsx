@@ -13,11 +13,7 @@ const POSITIVE_CONFIRM_PATTERNS = [
   /\bconfirm\b/i,
   /\bcontinue\b/i,
   /\byes\b/i,
-  /允许/,
-  /确认/,
-  /继续/,
-  /同意/,
-  /删除/,
+  /\bdelete\b/i,
 ] as const;
 
 const NEGATIVE_CONFIRM_PATTERNS = [
@@ -26,11 +22,7 @@ const NEGATIVE_CONFIRM_PATTERNS = [
   /\breject\b/i,
   /\babort\b/i,
   /\bno\b/i,
-  /取消/,
-  /拒绝/,
-  /不同意/,
-  /不允许/,
-  /停止/,
+  /\bstop\b/i,
 ] as const;
 
 const DANGER_REASON_I18N_MAP: Record<string, string> = {
@@ -311,7 +303,7 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
     const questionText = isConfirmMode ? questions[0]?.question ?? '' : '';
     const looksLikeDeleteQuestion = requestedCommand
       ? detectDangerLevelFromCommand(requestedCommand) !== 'safe'
-      : /\b(delete|remove|rm|unlink|rmdir|erase|del)\b/i.test(questionText) || /删除|移除/.test(questionText);
+      : /\b(delete|remove|rm|unlink|rmdir|erase|del)\b/i.test(questionText);
 
     if (permission.toolName === ASK_USER_QUESTION_TOOL_NAME && looksLikeDeleteQuestion) {
       return { dangerLevel: 'caution' as DangerLevel, dangerReasonText: i18nService.t('dangerReasonFileDelete') };
@@ -500,7 +492,7 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
                     key={question.question}
                     className="rounded-xl border border-border p-4 space-y-3"
                   >
-                    {/* 问题 */}
+                    {/* Question */}
                     <div className="text-sm font-medium text-foreground">
                       {question.header && (
                         <span className="inline-block text-[11px] uppercase tracking-wide px-2 py-0.5 mr-1.5 rounded-full bg-surface-raised text-secondary align-middle">
@@ -509,7 +501,7 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
                       )}
                       {question.question}
                     </div>
-                    {/* 命令详情 */}
+                    {/* Command details */}
                     {requestedCommand && (
                       <div>
                         <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1">
@@ -522,7 +514,7 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
                         </div>
                       </div>
                     )}
-                    {/* 选项 */}
+                    {/* Options */}
                     <div className="space-y-2">
                       {question.options.map((option) => {
                         const isSelected = selectedValues.includes(option.label);
@@ -578,7 +570,7 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
           )}
         </div>
 
-        {/* Warning for dangerous operations - 固定在滚动区域外，始终可见 */}
+        {/* Warning for dangerous operations - pinned outside the scroll area, always visible */}
         {(!isQuestionTool || isConfirmMode) && dangerLevel === 'destructive' && (
           <div className="flex items-start gap-2 p-3 mx-6 my-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
             <ExclamationTriangleIcon className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />

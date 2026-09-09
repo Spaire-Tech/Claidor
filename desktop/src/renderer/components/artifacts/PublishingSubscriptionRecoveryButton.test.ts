@@ -3,8 +3,6 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 
-import { i18nService } from '@/services/i18n';
-
 import PublishingSubscriptionRecoveryButton from './PublishingSubscriptionRecoveryButton';
 
 const renderButton = (compact = false): string => renderToStaticMarkup(
@@ -38,16 +36,8 @@ describe('PublishingSubscriptionRecoveryButton', () => {
     expect(renderButton(true)).toContain('h-7 px-2.5 text-xs');
   });
 
-  test('uses the concise Chinese automatic recovery label', () => {
-    const previousLanguage = i18nService.getLanguage();
-    i18nService.setLanguage('zh', { persist: false });
-
-    try {
-      const html = renderButton();
-      expect(html).toContain('>订阅恢复</button>');
-      expect(html).not.toContain('订阅恢复分享');
-    } finally {
-      i18nService.setLanguage(previousLanguage, { persist: false });
-    }
+  test('uses the concise automatic recovery label', () => {
+    const html = renderButton();
+    expect(html).toContain('>Subscribe to restore</button>');
   });
 });

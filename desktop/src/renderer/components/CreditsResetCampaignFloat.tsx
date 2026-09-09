@@ -29,9 +29,7 @@ const formatExpiry = (expiresAt?: string): string => {
   if (!datePart) return expiresAt;
   const [year, month, day] = datePart.split('-');
   if (!year || !month || !day) return datePart;
-  return i18nService.getLanguage() === 'en'
-    ? `${year}-${month}-${day}`
-    : `${Number(month)}月${Number(day)}日`;
+  return `${year}-${month}-${day}`;
 };
 
 const CreditsResetCampaignFloat: React.FC = () => {

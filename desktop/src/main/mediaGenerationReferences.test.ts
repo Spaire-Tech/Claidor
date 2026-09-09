@@ -10,7 +10,7 @@ import {
 } from './mediaGenerationReferences';
 
 const makeImageRef = (overrides: Partial<MediaAttachmentRefMain>): MediaAttachmentRefMain => ({
-  token: overrides.token ?? '@图片2',
+  token: overrides.token ?? '@image2',
   mediaType: MediaAttachmentKind.Image,
   index: overrides.index ?? 2,
   fileId: overrides.fileId ?? '/tmp/second.png',
@@ -23,7 +23,7 @@ const makeImageRef = (overrides: Partial<MediaAttachmentRefMain>): MediaAttachme
 });
 
 const makeVideoRef = (overrides: Partial<MediaAttachmentRefMain>): MediaAttachmentRefMain => ({
-  token: overrides.token ?? '@视频1',
+  token: overrides.token ?? '@video1',
   mediaType: MediaAttachmentKind.Video,
   index: overrides.index ?? 1,
   fileId: overrides.fileId ?? '/tmp/action.mp4',
@@ -40,11 +40,11 @@ describe('applyMediaReferencesToGenerationParams', () => {
     const params = applyMediaReferencesToGenerationParams({
       mediaType: MediaGenerationRequestType.Image,
       params: {
-        image: '@图片2',
+        image: '@image2',
       },
       refs: [
         makeImageRef({
-          token: '@图片2',
+          token: '@image2',
           localPath: '/tmp/second.png',
         }),
       ],
@@ -59,11 +59,11 @@ describe('applyMediaReferencesToGenerationParams', () => {
     const params = applyMediaReferencesToGenerationParams({
       mediaType: MediaGenerationRequestType.Image,
       params: {
-        images: ['@图片1', '/tmp/existing.png'],
+        images: ['@image1', '/tmp/existing.png'],
       },
       refs: [
         makeImageRef({
-          token: '@图片1',
+          token: '@image1',
           index: 1,
           localPath: '/tmp/existing.png',
         }),
@@ -71,7 +71,7 @@ describe('applyMediaReferencesToGenerationParams', () => {
     });
 
     expect(params.images).toEqual(['/tmp/existing.png']);
-    expect(params.images).not.toContain('@图片1');
+    expect(params.images).not.toContain('@image1');
   });
 
   test('puts explicit image mention first for video generation and treats it as first frame', () => {
@@ -126,18 +126,18 @@ describe('applyMediaReferencesToGenerationParams', () => {
     const params = applyMediaReferencesToGenerationParams({
       mediaType: MediaGenerationRequestType.Video,
       params: {
-        firstFrame: '@图片1',
-        referenceImages: ['@图片2'],
+        firstFrame: '@image1',
+        referenceImages: ['@image2'],
       },
       refs: [
         makeImageRef({
-          token: '@图片1',
+          token: '@image1',
           index: 1,
           localPath: '/tmp/first.png',
           role: MediaAttachmentRole.FirstFrame,
         }),
         makeImageRef({
-          token: '@图片2',
+          token: '@image2',
           index: 2,
           localPath: '/tmp/second.png',
           role: MediaAttachmentRole.ReferenceImage,
@@ -159,12 +159,12 @@ describe('applyMediaReferencesToGenerationParams', () => {
       mediaType: MediaGenerationRequestType.Video,
       params: {
         providerOptions: {
-          media: [{ type: 'reference_video', url: '@视频1' }],
+          media: [{ type: 'reference_video', url: '@video1' }],
         },
       },
       refs: [
         makeVideoRef({
-          token: '@视频1',
+          token: '@video1',
           localPath: '/tmp/action.mp4',
         }),
       ],
@@ -181,11 +181,11 @@ describe('applyMediaReferencesToGenerationParams', () => {
     const params = applyMediaReferencesToGenerationParams({
       mediaType: MediaGenerationRequestType.Image,
       params: {
-        images: ['@图片1'],
+        images: ['@image1'],
       },
       refs: [
         makeImageRef({
-          token: '@图片1',
+          token: '@image1',
           index: 1,
           localPath: undefined,
           dataUrl,

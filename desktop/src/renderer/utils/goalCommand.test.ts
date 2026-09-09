@@ -20,7 +20,7 @@ describe('applyOptimisticGoalCommand', () => {
   });
 
   test('uses only first command line as optimistic objective', () => {
-    const goal = applyOptimisticGoalCommand('/goal set Ship the page\n\n文件: /tmp/a.md', null, 'session-1', 1000);
+    const goal = applyOptimisticGoalCommand('/goal set Ship the page\n\nFile: /tmp/a.md', null, 'session-1', 1000);
     expect(goal?.objective).toBe('Ship the page');
   });
 

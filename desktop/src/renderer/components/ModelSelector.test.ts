@@ -1,5 +1,5 @@
-import { LobsterAIRequestCapability } from '@shared/providers/lobsterAIRequestOptions';
 import { ModelThinkingLevel } from '@shared/providers/modelThinking';
+import { SwenRequestCapability } from '@shared/providers/swenRequestOptions';
 import { expect, test } from 'vitest';
 
 import {
@@ -261,7 +261,7 @@ test('allows thinking changes only for capable, accessible, and ready models', (
   expect(canConfigureModelThinking({
     accessible: true,
     isServerModel: true,
-    requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
+    requestCapabilities: [SwenRequestCapability.OptionsV1],
     thinkingConfig: { options: thinkingConfig.options.map(option => ({ ...option })), defaultLevel: thinkingConfig.defaultLevel },
   })).toBe(true);
   expect(canConfigureModelThinking({
@@ -272,7 +272,7 @@ test('allows thinking changes only for capable, accessible, and ready models', (
   expect(canConfigureModelThinking({
     accessible: false,
     isServerModel: true,
-    requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
+    requestCapabilities: [SwenRequestCapability.OptionsV1],
     thinkingConfig: { options: thinkingConfig.options.map(option => ({ ...option })), defaultLevel: thinkingConfig.defaultLevel },
   })).toBe(false);
   expect(canConfigureModelThinking({
@@ -280,13 +280,13 @@ test('allows thinking changes only for capable, accessible, and ready models', (
     isServerModel: true,
     runtimeProfile: 'moonshot-kimi-k3',
     agenticReady: false,
-    requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
+    requestCapabilities: [SwenRequestCapability.OptionsV1],
     thinkingConfig: { options: thinkingConfig.options.map(option => ({ ...option })), defaultLevel: thinkingConfig.defaultLevel },
   })).toBe(false);
   expect(canConfigureModelThinking({
     accessible: true,
     isServerModel: true,
-    requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
+    requestCapabilities: [SwenRequestCapability.OptionsV1],
   })).toBe(false);
 });
 
@@ -302,6 +302,6 @@ test('hides the thinking protocol entry when request-options support is absent',
   expect(supportsConfigurableModelThinkingProtocol({ thinkingConfig })).toBe(false);
   expect(supportsConfigurableModelThinkingProtocol({
     thinkingConfig,
-    requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
+    requestCapabilities: [SwenRequestCapability.OptionsV1],
   })).toBe(true);
 });

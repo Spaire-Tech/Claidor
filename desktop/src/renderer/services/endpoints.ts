@@ -1,6 +1,11 @@
 /**
- * 集中管理所有业务 API 端点。
- * 后续新增的业务接口也应在此文件中配置。
+ * Web addresses the renderer opens in the browser.
+ *
+ * Swen lives on Claidor's two hosts and nowhere else: the API
+ * (api.claidor.com, account protocol under /desktop) and the web app
+ * (app.claidor.com, where people sign in and manage their account). The
+ * main process holds the API addresses (src/main/libs/endpoints.ts); this
+ * file only holds the pages the app opens for the person.
  */
 
 import { configService } from './config';
@@ -9,40 +14,13 @@ export const isTestModeEnabled = () => {
   return configService.getConfig().app?.testMode === true;
 };
 
-// 自动更新
-export const getUpdateCheckUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update';
+const CLAIDOR_APP_BASE_URL = 'https://app.claidor.com';
+const CLAIDOR_DEV_APP_BASE_URL = 'http://127.0.0.1:3000';
 
-// 手动检查更新
-export const getManualUpdateCheckUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update-manual'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update-manual';
+const getPortalBase = () => (isTestModeEnabled() ? CLAIDOR_DEV_APP_BASE_URL : CLAIDOR_APP_BASE_URL);
 
-export const getFallbackDownloadUrl = () => isTestModeEnabled()
-  ? 'https://lobsterai.inner.youdao.com/#/download-list'
-  : 'https://lobsterai.youdao.com/#/download-list';
-
-// Skill 商店
-export const getSkillStoreUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/skill-store'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/skill-store';
-
-// Kit 商店
-export const getKitStoreUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/kit-store'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/kit-store';
-
-// 登录地址
-export const getLoginOvermindUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/login-url'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/login-url';
-
-// Portal 页面
-const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';
-const PORTAL_BASE_PROD = 'https://lobsterai.youdao.com/portal#';
-
-const getPortalBase = () => isTestModeEnabled() ? PORTAL_BASE_TEST : PORTAL_BASE_PROD;
+/** Where a person can download Swen. */
+export const getFallbackDownloadUrl = () => `${getPortalBase()}/desktop`;
 
 export const PortalPricingKeyfrom = {
   HtmlShare: 'html_share',
@@ -56,6 +34,8 @@ export interface PortalPricingUrlOptions {
   traceId?: string;
 }
 
+// Claidor's web app has one account area today. Every account link below
+// opens it; the query parameters are kept so the web app can route later.
 export const getPortalLoginUrl = () => `${getPortalBase()}/login`;
 export const getPortalPricingUrl = (
   keyfrom?: PortalPricingKeyfrom,
@@ -66,36 +46,22 @@ export const getPortalPricingUrl = (
   if (options.traceId) query.set('trace_id', options.traceId);
   const queryString = query.toString();
   const suffix = queryString ? `?${queryString}` : '';
-  return `${getPortalBase()}/pricing${suffix}`;
+  return `${getPortalBase()}/${suffix}`;
 };
-export const getPortalProfileUrl = () => `${getPortalBase()}/profile`;
-export const getPortalCreditsDetailUrl = () => `${getPortalBase()}/profile/detail`;
+export const getPortalProfileUrl = () => `${getPortalBase()}/`;
+export const getPortalCreditsDetailUrl = () => `${getPortalBase()}/`;
 export const getPortalRechargeUrl = () => `${getPortalBase()}/`;
-export const getPortalInvitationUrl = () => `${getPortalBase()}/invitation`;
+export const getPortalInvitationUrl = () => `${getPortalBase()}/`;
 export const getPortalCreditsResetActivityUrl = (campaignCode?: string) => (
-  `${getPortalBase()}/profile?activity=credits_reset${campaignCode ? `&campaignCode=${encodeURIComponent(campaignCode)}` : ''}`
+  `${getPortalBase()}/${campaignCode ? `?campaignCode=${encodeURIComponent(campaignCode)}` : ''}`
 );
 
-export const getEnterpriseMemberProfileUrl = (enterpriseId: number) => (
-  `${getPortalBase()}/enterprise/profile/${encodeURIComponent(String(enterpriseId))}`
-);
+export const getEnterpriseMemberProfileUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
 
-const getEnterpriseConsoleBaseUrl = (enterpriseId: number) => (
-  `${getPortalBase()}/enterprise/console/${encodeURIComponent(String(enterpriseId))}`
-);
+export const getEnterpriseOverviewUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
 
-export const getEnterpriseOverviewUrl = (enterpriseId: number) => (
-  `${getEnterpriseConsoleBaseUrl(enterpriseId)}/overview`
-);
+export const getEnterpriseUsageUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
 
-export const getEnterpriseUsageUrl = (enterpriseId: number) => (
-  `${getEnterpriseConsoleBaseUrl(enterpriseId)}/usage`
-);
+export const getEnterpriseBillingUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
 
-export const getEnterpriseBillingUrl = (enterpriseId: number) => (
-  `${getEnterpriseConsoleBaseUrl(enterpriseId)}/billing`
-);
-
-export const getEnterpriseRechargeUrl = (enterpriseId: number) => (
-  `${getEnterpriseConsoleBaseUrl(enterpriseId)}/recharge`
-);
+export const getEnterpriseRechargeUrl = (_enterpriseId: number) => `${getPortalBase()}/`;

@@ -22,7 +22,7 @@ export function resolveChannelSessionTerminalStatus(rawStatus: string): CoworkSe
  * ("running"/"done"/…) and can linger on conversation entries, so it only
  * counts as "running" when the live tracker is unavailable — honoring a stale
  * "running" alongside `hasActiveRun: false` pinned IM conversation records to
- * 执行中 forever once cron deliveries mirrored into them.
+ * "running" forever once cron deliveries mirrored into them.
  *
  * Returns null when the local status should stay unchanged.
  */

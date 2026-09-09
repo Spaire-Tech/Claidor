@@ -58,7 +58,7 @@ const serializeAnalyticsList = (values: string[]): string | undefined => {
 
 const getModelAnalyticsSource = (model: Model | null): 'package' | 'custom' | undefined => {
   if (!model) return undefined;
-  if (model.isServerModel || model.providerKey === ProviderName.LobsteraiServer) {
+  if (model.isServerModel || model.providerKey === ProviderName.SwenServer) {
     return 'package';
   }
   return 'custom';
@@ -66,7 +66,7 @@ const getModelAnalyticsSource = (model: Model | null): 'package' | 'custom' | un
 
 const getModelSelectorGroup = (model: Model | null): 'server' | 'user' | undefined => {
   if (!model) return undefined;
-  return model.isServerModel || model.providerKey === ProviderName.LobsteraiServer ? 'server' : 'user';
+  return model.isServerModel || model.providerKey === ProviderName.SwenServer ? 'server' : 'user';
 };
 
 interface AgentSettingsPanelProps {

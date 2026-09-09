@@ -173,6 +173,11 @@ import VoiceInputButton from './voiceInput/VoiceInputButton';
 import VoiceInputRecordingStatus from './voiceInput/VoiceInputRecordingStatus';
 import { getCoworkVoiceRecordingUiState } from './voiceInput/voiceInputUiState';
 
+// Swen ships without the upstream voice input (Youdao speech recognition)
+// and without image or video generation. The code stays; the buttons do not.
+const SWEN_VOICE_INPUT_ENABLED: boolean = false;
+const SWEN_MEDIA_GENERATION_ENABLED: boolean = false;
+
 const logPromptModelSelection = (
   level: 'debug' | 'warn',
   message: string,
@@ -261,7 +266,7 @@ const SteerQueueIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({ className, ..
 );
 
 const getModelAnalyticsSource = (model: Model, selectorGroup: ModelSelectorChangeMeta['group']): string => {
-  if (model.isServerModel || model.providerKey === ProviderName.LobsteraiServer || selectorGroup === ModelSelectorGroup.Server) {
+  if (model.isServerModel || model.providerKey === ProviderName.SwenServer || selectorGroup === ModelSelectorGroup.Server) {
     return 'package';
   }
   return 'custom';
@@ -410,15 +415,15 @@ const AgentContextAvatar: React.FC<{ agent: AgentSelectorOption; className?: str
 };
 
 export interface CoworkPromptInputRef {
-  /** 设置输入框值 */
+  /** Set the input value */
   setValue: (value: string, inputSource?: 'template') => void;
-  /** 设置图片附件（用于重新编辑消息时还原图片） */
+  /** Set image attachments (used to restore images when re-editing a message) */
   setImageAttachments: (images: CoworkImageAttachment[]) => void;
-  /** 设置选中的 assistant 文本片段（用于重新编辑消息时还原上下文） */
+  /** Set the selected assistant text snippet (used to restore context when re-editing a message) */
   setSelectedTextSnippets: (snippets: CoworkSelectedTextSnippet[]) => void;
-  /** 聚焦输入框 */
+  /** Focus the input */
   focus: () => void;
-  /** 以当前草稿（文本/附件/浏览器注释）触发一次提交，等价于点击发送按钮 */
+  /** Submit the current draft (text/attachments/browser annotations), equivalent to clicking the send button */
   submit: () => void;
 }
 
@@ -585,7 +590,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     // imperative handle trigger it without depending on declaration order.
     const handleSubmitRef = useRef<((submitMethod?: 'button' | 'keyboard' | 'voice') => Promise<void>) | null>(null);
 
-  // 暴露方法给父组件
+  // Expose methods to the parent component
   React.useImperativeHandle(ref, () => ({
     setValue: (newValue: string, inputSource?: 'template') => {
       setValue(newValue);
@@ -710,7 +715,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       return ModelAccessPromptKind.AgenticNotReady;
     }
     if (
-      effectiveSelectedModel?.providerKey === ProviderName.LobsteraiServer
+      effectiveSelectedModel?.providerKey === ProviderName.SwenServer
       && effectiveSelectedModel.accessible === false
     ) {
       return isLoggedIn ? ModelAccessPromptKind.Subscribe : ModelAccessPromptKind.Login;
@@ -1996,7 +2001,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     reportPromptControl('kit_toggle', {
       kitId,
       kitName: marketplaceKit ? resolveLocalizedText(marketplaceKit.name) : installedKit?.id ?? kitId,
-      kitSource: marketplaceKit ? 'lobsterai-kits' : 'installed',
+      kitSource: marketplaceKit ? 'swen-kits' : 'installed',
       targetEnabled: willSelect,
       isInstalled: !!installedKit,
       skillCount: installedKit?.skills?.skillIds.length ?? marketplaceKit?.skills?.list.length,
@@ -2009,7 +2014,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
         action: LogReporterAction.ExpertKitSelected,
         kitId,
         kitName: marketplaceKit ? resolveLocalizedText(marketplaceKit.name) : undefined,
-        kitSource: marketplaceKit ? 'lobsterai-kits' : 'installed',
+        kitSource: marketplaceKit ? 'swen-kits' : 'installed',
         isInstalled: !!installedKit,
         skillCount: installedKit?.skills?.skillIds.length ?? marketplaceKit?.skills?.list.length,
         mcpServerCount: installedKit?.mcpServers.length ?? marketplaceKit?.mcpServers?.length,
@@ -2053,7 +2058,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       const cursorPos = textarea.selectionStart;
       if (cursorPos === textarea.selectionEnd && cursorPos > 0) {
         const textBefore = value.slice(0, cursorPos);
-        const mentionMatch = textBefore.match(/@(图片|视频|音频)\d+ ?$/);
+        const mentionMatch = textBefore.match(/@(image|video|audio)\d+ ?$/);
         if (mentionMatch) {
           event.preventDefault();
           const tokenStart = cursorPos - mentionMatch[0].length;
@@ -3123,7 +3128,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   ) : null;
 
   const renderVoiceInputButton = (buttonClassName: string, iconClassName: string) => (
-    <VoiceInputButton
+    !SWEN_VOICE_INPUT_ENABLED ? null : <VoiceInputButton
       buttonClassName={buttonClassName}
       iconClassName={iconClassName}
       isLoggedIn={isLoggedIn}
@@ -3144,7 +3149,9 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const largeInputToolActions = (
     <div className={`flex items-center ${useLargeToolbarCompactLayout ? 'gap-0' : 'gap-0.5'}`}>
       {largeInputActions}
-      <MediaModelPicker draftKey={draftKey} disabled={disabled || voiceInputLocksEditing} />
+      {SWEN_MEDIA_GENERATION_ENABLED && (
+        <MediaModelPicker draftKey={draftKey} disabled={disabled || voiceInputLocksEditing} />
+      )}
     </div>
   );
   const largeSendButtonSizeClass = useCompactSendButton ? 'h-7 w-7' : 'h-8 w-8';

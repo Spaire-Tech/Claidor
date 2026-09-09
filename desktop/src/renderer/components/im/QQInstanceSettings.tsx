@@ -330,7 +330,7 @@ const QQInstanceSettings: React.FC<QQInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || '添加'}
+                {i18nService.t('add') || 'Add'}
               </button>
             </div>
             {instance.allowFrom.length > 0 && (

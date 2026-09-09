@@ -7,17 +7,15 @@ const PLAN_SECTION_LABEL_PATTERN = new RegExp(
   [
     `^(#{1,6})\\s*(${PLAN_SECTION_LABELS})\\s*$`,
     `^\\*\\*(${PLAN_SECTION_LABELS})\\*\\*\\s*$`,
-    `^(#{1,6})\\s*(${PLAN_SECTION_LABELS})(?:\\*\\*)?(?:\\s*[:：])?\\s+(.+)$`,
-    `^\\*\\*(${PLAN_SECTION_LABELS})\\*\\*(?:\\s*[:：])?\\s+(.+)$`,
-    `^(?:\\*\\*)?(${PLAN_SECTION_LABELS})(?:\\*\\*)?\\s*[:：](?:\\*\\*)?\\s+(.+)$`,
-    `^(?:\\*\\*)?(${PLAN_SECTION_LABELS})(?:\\*\\*)?\\s*(?=为)(.+)$`,
+    `^(#{1,6})\\s*(${PLAN_SECTION_LABELS})(?:\\*\\*)?(?:\\s*:)?\\s+(.+)$`,
+    `^\\*\\*(${PLAN_SECTION_LABELS})\\*\\*(?:\\s*:)?\\s+(.+)$`,
+    `^(?:\\*\\*)?(${PLAN_SECTION_LABELS})(?:\\*\\*)?\\s*:(?:\\*\\*)?\\s+(.+)$`,
   ].join('|'),
   'i',
 );
-const INLINE_HEADING_SECTION_PATTERN = new RegExp(`\\s+(#{1,6}\\s*(?:${PLAN_SECTION_LABELS})(?=\\s*[:：]?\\s+))`, 'gi');
-const INLINE_BOLD_SECTION_PATTERN = new RegExp(`\\s+(\\*\\*(?:${PLAN_SECTION_LABELS})\\*\\*(?=\\s*[:：]?\\s+))`, 'gi');
-const INLINE_COLON_SECTION_PATTERN = new RegExp(`\\s+((?:${PLAN_SECTION_LABELS})\\s*[:：])`, 'gi');
-const INLINE_CHINESE_CONNECTOR_SECTION_PATTERN = new RegExp(`\\s+((?:${PLAN_SECTION_LABELS})(?=为))`, 'gi');
+const INLINE_HEADING_SECTION_PATTERN = new RegExp(`\\s+(#{1,6}\\s*(?:${PLAN_SECTION_LABELS})(?=\\s*:?\\s+))`, 'gi');
+const INLINE_BOLD_SECTION_PATTERN = new RegExp(`\\s+(\\*\\*(?:${PLAN_SECTION_LABELS})\\*\\*(?=\\s*:?\\s+))`, 'gi');
+const INLINE_COLON_SECTION_PATTERN = new RegExp(`\\s+((?:${PLAN_SECTION_LABELS})\\s*:)`, 'gi');
 const TRAILING_HEADING_MARKER_PATTERN = /(?:^|\n)\s*#{1,6}\s*$/;
 
 export interface ProposedPlanParseResult {
@@ -80,10 +78,6 @@ const splitInlinePlanSectionLabels = (line: string): string[] => line
     if (TRAILING_HEADING_MARKER_PATTERN.test(fullText.slice(0, offset))) return match;
     return `\n${section}`;
   })
-  .replace(INLINE_CHINESE_CONNECTOR_SECTION_PATTERN, (match, section: string, offset: number, fullText: string) => {
-    if (TRAILING_HEADING_MARKER_PATTERN.test(fullText.slice(0, offset))) return match;
-    return `\n${section}`;
-  })
   .split('\n');
 
 const readPlanSectionMatch = (line: string): { headingMarker?: string; label: string; body?: string } | null => {
@@ -102,12 +96,10 @@ const readPlanSectionMatch = (line: string): { headingMarker?: string; label: st
     boldBody,
     colonLabel,
     colonBody,
-    connectorLabel,
-    connectorBody,
   ] = match;
 
-  const label = headingLabel ?? boldOnlyLabel ?? bodyHeadingLabel ?? boldLabel ?? colonLabel ?? connectorLabel;
-  const body = bodyHeadingBody ?? boldBody ?? colonBody ?? connectorBody;
+  const label = headingLabel ?? boldOnlyLabel ?? bodyHeadingLabel ?? boldLabel ?? colonLabel;
+  const body = bodyHeadingBody ?? boldBody ?? colonBody;
   if (!label) return null;
 
   return { headingMarker: headingMarker ?? bodyHeadingMarker, label, body };

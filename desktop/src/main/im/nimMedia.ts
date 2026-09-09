@@ -1,29 +1,30 @@
 /**
  * NIM Media Utilities
- * 云信媒体消息处理：下载、发送、类型推断、清理
- * 
- * 参考 openclaw-nim/src/media.ts 实现，适配 LobsterAI Gateway 架构
+ * NIM media message handling: download, send, type inference, cleanup.
+ *
+ * Based on openclaw-nim/src/media.ts, adapted to the Swen Gateway architecture.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as https from 'https';
-import * as http from 'http';
 import { app } from 'electron';
+import * as fs from 'fs';
+import * as http from 'http';
+import * as https from 'https';
+import * as path from 'path';
+
 import type { IMMediaAttachment, IMMediaType } from './types';
 
-// ==================== 常量 ====================
+// ==================== Constants ====================
 
-/** 最大下载文件大小：30MB（与 openclaw-nim 一致） */
+/** Maximum download size: 30MB (same as openclaw-nim) */
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
-/** 下载文件存储子目录 */
+/** Subdirectory for downloaded files */
 const INBOUND_DIR = 'nim-inbound';
 
-// ==================== 目录管理 ====================
+// ==================== Directory management ====================
 
 /**
- * 获取 NIM 媒体文件存储目录
+ * Get the NIM media storage directory
  */
 export function getNimMediaDir(): string {
   const userDataPath = app.getPath('userData');
@@ -36,10 +37,10 @@ export function getNimMediaDir(): string {
   return mediaDir;
 }
 
-// ==================== 文件名与类型推断 ====================
+// ==================== File name and type inference ====================
 
 /**
- * 生成唯一文件名
+ * Generate a unique file name
  */
 function generateFileName(prefix: string, extension: string): string {
   const timestamp = Date.now();
@@ -48,8 +49,8 @@ function generateFileName(prefix: string, extension: string): string {
 }
 
 /**
- * 根据文件扩展名推断 NIM 消息类型（用于发送时决定调用哪个 SDK 方法）
- * 与 openclaw-nim/src/media.ts 的 inferMessageType 一致
+ * Infer the NIM message type from the file extension (decides which SDK method to call when sending).
+ * Mirrors inferMessageType in openclaw-nim/src/media.ts.
  */
 export function inferMediaType(filePath: string): 'image' | 'audio' | 'video' | 'file' {
   const ext = path.extname(filePath).toLowerCase();
@@ -65,34 +66,34 @@ export function inferMediaType(filePath: string): 'image' | 'audio' | 'video' | 
 }
 
 /**
- * 根据文件扩展名推断 MIME 类型（用于填充 IMMediaAttachment.mimeType）
+ * Infer the MIME type from the file extension (used to fill IMMediaAttachment.mimeType).
  */
 export function inferMimeType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
 
   const mimeMap: Record<string, string> = {
-    // 图片
+    // Images
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.png': 'image/png',
     '.gif': 'image/gif',
     '.webp': 'image/webp',
     '.bmp': 'image/bmp',
-    // 音频
+    // Audio
     '.mp3': 'audio/mpeg',
     '.wav': 'audio/wav',
     '.aac': 'audio/aac',
     '.m4a': 'audio/mp4',
     '.ogg': 'audio/ogg',
     '.amr': 'audio/amr',
-    // 视频
+    // Video
     '.mp4': 'video/mp4',
     '.mov': 'video/quicktime',
     '.avi': 'video/x-msvideo',
     '.mkv': 'video/x-matroska',
     '.webm': 'video/webm',
     '.flv': 'video/x-flv',
-    // 文档
+    // Documents
     '.pdf': 'application/pdf',
     '.zip': 'application/zip',
     '.rar': 'application/x-rar-compressed',
@@ -109,7 +110,7 @@ export function inferMimeType(filePath: string): string {
 }
 
 /**
- * 将 inferMediaType 的结果转为 IMMediaType
+ * Convert an inferMediaType result to IMMediaType
  */
 function toIMMediaType(mediaType: 'image' | 'audio' | 'video' | 'file'): IMMediaType {
   if (mediaType === 'file') return 'document';
@@ -117,29 +118,29 @@ function toIMMediaType(mediaType: 'image' | 'audio' | 'video' | 'file'): IMMedia
 }
 
 /**
- * 推断消息的媒体类型占位符文本
- * 与 openclaw-nim/src/media.ts 的 inferMediaPlaceholder 一致
+ * Placeholder text for a message's media type.
+ * Mirrors inferMediaPlaceholder in openclaw-nim/src/media.ts.
  */
 export function inferMediaPlaceholder(messageType: string): string {
   switch (messageType) {
     case 'image':
-      return '[图片]';
+      return '[Photo]';
     case 'audio':
-      return '[语音消息]';
+      return '[Voice Message]';
     case 'video':
-      return '[视频]';
+      return '[Video]';
     case 'file':
-      return '[文件]';
+      return '[File]';
     default:
-      return '[多媒体消息]';
+      return '[Media Message]';
   }
 }
 
-// ==================== 下载 ====================
+// ==================== Download ====================
 
 /**
- * 流式下载文件（支持重定向和大小限制）
- * 与 openclaw-nim/src/media.ts 的 downloadFile 一致
+ * Stream a file download (with redirect handling and a size limit).
+ * Mirrors downloadFile in openclaw-nim/src/media.ts.
  */
 function downloadFile(url: string, destPath: string, maxBytes: number = MAX_FILE_SIZE): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -148,7 +149,7 @@ function downloadFile(url: string, destPath: string, maxBytes: number = MAX_FILE
     let downloadedBytes = 0;
 
     protocol.get(url, (response) => {
-      // 处理重定向
+      // Handle redirects
       if (response.statusCode === 301 || response.statusCode === 302) {
         const redirectUrl = response.headers.location;
         if (redirectUrl) {
@@ -197,12 +198,12 @@ function downloadFile(url: string, destPath: string, maxBytes: number = MAX_FILE
 }
 
 /**
- * 下载 NIM 媒体文件并返回 IMMediaAttachment
- * 
- * @param url NOS 媒体 URL
- * @param attachment V2 消息的 attachment 对象
- * @param mediaType 消息类型 (image/audio/video/file)
- * @param log 日志函数
+ * Download a NIM media file and return an IMMediaAttachment
+ *
+ * @param url NOS media URL
+ * @param attachment The V2 message's attachment object
+ * @param mediaType Message type (image/audio/video/file)
+ * @param log Logging function
  */
 export async function downloadNimMedia(
   url: string,
@@ -221,7 +222,7 @@ export async function downloadNimMedia(
   }
 
   try {
-    // 从 URL 提取扩展名
+    // Extract the extension from the URL
     const urlPath = url.split('?')[0];
     const ext = path.extname(urlPath) || '.bin';
     const fileName = attachment.name || `nim_${Date.now()}${ext}`;
@@ -232,10 +233,10 @@ export async function downloadNimMedia(
 
     log(`[NIM Media] Downloading: ${url.substring(0, 80)}...`);
 
-    // 流式下载
+    // Streamed download
     await downloadFile(url, localPath, MAX_FILE_SIZE);
 
-    // 获取实际文件大小
+    // Get the actual file size
     const stats = fs.statSync(localPath);
     const mimeType = inferMimeType(localPath);
 
@@ -257,16 +258,16 @@ export async function downloadNimMedia(
   }
 }
 
-// ==================== 发送 ====================
+// ==================== Send ====================
 
 /**
- * 通过 NIM SDK 发送媒体消息
- * 
- * @param messageService V2NIMMessageService 实例
- * @param messageCreator V2NIMMessageCreator 实例
- * @param conversationId 目标会话 ID
- * @param filePath 本地文件路径
- * @param log 日志函数
+ * Send a media message through the NIM SDK
+ *
+ * @param messageService V2NIMMessageService instance
+ * @param messageCreator V2NIMMessageCreator instance
+ * @param conversationId Target conversation ID
+ * @param filePath Local file path
+ * @param log Logging function
  */
 export async function sendNimMediaMessage(
   messageService: any,
@@ -279,12 +280,12 @@ export async function sendNimMediaMessage(
     throw new Error(`File not found: ${filePath}`);
   }
 
-  /** 发送文件大小上限：100MB */
+  /** Maximum send size: 100MB */
   const MAX_SEND_FILE_SIZE = 100 * 1024 * 1024;
   const fileSize = fs.statSync(filePath).size;
   if (fileSize > MAX_SEND_FILE_SIZE) {
     throw new Error(
-      `文件过大: ${(fileSize / 1024 / 1024).toFixed(1)}MB，超出 100MB 发送限制`,
+      `File too large: ${(fileSize / 1024 / 1024).toFixed(1)}MB, exceeds the 100MB send limit`,
     );
   }
 
@@ -305,7 +306,7 @@ export async function sendNimMediaMessage(
 
     case 'video':
       // createVideoMessage(filePath, name, sceneName, duration, width, height)
-      // 默认 1920x1080，与 openclaw-nim/src/outbound.ts 一致
+      // Defaults to 1920x1080, same as openclaw-nim/src/outbound.ts
       message = messageCreator.createVideoMessage?.(filePath, baseName, '', 0, 1920, 1080);
       break;
 
@@ -325,11 +326,11 @@ export async function sendNimMediaMessage(
   log(`[NIM Media] Send result:`, result);
 }
 
-// ==================== 清理 ====================
+// ==================== Cleanup ====================
 
 /**
- * 清理过期的 NIM 媒体文件
- * @param maxAgeDays 最大保留天数，默认 7 天
+ * Remove expired NIM media files
+ * @param maxAgeDays Maximum retention in days, default 7
  */
 export function cleanupOldNimMediaFiles(maxAgeDays: number = 7): void {
   const mediaDir = getNimMediaDir();

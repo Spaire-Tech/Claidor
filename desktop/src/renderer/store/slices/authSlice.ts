@@ -16,7 +16,7 @@ export interface UserProfile {
 }
 
 export interface UserQuota {
-  planName: string;           // "免费", "标准", "进阶", "专业"
+  planName: string;           // "Free", "Standard", "Advanced", "Professional"
   subscriptionStatus: string; // "free" | "active" | "enterprise"
   creditsLimit: number;       // total credits limit
   creditsUsed: number;        // credits used

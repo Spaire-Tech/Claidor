@@ -138,7 +138,7 @@ function createMessage(overrides: Record<string, unknown> = {}) {
     conversationId: 'conv-1',
     senderId: 'user-1',
     senderName: 'Tester',
-    content: '2分钟后提醒我喝水',
+    content: 'Remind me to drink water in 2 minutes',
     chatType: 'direct',
     timestamp: Date.parse('2026-03-15T16:28:00+08:00'),
     ...overrides,
@@ -157,15 +157,15 @@ test('IM scheduled-task requests bypass agent execution and create a real cron.a
     imStore,
     detectScheduledTaskRequest: async () => ({
       kind: 'create',
-      sourceText: '2分钟后提醒我喝水',
-      reminderBody: '喝水',
+      sourceText: 'Remind me to drink water in 2 minutes',
+      reminderBody: 'drink water',
       delayMs: 120000,
-      delayLabel: '2分钟后',
+      delayLabel: 'in 2 minutes',
       runAt: new Date('2026-03-15T16:30:00+08:00'),
       scheduleAt: '2026-03-15T16:30:00+08:00',
-      taskName: '喝水提醒',
-      payloadText: '⏰ 提醒：喝水',
-      confirmationText: '好的，已设置好提醒！2分钟后（16:30）会提醒你喝水。',
+      taskName: 'Drink water reminder',
+      payloadText: '⏰ Reminder: drink water',
+      confirmationText: 'Got it, your reminder is set! I will remind you in 2 minutes (16:30): drink water.',
     }),
     createScheduledTask: async (params: Record<string, unknown>) => {
       createdParams = params;
@@ -173,7 +173,7 @@ test('IM scheduled-task requests bypass agent execution and create a real cron.a
         id: 'job-1',
         name: (params.request as Record<string, unknown>).taskName,
         agentId: 'main',
-        sessionKey: `agent:main:lobsterai:${params.sessionId}`,
+        sessionKey: `agent:main:swen:${params.sessionId}`,
         payloadText: (params.request as Record<string, unknown>).payloadText,
         scheduleAt: (params.request as Record<string, unknown>).scheduleAt,
       };
@@ -182,12 +182,12 @@ test('IM scheduled-task requests bypass agent execution and create a real cron.a
 
   const reply = await handler.processMessage(createMessage());
 
-  expect(reply).toMatch(/2分钟后（16:30）会提醒你喝水/u);
+  expect(reply).toMatch(/in 2 minutes \(16:30\): drink water/u);
   expect(runtime.startCalls.length).toBe(0);
   expect(runtime.continueCalls.length).toBe(0);
   expect(createdParams).toBeTruthy();
-  expect((createdParams!.request as Record<string, unknown>).taskName).toBe('喝水提醒');
-  expect((createdParams!.request as Record<string, unknown>).payloadText).toBe('⏰ 提醒：喝水');
+  expect((createdParams!.request as Record<string, unknown>).taskName).toBe('Drink water reminder');
+  expect((createdParams!.request as Record<string, unknown>).payloadText).toBe('⏰ Reminder: drink water');
 
   const [session] = [...coworkStore.sessions.values()];
   expect(session).toBeTruthy();
@@ -213,21 +213,21 @@ test.skip('async reminder turns on IM-created sessions relay back to the origina
     imStore,
     detectScheduledTaskRequest: async () => ({
       kind: 'create',
-      sourceText: '2分钟后提醒我喝水',
-      reminderBody: '喝水',
+      sourceText: 'Remind me to drink water in 2 minutes',
+      reminderBody: 'drink water',
       delayMs: 120000,
-      delayLabel: '2分钟后',
+      delayLabel: 'in 2 minutes',
       runAt: new Date('2026-03-15T16:30:00+08:00'),
       scheduleAt: '2026-03-15T16:30:00+08:00',
-      taskName: '喝水提醒',
-      payloadText: '⏰ 提醒：喝水',
-      confirmationText: '好的，已设置好提醒！2分钟后（16:30）会提醒你喝水。',
+      taskName: 'Drink water reminder',
+      payloadText: '⏰ Reminder: drink water',
+      confirmationText: 'Got it, your reminder is set! I will remind you in 2 minutes (16:30): drink water.',
     }),
     createScheduledTask: async (params: Record<string, unknown>) => ({
       id: 'job-1',
       name: (params.request as Record<string, unknown>).taskName,
       agentId: 'main',
-      sessionKey: `agent:main:lobsterai:${params.sessionId}`,
+      sessionKey: `agent:main:swen:${params.sessionId}`,
       payloadText: (params.request as Record<string, unknown>).payloadText,
       scheduleAt: (params.request as Record<string, unknown>).scheduleAt,
     }),
@@ -243,14 +243,14 @@ test.skip('async reminder turns on IM-created sessions relay back to the origina
   runtime.emit('message', session.id, {
     id: 'system-1',
     type: 'system',
-    content: '⏰ 提醒：喝水',
+    content: '⏰ Reminder: drink water',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('message', session.id, {
     id: 'assistant-1',
     type: 'assistant',
-    content: '⏰ 该喝水啦！起身喝一杯水吧。',
+    content: '⏰ Time to drink water! Get up and have a glass.',
     timestamp: Date.now(),
     metadata: {},
   });
@@ -262,7 +262,7 @@ test.skip('async reminder turns on IM-created sessions relay back to the origina
     {
       platform: 'nim',
       conversationId: 'conv-1',
-      text: '⏰ 该喝水啦！起身喝一杯水吧。',
+      text: '⏰ Time to drink water! Get up and have a glass.',
     },
   ]);
 
@@ -291,14 +291,14 @@ test('async reminder turns on channel-synced sessions are tracked lazily and rel
   runtime.emit('message', session.id, {
     id: 'system-1',
     type: 'system',
-    content: '⏰ 提醒：开会',
+    content: '⏰ Reminder: meeting',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('message', session.id, {
     id: 'assistant-1',
     type: 'assistant',
-    content: '时间到了，记得开会。',
+    content: 'Time is up, remember the meeting.',
     timestamp: Date.now(),
     metadata: {},
   });
@@ -310,7 +310,7 @@ test('async reminder turns on channel-synced sessions are tracked lazily and rel
     {
       platform: 'dingtalk',
       conversationId: 'default:user-42',
-      text: '时间到了，记得开会。',
+      text: 'Time is up, remember the meeting.',
     },
   ]);
 
@@ -329,23 +329,23 @@ test('falls back to normal agent execution when detector does not recognize a sc
     detectScheduledTaskRequest: async () => null,
   });
 
-  const pending = handler.processMessage(createMessage({ content: '帮我总结一下今天的会议纪要' }));
+  const pending = handler.processMessage(createMessage({ content: 'Summarize the notes from the meeting today' }));
   await new Promise((resolve) => setImmediate(resolve));
 
   expect(runtime.startCalls.length).toBe(1);
-  expect(runtime.startCalls[0].prompt).toBe('帮我总结一下今天的会议纪要');
+  expect(runtime.startCalls[0].prompt).toBe('Summarize the notes from the meeting today');
 
   runtime.emit('message', 'session-1', {
     id: 'assistant-1',
     type: 'assistant',
-    content: '这是会议纪要摘要。',
+    content: 'Here is the meeting notes summary.',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('complete', 'session-1', null);
 
   const reply = await pending;
-  expect(reply).toBe('这是会议纪要摘要。');
+  expect(reply).toBe('Here is the meeting notes summary.');
 
   handler.destroy();
 });
@@ -361,54 +361,54 @@ test('uses only current-turn store messages when completing an IM reply', async 
     imStore,
   });
 
-  const pending = handler.processMessage(createMessage({ content: '查测试环境日志' }));
+  const pending = handler.processMessage(createMessage({ content: 'Check the staging logs' }));
   await new Promise((resolve) => setImmediate(resolve));
 
   const sessionId = 'session-1';
   coworkStore.addMessage(sessionId, {
     id: 'old-user',
     type: 'user',
-    content: '上一轮问题',
+    content: 'Previous-turn question',
     metadata: {},
   });
   coworkStore.addMessage(sessionId, {
     id: 'old-assistant',
     type: 'assistant',
-    content: '上一轮答案，不应该出现在本次 IM 回复里。',
+    content: 'Previous-turn answer that must not appear in this IM reply.',
     metadata: {},
   });
   coworkStore.addMessage(sessionId, {
     id: 'current-user',
     type: 'user',
-    content: '查测试环境日志',
+    content: 'Check the staging logs',
     metadata: {},
   });
   coworkStore.addMessage(sessionId, {
     id: 'current-assistant',
     type: 'assistant',
-    content: '当前轮最终答案。',
+    content: 'Final answer for the current turn.',
     metadata: {},
   });
 
   runtime.emit('message', sessionId, {
     id: 'current-user',
     type: 'user',
-    content: '查测试环境日志',
+    content: 'Check the staging logs',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('message', sessionId, {
     id: 'current-assistant',
     type: 'assistant',
-    content: '当前轮流式快照',
+    content: 'Current-turn streaming snapshot',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('complete', sessionId, null);
 
   const reply = await pending;
-  expect(reply).toBe('当前轮最终答案。');
-  expect(reply).not.toContain('上一轮答案');
+  expect(reply).toBe('Final answer for the current turn.');
+  expect(reply).not.toContain('Previous-turn answer');
 
   handler.destroy();
 });
@@ -424,26 +424,26 @@ test('falls back to current user boundary when reconciled store message ids chan
     imStore,
   });
 
-  const pending = handler.processMessage(createMessage({ content: '继续查错误' }));
+  const pending = handler.processMessage(createMessage({ content: 'Keep investigating the error' }));
   await new Promise((resolve) => setImmediate(resolve));
 
   const sessionId = 'session-1';
   coworkStore.addMessage(sessionId, {
     id: 'history-user',
     type: 'user',
-    content: '历史问题',
+    content: 'Historical question',
     metadata: {},
   });
   coworkStore.addMessage(sessionId, {
     id: 'history-assistant',
     type: 'assistant',
-    content: '历史答案，不应该被发送。',
+    content: 'Historical answer that must not be sent.',
     metadata: {},
   });
   coworkStore.addMessage(sessionId, {
     id: 'store-current-user',
     type: 'user',
-    content: '继续查错误',
+    content: 'Keep investigating the error',
     metadata: {},
   });
   coworkStore.addMessage(sessionId, {
@@ -455,14 +455,14 @@ test('falls back to current user boundary when reconciled store message ids chan
   coworkStore.addMessage(sessionId, {
     id: 'store-current-assistant',
     type: 'assistant',
-    content: '按 boundary 找到的当前轮最终答案。',
+    content: 'Final answer for the current turn found via the boundary.',
     metadata: {},
   });
 
   runtime.emit('message', sessionId, {
     id: 'runtime-current-user',
     type: 'user',
-    content: '继续查错误',
+    content: 'Keep investigating the error',
     timestamp: Date.now(),
     metadata: {},
   });
@@ -476,15 +476,15 @@ test('falls back to current user boundary when reconciled store message ids chan
   runtime.emit('message', sessionId, {
     id: 'runtime-current-assistant',
     type: 'assistant',
-    content: '当前轮流式快照',
+    content: 'Current-turn streaming snapshot',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('complete', sessionId, null);
 
   const reply = await pending;
-  expect(reply).toBe('按 boundary 找到的当前轮最终答案。');
-  expect(reply).not.toContain('历史答案');
+  expect(reply).toBe('Final answer for the current turn found via the boundary.');
+  expect(reply).not.toContain('Historical answer');
 
   handler.destroy();
 });
@@ -500,54 +500,54 @@ test('strips thinking blocks from normal IM replies', async () => {
     imStore,
   });
 
-  const pending = handler.processMessage(createMessage({ content: '给我结论' }));
+  const pending = handler.processMessage(createMessage({ content: 'Give me the conclusion' }));
   await new Promise((resolve) => setImmediate(resolve));
 
   const sessionId = 'session-1';
   coworkStore.addMessage(sessionId, {
     id: 'current-user',
     type: 'user',
-    content: '给我结论',
+    content: 'Give me the conclusion',
     metadata: {},
   });
   coworkStore.addMessage(sessionId, {
     id: 'thinking-message',
     type: 'assistant',
-    content: '这段结构化 thinking 不应该发送',
+    content: 'This structured thinking must not be sent',
     metadata: { isThinking: true },
   });
   coworkStore.addMessage(sessionId, {
     id: 'current-assistant',
     type: 'assistant',
-    content: '<think>内部推理</think>最终答案',
+    content: '<think>internal reasoning</think>Final answer',
     metadata: {},
   });
 
   runtime.emit('message', sessionId, {
     id: 'current-user',
     type: 'user',
-    content: '给我结论',
+    content: 'Give me the conclusion',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('message', sessionId, {
     id: 'thinking-message',
     type: 'assistant',
-    content: '这段结构化 thinking 不应该发送',
+    content: 'This structured thinking must not be sent',
     timestamp: Date.now(),
     metadata: { isThinking: true },
   });
   runtime.emit('message', sessionId, {
     id: 'current-assistant',
     type: 'assistant',
-    content: '<think>内部推理</think>最终答案',
+    content: '<think>internal reasoning</think>Final answer',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('complete', sessionId, null);
 
   const reply = await pending;
-  expect(reply).toBe('最终答案');
+  expect(reply).toBe('Final answer');
 
   handler.destroy();
 });
@@ -574,21 +574,21 @@ test('does not relay thinking content for raw async reminder replies', async () 
   runtime.emit('message', session.id, {
     id: 'system-1',
     type: 'system',
-    content: '⏰ 提醒：开会',
+    content: '⏰ Reminder: meeting',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('message', session.id, {
     id: 'thinking-1',
     type: 'assistant',
-    content: '内部推理',
+    content: 'internal reasoning',
     timestamp: Date.now(),
     metadata: { isThinking: true },
   });
   runtime.emit('message', session.id, {
     id: 'assistant-1',
     type: 'assistant',
-    content: '<thinking>先判断提醒语气</thinking>时间到了，记得开会。',
+    content: '<thinking>decide the reminder tone first</thinking>Time is up, remember the meeting.',
     timestamp: Date.now(),
     metadata: {},
   });
@@ -600,7 +600,7 @@ test('does not relay thinking content for raw async reminder replies', async () 
     {
       platform: 'dingtalk',
       conversationId: 'default:user-42',
-      text: '时间到了，记得开会。',
+      text: 'Time is up, remember the meeting.',
     },
   ]);
 

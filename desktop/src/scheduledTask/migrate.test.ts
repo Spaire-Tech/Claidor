@@ -22,19 +22,20 @@
  *       - run rows migrated to JSONL files in runs/ directory
  *       - duplicate timestamps deduplicated on re-run
  */
-import { test, expect } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { migrateScheduledTasksToOpenclaw, migrateScheduledTaskRunsToOpenclaw } from './migrate';
+import { expect,test } from 'vitest';
+
 import { MigrationKey } from './constants';
+import { migrateScheduledTaskRunsToOpenclaw,migrateScheduledTasksToOpenclaw } from './migrate';
 import type { ScheduledTaskInput } from './types';
 
 // ---- fake helpers -----------------------------------------------------------
 
 function makeTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-migrate-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'swen-migrate-test-'));
 }
 function cleanupDir(dir: string) {
   fs.rmSync(dir, { recursive: true, force: true });

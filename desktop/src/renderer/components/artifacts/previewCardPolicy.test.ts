@@ -1,6 +1,5 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
-import { i18nService } from '@/services/i18n';
 import { type Artifact, ArtifactTypeValue } from '@/types/artifact';
 
 import {
@@ -10,25 +9,15 @@ import {
   PreviewCardOpenAction,
 } from './previewCardPolicy';
 
-const originalLanguage = i18nService.getLanguage();
-
 const makeArtifact = (overrides: Partial<Artifact>): Artifact => ({
   id: 'artifact-1',
   messageId: 'message-1',
   sessionId: 'session-1',
   type: ArtifactTypeValue.Html,
-  title: '欢迎页面',
+  title: 'Welcome page',
   content: '',
   createdAt: 1,
   ...overrides,
-});
-
-beforeAll(() => {
-  i18nService.setLanguage('zh', { persist: false });
-});
-
-afterAll(() => {
-  i18nService.setLanguage(originalLanguage, { persist: false });
 });
 
 describe('preview card presentation policy', () => {
@@ -41,8 +30,8 @@ describe('preview card presentation policy', () => {
     expect(descriptor).toMatchObject({
       displayKind: PreviewCardDisplayKind.WebPage,
       iconKind: PreviewCardIconKind.File,
-      title: '欢迎页面',
-      subtitle: '网页',
+      title: 'Welcome page',
+      subtitle: 'Web page',
       iconFileName: 'welcome.html',
       defaultOpenAction: PreviewCardOpenAction.Browser,
     });
@@ -50,7 +39,7 @@ describe('preview card presentation policy', () => {
 
   test('forces the HTML file icon when an inline web page has no extension', () => {
     const descriptor = getPreviewCardDescriptor(makeArtifact({
-      title: '内联页面',
+      title: 'Inline page',
       fileName: undefined,
       filePath: undefined,
     }));
@@ -62,7 +51,7 @@ describe('preview card presentation policy', () => {
   test('presents a local service separately with a globe icon', () => {
     const descriptor = getPreviewCardDescriptor(makeArtifact({
       type: ArtifactTypeValue.LocalService,
-      title: '订单系统',
+      title: 'Order system',
       url: 'http://localhost:4173',
       content: 'http://localhost:4173',
     }));
@@ -70,8 +59,8 @@ describe('preview card presentation policy', () => {
     expect(descriptor).toMatchObject({
       displayKind: PreviewCardDisplayKind.LocalService,
       iconKind: PreviewCardIconKind.Globe,
-      title: '订单系统',
-      subtitle: '本地服务',
+      title: 'Order system',
+      subtitle: 'Local service',
       defaultOpenAction: PreviewCardOpenAction.Browser,
     });
   });
@@ -79,15 +68,15 @@ describe('preview card presentation policy', () => {
   test('keeps regular files on file icons and preview behavior', () => {
     const descriptor = getPreviewCardDescriptor(makeArtifact({
       type: ArtifactTypeValue.Document,
-      title: '季度报告.pdf',
-      fileName: '季度报告.pdf',
-      filePath: '/tmp/季度报告.pdf',
+      title: 'Quarterly report.pdf',
+      fileName: 'Quarterly report.pdf',
+      filePath: '/tmp/Quarterly report.pdf',
     }));
 
     expect(descriptor).toMatchObject({
       displayKind: PreviewCardDisplayKind.Document,
       iconKind: PreviewCardIconKind.File,
-      subtitle: '文档 · PDF',
+      subtitle: 'Document · PDF',
       defaultOpenAction: PreviewCardOpenAction.Preview,
     });
   });

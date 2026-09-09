@@ -16,23 +16,15 @@ import {
 } from '../../shared/notifications/constants';
 import { OpenClawEnginePhase, OpenClawGatewayRepairErrorCode } from '../../shared/openclawEngine/constants';
 import {
-  applyModelRuntimeProfileMetadata,
-  findKimiK3ReservedCustomParamKeys,
-  ModelRuntimeProfileSource,
-  OpenClawApi,
   ProviderAuthType,
   ProviderName,
   ProviderRegistry,
-  resolveCodingPlanBaseUrl,
-  resolveModelRuntimeProfile,
 } from '../../shared/providers';
-import { type AppConfig, defaultConfig, FontPreferences, getProviderDisplayName, getVisibleProviders, isCustomProvider, normalizeFontPreference, resolveArtifactAutoPreviewEnabled, ShortcutAction, type ShortcutConfig } from '../config';
-import { APP_ID, EXPORT_FORMAT_TYPE, EXPORT_PASSWORD } from '../constants/app';
+import { defaultConfig, FontPreferences, getProviderDisplayName, getVisibleProviders, normalizeFontPreference, resolveArtifactAutoPreviewEnabled, ShortcutAction, type ShortcutConfig } from '../config';
 import { useSkin } from '../providers/SkinProvider';
 import { apiService } from '../services/api';
 import { configService } from '../services/config';
 import { coworkService } from '../services/cowork';
-import { decryptSecret, decryptWithPassword, EncryptedPayload, encryptWithPassword, PasswordEncryptedPayload } from '../services/encryption';
 import { i18nService, LanguageType } from '../services/i18n';
 import { imService } from '../services/im';
 import { LogReporterAction, reportYdAnalyzer } from '../services/logReporter';
@@ -61,7 +53,6 @@ import { OpenClawSessionKeepAlive as OpenClawSessionKeepAliveValues } from '../t
 import Modal from './common/Modal';
 import DreamingSettingsSection from './cowork/DreamingSettingsSection';
 import EmbeddingSettingsSection from './cowork/EmbeddingSettingsSection';
-import DshExperimentalSettings from './DshExperimentalSettings';
 import ErrorMessage from './ErrorMessage';
 import BrainIcon from './icons/BrainIcon';
 import EditIcon from './icons/EditIcon';
@@ -72,37 +63,27 @@ import IMSettings from './im/IMSettings';
 import PluginsSettings, { type PluginPendingChanges, type PluginsSettingsHandle } from './plugins/PluginsSettings';
 import BrowserWebAccessSettings from './settings/BrowserWebAccessSettings';
 import {
-  buildOpenAICompatibleChatCompletionsUrl,
-  buildOpenAIConnectionTestRequestBody,
-  buildOpenAIResponsesUrl,
-  CONNECTIVITY_TEST_TOKEN_BUDGET,
   CUSTOM_PROVIDER_KEYS,
   getDefaultActiveProvider,
   getDefaultProviders,
   getEffectiveApiFormat,
   getOpenClawProviderIdForConfig,
-  getProviderDefaultBaseUrl,
-  hasEquivalentProviderModelId,
   hasProviderAuthConfigured,
-  type Model,
   type ProviderConfig,
   providerKeys,
-  providerRequiresApiKey,
   type ProvidersConfig,
   type ProviderType,
   resolveBaseUrl,
   resolveModelSupportsImageForProvider,
-  shouldAutoSwitchProviderBaseUrl,
-  shouldUseOpenAIResponsesForProvider,
 } from './settings/modelProviderUtils';
-import ModelSettingsSection, { DeleteProviderConfirmDialog, ModelEditorDialog } from './settings/ModelSettingsSection';
 import { resolveSettingsEscapeAction, SettingsEscapeAction } from './settings/settingsEscape';
+import SwenAccountSection from './settings/SwenAccountSection';
 import EmailSkillConfig from './skills/EmailSkillConfig';
 import SkinPresentationScope from './skin/SkinPresentationScope';
 import SkinSettingsSection from './skin/SkinSettingsSection';
 import ThemedSelect from './ui/ThemedSelect';
 
-type TabType = 'general' | 'appearance' | 'coworkAgentEngine' | 'model' | 'browserWebAccess' | 'coworkMemory' | 'coworkDreaming' | 'shortcuts' | 'im' | 'email' | 'plugins' | 'experimental' | 'about';
+type TabType = 'general' | 'appearance' | 'coworkAgentEngine' | 'model' | 'browserWebAccess' | 'coworkMemory' | 'coworkDreaming' | 'shortcuts' | 'im' | 'email' | 'plugins' | 'about';
 
 const waitForNextPaint = (): Promise<void> => new Promise(resolve => {
   window.requestAnimationFrame(() => {
@@ -201,7 +182,6 @@ const SettingsAnalyticsSource = {
 } as const;
 
 type SettingsAnalyticsValue = string | boolean | number;
-type ProviderAnalyticsKind = 'builtin' | 'custom' | 'local';
 
 type MemorySettingAnalyticsSummary = {
   changedKeys: string;
@@ -263,16 +243,6 @@ const isCustomProviderKey = (providerKey: string): boolean => (
 const isLocalProviderKey = (providerKey: string): boolean => (
   providerKey === ProviderName.Ollama || providerKey === ProviderName.LmStudio
 );
-
-const resolveProviderAnalyticsKind = (providerKey: string): ProviderAnalyticsKind => {
-  if (isCustomProviderKey(providerKey)) {
-    return 'custom';
-  }
-  if (isLocalProviderKey(providerKey)) {
-    return 'local';
-  }
-  return 'builtin';
-};
 
 const countProviderModels = (providerConfig?: ProviderConfig): number => (
   Array.isArray(providerConfig?.models) ? providerConfig.models.length : 0
@@ -733,24 +703,6 @@ const reportCustomModelSettingsSaved = (
   });
 };
 
-const reportCustomModelConnectionTested = (
-  providerKey: ProviderType,
-  apiFormat: string,
-  result: 'success' | 'failed',
-  options: { failureReason?: string; statusCode?: number } = {},
-): void => {
-  void reportYdAnalyzer({
-    action: LogReporterAction.CustomModelConnectionTested,
-    source: SettingsAnalyticsSource.Model,
-    providerKey,
-    providerKind: resolveProviderAnalyticsKind(providerKey),
-    apiFormat,
-    result,
-    failureReason: options.failureReason,
-    statusCode: options.statusCode,
-  });
-};
-
 const AGENT_TASK_SLOT_COMMANDS: ShortcutCommandDefinition[] = [
   ShortcutAction.OpenAgentTask1,
   ShortcutAction.OpenAgentTask2,
@@ -913,95 +865,9 @@ interface SettingsProps extends SettingsOpenOptions {
   } | null;
 }
 
-
-type ProviderConnectionTestResult = {
-  success: boolean;
-  message: string;
-  provider: ProviderType;
-};
-
-interface ProviderExportEntry {
-  enabled: boolean;
-  apiKey: PasswordEncryptedPayload;
-  baseUrl: string;
-  apiFormat?: 'anthropic' | 'openai' | 'gemini';
-  codingPlanEnabled?: boolean;
-  models?: Model[];
-}
-
-interface ProvidersExportPayload {
-  type: typeof EXPORT_FORMAT_TYPE;
-  version: 2;
-  exportedAt: string;
-  encryption: {
-    algorithm: 'AES-GCM';
-    keySource: 'password';
-    keyDerivation: 'PBKDF2';
-  };
-  providers: Record<string, ProviderExportEntry>;
-}
-
-interface ProvidersImportEntry {
-  enabled?: boolean;
-  apiKey?: EncryptedPayload | PasswordEncryptedPayload | string;
-  apiKeyEncrypted?: string;
-  apiKeyIv?: string;
-  baseUrl?: string;
-  apiFormat?: 'anthropic' | 'openai' | 'native';
-  codingPlanEnabled?: boolean;
-  models?: Model[];
-}
-
-interface ProvidersImportPayload {
-  type?: string;
-  version?: number;
-  encryption?: {
-    algorithm?: string;
-    keySource?: string;
-    keyDerivation?: string;
-  };
-  providers?: Record<string, ProvidersImportEntry>;
-}
-
-const ABOUT_CONTACT_EMAIL = 'lobsterai.project@rd.netease.com';
-const ABOUT_USER_MANUAL_URL = 'https://lobsterai.youdao.com/#/docs/lobsterai_user_manual';
-const ABOUT_USER_COMMUNITY_URL = 'https://lobsterai.youdao.com/#/about';
-const ABOUT_SERVICE_TERMS_URL = 'https://c.youdao.com/dict/hardware/lobsterai/lobsterai_service.html';
-
-// MiniMax Portal OAuth constants
-const MINIMAX_OAUTH_CLIENT_ID = '78257093-7e40-4613-99e0-527b14b39113';
-const MINIMAX_OAUTH_SCOPE = 'group_id profile model.completion';
-const MINIMAX_OAUTH_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:user_code';
-const MINIMAX_BASE_URL_CN = 'https://api.minimaxi.com/anthropic';
-const MINIMAX_BASE_URL_GLOBAL = 'https://api.minimax.io/anthropic';
-const MINIMAX_CODE_ENDPOINT_CN = 'https://api.minimaxi.com/oauth/code';
-const MINIMAX_CODE_ENDPOINT_GLOBAL = 'https://api.minimax.io/oauth/code';
-const MINIMAX_TOKEN_ENDPOINT_CN = 'https://api.minimaxi.com/oauth/token';
-const MINIMAX_TOKEN_ENDPOINT_GLOBAL = 'https://api.minimax.io/oauth/token';
-
-type MiniMaxRegion = 'cn' | 'global';
-type MiniMaxOAuthPhase =
-  | { kind: 'idle' }
-  | { kind: 'requesting_code' }
-  | { kind: 'pending'; userCode: string; verificationUri: string }
-  | { kind: 'success' }
-  | { kind: 'error'; message: string };
-
-async function generateMiniMaxPkce(): Promise<{ verifier: string; challenge: string; state: string }> {
-  const verifierArray = new Uint8Array(32);
-  crypto.getRandomValues(verifierArray);
-  const verifier = btoa(String.fromCharCode(...verifierArray))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  const encoded = new TextEncoder().encode(verifier);
-  const digest = await crypto.subtle.digest('SHA-256', encoded);
-  const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  const stateArray = new Uint8Array(16);
-  crypto.getRandomValues(stateArray);
-  const state = btoa(String.fromCharCode(...stateArray))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  return { verifier, challenge, state };
-}
+const ABOUT_USER_MANUAL_URL = 'https://app.claidor.com/desktop';
+const ABOUT_USER_COMMUNITY_URL = 'https://app.claidor.com';
+const ABOUT_SERVICE_TERMS_URL = 'https://app.claidor.com/terms';
 
 const copyTextFallback = (text: string): boolean => {
   const textarea = document.createElement('textarea');
@@ -1392,7 +1258,7 @@ const Settings: React.FC<SettingsProps> = ({
     selectThemeById,
     selectThemeMode,
   } = useSkin();
-  // 状态
+  // State
   const [activeTab, setActiveTab] = useState<TabType>(initialTab ?? 'general');
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [themeId, setThemeId] = useState<string>(themeService.getDefaultThemeId());
@@ -1426,12 +1292,6 @@ const Settings: React.FC<SettingsProps> = ({
   }, [notice, noticeExtra, noticeI18nKey]);
 
   const [noticeMessage, setNoticeMessage] = useState<string | null>(() => buildNoticeMessage());
-  const [testResult, setTestResult] = useState<ProviderConnectionTestResult | null>(null);
-  const [isTestResultModalOpen, setIsTestResultModalOpen] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [pendingDeleteProvider, setPendingDeleteProvider] = useState<ProviderType | null>(null);
-  const [isImportingProviders, setIsImportingProviders] = useState(false);
-  const [isExportingProviders, setIsExportingProviders] = useState(false);
   const initialThemeIdRef = useRef<string>(themeService.getDefaultThemeId());
   const initialUiFontSizeRef = useRef<number>(FontPreferences.UiFontSizeDefault);
   const initialCodeFontSizeRef = useRef<number>(FontPreferences.CodeFontSizeDefault);
@@ -1458,89 +1318,25 @@ const Settings: React.FC<SettingsProps> = ({
   // Plugin settings handle (deferred save)
   const pluginsSettingsRef = useRef<PluginsSettingsHandle>(null);
 
-  // Add state for active provider
+  // Provider that supplies the legacy `config.api` fallback when nothing is enabled.
   const [activeProvider, setActiveProvider] = useState<ProviderType>(getDefaultActiveProvider());
-  const [showApiKey, setShowApiKey] = useState(false);
 
-  // MiniMax OAuth state
-  const [minimaxOAuthPhase, setMinimaxOAuthPhase] = useState<MiniMaxOAuthPhase>({ kind: 'idle' });
-  const [minimaxOAuthRegion, setMinimaxOAuthRegion] = useState<MiniMaxRegion>('cn');
-  const minimaxOAuthCancelRef = useRef(false);
-
-  // OpenAI ChatGPT (Codex) OAuth state
-  type OpenAIOAuthPhase =
-    | { kind: 'idle' }
-    | { kind: 'pending' }
-    | { kind: 'success'; email?: string }
-    | { kind: 'error'; message: string };
-  const [openaiOAuthPhase, setOpenaiOAuthPhase] = useState<OpenAIOAuthPhase>({ kind: 'idle' });
-  // Mirrors <CODEX_HOME>/auth.json on disk; refreshed on tab focus and after
-  // login/logout. `null` = not yet checked.
-  const [openaiOAuthStatus, setOpenaiOAuthStatus] = useState<
-    { loggedIn: false } | { loggedIn: true; email?: string } | null
-  >(null);
-
-  // xAI (Grok) OAuth state
-  type XaiOAuthPhase =
-    | { kind: 'idle' }
-    | { kind: 'pending' }
-    | { kind: 'device_code'; userCode: string; verificationUri: string }
-    | { kind: 'success'; email?: string }
-    | { kind: 'error'; message: string };
-  const [xaiOAuthPhase, setXaiOAuthPhase] = useState<XaiOAuthPhase>({ kind: 'idle' });
-  // Mirrors the OpenClaw auth-profiles store on disk; refreshed whenever the
-  // xAI provider tab becomes active and after login/logout. `null` = not yet checked.
-  const [xaiOAuthStatus, setXaiOAuthStatus] = useState<
-    { loggedIn: false } | { loggedIn: true; email?: string } | null
-  >(null);
-
-  // Add state for providers configuration
+  // Providers configuration (persisted as `config.providers` on save).
   const [providers, setProviders] = useState<ProvidersConfig>(() => getDefaultProviders());
 
-
-  // authType defaults to undefined on first open, which should behave as OAuth mode
-  const minimaxIsOAuthMode = providers.minimax.authType !== 'apikey';
-  // OpenAI defaults to API key mode unless the user explicitly opts in to OAuth
-  const openaiIsOAuthMode = providers.openai.authType === 'oauth';
-  // xAI likewise defaults to API key mode; OAuth is an explicit opt-in
-  const xaiIsOAuthMode = providers.xai.authType === 'oauth';
-  const isBaseUrlLocked = (activeProvider === 'zhipu' && providers.zhipu.codingPlanEnabled) || (activeProvider === 'qwen' && providers.qwen.codingPlanEnabled) || (activeProvider === 'volcengine' && providers.volcengine.codingPlanEnabled) || (activeProvider === 'moonshot' && providers.moonshot.codingPlanEnabled) || (activeProvider === 'qianfan' && providers.qianfan.codingPlanEnabled) || (activeProvider === 'xiaomi' && providers.xiaomi.codingPlanEnabled) || (activeProvider === 'minimax' && minimaxIsOAuthMode) || (activeProvider === 'openai' && openaiIsOAuthMode) || (activeProvider === 'xai' && xaiIsOAuthMode);
-
-  // 创建引用来确保内容区域的滚动
+  // Ref to the content area so we can control its scrolling.
   const contentRef = useRef<HTMLDivElement>(null);
-  // 内容区下方仍有未滚出的内容时，在底部按钮区上方显示渐隐遮罩
+  // Shows a fade-out mask above the footer buttons while unscrolled content remains below.
   const [footerFadeVisible, setFooterFadeVisible] = useState(false);
-  const importInputRef = useRef<HTMLInputElement>(null);
-  const emailCopiedTimerRef = useRef<number | null>(null);
   const openClawGatewayCopiedTimerRef = useRef<number | null>(null);
   const updateCheckTimerRef = useRef<number | null>(null);
 
-  // 快捷键设置
+  // Shortcut settings
   const [shortcuts, setShortcuts] = useState<ShortcutConfig>(() => ({ ...defaultConfig.shortcuts! }));
   const [shortcutSearchQuery, setShortcutSearchQuery] = useState('');
 
-  // GitHub Copilot device code auth state
-  const [copilotAuthStatus, setCopilotAuthStatus] = useState<'idle' | 'requesting' | 'awaiting_user' | 'polling' | 'authenticated' | 'error'>('idle');
-  const [copilotUserCode, setCopilotUserCode] = useState('');
-  const [copilotVerificationUri, setCopilotVerificationUri] = useState('');
-  const [copilotGithubUser, setCopilotGithubUser] = useState('');
-  const [copilotError, setCopilotError] = useState<string | null>(null);
-
-  // State for model editing
-  const [isAddingModel, setIsAddingModel] = useState(false);
-  const [isEditingModel, setIsEditingModel] = useState(false);
-  const [editingModelId, setEditingModelId] = useState<string | null>(null);
-  const [newModelName, setNewModelName] = useState('');
-  const [newModelId, setNewModelId] = useState('');
-  const [newModelSupportsImage, setNewModelSupportsImage] = useState(false);
-  const [newModelSupportsThinking, setNewModelSupportsThinking] = useState(false);
-  const [newModelContextWindow, setNewModelContextWindow] = useState<number | undefined>(undefined);
-  const [newModelCustomParams, setNewModelCustomParams] = useState<string>('');
-  const [modelFormError, setModelFormError] = useState<string | null>(null);
-
   // About tab
   const [appVersion, setAppVersion] = useState('');
-  const [emailCopied, setEmailCopied] = useState(false);
   const [isExportingLogs, setIsExportingLogs] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
@@ -1551,10 +1347,6 @@ const Settings: React.FC<SettingsProps> = ({
   useEffect(() => {
     window.electron.appInfo.getVersion().then(setAppVersion);
   }, []);
-
-  useEffect(() => {
-    setShowApiKey(false);
-  }, [activeProvider]);
 
   useEffect(() => {
     let mounted = true;
@@ -1591,21 +1383,6 @@ const Settings: React.FC<SettingsProps> = ({
       mounted = false;
       unsubscribe();
     };
-  }, []);
-
-  const handleCopyContactEmail = useCallback(async () => {
-    const copied = await copyTextToClipboard(ABOUT_CONTACT_EMAIL);
-    reportAboutAction('copy_contact_email', copied ? 'success' : 'failed');
-    if (copied) {
-      setEmailCopied(true);
-      if (emailCopiedTimerRef.current != null) {
-        window.clearTimeout(emailCopiedTimerRef.current);
-      }
-      emailCopiedTimerRef.current = window.setTimeout(() => {
-        setEmailCopied(false);
-        emailCopiedTimerRef.current = null;
-      }, 1200);
-    }
   }, []);
 
   const authUser = useSelector((state: RootState) => state.auth.user);
@@ -1907,9 +1684,6 @@ const Settings: React.FC<SettingsProps> = ({
   }, [isCleaningTempStorage, refreshTempStorageUsage, tempCleanSelectedDirs]);
 
   useEffect(() => () => {
-    if (emailCopiedTimerRef.current != null) {
-      window.clearTimeout(emailCopiedTimerRef.current);
-    }
     if (openClawGatewayCopiedTimerRef.current != null) {
       window.clearTimeout(openClawGatewayCopiedTimerRef.current);
     }
@@ -2165,13 +1939,13 @@ const Settings: React.FC<SettingsProps> = ({
         }
       }
 
-      // Load provider-specific configurations if available
-      // 合并已保存的配置和默认配置，确保新添加的 provider 能被显示
+      // Load provider-specific configurations if available.
+      // Merge the saved config over the defaults so newly added providers are present.
       if (config.providers) {
         setProviders(prev => {
           const merged = {
-            ...prev,  // 保留默认的 providers（包括新添加的 anthropic）
-            ...config.providers,  // 覆盖已保存的配置
+            ...prev,  // keep the default providers (including newly added ones such as anthropic)
+            ...config.providers,  // override with the saved config
           };
 
           // After merging, find the first enabled provider to set as activeProvider
@@ -2216,7 +1990,7 @@ const Settings: React.FC<SettingsProps> = ({
         });
       }
 
-      // 加载快捷键设置
+      // Load shortcut settings
       if (config.shortcuts) {
         setShortcuts(prev => ({
           ...prev,
@@ -2244,14 +2018,14 @@ const Settings: React.FC<SettingsProps> = ({
     };
   }, []);
 
-  // 监听标签页切换，确保内容区域滚动到顶部
+  // Scroll the content area back to the top whenever the active tab changes.
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
     }
   }, [activeTab]);
 
-  // 跟踪内容区滚动/尺寸/内容变化，决定底部渐隐遮罩是否显示
+  // Track content scroll/size/content changes to decide whether the footer fade mask is shown.
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
@@ -2328,504 +2102,6 @@ const Settings: React.FC<SettingsProps> = ({
       setActiveProvider(firstEnabledVisible ?? visibleKeys[0]);
     }
   }, [visibleProviders, activeProvider]);
-
-  // Handle adding a new custom provider
-  const handleAddCustomProvider = () => {
-    // Find the first unused custom slot
-    const usedKeys = new Set(Object.keys(providers));
-    const newKey = CUSTOM_PROVIDER_KEYS.find(k => !usedKeys.has(k));
-    if (!newKey) return; // All custom provider slots used
-    setProviders(prev => ({
-      ...prev,
-      [newKey]: {
-        enabled: false,
-        apiKey: '',
-        baseUrl: '',
-        apiFormat: 'openai' as const,
-        models: [],
-        displayName: undefined,
-      },
-    }));
-    setActiveProvider(newKey);
-    setShowApiKey(false);
-    setIsAddingModel(false);
-    setIsEditingModel(false);
-    setEditingModelId(null);
-    setNewModelName('');
-    setNewModelId('');
-    setNewModelSupportsImage(false);
-    setNewModelSupportsThinking(false);
-    setNewModelContextWindow(undefined);
-    setNewModelCustomParams('');
-    setModelFormError(null);
-  };
-
-  // Handle deleting a custom provider
-  const handleDeleteCustomProvider = (key: ProviderType) => {
-    setPendingDeleteProvider(key);
-  };
-
-  const confirmDeleteCustomProvider = async () => {
-    const key = pendingDeleteProvider;
-    if (!key) return;
-    setPendingDeleteProvider(null);
-    const currentConfig = configService.getConfig();
-    setProviders(prev => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-    // If the deleted provider was active, switch to first visible BEFORE the
-    // await below. Otherwise the intermediate render triggered while awaiting
-    // would still have activeProvider pointing at the just-deleted key, and the
-    // model settings render accesses providers[activeProvider].* without guards,
-    // crashing the whole view (white screen).
-    if (activeProvider === key) {
-      const visibleKeys = Object.keys(visibleProviders).filter(k => k !== key) as ProviderType[];
-      const firstEnabled = visibleKeys.find(k => visibleProviders[k]?.enabled);
-      setActiveProvider(firstEnabled ?? visibleKeys[0] ?? providerKeys[0]);
-    }
-    // Persist the deletion immediately so it survives window close
-    const updatedProviders = { ...currentConfig.providers };
-    delete updatedProviders[key];
-    try {
-      await configService.updateConfig({ providers: updatedProviders as AppConfig['providers'] });
-      if (usageAnalyticsEnabled) {
-        const customModelSettingsSummary = buildCustomModelSettingsAnalyticsSummary(
-          (currentConfig.providers ?? providers) as ProvidersConfig,
-          updatedProviders as ProvidersConfig,
-        );
-        if (customModelSettingsSummary) {
-          reportCustomModelSettingsSaved(customModelSettingsSummary);
-        }
-      }
-    } catch (deleteError) {
-      console.warn('[Settings] failed to persist custom provider deletion:', deleteError);
-    }
-  };
-
-  // Handle provider change
-  const handleProviderChange = (provider: ProviderType) => {
-    setIsAddingModel(false);
-    setIsEditingModel(false);
-    setEditingModelId(null);
-    setNewModelName('');
-    setNewModelId('');
-    setNewModelSupportsImage(false);
-    setModelFormError(null);
-    setActiveProvider(provider);
-    // 切换 provider 时清除测试结果
-    setIsTestResultModalOpen(false);
-    setTestResult(null);
-  };
-
-  // Handle provider configuration change
-  const handleProviderConfigChange = (provider: ProviderType, field: string, value: string) => {
-    setProviders(prev => {
-      if (field === 'apiFormat') {
-        const nextApiFormat = getEffectiveApiFormat(provider, value);
-        const nextProviderConfig: ProviderConfig = {
-          ...prev[provider],
-          apiFormat: nextApiFormat,
-        };
-
-        // Only auto-switch URL when current value is still a known default URL.
-        if (shouldAutoSwitchProviderBaseUrl(provider, prev[provider].baseUrl)) {
-          const defaultBaseUrl = getProviderDefaultBaseUrl(provider, nextApiFormat);
-          if (defaultBaseUrl) {
-            nextProviderConfig.baseUrl = defaultBaseUrl;
-          }
-        }
-
-        return {
-          ...prev,
-          [provider]: nextProviderConfig,
-        };
-      }
-
-      // Handle codingPlanEnabled toggle for all supported providers
-      if (field === 'codingPlanEnabled') {
-        const def = ProviderRegistry.get(provider);
-        if (def?.codingPlanSupported) {
-          const enabled = value === 'true';
-          const nextModels = enabled && def.codingPlanModels
-            ? def.codingPlanModels.map(m => ({ ...m }))
-            : def.defaultModels.map(m => ({ ...m }));
-          return {
-            ...prev,
-            [provider]: {
-              ...prev[provider],
-              codingPlanEnabled: enabled,
-              models: nextModels,
-            },
-          };
-        }
-      }
-
-      return {
-        ...prev,
-        [provider]: {
-          ...prev[provider],
-          [field]: value,
-        },
-      };
-    });
-  };
-
-  const handleMiniMaxDeviceLogin = async (region: MiniMaxRegion) => {
-    minimaxOAuthCancelRef.current = false;
-    setMinimaxOAuthPhase({ kind: 'requesting_code' });
-
-    const codeEndpoint = region === 'cn' ? MINIMAX_CODE_ENDPOINT_CN : MINIMAX_CODE_ENDPOINT_GLOBAL;
-    const tokenEndpoint = region === 'cn' ? MINIMAX_TOKEN_ENDPOINT_CN : MINIMAX_TOKEN_ENDPOINT_GLOBAL;
-    const defaultBaseUrl = region === 'cn' ? MINIMAX_BASE_URL_CN : MINIMAX_BASE_URL_GLOBAL;
-
-    try {
-      const { verifier, challenge, state } = await generateMiniMaxPkce();
-
-      const codeBody = [
-        'response_type=code',
-        `client_id=${encodeURIComponent(MINIMAX_OAUTH_CLIENT_ID)}`,
-        `scope=${encodeURIComponent(MINIMAX_OAUTH_SCOPE)}`,
-        `code_challenge=${encodeURIComponent(challenge)}`,
-        'code_challenge_method=S256',
-        `state=${encodeURIComponent(state)}`,
-      ].join('&');
-
-      const codeRes = await window.electron.api.fetch({
-        url: codeEndpoint,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-        },
-        body: codeBody,
-      });
-
-      if (!codeRes.ok) {
-        throw new Error(`MiniMax OAuth authorization failed: ${codeRes.status}`);
-      }
-
-      const codePayload = (codeRes.data ?? {}) as {
-        user_code?: string;
-        verification_uri?: string;
-        expired_in?: number;
-        interval?: number;
-        state?: string;
-        error?: string;
-      };
-
-      if (!codePayload.user_code || !codePayload.verification_uri) {
-        throw new Error(codePayload.error ?? 'MiniMax OAuth returned incomplete authorization payload');
-      }
-
-      if (codePayload.state !== state) {
-        throw new Error('MiniMax OAuth state mismatch: possible CSRF attack or session corruption');
-      }
-
-      try {
-        await window.electron.shell.openExternal(codePayload.verification_uri);
-      } catch { /* ignore: user can open manually */ }
-
-      setMinimaxOAuthPhase({
-        kind: 'pending',
-        userCode: codePayload.user_code,
-        verificationUri: codePayload.verification_uri,
-      });
-
-      let pollIntervalMs = codePayload.interval ?? 2000;
-      const expireTimeMs = codePayload.expired_in ?? (Date.now() + 5 * 60 * 1000);
-
-      while (Date.now() < expireTimeMs) {
-        if (minimaxOAuthCancelRef.current) {
-          setMinimaxOAuthPhase({ kind: 'idle' });
-          return;
-        }
-
-        await new Promise(r => setTimeout(r, pollIntervalMs));
-
-        if (minimaxOAuthCancelRef.current) {
-          setMinimaxOAuthPhase({ kind: 'idle' });
-          return;
-        }
-
-        const tokenBody = [
-          `grant_type=${encodeURIComponent(MINIMAX_OAUTH_GRANT_TYPE)}`,
-          `client_id=${encodeURIComponent(MINIMAX_OAUTH_CLIENT_ID)}`,
-          `user_code=${encodeURIComponent(codePayload.user_code)}`,
-          `code_verifier=${encodeURIComponent(verifier)}`,
-        ].join('&');
-
-        const tokenRes = await window.electron.api.fetch({
-          url: tokenEndpoint,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-          },
-          body: tokenBody,
-        });
-
-        const tokenPayload = (tokenRes.data ?? {}) as {
-          status?: string;
-          access_token?: string;
-          refresh_token?: string;
-          expired_in?: number;
-          resource_url?: string;
-          notification_message?: string;
-          base_resp?: { status_code?: number; status_msg?: string };
-        };
-
-        if (tokenPayload.status === 'error') {
-          throw new Error(tokenPayload.base_resp?.status_msg ?? 'MiniMax OAuth error');
-        }
-
-        if (tokenPayload.status === 'success') {
-          if (!tokenPayload.access_token || !tokenPayload.refresh_token) {
-            throw new Error('MiniMax OAuth returned incomplete token payload');
-          }
-
-          let baseUrl = (tokenPayload.resource_url ?? '').trim();
-          if (baseUrl && !baseUrl.startsWith('http')) {
-            baseUrl = `https://${baseUrl}`;
-          }
-          if (!baseUrl) {
-            baseUrl = defaultBaseUrl;
-          }
-
-          setProviders(prev => ({
-            ...prev,
-            minimax: {
-              ...prev.minimax,
-              enabled: true,
-              oauthAccessToken: tokenPayload.access_token!,
-              oauthBaseUrl: baseUrl,
-              apiFormat: 'anthropic',
-              authType: 'oauth',
-              oauthRefreshToken: tokenPayload.refresh_token,
-              oauthTokenExpiresAt: tokenPayload.expired_in,
-              models: [...(defaultConfig.providers?.minimax.models ?? [])],
-            },
-          }));
-
-          setMinimaxOAuthPhase({ kind: 'success' });
-          setTimeout(() => setMinimaxOAuthPhase({ kind: 'idle' }), 1500);
-          return;
-        }
-
-        // Still pending — back off gradually
-        pollIntervalMs = Math.min(pollIntervalMs * 1.5, 10000);
-      }
-
-      throw new Error('MiniMax OAuth timed out waiting for authorization');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setMinimaxOAuthPhase({ kind: 'error', message });
-    }
-  };
-
-  const handleCancelMiniMaxLogin = () => {
-    minimaxOAuthCancelRef.current = true;
-    setMinimaxOAuthPhase({ kind: 'idle' });
-  };
-
-  const handleMiniMaxOAuthLogout = () => {
-    setProviders(prev => ({
-      ...prev,
-      minimax: {
-        ...prev.minimax,
-        enabled: false,
-        oauthAccessToken: undefined,
-        oauthBaseUrl: undefined,
-        oauthRefreshToken: undefined,
-        oauthTokenExpiresAt: undefined,
-      },
-    }));
-    setMinimaxOAuthPhase({ kind: 'idle' });
-  };
-
-  // Sync the persisted ChatGPT login state into local UI state on mount and
-  // whenever the OpenAI provider tab becomes active. Also reconciles stale
-  // providers config (e.g. auth.json deleted externally).
-  useEffect(() => {
-    let cancelled = false;
-    if (activeProvider !== 'openai') return;
-    void window.electron.openaiCodexOAuth.status().then((status) => {
-      if (cancelled) return;
-      if (status.loggedIn) {
-        setOpenaiOAuthStatus({ loggedIn: true, email: status.email ?? undefined });
-      } else {
-        setOpenaiOAuthStatus({ loggedIn: false });
-        setProviders(prev => {
-          if (prev.openai.authType !== 'oauth') return prev;
-          return { ...prev, openai: { ...prev.openai, authType: 'apikey' } };
-        });
-      }
-    }).catch(() => {
-      if (!cancelled) setOpenaiOAuthStatus({ loggedIn: false });
-    });
-    return () => { cancelled = true; };
-  }, [activeProvider]);
-
-  const persistProviderAuthConfigInBackground = useCallback((nextProviders: ProvidersConfig) => {
-    void configService.updateConfig({ providers: nextProviders }).catch((saveError) => {
-      console.error('[Settings] failed to save provider auth state:', saveError);
-      setError(i18nService.t('failedToSaveSettings'));
-    });
-  }, []);
-
-  const handleOpenAIOAuthLogin = async () => {
-    setOpenaiOAuthPhase({ kind: 'pending' });
-    try {
-      const result = await window.electron.openaiCodexOAuth.start();
-      if (!result.success) {
-        setOpenaiOAuthPhase({ kind: 'error', message: result.error });
-        return;
-      }
-      const nextProviders: ProvidersConfig = {
-        ...providers,
-        openai: {
-          ...providers.openai,
-          enabled: true,
-          authType: 'oauth',
-        },
-      };
-      setProviders(nextProviders);
-      setOpenaiOAuthStatus({ loggedIn: true, email: result.email ?? undefined });
-      setOpenaiOAuthPhase({ kind: 'success', email: result.email ?? undefined });
-      persistProviderAuthConfigInBackground(nextProviders);
-      setTimeout(() => setOpenaiOAuthPhase({ kind: 'idle' }), 1500);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setOpenaiOAuthPhase({ kind: 'error', message });
-    }
-  };
-
-  const handleCancelOpenAIOAuthLogin = async () => {
-    try {
-      await window.electron.openaiCodexOAuth.cancel();
-    } catch {
-      /* ignore — we still want to reset the UI */
-    }
-    setOpenaiOAuthPhase({ kind: 'idle' });
-  };
-
-  const handleOpenAIOAuthLogout = async () => {
-    const nextOpenAIProvider = {
-      ...providers.openai,
-      enabled: providers.openai.apiKey.trim().length > 0,
-      authType: 'apikey' as const,
-    };
-    const nextProviders: ProvidersConfig = {
-      ...providers,
-      openai: {
-        ...nextOpenAIProvider,
-      },
-    };
-    setProviders(nextProviders);
-    setOpenaiOAuthStatus({ loggedIn: false });
-    setOpenaiOAuthPhase({ kind: 'idle' });
-    persistProviderAuthConfigInBackground(nextProviders);
-    try {
-      await window.electron.openaiCodexOAuth.logout();
-    } catch {
-      /* ignore — file may already be gone */
-    }
-  };
-
-  // Sync the persisted xAI login state (OpenClaw auth-profiles store) into
-  // local UI state whenever the xAI provider tab becomes active. Also
-  // reconciles stale providers config (e.g. credential removed externally).
-  useEffect(() => {
-    let cancelled = false;
-    if (activeProvider !== 'xai') return;
-    void window.electron.xaiOAuth.status().then((status) => {
-      if (cancelled) return;
-      if (status.loggedIn) {
-        setXaiOAuthStatus({ loggedIn: true, email: status.email });
-      } else {
-        setXaiOAuthStatus({ loggedIn: false });
-        setProviders(prev => {
-          if (prev.xai.authType !== 'oauth') return prev;
-          return { ...prev, xai: { ...prev.xai, authType: 'apikey' } };
-        });
-      }
-    }).catch(() => {
-      if (!cancelled) setXaiOAuthStatus({ loggedIn: false });
-    });
-    return () => { cancelled = true; };
-  }, [activeProvider]);
-
-  const handleXaiOAuthLogin = async () => {
-    setXaiOAuthPhase({ kind: 'pending' });
-    // The main process falls back to the device-code flow when the loopback
-    // callback port is taken — surface the user code as soon as it arrives.
-    const unsubscribeDeviceCode = window.electron.xaiOAuth.onDeviceCode((info) => {
-      setXaiOAuthPhase({
-        kind: 'device_code',
-        userCode: info.userCode,
-        verificationUri: info.verificationUriComplete ?? info.verificationUri,
-      });
-    });
-    try {
-      const result = await window.electron.xaiOAuth.start();
-      if (!result.success) {
-        if (/cancelled/i.test(result.error)) {
-          setXaiOAuthPhase({ kind: 'idle' });
-        } else {
-          setXaiOAuthPhase({ kind: 'error', message: result.error });
-        }
-        return;
-      }
-      const nextProviders: ProvidersConfig = {
-        ...providers,
-        xai: {
-          ...providers.xai,
-          enabled: true,
-          authType: 'oauth',
-        },
-      };
-      setProviders(nextProviders);
-      setXaiOAuthStatus({ loggedIn: true, email: result.email ?? undefined });
-      setXaiOAuthPhase({ kind: 'success', email: result.email ?? undefined });
-      persistProviderAuthConfigInBackground(nextProviders);
-      setTimeout(() => setXaiOAuthPhase({ kind: 'idle' }), 1500);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setXaiOAuthPhase({ kind: 'error', message });
-    } finally {
-      unsubscribeDeviceCode();
-    }
-  };
-
-  const handleCancelXaiOAuthLogin = async () => {
-    try {
-      await window.electron.xaiOAuth.cancel();
-    } catch {
-      /* ignore — we still want to reset the UI */
-    }
-    setXaiOAuthPhase({ kind: 'idle' });
-  };
-
-  const handleXaiOAuthLogout = async () => {
-    const nextProviders: ProvidersConfig = {
-      ...providers,
-      xai: {
-        ...providers.xai,
-        enabled: providers.xai.apiKey.trim().length > 0,
-        authType: 'apikey' as const,
-      },
-    };
-    setProviders(nextProviders);
-    setXaiOAuthStatus({ loggedIn: false });
-    setXaiOAuthPhase({ kind: 'idle' });
-    persistProviderAuthConfigInBackground(nextProviders);
-    try {
-      await window.electron.xaiOAuth.logout();
-    } catch {
-      /* ignore — credential may already be gone */
-    }
-  };
 
   const hasCoworkConfigChanges = coworkAgentEngine !== coworkConfig.agentEngine
     || coworkMemoryEnabled !== coworkConfig.memoryEnabled
@@ -3236,129 +2512,6 @@ const Settings: React.FC<SettingsProps> = ({
     });
   };
 
-  // Toggle provider enabled status
-  const toggleProviderEnabled = (provider: ProviderType) => {
-    const providerConfig = providers[provider];
-    const isEnabling = !providerConfig.enabled;
-    const hasValidAuth = hasProviderAuthConfigured(provider, providerConfig);
-
-    // GitHub Copilot requires device code auth — redirect to sign-in flow
-    if (provider === ProviderName.Copilot && isEnabling && !hasValidAuth) {
-      handleCopilotSignIn();
-      return;
-    }
-
-    if (isEnabling && !hasValidAuth) {
-      setError(i18nService.t('apiKeyRequired'));
-      return;
-    }
-
-    setProviders(prev => ({
-      ...prev,
-      [provider]: {
-        ...prev[provider],
-        enabled: !prev[provider].enabled
-      }
-    }));
-  };
-
-  const enableProvider = (provider: ProviderType) => {
-    setProviders(prev => {
-      if (prev[provider].enabled) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [provider]: {
-          ...prev[provider],
-          enabled: true,
-        },
-      };
-    });
-  };
-
-  // GitHub Copilot device code authentication
-  const handleCopilotSignIn = async () => {
-    try {
-      setCopilotAuthStatus('requesting');
-      setCopilotError(null);
-
-      // Step 1: Request device code
-      const { userCode, verificationUri, deviceCode, interval, expiresIn } =
-        await window.electron.githubCopilot.requestDeviceCode();
-
-      setCopilotUserCode(userCode);
-      setCopilotVerificationUri(verificationUri);
-      setCopilotAuthStatus('awaiting_user');
-
-      // Open verification URL in browser
-      await window.electron.shell.openExternal(verificationUri);
-
-      // Step 2: Poll for token
-      setCopilotAuthStatus('polling');
-      const result = await window.electron.githubCopilot.pollForToken(deviceCode, interval, expiresIn);
-
-      if (result.success && result.token) {
-        setCopilotGithubUser(result.githubUser || '');
-        setCopilotAuthStatus('authenticated');
-
-        apiService.setProviderRuntimeCredential(ProviderName.Copilot, {
-          apiKey: result.token,
-          ...(result.baseUrl ? { baseUrl: result.baseUrl } : {}),
-        });
-        setProviders(prev => ({
-          ...prev,
-          [ProviderName.Copilot]: {
-            ...prev[ProviderName.Copilot],
-            enabled: true,
-            authType: ProviderAuthType.OAuth,
-            apiKey: '',
-          },
-        }));
-      } else {
-        setCopilotError(result.error || 'Authentication failed');
-        setCopilotAuthStatus('error');
-      }
-    } catch (error: unknown) {
-      setCopilotError(error instanceof Error ? error.message : 'Authentication failed');
-      setCopilotAuthStatus('error');
-    }
-  };
-
-  const handleCopilotSignOut = async () => {
-    try {
-      await window.electron.githubCopilot.signOut();
-      setCopilotAuthStatus('idle');
-      setCopilotGithubUser('');
-      setCopilotUserCode('');
-      setCopilotError(null);
-      apiService.setProviderRuntimeCredential(ProviderName.Copilot, null);
-      setProviders(prev => ({
-        ...prev,
-        [ProviderName.Copilot]: {
-          ...prev[ProviderName.Copilot],
-          enabled: false,
-          authType: ProviderAuthType.ApiKey,
-          apiKey: '',
-        },
-      }));
-    } catch (error) {
-      console.error('[Settings] GitHub Copilot sign-out failed:', error);
-    }
-  };
-
-  const handleCopilotCancelAuth = async () => {
-    try {
-      await window.electron.githubCopilot.cancelPolling();
-      setCopilotAuthStatus('idle');
-      setCopilotUserCode('');
-      setCopilotError(null);
-    } catch (error) {
-      console.error('[Settings] GitHub Copilot cancel polling failed:', error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSaving || isAppearanceChanging) return;
@@ -3485,20 +2638,16 @@ const Settings: React.FC<SettingsProps> = ({
 
       applyTypographyPreferences({ uiFontSize, codeFontSize });
 
-      // 应用语言
+      // Apply the language
       i18nService.setLanguage(language, { persist: false });
 
-      // Set API with the primary provider - handle Qwen OAuth
-      let apiKeyToUse = primaryProvider.apiKey;
-      let baseUrlToUse = primaryProvider.baseUrl;
-
-
+      // Set API with the primary provider
       apiService.setConfig({
-        apiKey: apiKeyToUse,
-        baseUrl: baseUrlToUse,
+        apiKey: primaryProvider.apiKey,
+        baseUrl: primaryProvider.baseUrl,
       });
 
-      // 更新 Redux store 中的可用模型列表
+      // Update the list of available models in the Redux store
       const allModels: { id: string; name: string; provider?: string; providerKey?: string; openClawProviderId?: string; supportsImage?: boolean }[] = [];
       Object.entries(normalizedProviders).forEach(([providerName, config]) => {
         if (config.enabled && config.models) {
@@ -3701,17 +2850,8 @@ const Settings: React.FC<SettingsProps> = ({
     }
   };
 
-  // 标签页切换处理
+  // Tab change handling
   const doTabChange = useCallback((tab: TabType) => {
-    if (tab !== 'model') {
-      setIsAddingModel(false);
-      setIsEditingModel(false);
-      setEditingModelId(null);
-      setNewModelName('');
-      setNewModelId('');
-      setNewModelSupportsImage(false);
-      setModelFormError(null);
-    }
     setActiveTab(tab);
   }, []);
 
@@ -3757,7 +2897,7 @@ const Settings: React.FC<SettingsProps> = ({
       .filter(group => group.commands.length > 0);
   }, [shortcutSearchQuery, shortcuts]);
 
-  // 快捷键更新处理
+  // Shortcut update handling
   const handleShortcutChange = (key: ShortcutAction, value: string) => {
     const normalizedValue = value.trim();
     // Check for conflicts with other shortcuts
@@ -3791,231 +2931,9 @@ const Settings: React.FC<SettingsProps> = ({
     setShortcuts({ ...defaultConfig.shortcuts! });
   };
 
-  // 阻止点击设置窗口时事件传播到背景
+  // Stop clicks inside the settings window from propagating to the backdrop
   const handleSettingsClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-  };
-
-  // Handlers for model operations
-  const handleAddModel = () => {
-    setIsAddingModel(true);
-    setIsEditingModel(false);
-    setEditingModelId(null);
-    setNewModelName('');
-    setNewModelId('');
-    setNewModelSupportsImage(false);
-    setNewModelSupportsThinking(false);
-    setNewModelContextWindow(undefined);
-    setNewModelCustomParams('');
-    setModelFormError(null);
-  };
-
-  const handleEditModel = (
-    modelId: string,
-    modelName: string,
-    supportsImage?: boolean,
-    supportsThinking?: boolean,
-    contextWindow?: number,
-    customParams?: Record<string, unknown>,
-  ) => {
-    setIsAddingModel(false);
-    setIsEditingModel(true);
-    setEditingModelId(modelId);
-    setNewModelName(modelName);
-    setNewModelId(modelId);
-    setNewModelSupportsImage(!!supportsImage);
-    setNewModelSupportsThinking(!!supportsThinking);
-    setNewModelContextWindow(contextWindow);
-    setNewModelCustomParams(
-      customParams && Object.keys(customParams).length > 0
-        ? JSON.stringify(customParams, null, 2)
-        : '',
-    );
-    setModelFormError(null);
-  };
-
-  const handleDeleteModel = (modelId: string) => {
-    if (!providers[activeProvider].models) return;
-
-    const updatedModels = providers[activeProvider].models.filter(
-      model => model.id !== modelId
-    );
-
-    setProviders(prev => ({
-      ...prev,
-      [activeProvider]: {
-        ...prev[activeProvider],
-        models: updatedModels
-      }
-    }));
-  };
-
-  const handleSaveNewModel = () => {
-    const modelId = newModelId.trim();
-
-    if (activeProvider === 'ollama' || activeProvider === 'lm-studio') {
-      // For Ollama/LM Studio, only the model name (stored as modelId) is required
-      if (!modelId) {
-        setModelFormError(i18nService.t(activeProvider === 'lm-studio' ? 'lmStudioModelNameRequired' : 'ollamaModelNameRequired'));
-        return;
-      }
-    } else {
-      const modelName = newModelName.trim();
-      if (!modelName || !modelId) {
-        setModelFormError(i18nService.t('modelNameAndIdRequired'));
-        return;
-      }
-    }
-
-    // For Ollama, auto-fill display name from modelId if not provided
-    const modelName = activeProvider === 'ollama' || activeProvider === 'lm-studio'
-      ? (newModelName.trim() && newModelName.trim() !== modelId ? newModelName.trim() : modelId)
-      : newModelName.trim();
-
-    const currentModels = providers[activeProvider].models ?? [];
-    const hasDuplicateModel = hasEquivalentProviderModelId(
-      currentModels,
-      modelId,
-      isEditingModel ? editingModelId : null,
-    );
-    if (hasDuplicateModel) {
-      setModelFormError(i18nService.t('modelIdExists'));
-      return;
-    }
-
-    // Parse custom params JSON (validate before saving)
-    let parsedCustomParams: Record<string, unknown> | undefined;
-    const trimmedParams = newModelCustomParams.trim();
-    if (trimmedParams) {
-      try {
-        parsedCustomParams = JSON.parse(trimmedParams);
-        if (typeof parsedCustomParams !== 'object' || parsedCustomParams === null || Array.isArray(parsedCustomParams)) {
-          setModelFormError(i18nService.t('customParamsInvalidJson'));
-          return;
-        }
-      } catch {
-        setModelFormError(i18nService.t('customParamsInvalidJson'));
-        return;
-      }
-    }
-
-    const providerConfig = providers[activeProvider];
-    const effectiveApiFormat = getEffectiveApiFormat(
-      activeProvider,
-      providerConfig.apiFormat,
-    );
-    const runtimeProfile = resolveModelRuntimeProfile({
-      source: isCustomProvider(activeProvider)
-        ? ModelRuntimeProfileSource.Custom
-        : ModelRuntimeProfileSource.BuiltIn,
-      providerId: activeProvider,
-      modelId,
-      api: effectiveApiFormat === 'openai'
-        ? OpenClawApi.OpenAICompletions
-        : OpenClawApi.AnthropicMessages,
-    });
-    const conflictingCustomParamKeys = runtimeProfile
-      ? findKimiK3ReservedCustomParamKeys(parsedCustomParams)
-      : [];
-    if (conflictingCustomParamKeys.length > 0) {
-      setModelFormError(
-        i18nService.t('kimiK3CustomParamsConflict').replace(
-          '{keys}',
-          conflictingCustomParamKeys.join(', '),
-        ),
-      );
-      return;
-    }
-
-    const editingModel = currentModels.find(model => model.id === editingModelId);
-    const resolvedProfileMetadata = applyModelRuntimeProfileMetadata({
-      supportsImage: ProviderRegistry.resolveModelSupportsImage(
-        activeProvider,
-        modelId,
-        newModelSupportsImage,
-      ),
-      supportsVideo: ProviderRegistry.resolveModelSupportsVideo(
-        activeProvider,
-        modelId,
-        editingModel?.supportsVideo,
-      ),
-      supportsThinking: ProviderRegistry.resolveModelSupportsThinking(
-        activeProvider,
-        modelId,
-        newModelSupportsThinking,
-      ),
-      contextWindow: newModelContextWindow,
-      maxTokens: ProviderRegistry.resolveModelMaxTokens(
-        activeProvider,
-        modelId,
-        editingModel?.maxTokens,
-      ),
-    }, runtimeProfile);
-    const nextModel = {
-      id: modelId,
-      name: modelName,
-      supportsImage: resolvedProfileMetadata.supportsImage ?? false,
-      ...(resolvedProfileMetadata.supportsThinking ? { supportsThinking: true } : {}),
-      ...(resolvedProfileMetadata.contextWindow !== undefined
-        ? { contextWindow: resolvedProfileMetadata.contextWindow }
-        : {}),
-      ...(resolvedProfileMetadata.supportsVideo ? { supportsVideo: true } : {}),
-      ...(resolvedProfileMetadata.maxTokens !== undefined
-        ? { maxTokens: resolvedProfileMetadata.maxTokens }
-        : {}),
-      ...(parsedCustomParams && Object.keys(parsedCustomParams).length > 0
-        ? { customParams: parsedCustomParams }
-        : {}),
-    };
-    const updatedModels = isEditingModel && editingModelId
-      ? currentModels.map(model => (model.id === editingModelId ? nextModel : model))
-      : [...currentModels, nextModel];
-
-    setProviders(prev => ({
-      ...prev,
-      [activeProvider]: {
-        ...prev[activeProvider],
-        models: updatedModels
-      }
-    }));
-
-    setIsAddingModel(false);
-    setIsEditingModel(false);
-    setEditingModelId(null);
-    setNewModelName('');
-    setNewModelId('');
-    setNewModelSupportsImage(false);
-    setNewModelSupportsThinking(false);
-    setNewModelContextWindow(undefined);
-    setNewModelCustomParams('');
-    setModelFormError(null);
-  };
-
-  const handleCancelModelEdit = () => {
-    setIsAddingModel(false);
-    setIsEditingModel(false);
-    setEditingModelId(null);
-    setNewModelName('');
-    setNewModelId('');
-    setNewModelSupportsImage(false);
-    setNewModelSupportsThinking(false);
-    setNewModelContextWindow(undefined);
-    setNewModelCustomParams('');
-    setModelFormError(null);
-  };
-
-  const handleModelDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      handleCancelModelEdit();
-      return;
-    }
-    // Plain Enter must keep its default behavior (e.g. newline in the custom
-    // params textarea); only Cmd/Ctrl+Enter saves from the keyboard.
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      handleSaveNewModel();
-    }
   };
 
   // Escape dismisses the innermost stacked layer and closes the panel last.
@@ -4028,9 +2946,6 @@ const Settings: React.FC<SettingsProps> = ({
         || isCleaningTempStorage
         || isShortcutInputActive(),
       layers: [
-        { isOpen: pendingDeleteProvider !== null, dismiss: () => setPendingDeleteProvider(null) },
-        { isOpen: isAddingModel || isEditingModel, dismiss: handleCancelModelEdit },
-        { isOpen: isTestResultModalOpen, dismiss: () => setIsTestResultModalOpen(false) },
         { isOpen: showOpenClawRepairConfirm, dismiss: () => setShowOpenClawRepairConfirm(false) },
         { isOpen: showTempCleanConfirm, dismiss: () => setShowTempCleanConfirm(false) },
         {
@@ -4052,503 +2967,19 @@ const Settings: React.FC<SettingsProps> = ({
     }
   };
 
-  const showTestResultModal = (
-    result: Omit<ProviderConnectionTestResult, 'provider'>,
-    provider: ProviderType
-  ) => {
-    setTestResult({
-      ...result,
-      provider,
-    });
-    setIsTestResultModalOpen(true);
-  };
-
-  // 测试 API 连接
-  const handleTestConnection = async () => {
-    const testingProvider = activeProvider;
-    const providerConfig = providers[testingProvider];
-    const testingApiFormat = getEffectiveApiFormat(testingProvider, providerConfig.apiFormat);
-    setIsTesting(true);
-    setIsTestResultModalOpen(false);
-    setTestResult(null);
-
-    const hasValidAuth = providerConfig.apiKey;
-
-
-    if (providerRequiresApiKey(testingProvider) && !hasValidAuth) {
-      reportCustomModelConnectionTested(testingProvider, testingApiFormat, 'failed', {
-        failureReason: 'missing_api_key',
-      });
-      showTestResultModal({ success: false, message: i18nService.t('apiKeyRequired') }, testingProvider);
-      setIsTesting(false);
-      return;
-    }
-
-    // 获取第一个可用模型 - use a shallow copy to avoid mutating state
-    const originalModel = providerConfig.models?.[0];
-    if (!originalModel) {
-      reportCustomModelConnectionTested(testingProvider, testingApiFormat, 'failed', {
-        failureReason: 'missing_model',
-      });
-      showTestResultModal({ success: false, message: i18nService.t('noModelsConfigured') }, testingProvider);
-      setIsTesting(false);
-      return;
-    }
-
-    const firstModel = { ...originalModel };
-
-    try {
-      let response: Awaited<ReturnType<typeof window.electron.api.fetch>>;
-      // Apply Coding Plan endpoint switch
-      let effectiveBaseUrl = resolveBaseUrl(testingProvider, providerConfig.baseUrl, testingApiFormat);
-      let effectiveApiFormat = testingApiFormat;
-
-      // Handle Coding Plan endpoint switch for supported providers
-      if ((providerConfig as { codingPlanEnabled?: boolean }).codingPlanEnabled && (effectiveApiFormat === 'anthropic' || effectiveApiFormat === 'openai')) {
-        const resolved = resolveCodingPlanBaseUrl(testingProvider, true, effectiveApiFormat, effectiveBaseUrl);
-        effectiveBaseUrl = resolved.baseUrl;
-        effectiveApiFormat = resolved.effectiveFormat;
-      }
-
-      let normalizedBaseUrl = effectiveBaseUrl.replace(/\/+$/, '');
-
-      // Determine effective API key
-      let effectiveApiKey = providerConfig.apiKey;
-
-      if (testingProvider === ProviderName.Copilot) {
-        const result = await window.electron.githubCopilot.refreshToken();
-        if (!result.success || !result.token) {
-          reportCustomModelConnectionTested(testingProvider, effectiveApiFormat, 'failed', {
-            failureReason: 'unknown',
-          });
-          showTestResultModal({
-            success: false,
-            message: result.error || i18nService.t('apiKeyRequired'),
-          }, testingProvider);
-          return;
-        }
-        effectiveApiKey = result.token;
-        if (result.baseUrl) {
-          effectiveBaseUrl = result.baseUrl;
-          normalizedBaseUrl = effectiveBaseUrl.replace(/\/+$/, '');
-        }
-        apiService.setProviderRuntimeCredential(ProviderName.Copilot, {
-          apiKey: result.token,
-          ...(result.baseUrl ? { baseUrl: result.baseUrl } : {}),
-        });
-      }
-
-      if (testingProvider === 'qwen') {
-        // Use regular API Key mode
-        effectiveApiKey = providerConfig.apiKey;
-        // Ensure model ID is not an OAuth-mapped name (vision-model/coder-model)
-        // This can happen if a previous OAuth test mutated the model in state and it got persisted
-        if (firstModel.id === 'vision-model' || firstModel.id === 'coder-model') {
-          // Restore from defaultConfig's first qwen model
-          const defaultQwenModel = defaultConfig.providers?.qwen?.models?.[0];
-          firstModel.id = defaultQwenModel?.id || 'qwen3.5-plus';
-        }
-      }
-
-      // Determine format after all overrides (OAuth may switch to openai)
-      // 统一为两种协议格式：
-      // - anthropic: /v1/messages
-      // - openai provider: /v1/responses
-      // - other openai-compatible providers: /v1/chat/completions
-      const useAnthropicFormat = effectiveApiFormat === 'anthropic';
-
-      if (useAnthropicFormat) {
-        const anthropicUrl = normalizedBaseUrl.endsWith('/v1')
-          ? `${normalizedBaseUrl}/messages`
-          : `${normalizedBaseUrl}/v1/messages`;
-        response = await window.electron.api.fetch({
-          url: anthropicUrl,
-          method: 'POST',
-          headers: {
-            'x-api-key': effectiveApiKey,
-            'anthropic-version': '2023-06-01',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: firstModel.id,
-            max_tokens: CONNECTIVITY_TEST_TOKEN_BUDGET,
-            messages: [{ role: 'user', content: 'Hi' }],
-          }),
-        });
-      } else {
-        const useResponsesApi = shouldUseOpenAIResponsesForProvider(testingProvider);
-        const openaiUrl = useResponsesApi
-          ? buildOpenAIResponsesUrl(normalizedBaseUrl)
-          : buildOpenAICompatibleChatCompletionsUrl(normalizedBaseUrl, testingProvider);
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        if (effectiveApiKey) {
-          headers.Authorization = `Bearer ${effectiveApiKey}`;
-        }
-        if (testingProvider === ProviderName.Copilot) {
-          headers['Copilot-Integration-Id'] = 'vscode-chat';
-          headers['Editor-Version'] = 'vscode/1.96.2';
-          headers['Editor-Plugin-Version'] = 'copilot-chat/0.26.7';
-          headers['User-Agent'] = 'GitHubCopilotChat/0.26.7';
-          headers['Openai-Intent'] = 'conversation-panel';
-        }
-        const openAIRequestBody = buildOpenAIConnectionTestRequestBody({
-          provider: testingProvider,
-          model: firstModel,
-          useResponsesApi,
-        });
-        response = await window.electron.api.fetch({
-          url: openaiUrl,
-          method: 'POST',
-          headers,
-          body: JSON.stringify(openAIRequestBody),
-        });
-      }
-
-      if (response.ok) {
-        enableProvider(testingProvider);
-        reportCustomModelConnectionTested(testingProvider, effectiveApiFormat, 'success');
-        showTestResultModal({ success: true, message: i18nService.t('connectionSuccess') }, testingProvider);
-      } else {
-        const data = response.data || {};
-        // 提取错误信息
-        const errorMessage = data.error?.message || data.message || `${i18nService.t('connectionFailed')}: ${response.status}`;
-        if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('model output limit was reached')) {
-          enableProvider(testingProvider);
-          reportCustomModelConnectionTested(testingProvider, effectiveApiFormat, 'success');
-          showTestResultModal({ success: true, message: i18nService.t('connectionSuccess') }, testingProvider);
-          return;
-        }
-        reportCustomModelConnectionTested(testingProvider, effectiveApiFormat, 'failed', {
-          failureReason: 'http_error',
-          statusCode: response.status,
-        });
-        showTestResultModal({ success: false, message: errorMessage }, testingProvider);
-      }
-    } catch (err) {
-      reportCustomModelConnectionTested(testingProvider, testingApiFormat, 'failed', {
-        failureReason: 'network_error',
-      });
-      showTestResultModal({
-        success: false,
-        message: err instanceof Error ? err.message : i18nService.t('connectionFailed'),
-      }, testingProvider);
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const buildProvidersExport = async (password: string): Promise<ProvidersExportPayload> => {
-    const entries = await Promise.all(
-      Object.entries(providers).map(async ([providerKey, providerConfig]) => {
-        const apiKey = await encryptWithPassword(providerConfig.apiKey, password);
-        const apiFormat = getEffectiveApiFormat(providerKey, providerConfig.apiFormat);
-        return [
-          providerKey,
-          {
-            enabled: providerConfig.enabled,
-            apiKey,
-            baseUrl: resolveBaseUrl(providerKey as ProviderType, providerConfig.baseUrl, apiFormat),
-            apiFormat,
-            codingPlanEnabled: (providerConfig as ProviderConfig).codingPlanEnabled,
-            models: normalizeModels(providerKey, providerConfig.models),
-          },
-        ] as const;
-      })
-    );
-
-    return {
-      type: EXPORT_FORMAT_TYPE,
-      version: 2,
-      exportedAt: new Date().toISOString(),
-      encryption: {
-        algorithm: 'AES-GCM',
-        keySource: 'password',
-        keyDerivation: 'PBKDF2',
-      },
-      providers: Object.fromEntries(entries),
-    };
-  };
-
-  const normalizeModels = (providerKey: string, models?: Model[]) =>
-    models?.map(model => ({
-      ...model,
-      supportsImage: resolveModelSupportsImageForProvider(providerKey, model),
-    }));
-
-  const DEFAULT_EXPORT_PASSWORD = EXPORT_PASSWORD;
-
-  const handleExportProviders = async () => {
-    setError(null);
-    setIsExportingProviders(true);
-
-    try {
-      const payload = await buildProvidersExport(DEFAULT_EXPORT_PASSWORD);
-      const json = JSON.stringify(payload, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const date = new Date().toISOString().slice(0, 10);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${APP_ID}-providers-${date}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 0);
-    } catch (err) {
-      console.error('Failed to export providers:', err);
-      setError(i18nService.t('exportProvidersFailed'));
-    } finally {
-      setIsExportingProviders(false);
-    }
-  };
-
-  const handleImportProvidersClick = () => {
-    importInputRef.current?.click();
-  };
-
-  const handleImportProviders = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) {
-      return;
-    }
-
-    setError(null);
-
-    try {
-      const raw = await file.text();
-      console.log(`[Settings] importing providers from file: ${file.name}, size: ${file.size}`);
-      let payload: ProvidersImportPayload;
-      try {
-        payload = JSON.parse(raw) as ProvidersImportPayload;
-      } catch {
-        console.warn('[Settings] import failed: invalid JSON in file');
-        setError(i18nService.t('invalidProvidersFile'));
-        return;
-      }
-
-      if (!payload || payload.type !== EXPORT_FORMAT_TYPE || !payload.providers) {
-        console.warn(`[Settings] import failed: invalid format, type=${payload?.type}, hasProviders=${!!payload?.providers}`);
-        setError(i18nService.t('invalidProvidersFile'));
-        return;
-      }
-
-      // Check if it's version 2 (password-based encryption)
-      if (payload.version === 2 && payload.encryption?.keySource === 'password') {
-        console.log('[Settings] import: detected v2 password-based encryption');
-        await processImportPayloadWithPassword(payload);
-        return;
-      }
-
-      // Version 1 (legacy local-store key) - try to decrypt with local key
-      if (payload.version === 1) {
-        console.log('[Settings] import: detected v1 local-key encryption');
-        await processImportPayloadWithLocalKey(payload);
-        return;
-      }
-
-      console.warn(`[Settings] import failed: unsupported version=${payload.version}`);
-      setError(i18nService.t('invalidProvidersFile'));
-    } catch (err) {
-      console.error('[Settings] import failed:', err);
-      setError(i18nService.t('importProvidersFailed'));
-    }
-  };
-
-  const processImportPayloadWithLocalKey = async (payload: ProvidersImportPayload) => {
-    setIsImportingProviders(true);
-    try {
-      const fileKeys = Object.keys(payload.providers ?? {});
-      console.log(`[Settings] v1 import: processing ${fileKeys.length} providers from file`);
-      const providerUpdates: Partial<ProvidersConfig> = {};
-      let hadDecryptFailure = false;
-      for (const providerKey of providerKeys) {
-        const providerData = payload.providers?.[providerKey];
-        if (!providerData) {
-          continue;
-        }
-
-        let apiKey: string | undefined;
-        if (typeof providerData.apiKey === 'string') {
-          apiKey = providerData.apiKey;
-        } else if (providerData.apiKey && typeof providerData.apiKey === 'object') {
-          try {
-            apiKey = await decryptSecret(providerData.apiKey as EncryptedPayload);
-            console.log(`[Settings] v1 import: decrypted key for ${providerKey}`);
-          } catch (error) {
-            hadDecryptFailure = true;
-            console.warn(`[Settings] v1 import: failed to decrypt key for ${providerKey}`, error);
-          }
-        } else if (typeof providerData.apiKeyEncrypted === 'string' && typeof providerData.apiKeyIv === 'string') {
-          try {
-            apiKey = await decryptSecret({ encrypted: providerData.apiKeyEncrypted, iv: providerData.apiKeyIv });
-            console.log(`[Settings] v1 import: decrypted key for ${providerKey}`);
-          } catch (error) {
-            hadDecryptFailure = true;
-            console.warn(`[Settings] v1 import: failed to decrypt key for ${providerKey}`, error);
-          }
-        }
-
-        const models = normalizeModels(providerKey, providerData.models);
-        const existing = providers[providerKey];
-
-        providerUpdates[providerKey] = {
-          enabled: typeof providerData.enabled === 'boolean' ? providerData.enabled : existing?.enabled ?? false,
-          apiKey: apiKey ?? existing?.apiKey ?? '',
-          baseUrl: typeof providerData.baseUrl === 'string' ? providerData.baseUrl : existing?.baseUrl ?? '',
-          apiFormat: getEffectiveApiFormat(providerKey, providerData.apiFormat ?? existing?.apiFormat),
-          codingPlanEnabled: typeof providerData.codingPlanEnabled === 'boolean' ? providerData.codingPlanEnabled : (existing as ProviderConfig)?.codingPlanEnabled,
-          models: models ?? existing?.models,
-        };
-      }
-
-      if (Object.keys(providerUpdates).length === 0) {
-        console.warn(`[Settings] v1 import failed: no matching providers found, file keys: ${fileKeys.join(', ')}`);
-        setError(i18nService.t('invalidProvidersFile'));
-        return;
-      }
-
-      setProviders(prev => {
-        const next = { ...prev };
-        Object.entries(providerUpdates).forEach(([providerKey, update]) => {
-          next[providerKey] = {
-            ...prev[providerKey],
-            ...update,
-          };
-        });
-        return next;
-      });
-      setIsTestResultModalOpen(false);
-      setTestResult(null);
-      console.log(`[Settings] v1 import complete: updated ${Object.keys(providerUpdates).length} providers`);
-      if (hadDecryptFailure) {
-        setNoticeMessage(i18nService.t('decryptProvidersPartial'));
-      }
-    } catch (err) {
-      console.error('[Settings] v1 import failed:', err);
-      const isDecryptError = err instanceof Error
-        && (err.message === 'Invalid encrypted payload' || err.name === 'OperationError');
-      const message = isDecryptError
-        ? i18nService.t('decryptProvidersFailed')
-        : i18nService.t('importProvidersFailed');
-      setError(message);
-    } finally {
-      setIsImportingProviders(false);
-    }
-  };
-
-  const processImportPayloadWithPassword = async (payload: ProvidersImportPayload) => {
-    if (!payload.providers) {
-      return;
-    }
-
-    setIsImportingProviders(true);
-
-    try {
-      const fileKeys = Object.keys(payload.providers);
-      console.log(`[Settings] v2 import: processing ${fileKeys.length} providers from file`);
-      const providerUpdates: Partial<ProvidersConfig> = {};
-      let hadDecryptFailure = false;
-
-      for (const providerKey of providerKeys) {
-        const providerData = payload.providers[providerKey];
-        if (!providerData) {
-          continue;
-        }
-
-        let apiKey: string | undefined;
-        if (typeof providerData.apiKey === 'string') {
-          apiKey = providerData.apiKey;
-        } else if (providerData.apiKey && typeof providerData.apiKey === 'object') {
-          const apiKeyObj = providerData.apiKey as PasswordEncryptedPayload;
-          if (apiKeyObj.salt) {
-            // Version 2 password-based encryption
-            try {
-              apiKey = await decryptWithPassword(apiKeyObj, DEFAULT_EXPORT_PASSWORD);
-              console.log(`[Settings] v2 import: decrypted key for ${providerKey}`);
-            } catch (error) {
-              hadDecryptFailure = true;
-              console.warn(`[Settings] v2 import: failed to decrypt key for ${providerKey}`, error);
-            }
-          }
-        }
-
-        const models = normalizeModels(providerKey, providerData.models);
-        const existing = providers[providerKey];
-
-        providerUpdates[providerKey] = {
-          enabled: typeof providerData.enabled === 'boolean' ? providerData.enabled : existing?.enabled ?? false,
-          apiKey: apiKey ?? existing?.apiKey ?? '',
-          baseUrl: typeof providerData.baseUrl === 'string' ? providerData.baseUrl : existing?.baseUrl ?? '',
-          apiFormat: getEffectiveApiFormat(providerKey, providerData.apiFormat ?? existing?.apiFormat),
-          codingPlanEnabled: typeof providerData.codingPlanEnabled === 'boolean' ? providerData.codingPlanEnabled : (existing as ProviderConfig)?.codingPlanEnabled,
-          models: models ?? existing?.models,
-        };
-      }
-
-      if (Object.keys(providerUpdates).length === 0) {
-        console.warn(`[Settings] v2 import failed: no matching providers found, file keys: ${fileKeys.join(', ')}`);
-        setError(i18nService.t('invalidProvidersFile'));
-        return;
-      }
-
-      // Check if any key was successfully decrypted
-      const anyKeyDecrypted = Object.entries(providerUpdates).some(
-        ([key, update]) => update?.apiKey && update.apiKey !== providers[key]?.apiKey
-      );
-
-      if (!anyKeyDecrypted && hadDecryptFailure) {
-        // All decryptions failed - likely wrong password
-        console.warn('[Settings] v2 import failed: all key decryptions failed, likely wrong password');
-        setError(i18nService.t('decryptProvidersFailed'));
-        return;
-      }
-
-      setProviders(prev => {
-        const next = { ...prev };
-        Object.entries(providerUpdates).forEach(([providerKey, update]) => {
-          next[providerKey] = {
-            ...prev[providerKey],
-            ...update,
-          };
-        });
-        return next;
-      });
-      setIsTestResultModalOpen(false);
-      setTestResult(null);
-      console.log(`[Settings] v2 import complete: updated ${Object.keys(providerUpdates).length} providers`);
-      if (hadDecryptFailure) {
-        setNoticeMessage(i18nService.t('decryptProvidersPartial'));
-      }
-    } catch (err) {
-      console.error('[Settings] v2 import failed:', err);
-      const isDecryptError = err instanceof Error
-        && (err.message === 'Invalid encrypted payload' || err.name === 'OperationError');
-      const message = isDecryptError
-        ? i18nService.t('decryptProvidersFailed')
-        : i18nService.t('importProvidersFailed');
-      setError(message);
-    } finally {
-      setIsImportingProviders(false);
-    }
-  };
-
-  // 渲染标签页
+  // Render tabs
   const sidebarTabs: { key: TabType; label: string; icon: React.ReactNode }[] = (() => {
     const allTabs = [
       { key: 'general' as TabType,        label: i18nService.t('general'),        icon: <SettingsSlidersIcon className="h-5 w-5" /> },
       { key: 'appearance' as TabType,     label: i18nService.t('appearance'),     icon: <SunIcon className="h-5 w-5" /> },
       { key: 'coworkAgentEngine' as TabType, label: i18nService.t('coworkAgentEngine'), icon: <CpuChipIcon className="h-5 w-5" /> },
-      { key: 'model' as TabType,          label: i18nService.t('settingsCustomModel'), icon: <CubeIcon className="h-5 w-5" /> },
+      { key: 'model' as TabType,          label: i18nService.t('swenAccountTab'), icon: <CubeIcon className="h-5 w-5" /> },
       { key: 'im' as TabType,             label: i18nService.t('imBot'),          icon: <ChatBubbleLeftIcon className="h-5 w-5" /> },
       { key: 'browserWebAccess' as TabType, label: i18nService.t('browserWebAccessTab'), icon: <GlobeAltIcon className="h-5 w-5" /> },
       { key: 'email' as TabType,          label: i18nService.t('emailTab'),       icon: <EnvelopeIcon className="h-5 w-5" /> },
       { key: 'coworkMemory' as TabType,   label: i18nService.t('coworkMemoryTitle'), icon: <BrainIcon className="h-5 w-5" /> },
       { key: 'coworkDreaming' as TabType, label: i18nService.t('coworkMemoryTabDreaming'), icon: <DreamingTabIcon className="h-5 w-5" /> },
       { key: 'plugins' as TabType,        label: i18nService.t('pluginsTab'),     icon: <PlugIcon className="h-5 w-5" /> },
-      { key: 'experimental' as TabType,   label: i18nService.t('experimentalTab'), icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3v6.4c0 .35-.09.68-.27.98l-4.4 7.34A2 2 0 0 0 6.8 20.75h10.4a2 2 0 0 0 1.72-3.03l-4.4-7.34a1.9 1.9 0 0 1-.27-.98V3M8.25 3h7.5M7.5 14.25h9" /></svg> },
       { key: 'shortcuts' as TabType,      label: i18nService.t('shortcuts'),      icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5"><rect x="2" y="4" width="20" height="14" rx="2" /><line x1="6" y1="8" x2="8" y2="8" /><line x1="10" y1="8" x2="12" y2="8" /><line x1="14" y1="8" x2="16" y2="8" /><line x1="6" y1="12" x2="8" y2="12" /><line x1="10" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="18" y2="12" /><line x1="8" y1="15.5" x2="16" y2="15.5" /></svg> },
       { key: 'about' as TabType,          label: i18nService.t('about'),          icon: <InformationCircleIcon className="h-5 w-5" /> },
     ];
@@ -4815,36 +3246,11 @@ const Settings: React.FC<SettingsProps> = ({
 
   const renderTabContent = () => {
     switch(activeTab) {
-      case 'experimental':
-        return <DshExperimentalSettings />;
       case 'general':
         return (
           <div className="space-y-8">
             {/* Group: General basics */}
             <SettingsGroup title={i18nService.t('settingsGroupBasics')}>
-              <SettingsRow>
-                <div className="flex items-center justify-between gap-4">
-                  <h4 className="text-sm font-medium text-foreground">
-                    {i18nService.t('language')}
-                  </h4>
-                  <div className="w-[140px] shrink-0">
-                    <ThemedSelect
-                      id="language"
-                      value={language}
-                      onChange={(value) => {
-                        const nextLanguage = value as LanguageType;
-                        setLanguage(nextLanguage);
-                        i18nService.setLanguage(nextLanguage, { persist: false });
-                      }}
-                      options={[
-                        { value: 'zh', label: i18nService.t('chinese') },
-                        { value: 'en', label: i18nService.t('english') }
-                      ]}
-                    />
-                  </div>
-                </div>
-              </SettingsRow>
-
               <SettingsRow>
                 <SettingsToggleRow
                   title={i18nService.t('artifactAutoPreviewEnabled')}
@@ -5622,66 +4028,7 @@ const Settings: React.FC<SettingsProps> = ({
         );
 
       case 'model':
-        return (
-          <ModelSettingsSection
-            providers={providers}
-            activeProvider={activeProvider}
-            visibleProviders={visibleProviders}
-            showApiKey={showApiKey}
-            setShowApiKey={setShowApiKey}
-            isImportingProviders={isImportingProviders}
-            isExportingProviders={isExportingProviders}
-            minimaxIsOAuthMode={minimaxIsOAuthMode}
-            openaiIsOAuthMode={openaiIsOAuthMode}
-            isBaseUrlLocked={isBaseUrlLocked}
-            minimaxOAuthPhase={minimaxOAuthPhase}
-            minimaxOAuthRegion={minimaxOAuthRegion}
-            setMinimaxOAuthRegion={setMinimaxOAuthRegion}
-            setMinimaxOAuthPhase={setMinimaxOAuthPhase}
-            openaiOAuthPhase={openaiOAuthPhase}
-            setOpenaiOAuthPhase={setOpenaiOAuthPhase}
-            openaiOAuthStatus={openaiOAuthStatus}
-            xaiIsOAuthMode={xaiIsOAuthMode}
-            xaiOAuthPhase={xaiOAuthPhase}
-            setXaiOAuthPhase={setXaiOAuthPhase}
-            xaiOAuthStatus={xaiOAuthStatus}
-            copilotAuthStatus={copilotAuthStatus}
-            copilotUserCode={copilotUserCode}
-            copilotVerificationUri={copilotVerificationUri}
-            copilotGithubUser={copilotGithubUser}
-            copilotError={copilotError}
-            isTesting={isTesting}
-            testResult={testResult}
-            isTestResultModalOpen={isTestResultModalOpen}
-            setIsTestResultModalOpen={setIsTestResultModalOpen}
-            importInputRef={importInputRef}
-            handleImportProvidersClick={handleImportProvidersClick}
-            handleExportProviders={handleExportProviders}
-            handleImportProviders={handleImportProviders}
-            handleProviderChange={handleProviderChange}
-            toggleProviderEnabled={toggleProviderEnabled}
-            handleAddCustomProvider={handleAddCustomProvider}
-            handleDeleteCustomProvider={handleDeleteCustomProvider}
-            handleProviderConfigChange={handleProviderConfigChange}
-            setProviders={setProviders}
-            handleMiniMaxDeviceLogin={handleMiniMaxDeviceLogin}
-            handleCancelMiniMaxLogin={handleCancelMiniMaxLogin}
-            handleMiniMaxOAuthLogout={handleMiniMaxOAuthLogout}
-            handleOpenAIOAuthLogin={handleOpenAIOAuthLogin}
-            handleCancelOpenAIOAuthLogin={handleCancelOpenAIOAuthLogin}
-            handleOpenAIOAuthLogout={handleOpenAIOAuthLogout}
-            handleXaiOAuthLogin={handleXaiOAuthLogin}
-            handleCancelXaiOAuthLogin={handleCancelXaiOAuthLogin}
-            handleXaiOAuthLogout={handleXaiOAuthLogout}
-            handleCopilotSignIn={handleCopilotSignIn}
-            handleCopilotSignOut={handleCopilotSignOut}
-            handleCopilotCancelAuth={handleCopilotCancelAuth}
-            handleTestConnection={handleTestConnection}
-            handleAddModel={handleAddModel}
-            handleEditModel={handleEditModel}
-            handleDeleteModel={handleDeleteModel}
-          />
-        );
+        return <SwenAccountSection />;
 
       case 'shortcuts':
         return (
@@ -5789,7 +4136,7 @@ const Settings: React.FC<SettingsProps> = ({
             {/* Logo & App Name */}
             <img
               src="logo.png"
-              alt="LobsterAI"
+              alt="Swen"
               className="w-16 h-16 mb-3 cursor-pointer select-none"
               onClick={(e) => {
                 if (!e.altKey || !e.shiftKey) return;
@@ -5801,7 +4148,7 @@ const Settings: React.FC<SettingsProps> = ({
                 }
               }}
             />
-            <h3 className="text-lg font-semibold text-foreground">LobsterAI</h3>
+            <h3 className="text-lg font-semibold text-foreground">Swen</h3>
             <span className="text-xs text-secondary mt-1">v{appVersion}</span>
 
             {/* Info Card */}
@@ -5827,27 +4174,6 @@ const Settings: React.FC<SettingsProps> = ({
                   <span className="text-xs text-claude-textSecondary dark:text-claude-darkTextSecondary">
                     {i18nService.t('settings.enterprise.managed')}
                   </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
-                <span className="shrink-0 text-sm text-foreground">{i18nService.t('aboutContactEmail')}</span>
-                <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleCopyContactEmail();
-                    }}
-                    title={i18nService.t('copyToClipboard')}
-                    className="min-w-0 break-all text-right text-sm text-secondary bg-transparent border-none appearance-none p-0 m-0 cursor-pointer focus:outline-none"
-                  >
-                    {ABOUT_CONTACT_EMAIL}
-                  </button>
-                  {emailCopied && (
-                    <span className="text-[11px] leading-4 text-emerald-600 dark:text-emerald-400">
-                      {i18nService.t('copied')}
-                    </span>
                   )}
                 </div>
               </div>
@@ -5930,7 +4256,10 @@ const Settings: React.FC<SettingsProps> = ({
                 {i18nService.t('copyrightHolder')}
               </p>
               <p className="mt-1 text-center text-xs text-secondary">
-                Copyright &copy; {new Date().getFullYear()} NetEase Youdao. All Rights Reserved.
+                Copyright &copy; {new Date().getFullYear()} Claidor. All Rights Reserved.
+              </p>
+              <p className="mt-1 text-center text-xs text-secondary">
+                {i18nService.t('aboutUpstreamNotice')}
               </p>
             </div>
           </div>
@@ -6046,37 +4375,6 @@ const Settings: React.FC<SettingsProps> = ({
           </form>
 
         </div>
-
-        <ModelEditorDialog
-          activeProvider={activeProvider}
-          isAddingModel={isAddingModel}
-          isEditingModel={isEditingModel}
-          newModelName={newModelName}
-          setNewModelName={setNewModelName}
-          newModelId={newModelId}
-          setNewModelId={setNewModelId}
-          newModelSupportsImage={newModelSupportsImage}
-          setNewModelSupportsImage={setNewModelSupportsImage}
-          newModelSupportsThinking={newModelSupportsThinking}
-          setNewModelSupportsThinking={setNewModelSupportsThinking}
-          newModelContextWindow={newModelContextWindow}
-          setNewModelContextWindow={setNewModelContextWindow}
-          newModelCustomParams={newModelCustomParams}
-          setNewModelCustomParams={setNewModelCustomParams}
-          activeProviderConfig={providers[activeProvider]}
-          modelFormError={modelFormError}
-          setModelFormError={setModelFormError}
-          handleSaveNewModel={handleSaveNewModel}
-          handleCancelModelEdit={handleCancelModelEdit}
-          handleModelDialogKeyDown={handleModelDialogKeyDown}
-        />
-
-        <DeleteProviderConfirmDialog
-          pendingDeleteProvider={pendingDeleteProvider}
-          providers={providers}
-          onCancel={() => setPendingDeleteProvider(null)}
-          onConfirm={confirmDeleteCustomProvider}
-        />
 
           {showOpenClawRepairConfirm && (
             <div

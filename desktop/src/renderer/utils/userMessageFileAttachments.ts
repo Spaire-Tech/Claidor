@@ -2,17 +2,17 @@
  * Display-side extraction of file/folder attachment lines from user messages.
  *
  * When a prompt is submitted with non-image attachments, prepareCoworkPromptPayload
- * appends machine-generated lines like "输入文件: /abs/path" to the prompt text.
+ * appends machine-generated lines like "Input Files: /abs/path" to the prompt text.
  * This module parses those lines back out at render time so the UI can show
  * clickable attachment cards instead of raw path text.
  * DISPLAY ONLY — does not affect what was sent to the AI model.
  */
 
 // Labels ever produced by the payload builder (i18n `inputFileLabel` /
-// `inputFolderLabel`, plus the pre-i18n hardcoded value). Longest-first so
-// "输入文件夹" wins over its prefix "输入文件".
-const FOLDER_LABELS = ['输入文件夹', 'Input Folder'] as const;
-const FILE_LABELS = ['输入文件', 'Input Files'] as const;
+// `inputFolderLabel`). Folder labels are listed first so a folder label wins
+// over a file label that shares its prefix.
+const FOLDER_LABELS = ['Input Folder'] as const;
+const FILE_LABELS = ['Input Files'] as const;
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

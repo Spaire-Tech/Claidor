@@ -77,7 +77,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRequestDelete }) => {
   }, [task.id]);
 
   // Resolve the delivery channel/target to the same friendly names the form
-  // pickers show ("企业微信 · 2 号 · 私聊 · 张三") instead of raw ids.
+  // pickers show ("Telegram · #2 · DM · John") instead of raw ids.
   const { mode: deliveryMode, channel: deliveryChannel, accountId: deliveryAccountId, to: deliveryTo } = task.delivery;
   const [deliveryChannels, setDeliveryChannels] = useState<ScheduledTaskChannelOption[]>([]);
   const [deliveryConversations, setDeliveryConversations] = useState<

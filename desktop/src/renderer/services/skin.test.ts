@@ -123,7 +123,7 @@ describe('normalizeSkinList', () => {
       skins: [
         {
           id: 'three-kingdoms',
-          name: '三国蜀汉 Q 版',
+          name: 'Three Kingdoms chibi',
           assets: {
             [SkinAssetSlot.WorkspaceBackdrop]: 'lobster-skin://asset/three-kingdoms/workspace.backdrop',
             [SkinAssetSlot.HomeEmblem]: 'lobster-skin://asset/three-kingdoms/home.emblem',
@@ -141,7 +141,7 @@ describe('normalizeSkinList', () => {
     expect(skins).toHaveLength(1);
     expect(skins[0]).toMatchObject({
       id: 'three-kingdoms',
-      name: '三国蜀汉 Q 版',
+      name: 'Three Kingdoms chibi',
     });
   });
 });

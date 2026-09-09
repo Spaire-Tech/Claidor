@@ -8,7 +8,7 @@ import { OpenClawTranscriptSafetyErrorCode } from '../shared/openclawTranscript/
 
 export const CoworkErrorI18nKey = {
   AuthInvalid: 'coworkErrorAuthInvalid',
-  LobsterAILoginExpired: 'coworkErrorLobsterAILoginExpired',
+  SwenLoginExpired: 'coworkErrorSwenLoginExpired',
   OAuthInvalid: 'coworkErrorOAuthInvalid',
   ModelAccessDenied: 'coworkErrorModelAccessDenied',
   QuotaExhausted: 'coworkErrorQuotaExhausted',
@@ -23,11 +23,11 @@ export const CoworkErrorI18nKey = {
   GatewayHeapOutOfMemory: 'coworkErrorGatewayHeapOutOfMemory',
 } as const;
 
-const LOBSTERAI_QUOTA_EXHAUSTED_PATTERN =
-  /\b(?:4020[0-2]|4160[678])\b|(?:今日)?免费额度.*(用完|耗尽)|本月积分.*(用完|耗尽)|积分额度.*(用完|耗尽)|free.*quota.*(exhausted|used up|limit)|monthly.*credits?.*(exhausted|used up|limit)/i;
+const SWEN_QUOTA_EXHAUSTED_PATTERN =
+  /\b(?:4020[0-2]|4160[678])\b|free.*quota.*(exhausted|used up|limit)|monthly.*credits?.*(exhausted|used up|limit)|credit.*(?:quota|allowance).*(exhausted|used up|limit)/i;
 
 const MODEL_CAPACITY_OVERLOAD_PATTERN =
-  /overloaded_error|\boverloaded\b|(?:selected\s+)?model\s+(?:is\s+)?at capacity|system capacity(?: limits?)?|(?:service|model).*(?:high demand|high load)|服务过载|当前负载过高|系统容量(?:不足|限制)?/i;
+  /overloaded_error|\boverloaded\b|(?:selected\s+)?model\s+(?:is\s+)?at capacity|system capacity(?: limits?)?|(?:service|model).*(?:high demand|high load)|service overloaded|load is too high/i;
 
 const API_KEY_PATTERN = String.raw`(?:api\s*key|api[_-]?key|apikey)`;
 const UNAVAILABLE_NETWORK_CODE_PATTERN = String.raw`(?:ECONNREFUSED|ECONNRESET|ECONNABORTED|ENOTFOUND|ETIMEDOUT|ENETUNREACH|EHOSTUNREACH|EAI_AGAIN|UND_ERR_[A-Z_]+)`;
@@ -36,11 +36,11 @@ const ERROR_RULES: Array<[RegExp, string]> = [
   // OAuth / token refresh failures. Must precede generic auth handling.
   [/oauth.*(invalid|expired|failed|error|scope|token|callback|authorization|not completed)|auth[_ ]refresh|refresh[_ ]timeout|callback[_ ](timeout|validation)|token.*(expired|invalid)|invalid.*token|authorization method/i, CoworkErrorI18nKey.OAuthInvalid],
   // Provider/model permission errors. Must precede generic auth handling.
-  [/无权访问|没有权限|access denied|access.*forbidden|forbidden|permission denied|\b403\b|auth[_ ]scope/i, CoworkErrorI18nKey.ModelAccessDenied],
+  [/access denied|access.*forbidden|forbidden|permission denied|no permission|\b403\b|auth[_ ]scope/i, CoworkErrorI18nKey.ModelAccessDenied],
   // Auth: Anthropic, DeepSeek, OpenAI, Gemini, HTTP 401
   [new RegExp(`authentication[_ ](error|fails?)|${API_KEY_PATTERN}.*(invalid|expired|deleted|inactive|not[_ ]valid|not\\s+valid)|invalid.*${API_KEY_PATTERN}|incorrect.*${API_KEY_PATTERN}|unauthorized|PERMISSION_DENIED|\\b401\\b`, 'i'), CoworkErrorI18nKey.AuthInvalid],
-  // LobsterAI plan/free quota. Must precede generic 402/billing handling.
-  [LOBSTERAI_QUOTA_EXHAUSTED_PATTERN, CoworkErrorI18nKey.QuotaExhausted],
+  // Swen plan/free quota. Must precede generic 402/billing handling.
+  [SWEN_QUOTA_EXHAUSTED_PATTERN, CoworkErrorI18nKey.QuotaExhausted],
   // Provider/model capacity failures. Must precede rate-limit matching because
   // capacity errors may also contain phrases such as "too many requests".
   [MODEL_CAPACITY_OVERLOAD_PATTERN, CoworkErrorI18nKey.ModelOverloaded],
@@ -48,7 +48,7 @@ const ERROR_RULES: Array<[RegExp, string]> = [
   // (must precede billing so "RESOURCE_EXHAUSTED: quota exceeded" maps to rate-limit)
   [/\b429\b|rate[_ ]limit|too many requests|RESOURCE_EXHAUSTED/i, CoworkErrorI18nKey.RateLimit],
   // Billing: DeepSeek 402, OpenAI, OpenRouter, Qwen, StepFun
-  [/insufficient.*(balance|quota|credits)|billing|quota[_ ]exceeded|Arrearage|account.*not.*in.*good.*standing|余额不足|\b402\b/i, CoworkErrorI18nKey.InsufficientBalance],
+  [/insufficient.*(balance|quota|credits)|billing|quota[_ ]exceeded|Arrearage|account.*not.*in.*good.*standing|insufficient.*funds|\b402\b/i, CoworkErrorI18nKey.InsufficientBalance],
   // Oversized Cowork/OpenClaw gateway message payloads.
   [/chat\.send payload too large|max payload size exceeded|gateway closed \(1009\)|message too big/i, 'coworkErrorMessageTooLarge'],
   // Input too long: context length, HTTP 413, Qwen, payload too large
@@ -65,7 +65,7 @@ const ERROR_RULES: Array<[RegExp, string]> = [
   [/service restart/i, 'coworkErrorServiceRestart'],
   [/gateway.*draining|draining.*restart/i, 'coworkErrorGatewayDraining'],
   // Content moderation: Qwen, StepFun 451, generic
-  [/DataInspectionFailed|content.*(review|filter)|审核未通过|未通过.*审核|inappropriate.*content|\b451\b|flagged.*input/i, 'coworkErrorContentFiltered'],
+  [/DataInspectionFailed|content.*(review|filter)|moderation.*(failed|rejected)|inappropriate.*content|\b451\b|flagged.*input/i, 'coworkErrorContentFiltered'],
   // Model/provider response timeouts. Must precede generic request/network timeouts.
   [/LLM (?:idle timeout|request timed out)|no response from model|model response (?:timeout|timed out)/i, CoworkErrorI18nKey.ModelResponseTimeout],
   // Network errors
@@ -87,6 +87,6 @@ export function classifyErrorKey(error: string): string | null {
   return null;
 }
 
-export function isLobsterAIQuotaExhaustedError(error: string): boolean {
-  return LOBSTERAI_QUOTA_EXHAUSTED_PATTERN.test(error);
+export function isSwenQuotaExhaustedError(error: string): boolean {
+  return SWEN_QUOTA_EXHAUSTED_PATTERN.test(error);
 }

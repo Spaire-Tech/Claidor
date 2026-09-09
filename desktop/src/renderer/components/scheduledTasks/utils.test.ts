@@ -91,85 +91,85 @@ describe('formatElapsedDuration', () => {
 });
 
 describe('conversationOptionMatchesValue', () => {
-  const conversationId = 'weixin-bot-1:direct:wxid_zhangsan@im.wechat';
+  const conversationId = 'telegram-bot-1:direct:user_johndoe';
 
   test('matches the saved bare peer id regardless of casing', () => {
     // Saved targets carry the channel-native casing while conversation ids
     // derive from lowercased OpenClaw session keys.
     expect(
       conversationOptionMatchesValue(
-        'openclaw-weixin',
+        'telegram',
         conversationId,
-        'WxId_ZhangSan@im.wechat',
+        'User_JohnDoe',
       ),
     ).toBe(true);
   });
 
   test('matches full conversation ids and trailing segments', () => {
-    expect(conversationOptionMatchesValue('openclaw-weixin', conversationId, conversationId)).toBe(
+    expect(conversationOptionMatchesValue('telegram', conversationId, conversationId)).toBe(
       true,
     );
     expect(
       conversationOptionMatchesValue(
-        'openclaw-weixin',
+        'telegram',
         conversationId,
-        'direct:wxid_zhangsan@im.wechat',
+        'direct:user_johndoe',
       ),
     ).toBe(true);
   });
 
   test('rejects different peers and empty values', () => {
     expect(
-      conversationOptionMatchesValue('openclaw-weixin', conversationId, 'someone-else@im.wechat'),
+      conversationOptionMatchesValue('telegram', conversationId, 'someone-else'),
     ).toBe(false);
-    expect(conversationOptionMatchesValue('openclaw-weixin', conversationId, '')).toBe(false);
+    expect(conversationOptionMatchesValue('telegram', conversationId, '')).toBe(false);
   });
 });
 
 describe('channelOptionMatchesSelection', () => {
   test('single-instance options match regardless of the saved accountId', () => {
-    const option = { value: 'openclaw-weixin', label: 'WeChat' };
-    expect(channelOptionMatchesSelection(option, 'openclaw-weixin', undefined)).toBe(true);
-    expect(channelOptionMatchesSelection(option, 'openclaw-weixin', 'weixin-bot-1')).toBe(
+    const option = { value: 'telegram', label: 'Telegram' };
+    expect(channelOptionMatchesSelection(option, 'telegram', undefined)).toBe(true);
+    expect(channelOptionMatchesSelection(option, 'telegram', 'telegram-bot-1')).toBe(
       true,
     );
-    expect(channelOptionMatchesSelection(option, 'telegram', undefined)).toBe(false);
+    expect(channelOptionMatchesSelection(option, 'discord', undefined)).toBe(false);
   });
 
   test('multi-instance options require the exact accountId', () => {
-    const option = { value: 'feishu', label: '生产实例', accountId: '5ba0851a' };
-    expect(channelOptionMatchesSelection(option, 'feishu', '5ba0851a')).toBe(true);
-    expect(channelOptionMatchesSelection(option, 'feishu', 'other')).toBe(false);
-    expect(channelOptionMatchesSelection(option, 'feishu', undefined)).toBe(false);
+    const option = { value: 'discord', label: 'Production instance', accountId: '5ba0851a' };
+    expect(channelOptionMatchesSelection(option, 'discord', '5ba0851a')).toBe(true);
+    expect(channelOptionMatchesSelection(option, 'discord', 'other')).toBe(false);
+    expect(channelOptionMatchesSelection(option, 'discord', undefined)).toBe(false);
   });
 });
 
 describe('formatDeliveryLabel', () => {
   const conversation: ScheduledTaskConversationOption = {
-    conversationId: 'weixin-bot-1:direct:wxid_zhangsan@im.wechat',
-    platform: 'weixin',
+    conversationId: 'telegram-bot-1:direct:user_johndoe',
+    platform: 'telegram',
     coworkSessionId: 'session-1',
     lastActiveAt: 1,
     peerKind: 'direct',
-    displayName: '张三',
+    displayName: 'John Doe',
   };
 
   test('resolves the saved target to the friendly conversation name', () => {
     const label = formatDeliveryLabel(
       {
         mode: DeliveryMode.Announce,
-        channel: 'openclaw-weixin',
-        to: 'WxId_ZhangSan@im.wechat',
+        channel: 'telegram',
+        to: 'User_JohnDoe',
       },
       { conversations: [conversation] },
     );
-    expect(label).toContain('张三');
-    expect(label).not.toContain('WxId_ZhangSan');
+    expect(label).toContain('John Doe');
+    expect(label).not.toContain('User_JohnDoe');
   });
 
   test('falls back to the parsed target when no conversation matches', () => {
     const label = formatDeliveryLabel(
-      { mode: DeliveryMode.Announce, channel: 'openclaw-weixin', to: 'someone-else@im.wechat' },
+      { mode: DeliveryMode.Announce, channel: 'telegram', to: 'someone-else' },
       { conversations: [conversation] },
     );
     expect(label).toContain('someone-else');
@@ -177,14 +177,14 @@ describe('formatDeliveryLabel', () => {
 
   test('shows the channel instance name the form picker uses, without mode jargon', () => {
     const channels = [
-      { value: 'feishu', label: '1 号', accountId: 'acc-1' },
-      { value: 'feishu', label: '2 号', accountId: 'acc-2' },
+      { value: 'discord', label: 'Instance 1', accountId: 'acc-1' },
+      { value: 'discord', label: 'Instance 2', accountId: 'acc-2' },
     ];
     const label = formatDeliveryLabel(
-      { mode: DeliveryMode.Announce, channel: 'feishu', accountId: 'acc-2', to: 'wangning' },
+      { mode: DeliveryMode.Announce, channel: 'discord', accountId: 'acc-2', to: 'wangning' },
       { channels },
     );
-    expect(label).toContain('2 号');
+    expect(label).toContain('Instance 2');
     expect(label).toContain('wangning');
     expect(label).not.toContain(i18nService.t('scheduledTasksFormDeliveryModeAnnounce'));
   });
@@ -201,13 +201,13 @@ describe('formatDateTimeMinute', () => {
 describe('stripCronMetadataPrefix', () => {
   test('removes the cron routing tag from the prompt', () => {
     expect(
-      stripCronMetadataPrefix('[cron:e49b2a3b-0030 科技早报] 请收集并总结新闻'),
-    ).toBe('请收集并总结新闻');
+      stripCronMetadataPrefix('[cron:e49b2a3b-0030 Tech briefing] Collect and summarize the news'),
+    ).toBe('Collect and summarize the news');
   });
 
   test('keeps text without a cron tag unchanged', () => {
-    expect(stripCronMetadataPrefix('普通消息 [cron:not-a-prefix]')).toBe(
-      '普通消息 [cron:not-a-prefix]',
+    expect(stripCronMetadataPrefix('Regular message [cron:not-a-prefix]')).toBe(
+      'Regular message [cron:not-a-prefix]',
     );
   });
 

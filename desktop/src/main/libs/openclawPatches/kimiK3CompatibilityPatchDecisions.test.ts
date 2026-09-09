@@ -17,8 +17,8 @@ describe('Kimi K3 OpenClaw compatibility patch decisions', () => {
   });
 
   test('keeps the plugin API owner separate from concrete model transports', () => {
-    expectPatchContains('openclaw-lobsterai-model-compat-api.patch', [
-      'LOBSTERAI_MODEL_COMPAT_API = "lobsterai-model-compat"',
+    expectPatchContains('openclaw-swen-model-compat-api.patch', [
+      'SWEN_MODEL_COMPAT_API = "swen-model-compat"',
       'MODEL_TRANSPORT_APIS',
       'ModelTransportApiSchema',
       'keeps a provider API owner out of model transport resolution',

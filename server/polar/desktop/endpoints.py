@@ -1,13 +1,13 @@
 """The desktop app's server, on Claidor.
 
-The vendored LobsterAI app (`desktop/`) is pointed at
+The desktop app, Swen (`desktop/`), is pointed at
 `{BASE_URL}/desktop` and calls the paths below exactly as its own
 server mode does. Sign-in works like this:
 
 1. The app opens the browser at `/desktop/login?redirect_uri=…&state=…`
    (the redirect is a loopback callback the app is listening on; when
    it could not open one it comes with no redirect and expects a
-   `lobsterai://` deep link instead).
+   `swen://` deep link instead).
 2. With no Claidor session in the browser, that page sends the person
    to the web login and asks to be returned to.
 3. With one, it mints a five-minute, single-use code and redirects to
@@ -21,15 +21,22 @@ forwards to Anthropic with Claidor's key and meters what came back.
 
 from __future__ import annotations
 
+import functools
 import json
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlunparse
 
 import httpx
 import structlog
 from fastapi import Depends, Query, Request
-from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (
+    JSONResponse,
+    RedirectResponse,
+    Response,
+    StreamingResponse,
+)
 from pydantic import BaseModel, ConfigDict
 
 from polar.auth.dependencies import WebUserOrAnonymous
@@ -59,8 +66,8 @@ log = structlog.get_logger()
 router = APIRouter(prefix="/desktop", tags=["desktop", APITag.private])
 
 ANTHROPIC_VERSION = "2023-06-01"
-DEEP_LINK_CALLBACK = "lobsterai://auth/callback"
-CLIENT_VERSION_HEADER = "x-lobsterai-client-version"
+DEEP_LINK_CALLBACK = "swen://auth/callback"
+CLIENT_VERSION_HEADER = "x-swen-client-version"
 
 
 # --- helpers ---------------------------------------------------------------
@@ -111,7 +118,7 @@ def _callback_target(redirect_uri: str | None) -> str | None:
     ):
         return redirect_uri.strip()
     if (
-        parsed.scheme == "lobsterai"
+        parsed.scheme == "swen"
         and parsed.netloc == "auth"
         and parsed.path == "/callback"
     ):
@@ -300,6 +307,85 @@ async def client_banner_snapshot(request: Request) -> JSONResponse:
             "banners": [],
         }
     )
+
+
+@router.get("/api/updates/check", name="desktop:updates")
+@router.get("/api/updates/check-manual", name="desktop:updates_manual")
+async def updates_check() -> JSONResponse:
+    """The app asks whether a newer Swen exists.
+
+    Claidor does not publish desktop releases yet, so the answer is « nothing
+    newer »: the app reads ``data.value`` and treats ``None`` as up to date.
+    """
+    return _ok({"value": None})
+
+
+@router.get("/api/skill-store", name="desktop:skill_store")
+async def skill_store() -> JSONResponse:
+    """The skill marketplace. Empty until Claidor curates one.
+
+    The app reads ``data.value.marketplace`` (skills to install),
+    ``data.value.localSkill`` (names and descriptions for the bundled skills)
+    and ``data.value.marketTags``.
+    """
+    return _ok({"value": {"marketplace": [], "localSkill": [], "marketTags": []}})
+
+
+@router.get("/api/kit-store", name="desktop:kit_store")
+async def kit_store() -> JSONResponse:
+    """The kit store. Empty until Claidor curates one.
+
+    The app reads ``data.value.kits`` and appends its own built-in kits.
+    """
+    return _ok({"value": {"kits": []}})
+
+
+_MCP_MARKETPLACE_PATH = Path(__file__).with_name("mcp_marketplace.json")
+
+
+@functools.cache
+def _mcp_marketplace() -> dict[str, Any]:
+    """The MCP server catalogue the app offers (categories and servers)."""
+    return json.loads(_MCP_MARKETPLACE_PATH.read_text(encoding="utf-8"))
+
+
+@router.get("/api/mcp-marketplace", name="desktop:mcp_marketplace")
+async def mcp_marketplace() -> JSONResponse:
+    """The MCP marketplace. The app reads ``data.value.categories`` and
+    ``data.value.servers``; the catalogue lives next to this module."""
+    return _ok({"value": _mcp_marketplace()})
+
+
+@router.get("/api/analytics/events", name="desktop:analytics_events")
+async def analytics_events() -> Response:
+    """Usage events the app sends when the person allows usage statistics.
+
+    Acknowledged and discarded: Claidor keeps no usage analytics for the
+    desktop app yet. The app only checks that the request succeeded.
+    """
+    return Response(status_code=204)
+
+
+@router.get("/api/client-activities/slot", name="desktop:activity_slot")
+async def activity_slot() -> JSONResponse:
+    """Promotional activities (daily check-in, startup credits). Swen runs none."""
+    return _ok({"slotState": "empty", "serverTime": utc_now().isoformat()})
+
+
+@router.get(
+    "/api/client-activities/{activity_code}/context",
+    name="desktop:activity_context",
+)
+async def activity_context(activity_code: str) -> JSONResponse:
+    return _fail(404, f"No activity named {activity_code!r}.", status=404)
+
+
+@router.post(
+    "/api/client-activities/{activity_code}/actions/{action_id}",
+    name="desktop:activity_action",
+)
+async def activity_action(activity_code: str, action_id: str) -> JSONResponse:
+    return _fail(404, f"No activity named {activity_code!r}.", status=404)
 
 
 # --- the model proxy --------------------------------------------------------

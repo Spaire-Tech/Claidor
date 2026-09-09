@@ -43,15 +43,15 @@ describe('parseProposedPlanBlock', () => {
 
   test('ignores inline tag mentions before the real plan block', () => {
     expect(parseProposedPlanBlock([
-      'Plan Mode 要求我输出 <proposed_plan> 格式。',
-      '下面才是真正的计划内容：',
+      'Plan Mode asks me to answer in the <proposed_plan> format.',
+      'The real plan follows:',
       '<proposed_plan>',
       'Summary',
-      '讲解一元二次方程。',
+      'Explain quadratic equations.',
       '</proposed_plan>',
     ].join('\n'))).toEqual({
-      visibleText: 'Plan Mode 要求我输出 <proposed_plan> 格式。\n下面才是真正的计划内容：',
-      planText: 'Summary\n讲解一元二次方程。',
+      visibleText: 'Plan Mode asks me to answer in the <proposed_plan> format.\nThe real plan follows:',
+      planText: 'Summary\nExplain quadratic equations.',
       ignoredInlineOpenTagCount: 1,
     });
   });
@@ -64,28 +64,20 @@ describe('parseProposedPlanBlock', () => {
     });
   });
 
-  test('normalizes section labels followed by Chinese connector text', () => {
-    expect(parseProposedPlanBlock('<proposed_plan>\nSummary为「麦田烘焙」制作单页展示网页。\n</proposed_plan>')).toEqual({
-      visibleText: '',
-      planText: '## Summary\n\n为「麦田烘焙」制作单页展示网页。',
-      didNormalizePlanText: true,
-    });
-  });
-
   test('normalizes heading-style section labels with bodies on the same line', () => {
     expect(parseProposedPlanBlock([
       '<proposed_plan>',
-      '## Summary 创建生日派对邀请函网页。 ## Implementation Approach 1. 创建 index.html。',
+      '## Summary Create a birthday party invitation page. ## Implementation Approach 1. Create index.html.',
       '</proposed_plan>',
     ].join('\n'))).toEqual({
       visibleText: '',
       planText: [
         '## Summary',
         '',
-        '创建生日派对邀请函网页。',
+        'Create a birthday party invitation page.',
         '## Implementation Approach',
         '',
-        '1. 创建 index.html。',
+        '1. Create index.html.',
       ].join('\n'),
       didNormalizePlanText: true,
     });
@@ -94,17 +86,17 @@ describe('parseProposedPlanBlock', () => {
   test('normalizes bold section labels with bodies on the same line', () => {
     expect(parseProposedPlanBlock([
       '<proposed_plan>',
-      '**Summary** 制作季度汇报 PPT。 **Implementation Approach** 1. 使用 html2pptx 工作流。',
+      '**Summary** Build the quarterly review deck. **Implementation Approach** 1. Use the html2pptx workflow.',
       '</proposed_plan>',
     ].join('\n'))).toEqual({
       visibleText: '',
       planText: [
         '## Summary',
         '',
-        '制作季度汇报 PPT。',
+        'Build the quarterly review deck.',
         '## Implementation Approach',
         '',
-        '1. 使用 html2pptx 工作流。',
+        '1. Use the html2pptx workflow.',
       ].join('\n'),
       didNormalizePlanText: true,
     });
@@ -114,19 +106,19 @@ describe('parseProposedPlanBlock', () => {
     expect(parseProposedPlanBlock([
       '<proposed_plan>',
       '**Summary**',
-      '为「麦田烘焙」制作一个温馨文艺风格的单页展示网站。',
+      'Build a warm, artsy single-page showcase site for "Wheatfield Bakery".',
       '',
       '**Implementation Approach**',
-      '1. 使用纯 HTML + CSS + JS 创建 index.html。',
+      '1. Create index.html with plain HTML + CSS + JS.',
       '</proposed_plan>',
     ].join('\n'))).toEqual({
       visibleText: '',
       planText: [
         '## Summary',
-        '为「麦田烘焙」制作一个温馨文艺风格的单页展示网站。',
+        'Build a warm, artsy single-page showcase site for "Wheatfield Bakery".',
         '',
         '## Implementation Approach',
-        '1. 使用纯 HTML + CSS + JS 创建 index.html。',
+        '1. Create index.html with plain HTML + CSS + JS.',
       ].join('\n'),
       didNormalizePlanText: true,
     });
@@ -136,20 +128,20 @@ describe('parseProposedPlanBlock', () => {
 describe('normalizeProposedPlanMarkdown', () => {
   test('moves known section bodies to the line after the heading', () => {
     expect(normalizeProposedPlanMarkdown([
-      '**Summary:** 生成科普内容。',
+      '**Summary:** Generate educational content.',
       '## Implementation Approach: Use structured sections.',
-      '**Summary** 为客户创建单页网站。',
+      '**Summary** Create a single-page site for the client.',
       'Key Changes: Add examples.',
     ].join('\n'))).toBe([
       '## Summary',
       '',
-      '生成科普内容。',
+      'Generate educational content.',
       '## Implementation Approach',
       '',
       'Use structured sections.',
       '## Summary',
       '',
-      '为客户创建单页网站。',
+      'Create a single-page site for the client.',
       '## Key Changes',
       '',
       'Add examples.',

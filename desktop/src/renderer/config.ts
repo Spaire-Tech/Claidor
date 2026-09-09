@@ -91,14 +91,14 @@ export const normalizeFontPreference = (
 
 export const resolveArtifactAutoPreviewEnabled = (value: unknown): boolean => value !== false;
 
-// 配置类型定义
+// Configuration type definitions
 export interface AppConfig {
-  // API 配置
+  // API configuration
   api: {
     key: string;
     baseUrl: string;
   };
-  // 模型配置
+  // Model configuration
   model: {
     availableModels: Array<{
       id: string;
@@ -114,41 +114,41 @@ export interface AppConfig {
   };
   providers?: Record<string, ProviderConfig>;
   providerModelMigrationVersions?: Record<string, number>;
-  // 主题配置
+  // Theme configuration
   theme: 'light' | 'dark' | 'system';
   // Optional for configs created before exact default theme persistence was introduced.
   themeId?: string;
-  // UI 字号配置
+  // UI font size configuration
   uiFontSize?: number;
-  // 已应用的 UI 字号强制重置版本(见 UI_FONT_SIZE_MIGRATION_VERSION)
+  // Applied UI font size forced-reset version (see UI_FONT_SIZE_MIGRATION_VERSION)
   uiFontSizeMigrationVersion?: number;
-  // 代码字体大小配置
+  // Code font size configuration
   codeFontSize?: number;
-  // 已应用的代码字号强制重置版本(见 CODE_FONT_SIZE_MIGRATION_VERSION)
+  // Applied code font size forced-reset version (see CODE_FONT_SIZE_MIGRATION_VERSION)
   codeFontSizeMigrationVersion?: number;
-  // 语言配置
+  // Language configuration
   language: 'zh' | 'en';
-  // 是否使用系统代理
+  // Whether to use the system proxy
   useSystemProxy: boolean;
-  // 是否在生成可预览内容后自动打开 Artifact 预览面板
+  // Whether to open the Artifact preview panel automatically after previewable content is generated
   artifactAutoPreviewEnabled?: boolean;
-  // 是否启用 SQLite 自动备份与恢复
+  // Whether SQLite automatic backup and restore is enabled
   sqliteAutoBackupEnabled?: boolean;
-  // 是否允许发送基础产品使用统计
+  // Whether basic product usage statistics may be sent
   usageAnalyticsEnabled?: boolean;
-  // 通知配置
+  // Notification configuration
   notificationSettings?: NotificationSettings;
-  // 浏览器与网页访问配置
+  // Browser and web access configuration
   browserWebAccess: BrowserWebAccessConfig;
-  // 语言初始化标记 (用于判断是否是首次启动)
+  // Language initialization flag (used to detect the first launch)
   language_initialized?: boolean;
-  // 应用配置
+  // App configuration
   app: {
     port: number;
     isDevelopment: boolean;
     testMode?: boolean;
   };
-  // 快捷键配置
+  // Shortcut configuration
   shortcuts?: ShortcutConfig;
 }
 
@@ -170,7 +170,7 @@ const buildDefaultProviders = (): AppConfig['providers'] => {
   return providers;
 };
 
-// 默认配置
+// Default configuration
 export const defaultConfig: AppConfig = {
   api: {
     key: '',
@@ -200,10 +200,10 @@ export const defaultConfig: AppConfig = {
     port: 3000,
     isDevelopment: process.env.NODE_ENV === 'development',
     // Default to production (official) services. Source-launched dev builds run
-    // with NODE_ENV=development, but must not auto-target the internal-only test
-    // endpoints (*.inner.youdao.com) — external/open-source users can't reach
-    // them. Flip test mode via the hidden switch in Settings → About when the
-    // internal endpoints are actually needed.
+    // with NODE_ENV=development, but must not auto-target test mode, which
+    // points at the local Claidor dev servers (http://127.0.0.1:8000 API,
+    // http://127.0.0.1:3000 web app). Flip test mode via the hidden switch in
+    // Settings → About when the local dev servers are actually needed.
     testMode: false,
   },
   shortcuts: {
@@ -249,7 +249,7 @@ export const defaultConfig: AppConfig = {
   }
 };
 
-// 配置存储键
+// Configuration storage keys
 export const CONFIG_KEYS = {
   APP_CONFIG: 'app_config',
   AUTH: 'auth_state',
@@ -258,7 +258,7 @@ export const CONFIG_KEYS = {
   SKILLS: 'skills',
 };
 
-// 模型提供商分类
+// Model provider categories
 export const EN_PRIORITY_PROVIDERS = ['openai', 'anthropic', 'gemini'] as const;
 // Provider lists derived from ProviderRegistry — single source of truth
 export const CHINA_PROVIDERS = [...ProviderRegistry.idsByRegion('china')] as const;
@@ -272,12 +272,12 @@ export const getVisibleProviders = (language: 'zh' | 'en'): readonly string[] =>
 };
 
 /**
- * 判断 provider key 是否为自定义提供商（custom_0, custom_1, ...）
+ * Whether a provider key denotes a custom provider (custom_0, custom_1, ...)
  */
 export const isCustomProvider = (key: string): boolean => key.startsWith('custom_');
 
 /**
- * 从 custom_N key 中提取默认显示名称（如 custom_0 → "Custom0"）
+ * Derive the default display name from a custom_N key (e.g. custom_0 → "Custom0")
  */
 export const getCustomProviderDefaultName = (key: string): string => {
   const suffix = key.replace('custom_', '');
@@ -285,8 +285,8 @@ export const getCustomProviderDefaultName = (key: string): string => {
 };
 
 /**
- * 获取 provider 的显示名称，自定义 provider 优先使用 displayName，
- * 内置 provider 使用首字母大写的 key。
+ * Get the display name of a provider: custom providers prefer displayName,
+ * built-in providers use the capitalized key.
  */
 export const getProviderDisplayName = (
   providerKey: string,

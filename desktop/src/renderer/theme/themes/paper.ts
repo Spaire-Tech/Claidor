@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const paper: ThemeDefinition = {
   meta: {
     id: 'paper',
-    name: '纸墨素白',
-    description: '极简纸质感主题，专注阅读与书写',
+    name: 'Paper',
+    description: 'A minimal paper-like theme for focused reading and writing',
     appearance: 'light',
     preview: ['#fafaf9', '#18181b', '#71717a', '#a1a1aa'],
   },

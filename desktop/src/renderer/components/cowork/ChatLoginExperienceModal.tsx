@@ -24,7 +24,7 @@ const ChatLoginExperienceModal: React.FC<ChatLoginExperienceModalProps> = ({
       <div className="relative z-10 flex flex-col items-center">
         <img
           src="logo.png"
-          alt="LobsterAI"
+          alt="Swen"
           width={56}
           height={56}
           className="rounded-xl select-none"
@@ -32,7 +32,7 @@ const ChatLoginExperienceModal: React.FC<ChatLoginExperienceModalProps> = ({
         />
         <h2 className="mt-6 text-[25px] font-semibold leading-[1.25] tracking-normal sm:text-[28px]">
           <span className="block">{i18nService.t('chatLoginExperienceTitlePrefix')}</span>
-          <span className="block text-[31px] font-bold leading-[1.15] sm:text-[34px]">LobsterAI</span>
+          <span className="block text-[31px] font-bold leading-[1.15] sm:text-[34px]">Swen</span>
         </h2>
         <p className="mt-12 text-base leading-8 tracking-normal text-secondary sm:mt-16 sm:text-[17px]">
           <span className="block">{i18nService.t('chatLoginExperiencePromoLine1')}</span>

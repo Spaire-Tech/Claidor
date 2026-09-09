@@ -97,8 +97,8 @@ test('plan mode allows read-only shell inspection on macOS and Windows', () => {
   expect(isPlanModeSafeExecCommand('Get-ChildItem src')).toBe(true);
   expect(isPlanModeSafeExecCommand('findstr /s PlanMode src\\*.ts')).toBe(true);
   expect(isPlanModeSafeExecCommand(
-    'ls -la /Users/admin/lobsterai/project/wheat-bakery/ 2>/dev/null; '
-    + 'echo "---"; cat /Users/admin/lobsterai/project/index.html 2>/dev/null | head -50',
+    'ls -la /Users/admin/swen/project/wheat-bakery/ 2>/dev/null; '
+    + 'echo "---"; cat /Users/admin/swen/project/index.html 2>/dev/null | head -50',
   )).toBe(true);
   expect(isPlanModeSafeExecCommand('git status --short && rg -n "Plan Mode" src | head -20')).toBe(true);
   expect(isPlanModeSafeExecCommand('Get-Content app.log 2>$null | Select-Object -First 20')).toBe(true);
@@ -133,22 +133,22 @@ test('plan mode normalizes missing proposed plan tags without nesting them', () 
 });
 
 test('plan mode rejects a preface and accepts a structured implementation plan', () => {
-  expect(isPlanModeResponseComplete('Workspace 是空的，新项目。设计方向明确。')).toBe(false);
+  expect(isPlanModeResponseComplete('The workspace is empty; this is a new project. The design direction is clear.')).toBe(false);
   const completePlan = `<proposed_plan>
-## 概述
-- 为麦田烘焙制作单页展示网站，覆盖品牌介绍、产品、评价与联系信息，并保持内容层级清晰。
-## 实施方案
-- 使用语义化 HTML、CSS 变量和少量原生 JavaScript，构建无需额外运行时依赖的响应式页面。
-- 首屏使用品牌标题、口号和菜单锚点按钮，桌面端与移动端采用不同的稳定高度和留白。
-## 关键改动
-- 产品区域使用六项响应式网格，卡片包含图片占位、名称、价格、描述以及完整 hover 状态。
-- 关于、评价、联系区域分别处理图文布局、星级可访问文本、营业信息和地图占位。
-- 奶油色、棕色和绿色点缀通过设计变量管理，标题使用手写风格字体并提供系统字体回退。
-## 验证
-- 验证菜单锚点、键盘焦点、移动端单列布局、桌面端网格以及常见窄屏下不存在横向溢出。
-- 检查图片缺失回退、文本增长、颜色对比度和 prefers-reduced-motion 设置。
-## 假设与待确认
-- 默认交付单文件静态页面，产品图片、地址和电话先使用易替换占位内容。
+## Overview
+- Build a single-page showcase site for the Wheatfield Bakery covering the brand story, products, reviews and contact details while keeping the content hierarchy clear.
+## Implementation Approach
+- Use semantic HTML, CSS variables and a little vanilla JavaScript to build a responsive page with no extra runtime dependencies.
+- The hero uses the brand title, tagline and menu anchor buttons, with different stable heights and spacing on desktop and mobile.
+## Key Changes
+- The product section uses a six-item responsive grid; cards carry an image placeholder, name, price, description and a full hover state.
+- The about, reviews and contact sections handle image-and-text layouts, accessible star-rating text, opening hours and a map placeholder.
+- Cream, brown and green accents are managed through design variables; headings use a handwritten typeface with a system font fallback.
+## Validation
+- Verify menu anchors, keyboard focus, the single-column mobile layout, the desktop grid and the absence of horizontal overflow on common narrow screens.
+- Check the missing-image fallback, text growth, colour contrast and the prefers-reduced-motion setting.
+## Assumptions and Open Questions
+- Deliver a single static HTML file by default; product images, address and phone number use easily replaceable placeholders.
 </proposed_plan>`;
   expect(isPlanModeResponseComplete(completePlan)).toBe(true);
 });
@@ -160,7 +160,7 @@ test('plan mode treats OpenClaw failure finals as system errors instead of propo
   session.status = 'running';
   const adapter = new OpenClawRuntimeAdapter(store, {});
   adapter.on('error', vi.fn());
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-lock-final');
   turn.planMode = true;
   adapter.activeTurns.set(session.id, turn);
@@ -198,11 +198,11 @@ test('plan mode assistant snapshot jitter keeps one visible plan message', () =>
     '<proposed_plan>',
     '**Summary**',
     '',
-    '根据产品图为小红书平台撰写宣传文案。',
+    'Write promotional copy for a social media post based on the product photos.',
     '',
     '**Implementation Approach**',
-    '1. 分析图片视觉元素与产品信息。',
-    '2. 规划文案结构、卖点和禁用风险。',
+    '1. Analyze the visual elements of the photos and the product information.',
+    '2. Plan the copy structure, selling points and wording to avoid.',
     '</proposed_plan>',
     '',
   ].join('\n');
@@ -210,10 +210,10 @@ test('plan mode assistant snapshot jitter keeps one visible plan message', () =>
   expect(nextSnapshot.length).toBeLessThan(firstSnapshot.length);
 
   const { session, store } = createReconcileStore([
-    { id: 'msg-1', type: 'user', content: '帮我写小红书文案', timestamp: 1, metadata: {} },
+    { id: 'msg-1', type: 'user', content: 'Write social media copy for me', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-plan-snapshot');
   turn.planMode = true;
   adapter.activeTurns.set(session.id, turn);
@@ -281,13 +281,13 @@ test('pickPersistedAssistantSegment: empty branches', () => {
 
 test('normalizeOpenClawRuntimeErrorMessage maps empty SSE parser errors', () => {
   expect(normalizeOpenClawRuntimeErrorMessage('Unexpected end of JSON input')).toContain(
-    '空的 SSE data 帧',
+    'empty SSE data frame',
   );
   expect(
     normalizeOpenClawRuntimeErrorMessage(
       'Provider stream emitted too many empty SSE data frames.',
     ),
-  ).toContain('连续返回空的 SSE data 帧');
+  ).toContain('kept returning empty SSE data frames');
 });
 
 test('normalizeOpenClawRuntimeErrorMessage keeps unrelated errors unchanged', () => {
@@ -329,7 +329,7 @@ test('length final preserves partial output and tool results without completing 
     stop: () => {},
     request: historyRequest,
   };
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-length');
   const completeSpy = vi.fn();
   const errorSpy = vi.fn();
@@ -368,7 +368,7 @@ test('length final preserves partial output and tool results without completing 
     stopReason: 'length',
   });
   const systemMessage = session.messages.find((message) => message.type === 'system');
-  expect(systemMessage?.content).toContain('部分结果已保留');
+  expect(systemMessage?.content).toContain('The partial result was preserved');
   expect(systemMessage?.metadata).toMatchObject({
     isFinal: true,
     isIncomplete: true,
@@ -383,7 +383,7 @@ test('length final marks a thinking-only partial response as truncated', async (
   ]);
   session.status = 'running';
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-thinking-length');
   adapter.on('error', vi.fn());
   adapter.activeTurns.set(session.id, turn);
@@ -436,7 +436,7 @@ test('length final reconciles reasoning and tool work present only in gateway hi
   ]);
   session.status = 'running';
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const historyRequest = vi.fn(async () => ({
     messages: [
       { role: 'user', content: 'finish and verify the task' },
@@ -543,7 +543,7 @@ test('length final does not synthesize a closing plan tag from truncated gateway
   ]);
   session.status = 'running';
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   adapter.gatewayClient = {
     start: () => {},
     stop: () => {},
@@ -598,7 +598,7 @@ test('length final does not overwrite an explicit stop while history is pending'
   ]);
   session.status = 'running';
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   adapter.gatewayClient = {
     start: () => {},
     stop: () => {},
@@ -652,18 +652,18 @@ test('length final does not overwrite an explicit stop while history is pending'
 test('resolveOpenClawRuntimeErrorMessage restores recent quota error hidden by OpenClaw generic error', () => {
   consumeRecentOpenClawTokenProxyQuotaError();
   __openClawTokenProxyTestUtils.rememberQuotaError({
-    message: '本月积分已用完',
+    message: 'Monthly credits have been used up',
     code: 40202,
   });
 
   expect(resolveOpenClawRuntimeErrorMessage('LLM request failed.')).toContain(
-    '积分额度已用完',
+    'Your credits have been used up',
   );
   expect(consumeRecentOpenClawTokenProxyQuotaError()).toBeNull();
 });
 
-test('resolveOpenClawRuntimeErrorMessage classifies raw LobsterAI quota errors', () => {
-  expect(resolveOpenClawRuntimeErrorMessage('本月积分已用完')).toContain('积分额度已用完');
+test('resolveOpenClawRuntimeErrorMessage classifies raw Swen quota errors', () => {
+  expect(resolveOpenClawRuntimeErrorMessage('Monthly credits have been used up')).toContain('Your credits have been used up');
 });
 
 test('resolveOpenClawRuntimeError keeps structured enterprise quota reason', () => {
@@ -671,7 +671,7 @@ test('resolveOpenClawRuntimeError keeps structured enterprise quota reason', () 
     errorCode: '41606',
     rawErrorPreview: '41606 member monthly quota exhausted',
   })).toEqual({
-    message: expect.stringContaining('成员周期额度'),
+    message: expect.stringContaining('member period quota'),
     enterpriseQuotaError: {
       code: 41606,
       reason: 'member_monthly_quota_exhausted',
@@ -682,7 +682,7 @@ test('resolveOpenClawRuntimeError keeps structured enterprise quota reason', () 
 test('buildRuntimeErrorMetadata preserves technical details with enterprise quota fields', () => {
   const errorDetail = {
     rawErrorMessage: 'LLM request failed.',
-    provider: 'lobsterai-server',
+    provider: 'swen-server',
     httpCode: '402',
   };
 
@@ -707,35 +707,35 @@ test('resolveOpenClawRuntimeErrorMessage classifies generic error from safe OAut
     model: 'MiniMax-M3',
     providerRuntimeFailureKind: 'auth_invalid_token',
     rawErrorPreview: '401 Unauthorized',
-  })).toContain('OAuth 授权已失效');
+  })).toContain('OAuth authorization is invalid');
 });
 
-test('resolveOpenClawRuntimeErrorMessage identifies expired LobsterAI plan login', () => {
+test('resolveOpenClawRuntimeErrorMessage identifies expired Swen plan login', () => {
   expect(resolveOpenClawRuntimeErrorMessage('LLM request failed.', {
-    provider: 'lobsterai-server',
+    provider: 'swen-server',
     model: 'MiniMax-M3',
     failoverReason: 'auth',
     httpCode: '401',
     rawErrorPreview: '401 status code (no body)',
-  })).toContain('登录状态已过期');
+  })).toContain('Your login session has expired');
 });
 
-test('resolveOpenClawRuntimeErrorMessage keeps LobsterAI HTTP 403 as model access denial', () => {
+test('resolveOpenClawRuntimeErrorMessage keeps Swen HTTP 403 as model access denial', () => {
   expect(resolveOpenClawRuntimeErrorMessage('LLM request failed.', {
-    provider: 'lobsterai-server',
+    provider: 'swen-server',
     model: 'MiniMax-M3',
     failoverReason: 'auth',
     httpCode: '403',
     rawErrorPreview: '403 Forbidden',
-  })).toContain('无权访问该模型');
+  })).toContain('not allowed to access the selected model');
 });
 
 test('resolveOpenClawRuntimeErrorMessage classifies generic error from safe model access metadata', () => {
   expect(resolveOpenClawRuntimeErrorMessage('LLM request failed.', {
     provider: 'minimax',
     model: 'MiniMax-M2.7',
-    rawErrorPreview: '403 您无权访问MiniMax-M2.7。',
-  })).toContain('无权访问该模型');
+    rawErrorPreview: '403 You do not have access to MiniMax-M2.7.',
+  })).toContain('not allowed to access the selected model');
 });
 
 test('resolveOpenClawRuntimeErrorMessage classifies generic error from safe timeout metadata', () => {
@@ -743,7 +743,7 @@ test('resolveOpenClawRuntimeErrorMessage classifies generic error from safe time
     provider: 'minimax',
     model: 'MiniMax-M2.7',
     providerRuntimeFailureKind: 'timeout',
-  })).toContain('模型响应超时');
+  })).toContain('The model response timed out');
 });
 
 test('resolveOpenClawRuntimeErrorMessage classifies generic error from safe fetch failure preview', () => {
@@ -751,7 +751,7 @@ test('resolveOpenClawRuntimeErrorMessage classifies generic error from safe fetc
     provider: 'minimax',
     model: 'MiniMax-M2.7',
     rawErrorPreview: 'TypeError: fetch failed; causeName=ConnectTimeoutError; causeCode=UND_ERR_CONNECT_TIMEOUT',
-  })).toContain('网络连接失败');
+  })).toContain('Network connection failed');
 });
 
 test('resolveOpenClawRuntimeErrorMessage prefers Qwen 503 capacity evidence over rate-limit wrappers', () => {
@@ -762,7 +762,7 @@ test('resolveOpenClawRuntimeErrorMessage prefers Qwen 503 capacity evidence over
   const displayMessage = resolveOpenClawRuntimeErrorMessage(
     '⚠️ API rate limit reached. Please try again later.',
     {
-      provider: 'lobsterai-server',
+      provider: 'swen-server',
       model: 'qwen3.5-plus-2026-04-20',
       failoverReason: 'rate_limit',
       providerRuntimeFailureKind: 'rate_limit',
@@ -770,28 +770,28 @@ test('resolveOpenClawRuntimeErrorMessage prefers Qwen 503 capacity evidence over
     },
   );
 
-  expect(displayMessage).toContain('模型服务当前繁忙或容量不足');
-  expect(displayMessage).not.toContain('请求过于频繁');
+  expect(displayMessage).toContain('temporarily busy or at capacity');
+  expect(displayMessage).not.toContain('Too many requests');
 });
 
 test('resolveOpenClawRuntimeErrorMessage keeps genuine HTTP 429 errors as rate limits', () => {
   expect(resolveOpenClawRuntimeErrorMessage(
     '⚠️ API rate limit reached. Please try again later.',
     {
-      provider: 'lobsterai-server',
+      provider: 'swen-server',
       model: 'qwen3.5-plus-2026-04-20',
       failoverReason: 'rate_limit',
       providerRuntimeFailureKind: 'rate_limit',
       httpCode: '429',
       rawErrorPreview: '429 Too Many Requests',
     },
-  )).toContain('请求过于频繁');
+  )).toContain('Too many requests');
 });
 
 test('resolveOpenClawRuntimeErrorMessage prefers safe metadata over stale quota signal', () => {
   consumeRecentOpenClawTokenProxyQuotaError();
   __openClawTokenProxyTestUtils.rememberQuotaError({
-    message: '本月积分已用完',
+    message: 'Monthly credits have been used up',
     code: 40202,
   });
 
@@ -799,7 +799,7 @@ test('resolveOpenClawRuntimeErrorMessage prefers safe metadata over stale quota 
     provider: 'minimax',
     model: 'MiniMax-M2.7',
     providerRuntimeFailureKind: 'timeout',
-  })).toContain('模型响应超时');
+  })).toContain('The model response timed out');
   expect(consumeRecentOpenClawTokenProxyQuotaError()).toBeNull();
 });
 
@@ -851,11 +851,11 @@ test('buildOpenClawRuntimeErrorDetail returns undefined when the error passed th
 test('buildOpenClawRuntimeErrorDetail annotates the model source from gateway provider metadata', () => {
   const detail = buildOpenClawRuntimeErrorDetail(
     'LLM request failed.',
-    '请求过于频繁，请稍后再试。',
+    'Too many requests. Please try again later.',
     { provider: 'custom', model: 'kimi-k2.5', httpCode: '429' },
     {
       resolveModelSource: (providerId) => (providerId === 'custom'
-        ? { source: 'custom-provider', providerName: 'custom', providerDisplayName: '我的中转' }
+        ? { source: 'custom-provider', providerName: 'custom', providerDisplayName: 'My relay' }
         : undefined),
     },
   );
@@ -864,14 +864,14 @@ test('buildOpenClawRuntimeErrorDetail annotates the model source from gateway pr
     provider: 'custom',
     model: 'kimi-k2.5',
     modelSource: 'custom-provider',
-    providerDisplayName: '我的中转',
+    providerDisplayName: 'My relay',
   });
 });
 
 test('buildOpenClawRuntimeErrorDetail falls back to the turn model ref when metadata lacks provider info', () => {
   const detail = buildOpenClawRuntimeErrorDetail(
     'Agent failed before reply: something broke.',
-    '任务执行出错，请重试。如果问题持续出现，请检查模型配置。',
+    'Task failed due to an unexpected error. Please retry. If the issue persists, check your model configuration.',
     undefined,
     {
       fallbackModelRef: 'zai/glm-5',
@@ -958,8 +958,8 @@ test('resolveOpenClawToolLoopErrorOverride leaves unrelated errors untouched', (
 
 test('estimateOpenClawChatSendFrameBytes measures the full RPC frame as UTF-8 JSON', () => {
   const params = {
-    sessionKey: 'agent:main:lobsterai:session-1',
-    message: '分析这张图',
+    sessionKey: 'agent:main:swen:session-1',
+    message: 'Analyze this résumé image',
     deliver: false,
     idempotencyKey: 'run-1',
     attachments: [{
@@ -1069,12 +1069,12 @@ test('outbound prompt injects continuity capsule bridge before the current reque
   };
   internal.bridgedSessions.add('session-1');
 
-  const prompt = await internal.buildOutboundPrompt('session-1', '继续');
+  const prompt = await internal.buildOutboundPrompt('session-1', 'Continue');
 
-  expect(prompt).toContain('[LobsterAI continuity context after context compaction]');
+  expect(prompt).toContain('[Swen continuity context after context compaction]');
   expect(prompt).toContain('Improve compaction continuity.');
   expect(prompt).toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.ts');
-  expect(prompt.indexOf('[LobsterAI continuity context after context compaction]')).toBeLessThan(
+  expect(prompt.indexOf('[Swen continuity context after context compaction]')).toBeLessThan(
     prompt.indexOf('[Current user request]'),
   );
 });
@@ -1091,7 +1091,7 @@ test('outbound prompt injects full capsule first and mini capsule on later turns
       lastSource: ContinuityCapsuleSource.PostCompaction,
       lastCompactedAt: 100,
       currentObjective: 'Improve compaction continuity.',
-      recentUserRequests: ['继续优化压缩后的代码现场'],
+      recentUserRequests: ['Keep improving the post-compaction code context'],
       userConstraints: ['Do not change the user model.'],
       decisions: ['Use a session capsule row.'],
       completedFacts: ['Capsule bridge has been injected after compaction.'],
@@ -1116,13 +1116,13 @@ test('outbound prompt injects full capsule first and mini capsule on later turns
   };
   internal.bridgedSessions.add('session-1');
 
-  const firstPrompt = await internal.buildOutboundPrompt('session-1', '继续');
-  const secondPrompt = await internal.buildOutboundPrompt('session-1', '再继续');
+  const firstPrompt = await internal.buildOutboundPrompt('session-1', 'Continue');
+  const secondPrompt = await internal.buildOutboundPrompt('session-1', 'Continue again');
 
-  expect(firstPrompt).toContain('[LobsterAI continuity context after context compaction]');
+  expect(firstPrompt).toContain('[Swen continuity context after context compaction]');
   expect(firstPrompt).toContain('Touched files:');
   expect(firstPrompt).toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.ts');
-  expect(secondPrompt).toContain('[LobsterAI brief continuity context after context compaction]');
+  expect(secondPrompt).toContain('[Swen brief continuity context after context compaction]');
   expect(secondPrompt).toContain('Improve compaction continuity.');
   expect(secondPrompt).toContain('Inject capsule bridge.');
   expect(secondPrompt).not.toContain('Touched files:');
@@ -1144,7 +1144,7 @@ test('outbound prompt injects workspace rehydration bridge before the current re
       lastSource: ContinuityCapsuleSource.PostCompaction,
       lastCompactedAt: 100,
       currentObjective: 'Improve compaction continuity.',
-      recentUserRequests: ['继续优化压缩后的代码现场'],
+      recentUserRequests: ['Keep improving the post-compaction code context'],
       userConstraints: [],
       decisions: [],
       completedFacts: [],
@@ -1169,11 +1169,11 @@ test('outbound prompt injects workspace rehydration bridge before the current re
   };
   internal.bridgedSessions.add('session-1');
 
-  const prompt = await internal.buildOutboundPrompt('session-1', '继续');
+  const prompt = await internal.buildOutboundPrompt('session-1', 'Continue');
 
-  expect(prompt).toContain('[LobsterAI workspace state after context compaction]');
+  expect(prompt).toContain('[Swen workspace state after context compaction]');
   expect(prompt).toContain('src/main/libs/agentEngine/coworkWorkspaceRehydration.ts');
-  expect(prompt.indexOf('[LobsterAI workspace state after context compaction]')).toBeLessThan(
+  expect(prompt.indexOf('[Swen workspace state after context compaction]')).toBeLessThan(
     prompt.indexOf('[Current user request]'),
   );
 });
@@ -1218,11 +1218,11 @@ test('outbound prompt injects workspace rehydration bridge once per compaction',
   };
   internal.bridgedSessions.add('session-1');
 
-  const firstPrompt = await internal.buildOutboundPrompt('session-1', '继续');
-  const secondPrompt = await internal.buildOutboundPrompt('session-1', '再继续');
+  const firstPrompt = await internal.buildOutboundPrompt('session-1', 'Continue');
+  const secondPrompt = await internal.buildOutboundPrompt('session-1', 'Continue again');
 
-  expect(firstPrompt).toContain('[LobsterAI workspace state after context compaction]');
-  expect(secondPrompt).not.toContain('[LobsterAI workspace state after context compaction]');
+  expect(firstPrompt).toContain('[Swen workspace state after context compaction]');
+  expect(secondPrompt).not.toContain('[Swen workspace state after context compaction]');
 });
 
 test('outbound prompt injects top-k evidence bridge before the current request', async () => {
@@ -1233,7 +1233,7 @@ test('outbound prompt injects top-k evidence bridge before the current request',
         {
           id: 'user-1',
           type: 'user',
-          content: '用户要求麦田烘焙页面支持中日双语切换。',
+          content: 'The user wants the bakery page to support switching between English and Japanese.',
           timestamp: 1,
         },
         {
@@ -1254,7 +1254,7 @@ test('outbound prompt injects top-k evidence bridge before the current request',
       lastSource: ContinuityCapsuleSource.PostCompaction,
       lastCompactedAt: 100,
       currentObjective: 'Fix the failing bakery page test.',
-      recentUserRequests: ['继续处理测试失败'],
+      recentUserRequests: ['Keep working on the test failure'],
       userConstraints: [],
       decisions: [],
       completedFacts: [],
@@ -1279,11 +1279,11 @@ test('outbound prompt injects top-k evidence bridge before the current request',
   };
   internal.bridgedSessions.add('session-1');
 
-  const prompt = await internal.buildOutboundPrompt('session-1', '继续处理 src/pages/Bakery.tsx 的 npm test failed');
+  const prompt = await internal.buildOutboundPrompt('session-1', 'Continue with the npm test failed in src/pages/Bakery.tsx');
 
-  expect(prompt).toContain('[LobsterAI retrieved evidence after context compaction]');
+  expect(prompt).toContain('[Swen retrieved evidence after context compaction]');
   expect(prompt).toContain('npm test failed in src/pages/Bakery.tsx');
-  expect(prompt.indexOf('[LobsterAI retrieved evidence after context compaction]')).toBeLessThan(
+  expect(prompt.indexOf('[Swen retrieved evidence after context compaction]')).toBeLessThan(
     prompt.indexOf('[Current user request]'),
   );
 });
@@ -1325,7 +1325,7 @@ test('outbound prompt skips continuity capsule bridge before compaction', async 
 
   const prompt = await internal.buildOutboundPrompt('session-1', 'hello');
 
-  expect(prompt).not.toContain('[LobsterAI continuity context after context compaction]');
+  expect(prompt).not.toContain('[Swen continuity context after context compaction]');
 });
 
 test('context usage ignores non-checkpoint compactionCount', () => {
@@ -1333,7 +1333,7 @@ test('context usage ignores non-checkpoint compactionCount', () => {
   const usage = (adapter as unknown as {
     buildContextUsageFromSessionRow: (sessionId: string, row: Record<string, unknown>) => Record<string, unknown>;
   }).buildContextUsageFromSessionRow('session-1', {
-    key: 'agent:main:lobsterai:session-1',
+    key: 'agent:main:swen:session-1',
     tokenCount: 53_250,
     contextTokens: 60_000,
     compactionCount: 1,
@@ -1348,7 +1348,7 @@ test('context usage uses checkpoint compaction count', () => {
   const usage = (adapter as unknown as {
     buildContextUsageFromSessionRow: (sessionId: string, row: Record<string, unknown>) => Record<string, unknown>;
   }).buildContextUsageFromSessionRow('session-1', {
-    key: 'agent:main:lobsterai:session-1',
+    key: 'agent:main:swen:session-1',
     tokenCount: 20_000,
     contextTokens: 60_000,
     compactionCount: 9,
@@ -1482,7 +1482,7 @@ test('fork compaction lookup prefers an available summary over a newer empty che
 });
 
 test('context compaction diagnostic logs safe checkpoint metadata without summary text', async () => {
-  const sessionKey = 'agent:main:lobsterai:diag-safe';
+  const sessionKey = 'agent:main:swen:diag-safe';
   const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
   adapter.gatewayClient = {
     request: async () => ({
@@ -1524,7 +1524,7 @@ test('context compaction diagnostic logs safe checkpoint metadata without summar
 });
 
 test('context compaction diagnostic does not reuse checkpoint metadata for no-op compaction', async () => {
-  const sessionKey = 'agent:main:lobsterai:diag-noop';
+  const sessionKey = 'agent:main:swen:diag-noop';
   const requests: string[] = [];
   const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
   adapter.gatewayClient = {
@@ -1575,7 +1575,7 @@ test('context compaction diagnostic does not reuse checkpoint metadata for no-op
 });
 
 test('context compaction diagnostic fetches checkpoint details when list omits summary', async () => {
-  const sessionKey = 'agent:main:lobsterai:diag-get';
+  const sessionKey = 'agent:main:swen:diag-get';
   const requests: Array<{ method: string; params: unknown }> = [];
   const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
   adapter.gatewayClient = {
@@ -1625,7 +1625,7 @@ test('context compaction diagnostic fetches checkpoint details when list omits s
 });
 
 test('context compaction diagnostic lookup failure warns without throwing', async () => {
-  const sessionKey = 'agent:main:lobsterai:diag-failure';
+  const sessionKey = 'agent:main:swen:diag-failure';
   const error = new Error('gateway unavailable');
   const adapter = new OpenClawRuntimeAdapter({} as never, {} as never);
   adapter.gatewayClient = {
@@ -1674,7 +1674,7 @@ test('context usage resolves historical sessions with targeted lookup', async ()
     createdAt: 1,
     updatedAt: 1,
   };
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const requests: Array<{ method: string; params: Record<string, unknown> }> = [];
   const adapter = new OpenClawRuntimeAdapter({
     getSession: (sessionId: string) => (sessionId === session.id ? session : null),
@@ -1725,7 +1725,7 @@ test('context usage does not fall back to recent session lookup when targeted lo
     createdAt: 1,
     updatedAt: 1,
   };
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const requests: Array<{ method: string; params: Record<string, unknown> }> = [];
   const adapter = new OpenClawRuntimeAdapter({
     getSession: (sessionId: string) => (sessionId === session.id ? session : null),
@@ -1765,7 +1765,7 @@ test('context usage coalesces concurrent refreshes for the same session', async 
     createdAt: 1,
     updatedAt: 1,
   };
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const requests: Array<{ method: string; params: Record<string, unknown> }> = [];
   let releaseRequest: (() => void) | null = null;
   const requestBlocked = new Promise<void>((resolve) => {
@@ -1822,7 +1822,7 @@ test('usage metadata falls back to latest assistant when preferred id was replac
     ) => Promise<void>;
   }).applyUsageMetadataFromFinal(
     session.id,
-    `agent:main:lobsterai:${session.id}`,
+    `agent:main:swen:${session.id}`,
     'stale-message-id',
     80_262,
     391,
@@ -2039,14 +2039,14 @@ test('patchSession uses the persisted IM channel session key after runtime cache
     persistedSessionKey: 'agent:main:feishu:dm:ou_123',
   });
 
-  await adapter.patchSession('session-1', { model: 'lobsterai-server/qwen3.6-plus-YoudaoInner' });
+  await adapter.patchSession('session-1', { model: 'swen-server/qwen3.6-plus-YoudaoInner' });
 
   expect(requests).toEqual([
     {
       method: 'sessions.patch',
       params: {
         key: 'agent:main:feishu:dm:ou_123',
-        model: 'lobsterai-server/qwen3.6-plus-YoudaoInner',
+        model: 'swen-server/qwen3.6-plus-YoudaoInner',
       },
     },
   ]);
@@ -2059,20 +2059,20 @@ test('patchSession sends model and thinking level atomically', async () => {
   });
 
   const result = await adapter.patchSession('session-1', {
-    model: 'lobsterai-server/deepseek-v4-flash',
+    model: 'swen-server/deepseek-v4-flash',
     thinkingLevel: 'max',
   });
 
   expect(requests[0]).toEqual({
     method: 'sessions.patch',
     params: {
-      key: 'agent:main:lobsterai:session-1',
-      model: 'lobsterai-server/deepseek-v4-flash',
+      key: 'agent:main:swen:session-1',
+      model: 'swen-server/deepseek-v4-flash',
       thinkingLevel: 'max',
     },
   });
   expect(result).toEqual({
-    modelOverride: 'lobsterai-server/deepseek-v4-flash',
+    modelOverride: 'swen-server/deepseek-v4-flash',
     thinkingLevel: 'max',
   });
 });
@@ -2083,7 +2083,7 @@ test('patchSession rejects IM channel sessions when the real OpenClaw key is mis
     persistedSessionKey: null,
   });
 
-  await expect(adapter.patchSession('session-1', { model: 'lobsterai-server/qwen3.6-plus-YoudaoInner' }))
+  await expect(adapter.patchSession('session-1', { model: 'swen-server/qwen3.6-plus-YoudaoInner' }))
     .rejects.toThrow('Cannot patch IM channel session because the OpenClaw session key is missing.');
 
   expect(requests).toHaveLength(0);
@@ -2100,7 +2100,7 @@ test('patchSession keeps managed-key fallback for normal Cowork sessions', async
   expect(requests[0]).toEqual({
     method: 'sessions.patch',
     params: {
-      key: 'agent:main:lobsterai:session-1',
+      key: 'agent:main:swen:session-1',
       model: 'moonshot/kimi-k2.6',
     },
   });
@@ -2111,7 +2111,7 @@ test('interactive RPCs use the managed key for an idle scheduled session and its
     scheduledTaskId: 'daily-monitor',
   });
   const cronRunKey = 'agent:main:cron:daily-monitor:run:run-42';
-  const managedKey = 'agent:main:lobsterai:session-1';
+  const managedKey = 'agent:main:swen:session-1';
   adapter.rememberSessionKey('session-1', cronRunKey);
 
   await adapter.patchSession('session-1', { model: 'moonshot/kimi-k2.6' });
@@ -2209,7 +2209,7 @@ test('pollChannelSessions syncs channel row model into the local session overrid
         return {
           sessions: [{
             key: sessionKey,
-            modelProvider: 'lobsterai-server',
+            modelProvider: 'swen-server',
             model: 'kimi-k2.6-YoudaoInner',
           }],
         };
@@ -2229,11 +2229,11 @@ test('pollChannelSessions syncs channel row model into the local session overrid
 
   await adapter.pollChannelSessions();
 
-  expect(session.modelOverride).toBe('lobsterai-server/kimi-k2.6-YoudaoInner');
+  expect(session.modelOverride).toBe('swen-server/kimi-k2.6-YoudaoInner');
   expect(getUpdateSessionCalls()).toEqual([
     {
       sessionId: session.id,
-      patch: { modelOverride: 'lobsterai-server/kimi-k2.6-YoudaoInner' },
+      patch: { modelOverride: 'swen-server/kimi-k2.6-YoudaoInner' },
       options: { touchUpdatedAt: false },
     },
   ]);
@@ -2241,12 +2241,12 @@ test('pollChannelSessions syncs channel row model into the local session overrid
 
 test('pollChannelSessions clears stale override when channel row matches the agent default model', async () => {
   const sessionKey = 'agent:main:feishu:dm:ou_123';
-  const defaultModel = 'lobsterai-server/deepseek-v4-flash-YoudaoInner';
+  const defaultModel = 'swen-server/deepseek-v4-flash-YoudaoInner';
   const { session, store, getUpdateSessionCalls } = createReconcileStore([], {
     agentModel: defaultModel,
     sessionId: 'session-1',
   });
-  session.modelOverride = 'lobsterai-server/qwen3.7-max-YoudaoInner';
+  session.modelOverride = 'swen-server/qwen3.7-max-YoudaoInner';
   const adapter = new OpenClawRuntimeAdapter(store, {});
   adapter.gatewayClient = {
     start: () => {},
@@ -2254,7 +2254,7 @@ test('pollChannelSessions clears stale override when channel row matches the age
     request: async () => ({
       sessions: [{
         key: sessionKey,
-        modelProvider: 'lobsterai-server',
+        modelProvider: 'swen-server',
         model: 'deepseek-v4-flash-YoudaoInner',
       }],
     }),
@@ -2552,7 +2552,7 @@ test('sessions.changed IM status handling excludes desktop, cron, main, subagent
   };
 
   for (const sessionKey of [
-    `agent:main:lobsterai:${session.id}`,
+    `agent:main:swen:${session.id}`,
     'agent:main:cron:job-1:run:run-1',
     'agent:main:main',
     'agent:main:subagent:run-1',
@@ -2970,7 +2970,7 @@ function createRunTurnAdapter(options: {
       ? {
         id: 'main',
         name: 'Main',
-        model: options.agentModel ?? 'lobsterai-server/qwen3.5-plus-YoudaoInner',
+        model: options.agentModel ?? 'swen-server/qwen3.5-plus-YoudaoInner',
       }
       : null),
     updateAgent: () => {},
@@ -3018,7 +3018,7 @@ function createRunTurnAdapter(options: {
           : 'run-1';
         const sessionKey = typeof requestParams.sessionKey === 'string'
           ? requestParams.sessionKey
-          : 'agent:main:lobsterai:session-1';
+          : 'agent:main:swen:session-1';
         if (options.autoFinalizeChatSend !== false) {
           queueMicrotask(() => {
             (adapter as unknown as {
@@ -3052,7 +3052,7 @@ function createRunTurnAdapter(options: {
   if (options.cachedModel) {
     adapter.sessionModelPatchStateBySession.set(session.id, {
       model: options.cachedModel,
-      sessionKey: 'agent:main:lobsterai:session-1',
+      sessionKey: 'agent:main:swen:session-1',
       source: options.sessionModelOverride ? 'sessionOverride' : 'agentModel',
       confirmedAt: Date.now(),
     });
@@ -3071,7 +3071,7 @@ test('BTW side results and terminal events stay isolated from an active main tur
   const { adapter, requests, session } = createRunTurnAdapter({
     autoFinalizeChatSend: false,
   });
-  const sessionKey = 'agent:main:lobsterai:session-1';
+  const sessionKey = 'agent:main:swen:session-1';
   const activeMainTurn = {
     runId: 'main-run',
     sessionKey,
@@ -3173,7 +3173,7 @@ test('unknown BTW side results cannot mark an unrelated main run as terminal', (
       payload: {
         kind: 'btw',
         runId: 'main-run',
-        sessionKey: 'agent:main:lobsterai:session-1',
+        sessionKey: 'agent:main:swen:session-1',
         agentId: 'main',
         question: 'Unexpected side result',
         text: 'Unexpected answer',
@@ -3195,7 +3195,7 @@ test('BTW rejects reuse of a recently completed run id', async () => {
   const { adapter, requests } = createRunTurnAdapter({
     autoFinalizeChatSend: false,
   });
-  const sessionKey = 'agent:main:lobsterai:session-1';
+  const sessionKey = 'agent:main:swen:session-1';
 
   await expect(
     adapter.submitBtw('session-1', 'First question?', 'btw-reused-run'),
@@ -3229,7 +3229,7 @@ test('stopping a BTW request aborts only its run and leaves the active main turn
   const { adapter, requests, session } = createRunTurnAdapter({
     autoFinalizeChatSend: false,
   });
-  const sessionKey = 'agent:main:lobsterai:session-1';
+  const sessionKey = 'agent:main:swen:session-1';
   const activeMainTurn = {
     runId: 'main-run',
     sessionKey,
@@ -3323,7 +3323,7 @@ test('BTW validates identifiers, accepts large questions, and rejects mismatched
       payload: {
         kind: 'btw',
         runId: 'external-btw-run',
-        sessionKey: 'agent:main:lobsterai:session-1',
+        sessionKey: 'agent:main:swen:session-1',
         agentId: 'main',
         question: largeQuestion,
         text: 'External answer',
@@ -3335,7 +3335,7 @@ test('BTW validates identifiers, accepts large questions, and rejects mismatched
       payload: {
         kind: 'btw',
         runId: 'btw-run-match',
-        sessionKey: 'agent:main:lobsterai:another-session',
+        sessionKey: 'agent:main:swen:another-session',
         agentId: 'main',
         question: largeQuestion,
         text: 'Wrong answer',
@@ -3354,7 +3354,7 @@ test('BTW validates identifiers, accepts large questions, and rejects mismatched
       payload: {
         kind: 'btw',
         runId: 'btw-run-match',
-        sessionKey: 'agent:main:lobsterai:session-1',
+        sessionKey: 'agent:main:swen:session-1',
         agentId: 'main',
         question: 'Runtime-normalized question?',
         text: 'x'.repeat(COWORK_BTW_RESULT_MAX_CHARS + 1),
@@ -3526,7 +3526,7 @@ test('approved implementation exits plan mode and does not request another plan'
     metadata: {},
   });
 
-  await adapter.continueSession('session-1', '按照计划实现吧', {
+  await adapter.continueSession('session-1', 'Implement the plan', {
     systemPrompt: '# Plan Mode\nDo not edit files. Output a proposed plan.',
   });
 
@@ -3539,7 +3539,7 @@ test('approved implementation exits plan mode and does not request another plan'
 test('normal conversation does not receive plan mode instructions', async () => {
   const { adapter, requests } = createRunTurnAdapter();
 
-  await adapter.continueSession('session-1', '帮我解释一下这个项目的结构', {
+  await adapter.continueSession('session-1', 'Explain the structure of this project', {
     systemPrompt: 'You are a helpful coding assistant.',
   });
 
@@ -3631,17 +3631,17 @@ test('continueSession strips NUL characters from the persisted message and chat.
   const nul = String.fromCharCode(0);
   const { adapter, requests, session } = createRunTurnAdapter();
 
-  await adapter.continueSession('session-1', `请分析${nul}这段${nul}${nul}文本`);
+  await adapter.continueSession('session-1', `Please analyze${nul} this${nul}${nul} text`);
 
   const chatSendRequests = requests.filter((request) => request.method === 'chat.send');
   expect(chatSendRequests).toHaveLength(1);
   const outbound = chatSendRequests[0].params.message as string;
   expect(outbound).not.toContain(nul);
-  expect(outbound).toContain('请分析这段文本');
+  expect(outbound).toContain('Please analyze this text');
 
   const userMessages = session.messages.filter((message) => message.type === 'user');
   expect(userMessages).toHaveLength(1);
-  expect(userMessages[0].content).toBe('请分析这段文本');
+  expect(userMessages[0].content).toBe('Please analyze this text');
 });
 
 test('continueSession blocks an oversized active transcript before gateway requests', async () => {
@@ -3653,7 +3653,7 @@ test('continueSession blocks an oversized active transcript before gateway reque
     await fs.promises.writeFile(transcriptPath, '');
     await fs.promises.truncate(transcriptPath, OpenClawTranscriptSafetyLimit.HardBytes);
     await fs.promises.writeFile(path.join(sessionsDir, 'sessions.json'), JSON.stringify({
-      'agent:main:lobsterai:session-1': {
+      'agent:main:swen:session-1': {
         sessionId: 'openclaw-session-1',
         sessionFile: transcriptPath,
       },
@@ -3680,7 +3680,7 @@ test('continueSession blocks an oversized active transcript before gateway reque
 });
 
 test('continueSession patches a session override before chat.send even when the model cache matches', async () => {
-  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const model = 'swen-server/qwen3.6-plus-YoudaoInner';
   const { adapter, requests } = createRunTurnAdapter({
     sessionModelOverride: model,
     cachedModel: model,
@@ -3694,14 +3694,14 @@ test('continueSession patches a session override before chat.send even when the 
     'chat.send',
   ]);
   expect(requests[0].params).toEqual({
-    key: 'agent:main:lobsterai:session-1',
+    key: 'agent:main:swen:session-1',
     model,
     reasoningLevel: 'stream',
   });
 });
 
 test('continueSession continues after a redundant session override patch times out', async () => {
-  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const model = 'swen-server/qwen3.6-plus-YoudaoInner';
   const { adapter, requests } = createRunTurnAdapter({
     sessionModelOverride: model,
     cachedModel: model,
@@ -3718,7 +3718,7 @@ test('continueSession continues after a redundant session override patch times o
 });
 
 test('continueSession rejects an unconfirmed session override patch timeout before chat.send', async () => {
-  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const model = 'swen-server/qwen3.6-plus-YoudaoInner';
   const { adapter, requests } = createRunTurnAdapter({
     sessionModelOverride: model,
     modelPatchError: new Error('gateway request timeout for sessions.patch'),
@@ -3732,7 +3732,7 @@ test('continueSession rejects an unconfirmed session override patch timeout befo
 });
 
 test('continueSession waits for an in-flight model patch before chat.send', async () => {
-  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const model = 'swen-server/qwen3.6-plus-YoudaoInner';
   const {
     adapter,
     requests,
@@ -3789,14 +3789,14 @@ test('continueSession stopped before active turn creation does not send chat', a
 
 test('continueSession sends the session cwd to OpenClaw chat.send', async () => {
   const { adapter, requests } = createRunTurnAdapter({
-    sessionCwd: '/tmp/lobsterai-selected-project',
+    sessionCwd: '/tmp/swen-selected-project',
   });
 
   await adapter.continueSession('session-1', 'hello');
 
   const chatSend = requests.find((request) => request.method === 'chat.send');
   expect(chatSend?.params).toMatchObject({
-    cwd: path.resolve('/tmp/lobsterai-selected-project'),
+    cwd: path.resolve('/tmp/swen-selected-project'),
   });
 });
 
@@ -3816,7 +3816,7 @@ test('continueSession clears the pending turn when chat.send fails immediately',
 });
 
 test('pre-send model patch uses the extended send timeout while patchSession keeps the default', async () => {
-  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const model = 'swen-server/qwen3.6-plus-YoudaoInner';
   const { adapter, requests } = createRunTurnAdapter({
     sessionModelOverride: model,
   });
@@ -3831,7 +3831,7 @@ test('pre-send model patch uses the extended send timeout while patchSession kee
 });
 
 test('continueSession sends after a slow pre-send model patch eventually succeeds', async () => {
-  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const model = 'swen-server/qwen3.6-plus-YoudaoInner';
   const {
     adapter,
     requests,
@@ -3858,7 +3858,7 @@ test('continueSession sends after a slow pre-send model patch eventually succeed
 });
 
 test('continueSession aborts silently when the session is stopped during the model patch wait', async () => {
-  const model = 'lobsterai-server/qwen3.6-plus-YoudaoInner';
+  const model = 'swen-server/qwen3.6-plus-YoudaoInner';
   const {
     adapter,
     requests,
@@ -4099,7 +4099,7 @@ test('incomplete plan mode output requests one hidden completion retry', async (
         return {
           messages: [{
             role: 'assistant',
-            content: 'Workspace 是空的，新项目。设计方向明确。',
+            content: 'The workspace is empty; this is a new project. The design direction is clear.',
           }],
         };
       }
@@ -4110,10 +4110,10 @@ test('incomplete plan mode output requests one hidden completion retry', async (
       stop: () => {},
       request,
     };
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-plan-short');
     turn.planMode = true;
-    turn.currentText = 'Workspace 是空的，新项目。设计方向明确。';
+    turn.currentText = 'The workspace is empty; this is a new project. The design direction is clear.';
     turn.currentAssistantSegmentText = turn.currentText;
     turn.agentAssistantTextLength = turn.currentText.length;
     adapter.activeTurns.set(session.id, turn);
@@ -4145,7 +4145,7 @@ test('incomplete plan mode output requests one hidden completion retry', async (
     await expect(adapter.retryIncompletePlanModeResponse(
       session.id,
       turn,
-      '仍然只有一句前言。',
+      'Still only a one-sentence preface.',
     )).resolves.toBe(false);
     expect(request.mock.calls.filter(([method]) => method === 'chat.send')).toHaveLength(1);
   } finally {
@@ -4171,7 +4171,7 @@ test('incomplete final after plan recovery waits for the automatic continuation'
         }],
       })),
     };
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-plan-recovery');
     turn.planMode = true;
     turn.planModeRecoveryAttempted = true;
@@ -4236,7 +4236,7 @@ test('deferred plan recovery completion backfills the complete plan from history
       ],
     })),
   };
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-plan-recovery');
   turn.planMode = true;
   turn.planModeRecoveryAttempted = true;
@@ -4268,7 +4268,7 @@ test('plan mode does not request completion while a tool-use boundary is active'
     stop: () => {},
     request,
   };
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-plan-tools');
   turn.planMode = true;
   adapter.activeTurns.set(session.id, turn);
@@ -4282,7 +4282,7 @@ test('plan mode does not request completion while a tool-use boundary is active'
     message: {
       role: 'assistant',
       content: [
-        { type: 'text', text: '先检查项目结构。' },
+        { type: 'text', text: 'Check the project structure first.' },
         { type: 'toolCall', id: 'call-read', name: 'read', arguments: { path: 'README.md' } },
       ],
     },
@@ -4307,10 +4307,10 @@ test('failed plan mode recovery restores the original turn state', async () => {
         throw new Error('session busy');
       }),
     };
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-plan-original');
     turn.planMode = true;
-    turn.currentText = '计划生成前言。';
+    turn.currentText = 'Plan generation preface.';
     turn.currentAssistantSegmentText = turn.currentText;
     adapter.activeTurns.set(session.id, turn);
     adapter.sessionIdByRunId.set('run-plan-original', session.id);
@@ -4324,8 +4324,8 @@ test('failed plan mode recovery restores the original turn state', async () => {
 
     await expect(recoveryPromise).resolves.toBe(false);
     expect(turn.runId).toBe('run-plan-original');
-    expect(turn.currentText).toBe('计划生成前言。');
-    expect(turn.currentAssistantSegmentText).toBe('计划生成前言。');
+    expect(turn.currentText).toBe('Plan generation preface.');
+    expect(turn.currentAssistantSegmentText).toBe('Plan generation preface.');
     expect(turn.pendingRecoverableFollowup).toBe(false);
     expect(turn.pendingOpenClawRetry).toBe(false);
   } finally {
@@ -4334,7 +4334,7 @@ test('failed plan mode recovery restores the original turn state', async () => {
 });
 
 test('stopSession finalizes streamed assistant metadata with the active model', () => {
-  const model = 'lobsterai-server/qwen3.6-plus';
+  const model = 'swen-server/qwen3.6-plus';
   const { session, store } = createReconcileStore([
     { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
     {
@@ -4358,7 +4358,7 @@ test('stopSession finalizes streamed assistant metadata with the active model', 
   };
   adapter.on('messageUpdate', messageUpdateSpy);
 
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-stop');
   turn.model = model;
   turn.assistantMessageId = 'msg-2';
@@ -4531,9 +4531,9 @@ test('reconcileWithHistory: missing assistant message — triggers replace', asy
 test('reconcileWithHistory: syncs session_status model changes into the local session override', async () => {
   const sessionKey = 'agent:main:openclaw-weixin:bot-1:direct:user-1';
   const { session, store, getUpdateSessionCalls } = createReconcileStore([
-    { id: 'msg-1', type: 'user', content: '切成 kimi2.6', timestamp: 1, metadata: {} },
+    { id: 'msg-1', type: 'user', content: 'Switch to kimi2.6', timestamp: 1, metadata: {} },
   ]);
-  session.modelOverride = 'lobsterai-server/qwen3.7-max-YoudaoInner';
+  session.modelOverride = 'swen-server/qwen3.7-max-YoudaoInner';
 
   const adapter = new OpenClawRuntimeAdapter(store, {});
   adapter.channelSessionSync = {
@@ -4544,7 +4544,7 @@ test('reconcileWithHistory: syncs session_status model changes into the local se
     stop: () => {},
     request: async () => ({
       messages: [
-        { role: 'user', content: '切成 kimi2.6' },
+        { role: 'user', content: 'Switch to kimi2.6' },
         {
           role: 'toolResult',
           toolName: 'session_status',
@@ -4553,21 +4553,21 @@ test('reconcileWithHistory: syncs session_status model changes into the local se
             ok: true,
             changedModel: true,
             model: 'kimi-k2.6-YoudaoInner',
-            modelProvider: 'lobsterai-server',
-            modelOverride: 'lobsterai-server/kimi-k2.6-YoudaoInner',
+            modelProvider: 'swen-server',
+            modelOverride: 'swen-server/kimi-k2.6-YoudaoInner',
           },
         },
-        { role: 'assistant', content: '已经切好了', model: 'qwen3.7-max-YoudaoInner' },
+        { role: 'assistant', content: 'Switched.', model: 'qwen3.7-max-YoudaoInner' },
       ],
     }),
   };
 
   await adapter.reconcileWithHistory(session.id, sessionKey);
 
-  expect(session.modelOverride).toBe('lobsterai-server/kimi-k2.6-YoudaoInner');
+  expect(session.modelOverride).toBe('swen-server/kimi-k2.6-YoudaoInner');
   expect(getUpdateSessionCalls()).toContainEqual({
     sessionId: session.id,
-    patch: { modelOverride: 'lobsterai-server/kimi-k2.6-YoudaoInner' },
+    patch: { modelOverride: 'swen-server/kimi-k2.6-YoudaoInner' },
     options: { touchUpdatedAt: false },
   });
 });
@@ -4575,9 +4575,9 @@ test('reconcileWithHistory: syncs session_status model changes into the local se
 test('reconcileWithHistory: syncs model-snapshot entries without reading assistant text claims', async () => {
   const sessionKey = 'agent:main:feishu:dm:ou_123';
   const { session, store, getUpdateSessionCalls } = createReconcileStore([
-    { id: 'msg-1', type: 'user', content: '你现在是什么模型', timestamp: 1, metadata: {} },
+    { id: 'msg-1', type: 'user', content: 'Which model are you right now', timestamp: 1, metadata: {} },
   ]);
-  session.modelOverride = 'lobsterai-server/qwen3.7-max-YoudaoInner';
+  session.modelOverride = 'swen-server/qwen3.7-max-YoudaoInner';
 
   const adapter = new OpenClawRuntimeAdapter(store, {});
   adapter.channelSessionSync = {
@@ -4592,14 +4592,14 @@ test('reconcileWithHistory: syncs model-snapshot entries without reading assista
           type: 'custom',
           customType: 'model-snapshot',
           data: {
-            provider: 'lobsterai-server',
+            provider: 'swen-server',
             modelId: 'kimi-k2.6-YoudaoInner',
           },
         },
-        { role: 'user', content: '你现在是什么模型' },
+        { role: 'user', content: 'Which model are you right now' },
         {
           role: 'assistant',
-          content: '当前是 Kimi-K2.6',
+          content: 'Currently Kimi-K2.6',
           model: 'kimi-k2.6-YoudaoInner',
         },
       ],
@@ -4608,10 +4608,10 @@ test('reconcileWithHistory: syncs model-snapshot entries without reading assista
 
   await adapter.reconcileWithHistory(session.id, sessionKey);
 
-  expect(session.modelOverride).toBe('lobsterai-server/kimi-k2.6-YoudaoInner');
+  expect(session.modelOverride).toBe('swen-server/kimi-k2.6-YoudaoInner');
   expect(getUpdateSessionCalls()).toContainEqual({
     sessionId: session.id,
-    patch: { modelOverride: 'lobsterai-server/kimi-k2.6-YoudaoInner' },
+    patch: { modelOverride: 'swen-server/kimi-k2.6-YoudaoInner' },
     options: { touchUpdatedAt: false },
   });
 });
@@ -4619,9 +4619,9 @@ test('reconcileWithHistory: syncs model-snapshot entries without reading assista
 test('reconcileWithHistory: assistant text and message model metadata do not overwrite session override', async () => {
   const sessionKey = 'agent:main:feishu:dm:ou_123';
   const { session, store, getUpdateSessionCalls } = createReconcileStore([
-    { id: 'msg-1', type: 'user', content: '你现在是什么模型', timestamp: 1, metadata: {} },
+    { id: 'msg-1', type: 'user', content: 'Which model are you right now', timestamp: 1, metadata: {} },
   ]);
-  session.modelOverride = 'lobsterai-server/qwen3.7-max-YoudaoInner';
+  session.modelOverride = 'swen-server/qwen3.7-max-YoudaoInner';
 
   const adapter = new OpenClawRuntimeAdapter(store, {});
   adapter.channelSessionSync = {
@@ -4632,10 +4632,10 @@ test('reconcileWithHistory: assistant text and message model metadata do not ove
     stop: () => {},
     request: async () => ({
       messages: [
-        { role: 'user', content: '你现在是什么模型' },
+        { role: 'user', content: 'Which model are you right now' },
         {
           role: 'assistant',
-          content: '当前是 Kimi-K2.6',
+          content: 'Currently Kimi-K2.6',
           model: 'kimi-k2.6-YoudaoInner',
         },
       ],
@@ -4644,7 +4644,7 @@ test('reconcileWithHistory: assistant text and message model metadata do not ove
 
   await adapter.reconcileWithHistory(session.id, sessionKey);
 
-  expect(session.modelOverride).toBe('lobsterai-server/qwen3.7-max-YoudaoInner');
+  expect(session.modelOverride).toBe('swen-server/qwen3.7-max-YoudaoInner');
   expect(
     getUpdateSessionCalls().some((call) =>
       Object.prototype.hasOwnProperty.call(call.patch, 'modelOverride'),
@@ -4796,17 +4796,17 @@ test('reconcileWithHistory: content mismatch — triggers replace', async () => 
 });
 
 test('subagent history sync preserves visible local user text instead of raw outbound prompt', async () => {
-  const rawOutboundPrompt = `[LobsterAI system instructions]
+  const rawOutboundPrompt = `[Swen system instructions]
 hidden setup
 
-[Context bridge from previous LobsterAI conversation]
+[Context bridge from previous Swen conversation]
 previous context
 
 [Current user request]
-换一颗树再来一次`;
+Try again with a different tree`;
   const { session, store, getLastReplaceArgs } = createReconcileStore([
     { id: 'msg-1', type: 'user', content: rawOutboundPrompt, timestamp: 1, metadata: {} },
-    { id: 'msg-2', type: 'assistant', content: '新的作文内容', timestamp: 2, metadata: {} },
+    { id: 'msg-2', type: 'assistant', content: 'New essay content', timestamp: 2, metadata: {} },
   ]);
 
   const adapter = new OpenClawRuntimeAdapter(store, {});
@@ -4816,7 +4816,7 @@ previous context
     request: async () => ({
       messages: [
         { role: 'user', content: rawOutboundPrompt, timestamp: 10 },
-        { role: 'assistant', content: '新的作文内容', timestamp: 20 },
+        { role: 'assistant', content: 'New essay content', timestamp: 20 },
       ],
     }),
   };
@@ -4824,28 +4824,28 @@ previous context
   await adapter.syncSessionHistoryFromGateway(session.id, 'agent:writer:subagent:abc');
 
   expect(getLastReplaceArgs()?.authoritative).toEqual([
-    { role: 'user', text: '换一颗树再来一次', timestamp: 1, metadata: {} },
-    { role: 'assistant', text: '新的作文内容', timestamp: 20 },
+    { role: 'user', text: 'Try again with a different tree', timestamp: 1, metadata: {} },
+    { role: 'assistant', text: 'New essay content', timestamp: 20 },
   ]);
 });
 
 test('lifecycle fallback repairs managed session assistant text from history', async () => {
   const brokenTable = [
-    'OpenClaw 优缺点总结',
+    'OpenClaw pros and cons',
     '',
-    '| 维度 | 优点 ✅ | 缺点 ❌ |',
+    '| Aspect | Pros ✅ | Cons ❌ |',
     '|---------|',
-    '| 架构设计 | 单 Gateway | 单点风险 |',
+    '| Architecture | Single gateway | Single point of failure |',
   ].join('\n');
   const finalTable = [
-    'OpenClaw 优缺点总结',
+    'OpenClaw pros and cons',
     '',
-    '| 维度 | 优点 ✅ | 缺点 ❌ |',
+    '| Aspect | Pros ✅ | Cons ❌ |',
     '|------|---------|---------|',
-    '| 架构设计 | 单 Gateway | 单点风险 |',
+    '| Architecture | Single gateway | Single point of failure |',
   ].join('\n');
   const { session, store, getReplaceCallCount } = createReconcileStore([
-    { id: 'msg-1', type: 'user', content: '以表格总结 OpenClaw', timestamp: 1, metadata: {} },
+    { id: 'msg-1', type: 'user', content: 'Summarize OpenClaw in a table', timestamp: 1, metadata: {} },
     { id: 'msg-2', type: 'assistant', content: brokenTable, timestamp: 2, metadata: { isStreaming: true } },
   ]);
 
@@ -4855,7 +4855,7 @@ test('lifecycle fallback repairs managed session assistant text from history', a
     stop: () => {},
     request: async () => ({
       messages: [
-        { role: 'user', content: '以表格总结 OpenClaw' },
+        { role: 'user', content: 'Summarize OpenClaw in a table' },
         { role: 'assistant', content: finalTable },
       ],
     }),
@@ -4863,7 +4863,7 @@ test('lifecycle fallback repairs managed session assistant text from history', a
 
   const turn = {
     sessionId: session.id,
-    sessionKey: `agent:main:lobsterai:${session.id}`,
+    sessionKey: `agent:main:swen:${session.id}`,
     runId: 'run-1',
     turnToken: 1,
     startedAtMs: 1,
@@ -4907,7 +4907,7 @@ test('lifecycle fallback backfills missing tool result for the current turn', as
     { id: 'msg-2', type: 'tool_use', content: 'Using tool: read', timestamp: 2, metadata: { toolUseId: 'call-read' } },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
 
   adapter.gatewayClient = {
     start: () => {},
@@ -4971,7 +4971,7 @@ test('lifecycle fallback waits when history sync returns a short assistant segme
       { id: 'msg-3', type: 'tool_result', content: 'partial log output', timestamp: 3, metadata: { toolUseId: 'call-grep' } },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
     const maintenanceSpy = vi.fn();
 
@@ -5072,7 +5072,7 @@ test('chat final backfills only current-turn tool results from history', async (
       { id: 'msg-3', type: 'assistant', content: 'working', timestamp: 3, metadata: { isStreaming: true } },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const historyMessages = [
       { role: 'user', content: 'old question' },
       {
@@ -5133,7 +5133,7 @@ test('chat error maps non-managed OpenClaw session key to existing local session
     { id: 'msg-1', type: 'user', content: 'create a ppt', timestamp: 1, metadata: {} },
   ], { sessionId: localSessionId });
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const canonicalSessionKey = `agent:main:lobsterai:${session.id}`;
+  const canonicalSessionKey = `agent:main:swen:${session.id}`;
   const gatewaySessionKey = `agent:main:openai:${session.id}`;
   const errorSpy = vi.fn();
 
@@ -5162,7 +5162,7 @@ test('chat error replaces generic LLM failure using safe OpenClaw metadata', () 
     { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const errorSpy = vi.fn();
 
   session.status = 'running';
@@ -5182,8 +5182,8 @@ test('chat error replaces generic LLM failure using safe OpenClaw metadata', () 
 
   const persistedError = session.messages.find((message) => message.type === 'system');
   expect(session.status).toBe('error');
-  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('OAuth 授权已失效'));
-  expect(persistedError?.content).toContain('OAuth 授权已失效');
+  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('OAuth authorization is invalid'));
+  expect(persistedError?.content).toContain('OAuth authorization is invalid');
 });
 
 test('chat error can consume quota signal after lifecycle error schedules fallback', () => {
@@ -5194,7 +5194,7 @@ test('chat error can consume quota signal after lifecycle error schedules fallba
       { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const errorSpy = vi.fn();
     const abortRequest = vi.fn(async () => ({}));
 
@@ -5203,7 +5203,7 @@ test('chat error can consume quota signal after lifecycle error schedules fallba
     adapter.gatewayClient = { start: () => {}, stop: () => {}, request: abortRequest };
     adapter.activeTurns.set(session.id, createActiveTurn(session.id, sessionKey, 'run-quota'));
     __openClawTokenProxyTestUtils.rememberQuotaError({
-      message: '本月积分已用完',
+      message: 'Monthly credits have been used up',
       code: 40202,
     });
 
@@ -5221,8 +5221,8 @@ test('chat error can consume quota signal after lifecycle error schedules fallba
 
     const persistedError = session.messages.find((message) => message.type === 'system');
     expect(session.status).toBe('error');
-    expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('积分额度已用完'));
-    expect(persistedError?.content).toContain('立即升级/充值');
+    expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('Your credits have been used up'));
+    expect(persistedError?.content).toContain('Upgrade or recharge');
     expect(abortRequest).not.toHaveBeenCalled();
     expect(consumeRecentOpenClawTokenProxyQuotaError()).toBeNull();
   } finally {
@@ -5242,7 +5242,7 @@ test('stale chat error after a successful deferred final completes the turn inst
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const errorSpy = vi.fn();
     adapter.on('error', errorSpy);
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-stale-error');
     adapter.activeTurns.set(session.id, turn);
     adapter.latestTurnTokenBySession.set(session.id, turn.turnToken);
@@ -5251,7 +5251,7 @@ test('stale chat error after a successful deferred final completes the turn inst
       state: 'final',
       runId: 'run-stale-error',
       sessionKey,
-      message: { role: 'assistant', content: 'PPT 制作完成！' },
+      message: { role: 'assistant', content: 'The slide deck is done!' },
     }, 1);
     await vi.advanceTimersByTimeAsync(0);
     expect(turn.finalCompletionTimer).toBeDefined();
@@ -5287,7 +5287,7 @@ test('model idle timeout chat error still surfaces after a deferred final (text-
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const errorSpy = vi.fn();
     adapter.on('error', errorSpy);
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-idle-timeout');
     adapter.activeTurns.set(session.id, turn);
     adapter.latestTurnTokenBySession.set(session.id, turn.turnToken);
@@ -5296,7 +5296,7 @@ test('model idle timeout chat error still surfaces after a deferred final (text-
       state: 'final',
       runId: 'run-idle-timeout',
       sessionKey,
-      message: { role: 'assistant', content: '明白，接下来只走 bhumi-data 的只读查询。' },
+      message: { role: 'assistant', content: 'Understood, from now on only read-only queries against bhumi-data.' },
     }, 1);
     await vi.advanceTimersByTimeAsync(0);
     expect(turn.finalCompletionTimer).toBeDefined();
@@ -5333,7 +5333,7 @@ test('chat error with provider runtime failure metadata still surfaces after a d
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const errorSpy = vi.fn();
     adapter.on('error', errorSpy);
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-failover-meta');
     adapter.activeTurns.set(session.id, turn);
     adapter.latestTurnTokenBySession.set(session.id, turn.turnToken);
@@ -5380,7 +5380,7 @@ test('chat error still surfaces when a deferred final exists but the run reporte
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const errorSpy = vi.fn();
     adapter.on('error', errorSpy);
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-real-error');
     adapter.activeTurns.set(session.id, turn);
     adapter.latestTurnTokenBySession.set(session.id, turn.turnToken);
@@ -5422,7 +5422,7 @@ test('turn cleanup finalizes a running context compaction message as failed', ()
   const adapter = new OpenClawRuntimeAdapter(store, {});
   const errorSpy = vi.fn();
   adapter.on('error', errorSpy);
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-compaction-stuck');
   adapter.activeTurns.set(session.id, turn);
 
@@ -5453,7 +5453,7 @@ test('chat final stopReason=error replaces generic LLM failure using safe OpenCl
     { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const errorSpy = vi.fn();
 
   session.status = 'running';
@@ -5468,12 +5468,12 @@ test('chat final stopReason=error replaces generic LLM failure using safe OpenCl
     errorMessage: 'LLM request failed.',
     provider: 'minimax',
     model: 'MiniMax-M2.7',
-    rawErrorPreview: '403 您无权访问MiniMax-M2.7。',
+    rawErrorPreview: '403 You do not have access to MiniMax-M2.7.',
   }, 1);
   await Promise.resolve();
 
   expect(session.status).toBe('error');
-  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('无权访问该模型'));
+  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('not allowed to access the selected model'));
 });
 
 test('chat final terminal error persists visible system message when no assistant content exists', async () => {
@@ -5481,7 +5481,7 @@ test('chat final terminal error persists visible system message when no assistan
     { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const errorSpy = vi.fn();
 
   session.status = 'running';
@@ -5502,8 +5502,8 @@ test('chat final terminal error persists visible system message when no assistan
 
   const persistedError = session.messages.find((message) => message.type === 'system');
   expect(session.status).toBe('error');
-  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('模型响应超时'));
-  expect(persistedError?.content).toContain('模型响应超时');
+  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('The model response timed out'));
+  expect(persistedError?.content).toContain('The model response timed out');
 });
 
 test('chat final terminal error persists enterprise quota signal and technical details', async () => {
@@ -5511,7 +5511,7 @@ test('chat final terminal error persists enterprise quota signal and technical d
     { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
 
   session.status = 'running';
   adapter.on('error', vi.fn());
@@ -5528,7 +5528,7 @@ test('chat final terminal error persists enterprise quota signal and technical d
     stopReason: 'error',
     errorMessage: 'LLM request failed.',
     errorCode: 41607,
-    provider: 'lobsterai-server',
+    provider: 'swen-server',
     rawErrorPreview: '41607 enterprise pool exhausted',
   }, 1);
   await Promise.resolve();
@@ -5539,7 +5539,7 @@ test('chat final terminal error persists enterprise quota signal and technical d
     enterpriseErrorCode: 41607,
     enterpriseQuotaReason: 'enterprise_pool_exhausted',
     errorDetail: expect.objectContaining({
-      provider: 'lobsterai-server',
+      provider: 'swen-server',
       rawErrorMessage: 'LLM request failed.',
     }),
   }));
@@ -5550,7 +5550,7 @@ test('chat final stopReason error applies a captured tool-loop veto override', a
     { id: 'msg-1', type: 'user', content: 'watch the build', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-loop-error');
   session.status = 'running';
   adapter.on('error', vi.fn());
@@ -5596,7 +5596,7 @@ test('empty chat final stopReason error cannot defer into completed status', asy
       { id: 'msg-1', type: 'user', content: 'watch the build', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-empty-loop-error');
     session.status = 'running';
     adapter.on('error', vi.fn());
@@ -5641,7 +5641,7 @@ test('chat error ignores non-managed OpenClaw session key when local session id 
     { id: 'msg-1', type: 'user', content: 'create a ppt', timestamp: 1, metadata: {} },
   ], { sessionId: localSessionId });
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const canonicalSessionKey = `agent:main:lobsterai:${session.id}`;
+  const canonicalSessionKey = `agent:main:swen:${session.id}`;
   const gatewaySessionKey = `agent:main:openai:${unknownSessionId}`;
 
   session.status = 'running';
@@ -5665,7 +5665,7 @@ test('chat error ignores non-managed OpenClaw session key when agent id mismatch
     { id: 'msg-1', type: 'user', content: 'create a ppt', timestamp: 1, metadata: {} },
   ], { sessionId: localSessionId });
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const canonicalSessionKey = `agent:main:lobsterai:${session.id}`;
+  const canonicalSessionKey = `agent:main:swen:${session.id}`;
   const gatewaySessionKey = `agent:agent-2:openai:${session.id}`;
 
   session.status = 'running';
@@ -5694,7 +5694,7 @@ test('chat final repairs managed session assistant text from history', async () 
     ]);
 
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     adapter.gatewayClient = {
       start: () => {},
       stop: () => {},
@@ -5748,7 +5748,7 @@ test('chat final repairs last segment with corrupted committed text from tool ca
     ]);
 
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     adapter.gatewayClient = {
       start: () => {},
       stop: () => {},
@@ -5794,28 +5794,28 @@ test('chat final reuses committed assistant segment after sessions_yield history
   vi.useFakeTimers();
   try {
     const startupText = [
-      '已启动两个 subagent：',
+      'Started two subagents:',
       '',
-      '1. **random-stats** — 生成100个随机数并统计平均值/最大值/最小值，写入 `random_stats.txt`',
-      '2. **fun-facts** — 写3条编程冷知识到 `fun_facts.txt`',
+      '1. **random-stats** — generate 100 random numbers, compute the mean/max/min and write them to `random_stats.txt`',
+      '2. **fun-facts** — write 3 programming fun facts to `fun_facts.txt`',
       '',
-      '两个都在跑，完成后会自动通知我。稍等结果',
+      'Both are running and will notify me when done. Waiting for the results',
     ].join('\n');
     const { session, store } = createReconcileStore([
-      { id: 'msg-1', type: 'user', content: '起两个subagent 随便做点什么，用于测试', timestamp: 1, metadata: {} },
+      { id: 'msg-1', type: 'user', content: 'Spawn two subagents doing anything, just for testing', timestamp: 1, metadata: {} },
       { id: 'msg-2', type: 'assistant', content: startupText, timestamp: 2, metadata: { isStreaming: false, isFinal: true } },
       { id: 'msg-3', type: 'tool_use', content: 'Using tool: sessions_yield', timestamp: 3, metadata: { toolUseId: 'call-yield', toolName: 'sessions_yield' } },
       { id: 'msg-4', type: 'tool_result', content: '{"status":"yielded"}', timestamp: 4, metadata: { toolUseId: 'call-yield' } },
     ]);
 
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     adapter.gatewayClient = {
       start: () => {},
       stop: () => {},
       request: async () => ({
         messages: [
-          { role: 'user', content: '起两个subagent 随便做点什么，用于测试' },
+          { role: 'user', content: 'Spawn two subagents doing anything, just for testing' },
           {
             role: 'assistant',
             content: [
@@ -5893,7 +5893,7 @@ test('chat history sync reconstructs missed sessions_spawn tools after yield', a
     };
 
     const adapter = new OpenClawRuntimeAdapter(store, {}, {}, subagentRunStore as never);
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     adapter.gatewayClient = {
       start: () => {},
       stop: () => {},
@@ -6002,7 +6002,7 @@ test('chat history sync materializes missed backfillable tool results by result 
     };
 
     const adapter = new OpenClawRuntimeAdapter(store, {}, {}, subagentRunStore as never);
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     adapter.gatewayClient = {
       start: () => {},
       stop: () => {},
@@ -6074,20 +6074,20 @@ test('chat final removes redundant assistant prefix segment before final summary
   vi.useFakeTimers();
   try {
     const redundantPrefix = [
-      '邀请函页面已经做好了！',
-      '主要文件：',
+      'The invitation page is ready!',
+      'Main file:',
       '- leo-birthday-invitation/index.html',
-      '实现内容：',
-      '1. 深蓝星空背景和动态闪烁星星。',
-      '2. 手机优先响应式布局。',
+      'What was implemented:',
+      '1. A deep-blue starry background with twinkling stars.',
+      '2. A mobile-first responsive layout.',
     ].join('\n');
     const finalSummary = [
       redundantPrefix,
-      '3. RSVP 两个按钮带温柔提示。',
-      '4. 已生成移动端预览图，方便验收。',
+      '3. Two RSVP buttons with gentle hints.',
+      '4. A mobile preview screenshot was generated for review.',
     ].join('\n');
     const { session, store } = createReconcileStore([
-      { id: 'msg-1', type: 'user', content: '确认执行计划', timestamp: 1, metadata: {} },
+      { id: 'msg-1', type: 'user', content: 'Confirm the execution plan', timestamp: 1, metadata: {} },
       { id: 'msg-2', type: 'assistant', content: redundantPrefix, timestamp: 2, metadata: { isStreaming: false, isFinal: true } },
       { id: 'msg-3', type: 'tool_use', content: 'write_file', timestamp: 3, metadata: {} },
       { id: 'msg-4', type: 'tool_result', content: 'file created', timestamp: 4, metadata: {} },
@@ -6095,13 +6095,13 @@ test('chat final removes redundant assistant prefix segment before final summary
     ]);
 
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     adapter.gatewayClient = {
       start: () => {},
       stop: () => {},
       request: async () => ({
         messages: [
-          { role: 'user', content: '确认执行计划' },
+          { role: 'user', content: 'Confirm the execution plan' },
           { role: 'assistant', content: finalSummary },
         ],
       }),
@@ -6139,17 +6139,17 @@ test('chat final removes redundant assistant prefix segment before final summary
 
 test('late lifecycle fallback event does not reopen a completed managed session', () => {
   const { session, store } = createReconcileStore([
-    { id: 'msg-1', type: 'user', content: '你是哪个模型', timestamp: 1, metadata: {} },
+    { id: 'msg-1', type: 'user', content: 'Which model are you', timestamp: 1, metadata: {} },
     {
       id: 'msg-2',
       type: 'assistant',
-      content: '当前会话使用的是 qwen-portal/qwen3.6-plus 模型。',
+      content: 'This session uses the qwen-portal/qwen3.6-plus model.',
       timestamp: 2,
       metadata: { isStreaming: false, isFinal: true },
     },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
 
   adapter.rememberSessionKey(session.id, sessionKey);
   adapter.handleGatewayEvent({
@@ -6226,7 +6226,7 @@ test('late event for a closed run does not recreate a managed session turn', () 
     { id: 'msg-2', type: 'assistant', content: 'done', timestamp: 2, metadata: { isStreaming: false, isFinal: true } },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
 
   adapter.rememberSessionKey(session.id, sessionKey);
   adapter.ensureActiveTurn(session.id, sessionKey, 'closed-run');
@@ -6255,7 +6255,7 @@ test('retryable closed run reopens on same-run lifecycle start', () => {
     { id: 'msg-2', type: 'assistant', content: 'interim', timestamp: 2, metadata: { isStreaming: false, isFinal: true } },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
 
   adapter.rememberSessionKey(session.id, sessionKey);
   adapter.ensureActiveTurn(session.id, sessionKey, 'retry-run');
@@ -6304,7 +6304,7 @@ test('plugin approval request is forwarded as a cowork permission and resolves t
     { id: 'msg-1', type: 'user', content: 'apply the skill proposal', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const request = vi.fn().mockResolvedValue({});
   const permissionListener = vi.fn();
 
@@ -6371,7 +6371,7 @@ test('plugin approval resolved event clears pending plugin approval', () => {
     { id: 'msg-1', type: 'user', content: 'apply the skill proposal', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const request = vi.fn().mockResolvedValue({});
 
   adapter.gatewayClient = {
@@ -6420,7 +6420,7 @@ test('chat final completes after the retry grace window', async () => {
       { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     session.status = 'running';
@@ -6456,7 +6456,7 @@ test('chat final completion is postponed when the same run continues streaming',
       { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     session.status = 'running';
@@ -6502,7 +6502,7 @@ test('lifecycle end completes a pending chat final immediately', async () => {
       { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     session.status = 'running';
@@ -6540,7 +6540,7 @@ test('chat final completion is canceled when tool work continues after final', a
       { id: 'msg-1', type: 'user', content: 'hello', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     session.status = 'running';
@@ -6581,7 +6581,7 @@ test('tool-use chat final keeps the session running until tool work arrives', as
       { id: 'msg-1', type: 'user', content: 'read a file', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     session.status = 'running';
@@ -6631,7 +6631,7 @@ test('tool-use chat final inserts later tools after the preceding assistant segm
       { id: 'msg-1', type: 'user', content: 'verify the file', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const messageUpdateSpy = vi.fn();
 
     session.status = 'running';
@@ -6716,7 +6716,7 @@ test('tool-use lifecycle end waits for OpenClaw compaction retry', async () => {
       { id: 'msg-1', type: 'user', content: 'read a file', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     session.status = 'running';
@@ -6773,7 +6773,7 @@ test('compaction stream shows context maintenance state while keeping the sessio
     { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const messageSpy = vi.fn();
   const messageUpdateSpy = vi.fn();
   const maintenanceSpy = vi.fn();
@@ -6838,7 +6838,7 @@ test('compaction retry wait clears context maintenance when no follow-up arrives
       { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const maintenanceSpy = vi.fn();
     const completeSpy = vi.fn();
 
@@ -6881,7 +6881,7 @@ test('chat error clears context maintenance after compaction starts', () => {
     { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const maintenanceSpy = vi.fn();
   const errorSpy = vi.fn();
 
@@ -6910,10 +6910,10 @@ test('chat error clears context maintenance after compaction starts', () => {
   expect(maintenanceSpy).toHaveBeenNthCalledWith(2, session.id, false);
   expect(session.status).toBe('error');
   expect(adapter.activeTurns.has(session.id)).toBe(false);
-  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('模型响应超时'));
+  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('The model response timed out'));
   expect(session.messages.some((message) => (
     message.type === 'system'
-    && message.content.includes('模型响应超时')
+    && message.content.includes('The model response timed out')
   ))).toBe(true);
 });
 
@@ -6927,12 +6927,12 @@ test('chat error prevents stale empty final history sync from restarting context
     resolveHistory = resolve;
   });
   const { session, store } = createReconcileStore([
-    { id: 'msg-1', type: 'user', content: '整理一下未读邮件', timestamp: 1, metadata: {} },
+    { id: 'msg-1', type: 'user', content: 'Sort out my unread email', timestamp: 1, metadata: {} },
     { id: 'msg-2', type: 'tool_use', content: 'Using imap.js', timestamp: 2, metadata: { toolUseId: 'call-1' } },
     { id: 'msg-3', type: 'tool_result', content: 'mailbox list', timestamp: 3, metadata: { toolUseId: 'call-1' } },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const maintenanceSpy = vi.fn();
   const errorSpy = vi.fn();
 
@@ -6945,7 +6945,7 @@ test('chat error prevents stale empty final history sync from restarting context
       await historyCanReturn;
       return {
         messages: [
-          { role: 'user', content: '整理一下未读邮件' },
+          { role: 'user', content: 'Sort out my unread email' },
           {
             role: 'assistant',
             content: [
@@ -6989,7 +6989,7 @@ test('chat error prevents stale empty final history sync from restarting context
 
   expect(session.status).toBe('error');
   expect(adapter.activeTurns.has(session.id)).toBe(false);
-  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('模型响应超时'));
+  expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('The model response timed out'));
   expect(maintenanceSpy).not.toHaveBeenCalledWith(session.id, true);
 });
 
@@ -6998,7 +6998,7 @@ test('compaction stream reuses active structured message for duplicate start eve
     { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
 
   session.status = 'running';
   adapter.activeTurns.set(session.id, createActiveTurn(session.id, sessionKey, 'run-compaction'));
@@ -7026,7 +7026,7 @@ test('compaction end without a structured start message does not append a late m
     { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
 
   session.status = 'running';
   adapter.activeTurns.set(session.id, createActiveTurn(session.id, sessionKey, 'run-compaction'));
@@ -7052,7 +7052,7 @@ test('empty tool final waits for compaction retry and accepts same-run continuat
       { id: 'msg-3', type: 'tool_result', content: 'OK', timestamp: 3, metadata: { toolUseId: 'call-1' } },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
     const maintenanceSpy = vi.fn();
 
@@ -7144,15 +7144,15 @@ test('empty tool final waits for compaction retry and accepts same-run continuat
 test('empty final with local tool messages waits when history only has interim assistant text', async () => {
   vi.useFakeTimers();
   try {
-    const interimAnswer = '分析大致完成了，让我再确认一下 openclaw 日志有没有更多细节。';
-    const finalAnswer = '最终结论：OpenClaw 在压缩后继续 retry，客户端不能提前关闭 run。';
+    const interimAnswer = 'The analysis is mostly done; let me check the openclaw logs for more detail.';
+    const finalAnswer = 'Final conclusion: OpenClaw keeps retrying after compaction, so the client must not close the run early.';
     const { session, store } = createReconcileStore([
       { id: 'msg-1', type: 'user', content: 'analyze these logs', timestamp: 1, metadata: {} },
       { id: 'msg-2', type: 'tool_use', content: 'Using grep', timestamp: 2, metadata: { toolUseId: 'call-1' } },
       { id: 'msg-3', type: 'tool_result', content: '80 lines of output', timestamp: 3, metadata: { toolUseId: 'call-1' } },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
     const maintenanceSpy = vi.fn();
     let historyAnswer = interimAnswer;
@@ -7265,7 +7265,7 @@ test('visible short tool final waits with retry signal and accepts same-run cont
       { id: 'msg-3', type: 'tool_result', content: 'partial', timestamp: 3, metadata: { toolUseId: 'call-1' } },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
     const maintenanceSpy = vi.fn();
 
@@ -7368,7 +7368,7 @@ test('visible short tool final uses short confirmation when only large tool resu
       { id: 'msg-3', type: 'tool_result', content: 'partial', timestamp: 3, metadata: { toolUseId: 'call-1' } },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     adapter.gatewayClient = {
@@ -7453,7 +7453,7 @@ test('empty tool final shows thinking-only hint only after the follow-up grace w
       { id: 'msg-3', type: 'tool_result', content: 'OK', timestamp: 3, metadata: { toolUseId: 'call-1' } },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     adapter.gatewayClient = {
@@ -7505,7 +7505,7 @@ test('empty tool final shows thinking-only hint only after the follow-up grace w
 
     expect(session.messages.some((message) => (
       message.type === 'system'
-      && String(message.content).includes('[模型未输出内容]')
+      && String(message.content).includes('[No output]')
     ))).toBe(true);
     expect(completeSpy).toHaveBeenCalledWith(session.id, 'run-empty');
     expect(session.status).toBe('completed');
@@ -7521,7 +7521,7 @@ test('memory maintenance NO_REPLY stays running while waiting for a follow-up ru
       { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
     const maintenanceSpy = vi.fn();
 
@@ -7590,7 +7590,7 @@ test('memory maintenance fallback does not block a delayed queued run', async ()
       { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     session.status = 'running';
@@ -7656,7 +7656,7 @@ test('empty final with memory flush history waits for the original run to resume
       { id: 'msg-1', type: 'user', content: 'create a Japanese version', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
     const maintenanceSpy = vi.fn();
 
@@ -7746,7 +7746,7 @@ test('pre-compaction NO_REPLY without memory tools still waits for follow-up wor
       { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
     const maintenanceSpy = vi.fn();
 
@@ -7818,7 +7818,7 @@ test('silent token prefixes do not create visible assistant messages', () => {
     { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
 
   session.status = 'running';
   adapter.activeTurns.set(session.id, createActiveTurn(session.id, sessionKey, 'run-memory'));
@@ -7858,7 +7858,7 @@ test('usage metadata sync ignores silent latest assistant history entries', asyn
 
   await (adapter as unknown as {
     syncUsageMetadata: (sessionId: string, sessionKey: string, assistantMessageId: string) => Promise<void>;
-  }).syncUsageMetadata(session.id, `agent:main:lobsterai:${session.id}`, 'missing-message-id');
+  }).syncUsageMetadata(session.id, `agent:main:swen:${session.id}`, 'missing-message-id');
 
   expect(session.messages[1].metadata).toEqual({});
   expect(session.messages[2].metadata).toEqual({});
@@ -7871,7 +7871,7 @@ test('memory maintenance wait is canceled when a follow-up run starts', async ()
       { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
     const maintenanceSpy = vi.fn();
 
@@ -7926,7 +7926,7 @@ test('memory maintenance lifecycle end does not close a follow-up run', async ()
       { id: 'msg-1', type: 'user', content: 'continue the task', timestamp: 1, metadata: {} },
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const completeSpy = vi.fn();
 
     session.status = 'running';
@@ -7988,7 +7988,7 @@ test('ordinary write tool does not trigger memory maintenance handling', async (
     { id: 'msg-1', type: 'user', content: 'write a file', timestamp: 1, metadata: {} },
   ]);
   const adapter = new OpenClawRuntimeAdapter(store, {});
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const maintenanceSpy = vi.fn();
 
   adapter.on('contextMaintenance', maintenanceSpy);
@@ -8026,7 +8026,7 @@ test('blocked plan mode mutation waits for lifecycle end before safety recovery'
     session.status = 'running';
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const requests: Array<{ method: string; params: Record<string, unknown> }> = [];
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-plan-unsafe');
     turn.planMode = true;
     turn.assistantMessageId = 'msg-2';
@@ -8121,7 +8121,7 @@ test('repeated blocked mutation in one plan turn stops instead of looping recove
   session.status = 'running';
   const adapter = new OpenClawRuntimeAdapter(store, {});
   const request = vi.fn(async () => ({}));
-  const sessionKey = `agent:main:lobsterai:${session.id}`;
+  const sessionKey = `agent:main:swen:${session.id}`;
   const turn = createActiveTurn(session.id, sessionKey, 'run-plan-repeat');
   turn.planMode = true;
   turn.planModeRecoveryAttempted = true;
@@ -8159,7 +8159,7 @@ test.each(['write_file', 'create_file', 'delete_file', 'powershell'])(
     session.status = 'running';
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const request = vi.fn(async () => ({}));
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, `run-${toolName}`);
     turn.planMode = true;
     adapter.gatewayClient = { start: () => {}, stop: () => {}, request };
@@ -8197,7 +8197,7 @@ test('lifecycle error fallback waits before aborting a gateway run', async () =>
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const requests: Array<{ method: string; params: Record<string, unknown> }> = [];
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const turn = createActiveTurn(session.id, sessionKey, 'run-error');
 
     adapter.on('error', () => {});
@@ -8237,7 +8237,7 @@ test('lifecycle error fallback replaces generic LLM failure using safe OpenClaw 
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const requests: Array<{ method: string; params: Record<string, unknown> }> = [];
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
     const errorSpy = vi.fn();
     const turn = createActiveTurn(session.id, sessionKey, 'run-lifecycle-generic');
 
@@ -8269,8 +8269,8 @@ test('lifecycle error fallback replaces generic LLM failure using safe OpenClaw 
       runId: 'run-lifecycle-generic',
     });
     expect(session.status).toBe('error');
-    expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('OAuth 授权已失效'));
-    expect(persistedError?.content).toContain('OAuth 授权已失效');
+    expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('OAuth authorization is invalid'));
+    expect(persistedError?.content).toContain('OAuth authorization is invalid');
   } finally {
     vi.useRealTimers();
   }
@@ -8284,7 +8284,7 @@ test('lifecycle error fallback ignores a later run for the same session', async 
     ]);
     const adapter = new OpenClawRuntimeAdapter(store, {});
     const requests: Array<{ method: string; params: Record<string, unknown> }> = [];
-    const sessionKey = `agent:main:lobsterai:${session.id}`;
+    const sessionKey = `agent:main:swen:${session.id}`;
 
     adapter.gatewayClient = {
       start: () => {},
@@ -8780,7 +8780,7 @@ test('syncFullChannelHistory seeds gateway history cursor so old reminders are n
 test('syncFullChannelHistory: cron run history backfills initial run without losing old behavior', async () => {
   const cronKey = 'agent:main:cron:drink-water:run:run-1';
   const { session, store, getReplaceCallCount } = createReconcileStore([
-    { id: 'msg-1', type: 'assistant', content: '喝水时间到', timestamp: 1, metadata: { isStreaming: false, isFinal: true } },
+    { id: 'msg-1', type: 'assistant', content: 'Time to drink water', timestamp: 1, metadata: { isStreaming: false, isFinal: true } },
   ]);
 
   const adapter = new OpenClawRuntimeAdapter(store, {});
@@ -8789,8 +8789,8 @@ test('syncFullChannelHistory: cron run history backfills initial run without los
     stop: () => {},
     request: async () => ({
       messages: [
-        { role: 'user', content: '提醒我喝水' },
-        { role: 'assistant', content: '喝水时间到' },
+        { role: 'user', content: 'Remind me to drink water' },
+        { role: 'assistant', content: 'Time to drink water' },
       ],
     }),
   };
@@ -8802,8 +8802,8 @@ test('syncFullChannelHistory: cron run history backfills initial run without los
     type: message.type,
     content: message.content,
   }))).toEqual([
-    { type: 'user', content: '提醒我喝水' },
-    { type: 'assistant', content: '喝水时间到' },
+    { type: 'user', content: 'Remind me to drink water' },
+    { type: 'assistant', content: 'Time to drink water' },
   ]);
 });
 
@@ -8842,9 +8842,9 @@ test('cron run system history tracks equal-length runs by raw session key', asyn
 test('syncFullChannelHistory: cron run history does not replace follow-up messages', async () => {
   const cronKey = 'agent:main:cron:drink-water:run:run-1';
   const { session, store, getReplaceCallCount } = createReconcileStore([
-    { id: 'msg-1', type: 'assistant', content: '喝水时间到', timestamp: 1, metadata: { isStreaming: false, isFinal: true } },
-    { id: 'msg-2', type: 'user', content: '改成几点？', timestamp: 2, metadata: {} },
-    { id: 'msg-3', type: 'assistant', content: '已改为每天 10:00。', timestamp: 3, metadata: { isStreaming: false, isFinal: true } },
+    { id: 'msg-1', type: 'assistant', content: 'Time to drink water', timestamp: 1, metadata: { isStreaming: false, isFinal: true } },
+    { id: 'msg-2', type: 'user', content: 'Change it to what time?', timestamp: 2, metadata: {} },
+    { id: 'msg-3', type: 'assistant', content: 'Changed to 10:00 every day.', timestamp: 3, metadata: { isStreaming: false, isFinal: true } },
   ]);
 
   const adapter = new OpenClawRuntimeAdapter(store, {});
@@ -8853,8 +8853,8 @@ test('syncFullChannelHistory: cron run history does not replace follow-up messag
     stop: () => {},
     request: async () => ({
       messages: [
-        { role: 'user', content: '提醒我喝水' },
-        { role: 'assistant', content: '喝水时间到' },
+        { role: 'user', content: 'Remind me to drink water' },
+        { role: 'assistant', content: 'Time to drink water' },
       ],
     }),
   };
@@ -8865,10 +8865,10 @@ test('syncFullChannelHistory: cron run history does not replace follow-up messag
   const conversation = session.messages
     .filter((message) => message.type === 'user' || message.type === 'assistant')
     .map((message) => `${message.type}:${message.content}`);
-  expect(conversation).toContain('user:改成几点？');
-  expect(conversation).toContain('assistant:已改为每天 10:00。');
-  expect(conversation.filter((entry) => entry === 'assistant:喝水时间到')).toHaveLength(1);
-  expect(conversation).toContain('user:提醒我喝水');
+  expect(conversation).toContain('user:Change it to what time?');
+  expect(conversation).toContain('assistant:Changed to 10:00 every day.');
+  expect(conversation.filter((entry) => entry === 'assistant:Time to drink water')).toHaveLength(1);
+  expect(conversation).toContain('user:Remind me to drink water');
 });
 
 test('syncFullChannelHistory: cron run history appends a later run without replacing prior runs', async () => {
@@ -8878,19 +8878,19 @@ test('syncFullChannelHistory: cron run history appends a later run without repla
     {
       id: 'msg-1',
       type: 'user',
-      content: '提醒我喝水',
+      content: 'Remind me to drink water',
       timestamp: 1,
       metadata: { openclawCronRunSessionKey: oldCronKey, openclawCronRunEntryIndex: 0 },
     },
     {
       id: 'msg-2',
       type: 'assistant',
-      content: '第一次喝水提醒',
+      content: 'First water reminder',
       timestamp: 2,
       metadata: { isStreaming: false, isFinal: true, openclawCronRunSessionKey: oldCronKey, openclawCronRunEntryIndex: 1 },
     },
-    { id: 'msg-3', type: 'user', content: '改成 10 点', timestamp: 3, metadata: {} },
-    { id: 'msg-4', type: 'assistant', content: '已改为每天 10:00。', timestamp: 4, metadata: { isStreaming: false, isFinal: true } },
+    { id: 'msg-3', type: 'user', content: 'Change it to 10 am', timestamp: 3, metadata: {} },
+    { id: 'msg-4', type: 'assistant', content: 'Changed to 10:00 every day.', timestamp: 4, metadata: { isStreaming: false, isFinal: true } },
   ]);
 
   const adapter = new OpenClawRuntimeAdapter(store, {});
@@ -8899,8 +8899,8 @@ test('syncFullChannelHistory: cron run history appends a later run without repla
     stop: () => {},
     request: async () => ({
       messages: [
-        { role: 'user', content: '提醒我喝水' },
-        { role: 'assistant', content: '第二次喝水提醒' },
+        { role: 'user', content: 'Remind me to drink water' },
+        { role: 'assistant', content: 'Second water reminder' },
       ],
     }),
   };
@@ -8912,12 +8912,12 @@ test('syncFullChannelHistory: cron run history appends a later run without repla
     .filter((message) => message.type === 'user' || message.type === 'assistant')
     .map((message) => `${message.type}:${message.content}`);
   expect(conversation).toEqual([
-    'user:提醒我喝水',
-    'assistant:第一次喝水提醒',
-    'user:改成 10 点',
-    'assistant:已改为每天 10:00。',
-    'user:提醒我喝水',
-    'assistant:第二次喝水提醒',
+    'user:Remind me to drink water',
+    'assistant:First water reminder',
+    'user:Change it to 10 am',
+    'assistant:Changed to 10:00 every day.',
+    'user:Remind me to drink water',
+    'assistant:Second water reminder',
   ]);
 });
 
@@ -8991,7 +8991,7 @@ test('onSessionDeleted deletes gateway transcripts for all session keys', async 
   };
   const adapter = new OpenClawRuntimeAdapter({} as never, {}, {}, subagentRunStore as never);
   const channelSessionKey = 'agent:main:feishu:feishu-bot-1:direct:ou_zhangsan';
-  const managedSessionKey = 'agent:main:lobsterai:session-1';
+  const managedSessionKey = 'agent:main:swen:session-1';
   adapter.gatewayClient = {
     start: () => {},
     stop: () => {},
@@ -9118,7 +9118,7 @@ test('child chat final marks matching subagent done before local session resolut
     state: 'final',
     runId: '7d6f0db8-1066-4900-b6ea-a47b23825c8e',
     sessionKey: childSessionKey,
-    message: { role: 'assistant', content: '已完成。' },
+    message: { role: 'assistant', content: 'Done.' },
   }, 1);
 
   expect(subagentRunStore.updateSubagentRunStatus).toHaveBeenCalledWith(
@@ -9174,10 +9174,10 @@ test('getSessionKeysForSession prefers channel keys before managed fallback', ()
   const adapter = new OpenClawRuntimeAdapter(store, {});
 
   adapter.rememberSessionKey('session-1', 'agent:main:openai-user:dingtalk-connector:__default__:2459325231940374');
-  adapter.rememberSessionKey('session-1', 'agent:main:lobsterai:session-1');
+  adapter.rememberSessionKey('session-1', 'agent:main:swen:session-1');
 
   expect(adapter.getSessionKeysForSession('session-1')).toEqual([
     'agent:main:openai-user:dingtalk-connector:__default__:2459325231940374',
-    'agent:main:lobsterai:session-1',
+    'agent:main:swen:session-1',
   ]);
 });

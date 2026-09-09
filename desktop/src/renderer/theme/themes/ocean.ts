@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const ocean: ThemeDefinition = {
   meta: {
     id: 'ocean',
-    name: '深海蓝黑',
-    description: '深海般沉稳的蓝黑暗色主题',
+    name: 'Ocean',
+    description: 'A calm deep-sea blue-black dark theme',
     appearance: 'dark',
     preview: ['#0c1222', '#0ea5e9', '#38bdf8', '#2dd4bf'],
   },

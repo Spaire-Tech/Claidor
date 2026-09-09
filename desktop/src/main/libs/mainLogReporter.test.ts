@@ -35,7 +35,7 @@ describe('MainLogReporter', () => {
       userId: 'user-1',
     }));
 
-    expect(result.searchParams.get('action')).toBe('lobsterai_im_prompt_submit');
+    expect(result.searchParams.get('action')).toBe('swen_im_prompt_submit');
     expect(result.searchParams.get('_npid')).toBe('wisdom');
     expect(result.searchParams.get('_ncat')).toBe('actions');
     expect(result.searchParams.get('platform')).toBe('telegram');

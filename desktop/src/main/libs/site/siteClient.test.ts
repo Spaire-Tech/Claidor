@@ -125,7 +125,7 @@ describe('siteClient', () => {
           ? { reservationId: 'qrs_1', slotDelta: 1, expiresAt: '2026-07-22T12:00:00' }
           : {
               allowed: false,
-              plan: { name: 'standard', displayName: '标准', maxActiveSites: 5 },
+              plan: { name: 'standard', displayName: 'Standard', maxActiveSites: 5 },
               usage: { used: 5, reserved: 0, limit: 5, remaining: 0, requiredStops: 1 },
               target: { shareId: 'shr_target', occupiesSlot: false },
               candidates: { list: [], total: 0, page: 1, pageSize: 10 },

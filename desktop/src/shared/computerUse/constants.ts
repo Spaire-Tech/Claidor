@@ -26,18 +26,14 @@ export type ComputerUseKitBundleIntegrity =
 export const ComputerUseKitMetadata = {
   Name: {
     en: 'Computer Use',
-    zh: '电脑操作',
   } satisfies LocalizedText,
   Description: {
     en: 'Control local Windows desktop applications with screenshots, accessibility text, clicks, typing, scrolling, and app launching.',
-    zh: '通过截图、可访问性文本、点击、输入、滚动和应用启动来操作本地 Windows 桌面应用。',
   } satisfies LocalizedText,
   SkillName: {
     en: 'Computer Use',
-    zh: '电脑操作',
   } satisfies LocalizedText,
   SkillDescription: {
-    en: 'Use LobsterAI Computer Use tools to inspect and control Windows desktop applications.',
-    zh: '使用 LobsterAI 电脑操作工具检查和操作 Windows 桌面应用。',
+    en: 'Use Swen Computer Use tools to inspect and control Windows desktop applications.',
   } satisfies LocalizedText,
 } as const;

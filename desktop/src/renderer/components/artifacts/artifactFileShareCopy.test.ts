@@ -7,8 +7,8 @@ import {
 } from './artifactFileShareCopy';
 
 const labels = {
-  link: '链接',
-  shareCode: '分享码',
+  link: 'Link',
+  shareCode: 'Share code',
 };
 
 describe('buildArtifactFileShareCopyText', () => {
@@ -22,7 +22,7 @@ describe('buildArtifactFileShareCopyText', () => {
       }),
     ).toEqual({
       copyable: true,
-      text: '链接: https://share.example/s/123\n分享码: ABCD',
+      text: 'Link: https://share.example/s/123\nShare code: ABCD',
     });
   });
 
@@ -43,7 +43,7 @@ describe('buildArtifactFileShareCopyText', () => {
   test.each([
     {
       accessMode: HtmlShareAccessMode.Code,
-      expectedText: '链接: https://share.example/s/123\n分享码: ABCD',
+      expectedText: 'Link: https://share.example/s/123\nShare code: ABCD',
       shareCode: 'ABCD',
     },
     {
@@ -111,7 +111,7 @@ describe('buildArtifactFileShareCopyText', () => {
       }),
     ).toEqual({
       copyable: true,
-      text: '链接: https://share.example/s/123\n分享码: ABCD',
+      text: 'Link: https://share.example/s/123\nShare code: ABCD',
     });
   });
 });

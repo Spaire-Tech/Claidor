@@ -1,7 +1,7 @@
 {
-  "appId": "com.lobsterai.app",
-  "productName": "LobsterAI",
-  "executableName": "LobsterAI",
+  "appId": "com.claidor.swen",
+  "productName": "Swen",
+  "executableName": "Swen",
   "directories": {
     "output": "release"
   },
@@ -13,12 +13,16 @@
     {
       "from": "dist",
       "to": "dist",
-      "filter": ["**/*"]
+      "filter": [
+        "**/*"
+      ]
     },
     {
       "from": "dist-electron",
       "to": "dist-electron",
-      "filter": ["**/*"]
+      "filter": [
+        "**/*"
+      ]
     },
     "!**/*.map",
     "!**/*.d.ts",
@@ -65,8 +69,10 @@
   ],
   "protocols": [
     {
-      "name": "LobsterAI",
-      "schemes": ["lobsterai"]
+      "name": "Swen",
+      "schemes": [
+        "swen"
+      ]
     }
   ],
   "mac": {
@@ -81,10 +87,10 @@
     "entitlementsInherit": "build/entitlements.mac.plist",
     "extendInfo": {
       "CFBundleIconName": "icon",
-      "NSMicrophoneUsageDescription": "LobsterAI 需要访问您的麦克风来录制语音输入并进行语音识别。",
-      "NSCalendarsUsageDescription": "LobsterAI 需要访问您的日历来帮助您查看和管理日程安排，例如查找事件、创建会议等。",
-      "NSRemindersUsageDescription": "LobsterAI 需要访问您的提醒事项来帮助您管理待办事项。",
-      "NSAppleEventsUsageDescription": "LobsterAI 需要使用 Apple Events 来控制 Calendar 应用执行自动化操作。"
+      "NSMicrophoneUsageDescription": "Swen needs access to your microphone to record voice input for speech recognition.",
+      "NSCalendarsUsageDescription": "Swen needs access to your calendar to help you view and manage your schedule, for example finding events and creating meetings.",
+      "NSRemindersUsageDescription": "Swen needs access to your reminders to help you manage your to-do items.",
+      "NSAppleEventsUsageDescription": "Swen uses Apple Events to control the Calendar app for automation."
     },
     "extraResources": [
       {
@@ -244,7 +250,7 @@
       }
     ],
     "desktop": {
-      "Name": "LobsterAI",
+      "Name": "Swen",
       "Comment": "AI-assisted coding and productivity tool",
       "Terminal": "false"
     }

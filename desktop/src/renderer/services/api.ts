@@ -26,7 +26,7 @@ export class ApiError extends Error {
   }
 }
 
-// 生成唯一的请求 ID
+// Generate a unique request ID
 const generateRequestId = () => `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 class ApiService {
@@ -261,7 +261,7 @@ class ApiService {
       && provider !== ProviderName.Copilot;
   }
 
-  // 检测当前选择的模型属于哪个 provider
+  // Detect which provider the currently selected model belongs to
   private detectProvider(modelId: string, providerHint?: string): string {
     const normalizedHint = providerHint?.toLowerCase();
     if (
@@ -297,10 +297,10 @@ class ApiService {
     } else if (normalizedModelId.startsWith('doubao') || normalizedModelId.includes('volcengine') || normalizedModelId.includes('ep-') || normalizedModelId.startsWith('ark-')) {
       return 'volcengine';
     }
-    return 'openai'; // 默认使用 OpenAI 兼容格式
+    return 'openai'; // Default to the OpenAI-compatible format
   }
 
-  // 获取指定 provider 的配置
+  // Get the configuration of the given provider
   private getProviderConfig(provider: string): ApiConfig | null {
     const appConfig = configService.getConfig();
 
@@ -386,7 +386,7 @@ class ApiService {
       ? { content: message }
       : { content: message.content || '', images: message.images };
 
-    // 尝试获取模型对应 provider 的配置
+    // Try to get the configuration of the model's provider
     let effectiveConfig = this.config;
     const providerConfig = this.getProviderConfig(provider);
     if (providerConfig) {
@@ -401,10 +401,10 @@ class ApiService {
       throw new ApiError('API key is not configured. Please set your API key in the settings menu.');
     }
 
-    // 根据 API 协议格式决定调用方式：
-    // - anthropic: Anthropic 兼容协议 (/v1/messages)
-    // - openai: OpenAI 兼容协议 (OpenAI provider uses /v1/responses)
-    // - gemini: Google Gemini 原生协议 (streamGenerateContent)
+    // Choose the call style based on the API protocol format:
+    // - anthropic: Anthropic-compatible protocol (/v1/messages)
+    // - openai: OpenAI-compatible protocol (OpenAI provider uses /v1/responses)
+    // - gemini: Google Gemini native protocol (streamGenerateContent)
     const normalizedApiFormat = this.normalizeApiFormat(effectiveConfig.apiFormat);
     console.log(`[api-chat] provider=${provider}, model=${selectedModel.id}, apiFormat=${normalizedApiFormat}, baseUrl=${effectiveConfig.baseUrl}`);
 
@@ -449,7 +449,7 @@ class ApiService {
     }
   }
 
-  // Anthropic API 调用
+  // Anthropic API call
   private async chatWithAnthropic(
     message: ChatUserMessageInput,
     onProgress?: (content: string, reasoning?: string) => void,
@@ -466,7 +466,7 @@ class ApiService {
       const requestId = generateRequestId();
       this.currentRequestId = requestId;
 
-      // Anthropic 需要将 history 中的 system 消息分离出来
+      // Anthropic requires system messages to be separated out of the history
       const systemMessages = history.filter(m => m.role === 'system');
       const nonSystemMessages = history.filter(m => m.role !== 'system');
 
@@ -490,7 +490,7 @@ class ApiService {
         stream: true,
       };
 
-      // 添加 system 消息
+      // Add the system message
       if (systemMessages.length > 0) {
         const systemContent = systemMessages
           .map(m => this.mergeContentWithImageHint(m.content, supportsImages ? undefined : m.images))
@@ -501,7 +501,7 @@ class ApiService {
         }
       }
 
-      // 检测是否是 thinking 模型
+      // Detect whether this is a thinking model
       const isThinkingModel = modelId.includes('claude-3-7') ||
                               modelId.includes('claude-sonnet-4') ||
                               modelId.includes('claude-opus-4');
@@ -511,14 +511,14 @@ class ApiService {
           type: 'enabled',
           budget_tokens: 10000
         };
-        // Thinking 模型需要更大的 max_tokens
+        // Thinking models need a larger max_tokens
         requestBody.max_tokens = 16000;
       }
 
       return new Promise((resolve, reject) => {
         let aborted = false;
 
-        // 设置流式监听器
+        // Set up the stream listener
         const removeDataListener = window.electron.api.onStreamData(requestId, (chunk) => {
           const lines = chunk.split('\n');
 
@@ -530,7 +530,7 @@ class ApiService {
               try {
                 const parsed = JSON.parse(data);
 
-                // Anthropic SSE 事件处理
+                // Anthropic SSE event handling
                 if (parsed.type === 'content_block_delta') {
                   const delta = parsed.delta;
                   if (delta.type === 'text_delta') {
@@ -570,7 +570,7 @@ class ApiService {
 
         this.cleanupFunctions = [removeDataListener, removeDoneListener, removeErrorListener, removeAbortListener];
 
-        // 发起流式请求
+        // Start the streaming request
         console.log(`[api-chat] Anthropic request: baseUrl=${config.baseUrl}, finalUrl=${config.baseUrl}/v1/messages, model=${modelId}, apiFormat=${config.apiFormat}`);
         window.electron.api.stream({
           url: `${config.baseUrl}/v1/messages`,
@@ -614,7 +614,7 @@ class ApiService {
     }
   }
 
-  // Gemini native API 调用 (streamGenerateContent)
+  // Gemini native API call (streamGenerateContent)
   private async chatWithGemini(
     message: ChatUserMessageInput,
     onProgress?: (content: string, reasoning?: string) => void,
@@ -778,7 +778,7 @@ class ApiService {
     }
   }
 
-  // OpenAI 兼容 API 调用 (OpenAI, DeepSeek, etc.)
+  // OpenAI-compatible API call (OpenAI, DeepSeek, etc.)
   private async chatWithOpenAICompatible(
     message: ChatUserMessageInput,
     onProgress?: (content: string, reasoning?: string) => void,
@@ -825,7 +825,7 @@ class ApiService {
         let sseBuffer = '';
         let currentEvent = '';
 
-        // 设置流式监听器
+        // Set up the stream listener
         const removeDataListener = window.electron.api.onStreamData(requestId, (chunk) => {
           sseBuffer += chunk;
           const lines = sseBuffer.split('\n');

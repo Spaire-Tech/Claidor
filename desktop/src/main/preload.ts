@@ -126,7 +126,7 @@ import { NimQrLoginIpc } from './ipcHandlers/nimQrLogin';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
 
-// 暴露安全的 API 到渲染进程
+// Expose a safe API to the renderer process
 contextBridge.exposeInMainWorld('electron', {
   platform: process.platform,
   arch: process.arch,
@@ -238,7 +238,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
   },
   api: {
-    // 普通 API 请求（非流式）
+    // Regular (non-streaming) API request
     fetch: (options: {
       url: string;
       method: string;
@@ -246,7 +246,7 @@ contextBridge.exposeInMainWorld('electron', {
       body?: string;
     }) => ipcRenderer.invoke('api:fetch', options),
 
-    // 流式 API 请求
+    // Streaming API request
     stream: (options: {
       url: string;
       method: string;
@@ -255,31 +255,31 @@ contextBridge.exposeInMainWorld('electron', {
       requestId: string;
     }) => ipcRenderer.invoke('api:stream', options),
 
-    // 取消流式请求
+    // Cancel a streaming request
     cancelStream: (requestId: string) => ipcRenderer.invoke('api:stream:cancel', requestId),
 
-    // 监听流式数据
+    // Listen for streamed data
     onStreamData: (requestId: string, callback: (chunk: string) => void) => {
       const handler = (_event: any, chunk: string) => callback(chunk);
       ipcRenderer.on(`api:stream:${requestId}:data`, handler);
       return () => ipcRenderer.removeListener(`api:stream:${requestId}:data`, handler);
     },
 
-    // 监听流式完成
+    // Listen for stream completion
     onStreamDone: (requestId: string, callback: () => void) => {
       const handler = () => callback();
       ipcRenderer.on(`api:stream:${requestId}:done`, handler);
       return () => ipcRenderer.removeListener(`api:stream:${requestId}:done`, handler);
     },
 
-    // 监听流式错误
+    // Listen for stream errors
     onStreamError: (requestId: string, callback: (error: string) => void) => {
       const handler = (_event: any, error: string) => callback(error);
       ipcRenderer.on(`api:stream:${requestId}:error`, handler);
       return () => ipcRenderer.removeListener(`api:stream:${requestId}:error`, handler);
     },
 
-    // 监听流式取消
+    // Listen for stream cancellation
     onStreamAbort: (requestId: string, callback: () => void) => {
       const handler = () => callback();
       ipcRenderer.on(`api:stream:${requestId}:abort`, handler);

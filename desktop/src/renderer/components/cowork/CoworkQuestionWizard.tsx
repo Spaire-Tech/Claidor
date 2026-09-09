@@ -158,7 +158,7 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
         ...prev,
         [question.question]: optionLabel,
       }));
-      // 单选与「其他」互斥：选中选项时清空自定义输入
+      // Single choice and "Other" are mutually exclusive: clear the custom input when an option is selected
       setOtherInputs((prev) => {
         if (!prev[stepIndex]) return prev;
         const next = { ...prev };
@@ -166,7 +166,7 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
         return next;
       });
 
-      // 单选题选择后自动跳转到下一题（短暂停留以展示选中反馈）
+      // Auto-advance to the next question after a single-choice selection (brief pause to show the selection feedback)
       clearPendingAdvance();
       advanceTimerRef.current = setTimeout(() => {
         advanceTimerRef.current = null;
@@ -225,7 +225,7 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
         delete next[stepIndex];
         return next;
       });
-      // 单选与「其他」互斥：输入自定义答案时取消已选选项
+      // Single choice and "Other" are mutually exclusive: deselect the chosen option when a custom answer is typed
       if (!currentQuestion.multiSelect) {
         setAnswers((prev) => {
           if (!(currentQuestion.question in prev)) return prev;

@@ -1,5 +1,5 @@
-import { LobsterAIRequestCapability } from '@shared/providers/lobsterAIRequestOptions';
 import { ModelThinkingLevel, OpenClawThinkingLevel } from '@shared/providers/modelThinking';
+import { SwenRequestCapability } from '@shared/providers/swenRequestOptions';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 
 import {
@@ -9,15 +9,15 @@ import {
   resolveThinkingLevelForModel,
 } from './modelThinkingLevelMemory';
 
-const STORAGE_KEY = 'lobsterai.model-thinking-levels';
-const PRO_KEY = 'lobsterai-server::deepseek-v4-pro';
-const FLASH_KEY = 'lobsterai-server::deepseek-v4-flash';
+const STORAGE_KEY = 'swen.model-thinking-levels';
+const PRO_KEY = 'swen-server::deepseek-v4-pro';
+const FLASH_KEY = 'swen-server::deepseek-v4-flash';
 
 const PRO_MODEL = {
   id: 'deepseek-v4-pro',
-  providerKey: 'lobsterai-server',
+  providerKey: 'swen-server',
   isServerModel: true,
-  requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
+  requestCapabilities: [SwenRequestCapability.OptionsV1],
   thinkingConfig: {
     options: [
       { level: ModelThinkingLevel.High, openclawLevel: OpenClawThinkingLevel.High },

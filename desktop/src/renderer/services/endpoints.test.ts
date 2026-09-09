@@ -7,9 +7,11 @@ import {
   getEnterpriseOverviewUrl,
   getEnterpriseRechargeUrl,
   getEnterpriseUsageUrl,
+  getFallbackDownloadUrl,
   getPortalCreditsDetailUrl,
   getPortalCreditsResetActivityUrl,
   getPortalInvitationUrl,
+  getPortalLoginUrl,
   getPortalPricingUrl,
   getPortalProfileUrl,
   getPortalRechargeUrl,
@@ -26,64 +28,58 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-test('portal account urls use production base when test mode is disabled', () => {
+test('account urls open the Claidor web app when test mode is disabled', () => {
   mockTestMode(false);
 
-  expect(getPortalProfileUrl()).toBe('https://lobsterai.youdao.com/portal#/profile');
-  expect(getPortalCreditsDetailUrl()).toBe('https://lobsterai.youdao.com/portal#/profile/detail');
-  expect(getPortalRechargeUrl()).toBe('https://lobsterai.youdao.com/portal#/');
-  expect(getPortalInvitationUrl()).toBe('https://lobsterai.youdao.com/portal#/invitation');
-  expect(getPortalCreditsResetActivityUrl()).toBe('https://lobsterai.youdao.com/portal#/profile?activity=credits_reset');
+  expect(getPortalLoginUrl()).toBe('https://app.claidor.com/login');
+  expect(getFallbackDownloadUrl()).toBe('https://app.claidor.com/desktop');
+  expect(getPortalProfileUrl()).toBe('https://app.claidor.com/');
+  expect(getPortalCreditsDetailUrl()).toBe('https://app.claidor.com/');
+  expect(getPortalRechargeUrl()).toBe('https://app.claidor.com/');
+  expect(getPortalInvitationUrl()).toBe('https://app.claidor.com/');
+  expect(getPortalCreditsResetActivityUrl()).toBe('https://app.claidor.com/');
   expect(getPortalCreditsResetActivityUrl('credits_final_reward_2026_07')).toBe(
-    'https://lobsterai.youdao.com/portal#/profile?activity=credits_reset&campaignCode=credits_final_reward_2026_07',
+    'https://app.claidor.com/?campaignCode=credits_final_reward_2026_07',
   );
 });
 
-test('portal account urls use test base when test mode is enabled', () => {
+test('account urls open the local web app when test mode is enabled', () => {
   mockTestMode(true);
 
-  expect(getPortalProfileUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/profile');
-  expect(getPortalCreditsDetailUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/profile/detail');
-  expect(getPortalRechargeUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/');
-  expect(getPortalInvitationUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/invitation');
-  expect(getPortalCreditsResetActivityUrl()).toBe('https://lobsterai.inner.youdao.com/portal#/profile?activity=credits_reset');
+  expect(getPortalLoginUrl()).toBe('http://127.0.0.1:3000/login');
+  expect(getPortalProfileUrl()).toBe('http://127.0.0.1:3000/');
+  expect(getPortalCreditsDetailUrl()).toBe('http://127.0.0.1:3000/');
+  expect(getPortalRechargeUrl()).toBe('http://127.0.0.1:3000/');
+  expect(getPortalInvitationUrl()).toBe('http://127.0.0.1:3000/');
+  expect(getPortalCreditsResetActivityUrl()).toBe('http://127.0.0.1:3000/');
 });
 
-test('portal pricing url can include html share keyfrom', () => {
+test('pricing url can include html share keyfrom', () => {
   mockTestMode(false);
 
+  expect(getPortalPricingUrl()).toBe('https://app.claidor.com/');
   expect(getPortalPricingUrl(PortalPricingKeyfrom.HtmlShare)).toBe(
-    'https://lobsterai.youdao.com/portal#/pricing?keyfrom=html_share',
+    'https://app.claidor.com/?keyfrom=html_share',
   );
 });
 
-test('portal pricing url can carry a publishing attribution trace', () => {
+test('pricing url can carry a publishing attribution trace', () => {
   mockTestMode(false);
 
   expect(getPortalPricingUrl(
     PortalPricingKeyfrom.SiteDeployment,
     { traceId: 'attempt-123' },
   )).toBe(
-    'https://lobsterai.youdao.com/portal#/pricing?keyfrom=site_deployment&trace_id=attempt-123',
+    'https://app.claidor.com/?keyfrom=site_deployment&trace_id=attempt-123',
   );
 });
 
-test('enterprise console urls use the selected enterprise context', () => {
+test('enterprise console urls all open the Claidor account area', () => {
   mockTestMode(false);
 
-  expect(getEnterpriseMemberProfileUrl(1001)).toBe(
-    'https://lobsterai.youdao.com/portal#/enterprise/profile/1001',
-  );
-  expect(getEnterpriseOverviewUrl(1001)).toBe(
-    'https://lobsterai.youdao.com/portal#/enterprise/console/1001/overview',
-  );
-  expect(getEnterpriseUsageUrl(1001)).toBe(
-    'https://lobsterai.youdao.com/portal#/enterprise/console/1001/usage',
-  );
-  expect(getEnterpriseBillingUrl(1001)).toBe(
-    'https://lobsterai.youdao.com/portal#/enterprise/console/1001/billing',
-  );
-  expect(getEnterpriseRechargeUrl(1001)).toBe(
-    'https://lobsterai.youdao.com/portal#/enterprise/console/1001/recharge',
-  );
+  expect(getEnterpriseMemberProfileUrl(1001)).toBe('https://app.claidor.com/');
+  expect(getEnterpriseOverviewUrl(1001)).toBe('https://app.claidor.com/');
+  expect(getEnterpriseUsageUrl(1001)).toBe('https://app.claidor.com/');
+  expect(getEnterpriseBillingUrl(1001)).toBe('https://app.claidor.com/');
+  expect(getEnterpriseRechargeUrl(1001)).toBe('https://app.claidor.com/');
 });

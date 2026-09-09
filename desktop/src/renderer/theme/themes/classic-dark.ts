@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const classicDark: ThemeDefinition = {
   meta: {
     id: 'classic-dark',
-    name: '经典深色',
-    description: '原生默认深色主题，纯净近黑',
+    name: 'Classic Dark',
+    description: 'The original default dark theme, clean near-black',
     appearance: 'dark',
     preview: ['#0F1117', '#3B82F6', '#60A5FA', '#8B8FA3'],
   },

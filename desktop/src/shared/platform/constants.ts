@@ -8,6 +8,11 @@
  * When adding a new IM platform:
  * 1. Add one record to the DEFINITIONS array below
  *    — that's it, types and lookups are derived automatically.
+ *
+ * Swen offers Telegram and Discord. The Chinese messengers the upstream app
+ * carried (WeChat, WeCom, DingTalk, Feishu, QQ, NIM, NetEase Bee, POPO) and
+ * its NetEase-hosted email channel are retired: present in the type, absent
+ * from the product.
  */
 
 // ═══════════════════════════════════════════════════════
@@ -22,15 +27,20 @@ interface PlatformDefInput {
   readonly channelAliases: readonly string[];
   readonly logo: string;
   readonly guideUrl: string;
+  /**
+   * Retired platforms stay in the type so the code paths that once served
+   * them still compile, but they are never listed, never offered in the UI,
+   * and their OpenClaw plugins are not bundled. Swen retires the Chinese
+   * messengers the upstream app shipped.
+   */
+  readonly retired: boolean;
 }
 
 // ═══════════════════════════════════════════════════════
 // 2. Platform Definitions — the single source of truth
-//    Array order = Chinese UI display order (CHINA first, then GLOBAL).
 // ═══════════════════════════════════════════════════════
 
 const DEFINITIONS = [
-  // ── China ──
   {
     id: 'weixin',
     label: 'WeChat',
@@ -38,8 +48,8 @@ const DEFINITIONS = [
     channel: 'openclaw-weixin',
     channelAliases: [],
     logo: 'weixin.png',
-    guideUrl:
-      'https://lobsterai.youdao.com/#/docs/lobsterai_im_bot_config_guide/%E5%BE%AE%E4%BF%A1-im-%E6%9C%BA%E5%99%A8%E4%BA%BA%E9%85%8D%E7%BD%AE',
+    guideUrl: '',
+    retired: true,
   },
   {
     id: 'dingtalk',
@@ -48,8 +58,8 @@ const DEFINITIONS = [
     channel: 'dingtalk-connector',
     channelAliases: ['dingtalk'],
     logo: 'dingding.png',
-    guideUrl:
-      'https://lobsterai.youdao.com/#/docs/lobsterai_im_bot_config_guide/%E9%92%89%E9%92%89-im-%E6%9C%BA%E5%99%A8%E4%BA%BA%E9%85%8D%E7%BD%AE',
+    guideUrl: '',
+    retired: true,
   },
   {
     id: 'feishu',
@@ -58,8 +68,8 @@ const DEFINITIONS = [
     channel: 'feishu',
     channelAliases: [],
     logo: 'feishu.png',
-    guideUrl:
-      'https://lobsterai.youdao.com/#/docs/lobsterai_im_bot_config_guide/%E9%A3%9E%E4%B9%A6-im-%E6%9C%BA%E5%99%A8%E4%BA%BA%E9%85%8D%E7%BD%AE',
+    guideUrl: '',
+    retired: true,
   },
   {
     id: 'wecom',
@@ -68,8 +78,8 @@ const DEFINITIONS = [
     channel: 'wecom',
     channelAliases: ['wecom-openclaw-plugin'],
     logo: 'wecom.png',
-    guideUrl:
-      'https://lobsterai.youdao.com/#/docs/lobsterai_im_bot_config_guide/%E4%BC%81%E4%B8%9A%E5%BE%AE%E4%BF%A1%E6%9C%BA%E5%99%A8%E4%BA%BA%E9%85%8D%E7%BD%AE',
+    guideUrl: '',
+    retired: true,
   },
   {
     id: 'qq',
@@ -78,7 +88,8 @@ const DEFINITIONS = [
     channel: 'qqbot',
     channelAliases: [],
     logo: 'qq_bot.jpeg',
-    guideUrl: 'https://lobsterai.youdao.com/#/docs/lobsterai_im_bot_config_guide/qqqq-bot',
+    guideUrl: '',
+    retired: true,
   },
   {
     id: 'nim',
@@ -88,6 +99,7 @@ const DEFINITIONS = [
     channelAliases: [],
     logo: 'nim.png',
     guideUrl: '',
+    retired: true,
   },
   {
     id: 'netease-bee',
@@ -97,6 +109,7 @@ const DEFINITIONS = [
     channelAliases: [],
     logo: 'netease-bee.png',
     guideUrl: '',
+    retired: true,
   },
   {
     id: 'popo',
@@ -106,8 +119,8 @@ const DEFINITIONS = [
     channelAliases: ['popo'],
     logo: 'popo.png',
     guideUrl: '',
+    retired: true,
   },
-  // ── Global ──
   {
     id: 'telegram',
     label: 'Telegram',
@@ -115,8 +128,8 @@ const DEFINITIONS = [
     channel: 'telegram',
     channelAliases: [],
     logo: 'telegram.svg',
-    guideUrl:
-      'https://lobsterai.youdao.com/#/en/docs/lobsterai_im_bot_config_guide/telegram-bot-configuration',
+    guideUrl: '',
+    retired: false,
   },
   {
     id: 'discord',
@@ -125,17 +138,21 @@ const DEFINITIONS = [
     channel: 'discord',
     channelAliases: [],
     logo: 'discord.svg',
-    guideUrl:
-      'https://lobsterai.youdao.com/#/en/docs/lobsterai_im_bot_config_guide/discord-bot-configuration',
+    guideUrl: '',
+    retired: false,
   },
   {
     id: 'email',
     label: 'Email',
-    region: 'china',
+    region: 'global',
     channel: 'email',
     channelAliases: ['clawemail', 'clawemail-email'],
     logo: 'email.svg',
     guideUrl: '',
+    // The upstream email channel is NetEase's hosted « Claw » mail service
+    // (claw.163.com issues its API keys), not plain IMAP, so it is retired
+    // with the other NetEase services. The imap-smtp-email skill stays.
+    retired: true,
   },
 ] as const satisfies readonly PlatformDefInput[];
 
@@ -167,6 +184,8 @@ export interface PlatformDef {
   readonly logo: string;
   /** Setup guide URL (empty string if not yet available) */
   readonly guideUrl: string;
+  /** Retired platforms are never listed or offered. */
+  readonly retired: boolean;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -190,7 +209,7 @@ class PlatformRegistryImpl {
 
     for (const def of definitions) {
       pIdx.set(def.id, def);
-      platforms.push(def.id);
+      if (!def.retired) platforms.push(def.id);
 
       cIdx.set(def.channel, def);
       channels.add(def.channel);
@@ -209,14 +228,19 @@ class PlatformRegistryImpl {
 
   // ── Platform Lists ──
 
-  /** All platform ids. Array order = UI display order. */
+  /** All offered platform ids (retired ones excluded). Array order = UI display order. */
   get platforms(): readonly Platform[] {
     return this._platforms;
   }
 
-  /** Platforms filtered by region, preserving definition order. */
+  /** Offered platforms filtered by region, preserving definition order. */
   platformsByRegion(region: 'china' | 'global'): readonly Platform[] {
-    return this.defs.filter(d => d.region === region).map(d => d.id);
+    return this.defs.filter(d => d.region === region && !d.retired).map(d => d.id);
+  }
+
+  /** Whether a platform is retired: known to the code, not offered. */
+  isRetired(platform: Platform): boolean {
+    return this.platformIndex.get(platform)?.retired === true;
   }
 
   // ── Single Platform Queries ──
@@ -257,7 +281,7 @@ class PlatformRegistryImpl {
 
   /** Channel options for scheduled task delivery target dropdown. */
   channelOptions(): readonly { value: ChannelName; label: string }[] {
-    return this.defs.map(d => ({ value: d.channel, label: d.label }));
+    return this.defs.filter(d => !d.retired).map(d => ({ value: d.channel, label: d.label }));
   }
 }
 

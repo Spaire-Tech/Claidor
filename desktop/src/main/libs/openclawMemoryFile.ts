@@ -16,7 +16,6 @@
  */
 
 import crypto from 'crypto';
-import { app } from 'electron';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -565,16 +564,10 @@ export function migrateSqliteToMemoryMd(
 // Bootstrap file management (IDENTITY.md, USER.md, SOUL.md)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_IDENTITY_ZH = '你的名字是 LobsterAI，一个由网易有道开发的全场景个人助理 Agent。你 7×24 小时在线，能够自主处理日常生产力任务，包括数据分析、PPT 制作、视频生成、文档撰写、信息搜索、邮件工作流、定时任务等。你和用户共享同一个工作空间，协同完成用户的目标。';
-const DEFAULT_IDENTITY_EN = 'Your name is LobsterAI, a full-scenario personal assistant agent developed by NetEase Youdao. You are available 24/7 and can autonomously handle everyday productivity tasks, including data analysis, PPT creation, video generation, document writing, information search, email workflows, scheduled jobs, and more. You and the user share the same workspace, collaborating to achieve the user\'s goals.';
+const DEFAULT_IDENTITY_EN = 'Your name is Swen, a personal assistant agent for office work. You are available 24/7 and can autonomously handle everyday productivity tasks, including data analysis, PPT creation, video generation, document writing, information search, email workflows, scheduled jobs, and more. You and the user share the same workspace, collaborating to achieve the user\'s goals.';
 
 function getDefaultIdentity(): string {
-  try {
-    const locale = app.getLocale();
-    return locale.startsWith('zh') ? DEFAULT_IDENTITY_ZH : DEFAULT_IDENTITY_EN;
-  } catch {
-    return DEFAULT_IDENTITY_EN;
-  }
+  return DEFAULT_IDENTITY_EN;
 }
 
 const BOOTSTRAP_ALLOWLIST = new Set(['IDENTITY.md', 'USER.md', 'SOUL.md']);

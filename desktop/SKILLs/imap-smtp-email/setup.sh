@@ -55,18 +55,10 @@ echo ""
 # Prompt for email provider
 echo "Select your email provider:"
 echo "  1) Gmail"
-echo "  2) Outlook"
-echo "  3) 163.com"
-echo "  4) vip.163.com"
-echo "  5) 126.com"
-echo "  6) vip.126.com"
-echo "  7) 188.com"
-echo "  8) vip.188.com"
-echo "  9) yeah.net"
-echo " 10) QQ Mail"
-echo " 11) Custom"
+echo "  2) Outlook / Microsoft 365"
+echo "  3) Custom"
 echo ""
-read -p "Enter choice (1-11): " PROVIDER_CHOICE
+read -p "Enter choice (1-3): " PROVIDER_CHOICE
 
 case $PROVIDER_CHOICE in
   1)
@@ -86,70 +78,6 @@ case $PROVIDER_CHOICE in
     IMAP_TLS="true"
     ;;
   3)
-    IMAP_HOST="imap.163.com"
-    IMAP_PORT="993"
-    SMTP_HOST="smtp.163.com"
-    SMTP_PORT="465"
-    SMTP_SECURE="true"
-    IMAP_TLS="true"
-    ;;
-  4)
-    IMAP_HOST="imap.vip.163.com"
-    IMAP_PORT="993"
-    SMTP_HOST="smtp.vip.163.com"
-    SMTP_PORT="465"
-    SMTP_SECURE="true"
-    IMAP_TLS="true"
-    ;;
-  5)
-    IMAP_HOST="imap.126.com"
-    IMAP_PORT="993"
-    SMTP_HOST="smtp.126.com"
-    SMTP_PORT="465"
-    SMTP_SECURE="true"
-    IMAP_TLS="true"
-    ;;
-  6)
-    IMAP_HOST="imap.vip.126.com"
-    IMAP_PORT="993"
-    SMTP_HOST="smtp.vip.126.com"
-    SMTP_PORT="465"
-    SMTP_SECURE="true"
-    IMAP_TLS="true"
-    ;;
-  7)
-    IMAP_HOST="imap.188.com"
-    IMAP_PORT="993"
-    SMTP_HOST="smtp.188.com"
-    SMTP_PORT="465"
-    SMTP_SECURE="true"
-    IMAP_TLS="true"
-    ;;
-  8)
-    IMAP_HOST="imap.vip.188.com"
-    IMAP_PORT="993"
-    SMTP_HOST="smtp.vip.188.com"
-    SMTP_PORT="465"
-    SMTP_SECURE="true"
-    IMAP_TLS="true"
-    ;;
-  9)
-    IMAP_HOST="imap.yeah.net"
-    IMAP_PORT="993"
-    SMTP_HOST="smtp.yeah.net"
-    SMTP_PORT="465"
-    SMTP_SECURE="true"
-    IMAP_TLS="true"
-    ;;
-  10)
-    IMAP_HOST="imap.qq.com"
-    IMAP_PORT="993"
-    SMTP_HOST="smtp.qq.com"
-    SMTP_PORT="587"
-    SMTP_SECURE="false"
-    IMAP_TLS="true"
-    ;;
-  11)
     read -p "IMAP Host: " IMAP_HOST
     read -p "IMAP Port: " IMAP_PORT
     read -p "SMTP Host: " SMTP_HOST
@@ -165,7 +93,7 @@ esac
 
 echo ""
 read -p "Email address: " EMAIL
-read -s -p "Password / App Password / Authorization Code: " PASSWORD
+read -s -p "Password / App Password: " PASSWORD
 echo ""
 if [ -z "$REJECT_UNAUTHORIZED" ]; then
   read -p "Accept self-signed certificates? (y/n): " ACCEPT_CERT

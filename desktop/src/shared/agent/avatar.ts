@@ -51,8 +51,9 @@ const AGENT_AVATAR_PART_COUNT = 2;
 
 const AGENT_AVATAR_SVGS = new Set<string>(Object.values(AgentAvatarSvg));
 
+// Swen's default agent wears a briefcase; the lobster stays available as a choice.
 export const DefaultAgentAvatar = {
-  svg: AgentAvatarSvg.Lobster,
+  svg: AgentAvatarSvg.Briefcase,
 } as const satisfies DesignedAgentAvatar;
 
 export const isAgentAvatarSvg = (value: string): value is AgentAvatarSvg => {

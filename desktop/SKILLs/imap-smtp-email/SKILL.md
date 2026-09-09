@@ -1,27 +1,27 @@
 ---
 name: imap-smtp-email
-description: Read and send email via IMAP/SMTP. Check for new/unread messages, fetch content, search mailboxes, mark as read/unread, and send emails with attachments. Works with any IMAP/SMTP server including Gmail, Outlook, 163.com, vip.163.com, 126.com, vip.126.com, 188.com, and vip.188.com.
+description: Read and send email via IMAP/SMTP. Check for new/unread messages, fetch content, search mailboxes, mark as read/unread, and send emails with attachments. Works with any IMAP/SMTP server including Gmail and Outlook / Microsoft 365.
 official: true
 version: 1.0.7
 ---
 
 # IMAP/SMTP Email Tool
 
-Read, search, and manage email via IMAP protocol. Send email via SMTP. Supports Gmail, Outlook, 163.com, vip.163.com, 126.com, vip.126.com, 188.com, vip.188.com, and any standard IMAP/SMTP server.
+Read, search, and manage email via IMAP protocol. Send email via SMTP. Supports Gmail, Outlook / Microsoft 365, and any standard IMAP/SMTP server.
 
 ## Important: Configuration is Pre-configured
 
-The `accounts.json` configuration file is automatically managed by LobsterAI Settings (邮箱设置). Legacy `.env` configuration is still supported as a fallback for older users. **Do NOT ask the user to create or edit these files — just run the commands directly.** If credentials are wrong, the scripts will return a clear error message; only then should you inform the user to check their email settings.
+The `accounts.json` configuration file is automatically managed by Swen Settings > Email Settings. Legacy `.env` configuration is still supported as a fallback for older users. **Do NOT ask the user to create or edit these files — just run the commands directly.** If credentials are wrong, the scripts will return a clear error message; only then should you inform the user to check their email settings.
 
 The configuration files are located in this skill's directory (same folder as this SKILL.md file). The scripts load them automatically via absolute paths, regardless of the current working directory.
 
-Use the provided scripts as the only email transport interface. Do not write temporary IMAP/SMTP scripts, do not use raw sockets, OpenSSL, `net`, `tls`, or alternate mail clients, and do not inspect `.env`, `accounts.json`, or script source unless the official command output explicitly reports missing configuration and the user asks you to diagnose it. If an official command fails or times out, report that command result and suggest checking LobsterAI Settings; do not implement a fallback protocol client.
+Use the provided scripts as the only email transport interface. Do not write temporary IMAP/SMTP scripts, do not use raw sockets, OpenSSL, `net`, `tls`, or alternate mail clients, and do not inspect `.env`, `accounts.json`, or script source unless the official command output explicitly reports missing configuration and the user asks you to diagnose it. If an official command fails or times out, report that command result and suggest checking Swen Settings; do not implement a fallback protocol client.
 
 Do not claim that `node-imap`, `nodemailer`, or another dependency is broken unless an official script or verified stack trace proves it. A successful command means the configured email account works; a timeout means the current command timed out, not that the dependency is defective.
 
 Command results intentionally redact account metadata. In user-facing replies, use the redacted account label/email from the JSON result and do not repeat full configured email addresses unless the user explicitly asks for the exact address. Email content fields such as sender, subject, and message body may still be shown when they are the requested result.
 
-Never ask the user to send an email authorization code, app password, account password, or other credential in chat. If an account is disabled, incomplete, or has invalid credentials, ask the user to enable or update it in LobsterAI Settings > Email Settings, then rerun the official command.
+Never ask the user to send an email authorization code, app password, account password, or other credential in chat. If an account is disabled, incomplete, or has invalid credentials, ask the user to enable or update it in Swen Settings > Email Settings, then rerun the official command.
 
 For multi-account setups:
 - Run `node scripts/imap.js accounts` or `node scripts/smtp.js accounts` to list configured account IDs without exposing secrets.
@@ -64,20 +64,16 @@ SMTP_REJECT_UNAUTHORIZED=true     # Set to false for self-signed certs
 
 | Provider | IMAP Host | IMAP Port | SMTP Host | SMTP Port |
 |----------|-----------|-----------|-----------|-----------|
-| 163.com | imap.163.com | 993 | smtp.163.com | 465 |
-| vip.163.com | imap.vip.163.com | 993 | smtp.vip.163.com | 465 |
-| 126.com | imap.126.com | 993 | smtp.126.com | 465 |
-| vip.126.com | imap.vip.126.com | 993 | smtp.vip.126.com | 465 |
-| 188.com | imap.188.com | 993 | smtp.188.com | 465 |
-| vip.188.com | imap.vip.188.com | 993 | smtp.vip.188.com | 465 |
-| yeah.net | imap.yeah.net | 993 | smtp.yeah.net | 465 |
-| Gmail | imap.gmail.com | 993 | smtp.gmail.com | 587 |
-| Outlook | outlook.office365.com | 993 | smtp.office365.com | 587 |
-| QQ Mail | imap.qq.com | 993 | smtp.qq.com | 587 |
+| Gmail | imap.gmail.com | 993 | smtp.gmail.com | 587 (STARTTLS) or 465 (SSL) |
+| Outlook / Microsoft 365 | outlook.office365.com | 993 | smtp.office365.com | 587 |
 
-**Important for 163.com:**
-- Use **authorization code** (授权码), not account password
-- Enable IMAP/SMTP in web settings first
+**Important for Gmail:**
+- Use an **App Password** (requires 2-Step Verification), not the account password
+- Enable IMAP in Gmail settings first
+
+**Important for Outlook / Microsoft 365:**
+- Use an app password if the account has multi-factor authentication enabled
+- Some tenants disable basic IMAP/SMTP authentication; ask the administrator if sign-in is refused
 
 ## IMAP Commands (Receiving Email)
 
@@ -228,8 +224,8 @@ npm install
 ## Security Notes
 
 - Store credentials in `.env` (add to `.gitignore`)
-- For Gmail: use App Password if 2FA is enabled
-- For 163.com: use authorization code (授权码), not account password
+- For Gmail: use an App Password if 2-Step Verification is enabled
+- For Outlook / Microsoft 365: use an app password if MFA is enabled
 - Downloaded attachment filenames are normalized to a safe local filename and cannot create directories outside the account/UID download folder.
 
 ## Troubleshooting
@@ -241,8 +237,8 @@ npm install
 **Authentication failed:**
 - Verify username (usually full email address)
 - Check password is correct
-- For 163.com: use authorization code, not account password
-- For Gmail: use App Password if 2FA enabled
+- For Gmail: use an App Password if 2-Step Verification is enabled
+- For Outlook / Microsoft 365: use an app password if MFA is enabled
 
 **TLS/SSL errors:**
 - Match `IMAP_TLS`/`SMTP_SECURE` setting to server requirements

@@ -5,10 +5,10 @@ import type { Model } from '../../store/slices/modelSlice';
 
 type QuotaRelevantModel = Pick<Model, 'isServerModel' | 'providerKey'>;
 
-export function usesLobsterAIServerQuota(
+export function usesSwenServerQuota(
   model: QuotaRelevantModel | null | undefined,
 ): boolean {
-  return model?.isServerModel === true || model?.providerKey === ProviderName.LobsteraiServer;
+  return model?.isServerModel === true || model?.providerKey === ProviderName.SwenServer;
 }
 
 export function resolveBlockingEnterpriseQuotaReason(
@@ -17,5 +17,5 @@ export function resolveBlockingEnterpriseQuotaReason(
 ): EnterpriseQuotaReason | null {
   if (!reason) return null;
   if (!model) return reason;
-  return usesLobsterAIServerQuota(model) ? reason : null;
+  return usesSwenServerQuota(model) ? reason : null;
 }

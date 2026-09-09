@@ -483,8 +483,8 @@ test('scheduled task sessions preserve their task id in session details and list
 });
 
 test('list and search session summaries include IM platform from mappings', () => {
-  insertSession('weixin-session', 'main', '[微信] group:o9cq', 2_000);
-  insertSession('regular-session', 'main', '[微信] user-written title', 1_000);
+  insertSession('telegram-session', 'main', '[Telegram] group:o9cq', 2_000);
+  insertSession('regular-session', 'main', '[Telegram] user-written title', 1_000);
   db.prepare(
     `INSERT INTO im_session_mappings (
       im_conversation_id,
@@ -497,20 +497,20 @@ test('list and search session summaries include IM platform from mappings', () =
     ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     'group:o9cq',
-    'weixin',
-    'weixin-session',
+    'telegram',
+    'telegram-session',
     'main',
-    'agent:main:openclaw-weixin:group:o9cq',
+    'agent:main:telegram:group:o9cq',
     1_000,
     2_000,
   );
 
   const listed = store.listSessions(10, 0);
-  expect(listed.find((session) => session.id === 'weixin-session')?.imPlatform).toBe('weixin');
+  expect(listed.find((session) => session.id === 'telegram-session')?.imPlatform).toBe('telegram');
   expect(listed.find((session) => session.id === 'regular-session')?.imPlatform).toBeNull();
 
   const searched = store.searchSessions({ query: 'group:o9cq', limit: 10, offset: 0 });
-  expect(searched[0]?.imPlatform).toBe('weixin');
+  expect(searched[0]?.imPlatform).toBe('telegram');
 });
 
 test('scheduled task session lookup uses a stable newest-created top-level session', () => {
@@ -923,12 +923,12 @@ test('updateSession can patch model override without refreshing the session upda
 
   store.updateSession(
     sid,
-    { modelOverride: 'lobsterai-server/qwen3.6-plus-YoudaoInner' },
+    { modelOverride: 'swen-server/qwen3.6-plus-YoudaoInner' },
     { touchUpdatedAt: false },
   );
 
   const session = store.getSession(sid);
-  expect(session?.modelOverride).toBe('lobsterai-server/qwen3.6-plus-YoudaoInner');
+  expect(session?.modelOverride).toBe('swen-server/qwen3.6-plus-YoudaoInner');
   expect(session?.updatedAt).toBe(1000);
 });
 
@@ -940,7 +940,7 @@ test('create and update session persist the selected thinking level', () => {
     'local',
     [],
     'main',
-    'lobsterai-server/deepseek-v4-flash',
+    'swen-server/deepseek-v4-flash',
     { thinkingLevel: 'high' },
   );
 

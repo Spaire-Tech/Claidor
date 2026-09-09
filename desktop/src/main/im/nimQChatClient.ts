@@ -1,6 +1,6 @@
 /**
  * NIM QChat Client
- * Manages QChat (Circle Groups / 圈组) subscriptions for receiving and sending messages
+ * Manages QChat (Circle Groups) subscriptions for receiving and sending messages
  * Adapted from openclaw-nim/src/qchat-client.ts for Electron main process
  */
 

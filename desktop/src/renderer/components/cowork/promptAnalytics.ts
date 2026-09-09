@@ -108,13 +108,13 @@ export const getPromptTextAnalyticsParams = (
     promptLengthBucket: bucketPromptLength(trimmed.length),
     promptLineCountBucket: bucketPromptLineCount(promptLineCount),
     inputLanguageType: getPromptLanguageType(trimmed),
-    hasQuestionMark: /[?？]/.test(trimmed),
+    hasQuestionMark: /[?]/.test(trimmed),
     hasCodeFence: /```/.test(trimmed),
     hasInlineCode: /`[^`\n]+`/.test(trimmed),
     hasUrl: /https?:\/\/|www\./i.test(trimmed),
     hasPathLikeText: /(^|\s)(~\/|\.{1,2}\/|[A-Za-z]:\\|\/[\w.-]+\/|[\w.-]+\\[\w.-]+)/.test(trimmed),
     hasCommandLikeText: /(^|\n)\s*(npm|pnpm|yarn|node|python|pip|git|curl|docker|kubectl|npx|brew)\s+/.test(trimmed),
-    hasAtMediaMention: /@(图片|视频|音频)\d+/.test(trimmed),
+    hasAtMediaMention: /@(image|video|audio)\d+/.test(trimmed),
   };
 };
 

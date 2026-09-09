@@ -58,10 +58,10 @@ import {
 
 // Default working directory for new users
 const getDefaultWorkingDirectory = (): string => {
-  return path.join(os.homedir(), 'lobsterai', 'project');
+  return path.join(os.homedir(), 'swen', 'project');
 };
 
-const TASK_WORKSPACE_CONTAINER_DIR = '.lobsterai-tasks';
+const TASK_WORKSPACE_CONTAINER_DIR = '.swen-tasks';
 
 const normalizeRecentWorkspacePath = (cwd: string): string => {
   const resolved = path.resolve(cwd);
@@ -83,8 +83,8 @@ const MIN_MEMORY_USER_MEMORIES_MAX_ITEMS = 1;
 const MAX_MEMORY_USER_MEMORIES_MAX_ITEMS = 60;
 const MEMORY_NEAR_DUPLICATE_MIN_SCORE = 0.82;
 const MEMORY_PROCEDURAL_TEXT_RE =
-  /(执行以下命令|run\s+(?:the\s+)?following\s+command|\b(?:cd|npm|pnpm|yarn|node|python|bash|sh|git|curl|wget)\b|\$[A-Z_][A-Z0-9_]*|&&|--[a-z0-9-]+|\/tmp\/|\.sh\b|\.bat\b|\.ps1\b)/i;
-const MEMORY_ASSISTANT_STYLE_TEXT_RE = /^(?:使用|use)\s+[A-Za-z0-9._-]+\s*(?:技能|skill)/i;
+  /(run\s+(?:the\s+)?following\s+command|\b(?:cd|npm|pnpm|yarn|node|python|bash|sh|git|curl|wget)\b|\$[A-Z_][A-Z0-9_]*|&&|--[a-z0-9-]+|\/tmp\/|\.sh\b|\.bat\b|\.ps1\b)/i;
+const MEMORY_ASSISTANT_STYLE_TEXT_RE = /^(?:use)\s+[A-Za-z0-9._-]+\s*(?:skill)/i;
 
 const DEFAULT_EMBEDDING_ENABLED = false;
 const DEFAULT_EMBEDDING_PROVIDER = 'openai';
@@ -101,18 +101,16 @@ const DEFAULT_DREAMING_TIMEZONE = '';
 
 // Regexes and helper inlined from the removed coworkMemoryExtractor module.
 // Used only by shouldAutoDeleteMemoryText() during startup memory cleanup.
-const CHINESE_QUESTION_PREFIX_RE = /^(?:请问|问下|问一下|是否|能否|可否|为什么|为何|怎么|如何|谁|什么|哪(?:里|儿|个)?|几|多少|要不要|会不会|是不是|能不能|可不可以|行不行|对不对|好不好)/u;
-const ENGLISH_QUESTION_PREFIX_RE = /^(?:what|who|why|how|when|where|which|is|are|am|do|does|did|can|could|would|will|should)\b/i;
-const QUESTION_INLINE_RE = /(是不是|能不能|可不可以|要不要|会不会|有没有|对不对|好不好)/i;
-const QUESTION_SUFFIX_RE = /(吗|么|呢|嘛)\s*$/u;
+const ENGLISH_QUESTION_PREFIX_RE = /^(?:what|who|why|how|when|where|which|is|are|am|do|does|did|can|could|would|will|should|may i|please tell me|any idea)\b/i;
+const QUESTION_INLINE_RE = /\b(?:is it|can you|could you|would you|do you|did you|are you|is there|are there|whether or not)\b/i;
+const QUESTION_SUFFIX_RE = /\b(?:right|correct|isn't it|is it|or not)\s*$/i;
 
 function isQuestionLikeMemoryText(text: string): boolean {
   // This function has its own normalization (strips trailing punctuation)
   // that differs from normalizeMemoryText, so it cannot reuse that helper.
-  const normalized = text.replace(/\s+/g, ' ').trim().replace(/[。！!]+$/g, '').trim();
+  const normalized = text.replace(/\s+/g, ' ').trim().replace(/[!]+$/g, '').trim();
   if (!normalized) return false;
-  if (/[？?]\s*$/.test(normalized)) return true;
-  if (CHINESE_QUESTION_PREFIX_RE.test(normalized)) return true;
+  if (/[?]\s*$/.test(normalized)) return true;
   if (ENGLISH_QUESTION_PREFIX_RE.test(normalized)) return true;
   if (QUESTION_INLINE_RE.test(normalized)) return true;
   if (QUESTION_SUFFIX_RE.test(normalized)) return true;
@@ -204,7 +202,7 @@ function extractConversationSearchTerms(value: string): string[] {
   // Keep the full phrase and additionally match by per-token terms.
   addTerm(normalized);
   const tokens = normalized
-    .split(/[\s,，、|/\\;；]+/g)
+    .split(/[\s,|/\\;]+/g)
     .map(token => token.replace(/^['"`]+|['"`]+$/g, '').trim())
     .filter(Boolean);
 
@@ -229,8 +227,7 @@ function normalizeMemorySemanticKey(value: string): string {
   const key = normalizeMemoryMatchKey(value);
   if (!key) return '';
   return key
-    .replace(/^(?:the user|user|i am|i m|i|my|me)\s+/i, '')
-    .replace(/^(?:该用户|这个用户|用户|本人|我的|我们|咱们|咱|我|你的|你)\s*/u, '')
+    .replace(/^(?:the user|this user|user|i am|i m|i|my|me|we|our|you|your)\s+/i, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -330,16 +327,10 @@ function scoreMemoryTextQuality(value: string): number {
   const normalized = normalizeMemoryText(value);
   if (!normalized) return 0;
   let score = normalized.length;
-  if (/^(?:该用户|这个用户|用户)\s*/u.test(normalized)) {
+  if (/^(?:the user|this user|user)\b/i.test(normalized)) {
     score -= 12;
   }
-  if (/^(?:the user|user)\b/i.test(normalized)) {
-    score -= 12;
-  }
-  if (/^(?:我|我的|我是|我有|我会|我喜欢|我偏好)/u.test(normalized)) {
-    score += 4;
-  }
-  if (/^(?:i|i am|i'm|my)\b/i.test(normalized)) {
+  if (/^(?:i|i am|i'm|my|i have|i like|i prefer)\b/i.test(normalized)) {
     score += 4;
   }
   return score;
@@ -2102,7 +2093,7 @@ export class CoworkStore {
       timestamp: row.created_at,
       preview: getCoworkRailPreview(
         row.preview_content,
-        row.type === 'user' ? `Turn ${index + 1}` : 'LobsterAI',
+        row.type === 'user' ? `Turn ${index + 1}` : 'Swen',
         COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH,
       ),
       contentLen: row.content_len,

@@ -134,7 +134,6 @@ const DingTalkInstanceSettings: React.FC<DingTalkInstanceSettingsProps> = ({
   onTestConnectivity,
   testingPlatform,
   connectivityResults,
-  language,
   headerLeading,
 }) => {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -213,7 +212,7 @@ const DingTalkInstanceSettings: React.FC<DingTalkInstanceSettingsProps> = ({
     } catch (err: unknown) {
       if (!isMountedRef.current) return;
       setQrStatus('error');
-      setQrError((err instanceof Error ? err.message : undefined) || '获取二维码失败');
+      setQrError((err instanceof Error ? err.message : undefined) || 'Failed to fetch the QR code');
     }
   };
 
@@ -256,7 +255,7 @@ const DingTalkInstanceSettings: React.FC<DingTalkInstanceSettingsProps> = ({
             <span
               className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors truncate border-b border-dashed border-gray-400 dark:border-secondary/50 hover:border-primary pb-px"
               onClick={() => setEditingName(true)}
-              title={language === 'zh' ? '点击重命名' : 'Click to rename'}
+              title={'Click to rename'}
             >
               {instance.instanceName}
             </span>
@@ -483,7 +482,7 @@ const DingTalkInstanceSettings: React.FC<DingTalkInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || '添加'}
+                {i18nService.t('add') || 'Add'}
               </button>
             </div>
             {instance.allowFrom.length > 0 && (

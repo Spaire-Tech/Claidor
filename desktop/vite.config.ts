@@ -83,7 +83,7 @@ export default defineConfig({
     pdfJsStaticAssetsPlugin(),
     electron([
       {
-        // 主进程入口文件
+        // Main-process entry file
         entry: 'src/main/main.ts',
         vite: {
           build: {
@@ -110,7 +110,7 @@ export default defineConfig({
         },
       },
       {
-        // 预加载脚本入口文件
+        // Preload script entry file
         entry: 'src/main/preload.ts',
         vite: {
           build: {

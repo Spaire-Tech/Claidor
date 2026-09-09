@@ -55,9 +55,9 @@ interface PendingIMPermission {
 
 const PERMISSION_CONFIRM_TIMEOUT_MS = 60_000;
 const ACCUMULATOR_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-const IM_ALLOW_RESPONSE_RE = /^(允许|同意|yes|y)$/i;
-const IM_DENY_RESPONSE_RE = /^(拒绝|不同意|no|n)$/i;
-const IM_ALLOW_OPTION_LABEL = '允许本次操作';
+const IM_ALLOW_RESPONSE_RE = /^(allow|approve|yes|y)$/i;
+const IM_DENY_RESPONSE_RE = /^(deny|reject|no|n)$/i;
+const IM_ALLOW_OPTION_LABEL = 'Allow this operation';
 
 export interface IMCoworkHandlerOptions {
   coworkRuntime: CoworkRuntime;
@@ -237,8 +237,8 @@ export class IMCoworkHandler extends EventEmitter {
       console.warn('[IMCoworkHandler] Skills auto-routing prompt missing for current IM turn');
     }
 
-    // 打印完整的输入消息日志
-    console.log(`[IMCoworkHandler] 处理消息:`, JSON.stringify({
+    // Log the full inbound message
+    console.log(`[IMCoworkHandler] Processing message:`, JSON.stringify({
       platform: message.platform,
       conversationId: message.conversationId,
       coworkSessionId,
@@ -336,11 +336,11 @@ export class IMCoworkHandler extends EventEmitter {
       || ''
     ).trim();
     if (!selectedWorkspaceRoot) {
-      throw new Error('IM 工作目录未配置，请先在应用中选择任务目录。');
+      throw new Error('The IM working directory is not configured. Please select a task directory in the app first.');
     }
     const resolvedWorkspaceRoot = path.resolve(selectedWorkspaceRoot);
     if (!fs.existsSync(resolvedWorkspaceRoot) || !fs.statSync(resolvedWorkspaceRoot).isDirectory()) {
-      throw new Error(`IM 工作目录不存在或无效: ${resolvedWorkspaceRoot}`);
+      throw new Error(`The IM working directory does not exist or is invalid: ${resolvedWorkspaceRoot}`);
     }
 
     const session = this.coworkStore.createSession(
@@ -363,9 +363,9 @@ export class IMCoworkHandler extends EventEmitter {
    * Build a human-readable session title based on platform and sender identity.
    *
    * NIM title rules:
-   *   - P2P direct:  "云信-P2P-{senderName|senderId}"
-   *   - Team group:  "云信-群聊-{groupName|teamId}"
-   *   - QChat:       "云信-圈组-{groupName|channelId}"
+   *   - P2P direct:  "NIM-P2P-{senderName|senderId}"
+   *   - Team group:  "NIM-Team-{groupName|teamId}"
+   *   - QChat:       "NIM-QChat-{groupName|channelId}"
    *
    * Other platforms use the original "IM-{platform}-{timestamp}" style.
    */
@@ -504,7 +504,7 @@ export class IMCoworkHandler extends EventEmitter {
           isError: true,
         },
       });
-      const reply = `定时任务创建失败：${errorMessage}`;
+      const reply = `Failed to create the scheduled task: ${errorMessage}`;
       this.coworkStore.addMessage(sessionId, {
         type: 'assistant',
         content: reply,
@@ -542,7 +542,7 @@ export class IMCoworkHandler extends EventEmitter {
       || message.includes('payload too large')
       || message.includes('entity too large')
       || message.includes('maximum context length')
-      || message.includes('超过') || message.includes('上限')
+      || message.includes('exceed') || message.includes('limit')
     );
   }
 
@@ -617,10 +617,10 @@ export class IMCoworkHandler extends EventEmitter {
         if (accumulator && accumulator.timeoutId === timeoutId) {
           const partialReply = this.formatReply(sessionId, accumulator.messages);
           this.cleanupAccumulator(sessionId);
-          if (partialReply && partialReply !== '处理完成，但没有生成回复。') {
-            accumulator.resolve?.(partialReply + '\n\n[处理超时，以上为部分结果]');
+          if (partialReply && partialReply !== DEFAULT_IM_EMPTY_REPLY) {
+            accumulator.resolve?.(partialReply + '\n\n[Processing timed out; the above is a partial result]');
           } else {
-            accumulator.reject?.(new Error('处理超时，请稍后重试'));
+            accumulator.reject?.(new Error('Processing timed out. Please try again later.'));
           }
         }
       }, ACCUMULATOR_TIMEOUT_MS);
@@ -708,9 +708,9 @@ export class IMCoworkHandler extends EventEmitter {
       : '';
 
     return [
-      `检测到需要安全确认的操作（工具: ${request.toolName}）。`,
-      questionText ? `说明: ${questionText}` : '说明: 当前操作涉及删除或访问任务目录外路径。',
-      '请在 60 秒内回复“允许”或“拒绝”。',
+      `This operation needs your confirmation (tool: ${request.toolName}).`,
+      questionText ? `Details: ${questionText}` : 'Details: this operation deletes files or accesses paths outside the task directory.',
+      'Please reply "allow" or "deny" within 60 seconds.',
     ].join('\n');
   }
 
@@ -763,14 +763,14 @@ export class IMCoworkHandler extends EventEmitter {
 
     const normalizedReply = message.content
       .trim()
-      .replace(/[。！!,.，\s]+$/g, '');
+      .replace(/[!,.\s]+$/g, '');
     if (!normalizedReply) {
-      return '当前有待确认操作，请回复“允许”或“拒绝”（60 秒内）。';
+      return 'An operation is waiting for your confirmation. Please reply "allow" or "deny" (within 60 seconds).';
     }
 
     if (!this.coworkRuntime.isSessionActive(pending.sessionId)) {
       this.clearPendingPermissionByKey(key);
-      return '该确认请求已过期，请重新发送任务。';
+      return 'That confirmation request has expired. Please send the task again.';
     }
 
     if (IM_DENY_RESPONSE_RE.test(normalizedReply)) {
@@ -779,11 +779,11 @@ export class IMCoworkHandler extends EventEmitter {
         behavior: 'deny',
         message: 'Operation denied by IM user confirmation.',
       });
-      return '已拒绝本次操作，任务未继续执行。';
+      return 'The operation was denied and the task did not continue.';
     }
 
     if (!IM_ALLOW_RESPONSE_RE.test(normalizedReply)) {
-      return '当前有待确认操作，请回复“允许”或“拒绝”（60 秒内）。';
+      return 'An operation is waiting for your confirmation. Please reply "allow" or "deny" (within 60 seconds).';
     }
 
     this.clearPendingPermissionByKey(key);
@@ -892,7 +892,7 @@ export class IMCoworkHandler extends EventEmitter {
     this.cleanupAccumulator(sessionId);
 
     if (accumulator.backgroundDelivery) {
-      if (!this.sendAsyncReply || !replyText || replyText === '处理完成，但没有生成回复。') {
+      if (!this.sendAsyncReply || !replyText || replyText === DEFAULT_IM_EMPTY_REPLY) {
         console.warn('[IMCoworkHandler] cannot send async IM reminder reply', replyText);
         return;
       }
@@ -1140,18 +1140,18 @@ export class IMCoworkHandler extends EventEmitter {
 
     if (message.attachments && message.attachments.length > 0) {
       const mediaInfo = message.attachments.map((att: IMMediaAttachment) => {
-        const parts = [`类型: ${att.type}`, `路径: ${att.localPath}`];
-        if (att.fileName) parts.push(`文件名: ${att.fileName}`);
+        const parts = [`Type: ${att.type}`, `Path: ${att.localPath}`];
+        if (att.fileName) parts.push(`File name: ${att.fileName}`);
         if (att.mimeType) parts.push(`MIME: ${att.mimeType}`);
-        if (att.width && att.height) parts.push(`尺寸: ${att.width}x${att.height}`);
-        if (att.duration) parts.push(`时长: ${att.duration}秒`);
-        if (att.fileSize) parts.push(`大小: ${(att.fileSize / 1024).toFixed(1)}KB`);
+        if (att.width && att.height) parts.push(`Dimensions: ${att.width}x${att.height}`);
+        if (att.duration) parts.push(`Duration: ${att.duration}s`);
+        if (att.fileSize) parts.push(`Size: ${(att.fileSize / 1024).toFixed(1)}KB`);
         return `- ${parts.join(', ')}`;
       }).join('\n');
 
       content = content
-        ? `${content}\n\n[附件信息]\n${mediaInfo}`
-        : `[附件信息]\n${mediaInfo}`;
+        ? `${content}\n\n[Attachment Info]\n${mediaInfo}`
+        : `[Attachment Info]\n${mediaInfo}`;
     }
 
     return content;

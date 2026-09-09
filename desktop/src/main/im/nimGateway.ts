@@ -4,30 +4,31 @@
  * Adapted from openclaw-nim for Electron main process
  */
 
-import { EventEmitter } from 'events';
-import * as path from 'path';
-import * as os from 'os';
-import * as fs from 'fs';
 import { app } from 'electron';
+import { EventEmitter } from 'events';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 const NIM = require('nim-web-sdk-ng/dist/nodejs/nim.js').default;
 import type { V2NIM } from 'nim-web-sdk-ng/dist/nodejs/nim';
+
+import { parseMediaMarkers, stripMediaMarkers } from './dingtalkMediaParser';
 import {
+  cleanupOldNimMediaFiles,
+  downloadNimMedia,
+  inferMediaPlaceholder,
+  sendNimMediaMessage,
+} from './nimMedia';
+import { NimQChatClient, QChatInboundMessage } from './nimQChatClient';
+import {
+  DEFAULT_NIM_STATUS,
+  IMMediaAttachment,
+  IMMessage,
   NimConfig,
   NimGatewayStatus,
-  IMMessage,
-  IMMediaAttachment,
-  DEFAULT_NIM_STATUS,
-  NimTeamPolicy,
   NimSessionType,
+  NimTeamPolicy,
 } from './types';
-import {
-  downloadNimMedia,
-  sendNimMediaMessage,
-  inferMediaPlaceholder,
-  cleanupOldNimMediaFiles,
-} from './nimMedia';
-import { parseMediaMarkers, stripMediaMarkers } from './dingtalkMediaParser';
-import { NimQChatClient, QChatInboundMessage } from './nimQChatClient';
 
 // Message deduplication cache
 const processedMessages = new Map<string, number>();
@@ -103,7 +104,7 @@ function getSdkDataPath(account: string): string {
   try {
     baseDir = app.getPath('userData');
   } catch {
-    baseDir = path.join(os.homedir(), '.lobsterai');
+    baseDir = path.join(os.homedir(), '.swen');
   }
   const dataDir = path.join(baseDir, 'nim-data', account);
   if (!fs.existsSync(dataDir)) {
@@ -424,7 +425,7 @@ export class NimGateway extends EventEmitter {
           this.emit('connected');
           this.emit('status');
 
-          // 启动时清理旧媒体文件，并设置定期清理（每 24 小时）
+          // Clean up old media files at startup and schedule periodic cleanup (every 24 hours)
           this.cleanupMediaFiles();
           if (!this.cleanupInterval) {
             this.cleanupInterval = setInterval(() => {
@@ -670,7 +671,7 @@ export class NimGateway extends EventEmitter {
 
   /**
    * Fetch the display name for a team via V2NIMTeamService.getTeamInfo().
-   * teamType: 1 = advanced team (高级群), 2 = super team (超大群).
+   * teamType: 1 = advanced team, 2 = super team.
    * Falls back to the provided fallbackId on any error.
    */
   private async fetchTeamName(teamId: string, teamType: number, fallbackId: string): Promise<string> {
@@ -684,7 +685,7 @@ export class NimGateway extends EventEmitter {
       console.log('[NIM Gateway] getTeamInfo result:', JSON.stringify(team, null, 2));
       const name = team?.name;
       return name && name.trim() ? name.trim() : fallbackId;
-    } catch (err: any) {
+    } catch {
       // If local cache miss, try fetching from cloud
       try {
         const nim = this.v2Client as any;
@@ -741,7 +742,7 @@ export class NimGateway extends EventEmitter {
 
   /**
    * Parse V2 message attachment fields
-   * 与 openclaw-nim/src/client.ts 的 parseV2Attachment 一致
+   * Mirrors parseV2Attachment in openclaw-nim/src/client.ts
    */
   private parseV2Attachment(msg: any): { url?: string; name?: string; size?: number; width?: number; height?: number; duration?: number } | undefined {
     const attachment = msg.attachment;
@@ -759,7 +760,7 @@ export class NimGateway extends EventEmitter {
 
   /**
    * Handle incoming V2 message from SDK
-   * 支持 text、image、audio、video、file 消息类型
+   * Supports the text, image, audio, video and file message types
    */
   private async handleIncomingMessage(msg: any): Promise<void> {
     try {
@@ -796,13 +797,13 @@ export class NimGateway extends EventEmitter {
         return;
       }
 
-      // 打印原始消息结构，便于确认 SDK 字段名
+      // Log the raw message structure to confirm the SDK field names
       console.log('[NIM Gateway] Raw message:', JSON.stringify(msg, null, 2));
 
 
       const msgType = convertMessageType(msg.messageType);
 
-      // 支持的消息类型：text, image, audio, video, file
+      // Supported message types: text, image, audio, video, file
       const supportedTypes: NimMessageType[] = ['text', 'image', 'audio', 'video', 'file'];
       if (!supportedTypes.includes(msgType)) {
         this.log(`[NIM Gateway] Ignoring unsupported message type: ${msgType}`);
@@ -846,25 +847,25 @@ export class NimGateway extends EventEmitter {
         console.log(`[NIM Gateway] Team message accepted: bot was @-mentioned in ${targetId}`);
       }
 
-      // 构建消息内容和媒体附件
+      // Build the message content and media attachments
       let content = '';
       const attachments: IMMediaAttachment[] = [];
 
       if (msgType === 'text') {
-        // 纯文本消息
+        // Plain text message
         content = msg.text || '';
         if (!content.trim()) {
           this.log('[NIM Gateway] Ignoring empty text message');
           return;
         }
       } else if (['image', 'audio', 'video', 'file'].includes(msgType)) {
-        // 媒体消息：生成占位符文本，附带 URL（与 openclaw-nim/src/bot.ts 一致）
+        // Media message: build placeholder text with the URL appended (same as openclaw-nim/src/bot.ts)
         const attach = this.parseV2Attachment(msg);
         const placeholder = inferMediaPlaceholder(msgType);
         const attachUrl = attach?.url;
         content = attachUrl ? `${placeholder} ${attachUrl}` : placeholder;
 
-        // 下载媒体文件
+        // Download the media file
         if (attachUrl) {
           const nimMediaType = msgType as 'image' | 'audio' | 'video' | 'file';
           const downloaded = await downloadNimMedia(
@@ -895,10 +896,10 @@ export class NimGateway extends EventEmitter {
         });
       }
 
-      // P2P: 直接使用消息自带的昵称字段，无需额外 API 调用
-      // V2 SDK 字段可能是 fromNick / senderNick / nickname，都尝试一下
+      // P2P: use the nickname field carried by the message; no extra API call needed
+      // The V2 SDK field may be fromNick / senderNick / nickname, so try each
       const rawNick = msg.fromNick || msg.senderNick || msg.nickname || msg.nickName || '';
-      // 打印原始 msg 的所有 key，便于确认真实字段名（仅 debug 模式）
+      // Log all keys of the raw msg to confirm the real field names (debug mode only)
       console.log('[NIM Gateway] P2P msg keys:', Object.keys(msg));
       console.log('[NIM Gateway] P2P nick fields:', JSON.stringify({
         fromNick: msg.fromNick,
@@ -934,7 +935,7 @@ export class NimGateway extends EventEmitter {
 
       this.status.lastInboundAt = Date.now();
 
-      this.log('[NIM Gateway] 收到消息:', JSON.stringify({
+      this.log('[NIM Gateway] Received message:', JSON.stringify({
         msgId,
         senderId,
         sessionType,
@@ -948,7 +949,7 @@ export class NimGateway extends EventEmitter {
       // Create reply function with media support
       // For team messages, reply to the team with @-mention; for P2P, reply to sender
       const replyFn = async (text: string) => {
-        this.log('[NIM Gateway] 发送回复:', JSON.stringify({
+        this.log('[NIM Gateway] Sending reply:', JSON.stringify({
           to: isTeam ? targetId : senderId,
           sessionType,
           replyLength: text.length,
@@ -975,7 +976,7 @@ export class NimGateway extends EventEmitter {
           await this.onMessageCallback(message, replyFn);
         } catch (error: any) {
           console.error(`[NIM Gateway] Error in message callback: ${error.message}`);
-          await replyFn(`抱歉，处理消息时出现错误：${error.message}`);
+          await replyFn(`Sorry, something went wrong while processing your message: ${error.message}`);
         }
       }
     } catch (err: any) {
@@ -1039,36 +1040,36 @@ export class NimGateway extends EventEmitter {
 
   /**
    * Send reply with media marker parsing
-   * 解析文本中的媒体标记（如 ![image](/path/to/img.png)），
-   * 先发送纯文本部分，再逐个发送媒体文件。
-   * 与 Telegram/DingTalk/Feishu Gateway 的 replyFn 行为一致。
+   * Parses media markers in the text (e.g. ![image](/path/to/img.png)),
+   * sends the plain-text part first, then each media file in turn.
+   * Matches the replyFn behaviour of the Telegram/DingTalk/Feishu gateways.
    */
   private async sendReplyWithMedia(to: string, text: string): Promise<void> {
-    // 1. 解析媒体标记
+    // 1. Parse media markers
     const markers = parseMediaMarkers(text);
 
     if (markers.length === 0) {
-      // 没有媒体标记，纯文本发送
+      // No media markers, send as plain text
       await this.sendLongText(to, text);
       return;
     }
 
     this.log(`[NIM Gateway] Found ${markers.length} media marker(s) in reply`);
 
-    // 2. 先发送去除标记后的文本（如果有）
+    // 2. Send the text with markers stripped first (if any)
     const strippedText = stripMediaMarkers(text, markers);
     if (strippedText.trim()) {
       await this.sendLongText(to, strippedText);
-      // 文本和第一个媒体之间的间隔
+      // Pause between the text and the first media item
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    // 3. 逐个发送媒体文件
+    // 3. Send the media files one by one
     for (let i = 0; i < markers.length; i++) {
       const marker = markers[i];
 
       try {
-        // 检查文件是否存在
+        // Check that the file exists
         if (!fs.existsSync(marker.path)) {
           this.log(`[NIM Gateway] Media file not found: ${marker.path}`);
           continue;
@@ -1080,7 +1081,7 @@ export class NimGateway extends EventEmitter {
         console.error(`[NIM Gateway] Failed to send media ${marker.path}: ${error.message}`);
       }
 
-      // 媒体之间的间隔
+      // Pause between media items
       if (i < markers.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
@@ -1391,7 +1392,7 @@ export class NimGateway extends EventEmitter {
 
       this.status.lastInboundAt = Date.now();
 
-      this.log('[NIM QChat] 收到消息:', JSON.stringify({
+      this.log('[NIM QChat] Received message:', JSON.stringify({
         messageId: msg.messageId,
         serverId: msg.serverId,
         channelId: msg.channelId,
@@ -1421,7 +1422,7 @@ export class NimGateway extends EventEmitter {
 
       // Create reply function for QChat
       const replyFn = async (text: string) => {
-        this.log('[NIM QChat] 发送回复:', JSON.stringify({
+        this.log('[NIM QChat] Sending reply:', JSON.stringify({
           serverId: msg.serverId,
           channelId: msg.channelId,
           replyLength: text.length,
@@ -1443,7 +1444,7 @@ export class NimGateway extends EventEmitter {
           await this.onMessageCallback(imMessage, replyFn);
         } catch (error: any) {
           console.error(`[NIM QChat] Error in message callback: ${error.message}`);
-          await replyFn(`抱歉，处理消息时出现错误：${error.message}`);
+          await replyFn(`Sorry, something went wrong while processing your message: ${error.message}`);
         }
       }
     } catch (err: any) {

@@ -230,7 +230,7 @@ const ToolCallGroup: React.FC<{
         const pollCount = streamingInfo.pollCount ?? getRetainedMediaPollCount(streamingInfo, retainedMediaPollCounts);
         const displayTaskId = streamingInfo.upstreamTaskId || streamingInfo.taskId;
         const mediaToolName = group.toolUse.metadata?.toolName || '';
-        const isVideo = normalizeToolName(mediaToolName) === 'lobsteraivideogenerate';
+        const isVideo = normalizeToolName(mediaToolName) === 'swenvideogenerate';
         return (
           <div className={`${containerClass} flex items-center gap-2 flex-wrap`}>
             <Lottie

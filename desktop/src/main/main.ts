@@ -1628,14 +1628,14 @@ const buildAvailableOpenClawProviders = (): Record<string, { models: Array<{ id:
     .map(model => model.modelId.trim())
     .filter(Boolean);
   if (serverModelIds.length > 0) {
-    const serverProvider = providerMap[OpenClawProviderId.LobsteraiServer]
+    const serverProvider = providerMap[OpenClawProviderId.SwenServer]
       ?? { models: [] };
     for (const modelId of serverModelIds) {
       if (!serverProvider.models.some(model => model.id === modelId)) {
         serverProvider.models.push({ id: modelId });
       }
     }
-    providerMap[OpenClawProviderId.LobsteraiServer] = serverProvider;
+    providerMap[OpenClawProviderId.SwenServer] = serverProvider;
   }
 
   return providerMap;
@@ -1652,7 +1652,7 @@ const openClawConfigHasServerModels = (modelIds: string[]): boolean => {
         providers?: Record<string, { models?: Array<{ id?: string }> }>;
       };
     };
-    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.LobsteraiServer]?.models;
+    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.SwenServer]?.models;
     if (!Array.isArray(serverProviderModels)) return false;
 
     const configuredModelIds = new Set(
@@ -1707,7 +1707,7 @@ const resolveInlineAttachmentDir = (cwd?: string): string => {
       return path.join(resolved, COWORK_TEMP_DIR_NAME, COWORK_TEMP_ATTACHMENTS_DIR_NAME, 'manual');
     }
   }
-  return path.join(app.getPath('temp'), 'lobsterai', 'attachments');
+  return path.join(app.getPath('temp'), 'swen', 'attachments');
 };
 
 const ensurePngFileName = (value: string): string => {
@@ -1724,7 +1724,7 @@ const buildLogExportFileName = (): string => {
   const now = new Date();
   const datePart = `${now.getFullYear()}${padTwoDigits(now.getMonth() + 1)}${padTwoDigits(now.getDate())}`;
   const timePart = `${padTwoDigits(now.getHours())}${padTwoDigits(now.getMinutes())}${padTwoDigits(now.getSeconds())}`;
-  return `lobsterai-logs-${datePart}-${timePart}.zip`;
+  return `swen-logs-${datePart}-${timePart}.zip`;
 };
 
 const OPENCLAW_DAILY_LOG_RETENTION_DAYS = 7;
@@ -1912,7 +1912,7 @@ const savePngWithDialog = async (
   const defaultName = getDefaultExportImageName(defaultFileName);
   // Automation hook: end-to-end tests cannot drive the native save dialog, so
   // an explicit directory override saves the PNG directly.
-  const autosaveDir = process.env.LOBSTERAI_EXPORT_IMAGE_AUTOSAVE_DIR;
+  const autosaveDir = process.env.SWEN_EXPORT_IMAGE_AUTOSAVE_DIR;
   if (autosaveDir) {
     const outputPath = ensurePngFileName(path.join(autosaveDir, defaultName));
     await fs.promises.mkdir(autosaveDir, { recursive: true });
@@ -1973,8 +1973,8 @@ const DEV_SERVER_URL = process.env.ELECTRON_START_URL || 'http://localhost:5175'
 const enableVerboseLogging =
   process.env.ELECTRON_ENABLE_LOGGING === '1' || process.env.ELECTRON_ENABLE_LOGGING === 'true';
 const disableGpu =
-  process.env.LOBSTERAI_DISABLE_GPU === '1' ||
-  process.env.LOBSTERAI_DISABLE_GPU === 'true' ||
+  process.env.SWEN_DISABLE_GPU === '1' ||
+  process.env.SWEN_DISABLE_GPU === 'true' ||
   process.env.ELECTRON_DISABLE_GPU === '1' ||
   process.env.ELECTRON_DISABLE_GPU === 'true';
 const reloadOnChildProcessGone =
@@ -2028,9 +2028,9 @@ const normalizeWindowsShellPath = (inputPath: string): string => {
   return normalized;
 };
 
-// 配置应用
-// Linux/Windows 禁用 Chromium 沙箱：桌面应用渲染自有代码，风险可控；
-// Windows 下以管理员运行时沙箱无法降权会导致 GPU 进程启动失败 (error_code=18)
+// App configuration
+// Disable the Chromium sandbox on Linux/Windows: the desktop app renders its own code, so the risk is contained;
+// on Windows, when running as administrator the sandbox cannot drop privileges and the GPU process fails to start (error_code=18)
 if (isLinux || isWindows) {
   app.commandLine.appendSwitch('no-sandbox');
 }
@@ -2040,7 +2040,7 @@ if (isLinux) {
 if (disableGpu) {
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-software-rasterizer');
-  // 禁用硬件加速
+  // Disable hardware acceleration
   app.disableHardwareAcceleration();
 }
 if (enableVerboseLogging) {
@@ -2048,16 +2048,16 @@ if (enableVerboseLogging) {
   app.commandLine.appendSwitch('v', '1');
 }
 
-// 配置网络服务
+// Network service configuration
 app.on('ready', () => {
-  // 配置网络服务重启策略
+  // Configure the host resolver
   app.configureHostResolver({
     enableBuiltInResolver: true,
     secureDnsMode: 'off',
   });
 });
 
-// 添加错误处理
+// Error handling
 app.on('render-process-gone', (_event, webContents, details) => {
   console.error('Render process gone:', details);
   const shouldReload =
@@ -2078,7 +2078,7 @@ app.on('child-process-gone', (_event, details) => {
   }
 });
 
-// 处理未捕获的异常
+// Handle uncaught exceptions
 process.on('uncaughtException', error => {
   console.error('Uncaught Exception:', error);
 });
@@ -2441,13 +2441,13 @@ const resolveSessionWorkingDirectory = (options: { cwd?: string; agentId?: strin
 const NEW_USER_WELCOME_SESSION_ID_STORE_KEY = 'new_user_welcome_session_id';
 const NEW_USER_WELCOME_CONTENT_MAX_LENGTH = 4000;
 
-const isLobsteraiServerModelRef = (modelRef: string): boolean => {
+const isSwenServerModelRef = (modelRef: string): boolean => {
   const normalized = modelRef.trim();
   if (!normalized) return false;
 
   const parsed = parsePrimaryModelRef(normalized);
   if (parsed) {
-    return parsed.providerId === ProviderName.LobsteraiServer;
+    return parsed.providerId === ProviderName.SwenServer;
   }
 
   return getAllServerModelMetadata().some(model => model.modelId === normalized);
@@ -2457,18 +2457,18 @@ const shouldRefreshServerQuotaForSession = (sessionId: string): boolean => {
   const session = getCoworkStore().getSession(sessionId);
   const sessionModelRef = session?.modelOverride?.trim();
   if (sessionModelRef) {
-    return isLobsteraiServerModelRef(sessionModelRef);
+    return isSwenServerModelRef(sessionModelRef);
   }
 
   const agentModelRef = session?.agentId
     ? getAgentManager().getAgent(session.agentId)?.model?.trim()
     : '';
   if (agentModelRef) {
-    return isLobsteraiServerModelRef(agentModelRef);
+    return isSwenServerModelRef(agentModelRef);
   }
 
   const apiConfig = resolveCurrentApiConfig();
-  return apiConfig.providerMetadata?.providerName === ProviderName.LobsteraiServer;
+  return apiConfig.providerMetadata?.providerName === ProviderName.SwenServer;
 };
 
 const resolveCoworkAgentEngine = (): CoworkAgentEngine => {
@@ -3928,7 +3928,7 @@ function normalizeSelectedTextSnippetsForIpc(value: unknown): CoworkSelectedText
   return result.snippets;
 }
 
-// 获取正确的预加载脚本路径
+// Resolve the correct preload script path
 const PRELOAD_PATH = app.isPackaged
   ? path.join(__dirname, 'preload.js')
   : path.join(__dirname, '../dist-electron/preload.js');
@@ -3937,7 +3937,7 @@ const BROWSER_ANNOTATION_PRELOAD_PATH = app.isPackaged
   ? path.join(__dirname, 'browserAnnotationPreload.js')
   : path.join(__dirname, '../dist-electron/browserAnnotationPreload.js');
 
-// 获取应用图标路径（Windows 使用 .ico，其他平台使用 .png）
+// Resolve the app icon path (.ico on Windows, .png elsewhere)
 const getAppIconPath = (): string | undefined => {
   if (process.platform !== 'win32' && process.platform !== 'linux') return undefined;
   const basePath = app.isPackaged
@@ -3961,7 +3961,7 @@ const getNotificationIconPath = (): string | null => {
   return candidates.find(candidate => fs.existsSync(candidate)) ?? null;
 };
 
-// 保存对主窗口的引用
+// Keep a reference to the main window
 let mainWindow: BrowserWindow | null = null;
 let dataMigrationRestoreWindow: BrowserWindow | null = null;
 let desktopNotificationManager: DesktopNotificationManager | null = null;
@@ -4050,7 +4050,7 @@ const hideMainWindowForClose = (win: BrowserWindow): void => {
   }
 };
 
-// 存储活跃的流式请求控制器
+// Active streaming request controllers
 const activeStreamControllers = new Map<string, AbortController>();
 
 // Media generation selection and authenticated owner per session turn.
@@ -4292,7 +4292,7 @@ const resolveHappyHorse11Selection = (
     return {
       type: 't2v',
       upstreamModel: 'happyhorse-1.1-t2v',
-      reason: '未检测到输入图片，使用文生视频子模型 happyhorse-1.1-t2v',
+      reason: 'No input image detected; using the text-to-video sub-model happyhorse-1.1-t2v',
       imageCount,
     };
   }
@@ -4300,14 +4300,14 @@ const resolveHappyHorse11Selection = (
     return {
       type: 'i2v',
       upstreamModel: 'happyhorse-1.1-i2v',
-      reason: '检测到 1 张输入图片，使用图生视频子模型 happyhorse-1.1-i2v',
+      reason: '1 input image detected; using the image-to-video sub-model happyhorse-1.1-i2v',
       imageCount,
     };
   }
   return {
     type: 'r2v',
     upstreamModel: 'happyhorse-1.1-r2v',
-    reason: `检测到 ${imageCount} 张输入图片，使用参考生视频子模型 happyhorse-1.1-r2v`,
+    reason: `${imageCount} input images detected; using the reference-to-video sub-model happyhorse-1.1-r2v`,
     imageCount,
   };
 };
@@ -4606,7 +4606,7 @@ const scheduleReload = (reason: string, webContents?: WebContents) => {
   target.reloadIgnoringCache();
 };
 
-// 确保应用程序只有一个实例
+// Ensure only one instance of the app runs
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -4616,11 +4616,11 @@ if (!gotTheLock) {
   if (!app.isPackaged) {
     // In dev mode, setAsDefaultProtocolClient needs the electron exe path
     // and the app entry point as extra args so the OS can relaunch correctly
-    app.setAsDefaultProtocolClient('lobsterai', process.execPath, [
+    app.setAsDefaultProtocolClient('swen', process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   } else {
-    app.setAsDefaultProtocolClient('lobsterai');
+    app.setAsDefaultProtocolClient('swen');
   }
 
   const authCallbackRouter = new AuthCallbackRouter({
@@ -4634,7 +4634,7 @@ if (!gotTheLock) {
   });
 
   /**
-   * Parse a lobsterai:// deep link and send (or buffer) the auth code.
+   * Parse a swen:// deep link and send (or buffer) the auth code.
    */
   const handleDeepLink = (url: string) => {
     authCallbackRouter.handleDeepLink(url);
@@ -4713,7 +4713,7 @@ if (!gotTheLock) {
     }
 
     // Check for deep link in command line args (Windows/Linux)
-    const deepLink = commandLine.find(arg => arg.startsWith('lobsterai://'));
+    const deepLink = commandLine.find(arg => arg.startsWith('swen://'));
     if (deepLink) {
       handleDeepLink(deepLink);
     }
@@ -4721,7 +4721,7 @@ if (!gotTheLock) {
     focusMainWindow('second instance activation');
   });
 
-  // IPC 处理程序
+  // IPC handlers
   // One-shot arrival log: renderer startup has stalled on this invoke in the
   // field, and this line tells whether the request reached the main process.
   let firstStoreGetLogged = false;
@@ -4874,7 +4874,7 @@ if (!gotTheLock) {
             ? [
                 {
                   archiveName: 'install-timing.log',
-                  filePath: path.join(app.getPath('appData'), 'LobsterAI', 'install-timing.log'),
+                  filePath: path.join(app.getPath('appData'), 'Swen', 'install-timing.log'),
                 },
               ]
             : []),
@@ -6056,23 +6056,23 @@ if (!gotTheLock) {
         const costPoints = durationSec ? durationSec * 100 : null;
         const portalTasksUrl = getPortalTasksUrl();
         const subtitle = costPoints
-          ? `本次生成大约预计消耗 **${costPoints}** 积分`
-          : '费用约为 **100** 积分/秒';
+          ? `This generation is expected to use about **${costPoints}** credits`
+          : 'The cost is about **100** credits per second';
         const questionText = [
-          '请确认当前描述无误，提交后将无法取消。',
-          '视频生成任务耗时较长，请耐心等待。',
+          'Please confirm the description is correct; the task cannot be cancelled once submitted.',
+          'Video generation takes a while, so please be patient.',
           '',
-          `生成后请妥善保存视频，若误删可在[「个人主页-用量详情-生成任务」](${portalTasksUrl})中下载`,
-          '~~（链接有时效性，请尽快下载）~~',
+          `Save the video once it is generated. If it is deleted by mistake, it can be downloaded again from [Profile > Usage > Generation tasks](${portalTasksUrl})`,
+          '~~(The link expires, so download it soon)~~',
         ].join('\n');
         const confirmResponse = await getMcpRuntime().askUserInternal(
           [{
             question: questionText,
-            title: '确认生成视频？',
+            title: 'Generate this video?',
             subtitle,
             options: [
-              { label: '确认生成', description: '开始视频生成任务' },
-              { label: '取消', description: '暂不生成' },
+              { label: 'Generate', description: 'Start the video generation task' },
+              { label: 'Cancel', description: 'Do not generate for now' },
             ],
           }],
           undefined,
@@ -6080,7 +6080,7 @@ if (!gotTheLock) {
         );
 
         const userCancelled = confirmResponse?.behavior === 'deny'
-          || confirmResponse?.answers?.[questionText] === '取消';
+          || confirmResponse?.answers?.[questionText] === 'Cancel';
 
         if (!isRequestAccountCurrent()) return staleAccountResult();
         if (userCancelled) {
@@ -8555,7 +8555,7 @@ if (!gotTheLock) {
       console.error('[DataMigration] backup failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to back up LobsterAI data',
+        error: error instanceof Error ? error.message : 'Failed to back up Swen data',
       };
     }
   });
@@ -8614,11 +8614,11 @@ if (!gotTheLock) {
         success,
         scheduledRestart: rendererReleased,
         rollbackPath: restoreResult?.rollbackPath,
-        error: success ? undefined : restoreResult?.error || 'Failed to import LobsterAI data backup',
+        error: success ? undefined : restoreResult?.error || 'Failed to import Swen data backup',
       };
     } catch (error) {
       isCleanupInProgress = false;
-      const message = error instanceof Error ? error.message : 'Failed to import LobsterAI data backup';
+      const message = error instanceof Error ? error.message : 'Failed to import Swen data backup';
       console.error('[DataMigration] restore scheduling failed:', error);
       if (rendererReleased) {
         dialog.showErrorBox(t('dataMigrationRestoreDialogTitle'), message);
@@ -8708,7 +8708,7 @@ if (!gotTheLock) {
     try {
       return { success: true, state: await action() };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'LobsterAI in-app browser action failed.';
+      const message = error instanceof Error ? error.message : 'Swen in-app browser action failed.';
       return {
         success: false,
         state: {
@@ -8931,7 +8931,7 @@ if (!gotTheLock) {
       const providers = { ...(appConfig?.providers ?? {}) };
       // The billed built-in provider authenticates through the token proxy;
       // syncing its raw key/baseUrl into dsh would produce a dead route.
-      delete providers[ProviderName.LobsteraiServer];
+      delete providers[ProviderName.SwenServer];
       return providers;
     },
     getPlanProvider: () => {
@@ -12047,7 +12047,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().startFeishuInstallQrcode(isLark);
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : '获取二维码失败');
+      throw new Error(error instanceof Error ? error.message : 'Failed to get the QR code');
     }
   });
 
@@ -12055,7 +12055,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().pollFeishuInstall(deviceCode);
     } catch (error) {
-      return { done: false, error: error instanceof Error ? error.message : '轮询失败' };
+      return { done: false, error: error instanceof Error ? error.message : 'Polling failed' };
     }
   });
 
@@ -12065,7 +12065,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().verifyFeishuCredentials(appId, appSecret);
       } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : '验证失败' };
+        return { success: false, error: error instanceof Error ? error.message : 'Verification failed' };
       }
     },
   );
@@ -12075,7 +12075,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().startDingTalkInstallQrcode();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : '获取二维码失败');
+      throw new Error(error instanceof Error ? error.message : 'Failed to get the QR code');
     }
   });
 
@@ -12085,7 +12085,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().pollDingTalkInstall(deviceCode);
       } catch (error) {
-        return { done: false, error: error instanceof Error ? error.message : '轮询失败' };
+        return { done: false, error: error instanceof Error ? error.message : 'Polling failed' };
       }
     },
   );
@@ -12096,7 +12096,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().verifyDingTalkCredentials(clientId, clientSecret);
       } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : '验证失败' };
+        return { success: false, error: error instanceof Error ? error.message : 'Verification failed' };
       }
     },
   );
@@ -12761,7 +12761,7 @@ if (!gotTheLock) {
     }
   };
 
-  // Shell handlers - 打开文件/文件夹
+  // Shell handlers - open files/folders
   ipcMain.handle(ShellIpc.OpenPath, async (_event, filePath: string) => {
     try {
       const normalizedPath = normalizeWindowsShellPath(filePath);
@@ -12816,7 +12816,7 @@ if (!gotTheLock) {
 
   ipcMain.handle(ShellIpc.OpenHtmlInBrowser, async (_event, htmlContent: string) => {
     try {
-      const tmpDir = path.join(os.tmpdir(), 'lobsterai-preview');
+      const tmpDir = path.join(os.tmpdir(), 'swen-preview');
       fs.mkdirSync(tmpDir, { recursive: true });
       const tmpFile = path.join(tmpDir, `preview-${Date.now()}.html`);
       fs.writeFileSync(tmpFile, htmlContent, 'utf-8');
@@ -13133,7 +13133,7 @@ if (!gotTheLock) {
     }
   };
 
-  // API 代理处理程序 - 解决 CORS 问题
+  // API proxy handlers - work around CORS
   ipcMain.handle(
     'api:fetch',
     async (
@@ -13224,7 +13224,7 @@ if (!gotTheLock) {
     },
   );
 
-  // SSE 流式 API 代理
+  // SSE streaming API proxy
   ipcMain.handle(
     'api:stream',
     async (
@@ -13239,7 +13239,7 @@ if (!gotTheLock) {
     ) => {
       const controller = new AbortController();
 
-      // 存储 controller 以便后续取消
+      // Keep the controller so the request can be cancelled later
       activeStreamControllers.set(options.requestId, controller);
 
       try {
@@ -13290,7 +13290,7 @@ if (!gotTheLock) {
           };
         }
 
-        // 读取流式响应并通过 IPC 发送
+        // Read the streamed response and forward it over IPC
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
@@ -13319,7 +13319,7 @@ if (!gotTheLock) {
           }
         };
 
-        // 异步读取流，立即返回成功状态
+        // Read the stream asynchronously and return success immediately
         readStream();
 
         return {
@@ -13339,7 +13339,7 @@ if (!gotTheLock) {
     },
   );
 
-  // 取消流式请求
+  // Cancel a streaming request
   ipcMain.handle('api:stream:cancel', (_event, requestId: string) => {
     const controller = activeStreamControllers.get(requestId);
     if (controller) {
@@ -13352,7 +13352,7 @@ if (!gotTheLock) {
 
   // ─── end OAuth ───
 
-  // 企微 SDK 授权弹窗白名单域名
+  // Allowed domains for the WeCom SDK authorization popup
   const WECOM_AUTH_HOSTNAMES = new Set([
     'work.weixin.qq.com',
     'open.work.weixin.qq.com',
@@ -13382,7 +13382,7 @@ if (!gotTheLock) {
     }
   };
 
-  // 设置 Content Security Policy
+  // Set the Content Security Policy
   const sanitizeResponseHeaders = (
     headers: Record<string, string[]> | undefined
   ): Record<string, string[]> => {
@@ -13404,19 +13404,19 @@ if (!gotTheLock) {
 
   const setContentSecurityPolicy = () => {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      // 跳过企微授权页面，让其使用自身的 CSP（否则外部脚本被阻止导致空白页）
+      // Skip the WeCom authorization page so it uses its own CSP (otherwise external scripts are blocked and the page is blank)
       if (isWecomAuthUrl(details.url)) {
         callback({ responseHeaders: sanitizeResponseHeaders(details.responseHeaders) });
         return;
       }
 
-      // 跳过 artifact 沙箱及其 vendor 脚本的 CSP（iframe sandbox="allow-scripts" 隔离）
+      // Skip the CSP for the artifact sandbox and its vendor scripts (isolated by iframe sandbox="allow-scripts")
       if (isArtifactSandboxUrl(details.url)) {
         callback({ responseHeaders: sanitizeResponseHeaders(details.responseHeaders) });
         return;
       }
 
-      // 跳过 HTML 预览服务器的 CSP（本地 HTTP Server 提供文件类 HTML 预览）
+      // Skip the CSP for the HTML preview server (a local HTTP server serves file-based HTML previews)
       if (isPreviewServerUrl(details.url)) {
         callback({ responseHeaders: details.responseHeaders });
         return;
@@ -13430,7 +13430,7 @@ if (!gotTheLock) {
           : "script-src 'self'",
         "style-src 'self' 'unsafe-inline' https:",
         `img-src 'self' data: blob: https: http: ${ArtifactPreviewProtocol.LocalFile}: ${SKIN_PRIVILEGED_SCHEME.scheme}:`,
-        // 允许连接到所有域名，不做限制
+        // Allow connections to any domain, no restriction
         'connect-src *',
         "font-src 'self' data: blob: https:",
         `media-src 'self' data: blob: file: https: http: ${ArtifactPreviewProtocol.LocalFile}:`,
@@ -13447,9 +13447,9 @@ if (!gotTheLock) {
     });
   };
 
-  // 创建主窗口
+  // Create the main window
   const createWindow = () => {
-    // 如果窗口已经存在，就不再创建新窗口
+    // If the window already exists, do not create another one
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       if (!mainWindow.isVisible()) mainWindow.show();
@@ -13508,7 +13508,7 @@ if (!gotTheLock) {
       enableLargerThanScreen: false,
     });
 
-    // 设置 macOS Dock 图标（开发模式下 Electron 默认图标不是应用 Logo）
+    // Set the macOS Dock icon (in dev mode Electron's default icon is not the app logo)
     if (isMac && isDev) {
       const iconPath = getNotificationIconPath();
       if (iconPath) {
@@ -13516,11 +13516,11 @@ if (!gotTheLock) {
       }
     }
 
-    // 禁用窗口菜单
+    // Disable the window menu
     mainWindow.setMenu(null);
     installEditContextMenu(mainWindow.webContents);
 
-    // 处理 window.open 请求（企微 SDK 授权弹窗等）
+    // Handle window.open requests (WeCom SDK authorization popup, etc.)
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       if (isWecomAuthUrl(url)) {
         return {
@@ -13528,7 +13528,7 @@ if (!gotTheLock) {
           overrideBrowserWindowOptions: {
             width: 950,
             height: 640,
-            title: '企业微信授权',
+            title: 'WeCom Authorization',
             autoHideMenuBar: true,
             webPreferences: {
               nodeIntegration: false,
@@ -13563,9 +13563,9 @@ if (!gotTheLock) {
       }
     });
 
-    // 监听子窗口创建事件（企微授权弹窗安全限制）
+    // Listen for child window creation (security restrictions for the WeCom authorization popup)
     mainWindow.webContents.on('did-create-window', childWindow => {
-      // 限制子窗口只能导航到企微域名，防止被劫持到其他站点
+      // Restrict child windows to WeCom domains so they cannot be hijacked to other sites
       childWindow.webContents.on('will-navigate', (event, navUrl) => {
         if (!isWecomAuthUrl(navUrl)) {
           event.preventDefault();
@@ -13573,7 +13573,7 @@ if (!gotTheLock) {
       });
     });
 
-    // 设置窗口的最小尺寸
+    // Set the window's minimum size
     mainWindow.setMinimumSize(MIN_APP_WINDOW_WIDTH, MIN_APP_WINDOW_HEIGHT);
     if (shouldRestoreMaximized) {
       mainWindow.maximize();
@@ -13587,9 +13587,11 @@ if (!gotTheLock) {
       }
     };
 
-    // 窗口加载看门狗。一次性 30s 超时救不回被杀软扫描拖慢的首启动(现场案例:
-    // 首次加载超 30s,唯一一次 reload 后再无人接管,窗口永久空白),改为按退避
-    // 重试,封顶后停手保留现场。
+    // Window load watchdog. A single 30s timeout could not rescue a first launch
+    // slowed down by antivirus scanning (field case: first load took over 30s, the
+    // one and only reload fired and nothing took over afterwards, leaving the window
+    // blank forever). Retry with backoff instead, and stop after the cap so the
+    // state stays inspectable.
     const LOAD_WATCHDOG_DELAYS_MS = [30_000, 45_000, 60_000, 90_000];
     let loadRecoveryAttempts = 0;
     let loadWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
@@ -13626,8 +13628,9 @@ if (!gotTheLock) {
     };
     scheduleLoadWatchdog();
 
-    // 兜底显示:首帧迟迟不来时,宁可让用户看到纯背景色的窗口,也不能看起来
-    // "应用没打开"。开机自启保持仅托盘,不弹窗。
+    // Fallback display: if the first frame is slow to arrive, better to show the user
+    // a plain background-colored window than to look like "the app did not open".
+    // On auto-launch stay tray-only and do not pop up a window.
     const SHOW_FALLBACK_DELAY_MS = 10_000;
     const showFallbackTimer = setTimeout(() => {
       if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -13653,7 +13656,7 @@ if (!gotTheLock) {
       }
     });
 
-    // 处理窗口关闭
+    // Handle window close
     mainWindow.on('close', (e) => {
       windowStatePersist.cleanup();
       windowStatePersist.persist();
@@ -13675,7 +13678,7 @@ if (!gotTheLock) {
     mainWindow.on('hide', () => agentBrowserHost?.setWindowVisible(false));
     mainWindow.on('minimize', () => agentBrowserHost?.setWindowVisible(false));
 
-    // 处理渲染进程崩溃或退出
+    // Handle renderer process crash or exit
     mainWindow.webContents.on('render-process-gone', (_event, details) => {
       authCallbackRouter.markRendererUnavailable();
       console.error('Window render process gone:', details);
@@ -13683,7 +13686,7 @@ if (!gotTheLock) {
     });
 
     if (isDev) {
-      // 开发环境
+      // Development environment
       const maxRetries = 3;
       let retryCount = 0;
 
@@ -13706,20 +13709,20 @@ if (!gotTheLock) {
 
       tryLoadURL();
 
-      // 打开开发者工具
+      // Open the developer tools
       mainWindow.webContents.openDevTools();
     } else {
-      // 生产环境
+      // Production environment
       mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
     }
 
-    // 添加错误处理
+    // Error handling
     mainWindow.webContents.on(
       'did-fail-load',
       (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
         if (!isMainFrame) return;
         console.error('Page failed to load:', errorCode, errorDescription);
-        // 如果加载失败，尝试重新加载
+        // If loading failed, try to reload
         if (isDev) {
           setTimeout(() => {
             scheduleReload('did-fail-load');
@@ -13743,7 +13746,7 @@ if (!gotTheLock) {
       authCallbackRouter.handleNavigationStarted({ isMainFrame, isInPlace });
     });
 
-    // 当窗口关闭时，清除引用
+    // Clear the reference when the window is closed
     mainWindow.on('closed', () => {
       clearLoadWatchdog();
       clearTimeout(showFallbackTimer);
@@ -13756,10 +13759,10 @@ if (!gotTheLock) {
 
     windowStatePersist.bindWindowEvents(initialWindowBounds, shouldRestoreMaximized);
 
-    // 等待内容加载完成后再显示窗口
+    // Wait for the content to finish loading before showing the window
     mainWindow.once('ready-to-show', () => {
       clearTimeout(showFallbackTimer);
-      // 开机自启时不显示窗口，仅显示托盘图标
+      // On auto-launch do not show the window, only the tray icon
       if (!isAutoLaunched()) {
         mainWindow?.show();
       }
@@ -13767,7 +13770,7 @@ if (!gotTheLock) {
       // Initialize main-process i18n from stored language before creating UI elements.
       const initLang = getStore().get<{ language?: string }>('app_config')?.language;
       setLanguage(initLang === 'en' ? 'en' : 'zh');
-      // 窗口就绪后创建系统托盘
+      // Create the system tray once the window is ready
       createTray(() => mainWindow);
 
       // Start cron polling after the window is ready.
@@ -14166,7 +14169,7 @@ if (!gotTheLock) {
   process.once('SIGINT', () => handleTerminationSignal('SIGINT'));
   process.once('SIGTERM', () => handleTerminationSignal('SIGTERM'));
 
-  // 初始化应用
+  // Initialize the app
   const initApp = async () => {
     const profiler = new StartupProfiler();
 
@@ -14180,14 +14183,14 @@ if (!gotTheLock) {
     // We don't trigger permission dialogs at startup to avoid annoying users
 
     // Ensure default working directory exists
-    const defaultProjectDir = path.join(os.homedir(), 'lobsterai', 'project');
+    const defaultProjectDir = path.join(os.homedir(), 'swen', 'project');
     if (!fs.existsSync(defaultProjectDir)) {
       fs.mkdirSync(defaultProjectDir, { recursive: true });
       console.log('Created default project directory:', defaultProjectDir);
     }
     console.log('[Main] initApp: default project dir ensured');
 
-    // 注册 localfile:// 自定义协议，用于安全加载本地媒体文件。
+    // Register the custom localfile:// protocol for safely loading local media files.
     protocol.handle(ArtifactPreviewProtocol.LocalFile, createLocalFileProtocolResponse);
     registerSkinElectronIntegration(getSkinRuntimeController().store);
 
@@ -14223,7 +14226,7 @@ if (!gotTheLock) {
     // Dev/E2E convenience: boot the dsh engine once the app is ready and the
     // store can answer provider queries, so app-level checks can assert
     // readiness from logs without driving the settings UI.
-    if (process.env.LOBSTERAI_DSH_AUTOSTART === '1') {
+    if (process.env.SWEN_DSH_AUTOSTART === '1') {
       ensureDshEngineReady()
         .then(url => console.log(`[DSH] Autostart ready at ${url}`))
         .catch(error => console.error('[DSH] Autostart failed', error));
@@ -14257,7 +14260,7 @@ if (!gotTheLock) {
     }
     // Inject store getter into claudeSettings
     setStoreGetter(() => store);
-    // Inject auth getters for lobsterai-server provider routing
+    // Inject auth getters for swen-server provider routing
     // The getter proactively triggers a background token refresh when the
     // accessToken is within 5 minutes of expiry, so that the SDK always
     // gets a fresh token without blocking.
@@ -14302,7 +14305,7 @@ if (!gotTheLock) {
         });
     }
 
-    registerProxyTokenRefresher(ProviderName.LobsteraiServer, async rejectedToken => {
+    registerProxyTokenRefresher(ProviderName.SwenServer, async rejectedToken => {
       const latestAccessToken = getAuthTokens()?.accessToken;
       if (latestAccessToken && rejectedToken && latestAccessToken !== rejectedToken) {
         return {
@@ -14328,7 +14331,7 @@ if (!gotTheLock) {
     });
 
     // Start the lightweight token proxy before OpenClaw config sync so that
-    // lobsterai-server provider can use the proxy URL in its config.
+    // swen-server provider can use the proxy URL in its config.
     profiler.mark('openClawTokenProxy');
     try {
       await startOpenClawTokenProxy({
@@ -14485,7 +14488,7 @@ if (!gotTheLock) {
     }
 
     // Agent model migration — runs after cache warmup so resolveMatchedProvider
-    // can match lobsterai-server models without falling back.
+    // can match swen-server models without falling back.
     const defaultAgentModelRef = resolveDefaultAgentModelRef();
     const backfilledAgentModels = getCoworkStore().backfillEmptyAgentModels(defaultAgentModelRef);
     const qualifiedAgentModels = migrateAgentModelRefs({
@@ -14647,7 +14650,7 @@ if (!gotTheLock) {
 
     // Windows/Linux cold start: parse deep link from process.argv.
     // The router buffers it because the renderer is not ready yet after createWindow().
-    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('lobsterai://'));
+    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('swen://'));
     if (coldStartDeepLink) {
       handleDeepLink(coldStartDeepLink);
     }
@@ -14677,7 +14680,7 @@ if (!gotTheLock) {
       });
     }
 
-    // 首次启动时默认开启开机自启动，并以系统登录项的实际状态回写本地标记。
+    // Enable launch at login by default on first start, and write the actual system login-item state back to the local flag.
     if (!getStore().get('auto_launch_initialized')) {
       getStore().set('auto_launch_initialized', true);
       try {
@@ -14714,7 +14717,7 @@ if (!gotTheLock) {
     );
     getStore().onDidChange<AppConfigSettings>('app_config', (newConfig, oldConfig) => {
       updateTitleBarOverlay();
-      // 仅在语言变更时刷新托盘菜单文本
+      // Only refresh the tray menu text when the language changes
       const currentLanguage = newConfig?.language;
       if (currentLanguage !== lastLanguage) {
         lastLanguage = currentLanguage;
@@ -14761,7 +14764,7 @@ if (!gotTheLock) {
       lastSqliteAutoBackupEnabled = currentSqliteAutoBackupEnabled;
     });
 
-    // 在 macOS 上，当点击 dock 图标时显示已有窗口或重新创建
+    // On macOS, show the existing window or recreate it when the dock icon is clicked
     app.on('activate', () => {
       if (isDataMigrationRestoreInProgress) {
         return;
@@ -14777,10 +14780,10 @@ if (!gotTheLock) {
     });
   };
 
-  // 启动应用
+  // Start the app
   initApp().catch(console.error);
 
-  // 当所有窗口关闭时退出应用
+  // Quit the app when all windows are closed
   app.on('window-all-closed', () => {
     if (isDataMigrationRestoreInProgress) {
       return;

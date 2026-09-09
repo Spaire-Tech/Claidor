@@ -1,14 +1,14 @@
 /**
  * DingTalk Media Marker Parser
- * 解析文本中的媒体标记
+ * Parses media markers out of text.
  */
 import type { MediaMarker } from './types';
 
-// 文件扩展名分类
+// File extension categories
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'amr', 'm4a', 'aac'];
 const VIDEO_EXTENSIONS = ['mp4', 'mov'];
-// 文档/文件扩展名（非媒体类型，但需要作为文件发送）
+// Document/file extensions (not media types, but must be sent as files)
 const FILE_EXTENSIONS = [
   'txt', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
   'zip', 'rar', '7z', 'tar', 'gz',
@@ -16,35 +16,35 @@ const FILE_EXTENSIONS = [
   'js', 'ts', 'py', 'java', 'c', 'cpp', 'h', 'cs', 'go', 'rs', 'rb', 'php', 'sh',
 ];
 
-// 正则表达式模式
-// Markdown 图片: ![alt](path) - 匹配本地路径
-// 支持: file:/// 协议, 常见系统路径, 以及 ~/.lobsterai 等用户目录路径
+// Regular expression patterns
+// Markdown image: ![alt](path) - matches local paths
+// Supports: the file:/// protocol, common system paths, and user-directory paths such as ~/.swen
 const MARKDOWN_IMAGE_RE = /!\[([^\]]*)\]\(((?:file:\/\/\/|\/(?:tmp|var|private|Users|home|root)|~\/|[A-Za-z]:)[^)]+)\)/g;
 
-// Markdown 链接: [text](path) - 匹配本地媒体文件路径
-// 用于识别普通链接中的音视频文件
+// Markdown link: [text](path) - matches local media file paths
+// Used to recognise audio/video files in plain links
 const MARKDOWN_LINK_RE = /\[([^\]]*)\]\(((?:file:\/\/\/|\/(?:tmp|var|private|Users|home|root)|~\/|[A-Za-z]:)[^)]+)\)/g;
 
-// 裸路径图片: /path/to/image.png
+// Bare image path: /path/to/image.png
 const BARE_IMAGE_PATH_RE = /(?:^|\s)((?:\/(?:tmp|var|private|Users|home|root)\/[^\s`'",)]+|~\/[^\s`'",)]+|[A-Za-z]:[\\/][^\s`'",)]+)\.(?:png|jpg|jpeg|gif|bmp|webp))(?:\s|$|[,.])/gi;
 
-// 裸路径音视频: /path/to/audio.mp3 或 /path/to/video.mp4
+// Bare audio/video path: /path/to/audio.mp3 or /path/to/video.mp4
 const BARE_MEDIA_PATH_RE = /(?:^|\s)((?:\/(?:tmp|var|private|Users|home|root)\/[^\s`'",)]+|~\/[^\s`'",)]+|[A-Za-z]:[\\/][^\s`'",)]+)\.(?:mp3|wav|ogg|amr|m4a|aac|mp4|mov))(?:\s|$|[,.])/gi;
 
-// 裸路径文件: /path/to/file.txt, /path/to/file.pdf 等
+// Bare file path: /path/to/file.txt, /path/to/file.pdf, etc.
 const BARE_FILE_PATH_RE = /(?:^|\s)((?:\/(?:tmp|var|private|Users|home|root)\/[^\s`'",)]+|~\/[^\s`'",)]+|[A-Za-z]:[\\/][^\s`'",)]+)\.(?:txt|pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z|tar|gz|json|xml|csv|md|html|htm|js|ts|py|java|c|cpp|h|cs|go|rs|rb|php|sh))(?:\s|$|[,.])/gi;
 
-// 视频标记: [DINGTALK_VIDEO]{"path":"..."}[/DINGTALK_VIDEO]
+// Video marker: [DINGTALK_VIDEO]{"path":"..."}[/DINGTALK_VIDEO]
 const VIDEO_MARKER_RE = /\[DINGTALK_VIDEO\](\{[\s\S]*?\})\[\/DINGTALK_VIDEO\]/g;
 
-// 音频标记: [DINGTALK_AUDIO]{"path":"..."}[/DINGTALK_AUDIO]
+// Audio marker: [DINGTALK_AUDIO]{"path":"..."}[/DINGTALK_AUDIO]
 const AUDIO_MARKER_RE = /\[DINGTALK_AUDIO\](\{[\s\S]*?\})\[\/DINGTALK_AUDIO\]/g;
 
-// 文件标记: [DINGTALK_FILE]{"path":"...","name":"..."}[/DINGTALK_FILE]
+// File marker: [DINGTALK_FILE]{"path":"...","name":"..."}[/DINGTALK_FILE]
 const FILE_MARKER_RE = /\[DINGTALK_FILE\](\{[\s\S]*?\})\[\/DINGTALK_FILE\]/g;
 
 /**
- * 根据文件扩展名判断媒体类型
+ * Determine the media type from the file extension
  */
 function getMediaTypeByExtension(filePath: string): 'image' | 'audio' | 'video' | 'file' | null {
   const ext = filePath.split('.').pop()?.toLowerCase();
@@ -57,7 +57,7 @@ function getMediaTypeByExtension(filePath: string): 'image' | 'audio' | 'video' 
 }
 
 /**
- * 清理路径（移除 file:// 协议，处理转义空格）
+ * Clean a path (strip the file:// protocol, unescape spaces)
  */
 function cleanPath(rawPath: string): string {
   let path = rawPath.replace(/\\ /g, ' ');
@@ -68,21 +68,21 @@ function cleanPath(rawPath: string): string {
 }
 
 /**
- * 解析文本中的所有媒体标记
+ * Parse all media markers in the text
  */
 export function parseMediaMarkers(text: string): MediaMarker[] {
   const markers: MediaMarker[] = [];
   const processedPaths = new Set<string>();
 
-  console.log(`[DingTalk MediaParser] 开始解析媒体标记, 文本长度: ${text.length}`);
+  console.log(`[DingTalk MediaParser] Parsing media markers, text length: ${text.length}`);
 
-  // 1. 解析 Markdown 图片 ![alt](path)
+  // 1. Parse Markdown images ![alt](path)
   for (const match of text.matchAll(MARKDOWN_IMAGE_RE)) {
     const [fullMatch, altText, rawPath] = match;
     const path = cleanPath(rawPath);
-    // 使用 alt 文本作为文件名（如果有的话），否则从路径提取
+    // Use the alt text as the file name when present, otherwise derive it from the path
     const name = altText?.trim() || undefined;
-    console.log(`[DingTalk MediaParser] 发现 Markdown 图片:`, JSON.stringify({ rawPath, cleanedPath: path, name, fullMatch }));
+    console.log(`[DingTalk MediaParser] Found Markdown image:`, JSON.stringify({ rawPath, cleanedPath: path, name, fullMatch }));
     if (!processedPaths.has(path)) {
       processedPaths.add(path);
       markers.push({
@@ -94,14 +94,14 @@ export function parseMediaMarkers(text: string): MediaMarker[] {
     }
   }
 
-  // 2. 解析普通 Markdown 链接 [text](path) 中的媒体文件
+  // 2. Parse media files in plain Markdown links [text](path)
   for (const match of text.matchAll(MARKDOWN_LINK_RE)) {
     const [fullMatch, linkText, rawPath] = match;
     const path = cleanPath(rawPath);
     const mediaType = getMediaTypeByExtension(path);
-    // 使用链接文本作为文件名（如果有的话）
+    // Use the link text as the file name when present
     const name = linkText?.trim() || undefined;
-    console.log(`[DingTalk MediaParser] 发现 Markdown 链接:`, JSON.stringify({ rawPath, cleanedPath: path, mediaType, name, fullMatch }));
+    console.log(`[DingTalk MediaParser] Found Markdown link:`, JSON.stringify({ rawPath, cleanedPath: path, mediaType, name, fullMatch }));
     if (mediaType && !processedPaths.has(path)) {
       processedPaths.add(path);
       markers.push({
@@ -113,11 +113,11 @@ export function parseMediaMarkers(text: string): MediaMarker[] {
     }
   }
 
-  // 3. 解析裸图片路径
+  // 3. Parse bare image paths
   for (const match of text.matchAll(BARE_IMAGE_PATH_RE)) {
     const [fullMatch, rawPath] = match;
     const path = cleanPath(rawPath.trim());
-    console.log(`[DingTalk MediaParser] 发现裸图片路径:`, JSON.stringify({ rawPath, cleanedPath: path, fullMatch: fullMatch.trim() }));
+    console.log(`[DingTalk MediaParser] Found bare image path:`, JSON.stringify({ rawPath, cleanedPath: path, fullMatch: fullMatch.trim() }));
     if (!processedPaths.has(path)) {
       processedPaths.add(path);
       markers.push({
@@ -128,12 +128,12 @@ export function parseMediaMarkers(text: string): MediaMarker[] {
     }
   }
 
-  // 4. 解析裸音视频路径
+  // 4. Parse bare audio/video paths
   for (const match of text.matchAll(BARE_MEDIA_PATH_RE)) {
     const [fullMatch, rawPath] = match;
     const path = cleanPath(rawPath.trim());
     const mediaType = getMediaTypeByExtension(path);
-    console.log(`[DingTalk MediaParser] 发现裸音视频路径:`, JSON.stringify({ rawPath, cleanedPath: path, mediaType, fullMatch: fullMatch.trim() }));
+    console.log(`[DingTalk MediaParser] Found bare media path:`, JSON.stringify({ rawPath, cleanedPath: path, mediaType, fullMatch: fullMatch.trim() }));
     if (mediaType && !processedPaths.has(path)) {
       processedPaths.add(path);
       markers.push({
@@ -144,11 +144,11 @@ export function parseMediaMarkers(text: string): MediaMarker[] {
     }
   }
 
-  // 5. 解析裸文件路径 (txt, pdf, doc, etc.)
+  // 5. Parse bare file paths (txt, pdf, doc, etc.)
   for (const match of text.matchAll(BARE_FILE_PATH_RE)) {
     const [fullMatch, rawPath] = match;
     const path = cleanPath(rawPath.trim());
-    console.log(`[DingTalk MediaParser] 发现裸文件路径:`, JSON.stringify({ rawPath, cleanedPath: path, fullMatch: fullMatch.trim() }));
+    console.log(`[DingTalk MediaParser] Found bare file path:`, JSON.stringify({ rawPath, cleanedPath: path, fullMatch: fullMatch.trim() }));
     if (!processedPaths.has(path)) {
       processedPaths.add(path);
       markers.push({
@@ -159,11 +159,11 @@ export function parseMediaMarkers(text: string): MediaMarker[] {
     }
   }
 
-  // 6. 解析视频标记 [DINGTALK_VIDEO]
+  // 6. Parse video markers [DINGTALK_VIDEO]
   for (const match of text.matchAll(VIDEO_MARKER_RE)) {
     try {
       const info = JSON.parse(match[1]);
-      console.log(`[DingTalk MediaParser] 发现视频标记:`, JSON.stringify({ info, fullMatch: match[0] }));
+      console.log(`[DingTalk MediaParser] Found video marker:`, JSON.stringify({ info, fullMatch: match[0] }));
       if (info.path && !processedPaths.has(info.path)) {
         processedPaths.add(info.path);
         markers.push({
@@ -174,15 +174,15 @@ export function parseMediaMarkers(text: string): MediaMarker[] {
         });
       }
     } catch (e) {
-      console.warn(`[DingTalk MediaParser] 解析视频标记失败:`, match[0], e);
+      console.warn(`[DingTalk MediaParser] Failed to parse video marker:`, match[0], e);
     }
   }
 
-  // 7. 解析音频标记 [DINGTALK_AUDIO]
+  // 7. Parse audio markers [DINGTALK_AUDIO]
   for (const match of text.matchAll(AUDIO_MARKER_RE)) {
     try {
       const info = JSON.parse(match[1]);
-      console.log(`[DingTalk MediaParser] 发现音频标记:`, JSON.stringify({ info, fullMatch: match[0] }));
+      console.log(`[DingTalk MediaParser] Found audio marker:`, JSON.stringify({ info, fullMatch: match[0] }));
       if (info.path && !processedPaths.has(info.path)) {
         processedPaths.add(info.path);
         markers.push({
@@ -192,15 +192,15 @@ export function parseMediaMarkers(text: string): MediaMarker[] {
         });
       }
     } catch (e) {
-      console.warn(`[DingTalk MediaParser] 解析音频标记失败:`, match[0], e);
+      console.warn(`[DingTalk MediaParser] Failed to parse audio marker:`, match[0], e);
     }
   }
 
-  // 8. 解析文件标记 [DINGTALK_FILE]
+  // 8. Parse file markers [DINGTALK_FILE]
   for (const match of text.matchAll(FILE_MARKER_RE)) {
     try {
       const info = JSON.parse(match[1]);
-      console.log(`[DingTalk MediaParser] 发现文件标记:`, JSON.stringify({ info, fullMatch: match[0] }));
+      console.log(`[DingTalk MediaParser] Found file marker:`, JSON.stringify({ info, fullMatch: match[0] }));
       if (info.path && !processedPaths.has(info.path)) {
         processedPaths.add(info.path);
         markers.push({
@@ -211,23 +211,23 @@ export function parseMediaMarkers(text: string): MediaMarker[] {
         });
       }
     } catch (e) {
-      console.warn(`[DingTalk MediaParser] 解析文件标记失败:`, match[0], e);
+      console.warn(`[DingTalk MediaParser] Failed to parse file marker:`, match[0], e);
     }
   }
 
-  console.log(`[DingTalk MediaParser] 解析完成, 共发现 ${markers.length} 个媒体标记:`, JSON.stringify(markers, null, 2));
+  console.log(`[DingTalk MediaParser] Parsing finished, found ${markers.length} media markers:`, JSON.stringify(markers, null, 2));
 
   return markers;
 }
 
 /**
- * 从文本中移除已处理的媒体标记
+ * Remove processed media markers from the text
  */
 export function stripMediaMarkers(text: string, markers: MediaMarker[]): string {
   let result = text;
   for (const marker of markers) {
     result = result.replace(marker.originalMarker, '');
   }
-  // 清理多余空行
+  // Collapse extra blank lines
   return result.replace(/\n{3,}/g, '\n\n').trim();
 }

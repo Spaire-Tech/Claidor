@@ -87,9 +87,7 @@ class TestLogin:
     ) -> None:
         response = await client.get("/desktop/login", follow_redirects=False)
         assert response.status_code == 303
-        assert response.headers["location"].startswith(
-            "lobsterai://auth/callback?code="
-        )
+        assert response.headers["location"].startswith("swen://auth/callback?code=")
 
     @pytest.mark.auth
     async def test_a_foreign_callback_gets_nothing(
@@ -184,6 +182,51 @@ class TestSession:
             "data"
         ]
         assert snapshot["banners"] == []
+
+    async def test_the_catalogues_are_empty_and_updates_say_nothing_newer(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        for path in ("/desktop/api/updates/check", "/desktop/api/updates/check-manual"):
+            assert (await client.get(path)).json() == {
+                "code": 0,
+                "data": {"value": None},
+            }
+        skills = (await client.get("/desktop/api/skill-store")).json()
+        assert skills["code"] == 0
+        assert skills["data"]["value"] == {
+            "marketplace": [],
+            "localSkill": [],
+            "marketTags": [],
+        }
+        kits = (await client.get("/desktop/api/kit-store")).json()
+        assert kits["data"]["value"] == {"kits": []}
+
+    async def test_the_mcp_catalogue_is_served_and_usage_events_are_swallowed(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        body = (await client.get("/desktop/api/mcp-marketplace")).json()
+        assert body["code"] == 0
+        value = body["data"]["value"]
+        assert [c["id"] for c in value["categories"]][:2] == ["all", "search"]
+        assert {s["id"] for s in value["servers"]} >= {"github", "slack", "notion"}
+        assert all("description_en" in s for s in value["servers"])
+        pinged = await client.get(
+            "/desktop/api/analytics/events", params={"action": "swen_app_started"}
+        )
+        assert pinged.status_code == 204
+
+    async def test_there_are_no_activities(self, client: httpx.AsyncClient) -> None:
+        slot = (await client.get("/desktop/api/client-activities/slot")).json()
+        assert slot["code"] == 0
+        assert slot["data"]["slotState"] == "empty"
+        assert "activity" not in slot["data"]
+        context = await client.get("/desktop/api/client-activities/daily/context")
+        assert context.status_code == 404
+        assert context.json()["code"] == 404
+        action = await client.post(
+            "/desktop/api/client-activities/daily/actions/claim", json={}
+        )
+        assert action.status_code == 404
 
     async def test_refresh_rotates_and_the_old_refresh_token_dies(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

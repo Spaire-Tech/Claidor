@@ -301,7 +301,7 @@ export interface NimGatewayStatus {
 }
 
 // NIM supports max 3 instances (enabled or not), may use different accounts or AppKeys.
-// See: https://doc.yunxin.163.com/messaging2/ai-guide/TMwNzk4MzU?platform=client#多实例配置
+// See the multi-instance configuration section of https://doc.yunxin.163.com/messaging2/ai-guide/TMwNzk4MzU?platform=client
 export const MAX_NIM_INSTANCES = 3;
 
 export interface NimInstanceStatus extends NimGatewayStatus {
@@ -324,8 +324,8 @@ export type NimConfig = NimOpenClawConfig;
 
 export interface NeteaseBeeChanConfig {
   enabled: boolean;
-  clientId: string;    // 小蜜蜂平台的 NIM 账号 ID
-  secret: string;      // 用于 token 中继的密钥
+  clientId: string;    // NIM account ID on the NetEase Bee platform
+  secret: string;      // Secret used for token relay
   debug?: boolean;
 }
 
@@ -387,7 +387,7 @@ export interface QQMultiInstanceStatus {
   instances: QQInstanceStatus[];
 }
 
-// ==================== WeCom (企业微信) Types ====================
+// ==================== WeCom Types ====================
 
 export interface WecomOpenClawConfig {
   enabled: boolean;
@@ -484,7 +484,7 @@ export interface PopoMultiInstanceStatus {
   instances: PopoInstanceStatus[];
 }
 
-// ==================== Weixin (微信) Types ====================
+// ==================== Weixin (WeChat) Types ====================
 
 export interface WeixinOpenClawConfig {
   enabled: boolean;
@@ -609,13 +609,13 @@ export type IMMediaType = 'image' | 'video' | 'audio' | 'voice' | 'document' | '
 
 export interface IMMediaAttachment {
   type: IMMediaType;
-  localPath: string;          // 下载后的本地路径
-  mimeType: string;           // MIME 类型
-  fileName?: string;          // 原始文件名
-  fileSize?: number;          // 文件大小（字节）
-  width?: number;             // 图片/视频宽度
-  height?: number;            // 图片/视频高度
-  duration?: number;          // 音视频时长（秒）
+  localPath: string;          // Local path after download
+  mimeType: string;           // MIME type
+  fileName?: string;          // Original file name
+  fileSize?: number;          // File size (bytes)
+  width?: number;             // Image/video width
+  height?: number;            // Image/video height
+  duration?: number;          // Audio/video duration (seconds)
 }
 
 export interface IMMessage {
@@ -628,7 +628,7 @@ export interface IMMessage {
   chatType: 'direct' | 'group';
   timestamp: number;
   attachments?: IMMediaAttachment[];
-  mediaGroupId?: string;      // 媒体组 ID（用于合并多张图片）
+  mediaGroupId?: string;      // Media group ID (used to merge multiple images)
 }
 
 // ==================== IPC Result Types ====================

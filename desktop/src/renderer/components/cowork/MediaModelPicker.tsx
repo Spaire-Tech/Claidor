@@ -145,7 +145,7 @@ const loadSavedMediaSelection = (
 const MEDIA_ICON_HINTS: Array<{ pattern: RegExp; iconKey: MediaIconKey }> = [
   { pattern: /gpt[\s-]*image[\s-]*2|canvas[\s-]*20/i, iconKey: ProviderName.OpenAI },
   { pattern: /nano[\s-]*banana[\s-]*(?:2|pro)|nano[\s-]*banan[\s-]*(?:2|pro)|banana[\s-]*(?:2|pro)/i, iconKey: ProviderIconId.Banana },
-  { pattern: /doubao|seedream|豆包/i, iconKey: ProviderIconId.Doubao },
+  { pattern: /doubao|seedream/i, iconKey: ProviderIconId.Doubao },
   { pattern: /minimax/i, iconKey: ProviderName.Minimax },
   { pattern: /qwen|qwq|wan2\.7|z-image/i, iconKey: ProviderName.Qwen },
   { pattern: /kling/i, iconKey: ProviderIconId.Kling },
@@ -235,7 +235,6 @@ const BANANA_PRO_ESTIMATE_KEYS = new Set([
 interface ClientEstimateUsagePart {
   tokens: number;
   creditsPerMillion: number;
-  zhLabel: string;
   enLabel: string;
 }
 
@@ -250,13 +249,13 @@ interface ClientEstimateConfig {
 const CLIENT_ESTIMATE_CONFIGS: Record<string, ClientEstimateConfig> = {
   [GPT_IMAGE_2_MODEL_ID]: {
     credits: 30,
-    discountLabel: '6折',
+    discountLabel: '40% off',
     inputImageCount: 1,
     outputImageCount: 1,
     usageParts: [
-      { tokens: 83, creditsPerMillion: 2100, zhLabel: '文本 token', enLabel: 'text tokens' },
-      { tokens: 1050, creditsPerMillion: 5600, zhLabel: '图片输入 token', enLabel: 'image-input tokens' },
-      { tokens: 1900, creditsPerMillion: 12600, zhLabel: '图片输出 token', enLabel: 'image-output tokens' },
+      { tokens: 83, creditsPerMillion: 2100, enLabel: 'text tokens' },
+      { tokens: 1050, creditsPerMillion: 5600, enLabel: 'image-input tokens' },
+      { tokens: 1900, creditsPerMillion: 12600, enLabel: 'image-output tokens' },
     ],
   },
   [BANANA_2_MODEL_ID]: {
@@ -264,9 +263,9 @@ const CLIENT_ESTIMATE_CONFIGS: Record<string, ClientEstimateConfig> = {
     inputImageCount: 0,
     outputImageCount: 1,
     usageParts: [
-      { tokens: 60, creditsPerMillion: 350, zhLabel: '文本 token', enLabel: 'text tokens' },
-      { tokens: 1120, creditsPerMillion: 42000, zhLabel: '图片输出 token', enLabel: 'image-output tokens' },
-      { tokens: 922, creditsPerMillion: 2100, zhLabel: '思考输出 token', enLabel: 'thinking-output tokens' },
+      { tokens: 60, creditsPerMillion: 350, enLabel: 'text tokens' },
+      { tokens: 1120, creditsPerMillion: 42000, enLabel: 'image-output tokens' },
+      { tokens: 922, creditsPerMillion: 2100, enLabel: 'thinking-output tokens' },
     ],
   },
   [BANANA_PRO_MODEL_ID]: {
@@ -274,8 +273,8 @@ const CLIENT_ESTIMATE_CONFIGS: Record<string, ClientEstimateConfig> = {
     inputImageCount: 0,
     outputImageCount: 1,
     usageParts: [
-      { tokens: 60, creditsPerMillion: 1400, zhLabel: '文本 token', enLabel: 'text tokens' },
-      { tokens: 1120, creditsPerMillion: 84000, zhLabel: '图片输出 token', enLabel: 'image-output tokens' },
+      { tokens: 60, creditsPerMillion: 1400, enLabel: 'text tokens' },
+      { tokens: 1120, creditsPerMillion: 84000, enLabel: 'image-output tokens' },
     ],
   },
 };
@@ -428,10 +427,6 @@ const tierCredits = (tier: MediaPricingTierConfig): number => {
 };
 
 const formatPixelCount = (pixels: number): string => {
-  if (i18nService.getLanguage() === 'zh') {
-    if (pixels >= 10_000) return `${formatCreditAmount(pixels / 10_000)}万`;
-    return formatCreditAmount(pixels);
-  }
   if (pixels >= 1_000_000) return `${formatCreditAmount(pixels / 1_000_000)}M`;
   if (pixels >= 1_000) return `${formatCreditAmount(pixels / 1_000)}K`;
   return formatCreditAmount(pixels);
@@ -441,23 +436,16 @@ const formatOutputPixelTierLabel = (tier: MediaPricingTierConfig): string => {
   if (tier.label) return tier.label;
   const min = toFiniteNumber(tier.outputPixelsMin);
   const max = toFiniteNumber(tier.outputPixelsMax);
-  const isZh = i18nService.getLanguage() === 'zh';
   if (min != null && max != null) {
-    return isZh
-      ? `输出图${formatPixelCount(min)}-${formatPixelCount(max)}像素`
-      : `Output ${formatPixelCount(min)}-${formatPixelCount(max)} pixels`;
+    return `Output ${formatPixelCount(min)}-${formatPixelCount(max)} pixels`;
   }
   if (max != null) {
-    return isZh
-      ? `输出图≤${formatPixelCount(max)}像素`
-      : `Output ≤ ${formatPixelCount(max)} pixels`;
+    return `Output ≤ ${formatPixelCount(max)} pixels`;
   }
   if (min != null) {
-    return isZh
-      ? `输出图>${formatPixelCount(min - 1)}像素`
-      : `Output > ${formatPixelCount(min - 1)} pixels`;
+    return `Output > ${formatPixelCount(min - 1)} pixels`;
   }
-  return isZh ? '输出图' : 'Output image';
+  return 'Output image';
 };
 
 const getImageIoOutputTierCredits = (pricing?: MediaPricingConfig): number[] => {
@@ -482,7 +470,7 @@ const getModelPriceLabel = (model: MediaModel): string | null => {
   if (isTokenBillingModel(model)) {
     const estimatedCredits = getEstimatedRequestCredits(model);
     if (!estimatedCredits) return null;
-    return `≈${formatEstimatedCredits(estimatedCredits)} ${i18nService.t('authCreditsUnit')}/${model.unitLabel || '次'}`;
+    return `≈${formatEstimatedCredits(estimatedCredits)} ${i18nService.t('authCreditsUnit')}/${model.unitLabel || 'request'}`;
   }
   if (isImageIoBillingModel(model)) {
     const outputTierCredits = getImageIoOutputTierCredits(getPricingConfig(model));
@@ -492,11 +480,11 @@ const getModelPriceLabel = (model: MediaModel): string | null => {
     const creditRange = minCredits === maxCredits
       ? formatCreditAmount(minCredits)
       : `${formatCreditAmount(minCredits)}-${formatCreditAmount(maxCredits)}`;
-    return `x${creditRange} ${i18nService.t('authCreditsUnit')}/${model.unitLabel || '张输出图'}`;
+    return `x${creditRange} ${i18nService.t('authCreditsUnit')}/${model.unitLabel || 'output image'}`;
   }
   const unitCredits = toFiniteNumber(model.unitCredits);
   if (!unitCredits || unitCredits <= 0) return null;
-  return `x${formatCreditAmount(unitCredits)} ${i18nService.t('authCreditsUnit')}/${model.unitLabel || '张'}`;
+  return `x${formatCreditAmount(unitCredits)} ${i18nService.t('authCreditsUnit')}/${model.unitLabel || 'image'}`;
 };
 
 const getModelDiscountLabel = (model: MediaModel): string | null => {
@@ -534,19 +522,16 @@ const getImageIoPricingRows = (model: MediaModel): Array<{ label: string; credit
     const freeInputImageCount = getFreeInputImageCount(pricing);
     rows.push({
       label: (() => {
-        const isZh = i18nService.getLanguage() === 'zh';
-        if (freeInputImageCount === 1) return isZh ? '输入图（首张免费）' : 'Input image (first free)';
-        if (freeInputImageCount > 1) return isZh
-          ? `输入图（前${freeInputImageCount}张免费）`
-          : `Input image (first ${freeInputImageCount} free)`;
-        return isZh ? '输入图' : 'Input image';
+        if (freeInputImageCount === 1) return 'Input image (first free)';
+        if (freeInputImageCount > 1) return `Input image (first ${freeInputImageCount} free)`;
+        return 'Input image';
       })(),
       credits: inputCredits,
-      unitLabel: i18nService.getLanguage() === 'zh' ? '张输入图' : 'input image',
+      unitLabel: 'input image',
     });
   }
 
-  const outputUnitLabel = model.unitLabel || pricing.unitLabel || (i18nService.getLanguage() === 'zh' ? '张输出图' : 'output image');
+  const outputUnitLabel = model.unitLabel || pricing.unitLabel || 'output image';
   pricing.tiers?.forEach((tier) => {
     const credits = tierCredits(tier);
     if (credits <= 0) return;
@@ -561,20 +546,13 @@ const getImageIoPricingRows = (model: MediaModel): Array<{ label: string; credit
     const outputCredits = pricingCredits(pricing.outputCredits, pricing.outputCostYuan);
     if (outputCredits != null && outputCredits > 0) {
       rows.push({
-        label: i18nService.getLanguage() === 'zh' ? '输出图' : 'Output image',
+        label: 'Output image',
         credits: outputCredits,
         unitLabel: outputUnitLabel,
       });
     }
   }
   return rows;
-};
-
-const formatChineseEstimateScope = (config: ClientEstimateConfig): string => {
-  const parts: string[] = [];
-  if (config.inputImageCount > 0) parts.push(`${config.inputImageCount} 张输入图`);
-  if (config.outputImageCount > 0) parts.push(`${config.outputImageCount} 张输出图`);
-  return parts.length > 0 ? `按 ${parts.join('和 ')}估算` : '按默认参数估算';
 };
 
 const formatEnglishImageCount = (count: number, label: string): string => {
@@ -598,16 +576,6 @@ const getTokenBillingEstimateNotes = (model: MediaModel): string[] => {
   const formula = clientEstimate.usageParts
     .map(part => `${formatCreditAmount(part.tokens)}×${formatCreditAmount(part.creditsPerMillion)}/1M`)
     .join(' + ');
-
-  if (i18nService.getLanguage() === 'zh') {
-    const usage = clientEstimate.usageParts
-      .map(part => `${formatCreditAmount(part.tokens)} ${part.zhLabel}`)
-      .join('、');
-    return [
-      `预估计算：${formatChineseEstimateScope(clientEstimate)}，约 ${usage}：${formula} ≈ ${formatEstimatedCredits(clientEstimate.credits)} ${creditsUnit}。`,
-      '实际扣费按本次输入和输出 token 计算，输入图片数量、尺寸、输出复杂度不同，会与预估存在差异。',
-    ];
-  }
 
   const usage = clientEstimate.usageParts
     .map(part => `${formatCreditAmount(part.tokens)} ${part.enLabel}`)
@@ -1017,7 +985,7 @@ const MediaModelPicker: React.FC<MediaModelPickerProps> = ({ draftKey, disabled 
   const renderHoverCard = () => {
     if (!hoveredModel) return null;
     const desc = normalizeModelDescription(hoveredModel.description || hoveredModel.capabilities || hoveredModel.pricingDescription);
-    const unitLabel = hoveredModel.unitLabel || (hoveredModel.mediaType === 'image' ? '张' : '个');
+    const unitLabel = hoveredModel.unitLabel || (hoveredModel.mediaType === 'image' ? 'image' : 'item');
     const pricing = getPricingConfig(hoveredModel);
     const discountLabel = getModelDiscountLabel(hoveredModel);
     const tiers = pricing?.tiers;
@@ -1031,16 +999,16 @@ const MediaModelPicker: React.FC<MediaModelPickerProps> = ({ draftKey, disabled 
       if (tier.outputPixelsMin != null || tier.outputPixelsMax != null) return formatOutputPixelTierLabel(tier);
       const parts: string[] = [];
       if (tier.resolution) parts.push(tier.resolution);
-      if (tier.duration) parts.push(`${tier.duration}秒`);
-      if (tier.audio) parts.push('有声音');
-      if (tier.hasVideoInput === true) parts.push('含视频输入');
-      if (tier.hasVideoInput === false) parts.push('不含视频输入');
+      if (tier.duration) parts.push(`${tier.duration}s`);
+      if (tier.audio) parts.push('with audio');
+      if (tier.hasVideoInput === true) parts.push('with video input');
+      if (tier.hasVideoInput === false) parts.push('without video input');
       return parts.join(' ') || '-';
     };
 
-    const tierUnitSuffix = billingUnit === 'per_second' ? '秒'
-      : billingUnit === 'per_video' ? '个'
-      : billingUnit === 'per_token' ? '百万tokens'
+    const tierUnitSuffix = billingUnit === 'per_second' ? 's'
+      : billingUnit === 'per_video' ? 'video'
+      : billingUnit === 'per_token' ? '1M tokens'
       : unitLabel;
 
     const hasVideoInputTiers = tiers && tiers.some(t => t.hasVideoInput !== undefined);
@@ -1091,9 +1059,7 @@ const MediaModelPicker: React.FC<MediaModelPickerProps> = ({ draftKey, disabled 
               </tbody>
             </table>
             <div className="mt-1.5 text-[9px] leading-3 text-tertiary">
-              {i18nService.getLanguage() === 'zh'
-                ? '输出图按实际返回的图片尺寸分层计费。'
-                : 'Output image billing is tiered by the actual returned image size.'}
+              Output image billing is tiered by the actual returned image size.
             </div>
           </>
         ) : tokenPricingRows.length > 0 ? (
@@ -1128,8 +1094,8 @@ const MediaModelPicker: React.FC<MediaModelPickerProps> = ({ draftKey, disabled 
               <thead>
                 <tr className="border-b border-border/50">
                   <th className="text-left font-medium py-0.5 pr-1"></th>
-                  <th className="text-right font-medium py-0.5 px-1">含视频输入</th>
-                  <th className="text-right font-medium py-0.5">不含视频输入</th>
+                  <th className="text-right font-medium py-0.5 px-1">With video input</th>
+                  <th className="text-right font-medium py-0.5">Without video input</th>
                 </tr>
               </thead>
               <tbody>

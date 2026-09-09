@@ -79,11 +79,11 @@ const startupDescriptor = {
   loginRequired: true,
   periodLabel: 'Limited time',
   cardTitle: 'User reward',
-  modalTitle: 'Welcome to LobsterAI',
+  modalTitle: 'Welcome to Swen',
   modalDescription: 'Log in to claim 5000 credits',
   actionText: 'Claim now',
   posterUrl: 'https://example.com/reward.png',
-  posterAlt: 'LobsterAI user reward',
+  posterAlt: 'Swen user reward',
   autoPopupStartAt: '2026-07-30T00:00:00Z',
   autoPopupEndAt: '2026-08-15T00:00:00Z',
 };

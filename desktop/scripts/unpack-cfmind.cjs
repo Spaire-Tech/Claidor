@@ -1,21 +1,23 @@
 #!/usr/bin/env node
 
 /**
- * Windows 安装后资源 tar 解压脚本
+ * Post-install resource tar extraction script for Windows
  *
- * 由 NSIS installer.nsh 的 customInstall 宏调用。
- * 通过 LobsterAI.exe (ELECTRON_RUN_AS_NODE=1 模式) 执行。
+ * Invoked by the customInstall macro in the NSIS installer.nsh.
+ * Runs through Swen.exe in ELECTRON_RUN_AS_NODE=1 mode.
  *
- * 用法: LobsterAI.exe <本脚本路径> <tarPath> <destDir>
+ * Usage: Swen.exe <this script> <tarPath> <destDir>
  *
- * 效果:
- *   输入: $INSTDIR/resources/win-resources.tar
- *   输出: $INSTDIR/resources/cfmind/, SKILLs/, python-win/
- *   tar 文件由 NSIS 脚本在解压后删除
- *   全部目录校验通过后写入 <destDir>/.unpack-cfmind-ok 哨兵文件,
- *   供安装器在读不到本进程退出码的环境下兜底判定成功
+ * Effect:
+ *   Input:  $INSTDIR/resources/win-resources.tar
+ *   Output: $INSTDIR/resources/cfmind/, SKILLs/, python-win/
+ *   The tar file is deleted by the NSIS script after extraction.
+ *   Once every directory check passes, a <destDir>/.unpack-cfmind-ok sentinel
+ *   file is written so the installer can still detect success in environments
+ *   where it cannot read this process's exit code.
  *
- * 依赖: 从 app.asar 内加载 tar npm 包 (Electron 内置 ASAR 透明读取支持)
+ * Dependency: the tar npm package loaded from inside app.asar (Electron reads
+ * ASAR archives transparently).
  */
 
 const fs = require('fs');
@@ -29,10 +31,12 @@ try {
     fs.mkdirSync(path.dirname(process.argv[4]), { recursive: true });
     fs.appendFileSync(process.argv[4], heartbeat + '\n');
   }
-} catch {}
+} catch {
+  // Best-effort heartbeat; ignore failures.
+}
 
 // ============================================================
-// 参数解析
+// Argument parsing
 // ============================================================
 
 const tarPath = process.argv[2];
@@ -40,7 +44,7 @@ const destDir = process.argv[3];
 const installLogPath = process.argv[4];
 
 if (!tarPath || !destDir) {
-  console.error('[unpack-cfmind] Usage: LobsterAI.exe unpack-cfmind.cjs <tarPath> <destDir>');
+  console.error('[unpack-cfmind] Usage: Swen.exe unpack-cfmind.cjs <tarPath> <destDir>');
   process.exit(1);
 }
 
@@ -104,7 +108,7 @@ function formatMegabytes(bytes) {
 }
 
 // ============================================================
-// 加载 tar 模块
+// Load the tar module
 // ============================================================
 
 function loadTarModule() {
@@ -131,7 +135,7 @@ function loadTarModule() {
 }
 
 // ============================================================
-// 执行解压
+// Run the extraction
 // ============================================================
 
 process.on('uncaughtException', (err) => {

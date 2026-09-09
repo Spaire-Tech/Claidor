@@ -494,7 +494,7 @@ interface McpServerConfigIPC {
 interface McpMarketplaceServer {
   id: string;
   name: string;
-  description_zh: string;
+  description_zh?: string;
   description_en: string;
   category: string;
   transportType: 'stdio' | 'sse' | 'http';
@@ -506,7 +506,7 @@ interface McpMarketplaceServer {
 
 interface McpMarketplaceCategory {
   id: string;
-  name_zh: string;
+  name_zh?: string;
   name_en: string;
 }
 
@@ -2014,7 +2014,7 @@ interface IElectronAPI {
         supportsVideo?: boolean;
         supportsThinking?: boolean;
         thinkingConfig?: import('../../shared/providers/modelThinking').ModelThinkingConfig;
-        requestCapabilities?: import('../../shared/providers/lobsterAIRequestOptions').LobsterAIRequestCapability[];
+        requestCapabilities?: import('../../shared/providers/swenRequestOptions').SwenRequestCapability[];
         supportsToolCalling?: boolean;
         agenticReady?: boolean;
         contextWindow?: number;

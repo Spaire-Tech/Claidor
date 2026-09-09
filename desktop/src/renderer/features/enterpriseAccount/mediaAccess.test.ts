@@ -8,7 +8,7 @@ import {
 } from './mediaAccess';
 
 const enterpriseQuota: UserQuota = {
-  planName: '团队版',
+  planName: 'Team',
   subscriptionStatus: 'enterprise',
   creditsLimit: 5000,
   creditsUsed: 0,

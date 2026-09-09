@@ -6,11 +6,11 @@ Legal research platform for OHADA law (see README.md). Monorepo with Python/Fast
 
 This repository carried the Swens build (a model review platform for finance). It is archived, switched off and kept as a record: the engine under `server/polar/tieout` (routes no longer mounted; tests not collected), the screens under `clients/apps/web/src/components/Workspace` (no longer rendered), the scripts under `server/scripts`, and the documents of record under `docs/pierce` (`swens.md`, `swens-plan.md`, `notes.md`). The last working state is the git tag `swens-final`. Do not extend it; answer questions about it from those documents, never from memory.
 
-## desktop/ — LobsterAI, vendored
+## desktop/ — Swen, the desktop app
 
-`desktop/` is the LobsterAI desktop app (NetEase Youdao, MIT), a window on top of the OpenClaw agent engine, vendored with `git subtree` (squashed; the upstream commit is named in the vendoring commit). It builds on its own with its own `package.json`; it is not part of the `clients/` pnpm workspace. Keep the MIT notices. See `desktop/CLAIDOR-NOTES.md`.
+`desktop/` is Swen, Claidor's desktop assistant for office workers: the LobsterAI desktop app (NetEase Youdao, MIT) on top of the OpenClaw agent engine, vendored with `git subtree` (squashed; upstream commit named in the vendoring commit) and then reshaped: English only, Swen branding (`com.claidor.swen`, deep link `swen://`), Telegram/Discord/email channels only (the Chinese messengers are retired in `desktop/src/shared/platform/constants.ts`), no provider or API-key screens, no media generation, no Chinese services. It builds on its own with its own `package.json` (Node 24); it is not part of the `clients/` pnpm workspace. Keep the MIT notices. Never add Chinese text there. See `desktop/CLAIDOR-NOTES.md` for what was retired and what is still pending.
 
-Its sign-in is wired to this API: `server/polar/desktop` serves the account protocol the app speaks in its server mode under `/desktop` (browser login through the web app, auth code, token exchange and refresh, profile, quota, the model list, and a metered proxy to Anthropic on Claidor's key). The app's server base URL points at `{BASE_URL}/desktop` (`desktop/src/main/libs/endpoints.ts`). Settings: `DESKTOP_*` in `server/polar/config.py`.
+Its sign-in is wired to this API: `server/polar/desktop` serves the account protocol under `/desktop` (browser login through the web app, auth code, token exchange and refresh, profile, quota, the model list, a metered proxy to Anthropic on Claidor's key, and empty stubs for updates, skill store, kit store and client activities). The app talks only to `api.claidor.com` and `app.claidor.com` (`desktop/src/main/libs/endpoints.ts`, `desktop/src/renderer/services/endpoints.ts`). Settings: `DESKTOP_*` in `server/polar/config.py`.
 
 ## Quick Start
 

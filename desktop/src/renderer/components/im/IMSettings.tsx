@@ -381,7 +381,7 @@ type IMInstanceRenameTarget = IMInstanceTarget & {
 
 // Map of backend error messages to i18n keys
 const errorMessageI18nMap: Record<string, string> = {
-  '账号已在其它地方登录': 'kickedByOtherClient',
+  'Account signed in elsewhere': 'kickedByOtherClient',
 };
 
 // Helper function to translate IM error messages
@@ -580,7 +580,7 @@ const IMSettings: React.FC = () => {
     } catch (err: any) {
       if (!isMountedRef.current) return;
       setFeishuQrStatus('error');
-      setFeishuQrError(err?.message || '获取二维码失败');
+      setFeishuQrError(err?.message || 'Failed to fetch the QR code');
     }
   };
 
@@ -872,7 +872,7 @@ const IMSettings: React.FC = () => {
 
   const handleEmailGetApiKey = async () => {
     if (!activeEmailInstanceId) return;
-    const apiKeyUrl = 'https://claw.163.com/projects/dashboard/?channel=LobsterAI#/api-keys';
+    const apiKeyUrl = 'https://claw.163.com/projects/dashboard/?channel=Swen#/api-keys';
     try {
       await window.electron.shell.openExternal(apiKeyUrl);
     } catch {
@@ -2787,7 +2787,7 @@ const IMSettings: React.FC = () => {
           );
         })()}
 
-        {/* 小蜜蜂设置*/}
+        {/* NetEase Bee settings */}
         {activePlatform === 'netease-bee' && (
           <div className="space-y-3">
             {/* Client ID */}
@@ -2802,7 +2802,7 @@ const IMSettings: React.FC = () => {
                   onChange={(e) => handleNeteaseBeeChanChange('clientId', e.target.value)}
                   onBlur={handleSaveConfig}
                   className="block w-full rounded-lg bg-surface border-border-subtle border focus:border-primary focus:ring-1 focus:ring-primary/30 text-foreground px-3 py-2 pr-8 text-sm transition-colors"
-                  placeholder={i18nService.t('neteaseBeeChanClientIdPlaceholder') || '您的Client ID'}
+                  placeholder={i18nService.t('neteaseBeeChanClientIdPlaceholder') || 'Your Client ID'}
                 />
                 {config['netease-bee'].clientId && (
                   <div className="absolute right-2 inset-y-0 flex items-center">
@@ -2878,7 +2878,7 @@ const IMSettings: React.FC = () => {
           </div>
         )}
 
-        {/* Weixin (微信) Settings */}
+        {/* Weixin (WeChat) Settings */}
         {activePlatform === 'weixin' && (
           <div className="space-y-3">
             {/* Scan QR code section */}
@@ -3104,7 +3104,7 @@ const IMSettings: React.FC = () => {
           </div>
         )}
 
-        {/* WeCom (企业微信) Multi-Instance Settings */}
+        {/* WeCom Multi-Instance Settings */}
         {activePlatform === 'wecom' && (() => {
           const wecomMultiConfig = config.wecom;
           const activeWecomInstance = activeWecomInstanceId
