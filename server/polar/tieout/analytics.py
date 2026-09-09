@@ -72,6 +72,9 @@ ANALYTIC_RULE_NAMES: dict[str, str] = {
     "interest-consistency": "Interest does not follow the opening balance",
     "model-own-check": "The model's own check rows are firing",
     "time-axis": "Period columns out of order",
+    #: The convention check (convention-check.md): a line computed
+    #: unlike every model we hold that carries the same line name.
+    "convention": "A line is computed unlike every other model we hold",
 }
 
 #: The same checks with their passing sentence — what the « Checks
@@ -85,6 +88,7 @@ ANALYTIC_PASS_NAMES: dict[str, str] = {
     "interest-consistency": "Interest accrues on the opening balance",
     "model-own-check": "The model's own checks",
     "time-axis": "Time axis consistent across sheets",
+    "convention": "Lines match the conventions we hold",
 }
 
 #: The answer to « says who », per rule — the short citation the
@@ -96,6 +100,7 @@ ANALYTIC_STANDARDS: dict[str, str] = {
     "interest-consistency": "FAST C4",
     "model-own-check": "Own checks",
     "time-axis": "FAST B1",
+    "convention": "Models we hold",
 }
 
 #: The same answer spelled out — the sentence the finding's modal
@@ -122,6 +127,10 @@ ANALYTIC_STANDARD_SENTENCES: dict[str, str] = {
     ),
     "time-axis": (
         "FAST Standard B1: one time axis, running in order, shared by every sheet."
+    ),
+    "convention": (
+        "The models we hold: a line with this name is computed the same "
+        "way in every one of them that carries it."
     ),
 }
 
@@ -271,6 +280,7 @@ def run_analytics(book: Workbook, structure: Structure) -> Analytics:
         # `_graded` and `_deduplicated` are skipped because there is
         # nothing to grade or deduplicate.
         _time_axis(structure, result)
+        _convention(book, result)
         return result
     _own_checks(book, structure, result)
     _balance(book, structure, result)
@@ -278,9 +288,80 @@ def run_analytics(book: Workbook, structure: Structure) -> Analytics:
     _cash_continuity(book, structure, result)
     _debt_terminal(book, structure, result)
     _interest_consistency(book, structure, result)
+    _convention(book, result)
     _deduplicated(result)
     _graded(book, result)
     return result
+
+
+# --- the conventions we hold --------------------------------------------
+
+
+def _convention(book: Workbook, result: Analytics) -> None:
+    """« This line is computed differently from every model we hold. »
+
+    Registered in `docs/pierce/convention-check.md`. Reads formulas,
+    never cached values, so it runs whatever the calculation setting
+    says. A departure is a reviewer's question and grades as a smell:
+    the model may be right and the convention wrong for it, and the
+    sentence gives both sides.
+    """
+    from openpyxl.utils import get_column_letter
+
+    from .meaning.conventions import load, reach, words
+
+    held = load()
+    if not held.labels:
+        result.abstentions.append(
+            Abstention("convention", "No conventions are loaded to compare against.")
+        )
+        return
+    reached = reach(book, held)
+    if not reached:
+        result.abstentions.append(
+            Abstention(
+                "convention",
+                "None of this model's line names is one the models we hold "
+                "compute the same way, so there is nothing to compare.",
+            )
+        )
+        return
+    agreeing = sum(1 for one in reached if one.agrees)
+    result.tallies["convention"] = {"total": len(reached), "clean": agreeing}
+    for one in reached:
+        if one.agrees:
+            continue
+        row, convention = one.row, one.convention
+        #: The row's first formula cell, for the screen to open.
+        cells = sorted(
+            (
+                cell.column
+                for cell in book.cells.values()
+                if cell.sheet == row.sheet and cell.row == row.row and cell.formula
+            ),
+        )
+        column = cells[0] if cells else 1
+        ref = f"{row.sheet}!{get_column_letter(column)}{row.row}"
+        label = book.row_words.get(row.sheet, {}).get(row.row, row.label)
+        result.findings.append(
+            AnalyticFinding(
+                rule="convention",
+                sheet=row.sheet,
+                ref=ref,
+                row_label=label,
+                period="",
+                value=0.0,
+                detail=(
+                    f"Here « {label} » is made of {words(row.pattern)}. "
+                    f"In {convention.agreeing} of the {convention.files} models we "
+                    f"hold, from {convention.families} sources, it is made of "
+                    f"{words(convention.pattern)}."
+                ),
+                figure=str(convention.agreeing),
+                figure_unit=f"of {convention.files} models compute it the other way",
+                severity="smell",
+            )
+        )
 
 
 # --- the model's own checks ----------------------------------------------

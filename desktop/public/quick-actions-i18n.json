@@ -1,0 +1,104 @@
+{
+  "en": {
+    "pptx": {
+      "label": "Create Slides",
+      "prompts": {
+        "pptx-work-report": {
+          "label": "Work Report",
+          "description": "Quarterly summary and next phase planning report",
+          "prompt": "Create a quarterly work report PPT with the following content:\n\n1. Review of core work achievements this quarter\n2. Key project progress and milestone completion\n3. Performance metrics completion (visualized with charts)\n4. Problems encountered and solutions\n5. Team collaboration highlights\n6. Next quarter work plans and objectives\n7. Resource support needed\n\nStyle requirements: Concise business style, clear logic, data visualization, suitable for management reporting."
+        },
+        "pptx-content-research": {
+          "label": "Industry Research",
+          "description": "Industry trends and competitor analysis report",
+          "prompt": "Create an industry research and analysis report PPT covering the following sections:\n\n1. Research background and objectives\n2. Overall industry development status and market size\n3. Main competitor comparison (features, pricing, user reputation)\n4. Target user persona and core needs insights\n5. Industry trends and opportunities summary\n6. Actionable strategy recommendations\n\nStyle requirements: Data-driven, rich in charts, well-reasoned viewpoints, suitable for internal team sharing and discussion."
+        },
+        "pptx-training": {
+          "label": "Training Deck",
+          "description": "Onboarding and internal training slides",
+          "prompt": "Create a \"New Employee Onboarding\" training deck PPT, including:\n\n1. Company introduction and culture values\n2. Organizational structure and department responsibilities\n3. Core business process walkthrough (presented with flowcharts)\n4. Guide to commonly used office tools and systems\n5. Quick overview of attendance, expense and other policies\n6. 30/60/90-day growth path for new hires\n7. Interactive Q&A and contact list\n\nStyle requirements: Friendly and professional, well-highlighted key points, combining text and visuals, helping new hires integrate into the team quickly."
+        },
+        "pptx-ai-intro": {
+          "label": "Introduction to AI",
+          "description": "Popular science presentation for understanding AI basics",
+          "prompt": "Create a popular science PPT introducing artificial intelligence for beginners, including:\n\n1. What is artificial intelligence - explain with everyday examples\n2. Brief history of AI development (from Turing Test to large language models)\n3. Common AI application scenarios (voice assistants, recommendation systems, autonomous driving, etc.)\n4. Basic principles of machine learning (explained with intuitive analogies)\n5. How large models and ChatGPT work\n6. What AI can and cannot do\n7. How ordinary people can start using AI tools to improve efficiency\n\nStyle requirements: Easy to understand, use diagrams and analogies, avoid technical jargon, make it understandable even for those with no technical background."
+        }
+      }
+    },
+    "data-analysis": {
+      "label": "Data Analysis",
+      "prompts": {
+        "excel-summary": {
+          "label": "Excel Summary",
+          "description": "Categorize and summarize Excel data",
+          "prompt": "Please read my Excel file and help me complete the following tasks:\n\n1. Categorize data by category (sum, count, average)\n2. Generate proportion analysis for each category\n3. Mark outliers and key data points\n4. Output a well-organized summary statistics Excel file with charts"
+        },
+        "image-to-excel": {
+          "label": "Image to Table",
+          "description": "Recognize table data in images and generate Excel",
+          "prompt": "Please recognize the table content in the image I uploaded and help me:\n\n1. Extract all table data from the image\n2. Organize into standard row and column format\n3. Correct possible recognition errors\n4. Generate a clearly formatted Excel file"
+        },
+        "word-report": {
+          "label": "Data Report",
+          "description": "Generate Word analysis report based on data files",
+          "prompt": "Please generate a Word analysis report based on the data file I provided, with the following requirements:\n\n1. Include data overview description\n2. Core metrics statistics and trend analysis\n3. Key findings and conclusion summary\n4. Professional layout, clear structure, ready for reporting"
+        },
+        "multi-excel-merge": {
+          "label": "Merge Multiple Tables",
+          "description": "Merge multiple Excel files and standardize format",
+          "prompt": "I have multiple Excel files that need to be merged and organized. Please help me:\n\n1. Merge data from multiple files into one table\n2. Standardize column names and data formats\n3. Remove duplicate data\n4. Generate a merged Excel file with data source markers"
+        }
+      }
+    },
+    "doc-writing": {
+      "label": "Write Documents",
+      "prompts": {
+        "doc-meeting-minutes": {
+          "label": "Meeting Minutes",
+          "description": "Turn transcripts or scattered notes into standard minutes",
+          "prompt": "Based on the meeting record I provide (audio transcript or scattered notes), help me organize a standard meeting minutes Word document:\n\n1. Meeting topic, time, and attendees\n2. Summarize discussion points and conclusions by agenda item\n3. Action item list (with clear owners and deadlines)\n4. List items requiring management decisions or cross-team coordination separately\n5. Clean layout, ready to send to attendees for confirmation"
+        },
+        "doc-weekly-report": {
+          "label": "Weekly Report",
+          "description": "Turn work notes into a presentable weekly report",
+          "prompt": "Based on the key work items I provide, help me generate a well-structured weekly report Word document:\n\n1. Core progress this week (grouped by project, highlighting results and data)\n2. Problems and risks encountered, with countermeasures\n3. Support and coordination needed\n4. Next week's work plan (ordered by priority)\n\nRequirements: Concise and professional language, avoid trivial listing, let managers see the highlights at a glance."
+        },
+        "doc-proposal": {
+          "label": "Project Proposal",
+          "description": "Complete framework and first draft for proposals",
+          "prompt": "Please help me write a project proposal Word document. I will provide the basic idea; please complete a draft with the following structure:\n\n1. Project background and the problem to solve\n2. Goals and expected benefits (quantified where possible)\n3. Solution design and implementation path\n4. Milestone plan and timeline (presented in a table)\n5. Required resources and budget estimate\n6. Risk analysis and contingency plans\n\nRequirements: Rigorous logic, well-balanced detail, suitable for management review."
+        },
+        "doc-polish": {
+          "label": "Polish Documents",
+          "description": "Professional rewrite of notices, announcements and emails",
+          "prompt": "Please polish the draft I provide (notice, announcement, or important email):\n\n1. Keep the original meaning, fix grammar issues and typos\n2. Adjust to a formal, appropriate business tone\n3. Improve paragraph structure, putting key information first\n4. Provide revision notes marking the main changes\n5. If key elements are missing (time, audience, required actions), remind me to add them"
+        }
+      }
+    },
+    "website": {
+      "label": "Create Website",
+      "prompts": {
+        "web-resume": {
+          "label": "Personal Resume",
+          "description": "Online resume and portfolio page",
+          "prompt": "Help me create a beautiful online personal resume page.\n\nBasic information:\n- Name: John Smith\n- Position: Product Manager (5 years experience)\n- Contact: Email, phone, WeChat QR code placeholder\n\nPage content:\n- Personal introduction: A brief self-introduction highlighting core strengths\n- Work experience: 3 work experiences, including company name, position, time, main achievements\n- Professional skills: Display product design, data analysis, project management and other skills in progress bar format\n- Project cases: Display 3 representative project cards with project name and brief description\n- Educational background and certificates\n\nDesign style:\nClean and professional, left-right column layout, dark sidebar with white main content area. Suitable for sharing directly with interviewers or partners."
+        },
+        "web-store": {
+          "label": "Store Homepage",
+          "description": "Small shop or studio showcase page",
+          "prompt": "Help me create a showcase webpage for a bakery studio called \"Wheat Field Bakery\".\n\nPage content:\n- Hero image: Studio name, a slogan \"Baking with heart, warming every day\", \"View Menu\" button\n- Signature products: Display 6 popular product cards (including image placeholder, name, price, brief description)\n- About us: Studio story, founder philosophy, with a store environment image placeholder\n- Customer reviews: 3 user reviews with avatars and star ratings\n- Contact and address: Business hours, address, phone, embedded map placeholder area\n\nDesign style:\nWarm and artistic, cream and brown as main colors, rounded cards, handwritten style title fonts. Overall atmosphere warm and friendly."
+        },
+        "web-event": {
+          "label": "Event Invitation",
+          "description": "Online invitation page for annual parties, launches or team events",
+          "prompt": "Help me create an online invitation webpage for a company annual party.\n\nEvent information:\n- Theme: \"Starfield Tech 2026 Annual Party - Starlight Night\"\n- Time: Friday, January 22, 2027, 6:30 PM\n- Location: City Light Grand Hotel, 3rd Floor Ballroom\n\nPage content:\n- Opening animation: Title fade-in, golden particle falling effect\n- Invitation message: A warm invitation text\n- Event schedule: Timeline showing the flow (check-in, dinner, awards, lucky draw, performances)\n- Dress code: Formal attire, color reference image placeholder\n- Transportation guide: Address information and parking tips\n- RSVP confirmation: \"Will attend\" and \"Cannot attend\" two buttons\n\nDesign style:\nFestive and elegant, dark blue starry background, gold accent text, full of ceremony. Page should be mobile-friendly."
+        },
+        "web-survey": {
+          "label": "Survey Questionnaire",
+          "description": "Online form and questionnaire collection page",
+          "prompt": "Help me create a customer satisfaction survey questionnaire webpage.\n\nQuestionnaire title: \"Your Feedback is Important to Us\"\n\nQuestionnaire content:\n- Basic information: Name (optional), Contact (optional)\n- Single choice: Overall satisfaction (Very satisfied/Satisfied/Neutral/Dissatisfied/Very dissatisfied)\n- Single choice: Would you recommend to friends (1-10 rating slider)\n- Multiple choice: What aspects do you value most (Product quality/Service attitude/Response speed/Value for money/After-sales support)\n- Single choice: Usage frequency (Daily/Weekly/Monthly/Occasionally)\n- Text question: Your suggestions or opinions (large text box)\n- Submit button, show thank you page after submission\n\nDesign style:\nFresh and simple, white background, blue-green main color, sufficient spacing between questions, with progress bar showing completion. Suitable for mobile operation."
+        }
+      }
+    }
+  }
+}

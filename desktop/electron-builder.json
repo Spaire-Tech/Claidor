@@ -1,0 +1,273 @@
+{
+  "appId": "com.claidor.swen",
+  "productName": "Swen",
+  "executableName": "Swen",
+  "directories": {
+    "output": "release"
+  },
+  "beforePack": "./scripts/electron-builder-hooks.cjs",
+  "afterPack": "./scripts/electron-builder-hooks.cjs",
+  "files": [
+    "package.json",
+    "resources/SYSTEM_PROMPT.md",
+    {
+      "from": "dist",
+      "to": "dist",
+      "filter": [
+        "**/*"
+      ]
+    },
+    {
+      "from": "dist-electron",
+      "to": "dist-electron",
+      "filter": [
+        "**/*"
+      ]
+    },
+    "!**/*.map",
+    "!**/*.d.ts",
+    "!**/*.d.cts",
+    "!**/*.d.mts",
+    "!**/README.md",
+    "!**/README",
+    "!**/readme.md",
+    "!**/CHANGELOG.md",
+    "!**/CHANGELOG",
+    "!**/HISTORY.md",
+    "!**/LICENSE",
+    "!**/LICENSE.md",
+    "!**/LICENSE.txt",
+    "!**/.eslintrc*",
+    "!**/.prettierrc*",
+    "!**/tsconfig.json",
+    "!**/tsconfig.*.json",
+    "!**/*.test.*",
+    "!**/*.spec.*",
+    "!**/tests/**",
+    "!**/test/**",
+    "!**/__tests__/**"
+  ],
+  "extraResources": [
+    {
+      "from": ".keyfrom-build",
+      "to": "keyfrom",
+      "filter": [
+        "**/*"
+      ]
+    },
+    {
+      "from": "resources/tray",
+      "to": "tray",
+      "filter": [
+        "**/*"
+      ]
+    },
+    {
+      "from": "build/icons/png/512x512.png",
+      "to": "app-icon/512x512.png"
+    }
+  ],
+  "protocols": [
+    {
+      "name": "Swen",
+      "schemes": [
+        "swen"
+      ]
+    }
+  ],
+  "mac": {
+    "target": [
+      "dmg"
+    ],
+    "icon": "build/icons/mac/icon.icns",
+    "category": "public.app-category.productivity",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
+    "extendInfo": {
+      "CFBundleIconName": "icon",
+      "NSMicrophoneUsageDescription": "Swen needs access to your microphone to record voice input for speech recognition.",
+      "NSCalendarsUsageDescription": "Swen needs access to your calendar to help you view and manage your schedule, for example finding events and creating meetings.",
+      "NSRemindersUsageDescription": "Swen needs access to your reminders to help you manage your to-do items.",
+      "NSAppleEventsUsageDescription": "Swen uses Apple Events to control the Calendar app for automation."
+    },
+    "extraResources": [
+      {
+        "from": "SKILLs",
+        "to": "SKILLs",
+        "filter": [
+          "**/*",
+          "!**/.env",
+          "!**/.env.*",
+          "!**/.venv",
+          "!**/.venv/**",
+          "!**/*.map",
+          "!**/*.d.ts",
+          "!**/*.d.cts",
+          "!**/*.d.mts",
+          "!**/README.md",
+          "!**/README",
+          "!**/readme.md",
+          "!**/CHANGELOG.md",
+          "!**/CHANGELOG",
+          "!**/HISTORY.md",
+          "!**/LICENSE",
+          "!**/LICENSE.md",
+          "!**/LICENSE.txt",
+          "!**/.eslintrc*",
+          "!**/.prettierrc*",
+          "!**/tsconfig.json",
+          "!**/tsconfig.*.json",
+          "!**/*.test.*",
+          "!**/*.spec.*",
+          "!**/tests/**",
+          "!**/test/**",
+          "!**/__tests__/**"
+        ]
+      },
+      {
+        "from": "vendor/openclaw-runtime/current",
+        "to": "cfmind",
+        "filter": [
+          "**/*",
+          "!**/*.map",
+          "!**/*.d.ts",
+          "!**/*.d.cts",
+          "!**/*.d.mts",
+          "!**/README.md",
+          "!**/README",
+          "!**/readme.md",
+          "!**/CHANGELOG.md",
+          "!**/CHANGELOG",
+          "!**/HISTORY.md",
+          "!**/LICENSE",
+          "!**/LICENSE.md",
+          "!**/LICENSE.txt",
+          "!**/.eslintrc*",
+          "!**/.prettierrc*",
+          "!**/tsconfig.json",
+          "!**/tsconfig.*.json",
+          "!**/*.test.*",
+          "!**/*.spec.*",
+          "!**/tests/**",
+          "!**/test/**",
+          "!**/__tests__/**"
+        ]
+      }
+    ]
+  },
+  "dmg": {
+    "sign": false
+  },
+  "afterSign": "scripts/notarize.js",
+  "win": {
+    "target": [
+      "nsis"
+    ],
+    "icon": "build/icons/win/icon.ico",
+    "requestedExecutionLevel": "asInvoker",
+    "extraResources": [
+      {
+        "from": "build-tar/win-resources.tar",
+        "to": "win-resources.tar"
+      },
+      {
+        "from": "scripts/unpack-cfmind.cjs",
+        "to": "unpack-cfmind.cjs"
+      }
+    ]
+  },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb"
+    ],
+    "icon": "build/icons/png",
+    "category": "Utility",
+    "extraResources": [
+      {
+        "from": "SKILLs",
+        "to": "SKILLs",
+        "filter": [
+          "**/*",
+          "!**/.env",
+          "!**/.env.*",
+          "!**/.venv",
+          "!**/.venv/**",
+          "!**/*.map",
+          "!**/*.d.ts",
+          "!**/*.d.cts",
+          "!**/*.d.mts",
+          "!**/README.md",
+          "!**/README",
+          "!**/readme.md",
+          "!**/CHANGELOG.md",
+          "!**/CHANGELOG",
+          "!**/HISTORY.md",
+          "!**/LICENSE",
+          "!**/LICENSE.md",
+          "!**/LICENSE.txt",
+          "!**/.eslintrc*",
+          "!**/.prettierrc*",
+          "!**/tsconfig.json",
+          "!**/tsconfig.*.json",
+          "!**/*.test.*",
+          "!**/*.spec.*",
+          "!**/tests/**",
+          "!**/test/**",
+          "!**/__tests__/**"
+        ]
+      },
+      {
+        "from": "vendor/openclaw-runtime/current",
+        "to": "cfmind",
+        "filter": [
+          "**/*",
+          "!**/*.map",
+          "!**/*.d.ts",
+          "!**/*.d.cts",
+          "!**/*.d.mts",
+          "!**/README.md",
+          "!**/README",
+          "!**/readme.md",
+          "!**/CHANGELOG.md",
+          "!**/CHANGELOG",
+          "!**/HISTORY.md",
+          "!**/LICENSE",
+          "!**/LICENSE.md",
+          "!**/LICENSE.txt",
+          "!**/.eslintrc*",
+          "!**/.prettierrc*",
+          "!**/tsconfig.json",
+          "!**/tsconfig.*.json",
+          "!**/*.test.*",
+          "!**/*.spec.*",
+          "!**/tests/**",
+          "!**/test/**",
+          "!**/__tests__/**"
+        ]
+      }
+    ],
+    "desktop": {
+      "Name": "Swen",
+      "Comment": "AI-assisted coding and productivity tool",
+      "Terminal": "false"
+    }
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "runAfterFinish": true,
+    "deleteAppDataOnUninstall": false,
+    "include": "scripts/nsis-installer.nsh"
+  },
+  "electronVersion": "40.2.1",
+  "asarUnpack": [
+    "node_modules/@img/**",
+    "node_modules/better-sqlite3/**",
+    "node_modules/node-nim/**",
+    "node_modules/npm/**"
+  ],
+  "asar": true
+}

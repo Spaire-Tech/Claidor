@@ -27,10 +27,17 @@ The PlainSerializer then ensures `{CHECKOUT_ID}` doesn't get escaped again.
 """
 
 
+def _allowed_return_hosts() -> set[str]:
+    """The frontend hosts, and the API's own: a login may return to the
+    API itself, as the desktop app's sign-in does (`polar.desktop`)."""
+    own = urlparse(settings.BASE_URL).netloc
+    return set(settings.ALLOWED_HOSTS) | ({own} if own else set())
+
+
 def get_safe_return_url(return_to: str | None) -> str:
     # Unsafe URL -> fallback to default
     if return_to is None or not url_has_allowed_host_and_scheme(
-        return_to, settings.ALLOWED_HOSTS
+        return_to, _allowed_return_hosts()
     ):
         return settings.generate_frontend_url(settings.FRONTEND_DEFAULT_RETURN_PATH)
 

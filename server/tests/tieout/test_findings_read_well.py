@@ -428,6 +428,48 @@ CASES: list[tuple[str, Finding]] = [
         ),
     ),
     (
+        "anchored-elsewhere",
+        f(
+            "anchored-elsewhere",
+            name="Adjustment Factor phasing",
+            figure="5",
+            figure_unit="cells read the switch of « K Correction Factor phasing »",
+            detail=(
+                "The row « K Correction Factor phasing » reads its own, so this "
+                "answer holds only while I474 and I472 agree."
+            ),
+            formula="=IF($I$474=1,$AU$471/5,AT10*$AU$471)",
+            against="=IF($I$474=1,$AU$473/5,AT10*$AU$473)",
+        ),
+    ),
+    (
+        "formula-overwritten/link",
+        f(
+            "formula-overwritten",
+            name="Switch - QAA reward/(penalty)",
+            kind="one",
+            figure="2",
+            figure_unit="typed where the version before held a formula",
+            detail=(
+                "The cell it used to read now holds 1, so this one will not follow it."
+            ),
+            formula="2",
+            against="=F_Inputs!T1586",
+        ),
+    ),
+    (
+        "formula-overwritten/row",
+        f(
+            "formula-overwritten",
+            name="Ofwat - Ordinary shares issued",
+            kind="row",
+            figure="5",
+            figure_unit="cells typed over the version before's formulas",
+            detail="They will not follow their inputs any more.",
+            cells="N2191, O2191, P2191, Q2191, R2191",
+        ),
+    ),
+    (
         "typed-over-edge",
         f(
             "typed-over-edge",
@@ -833,7 +875,52 @@ def _analytic_findings() -> list[tuple[str, object]]:
         + row("Debt", 14, opening, "Senior loan closing balance", first=2018),
     }
 
+    #: The convention check reads formulas and row labels, so its scene
+    #: is built by hand: a line the models we hold compute one way
+    #: (« discounted closing rav » = closing RAV × the discount factor,
+    #: 21 of 21 files across three families), computed here by adding.
+    def formula_cell(sheet, ref, row, column, formula, row_label):
+        return Cell(
+            sheet=sheet,
+            ref=f"{sheet}!{ref}",
+            row=row,
+            column=column,
+            value=None,
+            formula=formula,
+            row_label=row_label,
+            column_label="",
+        )
+
+    convention_scene = (
+        row("RAV", 2, [100, 110, 120], "Closing RAV")
+        + row("RAV", 3, [0.9, 0.8, 0.7], "Single year discount factor")
+        + [
+            formula_cell(
+                "RAV", f"{col}4", 4, i + 3, f"={col}2+{col}3", "Discounted closing RAV"
+            )
+            for i, col in enumerate("CDE")
+        ]
+    )
+
     out: list[tuple[str, object]] = []
+    book = Workbook(
+        cells={one.ref: one for one in convention_scene},
+        sheets=["RAV"],
+    )
+    book.row_words = {
+        "RAV": {
+            2: "Closing RAV",
+            3: "Single year discount factor",
+            4: "Discounted closing RAV",
+        }
+    }
+    fired = [
+        one
+        for one in run_analytics(book, read_structure(book)).findings
+        if one.rule == "convention"
+    ]
+    assert fired, "the scene for convention raised nothing to score"
+    out.append(("convention", fired[0]))
     for rule, cells in scenes.items():
         fired = [one for one in run(cells) if one.rule == rule]
         assert fired, f"the scene for {rule} raised nothing to score"

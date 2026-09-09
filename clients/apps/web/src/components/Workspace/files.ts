@@ -109,13 +109,25 @@ const CATEGORY_OF: Record<string, string> = {
   //: the same defect `external-link` names, one level up in the file.
   'gapped-test': 'Probable formula defects',
   'typed-over-beat': 'Probable formula defects',
+  //: A row reading a sibling row's switch while it owns one
+  //: (wrong-switch.md): a wrong reference with a plausible number.
+  'anchored-elsewhere': 'Probable formula defects',
   'balance-sheet': 'Structural exceptions',
   'cash-continuity': 'Structural exceptions',
   'debt-terminal': 'Structural exceptions',
   'model-own-check': 'Structural exceptions',
   //: Renamed in the merged catalogue (was `interest`).
   'interest-consistency': 'Structural exceptions',
+  //: The convention check (convention-check.md): a line computed
+  //: unlike every model we hold that carries the same line name. A
+  //: reviewer's question rather than a defect, so it is its own
+  //: family, named for what the reader is being told.
+  convention: 'Computed unlike other models',
   'typed-over-formula': 'Embedded hardcodes',
+  //: A typed value where the version before held a formula
+  //: (overwritten-since.md): the same family as its file-only
+  //: sibling, with the earlier version as the evidence.
+  'formula-overwritten': 'Embedded hardcodes',
   'hardcode-in-formula': 'Embedded hardcodes',
   'external-link': 'Auditability risks',
   'broken-name': 'Auditability risks',

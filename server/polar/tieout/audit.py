@@ -284,8 +284,16 @@ RULE_NAMES: dict[str, str] = {
     "hardcode-in-formula": "Numbers typed inside formulas",
     "typed-over-formula": "Values typed over formulas",
     "typed-over-edge": "Values typed over a series' edge",
+    #: A typed value where the version before held a formula
+    #: (overwritten-since.md): the nine cell-diff misses, whose rows
+    #: carry no series for the typed-over rule to compare against.
+    "formula-overwritten": "Values typed over the version before's formulas",
     "inconsistent-anchoring": "Anchoring that changes along a row",
     "inconsistent-row": "Formulas inconsistent across a row",
+    #: A row anchored on a sibling row's switch while it owns one
+    #: (wrong-switch.md): the GD3 phasing row that reads `$I$474`
+    #: with its own `$I$472` populated and unread.
+    "anchored-elsewhere": "Rows that read another row's switch",
     "circular": "Circular references",
     "skipped-cell": "Sum ranges that miss a cell",
     #: A check formula that walks cells one by one and skips a live
@@ -315,9 +323,11 @@ HEADLINES: dict[str, str] = {
     "long-formula": "Complex formula",
     "hardcode-in-formula": "Typed-in assumption",
     "typed-over-formula": "Typed over a formula",
+    "formula-overwritten": "Typed over since the version before",
     "typed-over-edge": "Typed series edge",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
+    "anchored-elsewhere": "Reads another row's switch",
     "circular": "Cells in a loop",
     "skipped-cell": "Incomplete total",
     "gapped-test": "Gapped test",
@@ -547,10 +557,20 @@ def _elevated(book: Workbook, result: Audit, materiality: float | None = None) -
             "be wrong together",
         ),
         "inconsistent-anchoring": (0.9, "the row's own anchoring shows the break"),
+        "anchored-elsewhere": (
+            0.9,
+            "the row owns a switch it does not read, and a like-shaped "
+            "sibling reads its own",
+        ),
         "typed-over-formula": (
             0.8,
             "a typed value sits where the series calculates — overrides "
             "are sometimes deliberate",
+        ),
+        "formula-overwritten": (
+            0.85,
+            "the version before held a formula here — the file's own "
+            "history is the evidence, not a pattern",
         ),
         "typed-over-edge": (
             0.7,
@@ -983,6 +1003,23 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             "differently from the rest of its row. Filling the row again "
             "would change its result."
         ),
+        #: Which switch the row reads and that its own is unread; the
+        #: detail names the row that does it the other way and what it
+        #: costs (wrong-switch.md).
+        "anchored-elsewhere": (
+            f"In « {finding.name or 'this row'} », {finding.figure} "
+            f"{finding.figure_unit}, not their own, which is filled in and unread."
+        ),
+        #: The typed value where the version before held a formula; the
+        #: detail says what the source holds now and that the cell will
+        #: not follow it (overwritten-since.md).
+        "formula-overwritten": (
+            f"« {finding.name or 'This row'} » holds typed values in "
+            f"{finding.figure} cells where the version before held formulas."
+            if finding.kind == "row"
+            else f"« {finding.name or 'This cell'} » holds a typed {finding.figure} "
+            f"where the version before held a formula."
+        ),
         #: « iterative calculation » is Excel's phrase, not a
         #: banker's — the vocabulary table swaps it for « circular
         #: calculation », said in words that carry their own meaning.
@@ -1067,6 +1104,7 @@ def audit(
     axes: "PeriodAxes | None" = None,
     *,
     materiality: float | None = None,
+    previous: Workbook | None = None,
 ) -> Audit:
     """Every mechanical defect in a model, graded.
 
@@ -1075,7 +1113,13 @@ def audit(
     instead of a column letter) and lets a typed cell say what the row
     would calculate there. Absent, every sentence falls back to
     coordinates; nothing is guessed.
+
+    `previous` — the version before this one, when the caller holds
+    it. The one rule that reads it (`formula-overwritten`) abstains by
+    name without it; every other rule reads this workbook alone.
     """
+    from .revision import overwritten_since
+
     result = Audit(examined=len(book.cells))
 
     _unreadable_formulas(book, result)
@@ -1086,6 +1130,8 @@ def audit(
     _literals(book, result)
     _rows(book, result)
     _selector_drift(book, result)
+    _anchored_elsewhere(book, result)
+    overwritten_since(book, previous, result)
     _mutations(book, result)
     _typed_islands(book, result)
     _typed_edges(book, result)
@@ -1146,6 +1192,7 @@ COVERAGE_OF: dict[str, str] = {
     "hardcode-in-formula": "formulas",
     "inconsistent-anchoring": "formulas",
     "inconsistent-row": "formulas",
+    "anchored-elsewhere": "formulas",
     "external-link": "formulas",
     "error-value": "valued",
     "typed-over-formula": "typed",
@@ -1170,7 +1217,10 @@ COVERAGE_OF: dict[str, str] = {
 #: obligation is unchanged and `test_audit_coverage.py` holds it:
 #: **every rule here still lands in exactly one of tallies or
 #: abstentions, never both and never neither.**
-SELF_COUNTED: frozenset[str] = frozenset({"broken-aggregation"})
+#: `formula-overwritten` walks **typed cells matched by meaning to the
+#: version before**, a population only the pair can supply; with no
+#: earlier version it abstains by name (overwritten-since.md).
+SELF_COUNTED: frozenset[str] = frozenset({"broken-aggregation", "formula-overwritten"})
 
 
 #: A4 — why a denominator is zero, in the file's own terms. Ordered:
@@ -2350,6 +2400,222 @@ def _external_links(book: Workbook, result: Audit) -> None:
                 cells=_roster([one.ref for one in cells]),
             )
         )
+
+
+#: An absolutely anchored reference on the formula's own sheet:
+#: `$I$474`, never `Inputs!$I$474` (a sheet qualifier is a lookup
+#: elsewhere, not a sibling's switch) and never half-anchored.
+_OWN_SHEET_ANCHOR = re.compile(r"(?<![A-Za-z0-9_!'\]])\$([A-Z]{1,3})\$(\d+)(?![\d(])")
+
+#: Where a per-row switch can live when a sheet has no period axis to
+#: say where the numbers begin: the reader's label band plus the
+#: columns beside it — Ofgem's BPFMs keep label, unit, code, switch in
+#: E, G, H, I.
+SWITCH_COLUMNS = 12
+
+
+def _anchored_elsewhere(book: Workbook, result: Audit) -> None:
+    """A row anchored on a sibling row's switch (wrong-switch.md).
+
+    The GD3 final business-plan model: « RIIO-2 legacy Adjustment
+    Factor phasing » computes `=IF($I$474=1,$AU$471/5,AT10*$AU$471)`
+    — the phasing switch of the K Correction Factor row two below —
+    while its own switch sits in `I472`, populated and unread, and
+    the ET3 twin reads its own. A wrong reference that produces a
+    plausible number is the class a reviewer cannot see by eye.
+
+    Three conditions, all from the file: the anchor points at a cell
+    in the switch band on another row of the same sheet; the row owns
+    a populated cell in that column; and a **copy sibling** within
+    reach — a row whose formula is this one's copied down (every
+    reference the same text, or the same column shifted by the row
+    distance) — reads its own row in that column. A global switch
+    every row shares never fires: no sibling reads its own. The
+    comparison is reference by reference rather than by shape,
+    because the GD3 pair differs in a second anchor too (`$AU$471`
+    against `$AU$473`, each row's own factor line) and only the copy
+    relation sees those as the same decision.
+    """
+    from openpyxl.utils import get_column_letter
+
+    #: One representative cell per row: the leftmost formula cell
+    #: carrying an own-sheet anchor into the switch band. The band is
+    #: a fixed width rather than « left of the period axis »: on the
+    #: GD3 inputs sheet the header row carries a date in column I,
+    #: the very column the switches live in, so an axis-based band
+    #: excluded the registered case.
+    band = SWITCH_COLUMNS
+    rows: dict[tuple[str, int], Cell] = {}
+    for cell in book.cells.values():
+        if not cell.formula or not _OWN_SHEET_ANCHOR.search(cell.formula):
+            continue
+        if not any(
+            _column_number(letters) <= band and _column_number(letters) < cell.column
+            for letters, _ in _OWN_SHEET_ANCHOR.findall(cell.formula)
+        ):
+            continue
+        at = (cell.sheet, cell.row)
+        if at not in rows or cell.column < rows[at].column:
+            rows[at] = cell
+
+    by_sheet: dict[str, dict[int, Cell]] = {}
+    for (sheet, row), cell in rows.items():
+        by_sheet.setdefault(sheet, {})[row] = cell
+
+    for sheet, candidates in by_sheet.items():
+        for row, cell in sorted(candidates.items()):
+            pieces = _reference_pieces(cell.formula or "")
+            if pieces is None:
+                continue
+            #: The anchors this row reads in the band, on other rows,
+            #: where it owns a populated cell of its own.
+            targets = {
+                (_column_number(letters), int(digits))
+                for letters, digits in _OWN_SHEET_ANCHOR.findall(cell.formula or "")
+                if _column_number(letters) <= band
+                and _column_number(letters) < cell.column
+                and int(digits) != row
+                and f"{sheet}!{letters}{row}" in book.cells
+            }
+            if not targets:
+                continue
+            found: tuple[int, int, Cell] | None = None
+            for other_row in range(row - SIBLING_REACH, row + SIBLING_REACH + 1):
+                sibling = candidates.get(other_row)
+                if sibling is None or other_row == row or sibling.column != cell.column:
+                    continue
+                theirs = _reference_pieces(sibling.formula or "")
+                if theirs is None or not _copy_siblings(
+                    pieces, theirs, other_row - row
+                ):
+                    continue
+                for index, (piece, _) in enumerate(pieces):
+                    match = OFFSET_PIECE.fullmatch(piece)
+                    if match is None or match.group("sheet"):
+                        continue
+                    column = _column_number(match.group("column"))
+                    anchored = int(match.group("row"))
+                    if (column, anchored) not in targets:
+                        continue
+                    other = OFFSET_PIECE.fullmatch(theirs[index][0])
+                    if (
+                        other is not None
+                        and _column_number(other.group("column")) == column
+                        and int(other.group("row")) == other_row
+                    ):
+                        found = (column, anchored, sibling)
+                        break
+                if found is not None:
+                    break
+            if found is None:
+                continue
+            column, anchored, sibling = found
+            letter = get_column_letter(column)
+            reads = f"{letter}{anchored}"
+            owns = f"{letter}{row}"
+            anchor_text = f"${letter}${anchored}"
+            members = sorted(
+                (
+                    one
+                    for one in book.cells.values()
+                    if one.sheet == sheet
+                    and one.row == row
+                    and one.formula
+                    and anchor_text in one.formula
+                ),
+                key=lambda one: one.column,
+            )
+            other = book.row_words.get(sheet, {}).get(anchored, "") or f"row {anchored}"
+            sibling_label = sibling.row_label or f"row {sibling.row}"
+            label = cell.row_label or f"row {row}"
+            result.findings.append(
+                Finding(
+                    rule="anchored-elsewhere",
+                    severity="error",
+                    ref=cell.ref,
+                    sheet=sheet,
+                    name=cell.name,
+                    #: Two sentences, the second carrying what it costs —
+                    #: findings-voice allows two and the plain words add
+                    #: nothing to these.
+                    #: The headline (plain words) says which switch the row
+                    #: reads and that its own is unread; the detail names
+                    #: the row that does it the other way and what it costs.
+                    #: Opens with a word, not a « — the sentence splitter that
+                    #: grades the finding only breaks before a capital letter.
+                    detail=(
+                        f"The row « {sibling_label} » reads its own, so this answer "
+                        f"holds only while {reads} and {owns} agree."
+                    ),
+                    formula=cell.formula or "",
+                    against=sibling.formula or "",
+                    source="FAST, ICAEW P12",
+                    figure=str(len(members) or 1),
+                    figure_unit=f"cells read the switch of « {other} »",
+                    cells=_roster([one.ref for one in members] or [cell.ref]),
+                )
+            )
+
+
+#: How far up or down a copy sibling is looked for: a phasing pair sits
+#: two rows apart, a block of tranches a dozen.
+SIBLING_REACH = 12
+
+
+def _reference_pieces(formula: str) -> list[tuple[str, bool]] | None:
+    """The formula as a list of (text, is_reference) pieces, range
+    references split at the colon; None when the grammar rejects it."""
+    try:
+        tokens = _tokens(formula)
+    except Exception:
+        return None
+    if not tokens:
+        return None
+    pieces: list[tuple[str, bool]] = []
+    for token in tokens:
+        if token.type == "OPERAND" and token.subtype == "RANGE":
+            for piece in token.value.split(":"):
+                pieces.append((piece.strip(), True))
+                pieces.append((":", False))
+            pieces.pop()
+        else:
+            pieces.append((token.value, False))
+    return pieces
+
+
+def _copy_siblings(
+    mine: list[tuple[str, bool]], theirs: list[tuple[str, bool]], shift: int
+) -> bool:
+    """True when `theirs` is `mine` copied `shift` rows down: every
+    piece the same text, or the same column and anchoring with the row
+    moved by exactly `shift`. A reference carrying a sheet name must
+    match as text."""
+    if len(mine) != len(theirs):
+        return False
+    for (a, a_ref), (b, b_ref) in zip(mine, theirs, strict=True):
+        if a_ref != b_ref:
+            return False
+        if a == b:
+            continue
+        if not a_ref:
+            return False
+        first = OFFSET_PIECE.fullmatch(a)
+        second = OFFSET_PIECE.fullmatch(b)
+        if (
+            first is None
+            or second is None
+            or first.group("sheet")
+            or second.group("sheet")
+        ):
+            return False
+        if (
+            first.group("ca") != second.group("ca")
+            or first.group("ra") != second.group("ra")
+            or first.group("column") != second.group("column")
+            or int(second.group("row")) - int(first.group("row")) != shift
+        ):
+            return False
+    return True
 
 
 def _volatile(book: Workbook, result: Audit) -> None:

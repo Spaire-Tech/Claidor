@@ -184,12 +184,17 @@ class TestAnalyticsRefuse:
 
         result = run_analytics(book, read_structure(book))
 
+        #: The convention check abstains beside them for its own reason
+        #: — it reads formulas, not cached values, so manual calculation
+        #: never stops it; on this fixture no line name is one we hold
+        #: a convention for (convention-check.md).
         assert {one.rule for one in result.abstentions} == {
             "model-own-check",
             "balance-sheet",
             "cash-continuity",
             "debt-terminal",
             "interest-consistency",
+            "convention",
         }
 
     def test_each_abstention_carries_the_reason(self) -> None:
@@ -198,7 +203,9 @@ class TestAnalyticsRefuse:
 
         result = run_analytics(book, read_structure(book))
 
-        assert all("manual calculation" in one.why for one in result.abstentions)
+        reconciling = [one for one in result.abstentions if one.rule != "convention"]
+        assert reconciling
+        assert all("manual calculation" in one.why for one in reconciling)
 
     def test_the_reason_reads_as_a_sentence(self) -> None:
         #: `str.capitalize` lowercases the rest of the string and printed

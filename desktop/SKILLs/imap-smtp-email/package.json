@@ -1,0 +1,28 @@
+{
+  "name": "imap-smtp-email-skill",
+  "version": "1.0.0",
+  "description": "IMAP/SMTP email tool for Swen. Works with Gmail, Outlook / Microsoft 365, and any standard IMAP/SMTP server.",
+  "main": "scripts/imap.js",
+  "scripts": {
+    "check": "node scripts/imap.js check",
+    "fetch": "node scripts/imap.js fetch",
+    "search": "node scripts/imap.js search"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "imap": "^0.8.19",
+    "imap-simple": "^5.1.0",
+    "mailparser": "^3.9.3",
+    "nodemailer": "^7.0.13"
+  },
+  "keywords": [
+    "imap",
+    "smtp",
+    "email",
+    "gmail",
+    "outlook",
+    "skill"
+  ],
+  "author": "NetEase",
+  "license": "MIT"
+}

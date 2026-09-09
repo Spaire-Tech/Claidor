@@ -51,6 +51,19 @@ carries more than one change, the accounting lives with the round:
   `I_Series!H352`: the cell is typed text that begins with `=`, not
   a formula, and the reader no longer takes such text for
   arithmetic. Nothing else moves across the 27 files.
+- **3 September 2026, later** — cut after the wrong-switch round
+  (`wrong-switch.md`). One file changes: Ofgem's final GD3 BPFM gains
+  one `anchored-elsewhere` error at `MainInputs!AU472` (five cells),
+  the row that reads its sibling's phasing switch — the registered
+  case, found by hand in the truth-set round. The other 26 files
+  report identically.
+- **3 September 2026, later still** — cut after the previous-version
+  round (`overwritten-since.md`), whose rule abstains on every
+  single-file sweep and changes no finding. The one line that moves
+  is the wording of the GD3 `anchored-elsewhere` detail, rewritten
+  under the sentence gate (headline and detail as two sentences, no
+  « sibling »); the finding, its cells and its grade are unchanged.
+  The other 26 files report identically.
 
 ## Honest bounds
 

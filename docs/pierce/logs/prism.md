@@ -4912,6 +4912,73 @@ Record in `label-patterns.md`. Three lessons:
    enough to count conventions; a check that judges a formula will
    need the tree.
 
+## 4 September — two outside label sources: what the first score taught
+
+Records in `enron-errors.md` and `ofgem-errata.md`. Three lessons:
+
+1. **Touch is not detection.** Scored the way the CUSTODES round
+   scored, the engine covers fifteen of thirty-two real Enron faults;
+   read by hand, eight of those fifteen are a finding that names the
+   fault and seven are a typed-number finding that happened to sit in
+   the same cells. The number to carry is eight of thirty-two, and
+   the two earlier outside benchmarks were scored by touch too.
+2. **A regulator's errata log labels inputs and documents, not
+   formulas.** Two hundred and fifty corrections, two of them about
+   the models, both a right formula fed a wrong number. The
+   single-file rules cannot see that and never will; the version
+   comparison can, once the corrected files are held. The log is a
+   Watch test, not an audit test, and saying so before the files
+   arrive is the point of registering.
+3. **The misses are a to-do list, not a verdict.** Ten of seventeen
+   need a second version or a person. Seven are shapes with no rule
+   yet, four of them cheap and deterministic — a one-cell range, a
+   sum round arithmetic, a comparison in a numeric row, a two-cell
+   row — and this corpus is their test set.
+
+## 4 September — outside labels, and the investigator
+
+Records in `enron-errors.md`, `ofgem-errata.md`, `investigator-test.md`.
+
+1. **Score by the finding that names the fault, not the finding
+   that touches the cell.** Thirty-six outside-labelled Enron faults
+   scored under the CUSTODES touch convention gave 15 of 32; read
+   by hand, seven of the fifteen were a typed-number finding that
+   happened to share the cell. Eight of 32 is the number, and the
+   two earlier outside benchmarks were scored the flattering way.
+2. **A regulator's errata are input and document corrections.** Two
+   hundred and fifty entries, two about the models, both a right
+   formula fed the wrong month. Zero by construction for a
+   single-file rule; the Watch's measurement once the corrected
+   files are held.
+3. **The founder's question, answered against my prediction.** A
+   blind model reading each faulty sheet as a table named 18 of 32
+   faults, 12 of the 24 the rules missed, with three outright false
+   claims in seventy-one. I registered 4 to 8, and under 40%
+   precision. The reasons it gave were arithmetic, not pattern —
+   « 79,625 instead of 83,055 » — and every one is a claim the
+   engine can prove or deny. The design the founder proposed,
+   investigator proposes and engine proves, now has a measured
+   reason to exist, and its first test set.
+4. *(the loop built and run, same day — `investigator-loop.md`)*
+   **The prover's refutations are a test of the prover first.** With
+   the engine's evidence in hand the investigator kept its Enron
+   score (19 of 32, 13 of the 24 the rules missed) and the checker
+   confirmed 33 of 36 hits and refuted 6 of 7 false claims — and
+   caught me: two claims I had graded real in the first test cite
+   cells that hold nothing. On our own RIIO-3 sheets it raised
+   forty-four claims, one false, and seven real faults the engine has
+   no rule for in Ofgem's published final models; the checker refuted
+   eleven of the true ones, and every one of those was a bug in the
+   checker — a sheet name upper-cased, `AP$9` read as a fixed column,
+   defined names unread. Three fixed with tests; the Enron verdicts
+   did not move. The lesson is the one the founder's design rests
+   on: a refuted true claim is the loudest signal the loop gives, and
+   it points at the machine before it points at the model.
+5. *(same round)* **A label the engine wrote is not a label the
+   investigator can be scored on.** Every hit on our own sheets sat
+   on a cell the evidence file had named. Recall there is a repeat
+   count until the errata pairs give an outside denominator.
+
 ## 3 September — the truth set: what the registry taught
 
 Record in `truth-set.md`. Three lessons:
@@ -4932,6 +4999,58 @@ Record in `truth-set.md`. Three lessons:
    engine pointed at — and the engine misses it. The denominator
    that would make recall a number is a cell-level diff graded
    without the rules, or an outside corpus; nothing else.
+3e. *(the previous-version rule, same day — `overwritten-since.md`)*
+   **A cell with no row beside it has one witness: the version
+   before.** Fourteen of fourteen now, from five, by matching cells
+   on what they mean across two versions and asking whether a typed
+   value sits where a formula was. The price is volume — every Ofwat
+   final pastes dozens to hundreds of typed values over its draft's
+   links, and the ten read by hand were ten real overwrites — and a
+   limit the rule states rather than hides: it cannot tell a decision
+   from a defect, so it says what the source holds now and lets the
+   reviewer decide. Two things about method: a link is « a formula
+   that reads exactly one cell », because the regulator's guarded
+   form `=IF(x="",0,x)` is the link every one of the fourteen used;
+   and a sentence gate that grades a finding as its reader hears it
+   caught a three-sentence, spliced, « sibling »-carrying finding
+   from the round before, which had never been through it.
+3d. *(the wrong-switch rule, same day — `wrong-switch.md`)*
+   **A rule written for one case must be tested on everything else
+   before it is trusted, and even then it has one data point.** The
+   row anchored on its sibling's switch is found, in the error tier,
+   with the sibling as evidence; across 27 regulator files, 16 Ofwat
+   drafts, two project-finance models and the founder's model it
+   fires nowhere else. Two things moved from the registration on the
+   way and are named: the band the switches live in (the reader's
+   eight label columns did not reach column I) and the test of
+   « same shape » (the audit's shape keeps absolute anchors absolute,
+   so two copies of one row never matched; the rule now compares the
+   formulas as fill-down copies). A quiet error-tier rule is the
+   right kind of wrong if it is wrong; its precision is one of one
+   and says so.
+3c. *(the cell diff, same day — `cell-diff-labels.md`)*
+   **The independent denominator came from the revision, not the
+   engine, and the engine failed it.** Fourteen cells in one pair
+   were links to the inputs sheet at draft and typed values at
+   final, found by a diff that compares what a reference reads
+   rather than where it points; the audit flags five. The misses
+   share one shape — a switch or a small block with no series
+   beside it — and the fix reads the version before, which only the
+   Watch can. A recall number that is real and low is worth more
+   than one that is high and owed to the rules.
+3b. *(the convention check, same day — `convention-check.md`)*
+   **Write the rule, then code the rule you wrote.** The registration
+   said « three files from two independent families computing it the
+   same way »; the first build counted the families that *used* the
+   label, and thirty-two copies of one template became a convention.
+   Read back against the sentence, the number fell from 930 to 753,
+   and to 668 once block sums — « the block above, added up », a
+   shape every total line shares and none is judged by — were
+   excluded too. Twenty-one lines survive three authors, and those
+   are the only ones a reviewer would call a convention. The
+   founder's model shares none of them, and neither project-finance
+   model shares one either — a reach of zero, now measured instead
+   of hoped.
 3a. *(the label-column round, same day — `reader-label-formulas.md`)*
    **Count against the file, not against the reader.** The gap
    between the raw formula elements in a sheet's XML and what the
