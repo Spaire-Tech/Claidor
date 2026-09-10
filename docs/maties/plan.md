@@ -234,6 +234,12 @@ the exact path and the exact command, so a person can decide without
 knowing Unix (step 8, the dial). Step 2, the library, is built and in
 the installer; the cited answer in the chat is still to be seen.
 
+September 10, later: the whole app was brought to the founder's design
+(`docs/maties/design.md`): the sphere as the logo and icon, the fonts
+and marks shipped in the app, the stream restored, the shell, the
+conversation, the settings sheet and every page. The cast (step 4) is
+the founder's next drawing; until then the parrot is the default face.
+
 Not done: a signed Mac build (Apple enrolment is the founder's step);
-the update feed; the account page on the web app; a designed icon;
-everything from step 3 on.
+the update feed; the account page on the web app; the cited answer from
+the library seen in the chat; everything from step 3 on.
