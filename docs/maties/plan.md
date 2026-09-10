@@ -115,6 +115,17 @@ Every routine carries a « runs where » label, machine or cloud, chosen at
 creation with a default taken from what the routine touches, visible and
 changeable by the person.
 
+Decided September 10: the person sees Maties in one place, the app. The
+web app holds only the account pages (sign in, plan, billing); there is
+no chat online. Onboarding happens in the app and ends in the app's
+chat; the browser opens once, for the sign-in. The cloud engine is
+invisible: it works while the laptop is shut, writes to the same memory
+and the same conversation list, and what it did is simply there when the
+app opens, or reaches the person by email or Telegram if the app stays
+shut. What syncs is the memory and the conversations, kept on Claidor
+and read by both engines; the files and the library never leave the
+machine.
+
 What this decides:
 
 - **Gateway.** One account, two engines, one shared memory store that both
