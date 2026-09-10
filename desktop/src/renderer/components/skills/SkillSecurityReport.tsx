@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import {
-  ShieldCheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ShieldCheckIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+
 import { i18nService } from '../../services/i18n';
 import Modal from '../common/Modal';
 
@@ -91,7 +92,7 @@ const SkillSecurityReport: React.FC<SkillSecurityReportProps> = ({
   }
 
   return createPortal(
-    <Modal onClose={() => onAction('cancel')} overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/60" className="w-full max-w-xl mx-4 rounded-2xl bg-surface shadow-xl border border-border overflow-hidden">
+    <Modal onClose={() => onAction('cancel')} overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center" className="maties-card-prose maties-in mx-4 w-full max-w-xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-2.5">
@@ -183,7 +184,7 @@ const SkillSecurityReport: React.FC<SkillSecurityReportProps> = ({
             type="button"
             onClick={() => onAction('cancel')}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium rounded-xl text-foreground hover:bg-surface-raised transition-colors border border-border active:scale-[0.98] disabled:opacity-50"
+            className="maties-pill-sm is-ghost"
           >
             {i18nService.t('cancel')}
           </button>
@@ -192,7 +193,7 @@ const SkillSecurityReport: React.FC<SkillSecurityReportProps> = ({
               type="button"
               onClick={() => onAction('installDisabled')}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium rounded-xl bg-primary hover:bg-primary-hover text-white transition-colors active:scale-[0.98] disabled:opacity-50"
+              className="maties-pill-sm is-primary"
             >
               {i18nService.t('securityInstallDisabled')}
             </button>
@@ -200,7 +201,7 @@ const SkillSecurityReport: React.FC<SkillSecurityReportProps> = ({
               type="button"
               onClick={() => onAction('install')}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 hover:bg-orange-500/20 transition-colors active:scale-[0.98] disabled:opacity-50"
+              className="maties-pill-sm maties-status-attention"
             >
               {i18nService.t('securityInstallAnyway')}
             </button>

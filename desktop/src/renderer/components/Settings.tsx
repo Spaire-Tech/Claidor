@@ -53,6 +53,10 @@ import { OpenClawSessionKeepAlive as OpenClawSessionKeepAliveValues } from '../t
 import Modal from './common/Modal';
 import DreamingSettingsSection from './cowork/DreamingSettingsSection';
 import EmbeddingSettingsSection from './cowork/EmbeddingSettingsSection';
+import Eyebrow from './design/Eyebrow';
+import Pill, { PillTone } from './design/Pill';
+import Sphere from './design/Sphere';
+import Switch from './design/Switch';
 import ErrorMessage from './ErrorMessage';
 import BrainIcon from './icons/BrainIcon';
 import EditIcon from './icons/EditIcon';
@@ -79,12 +83,28 @@ import {
   resolveModelSupportsImageForProvider,
 } from './settings/modelProviderUtils';
 import { resolveSettingsEscapeAction, SettingsEscapeAction } from './settings/settingsEscape';
+import { announceSettingsSaved, SETTINGS_SAVED_EVENT } from './settings/settingsSavedSignal';
 import EmailSkillConfig from './skills/EmailSkillConfig';
 import SkinPresentationScope from './skin/SkinPresentationScope';
 import SkinSettingsSection from './skin/SkinSettingsSection';
 import ThemedSelect from './ui/ThemedSelect';
 
 type TabType = 'general' | 'appearance' | 'coworkAgentEngine' | 'model' | 'library' | 'browserWebAccess' | 'coworkMemory' | 'coworkDreaming' | 'shortcuts' | 'im' | 'email' | 'plugins' | 'about';
+
+const SETTINGS_TAB_ICON_CLASS = 'h-[17px] w-[17px]';
+
+// Tabs whose changes wait for « Save » (the sheet's form). Every other tab
+// saves on change and says so with a quiet « Saved » (design, section 5).
+const SETTINGS_TABS_WITH_FORM: ReadonlySet<TabType> = new Set<TabType>([
+  'general',
+  'appearance',
+  'coworkAgentEngine',
+  'coworkMemory',
+  'coworkDreaming',
+  'browserWebAccess',
+  'shortcuts',
+  'plugins',
+]);
 
 const waitForNextPaint = (): Promise<void> => new Promise(resolve => {
   window.requestAnimationFrame(() => {
@@ -1123,35 +1143,14 @@ const SendShortcutSelect: React.FC<{ value: string; onChange: (v: string) => voi
   );
 };
 
+// The app's switch in the one blue (docs/maties/design.md, section 5).
 const SettingsSwitch: React.FC<{
   checked: boolean;
   label: string;
   disabled?: boolean;
   onClick: () => void | Promise<void>;
 }> = ({ checked, label, disabled, onClick }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={checked}
-    aria-label={label}
-    onClick={() => {
-      void onClick();
-    }}
-    disabled={disabled}
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
-      disabled ? 'opacity-50 cursor-not-allowed' : ''
-    } ${
-      checked
-        ? 'bg-primary'
-        : 'bg-gray-300 dark:bg-gray-600'
-    }`}
-  >
-    <span
-      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-        checked ? 'translate-x-6' : 'translate-x-1'
-      }`}
-    />
-  </button>
+  <Switch checked={checked} label={label} disabled={disabled} onChange={onClick} />
 );
 
 const SettingsToggleRow: React.FC<{
@@ -1161,36 +1160,30 @@ const SettingsToggleRow: React.FC<{
   disabled?: boolean;
   onToggle: () => void | Promise<void>;
 }> = ({ title, description, checked, disabled, onToggle }) => (
-  <div>
-    <div className="flex items-center justify-between gap-4">
-      <h4 className="min-w-0 flex-1 text-sm font-medium text-foreground">
-        {title}
-      </h4>
-      <SettingsSwitch
-        checked={checked}
-        label={title}
-        disabled={disabled}
-        onClick={onToggle}
-      />
+  <div className="flex items-center justify-between gap-6">
+    <div className="min-w-0 flex-1">
+      <h4 className="maties-row-title">{title}</h4>
+      <p className="maties-row-desc">{description}</p>
     </div>
-    <p className="mt-1 text-sm text-secondary">
-      {description}
-    </p>
+    <SettingsSwitch
+      checked={checked}
+      label={title}
+      disabled={disabled}
+      onClick={onToggle}
+    />
   </div>
 );
 
-// Groups related settings rows into a labeled card (label above a bordered,
-// divider-separated card). Used to categorize the General settings tab.
+// A section of the sheet: an eyebrow, then a white card whose rows are
+// divided by hairlines (radius 16).
 const SettingsGroup: React.FC<{
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }> = ({ title, children, footer }) => (
   <section className="space-y-2.5">
-    <h4 className="px-1 text-xs font-semibold uppercase tracking-wider text-secondary">
-      {title}
-    </h4>
-    <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+    <Eyebrow className="px-1">{title}</Eyebrow>
+    <div className="maties-card-row maties-divide">
       {children}
     </div>
     {footer}
@@ -1199,8 +1192,31 @@ const SettingsGroup: React.FC<{
 
 // A single padded row inside a SettingsGroup card.
 const SettingsRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="px-4 py-3.5">{children}</div>
+  <div className="px-5 py-4">{children}</div>
 );
+
+// The quiet pill of a settings row: « Clean now », « Back up », « Show in Folder ».
+const SETTINGS_ROW_PILL_CLASS = 'maties-pill-sm';
+
+// The quiet « Saved » that fades on tabs that save on change.
+const SettingsSavedNotice: React.FC<{ hint: string; label: string }> = ({ hint, label }) => {
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  useEffect(() => {
+    const handleSaved = () => setSavedAt(Date.now());
+    window.addEventListener(SETTINGS_SAVED_EVENT, handleSaved);
+    return () => window.removeEventListener(SETTINGS_SAVED_EVENT, handleSaved);
+  }, []);
+  return (
+    <div className="flex h-8 items-center gap-3">
+      <span className="maties-caption">{hint}</span>
+      {savedAt !== null && (
+        <span key={savedAt} className="maties-saved maties-status-done text-[12.5px] font-medium">
+          {label}
+        </span>
+      )}
+    </div>
+  );
+};
 
 const SettingsNumberInputRow: React.FC<{
   id: string;
@@ -1211,12 +1227,12 @@ const SettingsNumberInputRow: React.FC<{
   max: number;
   onChange: (value: number) => void;
 }> = ({ id, title, description, value, min, max, onChange }) => (
-  <div className="flex items-center justify-between gap-4">
+  <div className="flex items-center justify-between gap-6">
     <div className="min-w-0 flex-1">
-      <label htmlFor={id} className="block text-sm font-medium text-foreground">
+      <label htmlFor={id} className="maties-row-title block">
         {title}
       </label>
-      <p className="mt-1 text-sm text-secondary">
+      <p className="maties-row-desc">
         {description}
       </p>
     </div>
@@ -1234,9 +1250,9 @@ const SettingsNumberInputRow: React.FC<{
         onBlur={(event) => {
           onChange(normalizeFontPreference(event.currentTarget.value, value, min, max));
         }}
-        className="h-8 w-16 rounded-lg border border-border bg-surface px-2 text-center text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+        className="maties-input maties-mono h-8 w-16 px-2 text-center text-[13px]"
       />
-      <span className="text-sm text-secondary">px</span>
+      <span className="maties-caption">px</span>
     </div>
   </div>
 );
@@ -2970,20 +2986,21 @@ const Settings: React.FC<SettingsProps> = ({
 
   // Render tabs
   const sidebarTabs: { key: TabType; label: string; icon: React.ReactNode }[] = (() => {
+    // Tab order from docs/maties/design.md, section 5. Icons at 17px.
     const allTabs = [
-      { key: 'general' as TabType,        label: i18nService.t('general'),        icon: <SettingsSlidersIcon className="h-5 w-5" /> },
-      { key: 'appearance' as TabType,     label: i18nService.t('appearance'),     icon: <SunIcon className="h-5 w-5" /> },
-      { key: 'coworkAgentEngine' as TabType, label: i18nService.t('coworkAgentEngine'), icon: <CpuChipIcon className="h-5 w-5" /> },
-      { key: 'model' as TabType,          label: i18nService.t('matiesAccountTab'), icon: <CubeIcon className="h-5 w-5" /> },
-      { key: 'library' as TabType,        label: i18nService.t('librarySettingsTab'), icon: <BookOpenIcon className="h-5 w-5" /> },
-      { key: 'im' as TabType,             label: i18nService.t('imBot'),          icon: <ChatBubbleLeftIcon className="h-5 w-5" /> },
-      { key: 'browserWebAccess' as TabType, label: i18nService.t('browserWebAccessTab'), icon: <GlobeAltIcon className="h-5 w-5" /> },
-      { key: 'email' as TabType,          label: i18nService.t('emailTab'),       icon: <EnvelopeIcon className="h-5 w-5" /> },
-      { key: 'coworkMemory' as TabType,   label: i18nService.t('coworkMemoryTitle'), icon: <BrainIcon className="h-5 w-5" /> },
-      { key: 'coworkDreaming' as TabType, label: i18nService.t('coworkMemoryTabDreaming'), icon: <DreamingTabIcon className="h-5 w-5" /> },
-      { key: 'plugins' as TabType,        label: i18nService.t('pluginsTab'),     icon: <PlugIcon className="h-5 w-5" /> },
-      { key: 'shortcuts' as TabType,      label: i18nService.t('shortcuts'),      icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5"><rect x="2" y="4" width="20" height="14" rx="2" /><line x1="6" y1="8" x2="8" y2="8" /><line x1="10" y1="8" x2="12" y2="8" /><line x1="14" y1="8" x2="16" y2="8" /><line x1="6" y1="12" x2="8" y2="12" /><line x1="10" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="18" y2="12" /><line x1="8" y1="15.5" x2="16" y2="15.5" /></svg> },
-      { key: 'about' as TabType,          label: i18nService.t('about'),          icon: <InformationCircleIcon className="h-5 w-5" /> },
+      { key: 'general' as TabType,        label: i18nService.t('general'),        icon: <SettingsSlidersIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'appearance' as TabType,     label: i18nService.t('appearance'),     icon: <SunIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'model' as TabType,          label: i18nService.t('matiesAccountTab'), icon: <CubeIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'library' as TabType,        label: i18nService.t('librarySettingsTab'), icon: <BookOpenIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'coworkAgentEngine' as TabType, label: i18nService.t('coworkAgentEngine'), icon: <CpuChipIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'coworkMemory' as TabType,   label: i18nService.t('coworkMemoryTitle'), icon: <BrainIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'coworkDreaming' as TabType, label: i18nService.t('coworkMemoryTabDreaming'), icon: <DreamingTabIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'browserWebAccess' as TabType, label: i18nService.t('browserWebAccessTab'), icon: <GlobeAltIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'im' as TabType,             label: i18nService.t('imBot'),          icon: <ChatBubbleLeftIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'email' as TabType,          label: i18nService.t('emailTab'),       icon: <EnvelopeIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'plugins' as TabType,        label: i18nService.t('pluginsTab'),     icon: <PlugIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'shortcuts' as TabType,      label: i18nService.t('shortcuts'),      icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={SETTINGS_TAB_ICON_CLASS}><rect x="2" y="4" width="20" height="14" rx="2" /><line x1="6" y1="8" x2="8" y2="8" /><line x1="10" y1="8" x2="12" y2="8" /><line x1="14" y1="8" x2="16" y2="8" /><line x1="6" y1="12" x2="8" y2="12" /><line x1="10" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="18" y2="12" /><line x1="8" y1="15.5" x2="16" y2="15.5" /></svg> },
+      { key: 'about' as TabType,          label: i18nService.t('about'),          icon: <InformationCircleIcon className={SETTINGS_TAB_ICON_CLASS} /> },
     ];
     // Filter out tabs hidden by enterprise config
     // Filter out tabs with 'hide' action in enterprise config
@@ -3047,6 +3064,7 @@ const Settings: React.FC<SettingsProps> = ({
       const selection = await selectThemeMode(mode);
       setTheme(selection.mode);
       setThemeId(selection.themeId);
+      announceSettingsSaved();
     } catch (selectionError) {
       console.error('[Settings] Failed to select the default theme mode', selectionError);
       setError(i18nService.t('themeApplyFailed'));
@@ -3059,6 +3077,7 @@ const Settings: React.FC<SettingsProps> = ({
       const selection = await selectThemeById(nextThemeId);
       setTheme(selection.mode);
       setThemeId(selection.themeId);
+      announceSettingsSaved();
     } catch (selectionError) {
       console.error('[Settings] Failed to select the default color theme', selectionError);
       setError(i18nService.t('themeApplyFailed'));
@@ -3068,9 +3087,7 @@ const Settings: React.FC<SettingsProps> = ({
   const renderAppearanceSettings = () => (
     <div className="space-y-8">
       <div>
-        <h4 className="text-sm font-medium mb-3" style={{ color: 'var(--lobster-text-primary)' }}>
-          {i18nService.t('appearance')}
-        </h4>
+        <Eyebrow className="mb-3 px-1">{i18nService.t('appearance')}</Eyebrow>
 
         <div className="grid max-w-xl grid-cols-3 gap-3 mb-4">
           {(['light', 'dark', 'system'] as const).map((mode) => {
@@ -3081,10 +3098,10 @@ const Settings: React.FC<SettingsProps> = ({
                 type="button"
                 onClick={() => void handleThemeModeSelection(mode)}
                 disabled={isAppearanceChanging}
-                className="flex flex-col items-center rounded-xl border-2 p-3 transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60"
+                aria-pressed={isSelected}
+                className="flex cursor-pointer flex-col items-center rounded-[14px] bg-white p-3 transition-shadow disabled:cursor-wait disabled:opacity-60 dark:bg-[#1c1e23]"
                 style={{
-                  borderColor: isSelected ? 'var(--lobster-primary)' : 'var(--lobster-border)',
-                  backgroundColor: isSelected ? 'var(--lobster-primary-muted)' : undefined,
+                  boxShadow: isSelected ? '0 0 0 2px #0060d0' : '0 0 0 .5px rgba(16,22,35,.10)',
                 }}
               >
                 <svg viewBox="0 0 120 80" className="w-full h-auto rounded-md mb-2 overflow-hidden" xmlns="http://www.w3.org/2000/svg">
@@ -3168,7 +3185,7 @@ const Settings: React.FC<SettingsProps> = ({
                     </>
                   )}
                 </svg>
-                <span className="text-xs font-medium" style={{ color: isSelected ? 'var(--lobster-primary)' : 'var(--lobster-text-primary)' }}>
+                <span className="text-[12.5px] font-medium" style={{ color: isSelected ? '#0060d0' : '#4a4f57' }}>
                   {i18nService.t(mode)}
                 </span>
               </button>
@@ -3176,9 +3193,7 @@ const Settings: React.FC<SettingsProps> = ({
           })}
         </div>
 
-        <h4 className="text-sm font-medium mb-3 mt-5" style={{ color: 'var(--lobster-text-primary)' }}>
-          {i18nService.t('themeColor')}
-        </h4>
+        <Eyebrow className="mb-3 mt-7 px-1">{i18nService.t('themeColor')}</Eyebrow>
         {(() => {
           const allThemes = themeService.getAllThemes();
           const renderTile = (t: import('../theme').ThemeDefinition) => {
@@ -3190,10 +3205,10 @@ const Settings: React.FC<SettingsProps> = ({
                 type="button"
                 onClick={() => void handleThemeIdSelection(t.meta.id)}
                 disabled={isAppearanceChanging}
-                className="flex flex-col items-center rounded-xl border-2 p-2 transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60"
+                aria-pressed={isSelected}
+                className="flex cursor-pointer flex-col items-center rounded-[12px] bg-white p-2 transition-shadow disabled:cursor-wait disabled:opacity-60 dark:bg-[#1c1e23]"
                 style={{
-                  borderColor: isSelected ? 'var(--lobster-primary)' : 'var(--lobster-border)',
-                  backgroundColor: isSelected ? 'var(--lobster-primary-muted)' : undefined,
+                  boxShadow: isSelected ? '0 0 0 2px #0060d0' : '0 0 0 .5px rgba(16,22,35,.10)',
                 }}
               >
                 <svg viewBox="0 0 80 48" className="w-full h-auto rounded-md mb-1.5 overflow-hidden" xmlns="http://www.w3.org/2000/svg">
@@ -3203,7 +3218,7 @@ const Settings: React.FC<SettingsProps> = ({
                   <circle cx="52" cy="24" r="8" fill={c3} opacity="0.8" />
                   <rect x="32" y="34" width="40" height="4" rx="2" fill={c1} opacity="0.6" />
                 </svg>
-                <span className="text-[10px] font-medium truncate w-full text-center" style={{ color: isSelected ? 'var(--lobster-primary)' : 'var(--lobster-text-primary)' }}>
+                <span className="w-full truncate text-center text-[11.5px] font-medium" style={{ color: isSelected ? '#0060d0' : '#4a4f57' }}>
                   {i18nService.t('theme-name-' + t.meta.id) || t.meta.name}
                 </span>
               </button>
@@ -3218,8 +3233,8 @@ const Settings: React.FC<SettingsProps> = ({
 
         <SkinSettingsSection onStartAiSkin={onStartAiSkin} />
 
-        <div className="mt-5 divide-y divide-border rounded-xl border border-border bg-surface">
-          <div className="px-4 py-3">
+        <div className="maties-card-row maties-divide mt-7">
+          <div className="px-5 py-4">
             <SettingsNumberInputRow
               id="ui-font-size"
               title={i18nService.t('uiFontSize')}
@@ -3230,7 +3245,7 @@ const Settings: React.FC<SettingsProps> = ({
               onChange={handleUiFontSizeChange}
             />
           </div>
-          <div className="px-4 py-3">
+          <div className="px-5 py-4">
             <SettingsNumberInputRow
               id="code-font-size"
               title={i18nService.t('codeFontSize')}
@@ -3348,11 +3363,11 @@ const Settings: React.FC<SettingsProps> = ({
               footer={
                 (window.electron.platform === 'win32' ||
                   (window.electron.platform === 'darwin' && !import.meta.env.DEV)) && (
-                  <p className="px-1 text-xs text-secondary">
+                  <p className="maties-caption px-1">
                     {i18nService.t('notificationSystemPermissionHint')}{' '}
                     <button
                       type="button"
-                      className="text-primary hover:underline"
+                      className="text-[#0060d0] hover:underline"
                       onClick={() => {
                         void window.electron.appInfo.openSystemNotificationSettings?.();
                       }}
@@ -3365,8 +3380,8 @@ const Settings: React.FC<SettingsProps> = ({
             >
               <SettingsRow>
                 <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <h4 className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                  <div className="flex items-center justify-between gap-6">
+                    <h4 className="maties-row-title min-w-0 flex-1">
                       {i18nService.t('taskCompletionNotificationMode')}
                     </h4>
                     <div className="w-[180px] shrink-0">
@@ -3393,7 +3408,7 @@ const Settings: React.FC<SettingsProps> = ({
                       />
                     </div>
                   </div>
-                  <p className="mt-1 text-sm text-secondary">
+                  <p className="maties-row-desc">
                     {i18nService.t('taskCompletionNotificationModeDescription')}
                   </p>
                 </div>
@@ -3430,12 +3445,12 @@ const Settings: React.FC<SettingsProps> = ({
             {/* Group: Data & privacy */}
             <SettingsGroup title={i18nService.t('settingsGroupDataPrivacy')}>
               <SettingsRow>
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-6">
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-sm font-medium text-foreground">
+                    <h4 className="maties-row-title">
                       {i18nService.t('coworkTempUsageTitle')}
                     </h4>
-                    <p className="mt-1 text-sm text-secondary">
+                    <p className="maties-row-desc">
                       {tempStorageUsageBytes === null
                         ? i18nService.t('coworkTempUsageLoading')
                         : i18nService.t('coworkTempUsageLabel')
@@ -3445,7 +3460,7 @@ const Settings: React.FC<SettingsProps> = ({
                               formatBackupSize(tempStorageCleanableBytes ?? 0) || '0 B',
                             )}
                     </p>
-                    <p className="mt-1 text-sm text-secondary">
+                    <p className="maties-row-desc">
                       {i18nService.t('coworkTempUsageManualNote')}
                     </p>
                   </div>
@@ -3455,7 +3470,7 @@ const Settings: React.FC<SettingsProps> = ({
                       void handleOpenTempCleanConfirm();
                     }}
                     disabled={isLoadingTempCleanPreview || isCleaningTempStorage || tempStorageCleanableBytes === 0}
-                    className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                    className={`${SETTINGS_ROW_PILL_CLASS} shrink-0`}
                   >
                     {isLoadingTempCleanPreview
                       ? i18nService.t('coworkTempPreviewLoading')
@@ -3503,19 +3518,17 @@ const Settings: React.FC<SettingsProps> = ({
           <div className="space-y-8 pb-2">
             {isOpenClawAgentEngine && (
               <>
-                <section className="space-y-3">
-                  <h4 className="text-sm font-medium text-foreground">
-                    {i18nService.t('openClawRuntimeStatusTitle')}
-                  </h4>
+                <section className="space-y-2.5">
+                  <Eyebrow className="px-1">{i18nService.t('openClawRuntimeStatusTitle')}</Eyebrow>
 
-                  <div className="rounded-xl border border-border bg-surface p-4">
+                  <div className="maties-card-row p-4">
                     <div className="flex items-start gap-3.5">
                       <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${openClawStatusTone.iconClassName}`}>
                         <OpenClawStatusIcon className={`h-5 w-5 ${openClawStatusTone.spinIcon ? 'animate-spin' : ''}`} />
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0 text-sm font-medium leading-5 text-foreground">
+                          <div className="maties-row-title min-w-0">
                             {resolveOpenClawStatusText(openClawEngineStatus)}
                           </div>
                           <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${openClawStatusTone.badgeClassName}`}>
@@ -3525,8 +3538,8 @@ const Settings: React.FC<SettingsProps> = ({
                         </div>
 
                         {openClawGatewayHttpUrl ? (
-                          <div className="mt-3 flex max-w-full items-center gap-2 rounded-lg border border-border-subtle bg-surface-raised/60 p-1.5">
-                            <span className="shrink-0 rounded-md bg-background px-2 py-1 text-[11px] font-medium text-secondary">
+                          <div className="maties-raised-2 mt-3 flex max-w-full items-center gap-2 rounded-[10px] p-1.5">
+                            <span className="maties-caption shrink-0 rounded-md bg-white px-2 py-1 text-[11.5px] font-medium dark:bg-[#1c1e23]">
                               {i18nService.t('openClawGatewayAddress')}
                             </span>
                             <code
@@ -3572,12 +3585,10 @@ const Settings: React.FC<SettingsProps> = ({
                   </div>
                 </section>
 
-                <section className="space-y-3">
-                  <h4 className="text-sm font-medium text-foreground">
-                    {i18nService.t('openClawBackgroundRuntimeTitle')}
-                  </h4>
+                <section className="space-y-2.5">
+                  <Eyebrow className="px-1">{i18nService.t('openClawBackgroundRuntimeTitle')}</Eyebrow>
 
-                  <div className="rounded-xl border border-border bg-surface p-4">
+                  <div className="maties-card-row p-4">
                     <div className="flex items-start gap-3.5">
                       <span
                         className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
@@ -3590,7 +3601,7 @@ const Settings: React.FC<SettingsProps> = ({
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
-                          <h4 className="min-w-0 text-sm font-medium leading-5 text-foreground">
+                          <h4 className="maties-row-title min-w-0">
                             {i18nService.t('openClawHeartbeatEnabled')}
                           </h4>
                           <SettingsSwitch
@@ -3601,7 +3612,7 @@ const Settings: React.FC<SettingsProps> = ({
                             }}
                           />
                         </div>
-                        <p className="mt-1.5 text-[13px] leading-5 text-secondary">
+                        <p className="maties-row-desc">
                           {i18nService.t('openClawHeartbeatEnabledDescription')}
                         </p>
                       </div>
@@ -3609,22 +3620,20 @@ const Settings: React.FC<SettingsProps> = ({
                   </div>
                 </section>
 
-                <section className="space-y-3">
-                  <h4 className="text-sm font-medium text-foreground">
-                    {i18nService.t('openClawMaintenanceTitle')}
-                  </h4>
+                <section className="space-y-2.5">
+                  <Eyebrow className="px-1">{i18nService.t('openClawMaintenanceTitle')}</Eyebrow>
 
-                  <div className="overflow-hidden rounded-xl border border-border bg-surface divide-y divide-border">
+                  <div className="maties-card-row maties-divide overflow-hidden">
                     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex min-w-0 items-start gap-3">
-                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-muted text-primary">
+                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
                           <WrenchScrewdriverIcon className="h-[18px] w-[18px]" />
                         </span>
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-foreground">
+                          <div className="maties-row-title">
                             {i18nService.t('openClawRepairGatewayStateTitle')}
                           </div>
-                          <div className="mt-0.5 text-[13px] leading-5 text-secondary">
+                          <div className="maties-row-desc">
                             {i18nService.t('openClawRepairGatewayStateDesc')}
                           </div>
                         </div>
@@ -3633,7 +3642,7 @@ const Settings: React.FC<SettingsProps> = ({
                         type="button"
                         onClick={() => setShowOpenClawRepairConfirm(true)}
                         disabled={isRepairingOpenClaw}
-                        className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:self-auto"
+                        className={`${SETTINGS_ROW_PILL_CLASS} shrink-0 self-start sm:self-auto`}
                       >
                         {isRepairingOpenClaw && (
                           <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
@@ -3662,7 +3671,7 @@ const Settings: React.FC<SettingsProps> = ({
                         <button
                           type="button"
                           onClick={() => { void handleRevealOpenClawDataBackup(); }}
-                          className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised active:scale-[0.98]"
+                          className={`${SETTINGS_ROW_PILL_CLASS} shrink-0`}
                         >
                           {i18nService.t('showInFolder')}
                         </button>
@@ -3671,14 +3680,14 @@ const Settings: React.FC<SettingsProps> = ({
 
                     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex min-w-0 items-start gap-3">
-                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-muted text-primary">
+                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
                           <ArchiveBoxIcon className="h-[18px] w-[18px]" />
                         </span>
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-foreground">
+                          <div className="maties-row-title">
                             {i18nService.t('openClawDataBackupTitle')}
                           </div>
-                          <div className="mt-0.5 text-[13px] leading-5 text-secondary">
+                          <div className="maties-row-desc">
                             {i18nService.t('openClawDataBackupDesc')}
                           </div>
                         </div>
@@ -3687,7 +3696,7 @@ const Settings: React.FC<SettingsProps> = ({
                         type="button"
                         onClick={() => { void handleOpenClawDataBackup(); }}
                         disabled={isBackingUpOpenClawData || isRestoringOpenClawData}
-                        className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:self-auto"
+                        className={`${SETTINGS_ROW_PILL_CLASS} shrink-0 self-start sm:self-auto`}
                       >
                         {isBackingUpOpenClawData && (
                           <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
@@ -3700,14 +3709,14 @@ const Settings: React.FC<SettingsProps> = ({
 
                     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex min-w-0 items-start gap-3">
-                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-muted text-primary">
+                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
                           <ArrowPathRoundedSquareIcon className="h-[18px] w-[18px]" />
                         </span>
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-foreground">
+                          <div className="maties-row-title">
                             {i18nService.t('openClawDataMigrationTitle')}
                           </div>
-                          <div className="mt-0.5 text-[13px] leading-5 text-secondary">
+                          <div className="maties-row-desc">
                             {i18nService.t('openClawDataMigrationDesc')}
                           </div>
                         </div>
@@ -3716,7 +3725,7 @@ const Settings: React.FC<SettingsProps> = ({
                         type="button"
                         onClick={() => setShowOpenClawDataRestoreConfirm(true)}
                         disabled={isBackingUpOpenClawData || isRestoringOpenClawData}
-                        className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:self-auto"
+                        className={`${SETTINGS_ROW_PILL_CLASS} shrink-0 self-start sm:self-auto`}
                       >
                         {isRestoringOpenClawData && (
                           <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
@@ -3787,36 +3796,32 @@ const Settings: React.FC<SettingsProps> = ({
         return (
           <div className="flex flex-col h-full space-y-4">
             <div
-              className="flex gap-6 border-b border-border shrink-0"
+              className="flex shrink-0 gap-1.5"
               role="tablist"
               aria-label={i18nService.t('coworkMemoryTitle')}
             >
               {memoryTabs.map((tab) => (
-                <button
-                  type="button"
+                <Pill
                   key={tab.key}
                   role="tab"
+                  compact
                   aria-selected={memoryTab === tab.key}
+                  tone={memoryTab === tab.key ? PillTone.Selected : PillTone.Quiet}
                   onClick={() => setMemoryTab(tab.key)}
-                  className={`-mb-px border-b-2 px-0.5 pb-2.5 text-sm font-medium transition-colors ${
-                    memoryTab === tab.key
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-secondary hover:text-foreground'
-                  }`}
                 >
                   {i18nService.t(tab.titleKey)}
-                </button>
+                </Pill>
               ))}
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto">
               {memoryTab === 'entries' && (
-                <div className="space-y-4 rounded-xl border px-4 py-4 border-border">
+                <div className="maties-card-row space-y-4 px-5 py-4">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium text-foreground">
+                    <div>
+                      <div className="maties-row-title">
                         {i18nService.t('coworkMemoryCrudTitle')}
                       </div>
-                      <div className="text-xs text-secondary">
+                      <div className="maties-row-desc">
                         {i18nService.t('coworkMemoryManageHint')}
                       </div>
                     </div>
@@ -3825,16 +3830,16 @@ const Settings: React.FC<SettingsProps> = ({
                           type="button"
                           onClick={() => { void handleEnterCoworkMemoryRawMode(); }}
                           disabled={coworkMemoryListLoading}
-                          className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-border text-sm text-foreground hover:bg-surface-raised disabled:opacity-60 transition-colors"
+                          className={SETTINGS_ROW_PILL_CLASS}
                         >
                           {i18nService.t('coworkMemoryRawButton')}
                         </button>
                         <button
                           type="button"
                           onClick={handleOpenCoworkMemoryModal}
-                          className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-sm transition-colors active:scale-[0.98]"
+                          className={`${SETTINGS_ROW_PILL_CLASS} is-primary`}
                         >
-                          <PlusCircleIcon className="h-4 w-4 mr-1.5" />
+                          <PlusCircleIcon className="h-3.5 w-3.5" />
                           {i18nService.t('coworkMemoryCrudCreate')}
                         </button>
                     </div>
@@ -3842,7 +3847,7 @@ const Settings: React.FC<SettingsProps> = ({
 
                     <>
                       {coworkMemoryStats && (
-                        <div className="text-xs text-secondary">
+                        <div className="maties-caption">
                           {`${i18nService.t('coworkMemoryTotalLabel')}: ${coworkMemoryStats.total}`}
                         </div>
                       )}
@@ -3852,20 +3857,20 @@ const Settings: React.FC<SettingsProps> = ({
                         value={coworkMemoryQuery}
                         onChange={(event) => setCoworkMemoryQuery(event.target.value)}
                         placeholder={i18nService.t('coworkMemorySearchPlaceholder')}
-                        className="w-full rounded-lg border px-3 py-2 text-sm border-border bg-surface"
+                        className="maties-input"
                       />
 
-                      <div className="rounded-lg border border-border">
+                      <div className="maties-hairline-top">
                         {coworkMemoryListLoading ? (
-                          <div className="px-3 py-3 text-xs text-secondary">
+                          <div className="maties-caption px-1 py-3">
                             {i18nService.t('loading')}
                           </div>
                         ) : coworkMemoryEntries.length === 0 ? (
-                          <div className="px-3 py-3 text-xs text-secondary">
+                          <div className="maties-caption px-1 py-3">
                             {i18nService.t('coworkMemoryEmpty')}
                           </div>
                         ) : (
-                          <div className="divide-y divide-border">
+                          <div className="maties-divide">
                             {coworkMemoryGroups.map((group, groupIndex) => (
                               <React.Fragment key={group.section ?? `ungrouped-${groupIndex}`}>
                                 {group.section && (
@@ -3936,15 +3941,15 @@ const Settings: React.FC<SettingsProps> = ({
                       isOpen
                       onClose={() => setCoworkMemoryRawMode(false)}
                       onEscape={() => setCoworkMemoryRawMode(false)}
-                      overlayClassName="fixed inset-0 z-[60] flex items-center justify-center bg-black/10 dark:bg-black/50 p-6"
-                      className="flex h-[min(720px,calc(100vh-48px))] w-[min(960px,calc(100vw-48px))] flex-col overflow-hidden rounded-xl border border-surface bg-surface shadow-[0_12px_40px_rgba(0,0,0,0.16)]"
+                      overlayClassName="fixed inset-0 z-[60] flex items-center justify-center maties-backdrop p-6"
+                      className="maties-card-prose maties-in flex h-[min(720px,calc(100vh-48px))] w-[min(960px,calc(100vw-48px))] flex-col overflow-hidden"
                     >
-                      <div className="flex shrink-0 items-start justify-between gap-3 px-5 py-4">
+                      <div className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-6">
                         <div className="min-w-0">
-                          <h2 className="text-lg font-semibold text-foreground">
+                          <h2 className="maties-page-title">
                             {i18nService.t('coworkMemoryRawButton')}
                           </h2>
-                          <p className="mt-0.5 text-sm text-secondary">
+                          <p className="maties-subtitle mt-1">
                             {i18nService.t('coworkMemoryRawHint')}
                           </p>
                         </div>
@@ -3953,9 +3958,9 @@ const Settings: React.FC<SettingsProps> = ({
                           onClick={() => setCoworkMemoryRawMode(false)}
                           title={i18nService.t('close')}
                           aria-label={i18nService.t('close')}
-                          className="p-2 rounded-lg hover:bg-surface-raised transition-colors"
+                          className="maties-icon-button"
                         >
-                          <XMarkIcon className="h-5 w-5 text-secondary" />
+                          <XMarkIcon className="h-[18px] w-[18px]" />
                         </button>
                       </div>
                       <textarea
@@ -3963,13 +3968,13 @@ const Settings: React.FC<SettingsProps> = ({
                         onChange={(event) => setCoworkMemoryRawText(event.target.value)}
                         spellCheck={false}
                         autoFocus
-                        className="min-h-0 w-full flex-1 resize-none bg-transparent px-5 pt-1 pb-4 text-xs font-mono leading-relaxed text-foreground focus:outline-none"
+                        className="maties-mono min-h-0 w-full flex-1 resize-none bg-transparent px-6 pb-4 pt-1 text-[12.5px] leading-relaxed text-[#1c1f23] focus:outline-none dark:text-[#f2f3f5]"
                       />
-                      <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border/60 px-5 py-3">
+                      <div className="maties-hairline-top flex shrink-0 items-center justify-end gap-2 px-6 py-4">
                         <button
                           type="button"
                           onClick={() => setCoworkMemoryRawMode(false)}
-                          className="px-3.5 py-1.5 text-sm text-foreground hover:bg-surface-raised rounded-lg border border-border transition-colors"
+                          className={`${SETTINGS_ROW_PILL_CLASS} is-ghost`}
                         >
                           {i18nService.t('cancel')}
                         </button>
@@ -3977,7 +3982,7 @@ const Settings: React.FC<SettingsProps> = ({
                           type="button"
                           onClick={() => { void handleSaveCoworkMemoryRaw(); }}
                           disabled={coworkMemoryRawSaving}
-                          className="px-3.5 py-1.5 text-sm text-white bg-primary hover:bg-primary-hover rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
+                          className={`${SETTINGS_ROW_PILL_CLASS} is-primary`}
                         >
                           {i18nService.t('save')}
                         </button>
@@ -4039,24 +4044,22 @@ const Settings: React.FC<SettingsProps> = ({
         return (
           <div className="space-y-4">
             <div className="relative">
-              <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
+              <MagnifyingGlassIcon className="maties-input-icon-glyph h-4 w-4" />
               <input
                 value={shortcutSearchQuery}
                 onChange={(event) => setShortcutSearchQuery(event.target.value)}
                 placeholder={i18nService.t('shortcutSearchPlaceholder')}
-                className="h-9 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-xs text-foreground outline-none transition-colors placeholder:text-secondary/70 focus:border-primary focus:ring-1 focus:ring-primary/25"
+                className="maties-input maties-input-icon"
               />
             </div>
-            <p className="text-xs leading-5 text-secondary">
+            <p className="maties-caption">
               {i18nService.t('shortcutScopeHint')}
             </p>
-            <div className="overflow-hidden rounded-xl border border-border bg-surface">
+            <div className="maties-card-row overflow-hidden">
               {filteredShortcutGroups.length > 0 ? filteredShortcutGroups.map((group, groupIndex) => (
                 <div key={group.titleKey}>
-                  <div className={`border-border-subtle bg-surface-raised/60 px-4 py-2 text-xs font-medium uppercase tracking-wide text-secondary ${
-                    groupIndex === 0 ? '' : 'border-t'
-                  }`}>
-                    {i18nService.t(group.titleKey)}
+                  <div className={`px-5 pb-1.5 pt-4 ${groupIndex === 0 ? '' : 'maties-hairline-top'}`}>
+                    <Eyebrow>{i18nService.t(group.titleKey)}</Eyebrow>
                   </div>
                   {group.commands.map((command, commandIndex) => {
                     const value = shortcuts[command.key] ?? '';
@@ -4064,15 +4067,15 @@ const Settings: React.FC<SettingsProps> = ({
                     return (
                       <div
                         key={command.key}
-                        className={`group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 ${
-                          commandIndex === 0 ? '' : 'border-t border-border-subtle'
+                        className={`group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-2.5 ${
+                          commandIndex === 0 ? '' : 'maties-hairline-top'
                         }`}
                       >
                         <div className="min-w-0">
-                          <div className="truncate text-xs font-medium text-foreground">
+                          <div className="truncate text-[13.5px] font-medium text-[#1c1f23] dark:text-[#f2f3f5]">
                             {commandLabel}
                           </div>
-                          <div className="mt-0.5 line-clamp-2 text-xs text-secondary">
+                          <div className="maties-caption mt-0.5 line-clamp-2">
                             {getShortcutCommandText(command, 'descriptionKey')}
                           </div>
                         </div>
@@ -4108,7 +4111,7 @@ const Settings: React.FC<SettingsProps> = ({
                   })}
                 </div>
               )) : (
-                <div className="px-4 py-8 text-center text-sm text-secondary">
+                <div className="maties-caption px-5 py-8 text-center">
                   {i18nService.t('shortcutNoResults')}
                 </div>
               )}
@@ -4117,7 +4120,7 @@ const Settings: React.FC<SettingsProps> = ({
               <button
                 type="button"
                 onClick={handleResetShortcuts}
-                className="rounded-xl bg-surface-raised px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-border/60"
+                className={SETTINGS_ROW_PILL_CLASS}
               >
                 {i18nService.t('shortcutResetAll')}
               </button>
@@ -4137,12 +4140,12 @@ const Settings: React.FC<SettingsProps> = ({
 
       case 'about':
         return (
-          <div className="flex min-h-full flex-col items-center pt-6 pb-3">
-            {/* Logo & App Name */}
-            <img
-              src="logo.png"
-              alt="Maties"
-              className="w-16 h-16 mb-3 cursor-pointer select-none"
+          <div className="flex min-h-full flex-col items-center pb-3 pt-8">
+            {/* The sphere, the name, the version, the MIT notice (design, section 5). */}
+            <button
+              type="button"
+              aria-label="Maties"
+              className="cursor-default rounded-full focus:outline-none"
               onClick={(e) => {
                 if (!e.altKey || !e.shiftKey) return;
 
@@ -4152,98 +4155,94 @@ const Settings: React.FC<SettingsProps> = ({
                   setTestModeUnlocked(true);
                 }
               }}
-            />
-            <h3 className="text-lg font-semibold text-foreground">Maties</h3>
-            <span className="text-xs text-secondary mt-1">v{appVersion}</span>
+            >
+              <Sphere size={64} title="Maties" />
+            </button>
+            <h3 className="maties-headline mt-5 text-[28px]">Maties</h3>
+            <span className="maties-mono mt-1.5 text-[12.5px] text-[#8f96a0]">v{appVersion}</span>
+            <p className="maties-caption mt-3 max-w-[52ch] text-center">
+              {i18nService.t('aboutUpstreamNotice')}
+            </p>
 
-            {/* Info Card */}
-            <div className="w-full mt-8 rounded-xl border border-border overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
-                <span className="shrink-0 text-sm text-foreground">{i18nService.t('aboutVersion')}</span>
-                <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-                  <span className="text-sm text-secondary">{appVersion}</span>
-                  {!enterpriseConfig?.disableUpdate && (
+            <div className="mt-9 w-full max-w-[640px] space-y-2.5">
+              <Eyebrow className="px-1">{i18nService.t('matiesAboutLinks')}</Eyebrow>
+              <div className="maties-card-row maties-divide">
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3.5">
+                  <span className="maties-row-title font-normal">{i18nService.t('aboutVersion')}</span>
+                  <div className="flex min-w-0 flex-wrap items-center justify-end gap-2.5">
+                    <span className="maties-mono text-[12.5px] text-[#8f96a0]">{appVersion}</span>
+                    {!enterpriseConfig?.disableUpdate && (
+                    <button
+                      type="button"
+                      disabled={updateCheckStatus === 'checking' || updateCheckStatus === 'downloading'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleCheckUpdate();
+                      }}
+                      className={SETTINGS_ROW_PILL_CLASS}
+                    >
+                      {updateButtonLabel}
+                    </button>
+                    )}
+                    {enterpriseConfig?.disableUpdate && (
+                    <span className="maties-caption">
+                      {i18nService.t('settings.enterprise.managed')}
+                    </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3.5">
+                  <span className="maties-row-title font-normal">{i18nService.t('aboutUserCommunity')}</span>
                   <button
                     type="button"
-                    disabled={updateCheckStatus === 'checking' || updateCheckStatus === 'downloading'}
                     onClick={(e) => {
                       e.stopPropagation();
-                      void handleCheckUpdate();
+                      handleOpenUserCommunity();
                     }}
-                    className="text-xs px-2 py-0.5 rounded-md border border-border text-secondary hover:text-primary dark:hover:text-primary hover:border-primary dark:hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="maties-mono min-w-0 cursor-pointer break-all rounded-md text-right text-[12.5px] text-[#4a4f57] transition-colors hover:text-[#0060d0] focus:outline-none"
                   >
-                    {updateButtonLabel}
+                    {ABOUT_USER_COMMUNITY_URL}
                   </button>
-                  )}
-                  {enterpriseConfig?.disableUpdate && (
-                  <span className="text-xs text-claude-textSecondary dark:text-claude-darkTextSecondary">
-                    {i18nService.t('settings.enterprise.managed')}
-                  </span>
-                  )}
                 </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
-                <span className="shrink-0 text-sm text-foreground">{i18nService.t('aboutUserCommunity')}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenUserCommunity();
-                  }}
-                  className="min-w-0 break-all text-right text-sm text-secondary hover:text-primary dark:hover:text-primary bg-transparent border-none appearance-none px-1.5 py-0.5 -mx-1.5 -my-0.5 rounded-md cursor-pointer focus:outline-none hover:bg-surface-raised transition-colors"
-                >
-                  {ABOUT_USER_COMMUNITY_URL}
-                </button>
-              </div>
-              <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3${testModeUnlocked ? ' border-b border-border' : ''}`}>
-                <span className="shrink-0 text-sm text-foreground">{i18nService.t('aboutUserManual')}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenUserManual();
-                  }}
-                  className="min-w-0 break-all text-right text-sm text-secondary hover:text-primary dark:hover:text-primary bg-transparent border-none appearance-none px-1.5 py-0.5 -mx-1.5 -my-0.5 rounded-md cursor-pointer focus:outline-none hover:bg-surface-raised transition-colors"
-                >
-                  {ABOUT_USER_MANUAL_URL}
-                </button>
-              </div>
-              {testModeUnlocked && (
-                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-                  <span className="shrink-0 text-sm text-foreground">{i18nService.t('testMode')}</span>
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3.5">
+                  <span className="maties-row-title font-normal">{i18nService.t('aboutUserManual')}</span>
                   <button
                     type="button"
-                    role="switch"
-                    aria-checked={testMode}
-                    onClick={() => setTestMode((prev) => !prev)}
-                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
-                      testMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenUserManual();
+                    }}
+                    className="maties-mono min-w-0 cursor-pointer break-all rounded-md text-right text-[12.5px] text-[#4a4f57] transition-colors hover:text-[#0060d0] focus:outline-none"
                   >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        testMode ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
+                    {ABOUT_USER_MANUAL_URL}
                   </button>
                 </div>
-              )}
+                {testModeUnlocked && (
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3.5">
+                    <span className="maties-row-title font-normal">{i18nService.t('testMode')}</span>
+                    <Switch
+                      checked={testMode}
+                      label={i18nService.t('testMode')}
+                      onChange={() => setTestMode((prev) => !prev)}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
-            <div className="mt-auto w-full pt-14 pb-2 flex flex-col items-center">
-              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-secondary">
+            <div className="mt-auto flex w-full flex-col items-center pb-2 pt-12">
+              <div className="flex flex-wrap items-center justify-center gap-1">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleOpenServiceTerms();
                   }}
-                  className="bg-transparent border-none appearance-none px-1.5 py-0.5 -mx-1.5 -my-0.5 rounded-md cursor-pointer hover:text-primary dark:hover:text-primary transition-colors"
+                  className="maties-pill-sm is-ghost"
                 >
                   {i18nService.t('aboutServiceTerms')}
                 </button>
-                <span className="text-xs opacity-40">|</span>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -4251,20 +4250,14 @@ const Settings: React.FC<SettingsProps> = ({
                     void handleExportLogs();
                   }}
                   disabled={isExportingLogs}
-                  className="bg-transparent border-none appearance-none px-1.5 py-0.5 -mx-1.5 -my-0.5 rounded-md cursor-pointer hover:text-primary dark:hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="maties-pill-sm is-ghost"
                 >
                   {isExportingLogs ? i18nService.t('aboutExportingLogs') : i18nService.t('aboutExportLogs')}
                 </button>
               </div>
 
-              <p className="mt-5 text-center text-xs text-secondary">
-                {i18nService.t('copyrightHolder')}
-              </p>
-              <p className="mt-1 text-center text-xs text-secondary">
-                Copyright &copy; {new Date().getFullYear()} Claidor. All Rights Reserved.
-              </p>
-              <p className="mt-1 text-center text-xs text-secondary">
-                {i18nService.t('aboutUpstreamNotice')}
+              <p className="maties-caption mt-4 text-center">
+                Copyright &copy; {new Date().getFullYear()} {i18nService.t('copyrightHolder')}. All rights reserved.
               </p>
             </div>
           </div>
@@ -4279,53 +4272,55 @@ const Settings: React.FC<SettingsProps> = ({
     <Modal
       onClose={guardedClose}
       onEscape={handleEscape}
-      overlayClassName="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-3 sm:p-4"
-      className="w-[calc(100vw-1.5rem)] min-w-0 sm:w-[85vw] max-w-[1200px]"
+      overlayClassName="fixed inset-0 z-50 maties-backdrop flex items-center justify-center p-4 sm:p-8"
+      className="w-[calc(100vw-2rem)] min-w-0 max-w-[1180px]"
     >
+      {/* The sheet: radius 24, the lifted shadow, at most 1180 × 780 (design, section 5). */}
       <SkinPresentationScope
         enabled
         data-skin-settings="true"
-        className="relative flex h-[min(90vh,calc(100vh-6rem))] w-full min-w-0 rounded-2xl border-border border shadow-modal overflow-hidden modal-content"
+        className="maties-sheet maties-in relative flex h-[min(780px,calc(100vh-4rem))] w-full min-w-0 overflow-hidden"
         onClick={handleSettingsClick}
       >
-        {/* Left sidebar */}
-        <div className="w-[220px] shrink-0 flex flex-col bg-surface-raised border-r border-border rounded-l-2xl overflow-y-auto">
-          <div className="px-5 pt-5 pb-3">
-            <h2 className="text-lg font-semibold text-foreground">{i18nService.t('settings')}</h2>
+        {/* The tab list */}
+        <div className="maties-hairline-right flex w-[232px] shrink-0 flex-col overflow-y-auto rounded-l-[24px] bg-[#fdfdfd] dark:bg-[#1c1e23]">
+          <div className="px-6 pb-2 pt-7">
+            <Eyebrow>{i18nService.t('settings')}</Eyebrow>
           </div>
-          <nav className="flex flex-col gap-0.5 px-3 pb-4">
+          <nav className="flex flex-col gap-px px-3.5 pb-5">
             {sidebarTabs.map((tab) => (
               <button
                 key={tab.key}
+                type="button"
                 onClick={() => handleTabChange(tab.key)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
-                  activeTab === tab.key
-                    ? 'bg-primary-muted text-primary'
-                    : 'text-secondary hover:text-foreground hover:bg-surface-raised'
-                }`}
+                data-active={activeTab === tab.key ? 'true' : undefined}
+                aria-current={activeTab === tab.key ? 'page' : undefined}
+                className="maties-tab-row"
               >
-                <span className="shrink-0">{tab.icon}</span>
+                <span>{tab.icon}</span>
                 <span className="min-w-0 truncate">{tab.label}</span>
               </button>
             ))}
           </nav>
         </div>
 
-        {/* Right content */}
-        <div className="relative flex-1 flex flex-col min-w-0 overflow-hidden bg-background rounded-r-2xl">
-          {/* Content header */}
-          <div className="flex justify-between items-center gap-3 px-6 pt-5 pb-3 shrink-0">
-            <h3 className="min-w-0 truncate text-lg font-semibold text-foreground">{activeTabLabel}</h3>
+        {/* The content */}
+        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-r-[24px] bg-white dark:bg-[#1c1e23]">
+          <div className="flex shrink-0 items-start justify-between gap-3 px-9 pb-4 pt-7">
+            <h3 className="maties-page-title min-w-0 truncate">{activeTabLabel}</h3>
             <button
+              type="button"
               onClick={guardedClose}
-              className="text-secondary hover:text-foreground p-1.5 hover:bg-surface-raised rounded-lg transition-colors"
+              aria-label={i18nService.t('close')}
+              title={i18nService.t('close')}
+              className="maties-icon-button -mr-2 -mt-1"
             >
-              <XMarkIcon className="h-5 w-5" />
+              <XMarkIcon className="h-[18px] w-[18px]" />
             </button>
           </div>
 
           {noticeMessage && (
-            <div className="px-6">
+            <div className="px-9">
               <ErrorMessage
                 message={noticeMessage}
                 onClose={() => setNoticeMessage(null)}
@@ -4334,7 +4329,7 @@ const Settings: React.FC<SettingsProps> = ({
           )}
 
           {error && (
-            <div className="px-6">
+            <div className="px-9">
               <ErrorMessage
                 message={error}
                 onClose={() => setError(null)}
@@ -4346,35 +4341,41 @@ const Settings: React.FC<SettingsProps> = ({
             {/* Tab content */}
             <div
               ref={contentRef}
-              className="px-6 py-4 flex-1 overflow-y-auto"
+              className="flex-1 overflow-y-auto px-9 pb-6 pt-2"
               style={{ scrollbarGutter: 'stable' }}
             >
               {renderTabContent()}
             </div>
 
-            {/* Footer buttons */}
+            {/* The footer: « Save » and « Cancel » only where a tab has a form. */}
             <div className="relative shrink-0">
               <div
                 aria-hidden="true"
-                className={`pointer-events-none absolute inset-x-0 bottom-full h-10 bg-gradient-to-t from-background to-transparent transition-opacity duration-200 ${
+                className={`pointer-events-none absolute inset-x-0 bottom-full h-10 bg-gradient-to-t from-white to-transparent transition-opacity duration-200 dark:from-[#1c1e23] ${
                   footerFadeVisible ? 'opacity-100' : 'opacity-0'
                 }`}
               />
-              <div className="flex justify-end space-x-4 px-6 pb-5 pt-3 bg-background">
-                <button
-                  type="button"
-                  onClick={guardedClose}
-                  className="px-4 py-2 rounded-xl transition-colors text-sm font-medium border border-border text-foreground hover:bg-surface-raised active:scale-[0.98]"
-                >
-                  {i18nService.t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving || isAppearanceChanging}
-                  className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-                >
-                  {isSaving ? i18nService.t('saving') : i18nService.t('save')}
-                </button>
+              <div className="flex items-center justify-end gap-2 bg-white px-9 pb-6 pt-3 dark:bg-[#1c1e23]">
+                {SETTINGS_TABS_WITH_FORM.has(activeTab) ? (
+                  <>
+                    <Pill tone={PillTone.Ghost} compact onClick={guardedClose}>
+                      {i18nService.t('cancel')}
+                    </Pill>
+                    <Pill
+                      type="submit"
+                      tone={PillTone.Primary}
+                      compact
+                      disabled={isSaving || isAppearanceChanging}
+                    >
+                      {isSaving ? i18nService.t('saving') : i18nService.t('save')}
+                    </Pill>
+                  </>
+                ) : (
+                  <SettingsSavedNotice
+                    hint={i18nService.t('matiesSavesOnChange')}
+                    label={i18nService.t('matiesSaved')}
+                  />
+                )}
               </div>
             </div>
           </form>
@@ -4383,21 +4384,21 @@ const Settings: React.FC<SettingsProps> = ({
 
           {showOpenClawRepairConfirm && (
             <div
-              className="absolute inset-0 z-30 flex items-center justify-center bg-black/35 px-4 rounded-2xl"
+              className="maties-backdrop absolute inset-0 z-30 flex items-center justify-center rounded-[24px] px-4"
               onClick={() => {
                 if (!isRepairingOpenClaw) setShowOpenClawRepairConfirm(false);
               }}
             >
               <div
-                className="bg-surface border-border border rounded-2xl shadow-xl w-full max-w-md"
+                className="maties-card-prose maties-in w-full max-w-md"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="px-5 pt-5 pb-4 border-b border-border">
+                <div className="px-6 pb-3 pt-6">
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-muted text-primary">
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
                       <WrenchScrewdriverIcon className="h-5 w-5" />
                     </span>
-                    <h3 className="text-base font-semibold text-foreground">
+                    <h3 className="maties-row-title text-[15.5px]">
                       {i18nService.t('openClawRepairConfirmTitle')}
                     </h3>
                   </div>
@@ -4413,7 +4414,7 @@ const Settings: React.FC<SettingsProps> = ({
                     type="button"
                     onClick={() => setShowOpenClawRepairConfirm(false)}
                     disabled={isRepairingOpenClaw}
-                    className="px-3 py-1.5 text-sm text-foreground hover:bg-surface-raised rounded-xl border border-border disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    className={`${SETTINGS_ROW_PILL_CLASS} is-ghost`}
                   >
                     {i18nService.t('cancel')}
                   </button>
@@ -4421,7 +4422,7 @@ const Settings: React.FC<SettingsProps> = ({
                     type="button"
                     onClick={() => { void handleConfirmOpenClawRepair(); }}
                     disabled={isRepairingOpenClaw}
-                    className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm text-white bg-primary hover:bg-primary-hover rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
+                    className={`${SETTINGS_ROW_PILL_CLASS} is-primary`}
                   >
                     <WrenchScrewdriverIcon className="h-4 w-4" />
                     {isRepairingOpenClaw
@@ -4435,21 +4436,21 @@ const Settings: React.FC<SettingsProps> = ({
 
           {showTempCleanConfirm && (
             <div
-              className="absolute inset-0 z-30 flex items-center justify-center bg-black/35 px-4 rounded-2xl"
+              className="maties-backdrop absolute inset-0 z-30 flex items-center justify-center rounded-[24px] px-4"
               onClick={() => {
                 if (!isCleaningTempStorage) setShowTempCleanConfirm(false);
               }}
             >
               <div
-                className="bg-surface border-border border rounded-2xl shadow-xl w-full max-w-lg"
+                className="maties-card-prose maties-in w-full max-w-lg"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="px-5 pt-5 pb-4 border-b border-border">
+                <div className="px-6 pb-3 pt-6">
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-muted text-primary">
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
                       <TrashIcon className="h-5 w-5" />
                     </span>
-                    <h3 className="text-base font-semibold text-foreground">
+                    <h3 className="maties-row-title text-[15.5px]">
                       {i18nService.t('coworkTempCleanDialogTitle')}
                     </h3>
                   </div>
@@ -4517,7 +4518,7 @@ const Settings: React.FC<SettingsProps> = ({
                       type="button"
                       onClick={() => setShowTempCleanConfirm(false)}
                       disabled={isCleaningTempStorage}
-                      className="px-3 py-1.5 text-sm text-foreground hover:bg-surface-raised rounded-xl border border-border disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                      className={`${SETTINGS_ROW_PILL_CLASS} is-ghost`}
                     >
                       {i18nService.t('cancel')}
                     </button>
@@ -4525,7 +4526,7 @@ const Settings: React.FC<SettingsProps> = ({
                       type="button"
                       onClick={() => { void handleConfirmTempClean(); }}
                       disabled={isCleaningTempStorage || tempCleanSelectedDirs.length === 0}
-                      className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm text-white bg-primary hover:bg-primary-hover rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
+                      className={`${SETTINGS_ROW_PILL_CLASS} is-primary`}
                     >
                       {isCleaningTempStorage
                         ? <ArrowPathIcon className="h-4 w-4 animate-spin" />
@@ -4542,21 +4543,21 @@ const Settings: React.FC<SettingsProps> = ({
 
           {showOpenClawDataRestoreConfirm && (
             <div
-              className="absolute inset-0 z-30 flex items-center justify-center bg-black/35 px-4 rounded-2xl"
+              className="maties-backdrop absolute inset-0 z-30 flex items-center justify-center rounded-[24px] px-4"
               onClick={() => {
                 if (!isRestoringOpenClawData) setShowOpenClawDataRestoreConfirm(false);
               }}
             >
               <div
-                className="bg-surface border-border border rounded-2xl shadow-xl w-full max-w-md"
+                className="maties-card-prose maties-in w-full max-w-md"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="px-5 pt-5 pb-4 border-b border-border">
+                <div className="px-6 pb-3 pt-6">
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-muted text-primary">
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
                       <ArrowPathRoundedSquareIcon className="h-5 w-5" />
                     </span>
-                    <h3 className="text-base font-semibold text-foreground">
+                    <h3 className="maties-row-title text-[15.5px]">
                       {i18nService.t('openClawDataMigrationConfirmTitle')}
                     </h3>
                   </div>
@@ -4572,7 +4573,7 @@ const Settings: React.FC<SettingsProps> = ({
                     type="button"
                     onClick={() => setShowOpenClawDataRestoreConfirm(false)}
                     disabled={isRestoringOpenClawData}
-                    className="px-3 py-1.5 text-sm text-foreground hover:bg-surface-raised rounded-xl border border-border disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    className={`${SETTINGS_ROW_PILL_CLASS} is-ghost`}
                   >
                     {i18nService.t('cancel')}
                   </button>
@@ -4580,7 +4581,7 @@ const Settings: React.FC<SettingsProps> = ({
                     type="button"
                     onClick={() => { void handleConfirmOpenClawDataRestore(); }}
                     disabled={isRestoringOpenClawData}
-                    className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm text-white bg-primary hover:bg-primary-hover rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
+                    className={`${SETTINGS_ROW_PILL_CLASS} is-primary`}
                   >
                     {isRestoringOpenClawData
                       ? <ArrowPathIcon className="h-4 w-4 animate-spin" />
@@ -4595,12 +4596,12 @@ const Settings: React.FC<SettingsProps> = ({
           )}
 
           {(isBackingUpOpenClawData || isRestoringOpenClawData) && (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4">
-              <div className="w-full max-w-md rounded-2xl border border-border bg-surface px-5 py-5 text-center shadow-xl">
-                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary-muted text-primary">
+            <div className="maties-backdrop fixed inset-0 z-[70] flex items-center justify-center px-4">
+              <div className="maties-card-prose maties-in w-full max-w-md px-6 py-6 text-center">
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b]">
                   <ArrowPathIcon className="h-5 w-5 animate-spin" />
                 </div>
-                <h3 className="mt-4 text-base font-semibold text-foreground">
+                <h3 className="maties-row-title mt-4 text-[15.5px]">
                   {i18nService.t(isBackingUpOpenClawData
                     ? 'openClawDataBackupBlockingTitle'
                     : 'openClawDataMigrationBlockingTitle')}
@@ -4625,36 +4626,36 @@ const Settings: React.FC<SettingsProps> = ({
           {/* Memory Modal */}
           {showMemoryModal && (
             <div
-              className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 px-4 rounded-2xl"
+              className="maties-backdrop absolute inset-0 z-20 flex items-center justify-center rounded-[24px] px-4"
               onClick={resetCoworkMemoryEditor}
             >
               <div
-                className="bg-surface border-border border rounded-2xl shadow-xl w-full max-w-lg"
+                className="maties-card-prose maties-in w-full max-w-lg"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center gap-2.5 px-5 pt-5 pb-3">
-                  <h3 className="text-base font-semibold text-foreground">
+                <div className="flex items-center gap-2.5 px-6 pb-3 pt-6">
+                  <h3 className="maties-row-title text-[15.5px]">
                     {coworkMemoryEditingId ? i18nService.t('coworkMemoryCrudUpdate') : i18nService.t('coworkMemoryCrudCreate')}
                   </h3>
                   {coworkMemoryEditingId && (
-                    <span className="inline-flex items-center rounded-md bg-primary-muted px-2 py-0.5 text-[11px] text-primary">
+                    <span className="maties-status-pill maties-status-quiet">
                       {i18nService.t('coworkMemoryEditingTag')}
                     </span>
                   )}
                 </div>
 
                 <div className="px-5 pb-1">
-                  <label className="block text-xs font-medium text-secondary mb-1.5">
-                    {i18nService.t('coworkMemoryCrudContentLabel')}<span className="text-red-500 dark:text-red-400 ml-0.5">*</span>
+                  <label className="maties-label mb-1.5 block">
+                    {i18nService.t('coworkMemoryCrudContentLabel')}<span className="ml-0.5 text-[#e0322d]">*</span>
                   </label>
                   <textarea
                     value={coworkMemoryDraftText}
                     onChange={(event) => setCoworkMemoryDraftText(event.target.value)}
                     placeholder={i18nService.t('coworkMemoryCrudTextPlaceholder')}
                     autoFocus
-                    className="min-h-[220px] w-full resize-y rounded-lg border px-3.5 py-3 text-sm leading-relaxed border-border bg-surface text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                    className="maties-input maties-textarea min-h-[220px]"
                   />
-                  <div className="mt-1.5 text-[11px] leading-relaxed text-secondary">
+                  <div className="maties-caption mt-1.5">
                     {i18nService.t('coworkMemoryCrudMultilineHint')}
                   </div>
                 </div>
@@ -4663,7 +4664,7 @@ const Settings: React.FC<SettingsProps> = ({
                   <button
                     type="button"
                     onClick={resetCoworkMemoryEditor}
-                    className="px-3.5 py-1.5 text-sm text-foreground hover:bg-surface-raised rounded-lg border border-border transition-colors"
+                    className={`${SETTINGS_ROW_PILL_CLASS} is-ghost`}
                   >
                     {i18nService.t('cancel')}
                   </button>
@@ -4671,7 +4672,7 @@ const Settings: React.FC<SettingsProps> = ({
                     type="button"
                     onClick={() => { void handleSaveCoworkMemoryEntry(); }}
                     disabled={!coworkMemoryDraftText.trim() || coworkMemoryListLoading}
-                    className="px-3.5 py-1.5 text-sm text-white bg-primary hover:bg-primary-hover rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
+                    className={`${SETTINGS_ROW_PILL_CLASS} is-primary`}
                   >
                     {coworkMemoryEditingId ? i18nService.t('save') : i18nService.t('coworkMemoryCrudCreate')}
                   </button>

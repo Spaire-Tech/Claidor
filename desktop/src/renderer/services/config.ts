@@ -192,10 +192,10 @@ const normalizeProvidersConfig = (providers: AppConfig['providers']): AppConfig[
 
 const legacyShortcutDefaults: Partial<Record<ShortcutAction, string[]>> = {
   [ShortcutAction.NewChat]: ['Ctrl+N'],
-  [ShortcutAction.Search]: ['Ctrl+F'],
+  [ShortcutAction.Search]: ['Ctrl+K'],
   [ShortcutAction.Settings]: ['Ctrl+,'],
   [ShortcutAction.ShowShortcuts]: ['Ctrl+/'],
-  [ShortcutAction.FocusPrompt]: ['Ctrl+K'],
+  [ShortcutAction.FocusPrompt]: ['Ctrl+L'],
   [ShortcutAction.StopCurrentTask]: ['Ctrl+.'],
   [ShortcutAction.ToggleSidebar]: ['Ctrl+B'],
   [ShortcutAction.ToggleArtifacts]: ['Ctrl+Shift+B'],

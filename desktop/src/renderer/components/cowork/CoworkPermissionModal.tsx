@@ -1,9 +1,10 @@
-import { ExclamationTriangleIcon, MinusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { ASK_USER_QUESTION_TOOL_NAME } from '../../../shared/cowork/constants';
 import { i18nService } from '../../services/i18n';
 import type { CoworkPermissionRequest, CoworkPermissionResult } from '../../types/cowork';
+import ApprovalCardShell from './ApprovalCardShell';
+import { getToolStepKind, getToolStepTitle } from './toolStepPresentation';
 
 type DangerLevel = 'safe' | 'caution' | 'destructive';
 
@@ -25,16 +26,22 @@ const NEGATIVE_CONFIRM_PATTERNS = [
   /\bstop\b/i,
 ] as const;
 
-const DANGER_REASON_I18N_MAP: Record<string, string> = {
-  'recursive-delete': 'dangerReasonRecursiveDelete',
-  'git-force-push': 'dangerReasonGitForcePush',
-  'git-reset-hard': 'dangerReasonGitResetHard',
-  'disk-overwrite': 'dangerReasonDiskOverwrite',
-  'disk-format': 'dangerReasonDiskFormat',
-  'file-delete': 'dangerReasonFileDelete',
-  'git-push': 'dangerReasonGitPush',
-  'process-kill': 'dangerReasonProcessKill',
-  'permission-change': 'dangerReasonPermissionChange',
+/**
+ * The approval card's words, per kind of step (docs/maties/design.md,
+ * « Approval »): one plain sentence of what will happen, the action verb,
+ * and one line of consequence. The card never says « execute » or
+ * « permission ».
+ */
+const APPROVAL_WORDS_BY_REASON: Record<string, { sentenceKey: string; verbKey: string; consequenceKey: string }> = {
+  'recursive-delete': { sentenceKey: 'matiesApprovalDeleteFolder', verbKey: 'matiesDelete', consequenceKey: 'matiesConsequenceIrreversible' },
+  'file-delete': { sentenceKey: 'matiesApprovalDeleteFiles', verbKey: 'matiesDelete', consequenceKey: 'matiesConsequenceIrreversible' },
+  'git-force-push': { sentenceKey: 'matiesApprovalGitForcePush', verbKey: 'matiesPush', consequenceKey: 'matiesConsequenceIrreversible' },
+  'git-reset-hard': { sentenceKey: 'matiesApprovalGitResetHard', verbKey: 'matiesDiscard', consequenceKey: 'matiesConsequenceIrreversible' },
+  'disk-overwrite': { sentenceKey: 'matiesApprovalDisk', verbKey: 'matiesRun', consequenceKey: 'matiesConsequenceIrreversible' },
+  'disk-format': { sentenceKey: 'matiesApprovalDisk', verbKey: 'matiesRun', consequenceKey: 'matiesConsequenceIrreversible' },
+  'git-push': { sentenceKey: 'matiesApprovalGitPush', verbKey: 'matiesPush', consequenceKey: 'matiesConsequenceShared' },
+  'process-kill': { sentenceKey: 'matiesApprovalProcessKill', verbKey: 'matiesStop', consequenceKey: 'matiesConsequenceChanges' },
+  'permission-change': { sentenceKey: 'matiesApprovalPermissions', verbKey: 'matiesAllow', consequenceKey: 'matiesConsequenceChanges' },
 };
 
 /** Fallback detection when dangerLevel is not provided by the adapter */
@@ -61,11 +68,24 @@ function detectDangerLevelFromCommand(command: string): DangerLevel {
   return 'safe';
 }
 
+/** Fallback reason when the adapter gives none: the same buckets it uses. */
+function detectDangerReasonFromCommand(command: string): string {
+  if (/\brm\s+(-[a-zA-Z]*r[a-zA-Z]*f?|--recursive)\b/i.test(command)) return 'recursive-delete';
+  if (/\bgit\s+push\s+.*--force\b/i.test(command)) return 'git-force-push';
+  if (/\bgit\s+reset\s+--hard\b/i.test(command)) return 'git-reset-hard';
+  if (/\b(dd|mkfs)\b/i.test(command)) return 'disk-overwrite';
+  if (/\b(rm|rmdir|unlink|del|erase|remove-item|trash)\b/i.test(command)) return 'file-delete';
+  if (/\bgit\s+push\b/i.test(command)) return 'git-push';
+  if (/\b(kill|killall|pkill)\b/i.test(command)) return 'process-kill';
+  if (/\b(chmod|chown)\b/i.test(command)) return 'permission-change';
+  return '';
+}
+
 interface CoworkPermissionModalProps {
   permission: CoworkPermissionRequest;
   onRespond: (result: CoworkPermissionResult) => void;
   onMinimize?: () => void;
-  /** Keep the modal mounted (so in-progress answers survive) but visually hidden while minimized. */
+  /** Keep the card mounted (so in-progress answers survive) but visually hidden while minimized. */
   hidden?: boolean;
 }
 
@@ -95,14 +115,14 @@ const renderTextWithLinks = (text: string): React.ReactNode[] => {
             e.preventDefault();
             (window as any).electron?.shell?.openExternal(linkUrl);
           }}
-          className="text-primary hover:underline cursor-pointer"
+          style={{ color: '#1c1f23', textDecoration: 'underline', textUnderlineOffset: 2 }}
         >
           {linkText}
         </a>
       );
     } else if (match[3]) {
       parts.push(
-        <span key={match.index} className="text-secondary">
+        <span key={match.index} style={{ color: '#8f96a0' }}>
           {match[3]}
         </span>
       );
@@ -128,7 +148,7 @@ const renderSubtitleWithHighlight = (text: string): React.ReactNode[] => {
       parts.push(text.slice(lastIndex, match.index));
     }
     parts.push(
-      <span key={match.index} className="text-primary font-semibold">
+      <span key={match.index} style={{ fontWeight: 500, color: '#1c1f23' }}>
         {match[1]}
       </span>
     );
@@ -140,7 +160,9 @@ const renderSubtitleWithHighlight = (text: string): React.ReactNode[] => {
   }
 
   return parts;
-};type QuestionItem = {
+};
+
+type QuestionItem = {
   question: string;
   header?: string;
   title?: string;
@@ -178,6 +200,79 @@ const resolveConfirmModeButtons = (question: QuestionItem): { primary: QuestionO
   return { primary: firstOption, secondary: secondOption };
 };
 
+/** Enter is never the yes: the blue button only answers to a click or the space bar. */
+const preventEnter = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+  if (event.key === 'Enter') event.preventDefault();
+};
+
+// ── The card's pieces ────────────────────────────────────────────────────────
+
+export const ApprovalSentence: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={{ fontSize: 15, fontWeight: 500, letterSpacing: '-.01em', lineHeight: 1.4, color: '#1c1f23', textWrap: 'pretty' }}>
+    {children}
+  </div>
+);
+
+/** The exact thing, in JetBrains Mono on #f6f7f9, scrollable if long. */
+export const ApprovalExact: React.FC<{ text: string; label?: string }> = ({ text, label }) => (
+  <div className="maties-inset" style={{ padding: '10px 14px', maxHeight: 180, overflow: 'auto' }} aria-label={label}>
+    <pre className="maties-mono whitespace-pre-wrap break-words" style={{ fontSize: 12.5, lineHeight: 1.55, color: '#1c1f23', margin: 0 }}>
+      {text}
+    </pre>
+  </div>
+);
+
+export const ApprovalConsequence: React.FC<{ children: React.ReactNode; tone?: 'plain' | 'warn' }> = ({ children, tone = 'plain' }) => (
+  <div style={{ fontSize: 13.5, letterSpacing: '-.006em', lineHeight: 1.45, color: tone === 'warn' ? '#c8790a' : '#4a4f57' }}>
+    {children}
+  </div>
+);
+
+export const ApprovalButtons: React.FC<{
+  onNotNow: () => void;
+  notNowLabel?: string;
+  onYes: () => void;
+  yesLabel: string;
+  yesDisabled?: boolean;
+  onLater?: () => void;
+  leading?: React.ReactNode;
+}> = ({ onNotNow, notNowLabel, onYes, yesLabel, yesDisabled = false, onLater, leading }) => (
+  <div className="flex flex-wrap items-center gap-2" style={{ paddingTop: 2 }}>
+    {leading}
+    {onLater && (
+      <button type="button" onClick={onLater} className="maties-button maties-button-ghost" style={{ color: '#8f96a0' }}>
+        {i18nService.t('matiesLater')}
+      </button>
+    )}
+    <span className="flex-1" />
+    <button type="button" onClick={onNotNow} className="maties-button maties-button-ghost">
+      {notNowLabel ?? i18nService.t('matiesNotNow')}
+    </button>
+    <button
+      type="button"
+      onClick={onYes}
+      onKeyDown={preventEnter}
+      disabled={yesDisabled}
+      className="maties-button maties-button-primary"
+    >
+      {yesLabel}
+    </button>
+  </div>
+);
+
+export const ApprovalCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="maties-card flex flex-col gap-3" style={{ padding: '16px 18px 14px 18px', alignSelf: 'stretch' }}>
+    {children}
+  </div>
+);
+
+// ── CoworkPermissionModal ────────────────────────────────────────────────────
+
+/**
+ * The approval (docs/maties/design.md, « Approval »). The name is
+ * historical: it is no longer a modal but the step's result card. The
+ * request, the answers and `onRespond` are exactly what they were.
+ */
 const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
   permission,
   onRespond,
@@ -299,17 +394,20 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
     };
   };
 
-  const { dangerLevel, dangerReasonText } = useMemo(() => {
+  const isBashTool = permission.toolName === 'Bash';
+  const isPluginApproval = (toolInput as Record<string, unknown>).approvalKind === 'plugin';
+
+  const { dangerLevel, dangerReason } = useMemo(() => {
     const questionText = isConfirmMode ? questions[0]?.question ?? '' : '';
     const looksLikeDeleteQuestion = requestedCommand
       ? detectDangerLevelFromCommand(requestedCommand) !== 'safe'
       : /\b(delete|remove|rm|unlink|rmdir|erase|del)\b/i.test(questionText);
 
     if (permission.toolName === ASK_USER_QUESTION_TOOL_NAME && looksLikeDeleteQuestion) {
-      return { dangerLevel: 'caution' as DangerLevel, dangerReasonText: i18nService.t('dangerReasonFileDelete') };
+      return { dangerLevel: 'caution' as DangerLevel, dangerReason: 'file-delete' };
     }
-    if (permission.toolName !== 'Bash') {
-      return { dangerLevel: 'safe' as DangerLevel, dangerReasonText: '' };
+    if (!isBashTool) {
+      return { dangerLevel: 'safe' as DangerLevel, dangerReason: '' };
     }
     const input = permission.toolInput as Record<string, unknown>;
     const command = String(input?.command ?? '');
@@ -319,12 +417,12 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
       ? input.dangerLevel as DangerLevel
       : detectDangerLevelFromCommand(command);
 
-    const reason = typeof input?.dangerReason === 'string' ? input.dangerReason : '';
-    const i18nKey = DANGER_REASON_I18N_MAP[reason];
-    const reasonText = i18nKey ? i18nService.t(i18nKey) : '';
+    const reason = typeof input?.dangerReason === 'string' && input.dangerReason
+      ? input.dangerReason
+      : detectDangerReasonFromCommand(command);
 
-    return { dangerLevel: level, dangerReasonText: reasonText };
-  }, [isConfirmMode, permission.toolName, permission.toolInput, questions, requestedCommand]);
+    return { dangerLevel: level, dangerReason: reason };
+  }, [isBashTool, isConfirmMode, permission.toolName, permission.toolInput, questions, requestedCommand]);
 
   const getSelectedValues = (question: QuestionItem): string[] => {
     const rawValue = answers[question.question] ?? '';
@@ -366,13 +464,6 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
     ? questions.every((question) => (answers[question.question] ?? '').trim())
     : true;
 
-  const denyButtonLabel = isQuestionTool && !isConfirmMode
-    ? i18nService.t('coworkDenyRequest')
-    : i18nService.t('coworkDeny');
-  const approveButtonLabel = isQuestionTool && !isConfirmMode
-    ? i18nService.t('coworkConfirmSelection')
-    : i18nService.t('coworkApprove');
-
   const handleConfirmModeSelect = (optionLabel: string) => {
     if (!isConfirmMode) return;
     onRespond(buildQuestionAnswerResult(questions[0].question, optionLabel));
@@ -409,213 +500,137 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
     });
   };
 
+  // ── The words ──────────────────────────────────────────────────────────────
+
+  const words = (() => {
+    if (isConfirmMode) {
+      const question = questions[0];
+      return {
+        sentence: question.title ?? i18nService.t('matiesApprovalQuestion'),
+        exact: requestedCommand || null,
+        consequence: dangerReason && APPROVAL_WORDS_BY_REASON[dangerReason]
+          ? i18nService.t(APPROVAL_WORDS_BY_REASON[dangerReason].consequenceKey)
+          : null,
+        verb: confirmModeButtons?.primary.label ?? i18nService.t('matiesContinue'),
+        notNow: confirmModeButtons?.secondary.label ?? i18nService.t('matiesNotNow'),
+      };
+    }
+    if (isQuestionTool) {
+      return {
+        sentence: i18nService.t('matiesApprovalQuestion'),
+        exact: requestedCommand || null,
+        consequence: i18nService.t('matiesConsequenceAnswer'),
+        verb: i18nService.t('matiesContinue'),
+        notNow: i18nService.t('matiesNotNow'),
+      };
+    }
+    if (isBashTool) {
+      const input = permission.toolInput as Record<string, unknown>;
+      const command = String(input?.command ?? '').trim();
+      const cwd = typeof input?.cwd === 'string' && input.cwd.trim() ? input.cwd.trim() : '';
+      const known = APPROVAL_WORDS_BY_REASON[dangerReason];
+      const sentence = known ? i18nService.t(known.sentenceKey) : i18nService.t('matiesApprovalCommand');
+      const consequence = known
+        ? i18nService.t(known.consequenceKey)
+        : i18nService.t(dangerLevel === 'safe' ? 'matiesConsequenceRuns' : 'matiesConsequenceChanges');
+      return {
+        sentence,
+        exact: cwd ? `${command}\n\n${i18nService.t('matiesApprovalInFolder').replace('{folder}', cwd)}` : command,
+        consequence,
+        verb: i18nService.t(known ? known.verbKey : 'matiesRun'),
+        notNow: i18nService.t('matiesNotNow'),
+      };
+    }
+    if (isPluginApproval) {
+      const input = permission.toolInput as Record<string, unknown>;
+      const title = typeof input.title === 'string' && input.title.trim() ? input.title.trim() : null;
+      const description = typeof input.description === 'string' && input.description.trim() ? input.description.trim() : null;
+      const tool = typeof input.toolName === 'string' && input.toolName.trim() ? input.toolName.trim() : permission.toolName;
+      return {
+        sentence: title ?? i18nService.t('matiesApprovalPlugin').replace('{tool}', tool),
+        exact: description,
+        consequence: i18nService.t('matiesConsequenceRuns'),
+        verb: i18nService.t('matiesAllow'),
+        notNow: i18nService.t('matiesNotNow'),
+      };
+    }
+    const kind = getToolStepKind(permission.toolName);
+    return {
+      sentence: `${i18nService.t('matiesApprovalGeneric')} — ${getToolStepTitle(kind).toLowerCase()}`,
+      exact: formatToolInput(permission.toolInput),
+      consequence: i18nService.t('matiesConsequenceRuns'),
+      verb: i18nService.t('matiesAllow'),
+      notNow: i18nService.t('matiesNotNow'),
+    };
+  })();
+
+  const consequenceTone = dangerLevel === 'destructive' ? 'warn' : 'plain';
+
   return (
-    <div className={`fixed inset-0 z-50 items-center justify-center modal-backdrop ${hidden ? 'hidden' : 'flex'}`}>
-      <div className="modal-content w-fit min-w-[28rem] max-w-[calc(100vw-2rem)] mx-4 bg-surface rounded-2xl shadow-modal overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-border">
-          <div className={`p-2 rounded-full ${isQuestionTool && !isConfirmMode ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-yellow-100 dark:bg-yellow-900/30'}`}>
-            {isConfirmMode && questions[0]?.title ? (
-              <svg className="h-6 w-6 text-yellow-600 dark:text-yellow-500" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12.2926 2.29317C12.683 1.90249 13.3162 1.90225 13.7068 2.29262L16.7115 5.29492C16.8993 5.48257 17.0047 5.7372 17.0046 6.00269C17.0045 6.26817 16.8989 6.52272 16.7109 6.71023L13.7063 9.70792C13.3153 10.098 12.6821 10.0973 12.2921 9.70629C11.902 9.31531 11.9027 8.68215 12.2937 8.29208L13.5785 7.01027C9.07988 7.22996 5.5 10.9469 5.5 15.5C5.5 20.1944 9.30558 24 14 24C18.5429 24 22.254 20.4356 22.4882 15.9515C22.517 15.3999 22.9875 14.9762 23.539 15.005C24.0906 15.0338 24.5143 15.5043 24.4855 16.0558C24.1961 21.5969 19.6126 26 14 26C8.20101 26 3.5 21.299 3.5 15.5C3.5 9.8368 7.98343 5.22075 13.5945 5.00769L12.2932 3.70738C11.9025 3.31701 11.9023 2.68384 12.2926 2.29317Z" fill="currentColor"/>
-                <path d="M18.2071 12.2929C18.5976 12.6834 18.5976 13.3166 18.2071 13.7071L13.2071 18.7071C13.0196 18.8946 12.7652 19 12.5 19C12.2348 19 11.9804 18.8946 11.7929 18.7071L9.79289 16.7071C9.40237 16.3166 9.40237 15.6834 9.79289 15.2929C10.1834 14.9024 10.8166 14.9024 11.2071 15.2929L12.5 16.5858L16.7929 12.2929C17.1834 11.9024 17.8166 11.9024 18.2071 12.2929Z" fill="currentColor"/>
-              </svg>
-            ) : (
-              <ExclamationTriangleIcon className={`h-6 w-6 ${isQuestionTool && !isConfirmMode ? 'text-blue-600 dark:text-blue-500' : 'text-yellow-600 dark:text-yellow-500'}`} />
-            )}
+    <ApprovalCardShell slotKeys={[permission.toolUseId, permission.requestId]} hidden={hidden}>
+      <ApprovalCard>
+        <ApprovalSentence>
+          {isConfirmMode ? renderTextWithLinks(words.sentence) : words.sentence}
+        </ApprovalSentence>
+        {isConfirmMode && questions[0].subtitle && (
+          <div style={{ fontSize: 14, lineHeight: 1.5, color: '#4a4f57' }}>
+            {renderSubtitleWithHighlight(questions[0].subtitle)}
           </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold text-foreground">
-              {isConfirmMode && questions[0]?.title
-                ? questions[0].title
-                : isQuestionTool && !isConfirmMode
-                  ? i18nService.t('coworkSelectionRequired')
-                  : i18nService.t('coworkPermissionRequired')}
-            </h2>
-            <p className="text-sm text-secondary">
-              {isConfirmMode && questions[0]?.subtitle
-                ? renderSubtitleWithHighlight(questions[0].subtitle)
-                : isQuestionTool && !isConfirmMode
-                  ? i18nService.t('coworkSelectionDescription')
-                  : i18nService.t('coworkPermissionDescription')}
-            </p>
+        )}
+        {isConfirmMode && questions[0].title && questions[0].question !== questions[0].title && (
+          <div style={{ fontSize: 14, lineHeight: 1.5, color: '#4a4f57', whiteSpace: 'pre-wrap' }}>
+            {renderTextWithLinks(questions[0].question)}
           </div>
-          {onMinimize && (
-            <button
-              type="button"
-              onClick={onMinimize}
-              className="p-2 rounded-lg hover:bg-surface-raised text-secondary transition-colors"
-              aria-label={i18nService.t('coworkPermissionMinimize')}
-              title={i18nService.t('coworkPermissionMinimize')}
-            >
-              <MinusIcon className="h-5 w-5" />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleDeny}
-            className="p-2 rounded-lg hover:bg-surface-raised text-secondary transition-colors"
-            aria-label={i18nService.t('coworkPermissionCancel')}
-            title={i18nService.t('coworkPermissionCancel')}
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
-          {isConfirmMode ? (
-            /* Simple confirm dialog — show question text + allow/deny buttons */
-            <div className="px-3 py-2 rounded-lg bg-background">
-              <p className="text-sm text-foreground whitespace-pre-wrap text-left">
-                {renderTextWithLinks(questions[0].question)}
-              </p>
-              {requestedCommand && (
-                <div className="mt-3">
-                  <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1">
-                    {i18nService.t('coworkToolInput')}
-                  </label>
-                  <div className="px-3 py-2 rounded-lg bg-surface max-h-40 overflow-y-auto">
-                    <pre className="text-code text-foreground whitespace-pre-wrap break-words font-mono">
-                      {requestedCommand}
-                    </pre>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : isQuestionTool ? (
-            <>
-              {questions.map((question) => {
-                const selectedValues = getSelectedValues(question);
-                return (
-                  <div
-                    key={question.question}
-                    className="rounded-xl border border-border p-4 space-y-3"
-                  >
-                    {/* Question */}
-                    <div className="text-sm font-medium text-foreground">
-                      {question.header && (
-                        <span className="inline-block text-[11px] uppercase tracking-wide px-2 py-0.5 mr-1.5 rounded-full bg-surface-raised text-secondary align-middle">
-                          {question.header}
-                        </span>
+        )}
+        {isQuestionTool && !isConfirmMode && questions.map((question) => {
+          const selectedValues = getSelectedValues(question);
+          return (
+            <div key={question.question} className="flex flex-col gap-3">
+              <div className="maties-prose" style={{ fontSize: 17.5 }}>
+                {question.header && (
+                  <span className="maties-meta mr-2 uppercase" style={{ fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '.06em', fontSize: 11.5 }}>
+                    {question.header}
+                  </span>
+                )}
+                {question.question}
+              </div>
+              <div className="flex flex-wrap gap-2" role={question.multiSelect ? 'group' : 'radiogroup'}>
+                {question.options.map((option) => {
+                  const isSelected = selectedValues.includes(option.label);
+                  return (
+                    <button
+                      key={option.label}
+                      type="button"
+                      onClick={() => handleSelectOption(question, option.label)}
+                      className="maties-pill"
+                      aria-pressed={isSelected}
+                      title={option.description}
+                    >
+                      <span>{option.label}</span>
+                      {option.description && (
+                        <span style={{ fontSize: 12.5, opacity: .7 }}>{option.description}</span>
                       )}
-                      {question.question}
-                    </div>
-                    {/* Command details */}
-                    {requestedCommand && (
-                      <div>
-                        <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1">
-                          {i18nService.t('coworkToolInput')}
-                        </label>
-                        <div className="px-3 py-2 rounded-lg bg-background max-h-40 overflow-y-auto">
-                          <pre className="text-code text-foreground whitespace-pre-wrap break-words font-mono">
-                            {requestedCommand}
-                          </pre>
-                        </div>
-                      </div>
-                    )}
-                    {/* Options */}
-                    <div className="space-y-2">
-                      {question.options.map((option) => {
-                        const isSelected = selectedValues.includes(option.label);
-                        return (
-                          <button
-                            key={option.label}
-                            type="button"
-                            onClick={() => handleSelectOption(question, option.label)}
-                            className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
-                              isSelected
-                                ? 'border-primary bg-primary/10 text-foreground'
-                                : 'border-border text-secondary hover:bg-surface-raised'
-                            }`}
-                          >
-                            <div className="text-sm font-medium">{option.label}</div>
-                            {option.description && (
-                              <div className="text-xs mt-1 opacity-80">{option.description}</div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          ) : (
-            <>
-              {/* Tool name */}
-              <div>
-                <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1">
-                  {i18nService.t('coworkToolName')}
-                </label>
-                <div className="px-3 py-2 rounded-lg bg-background">
-                  <code className="text-sm text-foreground">
-                    {permission.toolName}
-                  </code>
-                </div>
+                    </button>
+                  );
+                })}
               </div>
-
-              {/* Tool input */}
-              <div>
-                <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1">
-                  {i18nService.t('coworkToolInput')}
-                </label>
-                <div className="px-3 py-2 rounded-lg bg-background">
-                  <pre className="text-code text-foreground whitespace-pre-wrap break-words font-mono">
-                    {formatToolInput(permission.toolInput)}
-                  </pre>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Warning for dangerous operations - pinned outside the scroll area, always visible */}
-        {(!isQuestionTool || isConfirmMode) && dangerLevel === 'destructive' && (
-          <div className="flex items-start gap-2 p-3 mx-6 my-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <ExclamationTriangleIcon className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-red-700 dark:text-red-400">
-                {i18nService.t('coworkDestructiveOperation')}
-              </p>
-              {dangerReasonText && (
-                <p className="text-xs text-red-600 dark:text-red-500 mt-0.5">{dangerReasonText}</p>
-              )}
             </div>
-          </div>
+          );
+        })}
+        {words.exact && <ApprovalExact text={words.exact} />}
+        {words.consequence && (
+          <ApprovalConsequence tone={consequenceTone}>{words.consequence}</ApprovalConsequence>
         )}
-        {(!isQuestionTool || isConfirmMode) && dangerLevel === 'caution' && (
-          <div className="flex items-start gap-2 p-3 mx-6 my-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-                {i18nService.t('coworkCautionOperation')}
-              </p>
-              {dangerReasonText && (
-                <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-0.5">{dangerReasonText}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
-          <button
-            onClick={isConfirmMode && confirmModeButtons ? () => handleConfirmModeSelect(confirmModeButtons.secondary.label) : handleDeny}
-            className="px-4 py-2 text-sm font-medium rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-          >
-            {isConfirmMode && confirmModeButtons ? confirmModeButtons.secondary.label : denyButtonLabel}
-          </button>
-          <button
-            onClick={handleApprove}
-            disabled={!isComplete}
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-hover text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isConfirmMode && confirmModeButtons ? confirmModeButtons.primary.label : approveButtonLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+        <ApprovalButtons
+          onNotNow={isConfirmMode && confirmModeButtons ? () => handleConfirmModeSelect(confirmModeButtons.secondary.label) : handleDeny}
+          notNowLabel={words.notNow}
+          onYes={handleApprove}
+          yesLabel={words.verb}
+          yesDisabled={!isComplete}
+          onLater={onMinimize}
+        />
+      </ApprovalCard>
+    </ApprovalCardShell>
   );
 };
 

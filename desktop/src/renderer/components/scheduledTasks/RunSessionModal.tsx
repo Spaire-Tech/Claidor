@@ -265,7 +265,7 @@ const RunSessionModal: React.FC<RunSessionModalProps> = ({
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-3xl mx-4 max-h-[80vh] flex flex-col rounded-2xl shadow-2xl bg-background border border-border overflow-hidden"
+        className="maties-card-prose maties-in relative mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

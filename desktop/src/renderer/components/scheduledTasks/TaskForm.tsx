@@ -1306,7 +1306,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
             </button>
 
             {channelDropdownOpen && (
-              <div className="absolute bottom-full z-50 mb-1 w-full rounded-xl border border-border bg-surface shadow-popover popover-enter overflow-hidden">
+              <div className="maties-menu absolute bottom-full z-50 mb-1 w-full overflow-hidden">
                 <div className="max-h-72 overflow-y-auto py-1">
                   <button
                     type="button"
@@ -1414,7 +1414,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
               </button>
 
               {convDropdownOpen && !conversationsLoading && (
-                <div className="absolute bottom-full z-50 mb-1 w-full rounded-xl border border-border bg-surface shadow-popover popover-enter overflow-hidden">
+                <div className="maties-menu absolute bottom-full z-50 mb-1 w-full overflow-hidden">
                   <div className="max-h-72 overflow-y-auto py-1">
                     {conversations.length === 0 ? (
                       <div className="px-3 py-2 text-[13px] text-secondary">
@@ -1650,7 +1650,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
             type="button"
             onClick={() => void handleSubmit()}
             disabled={submitting}
-            className="px-4 py-1.5 text-[14px] font-normal leading-5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
+            className="maties-pill-sm is-primary"
           >
             {submitting
               ? i18nService.t('saving')
@@ -1687,8 +1687,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
       <Modal
         isOpen
         onClose={() => setPayloadEditorOpen(false)}
-        overlayClassName="fixed inset-0 z-[60] flex items-center justify-center bg-black/10 dark:bg-black/50 p-6"
-        className="flex h-[min(720px,calc(100vh-48px))] w-[min(960px,calc(100vw-48px))] flex-col overflow-hidden rounded-xl border border-surface bg-surface shadow-[0_12px_40px_rgba(0,0,0,0.16)]"
+        overlayClassName="maties-backdrop fixed inset-0 z-[60] flex items-center justify-center p-6"
+        className="maties-card-prose maties-in flex h-[min(720px,calc(100vh-48px))] w-[min(960px,calc(100vw-48px))] flex-col overflow-hidden"
       >
         <div className="flex shrink-0 items-start justify-between gap-3 px-5 py-4">
           <div className="min-w-0">
@@ -1727,7 +1727,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
           <button
             type="button"
             onClick={() => setPayloadEditorOpen(false)}
-            className="px-4 py-1.5 text-[14px] font-normal leading-5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+            className="maties-pill-sm is-primary"
           >
             {i18nService.t('scheduledTasksFormPayloadEditorDone')}
           </button>

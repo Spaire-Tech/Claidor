@@ -43,15 +43,19 @@ founder's final name) everywhere: `package.json`, `electron-builder.json`
 for either rename: nothing had shipped. The MIT notices stay in `LICENSE`,
 in the source headers that carried them, and on the About screen.
 
-Logo: the founder's mark, one brush stroke like a wave. Until the original
-vector file is in the repository, `scripts/generate-maties-mark.cjs` writes
-a hand-traced `build/logo/maties-mark.svg` from a centre line, and
-`scripts/render-brand-assets.cjs` (Chromium through Playwright, no
-ImageMagick) renders from that SVG every raster the app ships: the PNG
+Logo: the sphere, as the founder drew it in the chat design
+(`docs/maties/design.md`, section 2): three blurred gradient layers in a
+circle, alive in the app (`src/renderer/components/design/Sphere.tsx`)
+and rendered still by `scripts/render-brand-assets.cjs` (Chromium through
+Playwright, no ImageMagick) into every raster the app ships: the PNG
 ladder under `build/icons/png`, `build/icons/mac/icon.icns`,
-`build/icons/win/icon.ico`, `public/logo.png` (the mark on a white rounded
-tile) and the menu-bar icons under `resources/tray` (the mark alone). To
-use the real logo, replace the SVG and run `npm run brand:render`.
+`build/icons/win/icon.ico`, `public/logo.png` (the sphere on a white
+rounded tile) and the menu-bar icons under `resources/tray`. `npm run
+brand:render` regenerates them. The design itself: the founder's chat
+screen under `docs/maties/design/`, its rules in `docs/maties/design.md`,
+its fonts (Google Fonts, SIL Open Font License) under `public/fonts`, the
+default avatar under `public/avatars`, the file marks under
+`public/file-icons`.
 
 Language: English only. The Chinese dictionaries in
 `src/renderer/services/i18n.ts` and `src/main/i18n.ts` were deleted;

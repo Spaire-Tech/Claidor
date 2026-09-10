@@ -19,8 +19,10 @@ import { McpMarketplaceCategoryInfo,McpRegistryEntry, McpServerConfig, McpServer
 import { CARD_ACTION_PILL_CLASS, DETAIL_ACTION_PILL_CLASS } from '../common/actionPillStyles';
 import CardOverflowMenu, { type CardOverflowMenuItem } from '../common/CardOverflowMenu';
 import CardToggle from '../common/CardToggle';
-import { MANAGEMENT_BODY_TEXT, MANAGEMENT_META_TEXT, MANAGEMENT_TITLE_TEXT } from '../common/managementTypography';
+import { MANAGEMENT_BODY_TEXT, MANAGEMENT_META_TEXT } from '../common/managementTypography';
 import Modal from '../common/Modal';
+import EmptyState from '../design/EmptyState';
+import Pill, { PillTone } from '../design/Pill';
 import ErrorMessage from '../ErrorMessage';
 import EditIcon from '../icons/EditIcon';
 import PlusCircleIcon from '../icons/PlusCircleIcon';
@@ -1171,26 +1173,8 @@ const McpManager: React.FC = () => {
     return entry ? renderMarketplaceDetail(entry) : null;
   };
 
-  const tabClass = (tab: McpTab) =>
-    `relative px-2.5 pb-2.5 pt-0.5 ${MANAGEMENT_TITLE_TEXT} font-semibold transition-colors ${
-      activeTab === tab
-        ? 'text-foreground'
-        : 'text-secondary hover:text-foreground'
-    }`;
-
-  const tabIndicatorClass = (tab: McpTab) =>
-    `absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full transition-colors ${
-      activeTab === tab ? 'bg-primary' : 'bg-transparent'
-    }`;
-
   return (
-    <div className="relative space-y-4">
-      <div className="pb-2">
-        <p className={`${MANAGEMENT_BODY_TEXT} text-secondary`}>
-          {i18nService.t('mcpDescription')}
-        </p>
-      </div>
-
+    <div className="relative space-y-5">
       {actionError && (
         <ErrorMessage
           message={actionError}
@@ -1203,16 +1187,45 @@ const McpManager: React.FC = () => {
         data-skin-management-toolbar="true"
         className="sticky top-0 z-10 space-y-4 bg-background pb-2"
       >
-        {/* Search */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
+        {/* The Installed / Marketplace pills, the search box, and « Add server » */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5" role="tablist">
+            {MCP_TAB_ORDER.map((tab) => {
+              const count = tab === McpTab.Installed
+                ? installedItems.length
+                : (isLoadingMarketplace ? 0 : marketplaceCount);
+              return (
+                <Pill
+                  key={tab}
+                  role="tab"
+                  compact
+                  aria-selected={activeTab === tab}
+                  tone={activeTab === tab ? PillTone.Selected : PillTone.Quiet}
+                  onClick={() => {
+                    reportMcpAction('tab_change', {
+                      source: 'mcp_manager',
+                      activeTab,
+                      targetTab: tab,
+                    });
+                    setActiveTab(tab);
+                  }}
+                >
+                  {i18nService.t(MCP_TAB_LABEL_KEYS[tab])}
+                  {count > 0 && (
+                    <span className="maties-mono ml-1 text-[11.5px] text-[#8f96a0]">{count}</span>
+                  )}
+                </Pill>
+              );
+            })}
+          </div>
+          <div className="relative ml-auto w-full max-w-[300px] flex-1">
+            <SearchIcon className="maties-input-icon-glyph h-4 w-4" />
             <input
               type="text"
               placeholder={i18nService.t('searchMcpServers')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-surface text-foreground placeholder-secondary border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+              className="maties-input maties-input-icon pr-9"
             />
             {searchQuery && (
               <button
@@ -1229,53 +1242,16 @@ const McpManager: React.FC = () => {
                   });
                   setSearchQuery('');
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-secondary hover:text-primary transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[#9aa1ab] transition-colors hover:text-[#1c1f23]"
               >
                 <XCircleIconSolid className="h-4 w-4" />
               </button>
             )}
           </div>
           {/* Adding a server by hand is an action, not a place to browse. */}
-          <button
-            type="button"
-            onClick={handleOpenCreateForm}
-            className="px-3 py-2 text-sm rounded-xl border transition-colors bg-surface border-border text-foreground hover:bg-surface-raised flex items-center gap-2"
-          >
-            <PlusCircleIcon className="h-4 w-4" />
-            <span>{i18nService.t('mcpAddServer')}</span>
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex items-center border-b border-border">
-          {MCP_TAB_ORDER.map((tab) => {
-            const count = tab === McpTab.Installed
-              ? installedItems.length
-              : (isLoadingMarketplace ? 0 : marketplaceCount);
-            return (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => {
-                  reportMcpAction('tab_change', {
-                    source: 'mcp_manager',
-                    activeTab,
-                    targetTab: tab,
-                  });
-                  setActiveTab(tab);
-                }}
-                className={tabClass(tab)}
-              >
-                {i18nService.t(MCP_TAB_LABEL_KEYS[tab])}
-                {count > 0 && (
-                  <span className={`ml-1.5 rounded-full bg-surface-raised px-1.5 py-0.5 ${MANAGEMENT_META_TEXT} font-medium text-secondary`}>
-                    {count}
-                  </span>
-                )}
-                <div className={tabIndicatorClass(tab)} />
-              </button>
-            );
-          })}
+          <Pill compact icon={<PlusCircleIcon className="h-4 w-4" />} onClick={handleOpenCreateForm}>
+            {i18nService.t('mcpAddServer')}
+          </Pill>
         </div>
 
         {/* Category filter pills (Marketplace only) */}
@@ -1295,11 +1271,7 @@ const McpManager: React.FC = () => {
                   });
                   setActiveCategory(cat.id);
                 }}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  activeCategory === cat.id
-                    ? 'bg-primary text-white'
-                    : 'bg-surface-raised text-secondary hover:text-foreground'
-                }`}
+                className={`maties-pill-sm ${activeCategory === cat.id ? 'is-selected' : ''}`}
               >
                 {(i18nService.getLanguage() === 'zh' ? cat.name_zh : cat.name_en) || i18nService.t(cat.key)}
               </button>
@@ -1313,39 +1285,32 @@ const McpManager: React.FC = () => {
       {activeTab === McpTab.Installed && (
         filteredInstalled.length === 0 ? (
           searchQuery.trim() ? (
-            <div className="py-12 text-center text-sm text-secondary">
-              {i18nService.t('mcpNoInstalledServers')}
-            </div>
+            <EmptyState sentence={i18nService.t('mcpNoInstalledServers')} />
           ) : (
-            <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center">
-              <p className="mb-3 text-sm text-secondary">
-                {i18nService.t('mcpInstalledEmptyHint')}
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    reportMcpAction('tab_change', {
-                      source: 'mcp_manager',
-                      activeTab,
-                      targetTab: McpTab.Marketplace,
-                    });
-                    setActiveTab(McpTab.Marketplace);
-                  }}
-                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-raised"
-                >
-                  {i18nService.t('mcpInstalledEmptyMarket')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenCreateForm}
-                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-raised"
-                >
-                  <PlusCircleIcon className="h-3.5 w-3.5 text-secondary" />
-                  {i18nService.t('mcpAddServer')}
-                </button>
-              </div>
-            </div>
+            <EmptyState
+              sentence={i18nService.t('connectorsEmptySentence')}
+              action={(
+                <>
+                  <Pill
+                    tone={PillTone.Primary}
+                    compact
+                    onClick={() => {
+                      reportMcpAction('tab_change', {
+                        source: 'mcp_manager',
+                        activeTab,
+                        targetTab: McpTab.Marketplace,
+                      });
+                      setActiveTab(McpTab.Marketplace);
+                    }}
+                  >
+                    {i18nService.t('mcpInstalledEmptyMarket')}
+                  </Pill>
+                  <Pill compact icon={<PlusCircleIcon className="h-3.5 w-3.5" />} onClick={handleOpenCreateForm}>
+                    {i18nService.t('mcpAddServer')}
+                  </Pill>
+                </>
+              )}
+            />
           )
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
@@ -1423,7 +1388,7 @@ const McpManager: React.FC = () => {
         isLoadingMarketplace ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4" aria-hidden="true">
           {Array.from({ length: 6 }).map((_, idx) => (
-            <div key={idx} className="animate-pulse rounded-2xl border border-border bg-surface p-4">
+            <div key={idx} className="maties-card maties-skeleton p-4">
               <div className="mb-3 flex items-center gap-2.5">
                 <div className="h-10 w-10 rounded-[10px] bg-surface-raised" />
                 <div className="h-3.5 w-1/3 rounded bg-surface-raised" />
@@ -1443,9 +1408,7 @@ const McpManager: React.FC = () => {
         <div>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
             {filteredMarketplace.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-sm text-secondary">
-                {i18nService.t('noMcpServersAvailable')}
-              </div>
+              <EmptyState className="col-span-full" sentence={i18nService.t('connectorsMarketplaceEmptySentence')} />
             ) : (
               filteredMarketplace.map((entry) => {
                 const isInstalled = installedRegistryIds.has(entry.id);
@@ -1511,8 +1474,8 @@ const McpManager: React.FC = () => {
 
       {/* Delete confirmation modal */}
       {pendingDelete && (
-        <Modal onClose={handleCancelDelete} overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/60" className="w-full max-w-sm mx-4 rounded-2xl bg-surface border border-border shadow-2xl p-5">
-            <div className="text-lg font-semibold text-foreground">
+        <Modal onClose={handleCancelDelete} overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center" className="maties-card-prose maties-in mx-4 w-full max-w-sm p-6">
+            <div className="maties-row-title text-[15.5px]">
               {pendingDelete.kind === 'registryGroup'
                 ? i18nService.t('mcpUninstall')
                 : i18nService.t('deleteMcpServer')}
@@ -1532,7 +1495,7 @@ const McpManager: React.FC = () => {
                 type="button"
                 onClick={handleCancelDelete}
                 disabled={isDeleting}
-                className="px-3 py-1.5 text-xs rounded-lg border border-border text-secondary hover:bg-surface-raised transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="maties-pill-sm is-ghost"
               >
                 {i18nService.t('cancel')}
               </button>
@@ -1540,7 +1503,7 @@ const McpManager: React.FC = () => {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="px-3 py-1.5 text-xs rounded-lg bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="maties-pill-sm is-primary"
               >
                 {i18nService.t('confirmDelete')}
               </button>

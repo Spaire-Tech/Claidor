@@ -70,7 +70,7 @@ const renderHighlightedTitle = (title: string, query: string): React.ReactNode =
   return (
     <>
       {title.slice(0, matchIndex)}
-      <span className="rounded-[3px] bg-primary/15 text-foreground">
+      <span className="rounded-[3px] bg-[rgba(0,96,208,.12)] text-[#1c1f23] dark:text-[#f2f3f5]">
         {title.slice(matchIndex, matchIndex + trimmedQuery.length)}
       </span>
       {title.slice(matchIndex + trimmedQuery.length)}
@@ -79,7 +79,7 @@ const renderHighlightedTitle = (title: string, query: string): React.ReactNode =
 };
 
 const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <kbd className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[5px] border border-border bg-background px-1 font-sans text-[10px] font-medium text-secondary">
+  <kbd className="maties-kbd inline-flex min-w-[18px] items-center justify-center">
     {children}
   </kbd>
 );
@@ -275,11 +275,13 @@ const CoworkSearchModal: React.FC<CoworkSearchModalProps> = ({
 
   if (!isOpen) return null;
 
+  // The menu style (docs/maties/design.md, section 6): blur, radius 13, the
+  // box at the top, results as rows with the conversation's title and age.
   return (
     <Modal
       onClose={handleClose}
-      overlayClassName="fixed inset-0 z-50 flex items-start justify-center bg-black/10 px-6 pt-[14vh] backdrop-blur-[1px] dark:bg-black/30"
-      className="w-full max-w-[640px]"
+      overlayClassName="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(16,20,28,.16)] px-6 pt-[14vh]"
+      className="w-full max-w-[600px]"
     >
       <SkinPresentationScope
         enabled
@@ -287,43 +289,37 @@ const CoworkSearchModal: React.FC<CoworkSearchModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label={i18nService.t('search')}
-        className="modal-content overflow-hidden rounded-[18px] border border-border bg-white shadow-modal dark:bg-surface"
+        className="maties-menu overflow-hidden !p-0"
       >
-        <div className="flex items-center gap-3 border-b border-border px-4">
-          <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-secondary/70" />
+        <div className="maties-hairline-bottom flex items-center gap-3 px-4">
+          <MagnifyingGlassIcon className="h-[18px] w-[18px] shrink-0 text-[#9aa1ab]" />
           <input
             ref={searchInputRef}
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder={i18nService.t('searchConversations')}
+            placeholder={i18nService.t('matiesSearchPlaceholder')}
             aria-label={i18nService.t('search')}
-            className="h-14 min-w-0 flex-1 bg-transparent text-[15px] text-foreground placeholder-secondary/70 outline-none"
+            className="h-[52px] min-w-0 flex-1 bg-transparent text-[15px] text-[#1c1f23] outline-none placeholder:text-[#8f96a0] dark:text-[#f2f3f5]"
           />
-          {isLoading && (
-            <svg className="h-4 w-4 shrink-0 animate-spin text-secondary/50" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
-          )}
+          {isLoading && <span className="maties-ring h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
           <button
             type="button"
             onClick={handleClose}
             aria-label={i18nService.t('close')}
             title={i18nService.t('close')}
-            className="flex h-6 shrink-0 items-center rounded-md border border-border bg-background px-1.5 text-[11px] font-medium text-secondary transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.06]"
+            className="maties-kbd shrink-0 cursor-pointer transition-colors hover:text-[#1c1f23]"
           >
-            Esc
+            esc
           </button>
         </div>
         <div className="px-2 pb-1.5 pt-2">
-          <div className="px-2.5 pb-1.5 text-[12px] font-medium text-secondary/80">
-            {hasQuery ? i18nService.t('searchResults') : i18nService.t('searchRecentTasks')}
+          <div className="maties-eyebrow px-2.5 pb-1.5 pt-1 text-[11px]">
+            {hasQuery ? i18nService.t('searchResults') : i18nService.t('matiesSearchRecent')}
           </div>
           <div className="max-h-[min(420px,48vh)] overflow-y-auto">
             {displayedSessions.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-12 text-sm text-secondary">
-                {!isLoading && <MagnifyingGlassIcon className="h-6 w-6 text-secondary/40" />}
-                <span>{isLoading ? i18nService.t('loading') : i18nService.t('searchNoResults')}</span>
+              <div className="maties-caption flex flex-col items-center gap-2 py-10">
+                <span>{isLoading ? i18nService.t('loading') : i18nService.t('matiesSearchNoResults')}</span>
               </div>
             ) : (
               displayedSessions.map((session, index) => {
@@ -347,48 +343,29 @@ const CoworkSearchModal: React.FC<CoworkSearchModalProps> = ({
                       if (activeIndex !== index) setActiveIndex(index);
                     }}
                     data-skin-search-result-active={isActive ? 'true' : undefined}
-                    className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[13px] transition-colors ${
-                      isActive
-                        ? 'bg-black/[0.05] text-foreground dark:bg-white/[0.08]'
-                        : 'text-secondary'
-                      }`}
+                    data-active={isActive ? 'true' : undefined}
+                    className={`maties-menu-item h-9 gap-3 py-0 text-[13.5px] ${isActive ? 'bg-[rgba(16,20,28,.06)]' : ''}`}
                   >
                     {isRunning && (
                       <span
-                        className="inline-flex h-3 w-3 shrink-0 items-center justify-center"
+                        className="maties-ring h-3 w-3 shrink-0"
                         title={i18nService.t('myAgentSidebarRunning')}
                         aria-label={i18nService.t('myAgentSidebarRunning')}
-                      >
-                        <svg className="h-3 w-3 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                          />
-                        </svg>
-                      </span>
+                      />
                     )}
-                    <span className="min-w-0 flex-1 truncate font-medium">
+                    <span className="min-w-0 flex-1 truncate text-[#1c1f23] dark:text-[#f2f3f5]">
                       {renderHighlightedTitle(session.title, searchQuery)}
                     </span>
                     {isCurrent && (
-                      <span className="shrink-0 rounded-[5px] bg-primary/10 px-1.5 py-px text-[11px] font-medium text-primary">
-                        {i18nService.t('searchCurrentTask')}
+                      <span className="maties-status-pill maties-status-quiet h-5 text-[11px]">
+                        {i18nService.t('matiesSearchCurrent')}
                       </span>
                     )}
-                    <span className="max-w-[136px] shrink-0 truncate text-[12px] text-secondary/75">
+                    <span className="max-w-[136px] shrink-0 truncate text-[12px] text-[#8f96a0]">
                       {agentName}
                     </span>
                     <span
-                      className="w-[52px] shrink-0 text-right text-[12px] tabular-nums text-secondary/50"
+                      className="w-[44px] shrink-0 text-right text-[11.5px] tabular-nums text-[#a2a29c]"
                       title={relativeTime.full}
                     >
                       {relativeTime.compact}
@@ -399,15 +376,15 @@ const CoworkSearchModal: React.FC<CoworkSearchModalProps> = ({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-4 border-t border-border px-4 py-2 text-[11px] text-secondary/60">
+        <div className="maties-hairline-top flex items-center gap-4 px-4 py-2 text-[11.5px] text-[#a2a29c]">
           <span className="flex items-center gap-1.5">
             <Kbd>↑</Kbd>
             <Kbd>↓</Kbd>
-            <span>{i18nService.t('searchHintSelect')}</span>
+            <span>{i18nService.t('matiesShortcutHintSelect')}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <Kbd>↵</Kbd>
-            <span>{i18nService.t('searchHintOpen')}</span>
+            <span>{i18nService.t('matiesShortcutHintOpen')}</span>
           </span>
         </div>
       </SkinPresentationScope>

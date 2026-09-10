@@ -232,7 +232,7 @@ const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isTaskFilterActive, setIsTaskFilterActive] = useState(false);
   const [hasUnreadCompletedTasks, setHasUnreadCompletedTasks] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(244);
+  const [sidebarWidth, setSidebarWidth] = useState(298);
   const initialOpenClawEngineStatusRef = useRef(coworkService.getOpenClawEngineStatusSnapshot());
   const [isEngineStartupOverlayVisible, setIsEngineStartupOverlayVisible] = useState(
     () => initialOpenClawEngineStatusRef.current?.phase === OpenClawEnginePhase.Starting,
@@ -2068,7 +2068,7 @@ const App: React.FC = () => {
     <SkinProvider>
       <SkinPresentationScope
         enabled
-        className="h-screen overflow-hidden flex flex-col bg-surface-raised"
+        className="h-screen overflow-hidden flex flex-col bg-background"
       >
       {toastMessage && (
         <Toast
@@ -2109,11 +2109,11 @@ const App: React.FC = () => {
           hideLogin={enterpriseConfig?.ui?.login === 'hide'}
           isEngineStartupOverlayVisible={isEngineStartupOverlayVisible}
         />
-        <div className={`flex-1 min-w-0 transition-[padding] duration-200 ease-out ${isSidebarCollapsed ? 'pl-1.5' : ''}`}>
+        <div className="flex-1 min-w-0">
           <div
             data-skin-cowork-frame={mainView === 'cowork' ? 'true' : undefined}
             data-skin-management-frame={mainView !== 'cowork' ? 'true' : undefined}
-            className="relative h-full min-h-0 rounded-xl border border-border bg-background overflow-hidden"
+            className="relative h-full min-h-0 bg-background overflow-hidden"
           >
             {mainView !== 'cowork' && (
               <SkinBackdrop variant={SkinBackdropVariant.Management} />

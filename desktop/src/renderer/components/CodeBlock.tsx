@@ -1551,7 +1551,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ node, className, children, ...pro
     : match[1];
 
   return (
-    <div className="my-3 rounded-lg overflow-hidden border border-border bg-surface-raised/40 relative">
+    <div className="maties-code-block my-3 rounded-lg overflow-hidden border border-border bg-surface-raised/40 relative">
       {/* Fullscreen modal */}
       {fullscreen && (
         <CodeFullscreenModal
@@ -1564,7 +1564,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ node, className, children, ...pro
       )}
       {/* Header */}
       <div
-        className="bg-surface-raised/70 border-b border-border-subtle px-3.5 py-1.5 text-xs text-secondary font-medium flex items-center justify-between"
+        className="maties-code-block-header bg-surface-raised/70 border-b border-border-subtle px-3.5 py-1.5 text-xs text-secondary font-medium flex items-center justify-between"
         data-cowork-search-exclude="true"
       >
         <span className="font-mono opacity-70">{displayLang}</span>

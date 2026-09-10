@@ -38,7 +38,7 @@ const ClampedText: React.FC<{ text: string; className?: string }> = ({ text, cla
     <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       <p ref={textRef} className={`line-clamp-2 ${className}`}>{text}</p>
       {showFull && (
-        <div className="absolute bottom-full left-0 right-0 z-50 mb-1 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs leading-relaxed text-foreground shadow-xl">
+        <div className="maties-menu absolute bottom-full left-0 right-0 z-50 mb-1 px-3 py-2 text-xs leading-relaxed text-[#1c1f23]">
           {text}
         </div>
       )}
@@ -81,7 +81,7 @@ export const McpIconTile: React.FC<McpIconTileProps> = ({
   return (
     <span
       aria-hidden="true"
-      className={`${className} inline-flex shrink-0 items-center justify-center bg-primary-muted text-primary`}
+      className={`${className} inline-flex shrink-0 items-center justify-center bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]`}
     >
       <ConnectorIcon className={iconClassName} />
     </span>
@@ -125,13 +125,13 @@ const McpCard: React.FC<McpCardProps> = ({
         onOpenDetail();
       }
     })}
-    className={`group flex flex-col rounded-2xl border border-border bg-surface p-4 shadow-subtle transition-all hover:border-primary/50 hover:shadow-card focus-within:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-      onOpenDetail ? 'cursor-pointer' : ''
+    className={`maties-card group flex flex-col p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0060d0]/30 ${
+      onOpenDetail ? 'maties-card-interactive cursor-pointer' : ''
     }`}
   >
     <div className="mb-3 flex items-center gap-2.5">
       <McpIconTile icon={icon} />
-      <div className={`min-w-0 flex-1 truncate ${MANAGEMENT_TITLE_TEXT} font-semibold leading-snug text-foreground`}>
+      <div className={`min-w-0 flex-1 truncate ${MANAGEMENT_TITLE_TEXT} font-medium leading-snug text-[#1c1f23] dark:text-[#f2f3f5]`}>
         {title}
       </div>
       {actions && (

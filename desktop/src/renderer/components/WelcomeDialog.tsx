@@ -2,152 +2,90 @@ import React from 'react';
 
 import { i18nService } from '@/services/i18n';
 
-const SERVICE_TERMS_URL = 'https://app.claidor.com/terms';
+import Pill, { PillTone } from './design/Pill';
+import Shimmer from './design/Shimmer';
+import Sphere from './design/Sphere';
 
-// Ripple rings radiating from the logo: diameter and opacity per ring.
-const LOGO_RINGS: Array<{ size: number; opacity: number }> = [
-  { size: 150, opacity: 0.55 },
-  { size: 255, opacity: 0.4 },
-  { size: 380, opacity: 0.28 },
-  { size: 560, opacity: 0.16 },
-];
+const SERVICE_TERMS_URL = 'https://app.claidor.com/terms';
 
 interface WelcomeDialogProps {
   onLogin: () => void;
   loginPending: boolean;
   onCancelLogin: () => void;
-  onCustomModel: () => void;
+  /** Kept for the caller; the design has one way in, the Claidor sign-in. */
+  onCustomModel?: () => void;
 }
 
-// First-launch gate merging terms consent and login into one screen:
-// continuing via either action counts as accepting the service agreement.
+/**
+ * The welcome screen (docs/maties/design.md, section 6): the sphere at
+ * 64px, the sentence, one blue pill, the small print. Continuing counts as
+ * accepting the terms; the small print says so.
+ */
 const WelcomeDialog: React.FC<WelcomeDialogProps> = ({
   onLogin,
   loginPending,
   onCancelLogin,
-  onCustomModel,
 }) => {
   const handleTermsClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     await window.electron.shell.openExternal(SERVICE_TERMS_URL);
   };
 
-  const notice = i18nService.t('welcomeAgreementNotice');
-  const linkText = i18nService.t('welcomeAgreementLinkText');
-  const [noticeBefore, noticeAfter] = notice.split('{link}');
+  const smallPrint = i18nService.t('matiesWelcomeSmallPrint');
+  const linkText = i18nService.t('matiesWelcomeTermsLink');
+  const [printBefore, printAfter] = smallPrint.split('{link}');
   const copyright = i18nService
     .t('welcomeCopyright')
     .replace('{year}', String(new Date().getFullYear()));
 
   return (
-    <div className="fixed inset-0 z-[60] bg-surface flex flex-col items-center overflow-hidden">
-      {/* ambient brand glows: warm top-left echoing the logo, cool bottom-right echoing primary */}
+    <div className="fixed inset-0 z-[60] flex flex-col items-center overflow-hidden bg-white dark:bg-[#141518]">
+      {/* The only outer background: a faint wash from white to #e2e4e9 at the far corner. */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         aria-hidden="true"
-        style={{
-          background:
-            'radial-gradient(640px 420px at 12% -6%, rgba(255, 77, 46, 0.07), transparent 70%), '
-            + 'radial-gradient(720px 480px at 88% 106%, rgba(59, 130, 246, 0.06), transparent 70%)',
-        }}
+        style={{ background: 'radial-gradient(120% 120% at 100% 100%, #e2e4e9 0%, rgba(226,228,233,0) 60%)' }}
       />
 
-      {/* main content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center w-[320px]">
-        {/* logo with ripple rings radiating from it, fading out before the text below */}
-        <div className="relative mb-6">
-          <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-            aria-hidden="true"
-            style={{
-              width: 560,
-              height: 560,
-              maskImage: 'linear-gradient(to bottom, black 50%, transparent 76%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 76%)',
-            }}
-          >
-            {LOGO_RINGS.map(({ size, opacity }) => (
-              <div
-                key={size}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border"
-                style={{ width: size, height: size, opacity }}
-              />
-            ))}
-          </div>
-          <img
-            src="logo.png"
-            alt="Maties"
-            width={72}
-            height={72}
-            className="relative rounded-2xl select-none"
-            draggable={false}
-          />
-        </div>
+      <div className="maties-in relative z-10 flex w-[360px] flex-1 flex-col items-center justify-center text-center">
+        <Sphere size={64} title="Maties" />
 
-        <h1 className="text-2xl font-semibold text-foreground mb-8 text-center">
-          {i18nService.t('welcomeTitle')}
+        <h1 className="maties-headline mt-7 text-[26px]">
+          {i18nService.t('matiesWelcomeSentence')}
         </h1>
 
-        {/* actions area keeps a stable height across the idle and login-pending states */}
-        <div className="flex min-h-[140px] w-full flex-col items-center">
+        {/* The actions keep one height across the idle and pending states. */}
+        <div className="mt-8 flex min-h-[88px] w-full flex-col items-center">
           {loginPending ? (
             <>
-              {/* waiting for the browser login to complete — the gate stays until auth lands */}
-              <div className="flex h-11 items-center gap-2.5 text-sm text-secondary">
-                <div
-                  className="h-4 w-4 rounded-full border-2 border-border border-t-foreground animate-spin"
-                  aria-hidden="true"
-                />
-                {i18nService.t('welcomeLoginWaiting')}
+              <div className="flex h-9 items-center">
+                <Shimmer text={i18nService.t('matiesWelcomeWaiting')} />
               </div>
-              <button
-                onClick={onCancelLogin}
-                className="mt-3 text-sm text-secondary hover:text-foreground underline underline-offset-2 outline-none"
-              >
+              <Pill tone={PillTone.Ghost} compact className="mt-3" onClick={onCancelLogin}>
                 {i18nService.t('back')}
-              </button>
+              </Pill>
             </>
           ) : (
-            <>
-              {/* promo: quiet tinted chip sitting right above login, so the incentive reads as "log in to get it" */}
-              <div className="mb-3 px-3 py-1 rounded-full border text-xs font-medium select-none text-[#E5482C] bg-[#FF5A36]/10 border-[#FF5A36]/20 dark:text-[#FF9275] dark:bg-[#FF6D4A]/[0.14] dark:border-[#FF6D4A]/30">
-                {i18nService.t('welcomePromo')}
-              </div>
-
-              {/* primary: login */}
-              <button
-                onClick={onLogin}
-                className="w-full h-11 rounded-xl text-sm font-medium bg-foreground text-surface transition-opacity hover:opacity-90 active:opacity-80 outline-none"
-              >
-                {i18nService.t('welcomeLogin')}
-              </button>
-
-              {/* secondary: custom model — quiet ghost style */}
-              <button
-                onClick={onCustomModel}
-                className="mt-3 w-full h-11 rounded-xl text-sm font-medium text-secondary border border-border bg-transparent hover:text-foreground hover:bg-surface-raised transition-colors outline-none"
-              >
-                {i18nService.t('welcomeCustomModel')}
-              </button>
-            </>
+            <Pill tone={PillTone.Primary} onClick={onLogin} className="px-6">
+              {i18nService.t('matiesSignInWithClaidor')}
+            </Pill>
           )}
         </div>
       </div>
 
-      {/* footer: consent notice + copyright */}
-      <div className="relative z-10 flex flex-col items-center gap-1 pb-8 px-8 text-center">
-        <p className="text-xs text-secondary leading-relaxed">
-          {noticeBefore}
+      <div className="relative z-10 flex flex-col items-center gap-1 px-8 pb-8 text-center">
+        <p className="maties-caption max-w-[52ch]">
+          {printBefore}
           <a
             href={SERVICE_TERMS_URL}
             onClick={handleTermsClick}
-            className="underline underline-offset-2 hover:text-foreground outline-none"
+            className="text-[#1c1f23] underline decoration-[rgba(16,22,35,.25)] underline-offset-2 hover:decoration-[#1c1f23] dark:text-[#f2f3f5]"
           >
             {linkText}
           </a>
-          {noticeAfter}
+          {printAfter}
         </p>
-        <p className="text-xs text-secondary/70">{copyright}</p>
+        <p className="maties-caption">{copyright}</p>
       </div>
     </div>
   );

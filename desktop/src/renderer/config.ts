@@ -208,11 +208,11 @@ export const defaultConfig: AppConfig = {
   },
   shortcuts: {
     [ShortcutAction.NewChat]: 'CommandOrControl+N',
-    [ShortcutAction.Search]: 'CommandOrControl+F',
+    [ShortcutAction.Search]: 'CommandOrControl+K',
     [ShortcutAction.Settings]: 'CommandOrControl+,',
     [ShortcutAction.SendMessage]: 'Enter',
     [ShortcutAction.ShowShortcuts]: 'CommandOrControl+/',
-    [ShortcutAction.FocusPrompt]: 'CommandOrControl+K',
+    [ShortcutAction.FocusPrompt]: 'CommandOrControl+L',
     [ShortcutAction.StopCurrentTask]: 'CommandOrControl+.',
     [ShortcutAction.ToggleSidebar]: 'CommandOrControl+B',
     [ShortcutAction.ToggleArtifacts]: 'CommandOrControl+Shift+B',

@@ -503,7 +503,7 @@ const EmailSkillConfig: React.FC = () => {
         void persistAccountPatch(account.id, { enabled: !account.enabled });
       }}
       className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-        account.enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+        account.enabled ? 'bg-green-500' : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
       }`}
       aria-label={account.enabled ? i18nService.t('disable') : i18nService.t('enable')}
       title={account.enabled ? i18nService.t('disable') : i18nService.t('enable')}
@@ -981,8 +981,8 @@ const EmailSkillConfig: React.FC = () => {
         <Modal
           onClose={() => setPendingDeleteAccountId(null)}
           onEscape={() => setPendingDeleteAccountId(null)}
-          overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 shadow-2xl"
+          overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center"
+          className="maties-card-prose maties-in w-full max-w-sm p-6"
         >
           <div className="text-sm font-semibold text-foreground">
             {i18nService.t('confirmDelete')}

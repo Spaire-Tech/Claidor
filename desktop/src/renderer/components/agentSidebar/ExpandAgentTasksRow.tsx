@@ -10,6 +10,7 @@ interface ExpandAgentTasksRowProps {
   onSecondaryClick?: () => void;
 }
 
+/** « Show more » / « Show less » under an agent's conversations: a quiet 13px line. */
 const ExpandAgentTasksRow: React.FC<ExpandAgentTasksRowProps> = ({
   isLoading,
   label,
@@ -18,12 +19,12 @@ const ExpandAgentTasksRow: React.FC<ExpandAgentTasksRowProps> = ({
   onSecondaryClick,
 }) => {
   return (
-    <div className="-ml-[6px] flex h-7 w-[calc(100%+12px)] items-center gap-5 rounded-md pl-[38px] pr-2.5 text-[length:var(--lobster-text-sidebarCompact)] font-normal">
+    <div className="flex items-center gap-5 px-[11px] py-[6px] text-[13px] tracking-[-.006em]">
       <button
         type="button"
         onClick={onClick}
         disabled={isLoading}
-        className="min-w-0 text-left text-secondary transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+        className="min-w-0 text-left text-[#9aa1ab] transition-colors hover:text-[#1c1f23] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isLoading ? i18nService.t('loading') : label}
       </button>
@@ -31,7 +32,7 @@ const ExpandAgentTasksRow: React.FC<ExpandAgentTasksRowProps> = ({
         <button
           type="button"
           onClick={onSecondaryClick}
-          className="min-w-0 text-left text-secondary transition-colors hover:text-foreground"
+          className="min-w-0 text-left text-[#9aa1ab] transition-colors hover:text-[#1c1f23]"
         >
           {secondaryLabel}
         </button>

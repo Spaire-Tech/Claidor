@@ -2,23 +2,20 @@
 'use strict';
 
 /**
- * Renders the Maties mark (build/logo/maties-mark.svg) into every raster
- * the app ships: the in-app logo, the app icon PNG ladder, the macOS .icns,
+ * Renders the Maties logo, the sphere, into every raster the app ships: the in-app logo, the app icon PNG ladder, the macOS .icns,
  * the Windows .ico and the tray icons. Uses the Chromium that Playwright
  * finds, so it needs no ImageMagick.
  *
  *   node scripts/render-brand-assets.cjs [--playwright <path to playwright package>]
  *
- * The app icon is the mark on a white rounded square (macOS draws no mask
- * of its own). The tray icon is the mark alone, black on transparent, so
- * macOS can treat it as a template image.
+ * The app icon is the sphere on a white rounded square (macOS draws no
+ * mask of its own). The tray icons are the sphere alone on transparent.
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const markPath = path.join(root, 'build', 'logo', 'maties-mark.svg');
 
 const args = process.argv.slice(2);
 const playwrightArg = args.indexOf('--playwright');
@@ -40,16 +37,27 @@ const ICNS_TYPES = [
 ];
 const ICO_SIZES = [256, 128, 64, 48, 32, 16];
 
-const markSvg = fs.readFileSync(markPath, 'utf8');
-const markDataUri = `data:image/svg+xml;base64,${Buffer.from(markSvg).toString('base64')}`;
+/**
+ * The sphere is the logo (docs/maties/design.md, section 2): the same
+ * gradient layers as the Sphere component, drawn still, at one frame.
+ */
+const sphereHtml = (size) => `<span style="position:relative; display:inline-block; width:${size}px; height:${size}px; border-radius:50%; overflow:hidden;
+  box-shadow:0 1px 2px rgba(24,74,68,.10), 0 ${Math.round(size*0.2)}px ${Math.round(size*0.46)}px rgba(24,74,68,.18), inset 0 -${Math.round(size*0.15)}px ${Math.round(size*0.25)}px rgba(14,58,54,.22), inset 0 ${Math.round(size*0.1)}px ${Math.round(size*0.2)}px rgba(255,255,255,.6), inset 0 0 0 .5px rgba(255,255,255,.5)">
+  <span style="position:absolute; inset:-40%; border-radius:50%; transform:rotate(0deg) translate(9%,-6%) scale(1.2); filter:blur(${Math.max(1,size/9.6)}px); background:radial-gradient(44% 46% at 30% 24%, #f2f6d2 0%, rgba(242,246,210,0) 60%), radial-gradient(50% 52% at 74% 20%, #7fdcc6 0%, rgba(127,220,198,0) 66%), radial-gradient(54% 56% at 22% 76%, #a9de5c 0%, rgba(169,222,92,0) 68%), linear-gradient(160deg, #d8f0b4 0%, #6fcbb8 55%, #3aa0c4 100%)"></span>
+  <span style="position:absolute; inset:-34%; border-radius:50%; opacity:.85; transform:translate(-8%,7%) scale(1.35); filter:blur(${Math.max(1,size/6.9)}px); background:radial-gradient(40% 42% at 72% 74%, #2aa6c6 0%, rgba(42,166,198,0) 64%), radial-gradient(26% 26% at 56% 56%, #f2a45e 0%, rgba(242,164,94,0) 58%), radial-gradient(34% 36% at 20% 40%, #cfeeb0 0%, rgba(207,238,176,0) 62%)"></span>
+  <span style="position:absolute; inset:-20%; border-radius:50%; opacity:.7; transform:translate(-14%,10%); filter:blur(${Math.max(1,size/8)}px); background:radial-gradient(32% 34% at 50% 50%, #f6b26b 0%, rgba(246,178,107,0) 62%), radial-gradient(30% 32% at 24% 62%, #8ee06a 0%, rgba(142,224,106,0) 64%)"></span>
+  <span style="position:absolute; left:16%; top:12%; width:34%; height:24%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.95), rgba(255,255,255,0)); filter:blur(1.5px)"></span>
+  <span style="position:absolute; left:-10%; bottom:-14%; width:70%; height:44%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.55), rgba(255,255,255,0)); filter:blur(3px)"></span>
+</span>`;
 
-const iconHtml = (size, { tile }) => `<!doctype html><html><head><style>
+const iconHtml = (size, { tile }) => {
+  const sphere = tile ? Math.round(size * 0.62) : size;
+  return `<!doctype html><html><head><style>
   html, body { margin: 0; padding: 0; background: transparent; }
-  .icon { width: ${size}px; height: ${size}px; position: relative; overflow: hidden;
+  .icon { width: ${size}px; height: ${size}px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
     ${tile ? `background: #ffffff; border-radius: ${Math.round(size * 0.2237)}px;` : ''} }
-  .icon img { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: ${tile ? Math.round(size * 0.78) : size}px; height: ${tile ? Math.round(size * 0.78) : size}px; }
-</style></head><body><div class="icon"><img src="${markDataUri}"></div></body></html>`;
+</style></head><body><div class="icon">${sphereHtml(sphere)}</div></body></html>`;
+};
 
 const pngChunk = (buffer, name) => {
   const nameBuffer = Buffer.from(name, 'ascii');
@@ -132,8 +140,7 @@ const buildIco = (pngBySize) => {
     await page.setContent(`<!doctype html><html><head><style>
       html, body { margin: 0; background: transparent; }
       .c { width: ${canvas}px; height: ${canvas}px; display: flex; align-items: center; justify-content: center; }
-      img { width: ${mark}px; height: ${mark}px; }
-    </style></head><body><div class="c"><img src="${markDataUri}"></div></body></html>`);
+    </style></head><body><div class="c">${sphereHtml(mark)}</div></body></html>`);
     await page.waitForTimeout(50);
     return page.screenshot({ omitBackground: true, clip: { x: 0, y: 0, width: canvas, height: canvas } });
   };
@@ -147,7 +154,7 @@ const buildIco = (pngBySize) => {
   fs.writeFileSync(path.join(trayDir, 'tray-icon.ico'), buildIco(trayPngs));
 
   await browser.close();
-  console.log('[brand] rendered icons, icns, ico, logo and tray from', path.relative(root, markPath));
+  console.log('[brand] rendered icons, icns, ico, logo and tray from the sphere');
 })().catch((error) => {
   console.error(error);
   process.exit(1);

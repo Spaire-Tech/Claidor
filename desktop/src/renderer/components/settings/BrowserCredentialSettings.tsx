@@ -134,10 +134,10 @@ const BrowserCredentialSettings: React.FC = () => {
     <section className="space-y-3">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h4 className="text-sm font-medium text-foreground">
+          <h4 className="maties-row-title">
             {i18nService.t('browserCredentialManagerTitle')}
           </h4>
-          <p className="mt-1 text-sm text-secondary">
+          <p className="maties-row-desc">
             {i18nService.t('browserCredentialManagerDescription')}
           </p>
         </div>
@@ -145,7 +145,7 @@ const BrowserCredentialSettings: React.FC = () => {
           type="button"
           onClick={() => setShowAddDialog(true)}
           disabled={available !== true}
-          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-surface-raised px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="maties-pill-sm shrink-0"
         >
           <PlusIcon className="h-4 w-4" />
           {i18nService.t('browserCredentialAdd')}
@@ -153,36 +153,36 @@ const BrowserCredentialSettings: React.FC = () => {
       </div>
 
       {available === false && !loading ? (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+        <div className="maties-caption maties-status-attention maties-raised-2 rounded-[10px] px-3 py-2">
           {unavailableMessage}
         </div>
       ) : null}
       {error && !showAddDialog && !deleteTarget ? (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-300">
+        <div className="maties-caption maties-status-wrong maties-raised-2 rounded-[10px] px-3 py-2">
           {error}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-background">
+      <div className="maties-card-row overflow-hidden">
         {loading ? (
-          <div className="px-3 py-3 text-sm text-secondary">
+          <div className="maties-caption px-4 py-3">
             {i18nService.t('loading')}
           </div>
         ) : credentials.length > 0 ? (
           credentials.map((credential, index) => (
             <div
               key={credential.id}
-              className={`flex min-h-14 items-center gap-3 px-3 py-2 ${index > 0 ? 'border-t border-border' : ''}`}
+              className={`flex min-h-14 items-center gap-3 px-4 py-2 ${index > 0 ? 'maties-hairline-top' : ''}`}
             >
               <KeyIcon className="h-4 w-4 shrink-0 text-secondary" />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm text-foreground">{credential.username}</div>
-                <div className="truncate text-xs text-secondary">{credential.origin}</div>
+                <div className="truncate text-[13.5px] text-[#1c1f23] dark:text-[#f2f3f5]">{credential.username}</div>
+                <div className="maties-mono maties-caption truncate">{credential.origin}</div>
               </div>
               <button
                 type="button"
                 onClick={() => setDeleteTarget(credential)}
-                className="rounded-md p-1 text-secondary transition-colors hover:bg-surface-raised hover:text-red-500"
+                className="maties-icon-button h-7 w-7 hover:text-[#e0322d]"
                 title={i18nService.t('delete')}
                 aria-label={i18nService.t('delete')}
               >
@@ -191,7 +191,7 @@ const BrowserCredentialSettings: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="px-3 py-3 text-sm text-secondary">
+          <div className="maties-caption px-4 py-3">
             {i18nService.t('browserCredentialEmpty')}
           </div>
         )}
@@ -201,23 +201,23 @@ const BrowserCredentialSettings: React.FC = () => {
         <Modal
           onClose={closeAddDialog}
           onEscape={closeAddDialog}
-          overlayClassName="fixed inset-0 z-[70] flex items-center justify-center bg-black/25"
-          className="w-full max-w-[460px] rounded-2xl border border-border bg-background p-5 shadow-modal"
+          overlayClassName="maties-backdrop fixed inset-0 z-[70] flex items-center justify-center"
+          className="maties-card-prose maties-in w-full max-w-[460px] p-6"
         >
           <form onSubmit={saveCredential}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-base font-semibold text-foreground">
+                <h3 className="maties-row-title text-[15.5px]">
                   {i18nService.t('browserCredentialAddTitle')}
                 </h3>
-                <p className="mt-2 text-sm text-secondary">
+                <p className="maties-row-desc">
                   {i18nService.t('browserCredentialAddDescription')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => closeAddDialog()}
-                className="rounded-md p-1 text-secondary transition-colors hover:bg-surface-raised hover:text-foreground"
+                className="maties-icon-button -mr-2 -mt-1"
               >
                 <XMarkIcon className="h-4 w-4" />
               </button>
@@ -231,7 +231,7 @@ const BrowserCredentialSettings: React.FC = () => {
                 onChange={event => setOrigin(event.target.value)}
                 placeholder={i18nService.t('browserCredentialOriginPlaceholder')}
                 autoComplete="off"
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-secondary focus:border-primary focus:ring-1 focus:ring-primary/40"
+                className="maties-input"
               />
               <input
                 type="text"
@@ -239,7 +239,7 @@ const BrowserCredentialSettings: React.FC = () => {
                 onChange={event => setUsername(event.target.value)}
                 placeholder={i18nService.t('browserCredentialUsernamePlaceholder')}
                 autoComplete="off"
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-secondary focus:border-primary focus:ring-1 focus:ring-primary/40"
+                className="maties-input"
               />
               <input
                 type="password"
@@ -247,25 +247,25 @@ const BrowserCredentialSettings: React.FC = () => {
                 onChange={event => setPassword(event.target.value)}
                 placeholder={i18nService.t('browserCredentialPasswordPlaceholder')}
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-secondary focus:border-primary focus:ring-1 focus:ring-primary/40"
+                className="maties-input"
               />
             </div>
 
-            {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
+            {error ? <p className="maties-caption maties-status-wrong mt-3">{error}</p> : null}
 
-            <div className="mt-5 flex items-center justify-end gap-3">
+            <div className="mt-5 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => closeAddDialog()}
                 disabled={saving}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised disabled:opacity-50"
+                className="maties-pill-sm is-ghost"
               >
                 {i18nService.t('cancel')}
               </button>
               <button
                 type="submit"
                 disabled={saving || !origin.trim() || !username.trim() || !password}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-400"
+                className="maties-pill-sm is-primary"
               >
                 {saving ? i18nService.t('saving') : i18nService.t('save')}
               </button>
@@ -278,24 +278,24 @@ const BrowserCredentialSettings: React.FC = () => {
         <Modal
           onClose={() => !deleting && setDeleteTarget(null)}
           onEscape={() => !deleting && setDeleteTarget(null)}
-          overlayClassName="fixed inset-0 z-[70] flex items-center justify-center bg-black/25"
-          className="w-full max-w-[420px] rounded-2xl border border-border bg-background p-5 shadow-modal"
+          overlayClassName="maties-backdrop fixed inset-0 z-[70] flex items-center justify-center"
+          className="maties-card-prose maties-in w-full max-w-[420px] p-6"
         >
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="maties-row-title text-[15.5px]">
             {i18nService.t('browserCredentialDeleteTitle')}
           </h3>
-          <p className="mt-2 text-sm text-secondary">
+          <p className="maties-row-desc">
             {i18nService.t('browserCredentialDeleteDescription')
               .replace('{username}', deleteTarget.username)
               .replace('{origin}', deleteTarget.origin)}
           </p>
-          {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
-          <div className="mt-5 flex items-center justify-end gap-3">
+          {error ? <p className="maties-caption maties-status-wrong mt-3">{error}</p> : null}
+          <div className="mt-5 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={() => setDeleteTarget(null)}
               disabled={deleting}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised disabled:opacity-50"
+              className="maties-pill-sm is-ghost"
             >
               {i18nService.t('cancel')}
             </button>
@@ -303,7 +303,7 @@ const BrowserCredentialSettings: React.FC = () => {
               type="button"
               onClick={() => void deleteCredential()}
               disabled={deleting}
-              className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+              className="maties-pill-sm is-primary"
             >
               {i18nService.t('delete')}
             </button>
