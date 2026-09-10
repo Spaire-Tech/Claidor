@@ -751,7 +751,7 @@ function getNextSlideShapeId(doc: Document): string {
 
 function hasBackgroundFallback(doc: Document, relId: string): boolean {
   return Array.from(doc.getElementsByTagName('p:cNvPr')).some(node => (
-    node.getAttribute('name') === `Swen Background Fallback ${relId}`
+    node.getAttribute('name') === `Maties Background Fallback ${relId}`
   ));
 }
 
@@ -775,7 +775,7 @@ function createBackgroundFallbackPic(doc: Document, relId: string, blipFill: Ele
   const nvPicPr = createElement(doc, PPTX_PRESENTATION_NS, 'p:nvPicPr');
   const cNvPr = createElement(doc, PPTX_PRESENTATION_NS, 'p:cNvPr', {
     id: getNextSlideShapeId(doc),
-    name: `Swen Background Fallback ${relId}`,
+    name: `Maties Background Fallback ${relId}`,
   });
   const cNvPicPr = createElement(doc, PPTX_PRESENTATION_NS, 'p:cNvPicPr');
   const nvPr = createElement(doc, PPTX_PRESENTATION_NS, 'p:nvPr');

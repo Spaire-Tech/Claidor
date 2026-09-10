@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
+import { LIBRARY_SEARCH_PLUGIN_ID, LIBRARY_SEARCH_TOOL_NAME } from '../../shared/library/contentConstants';
+
 const repoRoot = path.resolve(__dirname, '../../../');
 
 function readManifest(extensionId: string): Record<string, unknown> {
@@ -31,15 +33,21 @@ describe('OpenClaw extension manifests', () => {
     expect(readContractTools('ask-user-question')).toEqual(['AskUserQuestion']);
   });
 
+  test('declares the search_library agent tool contract under the shared plugin id', () => {
+    expect(readManifest(LIBRARY_SEARCH_PLUGIN_ID).id).toBe(LIBRARY_SEARCH_PLUGIN_ID);
+    expect(readContractTools(LIBRARY_SEARCH_PLUGIN_ID)).toEqual([LIBRARY_SEARCH_TOOL_NAME]);
+  });
+
   test('declares TypeScript entries for local extensions that are precompiled for packaging', () => {
     expect(readPackageOpenClawExtensions('mcp-bridge')).toEqual(['./index.ts']);
     expect(readPackageOpenClawExtensions('ask-user-question')).toEqual(['./index.ts']);
-    expect(readPackageOpenClawExtensions('swen-model-compat')).toEqual(['./index.ts']);
+    expect(readPackageOpenClawExtensions(LIBRARY_SEARCH_PLUGIN_ID)).toEqual(['./index.ts']);
+    expect(readPackageOpenClawExtensions('maties-model-compat')).toEqual(['./index.ts']);
   });
 
-  test('declares a strict allowlisted model-profile config for Swen compatibility', () => {
-    const manifest = readManifest('swen-model-compat');
-    expect(manifest.providers).toEqual(['swen-model-compat']);
+  test('declares a strict allowlisted model-profile config for Maties compatibility', () => {
+    const manifest = readManifest('maties-model-compat');
+    expect(manifest.providers).toEqual(['maties-model-compat']);
     expect(manifest.activation).toBeUndefined();
     expect(manifest.configSchema).toEqual({
       type: 'object',

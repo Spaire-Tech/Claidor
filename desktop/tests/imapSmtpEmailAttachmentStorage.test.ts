@@ -44,7 +44,7 @@ const {
 const temporaryDirectories: string[] = [];
 
 function createTemporaryDirectory(): string {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-email-attachment-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-email-attachment-'));
   temporaryDirectories.push(directory);
   return directory;
 }
@@ -141,7 +141,7 @@ describe('sanitizeAttachmentFilename', () => {
 
 describe('isPathInside', () => {
   test('accepts descendants and rejects equality, siblings, and parent traversal', () => {
-    const root = path.resolve('/tmp/swen-attachment-root');
+    const root = path.resolve('/tmp/maties-attachment-root');
 
     expect(isPathInside(root, path.join(root, 'account', '42'))).toBe(true);
     expect(isPathInside(root, root)).toBe(false);

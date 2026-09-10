@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Default skill configuration for Swen",
+  "description": "Default skill configuration for Maties",
   "defaults": {
     "docx": {
       "order": 10,

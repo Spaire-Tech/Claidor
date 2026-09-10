@@ -4,24 +4,24 @@ import { describe, expect, test } from 'vitest';
 import { EnterpriseQuotaReason } from '../../../shared/enterpriseAccount/constants';
 import {
   resolveBlockingEnterpriseQuotaReason,
-  usesSwenServerQuota,
+  usesMatiesServerQuota,
 } from './modelQuotaGate';
 
 const quotaReason = EnterpriseQuotaReason.MemberMonthlyQuotaExhausted;
 
-describe('usesSwenServerQuota', () => {
+describe('usesMatiesServerQuota', () => {
   test('identifies server models by flag or provider key', () => {
-    expect(usesSwenServerQuota({
+    expect(usesMatiesServerQuota({
       providerKey: ProviderName.OpenAI,
       isServerModel: true,
     })).toBe(true);
-    expect(usesSwenServerQuota({
-      providerKey: ProviderName.SwenServer,
+    expect(usesMatiesServerQuota({
+      providerKey: ProviderName.MatiesServer,
     })).toBe(true);
   });
 
   test('identifies a user-configured model as independent from server quota', () => {
-    expect(usesSwenServerQuota({
+    expect(usesMatiesServerQuota({
       providerKey: ProviderName.Qwen,
       isServerModel: false,
     })).toBe(false);
@@ -29,9 +29,9 @@ describe('usesSwenServerQuota', () => {
 });
 
 describe('resolveBlockingEnterpriseQuotaReason', () => {
-  test('keeps the quota gate for Swen server models', () => {
+  test('keeps the quota gate for Maties server models', () => {
     expect(resolveBlockingEnterpriseQuotaReason(quotaReason, {
-      providerKey: ProviderName.SwenServer,
+      providerKey: ProviderName.MatiesServer,
       isServerModel: true,
     })).toBe(quotaReason);
   });
@@ -49,7 +49,7 @@ describe('resolveBlockingEnterpriseQuotaReason', () => {
 
   test('does not gate any model when enterprise quota is available', () => {
     expect(resolveBlockingEnterpriseQuotaReason(null, {
-      providerKey: ProviderName.SwenServer,
+      providerKey: ProviderName.MatiesServer,
       isServerModel: true,
     })).toBeNull();
   });

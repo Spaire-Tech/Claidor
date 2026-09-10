@@ -36,7 +36,7 @@ const {
 // ---- helpers ----------------------------------------------------------------
 
 function makeTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'swen-memoryfile-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'maties-memoryfile-test-'));
 }
 
 function cleanupDir(dir) {

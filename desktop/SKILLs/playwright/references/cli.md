@@ -3,12 +3,12 @@
 Use the wrapper script unless the CLI is already installed globally:
 
 ```bash
-export SKILLS_ROOT="${SWEN_SKILLS_ROOT:-${SKILLS_ROOT:-$HOME/Library/Application Support/Swen/SKILLs}}"
+export SKILLS_ROOT="${MATIES_SKILLS_ROOT:-${SKILLS_ROOT:-$HOME/Library/Application Support/Maties/SKILLs}}"
 export PWCLI="$SKILLS_ROOT/playwright/scripts/playwright_cli.sh"
 "$PWCLI" --help
 ```
 
-Installed skills resolve from `$SWEN_SKILLS_ROOT` / `$SKILLS_ROOT` (production default: app `userData/SKILLs`, macOS usually `~/Library/Application Support/Swen/SKILLs`).
+Installed skills resolve from `$MATIES_SKILLS_ROOT` / `$SKILLS_ROOT` (production default: app `userData/SKILLs`, macOS usually `~/Library/Application Support/Maties/SKILLs`).
 
 Optional convenience alias:
 

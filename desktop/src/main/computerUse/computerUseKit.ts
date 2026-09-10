@@ -31,7 +31,7 @@ type InstalledKitsMap = Record<string, InstalledKitRecord>;
 type SkillStateMap = Record<string, { enabled: boolean }>;
 
 // The Computer Use kit is switched off: its Windows runtime zip and its kit
-// bundle are hosted on NetEase's CDN, and Swen must not fetch binaries from
+// bundle are hosted on NetEase's CDN, and Maties must not fetch binaries from
 // there. Restore the platform check below once Claidor hosts the files:
 //   return process.platform === ComputerUseRuntime.Platform
 //     && process.arch === ComputerUseRuntime.Arch;
@@ -45,7 +45,7 @@ export function buildComputerUseMarketplaceKit(): Record<string, unknown> {
     name: ComputerUseKitMetadata.Name,
     description: ComputerUseKitMetadata.Description,
     icon: COMPUTER_USE_KIT_ICON_URL,
-    author: 'Swen',
+    author: 'Maties',
     version: ComputerUseRuntime.Version,
     tryAsking: [
       {

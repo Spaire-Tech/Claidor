@@ -22,8 +22,8 @@ afterEach(() => {
 
 test('resolveNpmCommand delegates to shared npm runtime resolution', () => {
   const resolved = {
-    command: 'C:\\Swen\\Swen.exe',
-    baseArgs: ['C:\\Swen\\resources\\app.asar.unpacked\\node_modules\\npm\\bin\\npm-cli.js'],
+    command: 'C:\\Maties\\Maties.exe',
+    baseArgs: ['C:\\Maties\\resources\\app.asar.unpacked\\node_modules\\npm\\bin\\npm-cli.js'],
     env: { ELECTRON_RUN_AS_NODE: '1' },
     shell: false,
   };

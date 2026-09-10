@@ -5,7 +5,7 @@ echo "============================================"
 echo " Sandbox VM Image Builder (WSL)"
 echo "============================================"
 
-PROJECT=/mnt/d/project/swen
+PROJECT=/mnt/d/project/maties
 BROOT=/root/sandbox-build
 OUTDIR=$PROJECT/sandbox/image/out
 

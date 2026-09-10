@@ -257,7 +257,7 @@ describe('publishing conversion attribution', () => {
 
   test('drops ownerless legacy attribution records', async () => {
     globalThis.localStorage.setItem(
-      'swen_publishing_conversion_attribution_v2',
+      'maties_publishing_conversion_attribution_v2',
       JSON.stringify({
         ...attribution,
         ownerAccountKey: undefined,

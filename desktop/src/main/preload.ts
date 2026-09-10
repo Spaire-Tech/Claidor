@@ -75,6 +75,12 @@ import type {
   ResolvedKitCapabilities,
 } from '../shared/kit/constants';
 import { LibraryIpc } from '../shared/library/constants';
+import {
+  type LibraryContentConfig,
+  LibraryContentIpc,
+  type LibraryContentStatus,
+  type LibrarySearchRequest,
+} from '../shared/library/contentConstants';
 import type {
   LibraryArtifactCandidate,
   LibraryBackfillState,
@@ -984,6 +990,27 @@ contextBridge.exposeInMainWorld('electron', {
       };
       ipcRenderer.on(LibraryIpc.Changed, handler);
       return () => ipcRenderer.removeListener(LibraryIpc.Changed, handler);
+    },
+  },
+  // The personal library: the index of the person's documents (docs/maties/library.md).
+  libraryContent: {
+    getStatus: () => ipcRenderer.invoke(LibraryContentIpc.GetStatus),
+    getConfig: () => ipcRenderer.invoke(LibraryContentIpc.GetConfig),
+    setConfig: (update: Partial<LibraryContentConfig>) =>
+      ipcRenderer.invoke(LibraryContentIpc.SetConfig, update),
+    pickFolder: () => ipcRenderer.invoke(LibraryContentIpc.PickFolder),
+    setPaused: (paused: boolean) => ipcRenderer.invoke(LibraryContentIpc.SetPaused, paused),
+    rebuild: () => ipcRenderer.invoke(LibraryContentIpc.Rebuild),
+    search: (request: LibrarySearchRequest) =>
+      ipcRenderer.invoke(LibraryContentIpc.Search, request),
+    openFile: (filePath: string) => ipcRenderer.invoke(LibraryContentIpc.OpenFile, filePath),
+    revealFile: (filePath: string) => ipcRenderer.invoke(LibraryContentIpc.RevealFile, filePath),
+    onStatusChanged: (callback: (status: LibraryContentStatus) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, status: LibraryContentStatus) => {
+        callback(status);
+      };
+      ipcRenderer.on(LibraryContentIpc.StatusChanged, handler);
+      return () => ipcRenderer.removeListener(LibraryContentIpc.StatusChanged, handler);
     },
   },
   asr: {

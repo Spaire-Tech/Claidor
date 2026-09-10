@@ -4,13 +4,13 @@
 // electron-builder-config.cjs, and NSIS compile-time guards.
 
 const BuildEnv = {
-  ChannelBuild: 'SWEN_CHANNEL_BUILD',
+  ChannelBuild: 'MATIES_CHANNEL_BUILD',
   Keyfrom: 'KEYFROM',
-  SilentOnDoubleClick: 'SWEN_SILENT_ON_DOUBLE_CLICK',
-  ReuseWebPackage: 'SWEN_REUSE_NSIS_WEB_PACKAGE',
-  WebInstaller: 'SWEN_WEB_INSTALLER',
-  WebPkgUrl: 'SWEN_WEB_PKG_URL',
-  WebPkgBaseUrl: 'SWEN_WEB_PKG_BASE_URL',
+  SilentOnDoubleClick: 'MATIES_SILENT_ON_DOUBLE_CLICK',
+  ReuseWebPackage: 'MATIES_REUSE_NSIS_WEB_PACKAGE',
+  WebInstaller: 'MATIES_WEB_INSTALLER',
+  WebPkgUrl: 'MATIES_WEB_PKG_URL',
+  WebPkgBaseUrl: 'MATIES_WEB_PKG_BASE_URL',
 };
 
 // Every variable a channel build must control itself; the build entry points

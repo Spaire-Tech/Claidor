@@ -18,7 +18,7 @@ const FILE_EXTENSIONS = [
 
 // Regular expression patterns
 // Markdown image: ![alt](path) - matches local paths
-// Supports: the file:/// protocol, common system paths, and user-directory paths such as ~/.swen
+// Supports: the file:/// protocol, common system paths, and user-directory paths such as ~/.maties
 const MARKDOWN_IMAGE_RE = /!\[([^\]]*)\]\(((?:file:\/\/\/|\/(?:tmp|var|private|Users|home|root)|~\/|[A-Za-z]:)[^)]+)\)/g;
 
 // Markdown link: [text](path) - matches local media file paths

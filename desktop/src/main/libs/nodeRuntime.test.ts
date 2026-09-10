@@ -12,7 +12,7 @@ const mockElectronState = vi.hoisted(() => ({
 vi.mock('electron', () => ({
   app: {
     getAppPath: () => mockElectronState.appPath,
-    getName: () => 'Swen',
+    getName: () => 'Maties',
     getPath: (name: string) => (name === 'userData' ? mockElectronState.userData : os.tmpdir()),
     isPackaged: mockElectronState.isPackaged,
   },
@@ -31,9 +31,9 @@ function setPlatform(platform: NodeJS.Platform): void {
 }
 
 beforeEach(() => {
-  mockElectronState.appPath = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-node-runtime-'));
+  mockElectronState.appPath = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-node-runtime-'));
   mockElectronState.isPackaged = false;
-  mockElectronState.userData = path.join(os.tmpdir(), 'swen-user-data');
+  mockElectronState.userData = path.join(os.tmpdir(), 'maties-user-data');
 });
 
 afterEach(() => {
@@ -42,21 +42,21 @@ afterEach(() => {
 });
 
 describe('selectSpawnableNodeCandidate', () => {
-  test('skips Swen bash and cmd shims on Windows and returns node.exe', () => {
+  test('skips Maties bash and cmd shims on Windows and returns node.exe', () => {
     expect(selectSpawnableNodeCandidate([
-      'C:\\Users\\demo\\AppData\\Roaming\\Swen\\cowork\\bin\\node',
-      'C:\\Users\\demo\\AppData\\Roaming\\Swen\\cowork\\bin\\node.cmd',
+      'C:\\Users\\demo\\AppData\\Roaming\\Maties\\cowork\\bin\\node',
+      'C:\\Users\\demo\\AppData\\Roaming\\Maties\\cowork\\bin\\node.cmd',
       'C:\\Program Files\\nodejs\\node.exe',
-    ], 'win32', 'C:\\Users\\demo\\AppData\\Roaming\\Swen')).toBe(
+    ], 'win32', 'C:\\Users\\demo\\AppData\\Roaming\\Maties')).toBe(
       'C:\\Program Files\\nodejs\\node.exe',
     );
   });
 
   test('returns null on Windows when only non-native shims are available', () => {
     expect(selectSpawnableNodeCandidate([
-      'C:\\Users\\demo\\AppData\\Roaming\\Swen\\cowork\\bin\\node',
-      'C:\\Users\\demo\\AppData\\Roaming\\Swen\\cowork\\bin\\node.cmd',
-    ], 'win32', 'C:\\Users\\demo\\AppData\\Roaming\\Swen')).toBeNull();
+      'C:\\Users\\demo\\AppData\\Roaming\\Maties\\cowork\\bin\\node',
+      'C:\\Users\\demo\\AppData\\Roaming\\Maties\\cowork\\bin\\node.cmd',
+    ], 'win32', 'C:\\Users\\demo\\AppData\\Roaming\\Maties')).toBeNull();
   });
 
   test('keeps the first command candidate on macOS', () => {
@@ -65,11 +65,11 @@ describe('selectSpawnableNodeCandidate', () => {
 });
 
 describe('resolveNodeRuntimeForSpawn', () => {
-  test('uses real node.exe on Windows when present after Swen shims', () => {
+  test('uses real node.exe on Windows when present after Maties shims', () => {
     setPlatform('win32');
 
     const runtime = resolveNodeRuntimeForSpawn({}, () => [
-      'C:\\Users\\demo\\AppData\\Roaming\\Swen\\cowork\\bin\\node',
+      'C:\\Users\\demo\\AppData\\Roaming\\Maties\\cowork\\bin\\node',
       'C:\\Program Files\\nodejs\\node.exe',
     ]);
 
@@ -84,7 +84,7 @@ describe('resolveNodeRuntimeForSpawn', () => {
     setPlatform('win32');
 
     const runtime = resolveNodeRuntimeForSpawn({}, () => [
-      'C:\\Users\\demo\\AppData\\Roaming\\Swen\\cowork\\bin\\node',
+      'C:\\Users\\demo\\AppData\\Roaming\\Maties\\cowork\\bin\\node',
     ]);
 
     expect(runtime.command).toBe(process.execPath);

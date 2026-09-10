@@ -49,7 +49,7 @@ describe('openclaw local session resolver', () => {
 
     expect(resolveCoworkSessionIdByOpenClawSessionKey(
       db,
-      'agent:qa-reviewer:swen:session-1',
+      'agent:qa-reviewer:maties:session-1',
     )).toBe('session-1');
   });
 

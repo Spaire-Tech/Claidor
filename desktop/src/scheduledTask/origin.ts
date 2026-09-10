@@ -45,7 +45,7 @@ export function inferOriginAndBinding(task: InferableTask): {
 } {
   const sk = (task.sessionKey ?? '').trim();
 
-  // 1. Managed session key: "agent:main:swen:{sessionId}"
+  // 1. Managed session key: "agent:main:maties:{sessionId}"
   if (sk && isManagedSessionKey(sk)) {
     const parsed = parseManagedSessionKey(sk);
     if (parsed) {

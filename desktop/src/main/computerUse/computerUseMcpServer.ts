@@ -188,7 +188,7 @@ const { StdioServerTransport } = await import(moduleUrl(sdkRoot, 'dist', 'esm', 
 const { z } = await import(moduleUrl(zodRoot, 'index.js'));
 const { WindowsComputerUseClient } = await import(pathToFileURL(clientModulePath).href);
 
-const APPROVED_APP_META_KEY = 'x-swen-computer-use-approved-app';
+const APPROVED_APP_META_KEY = 'x-maties-computer-use-approved-app';
 const MAX_TEXT_CHARS = 30000;
 const deniedAppPattern = [
   'cmd.exe',
@@ -215,7 +215,7 @@ function createHelperTurnId() {
 }
 const requestMeta = {
   computerUseHome: helperStateHome,
-  session_id: 'swen-computer-use',
+  session_id: 'maties-computer-use',
   turn_id: createHelperTurnId(),
 };
 

@@ -110,7 +110,7 @@ vi.mock('./openclawLocalExtensions', () => ({
   findThirdPartyExtensionsDir: () => null,
   hasBundledOpenClawExtension: (id: string) => (
     id !== 'qwen-portal-auth'
-    && (id !== 'swen-model-compat' || mockRuntimeState.modelCompatPluginAvailable)
+    && (id !== 'maties-model-compat' || mockRuntimeState.modelCompatPluginAvailable)
   ),
   hasRuntimeBundledOpenClawExtension: (id: string) => id === 'xai',
   resolveOpenClawExtensionPluginId: (id: string) => {
@@ -231,7 +231,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.skills.entries).not.toHaveProperty('remotion');
   });
 
-  test('writes OpenClaw config fields required by Swen patches', async () => {
+  test('writes OpenClaw config fields required by Maties patches', async () => {
     const legacyWorkingDirectory = path.join(tmpDir, 'legacy-working-directory');
     const mainAgentWorkingDirectory = path.join(tmpDir, 'main-agent-working-directory');
 
@@ -269,7 +269,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       ],
     });
 
-    const result = sync.sync('swen-patch-dependent-fields');
+    const result = sync.sync('maties-patch-dependent-fields');
     expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -742,7 +742,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(fs.existsSync(path.join(writerWorkspace, 'USER.md'))).toBe(false);
   });
 
-  test('merges all server models into existing swen provider and updates image input', async () => {
+  test('merges all server models into existing maties provider and updates image input', async () => {
     mockRuntimeState.proxyPort = 56646;
     mockRuntimeState.serverModels = [
       {
@@ -811,7 +811,7 @@ describe('OpenClawConfigSync runtime config output', () => {
         apiType: 'openai',
       },
       providerMetadata: {
-        providerName: 'swen-server',
+        providerName: 'maties-server',
         codingPlanEnabled: false,
         supportsImage: false,
         modelName: 'Qwen3.5 Plus',
@@ -860,7 +860,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const provider = config.models.providers['swen-server'];
+    const provider = config.models.providers['maties-server'];
     expect(provider.baseUrl).toBe('http://127.0.0.1:56646/v1');
     expect(provider.apiKey).toBe('${LOBSTER_PROXY_TOKEN}');
     expect(JSON.stringify(config)).not.toContain('LOBSTER_APIKEY_SERVER');
@@ -911,31 +911,31 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(JSON.stringify(provider.models)).not.toContain('cacheControlFormat');
     expect(JSON.stringify(provider.models)).not.toContain('supportsLongCacheRetention');
     expect(config.agents.defaults.models).toEqual(expect.objectContaining({
-      'swen-server/qwen3.5-plus-YoudaoInner': {
+      'maties-server/qwen3.5-plus-YoudaoInner': {
         params: {
           cacheRetention: 'short',
           contextCacheProvider: 'dashscope',
           contextCacheMode: 'explicit',
         },
       },
-      'swen-server/qwen3.6-plus-YoudaoInner': {
+      'maties-server/qwen3.6-plus-YoudaoInner': {
         params: {
           cacheRetention: 'short',
           contextCacheProvider: 'dashscope',
           contextCacheMode: 'explicit',
         },
       },
-      'swen-server/claude-sonnet-4-6-YoudaoInner': {
+      'maties-server/claude-sonnet-4-6-YoudaoInner': {
         params: {
           cacheRetention: 'short',
         },
       },
-      'swen-server/claude-opus-4-YoudaoInner': {
+      'maties-server/claude-opus-4-YoudaoInner': {
         params: {
           cacheRetention: 'short',
         },
       },
-      'swen-server/claude-sonnet-4-6': {
+      'maties-server/claude-sonnet-4-6': {
         params: {
           cacheRetention: 'short',
           contextCacheProvider: 'anthropic-compatible',
@@ -956,7 +956,7 @@ describe('OpenClawConfigSync runtime config output', () => {
         apiType: 'openai',
       },
       providerMetadata: {
-        providerName: 'swen-server',
+        providerName: 'maties-server',
         codingPlanEnabled: false,
         supportsImage: true,
         supportsThinking: true,
@@ -970,14 +970,14 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.models.providers['swen-server'].models).toEqual(expect.arrayContaining([
+    expect(config.models.providers['maties-server'].models).toEqual(expect.arrayContaining([
       expect.objectContaining({
         id: 'claude-sonnet-4-6',
         api: 'openai-completions',
       }),
     ]));
     expect(config.agents.defaults.models).toEqual(expect.objectContaining({
-      'swen-server/claude-sonnet-4-6': {
+      'maties-server/claude-sonnet-4-6': {
         params: {
           cacheRetention: 'short',
           contextCacheProvider: 'anthropic-compatible',
@@ -1221,15 +1221,15 @@ describe('OpenClawConfigSync runtime config output', () => {
         },
       },
       'deepseek/deepseek-v4-pro': {},
-      'swen-server/MiniMax-M2.7-YoudaoInner': {},
-      'swen-server/kimi-k2.6-inhouse-ZhiYun': {},
+      'maties-server/MiniMax-M2.7-YoudaoInner': {},
+      'maties-server/kimi-k2.6-inhouse-ZhiYun': {},
     }));
     expect(Object.keys(modelDefaults)).toEqual(expect.arrayContaining([
       'deepseek/deepseek-v4-flash',
       'deepseek/deepseek-v4-pro',
       'custom_0/custom-thinking-model',
-      'swen-server/MiniMax-M2.7-YoudaoInner',
-      'swen-server/kimi-k2.6-inhouse-ZhiYun',
+      'maties-server/MiniMax-M2.7-YoudaoInner',
+      'maties-server/kimi-k2.6-inhouse-ZhiYun',
     ]));
   });
 
@@ -1299,14 +1299,14 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     const customProvider = config.models.providers.custom_0;
-    const serverProvider = config.models.providers['swen-server'];
+    const serverProvider = config.models.providers['maties-server'];
     const customK3 = customProvider.models.find((model: { id: string }) =>
       model.id === 'kimi-k3');
     const serverK3 = serverProvider.models.find((model: { id: string }) =>
       model.id === 'kimi-k3-package');
 
-    expect(customProvider.api).toBe('swen-model-compat');
-    expect(serverProvider.api).toBe('swen-model-compat');
+    expect(customProvider.api).toBe('maties-model-compat');
+    expect(serverProvider.api).toBe('maties-model-compat');
     expect(customProvider.models).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'plain-model', api: 'openai-completions' }),
       expect.objectContaining({ id: 'kimi-k3', api: 'openai-completions' }),
@@ -1354,16 +1354,16 @@ describe('OpenClawConfigSync runtime config output', () => {
         },
       },
     });
-    expect(config.plugins.entries['swen-model-compat']).toEqual({
+    expect(config.plugins.entries['maties-model-compat']).toEqual({
       enabled: true,
       config: {
         modelProfiles: {
           'custom_0/kimi-k3': 'moonshot-kimi-k3',
-          'swen-server/kimi-k3-package': 'moonshot-kimi-k3',
+          'maties-server/kimi-k3-package': 'moonshot-kimi-k3',
         },
       },
     });
-    expect(config.plugins.allow).toContain('swen-model-compat');
+    expect(config.plugins.allow).toContain('maties-model-compat');
 
     const unchangedSync = sync.sync('kimi-k3-compat-unchanged');
     expect(unchangedSync.ok).toBe(true);
@@ -1391,14 +1391,14 @@ describe('OpenClawConfigSync runtime config output', () => {
       models: {
         providers: {
           custom_0: {
-            api: 'swen-model-compat',
+            api: 'maties-model-compat',
             models: [{ id: 'plain-model', api: 'openai-completions' }],
           },
         },
       },
       plugins: {
         entries: {
-          'swen-model-compat': {
+          'maties-model-compat': {
             enabled: true,
             config: {
               modelProfiles: {
@@ -1416,7 +1416,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       ...compatConfig,
       plugins: {
         entries: {
-          'swen-model-compat': {
+          'maties-model-compat': {
             enabled: true,
             config: {
               modelProfiles: {
@@ -1432,7 +1432,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       models: {
         providers: {
           custom_0: {
-            api: 'swen-model-compat',
+            api: 'maties-model-compat',
             models: [
               { id: 'another-plain-model', api: 'openai-completions' },
               { id: 'plain-model', api: 'openai-completions' },
@@ -1445,12 +1445,12 @@ describe('OpenClawConfigSync runtime config output', () => {
       ...compatConfig,
       plugins: {
         entries: {
-          'swen-model-compat': {
+          'maties-model-compat': {
             enabled: true,
             config: {
-              modelProfiles: compatConfig.plugins.entries['swen-model-compat'].config.modelProfiles,
+              modelProfiles: compatConfig.plugins.entries['maties-model-compat'].config.modelProfiles,
               thinkingProfiles: {
-                'swen-server/deepseek-v4-flash': {
+                'maties-server/deepseek-v4-flash': {
                   options: [
                     { level: 'off', openclawLevel: 'off' },
                     { level: 'high', openclawLevel: 'high' },
@@ -1497,7 +1497,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       rejectedModelRefs: [],
     });
     for (const providers of [forward, reverse]) {
-      expect(providers.custom_0.api).toBe('swen-model-compat');
+      expect(providers.custom_0.api).toBe('maties-model-compat');
       expect(Object.fromEntries(
         providers.custom_0.models.map(model => [model.id, model.api]),
       )).toEqual({
@@ -1544,7 +1544,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(sync.sync('ordinary-package-api-fallback')).toMatchObject({ ok: true });
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.models.providers['swen-server'].models).toContainEqual(
+    expect(config.models.providers['maties-server'].models).toContainEqual(
       expect.objectContaining({
         id: 'ordinary-package-model',
         api: 'openai-completions',
@@ -1567,15 +1567,15 @@ describe('OpenClawConfigSync runtime config output', () => {
         ],
         defaultLevel: 'high',
       },
-      requestCapabilities: ['swen-options-v1'],
+      requestCapabilities: ['maties-options-v1'],
     }];
 
     const sync = await createSync();
     expect(sync.sync('server-thinking-profile')).toMatchObject({ ok: true });
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.models.providers['swen-server'].api).toBe('openai-completions');
-    expect(config.models.providers['swen-server'].models[0]).toEqual(
+    expect(config.models.providers['maties-server'].api).toBe('openai-completions');
+    expect(config.models.providers['maties-server'].models[0]).toEqual(
       expect.objectContaining({
         thinkingLevelMap: {
           off: 'off',
@@ -1591,11 +1591,11 @@ describe('OpenClawConfigSync runtime config output', () => {
         }),
       }),
     );
-    expect(config.plugins.entries['swen-model-compat']).toEqual({
+    expect(config.plugins.entries['maties-model-compat']).toEqual({
       enabled: true,
       config: {
         thinkingProfiles: {
-          'swen-server/deepseek-v4-flash': {
+          'maties-server/deepseek-v4-flash': {
             options: [
               { level: 'off', openclawLevel: 'off' },
               { level: 'high', openclawLevel: 'high' },
@@ -1607,7 +1607,7 @@ describe('OpenClawConfigSync runtime config output', () => {
         },
       },
     });
-    expect(config.plugins.allow).toContain('swen-model-compat');
+    expect(config.plugins.allow).toContain('maties-model-compat');
   });
 
   test('keeps legacy thinking transport when the server does not advertise request options', async () => {
@@ -1632,8 +1632,8 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(
-      config.plugins.entries['swen-model-compat']
-        .config.thinkingProfiles['swen-server/deepseek-v4-flash'],
+      config.plugins.entries['maties-model-compat']
+        .config.thinkingProfiles['maties-server/deepseek-v4-flash'],
     ).toEqual({
       options: [
         { level: 'off', openclawLevel: 'off' },
@@ -1674,7 +1674,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       ok: false,
       changed: false,
     });
-    expect(result.error).toContain('swen-model-compat');
+    expect(result.error).toContain('maties-model-compat');
     expect(fs.existsSync(configPath)).toBe(false);
   });
 
@@ -1711,7 +1711,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       agents: {
         defaults: {
           models: {
-            'swen-server/MiniMax-M2.7-YoudaoInner': {},
+            'maties-server/MiniMax-M2.7-YoudaoInner': {},
           },
         },
       },
@@ -2588,9 +2588,49 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const agentsMdPath = path.join(stateDir, 'workspace-main', 'AGENTS.md');
     const agentsMd = fs.readFileSync(agentsMdPath, 'utf8');
-    expect(agentsMd).toContain('Swen does not support sandbox browser execution in this version.');
+    expect(agentsMd).toContain('Maties does not support sandbox browser execution in this version.');
     expect(agentsMd).toContain('For every `browser` tool call, set `target="host"` explicitly.');
     expect(agentsMd).toContain('never tell the user to enable Chrome remote debugging');
+  });
+
+  test('enables the search-library plugin with its bridge config and writes the library paragraph', async () => {
+    const librarySearchCallbackUrl = 'http://127.0.0.1:43210/library/search';
+    const sync = await createSync({
+      getLibrarySearchCallbackUrl: () => librarySearchCallbackUrl,
+    });
+
+    const result = sync.sync('library-plugin');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.plugins.entries['search-library']).toEqual({
+      enabled: true,
+      config: {
+        callbackUrl: librarySearchCallbackUrl,
+        secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+      },
+    });
+
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## Personal Library');
+    expect(agentsMd).toContain('call `search_library` first');
+    expect(agentsMd).toContain('Name the file path exactly as the tool returned it, so the app can turn it into a link.');
+    expect(agentsMd).toContain('Do not invent the contents of a document you have not seen.');
+    // The library paragraph follows the web search policy.
+    expect(agentsMd.indexOf('## Personal Library')).toBeGreaterThan(agentsMd.indexOf('## Web Search'));
+    expect(agentsMd.indexOf('## Personal Library')).toBeLessThan(agentsMd.indexOf('## Browser Policy'));
+  });
+
+  test('keeps the search-library plugin enabled without a config when the bridge is not up', async () => {
+    const sync = await createSync({
+      getLibrarySearchCallbackUrl: () => null,
+    });
+
+    const result = sync.sync('library-plugin-no-bridge');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.plugins.entries['search-library']).toEqual({ enabled: true });
   });
 
   test('enables managed OpenClaw tool loop detection', async () => {
@@ -2669,7 +2709,7 @@ describe('OpenClawConfigSync runtime config output', () => {
           timeoutSeconds: 25,
           maxRedirects: 4,
           maxChars: 12000,
-          userAgent: 'Swen Test',
+          userAgent: 'Maties Test',
           readability: false,
           allowRfc2544BenchmarkRange: true,
         },
@@ -2725,7 +2765,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       timeoutSeconds: 25,
       maxRedirects: 4,
       maxChars: 12000,
-      userAgent: 'Swen Test',
+      userAgent: 'Maties Test',
       ssrfPolicy: { allowRfc2544BenchmarkRange: true },
     });
     expect(config.tools.web.fetch.useEnvProxy).toBeUndefined();
@@ -2754,10 +2794,10 @@ describe('OpenClawConfigSync runtime config output', () => {
       }),
       getBrowserWebAccessConfig: () => ({ displayMode: browserDisplayMode }),
       getBrowserCallbackUrl: () => browserCallbackUrl,
-      getLobsterBrowserMcpCommand: () => 'C:/Swen/lobster-browser-mcp.cmd',
+      getLobsterBrowserMcpCommand: () => 'C:/Maties/lobster-browser-mcp.cmd',
       getLobsterBrowserMcpStdioLaunch: () => ({
-        command: 'C:/Swen/Swen.exe',
-        args: ['C:/Swen/lobster-browser-mcp-server.mjs'],
+        command: 'C:/Maties/Maties.exe',
+        args: ['C:/Maties/lobster-browser-mcp-server.mjs'],
         env: { ELECTRON_RUN_AS_NODE: '1' },
       }),
       isEnterprise: () => false,
@@ -2777,7 +2817,7 @@ describe('OpenClawConfigSync runtime config output', () => {
         [BrowserRuntimeProfile.InApp]: {
           driver: 'existing-session',
           attachOnly: true,
-          mcpCommand: 'C:/Swen/lobster-browser-mcp.cmd',
+          mcpCommand: 'C:/Maties/lobster-browser-mcp.cmd',
           mcpArgs: ['--lobster-bridge-url=http://127.0.0.1:3210/browser/tool'],
         },
       },
@@ -2785,9 +2825,9 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(inAppConfig.browser.headless).toBeUndefined();
     expect(inAppConfig.browser.extraArgs).toBeUndefined();
     expect(inAppConfig.mcp.servers[BrowserCredentialMcpServer.Name]).toEqual({
-      command: 'C:/Swen/Swen.exe',
+      command: 'C:/Maties/Maties.exe',
       args: [
-        'C:/Swen/lobster-browser-mcp-server.mjs',
+        'C:/Maties/lobster-browser-mcp-server.mjs',
         BrowserCredentialMcpServer.ToolSetArgument,
       ],
       env: { ELECTRON_RUN_AS_NODE: '1' },
@@ -2866,11 +2906,11 @@ describe('resolveModelSourceForOpenClawProvider', () => {
     mockRuntimeState.providerSourceEntries = [];
   });
 
-  test('classifies the Swen plan without any Settings entry', async () => {
+  test('classifies the Maties plan without any Settings entry', async () => {
     const { resolveModelSourceForOpenClawProvider } = await import('./openclawConfigSync');
-    expect(resolveModelSourceForOpenClawProvider('swen-server')).toEqual({
-      source: 'swen-plan',
-      providerName: ProviderName.SwenServer,
+    expect(resolveModelSourceForOpenClawProvider('maties-server')).toEqual({
+      source: 'maties-plan',
+      providerName: ProviderName.MatiesServer,
     });
   });
 

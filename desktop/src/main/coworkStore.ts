@@ -58,10 +58,10 @@ import {
 
 // Default working directory for new users
 const getDefaultWorkingDirectory = (): string => {
-  return path.join(os.homedir(), 'swen', 'project');
+  return path.join(os.homedir(), 'maties', 'project');
 };
 
-const TASK_WORKSPACE_CONTAINER_DIR = '.swen-tasks';
+const TASK_WORKSPACE_CONTAINER_DIR = '.maties-tasks';
 
 const normalizeRecentWorkspacePath = (cwd: string): string => {
   const resolved = path.resolve(cwd);
@@ -98,6 +98,57 @@ const DEFAULT_DREAMING_ENABLED = false;
 const DEFAULT_DREAMING_FREQUENCY = '0 3 * * *';
 const DEFAULT_DREAMING_MODEL = '';
 const DEFAULT_DREAMING_TIMEZONE = '';
+
+// The personal library (docs/maties/library.md): on by default, indexing the
+// person's usual document folders plus the working directory.
+const DEFAULT_LIBRARY_ENABLED = true;
+const DEFAULT_LIBRARY_EXCLUDED_FOLDERS: string[] = [];
+
+/** Absolute, trimmed, de-duplicated folder paths in their original order. */
+const normalizeFolderList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const folders: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string') continue;
+    const trimmed = entry.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    folders.push(trimmed);
+  }
+  return folders;
+};
+
+/**
+ * Folders the library indexes when the person has not chosen any yet:
+ * ~/Documents and ~/Desktop when they exist on disk, plus the working
+ * directory. De-duplicated.
+ */
+export const getDefaultLibraryFolders = (workingDirectory: string): string[] => {
+  const home = os.homedir();
+  const candidates = [path.join(home, 'Documents'), path.join(home, 'Desktop')]
+    .filter((folder) => {
+      try {
+        return fs.existsSync(folder);
+      } catch {
+        return false;
+      }
+    });
+  candidates.push(workingDirectory);
+  return normalizeFolderList(candidates);
+};
+
+/** Reads a JSON array of folder paths; anything unreadable falls back to the default. */
+const parseFolderListConfig = (value: string | undefined, fallback: () => string[]): string[] => {
+  if (value === undefined || value === null) return fallback();
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) return fallback();
+    return normalizeFolderList(parsed);
+  } catch {
+    return fallback();
+  }
+};
 
 // Regexes and helper inlined from the removed coworkMemoryExtractor module.
 // Used only by shouldAutoDeleteMemoryText() during startup memory cleanup.
@@ -630,6 +681,9 @@ export interface CoworkConfig {
   dreamingFrequency: string;
   dreamingModel: string;
   dreamingTimezone: string;
+  libraryEnabled: boolean;
+  libraryFolders: string[];
+  libraryExcludedFolders: string[];
 }
 
 export type CoworkConfigUpdate = Partial<Pick<
@@ -655,6 +709,9 @@ CoworkConfig,
   | 'dreamingFrequency'
   | 'dreamingModel'
   | 'dreamingTimezone'
+  | 'libraryEnabled'
+  | 'libraryFolders'
+  | 'libraryExcludedFolders'
 >>;
 
 export type PluginSource = 'npm' | 'clawhub' | 'git' | 'local' | 'openclaw';
@@ -2093,7 +2150,7 @@ export class CoworkStore {
       timestamp: row.created_at,
       preview: getCoworkRailPreview(
         row.preview_content,
-        row.type === 'user' ? `Turn ${index + 1}` : 'Swen',
+        row.type === 'user' ? `Turn ${index + 1}` : 'Maties',
         COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH,
       ),
       contentLen: row.content_len,
@@ -2454,15 +2511,19 @@ export class CoworkStore {
       'dreamingFrequency',
       'dreamingModel',
       'dreamingTimezone',
+      'libraryEnabled',
+      'libraryFolders',
+      'libraryExcludedFolders',
     ] as const;
     const configRows = this.getAll<{ key: string; value: string }>(
       `SELECT key, value FROM cowork_config WHERE key IN (${configKeys.map(() => '?').join(', ')})`,
       [...configKeys],
     );
     const cfg = new Map(configRows.map(r => [r.key, r.value]));
+    const workingDirectory = cfg.get('workingDirectory') || getDefaultWorkingDirectory();
 
     return {
-      workingDirectory: cfg.get('workingDirectory') || getDefaultWorkingDirectory(),
+      workingDirectory,
       systemPrompt: getDefaultSystemPrompt(),
       executionMode: 'local' as CoworkExecutionMode,
       agentEngine: 'openclaw' as CoworkAgentEngine,
@@ -2492,6 +2553,15 @@ export class CoworkStore {
       dreamingFrequency: cfg.get('dreamingFrequency') || DEFAULT_DREAMING_FREQUENCY,
       dreamingModel: cfg.get('dreamingModel') || DEFAULT_DREAMING_MODEL,
       dreamingTimezone: cfg.get('dreamingTimezone') || DEFAULT_DREAMING_TIMEZONE,
+      libraryEnabled: parseBooleanConfig(cfg.get('libraryEnabled'), DEFAULT_LIBRARY_ENABLED),
+      libraryFolders: parseFolderListConfig(
+        cfg.get('libraryFolders'),
+        () => getDefaultLibraryFolders(workingDirectory),
+      ),
+      libraryExcludedFolders: parseFolderListConfig(
+        cfg.get('libraryExcludedFolders'),
+        () => [...DEFAULT_LIBRARY_EXCLUDED_FOLDERS],
+      ),
     };
   }
 
@@ -2560,6 +2630,19 @@ export class CoworkStore {
     }
     if (config.dreamingTimezone !== undefined) {
       this.upsertConfig('dreamingTimezone', String(config.dreamingTimezone), now);
+    }
+    if (config.libraryEnabled !== undefined) {
+      this.upsertConfig('libraryEnabled', config.libraryEnabled ? '1' : '0', now);
+    }
+    if (config.libraryFolders !== undefined) {
+      this.upsertConfig('libraryFolders', JSON.stringify(normalizeFolderList(config.libraryFolders)), now);
+    }
+    if (config.libraryExcludedFolders !== undefined) {
+      this.upsertConfig(
+        'libraryExcludedFolders',
+        JSON.stringify(normalizeFolderList(config.libraryExcludedFolders)),
+        now,
+      );
     }
   }
 

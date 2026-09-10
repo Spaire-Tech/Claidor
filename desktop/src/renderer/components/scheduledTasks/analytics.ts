@@ -68,7 +68,7 @@ export function getModelAnalyticsParams(
   }
 
   const modelSource =
-    resolvedModel.isServerModel || resolvedModel.providerKey === ProviderName.SwenServer
+    resolvedModel.isServerModel || resolvedModel.providerKey === ProviderName.MatiesServer
       ? 'package'
       : 'custom';
 

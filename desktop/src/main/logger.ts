@@ -3,9 +3,9 @@
  * Intercepts console.* methods and writes to file + console simultaneously.
  *
  * Log file locations:
- *   macOS:   ~/Library/Logs/Swen/main-YYYY-MM-DD.log
- *   Windows: %USERPROFILE%\AppData\Roaming\Swen\logs\main-YYYY-MM-DD.log
- *   Linux:   ~/.config/Swen/logs/main-YYYY-MM-DD.log
+ *   macOS:   ~/Library/Logs/Maties/main-YYYY-MM-DD.log
+ *   Windows: %USERPROFILE%\AppData\Roaming\Maties\logs\main-YYYY-MM-DD.log
+ *   Linux:   ~/.config/Maties/logs/main-YYYY-MM-DD.log
  *
  * Rotation policy:
  *   - Daily log files (one file per calendar day)
@@ -91,7 +91,7 @@ export function initLogger(): void {
 
   // Log startup marker
   log.info('='.repeat(60));
-  log.info(`Swen started (${process.platform} ${process.arch})`);
+  log.info(`Maties started (${process.platform} ${process.arch})`);
   log.info('='.repeat(60));
 }
 

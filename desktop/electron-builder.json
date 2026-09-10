@@ -1,7 +1,7 @@
 {
-  "appId": "com.claidor.swen",
-  "productName": "Swen",
-  "executableName": "Swen",
+  "appId": "com.claidor.maties",
+  "productName": "Maties",
+  "executableName": "Maties",
   "directories": {
     "output": "release"
   },
@@ -65,13 +65,20 @@
     {
       "from": "build/icons/png/512x512.png",
       "to": "app-icon/512x512.png"
+    },
+    {
+      "from": "resources/embedding-model",
+      "to": "embedding-model",
+      "filter": [
+        "**/*"
+      ]
     }
   ],
   "protocols": [
     {
-      "name": "Swen",
+      "name": "Maties",
       "schemes": [
-        "swen"
+        "maties"
       ]
     }
   ],
@@ -85,12 +92,16 @@
     "gatekeeperAssess": false,
     "entitlements": "build/entitlements.mac.plist",
     "entitlementsInherit": "build/entitlements.mac.plist",
+    "files": [
+      "!node_modules/onnxruntime-node/bin/napi-v*/linux/**",
+      "!node_modules/onnxruntime-node/bin/napi-v*/win32/**"
+    ],
     "extendInfo": {
       "CFBundleIconName": "icon",
-      "NSMicrophoneUsageDescription": "Swen needs access to your microphone to record voice input for speech recognition.",
-      "NSCalendarsUsageDescription": "Swen needs access to your calendar to help you view and manage your schedule, for example finding events and creating meetings.",
-      "NSRemindersUsageDescription": "Swen needs access to your reminders to help you manage your to-do items.",
-      "NSAppleEventsUsageDescription": "Swen uses Apple Events to control the Calendar app for automation."
+      "NSMicrophoneUsageDescription": "Maties needs access to your microphone to record voice input for speech recognition.",
+      "NSCalendarsUsageDescription": "Maties needs access to your calendar to help you view and manage your schedule, for example finding events and creating meetings.",
+      "NSRemindersUsageDescription": "Maties needs access to your reminders to help you manage your to-do items.",
+      "NSAppleEventsUsageDescription": "Maties uses Apple Events to control the Calendar app for automation."
     },
     "extraResources": [
       {
@@ -167,6 +178,10 @@
     ],
     "icon": "build/icons/win/icon.ico",
     "requestedExecutionLevel": "asInvoker",
+    "files": [
+      "!node_modules/onnxruntime-node/bin/napi-v*/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v*/linux/**"
+    ],
     "extraResources": [
       {
         "from": "build-tar/win-resources.tar",
@@ -185,6 +200,10 @@
     ],
     "icon": "build/icons/png",
     "category": "Utility",
+    "files": [
+      "!node_modules/onnxruntime-node/bin/napi-v*/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v*/win32/**"
+    ],
     "extraResources": [
       {
         "from": "SKILLs",
@@ -250,7 +269,7 @@
       }
     ],
     "desktop": {
-      "Name": "Swen",
+      "Name": "Maties",
       "Comment": "AI-assisted coding and productivity tool",
       "Terminal": "false"
     }
@@ -267,7 +286,8 @@
     "node_modules/@img/**",
     "node_modules/better-sqlite3/**",
     "node_modules/node-nim/**",
-    "node_modules/npm/**"
+    "node_modules/npm/**",
+    "node_modules/onnxruntime-node/**"
   ],
   "asar": true
 }

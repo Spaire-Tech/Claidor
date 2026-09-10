@@ -66,7 +66,7 @@ describe('kit capability helpers', () => {
         kind: KitReferenceKind.Kit,
         id: 'design',
         name: 'Design',
-        uri: 'kit://design@swen-kits',
+        uri: 'kit://design@maties-kits',
         source: KitReferenceSource.LobsterAiKits,
       },
     ]);

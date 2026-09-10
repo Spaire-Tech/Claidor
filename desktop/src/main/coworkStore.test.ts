@@ -28,7 +28,7 @@ import {
   CoworkForkMode,
 } from '../shared/cowork/constants';
 import { OpenClawCronRunMetadataKey } from '../shared/cowork/openclawCronSessionKey';
-import { CoworkStore } from './coworkStore';
+import { CoworkStore, getDefaultLibraryFolders } from './coworkStore';
 import { ContinuityCapsuleSource } from './libs/agentEngine/coworkContinuityCapsule';
 
 // ---------------------------------------------------------------------------
@@ -95,7 +95,8 @@ function setupDb(): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS cowork_config (
       key TEXT PRIMARY KEY,
-      value TEXT
+      value TEXT,
+      updated_at INTEGER
     );
   `);
 
@@ -923,12 +924,12 @@ test('updateSession can patch model override without refreshing the session upda
 
   store.updateSession(
     sid,
-    { modelOverride: 'swen-server/qwen3.6-plus-YoudaoInner' },
+    { modelOverride: 'maties-server/qwen3.6-plus-YoudaoInner' },
     { touchUpdatedAt: false },
   );
 
   const session = store.getSession(sid);
-  expect(session?.modelOverride).toBe('swen-server/qwen3.6-plus-YoudaoInner');
+  expect(session?.modelOverride).toBe('maties-server/qwen3.6-plus-YoudaoInner');
   expect(session?.updatedAt).toBe(1000);
 });
 
@@ -940,7 +941,7 @@ test('create and update session persist the selected thinking level', () => {
     'local',
     [],
     'main',
-    'swen-server/deepseek-v4-flash',
+    'maties-server/deepseek-v4-flash',
     { thinkingLevel: 'high' },
   );
 
@@ -1336,6 +1337,70 @@ test('getConfig defaults OpenClaw heartbeat to disabled when config is missing',
   const config = store.getConfig();
 
   expect(config.openClawHeartbeatEnabled).toBe(false);
+});
+
+test('getConfig defaults the library to on with the default folders when nothing is stored', () => {
+  const config = store.getConfig();
+
+  expect(config.libraryEnabled).toBe(true);
+  expect(config.libraryFolders).toEqual(getDefaultLibraryFolders(config.workingDirectory));
+  expect(config.libraryFolders).toContain(config.workingDirectory);
+  expect(new Set(config.libraryFolders).size).toBe(config.libraryFolders.length);
+  expect(config.libraryExcludedFolders).toEqual([]);
+});
+
+test('getDefaultLibraryFolders lists existing home folders plus the working directory once', () => {
+  const folders = getDefaultLibraryFolders('/tmp/project');
+
+  expect(folders[folders.length - 1]).toBe('/tmp/project');
+  expect(new Set(folders).size).toBe(folders.length);
+  for (const folder of folders) {
+    expect(folder.length).toBeGreaterThan(0);
+  }
+  // The working directory is never repeated, even when it is a default folder.
+  const first = folders[0];
+  expect(getDefaultLibraryFolders(first).filter((folder) => folder === first)).toHaveLength(1);
+});
+
+test('library config round-trips through setConfig and getConfig', () => {
+  store.setConfig({
+    libraryEnabled: false,
+    libraryFolders: ['/home/me/Documents', ' /home/me/Desktop ', '/home/me/Documents', ''],
+    libraryExcludedFolders: ['/home/me/Documents/Archive'],
+  });
+
+  const config = store.getConfig();
+  expect(config.libraryEnabled).toBe(false);
+  expect(config.libraryFolders).toEqual(['/home/me/Documents', '/home/me/Desktop']);
+  expect(config.libraryExcludedFolders).toEqual(['/home/me/Documents/Archive']);
+
+  const stored = db
+    .prepare('SELECT value FROM cowork_config WHERE key = ?')
+    .get('libraryFolders') as { value: string };
+  expect(JSON.parse(stored.value)).toEqual(['/home/me/Documents', '/home/me/Desktop']);
+
+  // An empty list is a choice, not a missing value: the defaults do not come back.
+  store.setConfig({ libraryFolders: [] });
+  expect(store.getConfig().libraryFolders).toEqual([]);
+
+  store.setConfig({ libraryEnabled: true });
+  expect(store.getConfig().libraryEnabled).toBe(true);
+  expect(store.getConfig().libraryExcludedFolders).toEqual(['/home/me/Documents/Archive']);
+});
+
+test('getConfig falls back to the default folders when the stored list is unreadable', () => {
+  const upsert = db.prepare(
+    'INSERT OR REPLACE INTO cowork_config (key, value) VALUES (?, ?)',
+  );
+  upsert.run('libraryFolders', '{not json');
+  upsert.run('libraryExcludedFolders', '"a string, not a list"');
+
+  const config = store.getConfig();
+  expect(config.libraryFolders).toEqual(getDefaultLibraryFolders(config.workingDirectory));
+  expect(config.libraryExcludedFolders).toEqual([]);
+
+  upsert.run('libraryFolders', JSON.stringify([42, null, '/kept', '/kept']));
+  expect(store.getConfig().libraryFolders).toEqual(['/kept']);
 });
 
 test('backfillEmptyAgentModels assigns the current default model to empty agents only', () => {

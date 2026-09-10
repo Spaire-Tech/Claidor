@@ -148,7 +148,7 @@ describe('sanitizeUrlForLog', () => {
 
     expect(result).toBe('https://api.claidor.com/desktop/api/analytics/events?[redacted]#[redacted]');
     expect(result).not.toContain('user-1');
-    expect(result).not.toContain('swen_app_started');
+    expect(result).not.toContain('maties_app_started');
   });
 
   test('returns a safe marker for invalid URLs', () => {
@@ -162,7 +162,7 @@ describe('sanitizeUrlForLog', () => {
 describe('isAnalyticsEndpointUrl', () => {
   test('matches the analyzer endpoint regardless of query or fragment', () => {
     expect(isAnalyticsEndpointUrl(LogReporterEndpoint.Claidor)).toBe(true);
-    expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.Claidor}?_npid=wisdom&action=swen_app_started&uts=1`)).toBe(true);
+    expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.Claidor}?_npid=wisdom&action=maties_app_started&uts=1`)).toBe(true);
     expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.Claidor}#x`)).toBe(true);
   });
 

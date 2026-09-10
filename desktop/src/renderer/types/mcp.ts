@@ -64,10 +64,10 @@ export interface McpServerFormData {
 export interface McpRegistryEntry {
   id: string;                    // unique identifier, e.g. 'filesystem'
   name: string;                  // display name, English
-  name_zh?: string;              // accepted from remote data, never shown (Swen is English-only)
+  name_zh?: string;              // accepted from remote data, never shown (Maties is English-only)
   icon?: string;                 // icon URL (remote data); falls back to the default glyph
   descriptionKey: string;        // i18n translation key for description
-  description_zh?: string;       // accepted from remote data, never shown (Swen is English-only)
+  description_zh?: string;       // accepted from remote data, never shown (Maties is English-only)
   description_en?: string;       // English description (remote data)
   category: McpCategory;         // category tag
   categoryKey: string;           // i18n translation key for category

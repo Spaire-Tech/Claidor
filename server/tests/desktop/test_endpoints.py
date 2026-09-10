@@ -87,7 +87,7 @@ class TestLogin:
     ) -> None:
         response = await client.get("/desktop/login", follow_redirects=False)
         assert response.status_code == 303
-        assert response.headers["location"].startswith("swen://auth/callback?code=")
+        assert response.headers["location"].startswith("maties://auth/callback?code=")
 
     @pytest.mark.auth
     async def test_a_foreign_callback_gets_nothing(
@@ -211,7 +211,7 @@ class TestSession:
         assert {s["id"] for s in value["servers"]} >= {"github", "slack", "notion"}
         assert all("description_en" in s for s in value["servers"])
         pinged = await client.get(
-            "/desktop/api/analytics/events", params={"action": "swen_app_started"}
+            "/desktop/api/analytics/events", params={"action": "maties_app_started"}
         )
         assert pinged.status_code == 204
 

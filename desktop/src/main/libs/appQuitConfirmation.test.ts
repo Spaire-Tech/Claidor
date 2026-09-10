@@ -72,13 +72,13 @@ describe('AppQuitConfirmationGate', () => {
 describe('buildAppQuitConfirmationOptions', () => {
   test('builds a warning alert with Quit as default and Cancel as escape', () => {
     const options = buildAppQuitConfirmationOptions({
-      appName: 'Swen',
+      appName: 'Maties',
       translate: key => `<${key}>`,
     });
 
     expect(options).toEqual({
       type: 'warning',
-      title: 'Swen',
+      title: 'Maties',
       message: '<appQuitConfirmTitle>',
       detail: '<appQuitConfirmDetail>',
       buttons: ['<appQuitConfirmQuit>', '<appQuitConfirmCancel>'],
@@ -115,7 +115,7 @@ describe('showAppQuitConfirmation', () => {
     expect(mocks.focus).toHaveBeenCalledWith({ steal: true });
     expect(mocks.showMessageBox).toHaveBeenCalledTimes(1);
     const [options] = mocks.showMessageBox.mock.calls[0];
-    expect(options).toMatchObject({ type: 'warning', title: 'Swen', noLink: true });
+    expect(options).toMatchObject({ type: 'warning', title: 'Maties', noLink: true });
     expect(options.buttons).toHaveLength(2);
     expect(options.message).not.toBe('appQuitConfirmTitle');
     expect(options.detail).not.toBe('appQuitConfirmDetail');

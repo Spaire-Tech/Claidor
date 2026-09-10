@@ -9,7 +9,7 @@
  * 1. Add one record to the DEFINITIONS array below
  *    — that's it, types and lookups are derived automatically.
  *
- * Swen offers Telegram and Discord. The Chinese messengers the upstream app
+ * Maties offers Telegram and Discord. The Chinese messengers the upstream app
  * carried (WeChat, WeCom, DingTalk, Feishu, QQ, NIM, NetEase Bee, POPO) and
  * its NetEase-hosted email channel are retired: present in the type, absent
  * from the product.
@@ -30,7 +30,7 @@ interface PlatformDefInput {
   /**
    * Retired platforms stay in the type so the code paths that once served
    * them still compile, but they are never listed, never offered in the UI,
-   * and their OpenClaw plugins are not bundled. Swen retires the Chinese
+   * and their OpenClaw plugins are not bundled. Maties retires the Chinese
    * messengers the upstream app shipped.
    */
   readonly retired: boolean;

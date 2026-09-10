@@ -2,16 +2,16 @@ import type { StreamFn } from 'openclaw/plugin-sdk/agent-core';
 import { describe, expect, test } from 'vitest';
 
 import {
-  createSwenRequestOptionsWrapper,
-  resolveSwenRequestThinkingLevel,
-} from '../../../openclaw-extensions/swen-model-compat/requestOptions';
+  createMatiesRequestOptionsWrapper,
+  resolveMatiesRequestThinkingLevel,
+} from '../../../openclaw-extensions/maties-model-compat/requestOptions';
 import {
-  SWEN_REQUEST_OPTIONS_FIELD,
-  SWEN_REQUEST_OPTIONS_VERSION,
-} from '../../../openclaw-extensions/swen-model-compat/requestOptionsProtocol';
-import type { SwenThinkingProfile } from '../../../openclaw-extensions/swen-model-compat/thinkingProfileMapping';
+  MATIES_REQUEST_OPTIONS_FIELD,
+  MATIES_REQUEST_OPTIONS_VERSION,
+} from '../../../openclaw-extensions/maties-model-compat/requestOptionsProtocol';
+import type { MatiesThinkingProfile } from '../../../openclaw-extensions/maties-model-compat/thinkingProfileMapping';
 
-const profile: SwenThinkingProfile = {
+const profile: MatiesThinkingProfile = {
   options: [
     { level: 'off', openclawLevel: 'off' },
     { level: 'high', openclawLevel: 'high' },
@@ -21,12 +21,12 @@ const profile: SwenThinkingProfile = {
   requestOptionsVersion: 1,
 };
 
-describe('Swen request options', () => {
+describe('Maties request options', () => {
   test('uses an allowed selected level and falls back to the profile default', () => {
-    expect(resolveSwenRequestThinkingLevel(profile, 'off')).toBe('off');
-    expect(resolveSwenRequestThinkingLevel(profile, 'xhigh')).toBe('max');
-    expect(resolveSwenRequestThinkingLevel(profile, 'low')).toBe('high');
-    expect(resolveSwenRequestThinkingLevel(profile, undefined)).toBe('high');
+    expect(resolveMatiesRequestThinkingLevel(profile, 'off')).toBe('off');
+    expect(resolveMatiesRequestThinkingLevel(profile, 'xhigh')).toBe('max');
+    expect(resolveMatiesRequestThinkingLevel(profile, 'low')).toBe('high');
+    expect(resolveMatiesRequestThinkingLevel(profile, undefined)).toBe('high');
   });
 
   test('adds the final semantic thinking intent after the caller payload hook', async () => {
@@ -35,12 +35,12 @@ describe('Swen request options', () => {
       forwardedOptions = options;
       return {} as ReturnType<StreamFn>;
     }) as StreamFn;
-    const wrapped = createSwenRequestOptionsWrapper(baseStreamFn, 'off');
+    const wrapped = createMatiesRequestOptionsWrapper(baseStreamFn, 'off');
 
     await wrapped({} as never, {} as never, {
       onPayload: () => ({
         model: 'deepseek-v4-flash-YoudaoInner',
-        [SWEN_REQUEST_OPTIONS_FIELD]: {
+        [MATIES_REQUEST_OPTIONS_FIELD]: {
           version: 999,
           thinking: { level: 'max' },
         },
@@ -50,8 +50,8 @@ describe('Swen request options', () => {
     const payload = await forwardedOptions?.onPayload?.({}, {} as never);
     expect(payload).toEqual({
       model: 'deepseek-v4-flash-YoudaoInner',
-      [SWEN_REQUEST_OPTIONS_FIELD]: {
-        version: SWEN_REQUEST_OPTIONS_VERSION,
+      [MATIES_REQUEST_OPTIONS_FIELD]: {
+        version: MATIES_REQUEST_OPTIONS_VERSION,
         thinking: { level: 'off' },
       },
     });

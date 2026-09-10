@@ -11,8 +11,8 @@ import {
 import { EnterpriseAccountMode } from '@shared/enterpriseAccount/constants';
 import {
   type ModelThinkingConfig,
+  parseMatiesRequestCapabilities,
   parseModelThinkingConfig,
-  parseSwenRequestCapabilities,
   ProviderName,
 } from '@shared/providers';
 import type { ModelRuntimeProfile } from '@shared/providers/modelRuntimeProfiles';
@@ -200,7 +200,7 @@ export function mapPricingCatalogTextModelsToServerModels(
     const modelName = readString(model.modelName) || modelId;
     const provider = readString(model.providerLabel)
       || readString(model.provider)
-      || 'Swen';
+      || 'Maties';
     const contextWindow = readPositiveNumber(model.contextWindow);
     const costMultiplier = readPositiveNumber(model.costMultiplier);
     const thinkingConfig = model.supportsThinking === true
@@ -211,7 +211,7 @@ export function mapPricingCatalogTextModelsToServerModels(
       id: modelId,
       name: modelName,
       provider,
-      providerKey: ProviderName.SwenServer,
+      providerKey: ProviderName.MatiesServer,
       isServerModel: true,
       supportsImage: model.supportsImage === true,
       supportsThinking: model.supportsThinking === true,
@@ -240,12 +240,12 @@ export function mapAvailableServerModelsToModels(
     const thinkingConfig = model.supportsThinking === true
       ? parseModelThinkingConfig(model.thinkingConfig)
       : undefined;
-    const requestCapabilities = parseSwenRequestCapabilities(model.requestCapabilities);
+    const requestCapabilities = parseMatiesRequestCapabilities(model.requestCapabilities);
     return {
       id: model.modelId,
       name: model.modelName,
       provider: model.provider,
-      providerKey: ProviderName.SwenServer,
+      providerKey: ProviderName.MatiesServer,
       isServerModel: true,
       serverApiFormat: model.apiFormat,
       runtimeProfile: model.runtimeProfile,
@@ -814,7 +814,7 @@ class AuthService {
     const cleanup = this.applyLoggedOutState(true);
     const toastKey = event.reason === AuthSessionChangeReason.EnterpriseMembershipRevoked
       ? 'coworkErrorEnterpriseMembershipRevoked'
-      : 'coworkErrorSwenLoginExpired';
+      : 'coworkErrorMatiesLoginExpired';
     window.dispatchEvent(new CustomEvent('app:showToast', {
       detail: i18nService.t(toastKey),
     }));

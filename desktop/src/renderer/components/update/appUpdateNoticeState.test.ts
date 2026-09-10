@@ -13,7 +13,7 @@ const createState = (
     latestVersion: '2026.9.4',
     date: '2026-09-04',
     changeLog: { zh: { title: '', content: [] }, en: { title: '', content: [] } },
-    url: 'https://updates.example.com/swen-2026.9.4.dmg',
+    url: 'https://updates.example.com/maties-2026.9.4.dmg',
   },
   progress: null,
   readyFilePath: null,

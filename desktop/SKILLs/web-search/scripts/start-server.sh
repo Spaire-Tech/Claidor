@@ -24,8 +24,8 @@ resolve_node_runtime() {
     return 0
   fi
 
-  if [ -n "${SWEN_ELECTRON_PATH:-}" ] && [ -x "${SWEN_ELECTRON_PATH}" ]; then
-    NODE_CMD="$SWEN_ELECTRON_PATH"
+  if [ -n "${MATIES_ELECTRON_PATH:-}" ] && [ -x "${MATIES_ELECTRON_PATH}" ]; then
+    NODE_CMD="$MATIES_ELECTRON_PATH"
     NODE_ARGS=()
     NODE_ENV_PREFIX=("ELECTRON_RUN_AS_NODE=1")
     return 0
@@ -76,7 +76,7 @@ ensure_npm_available() {
   fi
 
   echo "✗ npm is unavailable, cannot repair web-search runtime"
-  echo "  Please reinstall the web-search skill runtime from Swen."
+  echo "  Please reinstall the web-search skill runtime from Maties."
   return 1
 }
 
@@ -216,7 +216,7 @@ cd "$PROJECT_DIR"
 if ! resolve_node_runtime; then
   echo "✗ Failed to start Bridge Server"
   echo "  Node.js runtime not found."
-  echo "  Please install Node.js, or run from Swen so scripts can use Electron runtime."
+  echo "  Please install Node.js, or run from Maties so scripts can use Electron runtime."
   exit 1
 fi
 

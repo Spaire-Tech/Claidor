@@ -8,7 +8,7 @@ import { OpenClawTranscriptSafetyErrorCode } from '../shared/openclawTranscript/
 
 export const CoworkErrorI18nKey = {
   AuthInvalid: 'coworkErrorAuthInvalid',
-  SwenLoginExpired: 'coworkErrorSwenLoginExpired',
+  MatiesLoginExpired: 'coworkErrorMatiesLoginExpired',
   OAuthInvalid: 'coworkErrorOAuthInvalid',
   ModelAccessDenied: 'coworkErrorModelAccessDenied',
   QuotaExhausted: 'coworkErrorQuotaExhausted',
@@ -23,7 +23,7 @@ export const CoworkErrorI18nKey = {
   GatewayHeapOutOfMemory: 'coworkErrorGatewayHeapOutOfMemory',
 } as const;
 
-const SWEN_QUOTA_EXHAUSTED_PATTERN =
+const MATIES_QUOTA_EXHAUSTED_PATTERN =
   /\b(?:4020[0-2]|4160[678])\b|free.*quota.*(exhausted|used up|limit)|monthly.*credits?.*(exhausted|used up|limit)|credit.*(?:quota|allowance).*(exhausted|used up|limit)/i;
 
 const MODEL_CAPACITY_OVERLOAD_PATTERN =
@@ -39,8 +39,8 @@ const ERROR_RULES: Array<[RegExp, string]> = [
   [/access denied|access.*forbidden|forbidden|permission denied|no permission|\b403\b|auth[_ ]scope/i, CoworkErrorI18nKey.ModelAccessDenied],
   // Auth: Anthropic, DeepSeek, OpenAI, Gemini, HTTP 401
   [new RegExp(`authentication[_ ](error|fails?)|${API_KEY_PATTERN}.*(invalid|expired|deleted|inactive|not[_ ]valid|not\\s+valid)|invalid.*${API_KEY_PATTERN}|incorrect.*${API_KEY_PATTERN}|unauthorized|PERMISSION_DENIED|\\b401\\b`, 'i'), CoworkErrorI18nKey.AuthInvalid],
-  // Swen plan/free quota. Must precede generic 402/billing handling.
-  [SWEN_QUOTA_EXHAUSTED_PATTERN, CoworkErrorI18nKey.QuotaExhausted],
+  // Maties plan/free quota. Must precede generic 402/billing handling.
+  [MATIES_QUOTA_EXHAUSTED_PATTERN, CoworkErrorI18nKey.QuotaExhausted],
   // Provider/model capacity failures. Must precede rate-limit matching because
   // capacity errors may also contain phrases such as "too many requests".
   [MODEL_CAPACITY_OVERLOAD_PATTERN, CoworkErrorI18nKey.ModelOverloaded],
@@ -87,6 +87,6 @@ export function classifyErrorKey(error: string): string | null {
   return null;
 }
 
-export function isSwenQuotaExhaustedError(error: string): boolean {
-  return SWEN_QUOTA_EXHAUSTED_PATTERN.test(error);
+export function isMatiesQuotaExhaustedError(error: string): boolean {
+  return MATIES_QUOTA_EXHAUSTED_PATTERN.test(error);
 }

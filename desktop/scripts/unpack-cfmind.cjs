@@ -4,9 +4,9 @@
  * Post-install resource tar extraction script for Windows
  *
  * Invoked by the customInstall macro in the NSIS installer.nsh.
- * Runs through Swen.exe in ELECTRON_RUN_AS_NODE=1 mode.
+ * Runs through Maties.exe in ELECTRON_RUN_AS_NODE=1 mode.
  *
- * Usage: Swen.exe <this script> <tarPath> <destDir>
+ * Usage: Maties.exe <this script> <tarPath> <destDir>
  *
  * Effect:
  *   Input:  $INSTDIR/resources/win-resources.tar
@@ -44,7 +44,7 @@ const destDir = process.argv[3];
 const installLogPath = process.argv[4];
 
 if (!tarPath || !destDir) {
-  console.error('[unpack-cfmind] Usage: Swen.exe unpack-cfmind.cjs <tarPath> <destDir>');
+  console.error('[unpack-cfmind] Usage: Maties.exe unpack-cfmind.cjs <tarPath> <destDir>');
   process.exit(1);
 }
 

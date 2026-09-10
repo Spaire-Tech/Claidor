@@ -1,6 +1,6 @@
 <h1 align="center">
-  <img src="public/logo.png" alt="Swen" width="96"><br>
-  Swen
+  <img src="public/logo.png" alt="Maties" width="96"><br>
+  Maties
 </h1>
 
 <p align="center">
@@ -14,21 +14,21 @@
   <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18" />
 </p>
 
-Swen is a desktop agent that works in a person's real environment: local files, terminal commands, browser workflows, Word, Excel and PowerPoint documents, PDFs, email, chat channels and scheduled jobs. It is meant for office workers who are not technical: they sign in once with their Claidor account and never see a model provider, an API key or a base URL.
+Maties is a desktop agent that works in a person's real environment: local files, terminal commands, browser workflows, Word, Excel and PowerPoint documents, PDFs, email, chat channels and scheduled jobs. It is meant for office workers who are not technical: they sign in once with their Claidor account and never see a model provider, an API key or a base URL.
 
-Cowork is the product and session layer. OpenClaw is the runtime and gateway underneath it. Swen keeps local persistence, permissions, UI state, artifacts, agents, memory and channel bindings in the desktop app, and uses OpenClaw to run the agent.
+Cowork is the product and session layer. OpenClaw is the runtime and gateway underneath it. Maties keeps local persistence, permissions, UI state, artifacts, agents, memory and channel bindings in the desktop app, and uses OpenClaw to run the agent.
 
-## How Swen reaches the models
+## How Maties reaches the models
 
-Swen holds no keys. The app signs the person in through the Claidor web app (`https://app.claidor.com`), receives an access token from the Claidor API (`https://api.claidor.com/desktop`), and sends every model request through Claidor's metered proxy. Claidor counts the tokens against the account's monthly allowance and picks the model the person chose in the chat box. The server side lives in `server/polar/desktop` of this repository.
+Maties holds no keys. The app signs the person in through the Claidor web app (`https://app.claidor.com`), receives an access token from the Claidor API (`https://api.claidor.com/desktop`), and sends every model request through Claidor's metered proxy. Claidor counts the tokens against the account's monthly allowance and picks the model the person chose in the chat box. The server side lives in `server/polar/desktop` of this repository.
 
-Test mode (the hidden switch in Settings → About) points the app at a local Claidor: API `http://127.0.0.1:8000`, web app `http://127.0.0.1:3000`. `SWEN_SERVER_BASE_URL` overrides the API address in development.
+Test mode (the hidden switch in Settings → About) points the app at a local Claidor: API `http://127.0.0.1:8000`, web app `http://127.0.0.1:3000`. `MATIES_SERVER_BASE_URL` overrides the API address in development.
 
 ## Features
 
 ### Desktop Cowork Sessions
 
-Run long-form agent tasks against local projects and files. Swen streams progress, keeps session history, renders tool output, and asks for approval before sensitive actions such as file operations, terminal commands or network access.
+Run long-form agent tasks against local projects and files. Maties streams progress, keeps session history, renders tool output, and asks for approval before sensitive actions such as file operations, terminal commands or network access.
 
 ### Multiple Agents
 
@@ -40,7 +40,7 @@ Seventeen skills are bundled (`SKILLs/skills.config.json`): Word documents, Exce
 
 ### MCP Servers
 
-Connect external tools and data sources through Model Context Protocol servers. Swen stores user-configured servers locally and syncs enabled servers into OpenClaw.
+Connect external tools and data sources through Model Context Protocol servers. Maties stores user-configured servers locally and syncs enabled servers into OpenClaw.
 
 ### Scheduled Tasks
 
@@ -60,11 +60,11 @@ Sessions and app data live locally in SQLite. OpenClaw workspace memory uses fil
 
 ## What was removed from the upstream app
 
-Swen is English-only and built for a Western office. Compared with LobsterAI it drops:
+Maties is English-only and built for a Western office. Compared with LobsterAI it drops:
 
 - the Chinese messengers (WeChat, WeCom, DingTalk, Feishu, QQ, NetEase IM, NetEase Bee, POPO) and the NetEase-hosted email channel: their code is retired in `src/shared/platform/constants.ts` and never offered, and their OpenClaw plugins are not bundled;
 - image and video generation, Youdao Note, the DeepSeek Harness runtime screen, voice input (Youdao speech recognition), credit campaigns and daily check-ins, the Windows Computer Use kit (its runtime was downloaded from NetEase's CDN), and usage analytics to Youdao (usage events now go to Claidor's API, which discards them, and only when the person allows statistics in Settings);
-- the provider and API-key screens: the Model tab is now the Swen account screen (sign in, usage this month, available models);
+- the provider and API-key screens: the Model tab is now the Maties account screen (sign in, usage this month, available models);
 - the Chinese-specific skills (stock research, Chinese content writing, music and film search, Seedance and Seedream media generation, Youdao Note, tech news);
 - the Chinese dictionary of the interface. `LanguageType` still lists `'zh'` for compatibility, but the app always runs in English.
 
@@ -131,7 +131,7 @@ npm run dist:win            # Windows x64
 npm run dist:linux
 ```
 
-The app id is `com.claidor.swen`, the product name `Swen`, and the deep link scheme `swen://` (used as the sign-in fallback when the loopback callback cannot start). The icons under `build/` and `public/logo.png` are placeholders until a designed icon exists.
+The app id is `com.claidor.maties`, the product name `Maties`, and the deep link scheme `maties://` (used as the sign-in fallback when the loopback callback cannot start). The icons under `build/` and `public/logo.png` are placeholders until a designed icon exists.
 
 Updates, the skill store and the kit store are asked from the Claidor API under `/desktop`; until Claidor publishes releases and catalogues they answer « nothing newer » and « empty ».
 
@@ -148,7 +148,7 @@ Updates, the skill store and the kit store are asked from the Claidor API under 
 | `src/main/presetAgents.ts` | The six office presets |
 | `src/shared/platform/constants.ts` | The chat-channel registry, with the retired platforms marked |
 | `src/renderer/components/cowork/` | Main Cowork UI, prompt input, session detail, permissions, tool display |
-| `src/renderer/components/settings/SwenAccountSection.tsx` | The account screen (sign in, usage, models) |
+| `src/renderer/components/settings/MatiesAccountSection.tsx` | The account screen (sign in, usage, models) |
 | `src/renderer/services/endpoints.ts` | The Claidor web pages the renderer opens |
 | `src/renderer/services/i18n.ts` | The English dictionary and `t()` helper |
 | `SKILLs/` | Bundled skills |
@@ -158,11 +158,11 @@ Updates, the skill store and the kit store are asked from the Claidor API under 
 - Renderer windows use context isolation, disabled Node integration and sandboxing.
 - Renderer-to-main access goes through preload IPC APIs.
 - Sensitive tool actions are permission-gated and logged.
-- App data is stored locally in `swen.sqlite` under Electron `userData`.
+- App data is stored locally in `maties.sqlite` under Electron `userData`.
 - OpenClaw state, workspace memory, generated config and gateway logs live under `userData/openclaw`.
 
 Read `CLAIDOR-NOTES.md` before relying on the engine's safety claims: the upstream app writes the engine's command-approval file to « security: full, ask: off », delete protection is a system-prompt instruction, commands from chat channels are auto-approved, and sandboxing is off outside enterprise accounts.
 
 ## License
 
-[MIT License](LICENSE). Swen is derived from LobsterAI, built by [NetEase Youdao](https://www.youdao.com/); the MIT notices are kept in `LICENSE` and in the source.
+[MIT License](LICENSE). Maties is derived from LobsterAI, built by [NetEase Youdao](https://www.youdao.com/); the MIT notices are kept in `LICENSE` and in the source.

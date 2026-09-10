@@ -150,6 +150,7 @@ import type {
 } from '../shared/kit/constants';
 import { KitStoreKey } from '../shared/kit/constants';
 import { LibraryChangeReason, LibraryIpc } from '../shared/library/constants';
+import { type LibraryContentConfig, LibraryContentIpc, type LibraryContentStatus } from '../shared/library/contentConstants';
 import {
   getLibraryThumbnailFailureDetails,
   isLibraryThumbnailFailureRetryable,
@@ -270,6 +271,11 @@ import {
 import { registerSessionDiagnosticsHandlers } from './ipcHandlers/sessionDiagnostics';
 import { registerSiteIpcHandlers } from './ipcHandlers/site';
 import { registerSkillHandlers } from './ipcHandlers/skills';
+import { LibraryDocumentWorkerClient } from './library/content/documentWorkerClient';
+import { LibraryContentIndexer } from './library/content/libraryContentIndexer';
+import { normalizeLibrarySearchRequest, registerLibraryContentIpcHandlers } from './library/content/libraryContentIpc';
+import { LibraryContentStore } from './library/content/libraryContentStore';
+import { resolveLibraryModelDir, resolveLibraryWorkerEntryPath } from './library/content/modelPath';
 import { LibraryIndexService } from './library/libraryIndexService';
 import { registerLibraryIpcHandlers } from './library/libraryIpc';
 import { LibraryLocalStore } from './library/libraryLocalStore';
@@ -1628,14 +1634,14 @@ const buildAvailableOpenClawProviders = (): Record<string, { models: Array<{ id:
     .map(model => model.modelId.trim())
     .filter(Boolean);
   if (serverModelIds.length > 0) {
-    const serverProvider = providerMap[OpenClawProviderId.SwenServer]
+    const serverProvider = providerMap[OpenClawProviderId.MatiesServer]
       ?? { models: [] };
     for (const modelId of serverModelIds) {
       if (!serverProvider.models.some(model => model.id === modelId)) {
         serverProvider.models.push({ id: modelId });
       }
     }
-    providerMap[OpenClawProviderId.SwenServer] = serverProvider;
+    providerMap[OpenClawProviderId.MatiesServer] = serverProvider;
   }
 
   return providerMap;
@@ -1652,7 +1658,7 @@ const openClawConfigHasServerModels = (modelIds: string[]): boolean => {
         providers?: Record<string, { models?: Array<{ id?: string }> }>;
       };
     };
-    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.SwenServer]?.models;
+    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.MatiesServer]?.models;
     if (!Array.isArray(serverProviderModels)) return false;
 
     const configuredModelIds = new Set(
@@ -1707,7 +1713,7 @@ const resolveInlineAttachmentDir = (cwd?: string): string => {
       return path.join(resolved, COWORK_TEMP_DIR_NAME, COWORK_TEMP_ATTACHMENTS_DIR_NAME, 'manual');
     }
   }
-  return path.join(app.getPath('temp'), 'swen', 'attachments');
+  return path.join(app.getPath('temp'), 'maties', 'attachments');
 };
 
 const ensurePngFileName = (value: string): string => {
@@ -1724,7 +1730,7 @@ const buildLogExportFileName = (): string => {
   const now = new Date();
   const datePart = `${now.getFullYear()}${padTwoDigits(now.getMonth() + 1)}${padTwoDigits(now.getDate())}`;
   const timePart = `${padTwoDigits(now.getHours())}${padTwoDigits(now.getMinutes())}${padTwoDigits(now.getSeconds())}`;
-  return `swen-logs-${datePart}-${timePart}.zip`;
+  return `maties-logs-${datePart}-${timePart}.zip`;
 };
 
 const OPENCLAW_DAILY_LOG_RETENTION_DAYS = 7;
@@ -1912,7 +1918,7 @@ const savePngWithDialog = async (
   const defaultName = getDefaultExportImageName(defaultFileName);
   // Automation hook: end-to-end tests cannot drive the native save dialog, so
   // an explicit directory override saves the PNG directly.
-  const autosaveDir = process.env.SWEN_EXPORT_IMAGE_AUTOSAVE_DIR;
+  const autosaveDir = process.env.MATIES_EXPORT_IMAGE_AUTOSAVE_DIR;
   if (autosaveDir) {
     const outputPath = ensurePngFileName(path.join(autosaveDir, defaultName));
     await fs.promises.mkdir(autosaveDir, { recursive: true });
@@ -1973,8 +1979,8 @@ const DEV_SERVER_URL = process.env.ELECTRON_START_URL || 'http://localhost:5175'
 const enableVerboseLogging =
   process.env.ELECTRON_ENABLE_LOGGING === '1' || process.env.ELECTRON_ENABLE_LOGGING === 'true';
 const disableGpu =
-  process.env.SWEN_DISABLE_GPU === '1' ||
-  process.env.SWEN_DISABLE_GPU === 'true' ||
+  process.env.MATIES_DISABLE_GPU === '1' ||
+  process.env.MATIES_DISABLE_GPU === 'true' ||
   process.env.ELECTRON_DISABLE_GPU === '1' ||
   process.env.ELECTRON_DISABLE_GPU === 'true';
 const reloadOnChildProcessGone =
@@ -2116,6 +2122,7 @@ let preventSleepBlockerId: number | null = null;
 let appUpdateCoordinator: AppUpdateCoordinator | null = null;
 let mainLogReporter: MainLogReporter | null = null;
 let libraryIndexService: LibraryIndexService | null = null;
+let libraryContentIndexer: LibraryContentIndexer | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
   if (enabled) {
@@ -2441,13 +2448,13 @@ const resolveSessionWorkingDirectory = (options: { cwd?: string; agentId?: strin
 const NEW_USER_WELCOME_SESSION_ID_STORE_KEY = 'new_user_welcome_session_id';
 const NEW_USER_WELCOME_CONTENT_MAX_LENGTH = 4000;
 
-const isSwenServerModelRef = (modelRef: string): boolean => {
+const isMatiesServerModelRef = (modelRef: string): boolean => {
   const normalized = modelRef.trim();
   if (!normalized) return false;
 
   const parsed = parsePrimaryModelRef(normalized);
   if (parsed) {
-    return parsed.providerId === ProviderName.SwenServer;
+    return parsed.providerId === ProviderName.MatiesServer;
   }
 
   return getAllServerModelMetadata().some(model => model.modelId === normalized);
@@ -2457,18 +2464,18 @@ const shouldRefreshServerQuotaForSession = (sessionId: string): boolean => {
   const session = getCoworkStore().getSession(sessionId);
   const sessionModelRef = session?.modelOverride?.trim();
   if (sessionModelRef) {
-    return isSwenServerModelRef(sessionModelRef);
+    return isMatiesServerModelRef(sessionModelRef);
   }
 
   const agentModelRef = session?.agentId
     ? getAgentManager().getAgent(session.agentId)?.model?.trim()
     : '';
   if (agentModelRef) {
-    return isSwenServerModelRef(agentModelRef);
+    return isMatiesServerModelRef(agentModelRef);
   }
 
   const apiConfig = resolveCurrentApiConfig();
-  return apiConfig.providerMetadata?.providerName === ProviderName.SwenServer;
+  return apiConfig.providerMetadata?.providerName === ProviderName.MatiesServer;
 };
 
 const resolveCoworkAgentEngine = (): CoworkAgentEngine => {
@@ -2577,6 +2584,7 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         return getMcpRuntime().getResolvedServersCache();
       },
       getAskUserCallbackUrl: () => getMcpRuntime().getAskUserCallbackUrl(),
+      getLibrarySearchCallbackUrl: () => getMcpRuntime().getLibrarySearchCallbackUrl(),
       getMediaCallbackUrl: () => getMcpRuntime().getMediaCallbackUrl(),
       getBrowserCallbackUrl: () => getMcpRuntime().getBrowserCallbackUrl(),
       getLobsterBrowserMcpCommand: () => {
@@ -4616,11 +4624,11 @@ if (!gotTheLock) {
   if (!app.isPackaged) {
     // In dev mode, setAsDefaultProtocolClient needs the electron exe path
     // and the app entry point as extra args so the OS can relaunch correctly
-    app.setAsDefaultProtocolClient('swen', process.execPath, [
+    app.setAsDefaultProtocolClient('maties', process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   } else {
-    app.setAsDefaultProtocolClient('swen');
+    app.setAsDefaultProtocolClient('maties');
   }
 
   const authCallbackRouter = new AuthCallbackRouter({
@@ -4634,7 +4642,7 @@ if (!gotTheLock) {
   });
 
   /**
-   * Parse a swen:// deep link and send (or buffer) the auth code.
+   * Parse a maties:// deep link and send (or buffer) the auth code.
    */
   const handleDeepLink = (url: string) => {
     authCallbackRouter.handleDeepLink(url);
@@ -4713,7 +4721,7 @@ if (!gotTheLock) {
     }
 
     // Check for deep link in command line args (Windows/Linux)
-    const deepLink = commandLine.find(arg => arg.startsWith('swen://'));
+    const deepLink = commandLine.find(arg => arg.startsWith('maties://'));
     if (deepLink) {
       handleDeepLink(deepLink);
     }
@@ -4874,7 +4882,7 @@ if (!gotTheLock) {
             ? [
                 {
                   archiveName: 'install-timing.log',
-                  filePath: path.join(app.getPath('appData'), 'Swen', 'install-timing.log'),
+                  filePath: path.join(app.getPath('appData'), 'Maties', 'install-timing.log'),
                 },
               ]
             : []),
@@ -8555,7 +8563,7 @@ if (!gotTheLock) {
       console.error('[DataMigration] backup failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to back up Swen data',
+        error: error instanceof Error ? error.message : 'Failed to back up Maties data',
       };
     }
   });
@@ -8614,11 +8622,11 @@ if (!gotTheLock) {
         success,
         scheduledRestart: rendererReleased,
         rollbackPath: restoreResult?.rollbackPath,
-        error: success ? undefined : restoreResult?.error || 'Failed to import Swen data backup',
+        error: success ? undefined : restoreResult?.error || 'Failed to import Maties data backup',
       };
     } catch (error) {
       isCleanupInProgress = false;
-      const message = error instanceof Error ? error.message : 'Failed to import Swen data backup';
+      const message = error instanceof Error ? error.message : 'Failed to import Maties data backup';
       console.error('[DataMigration] restore scheduling failed:', error);
       if (rendererReleased) {
         dialog.showErrorBox(t('dataMigrationRestoreDialogTitle'), message);
@@ -8708,7 +8716,7 @@ if (!gotTheLock) {
     try {
       return { success: true, state: await action() };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Swen in-app browser action failed.';
+      const message = error instanceof Error ? error.message : 'Maties in-app browser action failed.';
       return {
         success: false,
         state: {
@@ -8931,7 +8939,7 @@ if (!gotTheLock) {
       const providers = { ...(appConfig?.providers ?? {}) };
       // The billed built-in provider authenticates through the token proxy;
       // syncing its raw key/baseUrl into dsh would produce a dead route.
-      delete providers[ProviderName.SwenServer];
+      delete providers[ProviderName.MatiesServer];
       return providers;
     },
     getPlanProvider: () => {
@@ -12816,7 +12824,7 @@ if (!gotTheLock) {
 
   ipcMain.handle(ShellIpc.OpenHtmlInBrowser, async (_event, htmlContent: string) => {
     try {
-      const tmpDir = path.join(os.tmpdir(), 'swen-preview');
+      const tmpDir = path.join(os.tmpdir(), 'maties-preview');
       fs.mkdirSync(tmpDir, { recursive: true });
       const tmpFile = path.join(tmpDir, `preview-${Date.now()}.html`);
       fs.writeFileSync(tmpFile, htmlContent, 'utf-8');
@@ -14059,6 +14067,7 @@ if (!gotTheLock) {
 
     sqliteBackupManager?.stopPeriodicBackupLoop();
     libraryIndexService?.stop();
+    libraryContentIndexer?.stop();
     libraryThumbnailRenderer.dispose();
 
     // Close the SQLite database to flush the WAL and release the file lock.
@@ -14183,7 +14192,7 @@ if (!gotTheLock) {
     // We don't trigger permission dialogs at startup to avoid annoying users
 
     // Ensure default working directory exists
-    const defaultProjectDir = path.join(os.homedir(), 'swen', 'project');
+    const defaultProjectDir = path.join(os.homedir(), 'maties', 'project');
     if (!fs.existsSync(defaultProjectDir)) {
       fs.mkdirSync(defaultProjectDir, { recursive: true });
       console.log('Created default project directory:', defaultProjectDir);
@@ -14223,10 +14232,62 @@ if (!gotTheLock) {
     });
     libraryIndexService.start();
 
+    // The personal library: an index of the person's documents, built on
+    // this machine (docs/maties/library.md). The agent reaches it through the
+    // search_library tool over the loopback bridge.
+    const libraryContentStore = new LibraryContentStore(store.getDatabase());
+    const readLibraryContentConfig = (): LibraryContentConfig => {
+      const config = getCoworkStore().getConfig();
+      return {
+        enabled: config.libraryEnabled,
+        folders: config.libraryFolders,
+        excludedFolders: config.libraryExcludedFolders,
+      };
+    };
+    libraryContentIndexer = new LibraryContentIndexer({
+      store: libraryContentStore,
+      getConfig: readLibraryContentConfig,
+      createWorker: onExit => new LibraryDocumentWorkerClient({
+        modelDir: resolveLibraryModelDir(),
+        workerEntryPath: resolveLibraryWorkerEntryPath(),
+        onExit,
+      }),
+      onStatus: (status: LibraryContentStatus) => {
+        for (const window of BrowserWindow.getAllWindows()) {
+          if (!window.isDestroyed()) window.webContents.send(LibraryContentIpc.StatusChanged, status);
+        }
+      },
+      getMetadata: key => store?.get(key),
+      setMetadata: (key, value) => store?.set(key, value),
+      excludedRoots: [app.getPath('userData')],
+    });
+    const libraryContentIndexerInstance = libraryContentIndexer;
+    registerLibraryContentIpcHandlers({
+      indexer: libraryContentIndexerInstance,
+      store: libraryContentStore,
+      getConfig: readLibraryContentConfig,
+      setConfig: update => {
+        getCoworkStore().setConfig({
+          ...(update.enabled !== undefined ? { libraryEnabled: update.enabled } : {}),
+          ...(update.folders !== undefined ? { libraryFolders: update.folders } : {}),
+          ...(update.excludedFolders !== undefined ? { libraryExcludedFolders: update.excludedFolders } : {}),
+        });
+        return readLibraryContentConfig();
+      },
+      pickFolder: async () => {
+        const result = await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] });
+        return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
+      },
+    });
+    getMcpRuntime().setLibrarySearchHandler(request => (
+      libraryContentIndexerInstance.search(normalizeLibrarySearchRequest(request))
+    ));
+    libraryContentIndexer.start();
+
     // Dev/E2E convenience: boot the dsh engine once the app is ready and the
     // store can answer provider queries, so app-level checks can assert
     // readiness from logs without driving the settings UI.
-    if (process.env.SWEN_DSH_AUTOSTART === '1') {
+    if (process.env.MATIES_DSH_AUTOSTART === '1') {
       ensureDshEngineReady()
         .then(url => console.log(`[DSH] Autostart ready at ${url}`))
         .catch(error => console.error('[DSH] Autostart failed', error));
@@ -14260,7 +14321,7 @@ if (!gotTheLock) {
     }
     // Inject store getter into claudeSettings
     setStoreGetter(() => store);
-    // Inject auth getters for swen-server provider routing
+    // Inject auth getters for maties-server provider routing
     // The getter proactively triggers a background token refresh when the
     // accessToken is within 5 minutes of expiry, so that the SDK always
     // gets a fresh token without blocking.
@@ -14305,7 +14366,7 @@ if (!gotTheLock) {
         });
     }
 
-    registerProxyTokenRefresher(ProviderName.SwenServer, async rejectedToken => {
+    registerProxyTokenRefresher(ProviderName.MatiesServer, async rejectedToken => {
       const latestAccessToken = getAuthTokens()?.accessToken;
       if (latestAccessToken && rejectedToken && latestAccessToken !== rejectedToken) {
         return {
@@ -14331,7 +14392,7 @@ if (!gotTheLock) {
     });
 
     // Start the lightweight token proxy before OpenClaw config sync so that
-    // swen-server provider can use the proxy URL in its config.
+    // maties-server provider can use the proxy URL in its config.
     profiler.mark('openClawTokenProxy');
     try {
       await startOpenClawTokenProxy({
@@ -14488,7 +14549,7 @@ if (!gotTheLock) {
     }
 
     // Agent model migration — runs after cache warmup so resolveMatchedProvider
-    // can match swen-server models without falling back.
+    // can match maties-server models without falling back.
     const defaultAgentModelRef = resolveDefaultAgentModelRef();
     const backfilledAgentModels = getCoworkStore().backfillEmptyAgentModels(defaultAgentModelRef);
     const qualifiedAgentModels = migrateAgentModelRefs({
@@ -14650,7 +14711,7 @@ if (!gotTheLock) {
 
     // Windows/Linux cold start: parse deep link from process.argv.
     // The router buffers it because the renderer is not ready yet after createWindow().
-    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('swen://'));
+    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('maties://'));
     if (coldStartDeepLink) {
       handleDeepLink(coldStartDeepLink);
     }

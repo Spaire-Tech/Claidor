@@ -34,6 +34,6 @@ export const ComputerUseKitMetadata = {
     en: 'Computer Use',
   } satisfies LocalizedText,
   SkillDescription: {
-    en: 'Use Swen Computer Use tools to inspect and control Windows desktop applications.',
+    en: 'Use Maties Computer Use tools to inspect and control Windows desktop applications.',
   } satisfies LocalizedText,
 } as const;

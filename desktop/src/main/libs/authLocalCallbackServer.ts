@@ -46,13 +46,13 @@ const renderCallbackHtmlWithRedirect = (
     ? `<script>setTimeout(function(){ window.location.replace(${JSON.stringify(redirectUrl)}); }, 900);</script>`
     : '';
   const redirectHint = redirectUrl
-    ? '<p class="hint">Returning you to Swen.</p>'
+    ? '<p class="hint">Returning you to Maties.</p>'
     : '';
   const redirectAction = redirectUrl
     ? `<a class="action" href="${escapeHtml(redirectUrl)}">Go back now</a>`
     : '';
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Swen sign-in</title>
+<html lang="en"><head><meta charset="utf-8"><title>Maties sign-in</title>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f7f7f4; color: #14120b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
   .card { background: #fff; border: 1px solid rgba(20,18,11,.08); border-radius: 10px; padding: 30px 34px; max-width: 420px; box-shadow: 0 18px 50px rgba(20,18,11,.08); }
@@ -181,7 +181,7 @@ async function createAuthLocalCallback(
 
   server.on('request', (req, res) => {
     if (req.method !== 'GET') {
-      sendHtml(res, 405, false, 'This sign-in callback only accepts GET. Go back to Swen and try again.');
+      sendHtml(res, 405, false, 'This sign-in callback only accepts GET. Go back to Maties and try again.');
       return;
     }
 
@@ -198,14 +198,14 @@ async function createAuthLocalCallback(
 
     if (!code) {
       console.warn('[AuthLocalCallback] callback was rejected because the auth code was missing');
-      sendHtml(res, 400, false, 'The sign-in callback carried no code. Go back to Swen and try again.');
+      sendHtml(res, 400, false, 'The sign-in callback carried no code. Go back to Maties and try again.');
       void callback.close();
       return;
     }
 
     if (returnedState !== state) {
       console.warn('[AuthLocalCallback] callback was rejected because the state did not match');
-      sendHtml(res, 400, false, 'The sign-in state did not match. Go back to Swen and try again.');
+      sendHtml(res, 400, false, 'The sign-in state did not match. Go back to Maties and try again.');
       void callback.close();
       return;
     }
@@ -217,12 +217,12 @@ async function createAuthLocalCallback(
         res,
         200,
         true,
-        'You are signed in. Returning you to Swen.',
+        'You are signed in. Returning you to Maties.',
         returnTo,
       );
     } catch (error) {
       console.error('[AuthLocalCallback] failed to deliver auth code:', error);
-      sendHtml(res, 500, false, 'The sign-in callback could not be handled. Go back to Swen and try again.');
+      sendHtml(res, 500, false, 'The sign-in callback could not be handled. Go back to Maties and try again.');
     } finally {
       void callback.close();
     }

@@ -4,9 +4,9 @@ Read and send email via IMAP/SMTP protocol. Works with any IMAP/SMTP server incl
 
 ## Quick Setup
 
-1. **Configure accounts in Swen Settings > Email.**
+1. **Configure accounts in Maties Settings > Email.**
 
-Swen writes `accounts.json` for multi-account setups. Existing `.env` files are still read as a legacy single-account fallback.
+Maties writes `accounts.json` for multi-account setups. Existing `.env` files are still read as a legacy single-account fallback.
 
 Optional legacy `.env` format:
 
@@ -172,7 +172,7 @@ Sending is blocked unless `--confirmed` is passed after the user confirms recipi
 ## Files
 
 - `SKILL.md` - Skill documentation
-- `accounts.json` - Multi-account credentials managed by Swen Settings
+- `accounts.json` - Multi-account credentials managed by Maties Settings
 - `scripts/imap.js` - IMAP CLI tool
 - `scripts/smtp.js` - SMTP CLI tool
 - `package.json` - Node.js dependencies

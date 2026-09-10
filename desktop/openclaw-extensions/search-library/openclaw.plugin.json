@@ -1,0 +1,24 @@
+{
+  "id": "search-library",
+  "name": "Search Library",
+  "description": "Searches the person's own documents indexed by Maties desktop.",
+  "contracts": {
+    "tools": [
+      "search_library"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "callbackUrl": {
+        "type": "string",
+        "description": "Maties HTTP callback URL for library searches"
+      },
+      "secret": {
+        "type": "string",
+        "description": "Shared secret for callback authentication"
+      }
+    }
+  }
+}

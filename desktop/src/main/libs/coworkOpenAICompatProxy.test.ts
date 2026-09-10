@@ -12,22 +12,22 @@ import { __openAICompatProxyTestUtils, isAllowedProxyHost } from './coworkOpenAI
 
 const testUtils = __openAICompatProxyTestUtils;
 
-test('refreshes Swen credentials only for HTTP 401', () => {
-  expect(testUtils.shouldRefreshProxyToken(401, ProviderName.SwenServer)).toBe(true);
-  expect(testUtils.shouldRefreshProxyToken(403, ProviderName.SwenServer)).toBe(false);
+test('refreshes Maties credentials only for HTTP 401', () => {
+  expect(testUtils.shouldRefreshProxyToken(401, ProviderName.MatiesServer)).toBe(true);
+  expect(testUtils.shouldRefreshProxyToken(403, ProviderName.MatiesServer)).toBe(false);
   expect(testUtils.shouldRefreshProxyToken(403, ProviderName.Copilot)).toBe(true);
 });
 
-test('maps only transient Swen refresh failures to temporary service errors', () => {
-  expect(testUtils.isTemporarySwenAuthRefreshFailure(
-    ProviderName.SwenServer,
+test('maps only transient Maties refresh failures to temporary service errors', () => {
+  expect(testUtils.isTemporaryMatiesAuthRefreshFailure(
+    ProviderName.MatiesServer,
     { outcome: AuthRefreshOutcome.TransientFailure },
   )).toBe(true);
-  expect(testUtils.isTemporarySwenAuthRefreshFailure(
-    ProviderName.SwenServer,
+  expect(testUtils.isTemporaryMatiesAuthRefreshFailure(
+    ProviderName.MatiesServer,
     { outcome: AuthRefreshOutcome.TerminalFailure },
   )).toBe(false);
-  expect(testUtils.isTemporarySwenAuthRefreshFailure(
+  expect(testUtils.isTemporaryMatiesAuthRefreshFailure(
     ProviderName.Copilot,
     { outcome: AuthRefreshOutcome.TransientFailure },
   )).toBe(false);

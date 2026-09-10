@@ -84,7 +84,7 @@ describe('sessionDiagnosticsArchive', () => {
     });
 
     expect(fileName).toBe(
-      'swen-diagnostics-LOFTER content safety review Prompt-session--20260703-010203.zip',
+      'maties-diagnostics-LOFTER content safety review Prompt-session--20260703-010203.zip',
     );
   });
 
@@ -96,9 +96,9 @@ describe('sessionDiagnosticsArchive', () => {
     });
 
     expect(fileName).toBe(
-      `swen-diagnostics-CON ${'é'.repeat(36)}-session--20260703-010203.zip`,
+      `maties-diagnostics-CON ${'é'.repeat(36)}-session--20260703-010203.zip`,
     );
-    expect(Array.from(fileName)).toHaveLength(86);
+    expect(Array.from(fileName)).toHaveLength(88);
     expect(fileName).not.toMatch(/[<>:"/\\|?*\u0000-\u001F\u200B]/);
   });
 
