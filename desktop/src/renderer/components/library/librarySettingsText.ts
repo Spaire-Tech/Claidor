@@ -109,6 +109,17 @@ export const describeLibraryDocuments = (
   return `${documents}, ${updated}`;
 };
 
+/** "1,200 files are in iCloud but not on this Mac", or '' when none are. */
+export const describeLibraryCloudOnly = (
+  status: Pick<LibraryContentStatus, 'cloudOnlyCount'>,
+  t: LibrarySettingsTranslate,
+): string => {
+  if (!(status.cloudOnlyCount > 0)) return '';
+  return status.cloudOnlyCount === 1
+    ? t('librarySettingsCloudOnlyOne')
+    : fill(t('librarySettingsCloudOnlyMany'), { count: formatLibraryCount(status.cloudOnlyCount) });
+};
+
 /** "3 files could not be read", or '' when every file was read. */
 export const describeLibraryFailures = (
   status: Pick<LibraryContentStatus, 'failedCount'>,

@@ -24,6 +24,8 @@ export const LibraryDocumentStatus = {
   Indexed: 'indexed',
   /** Could not be read; `attempts` says how many times we tried. */
   Failed: 'failed',
+  /** Only in a cloud drive (iCloud) and not on this machine; read once it arrives. */
+  CloudOnly: 'cloud_only',
 } as const;
 export type LibraryDocumentStatus = typeof LibraryDocumentStatus[keyof typeof LibraryDocumentStatus];
 
@@ -32,6 +34,8 @@ export interface LibraryDocumentFile {
   kind: LibraryDocumentKind;
   sizeBytes: number;
   fileMtimeMs: number;
+  /** True when the file is a cloud placeholder with no bytes on this machine. */
+  cloudOnly?: boolean;
 }
 
 export interface LibraryDocumentRecord {
@@ -70,6 +74,7 @@ export interface LibraryContentCounts {
   indexed: number;
   pending: number;
   failed: number;
+  cloudOnly: number;
   chunks: number;
   lastIndexedAt: number | null;
   /** Bytes of passage text and vectors, an estimate of the index size. */
@@ -261,6 +266,18 @@ export class LibraryContentStore {
     const pathKey = buildLibraryPathKey(file.filePath);
     const now = Date.now();
     const existing = this.getByPathKey(pathKey);
+    if (file.cloudOnly) {
+      // Nothing to read yet. Remember the file so the count is honest, and
+      // read it when a later scan finds its bytes on the machine.
+      if (existing) {
+        if (existing.status !== LibraryDocumentStatus.CloudOnly) {
+          this.markCloudOnly(existing.id);
+        }
+        return { document: this.getById(existing.id)!, needsIndexing: false };
+      }
+      const id = this.insertDocument(pathKey, file, LibraryDocumentStatus.CloudOnly, now);
+      return { document: this.getById(id)!, needsIndexing: false };
+    }
     if (existing) {
       const unchanged = existing.sizeBytes === file.sizeBytes && existing.fileMtimeMs === file.fileMtimeMs;
       if (unchanged && existing.status === LibraryDocumentStatus.Indexed) {
@@ -293,6 +310,16 @@ export class LibraryContentStore {
         );
       return { document: this.getById(existing.id)!, needsIndexing: true };
     }
+    const id = this.insertDocument(pathKey, file, LibraryDocumentStatus.Pending, now);
+    return { document: this.getById(id)!, needsIndexing: true };
+  }
+
+  private insertDocument(
+    pathKey: string,
+    file: LibraryDocumentFile,
+    status: LibraryDocumentStatus,
+    now: number,
+  ): string {
     const id = crypto.randomUUID();
     this.db
       .prepare(
@@ -311,11 +338,27 @@ export class LibraryContentStore {
         path.basename(file.filePath),
         file.sizeBytes,
         file.fileMtimeMs,
-        LibraryDocumentStatus.Pending,
+        status,
         now,
         now,
       );
-    return { document: this.getById(id)!, needsIndexing: true };
+    return id;
+  }
+
+  /** The file is a cloud placeholder: keep the row, drop any passages, do not retry. */
+  markCloudOnly(id: string): void {
+    const now = Date.now();
+    this.db.transaction(() => {
+      this.deleteChunks(id);
+      this.db
+        .prepare(
+          `UPDATE library_documents
+           SET status = ?, attempts = 0, error = NULL, chunk_count = 0, updated_at = ?
+           WHERE id = ?`,
+        )
+        .run(LibraryDocumentStatus.CloudOnly, now, id);
+    })();
+    this.vectorCache = null;
   }
 
   /** Replaces the document's passages and vectors and marks it indexed. */
@@ -466,6 +509,7 @@ export class LibraryContentStore {
       indexed: byStatus.get(LibraryDocumentStatus.Indexed) ?? 0,
       pending: byStatus.get(LibraryDocumentStatus.Pending) ?? 0,
       failed,
+      cloudOnly: byStatus.get(LibraryDocumentStatus.CloudOnly) ?? 0,
       chunks: chunkRow.count,
       lastIndexedAt: lastRow.last ?? null,
       // The FTS index roughly doubles the text; count it once more.

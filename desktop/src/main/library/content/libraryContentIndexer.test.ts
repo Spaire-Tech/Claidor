@@ -14,7 +14,12 @@ import {
   type LibraryWorkerReadyMessage,
 } from '../../../shared/library/contentConstants';
 import { initializeLibraryContentTables } from '../libraryMigrations';
-import { LibraryContentIndexer, type LibraryWorkerLike } from './libraryContentIndexer';
+import {
+  isCloudPlaceholder,
+  isCloudReadError,
+  LibraryContentIndexer,
+  type LibraryWorkerLike,
+} from './libraryContentIndexer';
 import { LibraryContentStore } from './libraryContentStore';
 
 const DIMENSIONS = LibraryContentLimits.EmbeddingDimensions;
@@ -90,6 +95,22 @@ const waitFor = async (condition: () => boolean, timeoutMs = 5_000): Promise<voi
   }
 };
 
+describe('cloud placeholders', () => {
+  test('a full-size file with no blocks on disk is a placeholder on macOS only', () => {
+    const stats = { size: 4096, blocks: 0 } as fs.Stats;
+    expect(isCloudPlaceholder(stats)).toBe(process.platform === 'darwin');
+    expect(isCloudPlaceholder({ size: 4096, blocks: 8 } as fs.Stats)).toBe(false);
+    expect(isCloudPlaceholder({ size: 0, blocks: 0 } as fs.Stats)).toBe(false);
+  });
+
+  test('read errors that mean the bytes are in the cloud', () => {
+    expect(isCloudReadError('ETIMEDOUT: connection timed out, read')).toBe(true);
+    expect(isCloudReadError('ENOTCONN: socket is not connected, read')).toBe(true);
+    expect(isCloudReadError('no text found')).toBe(false);
+    expect(isCloudReadError('timed out after 120000 ms')).toBe(false);
+  });
+});
+
 describe('LibraryContentIndexer', () => {
   let root: string;
   let store: LibraryContentStore;
@@ -99,9 +120,11 @@ describe('LibraryContentIndexer', () => {
   let statuses: LibraryContentStatus[];
   let metadata: Map<string, unknown>;
   let workerOptions: { startOk?: boolean; delayMs?: number };
+  let cloudOnlyNames: Set<string>;
 
   const makeIndexer = () => {
     indexer = new LibraryContentIndexer({
+      detectCloudOnly: stats => cloudOnlyNames.has(String(stats.size)),
       store,
       getConfig: () => config,
       createWorker: onExit => {
@@ -137,7 +160,40 @@ describe('LibraryContentIndexer', () => {
     statuses = [];
     metadata = new Map();
     workerOptions = {};
+    cloudOnlyNames = new Set();
     indexer = null;
+  });
+
+  test('a file that is only in the cloud is set aside, not read, and read once it arrives', async () => {
+    // The fake detector keys on the size, so the placeholder gets a size of its own.
+    const cloud = write('cloud.txt', 'x'.repeat(777));
+    write('local.txt', 'Local file');
+    cloudOnlyNames.add('777');
+    const subject = makeIndexer();
+    subject.start();
+    await subject.scanNow();
+    await waitFor(() => store.counts().indexed === 1);
+    expect(store.counts()).toMatchObject({ indexed: 1, cloudOnly: 1, failed: 0, pending: 0 });
+    expect(subject.getStatus().cloudOnlyCount).toBe(1);
+    expect(workers[0].indexed).toEqual(['local.txt']);
+
+    cloudOnlyNames.clear();
+    await subject.scanNow();
+    await waitFor(() => store.counts().indexed === 2);
+    expect(store.getByFilePath(cloud)?.status).toBe('indexed');
+    expect(subject.getStatus().cloudOnlyCount).toBe(0);
+  });
+
+  test('a read that times out on the cloud sets the file aside instead of failing it', async () => {
+    write('stuck.txt', 'in the cloud');
+    const subject = makeIndexer();
+    subject.start();
+    await waitFor(() => workers.length === 1);
+    workers[0].failWith.set('stuck.txt', { message: 'ETIMEDOUT: connection timed out, read', permanent: false });
+    await subject.scanNow();
+    await waitFor(() => store.counts().cloudOnly === 1);
+    expect(store.counts().failed).toBe(0);
+    expect(store.getByFilePath(path.join(root, 'stuck.txt'))?.attempts).toBe(0);
   });
 
   afterEach(() => {
@@ -167,7 +223,8 @@ describe('LibraryContentIndexer', () => {
 
     await waitFor(() => subject.getStatus().phase === LibraryContentPhase.Idle);
     expect(subject.getStatus()).toMatchObject({ documentCount: 2, modelReady: true, folders: [root] });
-    expect(statuses.length).toBeGreaterThan(0);
+    // Status broadcasts are throttled on a timer; under a loaded machine it fires late.
+    await waitFor(() => statuses.length > 0);
   });
 
   test('does not read an unchanged file twice, reads a changed one again, forgets a deleted one', async () => {

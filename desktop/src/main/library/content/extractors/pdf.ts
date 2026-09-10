@@ -30,8 +30,31 @@ const WORD_GAP_X_DELTA = 1;
 let pdfJsPromise: Promise<PdfJsModule> | null = null;
 let pdfJsAssetRoot: string | null = null;
 
+/**
+ * pdf.js decides it is in a browser when `process.versions.electron` is set
+ * and `process.type` is not `browser`. An Electron utilityProcess reports
+ * `utility`, so pdf.js would reach for `document` and fail on every PDF
+ * with fonts (« document is not defined », seen on the founder's Mac).
+ * The document worker has no DOM and nothing else in it reads
+ * `process.type`, so it is set to what pdf.js expects before the import.
+ */
+export const pdfJsWouldMistakeElectronForBrowser = (
+  versions: { electron?: string },
+  processType: string | undefined,
+): boolean => !!versions.electron && !!processType && processType !== 'browser';
+
+const makePdfJsSeeNode = (): void => {
+  if (!pdfJsWouldMistakeElectronForBrowser(process.versions, process.type)) return;
+  try {
+    Object.defineProperty(process, 'type', { value: 'browser', configurable: true, writable: true });
+  } catch (error) {
+    console.warn('[LibraryWorker] could not adjust process.type for pdf.js', error);
+  }
+};
+
 const loadPdfJs = (): Promise<PdfJsModule> => {
   if (!pdfJsPromise) {
+    makePdfJsSeeNode();
     pdfJsPromise = import(PDFJS_ENTRY).catch((error: unknown) => {
       pdfJsPromise = null;
       throw error;

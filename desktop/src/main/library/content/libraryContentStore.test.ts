@@ -134,6 +134,32 @@ describe('LibraryContentStore documents', () => {
     expect(store.requeueFailed()).toBe(0);
   });
 
+  test('a cloud-only file is remembered, not queued, and read once its bytes arrive', () => {
+    const store = makeStore();
+    const file = { filePath: path.join(root, 'cloud.docx'), kind: LibraryDocumentKind.Word, sizeBytes: 900, fileMtimeMs: 5 };
+    const first = store.upsertSeenFile({ ...file, cloudOnly: true });
+    expect(first.needsIndexing).toBe(false);
+    expect(first.document.status).toBe(LibraryDocumentStatus.CloudOnly);
+    expect(store.counts()).toMatchObject({ cloudOnly: 1, pending: 0, failed: 0 });
+    expect(store.listPending()).toHaveLength(0);
+    // Still in the cloud on the next scan: nothing changes.
+    expect(store.upsertSeenFile({ ...file, cloudOnly: true }).needsIndexing).toBe(false);
+    // Downloaded, same size and date: now it is read.
+    const arrived = store.upsertSeenFile(file);
+    expect(arrived.needsIndexing).toBe(true);
+    expect(arrived.document.status).toBe(LibraryDocumentStatus.Pending);
+    expect(store.counts().cloudOnly).toBe(0);
+  });
+
+  test('an indexed file that goes back to the cloud loses its passages and is not retried', () => {
+    const store = makeStore();
+    const { lease } = seed(store);
+    store.markCloudOnly(lease.id);
+    expect(store.counts()).toMatchObject({ indexed: 2, cloudOnly: 1, chunks: 2 });
+    expect(store.search('rent', null)).toHaveLength(0);
+    expect(store.getById(lease.id)?.attempts).toBe(0);
+  });
+
   test('deleting a document removes its passages and vectors', () => {
     const store = makeStore();
     const { lease } = seed(store);

@@ -59,7 +59,26 @@ export interface LibraryContentIndexerOptions {
   rescanIntervalMs?: number;
   /** Test hook: milliseconds between two status broadcasts. */
   statusThrottleMs?: number;
+  /** Test hook: decides from the stats whether a file is a cloud placeholder. */
+  detectCloudOnly?: (stats: fs.Stats) => boolean;
 }
+
+/**
+ * A file synced by iCloud (or another cloud drive) that has not been
+ * downloaded has its full size but no blocks on disk. Reading it makes
+ * macOS start a download and, when that stalls, fail with « connection
+ * timed out » after a long wait. Seen on the founder's Mac: thousands of
+ * such files, three tries each, an hour lost. So they are set aside by
+ * their stats and never read until their bytes arrive.
+ */
+export const isCloudPlaceholder = (stats: fs.Stats): boolean => (
+  process.platform === 'darwin' && stats.size > 0 && stats.blocks === 0
+);
+
+/** Read errors that mean « the bytes are in the cloud, not here ». */
+const CLOUD_READ_ERROR = /connection timed out|ETIMEDOUT|ENOTCONN|EDEADLK|dataless/i;
+
+export const isCloudReadError = (message: string): boolean => CLOUD_READ_ERROR.test(message);
 
 const LibraryContentMetadataKey = {
   Paused: 'library.content.paused',
@@ -99,6 +118,7 @@ export class LibraryContentIndexer {
   private readonly excludedRoots: string[];
   private readonly rescanIntervalMs: number;
   private readonly statusThrottleMs: number;
+  private readonly detectCloudOnly: (stats: fs.Stats) => boolean;
 
   private worker: LibraryWorkerLike | null = null;
   private workerRestarts = 0;
@@ -133,6 +153,7 @@ export class LibraryContentIndexer {
     this.excludedRoots = (options.excludedRoots ?? []).map(root => path.resolve(root));
     this.rescanIntervalMs = options.rescanIntervalMs ?? LibraryContentLimits.RescanIntervalMs;
     this.statusThrottleMs = options.statusThrottleMs ?? LibraryContentLimits.StatusThrottleMs;
+    this.detectCloudOnly = options.detectCloudOnly ?? isCloudPlaceholder;
     this.paused = this.getMetadata<boolean>(LibraryContentMetadataKey.Paused) === true;
     this.lastScanAt = this.getMetadata<number>(LibraryContentMetadataKey.LastScanAt) ?? null;
   }
@@ -245,6 +266,7 @@ export class LibraryContentIndexer {
       chunkCount: counts.chunks,
       queuedCount: this.enabled ? counts.pending : 0,
       failedCount: counts.failed,
+      cloudOnlyCount: counts.cloudOnly,
       indexBytes: counts.indexBytes,
       ...(counts.lastIndexedAt ? { lastIndexedAt: counts.lastIndexedAt } : {}),
       ...(this.lastScanAt ? { lastScanAt: this.lastScanAt } : {}),
@@ -377,8 +399,13 @@ export class LibraryContentIndexer {
         })
         .catch(error => {
           if (this.stopped) return;
-          const permanent = isPermanentFailure(error);
           const message = errorMessage(error);
+          if (isCloudReadError(message)) {
+            this.store.markCloudOnly(document.id);
+            console.debug(`[LibraryContent] ${document.fileName} is only in the cloud; set aside`);
+            return;
+          }
+          const permanent = isPermanentFailure(error);
           this.store.markFailed(document.id, message, permanent);
           console.warn(`[LibraryContent] could not read ${document.fileName}${permanent ? '' : ' (will retry)'}: ${message}`);
         })
@@ -511,6 +538,7 @@ export class LibraryContentIndexer {
       kind,
       sizeBytes: stats.size,
       fileMtimeMs: Math.trunc(stats.mtimeMs),
+      cloudOnly: this.detectCloudOnly(stats),
     });
     if (!needsIndexing) return;
     if (stats.size > LibraryContentLimits.MaxFileBytes) {

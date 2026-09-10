@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { LibraryContentPhase } from '../../../shared/library/contentConstants';
 import {
+  describeLibraryCloudOnly,
   describeLibraryDocuments,
   describeLibraryFailures,
   describeLibraryPhase,
@@ -25,6 +26,8 @@ const words: Record<string, string> = {
   librarySettingsLastUpdated: 'last updated {time}',
   librarySettingsFailedOne: '1 file could not be read',
   librarySettingsFailedMany: '{count} files could not be read',
+  librarySettingsCloudOnlyOne: '1 file is in iCloud but not on this Mac. Open it once to bring it here.',
+  librarySettingsCloudOnlyMany: '{count} files are in iCloud but not on this Mac. Open them once to bring them here.',
   librarySettingsTimeJustNow: 'just now',
   librarySettingsTimeMinuteAgo: '1 minute ago',
   librarySettingsTimeMinutesAgo: '{count} minutes ago',
@@ -118,6 +121,8 @@ describe('describeLibraryFailures', () => {
     expect(describeLibraryFailures({ failedCount: 0 }, t)).toBe('');
     expect(describeLibraryFailures({ failedCount: 1 }, t)).toBe('1 file could not be read');
     expect(describeLibraryFailures({ failedCount: 2500 }, t)).toBe('2,500 files could not be read');
+    expect(describeLibraryCloudOnly({ cloudOnlyCount: 0 }, t)).toBe('');
+    expect(describeLibraryCloudOnly({ cloudOnlyCount: 5893 }, t)).toBe('5,893 files are in iCloud but not on this Mac. Open them once to bring them here.');
   });
 });
 

@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 
 import { LibraryContentLimits, LibraryDocumentKind } from '../../../../shared/library/contentConstants';
 import { extractLibraryDocument } from './index';
-import { joinPdfTextItems } from './pdf';
+import { joinPdfTextItems, pdfJsWouldMistakeElectronForBrowser } from './pdf';
 import { sectionsFromMarkdown, textFromCsv } from './plainText';
 import { boundSections, decodeXmlEntities, joinRowsWithRepeatedHeader } from './shared';
 import { textFromSlideXml } from './slides';
@@ -264,5 +264,14 @@ describe('extractor helpers', () => {
       { locator: { page: 2 }, text: 'abcdef' },
       { locator: { page: 3 }, text: 'ghi' },
     ]);
+  });
+});
+
+describe('pdf.js inside an Electron utility process', () => {
+  test('is mistaken for a browser only when Electron sets a non-browser process type', () => {
+    expect(pdfJsWouldMistakeElectronForBrowser({ electron: '40.0.0' }, 'utility')).toBe(true);
+    expect(pdfJsWouldMistakeElectronForBrowser({ electron: '40.0.0' }, 'browser')).toBe(false);
+    expect(pdfJsWouldMistakeElectronForBrowser({}, undefined)).toBe(false);
+    expect(pdfJsWouldMistakeElectronForBrowser({}, 'utility')).toBe(false);
   });
 });

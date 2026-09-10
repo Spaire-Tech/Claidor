@@ -129,6 +129,22 @@ line. Not yet seen: the agent answering a question with a citation through
 the chat, which needs the real conversation of step 1 (a signed-in engine
 run on the founder's machine).
 
+**First real disk, two faults.** On the founder's Mac the first pass read
+394 documents and reported 5,893 that could not be read. The log gave
+two reasons. Fifteen thousand « connection timed out » reads: the
+Documents and Desktop folders are synced to iCloud, and a file that is
+not downloaded has its full size but no bytes on disk; reading it makes
+macOS start a download, which stalled on a full disk, three tries each,
+an hour lost. Now a file with no blocks on disk is set aside as « in
+iCloud, not on this Mac », counted separately on the screen, never read
+until its bytes arrive, and read on the next scan once they do. And 189
+« document is not defined »: pdf.js decides it is in a browser when it
+sees Electron with a process type other than `browser`, which is what an
+Electron utility process reports, so every PDF with fonts failed. The
+worker now presents itself the way pdf.js expects before pdf.js loads.
+Both faults were reproduced here inside the built app before the fix and
+seen gone after it.
+
 **In the installer.** The macOS build on GitHub Actions (run 8, the
 library commit) packaged with the model fetch, the ONNX runtime unpacked
 and the other platforms' binaries left out, and produced the artifact.

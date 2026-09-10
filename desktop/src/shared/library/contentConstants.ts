@@ -128,6 +128,8 @@ export interface LibraryContentStatus {
   queuedCount: number;
   /** Documents that could not be read after the retries. */
   failedCount: number;
+  /** Documents that are only in a cloud drive (iCloud) and not on this machine. */
+  cloudOnlyCount: number;
   /** Bytes used by the index tables, when known. */
   indexBytes?: number;
   /** When the last document finished, epoch ms. */

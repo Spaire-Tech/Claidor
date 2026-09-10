@@ -8,6 +8,7 @@ import {
 } from '../../../shared/library/contentConstants';
 import { i18nService } from '../../services/i18n';
 import {
+  describeLibraryCloudOnly,
   describeLibraryDocuments,
   describeLibraryFailures,
   describeLibraryPhase,
@@ -265,6 +266,7 @@ const LibrarySettingsSection: React.FC = () => {
   const isPaused = status?.phase === LibraryContentPhase.Paused;
   const isOff = !enabled || !status || status.phase === LibraryContentPhase.Off;
   const failures = status ? describeLibraryFailures(status, t) : '';
+  const cloudOnly = status ? describeLibraryCloudOnly(status, t) : '';
 
   return (
     <div className="space-y-8">
@@ -343,6 +345,7 @@ const LibrarySettingsSection: React.FC = () => {
                     {describeLibraryDocuments(status, now, t)}
                   </p>
                 )}
+                {cloudOnly && <p className="mt-0.5 text-xs text-secondary">{cloudOnly}</p>}
                 {failures && <p className="mt-0.5 text-xs text-secondary">{failures}</p>}
               </div>
               <div className="flex shrink-0 items-center gap-2">

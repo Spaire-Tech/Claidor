@@ -78,6 +78,8 @@ const translations: Record<'en', Record<string, string>> = {
     librarySettingsDocumentsOne: '1 document',
     librarySettingsDocumentsMany: '{count} documents',
     librarySettingsLastUpdated: 'last updated {time}',
+    librarySettingsCloudOnlyOne: '1 file is in iCloud but not on this Mac. Open it once to bring it here.',
+    librarySettingsCloudOnlyMany: '{count} files are in iCloud but not on this Mac. Open them once to bring them here.',
     librarySettingsFailedOne: '1 file could not be read',
     librarySettingsFailedMany: '{count} files could not be read',
     librarySettingsTimeJustNow: 'just now',
