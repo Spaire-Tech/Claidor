@@ -29,6 +29,11 @@ const translations: Record<'en', Record<string, string>> = {
     traySettings: 'Settings',
     trayQuit: 'Quit',
 
+    // Onboarding (docs/maties/onboarding.md): what the main process answers when a profile is not usable
+    onboardingNameRequired: 'Give your Maty a name.',
+    onboardingVoiceUnknown: 'Choose one of the five voices.',
+    onboardingTimezoneUnknown: 'That time zone is not one this computer knows.',
+
     // Quit confirmation (native dialog shown on user-initiated quit)
     appQuitConfirmTitle: 'Quit Maties?',
     appQuitConfirmDetail: 'While Maties is closed, scheduled tasks will not run and IM messages will not be answered.',

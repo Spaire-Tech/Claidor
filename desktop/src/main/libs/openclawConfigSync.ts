@@ -21,6 +21,12 @@ import { COWORK_TEMP_DIR_NAME } from '../../shared/cowork/constants';
 import { CoworkErrorModelSource } from '../../shared/cowork/errorDetail';
 import { LIBRARY_SEARCH_PLUGIN_ID, LIBRARY_SEARCH_TOOL_NAME } from '../../shared/library/contentConstants';
 import { normalizeMcpServerUrlInput } from '../../shared/mcp/url';
+import {
+  type AssistantVoice,
+  DEFAULT_ASSISTANT_VOICE,
+  isAssistantVoice,
+  type OnboardingProfile,
+} from '../../shared/onboarding/constants';
 import { OPENCLAW_PLUGIN_INDEX_MANAGED_KEYS } from '../../shared/openclawEngine/constants';
 import { OpenClawTranscriptSafetyLimit } from '../../shared/openclawTranscript/constants';
 import type {
@@ -74,6 +80,7 @@ import type { OpenClawEngineManager } from './openclawEngineManager';
 import { repairHeartbeatFile, stripProactiveHeartbeatSection } from './openclawHeartbeatRepair';
 import { getMainAgentWorkspacePath } from './openclawMemoryFile';
 import { resolveOpenClawCatalogModelMaxTokens } from './openclawModelCatalog';
+import { buildManagedVoicePrompt } from './openclawVoicePrompt';
 
 const gwDiagTs = (): string => {
   const d = new Date();
@@ -1878,6 +1885,8 @@ type OpenClawConfigSyncDeps = {
   getAgents?: () => Agent[];
   getUserPlugins?: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   canUseMediaGeneration?: () => boolean;
+  /** The onboarding decisions (docs/maties/onboarding.md): name, voice, time zone, defaults filled. */
+  getOnboardingProfile?: () => OnboardingProfile | null | undefined;
 };
 
 export class OpenClawConfigSync {
@@ -1910,6 +1919,7 @@ export class OpenClawConfigSync {
   private readonly getAgents?: () => Agent[];
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
+  private readonly getOnboardingProfile?: () => OnboardingProfile | null | undefined;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
 
@@ -1943,6 +1953,23 @@ export class OpenClawConfigSync {
     this.getAgents = deps.getAgents;
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
+    this.getOnboardingProfile = deps.getOnboardingProfile;
+  }
+
+  /** The voice chosen at onboarding; the default until one is chosen. */
+  private resolveAssistantVoice(): AssistantVoice {
+    const voice = this.getOnboardingProfile?.()?.voice;
+    return isAssistantVoice(voice) ? voice : DEFAULT_ASSISTANT_VOICE;
+  }
+
+  /** The name chosen at onboarding, or empty when none is stored. */
+  private resolveAssistantName(): string {
+    return this.getOnboardingProfile?.()?.assistantName?.trim() ?? '';
+  }
+
+  /** The time zone chosen at onboarding, or empty when none is stored. */
+  private resolveUserTimezone(): string {
+    return this.getOnboardingProfile?.()?.timezone?.trim() ?? '';
   }
 
   /**
@@ -2097,7 +2124,9 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         // Still sync AGENTS.md even when API is not configured — skills/systemPrompt
         // may already be set and should be available when the user configures a model.
         const mainWorkspacePath = getMainAgentWorkspacePath(this.engineManager.getStateDir());
-        const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig);
+        const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig, {
+          voice: this.resolveAssistantVoice(),
+        });
         this.syncPerAgentWorkspaces(mainWorkspacePath, coworkConfig);
         if (agentsMdWarning) result.agentsMdWarning = agentsMdWarning;
         return result;
@@ -2334,6 +2363,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       coworkConfig.executionMode || 'local',
       this.isEnterprise(),
     );
+    const userTimezone = this.resolveUserTimezone();
     const availableProviders = buildProviderModelCatalog(allProvidersMap);
     const agentModelDefaults = Object.keys(perModelCustomDefaults).length > 0
       ? buildCompleteAgentModelDefaults(allProvidersMap, perModelCustomDefaults)
@@ -2465,6 +2495,8 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           model: {
             primary: primaryModel,
           },
+          // The zone of the system prompt's date block (docs/concepts/timezone.md); host zone when unset.
+          ...(userTimezone ? { userTimezone } : {}),
           sandbox: {
             mode: sandboxMode,
           },
@@ -3351,7 +3383,9 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // Sync AGENTS.md with skills routing prompt to the OpenClaw workspace directory.
     // This runs on every sync regardless of openclaw.json changes, because skills
     // may have been installed/enabled/disabled independently.
-    const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig);
+    const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig, {
+      voice: this.resolveAssistantVoice(),
+    });
 
     // Sync per-agent workspace files (SOUL.md, IDENTITY.md, AGENTS.md) for non-main agents
     this.syncPerAgentWorkspaces(mainWorkspacePath, coworkConfig);
@@ -3796,7 +3830,14 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
    * native channel connectors (DingTalk, Feishu, etc.) can discover and
    * invoke Maties skills.
    */
-  private syncAgentsMd(workspaceDir: string, coworkConfig: CoworkConfig): string | undefined {
+  private syncAgentsMd(
+    workspaceDir: string,
+    coworkConfig: CoworkConfig,
+    options: {
+      /** The assistant's voice (docs/maties/onboarding.md): rendered for the main workspace only. */
+      voice?: AssistantVoice;
+    } = {},
+  ): string | undefined {
     const MARKER = '<!-- Maties managed: do not edit below this line -->';
 
     try {
@@ -3810,6 +3851,11 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       const systemPrompt = (coworkConfig.systemPrompt || '').trim().replaceAll(MARKER, '');
       if (systemPrompt) {
         sections.push(`## System Prompt\n\n${systemPrompt}`);
+      }
+
+      // How the assistant writes, chosen at onboarding.
+      if (options.voice) {
+        sections.push(buildManagedVoicePrompt(options.voice));
       }
 
       // Skills are now loaded by OpenClaw natively via skills.load.extraDirs
@@ -3910,7 +3956,8 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             id: AgentId.Main,
             default: true,
             identity: {
-              name: DefaultAgentProfile.Name,
+              // No row yet: the name chosen at onboarding, else the product name.
+              name: this.resolveAssistantName() || DefaultAgentProfile.Name,
             },
             model: {
               primary: defaultPrimaryModel,

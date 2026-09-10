@@ -15,6 +15,7 @@ import {
   TaskCompletionNotificationMode,
 } from '../../shared/notifications/constants';
 import { OpenClawEnginePhase, OpenClawGatewayRepairErrorCode } from '../../shared/openclawEngine/constants';
+import type { Platform } from '../../shared/platform/constants';
 import {
   ProviderAuthType,
   ProviderName,
@@ -870,6 +871,8 @@ const DreamingTabIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 export type SettingsOpenOptions = {
   initialTab?: TabType;
+  /** With `initialTab: 'im'`: the channel to open, for a card that asked for one. */
+  initialImPlatform?: Platform;
   notice?: string;
   noticeI18nKey?: string;
   noticeExtra?: string;
@@ -1261,6 +1264,7 @@ const Settings: React.FC<SettingsProps> = ({
   onClose,
   onStartAiSkin,
   initialTab,
+  initialImPlatform,
   initialTabRequestId,
   notice,
   noticeI18nKey,
@@ -4129,7 +4133,7 @@ const Settings: React.FC<SettingsProps> = ({
         );
 
       case 'im':
-        return <IMSettings />;
+        return <IMSettings initialPlatform={initialImPlatform} initialPlatformRequestId={initialTabRequestId} />;
 
       case 'plugins':
         return (

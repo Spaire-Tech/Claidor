@@ -394,10 +394,17 @@ function translateIMError(error: string | null): string {
   return error;
 }
 
-const IMSettings: React.FC = () => {
+interface IMSettingsProps {
+  /** The platform to open first, when a connection card asked for one. */
+  initialPlatform?: Platform;
+  /** Changes with each request, so the same platform can be asked for twice. */
+  initialPlatformRequestId?: number;
+}
+
+const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatformRequestId }) => {
   const dispatch = useDispatch();
   const { config, status, isLoading } = useSelector((state: RootState) => state.im);
-  const [activePlatform, setActivePlatform] = useState<Platform>('weixin');
+  const [activePlatform, setActivePlatform] = useState<Platform>(initialPlatform ?? 'weixin');
   const [activeQQInstanceId, setActiveQQInstanceId] = useState<string | null>(null);
   const [activeFeishuInstanceId, setActiveFeishuInstanceId] = useState<string | null>(null);
   const [activeDingTalkInstanceId, setActiveDingTalkInstanceId] = useState<string | null>(null);
@@ -1059,6 +1066,13 @@ const IMSettings: React.FC = () => {
       setActivePlatform(platforms[0]);
     }
   }, [platforms, activePlatform]);
+
+  // A connection card asked for one platform: show it, also when the tab is already open.
+  useEffect(() => {
+    if (initialPlatform && platforms.includes(initialPlatform)) {
+      setActivePlatform(initialPlatform);
+    }
+  }, [initialPlatform, initialPlatformRequestId, platforms]);
 
   // Check if platform can be started
   const canStart = (platform: Platform): boolean => {

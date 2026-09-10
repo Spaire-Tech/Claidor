@@ -118,6 +118,7 @@ import type {
   ListLocalWebServicesOptions,
   LocalWebService,
 } from '../../shared/localWebServices/constants';
+import type { OnboardingProfile } from '../../shared/onboarding/constants';
 import type {
   OpenClawEngineErrorCode,
   OpenClawEnginePhase as SharedOpenClawEnginePhase,
@@ -651,6 +652,11 @@ interface IElectronAPI {
     get: (key: string) => Promise<any>;
     set: (key: string, value: any) => Promise<void>;
     remove: (key: string) => Promise<void>;
+  };
+  /** The onboarding profile (docs/maties/onboarding.md): read as stored, or store, rename the main agent and resync the engine. */
+  onboarding: {
+    getProfile: () => Promise<OnboardingProfile>;
+    applyProfile: (profile: OnboardingProfile) => Promise<void>;
   };
   skills: {
     list: () => Promise<{ success: boolean; skills?: Skill[]; error?: string }>;

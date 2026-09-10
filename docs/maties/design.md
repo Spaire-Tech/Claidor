@@ -287,8 +287,8 @@ the MIT notice).
   action at most.
 - **The account menu** from the bottom row: the menu style with the
   person, « Manage account », « Sign out ».
-- **Onboarding** (the tour cards): the card style, the sphere, one
-  sentence, « Next ».
+- **Onboarding**: the six screens of section 10. The tour cards over the
+  app and the welcome conversation are retired.
 
 ## 7. Dark
 
@@ -327,3 +327,55 @@ shown to the founder until light is signed off.
   where the folder and agent live, and nothing else goes there.
 - Serif for the assistant, sans for the app. It is the one rule that
   makes the answer feel written rather than printed.
+
+## 10. Onboarding
+
+September 10, 2026. The founder drew the six screens a person sees once
+(`docs/maties/design/onboarding/founder-onboarding-template.html`, the
+logos beside it). What each screen does to the app is in
+`onboarding.md`; this section is only the look. The assistant is a
+**Maty**; the plural is Maties.
+
+**The six screens**, one at a time in a centred column, six dots at the
+top, « Back » on the left, the footer with the privacy policy, the terms
+and « Log out »: Welcome (the sphere, the headline in Newsreader, one
+sentence, four cards, the time zone and appearance rows, « Continue »),
+Name your Maty (the bird, one large field, the address under it,
+« Suggest another name »), Choose a voice, How to reach {name}, Some
+more connections, Done (« {name}, your personal Maty, is all set » with
+the bird inline, and « Go to workspace »). A step rises into view with
+`pcIn`. The one primary action of the flow is the dark pill at the
+bottom right (« Continue », « Sign in to continue », « Finish setup »,
+« Go to workspace »), ink on white as the founder drew it, not blue;
+blue is for the « Connect » pills on the cards. Everything else is the
+app's tokens.
+
+**The voice orbs.** Five, in a row, each a mesh of three slow gradient
+layers the founder set (a dark base, a coloured bloom, a highlight) under
+a film grain, breathing on their own clocks (22 s, 9 s, 13 s), the
+chosen one at full opacity and the others faded. The colours are the
+voice: teal for Concise, green for Balanced, amber for Warm, blue for
+Direct, magenta for Sassy. A white play disc in the centre reads the
+sample sentence with the computer's own speech until a Maties voice from
+Claidor's servers exists. The name under the orb in Instrument Sans, the
+founder's line under the name in muted ink. `prefers-reduced-motion`
+stills the mesh.
+
+**The four points of Welcome** are not cards: a 22 px line icon in
+muted ink, a 15.5 px title, one 14.5 px line under it, two columns.
+
+**The connection cards** of screens 4 and 5 share one shape: white,
+radius 20, hairline border, resting shadow, a 48 px rounded tile at the
+left holding the logo (from `desktop/public/logos/apps`, shipped with
+the app, never fetched) or the name's first letter when a brand has no
+mark we may ship, the name in 16.5 px, one line under it in muted ink,
+and at the right what the card can honestly do: « Connect » (a quiet
+grey pill with blue text), « Connected » (green, with a tick, read from
+the app's real state, never a stored flag), « Install » for the phone
+app, or a quiet label with no button: « Uses your browser », « On this
+computer ». A « Connect » on something not wired yet opens a small sheet
+that says so, with « Tell me when »; nothing is hidden and nothing
+pretends. Eleven groups with a mono count and a note, a search pill at
+the top right. The same cards are the Connectors section of Skills &
+Connectors, with « How to reach {name} » above them and « Your own
+servers » (the MCP manager) below.

@@ -142,6 +142,7 @@ export class IMGatewayManager extends EventEmitter {
   private coworkHandler: IMCoworkHandler | null = null;
   private getLLMConfig: (() => Promise<any>) | null = null;
   private getSkillsPrompt: (() => Promise<string | null>) | null = null;
+  private getUserTimezone: (() => string | undefined) | null = null;
   private ensureCoworkReady: (() => Promise<void>) | null = null;
   private syncOpenClawConfig:
     | ((reason?: string, options?: { restartGatewayIfRunning?: boolean }) => Promise<void>)
@@ -237,9 +238,12 @@ export class IMGatewayManager extends EventEmitter {
   initialize(options: {
     getLLMConfig: () => Promise<any>;
     getSkillsPrompt?: () => Promise<string | null>;
+    /** The person's chosen time zone (`app.timezone`) for reminder detection; the machine's when absent. */
+    getUserTimezone?: () => string | undefined;
   }): void {
     this.getLLMConfig = options.getLLMConfig;
     this.getSkillsPrompt = options.getSkillsPrompt ?? null;
+    this.getUserTimezone = options.getUserTimezone ?? null;
 
     // Set up message handlers for gateways
     this.setupMessageHandlers();
@@ -371,6 +375,7 @@ export class IMGatewayManager extends EventEmitter {
       const detectScheduledTaskRequest = this.getLLMConfig && this.createScheduledTask
         ? createIMScheduledTaskRequestDetector({
             getLLMConfig: this.getLLMConfig,
+            getUserTimezone: this.getUserTimezone ?? undefined,
           })
         : undefined;
       this.coworkHandler = new IMCoworkHandler({

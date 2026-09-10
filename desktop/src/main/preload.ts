@@ -96,6 +96,7 @@ import {
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
 import { McpIpcChannel } from '../shared/mcp/constants';
+import { OnboardingIpcChannel, type OnboardingProfile } from '../shared/onboarding/constants';
 import { OpenClawEngineIpc } from '../shared/openclawEngine/constants';
 import { PermissionIpcChannel } from '../shared/permissions/constants';
 import type { Platform } from '../shared/platform';
@@ -1011,6 +1012,16 @@ contextBridge.exposeInMainWorld('electron', {
       };
       ipcRenderer.on(LibraryContentIpc.StatusChanged, handler);
       return () => ipcRenderer.removeListener(LibraryContentIpc.StatusChanged, handler);
+    },
+  },
+  // Onboarding (docs/maties/onboarding.md): the assistant's name, its voice, the time zone.
+  onboarding: {
+    getProfile: (): Promise<OnboardingProfile> => ipcRenderer.invoke(OnboardingIpcChannel.GetProfile),
+    applyProfile: async (profile: OnboardingProfile): Promise<void> => {
+      const result = await ipcRenderer.invoke(OnboardingIpcChannel.ApplyProfile, profile);
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to apply the onboarding profile');
+      }
     },
   },
   asr: {
