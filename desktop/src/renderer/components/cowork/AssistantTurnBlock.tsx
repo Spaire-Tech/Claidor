@@ -2,7 +2,6 @@ import '../design/conversation.css';
 
 import { ChevronDownIcon, ChevronUpIcon, FolderIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
 
 import { classifyErrorKey, CoworkErrorI18nKey } from '../../../common/coworkErrorClassify';
 import { ContextCompactionStatus } from '../../../common/coworkSystemMessages';
@@ -17,15 +16,11 @@ import type { CoworkGoal } from '../../../shared/cowork/goal';
 import { dedupeArtifactsForDisplay } from '../../services/artifactParser';
 import { getPortalPricingUrl } from '../../services/endpoints';
 import { i18nService } from '../../services/i18n';
-import type { RootState } from '../../store';
-import type { Model } from '../../store/slices/modelSlice';
 import type { Artifact } from '../../types/artifact';
 import type { CoworkMessage, CoworkMessageMetadata } from '../../types/cowork';
 import { revealLocalPathWithToast } from '../../utils/localFileActions';
-import { getModelDisplayName } from '../../utils/modelProviderHint';
 import { ArtifactPreviewCard } from '../artifacts';
 import { APPROVAL_SLOT_TURN, useApprovalSlotRef } from '../design/approvalSlots';
-import ProviderMark from '../design/ProviderMark';
 import Shimmer from '../design/Shimmer';
 import Sphere from '../design/Sphere';
 import AbnormalIcon from '../icons/AbnormalIcon';
@@ -430,26 +425,6 @@ const getActivityGroupKey = (item: ConsolidatedItem): string => {
   return item.message.id;
 };
 
-/** The model the turn ran on: the last assistant message that names one. */
-const getTurnModelRef = (turn: ConversationTurn): string => {
-  let modelRef = '';
-  for (const item of turn.assistantItems) {
-    if (item.type !== 'assistant') continue;
-    const model = item.message.metadata?.model;
-    if (typeof model === 'string' && model.trim()) modelRef = model.trim();
-  }
-  return modelRef;
-};
-
-/** The first thing the assistant did in the turn, for the time in the header. */
-const getTurnAssistantTimestamp = (turn: ConversationTurn): number | null => {
-  for (const item of turn.assistantItems) {
-    const timestamp = item.type === 'tool_group' ? item.group.toolUse.timestamp : item.message.timestamp;
-    if (typeof timestamp === 'number' && Number.isFinite(timestamp) && timestamp > 0) return timestamp;
-  }
-  return getTurnStartTimestamp(turn);
-};
-
 const getItemTimestamp = (item: ConsolidatedItem): number | null => {
   if (item.type === 'tool_group') return item.group.toolUse.timestamp;
   if (item.type === 'media_polling_group') return item.group.polls[0]?.toolUse.timestamp ?? null;
@@ -489,13 +464,6 @@ const findLastToolGroup = (chunks: ConsolidatedRenderChunk[]): ToolGroupItem | n
     }
   }
   return null;
-};
-
-const formatTurnTime = (timestamp: number | null): string => {
-  if (timestamp == null) return '';
-  const date = new Date(timestamp);
-  if (!Number.isFinite(date.getTime())) return '';
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
 const FoldChevron: React.FC<{ open: boolean }> = ({ open }) => (
@@ -551,14 +519,8 @@ const AssistantTurnBlock: React.FC<{
   isStreamingTurn?: boolean;
   /** True while subagents spawned in this turn are still running; keeps the process unfolded. */
   hasRunningSubagents?: boolean;
-  /** Hide the sphere and the header line (a subagent's own view draws its own). */
+  /** Hide the sphere at the left (a subagent's own view draws its own). */
   hideTurnHeader?: boolean;
-  /**
-   * The model the session is set to. A turn names its model only once its
-   * final message lands; while it runs, this keeps the mark and the name in
-   * the header instead of a bare time.
-   */
-  liveModelRef?: string;
 }> = ({
   turn,
   artifacts,
@@ -584,7 +546,6 @@ const AssistantTurnBlock: React.FC<{
   isStreamingTurn = false,
   hasRunningSubagents = false,
   hideTurnHeader = false,
-  liveModelRef = '',
 }) => {
   const [artifactCardsExpanded, setArtifactCardsExpanded] = useState(false);
   const [processExpanded, setProcessExpanded] = useState(false);
@@ -636,10 +597,7 @@ const AssistantTurnBlock: React.FC<{
     return next;
   }, [currentMediaPollCounts]);
   const knownFiles = useMemo(() => collectTurnFiles(consolidatedItems), [consolidatedItems]);
-  const recordedModelRef = useMemo(() => getTurnModelRef(turn), [turn]);
-  const turnTime = formatTurnTime(getTurnAssistantTimestamp(turn));
   const isTurnLive = isStreamingTurn || hasRunningSubagents;
-  const turnModelRef = recordedModelRef || (isTurnLive ? liveModelRef.trim() : '');
 
   // A request that arrives before its step is on screen lands here.
   const turnApprovalSlotRef = useApprovalSlotRef<HTMLDivElement>(isStreamingTurn ? APPROVAL_SLOT_TURN : null);
@@ -971,7 +929,6 @@ const AssistantTurnBlock: React.FC<{
   );
   // ... and while the answer's own words are moving, nothing else needs to.
   const stepIsLive = turnHasSelfIndicatingActivity(turn) || answerIsStreaming;
-  const modelName = turnModelRef ? getModelDisplayName(turnModelRef, []) : '';
 
   const liveChunks = renderChunks.map((chunk, chunkIndex) => renderChunk(
     chunk,
@@ -986,14 +943,6 @@ const AssistantTurnBlock: React.FC<{
             <Sphere size={22} still className="mt-[1px]" />
           )}
           <div className="flex min-w-0 flex-1 flex-col gap-4">
-            {!hideTurnHeader && (turnModelRef || turnTime) && (
-              <div className="maties-meta flex min-h-[22px] items-center gap-1.5" data-cowork-search-exclude="true">
-                {turnModelRef && <ProviderMark modelRef={turnModelRef} size={14} />}
-                {turnModelRef && <TurnModelName modelRef={turnModelRef} fallback={modelName} />}
-                {turnModelRef && turnTime && <span aria-hidden>·</span>}
-                {turnTime && <span className="tabular-nums">{turnTime}</span>}
-              </div>
-            )}
             {shouldFoldProcess ? (
               <>
                 <div className="flex flex-col gap-3">
@@ -1081,13 +1030,6 @@ const AssistantTurnBlock: React.FC<{
       </div>
     </div>
   );
-};
-
-/** The model's name from the records the app has, or the reference tidied. */
-const TurnModelName: React.FC<{ modelRef: string; fallback: string }> = ({ modelRef, fallback }) => {
-  const models = useSelector((state: RootState) => state.model.availableModels as Model[]);
-  const name = getModelDisplayName(modelRef, models) || fallback;
-  return <span>{name}</span>;
 };
 
 export { ContextCompactionDivider };

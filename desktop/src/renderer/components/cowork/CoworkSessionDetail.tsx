@@ -122,7 +122,6 @@ import {
   CoworkSessionStatusValue,
 } from '../../types/cowork';
 import type { MediaAttachmentRef } from '../../types/mediaGeneration';
-import { toOpenClawModelRef } from '../../utils/openclawModelRef';
 import { parseUserMessageForDisplay } from '../../utils/userMessageDisplay';
 import {
   AgentBrowserInAppPanel,
@@ -5137,10 +5136,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     currentAgentSelectedModel,
     currentSession?.modelOverride,
   ]);
-  // The header of a running turn shows this model until the turn records its own.
-  const liveModelRef = sessionModelSelection.selectedModel
-    ? toOpenClawModelRef(sessionModelSelection.selectedModel)
-    : '';
   const activeEnterpriseQuotaSignal = useMemo(
     () => resolveActiveEnterpriseQuotaSignal(
       enterpriseQuotaSignal,
@@ -5957,7 +5952,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             onAdjustPlan={handleAdjustPlan}
             searchTargetMessageId={activeConversationSearchMatch?.messageId}
             isStreamingTurn
-            liveModelRef={liveModelRef}
           />
         </div>
       );
@@ -6061,7 +6055,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
                 searchTargetMessageId={activeConversationSearchMatch?.messageId}
                 isStreamingTurn={isStreaming && isLastTurn}
                 hasRunningSubagents={turnHasRunningSubagents}
-                liveModelRef={liveModelRef}
               />
             </div>
           )}

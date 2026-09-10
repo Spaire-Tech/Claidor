@@ -90,9 +90,11 @@ traced earlier is retired.
 
 **The model's logo shows.** Wherever the model is named, its provider's
 mark sits before the name: in the composer's model chip (« Claude Sonnet
-5 » with the Anthropic mark), in the model menu, and in the small line
-above every assistant turn (« Claude Sonnet 5 · 12:40 » in 12.5 px
-muted, the mark at 14 px). The app already has the provider marks
+5 » with the Anthropic mark), in the model menu, and in Settings →
+Account. Not above the answer: the founder's drawing has nothing
+between the person's bubble and the answer, and the line that stood
+there for a day (« Claude Sonnet 5 · 12:40 ») was removed at the
+founder's word. The app already has the provider marks
 (`src/renderer/components/providers/uiRegistry`); the design only fixes
 where they go.
 
@@ -175,11 +177,8 @@ Attachments sit above the text as small chips inside the bubble. Hover
 shows copy and edit at the left of the bubble.
 
 **The assistant's turn.** No bubble. A 22 px still sphere at the left,
-then the column. Above the column, the line « Claude Sonnet 5 · 12:40 »
-with the provider mark, 12.5 px muted. A turn records its model only
-when its final message lands, so while it runs the line shows the model
-the session is set to; once recorded, the record wins. Then, in order,
-whatever the turn contains:
+then the column, and nothing above it: no name, no time. The column
+holds, in order, whatever the turn contains:
 
 - **Thinking.** « Thinking » in 15 px with the shimmer, alone, until the
   model says or does something. When the model's own reasoning is
