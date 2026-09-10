@@ -10,7 +10,7 @@ index 615a7530f945371c2da4f3be226d5abbf71b83e9..4df0a310e9dd3807bab78ae192ad3e7e
 +    const providers: Parameters<typeof buildInlineProviderModels>[0] = {
 +      custom: {
 +        baseUrl: "https://gateway.example.com/v1",
-+        api: "swen-model-compat",
++        api: "maties-model-compat",
 +        models: [
 +          { ...makeModel("kimi-k3"), api: "openai-completions" },
 +          makeModel("missing-transport"),
@@ -117,7 +117,7 @@ index 307188c91a34fc0b38f371fc8548f52a416bd4dc..07109bedb50ed5334c0c070ab5f277f8
  import type { SecretInput } from "./types.secrets.js";
  
 -export const MODEL_APIS = [
-+export const SWEN_MODEL_COMPAT_API = "swen-model-compat";
++export const MATIES_MODEL_COMPAT_API = "maties-model-compat";
 +
 +export const MODEL_TRANSPORT_APIS = [
    "openai-completions",
@@ -129,7 +129,7 @@ index 307188c91a34fc0b38f371fc8548f52a416bd4dc..07109bedb50ed5334c0c070ab5f277f8
  
 +export const MODEL_APIS = [
 +  ...MODEL_TRANSPORT_APIS,
-+  SWEN_MODEL_COMPAT_API,
++  MATIES_MODEL_COMPAT_API,
 +] as const;
 +
 +export type ModelTransportApi = (typeof MODEL_TRANSPORT_APIS)[number];
@@ -185,12 +185,12 @@ index 0000000000000000000000000000000000000000..b9e3f2e07c99c6ae1813e7c704b0f311
 +import { ModelsConfigSchema } from "./zod-schema.core.js";
 +
 +describe("ModelsConfigSchema provider API owners", () => {
-+  it("accepts the exact Swen provider owner while models keep explicit transports", () => {
++  it("accepts the exact Maties provider owner while models keep explicit transports", () => {
 +    const result = ModelsConfigSchema.safeParse({
 +      providers: {
 +        custom_0: {
 +          baseUrl: "https://gateway.example.com/v1",
-+          api: "swen-model-compat",
++          api: "maties-model-compat",
 +          models: [
 +            {
 +              id: "kimi-k3",
@@ -229,11 +229,11 @@ index 0000000000000000000000000000000000000000..b9e3f2e07c99c6ae1813e7c704b0f311
 +      providers: {
 +        custom_0: {
 +          baseUrl: "https://gateway.example.com/v1",
-+          api: "swen-model-compat",
++          api: "maties-model-compat",
 +          models: [{
 +            id: "kimi-k3",
 +            name: "Kimi K3",
-+            api: "swen-model-compat",
++            api: "maties-model-compat",
 +          }],
 +        },
 +      },
@@ -252,13 +252,13 @@ index 0000000000000000000000000000000000000000..d77bed074006ae3ae74597418a261909
 +import { resolveProviderConfigApiOwnerHint } from "./provider-config-owner.js";
 +
 +describe("resolveProviderConfigApiOwnerHint", () => {
-+  it("routes the exact Swen compatibility owner without changing model transports", () => {
++  it("routes the exact Maties compatibility owner without changing model transports", () => {
 +    const config = {
 +      models: {
 +        providers: {
 +          custom_0: {
 +            baseUrl: "https://gateway.example.com/v1",
-+            api: "swen-model-compat",
++            api: "maties-model-compat",
 +            models: [
 +              {
 +                id: "kimi-k3",
@@ -279,7 +279,7 @@ index 0000000000000000000000000000000000000000..d77bed074006ae3ae74597418a261909
 +    expect(resolveProviderConfigApiOwnerHint({
 +      provider: "custom_0",
 +      config: config as never,
-+    })).toBe("swen-model-compat");
++    })).toBe("maties-model-compat");
 +    expect(config.models.providers.custom_0.models.map((model) => model.api)).toEqual([
 +      "openai-completions",
 +      "anthropic-messages",

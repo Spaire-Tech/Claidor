@@ -1,12 +1,12 @@
 import type { StreamFn } from 'openclaw/plugin-sdk/agent-core';
 
 import {
-  SWEN_REQUEST_OPTIONS_FIELD,
-  SWEN_REQUEST_OPTIONS_VERSION,
+  MATIES_REQUEST_OPTIONS_FIELD,
+  MATIES_REQUEST_OPTIONS_VERSION,
 } from './requestOptionsProtocol';
 import type {
-  SwenThinkingLevel,
-  SwenThinkingProfile,
+  MatiesThinkingLevel,
+  MatiesThinkingProfile,
 } from './thinkingProfileMapping';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
@@ -18,21 +18,21 @@ const loadDefaultStreamFn = async (): Promise<StreamFn> => {
   return streamSimple as StreamFn;
 };
 
-export const resolveSwenRequestThinkingLevel = (
-  profile: SwenThinkingProfile,
+export const resolveMatiesRequestThinkingLevel = (
+  profile: MatiesThinkingProfile,
   requestedLevel: string | undefined,
-): SwenThinkingLevel => (
+): MatiesThinkingLevel => (
   profile.options.find(option => option.openclawLevel === requestedLevel)?.level
     ?? profile.defaultLevel
 );
 
 const applyRequestOptions = (
   payload: unknown,
-  thinkingLevel: SwenThinkingLevel,
+  thinkingLevel: MatiesThinkingLevel,
 ): unknown => {
   if (!isRecord(payload)) return payload;
-  payload[SWEN_REQUEST_OPTIONS_FIELD] = {
-    version: SWEN_REQUEST_OPTIONS_VERSION,
+  payload[MATIES_REQUEST_OPTIONS_FIELD] = {
+    version: MATIES_REQUEST_OPTIONS_VERSION,
     thinking: {
       level: thinkingLevel,
     },
@@ -40,9 +40,9 @@ const applyRequestOptions = (
   return payload;
 };
 
-export const createSwenRequestOptionsWrapper = (
+export const createMatiesRequestOptionsWrapper = (
   baseStreamFn: StreamFn | undefined,
-  thinkingLevel: SwenThinkingLevel,
+  thinkingLevel: MatiesThinkingLevel,
 ): StreamFn => {
   return async (model, context, options) => {
     const underlying = baseStreamFn ?? (await loadDefaultStreamFn());

@@ -24,7 +24,7 @@ This directory contains utilities and notes for SQLite backup and recovery perfo
 2. Confirm the target database path. The default desktop user-data path is usually:
 
    ```bash
-   ~/Library/Application\ Support/Swen/swen.sqlite
+   ~/Library/Application\ Support/Maties/maties.sqlite
    ```
 
 3. It is recommended to close the app before seeding data, to avoid lock contention with a running process.
@@ -37,7 +37,7 @@ First, generate enough data for backup performance testing.
 
 ```bash
 npm run test:sqlite-backup:seed -- \
-  --db "$HOME/Library/Application Support/Swen/swen.sqlite" \
+  --db "$HOME/Library/Application Support/Maties/maties.sqlite" \
   --sessions 10 \
   --messages-per-session 2000 \
   --payload-kb 8
@@ -47,7 +47,7 @@ npm run test:sqlite-backup:seed -- \
 
 ```bash
 npm run test:sqlite-backup:seed -- \
-  --db "$HOME/Library/Application Support/Swen/swen.sqlite" \
+  --db "$HOME/Library/Application Support/Maties/maties.sqlite" \
   --sessions 50 \
   --messages-per-session 10000 \
   --payload-kb 16
@@ -70,7 +70,7 @@ This is required before the automatic backup logic will run.
 If QA needs an automatic backup on every startup, set this environment variable:
 
 ```bash
-SWEN_SQLITE_BACKUP_ALWAYS_ON_STARTUP=1
+MATIES_SQLITE_BACKUP_ALWAYS_ON_STARTUP=1
 ```
 
 Supported truthy values: `1`, `true`.
@@ -78,7 +78,7 @@ Supported truthy values: `1`, `true`.
 ### Example: run in dev mode with forced startup backup
 
 ```bash
-SWEN_SQLITE_BACKUP_ALWAYS_ON_STARTUP=1 npm run electron:dev
+MATIES_SQLITE_BACKUP_ALWAYS_ON_STARTUP=1 npm run electron:dev
 ```
 
 ### What this does
@@ -93,7 +93,7 @@ After the app starts, inspect the main-process logs.
 Focus on these log lines:
 
 - `[SqliteBackup] Forced startup backup is enabled ...`
-- `[SqliteBackup] Starting periodic backup to swen-latest.sqlite`
+- `[SqliteBackup] Starting periodic backup to maties-latest.sqlite`
 - `[SqliteBackup] Backup progress: transferred X/Y pages, Z remaining`
 - `[SqliteBackup] Completed periodic backup with 1 retained snapshot(s)`
 
@@ -107,13 +107,13 @@ Without the force env var, startup will first check:
 After backup completes, verify that the backup file exists:
 
 ```bash
-ls -lh ~/Library/Application\ Support/Swen/backups/sqlite/snapshots/
+ls -lh ~/Library/Application\ Support/Maties/backups/sqlite/snapshots/
 ```
 
 The current single backup file is:
 
 ```text
-swen-latest.sqlite
+maties-latest.sqlite
 ```
 
 ## 6. Recovery Test
@@ -134,7 +134,7 @@ Make sure a valid backup exists first, then intentionally corrupt the main datab
 Example:
 
 ```bash
-printf 'not-a-sqlite-db' > ~/Library/Application\ Support/Swen/swen.sqlite
+printf 'not-a-sqlite-db' > ~/Library/Application\ Support/Maties/maties.sqlite
 ```
 
 Then launch the app.
@@ -152,7 +152,7 @@ Suggested QA sequence:
 1. Close the app.
 2. Run the seeding script to build a large database.
 3. Enable auto backup and recovery in the app.
-4. Launch the app with `SWEN_SQLITE_BACKUP_ALWAYS_ON_STARTUP=1`.
+4. Launch the app with `MATIES_SQLITE_BACKUP_ALWAYS_ON_STARTUP=1`.
 5. Record backup start, progress, completion logs, and duration.
 6. Delete the backup file, restart, and confirm a replacement backup is created immediately.
 7. Corrupt the main DB and restart to confirm recovery works.

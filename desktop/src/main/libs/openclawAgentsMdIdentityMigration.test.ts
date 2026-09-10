@@ -12,7 +12,7 @@ import {
   removeLegacyAgentsMdIdentityBlock,
 } from './openclawAgentsMdIdentityMigration';
 
-const MARKER = '<!-- Swen managed: do not edit below this line -->';
+const MARKER = '<!-- Maties managed: do not edit below this line -->';
 // Byte-for-byte legacy heading older releases wrote ("## Identity (must follow)"); mirrors LEGACY_IDENTITY_TITLE in the product code.
 const LEGACY_IDENTITY_TITLE = '## Identity\uff08\u5fc5\u987b\u9075\u5b88\uff09';
 
@@ -45,7 +45,7 @@ afterEach(() => {
 });
 
 const makeTempWorkspace = (): string => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-agents-md-migration-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-agents-md-migration-'));
   tmpDirs.push(dir);
   return dir;
 };
@@ -197,7 +197,7 @@ describe('cleanupLegacyAgentsMdIdentityBlockInWorkspace', () => {
     }
     expect(fs.readFileSync(agentsMdPath, 'utf8')).not.toContain(LEGACY_IDENTITY_TITLE);
     expect(fs.readFileSync(result.backupPath, 'utf8')).toBe(original);
-    expect(result.backupPath).toContain(path.join('.swen', 'migrations'));
+    expect(result.backupPath).toContain(path.join('.maties', 'migrations'));
   });
 
   test('skips when AGENTS.md does not exist', () => {

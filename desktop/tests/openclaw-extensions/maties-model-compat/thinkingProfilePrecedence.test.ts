@@ -1,19 +1,19 @@
 import { describe, expect, test } from 'vitest';
 
 import {
-  SwenThinkingLevel,
+  MatiesThinkingLevel,
   resolveOpenClawThinkingProfile,
-} from '../../../openclaw-extensions/swen-model-compat/thinkingProfileMapping';
+} from '../../../openclaw-extensions/maties-model-compat/thinkingProfileMapping';
 
-describe('swen model compatibility thinking profile precedence', () => {
+describe('maties model compatibility thinking profile precedence', () => {
   test('prefers a server thinking profile when a Kimi K3 runtime profile also exists', () => {
     expect(resolveOpenClawThinkingProfile({
       options: [
-        { level: SwenThinkingLevel.Off, openclawLevel: 'off' },
-        { level: SwenThinkingLevel.High, openclawLevel: 'high' },
-        { level: SwenThinkingLevel.Max, openclawLevel: 'xhigh' },
+        { level: MatiesThinkingLevel.Off, openclawLevel: 'off' },
+        { level: MatiesThinkingLevel.High, openclawLevel: 'high' },
+        { level: MatiesThinkingLevel.Max, openclawLevel: 'xhigh' },
       ],
-      defaultLevel: SwenThinkingLevel.High,
+      defaultLevel: MatiesThinkingLevel.High,
     }, true)).toEqual({
       levels: [
         { id: 'off', label: 'off' },

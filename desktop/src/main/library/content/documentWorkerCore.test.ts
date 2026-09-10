@@ -46,7 +46,7 @@ const longText = (prefix: string): string => (
 let fixtureDir = '';
 
 beforeAll(async () => {
-  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'swen-library-worker-'));
+  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'maties-library-worker-'));
 });
 
 afterAll(async () => {

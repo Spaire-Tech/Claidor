@@ -41,7 +41,7 @@ describe('normalizeLibrarySearchRequest', () => {
 
 describe('normalizeLibraryFolders', () => {
   test('keeps absolute existing folders once, drops the rest', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-folders-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-folders-'));
     try {
       const folders = normalizeLibraryFolders(
         [root, `${root}${path.sep}`, 'relative', 42, path.join(root, 'missing')],

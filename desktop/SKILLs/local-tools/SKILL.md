@@ -98,7 +98,7 @@ In all examples below, `<skill-dir>/scripts/calendar.sh` is a placeholder. Repla
 bash "<skill-dir>/scripts/calendar.sh" search --query "birthday"
 
 # If permission error returned, directly tell user:
-# "Calendar access permission is required. Please open System Settings > Privacy & Security > Calendar, and authorize Terminal or Swen"
+# "Calendar access permission is required. Please open System Settings > Privacy & Security > Calendar, and authorize Terminal or Maties"
 ```
 
 ### List Events
@@ -408,7 +408,7 @@ fi
 ```
 Error: Calendar access permission is required
 ```
-**Solution:** Open System Settings > Privacy & Security > Calendar, authorize Terminal or Swen
+**Solution:** Open System Settings > Privacy & Security > Calendar, authorize Terminal or Maties
 
 **Script Not Found:**
 ```

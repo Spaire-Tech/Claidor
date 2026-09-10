@@ -492,9 +492,9 @@ const buildRailItems = (
       messageId: primaryMessageId,
       turnIndex: index,
       absoluteIndex: messageOffsetById.get(primaryMessageId) ?? items.length,
-      label: turn.userMessage ? getRailLabel(userContent, `Turn ${index + 1}`) : 'Swen',
+      label: turn.userMessage ? getRailLabel(userContent, `Turn ${index + 1}`) : 'Maties',
       summary: assistantContent
-        ? getRailLabel(assistantContent, 'Swen', COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH)
+        ? getRailLabel(assistantContent, 'Maties', COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH)
         : '',
       contentLen: userContent.length + assistantContent.length,
       isUser: false,
@@ -562,7 +562,7 @@ const buildRailItemsFromIndex = (
       messageId: current.messageId,
       turnIndex: loadedTurnIndex,
       absoluteIndex: current.messageOffset,
-      label: 'Swen',
+      label: 'Maties',
       summary: current.preview,
       contentLen: current.contentLen,
       isUser: false,
@@ -1193,11 +1193,11 @@ const composeExportCanvas = async (
 
   ctx.fillStyle = brandColor;
   ctx.font = `600 ${brandFontSize}px ${fontStack}`;
-  ctx.fillText('Swen', textX, footerCenterY - taglineFontSize / 2 - 2);
+  ctx.fillText('Maties', textX, footerCenterY - taglineFontSize / 2 - 2);
 
   ctx.fillStyle = subtitleColor;
   ctx.font = `400 ${taglineFontSize}px ${fontStack}`;
-  ctx.fillText('Made with Swen', textX, footerCenterY + brandFontSize / 2 + 3);
+  ctx.fillText('Made with Maties', textX, footerCenterY + brandFontSize / 2 + 3);
 
   ctx.restore(); // card clip
 

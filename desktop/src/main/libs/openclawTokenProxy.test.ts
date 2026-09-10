@@ -20,10 +20,10 @@ beforeEach(() => {
   consumeRecentOpenClawTokenProxyQuotaError();
 });
 
-test('refreshes Swen credentials for 401 but not 403', () => {
-  expect(testUtils.shouldRefreshSwenToken(401)).toBe(true);
-  expect(testUtils.shouldRefreshSwenToken(200)).toBe(false);
-  expect(testUtils.shouldRefreshSwenToken(403)).toBe(false);
+test('refreshes Maties credentials for 401 but not 403', () => {
+  expect(testUtils.shouldRefreshMatiesToken(401)).toBe(true);
+  expect(testUtils.shouldRefreshMatiesToken(200)).toBe(false);
+  expect(testUtils.shouldRefreshMatiesToken(403)).toBe(false);
 });
 
 test('turns only transient refresh failures into temporary service errors', () => {
@@ -87,7 +87,7 @@ function flushStreamEvents(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
 }
 
-test('extracts Swen monthly quota error from proxy SSE packet', () => {
+test('extracts Maties monthly quota error from proxy SSE packet', () => {
   const packet = [
     'event: error',
     'data: {"type":"error","error":{"type":"proxy_error","message":"Monthly credits have been used up","code":40202}}',
@@ -108,7 +108,7 @@ test('extracts enterprise quota error from unified non-stream response', () => {
   });
 });
 
-test('ignores generic HTTP 402 without Swen quota code or message', () => {
+test('ignores generic HTTP 402 without Maties quota code or message', () => {
   const packet = [
     'event: error',
     'data: {"error":{"message":"Request failed with status 402"}}',
@@ -382,22 +382,22 @@ test('adds fixed capability, client version, and enterprise context headers with
     {
       accept: 'text/event-stream',
       'content-type': 'application/json',
-      'x-swen-client-capabilities': 'attacker-controlled',
-      'x-swen-client-version': '0.0.0',
+      'x-maties-client-capabilities': 'attacker-controlled',
+      'x-maties-client-version': '0.0.0',
     },
     '2026.7.23',
     {
-      'X-Swen-Account-Mode': 'enterprise',
-      'X-Swen-Enterprise-Id': '1001',
+      'X-Maties-Account-Mode': 'enterprise',
+      'X-Maties-Enterprise-Id': '1001',
     },
   )).toEqual({
     Authorization: 'Bearer access-token',
     Accept: 'text/event-stream',
     'Content-Type': 'application/json',
-    'X-Swen-Client-Capabilities': 'kimi-k3-agentic-v1,thinking-level-control-v1',
-    'X-Swen-Client-Version': '2026.7.23',
-    'X-Swen-Account-Mode': 'enterprise',
-    'X-Swen-Enterprise-Id': '1001',
+    'X-Maties-Client-Capabilities': 'kimi-k3-agentic-v1,thinking-level-control-v1',
+    'X-Maties-Client-Version': '2026.7.23',
+    'X-Maties-Account-Mode': 'enterprise',
+    'X-Maties-Enterprise-Id': '1001',
   });
 });
 

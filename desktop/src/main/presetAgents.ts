@@ -37,7 +37,7 @@ const PresetAgentIcon = {
 } as const;
 
 /**
- * A preset written once in English. Swen is English-only; the `…En` fields
+ * A preset written once in English. Maties is English-only; the `…En` fields
  * are kept because the renderer reads them, and they carry the same text.
  */
 interface PresetAgentSource {
@@ -76,7 +76,7 @@ const WORKING_RULES =
  * Hardcoded preset agent templates.
  * Users can add these via the "Choose Preset" flow in the UI.
  *
- * Swen's presets are office assistants: they lean on the bundled office
+ * Maties' presets are office assistants: they lean on the bundled office
  * skills (docx, xlsx, pptx, pdf, web-search, imap-smtp-email).
  */
 export const PRESET_AGENTS: PresetAgent[] = [

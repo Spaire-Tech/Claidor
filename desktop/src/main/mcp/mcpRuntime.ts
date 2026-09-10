@@ -258,10 +258,10 @@ export class McpRuntime {
       : '';
     const buildShimEnv = (): Record<string, string> => {
       const shimEnv: Record<string, string> = {
-        SWEN_ELECTRON_PATH: electronPath,
+        MATIES_ELECTRON_PATH: electronPath,
       };
       if (npmBinDir) {
-        shimEnv.SWEN_NPM_BIN_DIR = npmBinDir;
+        shimEnv.MATIES_NPM_BIN_DIR = npmBinDir;
       }
       return shimEnv;
     };
@@ -284,10 +284,10 @@ export class McpRuntime {
           if (readyResolution) {
             optimizedCount++;
             const shimEnv: Record<string, string> = {
-              SWEN_ELECTRON_PATH: electronPath,
+              MATIES_ELECTRON_PATH: electronPath,
             };
             if (npmBinDir) {
-              shimEnv.SWEN_NPM_BIN_DIR = npmBinDir;
+              shimEnv.MATIES_NPM_BIN_DIR = npmBinDir;
             }
             resolved.push({
               name: server.name,

@@ -19,7 +19,7 @@ import {
  */
 
 const LOG_TAG = '[LibraryWorker]';
-const SERVICE_NAME = 'Swen Library Worker';
+const SERVICE_NAME = 'Maties Library Worker';
 const DEFAULT_QUERY_TIMEOUT_MS = 30_000;
 
 export interface LibraryDocumentWorkerClientOptions {

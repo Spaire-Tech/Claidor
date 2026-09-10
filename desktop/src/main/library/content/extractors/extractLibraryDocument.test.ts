@@ -113,7 +113,7 @@ const buildMinimalPdf = (text: string): Buffer => {
 };
 
 beforeAll(async () => {
-  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'swen-library-extractors-'));
+  fixtureDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'maties-library-extractors-'));
   await Promise.all([
     writeDocx(fixture('lease.docx')),
     writeXlsx(fixture('budget.xlsx')),

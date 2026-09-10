@@ -36,10 +36,10 @@ const readWebArtifactName = (silentOnDoubleClick: boolean) => (
       env: {
         ...process.env,
         KEYFROM: 'dictbind',
-        SWEN_CHANNEL_BUILD: '1',
-        SWEN_SILENT_ON_DOUBLE_CLICK: silentOnDoubleClick ? '1' : '0',
-        SWEN_WEB_INSTALLER: '1',
-        SWEN_WEB_PKG_URL: 'https://cdn.example.test/Swen.nsis.7z',
+        MATIES_CHANNEL_BUILD: '1',
+        MATIES_SILENT_ON_DOUBLE_CLICK: silentOnDoubleClick ? '1' : '0',
+        MATIES_WEB_INSTALLER: '1',
+        MATIES_WEB_PKG_URL: 'https://cdn.example.test/Maties.nsis.7z',
       },
       encoding: 'utf8',
     },
@@ -58,11 +58,11 @@ const readWebBasePackageUrl = () => (
       env: {
         ...process.env,
         KEYFROM: 'dictbind',
-        SWEN_CHANNEL_BUILD: '1',
-        SWEN_SILENT_ON_DOUBLE_CLICK: '1',
-        SWEN_WEB_INSTALLER: '1',
-        SWEN_WEB_PKG_URL: '',
-        SWEN_WEB_PKG_BASE_URL: 'https://cdn.example.test/releases',
+        MATIES_CHANNEL_BUILD: '1',
+        MATIES_SILENT_ON_DOUBLE_CLICK: '1',
+        MATIES_WEB_INSTALLER: '1',
+        MATIES_WEB_PKG_URL: '',
+        MATIES_WEB_PKG_BASE_URL: 'https://cdn.example.test/releases',
       },
       encoding: 'utf8',
     },
@@ -88,13 +88,13 @@ describe('channel installer build flags', () => {
 
   test('does not leak inherited build env into a channel dry-run', () => {
     const inherited = runChannelDryRun(['--keyfrom', 'ci_plain_channel'], {
-      SWEN_CHANNEL_BUILD: '1',
-      SWEN_SILENT_ON_DOUBLE_CLICK: '1',
+      MATIES_CHANNEL_BUILD: '1',
+      MATIES_SILENT_ON_DOUBLE_CLICK: '1',
     });
     expect(inherited.status).toBe(0);
     expect(inherited.stdout).toContain('silentOnDoubleClick=false source=default');
-    expect(inherited.stderr).toContain('ignoring inherited SWEN_CHANNEL_BUILD=1');
-    expect(inherited.stderr).toContain('ignoring inherited SWEN_SILENT_ON_DOUBLE_CLICK=1');
+    expect(inherited.stderr).toContain('ignoring inherited MATIES_CHANNEL_BUILD=1');
+    expect(inherited.stderr).toContain('ignoring inherited MATIES_SILENT_ON_DOUBLE_CLICK=1');
   });
 });
 
@@ -121,7 +121,7 @@ describe('web installer build flags', () => {
       'npm run dist:win:web -- --keyfrom dictbind --silent --pkg-url <uploaded-url>',
     );
     expect(silent.stdout).toMatch(
-      /next: upload release[\\/]nsis-web[\\/]swen-[^\s]+-x64\.nsis\.7z/,
+      /next: upload release[\\/]nsis-web[\\/]maties-[^\s]+-x64\.nsis\.7z/,
     );
   });
 
@@ -131,7 +131,7 @@ describe('web installer build flags', () => {
       'dictbind',
       '--silent',
       '--pkg-url',
-      'https://cdn.example.test/swen.nsis.7z',
+      'https://cdn.example.test/maties.nsis.7z',
     ]);
 
     expect(stubOnly.status).toBe(0);
@@ -150,16 +150,16 @@ describe('web installer build flags', () => {
         'https://cdn.example.test/releases',
       ],
       {
-        SWEN_CHANNEL_BUILD: '1',
-        SWEN_SILENT_ON_DOUBLE_CLICK: '1',
+        MATIES_CHANNEL_BUILD: '1',
+        MATIES_SILENT_ON_DOUBLE_CLICK: '1',
       },
     );
 
     expect(inherited.status).toBe(0);
     expect(inherited.stdout).toContain('silentOnDoubleClick=false source=default');
-    expect(inherited.stderr).toContain('ignoring inherited SWEN_CHANNEL_BUILD=1');
+    expect(inherited.stderr).toContain('ignoring inherited MATIES_CHANNEL_BUILD=1');
     expect(inherited.stderr).toContain(
-      'ignoring inherited SWEN_SILENT_ON_DOUBLE_CLICK=1',
+      'ignoring inherited MATIES_SILENT_ON_DOUBLE_CLICK=1',
     );
   });
 
@@ -169,11 +169,11 @@ describe('web installer build flags', () => {
 
     expect(plain.status).toBe(0);
     expect(plain.stdout).toContain(
-      'artifact=Swen-WebSetup-${arch}-${version}-dictbind.${ext}',
+      'artifact=Maties-WebSetup-${arch}-${version}-dictbind.${ext}',
     );
     expect(silent.status).toBe(0);
     expect(silent.stdout).toContain(
-      'artifact=Swen-WebSetup-${arch}-${version}-dictbind-silent.${ext}',
+      'artifact=Maties-WebSetup-${arch}-${version}-dictbind-silent.${ext}',
     );
   });
 
@@ -182,7 +182,7 @@ describe('web installer build flags', () => {
 
     expect(probe.status).toBe(0);
     expect(probe.stdout).toMatch(
-      /packageUrl=https:\/\/cdn\.example\.test\/releases\/dictbind\/swen-[^/\s]+-x64\.nsis\.7z/,
+      /packageUrl=https:\/\/cdn\.example\.test\/releases\/dictbind\/maties-[^/\s]+-x64\.nsis\.7z/,
     );
   });
 });

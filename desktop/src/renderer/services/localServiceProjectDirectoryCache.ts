@@ -3,7 +3,7 @@ import {
   type ShareDeploymentProjectCandidate,
 } from '../../shared/shareDeployment/constants';
 
-const PROJECT_DIRECTORY_STORAGE_PREFIX = 'swen:node-deployment-project-directory:';
+const PROJECT_DIRECTORY_STORAGE_PREFIX = 'maties:node-deployment-project-directory:';
 
 interface LocalServiceProjectDirectoryCache {
   projectDirectory: string;

@@ -3,17 +3,17 @@ chcp 65001 >nul 2>&1
 setlocal EnableDelayedExpansion
 
 :: ============================================================
-:: Swen Windows build and packaging environment setup
+:: Maties Windows build and packaging environment setup
 :: ============================================================
 :: Usage: run this script as Administrator
 :: Purpose: install every dependency needed to build and package
 :: ============================================================
 
-title Swen environment setup
+title Maties environment setup
 
 echo.
 echo ============================================================
-echo   Swen Windows build and packaging environment setup
+echo   Maties Windows build and packaging environment setup
 echo ============================================================
 echo.
 

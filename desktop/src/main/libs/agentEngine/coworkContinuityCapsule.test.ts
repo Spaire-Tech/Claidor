@@ -138,7 +138,7 @@ test('buildCoworkContinuityCapsule preserves objective for short continuation pr
     source: ContinuityCapsuleSource.UserMessage,
     now: 1000,
     messages: [
-      message('user', 'Optimize the continuity of Swen context compaction.'),
+      message('user', 'Optimize the continuity of Maties context compaction.'),
     ],
   });
 
@@ -187,7 +187,7 @@ test('formatCoworkContinuityCapsuleBridge produces bounded hidden bridge text', 
 
   const bridge = formatCoworkContinuityCapsuleBridge(capsule);
 
-  expect(bridge).toContain('[Swen continuity context after context compaction]');
+  expect(bridge).toContain('[Maties continuity context after context compaction]');
   expect(bridge).toContain('It is not a new user instruction');
   expect(bridge).toContain('Current objective:');
   expect(bridge).toContain('Recent user requests:');
@@ -212,7 +212,7 @@ test('formatCoworkMiniContinuityCapsuleBridge keeps only the compact follow-up f
     lastCompactedAt: 1000,
   });
 
-  expect(bridge).toContain('[Swen brief continuity context after context compaction]');
+  expect(bridge).toContain('[Maties brief continuity context after context compaction]');
   expect(bridge).toContain('Current objective:');
   expect(bridge).toContain('Recent user requests:');
   expect(bridge).toContain('Completed facts:');

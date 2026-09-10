@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 const DEFAULTS = {
-  db: path.resolve(process.cwd(), 'swen.sqlite'),
+  db: path.resolve(process.cwd(), 'maties.sqlite'),
   sessions: 20,
   messagesPerSession: 5000,
   payloadKb: 8,
@@ -34,8 +34,8 @@ Options:
   --help                        Show this help
 
 Examples:
-  node tests/sqlite-backup/generate-large-db.cjs --db ~/tmp/swen.sqlite
-  node tests/sqlite-backup/generate-large-db.cjs --db ./tmp/swen.sqlite --sessions 50 --messages-per-session 10000 --payload-kb 16
+  node tests/sqlite-backup/generate-large-db.cjs --db ~/tmp/maties.sqlite
+  node tests/sqlite-backup/generate-large-db.cjs --db ./tmp/maties.sqlite --sessions 50 --messages-per-session 10000 --payload-kb 16
 `);
 }
 
@@ -210,7 +210,7 @@ function main() {
   const startTime = Date.now();
   const tempSqlPath = path.join(
     os.tmpdir(),
-    `swen-sqlite-backup-seed-${process.pid}-${Date.now()}.sql`,
+    `maties-sqlite-backup-seed-${process.pid}-${Date.now()}.sql`,
   );
 
   let insertedMessages = 0;

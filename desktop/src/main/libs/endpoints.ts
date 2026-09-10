@@ -25,7 +25,7 @@ export const isTestModeEnabled = (): boolean => {
 };
 
 /**
- * Claidor's web app and API. Swen lives on these two hosts and nowhere else:
+ * Claidor's web app and API. Maties lives on these two hosts and nowhere else:
  * the API serves the account protocol under `/desktop`
  * (`server/polar/desktop`), the web app is where people sign in.
  */
@@ -52,13 +52,13 @@ export const getServerApiBaseUrl = (): string => {
   const defaultOrigin = getClaidorApiBaseUrl();
   const origin = resolveDevelopmentServerBaseUrl({
     defaultBaseUrl: defaultOrigin,
-    developmentOverride: process.env.SWEN_SERVER_BASE_URL,
+    developmentOverride: process.env.MATIES_SERVER_BASE_URL,
     isDev: process.env.NODE_ENV === 'development',
     isPackaged: app.isPackaged,
   });
   if (origin !== defaultOrigin && loggedDevelopmentServerBaseUrl !== origin) {
     console.warn(
-      `[Endpoints] routing all Swen server traffic to development origin ${origin}`,
+      `[Endpoints] routing all Maties server traffic to development origin ${origin}`,
     );
     loggedDevelopmentServerBaseUrl = origin;
   }

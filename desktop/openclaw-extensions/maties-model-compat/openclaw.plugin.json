@@ -1,8 +1,8 @@
 {
-  "id": "swen-model-compat",
-  "name": "Swen Model Compatibility",
-  "description": "Applies explicit Swen-managed model runtime profiles.",
-  "providers": ["swen-model-compat"],
+  "id": "maties-model-compat",
+  "name": "Maties Model Compatibility",
+  "description": "Applies explicit Maties-managed model runtime profiles.",
+  "providers": ["maties-model-compat"],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

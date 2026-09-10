@@ -35,11 +35,11 @@ Once `npx` is present, proceed with the wrapper script. A global install of `pla
 ## Skill path (set once)
 
 ```bash
-export SKILLS_ROOT="${SWEN_SKILLS_ROOT:-${SKILLS_ROOT:-$HOME/Library/Application Support/Swen/SKILLs}}"
+export SKILLS_ROOT="${MATIES_SKILLS_ROOT:-${SKILLS_ROOT:-$HOME/Library/Application Support/Maties/SKILLs}}"
 export PWCLI="$SKILLS_ROOT/playwright/scripts/playwright_cli.sh"
 ```
 
-Installed skills resolve from `$SWEN_SKILLS_ROOT` / `$SKILLS_ROOT` (production default: app `userData/SKILLs`, macOS usually `~/Library/Application Support/Swen/SKILLs`).
+Installed skills resolve from `$MATIES_SKILLS_ROOT` / `$SKILLS_ROOT` (production default: app `userData/SKILLs`, macOS usually `~/Library/Application Support/Maties/SKILLs`).
 
 ## Quick start
 

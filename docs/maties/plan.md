@@ -1,6 +1,6 @@
-# Swen — the plan of record
+# Maties — the plan of record
 
-September 9, 2026. This is the plan for Swen, Claidor's desktop assistant
+September 9, 2026. This is the plan for Maties, Claidor's desktop assistant
 for office workers. It replaces nothing; the desktop app's technical notes
 stay in `desktop/CLAIDOR-NOTES.md`. Change this document before changing
 the direction, not after.
@@ -36,13 +36,13 @@ its own copies of sessions and memories. We do not say « only the
 questions leave »: to draft a reply from a contract the model reads the
 contract.
 
-**The library.** « Swen knows every document on your computer and answers
+**The library.** « Maties knows every document on your computer and answers
 with the file and the page. » True only because the index is built on the
 machine with a small local embedding model. Nothing is sent anywhere to
 build it. We do not build the index by sending files to a cloud model;
 that would upload the disk.
 
-**Where it runs.** « Swen works on your computer, and the parts of your day
+**Where it runs.** « Maties works on your computer, and the parts of your day
 that only need email and calendar keep running in Claidor's cloud while
 the laptop is shut. » See section 4. We do not say « purely local ».
 
@@ -64,9 +64,9 @@ From Town, in the order we build it:
    inside Electron; voices come from a speech service behind Claidor's
    API, never from a key in the app.
 2. Onboarding with no blank box: within five minutes, a biography of the
-   person built from their files and inbox, and five things Swen can do
+   person built from their files and inbox, and five things Maties can do
    today. Ours reads the Documents folder and the mailbox on the machine.
-3. The Wiki: a visible, editable page of what Swen knows about the person,
+3. The Wiki: a visible, editable page of what Maties knows about the person,
    refreshed nightly. The engine already keeps memory files; the Wiki is
    those files as a page.
 4. Routines as a catalogue with categories and one-click install, and
@@ -97,7 +97,7 @@ only works with NetEase's user base behind it.
 Town's best moment is « the summary is already there when I wake up ».
 That works because Town's servers never sleep. A local agent does nothing
 with the lid shut, and Youdao's own report says sixty percent of use is
-evenings and weekends. So Swen is one assistant with two engines on one
+evenings and weekends. So Maties is one assistant with two engines on one
 account.
 
 **On the machine.** Anything that needs files, local programs, or the
@@ -128,9 +128,9 @@ What this decides:
   holds (email and calendar access, connected-app tokens, the assistant's
   memory, and nothing from the disk).
 - **The assistant's email address.** A server component from day one:
-  mail to name@swen.com is received on our servers, handed to the cloud
-  engine, and answered on the person's behalf under the approval mode
-  they set.
+  mail to name@maties.com (the domain is not yet decided) is received on
+  our servers, handed to the cloud engine, and answered on the person's
+  behalf under the approval mode they set.
 
 ## 5. The library
 
@@ -212,12 +212,12 @@ Google, and shipped some three hundred and eighty changes this year. A
 desktop app is harder to support than a cloud one. « For everyone » means
 competing with Town, OpenAI, Anthropic, Google and Microsoft at once. The
 local engine, the library on the machine, Windows, and the two-engine
-account are what make Swen not a copy. The cloud engine costs us compute
+account are what make Maties not a copy. The cloud engine costs us compute
 that Town's pricing already carries and ours must.
 
 ## 10. Where things stand today
 
-Done: the app reshaped from LobsterAI (English only, Swen branding, our
+Done: the app reshaped from LobsterAI (English only, Maties branding, our
 domains, Chinese channels and services out, provider and key screens
 hidden); the account protocol on Claidor (browser sign-in, token
 exchange and refresh, profile, quota, model list, a metered proxy to
@@ -225,7 +225,7 @@ Anthropic on Claidor's key) merged and live; the sign-in loop proven
 end to end against a local Claidor with screenshots.
 
 September 10: step 1 is proven. On the founder's Mac, from the unsigned
-installer, the founder signed in, asked questions, and Swen answered
+installer, the founder signed in, asked questions, and Maties answered
 through Claidor, ran commands on the machine, found a full disk, and
 asked before deleting anything. Two lessons for later steps: the fresh
 engine asks « who am I to you, what should I be called », which is the

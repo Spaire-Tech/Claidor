@@ -1,7 +1,7 @@
 /**
  * Web addresses the renderer opens in the browser.
  *
- * Swen lives on Claidor's two hosts and nowhere else: the API
+ * Maties lives on Claidor's two hosts and nowhere else: the API
  * (api.claidor.com, account protocol under /desktop) and the web app
  * (app.claidor.com, where people sign in and manage their account). The
  * main process holds the API addresses (src/main/libs/endpoints.ts); this
@@ -19,7 +19,7 @@ const CLAIDOR_DEV_APP_BASE_URL = 'http://127.0.0.1:3000';
 
 const getPortalBase = () => (isTestModeEnabled() ? CLAIDOR_DEV_APP_BASE_URL : CLAIDOR_APP_BASE_URL);
 
-/** Where a person can download Swen. */
+/** Where a person can download Maties. */
 export const getFallbackDownloadUrl = () => `${getPortalBase()}/desktop`;
 
 export const PortalPricingKeyfrom = {

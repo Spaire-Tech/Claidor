@@ -104,7 +104,7 @@ function getSdkDataPath(account: string): string {
   try {
     baseDir = app.getPath('userData');
   } catch {
-    baseDir = path.join(os.homedir(), '.swen');
+    baseDir = path.join(os.homedir(), '.maties');
   }
   const dataDir = path.join(baseDir, 'nim-data', account);
   if (!fs.existsSync(dataDir)) {

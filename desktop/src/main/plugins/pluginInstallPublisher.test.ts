@@ -12,7 +12,7 @@ import {
 const tempRoots: string[] = [];
 
 const createTempRoot = (): string => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-plugin-publish-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-plugin-publish-test-'));
   tempRoots.push(root);
   return root;
 };

@@ -8,9 +8,9 @@ import type { RootState } from '../../store';
 import type { Model } from '../../store/slices/modelSlice';
 
 /**
- * The Swen account screen.
+ * The Maties account screen.
  *
- * Swen holds the model keys on the Claidor API. The person signs in with
+ * Maties holds the model keys on the Claidor API. The person signs in with
  * their Claidor account, and every request the app makes goes through
  * Claidor's metered proxy. There is nothing to configure: no provider, no
  * API key, no base URL. This screen shows who is signed in, how much of the
@@ -63,7 +63,7 @@ const SecondaryButton: React.FC<{
   </button>
 );
 
-const SwenAccountSection: React.FC = () => {
+const MatiesAccountSection: React.FC = () => {
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const isLoading = useSelector((state: RootState) => state.auth.isLoading);
   const user = useSelector((state: RootState) => state.auth.user);
@@ -80,12 +80,12 @@ const SwenAccountSection: React.FC = () => {
     try {
       const result = await authService.login();
       if (!result.success) {
-        setNotice(result.error || i18nService.t('swenAccountLoginFailed'));
+        setNotice(result.error || i18nService.t('matiesAccountLoginFailed'));
       } else {
-        setNotice(i18nService.t('swenAccountLoginOpened'));
+        setNotice(i18nService.t('matiesAccountLoginOpened'));
       }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : i18nService.t('swenAccountLoginFailed'));
+      setNotice(error instanceof Error ? error.message : i18nService.t('matiesAccountLoginFailed'));
     } finally {
       setBusy(null);
     }
@@ -116,7 +116,7 @@ const SwenAccountSection: React.FC = () => {
     try {
       await window.electron.shell.openExternal(getPortalProfileUrl());
     } catch (error) {
-      console.warn('[SwenAccount] failed to open the account page:', error);
+      console.warn('[MatiesAccount] failed to open the account page:', error);
     }
   }, []);
 
@@ -127,7 +127,7 @@ const SwenAccountSection: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <SectionCard title={i18nService.t('swenAccountTitle')}>
+      <SectionCard title={i18nService.t('matiesAccountTitle')}>
         <Row>
           {isLoading ? (
             <p className="text-sm text-secondary">{i18nService.t('loading')}</p>
@@ -148,11 +148,11 @@ const SwenAccountSection: React.FC = () => {
                 )}
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">{user?.nickname || i18nService.t('user')}</p>
-                  <p className="truncate text-xs text-secondary">{i18nService.t('swenAccountSignedInDesc')}</p>
+                  <p className="truncate text-xs text-secondary">{i18nService.t('matiesAccountSignedInDesc')}</p>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <SecondaryButton onClick={handleOpenAccount}>{i18nService.t('swenAccountManage')}</SecondaryButton>
+                <SecondaryButton onClick={handleOpenAccount}>{i18nService.t('matiesAccountManage')}</SecondaryButton>
                 <SecondaryButton onClick={handleLogout} disabled={busy !== null}>
                   {i18nService.t('authLogout')}
                 </SecondaryButton>
@@ -161,11 +161,11 @@ const SwenAccountSection: React.FC = () => {
           ) : (
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{i18nService.t('swenAccountSignedOutTitle')}</p>
-                <p className="mt-0.5 text-xs text-secondary">{i18nService.t('swenAccountSignedOutDesc')}</p>
+                <p className="text-sm font-medium text-foreground">{i18nService.t('matiesAccountSignedOutTitle')}</p>
+                <p className="mt-0.5 text-xs text-secondary">{i18nService.t('matiesAccountSignedOutDesc')}</p>
               </div>
               <PrimaryButton onClick={handleLogin} disabled={busy !== null}>
-                {busy === 'login' ? i18nService.t('loading') : i18nService.t('swenAccountSignIn')}
+                {busy === 'login' ? i18nService.t('loading') : i18nService.t('matiesAccountSignIn')}
               </PrimaryButton>
             </div>
           )}
@@ -174,18 +174,18 @@ const SwenAccountSection: React.FC = () => {
       </SectionCard>
 
       {isLoggedIn && (
-        <SectionCard title={i18nService.t('swenAccountUsageTitle')}>
+        <SectionCard title={i18nService.t('matiesAccountUsageTitle')}>
           <Row>
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-foreground">{i18nService.t('swenAccountUsageThisMonth')}</p>
+                <p className="text-sm font-medium text-foreground">{i18nService.t('matiesAccountUsageThisMonth')}</p>
                 <p className="mt-0.5 text-xs text-secondary">
                   {quota
-                    ? i18nService.t('swenAccountUsageLine')
+                    ? i18nService.t('matiesAccountUsageLine')
                       .replace('{used}', formatCredits(creditsUsed))
                       .replace('{limit}', formatCredits(creditsLimit))
                       .replace('{remaining}', formatCredits(creditsRemaining))
-                    : i18nService.t('swenAccountUsageUnavailable')}
+                    : i18nService.t('matiesAccountUsageUnavailable')}
                 </p>
               </div>
               <SecondaryButton onClick={handleRefresh} disabled={busy !== null}>
@@ -202,16 +202,16 @@ const SwenAccountSection: React.FC = () => {
             )}
           </Row>
           <Row>
-            <p className="text-xs text-secondary">{i18nService.t('swenAccountUsageExplain')}</p>
+            <p className="text-xs text-secondary">{i18nService.t('matiesAccountUsageExplain')}</p>
           </Row>
         </SectionCard>
       )}
 
-      <SectionCard title={i18nService.t('swenAccountModelsTitle')}>
+      <SectionCard title={i18nService.t('matiesAccountModelsTitle')}>
         {serverModels.length === 0 ? (
           <Row>
             <p className="text-sm text-secondary">
-              {isLoggedIn ? i18nService.t('swenAccountModelsEmpty') : i18nService.t('swenAccountModelsSignedOut')}
+              {isLoggedIn ? i18nService.t('matiesAccountModelsEmpty') : i18nService.t('matiesAccountModelsSignedOut')}
             </p>
           </Row>
         ) : (
@@ -225,18 +225,18 @@ const SwenAccountSection: React.FC = () => {
                   )}
                 </div>
                 <span className="shrink-0 text-xs text-secondary">
-                  {i18nService.t('swenAccountModelCost').replace('{multiplier}', String(model.costMultiplier ?? 1))}
+                  {i18nService.t('matiesAccountModelCost').replace('{multiplier}', String(model.costMultiplier ?? 1))}
                 </span>
               </div>
             </Row>
           ))
         )}
         <Row>
-          <p className="text-xs text-secondary">{i18nService.t('swenAccountModelsExplain')}</p>
+          <p className="text-xs text-secondary">{i18nService.t('matiesAccountModelsExplain')}</p>
         </Row>
       </SectionCard>
     </div>
   );
 };
 
-export default SwenAccountSection;
+export default MatiesAccountSection;

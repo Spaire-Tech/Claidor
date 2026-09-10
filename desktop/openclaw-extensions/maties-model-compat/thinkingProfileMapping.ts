@@ -1,6 +1,6 @@
-import { SWEN_REQUEST_OPTIONS_VERSION } from './requestOptionsProtocol';
+import { MATIES_REQUEST_OPTIONS_VERSION } from './requestOptionsProtocol';
 
-export const SwenThinkingLevel = {
+export const MatiesThinkingLevel = {
   Off: 'off',
   Minimal: 'minimal',
   Low: 'low',
@@ -10,10 +10,10 @@ export const SwenThinkingLevel = {
   Max: 'max',
 } as const;
 
-export type SwenThinkingLevel =
-  typeof SwenThinkingLevel[keyof typeof SwenThinkingLevel];
+export type MatiesThinkingLevel =
+  typeof MatiesThinkingLevel[keyof typeof MatiesThinkingLevel];
 
-export const SwenOpenClawThinkingLevel = {
+export const MatiesOpenClawThinkingLevel = {
   Off: 'off',
   Minimal: 'minimal',
   Low: 'low',
@@ -22,30 +22,30 @@ export const SwenOpenClawThinkingLevel = {
   XHigh: 'xhigh',
 } as const;
 
-export type SwenOpenClawThinkingLevel =
-  typeof SwenOpenClawThinkingLevel[keyof typeof SwenOpenClawThinkingLevel];
+export type MatiesOpenClawThinkingLevel =
+  typeof MatiesOpenClawThinkingLevel[keyof typeof MatiesOpenClawThinkingLevel];
 
-export type SwenThinkingOption = {
-  level: SwenThinkingLevel;
-  openclawLevel: SwenOpenClawThinkingLevel;
+export type MatiesThinkingOption = {
+  level: MatiesThinkingLevel;
+  openclawLevel: MatiesOpenClawThinkingLevel;
 };
 
-export type SwenThinkingProfile = {
-  options: SwenThinkingOption[];
-  defaultLevel: SwenThinkingLevel;
-  requestOptionsVersion?: typeof SWEN_REQUEST_OPTIONS_VERSION;
+export type MatiesThinkingProfile = {
+  options: MatiesThinkingOption[];
+  defaultLevel: MatiesThinkingLevel;
+  requestOptionsVersion?: typeof MATIES_REQUEST_OPTIONS_VERSION;
 };
 
-export type SwenThinkingProfileMap = Record<string, SwenThinkingProfile>;
+export type MatiesThinkingProfileMap = Record<string, MatiesThinkingProfile>;
 
-export type SwenOpenClawThinkingProfile = {
+export type MatiesOpenClawThinkingProfile = {
   levels: Array<{ id: string; label: string }>;
   defaultLevel: string;
   preserveWhenCatalogReasoningFalse: true;
 };
 
-const LEVELS = new Set<string>(Object.values(SwenThinkingLevel));
-const OPENCLAW_LEVELS = new Set<string>(Object.values(SwenOpenClawThinkingLevel));
+const LEVELS = new Set<string>(Object.values(MatiesThinkingLevel));
+const OPENCLAW_LEVELS = new Set<string>(Object.values(MatiesOpenClawThinkingLevel));
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   !!value && typeof value === 'object' && !Array.isArray(value)
@@ -58,11 +58,11 @@ const isModelRef = (value: string): boolean => {
     && !/\s/.test(value);
 };
 
-const parseThinkingProfile = (value: unknown): SwenThinkingProfile | undefined => {
+const parseThinkingProfile = (value: unknown): MatiesThinkingProfile | undefined => {
   if (!isRecord(value) || !Array.isArray(value.options) || value.options.length === 0) {
     return undefined;
   }
-  const options: SwenThinkingOption[] = [];
+  const options: MatiesThinkingOption[] = [];
   const seenLevels = new Set<string>();
   const seenOpenClawLevels = new Set<string>();
   for (const rawOption of value.options) {
@@ -77,19 +77,19 @@ const parseThinkingProfile = (value: unknown): SwenThinkingProfile | undefined =
       || typeof openclawLevel !== 'string'
       || !OPENCLAW_LEVELS.has(openclawLevel)
       || seenOpenClawLevels.has(openclawLevel)
-      || (level === SwenThinkingLevel.Off)
-        !== (openclawLevel === SwenOpenClawThinkingLevel.Off)
+      || (level === MatiesThinkingLevel.Off)
+        !== (openclawLevel === MatiesOpenClawThinkingLevel.Off)
     ) {
       return undefined;
     }
     seenLevels.add(level);
     seenOpenClawLevels.add(openclawLevel);
     options.push({
-      level: level as SwenThinkingLevel,
-      openclawLevel: openclawLevel as SwenOpenClawThinkingLevel,
+      level: level as MatiesThinkingLevel,
+      openclawLevel: openclawLevel as MatiesOpenClawThinkingLevel,
     });
   }
-  if (options.length === 1 && options[0]?.level === SwenThinkingLevel.Off) {
+  if (options.length === 1 && options[0]?.level === MatiesThinkingLevel.Off) {
     return undefined;
   }
   if (typeof value.defaultLevel !== 'string' || !seenLevels.has(value.defaultLevel)) {
@@ -97,16 +97,16 @@ const parseThinkingProfile = (value: unknown): SwenThinkingProfile | undefined =
   }
   return {
     options,
-    defaultLevel: value.defaultLevel as SwenThinkingLevel,
-    ...(value.requestOptionsVersion === SWEN_REQUEST_OPTIONS_VERSION
-      ? { requestOptionsVersion: SWEN_REQUEST_OPTIONS_VERSION }
+    defaultLevel: value.defaultLevel as MatiesThinkingLevel,
+    ...(value.requestOptionsVersion === MATIES_REQUEST_OPTIONS_VERSION
+      ? { requestOptionsVersion: MATIES_REQUEST_OPTIONS_VERSION }
       : {}),
   };
 };
 
-export const parseThinkingProfileMap = (value: unknown): SwenThinkingProfileMap => {
+export const parseThinkingProfileMap = (value: unknown): MatiesThinkingProfileMap => {
   if (!isRecord(value)) return {};
-  const result: SwenThinkingProfileMap = {};
+  const result: MatiesThinkingProfileMap = {};
   for (const [modelRef, rawProfile] of Object.entries(value).sort(([left], [right]) =>
     left.localeCompare(right))) {
     const profile = parseThinkingProfile(rawProfile);
@@ -118,9 +118,9 @@ export const parseThinkingProfileMap = (value: unknown): SwenThinkingProfileMap 
 };
 
 export const resolveOpenClawThinkingProfile = (
-  profile: SwenThinkingProfile | undefined,
+  profile: MatiesThinkingProfile | undefined,
   hasKimiK3RuntimeProfile: boolean,
-): SwenOpenClawThinkingProfile | undefined => {
+): MatiesOpenClawThinkingProfile | undefined => {
   if (profile) {
     const defaultOpenClawLevel = profile.options.find(
       option => option.level === profile.defaultLevel,

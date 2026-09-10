@@ -1,7 +1,7 @@
 {
   "id": "search-library",
   "name": "Search Library",
-  "description": "Searches the person's own documents indexed by Swen desktop.",
+  "description": "Searches the person's own documents indexed by Maties desktop.",
   "contracts": {
     "tools": [
       "search_library"
@@ -13,7 +13,7 @@
     "properties": {
       "callbackUrl": {
         "type": "string",
-        "description": "Swen HTTP callback URL for library searches"
+        "description": "Maties HTTP callback URL for library searches"
       },
       "secret": {
         "type": "string",

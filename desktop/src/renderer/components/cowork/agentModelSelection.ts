@@ -1,8 +1,8 @@
+import { supportsMatiesRequestOptionsV1 } from '@shared/providers/matiesRequestOptions';
 import {
   getModelThinkingLevels,
   type ModelThinkingLevel,
 } from '@shared/providers/modelThinking';
-import { supportsSwenRequestOptionsV1 } from '@shared/providers/swenRequestOptions';
 import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
@@ -30,7 +30,7 @@ export function resolveModelThinkingLevel(
   persistedLevel: ModelThinkingLevel | '' | null | undefined,
 ): ModelThinkingLevel | undefined {
   const config = model?.thinkingConfig;
-  if (!config || !supportsSwenRequestOptionsV1(model.requestCapabilities)) return undefined;
+  if (!config || !supportsMatiesRequestOptionsV1(model.requestCapabilities)) return undefined;
   if (persistedLevel && getModelThinkingLevels(config).includes(persistedLevel)) {
     return persistedLevel;
   }

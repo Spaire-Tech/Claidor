@@ -4,8 +4,8 @@ import { parseUserMessageForDisplay } from './userMessageDisplay';
 
 // ─── Helpers ────────────────────────────────────────────────
 
-const WIN_INBOUND = String.raw`C:\Users\zhangsan\AppData\Roaming\Swen\openclaw\state\media\inbound`;
-const MAC_INBOUND = '/Users/zhangsan/Library/Application Support/Swen/openclaw/state/media/inbound';
+const WIN_INBOUND = String.raw`C:\Users\zhangsan\AppData\Roaming\Maties\openclaw\state\media\inbound`;
+const MAC_INBOUND = '/Users/zhangsan/Library/Application Support/Maties/openclaw/state/media/inbound';
 
 const fileImg = (dir: string, name: string) => `${dir}${dir.includes('\\') ? '\\' : '/'}${name}`;
 
@@ -44,9 +44,9 @@ describe('passthrough (no transformation)', () => {
   });
 });
 
-// ─── Swen goal mode ────────────────────────────────────
+// ─── Maties goal mode ────────────────────────────────────
 
-describe('Swen goal mode command display', () => {
+describe('Maties goal mode command display', () => {
   test('strips /goal start prefix from displayed user text', () => {
     const input = '/goal start Build a showcase page for a bakery studio';
     expect(parseUserMessageForDisplay(input)).toBe('Build a showcase page for a bakery studio');

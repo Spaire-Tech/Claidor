@@ -58,10 +58,10 @@ import {
 
 // Default working directory for new users
 const getDefaultWorkingDirectory = (): string => {
-  return path.join(os.homedir(), 'swen', 'project');
+  return path.join(os.homedir(), 'maties', 'project');
 };
 
-const TASK_WORKSPACE_CONTAINER_DIR = '.swen-tasks';
+const TASK_WORKSPACE_CONTAINER_DIR = '.maties-tasks';
 
 const normalizeRecentWorkspacePath = (cwd: string): string => {
   const resolved = path.resolve(cwd);
@@ -99,7 +99,7 @@ const DEFAULT_DREAMING_FREQUENCY = '0 3 * * *';
 const DEFAULT_DREAMING_MODEL = '';
 const DEFAULT_DREAMING_TIMEZONE = '';
 
-// The personal library (docs/swen/library.md): on by default, indexing the
+// The personal library (docs/maties/library.md): on by default, indexing the
 // person's usual document folders plus the working directory.
 const DEFAULT_LIBRARY_ENABLED = true;
 const DEFAULT_LIBRARY_EXCLUDED_FOLDERS: string[] = [];
@@ -2150,7 +2150,7 @@ export class CoworkStore {
       timestamp: row.created_at,
       preview: getCoworkRailPreview(
         row.preview_content,
-        row.type === 'user' ? `Turn ${index + 1}` : 'Swen',
+        row.type === 'user' ? `Turn ${index + 1}` : 'Maties',
         COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH,
       ),
       contentLen: row.content_len,

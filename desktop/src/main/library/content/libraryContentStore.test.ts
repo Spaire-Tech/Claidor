@@ -23,7 +23,7 @@ const axisVector = (axis: number, lean = -1, leanWeight = 0): Float32Array => {
   return vector;
 };
 
-const root = path.join(os.tmpdir(), 'swen-library-test');
+const root = path.join(os.tmpdir(), 'maties-library-test');
 
 const makeStore = () => {
   const db = new Database(':memory:');

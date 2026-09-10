@@ -60,8 +60,8 @@ resolve_http_node_runtime() {
     return 0
   fi
 
-  if [ -n "${SWEN_ELECTRON_PATH:-}" ] && [ -x "${SWEN_ELECTRON_PATH}" ]; then
-    HTTP_NODE_CMD="$SWEN_ELECTRON_PATH"
+  if [ -n "${MATIES_ELECTRON_PATH:-}" ] && [ -x "${MATIES_ELECTRON_PATH}" ]; then
+    HTTP_NODE_CMD="$MATIES_ELECTRON_PATH"
     HTTP_NODE_ARGS=()
     HTTP_NODE_ENV_PREFIX=("ELECTRON_RUN_AS_NODE=1")
     return 0

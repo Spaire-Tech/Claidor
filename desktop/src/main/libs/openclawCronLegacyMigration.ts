@@ -102,7 +102,7 @@ function tailLog(text: string): string {
 }
 
 function resolveDoctorConfigPath(stateDir: string): string {
-  return path.join(stateDir, '.swen-cron-doctor-openclaw.json');
+  return path.join(stateDir, '.maties-cron-doctor-openclaw.json');
 }
 
 function writeDoctorCronConfig(stateDir: string): string {

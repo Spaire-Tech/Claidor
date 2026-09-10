@@ -29,7 +29,7 @@ test('parseOpenClawCronSessionKey rejects non-cron and malformed keys', () => {
     'cron:',
     'agent:ops:cron:',
     'agent:ops:slack:cron:daily-monitor:run:run-1',
-    'agent:ops:swen:session-1',
+    'agent:ops:maties:session-1',
   ];
 
   invalidKeys.forEach((sessionKey) => {

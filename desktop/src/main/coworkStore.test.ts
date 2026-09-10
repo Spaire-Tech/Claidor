@@ -924,12 +924,12 @@ test('updateSession can patch model override without refreshing the session upda
 
   store.updateSession(
     sid,
-    { modelOverride: 'swen-server/qwen3.6-plus-YoudaoInner' },
+    { modelOverride: 'maties-server/qwen3.6-plus-YoudaoInner' },
     { touchUpdatedAt: false },
   );
 
   const session = store.getSession(sid);
-  expect(session?.modelOverride).toBe('swen-server/qwen3.6-plus-YoudaoInner');
+  expect(session?.modelOverride).toBe('maties-server/qwen3.6-plus-YoudaoInner');
   expect(session?.updatedAt).toBe(1000);
 });
 
@@ -941,7 +941,7 @@ test('create and update session persist the selected thinking level', () => {
     'local',
     [],
     'main',
-    'swen-server/deepseek-v4-flash',
+    'maties-server/deepseek-v4-flash',
     { thinkingLevel: 'high' },
   );
 

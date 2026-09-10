@@ -226,7 +226,7 @@ export function appendPythonRuntimeToEnv(env: Record<string, string | undefined>
 
   if (pathEntries.length > 0) {
     env.PATH = appendWindowsPath(env.PATH, pathEntries);
-    env.SWEN_PYTHON_ROOT = pathEntries[0];
+    env.MATIES_PYTHON_ROOT = pathEntries[0];
   }
 
   return env;

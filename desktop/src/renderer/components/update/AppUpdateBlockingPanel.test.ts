@@ -16,10 +16,10 @@ const createState = (status: AppUpdateRuntimeState['status']): AppUpdateRuntimeS
       zh: { title: 'Unused locale', content: ['Unused first', 'Unused second', 'Unused third'] },
       en: { title: 'This release', content: ['First change', 'Second change', 'Third change'] },
     },
-    url: 'https://updates.example.com/swen-2026.7.16.dmg',
+    url: 'https://updates.example.com/maties-2026.7.16.dmg',
   },
   progress: null,
-  readyFilePath: '/tmp/swen-update.dmg',
+  readyFilePath: '/tmp/maties-update.dmg',
   readyFileHash: 'hash',
   errorMessage: null,
 });

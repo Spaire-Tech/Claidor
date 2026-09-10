@@ -21,7 +21,7 @@ import {
 
 /**
  * Keeps the personal library's index in step with the folders the person
- * chose (docs/swen/library.md).
+ * chose (docs/maties/library.md).
  *
  * Owns a document worker (a separate process that reads, chunks and embeds
  * files), walks the folders on start and every half hour, watches them for

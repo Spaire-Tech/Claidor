@@ -1530,7 +1530,7 @@ interface IElectronAPI {
     ) => Promise<LibraryResult<LibraryBackfillState>>;
     onChanged: (callback: (payload: LibraryChangedPayload) => void) => () => void;
   };
-  /** The personal library: the index of the person's documents (docs/swen/library.md). */
+  /** The personal library: the index of the person's documents (docs/maties/library.md). */
   libraryContent: {
     getStatus: () => Promise<LibraryContentStatus>;
     getConfig: () => Promise<LibraryContentConfig>;
@@ -2034,7 +2034,7 @@ interface IElectronAPI {
         supportsVideo?: boolean;
         supportsThinking?: boolean;
         thinkingConfig?: import('../../shared/providers/modelThinking').ModelThinkingConfig;
-        requestCapabilities?: import('../../shared/providers/swenRequestOptions').SwenRequestCapability[];
+        requestCapabilities?: import('../../shared/providers/matiesRequestOptions').MatiesRequestCapability[];
         supportsToolCalling?: boolean;
         agenticReady?: boolean;
         contextWindow?: number;

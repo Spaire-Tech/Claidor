@@ -1,7 +1,7 @@
 import { configService } from './config';
 
 // 支持的语言类型
-// Swen is English-only. 'zh' stays in the type because persisted configs
+// Maties is English-only. 'zh' stays in the type because persisted configs
 // and older code paths still mention it; every value is coerced to 'en'.
 export type LanguageType = 'zh' | 'en';
 const ONLY_LANGUAGE: LanguageType = 'en';
@@ -31,37 +31,37 @@ const translations: Record<'en', Record<string, string>> = {
     general: 'General',
     model: 'Model',
     settingsCustomModel: 'Custom Model',
-    swenAccountTab: 'Account',
-    swenAccountTitle: 'Swen account',
-    swenAccountSignedOutTitle: 'Not signed in',
-    swenAccountSignedOutDesc: 'Sign in with your Claidor account. Swen holds the model keys for you; there is nothing to configure.',
-    swenAccountSignIn: 'Sign in with Claidor',
-    swenAccountSignedInDesc: 'Signed in with Claidor. Requests go through Claidor and count against your monthly allowance.',
-    swenAccountManage: 'Manage account',
-    swenAccountLoginOpened: 'Your browser opened the Claidor sign-in page. Come back here once you have signed in.',
-    swenAccountLoginFailed: 'The sign-in page could not be opened.',
-    swenAccountUsageTitle: 'Usage',
-    swenAccountUsageThisMonth: 'This month',
-    swenAccountUsageLine: '{used} of {limit} credits used, {remaining} left',
-    swenAccountUsageUnavailable: 'Usage is not available right now.',
-    swenAccountUsageExplain: 'Credits measure how much the models read and write for you. The allowance resets every month.',
-    swenAccountModelsTitle: 'Models',
-    swenAccountModelsEmpty: 'No models are available on this account yet.',
-    swenAccountModelsSignedOut: 'Sign in to see the models you can use.',
-    swenAccountModelCost: '{multiplier}× credits',
-    swenAccountModelsExplain: 'Pick the model for a conversation from the chat box. Bigger multipliers use more credits per request.',
-    // Settings → Library (the personal library, docs/swen/library.md)
+    matiesAccountTab: 'Account',
+    matiesAccountTitle: 'Maties account',
+    matiesAccountSignedOutTitle: 'Not signed in',
+    matiesAccountSignedOutDesc: 'Sign in with your Claidor account. Maties holds the model keys for you; there is nothing to configure.',
+    matiesAccountSignIn: 'Sign in with Claidor',
+    matiesAccountSignedInDesc: 'Signed in with Claidor. Requests go through Claidor and count against your monthly allowance.',
+    matiesAccountManage: 'Manage account',
+    matiesAccountLoginOpened: 'Your browser opened the Claidor sign-in page. Come back here once you have signed in.',
+    matiesAccountLoginFailed: 'The sign-in page could not be opened.',
+    matiesAccountUsageTitle: 'Usage',
+    matiesAccountUsageThisMonth: 'This month',
+    matiesAccountUsageLine: '{used} of {limit} credits used, {remaining} left',
+    matiesAccountUsageUnavailable: 'Usage is not available right now.',
+    matiesAccountUsageExplain: 'Credits measure how much the models read and write for you. The allowance resets every month.',
+    matiesAccountModelsTitle: 'Models',
+    matiesAccountModelsEmpty: 'No models are available on this account yet.',
+    matiesAccountModelsSignedOut: 'Sign in to see the models you can use.',
+    matiesAccountModelCost: '{multiplier}× credits',
+    matiesAccountModelsExplain: 'Pick the model for a conversation from the chat box. Bigger multipliers use more credits per request.',
+    // Settings → Library (the personal library, docs/maties/library.md)
     librarySettingsTab: 'Library',
     librarySettingsTitle: 'Library',
-    librarySettingsSwitchLabel: 'Swen knows your documents',
+    librarySettingsSwitchLabel: 'Maties knows your documents',
     librarySettingsSwitchDesc: 'The index is built on this computer. Nothing leaves it to build it.',
     librarySettingsFoldersTitle: 'Folders',
-    librarySettingsFoldersDesc: 'Swen reads the documents in these folders and the folders inside them.',
+    librarySettingsFoldersDesc: 'Maties reads the documents in these folders and the folders inside them.',
     librarySettingsFoldersEmpty: 'No folders yet. Add one to start.',
     librarySettingsAddFolder: 'Add folder',
     librarySettingsRemove: 'Remove',
     librarySettingsSkippedTitle: 'Skipped folders',
-    librarySettingsSkippedDesc: 'Folders inside the list above that Swen leaves alone.',
+    librarySettingsSkippedDesc: 'Folders inside the list above that Maties leaves alone.',
     librarySettingsSkippedEmpty: 'No skipped folders.',
     librarySettingsTooManyFolders: 'You can add up to {max} folders.',
     librarySettingsWhatIsReadTitle: 'What is read',
@@ -124,7 +124,7 @@ const translations: Record<'en', Record<string, string>> = {
     aiSkinNone: 'No custom skin is currently active',
     aiSkinLibrary: 'Generated skins',
     aiSkinPreviewHint: 'These are the actual backdrop previews. Applying one updates the home and conversation backgrounds.',
-    aiSkinCreationGuide: 'Use “Customize Swen” in Expert Kits, or start here.',
+    aiSkinCreationGuide: 'Use “Customize Maties” in Expert Kits, or start here.',
     aiSkinEmpty: 'No AI skins are available yet',
     aiSkinEmptyDescription: 'Describe the look you want. AI will create a backdrop, emblem, and coordinated colors, then apply them.',
     aiSkinCreate: 'Create',
@@ -143,10 +143,10 @@ const translations: Record<'en', Record<string, string>> = {
     aiSkinDeleteConfirmTitle: 'Delete AI skin?',
     aiSkinDeleteConfirmMessage: 'Delete "{name}" from the skin library? This action cannot be undone.',
     aiSkinDeleteActiveWarning: 'This skin is in use. Deleting it restores the default color theme.',
-    aiSkinDeleteManagedCopyNote: 'Only Swen-managed skin copies are removed. Original images in the conversation and the AI Skin Designer kit are kept.',
+    aiSkinDeleteManagedCopyNote: 'Only Maties-managed skin copies are removed. Original images in the conversation and the AI Skin Designer kit are kept.',
     aiSkinDeleteFailed: 'Failed to delete the skin. Please try again.',
     uiFontSize: 'UI font size',
-    uiFontSizeDescription: 'Adjust the base size used for the Swen UI',
+    uiFontSizeDescription: 'Adjust the base size used for the Maties UI',
     codeFontSize: 'Code font size',
     codeFontSizeDescription: 'Adjust the base size used for code in chats and code views',
     'theme-name-classic-light': 'Classic Light',
@@ -265,7 +265,7 @@ const translations: Record<'en', Record<string, string>> = {
       'Image input is not enabled for the current model. Images will be sent as file paths. If the model supports vision, you can enable image input in the model configuration.',
     copied: 'Copied',
     copyrightHolder: 'Claidor',
-    aboutUpstreamNotice: 'Swen is based on LobsterAI by NetEase Youdao, released under the MIT License.',
+    aboutUpstreamNotice: 'Maties is based on LobsterAI by NetEase Youdao, released under the MIT License.',
     noModelsAvailable: 'No models available',
     addFirstModel: 'Add First Model',
     testConnection: 'Test Connection',
@@ -412,11 +412,11 @@ const translations: Record<'en', Record<string, string>> = {
     newUserOnboardingAriaLabel: 'New user onboarding',
     newUserOnboardingNewTaskTitle: 'Start a New Task',
     newUserOnboardingNewTaskDescription:
-      'Enter a task and Swen will break it into steps, generate content, and move it toward a result.',
+      'Enter a task and Maties will break it into steps, generate content, and move it toward a result.',
     newUserOnboardingPromptExample: 'Create a financial industry analysis report',
     newUserOnboardingPromptResultTitle: 'Say what you want to get done',
     newUserOnboardingPromptResultDescription:
-      'Swen turns complex work into clear results',
+      'Maties turns complex work into clear results',
     newUserOnboardingPromptLoadingUnderstand: 'Understanding your goal',
     newUserOnboardingPromptLoadingBreakdown: 'Breaking the task into steps',
     newUserOnboardingPromptLoadingResult: 'Preparing a clear deliverable',
@@ -425,13 +425,13 @@ const translations: Record<'en', Record<string, string>> = {
     newUserOnboardingNext: 'Next',
     newUserWelcomeTaskTitle: 'Hello, New Friend',
     newUserWelcomeTaskContent:
-      "Hi, I'm Swen, your all-purpose office Agent, here to help you solve problems.\n\n"
+      "Hi, I'm Maties, your all-purpose office Agent, here to help you solve problems.\n\n"
       + 'I can help with data analysis, document writing, PPT generation, research, scheduled tasks, and more.\n'
       + 'I can also act as a project assistant for website development, deployment, image creation, and video work.\n'
       + 'And I can help you spin up an AI team, with multiple Agents taking turns to move work forward.\n\n\n'
       + 'What has been keeping you busy lately? Project progress, information sorting, or a new idea?\n'
       + "I can help you break it down together.",
-    newUserWelcomeInputLockedLabel: 'Sign in to continue with Swen',
+    newUserWelcomeInputLockedLabel: 'Sign in to continue with Maties',
     newUserWelcomeTaskCreateFailed: 'Could not create the welcome task. Please try again later.',
     search: 'Search Tasks',
     openSettings: 'Open Settings',
@@ -440,13 +440,13 @@ const translations: Record<'en', Record<string, string>> = {
     shortcutConflict: 'Shortcut "{0}" is already used by "{1}"',
     shortcutSearchPlaceholder: 'Search shortcuts',
     shortcutScopeHint:
-      'Shortcuts only run while the Swen window is focused; while a text field is focused, only shortcuts with a Cmd/Ctrl modifier trigger.',
+      'Shortcuts only run while the Maties window is focused; while a text field is focused, only shortcuts with a Cmd/Ctrl modifier trigger.',
     shortcutNoResults: 'No matching shortcuts',
     shortcutClear: 'Clear shortcut',
     shortcutEditCommand: 'Change {command} shortcut',
     shortcutPressShortcut: 'Press shortcut',
     shortcutResetAll: 'Reset all to defaults',
-    shortcutGroupCowork: 'Swen',
+    shortcutGroupCowork: 'Maties',
     shortcutGroupAgent: 'Agent',
     shortcutGroupNavigation: 'Navigation',
     shortcutGroupSettingsTabs: 'Settings Tabs',
@@ -454,7 +454,7 @@ const translations: Record<'en', Record<string, string>> = {
     shortcutFocusPrompt: 'Focus Prompt',
     shortcutStopCurrentTask: 'Stop Current Task',
     shortcutToggleArtifacts: 'Show or Hide Artifacts Panel',
-    shortcutOpenCowork: 'Open Swen',
+    shortcutOpenCowork: 'Open Maties',
     shortcutOpenScheduledTasks: 'Open Scheduled Tasks',
     shortcutOpenKits: 'Open Kits',
     shortcutOpenSkills: 'Open Skills',
@@ -467,13 +467,13 @@ const translations: Record<'en', Record<string, string>> = {
     shortcutCollapseCurrentAgentTasks: 'Collapse Current Agent Tasks',
     shortcutOpenAgentTaskSlot: 'Open Current Agent Task {slot}',
     shortcutOpenSettingsTab: 'Open Settings: {tab}',
-    shortcutDescNewChat: 'Start a new Swen task',
-    shortcutDescFocusPrompt: 'Return to Swen and focus the current prompt',
+    shortcutDescNewChat: 'Start a new Maties task',
+    shortcutDescFocusPrompt: 'Return to Maties and focus the current prompt',
     shortcutDescStopCurrentTask: 'Stop the running Cowork task',
     shortcutDescSearch: 'Search and open task history',
     shortcutDescToggleArtifacts: 'Show or hide the preview side panel in the current session',
     shortcutDescSendMessage: 'Choose which key sends the prompt input message',
-    shortcutDescOpenCowork: 'Switch to the Swen task view',
+    shortcutDescOpenCowork: 'Switch to the Maties task view',
     shortcutDescOpenScheduledTasks: 'Switch to the scheduled tasks view',
     shortcutDescOpenKits: 'Switch to the kits view',
     shortcutDescOpenSkills: 'Switch to the skills view',
@@ -509,7 +509,7 @@ const translations: Record<'en', Record<string, string>> = {
     dailyCheckInClaimedAction: 'Claimed',
     dailyCheckInCompleted: 'Completed',
     dailyCheckInStartingLogin: 'Opening login…',
-    dailyCheckInLoginHint: 'Login is handled by Swen; the activity never receives account tokens',
+    dailyCheckInLoginHint: 'Login is handled by Maties; the activity never receives account tokens',
     dailyCheckInLoginFailed: 'Unable to start login',
     dailyCheckInClaimSuccess: '{credits} credits claimed',
     dailyCheckInClaimFailed: 'Unable to claim credits. Please try again.',
@@ -556,7 +556,7 @@ const translations: Record<'en', Record<string, string>> = {
     chatLoginExperienceStart: 'Start',
     chatLoginExperienceStarting: 'Opening...',
     authQuotaExhausted:
-      'Daily free quota exhausted. Visit Swen Portal to purchase a plan or credits, or configure your own API Key in Settings.',
+      'Daily free quota exhausted. Visit Maties Portal to purchase a plan or credits, or configure your own API Key in Settings.',
     authTopUpLink: 'Top Up',
     authSettingsLink: 'Settings',
     authLoginToChat: 'Log in to start chatting',
@@ -599,13 +599,13 @@ const translations: Record<'en', Record<string, string>> = {
     enterpriseAccountEnter: 'Open',
     enterpriseAccountAdjustQuota: 'Adjust quota',
     enterpriseQuotaMemberTitle: 'Your quota has been used up',
-    enterpriseQuotaMemberMemberDesc: 'Request a higher member quota from your team administrator to continue using Swen.',
-    enterpriseQuotaMemberAdminDesc: 'Adjust your quota to continue using Swen.',
+    enterpriseQuotaMemberMemberDesc: 'Request a higher member quota from your team administrator to continue using Maties.',
+    enterpriseQuotaMemberAdminDesc: 'Adjust your quota to continue using Maties.',
     enterpriseQuotaMemberInterrupt: 'You have reached your usage limit. Contact your team administrator.',
     enterpriseQuotaMemberAdminInterrupt: 'You have reached your personal quota. You can adjust it.',
     enterpriseQuotaPoolTitle: 'Team credits have been used up',
-    enterpriseQuotaPoolMemberDesc: 'Notify your team administrator to purchase a Team credit pack and continue using Swen.',
-    enterpriseQuotaPoolAdminDesc: 'Purchase a Team credit pack so members can continue using Swen.',
+    enterpriseQuotaPoolMemberDesc: 'Notify your team administrator to purchase a Team credit pack and continue using Maties.',
+    enterpriseQuotaPoolAdminDesc: 'Purchase a Team credit pack so members can continue using Maties.',
     enterpriseQuotaPoolInterrupt: 'Team credits have reached the limit. Add credits to continue.',
     enterpriseQuotaExpiredTitle: 'Team credits have expired',
     enterpriseQuotaExpiredMemberDesc: 'All Team credit batches have expired. Contact your team administrator.',
@@ -957,7 +957,7 @@ const translations: Record<'en', Record<string, string>> = {
     siteQuotaReservedHint:
       '{count} deployment reservation(s) are also using capacity and will expire if not submitted.',
     siteQuotaSearchPlaceholder: 'Search sites to stop',
-    siteQuotaChooseHint: 'Choose an online site. Swen will never stop one automatically.',
+    siteQuotaChooseHint: 'Choose an online site. Maties will never stop one automatically.',
     siteQuotaNoCandidates: 'No online sites are available to stop',
     siteQuotaStopAndContinue: 'Stop and continue',
     siteQuotaConfirmTitle: 'Stop this site?',
@@ -1249,8 +1249,8 @@ const translations: Record<'en', Record<string, string>> = {
     artifactPreviewCardShowLess: 'Show less',
     artifactPreviewCardOpenPreview: 'Open preview',
     artifactPreviewCardOpenWith: 'Open with',
-    artifactPreviewCardLobsterBrowser: 'Swen',
-    artifactPreviewCardOpenInLobsterBrowser: 'Open in Swen',
+    artifactPreviewCardLobsterBrowser: 'Maties',
+    artifactPreviewCardOpenInLobsterBrowser: 'Open in Maties',
     artifactFileKindWebsite: 'Website',
     artifactFileKindWebPage: 'Web page',
     artifactFileKindLocalService: 'Local service',
@@ -1305,9 +1305,9 @@ const translations: Record<'en', Record<string, string>> = {
     initializationError: 'Failed to initialize application. Please check your configuration.',
     apiKeyNotConfigured: 'API key not configured. Please set up your API key in settings.',
 
-    // Swen
-    cowork: 'Swen',
-    coworkSettings: 'Swen Settings',
+    // Maties
+    cowork: 'Maties',
+    coworkSettings: 'Maties Settings',
     coworkHistory: 'Task History',
     coworkNoSessions: 'No tasks yet',
     coworkNoSessionsHint: 'Start your first conversation in the input box',
@@ -1317,14 +1317,14 @@ const translations: Record<'en', Record<string, string>> = {
     coworkPlaceholder: 'Assign a task or ask any question',
     coworkWorkingDirectory: 'Working Directory',
     coworkWorkingDirectoryPlaceholder: 'Enter project path',
-    coworkWorkingDirectoryHint: 'Swen will execute commands in this directory',
+    coworkWorkingDirectoryHint: 'Maties will execute commands in this directory',
     coworkSystemPrompt: 'System Prompt',
-    coworkSystemPromptPlaceholder: 'Set custom instructions for Swen...',
-    coworkSystemPromptHint: "Optional system prompt to customize Swen's behavior",
+    coworkSystemPromptPlaceholder: 'Set custom instructions for Maties...',
+    coworkSystemPromptHint: "Optional system prompt to customize Maties' behavior",
     coworkModelSettingsRequired: 'Please configure models and API keys in Model Settings first.',
     coworkModelSettingsTitle: 'Model Settings',
     coworkModelSettingsHint:
-      'Swen uses the current model and provider configuration from Model Settings.',
+      'Maties uses the current model and provider configuration from Model Settings.',
     coworkModelSettingsAction: 'Go to Model Settings',
     modelGroupServer: 'Plan Models',
     modelGroupUser: 'Custom Models',
@@ -1469,7 +1469,7 @@ const translations: Record<'en', Record<string, string>> = {
     openClawDataBackupFailed: 'Failed to back up data. Please try again.',
     openClawDataBackupSavedTitle: 'Backup file saved',
     openClawDataBackupSize: 'Size',
-    openClawDataBackupBlockingTitle: 'Backing up Swen data',
+    openClawDataBackupBlockingTitle: 'Backing up Maties data',
     openClawDataBackupBlockingDesc:
       'The app is temporarily locked while the backup is running. Wait for the backup to finish before continuing.',
     openClawDataBackupBlockingWarning:
@@ -1483,12 +1483,12 @@ const translations: Record<'en', Record<string, string>> = {
     openClawDataMigrationFailed: 'Data migration failed',
     openClawDataMigrationRestarting:
       'Backup file selected. The app will restart and import the data.',
-    openClawDataMigrationBlockingTitle: 'Preparing to import Swen data',
+    openClawDataMigrationBlockingTitle: 'Preparing to import Maties data',
     openClawDataMigrationBlockingDesc:
       'The app is temporarily locked during import preparation. After you choose a backup file, the app will restart and finish the import.',
     openClawDataMigrationBlockingWarning:
       'Do not close the app. Closing it will interrupt import preparation and may require choosing the backup file again.',
-    openClawDataMigrationConfirmTitle: 'Import Swen data backup?',
+    openClawDataMigrationConfirmTitle: 'Import Maties data backup?',
     openClawDataMigrationConfirmDesc:
       'Importing replaces current app data, including login state, sessions, settings, skills, memory, and OpenClaw state.',
     openClawDataMigrationConfirmSafeDesc:
@@ -1672,7 +1672,7 @@ const translations: Record<'en', Record<string, string>> = {
     coworkDreamingAdvancedSummaryPromotedToday: 'promoted today',
     coworkDreamingLoadError: 'Failed to load Dreaming data',
     coworkDreamingGatewayUnavailable: 'Engine not connected, unable to load Dreaming data',
-    coworkConfigSaveFailed: 'Failed to save Swen settings. Please try again.',
+    coworkConfigSaveFailed: 'Failed to save Maties settings. Please try again.',
     coworkApiProviderModel: 'Select from provider models',
     coworkApiProviderModelCustom: 'Custom',
     coworkApiProviderModelHint:
@@ -1691,9 +1691,9 @@ const translations: Record<'en', Record<string, string>> = {
     coworkStatusCompleted: 'Completed',
     coworkStatusError: 'Error',
     coworkPermissionRequired: 'Permission Required',
-    coworkPermissionDescription: 'Swen is requesting to perform the following action',
+    coworkPermissionDescription: 'Maties is requesting to perform the following action',
     coworkSelectionRequired: 'Please Choose',
-    coworkSelectionDescription: 'Swen needs your input',
+    coworkSelectionDescription: 'Maties needs your input',
     coworkToolName: 'Tool Name',
     coworkToolInput: 'Tool Input',
     coworkToolResult: 'Result',
@@ -1790,13 +1790,13 @@ const translations: Record<'en', Record<string, string>> = {
     coworkQuestionWizardSkipped: 'Skipped',
     coworkQuestionAwaitingAnswer: 'Needs your answer',
     coworkQuestionResume: 'Resume',
-    coworkWelcome: 'Swen',
+    coworkWelcome: 'Maties',
     coworkDescription: 'All-scenario office assistant Agent',
     coworkGreetingMorning: 'Good morning',
     coworkGreetingAfternoon: 'Good afternoon',
     coworkGreetingEvening: 'Good evening',
     coworkGreetingLateNight: 'Up late?',
-    coworkHomeTagline: "I'm Swen, your all-in-one office agent",
+    coworkHomeTagline: "I'm Maties, your all-in-one office agent",
     coworkQuickActionCollapse: 'Collapse',
     coworkCurrentAgent: 'Current Agent',
     coworkSelectAgent: 'Select Agent',
@@ -2191,8 +2191,8 @@ const translations: Record<'en', Record<string, string>> = {
       'Invalid or expired API key. Please check and update your API key in settings.',
     coworkErrorEnterpriseMembershipRevoked:
       'You have been removed from the current team and signed out. Sign in again to choose an available identity.',
-    coworkErrorSwenLoginExpired:
-      'Your login session has expired. Sign in again to continue using Swen plan models.',
+    coworkErrorMatiesLoginExpired:
+      'Your login session has expired. Sign in again to continue using Maties plan models.',
     coworkErrorOAuthInvalid:
       'OAuth authorization is invalid or missing required access. Re-authenticate and try again.',
     coworkErrorModelAccessDenied:
@@ -2214,7 +2214,7 @@ const translations: Record<'en', Record<string, string>> = {
     coworkErrorModelNotFound:
       'The requested model does not exist or is unavailable. Please check the model configuration in settings.',
     coworkGatewaySessionSyncTimeout:
-      'The OpenClaw engine is responding slowly and your message has not been sent. Please wait a minute or two and resend. If this happens frequently, check system memory and disk usage, and add Swen to your antivirus allowlist.',
+      'The OpenClaw engine is responding slowly and your message has not been sent. Please wait a minute or two and resend. If this happens frequently, check system memory and disk usage, and add Maties to your antivirus allowlist.',
     coworkErrorTranscriptOversized:
       'This task history is too large. The message was not sent to protect the AI engine. Continue in a new task; the original task will be preserved.',
     coworkErrorGatewayHeapOutOfMemory:
@@ -2240,7 +2240,7 @@ const translations: Record<'en', Record<string, string>> = {
       'Task failed due to an unexpected error. Please retry. If the issue persists, check your model configuration.',
     coworkErrorTechnicalDetails: 'Technical details',
     coworkErrorModelLabel: 'Model',
-    coworkErrorModelSourceSwenPlan: 'Swen plan',
+    coworkErrorModelSourceMatiesPlan: 'Maties plan',
     coworkErrorModelSourceCustomModel: 'Custom model',
 
     // Media Generation
@@ -2998,7 +2998,7 @@ const translations: Record<'en', Record<string, string>> = {
     pluginsTab: 'Plugins',
     experimentalTab: 'Experimental',
     dshSettingsTitle: 'DeepSeek Harness',
-    dshSettingsDesc: 'Bundles DeepSeek\'s official open-source agent framework (dsh). Once enabled, Swen\'s model provider configuration syncs into dsh automatically.',
+    dshSettingsDesc: 'Bundles DeepSeek\'s official open-source agent framework (dsh). Once enabled, Maties\'s model provider configuration syncs into dsh automatically.',
     dshEnableLabel: 'Enable DeepSeek Harness',
     dshOpenWorkbench: 'Open Workbench',
     dshOpening: 'Starting…',
@@ -3501,7 +3501,7 @@ const translations: Record<'en', Record<string, string>> = {
     browserEnableToolDescription: 'Allow the agent to open and operate web pages.',
     browserProfileManaged: 'Separate browser (recommended)',
     browserProfileManagedDescription:
-      'Swen starts a dedicated browser that is stable and clean.',
+      'Maties starts a dedicated browser that is stable and clean.',
     browserProfileUser: 'My Chrome',
     browserProfileUserDescription:
       'Use this for sites that need your login state, such as X, Google, or internal systems.',
@@ -3550,7 +3550,7 @@ const translations: Record<'en', Record<string, string>> = {
     browserAdvancedTitle: 'Advanced settings',
     browserFollowGlobalProxy: 'Browser follows global proxy',
     browserFollowGlobalProxyDescription:
-      'Enabled by default. Turning it off is stored for Swen, but this version can still be affected by the browser proxy settings.',
+      'Enabled by default. Turning it off is stored for Maties, but this version can still be affected by the browser proxy settings.',
     browserEvaluateEnabled: 'Allow scripts inside pages',
     browserEvaluateEnabledDescription:
       'Turning this off is more conservative, but some complex page actions may stop working.',
@@ -3573,13 +3573,13 @@ const translations: Record<'en', Record<string, string>> = {
     browserAllowedHostnames: 'Allowed domains',
     browserAllowedHostnamesDescription: 'Domains that can be opened without asking',
     browserBlockedHostnames: 'Blocked domains',
-    browserBlockedHostnamesDescription: 'Swen will not open these websites',
+    browserBlockedHostnamesDescription: 'Maties will not open these websites',
     browserHostnameListEmpty: 'No domains added yet',
     browserHostnameInputPlaceholder: 'example.com',
     browserAddBlockedHostnameTitle: 'Add blocked domain',
-    browserAddBlockedHostnameDescription: 'This means Swen will not open this URL',
+    browserAddBlockedHostnameDescription: 'This means Maties will not open this URL',
     browserAddAllowedHostnameTitle: 'Add allowed domain',
-    browserAddAllowedHostnameDescription: 'This means Swen can open this domain',
+    browserAddAllowedHostnameDescription: 'This means Maties can open this domain',
     browserRemoteCdpTimeout: 'Remote connection timeout (ms)',
     browserRemoteCdpHandshakeTimeout: 'Remote handshake timeout (ms)',
     browserExtraArgs: 'Browser launch arguments',
@@ -3608,14 +3608,14 @@ const translations: Record<'en', Record<string, string>> = {
     permissionNotificationsDescription:
       'Show a system alert when a session needs you to approve an action or answer a question',
     notificationSystemPermissionHint:
-      'If you are not receiving notifications, allow Swen to send notifications in the system settings.',
+      'If you are not receiving notifications, allow Maties to send notifications in the system settings.',
     openSystemNotificationSettings: 'Open System Settings',
     preventSleep: 'Prevent Sleep',
     preventSleepDescription: 'Prevent the system from sleeping while the app is running',
     skipMissedJobs: 'Skip Missed Scheduled Jobs',
     skipMissedJobsDescription:
       'Skip jobs that were missed while the app was offline (applies after Save)',
-    usageAnalyticsEnabled: 'Help improve Swen',
+    usageAnalyticsEnabled: 'Help improve Maties',
     usageAnalyticsEnabledDescription:
       'Allow basic usage analytics to help improve the product. Chat content, file content, and API keys are not uploaded.',
     // General settings group titles
@@ -3980,7 +3980,7 @@ const translations: Record<'en', Record<string, string>> = {
       'Scheduled task "{name}" has abnormal data. Display has been auto-corrected. Consider re-editing this task',
 
     // First-launch welcome screen (terms + login merged)
-    welcomeTitle: 'Log in to Swen',
+    welcomeTitle: 'Log in to Maties',
     welcomePromo: 'Log in for 1M free tokens',
     welcomeLogin: 'Log in',
     welcomeCustomModel: 'Custom Model',
@@ -4083,7 +4083,7 @@ const translations: Record<'en', Record<string, string>> = {
 };
 
 // localStorage key read by index.html's pre-React splash
-const LANGUAGE_HINT_STORAGE_KEY = 'swen-language';
+const LANGUAGE_HINT_STORAGE_KEY = 'maties-language';
 
 // 初始化完成前的语言：优先上次启动持久化的提示，其次系统语言（与 splash 的推断逻辑一致）
 const readLanguageHint = (): LanguageType => ONLY_LANGUAGE;
@@ -4201,7 +4201,7 @@ class I18nService {
     }
   }
 
-  // Swen is English-only: every locale maps to English.
+  // Maties is English-only: every locale maps to English.
   private inferLanguageFromLocale(_systemLocale: string): LanguageType {
     return ONLY_LANGUAGE;
   }

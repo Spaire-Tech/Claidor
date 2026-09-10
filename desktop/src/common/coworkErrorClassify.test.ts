@@ -1,6 +1,6 @@
 import { expect,test } from 'vitest';
 
-import { classifyErrorKey, isSwenQuotaExhaustedError } from './coworkErrorClassify';
+import { classifyErrorKey, isMatiesQuotaExhaustedError } from './coworkErrorClassify';
 
 const classifyError = (error: string) => classifyErrorKey(error) ?? error;
 
@@ -68,29 +68,29 @@ test('billing: OpenAI insufficient_quota', () => {
   expect(classifyError('You exceeded your current quota, please check your plan and billing details. insufficient_quota')).toBe('coworkErrorInsufficientBalance');
 });
 
-test('billing: Swen free quota exhausted', () => {
+test('billing: Maties free quota exhausted', () => {
   expect(classifyError('Your free quota has been used up. Please upgrade your plan.')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: Swen daily free quota code exhausted', () => {
+test('billing: Maties daily free quota code exhausted', () => {
   expect(classifyError('{"error":{"message":"Daily free quota has been used up","code":40200}}')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: Swen free quota code exhausted', () => {
+test('billing: Maties free quota code exhausted', () => {
   expect(classifyError('{"error":{"message":"Free quota has been used up. Please upgrade your plan","code":40201}}')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: Swen monthly credits exhausted', () => {
+test('billing: Maties monthly credits exhausted', () => {
   expect(classifyError('Your monthly credits have been used up')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: Swen monthly quota JSON payload', () => {
+test('billing: Maties monthly quota JSON payload', () => {
   expect(classifyError('{"type":"error","error":{"type":"proxy_error","message":"Monthly credits have been used up","code":40202}}')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: detects Swen quota exhausted for proxy helpers', () => {
-  expect(isSwenQuotaExhaustedError('monthly credits exhausted')).toBe(true);
-  expect(isSwenQuotaExhaustedError('Request failed with status 402')).toBe(false);
+test('billing: detects Maties quota exhausted for proxy helpers', () => {
+  expect(isMatiesQuotaExhaustedError('monthly credits exhausted')).toBe(true);
+  expect(isMatiesQuotaExhaustedError('Request failed with status 402')).toBe(false);
 });
 
 test('billing: OpenRouter insufficient credits', () => {

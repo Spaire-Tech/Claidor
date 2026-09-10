@@ -1,8 +1,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { ProviderName } from '@shared/providers/constants';
+import type { MatiesRequestCapability } from '@shared/providers/matiesRequestOptions';
 import type { ModelRuntimeProfile } from '@shared/providers/modelRuntimeProfiles';
 import type { ModelThinkingConfig } from '@shared/providers/modelThinking';
-import type { SwenRequestCapability } from '@shared/providers/swenRequestOptions';
 
 import { defaultConfig, getProviderDisplayName } from '../../config';
 import { resolveOpenClawModelRef } from '../../utils/openclawModelRef';
@@ -18,7 +18,7 @@ export interface Model {
   supportsVideo?: boolean;
   supportsThinking?: boolean;
   thinkingConfig?: ModelThinkingConfig;
-  requestCapabilities?: SwenRequestCapability[];
+  requestCapabilities?: MatiesRequestCapability[];
   supportsToolCalling?: boolean;
   agenticReady?: boolean;
   contextWindow?: number;
@@ -34,7 +34,7 @@ export interface Model {
 }
 
 function isServerModelIdentity(model: Pick<Model, 'providerKey' | 'isServerModel'>): boolean {
-  return model.isServerModel === true || model.providerKey === ProviderName.SwenServer;
+  return model.isServerModel === true || model.providerKey === ProviderName.MatiesServer;
 }
 
 export function getModelIdentityKey(model: Pick<Model, 'id' | 'providerKey' | 'isServerModel'>): string {

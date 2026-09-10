@@ -40,8 +40,8 @@ describe('conversation search', () => {
 
   test('matches accented and mixed-language text literally', () => {
     const matches = findConversationSearchMatches([
-      message('mixed', 'assistant', 'Voici la recherche de conversation de Swen.'),
-    ], 'de conversation de Swen');
+      message('mixed', 'assistant', 'Voici la recherche de conversation de Maties.'),
+    ], 'de conversation de Maties');
 
     expect(matches).toHaveLength(1);
   });

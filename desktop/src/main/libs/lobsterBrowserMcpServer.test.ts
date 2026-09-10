@@ -34,7 +34,7 @@ describe('resolveLobsterBrowserMcpCommand', () => {
   test('generates a self-contained Windows launcher and private runtime descriptor', () => {
     const baseDir = createTempDirectory();
     const bridgeSecret = 'runtime-only-secret';
-    const electronNodeRuntimePath = 'D:\\Écrevisse\\Swen 100%\\Swen.exe';
+    const electronNodeRuntimePath = 'D:\\Écrevisse\\Maties 100%\\Maties.exe';
     const command = resolveLobsterBrowserMcpCommand(baseDir, {
       electronNodeRuntimePath,
       bridgeUrl: 'http://127.0.0.1:61234/browser/tool',
@@ -50,11 +50,11 @@ describe('resolveLobsterBrowserMcpCommand', () => {
     ));
 
     expect(path.extname(command)).toBe('.cmd');
-    expect(launcher).toContain('"D:\\Écrevisse\\Swen 100%%\\Swen.exe"');
+    expect(launcher).toContain('"D:\\Écrevisse\\Maties 100%%\\Maties.exe"');
     expect(launcher).toMatch(/^@echo off\r\nchcp 65001 >nul 2>&1\r\n/);
     expect(launcher.indexOf('chcp 65001')).toBeLessThan(launcher.indexOf(electronNodeRuntimePath.replaceAll('%', '%%')));
     expect(launcher).toContain('set "ELECTRON_RUN_AS_NODE=1"');
-    expect(launcher).not.toContain('SWEN_ELECTRON_PATH');
+    expect(launcher).not.toContain('MATIES_ELECTRON_PATH');
     expect(launcher).not.toContain(bridgeSecret);
     expect(runtimeConfig).toEqual({
       version: 1,
@@ -151,13 +151,13 @@ describe('resolveLobsterBrowserMcpCommand', () => {
       expect(path.basename(command)).toBe('lobster-browser-mcp');
       expect(launcher).toContain("'/Applications/Lobster AI/O'\"'\"'Brien Helper.app/Contents/MacOS/O'\"'\"'Brien Helper'");
       expect(launcher).toContain('ELECTRON_RUN_AS_NODE=1');
-      expect(launcher).not.toContain('SWEN_ELECTRON_PATH');
+      expect(launcher).not.toContain('MATIES_ELECTRON_PATH');
     },
   );
 
   test('builds a shell-free stdio launch using Electron as Node', () => {
     const baseDir = createTempDirectory();
-    const electronNodeRuntimePath = 'C:\\Program Files\\Swen\\Swen.exe';
+    const electronNodeRuntimePath = 'C:\\Program Files\\Maties\\Maties.exe';
     const launch = resolveLobsterBrowserMcpStdioLaunch(baseDir, {
       electronNodeRuntimePath,
       bridgeUrl: 'http://127.0.0.1:61234/browser/tool',
@@ -174,7 +174,7 @@ describe('resolveLobsterBrowserMcpCommand', () => {
     expect(fs.existsSync(launch.args[0])).toBe(true);
   });
 
-  test('starts with the MCP SDK restricted environment without Swen variables', async () => {
+  test('starts with the MCP SDK restricted environment without Maties variables', async () => {
     const baseDir = createTempDirectory();
     const bridgeSecret = 'runtime-only-secret';
     const receivedSecrets: string[] = [];
@@ -239,7 +239,7 @@ describe('resolveLobsterBrowserMcpCommand', () => {
     expect(stderrText).toContain('bridgeUrlArg=true');
     expect(stderrText).toContain('bridgeSecretConfigured=true');
     expect(stderrText).not.toContain(bridgeSecret);
-    expect(stderrText).not.toContain('SWEN_ELECTRON_PATH is not set');
+    expect(stderrText).not.toContain('MATIES_ELECTRON_PATH is not set');
   }, 15_000);
 
   test('writes bridge failures to stderr without exposing the bridge secret', async () => {

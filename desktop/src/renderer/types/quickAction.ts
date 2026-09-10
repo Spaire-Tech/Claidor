@@ -70,7 +70,7 @@ export interface QuickActionsConfig {
 }
 
 /**
- * Quick-action texts. Swen is English-only; `zh` is accepted for old files and ignored.
+ * Quick-action texts. Maties is English-only; `zh` is accepted for old files and ignored.
  */
 export interface QuickActionsI18n {
   zh?: QuickActionsI18nData;

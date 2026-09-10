@@ -21,7 +21,7 @@
 // ═══════════════════════════════════════════════════════
 
 // ─── Provider Name ──────────────────────────────────────────────────────
-// providerName identifies the Swen internal provider (config key).
+// providerName identifies the Maties internal provider (config key).
 export const ProviderName = {
   OpenAI: 'openai',
   Gemini: 'gemini',
@@ -41,7 +41,7 @@ export const ProviderName = {
   Ollama: 'ollama',
   LmStudio: 'lm-studio',
   Custom: 'custom',
-  SwenServer: 'swen-server',
+  MatiesServer: 'maties-server',
   Copilot: 'github-copilot',
 } as const;
 export type ProviderName = typeof ProviderName[keyof typeof ProviderName];
@@ -49,7 +49,7 @@ export type ProviderName = typeof ProviderName[keyof typeof ProviderName];
 // ─── OpenClaw Provider ID ───────────────────────────────────────────────
 // OpenClaw gateway provider identifiers. May differ from ProviderName.
 export const OpenClawProviderId = {
-  SwenServer: 'swen-server',
+  MatiesServer: 'maties-server',
   Moonshot: 'moonshot',
   Google: 'google',
   Xai: 'xai',
@@ -68,7 +68,7 @@ export const OpenClawProviderId = {
   Xiaomi: 'xiaomi',
   OpenRouter: 'openrouter',
   Copilot: 'github-copilot',
-  SwenCopilot: 'swen-copilot',
+  MatiesCopilot: 'maties-copilot',
   Ollama: 'ollama',
   LmStudio: 'lm-studio',
   Lobster: 'lobster',
@@ -467,7 +467,7 @@ const PROVIDER_DEFINITIONS = [
   {
     id: ProviderName.Copilot,
     label: 'GitHub Copilot',
-    openClawProviderId: OpenClawProviderId.SwenCopilot,
+    openClawProviderId: OpenClawProviderId.MatiesCopilot,
     defaultBaseUrl: 'https://api.individual.githubcopilot.com',
     defaultApiFormat: ApiFormat.OpenAI,
     codingPlanSupported: false,

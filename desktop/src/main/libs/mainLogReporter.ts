@@ -49,7 +49,7 @@ export interface MainLogUrlContext {
 }
 
 const logCommons = {
-  _npid: LogReporterProduct.Swen,
+  _npid: LogReporterProduct.Maties,
   _ncat: LogReporterCategory.Actions,
 } as const;
 
@@ -113,8 +113,8 @@ export class MainLogReporter {
       return false;
     }
 
-    if (!params.action.startsWith(LogReporterActionPrefix.Swen)) {
-      console.warn('[MainLogReporter] skipped an event without the Swen action prefix');
+    if (!params.action.startsWith(LogReporterActionPrefix.Maties)) {
+      console.warn('[MainLogReporter] skipped an event without the Maties action prefix');
       return false;
     }
 

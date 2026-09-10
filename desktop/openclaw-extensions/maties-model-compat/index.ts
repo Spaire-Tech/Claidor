@@ -8,22 +8,22 @@ import { createMoonshotKimiK3Wrapper } from 'openclaw/plugin-sdk/provider-stream
 
 import {
   hasModelRuntimeProfile,
+  MatiesModelRuntimeProfile,
   ModelProfileTransportDecision,
   parseModelProfileMap,
   resolveModelProfileTransportDecision,
-  SwenModelRuntimeProfile,
 } from './profileMapping';
 import {
-  createSwenRequestOptionsWrapper,
-  resolveSwenRequestThinkingLevel,
+  createMatiesRequestOptionsWrapper,
+  resolveMatiesRequestThinkingLevel,
 } from './requestOptions';
-import { SWEN_REQUEST_OPTIONS_VERSION } from './requestOptionsProtocol';
+import { MATIES_REQUEST_OPTIONS_VERSION } from './requestOptionsProtocol';
 import {
   parseThinkingProfileMap,
   resolveOpenClawThinkingProfile,
 } from './thinkingProfileMapping';
 
-const PLUGIN_ID = 'swen-model-compat';
+const PLUGIN_ID = 'maties-model-compat';
 const OPENAI_COMPLETIONS_API = 'openai-completions';
 const OPENAI_COMPATIBLE_APIS = new Set([
   OPENAI_COMPLETIONS_API,
@@ -39,7 +39,7 @@ const register = (api: OpenClawPluginApi): void => {
       modelProfiles,
       provider,
       modelId,
-      SwenModelRuntimeProfile.MoonshotKimiK3,
+      MatiesModelRuntimeProfile.MoonshotKimiK3,
     )
   );
   const resolveTransportDecision = (
@@ -68,8 +68,8 @@ const register = (api: OpenClawPluginApi): void => {
 
   api.registerProvider({
     id: PLUGIN_ID,
-    label: 'Swen Model Compatibility',
-    hookAliases: ['swen-server'],
+    label: 'Maties Model Compatibility',
+    hookAliases: ['maties-server'],
     auth: [],
     buildReplayPolicy: (ctx) => {
       const modelApi = ctx.modelApi ?? ctx.model?.api;
@@ -102,10 +102,10 @@ const register = (api: OpenClawPluginApi): void => {
         ? ctx.streamFn
         : createMoonshotKimiK3Wrapper(ctx.streamFn);
       const thinkingProfile = thinkingProfiles[`${ctx.provider}/${ctx.modelId}`];
-      if (thinkingProfile?.requestOptionsVersion === SWEN_REQUEST_OPTIONS_VERSION) {
-        return createSwenRequestOptionsWrapper(
+      if (thinkingProfile?.requestOptionsVersion === MATIES_REQUEST_OPTIONS_VERSION) {
+        return createMatiesRequestOptionsWrapper(
           baseStreamFn,
-          resolveSwenRequestThinkingLevel(thinkingProfile, ctx.thinkingLevel),
+          resolveMatiesRequestThinkingLevel(thinkingProfile, ctx.thinkingLevel),
         );
       }
       return baseStreamFn;
@@ -122,7 +122,7 @@ const register = (api: OpenClawPluginApi): void => {
 
 export default {
   id: PLUGIN_ID,
-  name: 'Swen Model Compatibility',
-  description: 'Applies explicit Swen-managed model runtime profiles.',
+  name: 'Maties Model Compatibility',
+  description: 'Applies explicit Maties-managed model runtime profiles.',
   register,
 };

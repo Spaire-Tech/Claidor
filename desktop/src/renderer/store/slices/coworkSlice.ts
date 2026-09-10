@@ -234,7 +234,7 @@ const buildRailIndexItemFromMessage = (
     timestamp: message.timestamp,
     preview: getCoworkRailPreview(
       message.content,
-      message.type === 'user' ? `Turn ${fallbackLabelIndex + 1}` : 'Swen',
+      message.type === 'user' ? `Turn ${fallbackLabelIndex + 1}` : 'Maties',
       COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH,
     ),
     contentLen: message.content.length,
@@ -327,8 +327,8 @@ const removeLoadedDetachedTailMessages = (
 };
 
 const MediaGenerationToolName = {
-  Image: 'swen_image_generate',
-  Video: 'swen_video_generate',
+  Image: 'maties_image_generate',
+  Video: 'maties_video_generate',
 } as const;
 
 const MediaGenerationActionName = {

@@ -15,7 +15,7 @@ import {
 } from './librarySettingsText';
 
 /**
- * Settings → Library: the personal library (docs/swen/library.md).
+ * Settings → Library: the personal library (docs/maties/library.md).
  *
  * A switch, the folders being indexed, the kinds of files read, a status
  * line, and Pause / Rebuild. Everything is built on this computer; this
@@ -32,7 +32,7 @@ const LibrarySettingsBusy = {
 } as const;
 type LibrarySettingsBusy = typeof LibrarySettingsBusy[keyof typeof LibrarySettingsBusy];
 
-// The small building blocks below mirror SwenAccountSection so the two
+// The small building blocks below mirror MatiesAccountSection so the two
 // screens look the same; they are kept local on purpose.
 
 const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (

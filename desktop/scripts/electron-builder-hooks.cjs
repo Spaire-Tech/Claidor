@@ -203,7 +203,7 @@ function precompileLocalExtensions(runtimeRoot, buildHint) {
 }
 
 function ensureBundledLocalExtensions(runtimeRoot, buildHint) {
-  const requiredLocalExtensions = ['mcp-bridge', 'ask-user-question', 'search-library', 'swen-model-compat'];
+  const requiredLocalExtensions = ['mcp-bridge', 'ask-user-question', 'search-library', 'maties-model-compat'];
   const missingCompiledExtensions = requiredLocalExtensions.filter(
     (extensionId) => !hasCompiledLocalExtension(runtimeRoot, extensionId),
   );

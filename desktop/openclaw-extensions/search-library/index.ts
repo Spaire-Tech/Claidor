@@ -7,7 +7,7 @@ import { isSearchLibraryCandidateSessionKey } from './sessionKey';
  * Search Library plugin for OpenClaw.
  *
  * Registers the `search_library` tool: the model asks a question in plain
- * words, the plugin posts it over the loopback bridge to Swen, and Swen
+ * words, the plugin posts it over the loopback bridge to Maties, and Maties
  * answers with passages from the person's own documents (indexed on the
  * machine), each with its file path and its page, sheet or slide.
  *
@@ -191,7 +191,7 @@ const renderSearchResponse = (response: LibrarySearchResponse): string => {
 const plugin = {
   id: LIBRARY_SEARCH_PLUGIN_ID,
   name: 'Search Library',
-  description: 'Searches the person\'s own documents indexed by Swen desktop.',
+  description: 'Searches the person\'s own documents indexed by Maties desktop.',
   configSchema: {
     parse(value: unknown): PluginConfig {
       return parsePluginConfig(value);
@@ -204,7 +204,7 @@ const plugin = {
       return;
     }
 
-    // Factory: the tool exists for Swen desktop sessions (and their subagents)
+    // Factory: the tool exists for Maties desktop sessions (and their subagents)
     // only. Chat channel sessions get null, so the tool is hidden there.
     api.registerTool((ctx) => {
       const sessionKey = ctx.sessionKey ?? '';

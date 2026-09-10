@@ -34,7 +34,7 @@ export type LogEventParams = Record<string, LogParamValue> & {
 };
 
 const logCommons = {
-  _npid: LogReporterProduct.Swen,
+  _npid: LogReporterProduct.Maties,
   _ncat: LogReporterCategory.Actions,
 } as const;
 
@@ -345,8 +345,8 @@ export const reportYdAnalyzer = async (
     return false;
   }
 
-  if (!params.action.startsWith(LogReporterActionPrefix.Swen)) {
-    writeReporterLog('warn', 'skipped an event without the Swen action prefix');
+  if (!params.action.startsWith(LogReporterActionPrefix.Maties)) {
+    writeReporterLog('warn', 'skipped an event without the Maties action prefix');
     return false;
   }
 

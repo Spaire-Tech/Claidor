@@ -35,11 +35,11 @@ const descriptor: StartupCreditDescriptor = {
   loginRequired: true,
   periodLabel: 'Staging campaign',
   cardTitle: 'Thank-you rewards',
-  modalTitle: 'Welcome to Swen',
+  modalTitle: 'Welcome to Maties',
   modalDescription: 'Sign in to claim limited-time credits',
   actionText: 'Claim 5000 credits',
   posterUrl: 'https://nos.example.test/reward.png',
-  posterAlt: 'Swen thank-you rewards campaign',
+  posterAlt: 'Maties thank-you rewards campaign',
   autoPopupStartAt: '2026-07-31T00:00:00Z',
   autoPopupEndAt: '2026-08-15T00:00:00Z',
 };

@@ -642,7 +642,7 @@ describe('parseLocalServiceUrlsFromText', () => {
     const content = [
       'How to start',
       '```bash',
-      'cd /Users/admin/swen/project/fanren/fanren-vote',
+      'cd /Users/admin/maties/project/fanren/fanren-vote',
       'npm run dev',
       '```',
       'Preview URL: http://localhost:3000',
@@ -651,70 +651,70 @@ describe('parseLocalServiceUrlsFromText', () => {
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/swen/project/fanren' },
+      { projectDirectory: '/Users/admin/maties/project/fanren' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/swen/project/fanren/fanren-vote',
+      '/Users/admin/maties/project/fanren/fanren-vote',
     );
   });
 
   test('prefers labeled project directory over session cwd', () => {
     const content = [
-      'Project directory: `/Users/admin/swen/project/fanren/fanren-vote/`',
+      'Project directory: `/Users/admin/maties/project/fanren/fanren-vote/`',
       'Preview URL: http://localhost:3000',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/swen/project/fanren' },
+      { projectDirectory: '/Users/admin/maties/project/fanren' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/swen/project/fanren/fanren-vote/',
+      '/Users/admin/maties/project/fanren/fanren-vote/',
     );
   });
 
   test('extracts labeled project directory from markdown file link', () => {
     const content = [
       '✅ Service started and running at http://localhost:3000',
-      '• Project path: [`/Users/admin/swen/project/fanren/fanren-vote/`](file:///Users/admin/swen/project/fanren/fanren-vote/)',
+      '• Project path: [`/Users/admin/maties/project/fanren/fanren-vote/`](file:///Users/admin/maties/project/fanren/fanren-vote/)',
       '• Status: running normally, HTTP 200',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/swen/project/fanren' },
+      { projectDirectory: '/Users/admin/maties/project/fanren' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/swen/project/fanren/fanren-vote/',
+      '/Users/admin/maties/project/fanren/fanren-vote/',
     );
   });
 
   test('extracts project directory from project located markdown file link', () => {
     const content = [
-      'The site is complete! The project is located at [chinese-navy-site](file:///Users/admin/swen/project/chinese-navy-site), and the local server runs at `http://localhost:8765`.',
+      'The site is complete! The project is located at [chinese-navy-site](file:///Users/admin/maties/project/chinese-navy-site), and the local server runs at `http://localhost:8765`.',
       '',
       '**File structure:**',
-      '- [index.html](file:///Users/admin/swen/project/chinese-navy-site/index.html) — page structure',
+      '- [index.html](file:///Users/admin/maties/project/chinese-navy-site/index.html) — page structure',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/swen/project' },
+      { projectDirectory: '/Users/admin/maties/project' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/swen/project/chinese-navy-site',
+      '/Users/admin/maties/project/chinese-navy-site',
     );
     expect(artifacts[0].localService?.projectCandidates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          directory: '/Users/admin/swen/project/chinese-navy-site',
+          directory: '/Users/admin/maties/project/chinese-navy-site',
           source: ShareDeploymentCandidateSource.TextLabeledPath,
         }),
       ]),
@@ -724,19 +724,19 @@ describe('parseLocalServiceUrlsFromText', () => {
   test('derives project directory from common parent of file links', () => {
     const content = [
       'The local service is running at http://localhost:8765',
-      '- [index.html](file:///Users/admin/swen/project/chinese-navy-site/index.html)',
-      '- [style.css](file:///Users/admin/swen/project/chinese-navy-site/styles/style.css)',
-      '- [app.js](file:///Users/admin/swen/project/chinese-navy-site/scripts/app.js)',
+      '- [index.html](file:///Users/admin/maties/project/chinese-navy-site/index.html)',
+      '- [style.css](file:///Users/admin/maties/project/chinese-navy-site/styles/style.css)',
+      '- [app.js](file:///Users/admin/maties/project/chinese-navy-site/scripts/app.js)',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(content, 'msg1', 'sess1');
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/swen/project/chinese-navy-site',
+      '/Users/admin/maties/project/chinese-navy-site',
     );
     expect(artifacts[0].localService?.projectCandidates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          directory: '/Users/admin/swen/project/chinese-navy-site',
+          directory: '/Users/admin/maties/project/chinese-navy-site',
           source: ShareDeploymentCandidateSource.TextCommonParent,
         }),
       ]),
@@ -752,7 +752,7 @@ describe('parseLocalServiceUrlsFromText', () => {
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/swen/project/fanren' },
+      { projectDirectory: '/Users/admin/maties/project/fanren' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBeUndefined();
@@ -781,10 +781,10 @@ describe('parseMediaTokensFromText', () => {
   });
 
   test('parses macOS path with spaces (Application Support)', () => {
-    const content = 'MEDIA: /Users/test/Library/Application Support/com.swen/images/output.png';
+    const content = 'MEDIA: /Users/test/Library/Application Support/com.maties/images/output.png';
     const artifacts = parseMediaTokensFromText(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
-    expect(artifacts[0].filePath).toBe('/Users/test/Library/Application Support/com.swen/images/output.png');
+    expect(artifacts[0].filePath).toBe('/Users/test/Library/Application Support/com.maties/images/output.png');
     expect(artifacts[0].type).toBe('image');
   });
 
@@ -1026,13 +1026,13 @@ describe('shouldParseFilePathsFromToolResult', () => {
     expect(shouldParseFilePathsFromToolResult('image_generate')).toBe(true);
   });
 
-  test('returns true for swen_image_generate tool', () => {
-    expect(shouldParseFilePathsFromToolResult('swen_image_generate')).toBe(true);
+  test('returns true for maties_image_generate tool', () => {
+    expect(shouldParseFilePathsFromToolResult('maties_image_generate')).toBe(true);
   });
 
   test('is case-insensitive', () => {
     expect(shouldParseFilePathsFromToolResult('Image_Generate')).toBe(true);
-    expect(shouldParseFilePathsFromToolResult('SWEN_IMAGE_GENERATE')).toBe(true);
+    expect(shouldParseFilePathsFromToolResult('MATIES_IMAGE_GENERATE')).toBe(true);
   });
 
   test('returns false for Bash tool (find/ls output should not become artifacts)', () => {

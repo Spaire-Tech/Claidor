@@ -47,13 +47,13 @@ describe('passthrough (no attachment lines)', () => {
 describe('file attachment extraction', () => {
   test('file line appended after prompt', () => {
     const result = extractUserMessageFileAttachments(
-      'See what is wrong in this log\n\nInput Files: /Users/me/logs/swen-logs-20260810.txt',
+      'See what is wrong in this log\n\nInput Files: /Users/me/logs/maties-logs-20260810.txt',
     );
     expect(result.text).toBe('See what is wrong in this log');
     expect(result.attachments).toEqual([
       {
-        path: '/Users/me/logs/swen-logs-20260810.txt',
-        name: 'swen-logs-20260810.txt',
+        path: '/Users/me/logs/maties-logs-20260810.txt',
+        name: 'maties-logs-20260810.txt',
         isDirectory: false,
       },
     ]);

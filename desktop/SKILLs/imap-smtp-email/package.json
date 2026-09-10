@@ -1,7 +1,7 @@
 {
   "name": "imap-smtp-email-skill",
   "version": "1.0.0",
-  "description": "IMAP/SMTP email tool for Swen. Works with Gmail, Outlook / Microsoft 365, and any standard IMAP/SMTP server.",
+  "description": "IMAP/SMTP email tool for Maties. Works with Gmail, Outlook / Microsoft 365, and any standard IMAP/SMTP server.",
   "main": "scripts/imap.js",
   "scripts": {
     "check": "node scripts/imap.js check",

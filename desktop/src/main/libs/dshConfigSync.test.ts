@@ -36,19 +36,19 @@ function providerFixture(overrides: Partial<ProviderConfig> = {}): ProviderConfi
 
 describe('sanitizeDshRouteId', () => {
   test('lowercases, collapses separators, and prefixes', () => {
-    expect(sanitizeDshRouteId('OpenAI')).toBe('swen-openai');
-    expect(sanitizeDshRouteId('My_Provider 1')).toBe('swen-my-provider-1');
+    expect(sanitizeDshRouteId('OpenAI')).toBe('maties-openai');
+    expect(sanitizeDshRouteId('My_Provider 1')).toBe('maties-my-provider-1');
   });
 
   test('strips leading non-letters and never returns a bare prefix', () => {
-    expect(sanitizeDshRouteId('123abc')).toBe('swen-abc');
-    expect(sanitizeDshRouteId('***')).toBe('swen-provider');
+    expect(sanitizeDshRouteId('123abc')).toBe('maties-abc');
+    expect(sanitizeDshRouteId('***')).toBe('maties-provider');
   });
 });
 
 describe('deriveDshApiKeyEnvRef', () => {
   test('follows the dsh models UI convention', () => {
-    expect(deriveDshApiKeyEnvRef('swen-my-gateway')).toBe('SWEN_MY_GATEWAY_API_KEY');
+    expect(deriveDshApiKeyEnvRef('maties-my-gateway')).toBe('MATIES_MY_GATEWAY_API_KEY');
   });
 });
 
@@ -64,34 +64,34 @@ describe('mapApiFormatToDshProtocol', () => {
 describe('renderDshManagedSettings', () => {
   test('renders a full route with env-referenced credentials', () => {
     const managed = renderDshManagedSettings({ 'My GW': providerFixture() });
-    const route = managed.routes['swen-my-gw'];
+    const route = managed.routes['maties-my-gw'];
     expect(route).toBeDefined();
-    expect(route.apiKeyEnv).toBe('SWEN_MY_GW_API_KEY');
-    expect(managed.envVars.SWEN_MY_GW_API_KEY).toBe('sk-test');
+    expect(route.apiKeyEnv).toBe('MATIES_MY_GW_API_KEY');
+    expect(managed.envVars.MATIES_MY_GW_API_KEY).toBe('sk-test');
     expect(route.models[0]).toEqual({ id: 'model-a', name: 'Model A', contextWindow: 8192, maxTokens: 1024 });
     expect(managed.skipped).toHaveLength(0);
   });
 
   test('prefers the canonical provider label over the raw config key, marked as managed', () => {
     const managed = renderDshManagedSettings({ deepseek: providerFixture({ displayName: undefined }) });
-    expect(managed.routes['swen-deepseek'].displayName).toBe(`${DSH_MANAGED_LABEL_PREFIX}DeepSeek`);
+    expect(managed.routes['maties-deepseek'].displayName).toBe(`${DSH_MANAGED_LABEL_PREFIX}DeepSeek`);
   });
 
   test('an explicit displayName still wins over the canonical label', () => {
     const managed = renderDshManagedSettings({ deepseek: providerFixture({ displayName: 'My DeepSeek' }) });
-    expect(managed.routes['swen-deepseek'].displayName).toBe(`${DSH_MANAGED_LABEL_PREFIX}My DeepSeek`);
+    expect(managed.routes['maties-deepseek'].displayName).toBe(`${DSH_MANAGED_LABEL_PREFIX}My DeepSeek`);
   });
 
   test('falls back to the config key for unknown providers', () => {
     const managed = renderDshManagedSettings({ 'my-gw': providerFixture({ displayName: undefined }) });
-    expect(managed.routes['swen-my-gw'].displayName).toBe(`${DSH_MANAGED_LABEL_PREFIX}my-gw`);
+    expect(managed.routes['maties-my-gw'].displayName).toBe(`${DSH_MANAGED_LABEL_PREFIX}my-gw`);
   });
 
   test('declares image input only when the model supports it', () => {
     const managed = renderDshManagedSettings({
       gw: providerFixture({ models: [{ id: 'm', name: 'M', supportsImage: true }] }),
     });
-    expect(managed.routes['swen-gw'].models[0].input).toEqual(['text', 'image']);
+    expect(managed.routes['maties-gw'].models[0].input).toEqual(['text', 'image']);
   });
 
   test('skips disabled, oauth, keyless, model-less, and gemini providers with reasons', () => {
@@ -114,7 +114,7 @@ describe('renderDshManagedSettings', () => {
         { gw: providerFixture() },
         { preferredDefault: { providerId: 'gw', modelId: 'model-a' } }
       ).defaultModel
-    ).toEqual({ provider: 'swen-gw', model: 'model-a' });
+    ).toEqual({ provider: 'maties-gw', model: 'model-a' });
   });
 
   test('falls back to a rendered route when the preferred one was skipped', () => {
@@ -122,7 +122,7 @@ describe('renderDshManagedSettings', () => {
       { gemini: providerFixture({ apiFormat: 'gemini' }), gw: providerFixture() },
       { preferredDefault: { providerId: 'gemini', modelId: 'model-a' } }
     );
-    expect(managed.defaultModel).toEqual({ provider: 'swen-gw', model: 'model-a' });
+    expect(managed.defaultModel).toEqual({ provider: 'maties-gw', model: 'model-a' });
   });
 
   test('has no default to offer when nothing rendered', () => {
@@ -150,7 +150,7 @@ describe('plan provider (token proxy)', () => {
     expect(managed.envVars[route.apiKeyEnv]).toBeTruthy();
   });
 
-  test('marks the plan as Swen-managed in the picker', () => {
+  test('marks the plan as Maties-managed in the picker', () => {
     const managed = renderDshManagedSettings({}, { planProvider: plan });
     expect(managed.routes[DSH_PLAN_ROUTE_ID].displayName).toBe(`${DSH_MANAGED_LABEL_PREFIX}Plan`);
   });
@@ -201,7 +201,7 @@ describe('plan provider (token proxy)', () => {
       { gw: providerFixture() },
       { planProvider: plan, preferredDefault: { providerId: 'gw', modelId: 'model-a' } }
     );
-    expect(managed.defaultModel).toEqual({ provider: 'swen-gw', model: 'model-a' });
+    expect(managed.defaultModel).toEqual({ provider: 'maties-gw', model: 'model-a' });
   });
 
   test('skips the plan with a reason when the proxy is down or it has no models', () => {
@@ -226,8 +226,8 @@ describe('mergeDshSettingsText', () => {
     const { text, warnings } = mergeDshSettingsText(null, managed, { seedDefaultModel: true });
     const doc = yaml.load(text) as Record<string, Record<string, unknown>>;
     expect(warnings).toHaveLength(0);
-    expect((doc['llm-pi-ai'].providers as Record<string, unknown>)['swen-gw']).toBeDefined();
-    expect(doc['agent-default-model']).toEqual({ provider: 'swen-gw', model: 'model-a' });
+    expect((doc['llm-pi-ai'].providers as Record<string, unknown>)['maties-gw']).toBeDefined();
+    expect(doc['agent-default-model']).toEqual({ provider: 'maties-gw', model: 'model-a' });
   });
 
   test('preserves user routes and foreign namespaces, replaces stale managed routes', () => {
@@ -236,7 +236,7 @@ describe('mergeDshSettingsText', () => {
       'llm-pi-ai': {
         providers: {
           'user-route': { apiKeyEnv: 'USER_KEY', api: 'openai-completions', baseURL: 'https://u.example', models: [{ id: 'u' }] },
-          'swen-stale': { apiKeyEnv: 'STALE', api: 'openai-completions', baseURL: 'https://s.example', models: [{ id: 's' }] },
+          'maties-stale': { apiKeyEnv: 'STALE', api: 'openai-completions', baseURL: 'https://s.example', models: [{ id: 's' }] },
         },
       },
       'agent-default-model': { provider: 'user-route', model: 'u' },
@@ -245,8 +245,8 @@ describe('mergeDshSettingsText', () => {
     const doc = yaml.load(text) as Record<string, Record<string, unknown>>;
     const providers = doc['llm-pi-ai'].providers as Record<string, unknown>;
     expect(providers['user-route']).toBeDefined();
-    expect(providers['swen-stale']).toBeUndefined();
-    expect(providers['swen-gw']).toBeDefined();
+    expect(providers['maties-stale']).toBeUndefined();
+    expect(providers['maties-gw']).toBeDefined();
     expect(doc['ui-onboarding']).toEqual({ done: true });
     // The user's default model pick must never be clobbered.
     expect(doc['agent-default-model']).toEqual({ provider: 'user-route', model: 'u' });
@@ -267,9 +267,9 @@ describe('mergeDshSettingsText', () => {
   });
 
   test('repairs a default pinned to a managed route that no longer exists', () => {
-    const existing = yaml.dump({ 'agent-default-model': { provider: 'swen-removed', model: 'gone' } });
+    const existing = yaml.dump({ 'agent-default-model': { provider: 'maties-removed', model: 'gone' } });
     const doc = yaml.load(mergeDshSettingsText(existing, managed).text) as Record<string, unknown>;
-    expect(doc['agent-default-model']).toEqual({ provider: 'swen-gw', model: 'model-a' });
+    expect(doc['agent-default-model']).toEqual({ provider: 'maties-gw', model: 'model-a' });
   });
 
   test('replaces unparseable content with a warning', () => {
@@ -292,7 +292,7 @@ describe('writeDshManagedSettings', () => {
       (yaml.load(fs.readFileSync(first.settingsPath, 'utf8')) as Record<string, unknown>)['agent-default-model']
     ).toBeDefined();
     const doc = yaml.load(fs.readFileSync(first.settingsPath, 'utf8')) as Record<string, Record<string, unknown>>;
-    expect((doc['llm-pi-ai'].providers as Record<string, unknown>)['swen-gw']).toBeDefined();
+    expect((doc['llm-pi-ai'].providers as Record<string, unknown>)['maties-gw']).toBeDefined();
     if (process.platform !== 'win32') {
       expect(fs.statSync(first.settingsPath).mode & 0o777).toBe(0o600);
     }

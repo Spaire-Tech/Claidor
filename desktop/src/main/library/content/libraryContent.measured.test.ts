@@ -24,16 +24,16 @@ import { LibraryContentStore } from './libraryContentStore';
 import { isLibraryModelPresent } from './modelPath';
 
 /**
- * The measured run promised in docs/swen/library.md: a folder of a few
+ * The measured run promised in docs/maties/library.md: a folder of a few
  * hundred generated office files through the real extractors, the real
  * model and the real indexer, then ten questions with the expected file and
- * place. Runs only with SWEN_LIBRARY_MEASURE=1 because it takes a minute.
+ * place. Runs only with MATIES_LIBRARY_MEASURE=1 because it takes a minute.
  *
- *   SWEN_LIBRARY_MEASURE=1 npx vitest run src/main/library/content/libraryContent.measured.test.ts
+ *   MATIES_LIBRARY_MEASURE=1 npx vitest run src/main/library/content/libraryContent.measured.test.ts
  */
 
 const MODEL_DIR = path.resolve(__dirname, '../../../../resources/embedding-model');
-const ENABLED = process.env.SWEN_LIBRARY_MEASURE === '1' && isLibraryModelPresent(MODEL_DIR);
+const ENABLED = process.env.MATIES_LIBRARY_MEASURE === '1' && isLibraryModelPresent(MODEL_DIR);
 
 const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const PKG_RELS_NS = 'http://schemas.openxmlformats.org/package/2006/relationships';
@@ -298,7 +298,7 @@ const megabytes = (bytes: number): string => `${(bytes / (1024 * 1024)).toFixed(
 
 describe.skipIf(!ENABLED)('the personal library, measured', () => {
   test('indexes a few hundred office files and answers ten questions with the file and the place', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-library-measured-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-library-measured-'));
     const lines: string[] = [];
     const say = (line: string) => {
       lines.push(line);
@@ -346,7 +346,7 @@ describe.skipIf(!ENABLED)('the personal library, measured', () => {
         say(`${found ? 'ok ' : 'MISS'} "${question.query}" → ${top ? `${top.fileName} ${formatLibraryLocator(top.locator) || 'whole file'} (${top.score})` : 'nothing'}; expected ${question.file} ${formatLibraryLocator(question.locator) || 'whole file'}${found ? '' : rank >= 0 ? ` at rank ${rank + 1}` : ' not in top 5'}; ${took} ms`);
       }
       say(`${correct} of ${QUESTIONS.length} questions answered with the right file and place`);
-      fs.writeFileSync(path.join(os.tmpdir(), 'swen-library-measured.txt'), `${lines.join('\n')}\n`);
+      fs.writeFileSync(path.join(os.tmpdir(), 'maties-library-measured.txt'), `${lines.join('\n')}\n`);
       indexer.stop();
       expect(correct).toBeGreaterThanOrEqual(8);
     } finally {

@@ -3,7 +3,7 @@ import {
   AuthSessionChangeReason,
   AuthSessionStatus,
 } from '@shared/auth/constants';
-import { ProviderName, SwenRequestCapability } from '@shared/providers';
+import { MatiesRequestCapability,ProviderName } from '@shared/providers';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
@@ -39,8 +39,8 @@ describe('pricing catalog model mapping', () => {
       {
         modelId: 'qwen3.7-plus',
         modelName: 'Qwen3.7-Plus',
-        provider: 'Swen',
-        providerLabel: 'Swen Plan',
+        provider: 'Maties',
+        providerLabel: 'Maties Plan',
         description: 'Strong multimodal model',
         supportsImage: true,
         supportsThinking: true,
@@ -61,8 +61,8 @@ describe('pricing catalog model mapping', () => {
     expect(model).toMatchObject({
       id: 'qwen3.7-plus',
       name: 'Qwen3.7-Plus',
-      provider: 'Swen Plan',
-      providerKey: ProviderName.SwenServer,
+      provider: 'Maties Plan',
+      providerKey: ProviderName.MatiesServer,
       isServerModel: true,
       accessible: false,
       description: 'Strong multimodal model',
@@ -128,7 +128,7 @@ describe('authenticated server model mapping', () => {
         ],
         defaultLevel: 'high',
       },
-      requestCapabilities: [SwenRequestCapability.OptionsV1],
+      requestCapabilities: [MatiesRequestCapability.OptionsV1],
       supportsToolCalling: true,
       agenticReady: false,
       contextWindow: 1_048_576,
@@ -139,7 +139,7 @@ describe('authenticated server model mapping', () => {
 
     expect(model).toMatchObject({
       id: 'kimi-k3-YoudaoInner',
-      providerKey: ProviderName.SwenServer,
+      providerKey: ProviderName.MatiesServer,
       isServerModel: true,
       serverApiFormat: 'openai',
       runtimeProfile: 'moonshot-kimi-k3',
@@ -154,7 +154,7 @@ describe('authenticated server model mapping', () => {
         ],
         defaultLevel: 'high',
       },
-      requestCapabilities: [SwenRequestCapability.OptionsV1],
+      requestCapabilities: [MatiesRequestCapability.OptionsV1],
       supportsToolCalling: true,
       agenticReady: false,
       contextWindow: 1_048_576,
@@ -168,7 +168,7 @@ describe('authenticated server model mapping', () => {
     const [model] = mapAvailableServerModelsToModels([{
       modelId: 'deepseek-v4-flash',
       modelName: 'DeepSeek V4 Flash',
-      provider: 'Swen',
+      provider: 'Maties',
       apiFormat: 'openai',
       supportsThinking: true,
       thinkingConfig: {
@@ -189,15 +189,15 @@ describe('authenticated server model mapping', () => {
     const [model] = mapAvailableServerModelsToModels([{
       modelId: 'capability-test',
       modelName: 'Capability Test',
-      provider: 'Swen',
+      provider: 'Maties',
       apiFormat: 'openai',
       requestCapabilities: [
-        SwenRequestCapability.OptionsV1,
+        MatiesRequestCapability.OptionsV1,
         'future-unknown-capability',
       ],
     }]);
 
-    expect(model.requestCapabilities).toEqual([SwenRequestCapability.OptionsV1]);
+    expect(model.requestCapabilities).toEqual([MatiesRequestCapability.OptionsV1]);
   });
 });
 
@@ -366,7 +366,7 @@ describe('quota checks', () => {
       models: [{
         modelId: 'qwen3.7-plus',
         modelName: 'Qwen3.7 Plus',
-        provider: 'Swen',
+        provider: 'Maties',
         apiFormat: 'openai',
         accessible: true,
       }],
@@ -402,7 +402,7 @@ describe('quota checks', () => {
     expect(store.getState().model.availableModels).toEqual(expect.arrayContaining([
       expect.objectContaining({
         id: 'qwen3.7-plus',
-        providerKey: ProviderName.SwenServer,
+        providerKey: ProviderName.MatiesServer,
         accessible: true,
       }),
     ]));
@@ -575,7 +575,7 @@ describe('server model loading', () => {
   const serverModel = {
     modelId: 'qwen3.7-plus',
     modelName: 'Qwen3.7 Plus',
-    provider: 'Swen',
+    provider: 'Maties',
     apiFormat: 'openai',
     accessible: true,
   };
@@ -828,7 +828,7 @@ describe('enterprise quota period boundary refresh', () => {
 describe('auth state restoration', () => {
   const user = {
     yid: 'user@example.com',
-    nickname: 'Swen User',
+    nickname: 'Maties User',
     avatarUrl: null,
   };
   const quota = {

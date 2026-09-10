@@ -116,8 +116,8 @@ export async function downloadUpdate(
   const ext = path.extname(parsedUrl.pathname) || (process.platform === 'darwin' ? '.dmg' : '.exe');
   const updateDir = path.join(app.getPath('userData'), 'updates');
   const ts = Date.now();
-  const downloadPath = path.join(updateDir, `swen-update-${source}-${ts}${ext}.download`);
-  const finalPath = path.join(updateDir, `swen-update-${source}-${ts}${ext}`);
+  const downloadPath = path.join(updateDir, `maties-update-${source}-${ts}${ext}.download`);
+  const finalPath = path.join(updateDir, `maties-update-${source}-${ts}${ext}`);
 
   console.log(`[AppUpdate] Temp path: ${downloadPath}`);
   console.log(`[AppUpdate] Final path: ${finalPath}`);
@@ -932,7 +932,7 @@ export const WINDOWS_UAC_DECLINED_EXIT_CODE = 1223;
  * so a slow decision is never mistaken for a hang.
  */
 const WINDOWS_INSTALLER_LAUNCH_TIMEOUT_MS = 300_000;
-const WINDOWS_INSTALLER_PATH_ENV = 'SWEN_UPDATE_INSTALLER_PATH';
+const WINDOWS_INSTALLER_PATH_ENV = 'MATIES_UPDATE_INSTALLER_PATH';
 
 export interface WindowsPowerShellCandidateOptions {
   systemRoot: string;
@@ -1100,9 +1100,9 @@ async function installWindowsNsis(
   // offers a retry instead of quitting into nothing.
   //
   // Quitting in parallel with the installer running is safe: the NSIS
-  // customCheckAppRunning macro stops remaining Swen processes by image
+  // customCheckAppRunning macro stops remaining Maties processes by image
   // name and polls until they are gone before replacing files. The installer
-  // process itself is named swen-update-*, so it is not affected by that
+  // process itself is named maties-update-*, so it is not affected by that
   // kill.
   console.log(`[AppUpdate] Launching Windows installer in update mode: ${exePath}`);
   const extraArgs = options?.noDefenderExclusion === true

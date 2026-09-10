@@ -1,13 +1,13 @@
 """The desktop app's server, on Claidor.
 
-The desktop app, Swen (`desktop/`), is pointed at
+The desktop app, Maties (`desktop/`), is pointed at
 `{BASE_URL}/desktop` and calls the paths below exactly as its own
 server mode does. Sign-in works like this:
 
 1. The app opens the browser at `/desktop/login?redirect_uri=…&state=…`
    (the redirect is a loopback callback the app is listening on; when
    it could not open one it comes with no redirect and expects a
-   `swen://` deep link instead).
+   `maties://` deep link instead).
 2. With no Claidor session in the browser, that page sends the person
    to the web login and asks to be returned to.
 3. With one, it mints a five-minute, single-use code and redirects to
@@ -66,8 +66,8 @@ log = structlog.get_logger()
 router = APIRouter(prefix="/desktop", tags=["desktop", APITag.private])
 
 ANTHROPIC_VERSION = "2023-06-01"
-DEEP_LINK_CALLBACK = "swen://auth/callback"
-CLIENT_VERSION_HEADER = "x-swen-client-version"
+DEEP_LINK_CALLBACK = "maties://auth/callback"
+CLIENT_VERSION_HEADER = "x-maties-client-version"
 
 
 # --- helpers ---------------------------------------------------------------
@@ -118,7 +118,7 @@ def _callback_target(redirect_uri: str | None) -> str | None:
     ):
         return redirect_uri.strip()
     if (
-        parsed.scheme == "swen"
+        parsed.scheme == "maties"
         and parsed.netloc == "auth"
         and parsed.path == "/callback"
     ):
@@ -312,7 +312,7 @@ async def client_banner_snapshot(request: Request) -> JSONResponse:
 @router.get("/api/updates/check", name="desktop:updates")
 @router.get("/api/updates/check-manual", name="desktop:updates_manual")
 async def updates_check() -> JSONResponse:
-    """The app asks whether a newer Swen exists.
+    """The app asks whether a newer Maties exists.
 
     Claidor does not publish desktop releases yet, so the answer is « nothing
     newer »: the app reads ``data.value`` and treats ``None`` as up to date.
@@ -376,7 +376,7 @@ async def enterprise_context() -> JSONResponse:
 
 @router.get("/api/client-activities/slot", name="desktop:activity_slot")
 async def activity_slot() -> JSONResponse:
-    """Promotional activities (daily check-in, startup credits). Swen runs none."""
+    """Promotional activities (daily check-in, startup credits). Maties runs none."""
     return _ok({"slotState": "empty", "serverTime": utc_now().isoformat()})
 
 

@@ -8,11 +8,11 @@
  * Usage:
  *   import { t, setLanguage } from './i18n';
  *   setLanguage('en');
- *   const label = t('trayShowWindow'); // "Open Swen"
+ *   const label = t('trayShowWindow'); // "Open Maties"
  *   const msg = t('imMissingCredentials', { fields: 'appId, appSecret' });
  */
 
-// Swen is English-only; 'zh' stays in the type for persisted configs and is coerced.
+// Maties is English-only; 'zh' stays in the type for persisted configs and is coerced.
 export type LanguageType = 'zh' | 'en';
 
 const translations: Record<'en', Record<string, string>> = {
@@ -22,16 +22,16 @@ const translations: Record<'en', Record<string, string>> = {
     dshPlanProviderName: 'Plan',
 
     // Tray menu
-    trayShowWindow: 'Open Swen',
+    trayShowWindow: 'Open Maties',
     trayNewTask: 'New Task',
     trayViewCompletedTask: 'View Completed Task',
-    trayCompletedTaskTooltip: 'Swen - {count} completed task(s)',
+    trayCompletedTaskTooltip: 'Maties - {count} completed task(s)',
     traySettings: 'Settings',
     trayQuit: 'Quit',
 
     // Quit confirmation (native dialog shown on user-initiated quit)
-    appQuitConfirmTitle: 'Quit Swen?',
-    appQuitConfirmDetail: 'While Swen is closed, scheduled tasks will not run and IM messages will not be answered.',
+    appQuitConfirmTitle: 'Quit Maties?',
+    appQuitConfirmDetail: 'While Maties is closed, scheduled tasks will not run and IM messages will not be answered.',
     appQuitConfirmQuit: 'Quit',
     appQuitConfirmCancel: 'Cancel',
     taskCompletionNotificationTitle: 'Task Complete',
@@ -44,7 +44,7 @@ const translations: Record<'en', Record<string, string>> = {
     questionNotificationBody: 'Waiting for your answer to continue.',
     browserCredentialApprovalHeader: 'Saved login',
     browserCredentialApprovalTitle: 'Allow Agent sign-in',
-    browserCredentialApprovalSubtitle: 'Swen fills the isolated page without revealing the password to the Agent.',
+    browserCredentialApprovalSubtitle: 'Maties fills the isolated page without revealing the password to the Agent.',
     browserCredentialApprovalQuestion: 'Allow the Agent to sign in to {origin} as {username}?',
     browserCredentialApprovalReason: 'Reason from the Agent: {reason}',
     browserCredentialApprovalAllow: 'Allow and continue',
@@ -53,7 +53,7 @@ const translations: Record<'en', Record<string, string>> = {
     browserCredentialApprovalDenyDescription: 'Do not use the saved login',
     browserCredentialSelectionQuestion: 'Choose an account the Agent may use to sign in to {origin}',
     browserCredentialSelectionTitle: 'Choose a sign-in account',
-    browserCredentialSelectionSubtitle: 'Swen will fill the selected account automatically.',
+    browserCredentialSelectionSubtitle: 'Maties will fill the selected account automatically.',
     browserCredentialSelectionDescription: 'Continue with this account',
     contextMenuCut: 'Cut',
     contextMenuCopy: 'Copy',
@@ -100,8 +100,8 @@ const translations: Record<'en', Record<string, string>> = {
 
     // Cowork error messages
     coworkErrorAuthInvalid: 'Invalid or expired API key. Please check your configuration.',
-    coworkErrorSwenLoginExpired:
-      'Your login session has expired. Sign in again to continue using Swen plan models.',
+    coworkErrorMatiesLoginExpired:
+      'Your login session has expired. Sign in again to continue using Maties plan models.',
     coworkErrorOAuthInvalid: 'OAuth authorization is invalid or missing required access. Re-authenticate and try again.',
     coworkErrorModelAccessDenied: 'This account is not allowed to access the selected model. Switch models or check provider account permissions.',
     coworkErrorQuotaExhausted:
@@ -117,7 +117,7 @@ const translations: Record<'en', Record<string, string>> = {
       'This message is too large. Reduce attachments, compress images, or split it up. (Keep each message under about 30 MB.)',
     coworkErrorCouldNotProcessPdf: 'Unable to process the PDF file.',
     coworkErrorModelNotFound: 'The requested model does not exist or is unavailable.',
-    coworkGatewaySessionSyncTimeout: 'The OpenClaw engine is responding slowly and your message has not been sent. Please wait a minute or two and resend. If this happens frequently, check system memory and disk usage, and add Swen to your antivirus allowlist.',
+    coworkGatewaySessionSyncTimeout: 'The OpenClaw engine is responding slowly and your message has not been sent. Please wait a minute or two and resend. If this happens frequently, check system memory and disk usage, and add Maties to your antivirus allowlist.',
     coworkErrorTranscriptOversized: 'This task history is too large. The message was not sent to protect the AI engine. Continue in a new task; the original task will be preserved.',
     coworkErrorGatewayHeapOutOfMemory: 'The local AI engine ran out of memory and is restarting automatically. This task may be too large; wait for recovery and continue in a new task.',
     coworkErrorGatewayDisconnected: 'AI engine connection lost. Please retry.',
@@ -194,15 +194,15 @@ const translations: Record<'en', Record<string, string>> = {
     enterpriseMediaQuotaUnavailable: 'Media generation quota is unavailable for this team.',
 
     // Data migration dialogs
-    dataMigrationBackupDialogTitle: 'Back Up Swen Data',
-    dataMigrationRestoreDialogTitle: 'Import Swen Data Backup',
-    dataMigrationBackupArchiveFilter: 'Swen Backup',
+    dataMigrationBackupDialogTitle: 'Back Up Maties Data',
+    dataMigrationRestoreDialogTitle: 'Import Maties Data Backup',
+    dataMigrationBackupArchiveFilter: 'Maties Backup',
     dataMigrationAllFilesFilter: 'All Files',
     dataMigrationBackupBlockedByActiveWorkloads:
       'An agent or scheduled task is still running. Stop it or wait for it to finish before backing up.',
-    dataMigrationRestoreProgressTitle: 'Importing Swen data',
+    dataMigrationRestoreProgressTitle: 'Importing Maties data',
     dataMigrationRestoreProgressDesc:
-      'Restoring the backup and validating data. Swen will restart automatically when finished.',
+      'Restoring the backup and validating data. Maties will restart automatically when finished.',
     dataMigrationRestoreProgressWarning:
       'Do not close the app or restart the computer, or the migration may be interrupted.',
 

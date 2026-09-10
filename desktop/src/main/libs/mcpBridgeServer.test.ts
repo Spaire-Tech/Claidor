@@ -39,7 +39,7 @@ describe('McpBridgeServer AskUser session attribution', () => {
           'x-ask-user-secret': secret,
         },
         body: JSON.stringify({
-          sessionKey: 'agent:main:swen:session-a',
+          sessionKey: 'agent:main:maties:session-a',
           questions: makeQuestions(),
         }),
       });
@@ -47,7 +47,7 @@ describe('McpBridgeServer AskUser session attribution', () => {
       expect(response.ok).toBe(true);
       await expect(response.json()).resolves.toEqual({ behavior: 'allow' });
       expect(received).toHaveLength(1);
-      expect(received[0].sessionKey).toBe('agent:main:swen:session-a');
+      expect(received[0].sessionKey).toBe('agent:main:maties:session-a');
     } finally {
       await server.stop();
     }
@@ -65,11 +65,11 @@ describe('McpBridgeServer AskUser session attribution', () => {
     await expect(server.askUserInternal(
       makeQuestions(),
       1_000,
-      { sessionKey: 'agent:main:swen:session-b' },
+      { sessionKey: 'agent:main:maties:session-b' },
     )).resolves.toEqual({ behavior: 'deny' });
 
     expect(received).toHaveLength(1);
-    expect(received[0].sessionKey).toBe('agent:main:swen:session-b');
+    expect(received[0].sessionKey).toBe('agent:main:maties:session-b');
   });
 });
 
@@ -200,7 +200,7 @@ describe('McpBridgeServer library search', () => {
         query: '  lease term  ',
         folder: '/Users/ada/Documents',
         limit: 5,
-        sessionKey: 'agent:main:swen:session-c',
+        sessionKey: 'agent:main:maties:session-c',
       });
       expect(response.status).toBe(200);
       await expect(response.json()).resolves.toEqual(makeResponse());
@@ -209,7 +209,7 @@ describe('McpBridgeServer library search', () => {
         query: 'lease term',
         folder: '/Users/ada/Documents',
         limit: 5,
-        sessionKey: 'agent:main:swen:session-c',
+        sessionKey: 'agent:main:maties:session-c',
       }]);
     } finally {
       await server.stop();

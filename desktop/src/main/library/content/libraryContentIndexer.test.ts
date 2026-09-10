@@ -151,7 +151,7 @@ describe('LibraryContentIndexer', () => {
   };
 
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-indexer-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-indexer-'));
     const db = new Database(':memory:');
     initializeLibraryContentTables(db);
     store = new LibraryContentStore(db);
@@ -207,7 +207,7 @@ describe('LibraryContentIndexer', () => {
     write('photo.png', 'not a document');
     write('node_modules/pkg/readme.md', 'skipped');
     write('.hidden/secret.md', 'skipped');
-    write('app-data/swen.md', 'skipped');
+    write('app-data/maties.md', 'skipped');
     write('contracts/~$lease.txt', 'lock file');
     const subject = makeIndexer();
     subject.start();

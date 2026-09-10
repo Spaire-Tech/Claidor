@@ -87,7 +87,7 @@ export const initializeLibraryTables = (db: Database.Database): void => {
 };
 
 /**
- * The personal library's content index (docs/swen/library.md): one row per
+ * The personal library's content index (docs/maties/library.md): one row per
  * document, its passages, an FTS5 table over the passage text for keywords,
  * and one embedding blob per passage for the cosine rerank.
  *

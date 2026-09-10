@@ -140,7 +140,7 @@ export class McpBridgeServer {
 
   /**
    * Register a callback for media generation tool requests.
-   * The callback should call swen-server and return the result.
+   * The callback should call maties-server and return the result.
    */
   onMediaGeneration(callback: (request: MediaGenerationRequest) => Promise<MediaGenerationResponse>): void {
     this.onMediaGenerationCallback = callback;
@@ -392,7 +392,7 @@ export class McpBridgeServer {
 
         this.pendingAskUser.set(requestId, { requestId, resolve, timer });
 
-        // Notify Swen to show the modal
+        // Notify Maties to show the modal
         if (this.onAskUserCallback) {
           this.onAskUserCallback({
             requestId,
@@ -485,7 +485,7 @@ export class McpBridgeServer {
       if (!this.onBrowserToolCallback) {
         res.writeHead(503, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
-          content: [{ type: 'text', text: 'Swen in-app browser is not ready.' }],
+          content: [{ type: 'text', text: 'Maties in-app browser is not ready.' }],
           isError: true,
         }));
         return;
@@ -506,7 +506,7 @@ export class McpBridgeServer {
       if (!res.writableEnded) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
-          content: [{ type: 'text', text: `Swen browser error: ${message}` }],
+          content: [{ type: 'text', text: `Maties browser error: ${message}` }],
           isError: true,
         }));
       }

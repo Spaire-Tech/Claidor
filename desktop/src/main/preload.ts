@@ -992,7 +992,7 @@ contextBridge.exposeInMainWorld('electron', {
       return () => ipcRenderer.removeListener(LibraryIpc.Changed, handler);
     },
   },
-  // The personal library: the index of the person's documents (docs/swen/library.md).
+  // The personal library: the index of the person's documents (docs/maties/library.md).
   libraryContent: {
     getStatus: () => ipcRenderer.invoke(LibraryContentIpc.GetStatus),
     getConfig: () => ipcRenderer.invoke(LibraryContentIpc.GetConfig),

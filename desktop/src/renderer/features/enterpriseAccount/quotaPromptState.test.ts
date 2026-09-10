@@ -257,7 +257,7 @@ describe('resolveActiveEnterpriseQuotaSignal', () => {
     reason: EnterpriseQuotaReason.MemberMonthlyQuotaExhausted,
   };
   const serverModel = {
-    providerKey: ProviderName.SwenServer,
+    providerKey: ProviderName.MatiesServer,
     isServerModel: true,
   };
 

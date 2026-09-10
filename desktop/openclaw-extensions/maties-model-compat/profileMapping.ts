@@ -1,11 +1,11 @@
-export const SwenModelRuntimeProfile = {
+export const MatiesModelRuntimeProfile = {
   MoonshotKimiK3: 'moonshot-kimi-k3',
 } as const;
 
-export type SwenModelRuntimeProfile =
-  typeof SwenModelRuntimeProfile[keyof typeof SwenModelRuntimeProfile];
+export type MatiesModelRuntimeProfile =
+  typeof MatiesModelRuntimeProfile[keyof typeof MatiesModelRuntimeProfile];
 
-export type SwenModelProfileMap = Record<string, SwenModelRuntimeProfile>;
+export type MatiesModelProfileMap = Record<string, MatiesModelRuntimeProfile>;
 
 export const ModelProfileTransportDecision = {
   Passthrough: 'passthrough',
@@ -33,14 +33,14 @@ const isModelRef = (value: string): boolean => {
     && !/\s/.test(value);
 };
 
-export const parseModelProfileMap = (value: unknown): SwenModelProfileMap => {
+export const parseModelProfileMap = (value: unknown): MatiesModelProfileMap => {
   if (!isRecord(value)) return {};
-  const result: SwenModelProfileMap = {};
+  const result: MatiesModelProfileMap = {};
   for (const [modelRef, profile] of Object.entries(value).sort(([a], [b]) =>
     a.localeCompare(b))) {
     if (
       isModelRef(modelRef)
-      && profile === SwenModelRuntimeProfile.MoonshotKimiK3
+      && profile === MatiesModelRuntimeProfile.MoonshotKimiK3
     ) {
       result[modelRef] = profile;
     }
@@ -49,14 +49,14 @@ export const parseModelProfileMap = (value: unknown): SwenModelProfileMap => {
 };
 
 export const hasModelRuntimeProfile = (
-  modelProfiles: SwenModelProfileMap,
+  modelProfiles: MatiesModelProfileMap,
   provider: string,
   modelId: string,
-  profile: SwenModelRuntimeProfile,
+  profile: MatiesModelRuntimeProfile,
 ): boolean => modelProfiles[`${provider}/${modelId}`] === profile;
 
 export const resolveModelProfileTransportDecision = (params: {
-  modelProfiles: SwenModelProfileMap;
+  modelProfiles: MatiesModelProfileMap;
   provider: string;
   modelId: string;
   modelApi?: string;
@@ -65,7 +65,7 @@ export const resolveModelProfileTransportDecision = (params: {
     params.modelProfiles,
     params.provider,
     params.modelId,
-    SwenModelRuntimeProfile.MoonshotKimiK3,
+    MatiesModelRuntimeProfile.MoonshotKimiK3,
   )) {
     return { kind: ModelProfileTransportDecision.Passthrough };
   }

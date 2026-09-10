@@ -4,8 +4,8 @@ import { isSearchLibraryCandidateSessionKey } from '../../../openclaw-extensions
 
 describe('search-library session key gating', () => {
   test('allows desktop sessions across agents', () => {
-    expect(isSearchLibraryCandidateSessionKey('agent:main:swen:session-1')).toBe(true);
-    expect(isSearchLibraryCandidateSessionKey('agent:qa-reviewer:swen:session-2')).toBe(true);
+    expect(isSearchLibraryCandidateSessionKey('agent:main:maties:session-1')).toBe(true);
+    expect(isSearchLibraryCandidateSessionKey('agent:qa-reviewer:maties:session-2')).toBe(true);
   });
 
   test('allows materialized subagent session candidates', () => {
@@ -13,14 +13,14 @@ describe('search-library session key gating', () => {
   });
 
   test('allows legacy desktop sessions', () => {
-    expect(isSearchLibraryCandidateSessionKey('swen:session-3')).toBe(true);
+    expect(isSearchLibraryCandidateSessionKey('maties:session-3')).toBe(true);
   });
 
   test('rejects channel and malformed session keys', () => {
     expect(isSearchLibraryCandidateSessionKey('agent:main:telegram:direct:user-1')).toBe(false);
     expect(isSearchLibraryCandidateSessionKey('agent:main:discord:channel:room-1')).toBe(false);
-    expect(isSearchLibraryCandidateSessionKey('agent::swen:session-4')).toBe(false);
-    expect(isSearchLibraryCandidateSessionKey('agent:main:swen:')).toBe(false);
+    expect(isSearchLibraryCandidateSessionKey('agent::maties:session-4')).toBe(false);
+    expect(isSearchLibraryCandidateSessionKey('agent:main:maties:')).toBe(false);
     expect(isSearchLibraryCandidateSessionKey('')).toBe(false);
   });
 });

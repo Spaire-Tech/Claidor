@@ -1,7 +1,7 @@
 {
-  "appId": "com.claidor.swen",
-  "productName": "Swen",
-  "executableName": "Swen",
+  "appId": "com.claidor.maties",
+  "productName": "Maties",
+  "executableName": "Maties",
   "directories": {
     "output": "release"
   },
@@ -76,9 +76,9 @@
   ],
   "protocols": [
     {
-      "name": "Swen",
+      "name": "Maties",
       "schemes": [
-        "swen"
+        "maties"
       ]
     }
   ],
@@ -98,10 +98,10 @@
     ],
     "extendInfo": {
       "CFBundleIconName": "icon",
-      "NSMicrophoneUsageDescription": "Swen needs access to your microphone to record voice input for speech recognition.",
-      "NSCalendarsUsageDescription": "Swen needs access to your calendar to help you view and manage your schedule, for example finding events and creating meetings.",
-      "NSRemindersUsageDescription": "Swen needs access to your reminders to help you manage your to-do items.",
-      "NSAppleEventsUsageDescription": "Swen uses Apple Events to control the Calendar app for automation."
+      "NSMicrophoneUsageDescription": "Maties needs access to your microphone to record voice input for speech recognition.",
+      "NSCalendarsUsageDescription": "Maties needs access to your calendar to help you view and manage your schedule, for example finding events and creating meetings.",
+      "NSRemindersUsageDescription": "Maties needs access to your reminders to help you manage your to-do items.",
+      "NSAppleEventsUsageDescription": "Maties uses Apple Events to control the Calendar app for automation."
     },
     "extraResources": [
       {
@@ -269,7 +269,7 @@
       }
     ],
     "desktop": {
-      "Name": "Swen",
+      "Name": "Maties",
       "Comment": "AI-assisted coding and productivity tool",
       "Terminal": "false"
     }

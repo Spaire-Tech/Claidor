@@ -10,7 +10,7 @@ export const KitReferenceScheme = {
 } as const;
 
 export const KitReferenceSource = {
-  LobsterAiKits: 'swen-kits',
+  LobsterAiKits: 'maties-kits',
 } as const;
 
 export type KitReferenceSource =

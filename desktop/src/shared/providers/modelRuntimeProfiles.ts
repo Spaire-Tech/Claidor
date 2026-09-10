@@ -14,11 +14,11 @@ export const ModelRuntimeProfileSource = {
 export type ModelRuntimeProfileSource =
   typeof ModelRuntimeProfileSource[keyof typeof ModelRuntimeProfileSource];
 
-export const SWEN_CLIENT_CAPABILITIES_HEADER = 'X-Swen-Client-Capabilities';
-export const SWEN_CLIENT_VERSION_HEADER = 'X-Swen-Client-Version';
+export const MATIES_CLIENT_CAPABILITIES_HEADER = 'X-Maties-Client-Capabilities';
+export const MATIES_CLIENT_VERSION_HEADER = 'X-Maties-Client-Version';
 export const KIMI_K3_AGENTIC_CAPABILITY = 'kimi-k3-agentic-v1';
 export const THINKING_LEVEL_CONTROL_CAPABILITY = 'thinking-level-control-v1';
-export const SWEN_CLIENT_CAPABILITIES = [
+export const MATIES_CLIENT_CAPABILITIES = [
   KIMI_K3_AGENTIC_CAPABILITY,
   THINKING_LEVEL_CONTROL_CAPABILITY,
 ].join(',');
@@ -131,7 +131,7 @@ export const resolveModelRuntimeProfile = ({
   }
 
   if (source === ModelRuntimeProfileSource.Server) {
-    if (providerId !== OpenClawProviderId.SwenServer) {
+    if (providerId !== OpenClawProviderId.MatiesServer) {
       return undefined;
     }
     return parseModelRuntimeProfile(serverRuntimeProfile);

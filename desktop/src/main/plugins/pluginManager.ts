@@ -458,7 +458,7 @@ export class PluginManager {
   }
 
   private async packNpmPlugin(params: PluginInstallParams, onLog?: PluginInstallLogCallback): Promise<string> {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-plugin-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-plugin-'));
     const spec = params.version ? `${params.spec}@${params.version}` : params.spec;
     const npm = resolveNpmCommand();
     const args = [...npm.baseArgs, 'pack', spec, '--pack-destination', tmpDir];
@@ -491,7 +491,7 @@ export class PluginManager {
   }
 
   private async packGitPlugin(params: PluginInstallParams, onLog?: PluginInstallLogCallback): Promise<string> {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'swen-plugin-git-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-plugin-git-'));
     const sourceDir = path.join(tmpDir, 'source');
 
     const gitUrl = params.spec;
@@ -618,7 +618,7 @@ export class PluginManager {
 
   /**
    * Sync plugins from OpenClaw's extensions directories and config into the
-   * local SQLite store. Discovers plugins installed outside of Swen
+   * local SQLite store. Discovers plugins installed outside of Maties
    * (via AI conversation, CLI, or OpenClaw Web UI) and adds them so they
    * appear in the plugin management UI.
    */
@@ -868,9 +868,9 @@ const INTERNAL_PLUGIN_IDS = [
   'openrouter',
   'ollama',
   'lm-studio',
-  'swen-server',
+  'maties-server',
   'github-copilot',
-  'swen-copilot',
+  'maties-copilot',
   'lobster',
   'kimi',
 

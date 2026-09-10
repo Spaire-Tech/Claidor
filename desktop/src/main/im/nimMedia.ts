@@ -2,7 +2,7 @@
  * NIM Media Utilities
  * NIM media message handling: download, send, type inference, cleanup.
  *
- * Based on openclaw-nim/src/media.ts, adapted to the Swen Gateway architecture.
+ * Based on openclaw-nim/src/media.ts, adapted to the Maties Gateway architecture.
  */
 
 import { app } from 'electron';

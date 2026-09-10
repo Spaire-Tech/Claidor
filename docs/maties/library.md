@@ -1,10 +1,10 @@
 # The personal library
 
-September 10, 2026. Step 2 of `docs/swen/plan.md`. Registered before code.
+September 10, 2026. Step 2 of `docs/maties/plan.md`. Registered before code.
 
 ## What it is
 
-Swen knows every document on the person's computer and answers with the
+Maties knows every document on the person's computer and answers with the
 file and the page. The index is built on the machine with a small local
 embedding model and kept in the app's own database. Nothing leaves the
 machine to build it. At question time only the passages the task needs go
@@ -24,7 +24,7 @@ to the model, per the privacy sentence in the plan.
 
 ## How it works
 
-**Where the index lives.** In `swen.sqlite`, the app's single database,
+**Where the index lives.** In `maties.sqlite`, the app's single database,
 through `initializeLibraryTables` (`src/main/library/libraryMigrations.ts`)
 next to the artifact library tables that already exist. Three tables:
 `library_documents` (path key, size, modified time, content hash, kind,
@@ -113,7 +113,7 @@ returned, however short the list.
 
 **The measured run**, on this build machine, all on the CPU, from the
 guarded test `libraryContent.measured.test.ts`
-(`SWEN_LIBRARY_MEASURE=1`): 340 generated office files of every kind, 340
+(`MATIES_LIBRARY_MEASURE=1`): 340 generated office files of every kind, 340
 indexed, none failed, 713 passages, in under ten seconds, so a few
 thousand documents a minute; the index about 1.4 MB; the model loads in
 about a third of a second; a question takes ten to twenty milliseconds.

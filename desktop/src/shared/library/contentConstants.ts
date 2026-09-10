@@ -4,7 +4,7 @@
  *
  * The library is an index of the person's own documents, built on the
  * machine (extraction, chunking and a small local embedding model) and kept
- * in the app's own SQLite database. Design note: docs/swen/library.md.
+ * in the app's own SQLite database. Design note: docs/maties/library.md.
  *
  * Everything that crosses a process boundary is declared here so the pieces
  * agree without importing each other.

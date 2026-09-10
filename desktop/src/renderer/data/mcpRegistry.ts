@@ -8,7 +8,7 @@ import { McpRegistryEntry } from '../types/mcp';
  * here, so there is a single source of truth for names, descriptions and the
  * server list itself. This file only holds entries the server payload cannot
  * express, such as flows managed by the app, which `mergeMarketplaceRegistry`
- * re-inserts into whatever the server returns. Swen ships none: the upstream
+ * re-inserts into whatever the server returns. Maties ships none: the upstream
  * Qichacha (Chinese company data) bundle was removed.
  */
 export const mcpRegistry: McpRegistryEntry[] = [];

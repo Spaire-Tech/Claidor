@@ -42,12 +42,12 @@ describe('OpenClaw extension manifests', () => {
     expect(readPackageOpenClawExtensions('mcp-bridge')).toEqual(['./index.ts']);
     expect(readPackageOpenClawExtensions('ask-user-question')).toEqual(['./index.ts']);
     expect(readPackageOpenClawExtensions(LIBRARY_SEARCH_PLUGIN_ID)).toEqual(['./index.ts']);
-    expect(readPackageOpenClawExtensions('swen-model-compat')).toEqual(['./index.ts']);
+    expect(readPackageOpenClawExtensions('maties-model-compat')).toEqual(['./index.ts']);
   });
 
-  test('declares a strict allowlisted model-profile config for Swen compatibility', () => {
-    const manifest = readManifest('swen-model-compat');
-    expect(manifest.providers).toEqual(['swen-model-compat']);
+  test('declares a strict allowlisted model-profile config for Maties compatibility', () => {
+    const manifest = readManifest('maties-model-compat');
+    expect(manifest.providers).toEqual(['maties-model-compat']);
     expect(manifest.activation).toBeUndefined();
     expect(manifest.configSchema).toEqual({
       type: 'object',

@@ -173,10 +173,10 @@ import VoiceInputButton from './voiceInput/VoiceInputButton';
 import VoiceInputRecordingStatus from './voiceInput/VoiceInputRecordingStatus';
 import { getCoworkVoiceRecordingUiState } from './voiceInput/voiceInputUiState';
 
-// Swen ships without the upstream voice input (Youdao speech recognition)
+// Maties ships without the upstream voice input (Youdao speech recognition)
 // and without image or video generation. The code stays; the buttons do not.
-const SWEN_VOICE_INPUT_ENABLED: boolean = false;
-const SWEN_MEDIA_GENERATION_ENABLED: boolean = false;
+const MATIES_VOICE_INPUT_ENABLED: boolean = false;
+const MATIES_MEDIA_GENERATION_ENABLED: boolean = false;
 
 const logPromptModelSelection = (
   level: 'debug' | 'warn',
@@ -266,7 +266,7 @@ const SteerQueueIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({ className, ..
 );
 
 const getModelAnalyticsSource = (model: Model, selectorGroup: ModelSelectorChangeMeta['group']): string => {
-  if (model.isServerModel || model.providerKey === ProviderName.SwenServer || selectorGroup === ModelSelectorGroup.Server) {
+  if (model.isServerModel || model.providerKey === ProviderName.MatiesServer || selectorGroup === ModelSelectorGroup.Server) {
     return 'package';
   }
   return 'custom';
@@ -715,7 +715,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       return ModelAccessPromptKind.AgenticNotReady;
     }
     if (
-      effectiveSelectedModel?.providerKey === ProviderName.SwenServer
+      effectiveSelectedModel?.providerKey === ProviderName.MatiesServer
       && effectiveSelectedModel.accessible === false
     ) {
       return isLoggedIn ? ModelAccessPromptKind.Subscribe : ModelAccessPromptKind.Login;
@@ -2001,7 +2001,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     reportPromptControl('kit_toggle', {
       kitId,
       kitName: marketplaceKit ? resolveLocalizedText(marketplaceKit.name) : installedKit?.id ?? kitId,
-      kitSource: marketplaceKit ? 'swen-kits' : 'installed',
+      kitSource: marketplaceKit ? 'maties-kits' : 'installed',
       targetEnabled: willSelect,
       isInstalled: !!installedKit,
       skillCount: installedKit?.skills?.skillIds.length ?? marketplaceKit?.skills?.list.length,
@@ -2014,7 +2014,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
         action: LogReporterAction.ExpertKitSelected,
         kitId,
         kitName: marketplaceKit ? resolveLocalizedText(marketplaceKit.name) : undefined,
-        kitSource: marketplaceKit ? 'swen-kits' : 'installed',
+        kitSource: marketplaceKit ? 'maties-kits' : 'installed',
         isInstalled: !!installedKit,
         skillCount: installedKit?.skills?.skillIds.length ?? marketplaceKit?.skills?.list.length,
         mcpServerCount: installedKit?.mcpServers.length ?? marketplaceKit?.mcpServers?.length,
@@ -3128,7 +3128,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   ) : null;
 
   const renderVoiceInputButton = (buttonClassName: string, iconClassName: string) => (
-    !SWEN_VOICE_INPUT_ENABLED ? null : <VoiceInputButton
+    !MATIES_VOICE_INPUT_ENABLED ? null : <VoiceInputButton
       buttonClassName={buttonClassName}
       iconClassName={iconClassName}
       isLoggedIn={isLoggedIn}
@@ -3149,7 +3149,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const largeInputToolActions = (
     <div className={`flex items-center ${useLargeToolbarCompactLayout ? 'gap-0' : 'gap-0.5'}`}>
       {largeInputActions}
-      {SWEN_MEDIA_GENERATION_ENABLED && (
+      {MATIES_MEDIA_GENERATION_ENABLED && (
         <MediaModelPicker draftKey={draftKey} disabled={disabled || voiceInputLocksEditing} />
       )}
     </div>

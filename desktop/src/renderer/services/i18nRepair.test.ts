@@ -19,7 +19,7 @@ test('repair language application refreshes the splash hint without rewriting co
 
   i18nService.setLanguage('en', { persist: false });
 
-  expect(setItem).toHaveBeenCalledWith('swen-language', 'en');
+  expect(setItem).toHaveBeenCalledWith('maties-language', 'en');
 });
 
 test('a late older initialization cannot replace the newest locale result', async () => {
@@ -48,7 +48,7 @@ test('a late older initialization cannot replace the newest locale result', asyn
   resolveFirstLocale?.('en-US');
   await olderInitialization;
 
-  // Swen is English-only: every locale lookup resolves to 'en', and only the
+  // Maties is English-only: every locale lookup resolves to 'en', and only the
   // newest initialization may persist the result.
   expect(i18nService.getLanguage()).toBe('en');
   expect(updateConfig).toHaveBeenCalledTimes(1);
@@ -56,7 +56,7 @@ test('a late older initialization cannot replace the newest locale result', asyn
     language: 'en',
     language_initialized: true,
   });
-  expect(setItem).toHaveBeenLastCalledWith('swen-language', 'en');
+  expect(setItem).toHaveBeenLastCalledWith('maties-language', 'en');
 });
 
 test('repair language wins over a locale lookup that completes late', async () => {
@@ -84,5 +84,5 @@ test('repair language wins over a locale lookup that completes late', async () =
 
   expect(i18nService.getLanguage()).toBe('en');
   expect(updateConfig).not.toHaveBeenCalled();
-  expect(setItem).toHaveBeenLastCalledWith('swen-language', 'en');
+  expect(setItem).toHaveBeenLastCalledWith('maties-language', 'en');
 });

@@ -1,6 +1,6 @@
-# Swen in this repository
+# Maties in this repository
 
-This directory is Swen, Claidor's desktop assistant. It started as a
+This directory is Maties, Claidor's desktop assistant. It started as a
 vendored copy of LobsterAI (NetEase Youdao, MIT licence, `LICENSE` in
 this directory), the desktop app that runs the OpenClaw agent engine
 underneath a window. It was added with
@@ -8,12 +8,12 @@ underneath a window. It was added with
     git subtree add --prefix=desktop https://github.com/netease-youdao/LobsterAI.git main --squash
 
 from upstream commit `7592cd03` (version 2026.9.4, bundling OpenClaw
-v2026.6.1) on 9 September 2026, and then reshaped into Swen. Because the
+v2026.6.1) on 9 September 2026, and then reshaped into Maties. Because the
 reshaping touched hundreds of files, a later `git subtree pull` from
 upstream will conflict widely; treat upstream as a source of patches to
 port by hand, not as a branch to merge.
 
-## Where Swen talks to
+## Where Maties talks to
 
 Only Claidor's two hosts, and nowhere else:
 
@@ -27,19 +27,31 @@ Only Claidor's two hosts, and nowhere else:
   where the browser sign-in happens and where the account links open.
 
 Test mode (Settings → About, hidden switch) uses `http://127.0.0.1:8000`
-and `http://127.0.0.1:3000`. `SWEN_SERVER_BASE_URL` overrides the API
-address in development. The deep link scheme is `swen://` (sign-in
-fallback `swen://auth/callback?code=…`), the app id `com.claidor.swen`,
-the client header `X-Swen-Client-Version`.
+and `http://127.0.0.1:3000`. `MATIES_SERVER_BASE_URL` overrides the API
+address in development. The deep link scheme is `maties://` (sign-in
+fallback `maties://auth/callback?code=…`), the app id `com.claidor.maties`,
+the client header `X-Maties-Client-Version`.
 
 ## What changed from LobsterAI
 
-Identity: LobsterAI → Swen everywhere (`package.json`, `electron-builder.json`,
-copy, storage keys such as `swen-language`, `swen.sqlite`). The tray and
-app icons under `build/`, `resources/tray` and `public/logo.png` are
-generated placeholders (a letter S) until a designed icon exists. The MIT
-notices stay in `LICENSE`, in the source headers that carried them, and on
-the About screen.
+Identity: LobsterAI → Swen (September 9) → Maties (September 10, the
+founder's final name) everywhere: `package.json`, `electron-builder.json`
+(`com.claidor.maties`, deep link `maties://`), copy, storage keys such as
+`maties-language`, the database `maties.sqlite`, the user-data folder
+`Maties`, the session-key marker `maties`, the local extension
+`maties-model-compat` and its OpenClaw patch. No data migration was written
+for either rename: nothing had shipped. The MIT notices stay in `LICENSE`,
+in the source headers that carried them, and on the About screen.
+
+Logo: the founder's mark, one brush stroke like a wave. Until the original
+vector file is in the repository, `scripts/generate-maties-mark.cjs` writes
+a hand-traced `build/logo/maties-mark.svg` from a centre line, and
+`scripts/render-brand-assets.cjs` (Chromium through Playwright, no
+ImageMagick) renders from that SVG every raster the app ships: the PNG
+ladder under `build/icons/png`, `build/icons/mac/icon.icns`,
+`build/icons/win/icon.ico`, `public/logo.png` (the mark on a white rounded
+tile) and the menu-bar icons under `resources/tray` (the mark alone). To
+use the real logo, replace the SVG and run `npm run brand:render`.
 
 Language: English only. The Chinese dictionaries in
 `src/renderer/services/i18n.ts` and `src/main/i18n.ts` were deleted;
@@ -64,9 +76,9 @@ across the gateway manager; delete it when a channel round comes.
 Removed or switched off: image and video generation (the
 `lobster-media-generation` extension and the Seedance/Seedream skills are
 deleted; the media picker in the prompt bar is behind
-`SWEN_MEDIA_GENERATION_ENABLED = false`), Youdao Note, the DeepSeek
+`MATIES_MEDIA_GENERATION_ENABLED = false`), Youdao Note, the DeepSeek
 Harness (DSH) settings tab, voice input (Youdao speech recognition, behind
-`SWEN_VOICE_INPUT_ENABLED = false`; the main-process ASR code remains),
+`MATIES_VOICE_INPUT_ENABLED = false`; the main-process ASR code remains),
 credit campaigns and daily check-in (the server answers « no activity »),
 the Windows Computer Use kit (its runtime zip and bundle were downloaded
 from NetEase's CDN; `isComputerUseKitSupportedPlatform()` returns false
@@ -76,7 +88,7 @@ keeps nothing, and only when the person allows statistics in Settings),
 the MCP marketplace from Youdao (Claidor serves the fifteen-server
 catalogue from `server/polar/desktop/mcp_marketplace.json`),
 the Qichacha MCP bundle, the provider and API-key screens (the Model tab
-is now `SwenAccountSection`: sign in, usage this month, available models;
+is now `MatiesAccountSection`: sign in, usage this month, available models;
 the provider config is still saved and read by the engine sync, so an
 enterprise config or an old profile still works), the upstream docs,
 specs, Chinese README, and the upstream `.github` workflows.
@@ -98,7 +110,7 @@ CDN) have no entry point left in the UI; the model-provider registry in
 gateways keep their NetEase URLs. Delete these when a channel or engine
 round comes.
 
-Added, not from upstream: the personal library (`docs/swen/library.md`).
+Added, not from upstream: the personal library (`docs/maties/library.md`).
 An index of the person's documents built on the machine: the contract in
 `src/shared/library/contentConstants.ts`, the tables in
 `src/main/library/libraryMigrations.ts`, the store, indexer and document

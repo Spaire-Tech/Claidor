@@ -15,7 +15,7 @@ import {
  * One row per document, its passages, an FTS5 table for keywords and one
  * 384-number vector per passage. A question is answered by taking keyword
  * candidates from FTS5, scanning the vectors for the closest passages, and
- * blending the two scores (docs/swen/library.md).
+ * blending the two scores (docs/maties/library.md).
  */
 
 export const LibraryDocumentStatus = {
