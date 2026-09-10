@@ -224,7 +224,16 @@ exchange and refresh, profile, quota, model list, a metered proxy to
 Anthropic on Claidor's key) merged and live; the sign-in loop proven
 end to end against a local Claidor with screenshots.
 
-Not done: a real conversation through the built app (step 1 above); a
-signed Mac build (Apple enrolment is the founder's step); the update
-feed; the account page on the web app; a designed icon; everything from
-step 2 on.
+September 10: step 1 is proven. On the founder's Mac, from the unsigned
+installer, the founder signed in, asked questions, and Swen answered
+through Claidor, ran commands on the machine, found a full disk, and
+asked before deleting anything. Two lessons for later steps: the fresh
+engine asks « who am I to you, what should I be called », which is the
+cast and onboarding (steps 4 and 5); and an approval prompt must show
+the exact path and the exact command, so a person can decide without
+knowing Unix (step 8, the dial). Step 2, the library, is built and in
+the installer; the cited answer in the chat is still to be seen.
+
+Not done: a signed Mac build (Apple enrolment is the founder's step);
+the update feed; the account page on the web app; a designed icon;
+everything from step 3 on.
