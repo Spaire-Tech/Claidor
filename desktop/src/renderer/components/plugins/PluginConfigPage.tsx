@@ -103,31 +103,31 @@ export default function PluginConfigPage({ pluginId, onBack, initialConfig, onCo
         <button
           type="button"
           onClick={onBack}
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-raised transition-colors"
+          className="maties-icon-button"
         >
           <ArrowLeftIcon className="h-5 w-5" />
         </button>
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="maties-row-title text-[15.5px]">
             {i18nService.t('pluginsConfigTitle')}
           </h3>
-          <p className="text-sm text-muted-foreground">{pluginId}</p>
+          <p className="maties-mono maties-caption">{pluginId}</p>
         </div>
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="text-sm text-muted-foreground py-8 text-center">Loading...</div>
+        <div className="maties-subtitle py-8 text-center">Loading...</div>
       ) : error ? (
-        <div className="text-sm text-destructive bg-destructive/10 rounded-lg p-4">
+        <div className="maties-caption maties-status-wrong maties-raised-2 rounded-[12px] p-4">
           {error}
         </div>
       ) : !schema ? (
-        <div className="text-sm text-muted-foreground py-8 text-center">
+        <div className="maties-subtitle py-8 text-center">
           {i18nService.t('pluginsConfigNoSchema')}
         </div>
       ) : (
-        <div className="rounded-lg border border-border p-4">
+        <div className="maties-card-row px-5 py-4">
           <SchemaForm
             schema={schema.configSchema}
             hints={schema.uiHints as Record<string, import('../im/SchemaForm').UiHint>}

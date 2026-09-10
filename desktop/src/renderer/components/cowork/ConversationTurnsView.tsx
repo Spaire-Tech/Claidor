@@ -126,6 +126,9 @@ const ConversationTurnsView: React.FC<ConversationTurnsViewProps> = ({
                   mapDisplayText={mapDisplayText}
                   localServiceDirectory={localServiceDirectory}
                   onOpenLocalService={onOpenLocalService}
+                  onRetryTurn={readOnly || !onReEdit ? undefined : (retryTurn) => {
+                    if (retryTurn.userMessage) onReEdit(retryTurn.userMessage);
+                  }}
                   showActivityIndicator={showActivityIndicator}
                   showCopyButtons={!isStreaming || !isLastTurn}
                   isStreamingTurn={isStreaming && isLastTurn}

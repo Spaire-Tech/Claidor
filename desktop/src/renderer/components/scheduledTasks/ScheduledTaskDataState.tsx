@@ -1,4 +1,3 @@
-import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 
 import {
@@ -6,6 +5,9 @@ import {
   type ScheduledTaskDataStatus as ScheduledTaskDataStatusValue,
 } from '../../../scheduledTask/constants';
 import { i18nService } from '../../services/i18n';
+import EmptyState from '../design/EmptyState';
+import Pill, { PillTone } from '../design/Pill';
+import Shimmer from '../design/Shimmer';
 
 interface ScheduledTaskDataStateProps {
   status: ScheduledTaskDataStatusValue;
@@ -22,33 +24,28 @@ const ScheduledTaskDataState: React.FC<ScheduledTaskDataStateProps> = ({
 
   if (status === ScheduledTaskDataStatus.Error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <ExclamationTriangleIcon className="mb-3 h-8 w-8 text-red-500" />
-        <p className="text-sm font-medium text-foreground">
-          {i18nService.t('scheduledTasksLoadFailed')}
-        </p>
-        {error && <p className="mt-1 max-w-md text-xs text-secondary">{error}</p>}
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-4 inline-flex items-center gap-1.5 text-sm text-primary transition-colors hover:text-primary-hover"
-        >
-          <ArrowPathIcon className="h-4 w-4" />
-          {i18nService.t('scheduledTasksRetry')}
-        </button>
-      </div>
+      <EmptyState
+        sentence={i18nService.t('scheduledTasksLoadFailed')}
+        action={(
+          <Pill tone={PillTone.Primary} compact onClick={onRetry}>
+            {i18nService.t('matiesTryAgain')}
+          </Pill>
+        )}
+      >
+        {error && <p className="maties-caption mt-4 max-w-md">{error}</p>}
+      </EmptyState>
     );
   }
 
+  // Waiting is a shimmer across the words, never a spinner beside them.
   const label =
     status === ScheduledTaskDataStatus.Starting
       ? i18nService.t('scheduledTasksServiceStarting')
       : i18nService.t('scheduledTasksLoading');
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <ArrowPathIcon className="mb-3 h-6 w-6 animate-spin text-primary" />
-      <p className="text-sm text-secondary">{label}</p>
+    <div className="flex flex-col items-center justify-center py-16 text-center" role="status">
+      <Shimmer text={label} />
     </div>
   );
 };

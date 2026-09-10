@@ -1187,7 +1187,7 @@ const IMSettings: React.FC = () => {
     if (displayState === IMRuntimeDisplayState.Connecting || displayState === IMRuntimeDisplayState.Starting) return 'bg-sky-500';
     if (displayState === IMRuntimeDisplayState.Failed) return 'bg-red-500';
     if (displayState === IMRuntimeDisplayState.PendingSave) return 'bg-yellow-500';
-    return 'bg-gray-300 dark:bg-gray-600';
+    return 'bg-[#d9dbe0] dark:bg-[#3a3f48]';
   };
 
   const getPlatformStatusDotClass = (platform: Platform): string | null => {
@@ -1845,7 +1845,7 @@ const IMSettings: React.FC = () => {
         className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
           instance.enabled
             ? (connected ? 'bg-green-500' : 'bg-yellow-500')
-            : 'bg-gray-300 dark:bg-gray-600'
+            : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
         } ${canEnable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
         aria-label={instance.enabled ? i18nService.t('stop') : i18nService.t('start')}
       >
@@ -2117,7 +2117,7 @@ const IMSettings: React.FC = () => {
               {!isMultiInstancePlatform(platform) && (
                 <span
                   className={`ml-2 flex h-4 w-7 flex-shrink-0 items-center rounded-full transition-colors ${
-                    isEnabled ? getPlatformSwitchColorClass(platform) : 'bg-gray-300 dark:bg-gray-600'
+                    isEnabled ? getPlatformSwitchColorClass(platform) : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
                   } ${(!canToggle || togglingPlatform === platform) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                   onClick={(event) => {
                     event.stopPropagation();

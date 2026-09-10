@@ -71,11 +71,14 @@ import { usePublishingRecoveryExposureLifecycle } from '../artifacts/usePublishi
 import {
   MANAGEMENT_BODY_TEXT,
   MANAGEMENT_META_TEXT,
-  MANAGEMENT_PAGE_TITLE_TEXT,
   MANAGEMENT_TITLE_TEXT,
 } from '../common/managementTypography';
 import Modal from '../common/Modal';
 import { MessageCopyButton } from '../cowork/MessageActionButton';
+import DesignEmptyState from '../design/EmptyState';
+import Eyebrow from '../design/Eyebrow';
+import PageTitle from '../design/PageTitle';
+import Pill, { PillTone } from '../design/Pill';
 import Cog6ToothIcon from '../icons/Cog6ToothIcon';
 import EllipsisHorizontalIcon from '../icons/EllipsisHorizontalIcon';
 import SidebarToggleIcon from '../icons/SidebarToggleIcon';
@@ -256,21 +259,21 @@ const SitesTopBar: React.FC<{
   const isWindows = window.electron.platform === 'win32';
 
   return (
-    <div className="draggable flex h-12 shrink-0 items-center border-b border-border px-4">
+    <div className="draggable flex h-[54px] shrink-0 items-center px-4">
       <div className="flex h-8 items-center gap-3">
         {isSidebarCollapsed && !isWindows && (
           <div className={`non-draggable flex items-center gap-1 ${isMac ? 'pl-[68px]' : ''}`}>
             <button
               type="button"
               onClick={onToggleSidebar}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-raised"
+              aria-label={i18nService.t('expand')}
+              className="maties-icon-button"
             >
               <SidebarToggleIcon className="h-4 w-4" isCollapsed />
             </button>
             {updateBadge}
           </div>
         )}
-        <h1 className="text-lg font-semibold text-foreground">{i18nService.t('sitesTitle')}</h1>
       </div>
     </div>
   );
@@ -282,17 +285,7 @@ const EmptyState: React.FC<{
   allowCreate: boolean;
 }> = ({ onCreateSiteByChat, readOnly, allowCreate }) => {
   if (!allowCreate) {
-    return (
-      <div className="mx-auto mt-12 max-w-3xl rounded-xl border border-border bg-surface p-7 text-center">
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <GlobeAltIcon className="h-5 w-5" />
-        </div>
-        <h2 className="mt-3 text-sm font-semibold text-foreground">
-          {i18nService.t('sitesEmptyTitle')}
-        </h2>
-        <p className="mt-1 text-xs text-secondary">{i18nService.t('sitesSubtitle')}</p>
-      </div>
-    );
+    return <DesignEmptyState className="mt-4" sentence={i18nService.t('sitesEmptyTitle')} />;
   }
 
   const templates = [
@@ -302,30 +295,36 @@ const EmptyState: React.FC<{
     ['sitesTemplateSurvey', 'sitesTemplateSurveyDescription', 'sitesTemplateSurveyPrompt'],
   ];
   return (
-    <div className="mx-auto mt-12 max-w-3xl rounded-xl border border-border bg-surface p-7 text-center">
-      <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <GlobeAltIcon className="h-5 w-5" />
-      </div>
-      <h2 className="mt-3 text-sm font-semibold text-foreground">
-        {i18nService.t('sitesEmptyTitle')}
-      </h2>
-      <div className="mt-5 text-left">
-        <p className="mb-2 text-xs font-semibold text-foreground">
-          {i18nService.t('sitesCreateFromTemplate')}
-        </p>
-        <div className="grid grid-cols-2 gap-2">
+    <div className="mx-auto mt-2 max-w-3xl">
+      <DesignEmptyState
+        sentence={i18nService.t('sitesEmptySentence')}
+        action={(
+          <Pill
+            tone={PillTone.Primary}
+            compact
+            disabled={readOnly}
+            onClick={() => onCreateSiteByChat(i18nService.t('sitesCreatePrompt'))}
+          >
+            {i18nService.t('sitesCreate')}
+          </Pill>
+        )}
+        className="py-8"
+      />
+      <div className="text-left">
+        <Eyebrow className="mb-3 px-1">{i18nService.t('sitesCreateFromTemplate')}</Eyebrow>
+        <div className="grid grid-cols-2 gap-3">
           {templates.map(([title, description, prompt]) => (
             <button
               key={title}
               type="button"
               disabled={readOnly}
               onClick={() => onCreateSiteByChat(i18nService.t(prompt))}
-              className="rounded-lg border border-border bg-background px-3.5 py-2.5 text-left transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+              className="maties-card maties-card-interactive px-4 py-3.5 text-left disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className="block text-sm font-medium text-foreground">
+              <span className="maties-row-title block">
                 {i18nService.t(title)}
               </span>
-              <span className="mt-0.5 block text-xs leading-5 text-secondary">
+              <span className="maties-row-desc block">
                 {i18nService.t(description)}
               </span>
             </button>
@@ -1354,7 +1353,7 @@ const SitesView: React.FC<SitesViewProps> = ({
                   <GlobeAltIcon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className={`truncate ${MANAGEMENT_PAGE_TITLE_TEXT} font-semibold text-foreground`}>
+                  <h1 className="maties-page-title truncate">
                     {selectedSite.title}
                   </h1>
                   <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 ${MANAGEMENT_META_TEXT} leading-[var(--lobster-leading-xs)] text-secondary`}>
@@ -2197,9 +2196,9 @@ const SitesView: React.FC<SitesViewProps> = ({
       type="button"
       disabled={readOnly}
       onClick={() => onCreateSiteByChat(i18nService.t('sitesCreatePrompt'))}
-      className={`inline-flex shrink-0 items-center rounded-lg bg-primary font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40 ${compact ? 'h-8 gap-1 px-2.5 text-xs' : 'h-9 gap-1.5 px-3.5 text-sm shadow-sm'}`}
+      className={`maties-pill-sm is-primary shrink-0 ${compact ? '' : 'h-8'}`}
     >
-      <PlusIcon className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+      <PlusIcon className="h-3.5 w-3.5" />
       {i18nService.t(compact ? 'sitesCreateShort' : 'sitesCreate')}
     </button>
   );
@@ -2217,23 +2216,27 @@ const SitesView: React.FC<SitesViewProps> = ({
           />
         </div>
       )}
-      <header className="mx-auto w-full min-w-[720px] max-w-[840px] shrink-0 px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-secondary">{i18nService.t('sitesSubtitle')}</p>
-          {isUnfilteredEmpty && !embedded && createSiteButton(true)}
-        </div>
+      <header className="mx-auto w-full min-w-[720px] max-w-[840px] shrink-0">
+        {!embedded && (
+          <PageTitle
+            title={i18nService.t('sitesTitle')}
+            description={i18nService.t('sitesSubtitle')}
+            action={!isUnfilteredEmpty ? createSiteButton(false) : undefined}
+            className="px-6 pt-7"
+          />
+        )}
         {!isUnfilteredEmpty && (
-          <div className="mt-3 flex flex-nowrap items-center gap-2.5">
+          <div className={`flex flex-nowrap items-center gap-2.5 px-6 ${embedded ? 'pt-4' : 'pt-6'}`}>
             <div className="relative min-w-[280px] flex-1">
-              <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
+              <MagnifyingGlassIcon className="maties-input-icon-glyph h-4 w-4" />
               <input
                 value={keywordInput}
                 onChange={event => setKeywordInput(event.target.value)}
                 placeholder={i18nService.t('sitesSearchPlaceholder')}
-                className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-secondary focus:border-primary"
+                className="maties-input maties-input-icon"
               />
             </div>
-            <div className="flex h-9 rounded-lg border border-border bg-surface p-0.5">
+            <div className="flex items-center gap-1.5">
               {(
                 [
                   { value: undefined, key: 'sitesFilterAll' },
@@ -2249,7 +2252,7 @@ const SitesView: React.FC<SitesViewProps> = ({
                     setStatusFilter(option.value);
                   }}
                   aria-pressed={statusFilter === option.value}
-                  className={`rounded-md px-3 text-xs ${statusFilter === option.value ? 'bg-background font-medium text-foreground shadow-sm' : 'text-secondary hover:text-foreground'}`}
+                  className={`maties-pill-sm ${statusFilter === option.value ? 'is-selected' : ''}`}
                 >
                   {i18nService.t(option.key)}
                 </button>
@@ -2259,18 +2262,17 @@ const SitesView: React.FC<SitesViewProps> = ({
               type="button"
               aria-label={i18nService.t('refresh')}
               onClick={() => void loadSites()}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-secondary hover:bg-surface-raised hover:text-foreground"
+              className="maties-icon-button"
             >
               <ArrowPathIcon className={`h-4 w-4 ${listLoading ? 'animate-spin' : ''}`} />
             </button>
-            {!embedded && createSiteButton(true)}
           </div>
         )}
       </header>
       <main className="min-h-0 w-full min-w-[720px] flex-1 overflow-y-auto [scrollbar-gutter:stable]">
-        <div className="mx-auto w-full max-w-[840px] px-6 pb-6">
+        <div className="mx-auto w-full max-w-[840px] px-6 pb-8 pt-5">
           {listError && (
-            <div className="mb-3 flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-600">
+            <div className="maties-card-row maties-status-wrong mb-3 flex items-center justify-between px-4 py-2.5 text-[13px]">
               <span>{listError}</span>
               <button type="button" onClick={() => void loadSites()} className="font-medium">
                 {i18nService.t('retry')}
@@ -2289,36 +2291,29 @@ const SitesView: React.FC<SitesViewProps> = ({
               allowCreate={!embedded}
             />
           ) : listData.list.length === 0 ? (
-            <div className="flex h-56 flex-col items-center justify-center text-sm text-secondary">
-              <MagnifyingGlassIcon className="mb-3 h-8 w-8" />
-              {i18nService.t('sitesNoResults')}
-            </div>
+            <DesignEmptyState sentence={i18nService.t('sitesNoMatchSentence')} />
           ) : (
             <div>
-              <div className="flex items-center border-b border-border px-3 pb-2">
-                <h2 className="min-w-0 flex-1 text-xs font-medium text-secondary">
-                  {i18nService.t('sitesMySites')}
-                </h2>
-                <span className="w-[140px] shrink-0 px-3 text-xs text-secondary">
-                  {i18nService.t('sitesAccessMode')}
-                </span>
+              <div className="flex items-center px-4 pb-2">
+                <Eyebrow className="min-w-0 flex-1">{i18nService.t('sitesMySites')}</Eyebrow>
+                <Eyebrow className="w-[140px] shrink-0 px-3">{i18nService.t('sitesAccessMode')}</Eyebrow>
                 <span className="w-[116px] shrink-0" aria-hidden="true" />
               </div>
-              <div>
+              <div className="maties-card-row maties-divide overflow-hidden">
                 {listData.list.map(site => (
                   <div
                     key={site.shareId}
-                    className="group flex w-full items-center rounded-lg border-b border-border/70 text-left transition-colors last:border-b-0 hover:bg-surface-raised/40"
+                    className="maties-hover group flex w-full items-center text-left transition-colors"
                   >
                     <button
                       type="button"
                       onClick={() => void openSiteDetail(site)}
-                      className="flex min-w-0 flex-1 items-center gap-4 rounded-lg px-3 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30"
+                      className="flex min-w-0 flex-1 items-center gap-4 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0060d0]/30"
                     >
                       <SiteDefaultIcon />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="truncate text-sm font-semibold text-foreground">
+                          <h3 className="maties-row-title truncate">
                             {site.title}
                           </h3>
                           <SiteStatusBadge status={site.siteStatus} />

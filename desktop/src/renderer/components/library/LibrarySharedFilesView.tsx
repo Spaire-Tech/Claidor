@@ -117,7 +117,6 @@ import CardOverflowMenu, { type CardOverflowMenuItem } from '../common/CardOverf
 import {
   MANAGEMENT_BODY_TEXT,
   MANAGEMENT_META_TEXT,
-  MANAGEMENT_PAGE_TITLE_TEXT,
   MANAGEMENT_TITLE_TEXT,
 } from '../common/managementTypography';
 import FileTypeIcon from '../icons/fileTypes/FileTypeIcon';
@@ -1290,7 +1289,7 @@ const LibraryShareSettingsView: React.FC<{
             <FileTypeIcon fileName={getLibraryDisplayFileName(item)} className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className={`truncate ${MANAGEMENT_PAGE_TITLE_TEXT} font-semibold text-foreground`}>
+            <h1 className="maties-page-title truncate">
               {getLibraryDisplayFileName(item)}
             </h1>
             <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 ${MANAGEMENT_META_TEXT} leading-[var(--lobster-leading-xs)] text-secondary`}>

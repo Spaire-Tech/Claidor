@@ -8,7 +8,16 @@
       /* Pre-React splash: a static replica of EngineStartupOverlay so the whole
          startup (window shown -> renderer init -> engine starting) is one
          continuous screen. Replaced automatically when React mounts into #root.
-         Keep layout/metrics in sync with EngineStartupOverlay.tsx. */
+         Keep layout/metrics in sync with EngineStartupOverlay.tsx: the sphere
+         breathing at 48px and « Starting up » with the shimmer
+         (docs/maties/design.md, section 6). The fonts ship with the app. */
+      @font-face {
+        font-family: 'Instrument Sans';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/instrument-sans.woff2) format('woff2');
+      }
       .splash,
       .splash * {
         box-sizing: border-box;
@@ -20,15 +29,20 @@
         align-items: center;
         justify-content: center;
         background: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        letter-spacing: -0.008em;
       }
       html.dark .splash {
-        background: #1a1d27;
+        background: #141518;
       }
-      .splash-gradient {
+      .splash-wash {
         position: absolute;
         inset: 0;
-        background: linear-gradient(360deg, rgba(255, 0, 77, 0) 5.5%, rgba(255, 0, 77, 0.05) 100%);
+        background: radial-gradient(120% 120% at 100% 100%, #e2e4e9 0%, rgba(226, 228, 233, 0) 60%);
+        pointer-events: none;
+      }
+      html.dark .splash-wash {
+        display: none;
       }
       .splash-content {
         position: relative;
@@ -37,157 +51,133 @@
         flex-direction: column;
         align-items: center;
         padding: 0 24px;
+        text-align: center;
       }
-      .splash-logo-wrap {
+      /* The sphere, exactly as Sphere.tsx draws it at 48px. */
+      .splash-breathe {
+        display: inline-flex;
+        animation: splash-breathe 3.2s ease-in-out infinite;
+      }
+      .splash-sphere {
         position: relative;
-        margin-bottom: 20px;
+        display: inline-block;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow:
+          0 1px 2px rgba(24, 74, 68, 0.1),
+          0 10px 22px rgba(24, 74, 68, 0.18),
+          inset 0 -7px 12px rgba(14, 58, 54, 0.22),
+          inset 0 5px 10px rgba(255, 255, 255, 0.6),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.5);
       }
-      .splash-logo-glow {
+      .splash-sphere > span {
         position: absolute;
-        inset: -8px;
-        border-radius: 24px;
-        background: rgba(59, 130, 246, 0.2);
-        filter: blur(24px);
-        animation: splash-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        border-radius: 50%;
       }
-      .splash-logo {
-        position: relative;
-        display: block;
-        width: 72px;
-        height: 72px;
-        border-radius: 16px;
-        user-select: none;
-        -webkit-user-drag: none;
+      .splash-sphere-a {
+        inset: -40%;
+        background:
+          radial-gradient(44% 46% at 30% 24%, #f2f6d2 0%, rgba(242, 246, 210, 0) 60%),
+          radial-gradient(50% 52% at 74% 20%, #7fdcc6 0%, rgba(127, 220, 198, 0) 66%),
+          radial-gradient(54% 56% at 22% 76%, #a9de5c 0%, rgba(169, 222, 92, 0) 68%),
+          linear-gradient(160deg, #d8f0b4 0%, #6fcbb8 55%, #3aa0c4 100%);
+        filter: blur(5px);
+        animation: splash-sphere-a 7s linear infinite;
+      }
+      .splash-sphere-b {
+        inset: -34%;
+        opacity: 0.85;
+        background:
+          radial-gradient(40% 42% at 72% 74%, #2aa6c6 0%, rgba(42, 166, 198, 0) 64%),
+          radial-gradient(26% 26% at 56% 56%, #f2a45e 0%, rgba(242, 164, 94, 0) 58%),
+          radial-gradient(34% 36% at 20% 40%, #cfeeb0 0%, rgba(207, 238, 176, 0) 62%);
+        filter: blur(7px);
+        animation: splash-sphere-b 11s linear infinite;
+      }
+      .splash-sphere-c {
+        inset: -20%;
+        background:
+          radial-gradient(32% 34% at 50% 50%, #f6b26b 0%, rgba(246, 178, 107, 0) 62%),
+          radial-gradient(30% 32% at 24% 62%, #8ee06a 0%, rgba(142, 224, 106, 0) 64%);
+        filter: blur(6px);
+        animation: splash-sphere-c 9s ease-in-out infinite;
+      }
+      .splash-sphere-glint {
+        left: 16%;
+        top: 12%;
+        width: 34%;
+        height: 24%;
+        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+        filter: blur(1.5px);
+        animation: splash-sphere-glint 5.5s ease-in-out infinite;
+      }
+      .splash-sphere-base {
+        left: -10%;
+        bottom: -14%;
+        width: 70%;
+        height: 44%;
+        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+        filter: blur(3px);
       }
       .splash-title {
-        margin: 0 0 8px;
-        font-size: 24px;
-        line-height: 32px;
-        font-weight: 700;
-        color: #1a1d23;
-        text-align: center;
-      }
-      html.dark .splash-title {
-        color: #e4e5e9;
+        margin: 24px 0 0;
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: -0.006em;
+        background: linear-gradient(100deg, #c9ccd2 20%, #6b7280 42%, #c9ccd2 64%);
+        background-size: 220% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: splash-shimmer 1.8s linear infinite;
       }
       .splash-subtitle {
-        margin: 0 0 32px;
-        font-size: 14px;
-        line-height: 20px;
-        color: #6b7280;
-        text-align: center;
+        margin: 8px 0 0;
+        min-height: 18px;
+        font-size: 12.5px;
+        line-height: 1.45;
+        color: #8f96a0;
       }
-      html.dark .splash-subtitle {
-        color: #8b8fa3;
-      }
-      .splash-bar {
-        position: relative;
-        width: 100%;
-        height: 6px;
-        border-radius: 9999px;
-        background: rgba(59, 130, 246, 0.15);
-        overflow: hidden;
-      }
-      .splash-bar-shimmer {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(to right, transparent, #3b82f6, transparent);
-        animation: splash-shimmer 1.5s infinite;
-      }
-      .splash-bar-below {
-        width: 100%;
-        min-height: 16px;
-        margin-top: 6px;
-      }
-      .splash-tips {
-        width: 100%;
-        margin-top: 40px;
-        border: 1px solid rgba(224, 226, 231, 0.3);
-        border-radius: 12px;
-        background: rgba(240, 241, 244, 0.6);
-        padding: 12px 16px;
-      }
-      html.dark .splash-tips {
-        border-color: rgba(42, 46, 56, 0.3);
-        background: rgba(36, 40, 48, 0.6);
-      }
-      .splash-tips-label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 4px;
-        font-size: 12px;
-        line-height: 16px;
-        font-weight: 500;
-        color: #3b82f6;
-      }
-      .splash-tips-label svg {
-        width: 14px;
-        height: 14px;
-        flex-shrink: 0;
-      }
-      .splash-tip-text {
-        margin: 0;
-        min-height: 40px;
-        font-size: 14px;
-        line-height: 1.625;
-        color: #6b7280;
-      }
-      html.dark .splash-tip-text {
-        color: #8b8fa3;
-      }
-      .splash-tip-dots {
-        display: flex;
-        justify-content: center;
-        gap: 6px;
-        margin-top: 8px;
-      }
-      .splash-dot {
-        position: relative;
-        width: 4px;
-        height: 4px;
-        border-radius: 9999px;
-        background: rgba(59, 130, 246, 0.25);
-        border: 0;
-        padding: 0;
-        margin: 0;
-        cursor: pointer;
-        transition: all 0.3s;
-        -webkit-appearance: none;
-        appearance: none;
-      }
-      /* enlarged hit area, same as the React overlay's after:-inset-* */
-      .splash-dot::after {
-        content: '';
-        position: absolute;
-        top: -6px;
-        bottom: -6px;
-        left: -2px;
-        right: -2px;
-      }
-      .splash-dot:hover {
-        background: rgba(59, 130, 246, 0.5);
-      }
-      .splash-dot-active,
-      .splash-dot-active:hover {
-        width: 12px;
-        background: #3b82f6;
-      }
-      @keyframes splash-pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.5;
-        }
+      @keyframes splash-breathe {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.06); }
       }
       @keyframes splash-shimmer {
-        0% {
-          transform: translateX(-100%);
+        0% { background-position: 120% 0; }
+        100% { background-position: -40% 0; }
+      }
+      @keyframes splash-sphere-a {
+        0% { transform: rotate(0deg) translate(9%, -6%) scale(1.2); }
+        33% { transform: rotate(120deg) translate(-7%, 8%) scale(1.4); }
+        66% { transform: rotate(240deg) translate(6%, 9%) scale(1.15); }
+        100% { transform: rotate(360deg) translate(9%, -6%) scale(1.2); }
+      }
+      @keyframes splash-sphere-b {
+        0% { transform: rotate(0deg) translate(-8%, 7%) scale(1.35); }
+        50% { transform: rotate(-180deg) translate(10%, -8%) scale(1.1); }
+        100% { transform: rotate(-360deg) translate(-8%, 7%) scale(1.35); }
+      }
+      @keyframes splash-sphere-c {
+        0% { transform: translate(-14%, 10%) scale(1); opacity: 0.55; }
+        50% { transform: translate(12%, -12%) scale(1.3); opacity: 0.9; }
+        100% { transform: translate(-14%, 10%) scale(1); opacity: 0.55; }
+      }
+      @keyframes splash-sphere-glint {
+        0%, 100% { opacity: 0.7; transform: translate(0, 0) scale(1); }
+        50% { opacity: 1; transform: translate(9%, 6%) scale(1.14); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .splash-breathe,
+        .splash-sphere > span {
+          animation: none;
         }
-        100% {
-          transform: translateX(100%);
+        .splash-title {
+          animation: none;
+          background: none;
+          color: #6b7280;
+          -webkit-text-fill-color: initial;
         }
       }
     </style>
@@ -201,7 +191,7 @@
             appearance = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }
           document.documentElement.classList.add(appearance);
-          document.documentElement.style.backgroundColor = appearance === 'dark' ? '#0F1117' : '#F8F9FB';
+          document.documentElement.style.backgroundColor = appearance === 'dark' ? '#141518' : '#ffffff';
         } catch (e) {
           console.error('Error applying theme early:', e);
         }
@@ -211,85 +201,23 @@
   <body>
     <div id="root">
       <div class="splash" role="status">
-        <div class="splash-gradient"></div>
+        <div class="splash-wash"></div>
         <div class="splash-content">
-          <div class="splash-logo-wrap">
-            <div class="splash-logo-glow"></div>
-            <img class="splash-logo" src="logo.png" alt="Maties" width="72" height="72" draggable="false" />
-          </div>
-          <h1 class="splash-title" id="splash-title">Starting AI engine</h1>
-          <p class="splash-subtitle" id="splash-subtitle">Loading...</p>
-          <div class="splash-bar"><div class="splash-bar-shimmer"></div></div>
-          <div class="splash-bar-below"></div>
-          <div class="splash-tips">
-            <div class="splash-tips-label">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-              </svg>
-              <span id="splash-tips-label">Tip</span>
-            </div>
-            <p class="splash-tip-text" id="splash-tip-text"></p>
-            <div class="splash-tip-dots" id="splash-tip-dots"></div>
-          </div>
+          <span class="splash-breathe" aria-hidden="true">
+            <span class="splash-sphere">
+              <span class="splash-sphere-a"></span>
+              <span class="splash-sphere-b"></span>
+              <span class="splash-sphere-c"></span>
+              <span class="splash-sphere-glint"></span>
+              <span class="splash-sphere-base"></span>
+            </span>
+          </span>
+          <!-- Keep the texts in sync with matiesStartingUp in src/renderer/services/i18n.ts. -->
+          <p class="splash-title">Starting up</p>
+          <p class="splash-subtitle"></p>
         </div>
       </div>
     </div>
-    <script>
-      // Fill the splash screen and pick the first tip. Maties is English-only.
-      // Keep the texts in sync with engineStarting* / loading in src/renderer/services/i18n.ts.
-      (function () {
-        try {
-          var t = {
-            title: 'Starting AI engine',
-            subtitle: 'Loading...',
-            label: 'Tip',
-            tips: [
-              'Ask AI for HTML, SVG, or Mermaid diagrams — the side panel previews them live',
-              'Enable Word, Excel, and PPT skills in Skills, and AI can generate office documents for you',
-              'Use Scheduled Tasks to have AI run routine work automatically at fixed times',
-              'Connect Telegram, Discord or email to reach AI from your messaging apps',
-              'Tell AI to "remember..." and it saves key facts to long-term memory for future chats',
-              'AI asks for your approval before sensitive operations, so you stay in control'
-            ]
-          };
-          document.getElementById('splash-title').textContent = t.title;
-          document.getElementById('splash-subtitle').textContent = t.subtitle;
-          document.getElementById('splash-tips-label').textContent = t.label;
-
-          var tipText = document.getElementById('splash-tip-text');
-          var dots = document.getElementById('splash-tip-dots');
-          var dotButtons = [];
-
-          // EngineStartupOverlay on the React side reads this value and continues from the same tip.
-          function selectTip(idx) {
-            tipText.textContent = t.tips[idx];
-            for (var j = 0; j < dotButtons.length; j++) {
-              dotButtons[j].className = j === idx ? 'splash-dot splash-dot-active' : 'splash-dot';
-            }
-            try {
-              sessionStorage.setItem('lobster-splash-tip-index', String(idx));
-            } catch (e) {
-              /* storage unavailable */
-            }
-          }
-
-          for (var i = 0; i < t.tips.length; i++) {
-            var dot = document.createElement('button');
-            dot.type = 'button';
-            dot.className = 'splash-dot';
-            dot.setAttribute('aria-label', t.label + ' ' + (i + 1));
-            dot.addEventListener('click', selectTip.bind(null, i));
-            dots.appendChild(dot);
-            dotButtons.push(dot);
-          }
-
-          // Always start from the first tip so the reading order is the same on every launch.
-          selectTip(0);
-        } catch (e) {
-          /* keep the default texts */
-        }
-      })();
-    </script>
     <script type="module" src="/src/renderer/main.tsx"></script>
   </body>
 </html>

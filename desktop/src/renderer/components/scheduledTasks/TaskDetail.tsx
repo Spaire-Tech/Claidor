@@ -202,7 +202,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRequestDelete }) => {
   const showErrorBanner = Boolean(task.state.lastError && lastStatus === TaskStatus.Error);
   const showConsecutiveWarning = task.state.consecutiveErrors >= 2;
 
-  const sectionClass = 'rounded-xl border border-border bg-surface p-4';
+  const sectionClass = 'maties-card-row p-5';
   const sectionTitleClass = 'text-sm font-semibold text-foreground mb-3';
   const labelClass = 'text-xs text-secondary mb-0.5';
   const valueClass = 'text-sm text-foreground';

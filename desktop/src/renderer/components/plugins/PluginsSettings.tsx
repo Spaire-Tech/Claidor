@@ -446,23 +446,23 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="plugins-unsaved-title"
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/35 px-4"
+      className="maties-backdrop fixed inset-0 z-[9999] flex items-center justify-center px-4"
     >
-      <div className="w-full max-w-sm rounded-2xl bg-background border border-border shadow-modal p-5">
-        <h4 id="plugins-unsaved-title" className="text-sm font-semibold text-foreground mb-2">
+      <div className="maties-card-prose maties-in w-full max-w-sm p-6">
+        <h4 id="plugins-unsaved-title" className="maties-row-title mb-2 text-[15.5px]">
           {i18nService.t('pluginsUnsavedTitle')}
         </h4>
-        <p className="text-sm text-secondary mb-4">
+        <p className="maties-row-desc mb-5">
           {i18nService.t('pluginsUnsavedMessage')}
         </p>
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={() => {
               setShowUnsavedConfirm(false);
               pendingLeaveActionRef.current = null;
             }}
-            className="px-4 py-2 text-sm font-medium rounded-lg text-secondary hover:bg-surface-raised transition-colors"
+            className="maties-pill-sm is-ghost"
           >
             {i18nService.t('pluginsUnsavedStay')}
           </button>
@@ -477,7 +477,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
               pendingLeaveActionRef.current = null;
               action?.();
             }}
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
+            className="maties-pill-sm is-primary"
           >
             {i18nService.t('pluginsUnsavedDiscard')}
           </button>
@@ -506,8 +506,8 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
     <div className="space-y-6 px-1">
       {/* Syncing overlay */}
       {syncing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border border-border rounded-xl shadow-lg p-6 flex items-center gap-3">
+        <div className="maties-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="maties-card-prose maties-in flex items-center gap-3 p-6">
             <ArrowPathIcon className="h-5 w-5 animate-spin text-primary" />
             <span className="text-sm text-foreground">{i18nService.t('pluginsSyncing')}</span>
           </div>
@@ -516,34 +516,34 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
       {/* Detect confirmation dialog (auto-detect on page open) */}
       {detectedPlugins !== null && detectedPlugins.length > 0 && !syncing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border border-border rounded-xl shadow-lg w-full max-w-md p-6">
-            <h3 className="text-base font-semibold text-foreground mb-2">
+        <div className="maties-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="maties-card-prose maties-in w-full max-w-md p-6">
+            <h3 className="maties-row-title mb-2 text-[15.5px]">
               {i18nService.t('pluginsSyncTitle')}
             </h3>
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="maties-subtitle mb-3">
               {i18nService.t('pluginsSyncFound').replace('{count}', String(detectedPlugins.length))}
             </p>
-            <div className="mb-4 max-h-32 overflow-y-auto rounded-md border border-border bg-surface-raised p-2">
+            <div className="maties-mono-box mb-4 max-h-32">
               {detectedPlugins.map(id => (
                 <div key={id} className="text-xs text-foreground py-0.5 font-mono">{id}</div>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground mb-5">
+            <p className="maties-caption mb-5">
               {i18nService.t('pluginsSyncLater')}
             </p>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setDetectedPlugins(null)}
-                className="px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-surface-raised transition-colors"
+                className="maties-pill-sm is-ghost"
               >
                 {i18nService.t('pluginsSyncSkip')}
               </button>
               <button
                 type="button"
                 onClick={runSync}
-                className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="maties-pill-sm is-primary"
               >
                 {i18nService.t('pluginsSyncNow')}
               </button>
@@ -555,10 +555,10 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="maties-row-title text-[15.5px]">
             {i18nService.t('pluginsTitle')}
           </h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="maties-row-desc">
             {i18nService.t('pluginsDesc')}
           </p>
         </div>
@@ -567,7 +567,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
             type="button"
             onClick={handleCheckUpdates}
             disabled={checking}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-surface-raised transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="maties-pill-sm"
           >
             <ArrowPathIcon className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
             {checking ? i18nService.t('pluginsChecking') : i18nService.t('pluginsCheckUpdates')}
@@ -575,7 +575,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
           <button
             type="button"
             onClick={() => { setShowInstallModal(true); setInstallLog(''); setInstallError(null); setDiscoverResult(null); }}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="maties-pill-sm is-primary"
           >
             <PlusIcon className="h-4 w-4" />
             {i18nService.t('pluginsInstall')}
@@ -585,18 +585,18 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
       {/* Plugin List */}
       {loading ? (
-        <div className="text-sm text-muted-foreground py-8 text-center">Loading...</div>
+        <div className="maties-subtitle py-8 text-center">Loading...</div>
       ) : plugins.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-sm text-muted-foreground">{i18nService.t('pluginsEmpty')}</p>
-          <p className="text-xs text-muted-foreground mt-1">{i18nService.t('pluginsEmptyHint')}</p>
+          <p className="maties-subtitle">{i18nService.t('pluginsEmpty')}</p>
+          <p className="maties-caption mt-1">{i18nService.t('pluginsEmptyHint')}</p>
         </div>
       ) : (
         <div className="space-y-3">
           {plugins.map(plugin => (
             <div
               key={plugin.pluginId}
-              className="flex items-center justify-between rounded-lg border border-border p-4"
+              className="maties-card-row flex items-center justify-between px-5 py-4"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -609,7 +609,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                     {plugin.pluginId}
                   </span>
                   {plugin.version && (
-                    <span className="text-xs text-muted-foreground">v{plugin.version}</span>
+                    <span className="maties-caption">v{plugin.version}</span>
                   )}
                   {updateInfos.get(plugin.pluginId)?.hasUpdate && (
                     <span className="text-xs text-primary font-medium">
@@ -621,7 +621,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                   </span>
                 </div>
                 {plugin.description && (
-                  <p className="text-xs text-muted-foreground mt-1 ml-4">
+                  <p className="maties-caption mt-1 ml-4">
                     {plugin.description}
                   </p>
                 )}
@@ -665,7 +665,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                   className={`
                     relative inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full
                     transition-colors duration-200 ease-in-out focus:outline-none
-                    ${plugin.enabled ? 'bg-primary' : 'bg-border dark:bg-border'}
+                    ${plugin.enabled ? 'bg-[#0060d0]' : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'}
                   `}
                 >
                   <span
@@ -684,21 +684,21 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
       {/* Install Modal */}
       {showInstallModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="maties-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="plugins-install-title"
-            className="flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-border bg-background shadow-lg"
+            className="maties-card-prose maties-in flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden"
           >
             <div className="flex shrink-0 items-center justify-between gap-4 px-6 pt-6 pb-4">
-              <h3 id="plugins-install-title" className="text-base font-semibold text-foreground">
+              <h3 id="plugins-install-title" className="maties-row-title text-[15.5px]">
                 {i18nService.t('pluginsInstallTitle')}
               </h3>
               <button
                 type="button"
                 onClick={closeInstallModal}
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground"
+                className="maties-icon-button -mr-2"
                 title={i18nService.t('cancel')}
                 aria-label={i18nService.t('cancel')}
               >
@@ -709,7 +709,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4">
               {/* Source selector */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="maties-label mb-1.5 block">
                   {i18nService.t('pluginsSource')}
                 </label>
                 <div className="flex gap-1 flex-wrap">
@@ -718,11 +718,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                       key={src}
                       type="button"
                       onClick={() => setForm(f => ({ ...f, source: src, spec: '' }))}
-                      className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                        form.source === src
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-surface-raised text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`maties-pill-sm ${form.source === src ? 'is-selected' : ''}`}
                     >
                       {sourceLabel(src)}
                     </button>
@@ -735,38 +731,38 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                 {form.source === 'npm' && (
                   <>
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                      <label className="maties-label mb-1.5 block">
                         {i18nService.t('pluginsPackageName')}
                       </label>
                       <input
                         type="text"
                         value={form.spec}
                         onChange={e => setForm(f => ({ ...f, spec: e.target.value }))}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="maties-input maties-mono text-[13px]"
                         placeholder="e.g. nsp-clawguard"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                      <label className="maties-label mb-1.5 block">
                         {i18nService.t('pluginsVersion')}
                       </label>
                       <input
                         type="text"
                         value={form.version}
                         onChange={e => setForm(f => ({ ...f, version: e.target.value }))}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="maties-input maties-mono text-[13px]"
                         placeholder={i18nService.t('pluginsVersionPlaceholder')}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                      <label className="maties-label mb-1.5 block">
                         {i18nService.t('pluginsRegistry')}
                       </label>
                       <input
                         type="text"
                         value={form.registry}
                         onChange={e => setForm(f => ({ ...f, registry: e.target.value }))}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="maties-input maties-mono text-[13px]"
                         placeholder={i18nService.t('pluginsRegistryPlaceholder')}
                       />
                     </div>
@@ -775,14 +771,14 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
                 {form.source === 'clawhub' && (
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    <label className="maties-label mb-1.5 block">
                       {i18nService.t('pluginsPackageName')}
                     </label>
                     <input
                       type="text"
                       value={form.spec}
                       onChange={e => setForm(f => ({ ...f, spec: e.target.value }))}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="maties-input maties-mono text-[13px]"
                       placeholder="e.g. openclaw-codex-app-server"
                     />
                   </div>
@@ -791,26 +787,26 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                 {form.source === 'git' && (
                   <>
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                      <label className="maties-label mb-1.5 block">
                         {i18nService.t('pluginsGitUrl')}
                       </label>
                       <input
                         type="text"
                         value={form.spec}
                         onChange={e => setForm(f => ({ ...f, spec: e.target.value }))}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="maties-input maties-mono text-[13px]"
                         placeholder={i18nService.t('pluginsGitUrlPlaceholder')}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                      <label className="maties-label mb-1.5 block">
                         {i18nService.t('pluginsVersion')}
                       </label>
                       <input
                         type="text"
                         value={form.version}
                         onChange={e => setForm(f => ({ ...f, version: e.target.value }))}
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="maties-input maties-mono text-[13px]"
                         placeholder="tag / branch / commit"
                       />
                     </div>
@@ -819,14 +815,14 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
                 {form.source === 'local' && (
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    <label className="maties-label mb-1.5 block">
                       {i18nService.t('pluginsLocalPath')}
                     </label>
                     <input
                       type="text"
                       value={form.spec}
                       onChange={e => setForm(f => ({ ...f, spec: e.target.value }))}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="maties-input maties-mono text-[13px]"
                       placeholder="C:\\path\\to\\plugin or ./plugin.tgz"
                     />
                   </div>
@@ -834,14 +830,14 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
                 {form.source === 'openclaw' && (
                   <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <p className="maties-subtitle mb-3">
                       {i18nService.t('pluginsSyncDesc')}
                     </p>
                     <button
                       type="button"
                       onClick={handleDiscover}
                       disabled={syncing}
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="maties-pill-sm is-primary"
                     >
                       <ArrowPathIcon className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                       {syncing ? i18nService.t('pluginsSyncing') : i18nService.t('pluginsSyncButton')}
@@ -855,7 +851,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                             <p className="text-sm text-foreground mb-2">
                               {i18nService.t('pluginsSyncFound').replace('{count}', String(discoverResult.length))}
                             </p>
-                            <div className="mb-3 max-h-32 overflow-y-auto rounded-md border border-border bg-surface-raised p-2">
+                            <div className="maties-mono-box mb-3 max-h-32">
                               {discoverResult.map(id => (
                                 <div key={id} className="text-xs text-foreground py-0.5 font-mono">{id}</div>
                               ))}
@@ -864,7 +860,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                               <button
                                 type="button"
                                 onClick={() => setDiscoverResult(null)}
-                                className="px-3 py-1.5 text-xs rounded-md border border-border text-foreground hover:bg-surface-raised transition-colors"
+                                className="maties-pill-sm is-ghost"
                               >
                                 {i18nService.t('pluginsSyncSkip')}
                               </button>
@@ -875,14 +871,14 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                                   setDiscoverResult(null);
                                   runSync();
                                 }}
-                                className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                                className="maties-pill-sm is-primary"
                               >
                                 {i18nService.t('pluginsSyncNow')}
                               </button>
                             </div>
                           </>
                         ) : (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="maties-subtitle">
                             {i18nService.t('pluginsSyncNone')}
                           </p>
                         )}
@@ -896,7 +892,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
               {form.source !== 'openclaw' && (installing || installLog) && (
                 <pre
                   ref={logRef}
-                  className="mt-3 max-h-40 overflow-y-auto rounded-md border border-border bg-surface-raised p-2 font-mono text-xs text-muted-foreground whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                  className="maties-mono-box mt-3 max-h-40 whitespace-pre-wrap break-words text-[#6b7280] [overflow-wrap:anywhere]"
                 >
                   {installLog || 'Waiting...'}
                 </pre>
@@ -904,18 +900,18 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
               {/* Error */}
               {form.source !== 'openclaw' && installError && (
-                <div className="mt-3 max-h-44 overflow-y-auto rounded-md bg-destructive/10 p-2 text-xs text-destructive whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                <div className="maties-mono-box maties-status-wrong mt-3 max-h-44 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                   {installError}
                 </div>
               )}
             </div>
 
             {/* Actions */}
-            <div className="flex shrink-0 justify-end gap-2 border-t border-border px-6 py-4">
+            <div className="maties-hairline-top flex shrink-0 justify-end gap-2 px-6 py-4">
               <button
                 type="button"
                 onClick={closeInstallModal}
-                className="px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-surface-raised transition-colors"
+                className="maties-pill-sm is-ghost"
               >
                 {i18nService.t('cancel')}
               </button>
@@ -924,7 +920,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                   type="button"
                   onClick={handleInstall}
                   disabled={installing || !form.spec.trim()}
-                  className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="maties-pill-sm is-primary"
                 >
                   {installing ? i18nService.t('pluginsInstalling') : i18nService.t('pluginsInstall')}
                 </button>
@@ -936,12 +932,12 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
       {/* Uninstall Confirmation Modal */}
       {confirmUninstall && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border border-border rounded-xl shadow-lg w-full max-w-sm p-6">
-            <h3 className="text-base font-semibold text-foreground mb-2">
+        <div className="maties-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="maties-card-prose maties-in w-full max-w-sm p-6">
+            <h3 className="maties-row-title mb-2 text-[15.5px]">
               {i18nService.t('pluginsUninstallConfirm')}
             </h3>
-            <p className="text-sm text-muted-foreground mb-5">
+            <p className="maties-subtitle mb-5">
               {confirmUninstall}
             </p>
             <div className="flex justify-end gap-2">
@@ -949,7 +945,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                 type="button"
                 onClick={() => setConfirmUninstall(null)}
                 disabled={uninstalling}
-                className="px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-surface-raised transition-colors disabled:opacity-50"
+                className="maties-pill-sm is-ghost"
               >
                 {i18nService.t('cancel')}
               </button>
@@ -957,7 +953,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                 type="button"
                 onClick={() => handleUninstall(confirmUninstall)}
                 disabled={uninstalling}
-                className="px-4 py-2 text-sm rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="maties-pill-sm is-primary"
               >
                 {uninstalling ? i18nService.t('pluginsUninstalling') : i18nService.t('pluginsUninstall')}
               </button>
@@ -968,18 +964,18 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
 
       {/* Update Confirmation Modal */}
       {confirmUpdate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border border-border rounded-xl shadow-lg w-full max-w-md p-6">
-            <h3 className="text-base font-semibold text-foreground mb-2">
+        <div className="maties-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="maties-card-prose maties-in w-full max-w-md p-6">
+            <h3 className="maties-row-title mb-2 text-[15.5px]">
               {i18nService.t('pluginsUpdateConfirm')}
             </h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="maties-subtitle mb-4">
               {confirmUpdate.pluginId}: v{confirmUpdate.currentVersion || '?'} → v{confirmUpdate.latestVersion}
             </p>
             {updateLog && (
               <pre
                 ref={updateLogRef}
-                className="text-xs font-mono bg-surface-raised border border-border rounded-md p-2 max-h-40 overflow-y-auto mb-4 whitespace-pre-wrap"
+                className="maties-mono-box mb-4 max-h-40 whitespace-pre-wrap"
               >
                 {updateLog}
               </pre>
@@ -989,7 +985,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                 type="button"
                 onClick={() => { setConfirmUpdate(null); setUpdateLog(''); }}
                 disabled={updating}
-                className="px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-surface-raised transition-colors disabled:opacity-50"
+                className="maties-pill-sm is-ghost"
               >
                 {i18nService.t('cancel')}
               </button>
@@ -997,7 +993,7 @@ export default function PluginsSettings({ handleRef }: PluginsSettingsProps) {
                 type="button"
                 onClick={() => handleUpdate(confirmUpdate.pluginId)}
                 disabled={updating}
-                className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="maties-pill-sm is-primary"
               >
                 {updating ? i18nService.t('pluginsUpdating') : i18nService.t('pluginsUpdate')}
               </button>

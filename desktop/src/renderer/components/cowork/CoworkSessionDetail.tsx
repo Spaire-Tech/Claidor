@@ -140,10 +140,10 @@ import {
   getAutoPreviewOpenTarget,
   selectAutoPreviewArtifact,
 } from '../artifacts/autoPreviewPolicy';
-import ComposeIcon from '../icons/ComposeIcon';
+import IconButton from '../design/IconButton';
+import { PencilLineIcon, SearchLineIcon, ShareLineIcon, SidebarLineIcon } from '../design/LineIcons';
 import FileTypeIcon from '../icons/fileTypes/FileTypeIcon';
-import SidebarSearchIcon from '../icons/SidebarSearchIcon';
-import SidebarToggleIcon from '../icons/SidebarToggleIcon';
+import MessageForkIcon from '../icons/MessageForkIcon';
 import SubagentIcon from '../icons/SubagentIcon';
 import MarkdownContent from '../MarkdownContent';
 import { type ToastEventDetail } from '../Toast';
@@ -1854,6 +1854,30 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
       forkedFromMessageId: messageId,
     });
   }, [currentSession?.id, currentSession?.status, isStreaming]);
+
+  // The top bar's fork: the whole conversation, with the same guard as a
+  // fork from a message.
+  const handleForkSession = useCallback(() => {
+    if (!currentSession?.id) return;
+    if (isStreaming || currentSession.status === CoworkSessionStatusValue.Running) {
+      window.dispatchEvent(new CustomEvent('app:showToast', {
+        detail: i18nService.t('coworkForkRunningBlocked'),
+      }));
+      console.warn('[CoworkFork] session fork was rejected because the session is still running');
+      return;
+    }
+    console.log(`[CoworkFork] requesting a fork of session ${currentSession.id} from the top bar`);
+    void coworkService.forkSession({ sessionId: currentSession.id });
+  }, [currentSession?.id, currentSession?.status, isStreaming]);
+
+  // The top bar's share: the same event the sidebar row sends, handled above.
+  const handleOpenShareFromHeader = useCallback(() => {
+    if (!currentSession?.id) return;
+    window.dispatchEvent(new CustomEvent<CoworkOpenShareOptionsEventDetail>(
+      CoworkUiEvent.OpenShareOptions,
+      { detail: { sessionId: currentSession.id } },
+    ));
+  }, [currentSession?.id]);
 
   const handleConfirmPlan = useCallback(async (messageId: string) => {
     if (!currentSession?.id || !latestProposedPlan || latestProposedPlan.messageId !== messageId) return;
@@ -6003,6 +6027,9 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
                 onDeployLocalService={handleDeployLocalServiceArtifact}
                 onOpenHtmlFile={handleOpenHtmlFileInBrowser}
                 onForkMessage={remoteManaged ? undefined : handleForkMessage}
+                onRetryTurn={remoteManaged ? undefined : (retryTurn) => {
+                  if (retryTurn.userMessage) handleReEdit(retryTurn.userMessage);
+                }}
                 renderToolGroupOverride={(group) => {
                   const groupSubagents = getToolGroupSubagents(group);
                   if (groupSubagents.length === 0) return null;
@@ -6041,38 +6068,44 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   return (
     <ArtifactFileShareProvider sessionId={currentSession.id}>
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-      {/* Header — spans full width */}
+      {/* The top bar (docs/maties/design.md, section 3): 54 px, no background,
+          no border; the sidebar toggle at the left, the title centred, share,
+          search and fork at the right. On Windows the window controls sit in
+          their own bar above; on macOS the traffic lights need room when the
+          sidebar is shut, as in CoworkView. */}
       <div
         data-skin-session-titlebar="true"
-        className={`draggable relative z-30 flex h-12 shrink-0 items-center justify-between overflow-visible border-b border-border bg-background ${
-          isArtifactPanelExpanded ? 'pl-0 pr-4' : 'px-4'
+        className={`draggable relative z-30 flex h-[54px] shrink-0 items-center gap-3 overflow-visible ${
+          isArtifactPanelExpanded ? 'pl-0 pr-[22px]' : 'px-[22px]'
         }`}
       >
-        {/* Left side: Toggle buttons (when collapsed) + Title */}
-        <div className="flex h-full flex-1 items-center gap-2 min-w-0">
-          {isSidebarCollapsed && !isWindows && (
-            <div className={`non-draggable flex items-center gap-1 ${isMac ? 'pl-[68px]' : ''}`}>
-              <button
-                type="button"
-                onClick={onToggleSidebar}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-              >
-                <SidebarToggleIcon className="h-4 w-4" isCollapsed={true} />
-              </button>
-              <button
-                type="button"
-                onClick={onNewChat}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-              >
-                <ComposeIcon className="h-4 w-4" />
-              </button>
-              {updateBadge}
-            </div>
+        <div className={`non-draggable flex shrink-0 items-center gap-1 ${isSidebarCollapsed && isMac ? 'pl-[68px]' : ''}`}>
+          {!isWindows && (
+            <IconButton
+              label={isSidebarCollapsed ? i18nService.t('expand') : i18nService.t('collapse')}
+              onClick={onToggleSidebar}
+              className="text-[#4a4f57]"
+            >
+              <SidebarLineIcon />
+            </IconButton>
           )}
-          <h1 className="text-sm leading-5 font-medium text-foreground truncate max-w-[360px]">
-            {getSessionTitleForDisplay(currentSession.title) || i18nService.t('coworkNewSession')}
-          </h1>
+          {isSidebarCollapsed && !isWindows && onNewChat && (
+            <IconButton
+              label={i18nService.t('coworkNewSession')}
+              onClick={onNewChat}
+              className="text-[#4a4f57]"
+            >
+              <PencilLineIcon />
+            </IconButton>
+          )}
+          {isSidebarCollapsed && updateBadge}
         </div>
+        <h1
+          className="min-w-0 flex-1 truncate text-center text-[14.5px] font-normal leading-5 tracking-[-.008em] text-[#31353b]"
+          title={getSessionTitleForDisplay(currentSession.title) || i18nService.t('coworkNewSession')}
+        >
+          {getSessionTitleForDisplay(currentSession.title) || i18nService.t('coworkNewSession')}
+        </h1>
 
         {isConversationSearchOpen ? (
           <CoworkConversationSearch
@@ -6088,13 +6121,13 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             onClose={closeConversationSearch}
           />
         ) : (
-          /* Right side: Artifact toggle */
+          /* Right side: the panel's tabs, then share, search, fork, the panel toggle */
           <div
           className={`flex h-full shrink-0 items-center gap-1 ${
             isArtifactPanelVisible
               ? isArtifactPanelExpanded
-                ? '-mr-4 pr-4'
-                : '-mr-4 border-l border-border pr-4'
+                ? '-mr-[22px] pr-[22px]'
+                : '-mr-[22px] border-l border-border pr-[22px]'
               : ''
           }`}
           style={artifactHeaderWidth !== undefined ? { width: artifactHeaderWidth } : undefined}
@@ -6410,15 +6443,33 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
               )}
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleOpenConversationSearch}
-            className="non-draggable relative h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-            aria-label={i18nService.t('coworkConversationSearchOpen')}
-            title={i18nService.t('coworkConversationSearchOpen')}
-          >
-            <SidebarSearchIcon className="h-[18px] w-[18px]" />
-          </button>
+          <span className="non-draggable flex items-center gap-1">
+            <IconButton
+              label={i18nService.t('coworkShareSession')}
+              title={currentSession.messages.length === 0 ? i18nService.t('coworkNothingToShareYet') : i18nService.t('coworkShareSession')}
+              disabled={currentSession.messages.length === 0}
+              onClick={handleOpenShareFromHeader}
+              className="text-[#4a4f57]"
+            >
+              <ShareLineIcon />
+            </IconButton>
+            <IconButton
+              label={i18nService.t('coworkConversationSearchOpen')}
+              onClick={handleOpenConversationSearch}
+              className="text-[#4a4f57]"
+            >
+              <SearchLineIcon size={18} />
+            </IconButton>
+            {!remoteManaged && (
+              <IconButton
+                label={i18nService.t('coworkForkSession')}
+                onClick={handleForkSession}
+                className="text-[#4a4f57]"
+              >
+                <MessageForkIcon className="h-[17px] w-[17px]" />
+              </IconButton>
+            )}
+          </span>
           <button
             type="button"
             onClick={handleToggleArtifactPanel}

@@ -1,0 +1,188 @@
+/*
+ * Maties design primitives (docs/maties/design.md).
+ *
+ * Keyframes shared by the sphere, the shimmer, the stream and the way
+ * things appear. Every animation collapses to a plain appearance when the
+ * person asks for reduced motion.
+ */
+
+/* Things appearing: 5px up and a fade. */
+@keyframes maties-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Waiting: a grey gradient swept through the words, never a spinner beside them. */
+@keyframes maties-shimmer {
+  0% { background-position: 120% 0; }
+  100% { background-position: -40% 0; }
+}
+
+/* A step in progress: the green ring turning. */
+@keyframes maties-ring {
+  to { transform: rotate(360deg); }
+}
+
+/* A skeleton waiting to become a result. */
+@keyframes maties-fade {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; }
+}
+
+/*
+ * One word of the answer arriving. The founder asked for « a stream of
+ * fading in »: each word comes up out of a blur rather than snapping on.
+ * Kept short because a slow fade on every word reads as lag.
+ */
+@keyframes maties-word-in {
+  from { opacity: 0; filter: blur(4px); transform: translateY(2px); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+
+/* The sphere: three blurred gradient layers turning at different speeds, and a glint. */
+@keyframes maties-sphere-a {
+  0% { transform: rotate(0deg) translate(9%, -6%) scale(1.2); }
+  33% { transform: rotate(120deg) translate(-7%, 8%) scale(1.4); }
+  66% { transform: rotate(240deg) translate(6%, 9%) scale(1.15); }
+  100% { transform: rotate(360deg) translate(9%, -6%) scale(1.2); }
+}
+@keyframes maties-sphere-b {
+  0% { transform: rotate(0deg) translate(-8%, 7%) scale(1.35); }
+  50% { transform: rotate(-180deg) translate(10%, -8%) scale(1.1); }
+  100% { transform: rotate(-360deg) translate(-8%, 7%) scale(1.35); }
+}
+@keyframes maties-sphere-c {
+  0% { transform: translate(-14%, 10%) scale(1); opacity: .55; }
+  50% { transform: translate(12%, -12%) scale(1.3); opacity: .9; }
+  100% { transform: translate(-14%, 10%) scale(1); opacity: .55; }
+}
+@keyframes maties-sphere-glint {
+  0%, 100% { opacity: .7; transform: translate(0, 0) scale(1); }
+  50% { opacity: 1; transform: translate(9%, 6%) scale(1.14); }
+}
+
+.maties-in { animation: maties-in .22s ease both; }
+.maties-in-fast { animation: maties-in .14s ease both; }
+.maties-in-slow { animation: maties-in .4s ease both; }
+
+.maties-shimmer {
+  background: linear-gradient(100deg, #c9ccd2 20%, #6b7280 42%, #c9ccd2 64%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: maties-shimmer 1.8s linear infinite;
+}
+
+.maties-ring {
+  border-radius: 50%;
+  border: 1.8px solid rgba(31, 138, 76, .16);
+  border-top-color: #1f8a4c;
+  animation: maties-ring 1s linear infinite;
+}
+
+.maties-skeleton {
+  background: #f1f2f4;
+  animation: maties-fade 1.6s ease-in-out infinite;
+}
+
+/* A word revealed by the stream animates once, when it mounts; a finished answer is still. */
+.maties-stream-live .maties-word { animation: maties-word-in .34s ease both; }
+
+/* The assistant's prose. */
+.maties-prose {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 17.5px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: #2f333b;
+  max-width: 74ch;
+  text-wrap: pretty;
+}
+
+.maties-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  letter-spacing: 0;
+}
+
+/* A menu: blurred white, radius 13, the founder's shadow, appearing with pcIn .14s. */
+.maties-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .96);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .19), 0 0 0 .5px rgba(0, 0, 0, .08);
+  animation: maties-in .14s ease both;
+}
+
+.maties-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14.5px;
+  letter-spacing: -.008em;
+  color: #15171b;
+  cursor: pointer;
+  padding: 9px 11px;
+}
+.maties-menu-item:hover,
+.maties-menu-item:focus-visible { background: rgba(16, 20, 28, .06); outline: none; }
+.maties-menu-item:disabled { cursor: default; opacity: .45; }
+.maties-menu-item:disabled:hover { background: transparent; }
+.maties-menu-item[data-danger='true'] { color: #e0322d; }
+
+.maties-menu-divider {
+  height: 1px;
+  background: #ecebe8;
+  margin: 5px 8px;
+}
+
+/* The mono pill that holds a shortcut (« ⌘K »). */
+.maties-kbd {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0;
+  color: #a2a29c;
+  background: #f2f2f0;
+  border-radius: 5px;
+  padding: 2px 5px;
+  white-space: nowrap;
+}
+
+/* The sidebar's hairline rows. */
+.maties-sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 14.5px;
+  letter-spacing: -.008em;
+  color: #31353b;
+  cursor: pointer;
+  padding: 9px 10px;
+  transition: background .12s ease, color .12s ease;
+}
+.maties-sidebar-row:hover { background: rgba(16, 20, 28, .05); color: #1c1f23; }
+.maties-sidebar-row[aria-current='page'] { background: #f0f0f2; color: #1c1f23; }
+
+@media (prefers-reduced-motion: reduce) {
+  .maties-in, .maties-in-fast, .maties-in-slow, .maties-menu, .maties-stream-live .maties-word { animation: none; }
+  .maties-shimmer { animation: none; color: #6b7280; background: none; -webkit-text-fill-color: initial; }
+  .maties-ring { animation-duration: 3s; }
+  .maties-skeleton { animation: none; }
+  .maties-sphere > span { animation: none !important; }
+}

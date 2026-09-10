@@ -349,7 +349,7 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
     : i18nService.t('saveMcpServer');
 
   return (
-    <Modal onClose={onClose} overlayClassName="fixed inset-0 z-50 flex items-center justify-center modal-backdrop px-4" className="modal-content flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-modal">
+    <Modal onClose={onClose} overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center px-4" className="maties-card-prose maties-in flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
           <h2 className="text-base font-semibold text-foreground">
             {modalTitle}

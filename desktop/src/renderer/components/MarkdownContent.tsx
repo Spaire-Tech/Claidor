@@ -1,7 +1,8 @@
 import 'katex/dist/katex.min.css';
 import 'katex/contrib/mhchem';
+import './design/conversation.css';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 // @ts-ignore
 import rehypeKatex from 'rehype-katex';
@@ -16,6 +17,10 @@ import { showShellFailureToast, showToast } from '../utils/localFileActions';
 import { transformMarkdownTextSegments } from '../utils/markdownCodeSegments';
 import CodeBlock from './CodeBlock';
 import LocalFileContextMenu from './common/LocalFileContextMenu';
+import FileIcon from './design/FileIcon';
+import rehypeFileChips, { FILE_CHIP_CLASS } from './design/rehypeFileChips';
+import rehypeStreamWords from './design/rehypeStreamWords';
+import { useAnswerStream } from './design/useAnswerStream';
 
 const SAFE_URL_PROTOCOLS = new Set(['http', 'https', 'mailto', 'tel', 'file', 'localfile', 'kit']);
 const INTERNAL_URL_PROTOCOLS = new Set(['kit']);
@@ -24,6 +29,12 @@ const LARGE_MARKDOWN_RENDER_THRESHOLD = 8 * 1024;
 const LARGE_MARKDOWN_PREVIEW_HEAD_LENGTH = 4 * 1024;
 const LARGE_MARKDOWN_PREVIEW_TAIL_LENGTH = 8 * 1024;
 type MarkdownSpacing = 'normal' | 'compact';
+/** 'answer' is the assistant speaking: Newsreader prose, chips for files (docs/maties/design.md, section 4). */
+export const MarkdownVariant = {
+  Default: 'default',
+  Answer: 'answer',
+} as const;
+export type MarkdownVariant = typeof MarkdownVariant[keyof typeof MarkdownVariant];
 
 export const shouldUseLargeMarkdownPreview = (content: string): boolean =>
   content.length > LARGE_MARKDOWN_RENDER_THRESHOLD;
@@ -407,6 +418,8 @@ interface LocalFileLinkProps {
   resolveLocalFilePath?: (href: string, text: string) => string | null;
   anchorProps: Record<string, unknown>;
   children: React.ReactNode;
+  /** Draw the link as a chip with the file's icon. */
+  chip?: boolean;
 }
 
 const LocalFileLink: React.FC<LocalFileLinkProps> = ({
@@ -416,6 +429,7 @@ const LocalFileLink: React.FC<LocalFileLinkProps> = ({
   resolveLocalFilePath,
   anchorProps,
   children,
+  chip = false,
 }) => {
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -461,11 +475,12 @@ const LocalFileLink: React.FC<LocalFileLinkProps> = ({
         href={toFileHref(filePath)}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
-        className={`${LINK_CLASS_NAME} cursor-pointer`}
+        className={chip ? FILE_CHIP_CLASS : `${LINK_CLASS_NAME} cursor-pointer`}
         title={filePath}
         {...anchorProps}
       >
-        {children}
+        {chip && !isDirectory && <FileIcon fileName={filePath} size={16} />}
+        {chip ? <span>{children}</span> : children}
       </a>
       {menuPosition && (
         <LocalFileContextMenu
@@ -483,6 +498,7 @@ const createMarkdownComponents = (
   resolveLocalFilePath?: (href: string, text: string) => string | null,
   onImageClick?: (image: { src: string; alt?: string | null }) => void,
   spacing: MarkdownSpacing = 'normal',
+  variant: MarkdownVariant = MarkdownVariant.Default,
 ) => ({
   p: ({ node: _node, className: _className, children, ...props }: any) => (
     <p className={`${spacing === 'compact' ? 'my-1' : 'my-3'} first:mt-0 last:mb-0 text-foreground`} {...props}>
@@ -539,7 +555,7 @@ const createMarkdownComponents = (
   ),
   code: CodeBlock,
   table: ({ node: _node, className: _className, children, ...props }: any) => (
-    <div className={`${spacing === 'compact' ? 'my-2' : 'my-4'} overflow-x-auto rounded-xl border border-border`}>
+    <div className={`${spacing === 'compact' ? 'my-2' : 'my-4'} overflow-x-auto rounded-xl border border-border${variant === MarkdownVariant.Answer ? ' maties-prose-table' : ''}`}>
       <table className="border-collapse w-full" {...props}>
         {children}
       </table>
@@ -586,10 +602,13 @@ const createMarkdownComponents = (
   hr: ({ node: _node, ...props }: any) => (
     <hr className={`${spacing === 'compact' ? 'my-2' : 'my-5'} border-border`} {...props} />
   ),
-  a: ({ node: _node, href, className: _className, children, ...props }: any) => {
+  a: ({ node: _node, href, className: anchorClassName, children, ...props }: any) => {
     if (typeof href === 'string' && href.startsWith('#artifact-')) {
       return null;
     }
+    const isFileChip = typeof anchorClassName === 'string'
+      ? anchorClassName.split(/\s+/).includes(FILE_CHIP_CLASS)
+      : Array.isArray(anchorClassName) && anchorClassName.includes(FILE_CHIP_CLASS);
 
     const hrefValue = typeof href === 'string' ? href.trim() : '';
     const isInternalLink = !!hrefValue && isInternalHref(hrefValue);
@@ -621,6 +640,7 @@ const createMarkdownComponents = (
           linkText={linkText}
           resolveLocalFilePath={resolveLocalFilePath}
           anchorProps={props}
+          chip={isFileChip || (variant === MarkdownVariant.Answer && !looksLikeDirectory(filePath))}
         >
           {children}
         </LocalFileLink>
@@ -673,35 +693,77 @@ interface MarkdownContentProps {
   content: string;
   className?: string;
   spacing?: MarkdownSpacing;
+  variant?: MarkdownVariant;
   resolveLocalFilePath?: (href: string, text: string) => string | null;
   enableLargePreview?: boolean;
   forceExpanded?: boolean;
   onImageClick?: (image: { src: string; alt?: string | null }) => void;
+  /**
+   * True while the answer is arriving. The text shown is then the paced
+   * prefix of `content`, and every word animates once as it is revealed.
+   */
+  streaming?: boolean;
+  /** Files the turn touched: their bare names in the text become chips. */
+  knownFiles?: string[];
 }
+
+const EMPTY_KNOWN_FILES: string[] = [];
 
 const MarkdownContent: React.FC<MarkdownContentProps> = ({
   content,
   className = '',
   spacing = 'normal',
+  variant = MarkdownVariant.Default,
   resolveLocalFilePath,
   enableLargePreview = true,
   forceExpanded = false,
   onImageClick,
+  streaming = false,
+  knownFiles = EMPTY_KNOWN_FILES,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const canUseLargePreview = enableLargePreview && shouldUseLargeMarkdownPreview(content);
   const useLargePreview = canUseLargePreview && !isExpanded && !forceExpanded;
+  // The component table must keep its identity while an answer streams:
+  // a new table means new component types, a remount of every node, and
+  // every word animating again. Callers hand in fresh callbacks on every
+  // chunk (the message object changes), so they are read through a ref.
+  const callbacksRef = useRef({ resolveLocalFilePath, onImageClick });
+  callbacksRef.current = { resolveLocalFilePath, onImageClick };
+  const hasResolveLocalFilePath = Boolean(resolveLocalFilePath);
+  const hasImageClick = Boolean(onImageClick);
   const components = useMemo(
-    () => createMarkdownComponents(resolveLocalFilePath, onImageClick, spacing),
-    [resolveLocalFilePath, onImageClick, spacing]
+    () => createMarkdownComponents(
+      hasResolveLocalFilePath
+        ? (href, text) => callbacksRef.current.resolveLocalFilePath?.(href, text) ?? null
+        : undefined,
+      hasImageClick
+        ? (image) => callbacksRef.current.onImageClick?.(image)
+        : undefined,
+      spacing,
+      variant,
+    ),
+    [hasResolveLocalFilePath, hasImageClick, spacing, variant]
   );
-  const markdownTextClassName = spacing === 'compact' ? 'text-markdown-body-compact' : 'text-markdown-body';
+  const isAnswer = variant === MarkdownVariant.Answer;
+  const markdownTextClassName = isAnswer
+    ? 'maties-prose'
+    : spacing === 'compact' ? 'text-markdown-body-compact' : 'text-markdown-body';
   const normalizedContent = useMemo(() => {
     if (useLargePreview) {
       return '';
     }
     return normalizeDisplayMath(convertLatexMathDelimiters(encodeFileUrlsInMarkdown(content)));
   }, [content, useLargePreview]);
+  // The stream: a paced prefix of the answer, each word animating once.
+  const { text: shownContent, live } = useAnswerStream(normalizedContent, streaming);
+  const knownFilesKey = knownFiles.join('\n');
+  const rehypePlugins = useMemo(() => {
+    const plugins: any[] = [rehypeKatex];
+    if (knownFilesKey || isAnswer) plugins.push([rehypeFileChips, { knownFiles: knownFilesKey ? knownFilesKey.split('\n') : [] }]);
+    if (live) plugins.push(rehypeStreamWords);
+    return plugins;
+  }, [knownFilesKey, isAnswer, live]);
 
   if (useLargePreview) {
     return (
@@ -728,7 +790,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
   }
 
   return (
-    <div className={`markdown-content min-w-0 max-w-full ${markdownTextClassName} ${className}`}>
+    <div className={`markdown-content min-w-0 max-w-full ${markdownTextClassName} ${live ? 'maties-stream-live' : ''} ${className}`}>
       {canUseLargePreview && isExpanded && (
         <div className="mb-2 flex justify-end">
           <button
@@ -742,11 +804,11 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
       )}
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={rehypePlugins}
         urlTransform={safeUrlTransform}
         components={components}
       >
-        {normalizedContent}
+        {shownContent}
       </ReactMarkdown>
     </div>
   );

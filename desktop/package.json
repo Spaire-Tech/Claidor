@@ -78,7 +78,6 @@
     "predist:linux": "npm run openclaw:runtime:linux-x64",
     "dist:linux": "npm run build && npm run compile:electron && npm run build:skills && electron-builder --linux --config scripts/electron-builder-config.cjs",
     "clean:release": "rimraf release",
-    "brand:mark": "node scripts/generate-maties-mark.cjs",
     "brand:render": "node scripts/render-brand-assets.cjs",
     "setup:mingit": "node scripts/setup-mingit.js",
     "setup:python-runtime": "node scripts/setup-python-runtime.js",

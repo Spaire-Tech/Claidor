@@ -18,6 +18,8 @@ import type { InstalledKit, KitSkillRef, MarketplaceKit } from '../../types/kit'
 import { CARD_ACTION_PILL_CLASS, DETAIL_ACTION_PILL_CLASS } from '../common/actionPillStyles';
 import { MANAGEMENT_BODY_TEXT, MANAGEMENT_META_TEXT, MANAGEMENT_TITLE_TEXT } from '../common/managementTypography';
 import Modal from '../common/Modal';
+import EmptyState from '../design/EmptyState';
+import Pill, { PillTone } from '../design/Pill';
 import ErrorMessage from '../ErrorMessage';
 import SearchIcon from '../icons/SearchIcon';
 import { getKitAnalyticsParams, reportKitAction } from './analytics';
@@ -443,13 +445,13 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
   const uninstallConfirmModal = kitPendingUninstall ? (
     <Modal
       onClose={handleCancelUninstall}
-      overlayClassName="fixed inset-0 z-[9999] flex items-center justify-center modal-backdrop px-4"
-      className="modal-content w-full max-w-sm rounded-2xl border border-border bg-surface shadow-modal p-5"
+      overlayClassName="maties-backdrop fixed inset-0 z-[9999] flex items-center justify-center px-4"
+      className="maties-card-prose maties-in w-full max-w-sm p-6"
     >
-      <div className="text-lg font-semibold text-foreground">
+      <div className="maties-row-title text-[15.5px]">
         {i18nService.t('kitUninstall')}
       </div>
-      <p className="mt-2 text-sm text-secondary">
+      <p className="maties-row-desc">
         {i18nService.t('kitUninstallConfirm').replace(
           '{name}',
           resolveLocalizedText(kitPendingUninstall.name),
@@ -460,7 +462,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
           type="button"
           onClick={handleCancelUninstall}
           disabled={operationType === KitOperationType.Uninstall}
-          className="px-3 py-1.5 text-xs rounded-lg border border-border text-secondary hover:bg-surface-raised transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="maties-pill-sm is-ghost"
         >
           {i18nService.t('cancel')}
         </button>
@@ -468,7 +470,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
           type="button"
           onClick={handleConfirmUninstall}
           disabled={operationType === KitOperationType.Uninstall}
-          className="px-3 py-1.5 text-xs rounded-lg bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="maties-pill-sm is-primary"
         >
           {i18nService.t('confirmDelete')}
         </button>
@@ -494,7 +496,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
             });
             setSelectedKit(null);
           }}
-          className="non-draggable relative z-30 inline-flex items-center gap-1.5 text-sm text-secondary hover:text-foreground transition-colors"
+          className="non-draggable maties-pill-sm is-ghost relative z-30 -ml-2"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           {i18nService.t('kitBack')}
@@ -505,19 +507,19 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
         )}
 
         {/* Kit header */}
-        <div className="rounded-xl border border-border bg-surface p-4 shadow-card">
+        <div className="maties-card p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
               <KitIcon icon={selectedKit.icon} className="h-20 w-20" />
               <div className="min-w-0">
-                <h2 className="text-base font-semibold text-foreground">{resolveLocalizedText(selectedKit.name)}</h2>
+                <h2 className="maties-headline text-[22px]">{resolveLocalizedText(selectedKit.name)}</h2>
                 <p className={`mt-1.5 max-w-2xl ${MANAGEMENT_BODY_TEXT} leading-5 text-secondary`}>
                   {resolveLocalizedText(selectedKit.description)}
                 </p>
                 <div className={`mt-3 flex items-center gap-1.5 ${MANAGEMENT_META_TEXT} text-secondary`}>
                   {installed && (
                     <>
-                      <span className="inline-flex items-center gap-0.5 rounded-md bg-green-500/10 px-1.5 py-0.5 font-medium text-green-600 dark:text-green-400">
+                      <span className="maties-status-done inline-flex items-center gap-1 font-medium">
                         <CheckIcon className="h-2.5 w-2.5" />
                         {i18nService.t('kitInstalled')}
                       </span>
@@ -526,7 +528,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                   )}
                   {selectedKit.author && (
                     <>
-                      <span className="rounded-md bg-primary-muted px-1.5 py-0.5 font-medium text-primary">
+                      <span className="font-medium text-[#4a4f57]">
                         {i18nService.t('kitOfficial')}
                       </span>
                       <span className="text-secondary/50">·</span>
@@ -534,7 +536,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                   )}
                   {selectedKit.version && (
                     <>
-                      <span className="rounded-md bg-surface-raised px-1.5 py-0.5 font-medium">
+                      <span className="maties-mono">
                         v{selectedKit.version}
                       </span>
                       <span className="text-secondary/50">·</span>
@@ -649,18 +651,18 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
               });
               setInstallPrompt(null);
             }}
-            overlayClassName="fixed inset-0 z-[9999] flex items-center justify-center modal-backdrop px-4"
-            className="modal-content w-full max-w-sm rounded-2xl border border-border bg-surface shadow-modal overflow-hidden"
+            overlayClassName="maties-backdrop fixed inset-0 z-[9999] flex items-center justify-center px-4"
+            className="maties-card-prose maties-in w-full max-w-sm overflow-hidden"
           >
-            <div className="px-5 py-4">
-              <h2 className="text-base font-semibold text-foreground">
+            <div className="px-6 pb-4 pt-6">
+              <h2 className="maties-row-title text-[15.5px]">
                 {i18nService.t('kitInstallRequired')}
               </h2>
-              <p className="mt-1.5 text-sm leading-5 text-secondary">
+              <p className="maties-row-desc">
                 {i18nService.t('kitInstallRequiredDesc')}
               </p>
             </div>
-            <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
+            <div className="flex items-center justify-end gap-2 px-6 pb-6">
               <button
                 type="button"
                 onClick={() => {
@@ -670,14 +672,14 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                   });
                   setInstallPrompt(null);
                 }}
-                className="px-4 py-2 text-sm font-medium rounded-lg text-secondary hover:bg-surface-raised transition-colors"
+                className="maties-pill-sm is-ghost"
               >
                 {i18nService.t('cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleInstallAndTry}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors"
+                className="maties-pill-sm is-primary"
               >
                 {i18nService.t('kitInstall')}
               </button>
@@ -692,12 +694,8 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
 
   // List view
   return (
-    <div className="space-y-4">
-      <p className={`${MANAGEMENT_BODY_TEXT} pb-2 text-secondary`}>
-        {i18nService.t('kitDescription')}
-      </p>
-
-      {/* Sticky toolbar: Search + tabs */}
+    <div className="space-y-5">
+      {/* Sticky toolbar: the Marketplace / Installed pills and the search box */}
       <div
         data-skin-management-toolbar="true"
         className="sticky top-0 z-10 space-y-4 bg-background pb-2"
@@ -706,16 +704,38 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
           <ErrorMessage message={actionError} onClose={() => setActionError('')} />
         )}
 
-        {/* Search */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5" role="tablist">
+            <Pill
+              role="tab"
+              compact
+              aria-selected={activeTab === KitTab.Marketplace}
+              tone={activeTab === KitTab.Marketplace ? PillTone.Selected : PillTone.Quiet}
+              onClick={() => handleTabChange(KitTab.Marketplace)}
+            >
+              {i18nService.t('kitMarketplace')}
+            </Pill>
+            <Pill
+              role="tab"
+              compact
+              aria-selected={activeTab === KitTab.Installed}
+              tone={activeTab === KitTab.Installed ? PillTone.Selected : PillTone.Quiet}
+              onClick={() => handleTabChange(KitTab.Installed)}
+            >
+              {i18nService.t('kitInstalledTab')}
+              {installedCount > 0 && (
+                <span className="maties-mono ml-1 text-[11.5px] text-[#8f96a0]">{installedCount}</span>
+              )}
+            </Pill>
+          </div>
+          <div className="relative ml-auto w-full max-w-[320px] flex-1">
+            <SearchIcon className="maties-input-icon-glyph h-4 w-4" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={i18nService.t('kitSearchPlaceholder')}
-              className="w-full rounded-xl border border-border bg-surface py-2 pl-9 pr-8 text-sm text-foreground placeholder-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+              className="maties-input maties-input-icon pr-9"
             />
             {searchQuery && (
               <button
@@ -728,45 +748,12 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                   });
                   setSearchQuery('');
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-secondary transition-colors hover:text-primary"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[#9aa1ab] transition-colors hover:text-[#1c1f23]"
               >
                 <XMarkIcon className="h-4 w-4" />
               </button>
             )}
           </div>
-        </div>
-
-        {/* Marketplace / Installed tabs */}
-        <div className="flex items-center border-b border-border">
-          <button
-            type="button"
-            onClick={() => handleTabChange(KitTab.Marketplace)}
-            className={`relative px-2.5 pb-2.5 pt-0.5 ${MANAGEMENT_TITLE_TEXT} font-semibold transition-colors ${
-              activeTab === KitTab.Marketplace ? 'text-foreground' : 'text-secondary hover:text-foreground'
-            }`}
-          >
-            {i18nService.t('kitMarketplace')}
-            <div className={`absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full transition-colors ${
-              activeTab === KitTab.Marketplace ? 'bg-primary' : 'bg-transparent'
-            }`} />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTabChange(KitTab.Installed)}
-            className={`relative px-2.5 pb-2.5 pt-0.5 ${MANAGEMENT_TITLE_TEXT} font-semibold transition-colors ${
-              activeTab === KitTab.Installed ? 'text-foreground' : 'text-secondary hover:text-foreground'
-            }`}
-          >
-            {i18nService.t('kitInstalledTab')}
-            {installedCount > 0 && (
-              <span className={`ml-1.5 rounded-full bg-surface-raised px-1.5 py-0.5 ${MANAGEMENT_META_TEXT} font-medium text-secondary`}>
-                {installedCount}
-              </span>
-            )}
-            <div className={`absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full transition-colors ${
-              activeTab === KitTab.Installed ? 'bg-primary' : 'bg-transparent'
-            }`} />
-          </button>
         </div>
       </div>
 
@@ -774,7 +761,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" aria-hidden="true">
           {Array.from({ length: 4 }).map((_, idx) => (
-            <div key={idx} className="min-h-[116px] animate-pulse rounded-xl border border-border bg-surface p-4">
+            <div key={idx} className="maties-card maties-skeleton min-h-[116px] p-4">
               <div className="flex gap-3.5">
                 <div className="h-16 w-16 rounded-xl bg-surface-raised" />
                 <div className="flex-1 space-y-2.5 pt-1">
@@ -787,17 +774,15 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
           ))}
         </div>
       ) : filteredKits.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="text-sm text-secondary">
-            {searchQuery.trim()
-              ? i18nService.t('kitSearchNoResults')
-              : activeTab === KitTab.Installed
-                ? i18nService.t('kitInstalledEmpty')
-                : i18nService.t('kitEmpty')}
-          </p>
-          {searchQuery.trim() ? (
-            <button
-              type="button"
+        <EmptyState
+          sentence={searchQuery.trim()
+            ? i18nService.t('kitSearchNoResults')
+            : activeTab === KitTab.Installed
+              ? i18nService.t('kitsEmptySentence')
+              : i18nService.t('kitsMarketplaceEmptySentence')}
+          action={searchQuery.trim() ? (
+            <Pill
+              compact
               onClick={() => {
                 reportKitAction('clear_search', {
                   source: 'kits_manager',
@@ -806,20 +791,15 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                 });
                 setSearchQuery('');
               }}
-              className="mt-3 text-sm font-medium text-primary hover:underline"
             >
               {i18nService.t('kitClearSearch')}
-            </button>
+            </Pill>
           ) : activeTab === KitTab.Installed ? (
-            <button
-              type="button"
-              onClick={() => handleTabChange(KitTab.Marketplace)}
-              className="mt-3 text-sm font-medium text-primary hover:underline"
-            >
+            <Pill tone={PillTone.Primary} compact onClick={() => handleTabChange(KitTab.Marketplace)}>
               {i18nService.t('kitGoInstall')}
-            </button>
-          ) : null}
-        </div>
+            </Pill>
+          ) : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {filteredKits.map((kit) => {
@@ -833,7 +813,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                 key={kit.id}
                 role="button"
                 tabIndex={0}
-                className="min-h-[116px] cursor-pointer rounded-xl border border-border bg-surface p-4 shadow-subtle transition-all hover:border-primary/50 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="maties-card maties-card-interactive min-h-[116px] cursor-pointer p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0060d0]/30"
                 onClick={() => openKitDetail(kit)}
                 onKeyDown={(e) => {
                   if (e.target !== e.currentTarget) return;
@@ -887,7 +867,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                     <div className={`mt-3 flex flex-wrap items-center gap-1.5 ${MANAGEMENT_META_TEXT} text-secondary`}>
                       {installed && activeTab === KitTab.Marketplace && (
                         <>
-                          <span className="inline-flex items-center gap-0.5 rounded-md bg-green-500/10 px-1.5 py-0.5 font-medium text-green-600 dark:text-green-400">
+                          <span className="maties-status-done inline-flex items-center gap-1 font-medium">
                             <CheckIcon className="h-2.5 w-2.5" />
                             {i18nService.t('kitInstalled')}
                           </span>
@@ -896,7 +876,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                       )}
                       {kit.author && (
                         <>
-                          <span className="rounded-md bg-primary-muted px-1.5 py-0.5 font-medium text-primary">
+                          <span className="font-medium text-[#4a4f57]">
                             {i18nService.t('kitOfficial')}
                           </span>
                           <span className="text-secondary/50">·</span>
@@ -904,7 +884,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                       )}
                       {kit.version && (
                         <>
-                          <span className="rounded-md bg-surface-raised px-1.5 py-0.5 font-medium">
+                          <span className="maties-mono">
                             v{kit.version}
                           </span>
                           <span className="text-secondary/50">·</span>
@@ -914,7 +894,7 @@ const KitsManager: React.FC<KitsManagerProps> = ({ onTryAsking, onUseKit }) => {
                         <span>{i18nService.t('kitSkillCount').replace('{count}', String(skillCount))}</span>
                       )}
                       {updateInfo && (
-                        <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-600 dark:text-amber-400">
+                        <span className="maties-status-attention font-medium">
                           {i18nService.t('kitReinstallRequiredBadge')}
                         </span>
                       )}
