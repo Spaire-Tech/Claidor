@@ -51,7 +51,18 @@ the laptop is shut. » See section 4. We do not say « purely local ».
 From Town, in the order we build it:
 
 1. A named assistant with a face and its own email address. People stay
-   for the character.
+   for the character. Decided September 10: a cast of ten to fifteen
+   drawn characters in one style, each with four states (idle, working,
+   waiting for you, done) and a preset voice. Simple and alive, not a
+   talking human head: realistic faces look wrong, cost money every
+   second, and nobody wants their assistant to be a deepfake. Voice is
+   a feature, not a face: the morning briefing read aloud, and talking
+   to the assistant from the phone. No animated mouth in a full spoken
+   conversation. The founder designs the cast (illustration tools that
+   keep one style across a set, then one that keeps a character the same
+   across poses); the app animates it with a small state-machine runtime
+   inside Electron; voices come from a speech service behind Claidor's
+   API, never from a key in the app.
 2. Onboarding with no blank box: within five minutes, a biography of the
    person built from their files and inbox, and five things Swen can do
    today. Ours reads the Documents folder and the mailbox on the machine.
@@ -175,16 +186,22 @@ SOC 2 when a customer with a compliance officer asks and not before.
 3. **The cloud engine per person.** Same build, shared memory, the
    assistant's email address. Before routines, because routines without a
    place to run at night is the Lobster mistake.
-4. **Onboarding**, the biography and five offers.
-5. **The Wiki.**
-6. **Routines**, the catalogue and the plain-word editor, twelve stock
+4. **The cast**, faces and voices. The founder draws the characters;
+   the app shows them alive in four states, lets the person pick one and
+   name it, and gives each a preset voice. The briefing read aloud comes
+   with the cloud engine's briefing; phone voice comes with the channels.
+   Added September 10.
+5. **Onboarding**, the biography and five offers, with the choice of a
+   character as its first screen.
+6. **The Wiki.**
+7. **Routines**, the catalogue and the plain-word editor, twelve stock
    routines, Auto-inbox first, each with its « runs where » label.
-7. **The dial** and the log.
-8. **Credits**, overage and the cap, from a month of numbers.
-9. **Windows** as a first-class build, then the signed Mac build once
-   Apple's enrolment is through, then the update feed.
-10. **Teams** and WeKnora, after the first paying individuals.
-11. Channels beyond Telegram, Discord and email: Slack, Teams, WhatsApp.
+8. **The dial** and the log.
+9. **Credits**, overage and the cap, from a month of numbers.
+10. **Windows** as a first-class build, then the signed Mac build once
+    Apple's enrolment is through, then the update feed.
+11. **Teams** and WeKnora, after the first paying individuals.
+12. Channels beyond Telegram, Discord and email: Slack, Teams, WhatsApp.
 
 A release every few days, in public, with a changelog.
 

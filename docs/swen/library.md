@@ -86,7 +86,7 @@ is key/value. The Library tab in Settings is its own component under
 
 OCR of scanned PDFs, images, email archives, Outlook PST files, cloud
 drives that are not synced to a local folder, a team library (that is
-WeKnora, step 10), re-ranking with a cross-encoder, multilingual models.
+WeKnora, step 11), re-ranking with a cross-encoder, multilingual models.
 
 ## How we know it works
 
