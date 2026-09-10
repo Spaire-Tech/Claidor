@@ -176,8 +176,10 @@ shows copy and edit at the left of the bubble.
 
 **The assistant's turn.** No bubble. A 22 px still sphere at the left,
 then the column. Above the column, the line « Claude Sonnet 5 · 12:40 »
-with the provider mark, 12.5 px muted. Then, in order, whatever the turn
-contains:
+with the provider mark, 12.5 px muted. A turn records its model only
+when its final message lands, so while it runs the line shows the model
+the session is set to; once recorded, the record wins. Then, in order,
+whatever the turn contains:
 
 - **Thinking.** « Thinking » in 15 px with the shimmer, alone, until the
   model says or does something. When the model's own reasoning is
@@ -211,8 +213,10 @@ contains:
   up). Words are keyed so a word animates once and never again. Code
   blocks and tables reveal whole, not word by word. When the model
   stops, whatever is left reveals at the same pace and then stops.
-- **Under the answer**, on hover: copy, fork, retry, and the token count
-  and cost the app already computes, all 12.5 px muted.
+- **Under the answer**, on hover: copy, fork, retry, and the tokens in
+  and out the turn recorded, all 12.5 px muted. No cost: the app has no
+  per-turn price to show. Retry re-opens the question for editing (the
+  app has no « generate again » of its own).
 
 **Approval.** When a step needs the person's yes, the step's result card
 becomes the approval card and the composer waits. The card says, in one
@@ -221,11 +225,18 @@ then the exact thing in JetBrains Mono on `#f6f7f9` (the full path; the
 full command; the file names, all of them, scrollable if long), then one
 line of consequence (« This cannot be undone » or « Files go to the
 Trash »), then two buttons at the right: « Not now » (ghost) and the
-action verb in blue (« Delete », « Send », « Run »). A checkbox « Don't
-ask again for this kind of step in this conversation » under the buttons
-for the kinds where that is safe (reading, running a known tool), never
-for deleting or sending. The card never says « execute » or « permission
-». `⏎` is never the yes.
+action verb in blue (« Delete », « Send », « Run »). At the left, a
+third ghost button « Later » puts the card aside: it becomes one
+hairline row above the composer (an amber dot for an action, a blue dot
+for a question, the sentence, « Not now », and « Expand » or « Resume »
+to bring the card back). The card never says « execute » or
+« permission ». `⏎` is never the yes.
+
+Not built yet: a checkbox « Don't ask again for this kind of step in
+this conversation » under the buttons, for the kinds where that is safe
+(reading, running a known tool), never for deleting or sending. The
+approval answer the engine accepts today is yes or no for one step; a
+remembered answer needs a new flag on that answer first.
 
 **Questions from the assistant** (the question wizard) use the same
 card: the question in Newsreader 17.5 px, the options as pills, one

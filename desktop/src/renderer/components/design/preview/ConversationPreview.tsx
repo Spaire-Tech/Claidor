@@ -286,7 +286,7 @@ const ConversationPreview: React.FC = () => {
         </div>
 
         <div data-maties-preview-turn="3">
-          <AssistantTurnBlock turn={approvalTurn} isStreamingTurn showActivityIndicator showCopyButtons={false} />
+          <AssistantTurnBlock turn={approvalTurn} isStreamingTurn showActivityIndicator showCopyButtons={false} liveModelRef={MODEL} />
         </div>
 
         {showApproval && (

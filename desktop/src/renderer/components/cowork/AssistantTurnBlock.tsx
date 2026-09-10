@@ -553,6 +553,12 @@ const AssistantTurnBlock: React.FC<{
   hasRunningSubagents?: boolean;
   /** Hide the sphere and the header line (a subagent's own view draws its own). */
   hideTurnHeader?: boolean;
+  /**
+   * The model the session is set to. A turn names its model only once its
+   * final message lands; while it runs, this keeps the mark and the name in
+   * the header instead of a bare time.
+   */
+  liveModelRef?: string;
 }> = ({
   turn,
   artifacts,
@@ -578,6 +584,7 @@ const AssistantTurnBlock: React.FC<{
   isStreamingTurn = false,
   hasRunningSubagents = false,
   hideTurnHeader = false,
+  liveModelRef = '',
 }) => {
   const [artifactCardsExpanded, setArtifactCardsExpanded] = useState(false);
   const [processExpanded, setProcessExpanded] = useState(false);
@@ -629,9 +636,10 @@ const AssistantTurnBlock: React.FC<{
     return next;
   }, [currentMediaPollCounts]);
   const knownFiles = useMemo(() => collectTurnFiles(consolidatedItems), [consolidatedItems]);
-  const turnModelRef = useMemo(() => getTurnModelRef(turn), [turn]);
+  const recordedModelRef = useMemo(() => getTurnModelRef(turn), [turn]);
   const turnTime = formatTurnTime(getTurnAssistantTimestamp(turn));
   const isTurnLive = isStreamingTurn || hasRunningSubagents;
+  const turnModelRef = recordedModelRef || (isTurnLive ? liveModelRef.trim() : '');
 
   // A request that arrives before its step is on screen lands here.
   const turnApprovalSlotRef = useApprovalSlotRef<HTMLDivElement>(isStreamingTurn ? APPROVAL_SLOT_TURN : null);

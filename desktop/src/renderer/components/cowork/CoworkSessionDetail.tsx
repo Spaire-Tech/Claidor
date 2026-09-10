@@ -3,10 +3,8 @@ import {
   ArrowDownIcon,
   ComputerDesktopIcon,
   DocumentArrowDownIcon,
-  ExclamationTriangleIcon,
   PaperClipIcon,
   PhotoIcon,
-  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -124,6 +122,7 @@ import {
   CoworkSessionStatusValue,
 } from '../../types/cowork';
 import type { MediaAttachmentRef } from '../../types/mediaGeneration';
+import { toOpenClawModelRef } from '../../utils/openclawModelRef';
 import { parseUserMessageForDisplay } from '../../utils/userMessageDisplay';
 import {
   AgentBrowserInAppPanel,
@@ -5138,6 +5137,10 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     currentAgentSelectedModel,
     currentSession?.modelOverride,
   ]);
+  // The header of a running turn shows this model until the turn records its own.
+  const liveModelRef = sessionModelSelection.selectedModel
+    ? toOpenClawModelRef(sessionModelSelection.selectedModel)
+    : '';
   const activeEnterpriseQuotaSignal = useMemo(
     () => resolveActiveEnterpriseQuotaSignal(
       enterpriseQuotaSignal,
@@ -5954,6 +5957,7 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             onAdjustPlan={handleAdjustPlan}
             searchTargetMessageId={activeConversationSearchMatch?.messageId}
             isStreamingTurn
+            liveModelRef={liveModelRef}
           />
         </div>
       );
@@ -6057,6 +6061,7 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
                 searchTargetMessageId={activeConversationSearchMatch?.messageId}
                 isStreamingTurn={isStreaming && isLastTurn}
                 hasRunningSubagents={turnHasRunningSubagents}
+                liveModelRef={liveModelRef}
               />
             </div>
           )}
@@ -6844,79 +6849,55 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             <PromptInputCollapseIcon className="h-3.5 w-3.5" />
           </button>
         )}
+        {/* A card put aside with « Later » waits here, above the composer, as one
+            hairline row (docs/maties/design.md, section 4): the amber dot for an
+            action awaiting a yes, the blue dot for a question, the sentence, and
+            the way back. */}
         {minimizedPermission && (
           <div className={`${COWORK_DETAIL_CONTENT_CLASS} mb-2`}>
-            <div
-              className={`flex min-w-0 items-center gap-1 rounded-xl border p-1 text-sm shadow-subtle ${
-                isMinimizedQuestionPermission
-                  ? 'border-border bg-surface'
-                  : 'border-amber-200 bg-amber-50/95 dark:border-amber-900/70 dark:bg-amber-950/35'
-              }`}
-            >
+            <div className="maties-card-row maties-in flex min-w-0 items-center gap-2" style={{ padding: '6px 6px 6px 14px' }}>
               <button
                 type="button"
                 onClick={onRestorePermission}
                 disabled={!onRestorePermission}
-                className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
-                  isMinimizedQuestionPermission
-                    ? 'enabled:hover:bg-surface-raised'
-                    : 'enabled:hover:bg-amber-100/70 dark:enabled:hover:bg-amber-900/40'
-                }`}
+                className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                style={{ fontSize: 13.5, letterSpacing: '-.008em', color: '#1c1f23' }}
                 title={minimizedPermissionPreview}
               >
-                {isMinimizedQuestionPermission ? (
-                  <QuestionMarkCircleIcon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                ) : (
-                  <ExclamationTriangleIcon className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden="true" />
-                )}
                 <span
-                  className={`shrink-0 font-medium ${
-                    isMinimizedQuestionPermission ? 'text-foreground' : 'text-amber-900 dark:text-amber-100'
-                  }`}
-                >
+                  className="maties-status-dot shrink-0"
+                  style={{ color: isMinimizedQuestionPermission ? '#0060d0' : '#c8790a' }}
+                  aria-hidden="true"
+                />
+                <span className="shrink-0 font-medium">
                   {i18nService.t(
                     isMinimizedQuestionPermission ? 'coworkQuestionAwaitingAnswer' : 'coworkPermissionAwaiting'
                   )}
                 </span>
-                {!isMinimizedQuestionPermission && (
-                  <span className="shrink-0 text-amber-700/80 dark:text-amber-200/75">
-                    {minimizedPermission.toolName}
-                  </span>
-                )}
-                <span
-                  className={`min-w-0 flex-1 truncate ${
-                    isMinimizedQuestionPermission
-                      ? 'text-secondary'
-                      : 'text-amber-800/85 dark:text-amber-100/80'
-                  }`}
-                >
+                <span className="min-w-0 flex-1 truncate" style={{ color: '#8f96a0' }}>
                   {minimizedPermissionPreview}
                 </span>
-                {onRestorePermission && (
-                  <span
-                    className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium ${
-                      isMinimizedQuestionPermission
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-50'
-                    }`}
-                  >
-                    {i18nService.t(
-                      isMinimizedQuestionPermission ? 'coworkQuestionResume' : 'coworkPermissionRestore'
-                    )}
-                  </span>
-                )}
               </button>
               {onRespondToPermission && (
                 <button
                   type="button"
                   onClick={handleDenyMinimizedPermission}
-                  className={`shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                    isMinimizedQuestionPermission
-                      ? 'text-secondary hover:bg-surface-raised hover:text-foreground'
-                      : 'text-amber-800 hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-900/60'
-                  }`}
+                  className="maties-button maties-button-ghost shrink-0"
+                  style={{ height: 28 }}
                 >
-                  {i18nService.t('coworkDeny')}
+                  {i18nService.t('matiesNotNow')}
+                </button>
+              )}
+              {onRestorePermission && (
+                <button
+                  type="button"
+                  onClick={onRestorePermission}
+                  className="maties-button maties-button-outline shrink-0"
+                  style={{ height: 28 }}
+                >
+                  {i18nService.t(
+                    isMinimizedQuestionPermission ? 'coworkQuestionResume' : 'coworkPermissionRestore'
+                  )}
                 </button>
               )}
             </div>
