@@ -179,7 +179,10 @@ test('sync writes native moonshot provider config and migrates matching managed 
   assert.equal(config.models.providers.moonshot.api, 'openai-completions');
   assert.equal(config.agents.defaults.model.primary, 'moonshot/kimi-k2.5');
   assert.deepEqual(config.commands.ownerAllowFrom, ['gateway-client', '*']);
-  assert.deepEqual(config.tools.deny, ['web_search']);
+  // Nothing is denied outright any more: web_search is served by the
+  // bundled DuckDuckGo provider where packaging kept it. This fixture's
+  // runtime has no search provider, so search stays off here.
+  assert.deepEqual(config.tools.deny, []);
   assert.equal(config.tools.web.search.enabled, false);
   assert.equal(config.browser.enabled, true);
 
@@ -282,7 +285,7 @@ test('sync writes scheduled-task policy into managed AGENTS.md for native channe
   assert.match(agentsMd, /main session.*read `MEMORY\.md`/is);
   assert.match(agentsMd, /## Scheduled Tasks/);
   assert.match(agentsMd, /## Web Search/);
-  assert.match(agentsMd, /Built-in `web_search` is disabled in this workspace\./);
+  assert.match(agentsMd, /Built-in `web_search` is not available in this build/);
   assert.match(agentsMd, /use `web_fetch`/);
   assert.match(agentsMd, /use the built-in `browser` tool/);
   assert.match(agentsMd, /Native channel sessions may deny `exec`/);

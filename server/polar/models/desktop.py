@@ -13,8 +13,9 @@ server-side state of that protocol.
   A row that names a `maty_jobs` row is the same thing narrowed to one
   cloud job and one lease; see the class.
 - `DesktopUsage`: one row per model call the app made through the
-  proxy, with the token counts Anthropic reported and the credits they
-  cost. The quota is a sum over these rows for the current month.
+  proxy, with the provider that served it, the token counts it reported
+  and the credits they cost. The quota is a sum over these rows for the
+  current month.
 
 One more table carries the shared memory (`docs/maties/cloud.md`):
 
@@ -146,7 +147,18 @@ class DesktopUsage(RecordModel):
         index=True,
     )
     model: Mapped[str] = mapped_column(String(128), nullable=False)
-    #: What Anthropic reported for the call, untouched.
+    #: Who served the call, and therefore which price list the credits
+    #: below were read off — `polar.desktop.pricing.DesktopProvider`.
+    #: Without it a credit figure cannot be traced back to the list that
+    #: produced it, and two providers' figures stop being comparable the
+    #: first time either list moves.
+    provider: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="anthropic", server_default="anthropic"
+    )
+    #: What the provider reported for the call, untouched. Cached reads
+    #: are their own count and are never part of `input_tokens`, which is
+    #: Anthropic's shape; OpenAI's prompt total is split into the two
+    #: before it is stored (`Usage.from_openai_payload`).
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     cache_creation_tokens: Mapped[int] = mapped_column(
@@ -157,7 +169,7 @@ class DesktopUsage(RecordModel):
     #: `polar.desktop.service.credits_for` for the weights.
     credits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     stream: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    #: The status Anthropic answered with; a failed call costs nothing.
+    #: The status the provider answered with; a failed call costs nothing.
     upstream_status: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
