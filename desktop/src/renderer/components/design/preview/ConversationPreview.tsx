@@ -119,14 +119,35 @@ const questionPermission: CoworkPermissionRequest = {
         question: 'Which version should the board pack use?',
         header: 'Board pack',
         options: [
-          { label: 'v22 with the fix' },
-          { label: 'v21 as sent' },
-          { label: 'Both, side by side' },
+          { label: 'v22 with the fix', description: 'The blended rate back at 3.6% and the coverage at 3.2×.' },
+          { label: 'v21 as sent', description: 'What the board has already read, untouched.' },
+          { label: 'Both, side by side', description: 'One sheet per version, with the three cells that move.' },
         ],
       },
       {
         question: 'Should I keep the change log on the first sheet?',
-        options: [{ label: 'Keep it' }, { label: 'Move it to a separate file' }],
+        options: [
+          { label: 'Keep it', description: 'Anyone opening the file sees what changed.' },
+          { label: 'Move it to a separate file', description: 'The first sheet stays the summary.' },
+        ],
+      },
+      {
+        question: 'How often should I re-run this check?',
+        header: 'Frequency',
+        options: [
+          { label: 'Every time the file changes' },
+          { label: 'Once a week' },
+          { label: 'Only when I ask' },
+        ],
+      },
+      {
+        question: 'Who else should get the file?',
+        options: [
+          { label: 'The CFO', description: 'She asked for the comparison on Monday.' },
+          { label: 'The auditors' },
+          { label: 'No one yet' },
+        ],
+        multiSelect: true,
       },
     ],
   },
@@ -217,11 +238,43 @@ const ConversationPreview: React.FC = () => {
     ],
   };
 
+  // The turn that is asking: the step holds the question card, so the step
+  // itself shows no ring and no skeleton.
+  const questionTurn: ConversationTurn = {
+    id: 'turn-4',
+    userMessage: message('u4', 'user', 'Get the board pack ready.', 180),
+    assistantItems: [
+      {
+        type: 'tool_group',
+        group: {
+          type: 'tool_group',
+          toolUse: message('s11', 'tool_use', 'Using tool: ask_user_question', 182, { toolName: 'ask_user_question', toolInput: {}, toolUseId: 'call-11' }),
+          toolResult: null,
+        },
+      },
+    ],
+  };
+
   const doneStep: ConversationTurn['assistantItems'][number] = finishedTurn.assistantItems[3];
   const failedGroup = {
     type: 'tool_group' as const,
     toolUse: message('s9', 'tool_use', 'Using tool: web_fetch', 0, { toolName: 'web_fetch', toolInput: { url: 'https://northbank.example/annual-report.pdf' }, toolUseId: 'call-9' }),
     toolResult: message('r9', 'tool_result', 'HTTP 404: the report moved.', 3, { toolUseId: 'call-9', isError: true }),
+  };
+  // A result the engine wrote for itself: a wrapper marker around pretty-
+  // printed JSON. The card says what it means, never a lone brace.
+  const wrappedJsonGroup = {
+    type: 'tool_group' as const,
+    toolUse: message('s12', 'tool_use', 'Using tool: mcp__northbank__facilities', 0, { toolName: 'mcp__northbank__facilities', toolInput: { limit: 3 }, toolUseId: 'call-12' }),
+    toolResult: message('r12', 'tool_result', [
+      '<<<EXTERNAL_UNTRUSTED_CONTENT id="2c2f5fad50c00778">>>',
+      '[',
+      '  { "id": "tranche-a", "rate": 3.1 },',
+      '  { "id": "tranche-b", "rate": 3.9 },',
+      '  { "id": "tranche-c", "rate": 4.4 }',
+      ']',
+      '<<<END_EXTERNAL_UNTRUSTED_CONTENT id="2c2f5fad50c00778">>>',
+    ].join('\n'), 2, { toolUseId: 'call-12' }),
   };
   const skeletonGroup = {
     type: 'tool_group' as const,
@@ -297,10 +350,25 @@ const ConversationPreview: React.FC = () => {
           />
         )}
         {showQuestion && (
-          <CoworkQuestionWizard
-            permission={questionPermission}
-            onRespond={(result) => { setAnswered(result.behavior); setShowQuestion(false); }}
-          />
+          <>
+            <div className="flex justify-end px-6 py-2 sm:px-8 lg:px-10">
+              <div className="mx-auto w-full max-w-[760px]">
+                <div className="flex justify-end">
+                  <div style={{ background: '#f4f5f7', borderRadius: 18, padding: '12px 18px', maxWidth: '72%', fontSize: 14.5, color: '#1c1f23' }}>
+                    {questionTurn.userMessage?.content}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div data-maties-preview-turn="4">
+              <AssistantTurnBlock turn={questionTurn} isStreamingTurn showActivityIndicator showCopyButtons={false} />
+            </div>
+            <CoworkQuestionWizard
+              permission={questionPermission}
+              onRespond={(result) => { setAnswered(result.behavior); setShowQuestion(false); }}
+              onMinimize={() => setShowQuestion(false)}
+            />
+          </>
         )}
         {answered && <div className="maties-meta px-10">Last answer: {answered}</div>}
 
@@ -310,6 +378,7 @@ const ConversationPreview: React.FC = () => {
             <div className="flex flex-col gap-8" style={{ paddingLeft: 36 }}>
               {doneStep.type === 'tool_group' && <ToolCallGroup group={doneStep.group} isLive={false} />}
               <ToolCallGroup group={failedGroup} isLive />
+              <ToolCallGroup group={wrappedJsonGroup} isLive={false} />
               <ToolCallGroup group={skeletonGroup} isLive />
             </div>
             <span className="maties-meta">Inside the opened list</span>

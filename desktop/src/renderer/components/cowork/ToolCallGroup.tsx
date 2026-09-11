@@ -8,7 +8,7 @@ import { useSelector } from 'react-redux';
 import mediaGeneratingAnimation from '../../assets/lottie/media-generating.json';
 import { i18nService } from '../../services/i18n';
 import { selectIsStreaming } from '../../store/selectors/coworkSelectors';
-import { useApprovalSlotOccupied, useApprovalSlotRef } from '../design/approvalSlots';
+import { APPROVAL_SLOT_TURN, useApprovalSlotOccupied, useApprovalSlotRef } from '../design/approvalSlots';
 import {
   bucketLength,
   getMessageLineCount,
@@ -253,6 +253,14 @@ const ToolCallGroup: React.FC<{
   const slotKey = stepState === StepState.Running && !isRowVariant ? (toolUseId ?? toolUse.id) : null;
   const approvalSlotRef = useApprovalSlotRef<HTMLDivElement>(slotKey);
   const approvalOccupied = useApprovalSlotOccupied([toolUseId, toolUse.id]);
+  // A request raised without a tool-use id (a question from the assistant)
+  // lands in the turn's own slot, which sits directly under the live step:
+  // it is still this step's card.
+  const turnApprovalOccupied = useApprovalSlotOccupied([APPROVAL_SLOT_TURN]);
+  // While the step holds a card, the card is the state: no ring, no
+  // « Running », no skeleton waiting for a result that is not coming.
+  const holdsApprovalCard = !isRowVariant
+    && (approvalOccupied || (stepState === StepState.Running && turnApprovalOccupied));
 
   const reportToolToggle = (nextExpanded: boolean) => {
     const resultLength = toolResultDisplayRaw.length || collapsedToolResult?.text?.length || 0;
@@ -481,15 +489,17 @@ const ToolCallGroup: React.FC<{
           <Chevron open={isExpanded} />
         </span>
       </button>
-      <div key={stepSublineText ?? stepState} className="maties-in-slow flex items-center gap-3">
-        <StepMark state={stepState} />
-        <span className="maties-step-sub min-w-0 truncate" style={stepState === StepState.Failed ? { color: '#e0322d' } : undefined}>
-          {stepSublineText ?? (stepState === StepState.Running ? i18nService.t('coworkToolRunning') : i18nService.t('matiesStepDone'))}
-          {stepState === StepState.Running && <ToolRunningElapsed startTimestamp={toolUse.timestamp} />}
-        </span>
-      </div>
+      {!holdsApprovalCard && (
+        <div key={stepSublineText ?? stepState} className="maties-in-slow flex items-center gap-3">
+          <StepMark state={stepState} />
+          <span className="maties-step-sub min-w-0 truncate" style={stepState === StepState.Failed ? { color: '#e0322d' } : undefined}>
+            {stepSublineText ?? (stepState === StepState.Running ? i18nService.t('coworkToolRunning') : i18nService.t('matiesStepDone'))}
+            {stepState === StepState.Running && <ToolRunningElapsed startTimestamp={toolUse.timestamp} />}
+          </span>
+        </div>
+      )}
       <div ref={approvalSlotRef} data-maties-approval-slot={slotKey ?? undefined} className="empty:hidden" />
-      {showResultCard && !approvalOccupied && (
+      {showResultCard && !holdsApprovalCard && (
         <StepResultCard result={stepResult} failed={stepState === StepState.Failed} onOpenAgent={onOpenAgent} />
       )}
       {footer}

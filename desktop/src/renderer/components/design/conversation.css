@@ -219,6 +219,44 @@
   box-shadow: none;
 }
 
+/*
+ * A choice with something to say (the question card): one full-width row
+ * per option in a single column, the label over its description, the whole
+ * row the target, a tick at the right when it is chosen.
+ */
+.maties-choice-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(16, 22, 35, .07);
+  text-align: left;
+  transition: background .14s ease, box-shadow .14s ease;
+}
+.maties-choice-row:hover { background: rgba(16, 20, 28, .05); }
+.maties-choice-row:focus-visible { outline: none; box-shadow: inset 0 0 0 1.5px rgba(0, 96, 208, .5); }
+.maties-choice-row[aria-pressed='true'],
+.maties-choice-row[data-selected='true'] {
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 96, 208, .5);
+}
+.maties-choice-label {
+  font-size: 14.5px;
+  letter-spacing: -.008em;
+  line-height: 1.4;
+  color: #1c1f23;
+}
+.maties-choice-description {
+  font-size: 13px;
+  letter-spacing: -.006em;
+  line-height: 1.45;
+  color: #8f96a0;
+  text-wrap: pretty;
+}
+
 /* The tiny chips of an attachment. */
 .maties-chip {
   display: inline-flex;

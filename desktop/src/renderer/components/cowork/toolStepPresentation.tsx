@@ -189,12 +189,104 @@ export type ToolStepResult =
   | { type: 'agent'; name: string }
   | { type: 'line'; text: string; number?: string };
 
+/**
+ * The engine wraps some results in a marker of its own
+ * (« <<<EXTERNAL_UNTRUSTED_CONTENT id="…">>> » and its closing twin). The
+ * marker is the engine talking to itself; the person never sees it. Any
+ * line that is nothing but a `<<<…>>>` marker goes, whatever it names.
+ */
+const ENGINE_MARKER_LINE = /^\s*<<<[^\n]*>>>\s*$/;
+
+export const stripEngineMarkers = (text: string): string => text
+  .split('\n')
+  .filter((line) => !ENGINE_MARKER_LINE.test(line))
+  .join('\n')
+  .trim();
+
+/**
+ * A line of brackets or punctuation carries no meaning to a person: the
+ * lone « { » of a pretty-printed result, a rule of dashes, a stray comma.
+ * A line with a letter or a figure in it does (« /opt/homebrew/lib » is a
+ * real answer and stays).
+ */
+const PUNCTUATION_ONLY_LINE = /^[^\p{L}\p{N}]*$/u;
+
+const isMeaningfulLine = (line: string): boolean => {
+  const trimmed = line.trim();
+  return trimmed.length > 0 && !PUNCTUATION_ONLY_LINE.test(trimmed);
+};
+
 const firstMeaningfulLine = (text: string): string | null => {
   for (const line of text.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed) return truncatePreview(trimmed, 110);
+    if (isMeaningfulLine(line)) return truncatePreview(line.trim(), 110);
   }
   return null;
+};
+
+/** The fields a machine result uses for the one line a person would read. */
+const HUMAN_FIELDS = ['title', 'name', 'summary', 'message', 'path'] as const;
+
+const COUNT_KEYS_ITEMS = ['matiesStepItemsOne', 'matiesStepItemsMany'] as const;
+const COUNT_KEYS_RESULTS = ['matiesStepResultOne', 'matiesStepResultMany'] as const;
+
+type CountKeys = typeof COUNT_KEYS_ITEMS | typeof COUNT_KEYS_RESULTS;
+
+/** A count, as the number card when the card can show a figure. */
+const countResult = (count: number, keys: CountKeys): ToolStepResult => {
+  const text = i18nService.t(count === 1 ? keys[0] : keys[1]).replace('{count}', String(count));
+  const number = String(count);
+  return text.startsWith(number) ? { type: 'line', text, number } : { type: 'line', text };
+};
+
+const parseJsonValue = (text: string): unknown => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Text that is JSON even though it does not parse: a result cut short, or
+ * one the engine pretty-printed and wrapped. A line that merely opens with
+ * a bracket (« [1] https://… ») is not JSON and keeps its own words.
+ */
+const looksLikeJsonText = (trimmed: string): boolean => {
+  const opener = trimmed.charAt(0);
+  if (opener !== '{' && opener !== '[') return false;
+  if (trimmed.endsWith(opener === '{' ? '}' : ']')) return true;
+  return trimmed.split('\n')[0].trim() === opener;
+};
+
+/**
+ * A result the engine wrote for itself, in JSON. The card never shows a
+ * raw line of it — a person reading « { » learns nothing. It says
+ * something true and small instead: how many items, the one human field,
+ * or, failing both, that the step is done.
+ */
+const describeJsonResult = (
+  text: string,
+  keys: CountKeys,
+  fallbackText: string,
+): ToolStepResult | null => {
+  const trimmed = text.trim();
+  const parsed = parseJsonValue(trimmed);
+  const isJson = (typeof parsed === 'object' && parsed !== null) || looksLikeJsonText(trimmed);
+  if (!isJson) return null;
+
+  if (Array.isArray(parsed)) return countResult(parsed.length, keys);
+
+  if (parsed && typeof parsed === 'object') {
+    const record = parsed as Record<string, unknown>;
+    for (const field of HUMAN_FIELDS) {
+      const value = record[field];
+      if (typeof value === 'string' && isMeaningfulLine(value)) {
+        return { type: 'line', text: truncatePreview(value.trim(), 110) };
+      }
+    }
+  }
+
+  return { type: 'line', text: fallbackText };
 };
 
 const findPageTitle = (text: string): string | null => {
@@ -239,12 +331,17 @@ export const getToolStepResult = (
   const rawToolName = typeof toolUse.metadata?.toolName === 'string' ? toolUse.metadata.toolName : '';
   const toolInput = toolUse.metadata?.toolInput;
   const kind = getToolStepKind(rawToolName);
-  const resultText = toolResult ? mapText(getToolResultRawText(toolResult)) : '';
+  // The engine's own wrapper goes first: everything below reads the result
+  // as the person would.
+  const resultText = toolResult ? stripEngineMarkers(mapText(getToolResultRawText(toolResult))) : '';
   const isError = Boolean(toolResult?.metadata?.isError || toolResult?.metadata?.error);
 
   if (isError) {
-    const line = hasText(resultText) ? firstMeaningfulLine(resultText) : null;
-    return { type: 'line', text: line ?? getToolStepFailureText(kind) };
+    const failureText = getToolStepFailureText(kind);
+    if (!hasText(resultText)) return { type: 'line', text: failureText };
+    const json = describeJsonResult(resultText, COUNT_KEYS_ITEMS, failureText);
+    if (json) return json;
+    return { type: 'line', text: firstMeaningfulLine(resultText) ?? failureText };
   }
 
   const filePath = getToolStepFilePath(rawToolName, toolInput);
@@ -271,24 +368,28 @@ export const getToolStepResult = (
     if (url) return { type: 'line', text: truncatePreview(url, 110) };
   }
 
-  if (kind === ToolStepKind.WebSearch || kind === ToolStepKind.Library || kind === ToolStepKind.FindFiles) {
-    if (hasText(resultText)) {
-      const links = countMatches(resultText, /https?:\/\//g);
-      const lines = resultText.split('\n').filter((line) => line.trim()).length;
-      const count = kind === ToolStepKind.WebSearch ? links : lines;
-      if (count > 0) {
-        const key = count === 1 ? 'matiesStepResultOne' : 'matiesStepResultMany';
-        return {
-          type: 'line',
-          text: i18nService.t(key).replace('{count}', String(count)),
-          number: String(count),
-        };
-      }
-    }
+  const isSearchKind = kind === ToolStepKind.WebSearch
+    || kind === ToolStepKind.Library
+    || kind === ToolStepKind.FindFiles;
+  const doneText = i18nService.t('matiesStepDone');
+
+  if (!hasText(resultText)) return { type: 'line', text: doneText };
+
+  const json = describeJsonResult(
+    resultText,
+    isSearchKind ? COUNT_KEYS_RESULTS : COUNT_KEYS_ITEMS,
+    doneText,
+  );
+  if (json) return json;
+
+  if (isSearchKind) {
+    const links = countMatches(resultText, /https?:\/\//g);
+    const lines = resultText.split('\n').filter((line) => line.trim()).length;
+    const count = kind === ToolStepKind.WebSearch ? links : lines;
+    if (count > 0) return countResult(count, COUNT_KEYS_RESULTS);
   }
 
-  const line = hasText(resultText) ? firstMeaningfulLine(resultText) : null;
-  return { type: 'line', text: line ?? i18nService.t('matiesStepDone') };
+  return { type: 'line', text: firstMeaningfulLine(resultText) ?? doneText };
 };
 
 // ── Icons ────────────────────────────────────────────────────────────────────

@@ -234,16 +234,10 @@ export const ApprovalButtons: React.FC<{
   onYes: () => void;
   yesLabel: string;
   yesDisabled?: boolean;
-  onLater?: () => void;
   leading?: React.ReactNode;
-}> = ({ onNotNow, notNowLabel, onYes, yesLabel, yesDisabled = false, onLater, leading }) => (
+}> = ({ onNotNow, notNowLabel, onYes, yesLabel, yesDisabled = false, leading }) => (
   <div className="flex flex-wrap items-center gap-2" style={{ paddingTop: 2 }}>
     {leading}
-    {onLater && (
-      <button type="button" onClick={onLater} className="maties-button maties-button-ghost" style={{ color: '#8f96a0' }}>
-        {i18nService.t('matiesLater')}
-      </button>
-    )}
     <span className="flex-1" />
     <button type="button" onClick={onNotNow} className="maties-button maties-button-ghost">
       {notNowLabel ?? i18nService.t('matiesNotNow')}
@@ -260,8 +254,31 @@ export const ApprovalButtons: React.FC<{
   </div>
 );
 
-export const ApprovalCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="maties-card flex flex-col gap-3" style={{ padding: '16px 18px 14px 18px', alignSelf: 'stretch' }}>
+/**
+ * The card an approval or a question is asked on. « Later » is a small
+ * close control in the corner rather than a third button beside the two
+ * that decide: three ways to not answer is what made this confusing.
+ */
+export const ApprovalCard: React.FC<{
+  children: React.ReactNode;
+  onLater?: () => void;
+}> = ({ children, onLater }) => (
+  <div className="maties-card relative flex flex-col gap-3" style={{ padding: '16px 18px 14px 18px', alignSelf: 'stretch' }}>
+    {onLater && (
+      <button
+        type="button"
+        onClick={onLater}
+        className="maties-icon-button absolute right-3 top-3"
+        style={{ borderRadius: 999 }}
+        title={i18nService.t('matiesDecideLater')}
+        aria-label={i18nService.t('matiesDecideLater')}
+      >
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+    )}
     {children}
   </div>
 );
@@ -568,7 +585,7 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
 
   return (
     <ApprovalCardShell slotKeys={[permission.toolUseId, permission.requestId]} hidden={hidden}>
-      <ApprovalCard>
+      <ApprovalCard onLater={onMinimize}>
         <ApprovalSentence>
           {isConfirmMode ? renderTextWithLinks(words.sentence) : words.sentence}
         </ApprovalSentence>
@@ -627,7 +644,6 @@ const CoworkPermissionModal: React.FC<CoworkPermissionModalProps> = ({
           onYes={handleApprove}
           yesLabel={words.verb}
           yesDisabled={!isComplete}
-          onLater={onMinimize}
         />
       </ApprovalCard>
     </ApprovalCardShell>
