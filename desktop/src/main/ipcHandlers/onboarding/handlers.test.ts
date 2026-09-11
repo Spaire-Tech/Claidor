@@ -1,3 +1,6 @@
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { describe, expect, test, vi } from 'vitest';
 
 import { AgentId } from '../../../shared/agent/constants';
@@ -26,12 +29,16 @@ const createDeps = (options: { hasMainRow?: boolean; syncSucceeds?: boolean } = 
     changed: true,
     ...(options.syncSucceeds === false ? { error: 'gateway busy' } : {}),
   }));
+  const workspaceDir = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-onboarding-'));
+  fs.writeFileSync(path.join(workspaceDir, 'BOOTSTRAP.md'), '# Bootstrap\n');
   const deps: OnboardingHandlerDeps = {
     getStore: () => store,
     getAgentManager: () => ({ updateAgent } as unknown as AgentManager),
     syncOpenClawConfig,
+    getMainWorkspacePath: () => workspaceDir,
+    getPersonName: () => 'Eva Martin',
   };
-  return { data, deps, updateAgent, syncOpenClawConfig };
+  return { data, deps, updateAgent, syncOpenClawConfig, workspaceDir };
 };
 
 describe('applyOnboardingProfile', () => {
@@ -48,6 +55,20 @@ describe('applyOnboardingProfile', () => {
     expect(data.get(OnboardingStoreKey.Timezone)).toBe('Europe/Paris');
     expect(updateAgent).toHaveBeenCalledWith(AgentId.Main, { name: 'Juno' });
     expect(syncOpenClawConfig).toHaveBeenCalledWith({ reason: 'onboarding-profile-applied' });
+  });
+
+  test('writes the engine identity files and removes its questionnaire', async () => {
+    const { deps, workspaceDir } = createDeps();
+
+    await applyOnboardingProfile(
+      { assistantName: 'Juno', voice: AssistantVoice.Warm, timezone: 'Europe/Paris' },
+      deps,
+    );
+
+    expect(fs.existsSync(path.join(workspaceDir, 'BOOTSTRAP.md'))).toBe(false);
+    expect(fs.readFileSync(path.join(workspaceDir, 'IDENTITY.md'), 'utf8')).toContain('- **Name:** Juno');
+    expect(fs.readFileSync(path.join(workspaceDir, 'USER.md'), 'utf8')).toContain('- **Name:** Eva Martin');
+    expect(fs.readFileSync(path.join(workspaceDir, 'SOUL.md'), 'utf8')).toContain('You are Juno');
   });
 
   test('keeps the stored profile when the main agent has no row yet', async () => {

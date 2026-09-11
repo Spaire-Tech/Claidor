@@ -15,7 +15,7 @@ import {
   normalizeBrowserAnnotationBatches,
 } from '@shared/cowork/browserAnnotations';
 import { ProviderName } from '@shared/providers';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -364,6 +364,8 @@ const LARGE_TOOLBAR_COMPACT_WIDTH = 520;
 const COMPOSER_CARD_SHADOW = '0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09), inset 0 1px 0 rgba(255,255,255,.7)';
 const COMPOSER_TRAY_TOP_OFFSET = 34;
 const COMPOSER_TRAY_HEIGHT = 44;
+/** The agent menu's width; it floats over the window, anchored to its chip in the tray. */
+const AGENT_MENU_WIDTH = 256;
 const COMPOSER_ROUND_BUTTON_CLASS_NAME =
   'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-[#4a4f57] transition-colors hover:bg-[#f3f3f1] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent';
 const COMPOSER_TRAY_CHIP_CLASS_NAME =
@@ -563,6 +565,9 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     const [imageVisionHint, setImageVisionHint] = useState(false);
     const [isPatchingModel, setIsPatchingModel] = useState(false);
     const [showAgentMenu, setShowAgentMenu] = useState(false);
+    // The agent menu leaves the tray (which sits under the composer card) and
+    // floats over everything, anchored to its chip.
+    const [agentMenuStyle, setAgentMenuStyle] = useState<React.CSSProperties>({});
     const [isReadOnlyContextCompact, setIsReadOnlyContextCompact] = useState(false);
     const [mentionPickerOpen, setMentionPickerOpen] = useState(false);
     const [mentionFilter, setMentionFilter] = useState('');
@@ -1125,6 +1130,29 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true);
       document.removeEventListener('keydown', handleEscape, true);
+    };
+  }, [showAgentMenu]);
+
+  // Place the agent menu above its chip, in window coordinates, and follow the chip while open.
+  useLayoutEffect(() => {
+    if (!showAgentMenu) return;
+    const place = () => {
+      const rect = agentButtonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setAgentMenuStyle({
+        position: 'fixed',
+        left: Math.max(8, Math.min(rect.left, window.innerWidth - AGENT_MENU_WIDTH - 8)),
+        bottom: window.innerHeight - rect.top + 4,
+        width: AGENT_MENU_WIDTH,
+        zIndex: 10000,
+      });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
     };
   }, [showAgentMenu]);
 
@@ -4008,10 +4036,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
                       <span className="min-w-0 truncate">{homeContextAgentName}</span>
                       <ChevronDownLineIcon className="text-[#8f96a0]" />
                     </button>
-                    {showAgentMenu && (
+                    {showAgentMenu && createPortal(
                       <div
                         ref={agentMenuRef}
-                        className="maties-menu absolute bottom-full left-0 z-50 mb-1 max-h-64 w-64 overflow-y-auto"
+                        className="maties-menu max-h-64 overflow-y-auto"
+                        style={agentMenuStyle}
                         role="menu"
                       >
                         {agentOptions.map((agent) => {
@@ -4030,7 +4059,8 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
                             </button>
                           );
                         })}
-                      </div>
+                      </div>,
+                      document.body,
                     )}
                   </div>
                 )}

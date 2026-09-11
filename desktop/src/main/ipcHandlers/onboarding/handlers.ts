@@ -3,6 +3,7 @@ import { ipcMain } from 'electron';
 import { AgentId } from '../../../shared/agent/constants';
 import { OnboardingIpcChannel, type OnboardingProfile } from '../../../shared/onboarding/constants';
 import type { AgentManager } from '../../agentManager';
+import { applyProfileToWorkspace } from '../../libs/openclawWorkspaceProfile';
 import {
   type OnboardingProfileStore,
   readOnboardingProfile,
@@ -23,6 +24,10 @@ export interface OnboardingHandlerDeps {
   getStore: () => OnboardingProfileStore;
   getAgentManager: () => AgentManager;
   syncOpenClawConfig: SyncOpenClawConfig;
+  /** The main agent's workspace, where the engine keeps its identity files. */
+  getMainWorkspacePath: () => string;
+  /** The signed-in person's display name, empty when signed out. */
+  getPersonName: () => string;
 }
 
 export interface OnboardingApplyResult {
@@ -47,6 +52,15 @@ export async function applyOnboardingProfile(
   if (!renamed) {
     // No row yet: the config sync reads the stored name for the main agent instead.
     console.warn('[Onboarding] main agent row not found; the stored name is used for the engine identity');
+  }
+
+  // The engine's own first-run questionnaire would ask all this again; the
+  // answers go into its identity files and the questionnaire is removed.
+  try {
+    const written = applyProfileToWorkspace(deps.getMainWorkspacePath(), profile, { name: deps.getPersonName() });
+    console.log(`[Onboarding] workspace identity applied: ${JSON.stringify(written)}`);
+  } catch (error) {
+    console.error('[Onboarding] writing the workspace identity files failed:', error);
   }
 
   try {

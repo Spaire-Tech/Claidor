@@ -172,6 +172,7 @@ import {
   TaskCompletionNotificationMode,
   WaitingNotificationKind,
 } from '../shared/notifications/constants';
+import { OnboardingStoreKey } from '../shared/onboarding/constants';
 import {
   OpenClawEngineIpc,
   OpenClawGatewayRepairErrorCode,
@@ -2164,6 +2165,17 @@ const getStore = (): SqliteStore => {
   return store;
 };
 
+/** The signed-in person's display name, for the engine's user file; empty when signed out. */
+const getSignedInPersonName = (): string => {
+  try {
+    const user = getStore().get<Record<string, unknown>>(LogReporterStoreKey.AuthUser);
+    const nickname = user?.nickname;
+    return typeof nickname === 'string' ? nickname.trim() : '';
+  } catch {
+    return '';
+  }
+};
+
 const getOpenClawEngineManager = (): OpenClawEngineManager => {
   if (!openClawEngineManager) {
     openClawEngineManager = new OpenClawEngineManager();
@@ -2492,6 +2504,8 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
       getOnboardingProfile: () => readOnboardingProfile(getStore()),
+      isOnboardingCompleted: () => getStore().get(OnboardingStoreKey.Completed) === true,
+      getPersonName: getSignedInPersonName,
       getSkillsList: () =>
         getSkillManager()
           .listSkills()
@@ -8419,6 +8433,8 @@ if (!gotTheLock) {
     getStore,
     getAgentManager,
     syncOpenClawConfig,
+    getMainWorkspacePath: () => getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir()),
+    getPersonName: getSignedInPersonName,
   });
 
   ipcMain.handle(OpenClawEngineIpc.GetStatus, async () => {

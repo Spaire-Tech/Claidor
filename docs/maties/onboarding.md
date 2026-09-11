@@ -65,6 +65,25 @@ Connectors: « How to reach {name} » on top, the eleven groups under it,
 and « Your own servers » at the bottom, which is the MCP manager as it
 was. One catalogue, one set of cards, two places that show it.
 
+## The engine's own questions
+
+A brand-new engine workspace comes with a first-run questionnaire
+(`BOOTSTRAP.md`): the assistant asks « what is my name, my nature, my
+vibe, my emoji, and what should I call you » in the first conversation.
+Maties asked all that on its own screens, so on « Finish setup », and
+again on every engine sync once the onboarding is complete, the answers
+are written in the engine's own files in the main workspace and the
+questionnaire is removed (`src/main/libs/openclawWorkspaceProfile.ts`):
+
+- `IDENTITY.md`: the name, « an AI assistant, a Maty », the vibe line
+  of the chosen voice, the bird as emoji. Rewritten whenever its name
+  line stops matching the profile (a rename in the app).
+- `USER.md`: the person's account name, what to call them, the time
+  zone. Written only when the file has no name yet; afterwards only the
+  time zone line is refreshed, so what the engine learns stays.
+- `SOUL.md`: who the assistant is, in the chosen voice. Written only
+  when missing; never overwritten.
+
 ## What is stored
 
 `src/shared/onboarding/constants.ts` is the contract: the `kv` keys, the
