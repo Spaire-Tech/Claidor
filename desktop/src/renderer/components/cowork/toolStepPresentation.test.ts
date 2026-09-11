@@ -123,6 +123,30 @@ describe('a step in plain words', () => {
     expect(getToolStepResult(command)).toEqual({ type: 'line', text: '/opt/homebrew/lib' });
   });
 
+  test('the runtime’s own warnings never reach the card', () => {
+    // What the founder saw on a step that had just written a document: a
+    // warning addressed to whoever builds the program, on the error stream,
+    // making a step that worked read as though it had gone wrong.
+    const noisy = [
+      '(node:23355) Warning: `--localstorage-file` was provided without a valid path',
+      '(Use `node --trace-warnings ...` to show where the warning was created)',
+      'npm notice New major version of npm available! 11.12.1 -> 12.0.2',
+      'Productivity Plan.docx written',
+    ].join('\n');
+    expect(stripEngineMarkers(noisy)).toBe('Productivity Plan.docx written');
+  });
+
+  test('a real failure still reaches the card', () => {
+    // The filter must not learn to swallow bad news. Nothing here
+    // announces itself as a warning, so nothing here is dropped.
+    const failed = [
+      'Error: ENOENT: no such file or directory',
+      '    at Object.open (node:fs:1234)',
+      'npm error code ENOENT',
+    ].join('\n');
+    expect(stripEngineMarkers(failed)).toBe(failed);
+  });
+
   test('a real path stays exactly as it is', () => {
     const command = group(toolUse('exec', { command: 'brew --prefix' }), toolResult('/opt/homebrew/lib\n'));
     expect(getToolStepResult(command)).toEqual({ type: 'line', text: '/opt/homebrew/lib' });

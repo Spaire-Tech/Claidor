@@ -1,13 +1,22 @@
 /**
  * Connections to accounts, from the app's side (docs/maties/connectors.md).
  *
- * Connect asks Claidor for a sign-in URL, opens it in a plain window and
- * waits. Claidor is the only thing that knows whether the sign-in finished,
- * so the window is watched by asking Claidor again, never by reading the
- * page: no injected script, no cookie reading, and web security stays on.
+ * Connect asks Claidor for a sign-in URL and opens it in the person's own
+ * browser. Claidor is the only thing that knows whether the sign-in
+ * finished, so we find out by asking Claidor again, never by reading the
+ * page: nothing is injected anywhere and no cookie is read.
+ *
+ * **Why the person's own browser and not a window of ours.** A window of
+ * ours starts with an empty cookie jar and no chrome — no address bar, no
+ * way back. That is fatal in the connection service's development mode,
+ * which requires the person to be signed in to the service itself in the
+ * same browser: our window could never be that browser, and offered no way
+ * to become it. Their own browser already holds the session, and shows the
+ * real address of the page being signed in to, which is the right thing to
+ * see when signing in to anything.
  */
 
-import { BrowserWindow } from 'electron';
+import { shell } from 'electron';
 
 import {
   type ConnectorActionResult,
@@ -23,21 +32,19 @@ import {
   requestConnectorLink,
 } from './connectorsClient';
 
-/** The sign-in window, sized for a form rather than for a page of prose. */
-const WINDOW_WIDTH = 520;
-const WINDOW_HEIGHT = 720;
-
-/** Its own cookie jar: the app's session is not lent to the sign-in pages. */
-const WINDOW_PARTITION = 'persist:claidor-connectors';
-
-/** How often Claidor is asked whether the sign-in finished, and for how long. */
+/**
+ * How often Claidor is asked whether the sign-in finished, and for how long.
+ *
+ * The browser is somebody else's window now, so there is no « they closed
+ * it » to hear: abandoning a sign-in ends in this limit instead. Five
+ * minutes is long enough for a slow sign-in with two factors and short
+ * enough that a forgotten one stops asking.
+ */
 const POLL_INTERVAL_MS = 2_000;
-const POLL_LIMIT_MS = 10 * 60_000;
+const POLL_LIMIT_MS = 5 * 60_000;
 
 export interface ConnectorsServiceDeps extends ConnectorsClientDeps {
   isSignedIn: () => boolean;
-  /** The window a sign-in window belongs to, when there is one. */
-  getParentWindow?: () => BrowserWindow | null;
   /** The state changed: tell the renderer. */
   onStateChanged?: (state: ConnectorsState) => void;
   /** The set of connected services changed: the engine's config must follow. */
@@ -55,7 +62,6 @@ const sameConnections = (a: ConnectorsState, b: ConnectorsState): boolean => (
 export class ConnectorsService {
   private readonly deps: ConnectorsServiceDeps;
   private state: ConnectorsState = EMPTY_CONNECTORS_STATE;
-  private linkWindow: BrowserWindow | null = null;
 
   constructor(deps: ConnectorsServiceDeps) {
     this.deps = deps;
@@ -129,9 +135,13 @@ export class ConnectorsService {
     return { outcome: ConnectorOutcome.Disconnected, state: this.state };
   }
 
-  /** Close the sign-in window if one is open; used when the app quits. */
+  /**
+   * Nothing of ours is left open by a sign-in — it happens in the person's
+   * own browser — so quitting has nothing to close. Kept because `main.ts`
+   * calls it on quit, and because a future provider may need it back.
+   */
   dispose(): void {
-    this.closeLinkWindow();
+    // Intentionally empty.
   }
 
   private applyState(next: ConnectorsState): void {
@@ -148,50 +158,14 @@ export class ConnectorsService {
   }
 
   /**
-   * Open the sign-in page and settle when the service turns up as connected
-   * or the person closes the window. Resolves true when it is connected.
+   * Hand the sign-in to the person's own browser and settle when the service
+   * turns up as connected. Resolves true when it is connected.
    */
   private runSignIn(slug: string, url: string): Promise<boolean> {
-    this.closeLinkWindow();
-    const parent = this.deps.getParentWindow?.() ?? null;
-    const window = new BrowserWindow({
-      width: WINDOW_WIDTH,
-      height: WINDOW_HEIGHT,
-      ...(parent && !parent.isDestroyed() ? { parent, modal: false } : {}),
-      autoHideMenuBar: true,
-      webPreferences: {
-        // A normal web page of somebody else's: no bridge, no node, no
-        // relaxed web security, and nothing of ours injected into it.
-        partition: WINDOW_PARTITION,
-        sandbox: true,
-        contextIsolation: true,
-        nodeIntegration: false,
-        webSecurity: true,
-      },
-    });
-    this.linkWindow = window;
-
-    // Sign-ins commonly open a popup; keep it inside the same jar.
-    window.webContents.setWindowOpenHandler(() => ({
-      action: 'allow',
-      overrideBrowserWindowOptions: {
-        width: WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
-        autoHideMenuBar: true,
-        webPreferences: {
-          partition: WINDOW_PARTITION,
-          sandbox: true,
-          contextIsolation: true,
-          nodeIntegration: false,
-          webSecurity: true,
-        },
-      },
-    }));
-
-    // The address carries a one-use token, so neither it nor the load error
-    // that quotes it is ever written to a log.
-    void window.loadURL(url).catch(() => {
-      console.warn(`[Connectors] the sign-in page for ${slug} did not load`);
+    // The address carries a one-use token, so neither it nor a failure
+    // quoting it is ever written to a log.
+    void shell.openExternal(url).catch(() => {
+      console.warn(`[Connectors] the sign-in page for ${slug} could not be opened`);
     });
 
     return new Promise<boolean>((resolve) => {
@@ -203,16 +177,8 @@ export class ConnectorsService {
         if (settled) return;
         settled = true;
         if (timer) clearTimeout(timer);
-        window.removeListener('closed', onClosed);
-        this.closeLinkWindow();
         resolve(connected);
       };
-
-      const onClosed = () => {
-        this.linkWindow = null;
-        settle(false);
-      };
-      window.once('closed', onClosed);
 
       const poll = async () => {
         if (settled) return;
@@ -234,11 +200,5 @@ export class ConnectorsService {
       };
       timer = setTimeout(() => { void poll(); }, POLL_INTERVAL_MS);
     });
-  }
-
-  private closeLinkWindow(): void {
-    const window = this.linkWindow;
-    this.linkWindow = null;
-    if (window && !window.isDestroyed()) window.destroy();
   }
 }

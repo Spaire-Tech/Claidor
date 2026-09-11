@@ -197,9 +197,35 @@ export type ToolStepResult =
  */
 const ENGINE_MARKER_LINE = /^\s*<<<[^\n]*>>>\s*$/;
 
+/**
+ * Noise the runtime writes to its own error stream while doing what it was
+ * asked. It is addressed to whoever is building the program, not to the
+ * person reading the answer, and showing it makes a step that worked look
+ * as though something went wrong — the founder saw
+ * « (node:23355) Warning: `--localstorage-file` was provided without a
+ * valid path » on a step that had just written a document perfectly well.
+ *
+ * Only lines that announce themselves as warnings or notices go. Nothing
+ * here matches `Error`, a stack frame, or a message a program wrote on
+ * purpose: a step that really failed must still say so.
+ */
+const RUNTIME_NOISE_LINE = [
+  // `(node:23355) Warning: …`, `(node:1) [DEP0040] DeprecationWarning: …`
+  /^\(node:\d+\)\s+(\[[A-Z0-9]+\]\s+)?\w*Warning:/,
+  // The follow-up the runtime prints under one of its own warnings.
+  /^\(Use `node --trace-\w+ \.\.\.` to show where the \w+ was created\)$/,
+  // `npm notice …`, `npm warn …` — housekeeping, never an answer.
+  /^npm (notice|warn|WARN)\b/,
+];
+
+const isRuntimeNoise = (line: string): boolean => {
+  const trimmed = line.trim();
+  return RUNTIME_NOISE_LINE.some((pattern) => pattern.test(trimmed));
+};
+
 export const stripEngineMarkers = (text: string): string => text
   .split('\n')
-  .filter((line) => !ENGINE_MARKER_LINE.test(line))
+  .filter((line) => !ENGINE_MARKER_LINE.test(line) && !isRuntimeNoise(line))
   .join('\n')
   .trim();
 
