@@ -77,7 +77,14 @@ RUN pnpm install --frozen-lockfile \
 
 # Pack the npm tarball and unpack it as the runtime: that is what decides
 # which files the engine ships, rather than us guessing.
-RUN npm pack --ignore-scripts --pack-destination /pack \
+#
+# `/pack` is created first because `npm pack --pack-destination` does not
+# create the directory it is given: it writes the tarball and then reopens
+# it by path, so a missing directory fails at the read with ENOENT on a
+# file npm has just claimed to write. The error names the tarball, which
+# reads like the pack failing rather than the destination missing.
+RUN mkdir -p /pack \
+  && npm pack --ignore-scripts --pack-destination /pack \
   && mkdir -p /unpack \
   && tar -xzf /pack/openclaw-*.tgz -C /unpack \
   && mkdir -p /engine \
