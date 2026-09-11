@@ -37,7 +37,7 @@ from fastapi.responses import (
     Response,
     StreamingResponse,
 )
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from polar.auth.dependencies import WebUserOrAnonymous
 from polar.auth.models import is_user
@@ -51,10 +51,14 @@ from polar.routing import APIRouter
 
 from .service import (
     AUTH_CODE_INVALID,
+    MEMORY_FILE_LIMIT,
+    MEMORY_REFUSED,
     MODELS,
     QUOTA_EXHAUSTED_CODE,
     REFRESH_INVALID,
+    DesktopMemoryRefused,
     DesktopUnauthenticated,
+    IncomingMemoryFile,
     Usage,
     UsageTally,
     desktop,
@@ -261,6 +265,114 @@ async def profile_summary(
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     return _ok(await desktop.profile_summary(session, desktop_session.user))
+
+
+# --- the shared memory ------------------------------------------------------
+
+
+class MemorySyncFile(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str = Field(max_length=200)
+    content: str
+    #: The version the client started from; 0 means « I have never seen
+    #: this file from you ».
+    base_version: int = Field(default=0, ge=0)
+
+
+class MemorySyncBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    files: list[MemorySyncFile] = Field(
+        default_factory=list, max_length=MEMORY_FILE_LIMIT
+    )
+
+
+class MemorySyncedFile(BaseModel):
+    name: str
+    content: str
+    version: int
+    #: True when the answer differs from what the client sent, so the app
+    #: writes the file back to the workspace.
+    changed: bool
+
+
+class MemorySyncResponse(BaseModel):
+    files: list[MemorySyncedFile]
+    deleted: list[str]
+
+
+class MemoryListedFile(BaseModel):
+    name: str
+    version: int
+    size: int
+
+
+class MemoryListResponse(BaseModel):
+    files: list[MemoryListedFile]
+
+
+@router.post(
+    "/api/memory/sync",
+    name="desktop:memory_sync",
+    response_model=MemorySyncResponse,
+)
+async def memory_sync(
+    body: MemorySyncBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> MemorySyncResponse | JSONResponse:
+    """The shared memory, one round (`docs/maties/cloud.md`, section 3).
+
+    The client sends every memory file it has and the version it last
+    saw for each; Claidor merges and answers with every file it holds,
+    so a fresh computer receives the whole memory by sending nothing.
+    Merging is Claidor's job alone, so two engines cannot disagree.
+    """
+    try:
+        synced = await desktop.sync_memory_files(
+            session,
+            desktop_session.user,
+            [
+                IncomingMemoryFile(
+                    name=file.name,
+                    content=file.content,
+                    base_version=file.base_version,
+                )
+                for file in body.files
+            ],
+        )
+    except DesktopMemoryRefused as error:
+        return _fail(MEMORY_REFUSED, error.message, status=400)
+    return MemorySyncResponse(
+        files=[
+            MemorySyncedFile(
+                name=file.name,
+                content=file.content,
+                version=file.version,
+                changed=file.changed,
+            )
+            for file in synced.files
+        ],
+        deleted=synced.deleted,
+    )
+
+
+@router.get("/api/memory", name="desktop:memory_list")
+async def memory_list(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> MemoryListResponse:
+    """What Claidor holds, without the text of it: a cheap way for a
+    client to see whether it is behind before sending anything."""
+    return MemoryListResponse(
+        files=[
+            MemoryListedFile(
+                name=file.name,
+                version=file.version,
+                size=len(file.content.encode("utf-8")),
+            )
+            for file in await desktop.list_memory_files(session, desktop_session.user)
+        ]
+    )
 
 
 # --- the models ------------------------------------------------------------

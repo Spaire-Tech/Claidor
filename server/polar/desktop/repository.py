@@ -1,12 +1,18 @@
 """The desktop app's tables, queried."""
 
+from collections.abc import Sequence
 from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
 
 from polar.kit.repository import RepositoryBase
-from polar.models import DesktopAuthCode, DesktopSession, DesktopUsage
+from polar.models import (
+    DesktopAuthCode,
+    DesktopMemoryFile,
+    DesktopSession,
+    DesktopUsage,
+)
 
 
 class DesktopAuthCodeRepository(RepositoryBase[DesktopAuthCode]):
@@ -50,3 +56,38 @@ class DesktopUsageRepository(RepositoryBase[DesktopUsage]):
         )
         result = await self.session.execute(statement)
         return int(result.scalar_one())
+
+
+class DesktopMemoryFileRepository(RepositoryBase[DesktopMemoryFile]):
+    model = DesktopMemoryFile
+
+    async def list_by_user(self, user_id: UUID) -> Sequence[DesktopMemoryFile]:
+        """Everything Claidor holds for one person, in name order."""
+        statement = (
+            self.get_base_statement()
+            .where(DesktopMemoryFile.user_id == user_id)
+            .order_by(DesktopMemoryFile.name)
+        )
+        return await self.get_all(statement)
+
+    async def get_by_name(self, user_id: UUID, name: str) -> DesktopMemoryFile | None:
+        statement = self.get_base_statement().where(
+            DesktopMemoryFile.user_id == user_id, DesktopMemoryFile.name == name
+        )
+        return await self.get_one_or_none(statement)
+
+    async def upsert(
+        self, user_id: UUID, name: str, *, content: str, version: int
+    ) -> DesktopMemoryFile:
+        """The row for one name, written at the version given. A name
+        the person does not have yet is created; one they have is
+        overwritten."""
+        found = await self.get_by_name(user_id, name)
+        if found is None:
+            found = DesktopMemoryFile(
+                user_id=user_id, name=name, content=content, version=version
+            )
+            return await self.create(found, flush=True)
+        return await self.update(
+            found, update_dict={"content": content, "version": version}, flush=True
+        )

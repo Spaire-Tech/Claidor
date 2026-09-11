@@ -13,6 +13,13 @@ server-side state of that protocol.
 - `DesktopUsage`: one row per model call the app made through the
   proxy, with the token counts Anthropic reported and the credits they
   cost. The quota is a sum over these rows for the current month.
+
+One more table carries the shared memory (`docs/maties/cloud.md`):
+
+- `DesktopMemoryFile`: one row per person per memory file. Two sides —
+  the app on a computer, and later the cloud runner — read it before
+  they work and write it after, so a person with two machines has one
+  assistant instead of two strangers.
 """
 
 from datetime import datetime
@@ -27,6 +34,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     Uuid,
 )
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
@@ -119,3 +127,36 @@ class DesktopUsage(RecordModel):
     stream: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     #: The status Anthropic answered with; a failed call costs nothing.
     upstream_status: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class DesktopMemoryFile(RecordModel):
+    """One memory file of one person, as Claidor holds it.
+
+    The assistant's memory is a handful of small text files in its
+    workspace: the durable facts (`MEMORY.md`), a note file per day
+    (`memory/YYYY-MM-DD.md`), and a short profile of the person
+    (`USER.md`). Each machine used to keep its own copy; this table is
+    the shared one, so the app on a computer and the cloud runner write
+    into one memory.
+
+    The name is a relative path inside the workspace, and only the three
+    shapes above are accepted — see
+    `polar.desktop.memory_merge.is_accepted_memory_name`, which is the
+    boundary that keeps a name from escaping the workspace.
+
+    `version` counts writes, starting at 1. A side that writes sends the
+    version it started from; when the row has moved on since, Claidor
+    merges the two copies by the file's rule and the version goes up by
+    one again.
+    """
+
+    __tablename__ = "desktop_memory_files"
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    #: The path inside the workspace, e.g. `memory/2026-09-11.md`.
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

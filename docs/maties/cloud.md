@@ -107,6 +107,19 @@ POST /desktop/api/memory/sync
   accepted, so no path can escape the workspace.
 - Merging is Claidor's job alone, so the app and the runner cannot
   disagree about it.
+- `deleted` names the files Claidor no longer holds. Today that is only
+  the oldest daily notes, pruned once a person passes two thousand
+  files. The app does not delete them from its own disk: memory is
+  never taken away quietly. It only stops tracking their version.
+- Refusals come back as a real HTTP failure with a reason, not as a
+  success carrying an error number. A single bad name refuses the whole
+  round and writes nothing, so a client can never half-sync. The
+  older routes on this server answer inside a `{code, data}` envelope
+  because the app that called them expected it; these two are new, so
+  they answer with the body itself and use the status line for what it
+  is for.
+- Sizes: a file over a megabyte, or a round over eight, is refused
+  whole.
 
 ## 4. The runner in detail
 
