@@ -269,6 +269,23 @@ files and the five offers, and the choice of a character, which waits
 for the cast (step 4). The tour cards and the welcome conversation
 inherited from LobsterAI are gone.
 
+September 11, a finding, not yet a decision. ClawHub, the skill
+registry of the engine we ship, holds about five thousand seven hundred
+skills, and our app already understands how to install from it. Three
+things are true at once about it. Phone calls are a solved problem
+there: skills exist that give the assistant a real telephone number,
+sold by the companies behind them, so the earlier judgement that calls
+were out of reach was wrong. The convenient connector skills for Gmail,
+Calendar and the rest advertise « managed OAuth » and are published by
+individuals, which means a person's mailbox would be reached through a
+stranger's servers, and that cannot sit under our privacy sentence. And
+the registry vets nothing: the verdict and scanner fields on its most
+installed skills are empty. The shape that fits this plan is a shelf we
+curate into the store endpoint the API already serves empty, with the
+open hub behind a door that says whose code it is. Whether that also
+replaces the integration service of section 3 is open, and is the
+founder's to settle once the cloud engine stands.
+
 Not done: a signed Mac build (Apple enrolment is the founder's step);
 the update feed; the account page on the web app; the cited answer from
 the library seen in the chat; steps 3 and 4, the rest of step 5, and

@@ -62,6 +62,7 @@ import {
   resolveAllProviderApiKeys,
   resolveRawApiConfig,
 } from './claudeSettings';
+import { buildConnectorMcpServers } from './connectors/connectorMcpServers';
 import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
@@ -81,6 +82,7 @@ import { repairHeartbeatFile, stripProactiveHeartbeatSection } from './openclawH
 import { getMainAgentWorkspacePath } from './openclawMemoryFile';
 import { resolveOpenClawCatalogModelMaxTokens } from './openclawModelCatalog';
 import { buildManagedVoicePrompt } from './openclawVoicePrompt';
+import { applyProfileToWorkspace } from './openclawWorkspaceProfile';
 
 const gwDiagTs = (): string => {
   const d = new Date();
@@ -1873,6 +1875,11 @@ type OpenClawConfigSyncDeps = {
   getWeixinConfig: () => WeixinOpenClawConfig | null;
   getIMSettings?: () => IMSettings | null;
   getResolvedMcpServers?: () => ResolvedMcpServer[];
+  /**
+   * The services the person has connected (docs/maties/connectors.md): one
+   * MCP entry each, pointing at Claidor's proxy and at nothing else.
+   */
+  getConnectedConnectorSlugs?: () => string[];
   getAskUserCallbackUrl?: () => string | null;
   /** Bridge route the search-library extension posts to; null until the bridge is up. */
   getLibrarySearchCallbackUrl?: () => string | null | undefined;
@@ -1887,6 +1894,10 @@ type OpenClawConfigSyncDeps = {
   canUseMediaGeneration?: () => boolean;
   /** The onboarding decisions (docs/maties/onboarding.md): name, voice, time zone, defaults filled. */
   getOnboardingProfile?: () => OnboardingProfile | null | undefined;
+  /** True once « Go to workspace » was pressed; before that the workspace files are left to the engine. */
+  isOnboardingCompleted?: () => boolean;
+  /** The signed-in person's display name, for the engine's user file. */
+  getPersonName?: () => string;
 };
 
 export class OpenClawConfigSync {
@@ -1908,6 +1919,7 @@ export class OpenClawConfigSync {
   private readonly getWeixinConfig: () => WeixinOpenClawConfig | null;
   private readonly getIMSettings?: () => IMSettings | null;
   private readonly getResolvedMcpServers?: () => ResolvedMcpServer[];
+  private readonly getConnectedConnectorSlugs?: () => string[];
   private readonly getAskUserCallbackUrl?: () => string | null;
   private readonly getLibrarySearchCallbackUrl?: () => string | null | undefined;
   private readonly getMediaCallbackUrl?: () => string | null;
@@ -1920,6 +1932,8 @@ export class OpenClawConfigSync {
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
   private readonly getOnboardingProfile?: () => OnboardingProfile | null | undefined;
+  private readonly isOnboardingCompleted?: () => boolean;
+  private readonly getPersonName?: () => string;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
 
@@ -1942,6 +1956,7 @@ export class OpenClawConfigSync {
     this.getWeixinConfig = deps.getWeixinConfig;
     this.getIMSettings = deps.getIMSettings;
     this.getResolvedMcpServers = deps.getResolvedMcpServers;
+    this.getConnectedConnectorSlugs = deps.getConnectedConnectorSlugs;
     this.getAskUserCallbackUrl = deps.getAskUserCallbackUrl;
     this.getLibrarySearchCallbackUrl = deps.getLibrarySearchCallbackUrl;
     this.getMediaCallbackUrl = deps.getMediaCallbackUrl;
@@ -1954,6 +1969,28 @@ export class OpenClawConfigSync {
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
     this.getOnboardingProfile = deps.getOnboardingProfile;
+    this.isOnboardingCompleted = deps.isOnboardingCompleted;
+    this.getPersonName = deps.getPersonName;
+  }
+
+  /**
+   * Once the onboarding is done, the main workspace's identity files say
+   * what was chosen there and the engine's questionnaire is gone, on every
+   * sync: a workspace the engine re-seeds, or a name changed later, is put
+   * right the next time the config is written.
+   */
+  private syncMainWorkspaceProfile(mainWorkspacePath: string): void {
+    if (!this.isOnboardingCompleted?.()) return;
+    const profile = this.getOnboardingProfile?.();
+    if (!profile) return;
+    try {
+      const written = applyProfileToWorkspace(mainWorkspacePath, profile, { name: this.getPersonName?.() ?? '' });
+      if (written.identityWritten || written.userWritten || written.soulWritten || written.bootstrapRemoved) {
+        console.log(`[OpenClawConfigSync] main workspace identity updated: ${JSON.stringify(written)}`);
+      }
+    } catch (error) {
+      console.warn('[OpenClawConfigSync] could not update the main workspace identity files:', error);
+    }
   }
 
   /** The voice chosen at onboarding; the default until one is chosen. */
@@ -2127,6 +2164,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig, {
           voice: this.resolveAssistantVoice(),
         });
+        this.syncMainWorkspaceProfile(mainWorkspacePath);
         this.syncPerAgentWorkspaces(mainWorkspacePath, coworkConfig);
         if (agentsMdWarning) result.agentsMdWarning = agentsMdWarning;
         return result;
@@ -2745,13 +2783,30 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         };
       }
     }
+    // The connected services (docs/maties/connectors.md): one entry each,
+    // reaching the loopback token proxy rather than Claidor directly. The
+    // proxy attaches the person's live session token per request, so no
+    // credential is written here and none goes stale; Claidor then adds the
+    // connector service's key and pins the person. Nothing about that service
+    // exists on this machine.
+    const connectorSlugs = this.getConnectedConnectorSlugs?.() ?? [];
+    const connectorsProxyPort = getOpenClawTokenProxyPort();
+    const connectorServers = connectorSlugs.length > 0 && connectorsProxyPort
+      ? buildConnectorMcpServers(`http://127.0.0.1:${connectorsProxyPort}`, connectorSlugs)
+      : {};
+    const connectorServerCount = Object.keys(connectorServers).length;
+    Object.assign(nativeMcpServers, connectorServers);
+
     const nativeMcpServerCount = Object.keys(nativeMcpServers).length;
     if (nativeMcpServerCount > 0) {
       (managedConfig as Record<string, unknown>).mcp = {
         servers: nativeMcpServers,
       };
     }
-    console.log(`[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s)`);
+    console.log(
+      `[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s), `
+      + `${connectorServerCount} of them connected accounts`,
+    );
 
     // Sync AskUserQuestion plugin config
     const askUserCallbackUrl = this.getAskUserCallbackUrl?.();
@@ -3386,6 +3441,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig, {
       voice: this.resolveAssistantVoice(),
     });
+    this.syncMainWorkspaceProfile(mainWorkspacePath);
 
     // Sync per-agent workspace files (SOUL.md, IDENTITY.md, AGENTS.md) for non-main agents
     this.syncPerAgentWorkspaces(mainWorkspacePath, coworkConfig);

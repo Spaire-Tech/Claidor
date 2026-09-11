@@ -1,0 +1,244 @@
+/**
+ * Connections to accounts, from the app's side (docs/maties/connectors.md).
+ *
+ * Connect asks Claidor for a sign-in URL, opens it in a plain window and
+ * waits. Claidor is the only thing that knows whether the sign-in finished,
+ * so the window is watched by asking Claidor again, never by reading the
+ * page: no injected script, no cookie reading, and web security stays on.
+ */
+
+import { BrowserWindow } from 'electron';
+
+import {
+  type ConnectorActionResult,
+  ConnectorOutcome,
+  type ConnectorsState,
+  EMPTY_CONNECTORS_STATE,
+} from '../../../shared/connectors/constants';
+import {
+  ConnectorRequestStatus,
+  type ConnectorsClientDeps,
+  deleteConnectorAccount,
+  fetchConnectorsState,
+  requestConnectorLink,
+} from './connectorsClient';
+
+/** The sign-in window, sized for a form rather than for a page of prose. */
+const WINDOW_WIDTH = 520;
+const WINDOW_HEIGHT = 720;
+
+/** Its own cookie jar: the app's session is not lent to the sign-in pages. */
+const WINDOW_PARTITION = 'persist:claidor-connectors';
+
+/** How often Claidor is asked whether the sign-in finished, and for how long. */
+const POLL_INTERVAL_MS = 2_000;
+const POLL_LIMIT_MS = 10 * 60_000;
+
+export interface ConnectorsServiceDeps extends ConnectorsClientDeps {
+  isSignedIn: () => boolean;
+  /** The window a sign-in window belongs to, when there is one. */
+  getParentWindow?: () => BrowserWindow | null;
+  /** The state changed: tell the renderer. */
+  onStateChanged?: (state: ConnectorsState) => void;
+  /** The set of connected services changed: the engine's config must follow. */
+  onConnectionsChanged?: () => void;
+}
+
+const slugsOf = (state: ConnectorsState): string[] => (
+  [...new Set(state.connections.map((connection) => connection.slug))].sort()
+);
+
+const sameConnections = (a: ConnectorsState, b: ConnectorsState): boolean => (
+  slugsOf(a).join(',') === slugsOf(b).join(',')
+);
+
+export class ConnectorsService {
+  private readonly deps: ConnectorsServiceDeps;
+  private state: ConnectorsState = EMPTY_CONNECTORS_STATE;
+  private linkWindow: BrowserWindow | null = null;
+
+  constructor(deps: ConnectorsServiceDeps) {
+    this.deps = deps;
+  }
+
+  /** The last answer from Claidor; `loaded` is false until there has been one. */
+  getState(): ConnectorsState {
+    return this.state;
+  }
+
+  /** The services the engine should be given an MCP entry for. */
+  getConnectedSlugs(): string[] {
+    return this.state.entitled ? slugsOf(this.state) : [];
+  }
+
+  /** Signing out empties the shelf until somebody signs in again. */
+  reset(): void {
+    this.applyState(EMPTY_CONNECTORS_STATE);
+  }
+
+  async refresh(): Promise<ConnectorsState> {
+    if (!this.deps.isSignedIn()) {
+      this.applyState(EMPTY_CONNECTORS_STATE);
+      return this.state;
+    }
+    const result = await fetchConnectorsState(this.deps);
+    if (result.status === ConnectorRequestStatus.Ok) {
+      this.applyState(result.data);
+    } else if (result.status === ConnectorRequestStatus.NotEntitled) {
+      this.applyState({ entitled: false, connections: [], loaded: true });
+    } else {
+      console.warn(`[Connectors] could not read what is connected: ${result.error}`);
+    }
+    return this.state;
+  }
+
+  async connect(slug: string): Promise<ConnectorActionResult> {
+    if (!this.deps.isSignedIn()) {
+      return { outcome: ConnectorOutcome.Failed, state: this.state, error: 'Not signed in.' };
+    }
+    const link = await requestConnectorLink(this.deps, slug);
+    if (link.status === ConnectorRequestStatus.NotEntitled) {
+      this.applyState({ ...this.state, entitled: false, loaded: true });
+      return { outcome: ConnectorOutcome.NotEntitled, state: this.state };
+    }
+    if (link.status === ConnectorRequestStatus.Failed) {
+      return { outcome: ConnectorOutcome.Failed, state: this.state, error: link.error };
+    }
+
+    const connected = await this.runSignIn(slug, link.data.url);
+    await this.refresh();
+    return {
+      outcome: connected ? ConnectorOutcome.Connected : ConnectorOutcome.Cancelled,
+      state: this.state,
+    };
+  }
+
+  async disconnect(accountId: string): Promise<ConnectorActionResult> {
+    if (!this.deps.isSignedIn()) {
+      return { outcome: ConnectorOutcome.Failed, state: this.state, error: 'Not signed in.' };
+    }
+    const result = await deleteConnectorAccount(this.deps, accountId);
+    if (result.status === ConnectorRequestStatus.NotEntitled) {
+      this.applyState({ ...this.state, entitled: false, loaded: true });
+      return { outcome: ConnectorOutcome.NotEntitled, state: this.state };
+    }
+    if (result.status === ConnectorRequestStatus.Failed) {
+      return { outcome: ConnectorOutcome.Failed, state: this.state, error: result.error };
+    }
+    await this.refresh();
+    return { outcome: ConnectorOutcome.Disconnected, state: this.state };
+  }
+
+  /** Close the sign-in window if one is open; used when the app quits. */
+  dispose(): void {
+    this.closeLinkWindow();
+  }
+
+  private applyState(next: ConnectorsState): void {
+    const previous = this.state;
+    const unchanged = previous.loaded === next.loaded
+      && previous.entitled === next.entitled
+      && sameConnections(previous, next);
+    if (unchanged) return;
+    this.state = next;
+    this.deps.onStateChanged?.(next);
+    if (previous.entitled !== next.entitled || !sameConnections(previous, next)) {
+      this.deps.onConnectionsChanged?.();
+    }
+  }
+
+  /**
+   * Open the sign-in page and settle when the service turns up as connected
+   * or the person closes the window. Resolves true when it is connected.
+   */
+  private runSignIn(slug: string, url: string): Promise<boolean> {
+    this.closeLinkWindow();
+    const parent = this.deps.getParentWindow?.() ?? null;
+    const window = new BrowserWindow({
+      width: WINDOW_WIDTH,
+      height: WINDOW_HEIGHT,
+      ...(parent && !parent.isDestroyed() ? { parent, modal: false } : {}),
+      autoHideMenuBar: true,
+      webPreferences: {
+        // A normal web page of somebody else's: no bridge, no node, no
+        // relaxed web security, and nothing of ours injected into it.
+        partition: WINDOW_PARTITION,
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false,
+        webSecurity: true,
+      },
+    });
+    this.linkWindow = window;
+
+    // Sign-ins commonly open a popup; keep it inside the same jar.
+    window.webContents.setWindowOpenHandler(() => ({
+      action: 'allow',
+      overrideBrowserWindowOptions: {
+        width: WINDOW_WIDTH,
+        height: WINDOW_HEIGHT,
+        autoHideMenuBar: true,
+        webPreferences: {
+          partition: WINDOW_PARTITION,
+          sandbox: true,
+          contextIsolation: true,
+          nodeIntegration: false,
+          webSecurity: true,
+        },
+      },
+    }));
+
+    // The address carries a one-use token, so neither it nor the load error
+    // that quotes it is ever written to a log.
+    void window.loadURL(url).catch(() => {
+      console.warn(`[Connectors] the sign-in page for ${slug} did not load`);
+    });
+
+    return new Promise<boolean>((resolve) => {
+      const startedAt = Date.now();
+      let settled = false;
+      let timer: ReturnType<typeof setTimeout> | null = null;
+
+      const settle = (connected: boolean) => {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        window.removeListener('closed', onClosed);
+        this.closeLinkWindow();
+        resolve(connected);
+      };
+
+      const onClosed = () => {
+        this.linkWindow = null;
+        settle(false);
+      };
+      window.once('closed', onClosed);
+
+      const poll = async () => {
+        if (settled) return;
+        if (Date.now() - startedAt > POLL_LIMIT_MS) {
+          settle(false);
+          return;
+        }
+        const result = await fetchConnectorsState(this.deps);
+        if (settled) return;
+        if (
+          result.status === ConnectorRequestStatus.Ok
+          && result.data.connections.some((connection) => connection.slug === slug)
+        ) {
+          this.applyState(result.data);
+          settle(true);
+          return;
+        }
+        timer = setTimeout(() => { void poll(); }, POLL_INTERVAL_MS);
+      };
+      timer = setTimeout(() => { void poll(); }, POLL_INTERVAL_MS);
+    });
+  }
+
+  private closeLinkWindow(): void {
+    const window = this.linkWindow;
+    this.linkWindow = null;
+    if (window && !window.isDestroyed()) window.destroy();
+  }
+}

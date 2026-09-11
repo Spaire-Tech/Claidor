@@ -42,6 +42,12 @@ from .customer_notification import (
 from .customer_seat import CustomerSeat, SeatStatus
 from .customer_session import CustomerSession
 from .customer_session_code import CustomerSessionCode
+from .desktop import (
+    DesktopAuthCode,
+    DesktopMemoryFile,
+    DesktopSession,
+    DesktopUsage,
+)
 from .discount import Discount
 from .discount_product import DiscountProduct
 from .discount_redemption import DiscountRedemption
@@ -90,8 +96,8 @@ from .legal_article import LegalArticle, LegalArticleEquivalence
 from .librarian_question import LibrarianQuestion
 from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
-from .desktop import DesktopAuthCode, DesktopSession, DesktopUsage
 from .login_code import LoginCode
+from .maty import MatyJob, MatyJobKind, MatyJobStatus
 from .member import Member, MemberRole
 from .member_session import MemberSession
 from .meter import Meter
@@ -233,6 +239,10 @@ __all__ = [
     "DecisionArticleTreatment",
     "DecisionKind",
     "DecisionLinkStatus",
+    "DesktopAuthCode",
+    "DesktopMemoryFile",
+    "DesktopSession",
+    "DesktopUsage",
     "Discount",
     "DiscountProduct",
     "DiscountRedemption",
@@ -293,10 +303,10 @@ __all__ = [
     "LicenseKey",
     "LicenseKeyActivation",
     "LinkState",
-    "DesktopAuthCode",
-    "DesktopSession",
-    "DesktopUsage",
     "LoginCode",
+    "MatyJob",
+    "MatyJobKind",
+    "MatyJobStatus",
     "Member",
     "MemberRole",
     "MemberSession",

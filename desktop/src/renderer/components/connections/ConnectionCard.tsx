@@ -1,10 +1,15 @@
 import { APP_LOGO_DIRECTORY, type ConnectionItem, ConnectionKind, connectionMonogram, ConnectionTag } from '@shared/connections/catalog';
+import type { ConnectorConnection, ConnectorsState } from '@shared/connectors/constants';
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 
 import { i18nService } from '../../services/i18n';
 import type { RootState } from '../../store';
-import { isChannelConfigured, isMcpEntryInstalled } from './connectionState';
+import {
+  ConnectionCardState,
+  isChannelConfigured,
+  readConnectionCard,
+} from './connectionState';
 import { requestChannelSettings } from './constants';
 
 /**
@@ -100,28 +105,89 @@ const QuietLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span className="shrink-0 whitespace-nowrap text-[14px] text-[#6b7280]">{children}</span>
 );
 
+/** « Disconnect » beside the tick: quiet until the pointer is on it. */
+const DisconnectButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`${ACTION_BUTTON_CLASS} bg-transparent px-[13px] text-[#6b7280] hover:bg-[rgba(16,20,28,.05)] hover:text-[#1c1f23]`}
+  >
+    {i18nService.t('matiesConnectionsDisconnect')}
+  </button>
+);
+
+/**
+ * The line under the name of a connected card: the account when Claidor
+ * names one, otherwise the day it was connected.
+ */
+export const connectedAccountLine = (connection: ConnectorConnection): string => {
+  if (connection.name) return connection.name;
+  const connectedAt = new Date(connection.connectedAt);
+  if (Number.isNaN(connectedAt.getTime())) return i18nService.t('matiesConnectionsConnected');
+  return i18nService
+    .t('matiesConnectionsConnectedOn')
+    .replace('{date}', connectedAt.toLocaleDateString(undefined, { day: 'numeric', month: 'long' }));
+};
+
 export interface ConnectionCardProps {
   item: ConnectionItem;
-  /** Open the install form of Claidor's catalogue for this entry. */
-  onInstallMcp: (mcpEntryId: string) => void;
+  /** What Claidor says is connected, and whether this person may connect. */
+  connectors: ConnectorsState;
+  /** The service whose window is open or whose request is in flight. */
+  busySlug: string | null;
+  /** Open the sign-in window for this service. */
+  onConnect: (appSlug: string) => void;
+  /** Drop the account behind this card. */
+  onDisconnect: (appSlug: string, accountId: string) => void;
+  /** Say that connections are part of the paid plan. */
+  onShowPrice: (item: ConnectionItem) => void;
   /** Open the honest sheet for something not wired yet. */
   onSoon: (item: ConnectionItem) => void;
 }
 
-const ConnectionCard: React.FC<ConnectionCardProps> = ({ item, onInstallMcp, onSoon }) => {
-  const servers = useSelector((state: RootState) => state.mcp.servers);
+const ConnectionCard: React.FC<ConnectionCardProps> = ({
+  item,
+  connectors,
+  busySlug,
+  onConnect,
+  onDisconnect,
+  onShowPrice,
+  onSoon,
+}) => {
   const imConfig = useSelector((state: RootState) => state.im.config);
 
-  let action: React.ReactNode;
+  let action: React.ReactNode = null;
+  let line: React.ReactNode = null;
+
   switch (item.kind) {
-    case ConnectionKind.Mcp:
-      action = (
-        <ConnectionActionButton
-          connected={isMcpEntryInstalled(servers, item.mcpEntryId)}
-          onClick={() => onInstallMcp(item.mcpEntryId)}
-        />
-      );
+    case ConnectionKind.Account: {
+      const reading = readConnectionCard(item.appSlug, connectors, busySlug);
+      switch (reading.state) {
+        case ConnectionCardState.Connected:
+          line = <ConnectionLine>{connectedAccountLine(reading.connection as ConnectorConnection)}</ConnectionLine>;
+          action = (
+            <span className="flex shrink-0 items-center gap-1">
+              <ConnectionActionButton connected />
+              <DisconnectButton
+                onClick={() => onDisconnect(item.appSlug, (reading.connection as ConnectorConnection).accountId)}
+              />
+            </span>
+          );
+          break;
+        case ConnectionCardState.Locked:
+          line = <ConnectionLine>{i18nService.t('matiesConnectionsPartOfPlan')}</ConnectionLine>;
+          action = <ConnectionActionButton connected={false} onClick={() => onShowPrice(item)} />;
+          break;
+        case ConnectionCardState.Busy:
+          action = <QuietLabel>{i18nService.t('matiesConnectionsWaiting')}</QuietLabel>;
+          break;
+        case ConnectionCardState.Unknown:
+          break;
+        default:
+          action = <ConnectionActionButton connected={false} onClick={() => onConnect(item.appSlug)} />;
+      }
       break;
+    }
     case ConnectionKind.Channel: {
       const platform = item.platformId;
       action = platform ? (
@@ -146,7 +212,8 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({ item, onInstallMcp, onS
 
   return (
     <ConnectionCardShell name={item.name} logo={item.logo} action={action}>
-      {item.tag && <ConnectionLine>{i18nService.t(TAG_LABEL_KEYS[item.tag])}</ConnectionLine>}
+      {line}
+      {!line && item.tag && <ConnectionLine>{i18nService.t(TAG_LABEL_KEYS[item.tag])}</ConnectionLine>}
     </ConnectionCardShell>
   );
 };

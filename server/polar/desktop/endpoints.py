@@ -37,11 +37,12 @@ from fastapi.responses import (
     Response,
     StreamingResponse,
 )
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from polar.auth.dependencies import WebUserOrAnonymous
 from polar.auth.models import is_user
 from polar.config import settings
+from polar.connectors.endpoints import router as connectors_router
 from polar.kit.db.postgres import AsyncSessionMaker
 from polar.kit.utils import utc_now
 from polar.models import DesktopSession
@@ -49,12 +50,17 @@ from polar.openapi import APITag
 from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
+from .auth import bearer_token, get_desktop_session
 from .service import (
     AUTH_CODE_INVALID,
+    MEMORY_FILE_LIMIT,
+    MEMORY_REFUSED,
     MODELS,
     QUOTA_EXHAUSTED_CODE,
     REFRESH_INVALID,
+    DesktopMemoryRefused,
     DesktopUnauthenticated,
+    IncomingMemoryFile,
     Usage,
     UsageTally,
     desktop,
@@ -82,27 +88,6 @@ def _fail(code: int, message: str, *, status: int = 200) -> JSONResponse:
     is 200 unless the app keys on it — a 401 on refresh means « sign in
     again », anything else « try later »."""
     return JSONResponse({"code": code, "message": message}, status_code=status)
-
-
-def _bearer(request: Request) -> str | None:
-    header = request.headers.get("Authorization", "")
-    scheme, _, token = header.partition(" ")
-    if scheme.lower() == "bearer" and token.strip():
-        return token.strip()
-    api_key = request.headers.get("x-api-key", "").strip()
-    return api_key or None
-
-
-async def get_desktop_session(
-    request: Request, session: AsyncSession = Depends(get_db_session)
-) -> DesktopSession:
-    token = _bearer(request)
-    if token is None:
-        raise DesktopUnauthenticated()
-    found = await desktop.authenticate(session, token)
-    if found is None:
-        raise DesktopUnauthenticated("This desktop session has expired.")
-    return found
 
 
 def _callback_target(redirect_uri: str | None) -> str | None:
@@ -229,7 +214,7 @@ async def refresh(
 async def logout(
     request: Request, session: AsyncSession = Depends(get_db_session)
 ) -> JSONResponse:
-    token = _bearer(request)
+    token = bearer_token(request)
     if token is not None:
         found = await desktop.authenticate(session, token)
         if found is not None:
@@ -261,6 +246,114 @@ async def profile_summary(
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     return _ok(await desktop.profile_summary(session, desktop_session.user))
+
+
+# --- the shared memory ------------------------------------------------------
+
+
+class MemorySyncFile(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str = Field(max_length=200)
+    content: str
+    #: The version the client started from; 0 means « I have never seen
+    #: this file from you ».
+    base_version: int = Field(default=0, ge=0)
+
+
+class MemorySyncBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    files: list[MemorySyncFile] = Field(
+        default_factory=list, max_length=MEMORY_FILE_LIMIT
+    )
+
+
+class MemorySyncedFile(BaseModel):
+    name: str
+    content: str
+    version: int
+    #: True when the answer differs from what the client sent, so the app
+    #: writes the file back to the workspace.
+    changed: bool
+
+
+class MemorySyncResponse(BaseModel):
+    files: list[MemorySyncedFile]
+    deleted: list[str]
+
+
+class MemoryListedFile(BaseModel):
+    name: str
+    version: int
+    size: int
+
+
+class MemoryListResponse(BaseModel):
+    files: list[MemoryListedFile]
+
+
+@router.post(
+    "/api/memory/sync",
+    name="desktop:memory_sync",
+    response_model=MemorySyncResponse,
+)
+async def memory_sync(
+    body: MemorySyncBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> MemorySyncResponse | JSONResponse:
+    """The shared memory, one round (`docs/maties/cloud.md`, section 3).
+
+    The client sends every memory file it has and the version it last
+    saw for each; Claidor merges and answers with every file it holds,
+    so a fresh computer receives the whole memory by sending nothing.
+    Merging is Claidor's job alone, so two engines cannot disagree.
+    """
+    try:
+        synced = await desktop.sync_memory_files(
+            session,
+            desktop_session.user,
+            [
+                IncomingMemoryFile(
+                    name=file.name,
+                    content=file.content,
+                    base_version=file.base_version,
+                )
+                for file in body.files
+            ],
+        )
+    except DesktopMemoryRefused as error:
+        return _fail(MEMORY_REFUSED, error.message, status=400)
+    return MemorySyncResponse(
+        files=[
+            MemorySyncedFile(
+                name=file.name,
+                content=file.content,
+                version=file.version,
+                changed=file.changed,
+            )
+            for file in synced.files
+        ],
+        deleted=synced.deleted,
+    )
+
+
+@router.get("/api/memory", name="desktop:memory_list")
+async def memory_list(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> MemoryListResponse:
+    """What Claidor holds, without the text of it: a cheap way for a
+    client to see whether it is behind before sending anything."""
+    return MemoryListResponse(
+        files=[
+            MemoryListedFile(
+                name=file.name,
+                version=file.version,
+                size=len(file.content.encode("utf-8")),
+            )
+            for file in await desktop.list_memory_files(session, desktop_session.user)
+        ]
+    )
 
 
 # --- the models ------------------------------------------------------------
@@ -617,3 +710,13 @@ async def proxy_other(path: str) -> JSONResponse:
         {"error": {"type": "not_found_error", "message": f"/{path} is not proxied."}},
         status_code=404,
     )
+
+
+# --- the connections --------------------------------------------------------
+
+# The four routes of `docs/maties/connectors.md` are their own module,
+# because everything about the middleman is kept away from the rest of
+# Claidor, but they are the desktop app's routes and belong at the
+# desktop app's address. Included here, they come out under
+# `/desktop/api/connectors`.
+router.include_router(connectors_router)

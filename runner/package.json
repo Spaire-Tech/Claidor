@@ -1,0 +1,26 @@
+{
+  "name": "claidor-maty-runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claidor's cloud runner: takes one Maty job at a time and does it with the OpenClaw engine.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24.15.0 <25"
+  },
+  "openclaw": {
+    "version": "v2026.6.1",
+    "repo": "https://github.com/openclaw/openclaw.git"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "24.3.0",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  }
+}

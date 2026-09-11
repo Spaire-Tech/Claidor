@@ -190,6 +190,46 @@ class Settings(BaseSettings):
     # Credits per calendar month per person; see polar.desktop.service.
     DESKTOP_MONTHLY_CREDITS: int = 3_000_000
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
+
+    # Connections (polar/connectors/, docs/maties/connectors.md). The
+    # middleman that holds the sign-in plumbing for the forty services a
+    # person connects an account to. Its developer token is project-wide
+    # — it can reach every customer's accounts — so it is minted on the
+    # server from these four values and never leaves it. Left empty, every
+    # connector route answers 503 and says so: a missing secret must read
+    # as « not configured here », never as a stack trace.
+    PIPEDREAM_CLIENT_ID: str = ""
+    PIPEDREAM_CLIENT_SECRET: str = ""
+    PIPEDREAM_PROJECT_ID: str = ""
+    # "development" (free, ten people) or "production". Their own word for
+    # which set of a project's accounts a call is about; it is not
+    # Claidor's CLAIDOR_ENV and the two move independently.
+    PIPEDREAM_ENVIRONMENT: str = "development"
+    # Who may use connections before there is a plan to buy (section 5 of
+    # the note): the founder's account, and staff. The plan does the real
+    # work once step 9 lands and this stays for staff. A JSON array of
+    # email addresses, like every other list setting here — addresses and
+    # not user ids, because whoever sets this is reading a Render dashboard
+    # and knows their own address, while a user id means a database query
+    # to find and one wrong character means a silent 402.
+    CONNECTORS_ENTITLED_EMAILS: set[str] = set()
+
+    # The cloud engine's queue (polar/maty/, docs/maties/cloud.md). The
+    # runner service is the only thing that speaks /maty/runner, and it
+    # does so with a shared secret of its own that belongs to no person:
+    # CLAIDOR_MATY_RUNNER_TOKEN in the environment. Left empty, the runner
+    # routes refuse everyone — a missing secret must never mean that
+    # everybody is a runner.
+    MATY_RUNNER_TOKEN: str = ""
+    # How long a claim holds a job before the queue takes it back, and
+    # therefore how long the job's token lives. Long enough for a
+    # briefing, short enough that a dead runner is not missed for long;
+    # the runner extends it with a heartbeat while it works.
+    MATY_JOB_LEASE_TTL: timedelta = timedelta(minutes=10)
+    # How many times one job is handed out before it stops and says so.
+    MATY_JOB_MAX_ATTEMPTS: int = 3
+    # The wait before a failed job is due again, doubling with each try.
+    MATY_JOB_RETRY_BACKOFF: timedelta = timedelta(minutes=1)
     USER_SESSION_COOKIE_KEY: str = "claidor_session"
     USER_SESSION_COOKIE_DOMAIN: str = "127.0.0.1"
 

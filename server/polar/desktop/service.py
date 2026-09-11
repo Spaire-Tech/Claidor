@@ -13,6 +13,7 @@ invented beyond what that code reads.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -27,11 +28,19 @@ from polar.desktop.tokens import (
 from polar.exceptions import PolarError
 from polar.kit.crypto import generate_token_hash_pair, get_token_hash
 from polar.kit.utils import utc_now
-from polar.models import DesktopAuthCode, DesktopSession, DesktopUsage, User
+from polar.models import (
+    DesktopAuthCode,
+    DesktopMemoryFile,
+    DesktopSession,
+    DesktopUsage,
+    User,
+)
 from polar.postgres import AsyncSession
 
+from .memory_merge import is_accepted_memory_name, merge_memory_file
 from .repository import (
     DesktopAuthCodeRepository,
+    DesktopMemoryFileRepository,
     DesktopSessionRepository,
     DesktopUsageRepository,
 )
@@ -43,6 +52,16 @@ QUOTA_EXHAUSTED_CODE = 40200
 AUTH_CODE_INVALID = 40101
 REFRESH_INVALID = 40102
 UNAUTHENTICATED = 40100
+#: A memory sync Claidor will not carry out: a name it does not keep, or
+#: more text than it accepts.
+MEMORY_REFUSED = 40001
+
+#: The memory is the assistant's own notes, a few pages of text. These
+#: caps are far above anything honest and well below anything that would
+#: hurt: one file, one request, and how many files a person may hold.
+MEMORY_FILE_MAX_BYTES = 1024 * 1024
+MEMORY_REQUEST_MAX_BYTES = 8 * 1024 * 1024
+MEMORY_FILE_LIMIT = 2000
 
 
 class DesktopError(PolarError): ...
@@ -51,6 +70,14 @@ class DesktopError(PolarError): ...
 class DesktopUnauthenticated(DesktopError):
     def __init__(self, message: str = "Sign in to the desktop app first.") -> None:
         super().__init__(message, status_code=401)
+
+
+class DesktopMemoryRefused(DesktopError):
+    """A memory sync that is not carried out at all: nothing is written
+    when one file in it is refused."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, status_code=400)
 
 
 # --- the models the app may call ---------------------------------------------
@@ -232,6 +259,40 @@ def month_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
     return start, end
 
 
+# --- the shared memory ----------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class IncomingMemoryFile:
+    """One file as a client sent it, with the version it started from.
+    `base_version` 0 means « I have never seen this file from you »."""
+
+    name: str
+    content: str
+    base_version: int = 0
+
+
+@dataclass(frozen=True)
+class MemoryFileState:
+    """One file as Claidor holds it once the sync is done. `changed`
+    means the client must write this back: either it differs from what
+    the client sent, or the client did not send it at all."""
+
+    name: str
+    content: str
+    version: int
+    changed: bool
+
+
+@dataclass(frozen=True)
+class MemorySync:
+    """The whole truth about a person's memory after a sync: every file
+    Claidor holds, and the names it pruned."""
+
+    files: list[MemoryFileState]
+    deleted: list[str]
+
+
 # --- the service ---------------------------------------------------------------
 
 
@@ -336,7 +397,14 @@ class DesktopService:
     ) -> tuple[DesktopSession, str, str]:
         """A new pair of tokens for a live refresh token; the old refresh
         token dies with the exchange. Anything else raises
-        `DesktopUnauthenticated`, which the app reads as « sign in again »."""
+        `DesktopUnauthenticated`, which the app reads as « sign in again ».
+
+        A session minted for a cloud job (`polar.maty`) is refused here
+        whatever its state. Its refresh token is generated and thrown
+        away, so this should be unreachable; it is written down anyway,
+        because the one thing a job's credential must never do is become
+        a lasting one, and « unreachable » is not a guarantee.
+        """
         token = refresh_token.strip()
         if not token or not token.isascii():
             raise DesktopUnauthenticated("The refresh token is invalid.")
@@ -345,6 +413,7 @@ class DesktopService:
         ).get_by_refresh_token_hash(get_token_hash(token, secret=settings.SECRET))
         if (
             found is None
+            or found.is_job_token
             or found.is_revoked
             or found.refresh_expires_at < utc_now()
             or not found.user.can_authenticate
@@ -446,6 +515,123 @@ class DesktopService:
         used = await self.credits_used(session, user.id)
         return used >= settings.DESKTOP_MONTHLY_CREDITS
 
+    # the shared memory
+
+    async def list_memory_files(
+        self, session: AsyncSession, user: User
+    ) -> Sequence[DesktopMemoryFile]:
+        """Everything Claidor holds for one person, in name order."""
+        return await DesktopMemoryFileRepository.from_session(session).list_by_user(
+            user.id
+        )
+
+    async def sync_memory_files(
+        self, session: AsyncSession, user: User, incoming: Iterable[IncomingMemoryFile]
+    ) -> MemorySync:
+        """One round of the shared memory, for one person.
+
+        For each file the client sends:
+
+        - a name Claidor does not keep refuses the whole sync, and
+          nothing is written (`polar.desktop.memory_merge`);
+        - a name Claidor has no row for is stored as sent, at version 1;
+        - a name whose stored version is the one the client started from
+          is stored as sent, at version + 1;
+        - anything else means both sides wrote since: the two copies are
+          merged by that file's rule and the merge is stored at version
+          + 1. For the profile, which is one document with one owner,
+          « merged » means Claidor's copy wins, because it is the one
+          that moved on.
+
+        A write that changes nothing leaves the version alone, so an
+        idle app syncing every few minutes does not count upwards for
+        ever.
+
+        The answer carries **every** file Claidor holds afterwards, so a
+        fresh computer receives the whole memory by sending nothing.
+
+        Sizes: a single file over 1 MB or a request over 8 MB is refused
+        whole. A person may hold 2000 files; past that the oldest daily
+        notes are pruned, the newest kept, and their names come back
+        under `deleted` so the client can drop them too. The durable
+        facts and the profile are never pruned.
+        """
+        sent = list(incoming)
+        self._check_memory_sizes(sent)
+
+        repository = DesktopMemoryFileRepository.from_session(session)
+        for file in sent:
+            stored = await repository.get_by_name(user.id, file.name)
+            if stored is None:
+                await repository.upsert(
+                    user.id, file.name, content=file.content, version=1
+                )
+                continue
+            if file.base_version == stored.version:
+                content = file.content
+            else:
+                content = merge_memory_file(
+                    file.name, stored.content, file.content, ours_is_newer=True
+                )
+            if content != stored.content:
+                await repository.upsert(
+                    user.id, file.name, content=content, version=stored.version + 1
+                )
+
+        deleted = await self._prune_memory_files(session, user)
+        by_name = {file.name: file.content for file in sent}
+        return MemorySync(
+            files=[
+                MemoryFileState(
+                    name=stored.name,
+                    content=stored.content,
+                    version=stored.version,
+                    changed=by_name.get(stored.name) != stored.content,
+                )
+                for stored in await repository.list_by_user(user.id)
+            ],
+            deleted=deleted,
+        )
+
+    def _check_memory_sizes(self, files: list[IncomingMemoryFile]) -> None:
+        """Every name and every size, before a single row is written."""
+        total = 0
+        for file in files:
+            if not is_accepted_memory_name(file.name):
+                raise DesktopMemoryRefused(
+                    f"{file.name!r} is not a memory file Claidor keeps."
+                )
+            size = len(file.content.encode("utf-8"))
+            if size > MEMORY_FILE_MAX_BYTES:
+                raise DesktopMemoryRefused(
+                    f"{file.name!r} is larger than {MEMORY_FILE_MAX_BYTES // 1024} KB."
+                )
+            total += size
+        if total > MEMORY_REQUEST_MAX_BYTES:
+            raise DesktopMemoryRefused(
+                f"This sync carries more than "
+                f"{MEMORY_REQUEST_MAX_BYTES // (1024 * 1024)} MB of memory."
+            )
+
+    async def _prune_memory_files(self, session: AsyncSession, user: User) -> list[str]:
+        """The oldest daily notes above the cap, dropped. Their names
+        sort by date, so the oldest are the first."""
+        repository = DesktopMemoryFileRepository.from_session(session)
+        held = await repository.list_by_user(user.id)
+        over = len(held) - MEMORY_FILE_LIMIT
+        if over <= 0:
+            return []
+        notes = sorted(
+            (one for one in held if one.name.startswith("memory/")),
+            key=lambda one: one.name,
+        )
+        deleted: list[str] = []
+        for note in notes[:over]:
+            deleted.append(note.name)
+            await session.delete(note)
+        await session.flush()
+        return deleted
+
     async def record_usage(
         self,
         session: AsyncSession,
@@ -479,14 +665,22 @@ desktop = DesktopService()
 __all__ = [
     "ACCESS_TOKEN_PREFIX",
     "AUTH_CODE_INVALID",
+    "MEMORY_FILE_LIMIT",
+    "MEMORY_FILE_MAX_BYTES",
+    "MEMORY_REFUSED",
+    "MEMORY_REQUEST_MAX_BYTES",
     "MODELS",
     "QUOTA_EXHAUSTED_CODE",
     "REFRESH_INVALID",
     "UNAUTHENTICATED",
     "DesktopError",
+    "DesktopMemoryRefused",
     "DesktopModel",
     "DesktopService",
     "DesktopUnauthenticated",
+    "IncomingMemoryFile",
+    "MemoryFileState",
+    "MemorySync",
     "Usage",
     "UsageTally",
     "credits_for",

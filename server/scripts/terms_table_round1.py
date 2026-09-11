@@ -44,13 +44,13 @@ def main(argv: list[str]) -> int:
 
     import pdfplumber
 
+    from polar.tieout.chain.extract import extract_pdf
+    from polar.tieout.chain.terms import signals_for
+
     #: The judge is the oracle's, reused not re-derived: its footer rule
     #: and its edge-anchored line numbers are the registered way to find
     #: a truth fact in this filing.
     from scripts.corpus_d3_oracle import FOOTER, _anchors
-
-    from polar.tieout.chain.extract import extract_pdf
-    from polar.tieout.chain.terms import signals_for
 
     sample = [
         s
@@ -102,10 +102,14 @@ def main(argv: list[str]) -> int:
         "carry a column anchor (informative, no bar)"
     )
     carried = tallies[PICKABLE] + tallies[NEEDS_TYPING]
-    print(f"\n  bar 1 (carried >= 14): {carried} of 15 — "
-          + ("PASS" if carried >= 14 else "FAIL"))
-    print(f"  bar 2 (all classified): {sum(tallies.values())} of 15 — "
-          + ("PASS" if sum(tallies.values()) == 15 else "FAIL"))
+    print(
+        f"\n  bar 1 (carried >= 14): {carried} of 15 — "
+        + ("PASS" if carried >= 14 else "FAIL")
+    )
+    print(
+        f"  bar 2 (all classified): {sum(tallies.values())} of 15 — "
+        + ("PASS" if sum(tallies.values()) == 15 else "FAIL")
+    )
     return 0
 
 

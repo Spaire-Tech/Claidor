@@ -8,14 +8,15 @@ import {
   APP_LOGO_DIRECTORY,
   CONNECTION_GROUPS,
   CONNECTION_ITEMS,
+  connectionAppSlug,
   ConnectionGroupId,
   ConnectionKind,
   connectionMonogram,
   countConnections,
   countConnectionsByKind,
   findConnection,
+  getConnectionAppSlugs,
   getConnectionGroups,
-  getConnectionMcpEntryIds,
   REACH_ENTRIES,
   reachAddressFor,
   ReachKind,
@@ -23,13 +24,13 @@ import {
 } from './catalog';
 
 const DESKTOP_ROOT = path.resolve(__dirname, '../../..');
-const MARKETPLACE_PATH = path.resolve(DESKTOP_ROOT, '../server/polar/desktop/mcp_marketplace.json');
 const LOGO_DIR = path.resolve(DESKTOP_ROOT, 'public', APP_LOGO_DIRECTORY);
 
-const readMarketplaceIds = (): Set<string> => {
-  const parsed = JSON.parse(fs.readFileSync(MARKETPLACE_PATH, 'utf8')) as { servers: Array<{ id: string }> };
-  return new Set(parsed.servers.map((server) => server.id));
-};
+/**
+ * The services no connector carries today (docs/maties/connectors.md,
+ * section 9: named, not quietly dropped).
+ */
+const WITHOUT_A_CONNECTOR = ['Otter', 'Adobe Express', 'Xero'];
 
 describe('connections catalogue', () => {
   test('lists the sixty-five connections the founder drew, in eleven groups', () => {
@@ -53,15 +54,29 @@ describe('connections catalogue', () => {
     expect(REACH_ENTRIES.map((entry) => entry.name)).toEqual(['Gmail', 'Slack Bot', 'iMessage', 'WhatsApp', 'Telegram', 'iOS']);
   });
 
-  test('points every mcp item at a server in the marketplace json', () => {
-    const marketplaceIds = readMarketplaceIds();
+  test('gives every account card a service name, and only account cards', () => {
     for (const item of CONNECTION_ITEMS) {
-      if (item.kind !== ConnectionKind.Mcp) continue;
-      expect(marketplaceIds.has(item.mcpEntryId), `${item.id} -> ${item.mcpEntryId}`).toBe(true);
+      if (item.kind === ConnectionKind.Account) {
+        expect(item.appSlug, item.id).toMatch(/^[a-z0-9][a-z0-9_]*$/);
+        expect(connectionAppSlug(item)).toBe(item.appSlug);
+      } else {
+        expect(connectionAppSlug(item), item.id).toBeUndefined();
+      }
     }
-    expect(getConnectionMcpEntryIds().sort()).toEqual([
-      'canva', 'figma', 'github', 'gitlab', 'gmail', 'google-calendar', 'google-drive', 'notion', 'slack', 'todoist',
-    ]);
+  });
+
+  test('names every service once, however many cards point at it', () => {
+    const slugs = getConnectionAppSlugs();
+    expect(new Set(slugs).size).toBe(slugs.length);
+    // Notion is filed under Files and under Tasks; it is one account.
+    expect(CONNECTION_ITEMS.filter((item) => connectionAppSlug(item) === 'notion')).toHaveLength(2);
+    expect(slugs.filter((slug) => slug === 'notion')).toHaveLength(1);
+    expect(slugs).toHaveLength(37);
+  });
+
+  test('leaves a card « soon » only when no connector carries the service', () => {
+    const soon = CONNECTION_ITEMS.filter((item) => item.kind === ConnectionKind.Soon);
+    expect(soon.map((item) => item.name)).toEqual(WITHOUT_A_CONNECTOR);
   });
 
   test('names only logo files that ship with the app', () => {
@@ -88,13 +103,15 @@ describe('connections catalogue', () => {
 
   test('knows what each kind of card is', () => {
     const counts = countConnectionsByKind();
-    expect(counts[ConnectionKind.Mcp]).toBe(11);
+    expect(counts[ConnectionKind.Account]).toBe(38);
     expect(counts[ConnectionKind.Local]).toBe(6);
     expect(counts[ConnectionKind.Browser]).toBe(14);
-    expect(counts[ConnectionKind.Channel]).toBe(5);
+    expect(counts[ConnectionKind.Channel]).toBe(4);
+    expect(counts[ConnectionKind.Soon]).toBe(3);
     expect(Object.values(counts).reduce((sum, count) => sum + count, 0)).toBe(65);
     expect(findConnection('apple-notes')?.kind).toBe(ConnectionKind.Local);
     expect(findConnection('telegram')).toMatchObject({ kind: ConnectionKind.Channel, platformId: 'telegram' });
+    expect(findConnection('gmail')).toMatchObject({ kind: ConnectionKind.Account, appSlug: 'gmail' });
     expect(findConnection('nothing')).toBeUndefined();
   });
 

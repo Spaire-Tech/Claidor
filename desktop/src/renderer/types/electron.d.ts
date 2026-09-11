@@ -39,6 +39,10 @@ import type {
   BrowserRuntimeProfile,
 } from '../../shared/browserWebAccess/constants';
 import type {
+  ConnectorActionResult,
+  ConnectorsState,
+} from '../../shared/connectors/constants';
+import type {
   BrowserAnnotationRect,
   BrowserAnnotationScreenshotRef,
   CoworkBrowserAnnotationMessageBatch,
@@ -1486,6 +1490,15 @@ interface IElectronAPI {
     downloadPersistenceArchive: (
       options: ShareDeploymentDownloadPersistenceInput,
     ) => Promise<ShareDeploymentDownloadPersistenceResult>;
+  };
+  /** Connections to accounts (docs/maties/connectors.md). */
+  connectors: {
+    /** Asks Claidor afresh: what is connected, and may this person connect at all. */
+    getState: () => Promise<ConnectorsState>;
+    /** Opens the sign-in window and settles when it closes. */
+    connect: (slug: string) => Promise<ConnectorActionResult>;
+    disconnect: (accountId: string) => Promise<ConnectorActionResult>;
+    onChanged: (callback: (state: ConnectorsState) => void) => () => void;
   };
   sites: {
     list: (options?: SiteListOptions) => Promise<SiteResult<SiteListData>>;

@@ -9,6 +9,7 @@ import {
   getToolStepResult,
   getToolStepSubline,
   getToolStepTitle,
+  stripEngineMarkers,
   ToolStepKind,
 } from './toolStepPresentation';
 
@@ -109,6 +110,79 @@ describe('a step in plain words', () => {
     const failed = group(toolUse('exec', { command: 'rm x' }), toolResult('', true));
     expect(getToolStepResult(failed)).toEqual({ type: 'line', text: 'The command did not finish' });
     expect(getToolStepResult(group(toolUse('exec', { command: 'sleep 1' })))).toBeNull();
+  });
+
+  test('the engine’s wrapper markers never reach the card', () => {
+    const wrapped = [
+      '<<<EXTERNAL_UNTRUSTED_CONTENT id="2c2f5fad50c00778">>>',
+      '/opt/homebrew/lib',
+      '<<<END_EXTERNAL_UNTRUSTED_CONTENT id="2c2f5fad50c00778">>>',
+    ].join('\n');
+    expect(stripEngineMarkers(wrapped)).toBe('/opt/homebrew/lib');
+    const command = group(toolUse('exec', { command: 'brew --prefix' }), toolResult(wrapped));
+    expect(getToolStepResult(command)).toEqual({ type: 'line', text: '/opt/homebrew/lib' });
+  });
+
+  test('a real path stays exactly as it is', () => {
+    const command = group(toolUse('exec', { command: 'brew --prefix' }), toolResult('/opt/homebrew/lib\n'));
+    expect(getToolStepResult(command)).toEqual({ type: 'line', text: '/opt/homebrew/lib' });
+  });
+
+  test('a line of brackets or punctuation is never shown', () => {
+    const brackets = group(toolUse('exec', { command: 'x' }), toolResult('(\n)\n  ,\n---\nthe run finished'));
+    expect(getToolStepResult(brackets)).toEqual({ type: 'line', text: 'the run finished' });
+    const nothing = group(toolUse('exec', { command: 'x' }), toolResult('}\n]\n'));
+    expect(getToolStepResult(nothing)).toEqual({ type: 'line', text: 'Done' });
+  });
+
+  test('pretty-printed JSON says something true instead of a lone brace', () => {
+    const object = group(
+      toolUse('mcp__notion__query', { database: 'x' }),
+      toolResult('{\n  "ok": true,\n  "title": "Q3 board pack",\n  "rows": 42\n}'),
+    );
+    expect(getToolStepResult(object)).toEqual({ type: 'line', text: 'Q3 board pack' });
+
+    const array = group(
+      toolUse('mcp__notion__query', { database: 'x' }),
+      toolResult('[\n  { "id": 1 },\n  { "id": 2 },\n  { "id": 3 }\n]'),
+    );
+    expect(getToolStepResult(array)).toEqual({ type: 'line', text: '3 items', number: '3' });
+
+    const single = group(toolUse('mcp__notion__query', {}), toolResult('[{ "id": 1 }]'));
+    expect(getToolStepResult(single)).toEqual({ type: 'line', text: '1 item', number: '1' });
+
+    const opaque = group(toolUse('mcp__notion__query', {}), toolResult('{\n  "ok": true,\n  "rows": 42\n}'));
+    expect(getToolStepResult(opaque)).toEqual({ type: 'line', text: 'Done' });
+
+    // Truncated JSON parses no better than a brace does, and says as little.
+    const truncated = group(toolUse('mcp__notion__query', {}), toolResult('{\n  "rows": [\n'));
+    expect(getToolStepResult(truncated)).toEqual({ type: 'line', text: 'Done' });
+  });
+
+  test('a numbered list is not JSON because it opens with a bracket', () => {
+    const search = group(
+      toolUse('web_search', { query: 'q' }),
+      toolResult('[1] https://a.example\n[2] https://b.example'),
+    );
+    expect(getToolStepResult(search)).toEqual({ type: 'line', text: '2 results', number: '2' });
+  });
+
+  test('a JSON search result counts what it found', () => {
+    const search = group(
+      toolUse('search_library', { query: 'OHADA' }),
+      toolResult('<<<EXTERNAL_UNTRUSTED_CONTENT id="2c2f5fad50c00778">>>\n[{"a":1},{"a":2}]\n<<<END>>>'),
+    );
+    expect(getToolStepResult(search)).toEqual({ type: 'line', text: '2 results', number: '2' });
+  });
+
+  test('a failure in JSON says what failed, not a brace', () => {
+    const failed = group(
+      toolUse('read', {}),
+      toolResult('{\n  "message": "The file is locked by another program"\n}', true),
+    );
+    expect(getToolStepResult(failed)).toEqual({ type: 'line', text: 'The file is locked by another program' });
+    const opaque = group(toolUse('read', {}), toolResult('{\n  "code": 13\n}', true));
+    expect(getToolStepResult(opaque)).toEqual({ type: 'line', text: 'Could not read the file' });
   });
 
   test('basenames', () => {

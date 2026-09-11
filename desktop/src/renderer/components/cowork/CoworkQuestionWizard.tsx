@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { i18nService } from '../../services/i18n';
 import type { CoworkPermissionRequest, CoworkPermissionResult } from '../../types/cowork';
 import ApprovalCardShell from './ApprovalCardShell';
-import { ApprovalCard, ApprovalConsequence } from './CoworkPermissionModal';
+import { ApprovalCard } from './CoworkPermissionModal';
 
 interface CoworkQuestionWizardProps {
   permission: CoworkPermissionRequest;
@@ -33,10 +33,33 @@ const preventEnter = (event: React.KeyboardEvent<HTMLButtonElement>) => {
 };
 
 /**
- * Questions from the assistant (docs/maties/design.md): the same card as
- * an approval — the question in Newsreader 17.5 px, the options as pills,
- * one selected, « Continue » in blue. One question at a time; the answers
- * and the result are exactly what they were.
+ * The question's own header belongs in the question, not in a label above
+ * it: one thing to read, not two. When the question already carries the
+ * header's words, the header adds nothing and goes.
+ */
+export const composeQuestionText = (question: string, header?: string): string => {
+  const trimmedHeader = header?.trim();
+  if (!trimmedHeader) return question;
+  if (question.toLowerCase().includes(trimmedHeader.toLowerCase())) return question;
+  return `${trimmedHeader}: ${question}`;
+};
+
+/** The tick at the right of a chosen row: the one mark that says « this one ». */
+const ChoiceTick: React.FC<{ selected: boolean }> = ({ selected }) => (
+  <span className="flex-shrink-0" style={{ width: 16, height: 16, marginTop: 2 }} aria-hidden>
+    {selected && (
+      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#0060d0" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="5,12.5 10,17.5 19,7" />
+      </svg>
+    )}
+  </span>
+);
+
+/**
+ * Questions from the assistant (docs/maties/design.md): the same card as an
+ * approval — the question in Newsreader, the options as full-width rows in
+ * one column, one clear action at the bottom right. One question at a time;
+ * the answers and the result are exactly what they were.
  */
 const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
   permission,
@@ -89,8 +112,9 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [otherInputs, setOtherInputs] = useState<Record<number, string>>({});
-  const [skippedSteps, setSkippedSteps] = useState<Record<number, boolean>>({});
+  const [openOtherSteps, setOpenOtherSteps] = useState<Record<number, boolean>>({});
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const otherInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const rawAnswers = (toolInput as Record<string, unknown>).answers;
@@ -106,7 +130,7 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
       setAnswers({});
     }
     setOtherInputs({});
-    setSkippedSteps({});
+    setOpenOtherSteps({});
     setCurrentStep(0);
   }, [permission.requestId, toolInput]);
 
@@ -115,6 +139,13 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
       clearTimeout(advanceTimerRef.current);
     }
   }, []);
+
+  // The field appears where the person just clicked, ready to be written in.
+  useEffect(() => {
+    if (openOtherSteps[currentStep]) {
+      otherInputRef.current?.focus();
+    }
+  }, [openOtherSteps, currentStep]);
 
   if (questions.length === 0) {
     return null;
@@ -143,35 +174,34 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
       .filter(Boolean);
   };
 
-  const hasAnswer = (index: number): boolean => {
-    const question = questions[index];
-    return Boolean(answers[question.question]?.trim()) || Boolean(otherInputs[index]?.trim());
-  };
-
-  const isStepResolved = (index: number): boolean => hasAnswer(index) || Boolean(skippedSteps[index]);
-
-  const allResolved = questions.every((_, index) => isStepResolved(index));
-
   const goToStep = (index: number) => {
     clearPendingAdvance();
     setCurrentStep(Math.max(0, Math.min(index, totalSteps - 1)));
   };
 
-  const handleSelectOption = (question: QuestionItem, optionLabel: string) => {
-    setSkippedSteps((prev) => {
-      if (!prev[stepIndex]) return prev;
+  const closeOtherIfEmpty = () => {
+    setOpenOtherSteps((prev) => {
+      if (!prev[stepIndex] || otherInputs[stepIndex]?.trim()) return prev;
       const next = { ...prev };
       delete next[stepIndex];
       return next;
     });
+  };
 
+  const handleSelectOption = (question: QuestionItem, optionLabel: string) => {
     if (!question.multiSelect) {
       setAnswers((prev) => ({
         ...prev,
         [question.question]: optionLabel,
       }));
-      // Single choice and "Other" are mutually exclusive: clear the custom input when an option is selected
+      // Single choice and "Something else" are mutually exclusive: clear the custom input when an option is selected
       setOtherInputs((prev) => {
+        if (!prev[stepIndex]) return prev;
+        const next = { ...prev };
+        delete next[stepIndex];
+        return next;
+      });
+      setOpenOtherSteps((prev) => {
         if (!prev[stepIndex]) return prev;
         const next = { ...prev };
         delete next[stepIndex];
@@ -225,66 +255,51 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
     }
   };
 
+  const handleToggleOther = () => {
+    clearPendingAdvance();
+    setOpenOtherSteps((prev) => {
+      const next = { ...prev };
+      if (prev[stepIndex] && !otherInputs[stepIndex]?.trim()) {
+        delete next[stepIndex];
+      } else {
+        next[stepIndex] = true;
+      }
+      return next;
+    });
+  };
+
   const handleOtherInputChange = (value: string) => {
     setOtherInputs((prev) => ({
       ...prev,
       [stepIndex]: value,
     }));
-    if (value.trim()) {
-      setSkippedSteps((prev) => {
-        if (!prev[stepIndex]) return prev;
+    if (value.trim() && !currentQuestion.multiSelect) {
+      // Single choice and "Something else" are mutually exclusive: deselect the chosen option when a custom answer is typed
+      setAnswers((prev) => {
+        if (!(currentQuestion.question in prev)) return prev;
         const next = { ...prev };
-        delete next[stepIndex];
+        delete next[currentQuestion.question];
         return next;
       });
-      // Single choice and "Other" are mutually exclusive: deselect the chosen option when a custom answer is typed
-      if (!currentQuestion.multiSelect) {
-        setAnswers((prev) => {
-          if (!(currentQuestion.question in prev)) return prev;
-          const next = { ...prev };
-          delete next[currentQuestion.question];
-          return next;
-        });
-      }
     }
   };
 
   const handlePrevious = () => {
     if (!isFirstStep) {
+      closeOtherIfEmpty();
       goToStep(stepIndex - 1);
     }
   };
 
   const handleNext = () => {
     if (!isLastStep) {
+      closeOtherIfEmpty();
       goToStep(stepIndex + 1);
     }
   };
 
-  const handleSkip = () => {
-    clearPendingAdvance();
-    setAnswers((prev) => {
-      const newAnswers = { ...prev };
-      delete newAnswers[currentQuestion.question];
-      return newAnswers;
-    });
-    setOtherInputs((prev) => {
-      const newInputs = { ...prev };
-      delete newInputs[stepIndex];
-      return newInputs;
-    });
-    setSkippedSteps((prev) => ({
-      ...prev,
-      [stepIndex]: true,
-    }));
-
-    if (!isLastStep) {
-      handleNext();
-    }
-  };
-
   const handleSubmit = () => {
-    // Merge "Other" inputs into answers
+    // Merge "Something else" inputs into answers
     const finalAnswers = { ...answers };
     Object.entries(otherInputs).forEach(([index, otherValue]) => {
       const question = questions[Number(index)];
@@ -316,60 +331,50 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
 
   const selectedValues = getSelectedValues(currentQuestion);
   const otherValue = otherInputs[stepIndex] ?? '';
-  const isOtherActive = Boolean(otherValue.trim());
-  const isCurrentSkipped = Boolean(skippedSteps[stepIndex]) && !hasAnswer(stepIndex);
+  const hasOtherAnswer = Boolean(otherValue.trim());
+  const isOtherOpen = Boolean(openOtherSteps[stepIndex]) || hasOtherAnswer;
 
   return (
     <ApprovalCardShell slotKeys={[permission.toolUseId, permission.requestId]} hidden={hidden}>
       <ApprovalCard>
-        <div className="flex items-center gap-2" data-cowork-search-exclude="true">
-          <span className="maties-meta">
-            {totalSteps > 1
-              ? i18nService.t('matiesQuestionOf').replace('{index}', String(stepIndex + 1)).replace('{total}', String(totalSteps))
-              : i18nService.t('matiesApprovalQuestion')}
-          </span>
-          {totalSteps > 1 && (
-            <span className="flex items-center gap-1" aria-hidden>
-              {questions.map((question, index) => {
-                const isActive = index === stepIndex;
-                const answered = hasAnswer(index);
-                return (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => goToStep(index)}
-                    title={question.question}
-                    style={{
-                      width: isActive ? 16 : 6,
-                      height: 6,
-                      borderRadius: 999,
-                      background: isActive ? '#0060d0' : answered ? 'rgba(0,96,208,.35)' : 'rgba(16,22,35,.12)',
-                      transition: 'width .18s ease, background .18s ease',
-                    }}
-                  />
-                );
-              })}
-            </span>
-          )}
-          {currentQuestion.header && (
-            <span className="maties-meta uppercase" style={{ letterSpacing: '.06em', fontSize: 11.5 }}>
-              {currentQuestion.header}
-            </span>
-          )}
-          {isCurrentSkipped && (
-            <span className="maties-meta">{i18nService.t('coworkQuestionWizardSkipped')}</span>
-          )}
-        </div>
+        {(totalSteps > 1 || onMinimize) && (
+          <div className="flex items-center gap-2" data-cowork-search-exclude="true">
+            {totalSteps > 1 && (
+              <span className="maties-meta">
+                {i18nService.t('matiesQuestionProgress')
+                  .replace('{index}', String(stepIndex + 1))
+                  .replace('{total}', String(totalSteps))}
+              </span>
+            )}
+            <span className="flex-1" />
+            {/* « Later » is one small control out of the way, not a button beside the answer. */}
+            {onMinimize && (
+              <button
+                type="button"
+                onClick={onMinimize}
+                className="maties-icon-button"
+                style={{ borderRadius: 999, marginRight: -4, marginTop: -4 }}
+                title={i18nService.t('matiesAnswerLater')}
+                aria-label={i18nService.t('matiesAnswerLater')}
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
 
-        <div key={stepIndex} className="maties-in flex flex-col gap-3">
+        <div key={stepIndex} className="maties-in flex flex-col gap-4">
           <div className="maties-prose" style={{ fontSize: 17.5 }}>
-            {currentQuestion.question}
+            {composeQuestionText(currentQuestion.question, currentQuestion.header)}
           </div>
           {currentQuestion.multiSelect && (
             <div className="maties-caption">{i18nService.t('coworkQuestionWizardMultiSelectHint')}</div>
           )}
 
-          <div className="flex flex-wrap gap-2" role={currentQuestion.multiSelect ? 'group' : 'radiogroup'}>
+          <div className="flex flex-col gap-2" role="group">
             {currentQuestion.options.map((option) => {
               const isSelected = selectedValues.includes(option.label);
               return (
@@ -377,80 +382,80 @@ const CoworkQuestionWizard: React.FC<CoworkQuestionWizardProps> = ({
                   key={option.label}
                   type="button"
                   onClick={() => handleSelectOption(currentQuestion, option.label)}
-                  className="maties-pill"
+                  className="maties-choice-row"
                   aria-pressed={isSelected}
-                  title={option.description}
                 >
-                  <span>{option.label}</span>
-                  {option.description && (
-                    <span style={{ fontSize: 12.5, opacity: .7 }}>{option.description}</span>
-                  )}
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="maties-choice-label">{option.label}</span>
+                    {option.description && (
+                      <span className="maties-choice-description">{option.description}</span>
+                    )}
+                  </span>
+                  <ChoiceTick selected={isSelected} />
                 </button>
               );
             })}
-          </div>
 
-          {/* « Something else »: the person's own words, in the same pill shape. */}
-          <label
-            className="maties-pill"
-            style={{ cursor: 'text', paddingRight: 16, ...(isOtherActive ? { boxShadow: 'inset 0 0 0 1px rgba(0,96,208,.45)' } : undefined) }}
-          >
-            <span style={{ color: isOtherActive ? '#1c1f23' : '#8f96a0', flex: '0 0 auto' }}>
-              {i18nService.t('matiesQuestionOther')}
-            </span>
-            <input
-              type="text"
-              value={otherValue}
-              onChange={(e) => handleOtherInputChange(e.target.value)}
-              onKeyDown={(e) => {
-                // Enter moves on; it never submits the whole set of answers.
-                if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
-                e.preventDefault();
-                if (!isLastStep) handleNext();
-              }}
-              placeholder={i18nService.t('matiesQuestionOtherPlaceholder')}
-              className="min-w-[160px] flex-1 bg-transparent focus:outline-none"
-              style={{ fontSize: 13.5, color: '#1c1f23' }}
-            />
-          </label>
+            {/* « Something else »: the last row, and the field appears only when it is chosen. */}
+            {isOtherOpen ? (
+              <label className="maties-choice-row" data-selected={hasOtherAnswer} style={{ cursor: 'text' }}>
+                <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <span className="maties-choice-label">{i18nService.t('matiesQuestionOther')}</span>
+                  <input
+                    ref={otherInputRef}
+                    type="text"
+                    value={otherValue}
+                    onChange={(e) => handleOtherInputChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Enter moves on; it never submits the whole set of answers.
+                      if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+                      e.preventDefault();
+                      if (!isLastStep) handleNext();
+                    }}
+                    placeholder={i18nService.t('matiesQuestionOtherPlaceholder')}
+                    className="w-full bg-transparent focus:outline-none"
+                    style={{ fontSize: 13.5, color: '#1c1f23' }}
+                  />
+                </span>
+                <ChoiceTick selected={hasOtherAnswer} />
+              </label>
+            ) : (
+              <button
+                type="button"
+                onClick={handleToggleOther}
+                className="maties-choice-row"
+                aria-pressed={false}
+              >
+                <span className="maties-choice-label min-w-0 flex-1">{i18nService.t('matiesQuestionOther')}</span>
+                <ChoiceTick selected={false} />
+              </button>
+            )}
+          </div>
         </div>
 
-        <ApprovalConsequence>{i18nService.t('matiesConsequenceAnswer')}</ApprovalConsequence>
-
-        <div className="flex flex-wrap items-center gap-2" style={{ paddingTop: 2 }}>
-          <button type="button" onClick={handleSkip} className="maties-button maties-button-ghost" style={{ color: '#8f96a0' }}>
-            {i18nService.t('matiesQuestionSkip')}
-          </button>
-          {onMinimize && (
-            <button type="button" onClick={onMinimize} className="maties-button maties-button-ghost" style={{ color: '#8f96a0' }}>
-              {i18nService.t('matiesLater')}
+        <div className="flex items-center gap-2" style={{ paddingTop: 6 }}>
+          {!isFirstStep && (
+            <button
+              type="button"
+              onClick={handlePrevious}
+              className="maties-button maties-button-ghost"
+              style={{ color: '#8f96a0' }}
+            >
+              {i18nService.t('matiesQuestionBack')}
             </button>
           )}
           <span className="flex-1" />
           <button type="button" onClick={handleDeny} className="maties-button maties-button-ghost">
             {i18nService.t('matiesNotNow')}
           </button>
-          {!isFirstStep && (
-            <button type="button" onClick={handlePrevious} className="maties-button maties-button-outline">
-              {i18nService.t('matiesQuestionBack')}
-            </button>
-          )}
-          {isLastStep ? (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              onKeyDown={preventEnter}
-              disabled={!allResolved}
-              className="maties-button maties-button-primary"
-              title={!allResolved ? i18nService.t('coworkQuestionWizardAnswerRequired') : undefined}
-            >
-              {i18nService.t('matiesContinue')}
-            </button>
-          ) : (
-            <button type="button" onClick={handleNext} className="maties-button maties-button-outline">
-              {i18nService.t('matiesQuestionNext')}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={isLastStep ? handleSubmit : handleNext}
+            onKeyDown={preventEnter}
+            className="maties-button maties-button-primary"
+          >
+            {i18nService.t(isLastStep ? 'matiesQuestionDone' : 'matiesQuestionNext')}
+          </button>
         </div>
       </ApprovalCard>
     </ApprovalCardShell>

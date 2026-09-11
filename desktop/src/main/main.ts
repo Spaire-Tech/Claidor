@@ -74,6 +74,7 @@ import {
   normalizeBrowserWebAccessConfig,
 } from '../shared/browserWebAccess/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
+import { ConnectorsIpc } from '../shared/connectors/constants';
 import {
   type CoworkBrowserAnnotationMessageBatch,
   normalizeBrowserAnnotationBatches,
@@ -166,12 +167,14 @@ import {
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
 import { canonicalizeMediaModelId, HAPPYHORSE_1_1_MODEL_ID, mediaModelDisplayName } from '../shared/mediaModelAliases';
+import { MemorySyncReason } from '../shared/memorySync/constants';
 import {
   normalizeNotificationSettings,
   type NotificationSettings,
   TaskCompletionNotificationMode,
   WaitingNotificationKind,
 } from '../shared/notifications/constants';
+import { OnboardingStoreKey } from '../shared/onboarding/constants';
 import {
   OpenClawEngineIpc,
   OpenClawGatewayRepairErrorCode,
@@ -253,6 +256,7 @@ import { registerActivityIpcHandlers } from './ipcHandlers/activity';
 import { registerAgentHandlers } from './ipcHandlers/agents';
 import { registerAsrIpcHandlers } from './ipcHandlers/asr';
 import { registerBrowserCredentialHandlers } from './ipcHandlers/browserCredentials/handlers';
+import { registerConnectorsIpcHandlers } from './ipcHandlers/connectors';
 import { registerCoworkSubagentHandlers } from './ipcHandlers/coworkSubagent';
 import { ensureDshEngineReady, registerDshHandlers } from './ipcHandlers/dsh/handlers';
 import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccount';
@@ -324,6 +328,7 @@ import {
   updateServerModelMetadata,
 } from './libs/claudeSettings';
 import { appendClientBannerVersion } from './libs/clientBannerRequest';
+import { ConnectorsService } from './libs/connectors/connectorsService';
 import {
   clearCopilotTokenState,
   initCopilotTokenManager,
@@ -418,6 +423,7 @@ import {
 import { exportLogsZip } from './libs/logExport';
 import { MainLogReporter } from './libs/mainLogReporter';
 import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
+import { createMemorySyncService, logMemorySyncResult } from './libs/memorySync/memorySyncService';
 import {
   migrateAgentModelRefs,
   parsePrimaryModelRef,
@@ -2124,6 +2130,10 @@ let appUpdateCoordinator: AppUpdateCoordinator | null = null;
 let mainLogReporter: MainLogReporter | null = null;
 let libraryIndexService: LibraryIndexService | null = null;
 let libraryContentIndexer: LibraryContentIndexer | null = null;
+// Connections to accounts (docs/maties/connectors.md). Held here so the
+// engine's config sync can read what is connected without reaching into the
+// IPC scope that owns the authenticated request path.
+let connectorsService: ConnectorsService | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
   if (enabled) {
@@ -2162,6 +2172,17 @@ const getStore = (): SqliteStore => {
     throw new Error('Store not initialized. Call initStore() first.');
   }
   return store;
+};
+
+/** The signed-in person's display name, for the engine's user file; empty when signed out. */
+const getSignedInPersonName = (): string => {
+  try {
+    const user = getStore().get<Record<string, unknown>>(LogReporterStoreKey.AuthUser);
+    const nickname = user?.nickname;
+    return typeof nickname === 'string' ? nickname.trim() : '';
+  } catch {
+    return '';
+  }
 };
 
 const getOpenClawEngineManager = (): OpenClawEngineManager => {
@@ -2352,6 +2373,7 @@ const bootstrapOpenClawEngine = async (
       }
       const result = await manager.startGateway(`bootstrap:${reason}`);
       console.log(`[OpenClaw] bootstrap completed (${elapsed()}), phase=${result.phase}`);
+      requestMemorySync(MemorySyncReason.EngineStarted);
       return result;
     } catch (error) {
       console.error(`[OpenClaw] bootstrap failed (${reason}, ${elapsed()}):`, error);
@@ -2371,6 +2393,11 @@ const bootstrapOpenClawEngine = async (
 // Injected after the auth session manager is created. This keeps gateway startup
 // able to await an in-flight refresh without exposing refresh internals globally.
 let waitForPendingTokenRefresh: () => Promise<void> = async () => {};
+
+// Injected the same way: the shared-memory round trip needs the signed-in
+// account's token, so it only exists once the auth session manager does.
+// Fire-and-forget — a failure is logged and retried on the next occasion.
+let requestMemorySync: (reason: MemorySyncReason) => void = () => {};
 
 const ensureOpenClawRunningForCowork = async () => {
   const configApplyStatus = await waitForOpenClawConfigApply('cowork engine startup');
@@ -2492,6 +2519,8 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
       getOnboardingProfile: () => readOnboardingProfile(getStore()),
+      isOnboardingCompleted: () => getStore().get(OnboardingStoreKey.Completed) === true,
+      getPersonName: getSignedInPersonName,
       getSkillsList: () =>
         getSkillManager()
           .listSkills()
@@ -2585,6 +2614,10 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         // The async resolution happens during syncOpenClawConfig via McpRuntime.
         return getMcpRuntime().getResolvedServersCache();
       },
+      // Connections to accounts (docs/maties/connectors.md): the engine gets
+      // one MCP entry per connected service, pointing at Claidor's proxy, and
+      // carries only the person's own session token.
+      getConnectedConnectorSlugs: () => connectorsService?.getConnectedSlugs() ?? [],
       getAskUserCallbackUrl: () => getMcpRuntime().getAskUserCallbackUrl(),
       getLibrarySearchCallbackUrl: () => getMcpRuntime().getLibrarySearchCallbackUrl(),
       getMediaCallbackUrl: () => getMcpRuntime().getMediaCallbackUrl(),
@@ -3432,6 +3465,9 @@ const bindCoworkRuntimeForwarder = (): void => {
     skinRuntimeController?.handleRuntimeComplete(sessionId);
     mediaReferencesBySession.delete(sessionId);
     getDesktopNotificationManager().handleComplete(sessionId);
+    // The engine writes its memory files as a run ends, so this is the moment
+    // the shared copy is worth refreshing.
+    requestMemorySync(MemorySyncReason.ConversationFinished);
     const windows = BrowserWindow.getAllWindows();
     windows.forEach(win => {
       if (win.isDestroyed()) return;
@@ -5397,6 +5433,47 @@ if (!gotTheLock) {
     return response;
   };
 
+  // ── Shared memory ──
+  //
+  // The engine keeps its memory as text files in the main agent's workspace;
+  // Claidor keeps the shared copy. The round trip rides the same authenticated
+  // request path as everything else, so there is one place that holds the token.
+  const MEMORY_SYNC_INTERVAL_MS = 15 * 60_000;
+  // The quit cleanup watchdog force-exits at ten seconds, so the last sync gets
+  // a short deadline of its own and is dropped when the network is slow.
+  const MEMORY_SYNC_QUIT_DEADLINE_MS = 4_000;
+
+  const memorySyncService = createMemorySyncService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    getVersionStore: () => getStore(),
+    getWorkspaceDir: () => {
+      try {
+        return getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir());
+      } catch (error) {
+        console.debug('[MemorySync] main agent workspace is not resolvable yet:', error);
+        return null;
+      }
+    },
+  });
+
+  const runMemorySync = async (reason: MemorySyncReason): Promise<void> => {
+    try {
+      logMemorySyncResult(reason, await memorySyncService.sync(reason));
+    } catch (error) {
+      console.warn(`[MemorySync] sync failed (reason=${reason}):`, error);
+    }
+  };
+
+  requestMemorySync = (reason: MemorySyncReason) => {
+    void runMemorySync(reason);
+  };
+
+  const memorySyncTimer: ReturnType<typeof setInterval> = setInterval(() => {
+    requestMemorySync(MemorySyncReason.Periodic);
+  }, MEMORY_SYNC_INTERVAL_MS);
+
   type AvailableServerModel = ServerModelMetadataInput & {
     modelId: string;
     modelName: string;
@@ -6912,6 +6989,9 @@ if (!gotTheLock) {
     }
     clearAuthTokens();
     clearAuthUser();
+    // The connected accounts belong to the person who signed in, so the shelf
+    // and the engine's connector entries empty with them.
+    connectorsService?.reset();
     clearEnterpriseAccountContext(getStore());
     clearServerModelMetadata();
     resetAuthQuotaGateState();
@@ -8419,6 +8499,8 @@ if (!gotTheLock) {
     getStore,
     getAgentManager,
     syncOpenClawConfig,
+    getMainWorkspacePath: () => getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir()),
+    getPersonName: getSignedInPersonName,
   });
 
   ipcMain.handle(OpenClawEngineIpc.GetStatus, async () => {
@@ -12955,6 +13037,37 @@ if (!gotTheLock) {
     getServerApiBaseUrl,
   });
 
+  // ---- connections to accounts (docs/maties/connectors.md) ----
+  //
+  // The app asks Claidor for a sign-in URL, opens it, and asks Claidor again
+  // what is connected. It never holds a credential of the connector service,
+  // and the engine's config gains one entry per connected service.
+  connectorsService = new ConnectorsService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    getParentWindow: () => (mainWindow && !mainWindow.isDestroyed() ? mainWindow : null),
+    onStateChanged: (state) => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        if (!window.isDestroyed()) window.webContents.send(ConnectorsIpc.Changed, state);
+      }
+    },
+    onConnectionsChanged: () => {
+      void syncOpenClawConfig({
+        reason: 'connectors-changed',
+        expectedImpact: OpenClawConfigImpact.Restart,
+      }).catch((error: unknown) => {
+        console.warn('[Connectors] the engine config could not be updated:', error);
+      });
+    },
+  });
+  registerConnectorsIpcHandlers({
+    getService: () => {
+      if (!connectorsService) throw new Error('Connections are not ready yet.');
+      return connectorsService;
+    },
+  });
+
   // ---- artifact file watching ----
   const fileWatchers = new Map<
     string,
@@ -14005,6 +14118,18 @@ if (!gotTheLock) {
   const runAppCleanup = async (reason = 'quit'): Promise<void> => {
     const cleanupStartedAt = Date.now();
     console.log(`[Main] App cleanup started for ${reason}`);
+
+    // Push what this computer learned before the engine stops, so the next
+    // machine to open the app starts from the same memory.
+    currentAppCleanupStep = 'memory-sync';
+    clearInterval(memorySyncTimer);
+    await Promise.race([
+      runMemorySync(MemorySyncReason.Quit),
+      new Promise<void>(resolve => {
+        setTimeout(resolve, MEMORY_SYNC_QUIT_DEADLINE_MS);
+      }),
+    ]);
+
     currentAppCleanupStep = 'sync-teardown';
     skillManager?.stopWatching();
     stopMediaPollTimer();
@@ -14080,6 +14205,7 @@ if (!gotTheLock) {
     libraryIndexService?.stop();
     libraryContentIndexer?.stop();
     libraryThumbnailRenderer.dispose();
+    connectorsService?.dispose();
 
     // Close the SQLite database to flush the WAL and release the file lock.
     try {
