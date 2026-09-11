@@ -12,6 +12,13 @@ defaults:
 
 permissions:
   contents: read
+  # `Detect changes` asks the API which files a pull request touches, and
+  # without this it is refused with "Resource not accessible by
+  # integration" — so the job has failed on every pull request while
+  # passing on every push to main, where it reads git history instead.
+  # test_server.yaml has carried the scope all along; this file was simply
+  # missed.
+  pull-requests: read
 
 jobs:
   changes:
