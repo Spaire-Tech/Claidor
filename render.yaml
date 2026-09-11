@@ -132,17 +132,18 @@ services:
   # Deploy latest reference, or the service's deploy hook. That is a real
   # manual step and it is written here rather than left to be discovered.
   #
-  # The image is PUBLIC on GHCR, by the founder's decision of September 11,
-  # so there is no `creds` line and Render needs no registry credential.
+  # The image stays PRIVATE on GHCR, by the founder's decision of
+  # September 11 — so Render needs read access to it: a registry credential
+  # added once in the dashboard under the name in `creds` below, holding a
+  # GitHub token with `read:packages` and nothing else.
   #
-  # What that publishes, said plainly: the built engine, our patches to it,
-  # and the runner's compiled source. What it does not publish is any
-  # secret, and that is a property to keep rather than assume. The image
-  # carries no ENV or ARG holding a credential; the runner's own token and
-  # every other value it needs are read from the environment at run time
-  # (`runner/src/settings.ts`), which Render supplies and the registry never
-  # sees. Anything that would bake a secret into a layer must make this
-  # image private again, and `creds` returns with it.
+  # Private is the safer default of the two and not only the easier one:
+  # a public image would publish the built engine, our patches to it and
+  # the runner's compiled source. It would publish no secret — the image
+  # declares no ENV or ARG holding a credential, and the runner reads its
+  # own token and everything else from the environment at run time
+  # (`runner/src/settings.ts`), which Render supplies and a registry never
+  # sees — but that is a property to keep rather than one to spend.
   #
   # It touches neither the database nor Redis: everything it needs it asks
   # the API for, and the only lasting credential it holds is its own
@@ -156,6 +157,9 @@ services:
       # build also carries its commit sha, so a bad deploy rolls back by
       # pointing a manual deploy at `...@sha256:` or the sha tag instead.
       url: ghcr.io/spaire-tech/claidor-maty-runner:main
+      # The name of the registry credential in the Render dashboard, not the
+      # credential itself. Nothing secret is in this file.
+      creds: ghcr-claidor
     plan: starter
     # Deliberately NOT in the `claidor-shared` group, unlike the two
     # services above. That group carries the provider key, the signing
