@@ -97,6 +97,7 @@ from .desktop import (
     DesktopUsage,
 )
 from .login_code import LoginCode
+from .maty import MatyJob, MatyJobKind, MatyJobStatus
 from .member import Member, MemberRole
 from .member_session import MemberSession
 from .meter import Meter
@@ -303,6 +304,9 @@ __all__ = [
     "DesktopSession",
     "DesktopUsage",
     "LoginCode",
+    "MatyJob",
+    "MatyJobKind",
+    "MatyJobStatus",
     "Member",
     "MemberRole",
     "MemberSession",

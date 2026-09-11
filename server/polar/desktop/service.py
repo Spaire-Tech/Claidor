@@ -397,7 +397,14 @@ class DesktopService:
     ) -> tuple[DesktopSession, str, str]:
         """A new pair of tokens for a live refresh token; the old refresh
         token dies with the exchange. Anything else raises
-        `DesktopUnauthenticated`, which the app reads as « sign in again »."""
+        `DesktopUnauthenticated`, which the app reads as « sign in again ».
+
+        A session minted for a cloud job (`polar.maty`) is refused here
+        whatever its state. Its refresh token is generated and thrown
+        away, so this should be unreachable; it is written down anyway,
+        because the one thing a job's credential must never do is become
+        a lasting one, and « unreachable » is not a guarantee.
+        """
         token = refresh_token.strip()
         if not token or not token.isascii():
             raise DesktopUnauthenticated("The refresh token is invalid.")
@@ -406,6 +413,7 @@ class DesktopService:
         ).get_by_refresh_token_hash(get_token_hash(token, secret=settings.SECRET))
         if (
             found is None
+            or found.is_job_token
             or found.is_revoked
             or found.refresh_expires_at < utc_now()
             or not found.user.can_authenticate

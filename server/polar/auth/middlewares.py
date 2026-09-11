@@ -14,6 +14,7 @@ from polar.customer_session.service import (
 from polar.desktop.tokens import is_desktop_access_token
 from polar.kit.utils import utc_now
 from polar.logging import Logger
+from polar.maty.tokens import is_runner_path
 from polar.member_session.service import member_session as member_session_service
 from polar.models import (
     CustomerSession,
@@ -108,6 +109,14 @@ async def get_member_session(session: AsyncSession, value: str) -> MemberSession
 async def get_auth_subject(
     request: Request, session: AsyncSession
 ) -> AuthSubject[Subject]:
+    # The cloud runner's routes are service-to-service: their bearer token
+    # is a shared secret that belongs to no person and is checked by those
+    # routes themselves (polar.maty.auth). Nobody is authenticated here,
+    # so an unrecognised token cannot become an OAuth2 error before the
+    # runner's own check has had a chance to refuse it properly.
+    if is_runner_path(request.url.path):
+        return AuthSubject(Anonymous(), set(), None)
+
     token = get_bearer_token(request)
     if token is not None:
         if is_registration_token_prefix(token):

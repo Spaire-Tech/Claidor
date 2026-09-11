@@ -190,6 +190,23 @@ class Settings(BaseSettings):
     # Credits per calendar month per person; see polar.desktop.service.
     DESKTOP_MONTHLY_CREDITS: int = 3_000_000
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
+
+    # The cloud engine's queue (polar/maty/, docs/maties/cloud.md). The
+    # runner service is the only thing that speaks /maty/runner, and it
+    # does so with a shared secret of its own that belongs to no person:
+    # CLAIDOR_MATY_RUNNER_TOKEN in the environment. Left empty, the runner
+    # routes refuse everyone — a missing secret must never mean that
+    # everybody is a runner.
+    MATY_RUNNER_TOKEN: str = ""
+    # How long a claim holds a job before the queue takes it back, and
+    # therefore how long the job's token lives. Long enough for a
+    # briefing, short enough that a dead runner is not missed for long;
+    # the runner extends it with a heartbeat while it works.
+    MATY_JOB_LEASE_TTL: timedelta = timedelta(minutes=10)
+    # How many times one job is handed out before it stops and says so.
+    MATY_JOB_MAX_ATTEMPTS: int = 3
+    # The wait before a failed job is due again, doubling with each try.
+    MATY_JOB_RETRY_BACKOFF: timedelta = timedelta(minutes=1)
     USER_SESSION_COOKIE_KEY: str = "claidor_session"
     USER_SESSION_COOKIE_DOMAIN: str = "127.0.0.1"
 

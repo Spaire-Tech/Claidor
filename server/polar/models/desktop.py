@@ -10,6 +10,8 @@ server-side state of that protocol.
   the app after the person signs in on the web.
 - `DesktopSession`: one signed-in desktop. Both tokens are stored as
   keyed hashes, never in clear; the refresh token rotates on every use.
+  A row that names a `maty_jobs` row is the same thing narrowed to one
+  cloud job and one lease; see the class.
 - `DesktopUsage`: one row per model call the app made through the
   proxy, with the token counts Anthropic reported and the credits they
   cost. The quota is a sum over these rows for the current month.
@@ -67,6 +69,22 @@ class DesktopAuthCode(RecordModel):
 
 
 class DesktopSession(RecordModel):
+    """One signed-in desktop — or, when `job_id` is set, one cloud job.
+
+    A row with a `job_id` is not a device: it is the credential Claidor
+    mints when a runner claims a job, so the runner can act as that one
+    person for the life of the lease and no longer. It is a
+    `DesktopSession` on purpose — see
+    `polar.maty.service.MatyService.claim` for why — and it differs from
+    a device's session in three ways, all of them narrowing:
+
+    - its access token expires exactly when the lease does;
+    - its refresh token is generated and thrown away, and
+      `DesktopService.refresh` refuses a row that names a job, so it can
+      never be traded up into a long-lived session;
+    - it is revoked the moment the job leaves the runner's hands.
+    """
+
     __tablename__ = "desktop_sessions"
 
     access_token_hash: Mapped[str] = mapped_column(
@@ -91,6 +109,15 @@ class DesktopSession(RecordModel):
     user_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
     )
+    #: The cloud job this session exists for, when it is a job token
+    #: rather than a device. None for every session a person signed in to.
+    job_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("maty_jobs.id", ondelete="cascade"),
+        nullable=True,
+        default=None,
+        index=True,
+    )
 
     @declared_attr
     def user(cls) -> Mapped["User"]:
@@ -99,6 +126,11 @@ class DesktopSession(RecordModel):
     @property
     def is_revoked(self) -> bool:
         return self.revoked_at is not None
+
+    @property
+    def is_job_token(self) -> bool:
+        """A credential minted for one cloud job, not a signed-in device."""
+        return self.job_id is not None
 
 
 class DesktopUsage(RecordModel):

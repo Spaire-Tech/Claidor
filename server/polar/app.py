@@ -34,6 +34,7 @@ from polar.logfire import (
 )
 from polar.logging import Logger
 from polar.logging import configure as configure_logging
+from polar.maty.endpoints import router as maty_router
 from polar.middlewares import (
     FlushEnqueuedWorkerJobsMiddleware,
     LogCorrelationIdMiddleware,
@@ -266,6 +267,9 @@ def create_app() -> FastAPI:
 
     # /desktop: the desktop app's sign-in and model proxy
     app.include_router(desktop_router)
+
+    # /maty/runner: the queue the cloud engine takes its work from
+    app.include_router(maty_router)
 
     if settings.BACKOFFICE_HOST is None:
         app.mount("/backoffice", backoffice_app)

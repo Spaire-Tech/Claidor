@@ -150,10 +150,18 @@ POST /maty/runner/claim            { "runner": "<name>" }
   → { "job": { "id", "kind", "prompt", "deliver", "allow" },
       "access_token": "...", "expires_at": "..." }
 
-POST /maty/runner/jobs/{id}/heartbeat     the work is still going
-POST /maty/runner/jobs/{id}/complete      { "result": "...", "usage": {...} }
-POST /maty/runner/jobs/{id}/fail          { "reason": "...", "retryable": true }
+POST /maty/runner/jobs/{id}/heartbeat  { "runner": "<name>" }
+POST /maty/runner/jobs/{id}/complete   { "runner": "<name>", "result": "...", "usage": {...} }
+POST /maty/runner/jobs/{id}/fail       { "runner": "<name>", "reason": "...", "retryable": true }
+  → { "id", "status", "attempts", "scheduled_at", "lease_expires_at" }
+  → 404 no such job · 409 not your lease, or it ran out, or the job is
+    finished · 401 not the service token · 422 a body that makes no sense
 ```
+
+Every one of the three carries the runner's name, because the name is
+the only way to ask « does this caller still hold this job ». The first
+draft of this note left it out and the answer was that any runner could
+finish another's work.
 
 **The token is the important part.** The runner holds no lasting
 credential for anybody. When it claims a job, Claidor mints a token for
