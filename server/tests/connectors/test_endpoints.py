@@ -41,7 +41,7 @@ def configure(mocker: MockerFixture) -> None:
 
 
 def entitle(mocker: MockerFixture, user: User) -> None:
-    mocker.patch.object(settings, "CONNECTORS_ENTITLED_USER_IDS", {user.id})
+    mocker.patch.object(settings, "CONNECTORS_ENTITLED_EMAILS", {user.email})
 
 
 async def signed_in(session: AsyncSession, user: User) -> str:

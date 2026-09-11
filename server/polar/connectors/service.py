@@ -43,6 +43,21 @@ ENTITLED_PLANS: frozenset[str] = frozenset()
 CONNECTIONS_CACHE_TTL_SECONDS = 60
 
 
+def _entitled_emails() -> frozenset[str]:
+    """The staff allowlist, folded for comparison.
+
+    Read on every call rather than at import, so a change in the Render
+    dashboard takes effect on the next deploy without anything else
+    knowing. Whoever types the address may capitalise it however they
+    like; an address is one thing either way.
+    """
+    return frozenset(
+        address.strip().lower()
+        for address in settings.CONNECTORS_ENTITLED_EMAILS
+        if address.strip()
+    )
+
+
 def _cache_key(user_id: UUID) -> str:
     # 👋 Bump the version when the cached shape changes.
     return f"polar:connectors:v1:{user_id}"
@@ -72,7 +87,10 @@ class ConnectorsService:
         connects one thing costs us every month for ever
         (`docs/maties/connectors.md`, section 5).
         """
-        if user.id in settings.CONNECTORS_ENTITLED_USER_IDS:
+        if (
+            _entitled_emails()
+            and (user.email or "").strip().lower() in _entitled_emails()
+        ):
             return True
         if not ENTITLED_PLANS:
             return False

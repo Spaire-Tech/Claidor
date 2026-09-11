@@ -23,7 +23,7 @@ class TestEntitled:
         assert ENTITLED_PLANS == frozenset()
         assert await connectors.entitled(session, user) is False
 
-        mocker.patch.object(settings, "CONNECTORS_ENTITLED_USER_IDS", {user.id})
+        mocker.patch.object(settings, "CONNECTORS_ENTITLED_EMAILS", {user.email})
         assert await connectors.entitled(session, user) is True
 
     async def test_somebody_else_s_allowlist_is_not_this_person_s(
@@ -33,15 +33,26 @@ class TestEntitled:
         user_second: User,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(settings, "CONNECTORS_ENTITLED_USER_IDS", {user_second.id})
+        mocker.patch.object(settings, "CONNECTORS_ENTITLED_EMAILS", {user_second.email})
         assert await connectors.entitled(session, user) is False
+
+    async def test_the_address_is_matched_however_it_was_typed(
+        self, session: AsyncSession, user: User, mocker: MockerFixture
+    ) -> None:
+        """Whoever fills this in is typing into a dashboard, so a capital
+        letter or a stray space must not be the difference between working
+        connections and a 402 nobody can explain."""
+        mocker.patch.object(
+            settings, "CONNECTORS_ENTITLED_EMAILS", {f"  {user.email.upper()}  "}
+        )
+        assert await connectors.entitled(session, user) is True
 
     async def test_a_free_plan_does_not_buy_connections(
         self, session: AsyncSession, user: User, mocker: MockerFixture
     ) -> None:
         """The quota is deliberately not even consulted while no plan
         includes connections; what matters is that « Free » is a no."""
-        mocker.patch.object(settings, "CONNECTORS_ENTITLED_USER_IDS", set())
+        mocker.patch.object(settings, "CONNECTORS_ENTITLED_EMAILS", set())
         assert (await desktop.quota(session, user))["planName"] == "Free"
         assert await connectors.entitled(session, user) is False
 

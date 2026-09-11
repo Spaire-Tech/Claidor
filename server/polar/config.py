@@ -208,8 +208,11 @@ class Settings(BaseSettings):
     # Who may use connections before there is a plan to buy (section 5 of
     # the note): the founder's account, and staff. The plan does the real
     # work once step 9 lands and this stays for staff. A JSON array of
-    # user ids, like every other list setting here.
-    CONNECTORS_ENTITLED_USER_IDS: set[UUID] = set()
+    # email addresses, like every other list setting here — addresses and
+    # not user ids, because whoever sets this is reading a Render dashboard
+    # and knows their own address, while a user id means a database query
+    # to find and one wrong character means a silent 402.
+    CONNECTORS_ENTITLED_EMAILS: set[str] = set()
 
     # The cloud engine's queue (polar/maty/, docs/maties/cloud.md). The
     # runner service is the only thing that speaks /maty/runner, and it

@@ -225,6 +225,15 @@ envVarGroups:
         sync: false
       # "development" is free and capped at ten people; switch to
       # "production" when there are more than ten, and expect the bill.
+      # Who may use connections before there is a plan to buy. Connections
+      # are a paid feature (docs/maties/connectors.md, section 5), and the
+      # paid plans do not exist until step 9, so WITHOUT THIS NOBODY IS
+      # ENTITLED AND EVERY CONNECTOR ROUTE ANSWERS 402 — including yours.
+      # A JSON array of email addresses, not a comma-separated one:
+      #   ["you@example.com"]
+      - key: CLAIDOR_CONNECTORS_ENTITLED_EMAILS
+        sync: false
+
       - key: CLAIDOR_PIPEDREAM_ENVIRONMENT
         value: development
 
