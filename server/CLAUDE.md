@@ -235,6 +235,19 @@ async def resource_created(resource_id: UUID) -> None:
 
 ## Testing
 
+### Python 3.14 final, not a release candidate
+
+`pyproject.toml` requires Python 3.14 and that is correct. Pydantic 2.12
+calls `typing._eval_type(..., prefer_fwd_module=True)`, a parameter that
+only exists in the **final** 3.14 release. On a 3.14 release candidate
+every import of pydantic dies with `TypeError: _eval_type() got an
+unexpected keyword argument 'prefer_fwd_module'`, which looks like a
+broken dependency and is not one: the interpreter is simply too old.
+CI reads the version from `pyproject.toml` and gets a real release, so
+the suite runs there. If it fails this way on your machine, install
+Python 3.14.0 or later and rebuild the environment. Pure modules with no
+pydantic import can still be run meanwhile with `pytest --noconftest`.
+
 ### Service Tests (Unit)
 
 ```python

@@ -138,6 +138,36 @@ A job carries: whose it is, what to do, why, and what it may touch.
    is sent on the channel the job names.
 6. The container is destroyed.
 
+### The job, exactly
+
+The runner is the only thing that speaks these, with a token of its own
+that belongs to the service and not to any person
+(`CLAIDOR_MATY_RUNNER_TOKEN`). It never reaches Claidor's database.
+
+```
+POST /maty/runner/claim            { "runner": "<name>" }
+  → { "job": null }                       nothing to do
+  → { "job": { "id", "kind", "prompt", "deliver", "allow" },
+      "access_token": "...", "expires_at": "..." }
+
+POST /maty/runner/jobs/{id}/heartbeat     the work is still going
+POST /maty/runner/jobs/{id}/complete      { "result": "...", "usage": {...} }
+POST /maty/runner/jobs/{id}/fail          { "reason": "...", "retryable": true }
+```
+
+**The token is the important part.** The runner holds no lasting
+credential for anybody. When it claims a job, Claidor mints a token for
+that one person that dies when the lease dies, and the runner uses it
+for the two things it is allowed to do: read and write that person's
+memory, and call a model through Claidor's metered proxy. So the work is
+paid for out of that person's credits exactly as it would be on their
+own machine, and a runner that is stolen holds nothing tomorrow.
+
+A claim takes a lease. A runner that dies mid-job stops sending its
+heartbeat, the lease runs out, and the job returns to the queue for
+another try. After a small number of tries it stops and says so, rather
+than looping forever on something that cannot work.
+
 **The safety of this is not the same as on a laptop, and this is the
 part to get right.** On the person's own computer the engine is
 deliberately wide open: it may run any command, and the app asks the
@@ -146,8 +176,13 @@ ask, the work is often triggered by mail a stranger sent, and the
 machine is ours, not theirs. So the cloud runner is the opposite by
 default:
 
-- One throwaway container per job. Nothing survives it but the memory
-  bundle and the result.
+- A fresh workspace per job, deleted after, and nothing carried from one
+  job to the next. The note first asked for a fresh *container* per job;
+  Render runs one container that stays up, so what we actually get is one
+  process doing one job at a time in a directory of its own. That is
+  weaker, it is written here rather than glossed over, and the day a job
+  needs to run something truly untrusted it moves to a sandbox of its
+  own before that happens, not after.
 - No shell, no files beyond the workspace, unless a job explicitly asks
   for them and the person allowed that routine to.
 - Out of the container it may reach three things: Claidor's model proxy,
