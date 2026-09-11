@@ -132,12 +132,17 @@ services:
   # Deploy latest reference, or the service's deploy hook. That is a real
   # manual step and it is written here rather than left to be discovered.
   #
-  # The image is private, like the repository, so Render needs read access to
-  # GHCR: a registry credential added once in the dashboard under the name
-  # below, holding a GitHub token with `read:packages` and nothing else. No
-  # credential is ever baked into the image. (Making the package public
-  # instead would let `creds` go; that is a decision about the patches being
-  # readable by anyone, not a convenience.)
+  # The image is PUBLIC on GHCR, by the founder's decision of September 11,
+  # so there is no `creds` line and Render needs no registry credential.
+  #
+  # What that publishes, said plainly: the built engine, our patches to it,
+  # and the runner's compiled source. What it does not publish is any
+  # secret, and that is a property to keep rather than assume. The image
+  # carries no ENV or ARG holding a credential; the runner's own token and
+  # every other value it needs are read from the environment at run time
+  # (`runner/src/settings.ts`), which Render supplies and the registry never
+  # sees. Anything that would bake a secret into a layer must make this
+  # image private again, and `creds` returns with it.
   #
   # It touches neither the database nor Redis: everything it needs it asks
   # the API for, and the only lasting credential it holds is its own
@@ -151,7 +156,6 @@ services:
       # build also carries its commit sha, so a bad deploy rolls back by
       # pointing a manual deploy at `...@sha256:` or the sha tag instead.
       url: ghcr.io/spaire-tech/claidor-maty-runner:main
-      creds: ghcr-claidor
     plan: starter
     # Deliberately NOT in the `claidor-shared` group, unlike the two
     # services above. That group carries the provider key, the signing
