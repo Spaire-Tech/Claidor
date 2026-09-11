@@ -62,11 +62,7 @@ import {
   resolveAllProviderApiKeys,
   resolveRawApiConfig,
 } from './claudeSettings';
-import {
-  buildConnectorMcpServers,
-  CONNECTORS_TOKEN_ENV_VAR,
-  CONNECTORS_TOKEN_UNCONFIGURED,
-} from './connectors/connectorMcpServers';
+import { buildConnectorMcpServers } from './connectors/connectorMcpServers';
 import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
@@ -1884,10 +1880,6 @@ type OpenClawConfigSyncDeps = {
    * MCP entry each, pointing at Claidor's proxy and at nothing else.
    */
   getConnectedConnectorSlugs?: () => string[];
-  /** Claidor's account protocol base URL, for the connector entries. */
-  getConnectorsBaseUrl?: () => string;
-  /** The person's own Claidor session token; injected as an env var, never written to disk. */
-  getConnectorsSessionToken?: () => string | null;
   getAskUserCallbackUrl?: () => string | null;
   /** Bridge route the search-library extension posts to; null until the bridge is up. */
   getLibrarySearchCallbackUrl?: () => string | null | undefined;
@@ -1928,8 +1920,6 @@ export class OpenClawConfigSync {
   private readonly getIMSettings?: () => IMSettings | null;
   private readonly getResolvedMcpServers?: () => ResolvedMcpServer[];
   private readonly getConnectedConnectorSlugs?: () => string[];
-  private readonly getConnectorsBaseUrl?: () => string;
-  private readonly getConnectorsSessionToken?: () => string | null;
   private readonly getAskUserCallbackUrl?: () => string | null;
   private readonly getLibrarySearchCallbackUrl?: () => string | null | undefined;
   private readonly getMediaCallbackUrl?: () => string | null;
@@ -1967,8 +1957,6 @@ export class OpenClawConfigSync {
     this.getIMSettings = deps.getIMSettings;
     this.getResolvedMcpServers = deps.getResolvedMcpServers;
     this.getConnectedConnectorSlugs = deps.getConnectedConnectorSlugs;
-    this.getConnectorsBaseUrl = deps.getConnectorsBaseUrl;
-    this.getConnectorsSessionToken = deps.getConnectorsSessionToken;
     this.getAskUserCallbackUrl = deps.getAskUserCallbackUrl;
     this.getLibrarySearchCallbackUrl = deps.getLibrarySearchCallbackUrl;
     this.getMediaCallbackUrl = deps.getMediaCallbackUrl;
@@ -2796,12 +2784,15 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       }
     }
     // The connected services (docs/maties/connectors.md): one entry each,
-    // reaching Claidor's proxy. Claidor adds the connector service's key and
-    // pins the person; nothing about that service exists on this machine.
+    // reaching the loopback token proxy rather than Claidor directly. The
+    // proxy attaches the person's live session token per request, so no
+    // credential is written here and none goes stale; Claidor then adds the
+    // connector service's key and pins the person. Nothing about that service
+    // exists on this machine.
     const connectorSlugs = this.getConnectedConnectorSlugs?.() ?? [];
-    const connectorsBaseUrl = this.getConnectorsBaseUrl?.() ?? '';
-    const connectorServers = connectorSlugs.length > 0 && connectorsBaseUrl
-      ? buildConnectorMcpServers(connectorsBaseUrl, connectorSlugs)
+    const connectorsProxyPort = getOpenClawTokenProxyPort();
+    const connectorServers = connectorSlugs.length > 0 && connectorsProxyPort
+      ? buildConnectorMcpServers(`http://127.0.0.1:${connectorsProxyPort}`, connectorSlugs)
       : {};
     const connectorServerCount = Object.keys(connectorServers).length;
     Object.assign(nativeMcpServers, connectorServers);
@@ -3496,11 +3487,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // ${LOBSTER_MCP_BRIDGE_SECRET} placeholder doesn't crash the gateway.
     // Used by the ask-user-question plugin.
     env.LOBSTER_MCP_BRIDGE_SECRET = this.getMcpBridgeSecret?.() || 'unconfigured';
-
-    // Connections (docs/maties/connectors.md): the engine carries the person's
-    // own Claidor session token and nothing else. It is always set, so a config
-    // still holding the placeholder cannot crash the gateway.
-    env[CONNECTORS_TOKEN_ENV_VAR] = this.getConnectorsSessionToken?.() || CONNECTORS_TOKEN_UNCONFIGURED;
 
     // Telegram — per-instance secrets (must match sync() indexing: enabled instances only)
     const tgInstances = this.getTelegramInstances();

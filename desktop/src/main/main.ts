@@ -2134,7 +2134,6 @@ let libraryContentIndexer: LibraryContentIndexer | null = null;
 // engine's config sync can read what is connected without reaching into the
 // IPC scope that owns the authenticated request path.
 let connectorsService: ConnectorsService | null = null;
-let readConnectorsSessionToken: (() => string | null) | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
   if (enabled) {
@@ -2619,8 +2618,6 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       // one MCP entry per connected service, pointing at Claidor's proxy, and
       // carries only the person's own session token.
       getConnectedConnectorSlugs: () => connectorsService?.getConnectedSlugs() ?? [],
-      getConnectorsBaseUrl: getServerApiBaseUrl,
-      getConnectorsSessionToken: () => readConnectorsSessionToken?.() ?? null,
       getAskUserCallbackUrl: () => getMcpRuntime().getAskUserCallbackUrl(),
       getLibrarySearchCallbackUrl: () => getMcpRuntime().getLibrarySearchCallbackUrl(),
       getMediaCallbackUrl: () => getMcpRuntime().getMediaCallbackUrl(),
@@ -13045,7 +13042,6 @@ if (!gotTheLock) {
   // The app asks Claidor for a sign-in URL, opens it, and asks Claidor again
   // what is connected. It never holds a credential of the connector service,
   // and the engine's config gains one entry per connected service.
-  readConnectorsSessionToken = () => getAuthTokens()?.accessToken ?? null;
   connectorsService = new ConnectorsService({
     getServerBaseUrl: getServerApiBaseUrl,
     fetchWithAuth,

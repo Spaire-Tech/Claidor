@@ -37,6 +37,18 @@ export const connectorMcpRoute = (slug: string): string => (
 );
 
 /** The answer of every route when connections are not part of the person's plan. */
+/**
+ * What the engine's MCP entries are pointed at, on the loopback token proxy
+ * rather than at Claidor. The proxy prefixes `/api` to reach
+ * `CONNECTORS_ROUTE` upstream and attaches the live session token on the way,
+ * which is why no credential is ever written into the engine's config.
+ */
+export const CONNECTORS_PROXY_PREFIX = '/connectors';
+
+export const connectorProxyMcpRoute = (slug: string): string => (
+  `${CONNECTORS_PROXY_PREFIX}/mcp/${encodeURIComponent(slug)}`
+);
+
 export const CONNECTORS_PAYMENT_REQUIRED_STATUS = 402;
 
 /** One account the person has connected, as Claidor reports it. */

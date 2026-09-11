@@ -6,22 +6,19 @@
  * Claidor holds the connector service's developer key and pins the external
  * user id to the person the session belongs to. That key is project-wide —
  * whoever holds it can reach every customer's accounts — so it is never on
- * this machine, in this config, or in a log. The engine carries only the
- * person's own Claidor session token, and even that is written as a `${VAR}`
- * placeholder resolved from the gateway's environment, so no token is stored
- * on disk.
+ * this machine, in this config, or in a log.
+ *
+ * **The engine carries no credential at all, not even the person's own.** The
+ * entries point at the loopback token proxy this app already runs for model
+ * calls (`openclawTokenProxy.ts`), which attaches the live Claidor session
+ * token per request and refreshes it on a 401. Writing the token into the
+ * config instead — even as an environment placeholder — would have broken
+ * every connection within the hour, because `DESKTOP_ACCESS_TOKEN_TTL` is one
+ * hour and the gateway's environment is fixed when it is spawned; repairing it
+ * would have forced a hard gateway restart each time the token turned over.
  */
 
-import { connectorMcpRoute } from '../../../shared/connectors/constants';
-
-/** The gateway environment variable holding the person's Claidor session token. */
-export const CONNECTORS_TOKEN_ENV_VAR = 'LOBSTER_CONNECTORS_TOKEN';
-
-/** The value written into the config; the real token never appears there. */
-export const CONNECTORS_TOKEN_PLACEHOLDER = `\${${CONNECTORS_TOKEN_ENV_VAR}}`;
-
-/** Set on the gateway when nobody is signed in, so a stale config cannot crash it. */
-export const CONNECTORS_TOKEN_UNCONFIGURED = 'unconfigured';
+import { connectorProxyMcpRoute } from '../../../shared/connectors/constants';
 
 /** Every connector server key starts with this, so the managed set is recognisable. */
 export const CONNECTOR_SERVER_KEY_PREFIX = 'claidor-';
@@ -31,6 +28,9 @@ export const CONNECTOR_MCP_TRANSPORT = 'streamable-http';
 
 /** Service names are carried into a config key, so only these characters pass. */
 const SAFE_SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+
+/** The proxy runs on this machine only; anything else means a misconfiguration. */
+const LOOPBACK_ORIGIN_PATTERN = /^http:\/\/(127\.0\.0\.1|\[::1\]|localhost):\d{1,5}$/;
 
 export const connectorServerKey = (slug: string): string => (
   `${CONNECTOR_SERVER_KEY_PREFIX}${slug}`
@@ -43,15 +43,23 @@ export const isConnectorServerKey = (key: string): boolean => (
 
 /**
  * Pure: the `mcp.servers` entries for the services a person has connected.
- * `serverBaseUrl` is Claidor's account protocol base, e.g.
- * `https://api.claidor.com/desktop`.
+ *
+ * `proxyBaseUrl` is the loopback token proxy's origin, e.g.
+ * `http://127.0.0.1:54321`, and never Claidor's own address: the proxy is
+ * what holds the live session token. An https address here would mean the
+ * engine talking to Claidor directly with no credential and every call
+ * refused, so a non-loopback origin is dropped rather than written.
  */
 export const buildConnectorMcpServers = (
-  serverBaseUrl: string,
+  proxyBaseUrl: string,
   slugs: readonly string[],
 ): Record<string, Record<string, unknown>> => {
-  const base = serverBaseUrl.replace(/\/+$/, '');
+  const base = proxyBaseUrl.replace(/\/+$/, '');
   if (!base) return {};
+  if (!LOOPBACK_ORIGIN_PATTERN.test(base)) {
+    console.warn('[Connectors] refused to write connector servers for a non-loopback proxy origin');
+    return {};
+  }
   const servers: Record<string, Record<string, unknown>> = {};
   for (const slug of [...new Set(slugs)].sort()) {
     if (!SAFE_SLUG_PATTERN.test(slug)) {
@@ -59,9 +67,9 @@ export const buildConnectorMcpServers = (
       continue;
     }
     servers[connectorServerKey(slug)] = {
-      url: `${base}${connectorMcpRoute(slug)}`,
+      // No `headers`: the proxy attaches the live token per request.
+      url: `${base}${connectorProxyMcpRoute(slug)}`,
       transport: CONNECTOR_MCP_TRANSPORT,
-      headers: { authorization: `Bearer ${CONNECTORS_TOKEN_PLACEHOLDER}` },
     };
   }
   return servers;
