@@ -225,6 +225,9 @@ envVarGroups:
         sync: false
       # "development" is free and capped at ten people; switch to
       # "production" when there are more than ten, and expect the bill.
+      - key: CLAIDOR_PIPEDREAM_ENVIRONMENT
+        value: development
+
       # Who may use connections before there is a plan to buy. Connections
       # are a paid feature (docs/maties/connectors.md, section 5), and the
       # paid plans do not exist until step 9, so WITHOUT THIS NOBODY IS
@@ -233,9 +236,6 @@ envVarGroups:
       #   ["you@example.com"]
       - key: CLAIDOR_CONNECTORS_ENTITLED_EMAILS
         sync: false
-
-      - key: CLAIDOR_PIPEDREAM_ENVIRONMENT
-        value: development
 
       # --- storage: Claidor's own buckets, never shared ---
       - key: CLAIDOR_AWS_ACCESS_KEY_ID
