@@ -16,14 +16,19 @@ server mode does. Sign-in works like this:
    an access token, a refresh token, the person and their quota.
 
 Every later call carries the access token as a bearer; the model proxy
-forwards to Anthropic with Claidor's key and meters what came back.
+forwards to the provider that serves the model asked for — Anthropic or
+OpenAI — with Claidor's key, and meters what came back against that
+provider's price list (`polar/desktop/pricing.py`). There is no API-key
+screen in the app and there will not be one: a person picks a model,
+never a key.
 """
 
 from __future__ import annotations
 
 import functools
 import json
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlunparse
@@ -55,16 +60,21 @@ from .service import (
     AUTH_CODE_INVALID,
     MEMORY_FILE_LIMIT,
     MEMORY_REFUSED,
-    MODELS,
     QUOTA_EXHAUSTED_CODE,
     REFRESH_INVALID,
     DesktopMemoryRefused,
+    DesktopProvider,
     DesktopUnauthenticated,
     IncomingMemoryFile,
     Usage,
-    UsageTally,
     desktop,
     model_by_id,
+    offered_models,
+    provider_api_key,
+    provider_base_url,
+    provider_configured,
+    tally_for,
+    usage_from_answer,
 )
 
 log = structlog.get_logger()
@@ -363,14 +373,17 @@ async def memory_list(
 async def models_available(
     desktop_session: DesktopSession = Depends(get_desktop_session),
 ) -> JSONResponse:
-    return _ok([one.available() for one in MODELS])
+    """The menu. A provider Claidor holds no key for is not on it: a
+    missing key reads as « not available here », never as an error at the
+    moment somebody sends a message."""
+    return _ok([one.available() for one in offered_models()])
 
 
 @router.get("/api/models/pricing-catalog", name="desktop:pricing")
 async def pricing_catalog() -> JSONResponse:
     return _ok(
         {
-            "textModels": [one.pricing() for one in MODELS],
+            "textModels": [one.pricing() for one in offered_models()],
             "imageModels": [],
             "videoModels": [],
         }
@@ -490,11 +503,19 @@ async def activity_action(activity_code: str, action_id: str) -> JSONResponse:
 
 
 # --- the model proxy --------------------------------------------------------
+#
+# Two providers serve the catalogue, and each one talks its own language
+# end to end: the engine speaks Anthropic's `/v1/messages` to an
+# Anthropic model and OpenAI's `/v1/chat/completions` to an OpenAI one.
+# Nothing here converts between the two shapes. The path says which
+# language is being spoken; the model says who serves it, and from that
+# come the address, the key and the price list. One branch, in one
+# place: `_WIRES`.
 
 
-def _upstream_headers(request: Request) -> dict[str, str]:
+def _anthropic_headers(request: Request) -> dict[str, str]:
     headers = {
-        "x-api-key": settings.ANTHROPIC_API_KEY,
+        "x-api-key": provider_api_key(DesktopProvider.anthropic),
         "anthropic-version": request.headers.get(
             "anthropic-version", ANTHROPIC_VERSION
         ),
@@ -507,8 +528,74 @@ def _upstream_headers(request: Request) -> dict[str, str]:
     return headers
 
 
+def _openai_headers(request: Request) -> dict[str, str]:
+    return {
+        "authorization": f"Bearer {provider_api_key(DesktopProvider.openai)}",
+        "content-type": "application/json",
+        "accept": request.headers.get("accept", "application/json"),
+    }
+
+
+def _anthropic_body(payload: dict[str, Any], raw: bytes) -> bytes:
+    """Untouched: Anthropic reports usage on every stream without being
+    asked."""
+    return raw
+
+
+def _openai_body(payload: dict[str, Any], raw: bytes) -> bytes:
+    """Untouched, except that a stream is made to report its usage.
+
+    OpenAI sends no usage on a stream unless the request carried
+    `stream_options.include_usage`, and whether the engine asks for it is
+    a compatibility flag in its own configuration. A stream that reports
+    nothing would cost nothing, which is not a discount — it is metering
+    that has quietly stopped working. So the proxy asks, always.
+    """
+    if payload.get("stream") is not True:
+        return raw
+    options = payload.get("stream_options")
+    options = dict(options) if isinstance(options, dict) else {}
+    if options.get("include_usage") is True:
+        return raw
+    options["include_usage"] = True
+    return json.dumps({**payload, "stream_options": options}).encode()
+
+
+@dataclass(frozen=True)
+class _Wire:
+    """One provider's own language: where it is spoken upstream, and how
+    the request is dressed for it."""
+
+    upstream_path: str
+    headers: Callable[[Request], dict[str, str]]
+    body: Callable[[dict[str, Any], bytes], bytes]
+
+
+_WIRES: dict[DesktopProvider, _Wire] = {
+    DesktopProvider.anthropic: _Wire(
+        upstream_path="/v1/messages",
+        headers=_anthropic_headers,
+        body=_anthropic_body,
+    ),
+    DesktopProvider.openai: _Wire(
+        upstream_path="/v1/chat/completions",
+        headers=_openai_headers,
+        body=_openai_body,
+    ),
+}
+
+
 def _timeout() -> httpx.Timeout:
     return httpx.Timeout(600.0, connect=30.0)
+
+
+def _error(kind: str, message: str, status: int) -> JSONResponse:
+    """The error shape both wires use. Anthropic's and OpenAI's own error
+    bodies are already this shape, so the app reads ours the same way it
+    reads theirs."""
+    return JSONResponse(
+        {"error": {"type": kind, "message": message}}, status_code=status
+    )
 
 
 @router.post("/api/proxy/v1/messages", name="desktop:messages", response_model=None)
@@ -520,50 +607,58 @@ async def proxy_messages(
     """Anthropic's Messages API, behind Claidor's key and the person's
     monthly allowance. The body goes through untouched; the usage
     Anthropic reports comes back as credits."""
+    return await _proxy(request, desktop_session, session, DesktopProvider.anthropic)
+
+
+@router.post(
+    "/api/proxy/v1/chat/completions",
+    name="desktop:chat_completions",
+    response_model=None,
+)
+async def proxy_chat_completions(
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse | StreamingResponse:
+    """OpenAI's Chat Completions API, behind Claidor's key and the same
+    allowance. The app's loopback proxy already forwards this path, so
+    the engine reaches it by speaking OpenAI to an OpenAI model — no
+    translation anywhere."""
+    return await _proxy(request, desktop_session, session, DesktopProvider.openai)
+
+
+async def _proxy(
+    request: Request,
+    desktop_session: DesktopSession,
+    session: AsyncSession,
+    spoken: DesktopProvider,
+) -> JSONResponse | StreamingResponse:
     raw = await request.body()
     try:
         payload = json.loads(raw or b"{}")
     except ValueError:
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "invalid_request_error",
-                    "message": "The body is not JSON.",
-                }
-            },
-            status_code=400,
-        )
+        return _error("invalid_request_error", "The body is not JSON.", 400)
     if not isinstance(payload, dict):
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "invalid_request_error",
-                    "message": "The body must be an object.",
-                }
-            },
-            status_code=400,
-        )
+        return _error("invalid_request_error", "The body must be an object.", 400)
     model = model_by_id(str(payload.get("model", "")))
     if model is None:
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "invalid_request_error",
-                    "message": "This model is not offered by the desktop app.",
-                }
-            },
-            status_code=400,
+        return _error(
+            "invalid_request_error",
+            "This model is not offered by the desktop app.",
+            400,
         )
-    if not settings.ANTHROPIC_API_KEY:
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "api_error",
-                    "message": "The model service is not configured.",
-                }
-            },
-            status_code=503,
+    if model.provider is not spoken:
+        # The path is one provider's language and the model is served by
+        # another. Nothing here translates between the two, so this is a
+        # mistake in the caller, not something to paper over.
+        return _error(
+            "invalid_request_error",
+            f"{model.model_id} is served by {model.provider.value} "
+            f"and is not reached through the {spoken.value} API.",
+            400,
         )
+    if not provider_configured(model.provider):
+        return _error("api_error", "The model service is not configured.", 503)
     user = desktop_session.user
     if await desktop.exhausted(session, user):
         return JSONResponse(
@@ -580,9 +675,11 @@ async def proxy_messages(
             status_code=402,
         )
 
+    wire = _WIRES[model.provider]
     stream = payload.get("stream") is True
-    url = f"{settings.DESKTOP_ANTHROPIC_BASE_URL}/v1/messages"
-    headers = _upstream_headers(request)
+    url = f"{provider_base_url(model.provider)}{wire.upstream_path}"
+    headers = wire.headers(request)
+    body = wire.body(payload, raw)
     user_id, session_id = user.id, desktop_session.id
 
     # The request's own session is committed when the handler returns,
@@ -619,66 +716,55 @@ async def proxy_messages(
 
     if not stream:
         async with httpx.AsyncClient(timeout=_timeout()) as client:
-            upstream = await client.post(url, headers=headers, content=raw)
+            upstream = await client.post(url, headers=headers, content=body)
         usage = Usage()
         try:
             answer = upstream.json()
-            if isinstance(answer, dict):
-                usage = Usage.from_payload(answer.get("usage"))
+            usage = usage_from_answer(model.provider, answer)
         except ValueError:
             answer = None
         await record(usage, upstream.status_code)
         if answer is None:
-            return JSONResponse(
-                {
-                    "error": {
-                        "type": "api_error",
-                        "message": "The model service answered with something that is not JSON.",
-                    }
-                },
-                status_code=502,
+            return _error(
+                "api_error",
+                "The model service answered with something that is not JSON.",
+                502,
             )
         return JSONResponse(answer, status_code=upstream.status_code)
 
     client = httpx.AsyncClient(timeout=_timeout())
-    upstream_request = client.build_request("POST", url, headers=headers, content=raw)
+    upstream_request = client.build_request("POST", url, headers=headers, content=body)
     try:
         upstream = await client.send(upstream_request, stream=True)
     except httpx.HTTPError as error:
         await client.aclose()
-        log.warning("desktop.proxy.upstream_unreachable", error=str(error))
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "api_error",
-                    "message": "The model service could not be reached.",
-                }
-            },
-            status_code=502,
+        log.warning(
+            "desktop.proxy.upstream_unreachable",
+            provider=model.provider.value,
+            error=str(error),
         )
+        return _error("api_error", "The model service could not be reached.", 502)
 
     if upstream.status_code != 200:
         # An error is small and not an event stream: read it, meter
         # nothing, hand it back as it came.
-        body = await upstream.aread()
+        error_body = await upstream.aread()
         await upstream.aclose()
         await client.aclose()
         await record(Usage(), upstream.status_code)
         try:
-            return JSONResponse(json.loads(body), status_code=upstream.status_code)
-        except ValueError:
             return JSONResponse(
-                {
-                    "error": {
-                        "type": "api_error",
-                        "message": body.decode(errors="replace")[:500],
-                    }
-                },
-                status_code=upstream.status_code,
+                json.loads(error_body), status_code=upstream.status_code
+            )
+        except ValueError:
+            return _error(
+                "api_error",
+                error_body.decode(errors="replace")[:500],
+                upstream.status_code,
             )
 
     async def relay() -> AsyncIterator[bytes]:
-        tally = UsageTally()
+        tally = tally_for(model.provider)
         try:
             async for chunk in upstream.aiter_bytes():
                 tally.feed(chunk)

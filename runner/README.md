@@ -97,8 +97,9 @@ secret, and the process refuses to start without the two that matter.
 | `CLAIDOR_MATY_ENGINE_START_TIMEOUT_MS` | The longest to wait for the engine to be ready. Default three minutes. |
 
 In production it is the `claidor-maty-runner` service in the repository's
-`render.yaml`: a Docker worker, no port and no health check, because
-nothing calls it.
+`render.yaml`: a worker running the published image, no port and no health
+check, because nothing calls it. A new image does not deploy itself —
+Render pulls only when a deploy is asked for.
 
 ```bash
 npm install
@@ -113,9 +114,28 @@ equal to the pin in `desktop/package.json`: one person, one assistant, so
 the two places it runs must be the same build. `src/engineVersion.test.ts`
 fails if the runner, the desktop and the Dockerfile ever disagree.
 
+The tag is only half of that engine. The other half is the patches in
+`desktop/scripts/patches/<tag>/`, which go into the source before it is
+built — which is why the engine is built here at all rather than installed
+from npm, where the unpatched package sits looking like an hour saved. The
+image applies them with the desktop's own script, so the order and the
+checks are the desktop's too, and the same test fails if a patch stops
+reaching the image.
+
 The image builds the engine from its own repository at that tag, the way
 `desktop/scripts/build-openclaw-runtime.sh` builds it, minus the parts that
-exist only for Electron.
+exist only for Electron. `docs/maties/cloud.md`, section 4, names what the
+desktop still does that this does not, and what it costs.
+
+It is built in GitHub Actions (`.github/workflows/runner_image.yml`) and
+published to `ghcr.io/spaire-tech/claidor-maty-runner`; Render pulls that
+image rather than building one, because its build machine does not finish
+the engine. Building it by hand takes the repository root as its context,
+because the patches live outside this directory:
+
+```bash
+docker build -f runner/Dockerfile -t claidor-maty-runner .
+```
 
 ## Tests
 

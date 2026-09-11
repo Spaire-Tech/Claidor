@@ -137,7 +137,11 @@ What this decides:
 - **Trust page.** Two columns: what stays on the machine (files, the
   library index, local programs, the browser), and what the cloud engine
   holds (email and calendar access, connected-app tokens, the assistant's
-  memory, and nothing from the disk).
+  memory, and nothing from the disk). One more sentence, in plain words,
+  because it is a change from « the assistant searches with your own
+  browser »: **when the assistant searches the web, the words it searches
+  for go to DuckDuckGo — nothing else about the conversation does**
+  (`docs/maties/models-and-search.md`, section 3).
 - **The assistant's email address.** A server component from day one:
   mail to name@maties.com (the domain is not yet decided) is received on
   our servers, handed to the cloud engine, and answered on the person's
@@ -185,8 +189,10 @@ Every price is a placeholder until the gateway has a month of numbers.
 
 Local-first is the trust story now, in the exact words of section 2. The
 artefacts follow in this order: a trust page with the two columns of
-section 4 and the subprocessor list (Anthropic for the model, Render for
-the cloud engine, the email vendor), a data processing agreement, then
+section 4 and the subprocessor list (Anthropic and OpenAI for the models
+a person may pick — `docs/maties/models-and-search.md`, section 2 —
+DuckDuckGo for web search, Render for the cloud engine, the email
+vendor), a data processing agreement, then
 SOC 2 when a customer with a compliance officer asks and not before.
 
 ## 8. Order of work
@@ -231,9 +237,10 @@ that Town's pricing already carries and ours must.
 Done: the app reshaped from LobsterAI (English only, Maties branding, our
 domains, Chinese channels and services out, provider and key screens
 hidden); the account protocol on Claidor (browser sign-in, token
-exchange and refresh, profile, quota, model list, a metered proxy to
-Anthropic on Claidor's key) merged and live; the sign-in loop proven
-end to end against a local Claidor with screenshots.
+exchange and refresh, profile, quota, model list, a metered proxy to the
+model's own provider — Anthropic or OpenAI — on Claidor's key, never the
+person's) merged and live; the sign-in loop proven end to end against a
+local Claidor with screenshots.
 
 September 10: step 1 is proven. On the founder's Mac, from the unsigned
 installer, the founder signed in, asked questions, and Maties answered

@@ -11,7 +11,13 @@ import respx
 from pytest_mock import MockerFixture
 
 from polar.config import settings
-from polar.desktop.service import Usage, UsageTally, credits_for, desktop, model_by_id
+from polar.desktop.service import (
+    Usage,
+    UsageTally,
+    credits_for,
+    desktop,
+    model_by_id,
+)
 from polar.kit.utils import utc_now
 from polar.models import DesktopSession, DesktopUsage, User
 from polar.postgres import AsyncSession
@@ -125,8 +131,13 @@ class TestExchange:
 @pytest.mark.asyncio
 class TestSession:
     async def test_the_bearer_opens_profile_quota_and_models(
-        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
     ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
 
@@ -160,8 +171,9 @@ class TestSession:
         assert response.status_code == 401
 
     async def test_the_pricing_catalogue_is_public(
-        self, client: httpx.AsyncClient
+        self, client: httpx.AsyncClient, mocker: MockerFixture
     ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
         response = await client.get("/desktop/api/models/pricing-catalog")
         body = response.json()
         assert body["code"] == 0
@@ -484,7 +496,216 @@ class TestProxy:
         response = await client.post(
             "/desktop/api/proxy/v1/chat/completions", headers=headers, json={}
         )
+        assert response.status_code == 400
+        response = await client.post(
+            "/desktop/api/proxy/v1/embeddings", headers=headers, json={}
+        )
         assert response.status_code == 404
+
+
+OPENAI_STREAM = b"".join(
+    [
+        b'data: {"id":"c1","choices":[{"delta":{"content":"Hel"}}],"usage":null}\n\n',
+        b'data: {"id":"c1","choices":[{"delta":{"content":"lo"}}],"usage":null}\n\n',
+        b'data: {"id":"c1","choices":[],"usage":{"prompt_tokens":1120,'
+        b'"completion_tokens":57,"total_tokens":1177,'
+        b'"prompt_tokens_details":{"cached_tokens":1000}}}\n\n',
+        b"data: [DONE]\n\n",
+    ]
+)
+
+
+@pytest.mark.asyncio
+class TestTwoProviders:
+    """The second model (`docs/maties/models-and-search.md`, section 2):
+    the model says who serves it, the proxy takes the address, the key
+    and the price list from that, and each side talks its own language."""
+
+    async def test_only_the_providers_with_a_key_are_offered(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
+        mocker.patch.object(settings, "OPENAI_API_KEY", "")
+        offered = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()
+        providers = {one["provider"] for one in offered["data"]}
+        assert providers == {"anthropic"}
+        catalog = (await client.get("/desktop/api/models/pricing-catalog")).json()
+        assert {one["provider"] for one in catalog["data"]["textModels"]} == {
+            "anthropic"
+        }
+
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        offered = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()
+        by_id = {one["modelId"]: one for one in offered["data"]}
+        assert {one["provider"] for one in offered["data"]} == {"anthropic", "openai"}
+        # The wire format follows the provider, with no converter between.
+        assert by_id["claude-sonnet-5"]["apiFormat"] == "anthropic"
+        assert by_id["gpt-5.6-terra"]["apiFormat"] == "openai"
+
+    async def test_a_gpt_call_goes_to_openai_in_openai_s_language(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions"
+            ).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id": "chatcmpl-1",
+                        "choices": [{"message": {"content": "Hello"}}],
+                        "usage": {
+                            "prompt_tokens": 1100,
+                            "completion_tokens": 100,
+                            "total_tokens": 1200,
+                            "prompt_tokens_details": {"cached_tokens": 1000},
+                        },
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "gpt-5.6-terra", "messages": []},
+            )
+        assert response.status_code == 200
+        sent = route.calls[0].request
+        assert sent.headers["authorization"] == "Bearer sk-openai"
+        assert "x-api-key" not in sent.headers
+
+        rows = (await session.execute(DesktopUsage.__table__.select())).all()
+        assert len(rows) == 1
+        row = rows[0]
+        assert row.provider == "openai"
+        # The cached part of the prompt is taken out of the input count
+        # rather than charged twice.
+        assert (row.input_tokens, row.cache_read_tokens) == (100, 1000)
+        assert row.output_tokens == 100
+        model = model_by_id("gpt-5.6-terra")
+        assert model is not None
+        assert row.credits == credits_for(
+            model,
+            Usage(input_tokens=100, output_tokens=100, cache_read_tokens=1000),
+        )
+
+    async def test_a_gpt_stream_is_made_to_report_its_usage_and_is_metered(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions"
+            ).mock(
+                return_value=httpx.Response(
+                    200,
+                    headers={"content-type": "text/event-stream"},
+                    content=OPENAI_STREAM,
+                )
+            )
+            async with client.stream(
+                "POST",
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "gpt-6-astra", "stream": True, "messages": []},
+            ) as response:
+                assert response.status_code == 200
+                received = b"".join([chunk async for chunk in response.aiter_bytes()])
+        assert received == OPENAI_STREAM
+
+        # Without this the stream reports nothing and the call is free —
+        # metering that has quietly stopped working.
+        sent = json.loads(route.calls[0].request.content)
+        assert sent["stream_options"] == {"include_usage": True}
+
+        rows = (await session.execute(DesktopUsage.__table__.select())).all()
+        assert len(rows) == 1
+        row = rows[0]
+        assert row.provider == "openai"
+        assert (row.input_tokens, row.cache_read_tokens) == (120, 1000)
+        assert row.output_tokens == 57
+        assert row.stream is True
+        assert row.credits > 0
+
+    async def test_a_model_sent_down_the_other_provider_s_path_is_refused(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        with respx.mock(assert_all_called=False):
+            claude_on_openai = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers=headers,
+                json={"model": "claude-sonnet-5", "messages": []},
+            )
+            gpt_on_anthropic = await client.post(
+                "/desktop/api/proxy/v1/messages",
+                headers=headers,
+                json={"model": "gpt-5.6-terra", "messages": []},
+            )
+        assert claude_on_openai.status_code == 400
+        assert gpt_on_anthropic.status_code == 400
+        assert "anthropic" in claude_on_openai.json()["error"]["message"]
+        assert "openai" in gpt_on_anthropic.json()["error"]["message"]
+
+    async def test_an_unconfigured_key_is_a_missing_model_not_a_failed_call(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
+        mocker.patch.object(settings, "OPENAI_API_KEY", "")
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+
+        offered = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()
+        assert not [one for one in offered["data"] if one["provider"] == "openai"]
+
+        # And if something asks anyway, it is answered plainly and no
+        # call is made.
+        with respx.mock(assert_all_called=False) as mock:
+            route = mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions")
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers=headers,
+                json={"model": "gpt-5.6-terra", "messages": []},
+            )
+            assert not route.called
+        assert response.status_code == 503
+        rows = (await session.execute(DesktopUsage.__table__.select())).all()
+        assert rows == []
 
 
 class TestUsageTally:

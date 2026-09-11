@@ -23,6 +23,9 @@ vi.mock('electron', () => ({
 const mockRuntimeState = vi.hoisted(() => ({
   proxyPort: null as number | null,
   modelCompatPluginAvailable: true,
+  // The bundled DuckDuckGo search provider. Off by default so the
+  // existing expectations describe a build without search.
+  searchPluginAvailable: false,
   serverModels: [] as Array<{
     modelId: string;
     modelName?: string;
@@ -112,7 +115,10 @@ vi.mock('./openclawLocalExtensions', () => ({
     id !== 'qwen-portal-auth'
     && (id !== 'maties-model-compat' || mockRuntimeState.modelCompatPluginAvailable)
   ),
-  hasRuntimeBundledOpenClawExtension: (id: string) => id === 'xai',
+  hasRuntimeBundledOpenClawExtension: (id: string) => (
+    id === 'xai'
+    || (id === 'duckduckgo' && mockRuntimeState.searchPluginAvailable)
+  ),
   resolveOpenClawExtensionPluginId: (id: string) => {
     const manifestIds: Record<string, string> = {
       'clawemail-email': 'email',
@@ -135,6 +141,7 @@ describe('OpenClawConfigSync runtime config output', () => {
   beforeEach(() => {
     mockRuntimeState.proxyPort = null;
     mockRuntimeState.modelCompatPluginAvailable = true;
+    mockRuntimeState.searchPluginAvailable = false;
     mockRuntimeState.serverModels = [];
     mockRuntimeState.enabledProviders = [];
     mockRuntimeState.providerSourceEntries = [];
@@ -1724,6 +1731,125 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(config.agents.defaults.models).toBeUndefined();
+  });
+
+  // --- The second model (docs/maties/models-and-search.md, section 2) ---
+
+  test('offers both providers through the one loopback proxy, each in its own wire format', async () => {
+    mockRuntimeState.proxyPort = 56646;
+    mockRuntimeState.serverModels = [
+      {
+        modelId: 'claude-sonnet-5',
+        modelName: 'Claude Sonnet 5',
+        provider: 'anthropic',
+        apiFormat: 'anthropic',
+        supportsImage: true,
+      },
+      {
+        modelId: 'gpt-5.6-terra',
+        modelName: 'GPT-5.6 Terra',
+        provider: 'openai',
+        apiFormat: 'openai',
+        supportsImage: true,
+        contextWindow: 1_050_000,
+      },
+      {
+        modelId: 'gpt-6-astra',
+        modelName: 'GPT-6 Astra',
+        provider: 'openai',
+        apiFormat: 'openai',
+        supportsImage: true,
+        contextWindow: 1_050_000,
+      },
+    ];
+
+    const sync = await createSync();
+    expect(sync.sync('two-providers')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const maties = config.models.providers['maties-server'];
+
+    // One provider, one address: the person's key never leaves Claidor,
+    // so both suppliers are reached through the same metered proxy.
+    expect(maties.baseUrl).toBe('http://127.0.0.1:56646/v1');
+
+    // The wire format follows the model, not the provider entry. Without
+    // the per-model `api` a GPT model would be sent down Anthropic's
+    // /v1/messages, which is the converter we deliberately did not build.
+    expect(Object.fromEntries(
+      maties.models.map((model: { id: string; api: string }) => [model.id, model.api]),
+    )).toEqual({
+      'claude-sonnet-5': 'anthropic-messages',
+      'gpt-5.6-terra': 'openai-completions',
+      'gpt-6-astra': 'openai-completions',
+    });
+  });
+
+  test('offers only the models the server lists, so an unconfigured key is a shorter menu', async () => {
+    mockRuntimeState.proxyPort = 56646;
+    mockRuntimeState.serverModels = [
+      {
+        modelId: 'claude-sonnet-5',
+        modelName: 'Claude Sonnet 5',
+        provider: 'anthropic',
+        apiFormat: 'anthropic',
+      },
+    ];
+
+    const sync = await createSync();
+    expect(sync.sync('anthropic-only')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const ids = config.models.providers['maties-server'].models
+      .map((model: { id: string }) => model.id);
+    expect(ids).toEqual(['claude-sonnet-5']);
+  });
+
+  // --- Search (docs/maties/models-and-search.md, section 3) ---
+
+  test('switches web_search on with DuckDuckGo when the provider is bundled', async () => {
+    mockRuntimeState.searchPluginAvailable = true;
+
+    const sync = await createSync();
+    expect(sync.sync('search-on')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // Three things have to agree or search fails silently.
+    expect(config.tools.deny).not.toContain('web_search');
+    expect(config.tools.web.search).toEqual({
+      enabled: true,
+      provider: 'duckduckgo',
+    });
+    expect(config.plugins.entries.duckduckgo).toEqual({ enabled: true });
+    // plugins.allow is a strict allowlist once non-empty — a bundled
+    // plugin missing from it never loads, and nothing says so.
+    expect(config.plugins.allow).toContain('duckduckgo');
+
+    const workspaceDir = path.join(stateDir, 'workspace-main');
+    const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
+    // The instruction must match the tools. Telling the assistant search
+    // is off while the tool is allowed reads as stupidity, not as a
+    // switched-off feature.
+    expect(agentsMd).toContain('Built-in `web_search` is available in this workspace');
+    expect(agentsMd).toContain('DuckDuckGo');
+    expect(agentsMd).not.toContain('Brave Search API');
+    expect(agentsMd).not.toContain('`web_search` is disabled');
+  });
+
+  test('leaves web_search off and says so when no search provider is bundled', async () => {
+    mockRuntimeState.searchPluginAvailable = false;
+
+    const sync = await createSync();
+    expect(sync.sync('search-off')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.tools.web.search).toEqual({ enabled: false });
+    expect(config.plugins.entries).not.toHaveProperty('duckduckgo');
+    expect(config.plugins.allow).not.toContain('duckduckgo');
+
+    const workspaceDir = path.join(stateDir, 'workspace-main');
+    const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('Built-in `web_search` is not available in this build');
   });
 
   test('declares and allowlists the bundled xai plugin so its compat hooks load', async () => {

@@ -12,9 +12,8 @@ invented beyond what that code reads.
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -38,6 +37,21 @@ from polar.models import (
 from polar.postgres import AsyncSession
 
 from .memory_merge import is_accepted_memory_name, merge_memory_file
+from .pricing import (
+    MODELS,
+    PROVIDER_TOKEN_WEIGHTS,
+    DesktopModel,
+    DesktopProvider,
+    OpenAIUsageTally,
+    SSEUsageTally,
+    TokenWeights,
+    Usage,
+    UsageTally,
+    credits_for,
+    model_by_id,
+    tally_for,
+    usage_from_answer,
+)
 from .repository import (
     DesktopAuthCodeRepository,
     DesktopMemoryFileRepository,
@@ -82,170 +96,39 @@ class DesktopMemoryRefused(DesktopError):
 
 # --- the models the app may call ---------------------------------------------
 
-
-@dataclass(frozen=True)
-class DesktopModel:
-    model_id: str
-    model_name: str
-    description: str
-    #: Cost weight relative to the middle model, used for credits and
-    #: shown by the app. A weight, not a price list.
-    cost_multiplier: float
-    context_window: int = 200_000
-    max_tokens: int = 16_384
-
-    def available(self) -> dict[str, Any]:
-        """The row of `/api/models/available`, as `AvailableServerModel`
-        in the app reads it."""
-        return {
-            "modelId": self.model_id,
-            "modelName": self.model_name,
-            "provider": "anthropic",
-            "apiFormat": "anthropic",
-            "description": self.description,
-            "costMultiplier": self.cost_multiplier,
-            "accessible": True,
-            "supportsImage": True,
-            "supportsVideo": False,
-            "supportsThinking": False,
-            "supportsToolCalling": True,
-            "agenticReady": True,
-            "contextWindow": self.context_window,
-            "maxTokens": self.max_tokens,
-            "explicitContextCache": False,
-        }
-
-    def pricing(self) -> dict[str, Any]:
-        return {
-            "modelId": self.model_id,
-            "modelName": self.model_name,
-            "provider": "anthropic",
-            "costMultiplier": self.cost_multiplier,
-            "description": self.description,
-        }
+# The catalogue and the whole of the metering live in
+# `polar.desktop.pricing`, which imports nothing but the standard
+# library so the price table can be read and tested on its own. What
+# needs settings — which key, which address, and therefore which models
+# are offered at all — stays here.
 
 
-MODELS: tuple[DesktopModel, ...] = (
-    DesktopModel(
-        "claude-sonnet-5",
-        "Claude Sonnet 5",
-        "The everyday model: fast, capable, the default.",
-        1.0,
-    ),
-    DesktopModel(
-        "claude-opus-5",
-        "Claude Opus 5",
-        "The most capable model, for the hardest work.",
-        5.0,
-    ),
-    DesktopModel(
-        "claude-haiku-4-5-20251001",
-        "Claude Haiku 4.5",
-        "The quickest and cheapest model, for simple steps.",
-        0.2,
-    ),
-)
+def provider_api_key(provider: DesktopProvider) -> str:
+    """Claidor's key for one provider, or "" where none is configured."""
+    if provider is DesktopProvider.openai:
+        return settings.OPENAI_API_KEY
+    return settings.ANTHROPIC_API_KEY
 
 
-def model_by_id(model_id: str) -> DesktopModel | None:
-    wanted = model_id.strip()
-    return next((one for one in MODELS if one.model_id == wanted), None)
+def provider_base_url(provider: DesktopProvider) -> str:
+    if provider is DesktopProvider.openai:
+        return settings.DESKTOP_OPENAI_BASE_URL
+    return settings.DESKTOP_ANTHROPIC_BASE_URL
+
+
+def provider_configured(provider: DesktopProvider) -> bool:
+    return bool(provider_api_key(provider))
+
+
+def offered_models() -> tuple[DesktopModel, ...]:
+    """The models the app is told about. A provider with no key is not
+    offered at all: a missing key must read as « not available here »
+    when the menu is drawn, never as an error at the moment somebody
+    sends a message."""
+    return tuple(one for one in MODELS if provider_configured(one.provider))
 
 
 # --- credits --------------------------------------------------------------------
-
-
-@dataclass
-class Usage:
-    """What Anthropic reported for one call."""
-
-    input_tokens: int = 0
-    output_tokens: int = 0
-    cache_creation_tokens: int = 0
-    cache_read_tokens: int = 0
-
-    @classmethod
-    def from_payload(cls, usage: Any) -> Usage:
-        if not isinstance(usage, dict):
-            return cls()
-
-        def number(key: str) -> int:
-            value = usage.get(key)
-            return int(value) if isinstance(value, int | float) else 0
-
-        return cls(
-            input_tokens=number("input_tokens"),
-            output_tokens=number("output_tokens"),
-            cache_creation_tokens=number("cache_creation_input_tokens"),
-            cache_read_tokens=number("cache_read_input_tokens"),
-        )
-
-
-def credits_for(model: DesktopModel, usage: Usage) -> int:
-    """One credit is one input token on the middle model. Output tokens
-    weigh five, cached reads a tenth, cache writes a quarter more — the
-    proportions of Anthropic's price list, scaled by the model's weight."""
-    weighted = (
-        usage.input_tokens
-        + usage.output_tokens * 5
-        + usage.cache_creation_tokens * 1.25
-        + usage.cache_read_tokens * 0.1
-    )
-    return int(round(weighted * model.cost_multiplier))
-
-
-@dataclass
-class UsageTally:
-    """Reads Anthropic's server-sent events as they stream past and keeps
-    the usage they report: `message_start` carries the input side,
-    `message_delta` the cumulative output side."""
-
-    usage: Usage = field(default_factory=Usage)
-    _buffer: bytes = b""
-
-    def feed(self, chunk: bytes) -> None:
-        self._buffer += chunk
-        while b"\n" in self._buffer:
-            line, _, self._buffer = self._buffer.partition(b"\n")
-            self._line(line.strip())
-
-    def finish(self) -> Usage:
-        if self._buffer.strip():
-            self._line(self._buffer.strip())
-            self._buffer = b""
-        return self.usage
-
-    def _line(self, line: bytes) -> None:
-        if not line.startswith(b"data:"):
-            return
-        try:
-            event = json.loads(line[5:].strip() or b"null")
-        except ValueError:
-            return
-        if not isinstance(event, dict):
-            return
-        kind = event.get("type")
-        if kind == "message_start":
-            message = event.get("message")
-            if isinstance(message, dict):
-                started = Usage.from_payload(message.get("usage"))
-                self.usage.input_tokens = started.input_tokens
-                self.usage.cache_creation_tokens = started.cache_creation_tokens
-                self.usage.cache_read_tokens = started.cache_read_tokens
-                self.usage.output_tokens = max(
-                    self.usage.output_tokens, started.output_tokens
-                )
-        elif kind == "message_delta":
-            delta = Usage.from_payload(event.get("usage"))
-            self.usage.output_tokens = max(
-                self.usage.output_tokens, delta.output_tokens
-            )
-            if delta.input_tokens:
-                self.usage.input_tokens = delta.input_tokens
-            if delta.cache_creation_tokens:
-                self.usage.cache_creation_tokens = delta.cache_creation_tokens
-            if delta.cache_read_tokens:
-                self.usage.cache_read_tokens = delta.cache_read_tokens
 
 
 def month_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
@@ -647,6 +530,11 @@ class DesktopService:
             user_id=user_id,
             session_id=session_id,
             model=model.model_id,
+            # The price list the credits below were read off. Without it
+            # a stored credit figure cannot be traced back to the list
+            # that produced it, and two providers' figures stop being
+            # comparable the first time either list moves.
+            provider=model.provider.value,
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,
             cache_creation_tokens=usage.cache_creation_tokens,
@@ -670,21 +558,32 @@ __all__ = [
     "MEMORY_REFUSED",
     "MEMORY_REQUEST_MAX_BYTES",
     "MODELS",
+    "PROVIDER_TOKEN_WEIGHTS",
     "QUOTA_EXHAUSTED_CODE",
     "REFRESH_INVALID",
     "UNAUTHENTICATED",
     "DesktopError",
     "DesktopMemoryRefused",
     "DesktopModel",
+    "DesktopProvider",
     "DesktopService",
     "DesktopUnauthenticated",
     "IncomingMemoryFile",
     "MemoryFileState",
     "MemorySync",
+    "OpenAIUsageTally",
+    "SSEUsageTally",
+    "TokenWeights",
     "Usage",
     "UsageTally",
     "credits_for",
     "desktop",
     "model_by_id",
     "month_bounds",
+    "offered_models",
+    "provider_api_key",
+    "provider_base_url",
+    "provider_configured",
+    "tally_for",
+    "usage_from_answer",
 ]

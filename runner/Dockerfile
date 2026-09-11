@@ -1,10 +1,27 @@
-# Claidor's cloud runner: the OpenClaw engine, built from its pinned tag,
-# with the small service that feeds it one job at a time.
+# Claidor's cloud runner: the OpenClaw engine, built from its pinned tag with
+# the desktop app's patches applied, plus the small service that feeds it one
+# job at a time.
 #
-# Build context is `runner/`. Nothing outside it is needed: the engine comes
-# from its own repository at the tag pinned below, which must stay equal to
-# `openclaw.version` in `desktop/package.json` — `src/engineVersion.test.ts`
-# fails if the three ever disagree.
+# This file is not built where it is deployed. Render's build machine does not
+# finish the engine build — 152 workspace projects, and it hangs at `tsdown` —
+# so GitHub Actions builds this image (`.github/workflows/runner_image.yml`),
+# pushes it to GHCR, and the `claidor-maty-runner` service in `render.yaml`
+# pulls it. Both paths run this one Dockerfile, so a developer's image and the
+# deployed one are the same thing rather than two builds that agree by luck.
+#
+# Build context is the REPOSITORY ROOT, not `runner/`:
+#
+#   docker build -f runner/Dockerfile -t claidor-maty-runner .
+#
+# The engine the desktop ships is not the engine upstream publishes. The
+# changes Maties makes to it live in `desktop/scripts/patches/<tag>/`, and the
+# desktop applies them to the source before building — which is why the
+# published npm package is not an option here, however tempting its 78 MB is.
+# Those patches sit outside `runner/`, so the context is widened to reach
+# them rather than a copy being kept under `runner/`: a copy would be a second
+# source of truth, and it would go stale the first morning somebody adds a
+# patch on the desktop side without thinking about the cloud. The root
+# `.dockerignore` keeps the widened context to the few paths below.
 #
 # Every version here is pinned on purpose. Nothing floats, so the same
 # Dockerfile builds the same image tomorrow.
@@ -12,7 +29,10 @@
 # --- the engine ------------------------------------------------------------
 # Built the way `desktop/scripts/build-openclaw-runtime.sh` builds it, minus
 # the parts that exist only for Electron: the tarball is not repacked into
-# gateway.asar, because plain Node loads openclaw.mjs directly.
+# gateway.asar, because plain Node loads openclaw.mjs directly. What the
+# desktop does on top of this — the gateway bundle, plugins, extensions,
+# precompilation, channel dependencies, pruning — is named and accounted for
+# in `docs/maties/cloud.md`, section 4.
 FROM node:24.15.0-bookworm-slim AS engine
 
 ARG OPENCLAW_VERSION=v2026.6.1
@@ -28,6 +48,27 @@ RUN corepack enable
 
 WORKDIR /src
 RUN git clone --depth 1 --branch "${OPENCLAW_VERSION}" "${OPENCLAW_REPO}" openclaw
+
+# The patches, and the desktop's own script that applies them. The script is
+# borrowed rather than reimplemented: it decides the order, refuses a patch
+# that no longer applies, and checks afterwards that the source really carries
+# what each patch promised. A second implementation here would be a second set
+# of bugs, and the two engines would drift the first time only one was fixed.
+#
+# These three paths are all this stage copies, so a change to the runner's own
+# source leaves every layer below cached and the engine is not rebuilt.
+COPY desktop/package.json /maties/package.json
+COPY desktop/scripts/apply-openclaw-patches.cjs /maties/scripts/apply-openclaw-patches.cjs
+COPY desktop/scripts/patches /maties/scripts/patches
+
+# The script picks the patch directory from the desktop's pinned version; the
+# clone above came from the ARG. If those two ever disagree the patches for
+# some other tag would be thrown at this source, so say so here rather than
+# let `git apply` explain it. `src/engineVersion.test.ts` catches the same
+# disagreement before anybody builds.
+RUN test "$(node -p "require('/maties/package.json').openclaw.version")" = "${OPENCLAW_VERSION}" \
+  || { echo "desktop/package.json pins a different openclaw version than ARG OPENCLAW_VERSION=${OPENCLAW_VERSION}" >&2; exit 1; } \
+  && node /maties/scripts/apply-openclaw-patches.cjs /src/openclaw
 
 WORKDIR /src/openclaw
 RUN pnpm install --frozen-lockfile \
@@ -56,10 +97,10 @@ RUN npm pkg delete devDependencies \
 FROM node:24.15.0-bookworm-slim AS build
 
 WORKDIR /build
-COPY package.json package-lock.json ./
+COPY runner/package.json runner/package-lock.json ./
 RUN npm ci --no-audit --no-fund
-COPY tsconfig.json ./
-COPY src ./src
+COPY runner/tsconfig.json ./
+COPY runner/src ./src
 RUN npm run build
 
 # --- the image that runs ---------------------------------------------------
@@ -71,7 +112,7 @@ ENV NODE_ENV=production \
 
 COPY --from=engine /engine /engine
 COPY --from=build /build/dist /app/dist
-COPY package.json /app/package.json
+COPY runner/package.json /app/package.json
 
 # The runner never installs anything at run time and never writes outside
 # the job directories, so it does not run as root.

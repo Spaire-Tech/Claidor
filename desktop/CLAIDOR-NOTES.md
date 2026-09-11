@@ -153,6 +153,24 @@ The logos ship with the app under `public/logos/apps`: the founder's own
 files, and the brand marks written from the `simple-icons` package (CC0)
 by `scripts/fetch-app-logos.cjs`; nothing is fetched at run time.
 
+Added September 11 (`docs/maties/models-and-search.md`): **a second
+model supplier and web search.** The model list Claidor serves now
+carries GPT entries alongside the Claude ones, and the proxy routes on
+the provider each entry names — each side in its own wire format,
+Anthropic's `/v1/messages` and OpenAI's `/v1/chat/completions`, with no
+converter between them. This does **not** bring back the API-key screen
+retired above and never will: a person picks a model, the key is
+Claidor's and stays on Claidor's server. A supplier Claidor holds no key
+for is simply absent from the list.
+
+Web search is on, with DuckDuckGo (free, no key, no account): the
+provider is kept by `scripts/prune-openclaw-runtime.cjs`, declared and
+allowlisted in `openclawConfigSync.ts`, `web_search` is no longer denied,
+and the workspace instruction says search is available instead of telling
+the assistant not to ask for it. All four have to agree, or search fails
+silently. A build whose packaging lost the provider falls back to no
+search and the instruction says so.
+
 Not done yet: no Slack, Teams, WhatsApp or iMessage channel (the founder's
 plan lists them; the catalogue shows them as « Soon »). No integration
 service behind the apps with an API (« Soon » until the founder chooses

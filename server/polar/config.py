@@ -189,7 +189,12 @@ class Settings(BaseSettings):
     DESKTOP_REFRESH_TOKEN_TTL: timedelta = timedelta(days=30)
     # Credits per calendar month per person; see polar.desktop.service.
     DESKTOP_MONTHLY_CREDITS: int = 3_000_000
+    # One address per provider the catalogue names. The key that goes
+    # with each is ANTHROPIC_API_KEY / OPENAI_API_KEY below; a provider
+    # with no key is simply not offered in the app's model list, never an
+    # error at the moment somebody sends a message.
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
+    DESKTOP_OPENAI_BASE_URL: str = "https://api.openai.com"
 
     # Connections (polar/connectors/, docs/maties/connectors.md). The
     # middleman that holds the sign-in plumbing for the forty services a
@@ -354,7 +359,10 @@ class Settings(BaseSettings):
     APPLE_KEY_ID: str = ""
     APPLE_KEY_VALUE: str = ""
 
-    # OpenAI
+    # OpenAI — the organization-details validator (polar/organization/
+    # ai_validation.py) and the desktop app's GPT models, which the model
+    # proxy serves on this one key exactly as it serves Claude on the
+    # Anthropic key below. Empty means the GPT entries are not offered.
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "o4-mini-2025-04-16"
 

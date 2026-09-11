@@ -331,7 +331,25 @@ const MANAGED_OWNER_ALLOW_FROM = [
   '*',
 ];
 
-const MANAGED_TOOL_DENY = ['web_search'] as const;
+// Nothing is denied outright any more. `web_search` used to be, back when
+// our packaging deleted every search provider; it is now served by the
+// bundled DuckDuckGo plugin, which needs no key and no account
+// (docs/maties/models-and-search.md, section 3).
+const MANAGED_TOOL_DENY: readonly string[] = [];
+
+/**
+ * The one search provider Maties ships. Free, keyless, and kept by
+ * `scripts/prune-openclaw-runtime.cjs`. Three things have to agree or
+ * search fails silently: the plugin must survive packaging, it must be
+ * named in the strict `plugins.allow` list, and `web_search` must not be
+ * denied. A build that lost the plugin falls back to no search at all,
+ * and the workspace instructions say so rather than leaving the
+ * assistant holding a tool that does not work.
+ */
+const DUCKDUCKGO_PLUGIN_ID = 'duckduckgo';
+
+const hasDuckDuckGoPlugin = (): boolean =>
+  hasRuntimeBundledOpenClawExtension(DUCKDUCKGO_PLUGIN_ID);
 // knownPollNoProgress is off: polling a live background process that stays
 // quiet (builds, installs, downloads) legitimately repeats identical calls
 // with identical output, and the detector killed such runs after 10 polls
@@ -392,14 +410,32 @@ const providerApiKeyEnvVar = (providerName: string): string => {
   return `LOBSTER_APIKEY_${envName}`;
 };
 
-const MANAGED_WEB_SEARCH_POLICY_PROMPT = [
+const MANAGED_WEB_SEARCH_ENABLED_PROMPT = [
   '## Web Search',
   '',
-  'Built-in `web_search` is disabled in this workspace. Do not ask for or rely on the Brave Search API.',
+  'Built-in `web_search` is available in this workspace and searches with DuckDuckGo.',
+  '',
+  'When you need live web information:',
+  '- To find pages you do not already have a URL for, use `web_search`.',
+  '- If you already have a specific URL, use `web_fetch` instead.',
+  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `web_search`.',
+  '- For dynamic pages, interactive browsing, login-required, JavaScript-heavy, or anti-automation pages, use the built-in `browser` tool.',
+  '- The Maties `web-search` skill needs local command execution. Native channel sessions may deny `exec`, so prefer `web_search`, `browser` or `web_fetch` there.',
+  '- Exception: the `imap-smtp-email` skill must always use `exec` to run its scripts, even in native channel sessions. Do not skip it because of exec restrictions.',
+  '',
+  'Whatever you type into `web_search` goes to DuckDuckGo. Nothing else about this session does. Searching for the contents of the person\'s own files is not a reason to send them anywhere: use the library first.',
+  '',
+  'Do not claim you searched the web unless you actually used `web_search`, `browser`, or `web_fetch`.',
+].join('\n');
+
+const MANAGED_WEB_SEARCH_UNAVAILABLE_PROMPT = [
+  '## Web Search',
+  '',
+  'Built-in `web_search` is not available in this build: no search provider is installed.',
   '',
   'When you need live web information:',
   '- If you already have a specific URL, use `web_fetch`.',
-  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `browser` or an available search skill instead.',
+  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `browser` instead.',
   '- If you need search discovery, dynamic pages, or interactive browsing, use the built-in `browser` tool.',
   '- For login-required, JavaScript-heavy, or anti-automation pages, use `browser` instead of `web_fetch`.',
   '- Only use the Maties `web-search` skill when local command execution is available. Native channel sessions may deny `exec`, so prefer `browser` or `web_fetch` there.',
@@ -407,6 +443,16 @@ const MANAGED_WEB_SEARCH_POLICY_PROMPT = [
   '',
   'Do not claim you searched the web unless you actually used `browser`, `web_fetch`, or the Maties `web-search` skill.',
 ].join('\n');
+
+/**
+ * The workspace instruction has to match what the tools actually are. An
+ * assistant told search is off while `web_search` is allowed will not
+ * use it, and that reads as stupidity rather than as a switched-off
+ * feature; the reverse sends it at a tool that is not there.
+ */
+const buildManagedWebSearchPolicyPrompt = (searchEnabled: boolean): string => (
+  searchEnabled ? MANAGED_WEB_SEARCH_ENABLED_PROMPT : MANAGED_WEB_SEARCH_UNAVAILABLE_PROMPT
+);
 
 const MANAGED_LIBRARY_PROMPT = [
   '## Personal Library',
@@ -2111,15 +2157,20 @@ export class OpenClawConfigSync {
         : {}),
     };
 
+    const searchEnabled = hasDuckDuckGoPlugin();
+
     return {
       deny: [
         ...MANAGED_TOOL_DENY
       ],
 loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       web: {
-        search: {
-          enabled: false,
-        },
+        // Named rather than left to auto-detection: DuckDuckGo is the
+        // only provider we ship, and saying so keeps the choice out of
+        // whatever credentials happen to be around.
+        search: searchEnabled
+          ? { enabled: true, provider: DUCKDUCKGO_PLUGIN_ID }
+          : { enabled: false },
         fetch: fetchConfig,
       },
     };
@@ -2433,6 +2484,11 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // OAuth refresh hook for credentials in the auth-profiles store. Declare
     // it only when the runtime actually bundles it (older runtimes pruned it).
     const hasXaiPlugin = hasRuntimeBundledOpenClawExtension('xai');
+    // The DuckDuckGo search provider. Declared and allowlisted only when
+    // the runtime actually bundles it, exactly like xai above: a build
+    // whose packaging dropped it must not carry a stale entry, and
+    // OpenClaw rejects a config naming a plugin it cannot find.
+    const hasSearchPlugin = hasDuckDuckGoPlugin();
     const qwenPortalAuthPluginId = resolveOpenClawExtensionPluginId('qwen-portal-auth');
 
     // Detect if any provider uses Qwen/Aliyun DashScope URLs — OpenClaw auto-injects
@@ -2696,6 +2752,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // exists, otherwise it becomes a stale entry on every startup.
           ...(hasQwenProvider && qwenPortalAuthPluginId ? { [qwenPortalAuthPluginId]: { enabled: true } } : {}),
           ...(hasXaiPlugin ? { xai: { enabled: true } } : {}),
+          ...(hasSearchPlugin ? { [DUCKDUCKGO_PLUGIN_ID]: { enabled: true } } : {}),
           // User-installed plugins: merge enabled state and config from user_plugins table
           ...Object.fromEntries(
             userPlugins.map(p => [p.pluginId, {
@@ -2722,6 +2779,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // plugins we rely on must be listed here explicitly or they never
           // load — entries.enabled alone is not enough.
           ...(hasXaiPlugin ? ['xai'] : []),
+          ...(hasSearchPlugin ? [DUCKDUCKGO_PLUGIN_ID] : []),
           ...(hasModelCompatConfig
             ? [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]
             : []),
@@ -3917,7 +3975,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       // Skills are now loaded by OpenClaw natively via skills.load.extraDirs
       // in openclaw.json, so we no longer embed the skills routing prompt here.
 
-      sections.push(MANAGED_WEB_SEARCH_POLICY_PROMPT);
+      sections.push(buildManagedWebSearchPolicyPrompt(hasDuckDuckGoPlugin()));
       sections.push(MANAGED_LIBRARY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
