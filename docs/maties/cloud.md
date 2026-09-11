@@ -135,8 +135,8 @@ A job carries: whose it is, what to do, why, and what it may touch.
 1. The queue hands the runner a job.
 2. The runner opens a fresh container, asks Claidor for that person's
    memory bundle and lays it out as a workspace.
-3. It starts the engine, the same build the app ships, already built
-   for Linux in this repository.
+3. It starts the engine: the same tag the app ships, carrying the same
+   patches, built into the runner's image.
 4. The engine works. Every request to a model goes through Claidor's
    existing metered proxy on the person's account, so a cloud run costs
    the person's credits exactly as a run on their machine does.
@@ -144,6 +144,66 @@ A job carries: whose it is, what to do, why, and what it may touch.
    conversation is stored so the app shows it, and anything to deliver
    is sent on the channel the job names.
 6. The container is destroyed.
+
+### The engine the cloud runs, exactly
+
+« The same engine » is the promise this whole note rests on, so here is
+what it costs to keep and where it is still not kept.
+
+The engine is not what upstream publishes. `openclaw@2026.6.1` exists on
+npm and installing it would take a minute instead of an hour, and it
+would be a **different engine**: what the app runs is that source plus
+the twenty-nine patches in `desktop/scripts/patches/v2026.6.1/`, and a
+patch goes into the source before the build, not into the package after
+it. A cloud engine built from the published package is the one mistake
+this section exists to prevent.
+
+It is not built on Render either. Render's build machine does not finish
+the engine — a hundred and fifty-two workspace projects, and it stops at
+`tsdown`. And when it was built there it was built from `runner/` alone,
+which cannot see the patches at all: the cloud was running an unpatched
+engine while this note said it was running the app's. So GitHub
+Actions builds `runner/Dockerfile` on every change to the runner or to
+the patches, applying them with the desktop's own script, and pushes the
+image to `ghcr.io/spaire-tech/claidor-maty-runner`. Render pulls that
+image and runs it. A developer running `docker build` runs the same file
+and gets the same thing.
+
+**What is the same:** the tag, the repository it comes from, the patch
+set and the order it is applied in, the source build, the npm tarball
+deciding which files ship, and production dependencies only.
+
+**What is not, and it is not nothing:**
+
+- *The gateway is not bundled.* The desktop packs the gateway entry into
+  one file with esbuild, because Electron otherwise spends eighty to a
+  hundred seconds resolving eleven hundred modules at every start. The
+  image does not, and the runner starts an engine per job, so it pays
+  that cost once per job — which is what the three-minute engine start
+  timeout is for. It changes what a job takes, never what it answers.
+  The day briefings are slow, this is the first thing to look at.
+- *No `gateway.asar`.* That is Electron packaging; plain Node loads
+  `openclaw.mjs` directly.
+- *No plugins, no local extensions, nothing precompiled.* The desktop
+  installs the Discord plugin and the library-search extension and then
+  precompiles them to avoid a long first start. A cloud job may not call
+  a plugin, has no channel and has no library, so none of the three is
+  installed and there is nothing to precompile.
+- *No channel dependencies.* That step works around a packaging bug in
+  v2026.4.5–v2026.4.8, fixed upstream before the pinned tag. It is dead
+  on both sides.
+- *Not pruned.* The desktop strips source maps and type declarations and
+  stubs out large packages to keep the installer small. The image only
+  drops the engine's handbook and its dev dependencies. That is size,
+  not behaviour.
+
+So: the same answers, a slower start and a fatter image. The gateway
+bundle is the only one of these worth revisiting.
+
+**And the deploy is not automatic.** Render does not redeploy when a new
+image is pushed to a tag, so a green build sits in the registry until
+somebody deploys it. One click, and a real step that belongs in whatever
+we write down as the way to ship.
 
 ### The job, exactly
 

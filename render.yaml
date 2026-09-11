@@ -115,10 +115,29 @@ services:
         fromService: { name: claidor-redis, type: keyvalue, property: port }
 
   # The cloud runner for Maties (docs/maties/cloud.md, section 4): it takes
-  # one job at a time off /maty/runner/claim, does it with the same agent
-  # engine the desktop app ships, and reports the answer back. It is a
-  # worker, not a web service — nothing calls it, it calls us — so it has
-  # no port and no health check path.
+  # one job at a time off /maty/runner/claim, does it with the agent engine
+  # the desktop app ships — the same tag, carrying the same patches — and
+  # reports the answer back. It is a worker, not a web service — nothing
+  # calls it, it calls us — so it has no port and no health check path.
+  #
+  # Alone among the services here it is not built by Render. The engine is
+  # 152 workspace projects and Render's build machine hangs at `tsdown`
+  # rather than finishing; worse, a build here could not reach the patches
+  # under desktop/, so it would quietly run a different engine from the one
+  # on the person's computer. GitHub Actions builds the image with the
+  # patches applied (.github/workflows/runner_image.yml) and this pulls it.
+  #
+  # A push to the registry does NOT deploy: autoDeploy has no effect on an
+  # image-backed service, so a new image goes out through Manual Deploy →
+  # Deploy latest reference, or the service's deploy hook. That is a real
+  # manual step and it is written here rather than left to be discovered.
+  #
+  # The image is private, like the repository, so Render needs read access to
+  # GHCR: a registry credential added once in the dashboard under the name
+  # below, holding a GitHub token with `read:packages` and nothing else. No
+  # credential is ever baked into the image. (Making the package public
+  # instead would let `creds` go; that is a decision about the patches being
+  # readable by anyone, not a convenience.)
   #
   # It touches neither the database nor Redis: everything it needs it asks
   # the API for, and the only lasting credential it holds is its own
@@ -126,13 +145,14 @@ services:
   # the lease.
   - type: worker
     name: claidor-maty-runner
-    runtime: docker
-    repo: https://github.com/Spaire-Tech/Claidor
-    branch: main
-    dockerfilePath: ./runner/Dockerfile
-    dockerContext: ./runner
+    runtime: image
+    image:
+      # The moving tag the workflow pushes on every green build of main. Each
+      # build also carries its commit sha, so a bad deploy rolls back by
+      # pointing a manual deploy at `...@sha256:` or the sha tag instead.
+      url: ghcr.io/spaire-tech/claidor-maty-runner:main
+      creds: ghcr-claidor
     plan: starter
-    autoDeploy: true
     # Deliberately NOT in the `claidor-shared` group, unlike the two
     # services above. That group carries the provider key, the signing
     # secrets and the S3 credentials, and this service needs none of them:
@@ -201,8 +221,14 @@ envVarGroups:
       - key: CLAIDOR_CURRENT_JWK_KID
         value: claidor_prod
 
-      # --- the librarian ---
+      # --- the librarian, and the desktop app's models ---
+      # Both suppliers the model proxy serves (docs/maties/models-and-search.md).
+      # One key each, held here and never by the app: Maties has no
+      # API-key screen. An empty key is not an outage — the models it
+      # would serve are simply not offered in the app's model list.
       - key: CLAIDOR_ANTHROPIC_API_KEY
+        sync: false
+      - key: CLAIDOR_OPENAI_API_KEY
         sync: false
 
       # --- sign-in ---
