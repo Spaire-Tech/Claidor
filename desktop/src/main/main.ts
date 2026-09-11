@@ -166,6 +166,7 @@ import {
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
 import { canonicalizeMediaModelId, HAPPYHORSE_1_1_MODEL_ID, mediaModelDisplayName } from '../shared/mediaModelAliases';
+import { MemorySyncReason } from '../shared/memorySync/constants';
 import {
   normalizeNotificationSettings,
   type NotificationSettings,
@@ -419,6 +420,7 @@ import {
 import { exportLogsZip } from './libs/logExport';
 import { MainLogReporter } from './libs/mainLogReporter';
 import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
+import { createMemorySyncService, logMemorySyncResult } from './libs/memorySync/memorySyncService';
 import {
   migrateAgentModelRefs,
   parsePrimaryModelRef,
@@ -2364,6 +2366,7 @@ const bootstrapOpenClawEngine = async (
       }
       const result = await manager.startGateway(`bootstrap:${reason}`);
       console.log(`[OpenClaw] bootstrap completed (${elapsed()}), phase=${result.phase}`);
+      requestMemorySync(MemorySyncReason.EngineStarted);
       return result;
     } catch (error) {
       console.error(`[OpenClaw] bootstrap failed (${reason}, ${elapsed()}):`, error);
@@ -2383,6 +2386,11 @@ const bootstrapOpenClawEngine = async (
 // Injected after the auth session manager is created. This keeps gateway startup
 // able to await an in-flight refresh without exposing refresh internals globally.
 let waitForPendingTokenRefresh: () => Promise<void> = async () => {};
+
+// Injected the same way: the shared-memory round trip needs the signed-in
+// account's token, so it only exists once the auth session manager does.
+// Fire-and-forget — a failure is logged and retried on the next occasion.
+let requestMemorySync: (reason: MemorySyncReason) => void = () => {};
 
 const ensureOpenClawRunningForCowork = async () => {
   const configApplyStatus = await waitForOpenClawConfigApply('cowork engine startup');
@@ -3446,6 +3454,9 @@ const bindCoworkRuntimeForwarder = (): void => {
     skinRuntimeController?.handleRuntimeComplete(sessionId);
     mediaReferencesBySession.delete(sessionId);
     getDesktopNotificationManager().handleComplete(sessionId);
+    // The engine writes its memory files as a run ends, so this is the moment
+    // the shared copy is worth refreshing.
+    requestMemorySync(MemorySyncReason.ConversationFinished);
     const windows = BrowserWindow.getAllWindows();
     windows.forEach(win => {
       if (win.isDestroyed()) return;
@@ -5410,6 +5421,47 @@ if (!gotTheLock) {
     }
     return response;
   };
+
+  // ── Shared memory ──
+  //
+  // The engine keeps its memory as text files in the main agent's workspace;
+  // Claidor keeps the shared copy. The round trip rides the same authenticated
+  // request path as everything else, so there is one place that holds the token.
+  const MEMORY_SYNC_INTERVAL_MS = 15 * 60_000;
+  // The quit cleanup watchdog force-exits at ten seconds, so the last sync gets
+  // a short deadline of its own and is dropped when the network is slow.
+  const MEMORY_SYNC_QUIT_DEADLINE_MS = 4_000;
+
+  const memorySyncService = createMemorySyncService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    getVersionStore: () => getStore(),
+    getWorkspaceDir: () => {
+      try {
+        return getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir());
+      } catch (error) {
+        console.debug('[MemorySync] main agent workspace is not resolvable yet:', error);
+        return null;
+      }
+    },
+  });
+
+  const runMemorySync = async (reason: MemorySyncReason): Promise<void> => {
+    try {
+      logMemorySyncResult(reason, await memorySyncService.sync(reason));
+    } catch (error) {
+      console.warn(`[MemorySync] sync failed (reason=${reason}):`, error);
+    }
+  };
+
+  requestMemorySync = (reason: MemorySyncReason) => {
+    void runMemorySync(reason);
+  };
+
+  const memorySyncTimer: ReturnType<typeof setInterval> = setInterval(() => {
+    requestMemorySync(MemorySyncReason.Periodic);
+  }, MEMORY_SYNC_INTERVAL_MS);
 
   type AvailableServerModel = ServerModelMetadataInput & {
     modelId: string;
@@ -14021,6 +14073,18 @@ if (!gotTheLock) {
   const runAppCleanup = async (reason = 'quit'): Promise<void> => {
     const cleanupStartedAt = Date.now();
     console.log(`[Main] App cleanup started for ${reason}`);
+
+    // Push what this computer learned before the engine stops, so the next
+    // machine to open the app starts from the same memory.
+    currentAppCleanupStep = 'memory-sync';
+    clearInterval(memorySyncTimer);
+    await Promise.race([
+      runMemorySync(MemorySyncReason.Quit),
+      new Promise<void>(resolve => {
+        setTimeout(resolve, MEMORY_SYNC_QUIT_DEADLINE_MS);
+      }),
+    ]);
+
     currentAppCleanupStep = 'sync-teardown';
     skillManager?.stopWatching();
     stopMediaPollTimer();
