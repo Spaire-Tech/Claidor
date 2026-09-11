@@ -50,6 +50,12 @@ const translations: Record<'en', Record<string, string>> = {
     matiesAccountModelsSignedOut: 'Sign in to see the models you can use.',
     matiesAccountModelCost: '{multiplier}× credits',
     matiesAccountModelsExplain: 'Pick the model for a conversation from the chat box. Bigger multipliers use more credits per request.',
+    matiesAccountModelsRecheck: 'Check again',
+    matiesAccountModelsChecking: 'Checking…',
+    matiesAccountModelsCheckedAt: 'Checked at {time}',
+    matiesAccountModelsCheckFailed: 'Could not reach Claidor. The list below is the last one received.',
+    matiesAccountModelsStale: 'This list came from Claidor. If a model you expect is missing, check again.',
+    matiesSignOutKeeps: 'Signing out keeps your chats, your library and everything else on this computer. It ends this session and disconnects your accounts.',
     matiesAccountPersonTitle: 'Signed in as',
     matiesAccountModelCostStandard: 'Standard cost',
     // The screens that are not the chat (docs/maties/design.md, sections 5 and 6)
