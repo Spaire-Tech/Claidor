@@ -6992,6 +6992,9 @@ if (!gotTheLock) {
     }
     clearAuthTokens();
     clearAuthUser();
+    // The connected accounts belong to the person who signed in, so the shelf
+    // and the engine's connector entries empty with them.
+    connectorsService?.reset();
     clearEnterpriseAccountContext(getStore());
     clearServerModelMetadata();
     resetAuthQuotaGateState();
@@ -14206,6 +14209,7 @@ if (!gotTheLock) {
     libraryIndexService?.stop();
     libraryContentIndexer?.stop();
     libraryThumbnailRenderer.dispose();
+    connectorsService?.dispose();
 
     // Close the SQLite database to flush the WAL and release the file lock.
     try {
