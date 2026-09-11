@@ -5,12 +5,13 @@ import {
   getConnectionGroups,
   searchConnections,
 } from '@shared/connections/catalog';
+import { ConnectorOutcome } from '@shared/connectors/constants';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { i18nService } from '../../services/i18n';
 import SearchIcon from '../icons/SearchIcon';
-import McpRegistryInstallModal from '../mcp/McpRegistryInstallModal';
 import ConnectionCard from './ConnectionCard';
+import ConnectionPriceSheet from './ConnectionPriceSheet';
 import ConnectionSoonSheet, { type SoonTarget } from './ConnectionSoonSheet';
 import { useConnectionsState } from './useConnectionsState';
 
@@ -24,14 +25,23 @@ const GROUP_TITLE_KEYS: Record<ConnectionGroupId, string> = Object.fromEntries(
  * drew them. Shown in the onboarding and in Skills & Connectors alike.
  */
 const ConnectionsCatalog: React.FC = () => {
-  useConnectionsState();
+  const { connectors, busySlug, connect, disconnect } = useConnectionsState();
   const [query, setQuery] = useState('');
-  const [installingEntryId, setInstallingEntryId] = useState<string | null>(null);
   const [soonTarget, setSoonTarget] = useState<SoonTarget | null>(null);
+  const [priceTarget, setPriceTarget] = useState<string | null>(null);
 
   const groupTitle = useCallback((groupId: ConnectionGroupId) => i18nService.t(GROUP_TITLE_KEYS[groupId]), []);
   const groups = useMemo(() => getConnectionGroups(searchConnections(query, groupTitle)), [groupTitle, query]);
   const handleSoon = useCallback((item: ConnectionItem) => setSoonTarget({ id: item.id, name: item.name }), []);
+  const handleShowPrice = useCallback((item: ConnectionItem) => setPriceTarget(item.name), []);
+
+  // A 402 can arrive on the way to the window: the price card answers it,
+  // so a person never meets a button that silently does nothing.
+  const handleConnect = useCallback((appSlug: string, name: string) => {
+    void connect(appSlug).then((result) => {
+      if (result.outcome === ConnectorOutcome.NotEntitled) setPriceTarget(name);
+    });
+  }, [connect]);
 
   return (
     <div className="flex w-full flex-col">
@@ -71,7 +81,16 @@ const ConnectionsCatalog: React.FC = () => {
           </div>
           <div className="grid gap-[14px] [grid-template-columns:repeat(auto-fill,minmax(380px,1fr))]">
             {group.items.map((item) => (
-              <ConnectionCard key={item.id} item={item} onInstallMcp={setInstallingEntryId} onSoon={handleSoon} />
+              <ConnectionCard
+                key={item.id}
+                item={item}
+                connectors={connectors}
+                busySlug={busySlug}
+                onConnect={(appSlug) => handleConnect(appSlug, item.name)}
+                onDisconnect={(appSlug, accountId) => { void disconnect(appSlug, accountId); }}
+                onShowPrice={handleShowPrice}
+                onSoon={handleSoon}
+              />
             ))}
           </div>
         </section>
@@ -81,8 +100,8 @@ const ConnectionsCatalog: React.FC = () => {
         <p className="py-10 text-center text-[15px] text-[#6b7280]">{i18nService.t('matiesConnectionsNoMatch')}</p>
       )}
 
-      <McpRegistryInstallModal entryId={installingEntryId} onClose={() => setInstallingEntryId(null)} />
       <ConnectionSoonSheet target={soonTarget} onClose={() => setSoonTarget(null)} />
+      <ConnectionPriceSheet name={priceTarget} onClose={() => setPriceTarget(null)} />
     </div>
   );
 };
