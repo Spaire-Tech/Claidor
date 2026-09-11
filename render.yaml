@@ -31,6 +31,16 @@ services:
       - key: CLAIDOR_MIGRATE_ON_STARTUP
         value: "true"
 
+      # The cloud runner's service token. This service is the one that
+      # checks it, and claidor-maty-runner is the one that sends it, so the
+      # same value goes in both places and nowhere else. Left unset here,
+      # every runner request is refused and the queue never moves. It is
+      # not in the claidor-shared group on purpose: the runner must not
+      # join that group, because it carries keys the runner has no business
+      # holding. See docs/maties/cloud.md, section 4.
+      - key: CLAIDOR_MATY_RUNNER_TOKEN
+        sync: false
+
       # --- database (Render-managed, Claidor's own) ---
       - key: CLAIDOR_POSTGRES_HOST
         fromDatabase: { name: claidor-postgres, property: host }

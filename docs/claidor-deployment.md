@@ -229,6 +229,89 @@ script is idempotent — safe to re-run after each new acquisition.
 `corpus/` and run these as Render Jobs. Loading from a laptop is fine while
 the corpus changes by hand.)
 
+### 7b. The cloud runner — turning it on, step by step
+
+This is the service that does Maties' work while the person's laptop is
+shut (`docs/maties/cloud.md`). It is one new entry in the same
+blueprint, so there is nothing new to learn, but it has two traps and
+both of them are silent. Read the whole section before starting.
+
+**Trap one: the blueprint only reads `main`.** Every service in
+`render.yaml` says `branch: main`. Render will not see the runner while
+the work sits on a feature branch. Merge first, or nothing below will
+find anything.
+
+**Trap two: the token lives in two places and must match exactly.** The
+API checks it, the runner sends it. If they differ, or if either is
+blank, the runner polls forever and every request is refused. Nothing
+crashes and no alarm sounds; the queue simply never moves.
+
+#### Step 1 — make the token
+
+On your own machine, one line:
+
+```bash
+openssl rand -hex 32
+```
+
+That prints sixty-four characters. Copy them somewhere safe for the next
+two minutes. This is a password that only two computers will ever see,
+so do not shorten it and do not reuse an existing one.
+
+#### Step 2 — merge, so Render can see the service
+
+The runner and its blueprint entry must be on `main`. Merge the branch,
+or open and merge the pull request, whichever you normally do.
+
+#### Step 3 — let the blueprint create the service
+
+Render dashboard → **Blueprints** → the Claidor blueprint → Render
+detects the new entry and offers to apply it. Apply.
+
+It creates one new service, `claidor-maty-runner`, a **worker**: no web
+address, no health check, nothing calls it. It calls us.
+
+Render will prompt for one secret on it, `CLAIDOR_MATY_RUNNER_TOKEN`.
+Paste the sixty-four characters from step 1.
+
+The first build takes a while, twenty minutes or more, because it
+compiles the agent engine from source. That is expected once. Later
+deploys reuse the layers and are quick.
+
+#### Step 4 — give the API the same token
+
+The API is the half that checks the token, and it is a separate setting.
+
+Render dashboard → **claidor-api** → **Environment** →
+`CLAIDOR_MATY_RUNNER_TOKEN` → paste **the same** sixty-four characters →
+save. Saving restarts the API, which takes a minute.
+
+Do not put this value in the `claidor-shared` group. The runner is
+deliberately not a member of that group, because the group carries the
+provider key and the storage credentials and the runner has no business
+holding either.
+
+#### Step 5 — check it is alive
+
+Two places, in this order.
+
+1. **claidor-maty-runner → Logs.** Within a minute of starting you
+   should see it claiming and finding nothing to do. A quiet, repeating
+   line is the healthy state: there are no jobs yet.
+2. If instead you see it refused, the two tokens differ. Re-paste both
+   from the same clipboard and restart the runner.
+
+#### What it costs
+
+One more `starter` instance. The build is slow, the service is idle
+almost all the time, and it holds no database of its own.
+
+#### Turning it off
+
+Suspend `claidor-maty-runner` in Render. Nothing else notices: jobs
+simply queue until it comes back, and the app on the person's own
+computer is untouched.
+
 ### 8. First login
 
 Visit the frontend, sign in with Google. The first user needs an
