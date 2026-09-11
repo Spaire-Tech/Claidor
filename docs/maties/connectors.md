@@ -115,7 +115,8 @@ one.
 
 ```
 GET    /desktop/api/connectors
-         -> { entitled: bool, connections: [{ slug, accountId, connectedAt }] }
+         200 -> { entitled: true,  connections: [{ slug, accountId, connectedAt }] }
+         402 -> { entitled: false, connections: [] }
 
 POST   /desktop/api/connectors/{slug}/link
          -> { url, expiresAt }          402 when not entitled
@@ -127,6 +128,11 @@ ANY    /desktop/api/connectors/mcp/{slug}
          -> the MCP conversation, proxied  402 when not entitled
 ```
 
+All four refuse with 402, `GET` included: a patched app must gain
+nothing anywhere. `GET` still answers with a full body when it refuses,
+so the shelf can be drawn from the refusal — the body is a courtesy to
+an honest app, the status is what a dishonest one cannot argue with.
+
 The person's Pipedream identity is their Claidor user id. It already
 exists, it is stable, and it is not a secret.
 
@@ -136,6 +142,12 @@ Pipedream holds the accounts. We do not mirror them into our database,
 because a mirror drifts and then lies about what is connected. We ask
 them, and cache the answer in Redis for a minute so that opening the app
 is not forty network calls.
+
+The cache is dropped when a connection is removed, and when a link is
+**minted** — not when a sign-in succeeds. Success happens inside a
+browser window that never reports back to us, so there is nothing to
+hear. Minting stands in for it, and is sound because minting a link is
+the only thing that can create a connection in the first place.
 
 ## 5. The gate
 

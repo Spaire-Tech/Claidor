@@ -182,7 +182,6 @@ class PipedreamProvider:
             json_body={"external_user_id": self._external_user_id(user)},
         )
         connect_link_url = payload.get("connect_link_url")
-        token = payload.get("token")
         if not isinstance(connect_link_url, str) or not connect_link_url:
             # Without a URL there is nothing to open, and `token` alone
             # would mean building their page's address ourselves.
