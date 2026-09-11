@@ -104,6 +104,45 @@ services:
       - key: CLAIDOR_REDIS_PORT
         fromService: { name: claidor-redis, type: keyvalue, property: port }
 
+  # The cloud runner for Maties (docs/maties/cloud.md, section 4): it takes
+  # one job at a time off /maty/runner/claim, does it with the same agent
+  # engine the desktop app ships, and reports the answer back. It is a
+  # worker, not a web service — nothing calls it, it calls us — so it has
+  # no port and no health check path.
+  #
+  # It touches neither the database nor Redis: everything it needs it asks
+  # the API for, and the only lasting credential it holds is its own
+  # service token. The person's own token is minted per job and dies with
+  # the lease.
+  - type: worker
+    name: claidor-maty-runner
+    runtime: docker
+    repo: https://github.com/Spaire-Tech/Claidor
+    branch: main
+    dockerfilePath: ./runner/Dockerfile
+    dockerContext: ./runner
+    plan: starter
+    autoDeploy: true
+    # Deliberately NOT in the `claidor-shared` group, unlike the two
+    # services above. That group carries the provider key, the signing
+    # secrets and the S3 credentials, and this service needs none of them:
+    # every model call it makes goes through the API's metered proxy on the
+    # person's own token, and it stores nothing anywhere. Joining the group
+    # for tidiness would hand a stolen runner the keys to everything, which
+    # is the opposite of what docs/maties/cloud.md promises. It holds two
+    # values and no more.
+    envVars:
+      # Where to claim jobs, fetch the person's memory, and call the model
+      # proxy. The same address the desktop app uses.
+      - key: CLAIDOR_API_BASE_URL
+        value: https://api.claidor.com
+
+      # The service's own token, which belongs to no person. Generated once
+      # and pasted into the dashboard, like every other secret here. The
+      # API knows it as CLAIDOR_MATY_RUNNER_TOKEN too; the two must match.
+      - key: CLAIDOR_MATY_RUNNER_TOKEN
+        sync: false
+
   - type: keyvalue
     name: claidor-redis
     plan: free

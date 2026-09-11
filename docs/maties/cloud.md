@@ -54,7 +54,7 @@ losing anything:
 |---|---|---|
 | the daily notes | one file per day, lines added as things happen | keep every line from both sides, in order, drop exact repeats |
 | the durable facts | a list of things worth remembering | same: keep every block from both sides, drop repeats |
-| about the person | a short profile | the newer one wins; the app writes it at setup |
+| about the person | a short profile | the newer one wins; the app writes it at setup, and the cloud never sends it up |
 | who the assistant is | name, vibe, emoji | the app owns it; the cloud never writes it |
 | the instructions | the managed section the app generates | the app owns it; the cloud never writes it |
 
@@ -62,6 +62,13 @@ The first two are lists, and lists merge by union, which is why this
 works without locking anything. The app already recognises a memory
 block and gives it a fingerprint, so « drop repeats » is code we have.
 The last three are single documents with one owner, which is the app.
+
+The runner therefore sends only the two lists back up, and this turned
+out to matter more than it looks. The engine writes its own blank
+template into any workspace missing one of those documents. A cloud run
+that pushed them up would quietly replace the person's profile, and the
+assistant's own name and character, with boilerplate. So the rule is not
+a tidiness preference: the cloud reads all five and returns two.
 
 Each person has one bundle on Claidor with a version. A side that
 writes sends the version it started from; if the bundle moved on, it
@@ -191,11 +198,30 @@ default:
   weaker, it is written here rather than glossed over, and the day a job
   needs to run something truly untrusted it moves to a sandbox of its
   own before that happens, not after.
-- No shell, no files beyond the workspace, unless a job explicitly asks
-  for them and the person allowed that routine to.
-- Out of the container it may reach three things: Claidor's model proxy,
-  Claidor's own API, and the connectors the person signed in to.
-  Nothing else.
+- No shell and no commands at all. The tools the engine offers are an
+  allowlist of three, reading, writing and editing, so a tool a later
+  version of the engine adds is off until somebody turns it on
+  deliberately. Files are held inside the job's own directory, and a
+  path that climbs out of it is refused.
+- **Reaching out is not walled, and this is the honest version.** The
+  first draft of this note said the runner may reach three addresses and
+  nothing else. The engine has no such setting: it can route everything
+  through a filtering proxy somebody else runs, and that is all. So what
+  we actually do is switch off every tool that touches a network, which
+  leaves the model call and nothing else. The appetite is removed rather
+  than the door locked. A real lock has to come from the network around
+  the container, and the plan we are on does not offer one. Worth
+  revisiting the day a job needs a tool that fetches.
+- The engine's own sandbox stays off, and not for the reason it is off
+  on a laptop: it is built on containers, and there is no container
+  engine inside a container here. Turning it on would fail every tool
+  call rather than contain one. What contains this is the tool list
+  above and the container itself.
+- The engine is started with an empty environment rather than the
+  service's own, so the runner's service token, and anything else the
+  service holds, never reaches it. The tokens it does need are handed to
+  it by name and never written to a file, so a job directory left behind
+  by a crash holds no credential.
 - Anything that cannot be undone — sending, paying, deleting — is not
   done at night on the person's behalf unless they marked that routine
   as allowed to. Otherwise it is prepared and waits: a draft, and a line
