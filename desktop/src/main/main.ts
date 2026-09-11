@@ -74,6 +74,7 @@ import {
   normalizeBrowserWebAccessConfig,
 } from '../shared/browserWebAccess/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
+import { ConnectorsIpc } from '../shared/connectors/constants';
 import {
   type CoworkBrowserAnnotationMessageBatch,
   normalizeBrowserAnnotationBatches,
@@ -255,6 +256,7 @@ import { registerActivityIpcHandlers } from './ipcHandlers/activity';
 import { registerAgentHandlers } from './ipcHandlers/agents';
 import { registerAsrIpcHandlers } from './ipcHandlers/asr';
 import { registerBrowserCredentialHandlers } from './ipcHandlers/browserCredentials/handlers';
+import { registerConnectorsIpcHandlers } from './ipcHandlers/connectors';
 import { registerCoworkSubagentHandlers } from './ipcHandlers/coworkSubagent';
 import { ensureDshEngineReady, registerDshHandlers } from './ipcHandlers/dsh/handlers';
 import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccount';
@@ -326,6 +328,7 @@ import {
   updateServerModelMetadata,
 } from './libs/claudeSettings';
 import { appendClientBannerVersion } from './libs/clientBannerRequest';
+import { ConnectorsService } from './libs/connectors/connectorsService';
 import {
   clearCopilotTokenState,
   initCopilotTokenManager,
@@ -2127,6 +2130,11 @@ let appUpdateCoordinator: AppUpdateCoordinator | null = null;
 let mainLogReporter: MainLogReporter | null = null;
 let libraryIndexService: LibraryIndexService | null = null;
 let libraryContentIndexer: LibraryContentIndexer | null = null;
+// Connections to accounts (docs/maties/connectors.md). Held here so the
+// engine's config sync can read what is connected without reaching into the
+// IPC scope that owns the authenticated request path.
+let connectorsService: ConnectorsService | null = null;
+let readConnectorsSessionToken: (() => string | null) | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
   if (enabled) {
@@ -2607,6 +2615,12 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         // The async resolution happens during syncOpenClawConfig via McpRuntime.
         return getMcpRuntime().getResolvedServersCache();
       },
+      // Connections to accounts (docs/maties/connectors.md): the engine gets
+      // one MCP entry per connected service, pointing at Claidor's proxy, and
+      // carries only the person's own session token.
+      getConnectedConnectorSlugs: () => connectorsService?.getConnectedSlugs() ?? [],
+      getConnectorsBaseUrl: getServerApiBaseUrl,
+      getConnectorsSessionToken: () => readConnectorsSessionToken?.() ?? null,
       getAskUserCallbackUrl: () => getMcpRuntime().getAskUserCallbackUrl(),
       getLibrarySearchCallbackUrl: () => getMcpRuntime().getLibrarySearchCallbackUrl(),
       getMediaCallbackUrl: () => getMcpRuntime().getMediaCallbackUrl(),
@@ -13021,6 +13035,38 @@ if (!gotTheLock) {
       return scopedFetch(url, options);
     },
     getServerApiBaseUrl,
+  });
+
+  // ---- connections to accounts (docs/maties/connectors.md) ----
+  //
+  // The app asks Claidor for a sign-in URL, opens it, and asks Claidor again
+  // what is connected. It never holds a credential of the connector service,
+  // and the engine's config gains one entry per connected service.
+  readConnectorsSessionToken = () => getAuthTokens()?.accessToken ?? null;
+  connectorsService = new ConnectorsService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    getParentWindow: () => (mainWindow && !mainWindow.isDestroyed() ? mainWindow : null),
+    onStateChanged: (state) => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        if (!window.isDestroyed()) window.webContents.send(ConnectorsIpc.Changed, state);
+      }
+    },
+    onConnectionsChanged: () => {
+      void syncOpenClawConfig({
+        reason: 'connectors-changed',
+        expectedImpact: OpenClawConfigImpact.Restart,
+      }).catch((error: unknown) => {
+        console.warn('[Connectors] the engine config could not be updated:', error);
+      });
+    },
+  });
+  registerConnectorsIpcHandlers({
+    getService: () => {
+      if (!connectorsService) throw new Error('Connections are not ready yet.');
+      return connectorsService;
+    },
   });
 
   // ---- artifact file watching ----

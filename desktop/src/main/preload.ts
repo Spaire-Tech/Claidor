@@ -41,6 +41,7 @@ import {
   type BrowserRuntimeProfile,
 } from '../shared/browserWebAccess/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
+import { ConnectorsIpc, type ConnectorsState } from '../shared/connectors/constants';
 import type { CoworkBrowserAnnotationMessageBatch } from '../shared/cowork/browserAnnotations';
 import type {
   CoworkBtwAbortRequest,
@@ -944,6 +945,20 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke(ShareDeploymentIpc.GetPersistence, deploymentId),
     downloadPersistenceArchive: (options: ShareDeploymentDownloadPersistenceInput) =>
       ipcRenderer.invoke(ShareDeploymentIpc.DownloadPersistenceArchive, options),
+  },
+  // Connections to accounts (docs/maties/connectors.md): the sign-in window
+  // is opened by the main process; the renderer only asks and is told.
+  connectors: {
+    getState: () => ipcRenderer.invoke(ConnectorsIpc.GetState),
+    connect: (slug: string) => ipcRenderer.invoke(ConnectorsIpc.Connect, slug),
+    disconnect: (accountId: string) => ipcRenderer.invoke(ConnectorsIpc.Disconnect, accountId),
+    onChanged: (callback: (state: ConnectorsState) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, state: ConnectorsState) => {
+        callback(state);
+      };
+      ipcRenderer.on(ConnectorsIpc.Changed, handler);
+      return () => ipcRenderer.removeListener(ConnectorsIpc.Changed, handler);
+    },
   },
   sites: {
     list: (options: SiteListOptions = {}) => ipcRenderer.invoke(SiteIpc.List, options),

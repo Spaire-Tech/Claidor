@@ -211,6 +211,23 @@ envVarGroups:
       - key: CLAIDOR_GOOGLE_CLIENT_SECRET
         sync: false
 
+      # --- connections (docs/maties/connectors.md) ---
+      # The middleman that holds the sign-in plumbing for the services a
+      # person connects an account to. The client secret buys a developer
+      # token that is project-wide: it can reach every customer's
+      # accounts, which is why it is only ever minted on the API and why
+      # claidor-maty-runner above is not in this group.
+      - key: CLAIDOR_PIPEDREAM_CLIENT_ID
+        sync: false
+      - key: CLAIDOR_PIPEDREAM_CLIENT_SECRET
+        sync: false
+      - key: CLAIDOR_PIPEDREAM_PROJECT_ID
+        sync: false
+      # "development" is free and capped at ten people; switch to
+      # "production" when there are more than ten, and expect the bill.
+      - key: CLAIDOR_PIPEDREAM_ENVIRONMENT
+        value: development
+
       # --- storage: Claidor's own buckets, never shared ---
       - key: CLAIDOR_AWS_ACCESS_KEY_ID
         sync: false

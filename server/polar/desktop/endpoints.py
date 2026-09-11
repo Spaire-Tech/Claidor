@@ -42,6 +42,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from polar.auth.dependencies import WebUserOrAnonymous
 from polar.auth.models import is_user
 from polar.config import settings
+from polar.connectors.endpoints import router as connectors_router
 from polar.kit.db.postgres import AsyncSessionMaker
 from polar.kit.utils import utc_now
 from polar.models import DesktopSession
@@ -49,6 +50,7 @@ from polar.openapi import APITag
 from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
+from .auth import bearer_token, get_desktop_session
 from .service import (
     AUTH_CODE_INVALID,
     MEMORY_FILE_LIMIT,
@@ -86,27 +88,6 @@ def _fail(code: int, message: str, *, status: int = 200) -> JSONResponse:
     is 200 unless the app keys on it — a 401 on refresh means « sign in
     again », anything else « try later »."""
     return JSONResponse({"code": code, "message": message}, status_code=status)
-
-
-def _bearer(request: Request) -> str | None:
-    header = request.headers.get("Authorization", "")
-    scheme, _, token = header.partition(" ")
-    if scheme.lower() == "bearer" and token.strip():
-        return token.strip()
-    api_key = request.headers.get("x-api-key", "").strip()
-    return api_key or None
-
-
-async def get_desktop_session(
-    request: Request, session: AsyncSession = Depends(get_db_session)
-) -> DesktopSession:
-    token = _bearer(request)
-    if token is None:
-        raise DesktopUnauthenticated()
-    found = await desktop.authenticate(session, token)
-    if found is None:
-        raise DesktopUnauthenticated("This desktop session has expired.")
-    return found
 
 
 def _callback_target(redirect_uri: str | None) -> str | None:
@@ -233,7 +214,7 @@ async def refresh(
 async def logout(
     request: Request, session: AsyncSession = Depends(get_db_session)
 ) -> JSONResponse:
-    token = _bearer(request)
+    token = bearer_token(request)
     if token is not None:
         found = await desktop.authenticate(session, token)
         if found is not None:
@@ -729,3 +710,13 @@ async def proxy_other(path: str) -> JSONResponse:
         {"error": {"type": "not_found_error", "message": f"/{path} is not proxied."}},
         status_code=404,
     )
+
+
+# --- the connections --------------------------------------------------------
+
+# The four routes of `docs/maties/connectors.md` are their own module,
+# because everything about the middleman is kept away from the rest of
+# Claidor, but they are the desktop app's routes and belong at the
+# desktop app's address. Included here, they come out under
+# `/desktop/api/connectors`.
+router.include_router(connectors_router)

@@ -23,6 +23,8 @@ const getPortalBase = () => (isTestModeEnabled() ? CLAIDOR_DEV_APP_BASE_URL : CL
 export const getFallbackDownloadUrl = () => `${getPortalBase()}/desktop`;
 
 export const PortalPricingKeyfrom = {
+  /** The price card of a connection (docs/maties/connectors.md, section 1). */
+  Connectors: 'connectors',
   HtmlShare: 'html_share',
   SiteDeployment: 'site_deployment',
 } as const;

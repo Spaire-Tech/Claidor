@@ -63,6 +63,11 @@ import {
   resolveRawApiConfig,
 } from './claudeSettings';
 import {
+  buildConnectorMcpServers,
+  CONNECTORS_TOKEN_ENV_VAR,
+  CONNECTORS_TOKEN_UNCONFIGURED,
+} from './connectors/connectorMcpServers';
+import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
 } from './coworkOpenAICompatProxy';
@@ -1874,6 +1879,15 @@ type OpenClawConfigSyncDeps = {
   getWeixinConfig: () => WeixinOpenClawConfig | null;
   getIMSettings?: () => IMSettings | null;
   getResolvedMcpServers?: () => ResolvedMcpServer[];
+  /**
+   * The services the person has connected (docs/maties/connectors.md): one
+   * MCP entry each, pointing at Claidor's proxy and at nothing else.
+   */
+  getConnectedConnectorSlugs?: () => string[];
+  /** Claidor's account protocol base URL, for the connector entries. */
+  getConnectorsBaseUrl?: () => string;
+  /** The person's own Claidor session token; injected as an env var, never written to disk. */
+  getConnectorsSessionToken?: () => string | null;
   getAskUserCallbackUrl?: () => string | null;
   /** Bridge route the search-library extension posts to; null until the bridge is up. */
   getLibrarySearchCallbackUrl?: () => string | null | undefined;
@@ -1913,6 +1927,9 @@ export class OpenClawConfigSync {
   private readonly getWeixinConfig: () => WeixinOpenClawConfig | null;
   private readonly getIMSettings?: () => IMSettings | null;
   private readonly getResolvedMcpServers?: () => ResolvedMcpServer[];
+  private readonly getConnectedConnectorSlugs?: () => string[];
+  private readonly getConnectorsBaseUrl?: () => string;
+  private readonly getConnectorsSessionToken?: () => string | null;
   private readonly getAskUserCallbackUrl?: () => string | null;
   private readonly getLibrarySearchCallbackUrl?: () => string | null | undefined;
   private readonly getMediaCallbackUrl?: () => string | null;
@@ -1949,6 +1966,9 @@ export class OpenClawConfigSync {
     this.getWeixinConfig = deps.getWeixinConfig;
     this.getIMSettings = deps.getIMSettings;
     this.getResolvedMcpServers = deps.getResolvedMcpServers;
+    this.getConnectedConnectorSlugs = deps.getConnectedConnectorSlugs;
+    this.getConnectorsBaseUrl = deps.getConnectorsBaseUrl;
+    this.getConnectorsSessionToken = deps.getConnectorsSessionToken;
     this.getAskUserCallbackUrl = deps.getAskUserCallbackUrl;
     this.getLibrarySearchCallbackUrl = deps.getLibrarySearchCallbackUrl;
     this.getMediaCallbackUrl = deps.getMediaCallbackUrl;
@@ -2775,13 +2795,27 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         };
       }
     }
+    // The connected services (docs/maties/connectors.md): one entry each,
+    // reaching Claidor's proxy. Claidor adds the connector service's key and
+    // pins the person; nothing about that service exists on this machine.
+    const connectorSlugs = this.getConnectedConnectorSlugs?.() ?? [];
+    const connectorsBaseUrl = this.getConnectorsBaseUrl?.() ?? '';
+    const connectorServers = connectorSlugs.length > 0 && connectorsBaseUrl
+      ? buildConnectorMcpServers(connectorsBaseUrl, connectorSlugs)
+      : {};
+    const connectorServerCount = Object.keys(connectorServers).length;
+    Object.assign(nativeMcpServers, connectorServers);
+
     const nativeMcpServerCount = Object.keys(nativeMcpServers).length;
     if (nativeMcpServerCount > 0) {
       (managedConfig as Record<string, unknown>).mcp = {
         servers: nativeMcpServers,
       };
     }
-    console.log(`[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s)`);
+    console.log(
+      `[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s), `
+      + `${connectorServerCount} of them connected accounts`,
+    );
 
     // Sync AskUserQuestion plugin config
     const askUserCallbackUrl = this.getAskUserCallbackUrl?.();
@@ -3462,6 +3496,11 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // ${LOBSTER_MCP_BRIDGE_SECRET} placeholder doesn't crash the gateway.
     // Used by the ask-user-question plugin.
     env.LOBSTER_MCP_BRIDGE_SECRET = this.getMcpBridgeSecret?.() || 'unconfigured';
+
+    // Connections (docs/maties/connectors.md): the engine carries the person's
+    // own Claidor session token and nothing else. It is always set, so a config
+    // still holding the placeholder cannot crash the gateway.
+    env[CONNECTORS_TOKEN_ENV_VAR] = this.getConnectorsSessionToken?.() || CONNECTORS_TOKEN_UNCONFIGURED;
 
     // Telegram — per-instance secrets (must match sync() indexing: enabled instances only)
     const tgInstances = this.getTelegramInstances();

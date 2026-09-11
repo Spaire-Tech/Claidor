@@ -6,7 +6,7 @@
  *
  * Every entry knows what it is (`kind`), so every card can do something
  * honest. « Connected » is never stored here: the renderer reads it from
- * the app's real state (an MCP server installed, a channel configured).
+ * the app's real state (an account Claidor reports, a channel configured).
  *
  * Titles, notes and tag lines are i18n keys resolved by the renderer; the
  * names are product names and stay literal.
@@ -18,8 +18,13 @@ import type { Platform } from '../platform/constants';
 export const APP_LOGO_DIRECTORY = 'logos/apps';
 
 export const ConnectionKind = {
-  /** One of the servers in Claidor's MCP catalogue: Connect opens the install form. */
-  Mcp: 'mcp',
+  /**
+   * An account somewhere (docs/maties/connectors.md, section 2): Connect opens
+   * a window, the person signs in, the card gets a tick. `appSlug` is the name
+   * the connector service knows the service by; the app only carries it to
+   * Claidor and never speaks to the service itself.
+   */
+  Account: 'account',
   /** A way to reach the assistant; `platformId` when the app offers it today. */
   Channel: 'channel',
   /** No account needed: the assistant uses the person's own browser. */
@@ -82,7 +87,7 @@ interface ConnectionItemBase {
 }
 
 export type ConnectionItem = ConnectionItemBase & (
-  | { readonly kind: typeof ConnectionKind.Mcp; readonly mcpEntryId: string }
+  | { readonly kind: typeof ConnectionKind.Account; readonly appSlug: string }
   | { readonly kind: typeof ConnectionKind.Channel; readonly platformId?: Platform }
   | { readonly kind: typeof ConnectionKind.Browser }
   | { readonly kind: typeof ConnectionKind.Local }
@@ -146,41 +151,42 @@ const K = ConnectionKind;
 /** The sixty-five items, in the founder's order within each group. */
 export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   // Mail & Calendar
-  { id: 'gmail', name: 'Gmail', group: G.MailCalendar, kind: K.Mcp, mcpEntryId: 'gmail', logo: 'gmail.webp' },
-  { id: 'outlook', name: 'Outlook', group: G.MailCalendar, kind: K.Soon, logo: 'outlook.webp' },
-  { id: 'google-calendar', name: 'Google Calendar', group: G.MailCalendar, kind: K.Mcp, mcpEntryId: 'google-calendar', logo: 'google-calendar.webp' },
+  { id: 'gmail', name: 'Gmail', group: G.MailCalendar, kind: K.Account, appSlug: 'gmail', logo: 'gmail.webp' },
+  { id: 'outlook', name: 'Outlook', group: G.MailCalendar, kind: K.Account, appSlug: 'microsoft_outlook', logo: 'outlook.webp' },
+  { id: 'google-calendar', name: 'Google Calendar', group: G.MailCalendar, kind: K.Account, appSlug: 'google_calendar', logo: 'google-calendar.webp' },
   { id: 'apple-calendar', name: 'Apple Calendar', group: G.MailCalendar, kind: K.Local, logo: 'apple-calendar-mac.png' },
   // Messaging
   { id: 'whatsapp', name: 'WhatsApp', group: G.Messaging, kind: K.Channel, logo: 'whatsapp.svg' },
   { id: 'imessage', name: 'iMessage', group: G.Messaging, kind: K.Channel, logo: 'imessage.webp' },
-  { id: 'slack', name: 'Slack', group: G.Messaging, kind: K.Mcp, mcpEntryId: 'slack' },
-  { id: 'microsoft-teams', name: 'Microsoft Teams', group: G.Messaging, kind: K.Channel },
+  { id: 'slack', name: 'Slack', group: G.Messaging, kind: K.Account, appSlug: 'slack_v2' },
+  { id: 'microsoft-teams', name: 'Microsoft Teams', group: G.Messaging, kind: K.Account, appSlug: 'microsoft_teams' },
   { id: 'telegram', name: 'Telegram', group: G.Messaging, kind: K.Channel, platformId: 'telegram', logo: 'telegram.svg' },
   { id: 'discord', name: 'Discord', group: G.Messaging, kind: K.Channel, platformId: 'discord', logo: 'discord.svg' },
   // Files & Docs
-  { id: 'google-drive', name: 'Google Drive', group: G.FilesDocs, kind: K.Mcp, mcpEntryId: 'google-drive', logo: 'google-drive.svg' },
-  { id: 'google-docs', name: 'Google Docs', group: G.FilesDocs, kind: K.Soon, logo: 'google-docs.svg' },
-  { id: 'google-sheets', name: 'Google Sheets', group: G.FilesDocs, kind: K.Soon, logo: 'google-sheets.webp' },
-  { id: 'google-slides', name: 'Google Slides', group: G.FilesDocs, kind: K.Soon, logo: 'google-slides.webp' },
-  { id: 'onedrive', name: 'OneDrive', group: G.FilesDocs, kind: K.Soon, logo: 'onedrive.jpg' },
+  { id: 'google-drive', name: 'Google Drive', group: G.FilesDocs, kind: K.Account, appSlug: 'google_drive', logo: 'google-drive.svg' },
+  { id: 'google-docs', name: 'Google Docs', group: G.FilesDocs, kind: K.Account, appSlug: 'google_docs', logo: 'google-docs.svg' },
+  { id: 'google-sheets', name: 'Google Sheets', group: G.FilesDocs, kind: K.Account, appSlug: 'google_sheets', logo: 'google-sheets.webp' },
+  { id: 'google-slides', name: 'Google Slides', group: G.FilesDocs, kind: K.Account, appSlug: 'google_slides', logo: 'google-slides.webp' },
+  { id: 'onedrive', name: 'OneDrive', group: G.FilesDocs, kind: K.Account, appSlug: 'microsoft_onedrive', logo: 'onedrive.jpg' },
   { id: 'word', name: 'Word', group: G.FilesDocs, kind: K.Local, logo: 'word.webp' },
   { id: 'excel', name: 'Excel', group: G.FilesDocs, kind: K.Local, logo: 'excel.webp' },
   { id: 'powerpoint', name: 'PowerPoint', group: G.FilesDocs, kind: K.Local, logo: 'powerpoint.webp' },
-  { id: 'dropbox', name: 'Dropbox', group: G.FilesDocs, kind: K.Soon, logo: 'dropbox.svg' },
-  { id: 'notion', name: 'Notion', group: G.FilesDocs, kind: K.Mcp, mcpEntryId: 'notion', logo: 'notion.svg' },
+  { id: 'dropbox', name: 'Dropbox', group: G.FilesDocs, kind: K.Account, appSlug: 'dropbox', logo: 'dropbox.svg' },
+  { id: 'notion', name: 'Notion', group: G.FilesDocs, kind: K.Account, appSlug: 'notion', logo: 'notion.svg' },
   { id: 'apple-notes', name: 'Apple Notes', group: G.FilesDocs, kind: K.Local, logo: 'apple-notes.webp' },
   // Productivity & Tasks
-  { id: 'notion-tasks', name: 'Notion', group: G.Productivity, kind: K.Mcp, mcpEntryId: 'notion', logo: 'notion.svg' },
-  { id: 'todoist', name: 'Todoist', group: G.Productivity, kind: K.Mcp, mcpEntryId: 'todoist', logo: 'todoist.svg' },
+  { id: 'notion-tasks', name: 'Notion', group: G.Productivity, kind: K.Account, appSlug: 'notion', logo: 'notion.svg' },
+  { id: 'todoist', name: 'Todoist', group: G.Productivity, kind: K.Account, appSlug: 'todoist', logo: 'todoist.svg' },
   { id: 'apple-reminders', name: 'Apple Reminders', group: G.Productivity, kind: K.Local, logo: 'apple-reminders.png' },
-  { id: 'google-tasks', name: 'Google Tasks', group: G.Productivity, kind: K.Soon, logo: 'googletasks.svg' },
-  { id: 'trello', name: 'Trello', group: G.Productivity, kind: K.Soon, logo: 'trello.svg' },
-  { id: 'asana', name: 'Asana', group: G.Productivity, kind: K.Soon, logo: 'asana.svg' },
-  { id: 'monday', name: 'Monday', group: G.Productivity, kind: K.Soon },
+  { id: 'google-tasks', name: 'Google Tasks', group: G.Productivity, kind: K.Account, appSlug: 'google_tasks', logo: 'googletasks.svg' },
+  { id: 'trello', name: 'Trello', group: G.Productivity, kind: K.Account, appSlug: 'trello', logo: 'trello.svg' },
+  { id: 'asana', name: 'Asana', group: G.Productivity, kind: K.Account, appSlug: 'asana', logo: 'asana.svg' },
+  { id: 'monday', name: 'Monday', group: G.Productivity, kind: K.Account, appSlug: 'monday' },
   // Meetings
-  { id: 'zoom', name: 'Zoom', group: G.Meetings, kind: K.Soon, logo: 'zoom.webp' },
-  { id: 'google-meet', name: 'Google Meet', group: G.Meetings, kind: K.Soon, logo: 'google-meet.webp' },
-  { id: 'fathom', name: 'Fathom', group: G.Meetings, kind: K.Soon, logo: 'fathom.jpg' },
+  { id: 'zoom', name: 'Zoom', group: G.Meetings, kind: K.Account, appSlug: 'zoom', logo: 'zoom.webp' },
+  { id: 'google-meet', name: 'Google Meet', group: G.Meetings, kind: K.Account, appSlug: 'google_meet', logo: 'google-meet.webp' },
+  { id: 'fathom', name: 'Fathom', group: G.Meetings, kind: K.Account, appSlug: 'fathom', logo: 'fathom.jpg' },
+  // No connector carries Otter yet, so the card stays honest rather than guessing.
   { id: 'otter', name: 'Otter', group: G.Meetings, kind: K.Soon },
   // Social Media
   { id: 'linkedin', name: 'LinkedIn', group: G.Social, kind: K.Browser },
@@ -190,23 +196,25 @@ export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   { id: 'youtube', name: 'YouTube', group: G.Social, kind: K.Browser, logo: 'youtube.svg' },
   { id: 'facebook', name: 'Facebook', group: G.Social, kind: K.Browser, logo: 'facebook.svg' },
   // Creativity
-  { id: 'canva', name: 'Canva', group: G.Creativity, kind: K.Mcp, mcpEntryId: 'canva' },
-  { id: 'figma', name: 'Figma', group: G.Creativity, kind: K.Mcp, mcpEntryId: 'figma', logo: 'figma.svg' },
+  { id: 'canva', name: 'Canva', group: G.Creativity, kind: K.Account, appSlug: 'canva' },
+  { id: 'figma', name: 'Figma', group: G.Creativity, kind: K.Account, appSlug: 'figma', logo: 'figma.svg' },
+  // No connector carries Adobe Express yet.
   { id: 'adobe-express', name: 'Adobe Express', group: G.Creativity, kind: K.Soon },
   { id: 'youtube-studio', name: 'YouTube Studio', group: G.Creativity, kind: K.Browser, logo: 'youtubestudio.svg' },
   // Finance & Money
-  { id: 'stripe', name: 'Stripe', group: G.Finance, kind: K.Soon, logo: 'stripe.svg' },
-  { id: 'paypal', name: 'PayPal', group: G.Finance, kind: K.Soon, logo: 'paypal.svg' },
-  { id: 'quickbooks', name: 'QuickBooks', group: G.Finance, kind: K.Soon, logo: 'quickbooks.svg' },
+  { id: 'stripe', name: 'Stripe', group: G.Finance, kind: K.Account, appSlug: 'stripe', logo: 'stripe.svg' },
+  { id: 'paypal', name: 'PayPal', group: G.Finance, kind: K.Account, appSlug: 'paypal', logo: 'paypal.svg' },
+  { id: 'quickbooks', name: 'QuickBooks', group: G.Finance, kind: K.Account, appSlug: 'quickbooks', logo: 'quickbooks.svg' },
+  // The only Xero a connector carries is Xero Payroll, which is not this card.
   { id: 'xero', name: 'Xero', group: G.Finance, kind: K.Soon, logo: 'xero.svg' },
-  { id: 'shopify', name: 'Shopify', group: G.Finance, kind: K.Soon, logo: 'shopify.svg' },
+  { id: 'shopify', name: 'Shopify', group: G.Finance, kind: K.Account, appSlug: 'shopify', logo: 'shopify.svg' },
   { id: 'amazon-seller', name: 'Amazon Seller', group: G.Finance, kind: K.Browser },
   // Sales & Customers
-  { id: 'hubspot', name: 'HubSpot', group: G.Sales, kind: K.Soon, logo: 'hubspot.svg' },
-  { id: 'salesforce', name: 'Salesforce', group: G.Sales, kind: K.Soon },
-  { id: 'pipedrive', name: 'Pipedrive', group: G.Sales, kind: K.Soon },
-  { id: 'intercom', name: 'Intercom', group: G.Sales, kind: K.Soon, logo: 'intercom.svg' },
-  { id: 'calendly', name: 'Calendly', group: G.Sales, kind: K.Soon, logo: 'calendly.svg' },
+  { id: 'hubspot', name: 'HubSpot', group: G.Sales, kind: K.Account, appSlug: 'hubspot', logo: 'hubspot.svg' },
+  { id: 'salesforce', name: 'Salesforce', group: G.Sales, kind: K.Account, appSlug: 'salesforce_rest_api' },
+  { id: 'pipedrive', name: 'Pipedrive', group: G.Sales, kind: K.Account, appSlug: 'pipedrive' },
+  { id: 'intercom', name: 'Intercom', group: G.Sales, kind: K.Account, appSlug: 'intercom', logo: 'intercom.svg' },
+  { id: 'calendly', name: 'Calendly', group: G.Sales, kind: K.Account, appSlug: 'calendly_v2', logo: 'calendly.svg' },
   // Shopping & Travel
   { id: 'amazon', name: 'Amazon', group: G.ShoppingTravel, kind: K.Browser, tag: ConnectionTag.ThroughYourBrowser },
   { id: 'google-flights', name: 'Google Flights', group: G.ShoppingTravel, kind: K.Browser, tag: ConnectionTag.ThroughYourBrowser },
@@ -215,12 +223,12 @@ export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   { id: 'opentable', name: 'OpenTable', group: G.ShoppingTravel, kind: K.Browser, tag: ConnectionTag.ThroughYourBrowser },
   { id: 'doordash', name: 'DoorDash', group: G.ShoppingTravel, kind: K.Browser, tag: ConnectionTag.ThroughYourBrowser, logo: 'doordash.svg' },
   // Developer
-  { id: 'github', name: 'GitHub', group: G.Developer, kind: K.Mcp, mcpEntryId: 'github', logo: 'github.svg' },
-  { id: 'gitlab', name: 'GitLab', group: G.Developer, kind: K.Mcp, mcpEntryId: 'gitlab', logo: 'gitlab.svg' },
-  { id: 'linear', name: 'Linear', group: G.Developer, kind: K.Soon, logo: 'linear.svg' },
-  { id: 'jira', name: 'Jira', group: G.Developer, kind: K.Soon, logo: 'jira.svg' },
-  { id: 'supabase', name: 'Supabase', group: G.Developer, kind: K.Soon, logo: 'supabase.svg' },
-  { id: 'vercel', name: 'Vercel', group: G.Developer, kind: K.Soon, logo: 'vercel.svg' },
+  { id: 'github', name: 'GitHub', group: G.Developer, kind: K.Account, appSlug: 'github', logo: 'github.svg' },
+  { id: 'gitlab', name: 'GitLab', group: G.Developer, kind: K.Account, appSlug: 'gitlab', logo: 'gitlab.svg' },
+  { id: 'linear', name: 'Linear', group: G.Developer, kind: K.Account, appSlug: 'linear', logo: 'linear.svg' },
+  { id: 'jira', name: 'Jira', group: G.Developer, kind: K.Account, appSlug: 'jira', logo: 'jira.svg' },
+  { id: 'supabase', name: 'Supabase', group: G.Developer, kind: K.Account, appSlug: 'supabase', logo: 'supabase.svg' },
+  { id: 'vercel', name: 'Vercel', group: G.Developer, kind: K.Account, appSlug: 'vercel_token_auth', logo: 'vercel.svg' },
 ];
 
 export interface ConnectionGroup extends ConnectionGroupDef {
@@ -274,7 +282,7 @@ export const countConnections = (): number => CONNECTION_ITEMS.length;
 
 export const countConnectionsByKind = (): Record<ConnectionKind, number> => {
   const counts: Record<ConnectionKind, number> = {
-    [ConnectionKind.Mcp]: 0,
+    [ConnectionKind.Account]: 0,
     [ConnectionKind.Channel]: 0,
     [ConnectionKind.Browser]: 0,
     [ConnectionKind.Local]: 0,
@@ -284,9 +292,21 @@ export const countConnectionsByKind = (): Record<ConnectionKind, number> => {
   return counts;
 };
 
-/** Every distinct MCP catalogue id the items point to. */
-export const getConnectionMcpEntryIds = (): string[] => (
-  [...new Set(CONNECTION_ITEMS.flatMap((item) => (item.kind === ConnectionKind.Mcp ? [item.mcpEntryId] : [])))]
+/** The service name of an item when a connector can carry it, else undefined. */
+export const connectionAppSlug = (item: ConnectionItem): string | undefined => (
+  item.kind === ConnectionKind.Account ? item.appSlug : undefined
+);
+
+/**
+ * Every distinct service the catalogue can connect. Two cards may name the
+ * same service (Notion is filed under Files and under Tasks); it is one
+ * account and appears once here.
+ */
+export const getConnectionAppSlugs = (): string[] => (
+  [...new Set(CONNECTION_ITEMS.flatMap((item) => {
+    const slug = connectionAppSlug(item);
+    return slug ? [slug] : [];
+  }))]
 );
 
 /** The address the assistant answers at, for the reach card. */
