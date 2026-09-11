@@ -161,19 +161,29 @@ function applyScheduledTaskTemplate(form: FormState, template: ScheduledTaskTemp
     monthDay: template.schedule.monthDay ?? form.monthDay,
     payloadText: i18nService.t(template.promptKey),
     cronExpr: '',
-    cronTz: '',
     cronMode: 'builder',
     cronBuilder: { ...DEFAULT_CRON_BUILDER },
   };
 }
 
+/**
+ * `defaultTimezone` is the person's chosen zone (`app.timezone`,
+ * docs/maties/onboarding.md): a new task is scheduled in it unless the
+ * person types another. An existing task keeps whatever it was saved with.
+ */
 export function createScheduledTaskFormState(
   task: ScheduledTask | undefined,
   fallbackModelRef: string,
   template?: ScheduledTaskTemplate | null,
+  defaultTimezone = '',
 ): FormState {
   if (!task) {
-    const form = { ...DEFAULT_FORM_STATE, ...nowDefaults(), modelId: fallbackModelRef };
+    const form = {
+      ...DEFAULT_FORM_STATE,
+      ...nowDefaults(),
+      modelId: fallbackModelRef,
+      cronTz: defaultTimezone.trim(),
+    };
     return template ? applyScheduledTaskTemplate(form, template) : form;
   }
 
@@ -211,7 +221,19 @@ export function createScheduledTaskFormState(
   };
 }
 
-function buildScheduleInput(form: FormState): ScheduledTaskInput['schedule'] {
+/** A cron schedule in the form's zone when one is set; the engine falls back to the host's zone otherwise. */
+function buildCronSchedule(form: FormState, expr: string): ScheduledTaskInput['schedule'] {
+  const schedule: ScheduledTaskInput['schedule'] & { kind: typeof ScheduleKind.Cron } = {
+    kind: ScheduleKind.Cron,
+    expr,
+  };
+  if (form.cronTz.trim()) {
+    schedule.tz = form.cronTz.trim();
+  }
+  return schedule;
+}
+
+export function buildScheduleInput(form: FormState): ScheduledTaskInput['schedule'] {
   if (form.planType === 'once') {
     const date = new Date(form.year, form.month - 1, form.day, form.hour, form.minute, form.second);
     return { kind: ScheduleKind.At, at: date.toISOString() };
@@ -220,33 +242,26 @@ function buildScheduleInput(form: FormState): ScheduledTaskInput['schedule'] {
   if (form.planType === 'cron') {
     const expr =
       form.cronMode === 'builder' ? cronBuilderToExpr(form.cronBuilder) : form.cronExpr.trim();
-    const schedule: ScheduledTaskInput['schedule'] & { kind: typeof ScheduleKind.Cron } = {
-      kind: ScheduleKind.Cron,
-      expr,
-    };
-    if (form.cronTz.trim()) {
-      schedule.tz = form.cronTz.trim();
-    }
-    return schedule;
+    return buildCronSchedule(form, expr);
   }
 
   const min = String(form.minute);
   const hr = String(form.hour);
 
   if (form.planType === 'hourly') {
-    return { kind: ScheduleKind.Cron, expr: `${min} * * * *` };
+    return buildCronSchedule(form, `${min} * * * *`);
   }
 
   if (form.planType === 'daily') {
-    return { kind: ScheduleKind.Cron, expr: `${min} ${hr} * * *` };
+    return buildCronSchedule(form, `${min} ${hr} * * *`);
   }
 
   if (form.planType === 'weekly') {
     const dowField = [...form.weekdays].sort((a, b) => a - b).join(',');
-    return { kind: ScheduleKind.Cron, expr: `${min} ${hr} * * ${dowField}` };
+    return buildCronSchedule(form, `${min} ${hr} * * ${dowField}`);
   }
 
-  return { kind: ScheduleKind.Cron, expr: `${min} ${hr} ${form.monthDay} * *` };
+  return buildCronSchedule(form, `${min} ${hr} ${form.monthDay} * *`);
 }
 
 const WEEKDAY_KEYS = [
@@ -294,15 +309,33 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const availableModels = useSelector((state: RootState) => state.model.availableModels);
   const defaultSelectedModel = useSelector((state: RootState) => state.model.defaultSelectedModel);
   const fallbackModelRef = defaultSelectedModel ? toOpenClawModelRef(defaultSelectedModel) : '';
+  // The person's chosen zone (`app.timezone`); read once, and only a new task takes it as its default.
+  const [defaultTimezone, setDefaultTimezone] = useState('');
+  useEffect(() => {
+    if (mode !== 'create') return;
+    let cancelled = false;
+    window.electron.onboarding
+      ?.getProfile()
+      .then(profile => {
+        if (!cancelled && profile?.timezone) setDefaultTimezone(profile.timezone);
+      })
+      .catch(() => {
+        // The machine's zone stays the engine's fallback.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
   const [form, setForm] = useState<FormState>(() =>
     createScheduledTaskFormState(
       task,
       fallbackModelRef,
       mode === 'create' ? initialTemplate : null,
+      defaultTimezone,
     )
   );
   const initialFormRef = useRef<string>(
-    JSON.stringify(createScheduledTaskFormState(task, fallbackModelRef)),
+    JSON.stringify(createScheduledTaskFormState(task, fallbackModelRef, null, defaultTimezone)),
   );
   const [channelOptions, setChannelOptions] = useState<ScheduledTaskChannelOption[]>(() => {
     const base: ScheduledTaskChannelOption[] = [];
@@ -356,16 +389,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const isSystemEventTask = task?.payload.kind === PayloadKind.SystemEvent;
 
   useEffect(() => {
-    const cleanForm = createScheduledTaskFormState(task, fallbackModelRef);
+    const cleanForm = createScheduledTaskFormState(task, fallbackModelRef, null, defaultTimezone);
     const nextForm = createScheduledTaskFormState(
       task,
       fallbackModelRef,
       mode === 'create' ? initialTemplate : null,
+      defaultTimezone,
     );
     initialFormRef.current = JSON.stringify(cleanForm);
     setForm(nextForm);
     setAppliedTemplate(mode === 'create' ? initialTemplate : null);
-  }, [task, fallbackModelRef, initialTemplate, mode]);
+  }, [task, fallbackModelRef, initialTemplate, mode, defaultTimezone]);
 
   useEffect(() => {
     reportScheduledTaskAction('form_open', {

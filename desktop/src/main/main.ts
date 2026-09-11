@@ -259,6 +259,7 @@ import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccou
 import { registerKitHandlers } from './ipcHandlers/kits';
 import { registerMcpHandlers } from './ipcHandlers/mcp';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
+import { readOnboardingProfile, registerOnboardingHandlers } from './ipcHandlers/onboarding';
 import { registerPermissionIpcHandlers } from './ipcHandlers/permissions/handlers';
 import { registerPluginHandlers } from './ipcHandlers/plugins';
 import {
@@ -2490,6 +2491,7 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       getBrowserWebAccessConfig: () => getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
+      getOnboardingProfile: () => readOnboardingProfile(getStore()),
       getSkillsList: () =>
         getSkillManager()
           .listSkills()
@@ -3500,6 +3502,7 @@ const getCoworkEngineRouter = () => {
             getCronJobService().notifyGatewayReady();
             handleGatewaySelfRestartSettled();
           },
+          getUserTimezone: () => readOnboardingProfile(getStore()).timezone,
           onBrowserToolEvent: event => {
             const displayMode = normalizeBrowserWebAccessConfig(
               getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
@@ -3786,6 +3789,7 @@ const getIMGatewayManager = () => {
       getSkillsPrompt: async () => {
         return getSkillManager().buildAutoRoutingPrompt();
       },
+      getUserTimezone: () => readOnboardingProfile(getStore()).timezone,
     });
 
     // Forward IM events to renderer
@@ -8407,6 +8411,13 @@ if (!gotTheLock) {
     getStore,
     getKitStoreUrl,
     getSkillManager,
+    syncOpenClawConfig,
+  });
+
+  // Onboarding IPC handlers (docs/maties/onboarding.md): the name, the voice, the time zone
+  registerOnboardingHandlers({
+    getStore,
+    getAgentManager,
     syncOpenClawConfig,
   });
 

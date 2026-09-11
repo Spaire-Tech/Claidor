@@ -2655,6 +2655,87 @@ describe('OpenClawConfigSync runtime config output', () => {
     });
   });
 
+  test('renders the main agent under its stored row name and the chosen voice in AGENTS.md', async () => {
+    const { AssistantVoice } = await import('../../shared/onboarding/constants');
+    const { ASSISTANT_VOICE_INSTRUCTIONS } = await import('./openclawVoicePrompt');
+    const sync = await createSync({
+      getOnboardingProfile: () => ({
+        assistantName: 'Juno',
+        voice: AssistantVoice.Warm,
+        timezone: 'Europe/Paris',
+      }),
+      getAgents: () => [
+        {
+          id: 'main',
+          name: 'Juno',
+          description: '',
+          systemPrompt: '',
+          identity: '',
+          model: '',
+          workingDirectory: '',
+          icon: '',
+          skillIds: [],
+          enabled: true,
+          isDefault: true,
+          source: 'custom',
+          presetId: '',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
+    });
+
+    const result = sync.sync('onboarding-profile');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const mainEntry = config.agents.list.find((entry: { id?: string }) => entry.id === 'main');
+    expect(mainEntry.identity).toEqual({ name: 'Juno' });
+    expect(config.agents.defaults.userTimezone).toBe('Europe/Paris');
+
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## Voice');
+    expect(agentsMd).toContain(ASSISTANT_VOICE_INSTRUCTIONS[AssistantVoice.Warm]);
+    expect(agentsMd).not.toContain(ASSISTANT_VOICE_INSTRUCTIONS[AssistantVoice.Concise]);
+    // The voice comes before the policies, right where the system prompt would be.
+    expect(agentsMd.indexOf('## Voice')).toBeLessThan(agentsMd.indexOf('## Web Search'));
+  });
+
+  test('uses the stored assistant name for the main agent when it has no row yet', async () => {
+    const { AssistantVoice } = await import('../../shared/onboarding/constants');
+    const sync = await createSync({
+      getOnboardingProfile: () => ({
+        assistantName: 'Marlow',
+        voice: AssistantVoice.Direct,
+        timezone: 'UTC',
+      }),
+      getAgents: () => [],
+    });
+
+    const result = sync.sync('onboarding-profile-no-row');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const mainEntry = config.agents.list.find((entry: { id?: string }) => entry.id === 'main');
+    expect(mainEntry.identity).toEqual({ name: 'Marlow' });
+    expect(mainEntry.default).toBe(true);
+  });
+
+  test('renders the default voice and no user time zone before onboarding', async () => {
+    const { DEFAULT_ASSISTANT_VOICE } = await import('../../shared/onboarding/constants');
+    const { ASSISTANT_VOICE_INSTRUCTIONS } = await import('./openclawVoicePrompt');
+    const sync = await createSync();
+
+    const result = sync.sync('onboarding-defaults');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.agents.defaults).not.toHaveProperty('userTimezone');
+
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain(ASSISTANT_VOICE_INSTRUCTIONS[DEFAULT_ASSISTANT_VOICE]);
+  });
+
   test('writes browser and web fetch access settings', async () => {
     const { setSystemProxyEnabled } = await import('./systemProxy');
     const {

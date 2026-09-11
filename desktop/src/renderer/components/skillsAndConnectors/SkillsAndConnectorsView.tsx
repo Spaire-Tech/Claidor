@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import { DEFAULT_ASSISTANT_NAME, OnboardingStoreKey } from '@shared/onboarding/constants';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { i18nService } from '../../services/i18n';
+import { ConnectionsCatalog, ReachList } from '../connections';
 import PageTitle from '../design/PageTitle';
 import Pill, { PillTone } from '../design/Pill';
 import ComposeIcon from '../icons/ComposeIcon';
@@ -32,6 +34,48 @@ interface SkillsAndConnectorsViewProps {
 const SECTION_ICONS: Record<SkillsConnectorsSection, React.FC<{ className?: string }>> = {
   [SkillsConnectorsSection.Skills]: SkillIcon,
   [SkillsConnectorsSection.Connectors]: SidebarMcpIcon,
+};
+
+/** The assistant's name as the onboarding stored it; the default until then. */
+const useAssistantName = (): string => {
+  const [name, setName] = useState(DEFAULT_ASSISTANT_NAME);
+  useEffect(() => {
+    let active = true;
+    window.electron.store.get(OnboardingStoreKey.AssistantName)
+      .then((stored: unknown) => {
+        if (active && typeof stored === 'string' && stored.trim()) setName(stored.trim());
+      })
+      .catch((error: unknown) => {
+        console.warn('[Connections] Could not read the assistant name', error);
+      });
+    return () => { active = false; };
+  }, []);
+  return name;
+};
+
+/**
+ * The Connectors section (docs/maties/onboarding.md, « In the workspace »):
+ * how to reach the assistant, the catalogue, then the person's own servers.
+ */
+const ConnectorsSection: React.FC = () => {
+  const assistantName = useAssistantName();
+  return (
+    <div className="flex flex-col gap-12">
+      <section className="flex flex-col gap-[14px]">
+        <h2 className="text-[24px] font-medium tracking-[-.014em] text-[#1c1f23]">
+          {i18nService.t('matiesConnectionsReachTitle').replace('{name}', assistantName)}
+        </h2>
+        <ReachList assistantName={assistantName} />
+      </section>
+      <ConnectionsCatalog />
+      <section className="flex flex-col gap-[14px]">
+        <h2 className="text-[24px] font-medium tracking-[-.014em] text-[#1c1f23]">
+          {i18nService.t('matiesConnectionsOwnServers')}
+        </h2>
+        <McpManager />
+      </section>
+    </div>
+  );
 };
 
 /**
@@ -131,7 +175,7 @@ const SkillsAndConnectorsView: React.FC<SkillsAndConnectorsViewProps> = ({
           />
           <div className="px-9 pb-8 pt-6">
             {activeSection === SkillsConnectorsSection.Connectors ? (
-              <McpManager />
+              <ConnectorsSection />
             ) : (
               <SkillsManager
                 readOnly={skillsReadOnly}

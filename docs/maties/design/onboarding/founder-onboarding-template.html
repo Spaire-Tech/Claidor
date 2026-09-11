@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="dba45c8a-535f-408a-af5e-3afb2a5d4a16"></script>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<style>/* latin-ext */
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("73cecf05-4f50-409d-875f-7cb67dca2ab3") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("b20c8c9c-9ae9-498a-ac6d-d904c19de2f3") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("73cecf05-4f50-409d-875f-7cb67dca2ab3") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("b20c8c9c-9ae9-498a-ac6d-d904c19de2f3") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("f3354082-e160-4f7f-a9f6-6de582e5c1cf") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("74b0335a-4dca-4add-8f5a-546d60c362ec") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("df43f168-e974-4103-a12d-c4386dc1e421") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("f7590443-a9ca-42f8-a048-e47b9ce8dec2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("46472d8d-c45c-4c2d-b159-c30daa607c5d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("2dded460-1028-49ba-bb9a-1e4db1776aad") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("f3354082-e160-4f7f-a9f6-6de582e5c1cf") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("74b0335a-4dca-4add-8f5a-546d60c362ec") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("df43f168-e974-4103-a12d-c4386dc1e421") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("f7590443-a9ca-42f8-a048-e47b9ce8dec2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("46472d8d-c45c-4c2d-b159-c30daa607c5d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("2dded460-1028-49ba-bb9a-1e4db1776aad") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>/* vietnamese */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("2ba90f9d-87f0-4184-9749-758a8f16d65f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("f1eef0b2-72c9-419c-bd3f-7ef99986ce30") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("88a37156-0252-4616-a59b-3c1132b03213") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("2ba90f9d-87f0-4184-9749-758a8f16d65f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("f1eef0b2-72c9-419c-bd3f-7ef99986ce30") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("88a37156-0252-4616-a59b-3c1132b03213") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+  html, body { margin:0; padding:0; }
+  body { --grain: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMjQwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC45IiBudW1PY3RhdmVzPSI0IiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjxmZUNvbXBvbmVudFRyYW5zZmVyPjxmZUZ1bmNSIHR5cGU9ImxpbmVhciIgc2xvcGU9IjIuNCIgaW50ZXJjZXB0PSItMC43Ii8+PGZlRnVuY0cgdHlwZT0ibGluZWFyIiBzbG9wZT0iMi40IiBpbnRlcmNlcHQ9Ii0wLjciLz48ZmVGdW5jQiB0eXBlPSJsaW5lYXIiIHNsb3BlPSIyLjQiIGludGVyY2VwdD0iLTAuNyIvPjwvZmVDb21wb25lbnRUcmFuc2Zlcj48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgZmlsdGVyPSJ1cmwoI24pIi8+PC9zdmc+"); }
+  * { box-sizing:border-box; }
+  a { color:#0060d0; text-decoration:none; }
+  a:hover { color:#0050ae; }
+  ::-webkit-scrollbar { width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb { background:rgba(21,23,27,.14); border-radius:8px; border:3px solid transparent; background-clip:content-box; }
+  @keyframes meshA { 0% { transform:translate(-14%,-8%) scale(1.25) rotate(0deg); } 25% { transform:translate(12%,-16%) scale(1.5) rotate(90deg); } 50% { transform:translate(18%,12%) scale(1.2) rotate(180deg); } 75% { transform:translate(-10%,16%) scale(1.45) rotate(270deg); } 100% { transform:translate(-14%,-8%) scale(1.25) rotate(360deg); } }
+  @keyframes meshB { 0% { transform:translate(16%,10%) scale(1.4) rotate(0deg); } 33% { transform:translate(-16%,14%) scale(1.15) rotate(-120deg); } 66% { transform:translate(-6%,-18%) scale(1.5) rotate(-240deg); } 100% { transform:translate(16%,10%) scale(1.4) rotate(-360deg); } }
+  @keyframes meshBase { 0% { transform:scale(1.1) rotate(0deg); } 50% { transform:scale(1.28) rotate(180deg); } 100% { transform:scale(1.1) rotate(360deg); } }
+  @keyframes obRise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes sphA { 0% { transform:rotate(0deg) translate(9%,-6%) scale(1.2); } 33% { transform:rotate(120deg) translate(-7%,8%) scale(1.4); } 66% { transform:rotate(240deg) translate(6%,9%) scale(1.15); } 100% { transform:rotate(360deg) translate(9%,-6%) scale(1.2); } }
+  @keyframes sphB { 0% { transform:rotate(0deg) translate(-8%,7%) scale(1.35); } 50% { transform:rotate(-180deg) translate(10%,-8%) scale(1.1); } 100% { transform:rotate(-360deg) translate(-8%,7%) scale(1.35); } }
+  @keyframes sphC { 0% { transform:translate(-14%,10%) scale(1); opacity:.55; } 50% { transform:translate(12%,-12%) scale(1.3); opacity:.9; } 100% { transform:translate(-14%,10%) scale(1); opacity:.55; } }
+  @keyframes sphGlint { 0%,100% { opacity:.7; transform:translate(0,0) scale(1); } 50% { opacity:1; transform:translate(9%,6%) scale(1.14); } }
+</style>
+</helmet>
+<div style="height:100vh; width:100%; display:flex; flex-direction:column; font-family:'Instrument Sans',-apple-system,system-ui,sans-serif; color:#1c1f23; font-size:14.5px; line-height:1.5; overflow:hidden; background:#ffffff">
+
+  <div style="flex:0 0 auto; position:relative; height:60px; display:flex; align-items:center; justify-content:center">
+    <sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}">
+      <button sc-camel-on-click="{{ back }}" title="Back" style="position:absolute; left:22px; top:14px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; border-radius:10px; color:#6b7280; cursor:pointer" style-hover="background:rgba(16,22,35,.06); color:#1c1f23">
+        <svg width="9" height="15" sc-camel-view-box="0 0 9 15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="7.5,1.5 1.5,7.5 7.5,13.5"></polyline></svg>
+      </button>
+    </sc-if>
+    <div style="display:flex; align-items:center; gap:8px">
+      <sc-for list="{{ dots }}" as="d" hint-placeholder-count="9">
+        <span style="width:5px; height:5px; border-radius:50%; background:{{ d.bg }}; transition:background .2s ease"></span>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; display:flex; justify-content:center; padding:0 clamp(20px,3vw,36px)">
+    <div style="width:100%; min-width:0; max-width:1040px; display:flex; flex-direction:column; align-items:center; padding:clamp(14px,3vh,36px) 0 40px">
+
+      <sc-if value="{{ isOne }}" hint-placeholder-val="{{ true }}">
+      <div style="width:100%; max-width:820px; display:flex; flex-direction:column; align-items:center; animation:obRise .42s cubic-bezier(.22,.61,.36,1) both">
+        <span style="position:relative; width:72px; height:72px; border-radius:50%; overflow:hidden; box-shadow:0 1px 2px rgba(24,74,68,.10), 0 14px 30px rgba(24,74,68,.20), inset 0 -9px 16px rgba(14,58,54,.22), inset 0 6px 12px rgba(255,255,255,.6), inset 0 0 0 .5px rgba(255,255,255,.5)">
+          <span style="position:absolute; inset:-40%; background:radial-gradient(44% 46% at 30% 24%, #f2f6d2 0%, rgba(242,246,210,0) 60%), radial-gradient(50% 52% at 74% 20%, #7fdcc6 0%, rgba(127,220,198,0) 66%), radial-gradient(54% 56% at 22% 76%, #a9de5c 0%, rgba(169,222,92,0) 68%), linear-gradient(160deg, #d8f0b4 0%, #6fcbb8 55%, #3aa0c4 100%); filter:blur(6px); animation:sphA 7s linear infinite"></span>
+          <span style="position:absolute; inset:-34%; opacity:.85; background:radial-gradient(40% 42% at 72% 74%, #2aa6c6 0%, rgba(42,166,198,0) 64%), radial-gradient(26% 26% at 56% 56%, #f2a45e 0%, rgba(242,164,94,0) 58%), radial-gradient(34% 36% at 20% 40%, #cfeeb0 0%, rgba(207,238,176,0) 62%); filter:blur(9px); animation:sphB 11s linear infinite"></span>
+          <span style="position:absolute; inset:-20%; background:radial-gradient(32% 34% at 50% 50%, #f6b26b 0%, rgba(246,178,107,0) 62%), radial-gradient(30% 32% at 24% 62%, #8ee06a 0%, rgba(142,224,106,0) 64%); filter:blur(8px); animation:sphC 9s ease-in-out infinite"></span>
+          <span style="position:absolute; left:16%; top:12%; width:34%; height:24%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.95), rgba(255,255,255,0)); filter:blur(2px); animation:sphGlint 5.5s ease-in-out infinite"></span>
+          <span style="position:absolute; left:-10%; bottom:-14%; width:70%; height:44%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.55), rgba(255,255,255,0)); filter:blur(4px)"></span>
+        </span>
+
+        <div style="font-family:Newsreader,Georgia,serif; font-size:clamp(32px,3.8vw,46px); font-weight:400; letter-spacing:-.016em; line-height:1.14; text-align:center; margin-top:clamp(26px,4.5vh,42px)">Welcome to Maties.</div>
+        <div style="font-family:Newsreader,Georgia,serif; font-size:17.5px; font-weight:400; line-height:1.6; color:#4a4f57; text-align:center; max-width:60ch; margin-top:16px; text-wrap:pretty">Your assistant, on your computer. It reads your documents, uses your programs, and never acts without you.</div>
+
+        <div style="width:100%; max-width:820px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:clamp(28px,5vw,64px); row-gap:clamp(26px,4vh,40px); margin-top:clamp(34px,6vh,58px); padding:0 clamp(0px,2vw,20px)">
+          <div style="display:flex; gap:15px">
+            <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 22px; margin-top:2px"><rect x="2.8" y="4.2" width="18.4" height="12.4" rx="1.8"></rect><path d="M8.4 20.2h7.2M12 16.6v3.6"></path></svg>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px">
+              <span style="font-size:15.5px; font-weight:500">Works on your computer</span>
+              <span style="font-size:14.5px; color:#6b7280; line-height:1.5; text-wrap:pretty">Your files, your programs, your browser.</span>
+            </span>
+          </div>
+          <div style="display:flex; gap:15px">
+            <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 22px; margin-top:2px"><path d="M3.2 6.6a1.8 1.8 0 0 1 1.8-1.8h4l2.2 2.6h7.8a1.8 1.8 0 0 1 1.8 1.8v8.4a1.8 1.8 0 0 1-1.8 1.8H5a1.8 1.8 0 0 1-1.8-1.8Z"></path></svg>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px">
+              <span style="font-size:15.5px; font-weight:500">Knows your documents</span>
+              <span style="font-size:14.5px; color:#6b7280; line-height:1.5; text-wrap:pretty">Reads the folders you choose. Nothing leaves your computer.</span>
+            </span>
+          </div>
+          <div style="display:flex; gap:15px">
+            <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 22px; margin-top:2px"><path d="M20.2 14.4A8.6 8.6 0 0 1 9.6 3.8a8.6 8.6 0 1 0 10.6 10.6Z"></path></svg>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px">
+              <span style="font-size:15.5px; font-weight:500">Keeps going while you're away</span>
+              <span style="font-size:14.5px; color:#6b7280; line-height:1.5; text-wrap:pretty">Mornings handled, even with the laptop shut.</span>
+            </span>
+          </div>
+          <div style="display:flex; gap:15px">
+            <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 22px; margin-top:2px"><path d="M12 3.2 20 6v6c0 4.4-3.2 7.4-8 8.8-4.8-1.4-8-4.4-8-8.8V6Z"></path><path d="M8.8 12.1 11.2 14.5 15.4 10.2"></path></svg>
+            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px">
+              <span style="font-size:15.5px; font-weight:500">Asks before it acts</span>
+              <span style="font-size:14.5px; color:#6b7280; line-height:1.5; text-wrap:pretty">Nothing deleted, sent or paid without your yes.</span>
+            </span>
+          </div>
+        </div>
+
+        <div style="width:100%; margin-top:clamp(38px,6vh,60px); background:#fbfbfc; border:1px solid rgba(16,22,35,.07); border-radius:18px; box-shadow:0 1px 2px rgba(16,22,35,.03); overflow:hidden">
+          <div style="display:flex; align-items:center; gap:14px; padding:18px 22px">
+            <span style="flex:1; min-width:0; font-size:15px">Time zone</span>
+            <span style="flex:0 0 auto; display:flex; align-items:center; gap:8px; font-size:15px; color:#6b7280; cursor:pointer">
+              <span>{{ tz }}</span>
+              <svg width="10" height="16" sc-camel-view-box="0 0 10 16" fill="none" stroke="#c3c7ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,2 8,8 2,14"></polyline></svg>
+            </span>
+          </div>
+          <div style="height:1px; background:rgba(16,22,35,.06); margin-left:18px"></div>
+          <div style="display:flex; align-items:center; gap:14px; padding:18px 22px">
+            <span style="flex:1; min-width:0; font-size:15px">Appearance</span>
+            <span style="flex:0 0 auto; display:flex; align-items:center; gap:8px; font-size:15px; color:#6b7280; cursor:pointer">
+              <span>{{ theme }}</span>
+              <svg width="10" height="16" sc-camel-view-box="0 0 10 16" fill="none" stroke="#c3c7ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,2 8,8 2,14"></polyline></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isThree }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%; max-width:640px; display:flex; flex-direction:column; align-items:center; animation:obRise .42s cubic-bezier(.22,.61,.36,1) both">
+        <img src="../../../../desktop/public/avatars/parrot.png" alt="" style="display:block; width:clamp(140px,17vw,200px); height:auto; align-self:center">
+        <div style="font-family:Newsreader,Georgia,serif; font-size:clamp(26px,3vw,36px); font-weight:400; letter-spacing:-.016em; text-align:center; margin-top:26px">Name your Maty</div>
+        <input value="{{ name }}" sc-camel-on-input="{{ setName }}" style="width:100%; margin-top:24px; border:0; border-bottom:1px solid rgba(16,22,35,.18); outline:0; background:transparent; font-family:Newsreader,Georgia,serif; font-size:clamp(34px,5vw,56px); font-weight:400; letter-spacing:-.02em; color:#1c1f23; text-align:center; padding:0 0 10px">
+        <div style="font-family:'JetBrains Mono',ui-monospace,monospace; font-size:13.5px; letter-spacing:0; color:#6b7280; margin-top:18px">{{ address }}</div>
+        <div style="font-size:14px; color:#6b7280; margin-top:8px; text-align:center; max-width:52ch; text-wrap:pretty">Email this address, or forward anything to it. Only you can start work this way.</div>
+        <button sc-camel-on-click="{{ shuffle }}" style="display:flex; align-items:center; gap:8px; margin-top:22px; border:0; background:transparent; font:inherit; font-size:14px; color:#0060d0; cursor:pointer; padding:6px 8px" style-hover="color:#0050ae">
+          <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h4v4"></path><path d="M20 4 4 20"></path><path d="M4 4l5 5M16 20h4v-4"></path><path d="M15 15l5 5"></path></svg>
+          <span>Suggest another name</span>
+        </button>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isFour }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%; display:flex; flex-direction:column; align-items:center; animation:obRise .42s cubic-bezier(.22,.61,.36,1) both">
+        <div style="font-family:Newsreader,Georgia,serif; font-size:clamp(26px,3vw,36px); font-weight:400; letter-spacing:-.016em; text-align:center">Choose a voice.</div>
+        <div style="font-family:Newsreader,Georgia,serif; font-size:16.5px; font-weight:400; line-height:1.55; color:#4a4f57; text-align:center; margin-top:10px">How {{ name }} writes and speaks to you.</div>
+
+        <div style="width:100%; margin-top:clamp(20px,3.2vh,34px); background:#ffffff; padding:clamp(26px,4.5vh,44px) 0 clamp(24px,3vh,34px); overflow:hidden">
+          <div style="width:132%; margin-left:-16%; display:flex; align-items:center; justify-content:center; gap:clamp(14px,2.6vw,38px)">
+            <sc-for list="{{ vOrbs }}" as="o" hint-placeholder-count="5">
+              <button sc-camel-on-click="{{ o.pick }}" style="flex:0 0 auto; position:relative; width:{{ o.size }}; height:{{ o.size }}; padding:0; border:0; background:transparent; border-radius:50%; opacity:{{ o.op }}; cursor:pointer; transition:width .4s cubic-bezier(.3,.8,.4,1), height .4s cubic-bezier(.3,.8,.4,1), opacity .4s ease">
+                <span style="position:absolute; inset:0; border-radius:50%; overflow:hidden">
+                  <span style="position:absolute; inset:0; background:{{ o.g1 }}; animation:meshBase 22s linear infinite"></span>
+                  <span style="position:absolute; inset:-6%; background:{{ o.g2 }}; filter:blur(6px); animation:meshA 9s ease-in-out infinite"></span>
+                  <span style="position:absolute; inset:-6%; background:{{ o.g3 }}; filter:blur(6px); animation:meshB 13s ease-in-out infinite"></span>
+                  <span style="position:absolute; inset:0; background-image:var(--grain); background-size:170px 170px; opacity:.5; mix-blend-mode:screen"></span>
+                  <span style="position:absolute; inset:0; background-image:var(--grain); background-size:170px 170px; opacity:.62; mix-blend-mode:multiply"></span>
+                  <span style="position:absolute; inset:0; border-radius:50%; box-shadow:inset 0 0 40px rgba(20,16,12,.14)"></span>
+                </span>
+                <span style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:56px; height:56px; border-radius:50%; background:#fff; box-shadow:0 2px 10px rgba(16,22,35,.14); display:{{ o.playShow }}; align-items:center; justify-content:center">
+                  <svg width="15" height="17" sc-camel-view-box="0 0 15 17" fill="#1c1f23"><path d="M14 8.5 0 17V0z"></path></svg>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="width:132%; margin-left:-16%; display:flex; align-items:flex-start; justify-content:center; gap:clamp(14px,2.6vw,38px); margin-top:clamp(22px,3.2vh,34px)">
+            <sc-for list="{{ vOrbs }}" as="o" hint-placeholder-count="5">
+              <div style="flex:0 0 auto; position:relative; width:{{ o.size }}; height:1px">
+                <div style="position:absolute; left:50%; top:0; transform:translateX(-50%); width:min(210px,23vw); display:flex; flex-direction:column; align-items:center; gap:5px; text-align:center">
+                  <span style="font-size:15px; color:#4a4f57">{{ o.capName }}</span>
+                  <span style="font-size:13.5px; color:#6b7280; line-height:1.45; text-wrap:pretty">{{ o.capDesc }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex; align-items:flex-start; justify-content:center; gap:clamp(10px,2vw,26px); margin-top:clamp(78px,9vh,104px)">
+            <button sc-camel-on-click="{{ vPrev }}" title="Previous" style="flex:0 0 auto; width:30px; height:30px; margin-top:4px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; border-radius:50%; color:#9aa0aa; cursor:pointer" style-hover="background:#f2f3f5; color:#1c1f23">
+              <svg width="8" height="14" sc-camel-view-box="0 0 9 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="7.5,1.5 1.5,7.5 7.5,13.5"></polyline></svg>
+            </button>
+            <div style="flex:0 0 auto; width:min(280px,32vw); display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center">
+              <span style="font-size:16px; font-weight:500; color:#1c1f23">{{ vName }}</span>
+              <span style="font-size:14px; color:#4a4f57; line-height:1.5; text-wrap:pretty">{{ vDesc }}</span>
+            </div>
+            <button sc-camel-on-click="{{ vNext }}" title="Next" style="flex:0 0 auto; width:30px; height:30px; margin-top:4px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; border-radius:50%; color:#9aa0aa; cursor:pointer" style-hover="background:#f2f3f5; color:#1c1f23">
+              <svg width="8" height="14" sc-camel-view-box="0 0 9 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isReach }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%; max-width:760px; align-self:center; display:flex; flex-direction:column; animation:obRise .42s cubic-bezier(.22,.61,.36,1) both">
+        <div style="font-family:Newsreader,Georgia,serif; font-size:clamp(26px,3vw,36px); font-weight:400; letter-spacing:-.016em; text-align:center">How to reach {{ name }}</div>
+        <div style="display:flex; flex-direction:column; gap:14px; margin-top:clamp(24px,4vh,36px)">
+          <sc-for list="{{ reach }}" as="r" hint-placeholder-count="6">
+            <div style="display:flex; align-items:center; gap:16px; padding:20px 22px; background:#fff; border:1px solid rgba(16,22,35,.08); border-radius:20px; box-shadow:0 1px 2px rgba(16,22,35,.04)">
+              <span style="flex:0 0 auto; position:relative; width:48px; height:48px; border-radius:14px; background:#f6f7f9; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:500; color:#4a4f57">
+                <span>{{ r.mg }}</span>
+                <img ref="{{ r.logoRef }}" alt="" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:28px; height:28px; object-fit:contain; display:none">
+              </span>
+              <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px">
+                <span style="font-size:16.5px; font-weight:500; letter-spacing:-.006em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ r.name }}</span>
+                <span style="font-size:14px; color:#6b7280; line-height:1.5; display:{{ r.tagShow }}">{{ r.tag }}</span>
+                <span style="font-family:'JetBrains Mono',ui-monospace,monospace; font-size:13.5px; letter-spacing:0; color:#1c1f23; display:{{ r.monoShow }}">{{ r.mono }}</span>
+              </span>
+              <button sc-camel-on-click="{{ r.toggle }}" style="flex:0 0 auto; height:36px; padding:0 18px; display:flex; align-items:center; gap:7px; border:0; background:{{ r.btnBg }}; color:{{ r.btnFg }}; border-radius:999px; font:inherit; font-size:14.5px; font-weight:500; white-space:nowrap; cursor:pointer">
+                <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:{{ r.tickShow }}"><polyline points="4,12.5 9.5,18 20,6.5"></polyline></svg>
+                <span>{{ r.btnLabel }}</span>
+              </button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isFive }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%; display:flex; flex-direction:column; animation:obRise .42s cubic-bezier(.22,.61,.36,1) both">
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin:0 2px 6px">
+          <span style="flex:1; min-width:200px; display:flex; align-items:baseline; gap:10px">
+            <span style="font-size:24px; font-weight:500; letter-spacing:-.014em">Some more connections</span>
+            <span style="font-size:16px; color:#6b7280">{{ allCount }}</span>
+          </span>
+          <span style="flex:0 0 auto; display:flex; align-items:center; gap:10px; width:min(300px,100%); background:#f2f3f5; border-radius:999px; padding:0 17px; height:42px">
+            <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.9" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="20.5" y2="20.5"></line></svg>
+            <input value="{{ q }}" sc-camel-on-input="{{ setQ }}" placeholder="Search" style="flex:1; min-width:0; border:0; outline:0; background:transparent; font:inherit; font-size:15.5px; color:#1c1f23">
+          </span>
+        </div>
+        <div style="font-size:15px; color:#6b7280; line-height:1.55; max-width:74ch; margin:6px 2px 0; text-wrap:pretty">A connector lets your Matey act inside a service you already use. Where there's no connector, it uses your computer and your browser instead, so nothing is out of reach</div>
+
+        <sc-for list="{{ cats }}" as="c" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; gap:14px; padding-top:34px">
+            <div style="display:flex; flex-direction:column; gap:4px; padding:0 2px">
+              <div style="display:flex; align-items:baseline; gap:9px">
+                <span style="font-size:18px; font-weight:500; letter-spacing:-.008em">{{ c.title }}</span>
+                <span style="font-family:'JetBrains Mono',ui-monospace,monospace; font-size:13px; letter-spacing:0; color:#6b7280">{{ c.count }}</span>
+              </div>
+              <span style="font-size:14.5px; color:#6b7280; line-height:1.5; text-wrap:pretty">{{ c.note }}</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:14px">
+              <sc-for list="{{ c.items }}" as="i" hint-placeholder-count="6">
+                <div style="display:flex; align-items:center; gap:16px; padding:20px 22px; background:#fff; border:1px solid rgba(16,22,35,.08); border-radius:20px; box-shadow:0 1px 2px rgba(16,22,35,.04)">
+                  <span style="flex:0 0 auto; position:relative; width:48px; height:48px; border-radius:14px; background:#f6f7f9; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:500; color:#4a4f57">
+                    <span>{{ i.mg }}</span>
+                    <img ref="{{ i.logoRef }}" alt="" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:28px; height:28px; object-fit:contain; display:none">
+                  </span>
+                  <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px">
+                    <span style="font-size:16.5px; font-weight:500; letter-spacing:-.006em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ i.name }}</span>
+                    <span style="font-size:14px; color:#6b7280; display:{{ i.tagShow }}">{{ i.tag }}</span>
+                  </span>
+                  <button sc-camel-on-click="{{ i.toggle }}" style="flex:0 0 auto; height:36px; padding:0 18px; display:flex; align-items:center; gap:7px; border:0; background:{{ i.btnBg }}; color:{{ i.btnFg }}; border-radius:999px; font:inherit; font-size:14.5px; font-weight:500; white-space:nowrap; cursor:pointer">
+                    <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:{{ i.tickShow }}"><polyline points="4,12.5 9.5,18 20,6.5"></polyline></svg>
+                    <span>{{ i.btnLabel }}</span>
+                  </button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:15px; color:#6b7280; text-align:center; padding:40px 0">Nothing matches that search.</div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%; max-width:760px; align-self:center; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; flex:1; min-height:min(72vh,760px); padding:clamp(20px,5vh,60px) 0; animation:obRise .42s cubic-bezier(.22,.61,.36,1) both">
+        <span style="position:relative; flex:0 0 auto; width:110px; height:110px; border-radius:50%; overflow:hidden; box-shadow:0 1px 2px rgba(24,74,68,.10), 0 14px 30px rgba(24,74,68,.20), inset 0 -9px 16px rgba(14,58,54,.22), inset 0 6px 12px rgba(255,255,255,.6), inset 0 0 0 .5px rgba(255,255,255,.5)">
+          <span style="position:absolute; inset:-40%; background:radial-gradient(44% 46% at 30% 24%, #f2f6d2 0%, rgba(242,246,210,0) 60%), radial-gradient(50% 52% at 74% 20%, #7fdcc6 0%, rgba(127,220,198,0) 66%), radial-gradient(54% 56% at 22% 76%, #a9de5c 0%, rgba(169,222,92,0) 68%), linear-gradient(160deg, #d8f0b4 0%, #6fcbb8 55%, #3aa0c4 100%); filter:blur(6px); animation:sphA 7s linear infinite"></span>
+          <span style="position:absolute; inset:-34%; opacity:.85; background:radial-gradient(40% 42% at 72% 74%, #2aa6c6 0%, rgba(42,166,198,0) 64%), radial-gradient(26% 26% at 56% 56%, #f2a45e 0%, rgba(242,164,94,0) 58%), radial-gradient(34% 36% at 20% 40%, #cfeeb0 0%, rgba(207,238,176,0) 62%); filter:blur(9px); animation:sphB 11s linear infinite"></span>
+          <span style="position:absolute; inset:-20%; background:radial-gradient(32% 34% at 50% 50%, #f6b26b 0%, rgba(246,178,107,0) 62%), radial-gradient(30% 32% at 24% 62%, #8ee06a 0%, rgba(142,224,106,0) 64%); filter:blur(8px); animation:sphC 9s ease-in-out infinite"></span>
+          <span style="position:absolute; left:16%; top:12%; width:34%; height:24%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.95), rgba(255,255,255,0)); filter:blur(2px); animation:sphGlint 5.5s ease-in-out infinite"></span>
+          <span style="position:absolute; left:-10%; bottom:-14%; width:70%; height:44%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.55), rgba(255,255,255,0)); filter:blur(4px)"></span>
+        </span>
+        <div style="font-family:Newsreader,Georgia,serif; font-size:clamp(34px,4.4vw,54px); font-weight:400; letter-spacing:-.02em; line-height:1.22; margin-top:clamp(34px,6vh,56px); max-width:26ch; text-wrap:pretty">{{ name }} <img src="../../../../desktop/public/avatars/parrot.png" alt="" style="display:inline-block; height:1.05em; width:auto; vertical-align:-.16em; margin:0 .06em">, your personal AI agent, is all set</div>
+        <button sc-camel-on-click="{{ toWorkspace }}" style="height:46px; margin-top:clamp(34px,6vh,54px); padding:0 26px; display:flex; align-items:center; justify-content:center; border:0; border-radius:999px; background:#1c1f23; color:#fff; font:inherit; font-size:15px; font-weight:500; cursor:pointer" style-hover="background:#0a0c0f">Go to workspace</button>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <div style="flex:0 0 auto; display:flex; justify-content:center; padding:16px clamp(20px,3vw,36px) 18px; background:#ffffff; border-top:1px solid rgba(16,22,35,.06); display:{{ footShow }}">
+    <div style="width:100%; display:flex; align-items:center; gap:22px">
+      <div style="flex:1; min-width:0; display:flex; align-items:center; gap:14px">
+        <a href="#" style="font-size:12.5px; color:#5b6270" style-hover="color:#1c1f23">Privacy Policy</a>
+        <span style="width:3px; height:3px; border-radius:50%; background:rgba(16,22,35,.18)"></span>
+        <a href="#" style="font-size:12.5px; color:#5b6270" style-hover="color:#1c1f23">Terms of Service</a>
+        <span style="width:3px; height:3px; border-radius:50%; background:rgba(16,22,35,.18)"></span>
+        <a href="#" style="font-size:12.5px; color:#5b6270" style-hover="color:#1c1f23">Log out</a>
+      </div>
+      <button sc-camel-on-click="{{ next }}" style="flex:0 0 auto; height:40px; padding:0 24px; display:flex; align-items:center; justify-content:center; border:0; border-radius:999px; background:#1c1f23; color:#fff; font:inherit; font-size:14px; font-weight:500; white-space:nowrap; cursor:pointer" style-hover="background:#0a0c0f">{{ ctaLabel }}</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900}}">
+const CATS = [
+  ['Mail & Calendar','',[
+    ['Gmail','','','','','logos/apps/gmail.webp'],
+    ['Outlook','','','','','logos/apps/outlook.webp'],
+    ['Google Calendar','','','','','logos/apps/google-calendar.webp'],
+    ['Apple Calendar','','','','','logos/apps/apple-calendar-mac.png']
+  ]],
+  ['Messaging','Also how you reach your Matey from your phone.',[['WhatsApp','whatsapp.com'],['iMessage','','','','','logos/apps/imessage.webp'],['Slack','slack.com'],['Microsoft Teams','teams.microsoft.com'],['Telegram','telegram.org'],['Discord','discord.com']]],
+  ['Files & Docs','',[['Google Drive','','','','','logos/apps/google-drive.svg'],['Google Docs','','','','','logos/apps/google-docs.svg'],['Google Sheets','','','','','logos/apps/google-sheets.webp'],['Google Slides','','','','','logos/apps/google-slides.webp'],['OneDrive','','','','','logos/apps/onedrive.jpg'],['Word','','','','','logos/apps/word.webp'],['Excel','','','','','logos/apps/excel.webp'],['PowerPoint','','','','','logos/apps/powerpoint.webp'],['Dropbox','dropbox.com'],['Notion','notion.so'],['Apple Notes','','','','','logos/apps/apple-notes.webp']]],
+  ['Productivity & Tasks','',[['Notion','notion.so'],['Todoist','todoist.com'],['Apple Reminders','','','','','logos/apps/apple-reminders.png'],['Google Tasks','tasks.google.com'],['Trello','trello.com'],['Asana','asana.com'],['Monday','monday.com']]],
+  ['Meetings','',[['Zoom','','','','','logos/apps/zoom.webp'],['Google Meet','','','','','logos/apps/google-meet.webp'],['Fathom','','','','','logos/apps/fathom.jpg'],['Otter','otter.ai']]],
+  ['Social Media','Draft and schedule posts, pull comments, weekly numbers.',[['LinkedIn','linkedin.com'],['X','x.com'],['Instagram','instagram.com'],['TikTok','tiktok.com'],['YouTube','youtube.com'],['Facebook','facebook.com']]],
+  ['Creativity','It also makes its own docs, decks, spreadsheets, images and short videos.',[['Canva','canva.com'],['Figma','figma.com'],['Adobe Express','express.adobe.com'],['YouTube Studio','youtube.com']]],
+  ['Finance & Money','Market data it fetches on its own, no account needed.',[['Stripe','stripe.com'],['PayPal','paypal.com'],['QuickBooks','quickbooks.intuit.com'],['Xero','xero.com'],['Shopify','shopify.com'],['Amazon Seller','sellercentral.amazon.com']]],
+  ['Sales & Customers','',[['HubSpot','hubspot.com'],['Salesforce','salesforce.com'],['Pipedrive','pipedrive.com'],['Intercom','intercom.com'],['Calendly','calendly.com']]],
+  ['Shopping & Travel','No API needed. It uses your logged-in browser.',[['Amazon','amazon.com','Through your browser'],['Google Flights','google.com','Through your browser'],['Airbnb','airbnb.com','Through your browser'],['Booking','booking.com','Through your browser'],['OpenTable','opentable.com','Through your browser'],['DoorDash','doordash.com','Through your browser']]],
+  ['Developer','',[['GitHub','github.com'],['GitLab','gitlab.com'],['Linear','linear.app'],['Jira','atlassian.com'],['Supabase','supabase.com'],['Vercel','vercel.com']]]
+];
+const GOOGLE = [['Gmail','gmail','#EA4335'],['Google Calendar','googlecalendar','#4285F4'],['Google Drive','googledrive','#1A73E8'],['Google Docs','googledocs','#1A73E8'],['Google Sheets','googlesheets','#0F9D58'],['Google Slides','googleslides','#F4B400']];
+const BLANK = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E';
+const iconRef = (slug, color) => (el) => {
+  if (!el || el.dataset.slug === slug) return;
+  el.dataset.slug = slug;
+  const url = 'https://cdn.jsdelivr.net/npm/simple-icons@13/icons/' + slug + '.svg';
+  el.src = BLANK;
+  el.style.display = 'block';
+  const m = mono(el);
+  if (m) m.style.display = 'none';
+  el.style.background = color;
+  el.style.webkitMask = 'url(' + url + ') center/contain no-repeat';
+  el.style.mask = 'url(' + url + ') center/contain no-repeat';
+};
+const mono = (el) => el.parentElement && el.parentElement.querySelector('span');
+const resSrc = (path) => {
+  const k = 'r_' + path.replace(/[^a-z0-9]/gi, '_');
+  return (window.__resources && window.__resources[k]) || path;
+};
+const fileRef = (path) => (el) => {
+  if (!el || el.dataset.file === path) return;
+  el.dataset.file = path;
+  const m = mono(el);
+  el.onload = () => { el.style.display = 'block'; if (m) m.style.display = 'none'; };
+  el.onerror = () => { el.style.display = 'none'; if (m) m.style.display = 'block'; };
+  el.src = resSrc(path);
+};
+const logoRef = (domain) => (el) => {
+  if (!el || !domain || el.dataset.dom === domain) return;
+  el.dataset.dom = domain;
+  let tried = 0;
+  const srcs = ['https://icons.duckduckgo.com/ip3/' + domain + '.ico', 'https://www.google.com/s2/favicons?sz=64&domain=' + domain];
+  const m = mono(el);
+  el.onload = () => { if (el.naturalWidth > 0) { el.style.display = 'block'; if (m) m.style.display = 'none'; } };
+  el.onerror = () => { tried += 1; if (tried < srcs.length) { el.src = srcs[tried]; } else { el.style.display = 'none'; if (m) m.style.display = 'block'; } };
+  el.src = srcs[0];
+};
+const ORBS = [
+  ['Marlow','Steady, low and unhurried.',
+   'linear-gradient(160deg, #072a2a 0%, #04191c 55%, #020a0e 100%)',
+   'radial-gradient(58% 56% at 30% 30%, #1fb5a6 0%, rgba(31,181,166,.55) 42%, rgba(3,20,24,0) 76%)',
+   'radial-gradient(34% 32% at 26% 26%, #a9f7e6 0%, rgba(169,247,230,0) 70%)'],
+  ['Wren','Bright and quick to the point.',
+   'linear-gradient(160deg, #0a1240 0%, #060a26 55%, #02030d 100%)',
+   'radial-gradient(58% 56% at 68% 32%, #2f6cff 0%, rgba(47,108,255,.55) 42%, rgba(4,7,26,0) 76%)',
+   'radial-gradient(34% 32% at 70% 28%, #bcd6ff 0%, rgba(188,214,255,0) 70%)'],
+  ['Juno','Warm, encouraging, patient.',
+   'linear-gradient(160deg, #3a0f06 0%, #1e0703 55%, #0a0201 100%)',
+   'radial-gradient(58% 56% at 32% 68%, #ff7a1f 0%, rgba(255,122,31,.55) 42%, rgba(26,7,3,0) 76%)',
+   'radial-gradient(34% 32% at 28% 70%, #ffd9a1 0%, rgba(255,217,161,0) 70%)'],
+  ['Sable','Quiet, precise, formal.',
+   'linear-gradient(160deg, #1d1630 0%, #100b1c 55%, #05040a 100%)',
+   'radial-gradient(58% 56% at 66% 34%, #7a5cff 0%, rgba(122,92,255,.5) 42%, rgba(12,9,22,0) 76%)',
+   'radial-gradient(34% 32% at 68% 30%, #e2d6ff 0%, rgba(226,214,255,0) 70%)'],
+  ['Pip','Playful, witty, a little sharp.',
+   'linear-gradient(160deg, #17300a 0%, #0b1b06 55%, #030902 100%)',
+   'radial-gradient(58% 56% at 34% 34%, #8ee02a 0%, rgba(142,224,42,.5) 42%, rgba(8,20,6,0) 76%)',
+   'radial-gradient(34% 32% at 30% 30%, #e9ffb0 0%, rgba(233,255,176,0) 70%)']
+];
+const VOICES = [
+  ['Concise','Minimal voices that say only what matters.',
+   'linear-gradient(160deg, #05302c 0%, #031c1b 55%, #010a0a 100%)',
+   'radial-gradient(58% 56% at 34% 36%, #16e0c6 0%, rgba(22,224,198,.62) 42%, rgba(2,22,20,0) 76%)',
+   'radial-gradient(34% 32% at 30% 32%, #c8fff2 0%, rgba(200,255,242,0) 70%)'],
+  ['Balanced','Even, unhurried voices that keep everything clear.',
+   'linear-gradient(160deg, #143408 0%, #0a1e05 55%, #030a02 100%)',
+   'radial-gradient(58% 56% at 32% 32%, #9ce62f 0%, rgba(156,230,47,.6) 42%, rgba(8,24,6,0) 76%)',
+   'radial-gradient(34% 32% at 28% 28%, #eaffb5 0%, rgba(234,255,181,0) 70%)'],
+  ['Warm','Encouraging voices that reassure and keep you moving.',
+   'linear-gradient(160deg, #451802 0%, #260d02 55%, #0c0401 100%)',
+   'radial-gradient(58% 56% at 34% 66%, #ffab12 0%, rgba(255,171,18,.62) 42%, rgba(32,11,2,0) 76%)',
+   'radial-gradient(34% 32% at 30% 68%, #ffe9a8 0%, rgba(255,233,168,0) 70%)'],
+  ['Direct','Decisive voices that get to the point and stop.',
+   'linear-gradient(160deg, #032840 0%, #021626 55%, #01070d 100%)',
+   'radial-gradient(58% 56% at 68% 30%, #23bdf5 0%, rgba(35,189,245,.62) 42%, rgba(2,16,28,0) 76%)',
+   'radial-gradient(34% 32% at 70% 26%, #ccf2ff 0%, rgba(204,242,255,0) 70%)'],
+  ['Sassy','Playful voices with a little bite to them.',
+   'linear-gradient(160deg, #3d0a06 0%, #210503 55%, #0a0201 100%)',
+   'radial-gradient(58% 56% at 32% 34%, #ff4d3a 0%, rgba(255,77,58,.62) 42%, rgba(26,4,3,0) 76%)',
+   'radial-gradient(34% 32% at 28% 30%, #ffd0b8 0%, rgba(255,208,184,0) 70%)']
+];
+const REACH = [
+  ['Gmail', 'logos/apps/gmail.webp', '', 'email', 'Connected'],
+  ['Slack Bot', 'slack.com', '@Maties to reach your Maty from Slack', '', 'Connect'],
+  ['iMessage', 'logos/apps/imessage.webp', 'Text your Maty and add it to group texts', '', 'Connect'],
+  ['WhatsApp', 'whatsapp.com', 'Message your Maty in WhatsApp', '', 'Connect'],
+  ['Telegram', 'telegram.org', 'Message your Maty in Telegram', '', 'Connect'],
+  ['iOS', 'logos/apps/apple.svg', 'Install Maties for iPhone', '', 'Install']
+];
+const TINTS = ['#eef4ee','#eef1f8','#fdf1e6','#f2eff5','#eef7f3'];
+class Component extends DCLogic {
+  state = { step: 1, tz: 'Pacific (Los Angeles)', theme: 'System', q: '', conn: {
+    'Mail & Calendar:Gmail': true, 'Mail & Calendar:Google Calendar': true,
+    'Files & Docs:Google Drive': true, 'Files & Docs:Google Docs': true,
+    'Files & Docs:Google Sheets': true, 'Files & Docs:Google Slides': true, 'Reach:Gmail': true
+  }, orb: 2, voice: 'Concise', name: 'Juno' };
+  mg(name) { return name.replace(/[^A-Za-z]/g, '').slice(0, 1).toUpperCase(); }
+  btn(id) {
+    const on = !!this.state.conn[id];
+    return {
+      toggle: () => this.setState(s => ({ conn: Object.assign({}, s.conn, { [id]: !s.conn[id] }) })),
+      btnLabel: on ? 'Connected' : 'Connect',
+      btnBg: on ? '#e7f6ec' : '#f2f3f5',
+      btnFg: on ? '#1a8547' : '#0060d0',
+      tickShow: on ? 'block' : 'none'
+    };
+  }
+  componentDidMount() {
+    const n = 256, c = document.createElement('canvas');
+    c.width = n; c.height = n;
+    const ctx = c.getContext('2d'), img = ctx.createImageData(n, n), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const g = Math.random() * 255 | 0;
+      d[i] = d[i+1] = d[i+2] = g; d[i+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    document.body.style.setProperty('--grain', 'url(' + c.toDataURL('image/png') + ')');
+  }
+
+  renderVals() {
+    const step = this.state.step;
+    const q = this.state.q.trim().toLowerCase();
+    let total = 0;
+    const cats = CATS.map(c => {
+      const items = c[2].filter(it => !q || it[0].toLowerCase().includes(q) || c[0].toLowerCase().includes(q)).map(it => {
+        const id = c[0] + ':' + it[0];
+        total += 1;
+        return Object.assign({
+          name: it[0], mg: this.mg(it[0]),
+          logoRef: it[5] ? fileRef(it[5]) : (it[3] ? iconRef(it[3], it[4]) : logoRef(it[1])),
+          tag: it[2] || '', tagShow: it[2] ? 'block' : 'none'
+        }, this.btn(id));
+      });
+      return { title: c[0], note: c[1], count: items.length, items };
+    }).filter(c => c.items.length > 0);
+    const allCount = CATS.reduce((n, c) => n + c[2].length, 0);
+    const sel = this.state.orb;
+    const N = ORBS.length;
+    const orbs = [-2, -1, 0, 1, 2].map(off => {
+      const idx = ((sel + off) % N + N) % N;
+      const o = ORBS[idx];
+      const d = Math.abs(off);
+      return { g1: o[2], g2: o[3], g3: o[4],
+        size: d === 0 ? 'clamp(184px,21vw,268px)' : (d === 1 ? 'clamp(124px,14vw,178px)' : 'clamp(92px,10vw,124px)'),
+        op: d === 0 ? 1 : (d === 1 ? 0.8 : 0.42),
+        playShow: d === 0 ? 'flex' : 'none',
+        pick: () => this.setState({ orb: idx, name: ORBS[idx][0] }) };
+    });
+    const faces = ORBS.map((o, idx) => ({
+      name: o[0], g1: o[2], g2: o[3], g3: o[4], tileBg: TINTS[idx % TINTS.length],
+      border: idx === sel ? 'rgba(16,22,35,.14)' : 'rgba(16,22,35,.07)',
+      ring: idx === sel ? '0 0 0 2px #1c1f23' : '0 1px 2px rgba(16,22,35,.04)',
+      labelShow: idx === sel ? 'block' : 'none',
+      pick: () => this.setState({ orb: idx, name: ORBS[idx][0] })
+    }));
+    const vi = Math.max(0, VOICES.findIndex(v => v[0] === this.state.voice));
+    const VN = VOICES.length;
+    const vOrbs = [-2, -1, 0, 1, 2].map(off => {
+      const j = ((vi + off) % VN + VN) % VN;
+      const v = VOICES[j];
+      const d = Math.abs(off);
+      return { g1: v[2], g2: v[3], g3: v[4],
+        size: d === 0 ? 'clamp(168px,19vw,246px)' : (d === 1 ? 'clamp(112px,13vw,168px)' : 'clamp(78px,9vw,116px)'),
+        op: d === 0 ? 1 : (d === 1 ? 0.9 : 0.4),
+        playShow: d === 0 ? 'flex' : 'none',
+        capName: d === 1 ? v[0] : '', capDesc: d === 1 ? v[1] : '',
+        pick: () => this.setState({ voice: VOICES[j][0] }) };
+    });
+    const pick = ORBS[sel];
+    const nm = (this.state.name || pick[0]);
+    return {
+      isOne: step === 1, isThree: step === 2, isFour: step === 3, isReach: step === 4, isFive: step === 5, isDone: step === 6, footShow: step === 6 ? 'none' : 'flex', toWorkspace: () => {}, canBack: step > 1,
+      orbs, pickName: pick[0], pickTag: pick[1],
+      selG1: pick[2], selG2: pick[3], selG3: pick[4],
+      name: nm, address: nm.toLowerCase().replace(/[^a-z0-9]/g, '') + '@maties.ai',
+      setName: (e) => this.setState({ name: e.target.value }),
+      shuffle: () => { const i = (sel + 1) % ORBS.length; this.setState({ orb: i, name: ORBS[i][0] }); },
+      prev: () => this.setState(s => { const i = (s.orb - 1 + ORBS.length) % ORBS.length; return { orb: i, name: ORBS[i][0] }; }),
+      next2: () => this.setState(s => { const i = (s.orb + 1) % ORBS.length; return { orb: i, name: ORBS[i][0] }; }),
+      reach: REACH.map(r => {
+        const id = 'Reach:' + r[0];
+        const on = !!this.state.conn[id];
+        const isEmail = r[3] === 'email';
+        return {
+          name: r[0], mg: this.mg(r[0]),
+          logoRef: r[1].indexOf('/') >= 0 ? fileRef(r[1]) : logoRef(r[1]),
+          tag: isEmail ? 'Send ' + nm + ' an email:' : r[2],
+          tagShow: 'block',
+          mono: nm.toLowerCase().replace(/[^a-z0-9]/g, '') + '@maties.ai',
+          monoShow: isEmail ? 'block' : 'none',
+          toggle: () => this.setState(s => ({ conn: Object.assign({}, s.conn, { [id]: !s.conn[id] }) })),
+          btnLabel: on ? 'Connected' : r[4],
+          btnBg: on ? '#e7f6ec' : '#f2f3f5',
+          btnFg: on ? '#1a8547' : '#0060d0',
+          tickShow: on ? 'block' : 'none'
+        };
+      }),
+      faces, vOrbs, vName: VOICES[vi][0], vDesc: VOICES[vi][1],
+      vPrevName: VOICES[(vi - 1 + VN) % VN][0], vPrevDesc: VOICES[(vi - 1 + VN) % VN][1],
+      vNextName: VOICES[(vi + 1) % VN][0], vNextDesc: VOICES[(vi + 1) % VN][1],
+      vPrev: () => this.setState({ voice: VOICES[(vi - 1 + VN) % VN][0] }),
+      vNext: () => this.setState({ voice: VOICES[(vi + 1) % VN][0] }),
+      tz: this.state.tz, theme: this.state.theme,
+      cats, allCount, empty: cats.length === 0,
+      q: this.state.q, setQ: (e) => this.setState({ q: e.target.value }),
+      dots: Array.from({ length: 6 }, (_, i) => ({ bg: i === step - 1 ? '#1c1f23' : 'rgba(16,22,35,.15)' })),
+      ctaLabel: step === 5 ? 'Finish setup' : 'Continue',
+      next: () => this.setState(s => ({ step: Math.min(6, s.step + 1) })),
+      back: () => this.setState(s => ({ step: Math.max(1, s.step - 1) }))
+    };
+  }
+}
+</script>
+
+
+</body></html>

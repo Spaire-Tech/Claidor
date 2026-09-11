@@ -212,10 +212,10 @@ export function normalizeDetectedScheduledTaskRequest(
   };
 }
 
-function buildScheduledTaskDetectionPrompt(now: Date): string {
+function buildScheduledTaskDetectionPrompt(now: Date, timezone?: string): string {
   return [
     'You are a structured extractor for one-shot reminder requests in an IM conversation.',
-    buildOpenClawLocalTimeContextPrompt(now),
+    buildOpenClawLocalTimeContextPrompt(now, timezone),
     'Return JSON only. No markdown. No prose.',
     'Decide whether the user is explicitly asking to create a one-time scheduled reminder/task.',
     'If yes, return: {"shouldCreateTask":true,"scheduleAt":"ISO8601 with explicit timezone offset","reminderBody":"short reminder content","taskName":"short task name"}',
@@ -231,6 +231,8 @@ function buildScheduledTaskDetectionPrompt(now: Date): string {
 
 export function createIMScheduledTaskRequestDetector(options: {
   getLLMConfig: () => Promise<LLMConfig | null>;
+  /** The person's chosen time zone (`app.timezone`); the machine's when absent. */
+  getUserTimezone?: () => string | undefined;
 }): IMScheduledTaskRequestDetector {
   return async (message: IMMessage): Promise<ParsedIMScheduledTaskRequest | null> => {
     if (!looksLikeIMScheduledTaskCandidate(message.content, message.attachments)) {
@@ -247,7 +249,7 @@ export function createIMScheduledTaskRequestDetector(options: {
       getLLMConfig: async () => llmConfig,
       imSettings: {
         skillsEnabled: false,
-        systemPrompt: buildScheduledTaskDetectionPrompt(now),
+        systemPrompt: buildScheduledTaskDetectionPrompt(now, options.getUserTimezone?.()),
       },
     });
 

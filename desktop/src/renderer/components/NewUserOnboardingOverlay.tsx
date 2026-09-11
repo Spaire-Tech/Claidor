@@ -449,7 +449,7 @@ const PromptResultPopover: React.FC<{
   );
 };
 
-const NewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayProps> = ({
+export const RetiredNewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayProps> = ({
   step,
   onNext,
   onSkip,
@@ -648,5 +648,9 @@ const NewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayProps> = ({
     </div>
   );
 };
+
+// The tour cards are retired with the onboarding flow (docs/maties/onboarding.md):
+// the six screens replaced them, and App.tsx no longer mounts this overlay.
+const NewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayProps> = () => null;
 
 export default NewUserOnboardingOverlay;

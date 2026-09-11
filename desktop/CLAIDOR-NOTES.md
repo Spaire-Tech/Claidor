@@ -127,10 +127,38 @@ bridge (`/library/search`), and Settings → Library
 (git-ignored, pinned revision and checksums) and shipped as an extra
 resource; the app never downloads it.
 
+Added September 10, later: the onboarding (`docs/maties/onboarding.md`,
+the look in `docs/maties/design.md` section 10). Six screens a person sees
+once (`src/renderer/components/onboarding/`), replacing the upstream tour
+cards over the app and the « new user welcome task » conversation, which
+are removed. The three decisions land in the main process
+(`src/main/ipcHandlers/onboarding/`): the name becomes the main agent's
+row name (`agents`, id `main`), which the engine config reads as
+`identity.name`; the voice becomes a « Voice » section in the managed
+`AGENTS.md` of the main workspace (`src/main/libs/openclawVoicePrompt.ts`);
+the time zone (`app.timezone`) becomes `agents.defaults.userTimezone` in
+the engine config, the zone of the local-time hint sent with every turn,
+and the default zone of a new scheduled task. The contract is
+`src/shared/onboarding/constants.ts`. The assistant is a « Maty » in the
+copy; « Matey » is never written.
+
+With it, the connections catalogue (`src/shared/connections/catalog.ts`):
+the six ways to reach the assistant and sixty-five services in eleven
+groups, each card knowing whether it is an MCP server from Claidor's
+catalogue, a channel, the person's own browser, something already on the
+computer, or not wired yet (« Soon », with « Tell me when » remembered
+under `connections.wanted`). Shown in the onboarding and as the Connectors
+section of Skills & Connectors (`src/renderer/components/connections/`).
+The logos ship with the app under `public/logos/apps`: the founder's own
+files, and the brand marks written from the `simple-icons` package (CC0)
+by `scripts/fetch-app-logos.cjs`; nothing is fetched at run time.
+
 Not done yet: no Slack, Teams, WhatsApp or iMessage channel (the founder's
-plan lists them; none is added). No signed build, no release, no update
-feed. The account links on the web app open its home page because the
-web app has no account pages for the desktop yet.
+plan lists them; the catalogue shows them as « Soon »). No integration
+service behind the apps with an API (« Soon » until the founder chooses
+one). No signed build, no release, no update feed. The account links on
+the web app open its home page because the web app has no account pages
+for the desktop yet.
 
 ## Safety of the engine, unchanged from upstream
 

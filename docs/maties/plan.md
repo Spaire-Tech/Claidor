@@ -115,6 +115,17 @@ Every routine carries a « runs where » label, machine or cloud, chosen at
 creation with a default taken from what the routine touches, visible and
 changeable by the person.
 
+Decided September 10: the person sees Maties in one place, the app. The
+web app holds only the account pages (sign in, plan, billing); there is
+no chat online. Onboarding happens in the app and ends in the app's
+chat; the browser opens once, for the sign-in. The cloud engine is
+invisible: it works while the laptop is shut, writes to the same memory
+and the same conversation list, and what it did is simply there when the
+app opens, or reaches the person by email or Telegram if the app stays
+shut. What syncs is the memory and the conversations, kept on Claidor
+and read by both engines; the files and the library never leave the
+machine.
+
 What this decides:
 
 - **Gateway.** One account, two engines, one shared memory store that both
@@ -234,6 +245,31 @@ the exact path and the exact command, so a person can decide without
 knowing Unix (step 8, the dial). Step 2, the library, is built and in
 the installer; the cited answer in the chat is still to be seen.
 
+September 10, later: the whole app was brought to the founder's design
+(`docs/maties/design.md`): the sphere as the logo and icon, the fonts
+and marks shipped in the app, the stream restored, the shell, the
+conversation, the settings sheet and every page. The cast (step 4) is
+the founder's next drawing; until then the parrot is the default face.
+
+September 10, later still: step 5, the onboarding, is built from the
+founder's six screens (`docs/maties/onboarding.md`). What is wired: the
+name the person gives their Maty is the main agent's name and the
+engine's identity; the voice they choose is a section of the engine's
+instructions; the time zone is the engine's, the chat's and the
+scheduled tasks' zone; Telegram and Discord open the app's channel
+settings; the fifteen MCP servers of Claidor's catalogue install from
+their cards; the browser and the programs already on the computer show
+as ready; sixty-five connections in eleven groups, with their logos in
+the app, are the Connectors section of Skills & Connectors as well. What
+says « Soon », with « Tell me when »: Slack, WhatsApp, iMessage, Signal,
+Teams and Google Chat as channels (step 12), the apps with an API until
+the integration service is chosen, and the assistant's own mailbox
+(step 3). Not in this round of step 5: the biography from the person's
+files and the five offers, and the choice of a character, which waits
+for the cast (step 4). The tour cards and the welcome conversation
+inherited from LobsterAI are gone.
+
 Not done: a signed Mac build (Apple enrolment is the founder's step);
-the update feed; the account page on the web app; a designed icon;
-everything from step 3 on.
+the update feed; the account page on the web app; the cited answer from
+the library seen in the chat; steps 3 and 4, the rest of step 5, and
+everything from step 6 on.

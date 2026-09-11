@@ -488,6 +488,8 @@ type OpenClawRuntimeAdapterOptions = {
   }) => void;
   onGatewayClientReady?: () => void;
   onBrowserToolEvent?: (event: AgentBrowserToolEvent) => void;
+  /** The person's chosen time zone (`app.timezone`); the machine's when absent. */
+  getUserTimezone?: () => string | undefined;
 };
 
 const SessionModelPatchSource = {
@@ -5655,7 +5657,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     if (shouldInjectSystemPrompt) {
       sections.push(this.buildSystemPromptPrefix(normalizedSystemPrompt));
     }
-    sections.push(buildOpenClawLocalTimeContextPrompt());
+    sections.push(buildOpenClawLocalTimeContextPrompt(new Date(), this.options.getUserTimezone?.()));
     if (currentModel) {
       sections.push(`[Session info]\nCurrent model: ${currentModel}`);
     }
