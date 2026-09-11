@@ -13046,7 +13046,6 @@ if (!gotTheLock) {
     getServerBaseUrl: getServerApiBaseUrl,
     fetchWithAuth,
     isSignedIn: () => getAuthTokens() !== null,
-    getParentWindow: () => (mainWindow && !mainWindow.isDestroyed() ? mainWindow : null),
     onStateChanged: (state) => {
       for (const window of BrowserWindow.getAllWindows()) {
         if (!window.isDestroyed()) window.webContents.send(ConnectorsIpc.Changed, state);

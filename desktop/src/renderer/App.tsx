@@ -699,6 +699,12 @@ const App: React.FC = () => {
     setMainView('skills');
   }, []);
 
+  // 'mcp' is the view that opens on the Connectors section; the name is
+  // historical (see SkillsAndConnectorsView) and not what a person sees.
+  const handleShowConnectors = useCallback(() => {
+    setMainView('mcp');
+  }, []);
+
   const handleShowCowork = useCallback(() => {
     setMainView('cowork');
   }, []);
@@ -1785,6 +1791,7 @@ const App: React.FC = () => {
           onShowSettings={handleShowSettings}
           activeView={mainView}
           onShowSkills={handleShowSkills}
+          onShowConnectors={handleShowConnectors}
           onShowCowork={handleShowCowork}
           onShowScheduledTasks={handleShowScheduledTasks}
           onShowKits={handleShowKits}

@@ -40,6 +40,7 @@ import {
 } from './design/LineIcons';
 import Pill, { PillTone } from './design/Pill';
 import { formatShortcutGlyphs } from './design/shortcutGlyphs';
+import SidebarMcpIcon from './icons/SidebarMcpIcon';
 import LoginButton, { LoginButtonVariant } from './LoginButton';
 
 interface SidebarProps {
@@ -47,6 +48,7 @@ interface SidebarProps {
   onShowLogin?: () => void;
   activeView: 'cowork' | 'skills' | 'scheduledTasks' | 'kits' | 'mcp' | 'library';
   onShowSkills: () => void;
+  onShowConnectors: () => void;
   onShowCowork: () => void;
   onShowScheduledTasks: () => void;
   onShowKits: () => void;
@@ -180,6 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onShowSettings,
   activeView,
   onShowSkills,
+  onShowConnectors,
   onShowCowork,
   onShowScheduledTasks,
   onShowKits,
@@ -557,13 +560,28 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       key: 'skills',
-      label: i18nService.t('skillsAndConnectors'),
+      label: i18nService.t('skills'),
       icon: <PuzzleLineIcon />,
-      isActive: activeView === 'skills' || activeView === 'mcp',
+      isActive: activeView === 'skills',
       onClick: () => {
         reportSidebarAction('open_skills', { activeView, isCollapsed });
         setIsSearchOpen(false);
         onShowSkills();
+      },
+    },
+    // Connections are their own entry rather than a tab inside Skills. They
+    // were a tab, and the founder could not find them: a headline feature
+    // behind a second click, under a heading naming something else, is a
+    // feature nobody uses.
+    {
+      key: 'connectors',
+      label: i18nService.t('connectors'),
+      icon: <SidebarMcpIcon />,
+      isActive: activeView === 'mcp',
+      onClick: () => {
+        reportSidebarAction('open_connectors', { activeView, isCollapsed });
+        setIsSearchOpen(false);
+        onShowConnectors();
       },
     },
     {
