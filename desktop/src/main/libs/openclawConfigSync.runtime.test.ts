@@ -3115,6 +3115,42 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(leaveInAppConfig.mcp).toBeUndefined();
   });
 
+  // The founder's Mac, 12 September: Settings read "Built-in browser", the
+  // generated config read the in-app profile, and the engine drove its own
+  // Chromium anyway. This is that sequence.
+  test('asks for a restart when the browser profile changes, or the in-app browser never arrives', async () => {
+    const { OpenClawConfigImpact } = await import('./openclawConfigImpact');
+    const { BrowserDisplayMode, BrowserRuntimeProfile } = await import(
+      '../../shared/browserWebAccess/constants'
+    );
+    // The bridge has no port yet, which is the real state of the app for the
+    // first seconds after launch.
+    let browserCallbackUrl: string | null = null;
+    const sync = await createSync({
+      getBrowserWebAccessConfig: () => ({ displayMode: BrowserDisplayMode.InApp }),
+      getBrowserCallbackUrl: () => browserCallbackUrl,
+      getLobsterBrowserMcpCommand: () => '/tmp/lobster-browser-mcp',
+    });
+
+    const beforeBridge = sync.sync('browser-bridge-not-ready');
+    expect(beforeBridge.ok).toBe(true);
+    const externalConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // In-app was asked for and could not be given: the engine gets the
+    // external browser, and this is the state the gateway starts on.
+    expect(externalConfig.browser.defaultProfile).not.toBe(BrowserRuntimeProfile.InApp);
+
+    // The bridge comes up a second or two later and the next sync corrects
+    // the file. Correcting the file is not enough on its own.
+    browserCallbackUrl = 'http://127.0.0.1:58260/browser/tool';
+    const afterBridge = sync.sync('browser-bridge-ready');
+    expect(afterBridge.ok).toBe(true);
+    const inAppConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(inAppConfig.browser.defaultProfile).toBe(BrowserRuntimeProfile.InApp);
+    // Without this the gateway keeps the profile it booted with, and the
+    // built-in browser panel never receives a page.
+    expect(afterBridge.restartImpact).toBe(OpenClawConfigImpact.Restart);
+  });
+
   test('marks MCP server config changes as restart impact', async () => {
     const { OpenClawConfigImpact } = await import('./openclawConfigImpact');
     const sync = await createSync({

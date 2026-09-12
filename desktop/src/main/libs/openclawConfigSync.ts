@@ -3543,6 +3543,16 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     })();
 
     let changedTopLevelKeys: string[] = [];
+    // The gateway binds its browser profile once, at startup, and never
+    // re-reads it on a hot config update. That made the in-app browser
+    // unreachable on every launch: the first sync runs before the MCP bridge
+    // has a port, so `buildBrowserConfig` cannot offer the in-app profile and
+    // writes the external one; the gateway starts on that. A later sync, with
+    // the bridge up, corrects the file — but `browser` was not a key that
+    // asked for a restart, so the running gateway kept driving its own
+    // Chromium. The config on disk said in-app, the engine did the opposite,
+    // and both were telling the truth about different things.
+    let browserProfileChanged = false;
     if (configChanged) {
       // Diagnostic: diff gateway and plugins sections to identify what triggers OpenClaw restart
       try {
@@ -3575,6 +3585,21 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           return JSON.stringify(currentObj[k]) !== JSON.stringify(nextObj[k]);
         });
         console.log(`${gwDiagTs()} top-level changed keys:`, changedTopLevelKeys.join(',') || '(none)');
+        // Only the profile, not every browser setting: the rest of that
+        // section does hot-apply, and turning each of them into a hard
+        // restart would be a worse bug than the one being fixed.
+        const currentBrowserProfile = (currentObj.browser as { defaultProfile?: unknown } | undefined)
+          ?.defaultProfile ?? null;
+        const nextBrowserProfile = (nextObj.browser as { defaultProfile?: unknown } | undefined)
+          ?.defaultProfile ?? null;
+        browserProfileChanged = currentBrowserProfile !== nextBrowserProfile;
+        if (browserProfileChanged) {
+          console.log(
+            `${gwDiagTs()} browser profile changed:`,
+            `${String(currentBrowserProfile)} -> ${String(nextBrowserProfile)}`,
+            '(requires gateway restart)',
+          );
+        }
       } catch { /* ignore parse errors in diag */ }
       try {
         ensureDir(path.dirname(configPath));
@@ -3617,7 +3642,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       configPath,
       ...(bindingsChanged ? { bindingsChanged } : {}),
       ...(changedTopLevelKeys.length > 0 ? { changedTopLevelKeys } : {}),
-      ...(changedTopLevelKeys.includes('mcp') || modelCompatRestartRequired
+      ...(changedTopLevelKeys.includes('mcp') || browserProfileChanged || modelCompatRestartRequired
         ? { restartImpact: OpenClawConfigImpact.Restart }
         : {}),
       ...(agentsMdWarning ? { agentsMdWarning } : {}),
