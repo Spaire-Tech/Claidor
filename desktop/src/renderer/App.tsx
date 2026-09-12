@@ -695,6 +695,16 @@ const App: React.FC = () => {
     };
   }, [handleShowSettings]);
 
+  // An app card sent the assistant's browser to a sign-in page. That browser
+  // lives in the panel behind Settings, so Settings closes to show it.
+  useEffect(() => {
+    const handleShowAssistantBrowser = () => setShowSettings(false);
+    window.addEventListener(ConnectionsUiEvent.ShowAssistantBrowser, handleShowAssistantBrowser);
+    return () => {
+      window.removeEventListener(ConnectionsUiEvent.ShowAssistantBrowser, handleShowAssistantBrowser);
+    };
+  }, []);
+
   // Skills and Apps are Settings tabs now, not places in the sidebar: the
   // sidebar is where you work, settings is what it can do and who you are.
   const handleShowSkills = useCallback(() => {

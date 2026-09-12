@@ -1,16 +1,22 @@
 import { APP_LOGO_DIRECTORY, type ConnectionItem, ConnectionKind, connectionMonogram, ConnectionTag } from '@shared/connections/catalog';
 import type { ConnectorConnection, ConnectorsState } from '@shared/connectors/constants';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useSelector } from 'react-redux';
 
 import { i18nService } from '../../services/i18n';
 import type { RootState } from '../../store';
 import {
+  appWebAddress,
+  BrowserSignInOutcome,
+  offersBrowserSignIn,
+  openBrowserSignIn,
+} from './browserSignIn';
+import {
   ConnectionCardState,
   isChannelConfigured,
   readConnectionCard,
 } from './connectionState';
-import { requestChannelSettings } from './constants';
+import { requestAssistantBrowser, requestChannelSettings } from './constants';
 
 /**
  * The founder's card (docs/maties/design/onboarding, screens 4 and 5): a
@@ -129,6 +135,33 @@ const DisconnectButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
 );
 
 /**
+ * The other door, offered quietly: one sentence under the account, the act in
+ * blue and the fact in muted ink. Never a second pill — a person who has just
+ * connected an app and is shown another button of Connect's weight will read
+ * it as the first one having failed.
+ */
+const BrowserSignInLine: React.FC<{
+  name: string;
+  /** The browser did not open; the offer stays, so it can be taken again. */
+  failed: boolean;
+  onClick: () => void;
+}> = ({ name, failed, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group max-w-full cursor-pointer self-start border-0 bg-transparent p-0 text-left text-[14px] leading-[1.5] text-[#6b7280]"
+  >
+    <span className="text-[#0060d0] group-hover:underline">
+      {i18nService.t('matiesConnectionsBrowserSignIn').replace('{name}', name)}
+    </span>
+    {' '}
+    {i18nService.t(failed
+      ? 'matiesConnectionsBrowserSignInFailed'
+      : 'matiesConnectionsBrowserSignInOnce')}
+  </button>
+);
+
+/**
  * The line under the name of a connected card: the account when Claidor
  * names one, otherwise the day it was connected.
  */
@@ -167,16 +200,47 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   onSoon,
 }) => {
   const imConfig = useSelector((state: RootState) => state.im.config);
+  // The assistant's browser is drawn beside the conversation, so the page has
+  // to be sent to the session the person is in.
+  const sessionId = useSelector((state: RootState) => state.cowork.currentSessionId);
+  const [signInFailed, setSignInFailed] = useState(false);
+
+  const handleBrowserSignIn = useCallback((url: string) => {
+    setSignInFailed(false);
+    void openBrowserSignIn(url, sessionId).then((outcome) => {
+      if (outcome === BrowserSignInOutcome.Failed) {
+        setSignInFailed(true);
+        return;
+      }
+      if (outcome === BrowserSignInOutcome.InApp) requestAssistantBrowser();
+    });
+  }, [sessionId]);
 
   let action: React.ReactNode = null;
   let line: React.ReactNode = null;
+  /** Two lines under the name want more air between them than one does. */
+  let loose = false;
 
   switch (item.kind) {
     case ConnectionKind.Account: {
       const reading = readConnectionCard(item.appSlug, connectors, busySlug);
       switch (reading.state) {
-        case ConnectionCardState.Connected:
-          line = <ConnectionLine>{connectedAccountLine(reading.connection as ConnectorConnection)}</ConnectionLine>;
+        case ConnectionCardState.Connected: {
+          const webAddress = appWebAddress(item);
+          const offersSignIn = offersBrowserSignIn(item, reading.state);
+          loose = offersSignIn;
+          line = (
+            <>
+              <ConnectionLine>{connectedAccountLine(reading.connection as ConnectorConnection)}</ConnectionLine>
+              {offersSignIn && webAddress && (
+                <BrowserSignInLine
+                  name={item.name}
+                  failed={signInFailed}
+                  onClick={() => handleBrowserSignIn(webAddress)}
+                />
+              )}
+            </>
+          );
           action = (
             <span className="flex shrink-0 items-center gap-1">
               <ConnectionActionButton connected />
@@ -186,6 +250,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
             </span>
           );
           break;
+        }
         case ConnectionCardState.Locked:
           line = <ConnectionLine>{i18nService.t('matiesConnectionsPartOfPlan')}</ConnectionLine>;
           action = <ConnectionActionButton connected={false} onClick={() => onShowPrice(item)} />;
@@ -223,7 +288,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   }
 
   return (
-    <ConnectionCardShell name={item.name} logo={item.logo} action={action}>
+    <ConnectionCardShell name={item.name} logo={item.logo} action={action} loose={loose}>
       {line}
       {!line && item.tag && <ConnectionLine>{i18nService.t(TAG_LABEL_KEYS[item.tag])}</ConnectionLine>}
     </ConnectionCardShell>

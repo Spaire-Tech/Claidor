@@ -66,6 +66,8 @@ import {
   type AgentBrowserHostRequest,
   type AgentBrowserHostResponse,
   type AgentBrowserHostSetViewRequest,
+  type AgentBrowserOpenPageRequest,
+  type AgentBrowserOpenPageResponse,
   type BrowserDiagnosticResultStep,
   BrowserDiagnosticStatus,
   BrowserDiagnosticStep,
@@ -8906,6 +8908,49 @@ if (!gotTheLock) {
   ipcMain.handle(
     BrowserIpc.StopHost,
     (): Promise<AgentBrowserHostResponse> => runBrowserHostAction(() => getAgentBrowserHost().stop()),
+  );
+
+  /**
+   * Open a page in the browser the agent itself works in, so that a sign-in
+   * the person performs there is the one the agent finds next time. In-app,
+   * that is the host's persistent partition; otherwise it is the engine's own
+   * managed browser, which the control gateway opens a tab in.
+   */
+  ipcMain.handle(
+    BrowserIpc.OpenAgentPage,
+    async (_event, request?: AgentBrowserOpenPageRequest): Promise<AgentBrowserOpenPageResponse> => {
+      const url = request?.url?.trim();
+      if (!url) {
+        return { success: false, error: 'A page address is required.' };
+      }
+      const displayMode = normalizeBrowserWebAccessConfig(
+        getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
+      ).displayMode;
+      try {
+        if (displayMode === BrowserDisplayMode.InApp) {
+          await getAgentBrowserHost().navigate(url, request?.sessionId);
+        } else {
+          await fetchBrowserControlJson<Record<string, unknown>>('/start', {
+            method: 'POST',
+            timeoutMs: 20000,
+          });
+          await fetchBrowserControlJson<Record<string, unknown>>('/tabs/open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+            timeoutMs: 20000,
+          });
+        }
+        return { success: true, displayMode };
+      } catch (error) {
+        console.error('[AgentBrowser] Failed to open a page in the agent browser:', error);
+        return {
+          success: false,
+          displayMode,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
   );
 
   ipcMain.handle(

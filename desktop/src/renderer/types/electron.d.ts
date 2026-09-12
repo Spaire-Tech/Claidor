@@ -35,6 +35,8 @@ import type {
   AgentBrowserHostResponse,
   AgentBrowserHostSetViewRequest,
   AgentBrowserHostStateEvent,
+  AgentBrowserOpenPageRequest,
+  AgentBrowserOpenPageResponse,
   BrowserDiagnosticResult,
   BrowserRuntimeProfile,
 } from '../../shared/browserWebAccess/constants';
@@ -874,6 +876,7 @@ interface IElectronAPI {
       goForwardHost: (request?: AgentBrowserHostRequest) => Promise<AgentBrowserHostResponse>;
       reloadHost: (request?: AgentBrowserHostRequest) => Promise<AgentBrowserHostResponse>;
       stopHost: (request?: AgentBrowserHostRequest) => Promise<AgentBrowserHostResponse>;
+      openAgentPage: (request: AgentBrowserOpenPageRequest) => Promise<AgentBrowserOpenPageResponse>;
       selectHostPage: (request: AgentBrowserHostPageRequest) => Promise<AgentBrowserHostResponse>;
       closeHostPage: (request: AgentBrowserHostPageRequest) => Promise<AgentBrowserHostResponse>;
       resolveCredentialSavePrompt: (

@@ -37,6 +37,8 @@ import {
   type AgentBrowserHostResponse,
   type AgentBrowserHostSetViewRequest,
   type AgentBrowserHostStateEvent,
+  type AgentBrowserOpenPageRequest,
+  type AgentBrowserOpenPageResponse,
   BrowserIpc,
   type BrowserRuntimeProfile,
 } from '../shared/browserWebAccess/constants';
@@ -377,6 +379,8 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.invoke(BrowserIpc.ReloadHost, request),
       stopHost: (request?: AgentBrowserHostRequest): Promise<AgentBrowserHostResponse> =>
         ipcRenderer.invoke(BrowserIpc.StopHost, request),
+      openAgentPage: (request: AgentBrowserOpenPageRequest): Promise<AgentBrowserOpenPageResponse> =>
+        ipcRenderer.invoke(BrowserIpc.OpenAgentPage, request),
       selectHostPage: (request: AgentBrowserHostPageRequest): Promise<AgentBrowserHostResponse> =>
         ipcRenderer.invoke(BrowserIpc.SelectHostPage, request),
       closeHostPage: (request: AgentBrowserHostPageRequest): Promise<AgentBrowserHostResponse> =>
