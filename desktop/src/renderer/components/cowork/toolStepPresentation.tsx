@@ -508,6 +508,35 @@ const getDiffStats = (rawToolName: string, toolInput: Record<string, unknown> | 
  * What the step produced, for its result card: a file name with its icon, a
  * page title, a number, a short line.
  */
+/**
+ * Whether a step's result is worth a card of its own.
+ *
+ * The founder, on the white box under each step: « i want no card at all.
+ * its noise. » Asked how far to cut, they chose: drop it unless it is a
+ * file. So a line, a count and « Done » no longer get one — the step
+ * already says what it was doing, on its own row, and a box repeating
+ * « Done » underneath is a second thing to read that carries nothing.
+ *
+ * Three keep theirs, and each is something to act on rather than
+ * something to read:
+ *
+ * - a **file**, because the card is the link that opens it;
+ * - a **subagent**, because the card is the link that opens its run;
+ * - a **failure**, because what went wrong appears nowhere else. The
+ *   step's own row turns red and shows what it was attempting, never the
+ *   reason. Dropping this one would mean a step that failed says only
+ *   that it failed, which is the silent-fallback shape this codebase has
+ *   been bitten by all week.
+ */
+export const shouldShowStepResultCard = (
+  result: ToolStepResult | null,
+  failed: boolean,
+): boolean => {
+  if (!result) return false;
+  if (failed) return true;
+  return result.type === 'file' || result.type === 'agent';
+};
+
 export const getToolStepResult = (
   group: ToolGroupItem,
   mapText: (value: string) => string = (value) => value,

@@ -12,6 +12,7 @@ import {
   getToolStepSubline,
   getToolStepTitle,
   planRepeatedFailureCollapse,
+  shouldShowStepResultCard,
   stripEngineMarkers,
   ToolStepKind,
 } from './toolStepPresentation';
@@ -354,6 +355,42 @@ describe('a run of failures is one card', () => {
       // running card stays exactly where it is.
       expect(collapsed).toHaveLength(2);
       expect(collapsed[1].type === 'tool_group' && collapsed[1].group.toolUse.id).toBe('b');
+    });
+  });
+
+  // « i want no card at all. its noise. » Asked how far, the founder chose
+  // « drop it unless it's a file ».
+  describe('which results still deserve a card', () => {
+    test('a file does, because the card is the link that opens it', () => {
+      expect(shouldShowStepResultCard(
+        { type: 'file', path: '/tmp/a.md', name: 'a.md', diff: null },
+        false,
+      )).toBe(true);
+    });
+
+    test('a subagent does, for the same reason', () => {
+      expect(shouldShowStepResultCard({ type: 'agent', name: 'research' }, false)).toBe(true);
+    });
+
+    test('a line, a count and « Done » do not — that is the noise', () => {
+      expect(shouldShowStepResultCard({ type: 'line', text: 'Done' }, false)).toBe(false);
+      expect(shouldShowStepResultCard({ type: 'line', text: '3 results', number: '3' }, false))
+        .toBe(false);
+      expect(shouldShowStepResultCard({ type: 'line', text: 'Quarterly report' }, false))
+        .toBe(false);
+    });
+
+    test('a failure keeps its card, because the reason appears nowhere else', () => {
+      // The step's own row turns red and shows what it was attempting,
+      // never why it failed. Dropping this would make a failed step say
+      // only that it failed.
+      expect(shouldShowStepResultCard({ type: 'line', text: 'Permission denied' }, true))
+        .toBe(true);
+    });
+
+    test('nothing at all gets nothing', () => {
+      expect(shouldShowStepResultCard(null, false)).toBe(false);
+      expect(shouldShowStepResultCard(null, true)).toBe(false);
     });
   });
 

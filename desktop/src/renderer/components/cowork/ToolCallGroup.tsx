@@ -42,6 +42,7 @@ import {
   getToolStepResult,
   getToolStepSubline,
   getToolStepTitle,
+  shouldShowStepResultCard,
   ToolStepIcon,
 } from './toolStepPresentation';
 
@@ -467,7 +468,7 @@ const ToolCallGroup: React.FC<{
         {renderMediaRunningIndicators('px-2 pb-2')}
         {isExpanded && (
           <div className="maties-in flex flex-col gap-3 pb-3 pl-[50px] pr-2">
-            {stepResult && (
+            {shouldShowStepResultCard(stepResult, stepState === StepState.Failed) && stepResult && (
               <StepResultCard result={stepResult} failed={stepState === StepState.Failed} onOpenAgent={onOpenAgent} />
             )}
             {renderDetailBody()}
@@ -504,7 +505,8 @@ const ToolCallGroup: React.FC<{
         </div>
       )}
       <div ref={approvalSlotRef} data-maties-approval-slot={slotKey ?? undefined} className="empty:hidden" />
-      {showResultCard && !holdsApprovalCard && (
+      {showResultCard && !holdsApprovalCard
+        && shouldShowStepResultCard(stepResult, stepState === StepState.Failed) && (
         <StepResultCard result={stepResult} failed={stepState === StepState.Failed} onOpenAgent={onOpenAgent} />
       )}
       {footer}
