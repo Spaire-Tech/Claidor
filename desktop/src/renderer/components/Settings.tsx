@@ -1,4 +1,4 @@
-import { ArchiveBoxIcon, ArrowPathIcon, ArrowPathRoundedSquareIcon, BookOpenIcon, ChatBubbleLeftIcon, CheckCircleIcon, CpuChipIcon, CubeIcon, EnvelopeIcon, ExclamationTriangleIcon, GlobeAltIcon, InformationCircleIcon, MagnifyingGlassIcon, SignalIcon, SunIcon, TrashIcon, WrenchScrewdriverIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ArrowPathRoundedSquareIcon, BookOpenIcon, CubeIcon, ExclamationTriangleIcon, InformationCircleIcon, SunIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import React, { useCallback,useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -14,7 +14,6 @@ import {
   normalizeNotificationSettings,
   TaskCompletionNotificationMode,
 } from '../../shared/notifications/constants';
-import { OpenClawEnginePhase, OpenClawGatewayRepairErrorCode } from '../../shared/openclawEngine/constants';
 import type { Platform } from '../../shared/platform/constants';
 import {
   ProviderAuthType,
@@ -31,7 +30,7 @@ import { imService } from '../services/im';
 import { LogReporterAction, reportYdAnalyzer } from '../services/logReporter';
 import { clearPendingPublishingConversionAttribution } from '../services/publishingConversionAttribution';
 import { clearPublishingSubscriptionRecoveryAnalytics } from '../services/publishingSubscriptionRecovery';
-import { formatShortcutForDisplay, getShortcutConflictSignature, isTextEditingSafeShortcut, matchesShortcut } from '../services/shortcuts';
+import { isTextEditingSafeShortcut, matchesShortcut } from '../services/shortcuts';
 import {
   type ThemeDefaultChangedDetail,
   themeService,
@@ -46,13 +45,11 @@ import type {
   CoworkMemoryStats,
   CoworkTempDirPreview,
   CoworkUserMemoryEntry,
-  OpenClawEngineStatus,
-  OpenClawGatewayRepairResult,
   OpenClawSessionKeepAlive,
 } from '../types/cowork';
 import { OpenClawSessionKeepAlive as OpenClawSessionKeepAliveValues } from '../types/cowork';
 import Modal from './common/Modal';
-import DreamingSettingsSection from './cowork/DreamingSettingsSection';
+import { ConnectionsCatalog, ReachList, useAssistantName } from './connections';
 import EmbeddingSettingsSection from './cowork/EmbeddingSettingsSection';
 import Eyebrow from './design/Eyebrow';
 import Pill, { PillTone } from './design/Pill';
@@ -61,13 +58,15 @@ import Switch from './design/Switch';
 import ErrorMessage from './ErrorMessage';
 import BrainIcon from './icons/BrainIcon';
 import EditIcon from './icons/EditIcon';
-import MessageCopyIcon from './icons/MessageCopyIcon';
-import PlugIcon from './icons/PlugIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
+import SidebarMcpIcon from './icons/SidebarMcpIcon';
+import SkillIcon from './icons/SkillIcon';
 import IMSettings from './im/IMSettings';
 import LibrarySettingsSection from './library/LibrarySettingsSection';
+import { McpManager } from './mcp';
 import BrowserWebAccessSettings from './settings/BrowserWebAccessSettings';
 import MatiesAccountSection from './settings/MatiesAccountSection';
+import MemoryTidyingSection from './settings/MemoryTidyingSection';
 import {
   CUSTOM_PROVIDER_KEYS,
   getDefaultActiveProvider,
@@ -84,7 +83,7 @@ import {
 } from './settings/modelProviderUtils';
 import { resolveSettingsEscapeAction, SettingsEscapeAction } from './settings/settingsEscape';
 import { announceSettingsSaved, SETTINGS_SAVED_EVENT } from './settings/settingsSavedSignal';
-import EmailSkillConfig from './skills/EmailSkillConfig';
+import { SkillsManager } from './skills';
 import SkinPresentationScope from './skin/SkinPresentationScope';
 import SkinSettingsSection from './skin/SkinSettingsSection';
 import ThemedSelect from './ui/ThemedSelect';
@@ -169,15 +168,6 @@ const resolvePrimaryProviderForSettingsSave = (
     : providers[activeProvider];
 };
 
-type ShortcutCommandDefinition = {
-  key: ShortcutAction;
-  labelKey: string;
-  descriptionKey: string;
-  inputType?: 'recorder' | 'send';
-  slot?: number;
-  tabLabelKey?: string;
-};
-
 const SETTINGS_TAB_SHORTCUT_ACTIONS: Partial<Record<ShortcutAction, TabType>> = {
   [ShortcutAction.OpenSettingsGeneral]: 'general',
   [ShortcutAction.OpenSettingsAppearance]: 'appearance',
@@ -224,14 +214,6 @@ type ShortcutSettingAnalyticsSummary = {
   configuredCount: number;
   disabledCount: number;
   resetToDefault: boolean;
-};
-
-type PluginSettingsAnalyticsSummary = {
-  changedKeys: string;
-  configCount: number;
-  disabledToggleCount: number;
-  enabledToggleCount: number;
-  toggleCount: number;
 };
 
 const DREAMING_FREQUENCY_PRESETS_FOR_ANALYTICS = new Set([
@@ -620,17 +602,6 @@ const reportDreamingSettingChanged = (
   });
 };
 
-const reportPluginSettingsSaved = (
-  summary: PluginSettingsAnalyticsSummary,
-): void => {
-  console.debug('[Settings] reporting plugin settings analytics');
-  void reportYdAnalyzer({
-    action: LogReporterAction.PluginSettingsSaved,
-    source: SettingsAnalyticsSource.Plugins,
-    ...summary,
-  });
-};
-
 const reportShortcutSettingChanged = (
   summary: ShortcutSettingAnalyticsSummary,
 ): void => {
@@ -696,106 +667,17 @@ const reportCustomModelSettingsSaved = (
   });
 };
 
-const AGENT_TASK_SLOT_COMMANDS: ShortcutCommandDefinition[] = [
-  ShortcutAction.OpenAgentTask1,
-  ShortcutAction.OpenAgentTask2,
-  ShortcutAction.OpenAgentTask3,
-  ShortcutAction.OpenAgentTask4,
-  ShortcutAction.OpenAgentTask5,
-  ShortcutAction.OpenAgentTask6,
-  ShortcutAction.OpenAgentTask7,
-  ShortcutAction.OpenAgentTask8,
-  ShortcutAction.OpenAgentTask9,
-].map((key, index) => ({
-  key,
-  labelKey: 'shortcutOpenAgentTaskSlot',
-  descriptionKey: 'shortcutDescOpenAgentTaskSlot',
-  slot: index + 1,
-}));
-
-const SETTINGS_TAB_SHORTCUT_COMMANDS: ShortcutCommandDefinition[] = [
-  { key: ShortcutAction.OpenSettingsGeneral, tabLabelKey: 'general' },
-  { key: ShortcutAction.OpenSettingsAppearance, tabLabelKey: 'appearance' },
-  { key: ShortcutAction.OpenSettingsModel, tabLabelKey: 'matiesAccountTab' },
-  { key: ShortcutAction.OpenSettingsMemory, tabLabelKey: 'coworkMemoryTitle' },
-  { key: ShortcutAction.OpenSettingsAbout, tabLabelKey: 'about' },
-].map(command => ({
-  ...command,
-  labelKey: 'shortcutOpenSettingsTab',
-  descriptionKey: 'shortcutDescOpenSettingsTab',
-}));
-
-const SHORTCUT_COMMAND_GROUPS: Array<{
-  titleKey: string;
-  commands: ShortcutCommandDefinition[];
-}> = [
-  {
-    titleKey: 'shortcutGroupCowork',
-    commands: [
-      { key: ShortcutAction.NewChat, labelKey: 'newChat', descriptionKey: 'shortcutDescNewChat' },
-      { key: ShortcutAction.FocusPrompt, labelKey: 'shortcutFocusPrompt', descriptionKey: 'shortcutDescFocusPrompt' },
-      { key: ShortcutAction.StopCurrentTask, labelKey: 'shortcutStopCurrentTask', descriptionKey: 'shortcutDescStopCurrentTask' },
-      { key: ShortcutAction.Search, labelKey: 'search', descriptionKey: 'shortcutDescSearch' },
-      { key: ShortcutAction.ToggleArtifacts, labelKey: 'shortcutToggleArtifacts', descriptionKey: 'shortcutDescToggleArtifacts' },
-      {
-        key: ShortcutAction.SendMessage,
-        labelKey: 'sendMessageShortcut',
-        descriptionKey: 'shortcutDescSendMessage',
-        inputType: 'send',
-      },
-    ],
-  },
-  {
-    titleKey: 'shortcutGroupNavigation',
-    commands: [
-      { key: ShortcutAction.OpenCowork, labelKey: 'shortcutOpenCowork', descriptionKey: 'shortcutDescOpenCowork' },
-      { key: ShortcutAction.OpenScheduledTasks, labelKey: 'shortcutOpenScheduledTasks', descriptionKey: 'shortcutDescOpenScheduledTasks' },
-      { key: ShortcutAction.OpenSkills, labelKey: 'shortcutOpenSkills', descriptionKey: 'shortcutDescOpenSkills' },
-      { key: ShortcutAction.OpenMcp, labelKey: 'shortcutOpenApps', descriptionKey: 'shortcutDescOpenApps' },
-      { key: ShortcutAction.ToggleSidebar, labelKey: 'shortcutToggleSidebar', descriptionKey: 'shortcutDescToggleSidebar' },
-    ],
-  },
-  {
-    titleKey: 'shortcutGroupApp',
-    commands: [
-      { key: ShortcutAction.Settings, labelKey: 'openSettings', descriptionKey: 'shortcutDescSettings' },
-    ],
-  },
-  {
-    titleKey: 'shortcutGroupAgent',
-    commands: [
-      { key: ShortcutAction.PreviousAgent, labelKey: 'shortcutPreviousAgent', descriptionKey: 'shortcutDescPreviousAgent' },
-      { key: ShortcutAction.NextAgent, labelKey: 'shortcutNextAgent', descriptionKey: 'shortcutDescNextAgent' },
-      {
-        key: ShortcutAction.ShowCurrentAgentTasks,
-        labelKey: 'shortcutShowCurrentAgentTasks',
-        descriptionKey: 'shortcutDescShowCurrentAgentTasks',
-      },
-      {
-        key: ShortcutAction.CollapseCurrentAgentTasks,
-        labelKey: 'shortcutCollapseCurrentAgentTasks',
-        descriptionKey: 'shortcutDescCollapseCurrentAgentTasks',
-      },
-      ...AGENT_TASK_SLOT_COMMANDS,
-    ],
-  },
-  {
-    titleKey: 'shortcutGroupSettingsTabs',
-    commands: SETTINGS_TAB_SHORTCUT_COMMANDS,
-  },
+/**
+ * The Settings tabs a shortcut can open. There is no Shortcuts tab any more,
+ * so nothing here is editable — these are the app's fixed bindings.
+ */
+const SETTINGS_TAB_SHORTCUT_KEYS: readonly ShortcutAction[] = [
+  ShortcutAction.OpenSettingsGeneral,
+  ShortcutAction.OpenSettingsAppearance,
+  ShortcutAction.OpenSettingsModel,
+  ShortcutAction.OpenSettingsMemory,
+  ShortcutAction.OpenSettingsAbout,
 ];
-
-const SHORTCUT_COMMANDS = SHORTCUT_COMMAND_GROUPS.flatMap(group => group.commands);
-
-const getShortcutCommandText = (
-  command: ShortcutCommandDefinition,
-  field: 'labelKey' | 'descriptionKey',
-) => {
-  const value = i18nService.t(command[field]);
-  return value
-    .replace('{slot}', String(command.slot ?? ''))
-    .replace('{tab}', command.tabLabelKey ? i18nService.t(command.tabLabelKey) : '');
-};
 
 const SettingsSlidersIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -812,23 +694,6 @@ const SettingsSlidersIcon: React.FC<{ className?: string }> = ({ className }) =>
     <path d="M19 7h-9" />
     <circle cx="17" cy="17" r="3" />
     <circle cx="7" cy="7" r="3" />
-  </svg>
-);
-
-const DreamingTabIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    width="34"
-    height="34"
-    viewBox="0 0 34 34"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    aria-hidden="true"
-  >
-    <path
-      d="M27.9219 21.9648L29.014 22.4621L29.8552 20.6145L27.831 20.7683L27.9219 21.9648ZM16.0762 5.03516L17.1683 5.53234L18.0095 3.68449L15.9851 3.83862L16.0762 5.03516ZM27.9219 21.9648L26.8297 21.4676C25.1281 25.205 21.3674 27.8 17 27.8V29V30.2C22.3442 30.2 26.9378 27.0221 29.014 22.4621L27.9219 21.9648ZM17 29V27.8C11.0353 27.8 6.2 22.9647 6.2 17H5H3.8C3.8 24.2902 9.70984 30.2 17 30.2V29ZM5 17H6.2C6.2 11.3157 10.5923 6.65614 16.1673 6.23169L16.0762 5.03516L15.9851 3.83862C9.16855 4.35759 3.8 10.0512 3.8 17H5ZM16.0762 5.03516L14.984 4.53798C14.2262 6.20275 13.8 8.052 13.8 10H15H16.2C16.2 8.40537 16.5483 6.8944 17.1683 5.53234L16.0762 5.03516ZM15 10H13.8C13.8 17.2902 19.7098 23.2 27 23.2V22V20.8C21.0353 20.8 16.2 15.9647 16.2 10H15ZM27 22V23.2C27.3413 23.2 27.679 23.1868 28.0128 23.1614L27.9219 21.9648L27.831 20.7683C27.5562 20.7892 27.2791 20.8 27 20.8V22Z"
-      fill="currentColor"
-    />
   </svg>
 );
 
@@ -860,40 +725,6 @@ const ABOUT_USER_MANUAL_URL = 'https://app.claidor.com/desktop';
 const ABOUT_USER_COMMUNITY_URL = 'https://app.claidor.com';
 const ABOUT_SERVICE_TERMS_URL = 'https://app.claidor.com/terms';
 
-const copyTextFallback = (text: string): boolean => {
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.setAttribute('readonly', '');
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  textarea.style.pointerEvents = 'none';
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
-  textarea.setSelectionRange(0, text.length);
-  const copied = document.execCommand('copy');
-  document.body.removeChild(textarea);
-  return copied;
-};
-
-const copyTextToClipboard = async (text: string): Promise<boolean> => {
-  if (navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch (clipboardError) {
-      console.warn('Navigator clipboard write failed, trying fallback:', clipboardError);
-    }
-  }
-
-  try {
-    return copyTextFallback(text);
-  } catch (fallbackError) {
-    console.error('Fallback clipboard copy failed:', fallbackError);
-    return false;
-  }
-};
-
 const getUpdateCheckStatusFromRuntimeStatus = (
   state: AppUpdateRuntimeState,
 ): 'idle' | 'checking' | 'upToDate' | 'error' | 'downloading' | 'ready' => {
@@ -914,15 +745,6 @@ const getUpdateCheckStatusFromRuntimeStatus = (
   }
 };
 
-// System shortcuts that should not be captured (clipboard, undo, select-all, quit, etc.)
-const isSystemShortcut = (e: KeyboardEvent): boolean => {
-  const key = e.key.toLowerCase();
-  if (e.metaKey && ['c', 'v', 'x', 'z', 'y', 'a', 'q', 'w'].includes(key)) return true;
-  if (e.metaKey && e.shiftKey && key === 'z') return true;
-  if (e.ctrlKey && ['c', 'v', 'x', 'z', 'y', 'a', 'w'].includes(key)) return true;
-  return false;
-};
-
 const isShortcutInputActive = () => {
   const activeElement = document.activeElement;
   if (!(activeElement instanceof HTMLElement)) return false;
@@ -936,181 +758,6 @@ const isTextEditingActive = () => {
   if (activeElement instanceof HTMLTextAreaElement) return true;
   if (activeElement instanceof HTMLSelectElement) return true;
   return activeElement instanceof HTMLInputElement;
-};
-
-const formatShortcutFromEvent = (e: React.KeyboardEvent): string | null => {
-  // Skip standalone modifier keys
-  if (['Meta', 'Control', 'Alt', 'Shift'].includes(e.key)) return null;
-  // Require at least one non-Shift modifier
-  if (!e.metaKey && !e.ctrlKey && !e.altKey) return null;
-  if (isSystemShortcut(e.nativeEvent)) return null;
-
-  const parts: string[] = [];
-  if (e.metaKey) parts.push('Cmd');
-  if (e.ctrlKey) parts.push('Ctrl');
-  if (e.altKey) parts.push(isMacPlatform ? 'Option' : 'Alt');
-  if (e.shiftKey) parts.push('Shift');
-
-  const keyMap: Record<string, string> = {
-    ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
-    ' ': 'Space', Escape: 'Esc', Enter: 'Enter', Backspace: 'Backspace',
-    Delete: 'Delete', Tab: 'Tab',
-  };
-  const key = keyMap[e.key] ?? (e.key.length === 1 ? e.key.toUpperCase() : e.key);
-  parts.push(key);
-  return parts.join('+');
-};
-
-const SEND_SHORTCUT_OPTIONS = [
-  { value: 'Enter', label: 'Enter', labelMac: 'Enter' },
-  { value: 'Shift+Enter', label: 'Shift+Enter', labelMac: 'Shift+Enter' },
-  { value: 'Ctrl+Enter', label: 'Ctrl+Enter', labelMac: 'Cmd+Enter' },
-  { value: 'Alt+Enter', label: 'Alt+Enter', labelMac: 'Option+Enter' },
-] as const;
-
-const isMacPlatform = navigator.platform.includes('Mac');
-
-const ShortcutRecorder: React.FC<{
-  value: string;
-  label: string;
-  onChange: (v: string) => void;
-}> = ({ value, label, onChange }) => {
-  const [recording, setRecording] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const recorderRef = useRef<HTMLButtonElement>(null);
-  const displayValue = formatShortcutForDisplay(value, { isMac: isMacPlatform });
-  const editLabel = i18nService.t('shortcutEditCommand').replace('{command}', label);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!recording) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.key === 'Escape') { setRecording(false); return; }
-    if (e.key === 'Delete' || e.key === 'Backspace') { onChange(''); setRecording(false); return; }
-    const shortcut = formatShortcutFromEvent(e);
-    if (shortcut) { onChange(shortcut); setRecording(false); }
-  };
-
-  useEffect(() => {
-    if (!recording) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setRecording(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [recording]);
-
-  useEffect(() => {
-    if (!recording) return;
-    window.setTimeout(() => recorderRef.current?.focus(), 0);
-  }, [recording]);
-
-  if (recording) {
-    return (
-      <div ref={containerRef} className="flex items-center gap-3">
-        <button
-          ref={recorderRef}
-          type="button"
-          data-shortcut-input="true"
-          onKeyDown={handleKeyDown}
-          className="h-8 min-w-[8rem] rounded-xl border border-border bg-surface px-4 text-xs font-medium text-foreground shadow-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary/25"
-        >
-          {i18nService.t('shortcutPressShortcut')}
-        </button>
-        <button
-          type="button"
-          data-shortcut-input="true"
-          onClick={() => setRecording(false)}
-          className="text-xs font-medium text-secondary transition-colors hover:text-foreground"
-        >
-          {i18nService.t('cancel')}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <span
-        title={displayValue || i18nService.t('shortcutNotSet')}
-        className="min-w-[5.5rem] max-w-[9rem] truncate rounded-full bg-surface-raised px-3 py-1 text-center text-xs font-medium text-secondary"
-      >
-        {displayValue || i18nService.t('shortcutNotSet')}
-      </span>
-      <button
-        type="button"
-        onClick={() => setRecording(true)}
-        title={editLabel}
-        aria-label={editLabel}
-        className="pointer-events-none inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-secondary opacity-0 transition-colors hover:bg-surface-raised hover:text-foreground group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
-      >
-        <EditIcon className="h-4 w-4" />
-      </button>
-    </div>
-  );
-};
-
-const SendShortcutSelect: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
-
-  const currentLabel = (() => {
-    const opt = SEND_SHORTCUT_OPTIONS.find(o => o.value === value);
-    if (!value) return i18nService.t('shortcutNotSet');
-    if (!opt) return formatShortcutForDisplay(value, { isMac: isMacPlatform });
-    return isMacPlatform ? opt.labelMac : opt.label;
-  })();
-
-  return (
-    <div ref={containerRef} className="flex items-center gap-2">
-      <div className="relative">
-        <div
-          onClick={() => setOpen(!open)}
-          className={`w-28 rounded-lg border px-2.5 py-1 text-xs cursor-pointer select-none text-center outline-none transition-colors
-            dark:bg-claude-darkSurfaceInset bg-claude-surfaceInset dark:text-claude-darkText text-claude-text
-            ${open
-              ? 'border-claude-accent ring-1 ring-claude-accent/30'
-              : 'dark:border-claude-darkBorder border-claude-border hover:border-claude-accent/50'
-            }`}
-        >
-          {currentLabel}
-        </div>
-        {open && (
-          <div className="absolute right-0 mt-1 z-50 min-w-[160px] rounded-xl border dark:border-claude-darkBorder border-claude-border dark:bg-claude-darkSurfaceInset bg-claude-surfaceInset shadow-elevated py-1">
-            {SEND_SHORTCUT_OPTIONS.map((option) => {
-              const label = isMacPlatform ? option.labelMac : option.label;
-              const isActive = value === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => { onChange(option.value); setOpen(false); }}
-                  className={`flex items-center justify-between w-full px-3 py-1.5 text-xs transition-colors
-                    ${isActive
-                      ? 'dark:text-claude-accent text-claude-accent font-medium'
-                      : 'dark:text-claude-darkText text-claude-text'
-                    } hover:bg-claude-accent/10`}
-                >
-                  <span>{label}</span>
-                  {isActive && <span className="text-claude-accent">✓</span>}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-      <span className="h-6 w-6 shrink-0" aria-hidden="true" />
-    </div>
-  );
 };
 
 // The app's switch in the one blue (docs/maties/design.md, section 5).
@@ -1242,6 +889,7 @@ const Settings: React.FC<SettingsProps> = ({
   enterpriseConfig,
 }) => {
   const dispatch = useDispatch();
+  const assistantName = useAssistantName();
   const {
     activeSkin,
     isAppearanceChanging,
@@ -1317,12 +965,10 @@ const Settings: React.FC<SettingsProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
   // Shows a fade-out mask above the footer buttons while unscrolled content remains below.
   const [footerFadeVisible, setFooterFadeVisible] = useState(false);
-  const openClawGatewayCopiedTimerRef = useRef<number | null>(null);
   const updateCheckTimerRef = useRef<number | null>(null);
 
   // Shortcut settings
   const [shortcuts, setShortcuts] = useState<ShortcutConfig>(() => ({ ...defaultConfig.shortcuts! }));
-  const [shortcutSearchQuery, setShortcutSearchQuery] = useState('');
 
   // About tab
   const [appVersion, setAppVersion] = useState('');
@@ -1525,7 +1171,7 @@ const Settings: React.FC<SettingsProps> = ({
   const [dreamingFrequency, setDreamingFrequency] = useState<string>(coworkConfig.dreamingFrequency ?? '0 3 * * *');
   const [dreamingModel, setDreamingModel] = useState<string>(coworkConfig.dreamingModel ?? '');
   const [dreamingTimezone, setDreamingTimezone] = useState<string>(coworkConfig.dreamingTimezone ?? '');
-  const [memoryTab, setMemoryTab] = useState<'entries' | 'embedding'>('entries');
+  const [showMemorySearchSettings, setShowMemorySearchSettings] = useState(false);
   const [openClawSessionKeepAlive, setOpenClawSessionKeepAlive] = useState<OpenClawSessionKeepAlive>(
     coworkConfig.openClawSessionPolicy?.keepAlive || OpenClawSessionKeepAliveValues.ThirtyDays,
   );
@@ -1540,11 +1186,6 @@ const Settings: React.FC<SettingsProps> = ({
   const [coworkMemoryRawText, setCoworkMemoryRawText] = useState<string>('');
   const [coworkMemoryRawSaving, setCoworkMemoryRawSaving] = useState<boolean>(false);
   const [coworkMemoryExpandedIds, setCoworkMemoryExpandedIds] = useState<Set<string>>(new Set());
-  const [openClawEngineStatus, setOpenClawEngineStatus] = useState<OpenClawEngineStatus | null>(null);
-  const [showOpenClawRepairConfirm, setShowOpenClawRepairConfirm] = useState<boolean>(false);
-  const [isRepairingOpenClaw, setIsRepairingOpenClaw] = useState<boolean>(false);
-  const [openClawRepairResult, setOpenClawRepairResult] = useState<OpenClawGatewayRepairResult | null>(null);
-  const [openClawGatewayCopied, setOpenClawGatewayCopied] = useState<boolean>(false);
   const [isBackingUpOpenClawData, setIsBackingUpOpenClawData] = useState<boolean>(false);
   const [isRestoringOpenClawData, setIsRestoringOpenClawData] = useState<boolean>(false);
   const [openClawDataBackupResult, setOpenClawDataBackupResult] = useState<{ path: string; sizeBytes?: number } | null>(null);
@@ -1673,9 +1314,6 @@ const Settings: React.FC<SettingsProps> = ({
   }, [isCleaningTempStorage, refreshTempStorageUsage, tempCleanSelectedDirs]);
 
   useEffect(() => () => {
-    if (openClawGatewayCopiedTimerRef.current != null) {
-      window.clearTimeout(openClawGatewayCopiedTimerRef.current);
-    }
     if (updateCheckTimerRef.current != null) {
       window.clearTimeout(updateCheckTimerRef.current);
     }
@@ -1699,22 +1337,6 @@ const Settings: React.FC<SettingsProps> = ({
     });
     return () => {
       active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    void coworkService.getOpenClawEngineStatus().then((status) => {
-      if (!active || !status) return;
-      setOpenClawEngineStatus(status);
-    });
-    const unsubscribe = coworkService.onOpenClawEngineStatus((status) => {
-      if (!active) return;
-      setOpenClawEngineStatus(status);
-    });
-    return () => {
-      active = false;
-      unsubscribe();
     };
   }, []);
 
@@ -2107,174 +1729,6 @@ const Settings: React.FC<SettingsProps> = ({
     || embeddingRemoteApiKey !== (coworkConfig.embeddingRemoteApiKey ?? '')
     || dreamingEnabled !== (coworkConfig.dreamingEnabled ?? false)
     || dreamingFrequency !== (coworkConfig.dreamingFrequency ?? '0 3 * * *');
-  const isOpenClawAgentEngine = coworkAgentEngine === 'openclaw';
-
-  const openClawProgressPercent = useMemo(() => {
-    if (typeof openClawEngineStatus?.progressPercent !== 'number' || !Number.isFinite(openClawEngineStatus.progressPercent)) {
-      return null;
-    }
-    return Math.max(0, Math.min(100, Math.round(openClawEngineStatus.progressPercent)));
-  }, [openClawEngineStatus]);
-
-  const openClawStatusTone = useMemo(() => {
-    const phase = openClawEngineStatus?.phase;
-
-    if (phase === OpenClawEnginePhase.Error) {
-      return {
-        Icon: ExclamationTriangleIcon,
-        iconClassName: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-        progressClassName: 'bg-red-500',
-        spinIcon: false,
-        inProgress: false,
-        badgeLabelKey: 'openClawStatusBadgeError',
-        badgeClassName: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-        badgeDotClassName: 'bg-red-500',
-      };
-    }
-
-    if (phase === OpenClawEnginePhase.Running || phase === OpenClawEnginePhase.Ready) {
-      return {
-        Icon: CheckCircleIcon,
-        iconClassName: 'bg-primary-muted text-primary',
-        progressClassName: 'bg-primary',
-        spinIcon: false,
-        inProgress: false,
-        badgeLabelKey: phase === OpenClawEnginePhase.Running
-          ? 'openClawStatusBadgeRunning'
-          : 'openClawStatusBadgeReady',
-        badgeClassName: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-        badgeDotClassName: 'bg-emerald-500',
-      };
-    }
-
-    if (phase === OpenClawEnginePhase.Installing || phase === OpenClawEnginePhase.Starting) {
-      return {
-        Icon: ArrowPathIcon,
-        iconClassName: 'bg-primary-muted text-primary',
-        progressClassName: 'bg-primary',
-        spinIcon: true,
-        inProgress: true,
-        badgeLabelKey: phase === OpenClawEnginePhase.Installing
-          ? 'openClawStatusBadgeInstalling'
-          : 'openClawStatusBadgeStarting',
-        badgeClassName: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-        badgeDotClassName: 'bg-amber-500',
-      };
-    }
-
-    return {
-      Icon: CpuChipIcon,
-      iconClassName: 'bg-surface-raised text-secondary',
-      progressClassName: 'bg-primary',
-      spinIcon: false,
-      inProgress: false,
-      badgeLabelKey: 'openClawStatusBadgeNotInstalled',
-      badgeClassName: 'bg-surface-raised text-secondary',
-      badgeDotClassName: 'bg-secondary/60',
-    };
-  }, [openClawEngineStatus?.phase]);
-
-  const OpenClawStatusIcon = openClawStatusTone.Icon;
-  const openClawGatewayHttpUrl = openClawEngineStatus?.gatewayHttpUrl?.trim() || null;
-
-  const handleCopyOpenClawGatewayUrl = useCallback(async () => {
-    if (!openClawGatewayHttpUrl) return;
-    const copied = await copyTextToClipboard(openClawGatewayHttpUrl);
-    if (!copied) return;
-
-    setOpenClawGatewayCopied(true);
-    if (openClawGatewayCopiedTimerRef.current != null) {
-      window.clearTimeout(openClawGatewayCopiedTimerRef.current);
-    }
-    openClawGatewayCopiedTimerRef.current = window.setTimeout(() => {
-      setOpenClawGatewayCopied(false);
-      openClawGatewayCopiedTimerRef.current = null;
-    }, 1200);
-  }, [openClawGatewayHttpUrl]);
-
-  useEffect(() => {
-    setOpenClawGatewayCopied(false);
-  }, [openClawGatewayHttpUrl]);
-
-  const resolveOpenClawStatusText = (status: OpenClawEngineStatus | null): string => {
-    if (!status) {
-      return i18nService.t('coworkOpenClawNotInstalledNotice');
-    }
-    switch (status.phase) {
-      case OpenClawEnginePhase.NotInstalled:
-        return i18nService.t('coworkOpenClawNotInstalledNotice');
-      case OpenClawEnginePhase.Installing:
-        return i18nService.t('coworkOpenClawInstalling');
-      case OpenClawEnginePhase.Ready:
-        return i18nService.t('coworkOpenClawReadyNotice');
-      case OpenClawEnginePhase.Starting:
-        return i18nService.t('coworkOpenClawStarting');
-      case OpenClawEnginePhase.Error:
-        return i18nService.t('coworkOpenClawError');
-      case OpenClawEnginePhase.Running:
-        return i18nService.t('coworkOpenClawRunning');
-      default:
-        return status.message?.trim() || i18nService.t('coworkOpenClawRunning');
-    }
-  };
-
-  const resolveOpenClawStatusDescription = (status: OpenClawEngineStatus | null): string => {
-    return status?.gatewayHttpUrl || i18nService.t('coworkOpenClawInstallHint');
-  };
-
-  const resolveOpenClawRepairMessage = (result: OpenClawGatewayRepairResult): string => {
-    if (result.success) {
-      return result.backupPath
-        ? i18nService.t('openClawRepairSuccess')
-        : i18nService.t('openClawRepairSuccessNoBackup');
-    }
-    if (result.errorCode === OpenClawGatewayRepairErrorCode.Busy) {
-      return i18nService.t('openClawRepairBusyError');
-    }
-    if (result.errorCode === OpenClawGatewayRepairErrorCode.ConfigApplyPending) {
-      return i18nService.t('openClawRepairConfigApplyPendingError');
-    }
-    return result.error?.trim() || i18nService.t('openClawRepairFailed');
-  };
-
-  const handleConfirmOpenClawRepair = useCallback(async () => {
-    if (isRepairingOpenClaw) return;
-    setShowOpenClawRepairConfirm(false);
-    setOpenClawRepairResult(null);
-    setError(null);
-    setIsRepairingOpenClaw(true);
-    try {
-      const result = await coworkService.repairOpenClawGatewayState();
-      setOpenClawRepairResult(result);
-      reportAgentEngineMaintenanceAction(
-        'repair_gateway_state',
-        result.success ? 'success' : 'failed',
-        result.success ? {} : { errorCode: result.errorCode ?? 'unknown' },
-      );
-    } catch (repairError) {
-      setOpenClawRepairResult({
-        success: false,
-        error: repairError instanceof Error ? repairError.message : i18nService.t('openClawRepairFailed'),
-      });
-      reportAgentEngineMaintenanceAction('repair_gateway_state', 'failed', { errorCode: 'unknown' });
-    } finally {
-      setIsRepairingOpenClaw(false);
-    }
-  }, [isRepairingOpenClaw]);
-
-  const handleRevealOpenClawRepairBackup = useCallback(async () => {
-    const backupPath = openClawRepairResult?.backupPath;
-    if (!backupPath) return;
-    try {
-      const result = await window.electron.shell.showItemInFolder(backupPath);
-      if (!result?.success) {
-        setError(result?.error || i18nService.t('showInFolderFailed'));
-      }
-    } catch (revealError) {
-      setError(revealError instanceof Error ? revealError.message : i18nService.t('showInFolderFailed'));
-    }
-  }, [openClawRepairResult?.backupPath]);
-
   const handleRevealOpenClawDataBackup = useCallback(async () => {
     const backupPath = openClawDataBackupResult?.path;
     if (!backupPath) return;
@@ -2839,65 +2293,6 @@ const Settings: React.FC<SettingsProps> = ({
     onClose();
   }, [isBackingUpOpenClawData, isRestoringOpenClawData, onClose]);
 
-  const shortcutCommandMap = useMemo(
-    () => new Map(SHORTCUT_COMMANDS.map(command => [command.key, command])),
-    [],
-  );
-
-  const filteredShortcutGroups = useMemo(() => {
-    const query = shortcutSearchQuery.trim().toLowerCase();
-    if (!query) return SHORTCUT_COMMAND_GROUPS;
-
-    return SHORTCUT_COMMAND_GROUPS
-      .map(group => ({
-        ...group,
-        commands: group.commands.filter(command => {
-          const haystack = [
-            getShortcutCommandText(command, 'labelKey'),
-            getShortcutCommandText(command, 'descriptionKey'),
-            shortcuts[command.key] ?? '',
-            formatShortcutForDisplay(shortcuts[command.key], { isMac: isMacPlatform }),
-          ].join(' ').toLowerCase();
-          return haystack.includes(query);
-        }),
-      }))
-      .filter(group => group.commands.length > 0);
-  }, [shortcutSearchQuery, shortcuts]);
-
-  // Shortcut update handling
-  const handleShortcutChange = (key: ShortcutAction, value: string) => {
-    const normalizedValue = value.trim();
-    // Check for conflicts with other shortcuts
-    const normalizedSignature = getShortcutConflictSignature(normalizedValue, { isMac: isMacPlatform });
-    const conflictKey = normalizedSignature
-      ? Object.values(ShortcutAction).find((action) => {
-          if (action === key) return false;
-          return getShortcutConflictSignature(shortcuts[action], { isMac: isMacPlatform }) === normalizedSignature;
-        })
-      : undefined;
-    if (conflictKey) {
-      const conflictCommand = shortcutCommandMap.get(conflictKey);
-      const conflictLabel = conflictCommand
-        ? getShortcutCommandText(conflictCommand, 'labelKey')
-        : conflictKey;
-      setNoticeMessage(
-        i18nService
-          .t('shortcutConflict')
-          .replace('{0}', formatShortcutForDisplay(normalizedValue, { isMac: isMacPlatform }))
-          .replace('{1}', conflictLabel)
-      );
-      return;
-    }
-    setShortcuts(prev => ({
-      ...prev,
-      [key]: normalizedValue
-    }));
-  };
-
-  const handleResetShortcuts = () => {
-    setShortcuts({ ...defaultConfig.shortcuts! });
-  };
-
   // Stop clicks inside the settings window from propagating to the backdrop
   const handleSettingsClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -2909,11 +2304,9 @@ const Settings: React.FC<SettingsProps> = ({
     const resolution = resolveSettingsEscapeAction({
       isBlocked: isBackingUpOpenClawData
         || isRestoringOpenClawData
-        || isRepairingOpenClaw
         || isCleaningTempStorage
         || isShortcutInputActive(),
       layers: [
-        { isOpen: showOpenClawRepairConfirm, dismiss: () => setShowOpenClawRepairConfirm(false) },
         { isOpen: showTempCleanConfirm, dismiss: () => setShowTempCleanConfirm(false) },
         {
           isOpen: showOpenClawDataRestoreConfirm,
@@ -2966,15 +2359,15 @@ const Settings: React.FC<SettingsProps> = ({
       if (event.repeat || isShortcutInputActive()) return;
 
       const isTextEditing = isTextEditingActive();
-      const command = SETTINGS_TAB_SHORTCUT_COMMANDS.find((candidate) => {
-        const binding = shortcuts[candidate.key];
+      const command = SETTINGS_TAB_SHORTCUT_KEYS.find((candidate) => {
+        const binding = shortcuts[candidate];
         // While typing, only run shortcuts carrying a Cmd/Ctrl modifier so plain keys keep inserting text.
         if (isTextEditing && !isTextEditingSafeShortcut(binding)) return false;
         return matchesShortcut(event, binding);
       });
       if (!command) return;
 
-      const targetTab = SETTINGS_TAB_SHORTCUT_ACTIONS[command.key];
+      const targetTab = SETTINGS_TAB_SHORTCUT_ACTIONS[command];
       if (!targetTab || !sidebarTabs.some(tab => tab.key === targetTab)) return;
 
       event.preventDefault();
@@ -3385,6 +2778,27 @@ const Settings: React.FC<SettingsProps> = ({
                   }}
                 />
               </SettingsRow>
+
+              {/* The one control worth keeping from the retired Agent Engine
+                  tab: whether it keeps working while you are away. */}
+              <SettingsRow>
+                <SettingsToggleRow
+                  title={i18nService.t('backgroundWorkEnabled')}
+                  description={i18nService.t('backgroundWorkEnabledDescription')}
+                  checked={openClawHeartbeatEnabled}
+                  onToggle={() => {
+                    setOpenClawHeartbeatEnabled((prev) => !prev);
+                  }}
+                />
+              </SettingsRow>
+            </SettingsGroup>
+
+            {/* Group: Browser (its own tab until the clear-out) */}
+            <SettingsGroup title={i18nService.t('browserWebAccessTab')}>
+              <BrowserWebAccessSettings
+                value={browserWebAccess}
+                onChange={setBrowserWebAccess}
+              />
             </SettingsGroup>
 
             {/* Group: Data & privacy */}
@@ -3447,6 +2861,72 @@ const Settings: React.FC<SettingsProps> = ({
                     setUsageAnalyticsEnabled((prev) => !prev);
                   }}
                 />
+              </SettingsRow>
+
+              {/* Moving to another computer. This was the Agent Engine tab's
+                  « Data Backup » / « Data Migration »; the work is the same
+                  and the words are now about the person's own data. */}
+              <SettingsRow>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="maties-row-title">{i18nService.t('dataBackupTitle')}</h4>
+                    <p className="maties-row-desc">{i18nService.t('dataBackupDescription')}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { void handleOpenClawDataBackup(); }}
+                    disabled={isBackingUpOpenClawData || isRestoringOpenClawData}
+                    className={`${SETTINGS_ROW_PILL_CLASS} shrink-0`}
+                  >
+                    {isBackingUpOpenClawData && (
+                      <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                    )}
+                    {isBackingUpOpenClawData
+                      ? i18nService.t('openClawDataBackupRunning')
+                      : i18nService.t('dataBackupAction')}
+                  </button>
+                </div>
+                {openClawDataBackupResult && (
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="maties-caption break-all">{openClawDataBackupResult.path}</div>
+                      {formatBackupSize(openClawDataBackupResult.sizeBytes) && (
+                        <div className="maties-caption">
+                          {formatBackupSize(openClawDataBackupResult.sizeBytes)}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { void handleRevealOpenClawDataBackup(); }}
+                      className={`${SETTINGS_ROW_PILL_CLASS} shrink-0`}
+                    >
+                      {i18nService.t('showInFolder')}
+                    </button>
+                  </div>
+                )}
+              </SettingsRow>
+
+              <SettingsRow>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="maties-row-title">{i18nService.t('dataRestoreTitle')}</h4>
+                    <p className="maties-row-desc">{i18nService.t('dataRestoreDescription')}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowOpenClawDataRestoreConfirm(true)}
+                    disabled={isBackingUpOpenClawData || isRestoringOpenClawData}
+                    className={`${SETTINGS_ROW_PILL_CLASS} shrink-0`}
+                  >
+                    {isRestoringOpenClawData && (
+                      <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                    )}
+                    {isRestoringOpenClawData
+                      ? i18nService.t('openClawDataMigrationRunning')
+                      : i18nService.t('dataRestoreAction')}
+                  </button>
+                </div>
               </SettingsRow>
             </SettingsGroup>
           </div>
@@ -3980,57 +3460,6 @@ const Settings: React.FC<SettingsProps> = ({
 
         </div>
 
-          {showOpenClawRepairConfirm && (
-            <div
-              className="maties-backdrop absolute inset-0 z-30 flex items-center justify-center rounded-[24px] px-4"
-              onClick={() => {
-                if (!isRepairingOpenClaw) setShowOpenClawRepairConfirm(false);
-              }}
-            >
-              <div
-                className="maties-card-prose maties-in w-full max-w-md"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="px-6 pb-3 pt-6">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
-                      <WrenchScrewdriverIcon className="h-5 w-5" />
-                    </span>
-                    <h3 className="maties-row-title text-[15.5px]">
-                      {i18nService.t('openClawRepairConfirmTitle')}
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="space-y-3 px-5 py-4 text-sm text-secondary">
-                  <p>{i18nService.t('openClawRepairConfirmDesc')}</p>
-                  <p>{i18nService.t('openClawRepairConfirmSafeDesc')}</p>
-                </div>
-
-                <div className="flex justify-end space-x-2 px-5 pb-5">
-                  <button
-                    type="button"
-                    onClick={() => setShowOpenClawRepairConfirm(false)}
-                    disabled={isRepairingOpenClaw}
-                    className={`${SETTINGS_ROW_PILL_CLASS} is-ghost`}
-                  >
-                    {i18nService.t('cancel')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { void handleConfirmOpenClawRepair(); }}
-                    disabled={isRepairingOpenClaw}
-                    className={`${SETTINGS_ROW_PILL_CLASS} is-primary`}
-                  >
-                    <WrenchScrewdriverIcon className="h-4 w-4" />
-                    {isRepairingOpenClaw
-                      ? i18nService.t('openClawRepairRunning')
-                      : i18nService.t('openClawRepairConfirmAction')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {showTempCleanConfirm && (
             <div

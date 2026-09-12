@@ -34,13 +34,11 @@ import CoworkPermissionModal from './components/cowork/CoworkPermissionModal';
 import CoworkQuestionWizard from './components/cowork/CoworkQuestionWizard';
 import EngineFailureOverlay from './components/cowork/EngineFailureOverlay';
 import EngineStartupOverlay from './components/cowork/EngineStartupOverlay';
-import KitsView from './components/kits/KitsView';
 import LibraryView from './components/library/LibraryView';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import { ScheduledTasksView } from './components/scheduledTasks';
 import Settings, { type SettingsOpenOptions } from './components/Settings';
 import Sidebar from './components/Sidebar';
-import { SkillsAndConnectorsView, SkillsConnectorsSection } from './components/skillsAndConnectors';
 import SkinBackdrop, { SkinBackdropVariant } from './components/skin/SkinBackdrop';
 import SkinPresentationScope from './components/skin/SkinPresentationScope';
 import StartupCreditCampaign from './components/StartupCreditCampaign';
@@ -90,11 +88,9 @@ import {
   clearDraftAttachments,
   clearDraftSelectedTextSnippets,
   setDraftCollaborationMode,
-  setDraftKitIds,
   setDraftPrompt,
   setDraftSkillIds,
 } from './store/slices/coworkSlice';
-import { setActiveKitIds } from './store/slices/kitSlice';
 import { setAvailableModels, setDefaultSelectedModel } from './store/slices/modelSlice';
 import { clearSelection } from './store/slices/quickActionSlice';
 import { setActiveSkillIds } from './store/slices/skillSlice';
@@ -118,14 +114,8 @@ const SETTINGS_TAB_SHORTCUT_ACTIONS: Array<{
 }> = [
   { action: ShortcutAction.OpenSettingsGeneral, initialTab: 'general' },
   { action: ShortcutAction.OpenSettingsAppearance, initialTab: 'appearance' },
-  { action: ShortcutAction.OpenSettingsAgentEngine, initialTab: 'coworkAgentEngine' },
   { action: ShortcutAction.OpenSettingsModel, initialTab: 'model' },
-  { action: ShortcutAction.OpenSettingsIm, initialTab: 'im' },
-  { action: ShortcutAction.OpenSettingsBrowser, initialTab: 'browserWebAccess' },
-  { action: ShortcutAction.OpenSettingsEmail, initialTab: 'email' },
   { action: ShortcutAction.OpenSettingsMemory, initialTab: 'coworkMemory' },
-  { action: ShortcutAction.OpenSettingsDreaming, initialTab: 'coworkDreaming' },
-  { action: ShortcutAction.OpenSettingsPlugins, initialTab: 'plugins' },
   { action: ShortcutAction.OpenSettingsAbout, initialTab: 'about' },
 ];
 
@@ -169,7 +159,7 @@ const logAppUpdateRendererLifecycle = (
 const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsOptions, setSettingsOptions] = useState<SettingsOpenOptions & { requestId: number }>({ requestId: 0 });
-  const [mainView, setMainView] = useState<'cowork' | 'skills' | 'scheduledTasks' | 'kits' | 'mcp' | 'library'>('cowork');
+  const [mainView, setMainView] = useState<'cowork' | 'scheduledTasks' | 'library'>('cowork');
   const [libraryNavigationRequest, setLibraryNavigationRequest] = useState<{
     source: LibrarySourceFilter;
     requestId: number;
@@ -687,7 +677,7 @@ const App: React.FC = () => {
     const handleOpenChannelSettings = (event: Event) => {
       const detail = (event as CustomEvent<OpenChannelSettingsEventDetail>).detail;
       if (!detail?.platform) return;
-      handleShowSettings({ initialTab: 'im', initialImPlatform: detail.platform });
+      handleShowSettings({ initialTab: 'apps', initialImPlatform: detail.platform });
     };
     window.addEventListener(ConnectionsUiEvent.OpenChannelSettings, handleOpenChannelSettings);
     return () => {
@@ -695,15 +685,15 @@ const App: React.FC = () => {
     };
   }, [handleShowSettings]);
 
+  // Skills and Apps are Settings tabs now, not places in the sidebar: the
+  // sidebar is where you work, settings is what it can do and who you are.
   const handleShowSkills = useCallback(() => {
-    setMainView('skills');
-  }, []);
+    handleShowSettings({ initialTab: 'skills' });
+  }, [handleShowSettings]);
 
-  // 'mcp' is the view that opens on the Connectors section; the name is
-  // historical (see SkillsAndConnectorsView) and not what a person sees.
-  const handleShowConnectors = useCallback(() => {
-    setMainView('mcp');
-  }, []);
+  const handleShowApps = useCallback(() => {
+    handleShowSettings({ initialTab: 'apps' });
+  }, [handleShowSettings]);
 
   const handleShowCowork = useCallback(() => {
     setMainView('cowork');
@@ -711,10 +701,6 @@ const App: React.FC = () => {
 
   const handleShowScheduledTasks = useCallback(() => {
     setMainView('scheduledTasks');
-  }, []);
-
-  const handleShowMcp = useCallback(() => {
-    setMainView('mcp');
   }, []);
 
   const handleShowLibrary = useCallback(() => {
@@ -750,20 +736,9 @@ const App: React.FC = () => {
     });
   }, [dispatch]);
 
-  const handleShowKits = useCallback(() => {
-    setMainView('kits');
-  }, []);
-
-  const handleSkillsConnectorsSectionChange = useCallback((section: SkillsConnectorsSection) => {
-    if (section === SkillsConnectorsSection.Connectors) {
-      handleShowMcp();
-    } else {
-      handleShowSkills();
-    }
-  }, [handleShowMcp, handleShowSkills]);
-
-  const openHomeWithKit = useCallback((kitId: string, text?: string) => {
-    dispatch(setActiveKitIds([kitId]));
+  /** Opens the chat with one skill chosen, and optionally a prompt already typed. */
+  const openHomeWithSkill = useCallback((skillId: string, text?: string) => {
+    dispatch(setActiveSkillIds([skillId]));
     coworkService.clearSession({ restoreAgentSkills: true });
     dispatch(clearSelection());
     if (text !== undefined) {
@@ -775,36 +750,19 @@ const App: React.FC = () => {
       // mounts/updates with draftKey='__home__', it picks up the text.
       dispatch(setDraftPrompt({ sessionId: '__home__', draft: text }));
     }
-    dispatch(setDraftKitIds({ draftKey: '__home__', kitIds: [kitId] }));
+    dispatch(setDraftSkillIds({ draftKey: '__home__', skillIds: [skillId] }));
     setMainView('cowork');
     window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent(CoworkUiEvent.FocusInput, {
-        // Without text, keep any existing home draft and just focus with the kit selected
+        // Without text, keep any existing home draft and just focus with the skill selected
         detail: text !== undefined ? { resetCollaborationMode: true, text } : { clear: false },
       }));
     }, 0);
   }, [dispatch]);
 
-  const handleKitTryAsking = useCallback((text: string, kitId: string) => {
-    openHomeWithKit(kitId, text);
-  }, [openHomeWithKit]);
-
-  const handleKitUse = useCallback((kitId: string) => {
-    openHomeWithKit(kitId);
-  }, [openHomeWithKit]);
-
   const handleSkillUse = useCallback((skillId: string) => {
-    dispatch(setActiveSkillIds([skillId]));
-    coworkService.clearSession({ restoreAgentSkills: true });
-    dispatch(clearSelection());
-    dispatch(setDraftSkillIds({ draftKey: '__home__', skillIds: [skillId] }));
-    setMainView('cowork');
-    window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent(CoworkUiEvent.FocusInput, {
-        detail: { clear: false },
-      }));
-    }, 0);
-  }, [dispatch]);
+    openHomeWithSkill(skillId);
+  }, [openHomeWithSkill]);
 
   const handleToggleSidebar = useCallback(() => {
     const nextCollapsed = !isSidebarCollapsed;
@@ -1182,9 +1140,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleStartAiSkinFromSettings = (text: string, kitId: string) => {
+  const handleStartAiSkinFromSettings = (text: string, skillId: string) => {
     handleCloseSettings();
-    openHomeWithKit(kitId, text);
+    openHomeWithSkill(skillId, text);
   };
 
   const isShortcutInputActive = () => {
@@ -1229,13 +1187,7 @@ const App: React.FC = () => {
         return matchesShortcut(event, binding);
       };
 
-      if (showSettings) {
-        if (matchesAction(ShortcutAction.ShowShortcuts)) {
-          event.preventDefault();
-          handleShowSettings({ initialTab: 'shortcuts' });
-        }
-        return;
-      }
+      if (showSettings) return;
 
       if (showUpdateModal || isPermissionModalOpen || isUpdateInteractionBlocked) return;
 
@@ -1268,12 +1220,6 @@ const App: React.FC = () => {
       if (matchesAction(ShortcutAction.Settings)) {
         event.preventDefault();
         handleShowSettings();
-        return;
-      }
-
-      if (matchesAction(ShortcutAction.ShowShortcuts)) {
-        event.preventDefault();
-        handleShowSettings({ initialTab: 'shortcuts' });
         return;
       }
 
@@ -1379,12 +1325,6 @@ const App: React.FC = () => {
         return;
       }
 
-      if (matchesAction(ShortcutAction.OpenKits)) {
-        event.preventDefault();
-        handleShowKits();
-        return;
-      }
-
       if (matchesAction(ShortcutAction.OpenSkills)) {
         event.preventDefault();
         handleShowSkills();
@@ -1393,7 +1333,7 @@ const App: React.FC = () => {
 
       if (matchesAction(ShortcutAction.OpenMcp)) {
         event.preventDefault();
-        handleShowMcp();
+        handleShowApps();
       }
     };
 
@@ -1402,9 +1342,8 @@ const App: React.FC = () => {
   }, [
     currentSessionId,
     handleNewChat,
+    handleShowApps,
     handleShowCowork,
-    handleShowKits,
-    handleShowMcp,
     handleShowScheduledTasks,
     handleShowSettings,
     handleShowSkills,
@@ -1791,10 +1730,9 @@ const App: React.FC = () => {
           onShowSettings={handleShowSettings}
           activeView={mainView}
           onShowSkills={handleShowSkills}
-          onShowConnectors={handleShowConnectors}
+          onShowApps={handleShowApps}
           onShowCowork={handleShowCowork}
           onShowScheduledTasks={handleShowScheduledTasks}
-          onShowKits={handleShowKits}
           onShowLibrary={handleShowLibrary}
           onNewChat={handleNewChat}
           isCollapsed={isSidebarCollapsed}
@@ -1819,33 +1757,12 @@ const App: React.FC = () => {
               <SkinBackdrop variant={SkinBackdropVariant.Management} />
             )}
             <EngineStartupOverlay />
-            {mainView === 'skills' || mainView === 'mcp' ? (
-              <SkillsAndConnectorsView
-                activeSection={mainView === 'mcp' ? SkillsConnectorsSection.Connectors : SkillsConnectorsSection.Skills}
-                onSectionChange={handleSkillsConnectorsSectionChange}
-                isSidebarCollapsed={isSidebarCollapsed}
-                onToggleSidebar={handleToggleSidebar}
-                onNewChat={handleNewChat}
-                onCreateSkillByChat={handleCreateSkillByChat}
-                onUseSkill={handleSkillUse}
-                updateBadge={collapsedHeaderUpdateBadge}
-                skillsReadOnly={enterpriseConfig?.ui?.skills === 'readonly'}
-              />
-            ) : mainView === 'scheduledTasks' ? (
+            {mainView === 'scheduledTasks' ? (
               <ScheduledTasksView
                 isSidebarCollapsed={isSidebarCollapsed}
                 onToggleSidebar={handleToggleSidebar}
                 onNewChat={handleNewChat}
                 updateBadge={collapsedHeaderUpdateBadge}
-              />
-            ) : mainView === 'kits' ? (
-              <KitsView
-                isSidebarCollapsed={isSidebarCollapsed}
-                onToggleSidebar={handleToggleSidebar}
-                onNewChat={handleNewChat}
-                updateBadge={collapsedHeaderUpdateBadge}
-                onTryAsking={handleKitTryAsking}
-                onUseKit={handleKitUse}
               />
             ) : mainView === 'library' ? (
               <LibraryView
@@ -1863,7 +1780,6 @@ const App: React.FC = () => {
               <CoworkView
                 onRequestAppSettings={handleShowSettings}
                 onShowSkills={handleShowSkills}
-                onShowKits={handleShowKits}
                 isSidebarCollapsed={isSidebarCollapsed}
                 onToggleSidebar={handleToggleSidebar}
                 onNewChat={handleNewChat}
@@ -1883,7 +1799,6 @@ const App: React.FC = () => {
       </div>
 
       <EngineFailureOverlay
-        onRequestAppSettings={handleShowSettings}
         suspended={showSettings || showUpdateModal || showUpdateInstallConfirm || isPermissionModalOpen}
       />
 
@@ -1892,6 +1807,8 @@ const App: React.FC = () => {
         <Settings
           onClose={handleCloseSettings}
           onStartAiSkin={handleStartAiSkinFromSettings}
+          onUseSkill={handleSkillUse}
+          onCreateSkillByChat={handleCreateSkillByChat}
           initialTab={settingsOptions.initialTab}
           initialTabRequestId={settingsOptions.requestId}
           notice={settingsOptions.notice}

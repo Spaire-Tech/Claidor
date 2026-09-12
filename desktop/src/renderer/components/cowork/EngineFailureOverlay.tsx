@@ -7,10 +7,8 @@ import { LogReporterAction, reportYdAnalyzer } from '../../services/logReporter'
 import type { OpenClawEngineStatus, OpenClawGatewayRepairResult } from '../../types/cowork';
 import Pill, { PillTone } from '../design/Pill';
 import Sphere from '../design/Sphere';
-import type { SettingsOpenOptions } from '../Settings';
 
 interface EngineFailureOverlayProps {
-  onRequestAppSettings?: (options?: SettingsOpenOptions) => void;
   suspended?: boolean;
 }
 
@@ -31,7 +29,6 @@ const resolveGatewayRepairErrorText = (result: OpenClawGatewayRepairResult): str
  * in mono under the sentence.
  */
 const EngineFailureOverlay: React.FC<EngineFailureOverlayProps> = ({
-  onRequestAppSettings,
   suspended = false,
 }) => {
   const [status, setStatus] = useState<OpenClawEngineStatus | null>(
@@ -183,17 +180,6 @@ const EngineFailureOverlay: React.FC<EngineFailureOverlayProps> = ({
             {isRestartingGateway ? i18nService.t('loading') : i18nService.t('matiesTryAgain')}
           </Pill>
         </div>
-        {onRequestAppSettings && (
-          <div className="mt-3 flex justify-center">
-            <button
-              type="button"
-              onClick={() => onRequestAppSettings({ initialTab: 'coworkAgentEngine' })}
-              className="maties-pill-sm is-link"
-            >
-              {i18nService.t('matiesEngineSettings')}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
