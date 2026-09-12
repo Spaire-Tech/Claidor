@@ -522,6 +522,15 @@ storage, runtime, windowing, or OpenClaw config/restart behavior.
 
 ## Practical Guidance
 
+- **Assume it is already built.** Read `docs/maties/before-you-build.md`
+  before writing anything: what already exists, and the traps that have
+  cost real time. The engine we bundle ships far more than we surface,
+  and much of the app and server is already written. Add to that note
+  whenever a session finds either.
+- **Before adding a name to any list, read what the list is protecting.**
+  `scripts/prune-openclaw-runtime.cjs` is the sharpest example: plugin
+  loading is all-or-nothing, so one extension that cannot load kills
+  every other plugin, and the app loses the internet.
 - Prefer `rg` for search.
 - Verify historical notes against current source before acting.
 - Ignore stale docs that conflict with `package.json`, `src/main`, `src/shared`,

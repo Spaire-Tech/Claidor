@@ -64,10 +64,31 @@ polar/
 
 ## Core Rules
 
+### Assume it is already built
+
+This is a large, complete codebase. Before writing anything, ask whether
+it exists already — and assume it does until the repository says
+otherwise. Read `docs/maties/before-you-build.md` first: it is the
+register of what we already have and of the traps that have cost real
+time, and it is kept current by every session that finds one.
+
+Two habits it exists to enforce:
+
+- **Search before building.** The engine we bundle ships far more than we
+  surface, and much of our own server and app is already written.
+- **Before adding a name to any list, read what the list is protecting.**
+  A change that looks additive is how the browser stopped working
+  entirely on 12 September: plugin loading here is all-or-nothing, and
+  one extension that could not load killed every other plugin.
+
+When a session discovers something already built, or a trap, add it to
+that note. A fact found twice is a note nobody wrote the first time.
+
 See subdirectory CLAUDE.md files for detailed patterns:
 - `server/CLAUDE.md` - Backend patterns
 - `server/polar/backoffice/CLAUDE.md` - HTMX + DaisyUI patterns
 - `clients/CLAUDE.md` - Frontend design system
+- `docs/maties/before-you-build.md` - What already exists, and what breaks quietly
 
 ## Environment Setup
 
