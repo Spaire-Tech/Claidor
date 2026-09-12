@@ -146,6 +146,24 @@ class MatyJob(RecordModel):
         TIMESTAMP(timezone=True), nullable=False, default=utc_now, index=True
     )
 
+    #: When a runner last took this job up, and when it stopped for good.
+    #:
+    #: These two exist because the app asks « how long has this been
+    #: going » and « when did it land », and neither could be answered
+    #: without them: `modified_at` moves for every heartbeat, and
+    #: `lease_expires_at` is a deadline in the future that is cleared the
+    #: moment the job finishes. `started_at` is stamped at each claim
+    #: rather than only at the first, so it is when the try that is
+    #: running — or the last one that ran — began; `attempts` is what says
+    #: how many there were. `finished_at` is stamped once, when the job
+    #: reaches a status it never leaves.
+    started_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+
     @declared_attr
     def user(cls) -> Mapped["User"]:
         return relationship("User", lazy="raise")

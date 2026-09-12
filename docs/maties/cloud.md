@@ -293,6 +293,90 @@ default:
 That last rule is a product rule as much as a technical one, and it
 belongs on the trust page.
 
+### The person's four routes
+
+The four above are the runner's. Nothing in them creates work, and for a
+while nothing did: the runner polled an empty queue because the only way
+into the table was Claidor's own code. These are the app's way in, on the
+desktop router with the desktop session, so they come out beside the
+memory sync the app already speaks:
+
+```
+GET  /desktop/api/maty/jobs             → { "available": true, "jobs": [ job, … ] }
+POST /desktop/api/maty/jobs   { kind?, prompt, deliver?, allow? }
+                                        → { "job": job }
+GET  /desktop/api/maty/jobs/{id}        → { "job": job }
+POST /desktop/api/maty/jobs/{id}/cancel → { "job": job }
+
+job = { id, kind, prompt, status, result, error,
+        createdAt, startedAt, finishedAt }
+```
+
+**`available` is one fact, told twice.** It is whether a runner can reach
+this Claidor at all — whether `CLAIDOR_MATY_RUNNER_TOKEN` is set. The
+listing carries it so the app can hide the button; create refuses with
+503 so a patched app cannot get past it. A Claidor with no runner must
+read as « not available here », and never as a job that is accepted,
+shown as waiting, and never done. That is the one failure this whole
+section exists to prevent, because it is the one the person cannot see.
+
+**A job is one person's and the routes say nothing else.** A job id that
+belongs to somebody else answers 404, not 403, on both the read and the
+cancel — the same answer as an id that never existed, in the same words.
+403 would let anybody with a list of ids sift it for the real ones, and a
+job id is the name of a piece of somebody's private work.
+
+**`deliver` and `allow` are refused, not taken.** The app may send them
+and is told no. They are the two fields that turn « the assistant drafted
+this » into « the assistant did this »: `allow` is the send-and-pay marks
+above, `deliver` is where an answer goes without anybody reading it
+first. Neither is safe to take from a client — an app can be patched, and
+a stranger's mail can end up inside a prompt — so both stay the server's
+to decide, per routine, when there are routines to decide for. Until
+then the cautious default is the whole story: the answer comes back to
+the app, and nothing is sent anywhere. Refused rather than quietly
+emptied, because a dropped `deliver` tells the person their briefing was
+emailed when it was not. Widening this is its own piece of work with its
+own thought, and it starts here.
+
+**The caps, and why these numbers.** A prompt is at most eight thousand
+characters — a page of instructions and the mail that provoked them, and
+the prompt is what the engine is *told to do*, not the material it works
+on; that comes from the memory and the library. An empty or
+whitespace-only prompt is refused with 400 rather than queued as a job
+with nothing in it. And one person may have ten jobs waiting or running
+at once. Ten is not a quota on how much anybody may use the cloud —
+finished work does not count, so a person who has used it a thousand
+times is no more limited than one who never has. It is a ceiling on how
+fast a mistake can fill the queue: a loop in the app gets ten refusals
+instead of ten thousand rows.
+
+**Cancel is for a job that has not started.** A `running` job is held by
+a runner under a lease, in a container that is already working. Marking
+it finished here would not stop that container, and the runner would
+then complete or fail a job we had declared over — two writers on one
+row, racing, for nothing. So a running job is refused with 409 and a
+sentence saying it will stop on its own if it does not finish; the lease
+is ten minutes. A cloud engine that can genuinely be stopped mid-flight
+means the runner asking, between steps, whether it is still wanted. That
+is a real feature and it is not this one.
+
+A cancelled job is `failed` with « Cancelled before it started. » as its
+reason, and not a status of its own. The table has four statuses and it
+stays at four: a fifth would be a word the deployed runner has never
+heard, for a difference the app can read off that sentence. The day the
+app wants to *show* a cancellation differently from a breakage is the day
+to add `cancelled` — to the model, the final set and the claim filter
+together.
+
+`startedAt` and `finishedAt` are columns on the job, added with these
+routes. Neither could be derived from what was already there:
+`modified_at` moves on every heartbeat, and `lease_expires_at` is a
+deadline in the future that is cleared the moment a job finishes.
+`startedAt` is stamped at every claim, so it is when the try that is
+running began rather than when the first one did; `attempts` is what
+counts the tries.
+
 ## 5. The mailbox in detail
 
 The address is `name@` the domain we choose. Mail arrives at a vendor

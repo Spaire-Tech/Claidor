@@ -50,6 +50,7 @@ from polar.config import settings
 from polar.connectors.endpoints import router as connectors_router
 from polar.kit.db.postgres import AsyncSessionMaker
 from polar.kit.utils import utc_now
+from polar.maty.desktop_endpoints import router as maty_jobs_router
 from polar.models import DesktopSession
 from polar.openapi import APITag
 from polar.postgres import AsyncSession, get_db_session
@@ -806,3 +807,14 @@ async def proxy_other(path: str) -> JSONResponse:
 # desktop app's address. Included here, they come out under
 # `/desktop/api/connectors`.
 router.include_router(connectors_router)
+
+
+# --- the cloud engine -------------------------------------------------------
+
+# The person's side of `docs/maties/cloud.md`: asking for a piece of work
+# to be done on Claidor's servers, and seeing what came of it. The
+# runner's own four verbs are a router of their own at `/maty/runner`,
+# mounted in `polar.app` and reachable only with the service token; these
+# are the app's, and belong at the app's address. Included here, they
+# come out under `/desktop/api/maty/jobs`.
+router.include_router(maty_jobs_router)
