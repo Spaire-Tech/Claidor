@@ -1889,7 +1889,23 @@ describe('OpenClawConfigSync runtime config output', () => {
 
   // --- The wiki (docs/maties/library.md) ---
 
-  test('permits the wiki, pinned to the vault mode that reads nothing else', async () => {
+  test('leaves the wiki switched off until a gateway has been seen to load it', async () => {
+    // Held back on 12 September. It had been switched on without anyone
+    // watching a gateway load it, alongside an un-pruning that broke the
+    // browser; plugin loading is all-or-nothing, so a plugin that cannot
+    // activate takes every other plugin down with it.
+    const sync = await createSync();
+    expect(sync.sync('wiki-off')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.plugins.entries).not.toHaveProperty('memory-wiki');
+    expect(config.plugins.allow).not.toContain('memory-wiki');
+    // The rule that outlives the switch: whenever it does come back, it
+    // comes back in the mode that cannot read the person's disk.
+    expect(JSON.stringify(config)).not.toContain('unsafe-local');
+  });
+
+  test.skip('permits the wiki, pinned to the vault mode that reads nothing else', async () => {
     const sync = await createSync();
     expect(sync.sync('wiki-on')).toMatchObject({ ok: true });
 
