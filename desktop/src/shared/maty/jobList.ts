@@ -64,17 +64,22 @@ export const sameMatyJobs = (a: readonly MatyJob[], b: readonly MatyJob[]): bool
 /**
  * What the strip above the composer shows.
  *
- * A live job is never hidden: the person must be able to find it again long
- * after the moment they sent it. A finished one stays until they put it away,
- * and « away » is only the app's own view — the contract has no notion of a
- * job being seen, and nothing is deleted on Claidor.
+ * A live job is never hidden and never counted out by the limit: the person
+ * must be able to find it again long after the moment they sent it, and
+ * Claidor lets ten be in flight at once. The limit only decides how many
+ * finished jobs keep them company, so the strip stays a strip.
+ *
+ * A finished job stays until the person puts it away, and « away » is only
+ * the app's own view — the contract has no notion of a job being seen, and
+ * nothing is deleted on Claidor.
  */
 export const visibleMatyJobs = (
   jobs: readonly MatyJob[],
   putAway: ReadonlySet<string>,
   limit: number,
 ): MatyJob[] => {
-  const shown = sortMatyJobsNewestFirst(jobs)
-    .filter((job) => isLiveMatyJob(job) || !putAway.has(job.id));
-  return shown.slice(0, Math.max(0, limit));
+  const sorted = sortMatyJobsNewestFirst(jobs);
+  const live = sorted.filter(isLiveMatyJob);
+  const finished = sorted.filter((job) => !isLiveMatyJob(job) && !putAway.has(job.id));
+  return [...live, ...finished.slice(0, Math.max(0, limit - live.length))];
 };

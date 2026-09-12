@@ -16,17 +16,24 @@
 import {
   type MatyJob,
   MatyJobStatus,
+  MatyOutcome,
   type MatyState,
 } from '@shared/maty/constants';
 import { isCancellableMatyJob, isLiveMatyJob, visibleMatyJobs } from '@shared/maty/jobList';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { i18nService } from '../../services/i18n';
+import { matyService } from '../../services/maty';
 import Sphere from '../design/Sphere';
+import MarkdownContent, { MarkdownVariant } from '../MarkdownContent';
 import { getMatyPutAway, onMatyPreferencesChanged, putMatyJobAway } from './matyPreferences';
 import { useMatyState } from './useMatyState';
 
-/** Four rows is a strip; more is a list, and a list belongs on its own page. */
+/**
+ * How many rows the strip aims for. Live work is never cut by it — every job
+ * still up there is drawn — so this only limits how many finished answers keep
+ * them company before the person puts one away.
+ */
 const MAX_ROWS = 4;
 
 const DOT_COLOUR: Record<MatyJobStatus, string> = {
@@ -128,7 +135,14 @@ const CloudWorkRow: React.FC<CloudWorkRowProps> = ({
           {job.status === MatyJobStatus.Failed ? (
             <p className="m-0 min-w-0 flex-1 text-[14px] leading-[1.5] text-[#4a4f57]">{body}</p>
           ) : (
-            <div className="maties-prose min-w-0 flex-1 whitespace-pre-wrap">{body}</div>
+            // The assistant's own voice, in the app's own renderer: serif
+            // prose, the markdown it already draws, and no stream — this
+            // answer was written hours ago and is not arriving now.
+            <MarkdownContent
+              content={body}
+              variant={MarkdownVariant.Answer}
+              className="min-w-0 flex-1"
+            />
           )}
         </div>
       )}
@@ -147,8 +161,21 @@ const CloudWorkStrip: React.FC = () => {
     [state.jobs, putAway],
   );
 
-  const handleCancel = useCallback((jobId: string) => {
-    void window.electron.maty.cancel(jobId);
+  const handleCancel = useCallback((jobId: string): void => {
+    void matyService.cancel(jobId).then((result) => {
+      if (result.outcome === MatyOutcome.Cancelled) {
+        // Claidor records a job taken back as a failed one carrying the
+        // reason, which would leave a red row about something the person
+        // themselves stopped. The row goes; nothing is deleted on Claidor.
+        putMatyJobAway(jobId);
+        return;
+      }
+      // Only a queued job can be taken back, and the runner may have picked
+      // it up in the meantime.
+      window.dispatchEvent(new CustomEvent('app:showToast', {
+        detail: i18nService.t('matyCancelFailed'),
+      }));
+    });
   }, []);
 
   const handlePutAway = useCallback((jobId: string) => {
@@ -156,7 +183,7 @@ const CloudWorkStrip: React.FC = () => {
   }, []);
 
   const handleCheckAgain = useCallback(() => {
-    void window.electron.maty.refresh();
+    void matyService.refresh();
   }, []);
 
   if (!state.loaded || rows.length === 0) return null;

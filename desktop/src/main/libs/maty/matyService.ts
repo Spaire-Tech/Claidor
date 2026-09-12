@@ -124,6 +124,7 @@ export class MatyService {
   private state: MatyState = EMPTY_MATY_STATE;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private watchStartedAt = 0;
+  private refreshing: Promise<MatyState> | null = null;
   private disposed = false;
 
   constructor(deps: MatyServiceDeps) {
@@ -151,12 +152,24 @@ export class MatyService {
    * Ask Claidor now, and start watching again from this moment. Somebody
    * asking is itself a reason to keep watching, so the half-hour limit starts
    * over here; it only exists to stop a timer nobody is waiting on.
+   *
+   * Several things on screen ask at once — the composer's chip and the strip
+   * above it, on two screens — so a caller arriving while a round is in
+   * flight joins that round rather than starting a second one.
    */
-  async refresh(): Promise<MatyState> {
-    this.watchStartedAt = Date.now();
-    await this.load();
-    this.scheduleWatch();
-    return this.state;
+  refresh(): Promise<MatyState> {
+    if (this.refreshing) return this.refreshing;
+    const round = (async (): Promise<MatyState> => {
+      this.watchStartedAt = Date.now();
+      await this.load();
+      this.scheduleWatch();
+      return this.state;
+    })();
+    this.refreshing = round;
+    void round.finally(() => {
+      if (this.refreshing === round) this.refreshing = null;
+    });
+    return round;
   }
 
   /** Send one piece of work up. Only the words travel. */

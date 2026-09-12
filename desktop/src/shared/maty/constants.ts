@@ -131,5 +131,9 @@ export interface MatyActionResult {
   readonly error?: string;
 }
 
-/** Longer than this and Claidor would refuse it; the app says so first. */
-export const MATY_PROMPT_MAX_LENGTH = 20_000;
+/**
+ * Longer than this and Claidor refuses the whole call, so the app stops it
+ * here and says so in its own words. It is Claidor's figure, not a guess:
+ * `PROMPT_MAX_LENGTH` in `server/polar/maty/service.py`.
+ */
+export const MATY_PROMPT_MAX_LENGTH = 8_000;

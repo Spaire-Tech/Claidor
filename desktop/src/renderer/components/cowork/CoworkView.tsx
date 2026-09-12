@@ -45,6 +45,7 @@ import { toOpenClawModelRef } from '../../utils/openclawModelRef';
 import IconButton from '../design/IconButton';
 import { ShareLineIcon, SidebarLineIcon } from '../design/LineIcons';
 import Sphere from '../design/Sphere';
+import CloudWorkStrip from '../maty/CloudWorkStrip';
 import { ModelAccessPromptKind, ModelAccessPromptModal } from '../ModelSelector';
 import { PromptPanel, QuickActionBar } from '../quick-actions';
 import type { SettingsOpenOptions } from '../Settings';
@@ -937,6 +938,10 @@ const CoworkView: React.FC<CoworkViewProps> = ({
               </div>
 
               <div className="relative z-30 w-full max-w-[800px]">
+                {/* What is in the cloud, above the composer
+                    (docs/maties/cloud.md). Nothing is drawn when there is
+                    nothing up there. */}
+                <CloudWorkStrip />
                 <CoworkPromptInput
                   ref={promptInputRef}
                   onSubmit={handleStartSession}

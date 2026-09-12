@@ -377,6 +377,60 @@ deadline in the future that is cleared the moment a job finishes.
 running began rather than when the first one did; `attempts` is what
 counts the tries.
 
+### What the app does with them
+
+The routes above are half of it. The other half is what the person sees,
+and section 1 said « nothing new », which is still the rule: no second
+screen, no inbox, no page of jobs. Three small things instead.
+
+**« Runs where » is a chip in the composer**, beside the model chip,
+because both say how the next answer gets made. It reads « On this
+computer » or « In the cloud », and changing it changes what the send
+button does — in the cloud the work goes up to Claidor and nothing
+starts here. **The chip is drawn only when `available` is true.** There
+is no greyed-out version of it: a person who has no cloud engine never
+learns there is a choice, which is the honest reading of a Claidor that
+cannot do the thing. If Claidor switches it off between the chip being
+drawn and the send, the 503 puts the choice back to « on this computer »
+and says so, and the words stay in the box.
+
+**Only the words travel.** The call carries a prompt and nothing else,
+so attached files, the working folder and the chosen agent all stay on
+this computer, and the toast says so when there were attachments. This
+is the same rule as section 3's « what never goes up », and it is
+worth the person hearing it at the moment it applies.
+
+**Work in the cloud lives in one hairline strip above the composer**,
+the shape the design already gives to a thing set aside (design.md,
+section 4). One row per job: a dot, « Waiting in the cloud » / « Working
+in the cloud » / « Done in the cloud », the first line of what was
+asked, and at most one action — take it back while it is queued, show
+the answer once there is one, put it away when it has been read. The
+strip is on every chat screen and it is rebuilt from Claidor's own
+listing, so a job sent last night is still there in the morning whatever
+happened to the laptop. A finished answer opens in the assistant's own
+voice, serif, in the app's own renderer.
+
+A live job is never hidden and never put away: the person must be able
+to find it long after the moment they sent it. « Put away » is the app's
+own view of a *finished* job and nothing more — no job is deleted on
+Claidor, and Claidor has no notion of a job having been seen.
+
+**Watching stops, and says so.** The app asks Claidor every eight
+seconds while something is live, and gives up after half an hour,
+because the whole point of the cloud engine is that nobody has to sit
+and watch. When it has stopped, the row says so with « Check again »
+rather than leaving a shimmer running on nothing. Opening the app asks
+once more, which is what makes « the summary is already there when I
+wake up » true.
+
+**A cancelled job leaves the strip.** Claidor records it as `failed`
+with « Cancelled before it started. », which is the right row in the
+table and the wrong row on the screen — a red mark about something the
+person themselves stopped. So the app puts it away on a successful
+cancel. It is not hidden from anywhere it still matters; it simply is
+not news.
+
 ## 5. The mailbox in detail
 
 The address is `name@` the domain we choose. Mail arrives at a vendor

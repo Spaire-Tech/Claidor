@@ -144,6 +144,7 @@ import FileTypeIcon from '../icons/fileTypes/FileTypeIcon';
 import MessageForkIcon from '../icons/MessageForkIcon';
 import SubagentIcon from '../icons/SubagentIcon';
 import MarkdownContent from '../MarkdownContent';
+import CloudWorkStrip from '../maty/CloudWorkStrip';
 import { type ToastEventDetail } from '../Toast';
 import { resolveAgentModelSelection, useAgentSelectedModel } from './agentModelSelection';
 import AssistantTurnBlock, { ContextCompactionDivider } from './AssistantTurnBlock';
@@ -7015,6 +7016,10 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
               <div ref={setSteerPreviewPortalTarget} />
             </div>
           )}
+          {/* What is in the cloud, above the composer
+              (docs/maties/cloud.md). Nothing is drawn when there is nothing
+              up there. */}
+          <CloudWorkStrip />
           <CoworkPromptInput
             ref={promptInputRef}
             onSubmit={onContinue}

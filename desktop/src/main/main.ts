@@ -161,12 +161,12 @@ import {
   type LibraryThumbnailGenerateResponse,
 } from '../shared/library/thumbnail';
 import type { LibraryChangedPayload } from '../shared/library/types';
-import { MatyIpc } from '../shared/maty/constants';
 import {
   type ListLocalWebServicesOptions,
   type LocalWebService,
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
+import { MatyIpc } from '../shared/maty/constants';
 import { canonicalizeMediaModelId, HAPPYHORSE_1_1_MODEL_ID, mediaModelDisplayName } from '../shared/mediaModelAliases';
 import { MemorySyncReason } from '../shared/memorySync/constants';
 import {
@@ -424,8 +424,8 @@ import {
 } from './libs/lobsterBrowserMcpServer';
 import { exportLogsZip } from './libs/logExport';
 import { MainLogReporter } from './libs/mainLogReporter';
-import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
 import { MatyService } from './libs/maty/matyService';
+import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
 import { createMemorySyncService, logMemorySyncResult } from './libs/memorySync/memorySyncService';
 import {
   migrateAgentModelRefs,
