@@ -19,10 +19,7 @@ describe('buildCoworkCapabilitySelection', () => {
   test('keeps routable direct skills in both direct and runtime selections', () => {
     const result = buildCoworkCapabilitySelection(
       ['skill-a', 'skill-disabled', 'skill-a'],
-      [],
       [makeSkill('skill-a'), makeSkill('skill-disabled', false)],
-      {},
-      [],
     );
 
     expect(result.directSkillIds).toEqual(['skill-a']);

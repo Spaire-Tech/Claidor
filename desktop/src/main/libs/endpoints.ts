@@ -83,6 +83,3 @@ export const getSkillStoreUrl = (): string => `${getServerApiBaseUrl()}/api/skil
 // The web app's home for the signed-in person.
 export const getPortalTasksUrl = (): string => `${getClaidorAppBaseUrl()}/`;
 
-export const getKitStoreUrl = (): string => `${getServerApiBaseUrl()}/api/kit-store`;
-
-export const getMcpMarketplaceUrl = (): string => `${getServerApiBaseUrl()}/api/mcp-marketplace`;

@@ -148,12 +148,6 @@ import {
   HtmlShareStatus,
   type HtmlShareStatus as HtmlShareStatusValue,
 } from '../shared/htmlShare/constants';
-import type {
-  InstalledKitRecord,
-  KitReference,
-  ResolvedKitCapabilities,
-} from '../shared/kit/constants';
-import { KitStoreKey } from '../shared/kit/constants';
 import { LibraryChangeReason, LibraryIpc } from '../shared/library/constants';
 import { type LibraryContentConfig, LibraryContentIpc, type LibraryContentStatus } from '../shared/library/contentConstants';
 import {
@@ -210,6 +204,7 @@ import {
 } from '../shared/shareDeployment/constants';
 import type { ShellOpenFailureReason as ShellOpenFailureReasonType } from '../shared/shell/constants';
 import { type ShellGetBrowserAppsInput, ShellIpc, ShellOpenFailureReason } from '../shared/shell/constants';
+import { SkinPackSkillId } from '../shared/skin/kit';
 import { AgentManager } from './agentManager';
 import { APP_NAME, APP_USER_MODEL_ID, DB_FILENAME } from './appConstants';
 import { createLocalFileProtocolResponse } from './artifactLocalFileProtocol';
@@ -265,7 +260,6 @@ import { registerConnectorsIpcHandlers } from './ipcHandlers/connectors';
 import { registerCoworkSubagentHandlers } from './ipcHandlers/coworkSubagent';
 import { ensureDshEngineReady, registerDshHandlers } from './ipcHandlers/dsh/handlers';
 import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccount';
-import { registerKitHandlers } from './ipcHandlers/kits';
 import { registerMatyIpcHandlers } from './ipcHandlers/maty';
 import { registerMcpHandlers } from './ipcHandlers/mcp';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
@@ -372,7 +366,6 @@ import {
 import { DesktopNotificationManager } from './libs/desktopNotificationManager';
 import {
   getHtmlSharePublicBaseUrl,
-  getKitStoreUrl,
   getPortalTasksUrl,
   getServerApiBaseUrl,
   getSkillStoreUrl,
@@ -3954,9 +3947,6 @@ function validateCoworkImageAttachmentsForRuntime(
 function buildCoworkUserSelectionMetadata(options: {
   prompt?: string;
   skillIds?: string[];
-  kitIds?: string[];
-  kitReferences?: KitReference[];
-  resolvedKitCapabilities?: ResolvedKitCapabilities;
   selectedTextSnippets?: CoworkSelectedTextSnippet[];
   browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
   imageAttachmentPreviews?: CoworkImageAttachmentPreview[];
@@ -3967,15 +3957,6 @@ function buildCoworkUserSelectionMetadata(options: {
 
   if (options.skillIds?.length) {
     metadata.skillIds = options.skillIds;
-  }
-  if (options.kitIds?.length) {
-    metadata.kitIds = options.kitIds;
-    if (options.kitReferences?.length) {
-      metadata.kitReferences = options.kitReferences;
-    }
-    if (options.resolvedKitCapabilities) {
-      metadata.resolvedKitCapabilities = options.resolvedKitCapabilities;
-    }
   }
   if (options.imageAttachmentPreviews?.length) {
     metadata.imageAttachmentPreviews = options.imageAttachmentPreviews;
@@ -4258,9 +4239,16 @@ const getSkinRuntimeController = (): SkinRuntimeController => {
   if (!skinRuntimeController) {
     skinRuntimeController = new SkinRuntimeController({
       rootDir: path.join(app.getPath('userData'), 'skins'),
-      getInstalledKits: () => (
-        getStore().get<Record<string, InstalledKitRecord>>(KitStoreKey.Installed) ?? {}
-      ),
+      isSkinSkillEnabled: () => {
+        try {
+          return getSkillManager()
+            .listSkills()
+            .some(skill => skill.id === SkinPackSkillId.BuiltIn && skill.enabled);
+        } catch (error) {
+          console.warn('[SkinWorkflow] could not read the appearance skill state:', error);
+          return false;
+        }
+      },
       getParentSessionId: sessionId => (
         getCoworkParentSessionId(getStore().getDatabase(), sessionId)
       ),
@@ -8549,14 +8537,6 @@ if (!gotTheLock) {
     getOpenClawRuntimeAdapter: () => openClawRuntimeAdapter,
   });
 
-  // Kits IPC handlers
-  registerKitHandlers({
-    getStore,
-    getKitStoreUrl,
-    getSkillManager,
-    syncOpenClawConfig,
-  });
-
   // Onboarding IPC handlers (docs/maties/onboarding.md): the name, the voice, the time zone
   registerOnboardingHandlers({
     getStore,
@@ -9144,9 +9124,6 @@ if (!gotTheLock) {
         title?: string;
         activeSkillIds?: string[];
         runtimeSkillIds?: string[];
-        kitIds?: string[];
-        kitReferences?: KitReference[];
-        resolvedKitCapabilities?: ResolvedKitCapabilities;
         imageAttachments?: CoworkImageAttachmentMain[];
         agentId?: string;
         modelOverride?: string;
@@ -9275,7 +9252,7 @@ if (!gotTheLock) {
 
         const skinTurn = getSkinRuntimeController().prepareTurn({
           sessionId: session.id,
-          kitIds: options.kitIds,
+          skillIds: options.activeSkillIds,
           mediaSelection: normalizeMediaSelectionState(options.mediaSelection),
           mediaGenerationEntitled: cachedMediaGenerationEntitled,
         });
@@ -9318,9 +9295,6 @@ if (!gotTheLock) {
         const messageMetadata = buildCoworkUserSelectionMetadata({
           prompt,
           skillIds: options.activeSkillIds,
-          kitIds: options.kitIds,
-          kitReferences: options.kitReferences,
-          resolvedKitCapabilities: options.resolvedKitCapabilities,
           selectedTextSnippets,
           browserAnnotations,
           imageAttachmentPreviews,
@@ -9345,9 +9319,6 @@ if (!gotTheLock) {
             systemPrompt,
             skillIds: runtimeSkillIds,
             messageSkillIds: options.activeSkillIds,
-            kitIds: options.kitIds,
-            kitReferences: options.kitReferences,
-            resolvedKitCapabilities: options.resolvedKitCapabilities,
             workspaceRoot: taskWorkingDirectory,
             confirmationMode: 'modal',
             imageAttachments: options.imageAttachments,
@@ -9404,9 +9375,6 @@ if (!gotTheLock) {
         systemPrompt?: string;
         activeSkillIds?: string[];
         runtimeSkillIds?: string[];
-        kitIds?: string[];
-        kitReferences?: KitReference[];
-        resolvedKitCapabilities?: ResolvedKitCapabilities;
         imageAttachments?: CoworkImageAttachmentMain[];
         mediaSelection?: {
           mode: 'auto' | 'image' | 'video' | 'none';
@@ -9484,7 +9452,7 @@ if (!gotTheLock) {
 
         const skinTurn = getSkinRuntimeController().prepareTurn({
           sessionId: options.sessionId,
-          kitIds: options.kitIds,
+          skillIds: options.activeSkillIds,
           mediaSelection: normalizeMediaSelectionState(options.mediaSelection),
           mediaGenerationEntitled: cachedMediaGenerationEntitled,
         });
@@ -9535,9 +9503,6 @@ if (!gotTheLock) {
             systemPrompt: continuationSystemPrompt,
             skillIds: options.runtimeSkillIds ?? options.activeSkillIds,
             messageSkillIds: options.activeSkillIds,
-            kitIds: options.kitIds,
-            kitReferences: options.kitReferences,
-            resolvedKitCapabilities: options.resolvedKitCapabilities,
             imageAttachments: options.imageAttachments,
             mediaSelection: normalizedMediaSelection,
             workflowKind,
@@ -10246,7 +10211,7 @@ if (!gotTheLock) {
             `[CoworkIPC] searched sessions; query length ${searchQuery.length}, returned ${sessions.length} of ${total} from offset ${offset} in ${Date.now() - startedAt}ms.`,
           );
         }
-        return { success: true, sessions, hasMore: offset + sessions.length < total };
+        return { success: true, sessions, total, hasMore: offset + sessions.length < total };
       } catch (error) {
         console.error('[CoworkIPC] failed to list sessions:', error);
         return {

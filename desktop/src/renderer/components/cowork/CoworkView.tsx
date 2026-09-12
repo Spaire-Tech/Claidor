@@ -47,7 +47,6 @@ import Sphere from '../design/Sphere';
 import CloudWorkStrip from '../maty/CloudWorkStrip';
 import { ModelAccessPromptKind, ModelAccessPromptModal } from '../ModelSelector';
 import { PromptPanel, QuickActionBar } from '../quick-actions';
-import type { SettingsOpenOptions } from '../Settings';
 import SkinAmbientEffects from '../skin/SkinAmbientEffects';
 import SkinBackdrop, { SkinBackdropVariant } from '../skin/SkinBackdrop';
 import { resolveModelThinkingLevel, useAgentSelectedModel } from './agentModelSelection';
@@ -70,7 +69,6 @@ const logCoworkViewModel = (message: string): void => {
 };
 
 export interface CoworkViewProps {
-  onRequestAppSettings?: (options?: SettingsOpenOptions) => void;
   onShowSkills?: () => void;
   isSidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
@@ -82,7 +80,6 @@ export interface CoworkViewProps {
 }
 
 const CoworkView: React.FC<CoworkViewProps> = ({
-  onRequestAppSettings,
   onShowSkills,
   isSidebarCollapsed,
   onToggleSidebar,

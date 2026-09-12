@@ -70,11 +70,6 @@ import {
   type HtmlShareSourceType,
   type HtmlShareStatus,
 } from '../shared/htmlShare/constants';
-import type {
-  KitReference,
-  KitSkillMetadata,
-  ResolvedKitCapabilities,
-} from '../shared/kit/constants';
 import { LibraryIpc } from '../shared/library/constants';
 import {
   type LibraryContentConfig,
@@ -192,28 +187,11 @@ contextBridge.exposeInMainWorld('electron', {
     setEnabledByRegistryId: (options: { registryId: string; enabled: boolean }) =>
       ipcRenderer.invoke(McpIpcChannel.SetEnabledByRegistryId, options),
     retryLaunchResolution: (id: string) => ipcRenderer.invoke(McpIpcChannel.RetryLaunchResolution, id),
-    fetchMarketplace: () => ipcRenderer.invoke(McpIpcChannel.FetchMarketplace),
-    connectQichacha: () => ipcRenderer.invoke(McpIpcChannel.ConnectQichacha),
     onChanged: (callback: () => void) => {
       const handler = () => callback();
       ipcRenderer.on(McpIpcChannel.Changed, handler);
       return () => ipcRenderer.removeListener(McpIpcChannel.Changed, handler);
     },
-  },
-  kits: {
-    fetchStore: () => ipcRenderer.invoke('kits:fetchStore'),
-    install: (params: {
-      kitId: string;
-      bundleUrl: string;
-      version: string;
-      skillListIds: string[];
-      skillList?: KitSkillMetadata[];
-      mcpServers?: unknown[] | null;
-      connectors?: unknown[] | null;
-    }) =>
-      ipcRenderer.invoke('kits:install', params),
-    uninstall: (kitId: string) => ipcRenderer.invoke('kits:uninstall', kitId),
-    listInstalled: () => ipcRenderer.invoke('kits:listInstalled'),
   },
   skin: {
     getActive: (): Promise<SkinGetActiveResponse> => ipcRenderer.invoke(SkinIpc.GetActive),
@@ -515,9 +493,6 @@ contextBridge.exposeInMainWorld('electron', {
       title?: string;
       activeSkillIds?: string[];
       runtimeSkillIds?: string[];
-      kitIds?: string[];
-      kitReferences?: KitReference[];
-      resolvedKitCapabilities?: ResolvedKitCapabilities;
       selectedTextSnippets?: Array<{ id: string; text: string; sourceMessageId?: string; sourceMessageType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceId?: string; sourceType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceTitle?: string; sourcePath?: string; artifactId?: string; createdAt: number; startOffset?: number; endOffset?: number }>;
       browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
       agentId?: string;
@@ -532,9 +507,6 @@ contextBridge.exposeInMainWorld('electron', {
       systemPrompt?: string;
       activeSkillIds?: string[];
       runtimeSkillIds?: string[];
-      kitIds?: string[];
-      kitReferences?: KitReference[];
-      resolvedKitCapabilities?: ResolvedKitCapabilities;
       selectedTextSnippets?: Array<{ id: string; text: string; sourceMessageId?: string; sourceMessageType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceId?: string; sourceType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceTitle?: string; sourcePath?: string; artifactId?: string; createdAt: number; startOffset?: number; endOffset?: number }>;
       browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
       imageAttachments?: Array<{ name: string; mimeType: string; base64Data: string; sizeBytes?: number; localPath?: string; previewMimeType?: string; previewBase64Data?: string }>;

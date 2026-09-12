@@ -42,10 +42,6 @@ import {
   type CoworkSelectedTextSnippet,
   CoworkSelectedTextSource,
 } from '../shared/cowork/selectedText';
-import type {
-  KitReference,
-  ResolvedKitCapabilities,
-} from '../shared/kit/constants';
 import {
   type Platform,
   PlatformRegistry,
@@ -512,9 +508,6 @@ export interface CoworkMessageMetadata {
   isStreaming?: boolean;
   isFinal?: boolean;
   skillIds?: string[];
-  kitIds?: string[];
-  kitReferences?: KitReference[];
-  resolvedKitCapabilities?: ResolvedKitCapabilities;
   usage?: {
     inputTokens?: number;
     outputTokens?: number;

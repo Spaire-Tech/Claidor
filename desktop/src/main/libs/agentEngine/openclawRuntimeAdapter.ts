@@ -78,10 +78,6 @@ import {
 } from '../../../shared/enterpriseAccount/constants';
 import { resolveEnterpriseQuotaError } from '../../../shared/enterpriseAccount/quotaError';
 import type { EnterpriseQuotaErrorDetails } from '../../../shared/enterpriseAccount/types';
-import type {
-  KitReference,
-  ResolvedKitCapabilities,
-} from '../../../shared/kit/constants';
 import { OpenClawGatewayFailureKind } from '../../../shared/openclawEngine/constants';
 import { OpenClawTranscriptSafetyStatus } from '../../../shared/openclawTranscript/constants';
 import { ProviderName } from '../../../shared/providers';
@@ -4427,9 +4423,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       skipInitialUserMessage: options.skipInitialUserMessage,
       skillIds: options.skillIds,
       messageSkillIds: options.messageSkillIds,
-      kitIds: options.kitIds,
-      kitReferences: options.kitReferences,
-      resolvedKitCapabilities: options.resolvedKitCapabilities,
       systemPrompt: options.systemPrompt,
       confirmationMode: options.confirmationMode,
       imageAttachments: options.imageAttachments,
@@ -4448,9 +4441,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       systemPrompt: options.systemPrompt,
       skillIds: options.skillIds,
       messageSkillIds: options.messageSkillIds,
-      kitIds: options.kitIds,
-      kitReferences: options.kitReferences,
-      resolvedKitCapabilities: options.resolvedKitCapabilities,
       imageAttachments: options.imageAttachments,
       mediaSelection: options.mediaSelection,
       workflowKind: options.workflowKind,
@@ -5267,9 +5257,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       systemPrompt?: string;
       skillIds?: string[];
       messageSkillIds?: string[];
-      kitIds?: string[];
-      kitReferences?: KitReference[];
-      resolvedKitCapabilities?: ResolvedKitCapabilities;
       confirmationMode?: 'modal' | 'text';
       imageAttachments?: CoworkImageAttachment[];
       agentId?: string;
@@ -5321,7 +5308,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const goalSettingMetadata = buildGoalSettingMessageMetadata(prompt);
       const metadata = (
         messageSkillIds?.length
-        || options.kitIds?.length
         || imageAttachmentPreviews?.length
         || options.selectedTextSnippets?.length
         || options.browserAnnotations?.length
@@ -5330,11 +5316,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         ? {
           ...goalSettingMetadata,
           ...(messageSkillIds?.length ? { skillIds: messageSkillIds } : {}),
-          ...(options.kitIds?.length ? {
-            kitIds: options.kitIds,
-            ...(options.kitReferences?.length ? { kitReferences: options.kitReferences } : {}),
-            ...(options.resolvedKitCapabilities ? { resolvedKitCapabilities: options.resolvedKitCapabilities } : {}),
-          } : {}),
           ...(imageAttachmentPreviews?.length ? { imageAttachmentPreviews } : {}),
           ...(options.selectedTextSnippets?.length ? { selectedTextSnippets: options.selectedTextSnippets } : {}),
           ...(options.browserAnnotations?.length ? { browserAnnotations: options.browserAnnotations } : {}),

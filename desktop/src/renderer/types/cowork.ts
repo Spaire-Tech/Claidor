@@ -396,6 +396,8 @@ export interface CoworkSessionResult {
 export interface CoworkSessionListResult {
   success: boolean;
   sessions?: CoworkSessionSummary[];
+  /** How many sessions match in total, not just on this page. */
+  total?: number;
   /** Whether more sessions exist beyond the currently loaded set. */
   hasMore?: boolean;
   error?: string;

@@ -511,30 +511,6 @@ interface McpServerConfigIPC {
   updatedAt: number;
 }
 
-interface McpMarketplaceServer {
-  id: string;
-  name: string;
-  description_zh?: string;
-  description_en: string;
-  category: string;
-  transportType: 'stdio' | 'sse' | 'http';
-  command: string;
-  defaultArgs: string[];
-  requiredEnvKeys?: string[];
-  optionalEnvKeys?: string[];
-}
-
-interface McpMarketplaceCategory {
-  id: string;
-  name_zh?: string;
-  name_en: string;
-}
-
-interface McpMarketplaceData {
-  categories: McpMarketplaceCategory[];
-  servers: McpMarketplaceServer[];
-}
-
 import type { AgentLegacyIdentityCleanupResult } from '@shared/agent';
 import type { Platform } from '@shared/platform';
 
@@ -758,16 +734,6 @@ interface IElectronAPI {
     retryLaunchResolution: (
       id: string,
     ) => Promise<{ success: boolean; servers?: McpServerConfigIPC[]; error?: string }>;
-    fetchMarketplace: () => Promise<{
-      success: boolean;
-      data?: McpMarketplaceData;
-      error?: string;
-    }>;
-    connectQichacha: () => Promise<{
-      success: boolean;
-      servers?: McpServerConfigIPC[];
-      error?: string;
-    }>;
     onChanged: (callback: () => void) => () => void;
   };
   skin: {
@@ -1040,6 +1006,8 @@ interface IElectronAPI {
     listSessions: (options?: { limit?: number; offset?: number; agentId?: string; searchQuery?: string }) => Promise<{
       success: boolean;
       sessions?: CoworkSessionSummary[];
+      /** How many sessions match in total, not just on this page. */
+      total?: number;
       hasMore?: boolean;
       error?: string;
     }>;

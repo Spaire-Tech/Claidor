@@ -352,7 +352,7 @@ export class McpRuntime {
 
     const askUserCallbackUrl = this.getAskUserCallbackUrl();
     const shouldEnableComputerUse = askUserCallbackUrl !== null
-      && isComputerUseKitInstalled(this.deps.getStore());
+      && isComputerUseKitInstalled();
     if (shouldEnableComputerUse) {
       const installResult = await installComputerUseRuntime();
       if (!installResult.success) {
