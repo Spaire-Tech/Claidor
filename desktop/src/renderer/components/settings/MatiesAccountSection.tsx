@@ -12,6 +12,7 @@ import { getPersonInitials } from '../agentSidebar/personInitials';
 import Eyebrow from '../design/Eyebrow';
 import Pill, { PillTone } from '../design/Pill';
 import Sphere from '../design/Sphere';
+import { formatCostMultiplier } from '../modelCostMultiplier';
 
 /**
  * Settings → Account (docs/maties/design.md, section 5): the sphere, the
@@ -83,6 +84,30 @@ const MatiesAccountSection: React.FC = () => {
   const availableModels = useSelector((state: RootState) => state.model.availableModels);
   const [busy, setBusy] = useState<'login' | 'logout' | 'refresh' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Which models Claidor offers, and when it was last asked. The founder
+  // could only answer that from a log file on their own machine, four
+  // rounds running, so it is a button and a line here instead.
+  const [checking, setChecking] = useState(false);
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
+  const [checkError, setCheckError] = useState(false);
+
+  const handleRecheck = useCallback(async () => {
+    setChecking(true);
+    setCheckError(false);
+    try {
+      const ok = await authService.refreshServerModels();
+      setCheckError(!ok);
+      // The time is recorded whether or not the list changed: « nothing
+      // changed » is an answer, and only a timestamp distinguishes it from
+      // « nobody asked ».
+      setCheckedAt(ok ? new Date().toLocaleTimeString() : null);
+    } catch {
+      setCheckError(true);
+      setCheckedAt(null);
+    } finally {
+      setChecking(false);
+    }
+  }, []);
 
   const serverModels = availableModels.filter((model: Model) => model.isServerModel);
 
@@ -209,6 +234,15 @@ const MatiesAccountSection: React.FC = () => {
               </Pill>
             </div>
           )}
+          {/* Sign out ends the session and disconnects the accounts; it does
+              not remove anything from this computer. Said here because
+              « sign out » implies otherwise to most people, and finding out
+              by trying it is the wrong way round. */}
+          {isLoggedIn && (
+            <p className="maties-caption mt-2 max-w-[56ch]">
+              {i18nService.t('matiesSignOutKeeps')}
+            </p>
+          )}
           {notice && <p className="maties-caption mt-2">{notice}</p>}
         </Row>
       </Section>
@@ -275,12 +309,36 @@ const MatiesAccountSection: React.FC = () => {
                 <span className="maties-caption maties-mono shrink-0 tabular-nums">
                   {(model.costMultiplier ?? 1) === 1
                     ? i18nService.t('matiesAccountModelCostStandard')
-                    : i18nService.t('matiesAccountModelCost').replace('{multiplier}', String(model.costMultiplier ?? 1))}
+                    : i18nService.t('matiesAccountModelCost')
+                      .replace('{multiplier}', formatCostMultiplier(model.costMultiplier ?? 1))}
                 </span>
               </div>
             </Row>
           ))
         )}
+        <Row>
+          <div className="flex items-center justify-between gap-4">
+            <p className="maties-caption min-w-0">
+              {checkError
+                ? i18nService.t('matiesAccountModelsCheckFailed')
+                : checkedAt
+                  ? i18nService.t('matiesAccountModelsCheckedAt').replace('{time}', checkedAt)
+                  : i18nService.t('matiesAccountModelsStale')}
+            </p>
+            {isLoggedIn && (
+              <button
+                type="button"
+                className="maties-pill-sm shrink-0"
+                disabled={checking}
+                onClick={() => { void handleRecheck(); }}
+              >
+                {checking
+                  ? i18nService.t('matiesAccountModelsChecking')
+                  : i18nService.t('matiesAccountModelsRecheck')}
+              </button>
+            )}
+          </div>
+        </Row>
         <Row>
           <p className="maties-caption">{i18nService.t('matiesAccountModelsExplain')}</p>
         </Row>

@@ -29,6 +29,7 @@ import type { Model } from '../store/slices/modelSlice';
 import { getModelIdentityKey, isSameModelIdentity, setSelectedModel } from '../store/slices/modelSlice';
 import { resolveModelIconProviderKey } from '../utils/modelProviderHint';
 import Modal from './common/Modal';
+import { formatCostMultiplier } from './modelCostMultiplier';
 import ModelThinkingMenu, {
   getModelThinkingLevelLabel,
 } from './modelSelector/ModelThinkingMenu';
@@ -964,7 +965,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         )}
         {model.costMultiplier != null && model.costMultiplier > 0 && (
           <span className="shrink-0 text-[11px] text-secondary whitespace-nowrap">
-            x{model.costMultiplier}
+            x{formatCostMultiplier(model.costMultiplier)}
           </span>
         )}
         <span className="flex-1" />
@@ -1052,7 +1053,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         )}
         {hoveredModel.costMultiplier != null && hoveredModel.costMultiplier > 0 && (
           <div className="mt-2 text-[11px] text-secondary">
-            ({i18nService.t('modelCostMultiplierLabel')} x{hoveredModel.costMultiplier})
+            ({i18nService.t('modelCostMultiplierLabel')} x{formatCostMultiplier(hoveredModel.costMultiplier)})
           </div>
         )}
         {(hoveredModel.supportsImage || hoveredModel.supportsThinking) && (

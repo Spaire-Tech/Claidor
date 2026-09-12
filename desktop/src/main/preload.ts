@@ -96,6 +96,10 @@ import {
   type LocalWebService,
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
+import {
+  MatyIpc,
+  type MatyState,
+} from '../shared/maty/constants';
 import { McpIpcChannel } from '../shared/mcp/constants';
 import { OnboardingIpcChannel, type OnboardingProfile } from '../shared/onboarding/constants';
 import { OpenClawEngineIpc } from '../shared/openclawEngine/constants';
@@ -958,6 +962,22 @@ contextBridge.exposeInMainWorld('electron', {
       };
       ipcRenderer.on(ConnectorsIpc.Changed, handler);
       return () => ipcRenderer.removeListener(ConnectorsIpc.Changed, handler);
+    },
+  },
+  // Work sent to the cloud engine (docs/maties/cloud.md): the requests and the
+  // watching belong to the main process; the renderer only asks and is told.
+  maty: {
+    getState: () => ipcRenderer.invoke(MatyIpc.GetState),
+    refresh: () => ipcRenderer.invoke(MatyIpc.Refresh),
+    send: (prompt: string) => ipcRenderer.invoke(MatyIpc.Send, prompt),
+    getJob: (jobId: string) => ipcRenderer.invoke(MatyIpc.GetJob, jobId),
+    cancel: (jobId: string) => ipcRenderer.invoke(MatyIpc.Cancel, jobId),
+    onChanged: (callback: (state: MatyState) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, state: MatyState) => {
+        callback(state);
+      };
+      ipcRenderer.on(MatyIpc.Changed, handler);
+      return () => ipcRenderer.removeListener(MatyIpc.Changed, handler);
     },
   },
   sites: {

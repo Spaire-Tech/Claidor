@@ -14,6 +14,10 @@ import {
   type CoworkBrowserAnnotationMessageBatch,
   normalizeBrowserAnnotationBatches,
 } from '@shared/cowork/browserAnnotations';
+import {
+  MatyOutcome,
+  MatyWorkPlace,
+} from '@shared/maty/constants';
 import { ProviderName } from '@shared/providers';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -57,6 +61,7 @@ import {
   LogReporterEntry,
   reportYdAnalyzer,
 } from '../../services/logReporter';
+import { matyService } from '../../services/maty';
 import { getOnboardingErrorCode, reportOnboardingAction } from '../../services/onboardingAnalytics';
 import { resolveLocalizedText, skillService } from '../../services/skill';
 import { RootState } from '../../store';
@@ -132,6 +137,9 @@ import TaskPauseIcon from '../icons/TaskPauseIcon';
 import TrashIcon from '../icons/TrashIcon';
 import XMarkIcon from '../icons/XMarkIcon';
 import { ActiveKitBadge, KitsButton } from '../kits';
+import { setMatyWorkPlace } from '../maty/matyPreferences';
+import RunsWhereChip from '../maty/RunsWhereChip';
+import { useMatyState, useMatyWorkPlace } from '../maty/useMatyState';
 import ModelSelector, {
   isModelAgenticBlocked,
   ModelAccessPromptKind,
@@ -371,6 +379,10 @@ const COMPOSER_ROUND_BUTTON_CLASS_NAME =
 const COMPOSER_TRAY_CHIP_CLASS_NAME =
   'flex h-[34px] min-w-0 items-center gap-[9px] rounded-[10px] border-0 bg-transparent px-[11px] text-[14.5px] tracking-[-.008em] text-[#31353b] transition-colors hover:bg-[#f3f3f1]';
 const ADD_MENU_ICON_CLASS_NAME = 'text-[#4a4f57]';
+// « Runs where » sits beside the model chip and is cut from the same cloth:
+// both say how the next answer is made (docs/maties/cloud.md, section 1).
+const RUNS_WHERE_CHIP_CLASS_NAME =
+  'flex h-8 min-w-0 max-w-[190px] items-center gap-[7px] rounded-full border-0 bg-transparent px-[10px] text-[13.5px] leading-5 tracking-[-.006em] text-[#4a4f57] transition-colors hover:bg-[#f3f3f1]';
 // Fixed textarea height while it holds quick-action template text (~7 lines
 // at 22px line-height plus padding). Shorter than maxHeight so the shortest
 // templates don't leave a large blank area; longer templates scroll inside.
@@ -706,6 +718,15 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   // The tray (the lower card) carries the working folder and the agent; the
   // compact composer beside an open artifact has no room for it.
   const useComposerTray = isLarge && !isCompact && (showFolderSelector || showAgentSelector || showReadOnlyContext);
+
+  // Where the next piece of work runs (docs/maties/cloud.md). The choice is
+  // offered only when Claidor says the cloud engine will take work: there is
+  // no greyed-out version of this chip, because a control that cannot be
+  // honoured is not a control.
+  const matyState = useMatyState();
+  const matyWorkPlace = useMatyWorkPlace();
+  const offerCloudChoice = isLarge && !remoteManaged && matyState.available;
+  const sendsToCloud = offerCloudChoice && matyWorkPlace === MatyWorkPlace.Cloud;
 
   const effectiveSelectedModel = resolveEffectiveModel({
     sessionId,
@@ -1424,6 +1445,34 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     reportPromptControl,
   ]);
 
+  /**
+   * Send what is in the box to the cloud engine instead of running it here
+   * (docs/maties/cloud.md). Only the words travel: the contract carries a
+   * prompt and nothing else, so attached files, the working folder and the
+   * chosen agent all stay on this computer, and the toast says so.
+   */
+  const sendPromptToCloud = useCallback(async (): Promise<void> => {
+    const prompt = value.trim();
+    if (!prompt) return;
+    const result = await matyService.send(prompt);
+    if (result.outcome === MatyOutcome.Sent) {
+      showToast(i18nService.t(hasAttachments ? 'matySentWithoutFiles' : 'matySent'));
+      if (draftKeyRef.current === draftKey) {
+        setValue('');
+        dispatch(setDraftPrompt({ sessionId: draftKey, draft: '' }));
+      }
+      return;
+    }
+    if (result.outcome === MatyOutcome.Unavailable) {
+      // Claidor has switched the cloud engine off since the chip was drawn.
+      // The choice goes away and the words stay where they are.
+      setMatyWorkPlace(MatyWorkPlace.Here);
+      showToast(i18nService.t('matyUnavailable'));
+      return;
+    }
+    showToast(i18nService.t('matySendFailed').replace('{reason}', result.error ?? ''));
+  }, [value, hasAttachments, draftKey, dispatch]);
+
   const handleSubmit = useCallback(async (submitMethod: 'button' | 'keyboard' | 'voice' = 'button') => {
     let effectiveSubmitMethod = submitMethod;
     if (submitDisabled) {
@@ -1433,6 +1482,13 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
         ...getPromptTextAnalyticsParams(value),
         ...getPromptCapabilityAnalyticsParams(),
       });
+      return;
+    }
+    // « In the cloud » takes the whole send: the work goes up to Claidor and
+    // nothing starts here. A goal, a steer and a dictation are all part of a
+    // conversation already running on this computer, so they never do.
+    if (sendsToCloud && !goalInputActive && !steerInputActive && !isVoiceRecording) {
+      await sendPromptToCloud();
       return;
     }
     const btwCommand = !goalInputActive && !steerInputActive && !isVoiceRecording
@@ -2015,7 +2071,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     resetGoalInput(false);
     draftStartedAnalyticsRef.current = false;
     inputSourceOverrideRef.current = null;
-  }, [value, steerInputActive, steerValue, isVoiceRecording, stopVoiceRecordingAndRecognize, goalInputActive, goalInputMode, resetGoalInput, isStreaming, canSteer, remoteManaged, disabled, submitDisabled, isPatchingModel, onSubmit, onGoalCommand, activeSkillIds, skills, activeKitIds, marketplaceKits, installedKits, attachments, browserAnnotationBatches, showFolderSelector, workingDirectory, dispatch, draftKey, selectedTextSnippets, pendingSteers.length, resolveSubmitModelAccessPrompt, isLoggedIn, hasAccessibleUserModel, isPlanMode, planConfirmation, reportPromptControl, getPromptCapabilityAnalyticsParams, getPromptContextAnalyticsParams, getPromptInputSource, goal, sessionId, preparePromptPayload, modelSupportsImage, queuedMediaSelection, authOwnerAccountKey, authAccountGeneration, effectiveModelIsAvailable, modelSelectionRefreshPending, effectiveSelectedModel?.id, effectiveSelectedModel?.providerKey]);
+  }, [sendsToCloud, sendPromptToCloud, value, steerInputActive, steerValue, isVoiceRecording, stopVoiceRecordingAndRecognize, goalInputActive, goalInputMode, resetGoalInput, isStreaming, canSteer, remoteManaged, disabled, submitDisabled, isPatchingModel, onSubmit, onGoalCommand, activeSkillIds, skills, activeKitIds, marketplaceKits, installedKits, attachments, browserAnnotationBatches, showFolderSelector, workingDirectory, dispatch, draftKey, selectedTextSnippets, pendingSteers.length, resolveSubmitModelAccessPrompt, isLoggedIn, hasAccessibleUserModel, isPlanMode, planConfirmation, reportPromptControl, getPromptCapabilityAnalyticsParams, getPromptContextAnalyticsParams, getPromptInputSource, goal, sessionId, preparePromptPayload, modelSupportsImage, queuedMediaSelection, authOwnerAccountKey, authAccountGeneration, effectiveModelIsAvailable, modelSelectionRefreshPending, effectiveSelectedModel?.id, effectiveSelectedModel?.providerKey]);
   handleSubmitRef.current = handleSubmit;
 
   const handleSelectSkill = useCallback((skill: Skill) => {
@@ -2993,6 +3049,14 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     return () => window.removeEventListener(ConfigServiceEvent.Updated, syncFromConfig);
   }, []);
 
+  const largeRunsWhereChip = offerCloudChoice ? (
+    <RunsWhereChip
+      place={matyWorkPlace}
+      className={RUNS_WHERE_CHIP_CLASS_NAME}
+      compact={useLargeToolbarCompactLayout}
+    />
+  ) : null;
+
   const largeModelSelector = showModelSelector ? (
     <div className="flex flex-col items-start gap-1">
       <ModelSelector
@@ -3967,6 +4031,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
                 </div>
                 <div className={`ml-auto flex shrink-0 items-center ${largeToolbarControlGapClass}`}>
                   {contextUsageControl}
+                  {largeRunsWhereChip}
                   {voiceRecordingUiState.showLargeModelSelector && largeModelSelector}
                   {largeVoiceInputButton}
                   {largeSendButton}

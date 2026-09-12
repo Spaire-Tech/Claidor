@@ -17,10 +17,18 @@ The three rules the rest of this file exists to keep:
    same as an honest failure, and a job that cannot work stops after
    `MATY_JOB_MAX_ATTEMPTS` instead of looping for ever.
 3. **A job's credential dies with its lease.** See `claim`.
+
+The other half of this file is the person's side — what the app may ask
+for (`create_for_person` and the three that follow it). It is a separate
+set of methods rather than a flag on the same ones because the whole
+difference between the two callers is what gets checked: Claidor's own
+`enqueue` is trusted about delivery and permission, and a client is
+trusted about neither.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
@@ -43,6 +51,40 @@ CLAIM_SCAN_LIMIT = 20
 
 #: What a job is told when its runner simply stopped answering.
 LEASE_LOST_REASON = "The runner stopped answering and the lease ran out."
+
+#: What a job is told when the person changed their mind before it ran.
+#:
+#: A cancelled job is `failed` and not a status of its own. The table has
+#: four statuses and the two final ones are `done` and `failed`; adding a
+#: fifth would mean a value the deployed runner has never heard of, for a
+#: difference the app can already read off this sentence. If the app ever
+#: needs to *style* a cancellation differently from a breakage, that is
+#: the moment to add `MatyJobStatus.cancelled` — and it is a change to
+#: the model, the final set and the claim filter, not a detail.
+CANCELLED_REASON = "Cancelled before it started."
+
+#: The longest prompt the app may send. Long enough for a page of
+#: instructions and the mail that provoked them; short enough that the
+#: queue cannot be used as a filing cabinet. The prompt is what the
+#: engine is told to do, not the material it works on — that comes from
+#: the person's memory and their library.
+PROMPT_MAX_LENGTH = 8_000
+
+#: How many jobs one person may have waiting or running at once.
+#:
+#: Ten is not a quota on how much anybody may use the cloud; it is a
+#: ceiling on how fast a mistake can fill the queue. A loop in the app
+#: gets ten refusals instead of ten thousand rows, and a person working
+#: honestly never sees it, because a job that has finished no longer
+#: counts and the runner works through them steadily. Every other limit
+#: on the cloud engine is about money and lives in the metered proxy;
+#: this one is about the queue.
+LIVE_JOB_LIMIT = 10
+
+#: The most jobs one listing returns. The app shows a recent history, not
+#: an archive, and an answer whose size grows with how long somebody has
+#: been a customer is a bug that takes a year to appear.
+JOB_LIST_LIMIT = 50
 
 
 class MatyError(PolarError): ...
@@ -73,6 +115,66 @@ class MatyJobNotHeld(MatyError):
         super().__init__(message, status_code=409)
 
 
+class MatyNotAvailable(MatyError):
+    """This Claidor has no cloud runner, so there is nothing to queue for.
+
+    503 and not 202: a job nobody will ever take is worse than a refusal,
+    because the person is told their work is under way and it is not. The
+    app reads the same fact from `available` on the listing and hides the
+    button; this is what a client that ignored it gets.
+    """
+
+    def __init__(
+        self, message: str = "The cloud engine is not available on this Claidor."
+    ) -> None:
+        super().__init__(message, status_code=503)
+
+
+class MatyJobRefused(MatyError):
+    """The job as asked for cannot be made: 400, with the reason said
+    plainly enough to show a person."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, status_code=400)
+
+
+class MatyTooManyJobs(MatyError):
+    """This person already has `LIVE_JOB_LIMIT` jobs in flight."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__(
+            f"You already have {limit} pieces of work waiting or running. "
+            "Wait for one to finish, or cancel one, before starting another.",
+            status_code=429,
+        )
+
+
+class MatyJobNotCancellable(MatyError):
+    """Only a job that has not started can be called off.
+
+    A `running` job is held by a runner under a lease, in a container
+    that is already working. Marking it cancelled here would not stop
+    that container, and the runner would then complete or fail a job we
+    had declared finished — two writers on one row, racing, for no gain.
+    The lease is short; a running job either lands or times out, and it
+    can be left alone until it does. A cloud engine that can genuinely
+    stop mid-flight is a different feature — the runner would have to ask
+    whether it is still wanted — and it is not this one.
+    """
+
+    def __init__(self, job_id: UUID, status: MatyJobStatus) -> None:
+        if status is MatyJobStatus.running:
+            detail = (
+                "This work has already started and cannot be called off. "
+                "It will stop on its own if it does not finish."
+            )
+        else:
+            detail = f"This work has already finished ({status.value})."
+        super().__init__(detail, status_code=409)
+        self.job_id = job_id
+        self.status = status
+
+
 @dataclass(frozen=True)
 class ClaimedJob:
     """What a runner receives: the job, a credential that acts as that one
@@ -90,6 +192,25 @@ def retry_delay(attempts: int) -> timedelta:
 
 
 class MatyService:
+    # --- whether there is a cloud engine at all --------------------------
+
+    @property
+    def available(self) -> bool:
+        """Whether the cloud engine can actually do anything here.
+
+        The runner authenticates with `CLAIDOR_MATY_RUNNER_TOKEN`
+        (`polar.maty.auth`), so a Claidor without that setting has no way
+        to let a runner in, and a job queued on it would sit there for
+        ever. One fact, read the same way by the listing (which says
+        `available: false` so the app can hide the button) and by the
+        create route (which refuses, so a patched app cannot queue work
+        nobody will do). A development machine and a production Claidor
+        that has lost its environment variable look identical from here,
+        which is right: in both, the answer to « can this run in the
+        cloud » is no.
+        """
+        return bool(settings.MATY_RUNNER_TOKEN)
+
     # --- putting work in -----------------------------------------------
 
     async def enqueue(
@@ -116,6 +237,124 @@ class MatyService:
         session.add(job)
         await session.flush()
         return job
+
+    # --- the person's four verbs ----------------------------------------
+    #
+    # `enqueue` above is Claidor's own way in: a routine coming due, a
+    # piece of mail, a retry. Everything below is the app asking on a
+    # person's behalf, and it is the only path a client can reach. The
+    # difference is entirely in what is checked, which is why these are
+    # separate methods and not a flag.
+
+    async def create_for_person(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        kind: MatyJobKind = MatyJobKind.task,
+        prompt: str,
+        deliver: dict[str, Any] | None = None,
+        allow: dict[str, Any] | None = None,
+    ) -> MatyJob:
+        """One piece of work a person asked for, or a refusal saying why not.
+
+        **`deliver` and `allow` are refused, not ignored, and this is the
+        decision the route exists to hold.** Section 4 of
+        `docs/maties/cloud.md`: `allow` is what the job may do that cannot
+        be undone — send, pay, delete — and `deliver` is where an answer
+        is sent without anybody reading it first. Both are the difference
+        between « the assistant drafted this » and « the assistant did
+        this », and neither is safe to take from a client: an app is
+        patchable and a stranger's mail can end up in a prompt, so the
+        only place either may be decided is the server, per routine, once
+        there are routines to decide for. Until then the cautious default
+        is the whole story — the answer comes back to the app and nothing
+        is sent anywhere — and widening it is its own piece of work.
+        Refused rather than dropped because a silently emptied `deliver`
+        is the worst of the three outcomes: the person is told their
+        briefing was emailed and it was not.
+
+        `kind`, by contrast, is the client's to choose. It is a label on
+        why the job exists and it grants nothing on its own: what a job
+        may do is `allow`, and `allow` is empty. An app that calls its
+        work a routine when it is a task has told us something slightly
+        wrong about its own history and nothing else. The day `kind`
+        starts deciding anything — a different workspace, a different
+        tool list — is the day it stops being the client's to choose.
+        """
+        if not self.available:
+            raise MatyNotAvailable()
+        if deliver:
+            raise MatyJobRefused(
+                "Claidor decides where an answer goes, not the app. "
+                "A job started from the app answers in the app."
+            )
+        if allow:
+            raise MatyJobRefused(
+                "Claidor decides what a job may do on your behalf, not the app. "
+                "Work started this way prepares things and waits."
+            )
+
+        cleaned = prompt.strip()
+        if not cleaned:
+            raise MatyJobRefused("A job needs something to do.")
+        if len(cleaned) > PROMPT_MAX_LENGTH:
+            raise MatyJobRefused(
+                f"That is longer than {PROMPT_MAX_LENGTH:,} characters, "
+                "which is as much as one job may be asked in one go."
+            )
+
+        repository = MatyJobRepository.from_session(session)
+        # Counted immediately before the insert, in the same transaction,
+        # so two requests racing can at worst overshoot by one — and the
+        # cap is a guard against a loop, not an accounting figure.
+        if await repository.count_live_for_user(user.id) >= LIVE_JOB_LIMIT:
+            raise MatyTooManyJobs(LIVE_JOB_LIMIT)
+
+        return await self.enqueue(session, user, kind=kind, prompt=cleaned)
+
+    async def list_for_person(
+        self, session: AsyncSession, user: User
+    ) -> Sequence[MatyJob]:
+        """This person's jobs, newest first, at most `JOB_LIST_LIMIT`."""
+        return await MatyJobRepository.from_session(session).list_by_user(
+            user.id, limit=JOB_LIST_LIMIT
+        )
+
+    async def get_for_person(
+        self, session: AsyncSession, user: User, job_id: UUID
+    ) -> MatyJob:
+        """One job of this person's, or `MatyJobNotFound`.
+
+        Somebody else's job is not found — 404 and never 403. A job id is
+        a name for a piece of somebody's private work, and an endpoint
+        that says « that exists but is not yours » lets anybody with a
+        list of ids learn which of them are real. There is one answer for
+        « no such job » and « not your job » because from where the caller
+        stands they are the same sentence.
+        """
+        job = await MatyJobRepository.from_session(session).get_by_id_for_user(
+            job_id, user.id
+        )
+        if job is None:
+            raise MatyJobNotFound(job_id)
+        return job
+
+    async def cancel_for_person(
+        self,
+        session: AsyncSession,
+        user: User,
+        job_id: UUID,
+        *,
+        now: datetime | None = None,
+    ) -> MatyJob:
+        """Call off a job that has not started. See `MatyJobNotCancellable`
+        for why `running` is refused rather than raced."""
+        moment = now or utc_now()
+        job = await self.get_for_person(session, user, job_id)
+        if job.status is not MatyJobStatus.queued:
+            raise MatyJobNotCancellable(job.id, job.status)
+        return await self._give_up(session, job, reason=CANCELLED_REASON, now=moment)
 
     # --- the runner's four verbs ---------------------------------------
 
@@ -177,6 +416,10 @@ class MatyService:
             job.runner = runner[:128]
             job.attempts += 1
             job.lease_expires_at = expires_at
+            # When the try that is now running began. Stamped at every
+            # claim, so a retry says when *it* started rather than when
+            # the first attempt did; `attempts` is what counts the tries.
+            job.started_at = moment
             session.add(job)
             await session.flush()
 
@@ -234,6 +477,7 @@ class MatyService:
         job.error = None
         job.runner = None
         job.lease_expires_at = None
+        job.finished_at = moment
         session.add(job)
         await session.flush()
         await self._end_job_tokens(session, job, now=moment)
@@ -305,6 +549,7 @@ class MatyService:
         job.error = reason
         job.runner = None
         job.lease_expires_at = None
+        job.finished_at = moment
         session.add(job)
         await session.flush()
         await self._end_job_tokens(session, job, now=moment)
@@ -359,14 +604,22 @@ class MatyService:
 maty = MatyService()
 
 __all__ = [
+    "CANCELLED_REASON",
     "CLAIM_SCAN_LIMIT",
+    "JOB_LIST_LIMIT",
     "LEASE_LOST_REASON",
+    "LIVE_JOB_LIMIT",
+    "PROMPT_MAX_LENGTH",
     "ClaimedJob",
     "MatyError",
+    "MatyJobNotCancellable",
     "MatyJobNotFound",
     "MatyJobNotHeld",
+    "MatyJobRefused",
+    "MatyNotAvailable",
     "MatyRunnerUnauthenticated",
     "MatyService",
+    "MatyTooManyJobs",
     "maty",
     "retry_delay",
 ]

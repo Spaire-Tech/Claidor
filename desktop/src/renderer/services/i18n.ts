@@ -50,6 +50,12 @@ const translations: Record<'en', Record<string, string>> = {
     matiesAccountModelsSignedOut: 'Sign in to see the models you can use.',
     matiesAccountModelCost: '{multiplier}× credits',
     matiesAccountModelsExplain: 'Pick the model for a conversation from the chat box. Bigger multipliers use more credits per request.',
+    matiesAccountModelsRecheck: 'Check again',
+    matiesAccountModelsChecking: 'Checking…',
+    matiesAccountModelsCheckedAt: 'Checked at {time}',
+    matiesAccountModelsCheckFailed: 'Could not reach Claidor. The list below is the last one received.',
+    matiesAccountModelsStale: 'This list came from Claidor. If a model you expect is missing, check again.',
+    matiesSignOutKeeps: 'Signing out keeps your chats, your library and everything else on this computer. It ends this session and disconnects your accounts.',
     matiesAccountPersonTitle: 'Signed in as',
     matiesAccountModelCostStandard: 'Standard cost',
     // The screens that are not the chat (docs/maties/design.md, sections 5 and 6)
@@ -4319,6 +4325,24 @@ const translations: Record<'en', Record<string, string>> = {
     matiesConnectionsSeePlans: 'See plans',
     matiesConnectionsOwnServers: 'Your own servers',
     matiesConnectionsMcpEntryMissing: 'Could not load this connector. Check your connection and try again.',
+
+    // Work sent to the cloud engine (docs/maties/cloud.md)
+    matyRunsWhere: 'Runs',
+    matyRunsHere: 'On this computer',
+    matyRunsInCloud: 'In the cloud',
+    matyRunsWhereExplain: 'Work in the cloud carries on when this computer is asleep or shut. Only the words are sent; your files and folders stay here.',
+    matyJobQueued: 'Waiting in the cloud',
+    matyJobRunning: 'Working in the cloud',
+    matyJobDone: 'Done in the cloud',
+    matyJobFailed: 'Could not finish in the cloud',
+    matyCheckAgain: 'Check again',
+    matyCancelJob: 'Take back',
+    matyPutAway: 'Put away',
+    matySent: 'Sent to the cloud. The answer will be here, whether or not this computer stays awake.',
+    matySentWithoutFiles: 'Sent to the cloud, words only: your attached files stayed on this computer.',
+    matySendFailed: 'The work could not be sent to the cloud. {reason}',
+    matyUnavailable: 'The cloud is not taking work right now. Your words are still in the box; send again to run this on your computer.',
+    matyCancelFailed: 'That work could not be taken back. It may already have started.',
   },
 };
 

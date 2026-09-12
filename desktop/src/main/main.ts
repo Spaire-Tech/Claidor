@@ -166,6 +166,7 @@ import {
   type LocalWebService,
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
+import { MatyIpc } from '../shared/maty/constants';
 import { canonicalizeMediaModelId, HAPPYHORSE_1_1_MODEL_ID, mediaModelDisplayName } from '../shared/mediaModelAliases';
 import { MemorySyncReason } from '../shared/memorySync/constants';
 import {
@@ -261,6 +262,7 @@ import { registerCoworkSubagentHandlers } from './ipcHandlers/coworkSubagent';
 import { ensureDshEngineReady, registerDshHandlers } from './ipcHandlers/dsh/handlers';
 import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccount';
 import { registerKitHandlers } from './ipcHandlers/kits';
+import { registerMatyIpcHandlers } from './ipcHandlers/maty';
 import { registerMcpHandlers } from './ipcHandlers/mcp';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
 import { readOnboardingProfile, registerOnboardingHandlers } from './ipcHandlers/onboarding';
@@ -422,6 +424,7 @@ import {
 } from './libs/lobsterBrowserMcpServer';
 import { exportLogsZip } from './libs/logExport';
 import { MainLogReporter } from './libs/mainLogReporter';
+import { MatyService } from './libs/maty/matyService';
 import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
 import { createMemorySyncService, logMemorySyncResult } from './libs/memorySync/memorySyncService';
 import {
@@ -2134,6 +2137,9 @@ let libraryContentIndexer: LibraryContentIndexer | null = null;
 // engine's config sync can read what is connected without reaching into the
 // IPC scope that owns the authenticated request path.
 let connectorsService: ConnectorsService | null = null;
+// Work sent to the cloud engine (docs/maties/cloud.md). Held here so that
+// signing out and quitting can reach it, as they do the connections.
+let matyService: MatyService | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
   if (enabled) {
@@ -6992,6 +6998,9 @@ if (!gotTheLock) {
     // The connected accounts belong to the person who signed in, so the shelf
     // and the engine's connector entries empty with them.
     connectorsService?.reset();
+    // Cloud work belongs to the person who signed in, so the list empties
+    // with them; nothing is cancelled on Claidor.
+    matyService?.reset();
     clearEnterpriseAccountContext(getStore());
     clearServerModelMetadata();
     resetAuthQuotaGateState();
@@ -13067,6 +13076,28 @@ if (!gotTheLock) {
     },
   });
 
+  // ---- work sent to the cloud engine (docs/maties/cloud.md) ----
+  //
+  // The app posts a piece of work to Claidor and watches it for a while. It
+  // holds no credential of the runner's: every request is signed with the
+  // person's own Claidor session, exactly as connections and memory sync are.
+  matyService = new MatyService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    onStateChanged: (state) => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        if (!window.isDestroyed()) window.webContents.send(MatyIpc.Changed, state);
+      }
+    },
+  });
+  registerMatyIpcHandlers({
+    getService: () => {
+      if (!matyService) throw new Error('Cloud work is not ready yet.');
+      return matyService;
+    },
+  });
+
   // ---- artifact file watching ----
   const fileWatchers = new Map<
     string,
@@ -14205,6 +14236,7 @@ if (!gotTheLock) {
     libraryContentIndexer?.stop();
     libraryThumbnailRenderer.dispose();
     connectorsService?.dispose();
+    matyService?.dispose();
 
     // Close the SQLite database to flush the WAL and release the file lock.
     try {

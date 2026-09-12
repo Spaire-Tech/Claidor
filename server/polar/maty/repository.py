@@ -49,14 +49,46 @@ class MatyJobRepository(RepositoryIDMixin[MatyJob, UUID], RepositoryBase[MatyJob
     async def get_next_claimable(self, now: datetime) -> MatyJob | None:
         return await self.get_one_or_none(self.claimable_statement(now))
 
-    async def list_by_user(self, user_id: UUID) -> Sequence[MatyJob]:
+    async def list_by_user(
+        self, user_id: UUID, *, limit: int | None = None
+    ) -> Sequence[MatyJob]:
         """A person's jobs, newest first — what the app shows."""
         statement = (
             self.get_base_statement()
             .where(MatyJob.user_id == user_id)
             .order_by(MatyJob.created_at.desc())
         )
+        if limit is not None:
+            statement = statement.limit(limit)
         return await self.get_all(statement)
+
+    async def get_by_id_for_user(self, job_id: UUID, user_id: UUID) -> MatyJob | None:
+        """One job, if it is this person's.
+
+        The owner is part of the query and not a check after it, which is
+        the whole of « ownership is absolute »: there is no code path on
+        which a job is loaded first and judged second, so no way for a
+        route to answer differently for somebody else's job that exists
+        than for an id that never existed.
+        """
+        statement = self.get_base_statement().where(
+            MatyJob.id == job_id, MatyJob.user_id == user_id
+        )
+        return await self.get_one_or_none(statement)
+
+    async def count_live_for_user(self, user_id: UUID) -> int:
+        """How many of this person's jobs are waiting or being worked on.
+
+        « Live » is the two non-final statuses. Finished work does not
+        count against anybody: the cap is on what is in flight, so a
+        person who has used the cloud a thousand times is no more limited
+        than one who never has.
+        """
+        statement = self.get_base_statement().where(
+            MatyJob.user_id == user_id,
+            MatyJob.status.in_((MatyJobStatus.queued, MatyJobStatus.running)),
+        )
+        return await self.count(statement)
 
 
 class MatyJobSessionRepository(RepositoryBase[DesktopSession]):

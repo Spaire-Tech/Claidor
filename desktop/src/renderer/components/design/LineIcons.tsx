@@ -219,3 +219,18 @@ export const GlobeLineIcon: React.FC<LineIconProps> = (props) => (
     <path d="M12 3.5c2.4 2.4 3.6 5.3 3.6 8.5S14.4 18.1 12 20.5c-2.4-2.4-3.6-5.3-3.6-8.5S9.6 5.9 12 3.5z" />
   </svg>
 );
+
+/** Where the work runs: this computer. */
+export const LaptopLineIcon: React.FC<LineIconProps> = (props) => (
+  <svg {...svgProps(props, 1.8)}>
+    <rect x="4" y="5.5" width="16" height="10.5" rx="1.6" />
+    <path d="M2.5 19.5h19" />
+  </svg>
+);
+
+/** Where the work runs: the cloud engine. */
+export const CloudLineIcon: React.FC<LineIconProps> = (props) => (
+  <svg {...svgProps(props, 1.8)}>
+    <path d="M7.2 18.5h9.6a4.1 4.1 0 0 0 .5-8.17A5.6 5.6 0 0 0 6.6 10.5a3.9 3.9 0 0 0 .6 8z" />
+  </svg>
+);
