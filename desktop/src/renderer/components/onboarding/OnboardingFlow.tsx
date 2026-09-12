@@ -253,9 +253,20 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onAcceptPrivacy, onFini
         className="flex min-h-0 flex-1 justify-center overflow-y-auto overflow-x-hidden"
         style={{ padding: '0 clamp(20px,3vw,36px)' }}
       >
+        {/*
+          `m-auto` rather than centring on the scroll container: auto
+          margins collapse to zero once the content is taller than the
+          area, so a long step scrolls from its true top. Centring the
+          container instead would push the head of a tall step above the
+          scrollable region, where it cannot be reached at all.
+
+          The padding is symmetric for the same reason the founder asked
+          for this: the step should sit in the middle of the window with
+          air under it, not pinned to the top with the space all below.
+        */}
         <div
-          className="flex w-full min-w-0 max-w-[1040px] flex-col items-center"
-          style={{ padding: 'clamp(14px,3vh,36px) 0 40px' }}
+          className="m-auto flex w-full min-w-0 max-w-[1040px] flex-col items-center"
+          style={{ padding: 'clamp(20px,4vh,44px) 0' }}
         >
           {loaded && renderStep()}
         </div>

@@ -98,8 +98,16 @@
 .dark .maties-ob-panel { background: #1c1e23; border-color: rgba(255, 255, 255, .07); }
 .dark .maties-ob-divider { background: rgba(255, 255, 255, .07); }
 
+/* The ring that turns while a sample is on its way. Only the ring moves:
+   the disc under it stays put, because a control that jumps when clicked
+   reads as broken even when it is working. */
+@keyframes maties-orb-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.maties-orb-spinner { animation: maties-orb-spin .8s linear infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .maties-ob-step { animation: none; }
   .maties-orb-base, .maties-orb-mesh-a, .maties-orb-mesh-b { animation: none; }
   .maties-orb { transition: none; }
+  /* Still visible, still says « working », just not spinning. */
+  .maties-orb-spinner { animation: none; opacity: .75; }
 }

@@ -107,12 +107,23 @@ const englishVoices = (synthesis: SpeechSynthesis): SpeechSynthesisVoice[] => {
  * whatever was being said first. Returns false when the runtime has no
  * speech, so the disc can stay put and do nothing.
  */
-export const speakVoiceSample = (voice: VoiceDefinition, sentence: string): boolean => {
+export const speakVoiceSample = (
+  voice: VoiceDefinition,
+  sentence: string,
+  onEnded?: () => void,
+): boolean => {
   const synthesis = typeof window === 'undefined' ? undefined : window.speechSynthesis;
   if (!synthesis || typeof SpeechSynthesisUtterance === 'undefined') return false;
   try {
     synthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(sentence);
+    // The fallback has to report its end too, or the play button stays
+    // showing « playing » forever on the days the real voice is absent —
+    // which are exactly the days somebody is already confused.
+    if (onEnded) {
+      utterance.addEventListener('end', onEnded, { once: true });
+      utterance.addEventListener('error', onEnded, { once: true });
+    }
     utterance.lang = 'en-US';
     utterance.rate = voice.speech.rate;
     utterance.pitch = voice.speech.pitch;

@@ -76,6 +76,15 @@ export const resolveVoiceAssignment = async (): Promise<VoiceAssignment> => {
   return pendingAssignment;
 };
 
+export interface SpeakOptions {
+  /**
+   * Called when the voice stops of its own accord. Not called when the
+   * caller stops it, since a caller that stopped it already knows — and
+   * calling both ways round is how a button ends up fighting itself.
+   */
+  onEnded?: () => void;
+}
+
 /**
  * Says the sentence in Maty's own voice for that style. False means it
  * could not — no bridge, no voice for the account, or the server refused
@@ -84,6 +93,7 @@ export const resolveVoiceAssignment = async (): Promise<VoiceAssignment> => {
 export const speakAsMaty = async (
   style: AssistantVoice,
   sentence: string,
+  options?: SpeakOptions,
 ): Promise<boolean> => {
   const bridge = speechBridge();
   if (!bridge || !sentence.trim()) return false;
@@ -99,7 +109,14 @@ export const speakAsMaty = async (
     const audio = new Audio(url);
     currentAudio = audio;
     currentObjectUrl = url;
-    audio.addEventListener('ended', stopMatiesVoice, { once: true });
+    audio.addEventListener('ended', () => {
+      // Only if this is still the sound being played: a second sample
+      // started before the first ended would otherwise put the button
+      // back to idle while the new one is still speaking.
+      if (currentAudio !== audio) return;
+      stopMatiesVoice();
+      options?.onEnded?.();
+    }, { once: true });
     await audio.play();
     return true;
   } catch (error) {
