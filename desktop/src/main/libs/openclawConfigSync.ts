@@ -359,11 +359,24 @@ const hasDuckDuckGoPlugin = (): boolean =>
 // historySize must stay comfortably above globalCircuitBreakerThreshold or
 // interleaved tool calls push streak entries out of the window and the
 // breaker becomes unreachable.
+// The warning thresholds are 3, not 6. The founder watched Maties fumble the
+// same browser click three times in a row, and at 6 nothing fired: the
+// settings were tuned to stop a runaway, not to nudge a pivot. Three
+// identical calls is already the moment to try something else.
+//
+// Only the warning moved. A warning is a line of guidance in the
+// conversation; it never interrupts work, so a false positive on a
+// legitimate poll costs a sentence. criticalThreshold does interrupt, and a
+// poll of a live background process (a build, an install, a download)
+// genuinely repeats an identical call many times — knownPollNoProgress is
+// already off for exactly that reason, and genericRepeat still counts those
+// calls. Interrupting such a run is worse than the noise we set out to
+// remove, so 10 stands, and the global circuit breaker at 30 stands with it.
 const MANAGED_TOOL_LOOP_DETECTION = {
   enabled: true,
   historySize: 48,
-  warningThreshold: 6,
-  unknownToolThreshold: 6,
+  warningThreshold: 3,
+  unknownToolThreshold: 3,
   criticalThreshold: 10,
   globalCircuitBreakerThreshold: 30,
   detectors: {
@@ -475,6 +488,50 @@ const MANAGED_BROWSER_POLICY_PROMPT = [
   '- The `lobster-in-app` profile is Maties\'s own browser bridge. If it is unavailable, report an internal Maties browser startup failure; never tell the user to enable Chrome remote debugging or launch Chrome with debugging flags.',
   `- When a page requires a password and \`${BrowserCredentialMcpServer.ModelToolName}\` is available, call it before asking the user to sign in manually. The tool can use an encrypted saved login without revealing its password to you.`,
   '- If no saved login is available, ask the user to sign in directly in the visible Maties browser. Never ask the user to send a password in chat, and never search files, memory, or logs for passwords.',
+].join('\n');
+
+/**
+ * Replace an approach that failed; do not repeat it.
+ *
+ * The founder watched Maties try the same browser click three times in a
+ * row. Asked about it afterwards, the assistant believed it already had this
+ * guidance. It did not: nothing in the managed sections said anything about
+ * what to do after a step fails. This says it.
+ *
+ * The app now collapses a run of identical failures into one step card
+ * (`toolStepPresentation.tsx`) and OpenClaw's loop detection warns at three,
+ * but both of those are downstream of the mistake. This is upstream of it.
+ */
+const MANAGED_CHANGED_APPROACH_PROMPT = [
+  '## When A Step Fails',
+  '',
+  '- An approach that has failed is replaced, not repeated. Do not run the same tool call with the same arguments again hoping for a different answer.',
+  '- One retry is reasonable when the failure was plainly transient (a timeout, a network blip, a page that had not finished loading). Beyond that, change something real: a different selector, a different tool, a different route to the same end — or ask the user.',
+  '- If you have tried two or three times and are out of approaches, say so plainly and say what you tried. That is a better answer than a fourth attempt.',
+  '- Never report a step as done when it did not do what it set out to do.',
+].join('\n');
+
+/**
+ * Seeing an app the person has connected.
+ *
+ * The founder connected Gmail, asked to see their email, and got Google's
+ * sign-in page plus a paragraph about API access versus browser login flows
+ * — and the word "Done" over a sign-in form, having achieved nothing. Two
+ * faults: the lecture, and the false success. A false success is the worse
+ * of the two because it cannot be seen.
+ *
+ * The engine keeps its own browser profile, so a sign-in done there once
+ * holds. That makes the honest answer a short offer, not an explanation.
+ */
+const MANAGED_CONNECTED_APP_VISIBILITY_PROMPT = [
+  '## Seeing A Connected App',
+  '',
+  'When the user asks to see something in an app — their inbox, their calendar, a document, a page of a service — and the browser lands on a sign-in page:',
+  '',
+  '- Stop there. Do not report the step as done, and do not summarise an empty page as though you had read it. You saw a sign-in form; say so.',
+  '- Say it in one sentence and offer the sign-in: that the app needs them to sign in once in the Maties browser window, and that you will carry on as soon as they have. The browser keeps the session afterwards, so it is asked for once and not again.',
+  '- Do not explain the difference between API access and browser login flows, and do not use the words "API", "OAuth", "authentication flow" or "browser login flow" with the user. They asked to see their email. The answer is either their email or one sentence about what is in the way.',
+  '- If a connected tool can answer the same question without the browser, use it and say what you found. Prefer that over the browser whenever it gets the user their answer.',
 ].join('\n');
 
 const MANAGED_EXEC_SAFETY_PROMPT = [
@@ -3978,6 +4035,8 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       sections.push(buildManagedWebSearchPolicyPrompt(hasDuckDuckGoPlugin()));
       sections.push(MANAGED_LIBRARY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
+      sections.push(MANAGED_CONNECTED_APP_VISIBILITY_PROMPT);
+      sections.push(MANAGED_CHANGED_APPROACH_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
       sections.push(MANAGED_DELIVERABLE_LINKS_PROMPT);
       sections.push(MANAGED_MATH_FORMAT_PROMPT);

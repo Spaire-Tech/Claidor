@@ -1855,6 +1855,11 @@ const translations: Record<'en', Record<string, string>> = {
     matiesStepFailedPage: 'The page could not be opened',
     matiesStepFailedAgent: 'The agent could not do it',
     matiesStepFailedGeneric: 'This step did not work',
+    // A run of identical failures folded into one card. The second wording
+    // is for a run that is still the last thing that happened: nothing has
+    // changed approach yet, so the card does not say it has.
+    matiesStepTriedThenChanged: 'tried {count} times, then changed approach',
+    matiesStepTriedAgain: 'tried {count} times',
     matiesStepDone: 'Done',
     matiesStepResultOne: '1 result',
     matiesStepResultMany: '{count} results',

@@ -2759,6 +2759,32 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.plugins.entries['search-library']).toEqual({ enabled: true });
   });
 
+  test('tells the assistant to replace an approach that failed, not repeat it', async () => {
+    const sync = await createSync();
+    expect(sync.sync('changed-approach-prompt').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## When A Step Fails');
+    expect(agentsMd).toContain('An approach that has failed is replaced, not repeated.');
+    expect(agentsMd).toContain('Never report a step as done when it did not do what it set out to do.');
+  });
+
+  test('offers the sign-in instead of a lecture when a connected app is asked for visually', async () => {
+    const sync = await createSync();
+    expect(sync.sync('connected-app-prompt').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## Seeing A Connected App');
+    // The false success is the worse of the two faults, because it cannot
+    // be seen: the sign-in page is never reported as a finished step.
+    expect(agentsMd).toContain('Do not report the step as done');
+    expect(agentsMd).toContain('sign in once in the Maties browser window');
+    // And no lecture: the words the founder was given are named and banned.
+    expect(agentsMd).toContain('do not use the words "API", "OAuth", "authentication flow" or "browser login flow"');
+    // It follows the browser policy it qualifies.
+    expect(agentsMd.indexOf('## Seeing A Connected App')).toBeGreaterThan(agentsMd.indexOf('## Browser Policy'));
+  });
+
   test('enables managed OpenClaw tool loop detection', async () => {
     const sync = await createSync();
 
@@ -2769,8 +2795,8 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.loopDetection).toEqual({
       enabled: true,
       historySize: 48,
-      warningThreshold: 6,
-      unknownToolThreshold: 6,
+      warningThreshold: 3,
+      unknownToolThreshold: 3,
       criticalThreshold: 10,
       globalCircuitBreakerThreshold: 30,
       detectors: {

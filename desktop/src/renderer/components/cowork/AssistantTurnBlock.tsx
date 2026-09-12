@@ -67,7 +67,11 @@ import StepResultCard from './StepResultCard';
 import { countToolSteps, formatStepsFold } from './stepsFold';
 import ThinkingBlock from './ThinkingBlock';
 import ToolCallGroup, { ToolCallVariant } from './ToolCallGroup';
-import { getToolStepFilePath, getToolStepResult } from './toolStepPresentation';
+import {
+  collapseRepeatedFailures,
+  getToolStepFilePath,
+  getToolStepResult,
+} from './toolStepPresentation';
 
 const encodeLocalPathForUrl = (filePath: string): string => {
   return filePath
@@ -553,8 +557,11 @@ const AssistantTurnBlock: React.FC<{
     () => getVisibleAssistantItems(turn.assistantItems),
     [turn.assistantItems],
   );
+  // Media polls fold first, then runs of identical failures: three fumbles
+  // of the same tool are one step card that says it tried and moved on,
+  // never three red ones.
   const consolidatedItems = useMemo(
-    () => consolidateMediaPolling(visibleAssistantItems),
+    () => collapseRepeatedFailures(consolidateMediaPolling(visibleAssistantItems)),
     [visibleAssistantItems],
   );
   const toolGroupOverrides = useMemo(() => {

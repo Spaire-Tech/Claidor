@@ -27,7 +27,10 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
 import { buildGoalSettingMessageMetadata } from '../common/goalCommandDisplay';
 import type { OpenClawSessionPatch } from '../common/openclawSession';
-import { buildSessionTitleFromInput } from '../common/sessionTitle';
+import {
+  buildSessionTitleFromInput,
+  SessionTitleSource,
+} from '../common/sessionTitle';
 import { buildScheduledTaskEnginePrompt } from '../scheduledTask/enginePrompt';
 import {
   migrateScheduledTaskRunsToOpenclaw,
@@ -102,6 +105,7 @@ import {
   CoworkForkMode,
   CoworkIpcChannel,
   CoworkOnboardingMessageKind,
+  type CoworkSessionsChangedPayload,
 } from '../shared/cowork/constants';
 import {
   buildCoworkImageAttachmentPreviews,
@@ -493,6 +497,7 @@ import {
 import { migrateMainAgentWorkspace } from './libs/openclawWorkspaceMigration';
 import { ensurePythonRuntimeReady } from './libs/pythonRuntime';
 import { isAnalyticsEndpointUrl, sanitizeUrlForLog, serializeForLog } from './libs/sanitizeForLog';
+import { createSessionNamingService } from './libs/sessionNaming';
 import { packageNodeServiceDeployment } from './libs/shareDeployment/nodeServiceDeploymentPackager';
 import {
   analyzeNodeServiceProjectDirectory,
@@ -2405,6 +2410,12 @@ let waitForPendingTokenRefresh: () => Promise<void> = async () => {};
 // Fire-and-forget — a failure is logged and retried on the next occasion.
 let requestMemorySync: (reason: MemorySyncReason) => void = () => {};
 
+// Naming a chat by what it is about needs the account's token too, and is
+// injected the same way. Fire-and-forget by construction: the reply is
+// already on screen when this runs, and a failure leaves the chat with the
+// truncation it already had.
+let requestSessionName: (sessionId: string) => void = () => {};
+
 const ensureOpenClawRunningForCowork = async () => {
   const configApplyStatus = await waitForOpenClawConfigApply('cowork engine startup');
   if (configApplyStatus) {
@@ -3474,6 +3485,11 @@ const bindCoworkRuntimeForwarder = (): void => {
     // The engine writes its memory files as a run ends, so this is the moment
     // the shared copy is worth refreshing.
     requestMemorySync(MemorySyncReason.ConversationFinished);
+    // The exchange has settled and the reply is already on screen: this is
+    // the moment to name the chat by what it is about. The service itself
+    // decides whether there is anything to do — once per chat, and never
+    // over a name the person typed.
+    requestSessionName(sessionId);
     const windows = BrowserWindow.getAllWindows();
     windows.forEach(win => {
       if (win.isDestroyed()) return;
@@ -5479,6 +5495,44 @@ if (!gotTheLock) {
   const memorySyncTimer: ReturnType<typeof setInterval> = setInterval(() => {
     requestMemorySync(MemorySyncReason.Periodic);
   }, MEMORY_SYNC_INTERVAL_MS);
+
+  // ── A name for the chat ──
+  //
+  // See `src/main/libs/sessionNaming.ts`. Bound here because the naming call
+  // rides the same authenticated request path as everything else.
+  const sessionNamingService = createSessionNamingService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    getSession: (sessionId) => {
+      // One message is enough: only the title and its source are read here.
+      const session = getCoworkStore().getSession(sessionId, 1);
+      return session
+        ? { id: session.id, title: session.title, titleSource: session.titleSource }
+        : null;
+    },
+    getFirstMessages: (sessionId, limit) => getCoworkStore()
+      .getPagedSessionMessages(sessionId, limit, 0)
+      .map((message) => ({ type: message.type, content: message.content })),
+    applyTitle: (sessionId, title) => {
+      getCoworkStore().updateSession(
+        sessionId,
+        { title, titleSource: SessionTitleSource.Assistant },
+        { touchUpdatedAt: false },
+      );
+    },
+    notifySessionChanged: (sessionId) => {
+      const payload: CoworkSessionsChangedPayload = { sessionIds: [sessionId] };
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed()) win.webContents.send(CoworkIpcChannel.SessionsChanged, payload);
+      }
+    },
+    buildModelHeaders: () => buildServerModelCapabilityHeaders(app.getVersion()),
+  });
+
+  requestSessionName = (sessionId: string) => {
+    sessionNamingService.nameSession(sessionId);
+  };
 
   type AvailableServerModel = ServerModelMetadataInput & {
     modelId: string;
@@ -9199,7 +9253,16 @@ if (!gotTheLock) {
           runtimeSkillIds || [],
           options.agentId || 'main',
           options.modelOverride || '',
-          { thinkingLevel: thinkingLevel || '' },
+          {
+            thinkingLevel: thinkingLevel || '',
+            // A title the caller supplied is a deliberate name (a scheduled
+            // task, a seeded chat) and is never replaced. Only the
+            // truncation of what the person typed is a placeholder, and
+            // only that is open to being named by what the chat is about.
+            titleSource: options.title?.trim()
+              ? SessionTitleSource.Person
+              : SessionTitleSource.Fallback,
+          },
         );
 
         if (options.modelOverride) {
@@ -10036,7 +10099,13 @@ if (!gotTheLock) {
           return { success: false, error: 'Title is required' };
         }
         const coworkStoreInstance = getCoworkStore();
-        coworkStoreInstance.updateSession(options.sessionId, { title }, { touchUpdatedAt: false });
+        // A name the person typed wins for ever after: recording who wrote
+        // it is what stops the app renaming it later.
+        coworkStoreInstance.updateSession(
+          options.sessionId,
+          { title, titleSource: SessionTitleSource.Person },
+          { touchUpdatedAt: false },
+        );
         return { success: true };
       } catch (error) {
         return {

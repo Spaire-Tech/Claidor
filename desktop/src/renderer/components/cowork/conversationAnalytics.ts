@@ -53,8 +53,6 @@ export const getMessageCapabilityAnalyticsParams = (
 ): Record<string, ConversationAnalyticsValue> => {
   const metadata = message.metadata;
   const skillIds = Array.isArray(metadata?.skillIds) ? metadata.skillIds : [];
-  const kitIds = Array.isArray(metadata?.kitIds) ? metadata.kitIds : [];
-  const kitReferences = Array.isArray(metadata?.kitReferences) ? metadata.kitReferences : [];
   const imageAttachmentPreviews = Array.isArray(metadata?.imageAttachmentPreviews)
     ? metadata.imageAttachmentPreviews
     : [];
@@ -64,8 +62,6 @@ export const getMessageCapabilityAnalyticsParams = (
   return {
     activeSkillCount: skillIds.length,
     activeSkillIds: joinValues(skillIds),
-    activeKitCount: kitIds.length || kitReferences.length,
-    activeKitIds: joinValues(kitIds.length > 0 ? kitIds : kitReferences.map(item => item.id)),
     hasAttachments: imageAttachmentPreviews.length > 0 || legacyImageAttachments.length > 0,
     imageAttachmentCount: imageAttachmentPreviews.length + legacyImageAttachments.length,
     hasModelLabel: Boolean(metadata?.modelId || metadata?.modelName || metadata?.providerKey),

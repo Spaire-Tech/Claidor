@@ -26,8 +26,7 @@ import {
   selectIsStreaming,
   selectSessionNavigationTargetId,
 } from '../../store/selectors/coworkSelectors';
-import { addMessage, setCurrentSession, setDraftCollaborationMode, setDraftKitIds, setDraftSkillIds, setStreaming, updateSessionGoal, updateSessionStatus } from '../../store/slices/coworkSlice';
-import { clearActiveKits } from '../../store/slices/kitSlice';
+import { addMessage, setCurrentSession, setDraftCollaborationMode, setDraftSkillIds, setStreaming, updateSessionGoal, updateSessionStatus } from '../../store/slices/coworkSlice';
 import { clearSelection, selectAction, setActions } from '../../store/slices/quickActionSlice';
 import { clearActiveSkills, setActiveSkillIds } from '../../store/slices/skillSlice';
 import {
@@ -73,7 +72,6 @@ const logCoworkViewModel = (message: string): void => {
 export interface CoworkViewProps {
   onRequestAppSettings?: (options?: SettingsOpenOptions) => void;
   onShowSkills?: () => void;
-  onShowKits?: () => void;
   isSidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
@@ -86,7 +84,6 @@ export interface CoworkViewProps {
 const CoworkView: React.FC<CoworkViewProps> = ({
   onRequestAppSettings,
   onShowSkills,
-  onShowKits,
   isSidebarCollapsed,
   onToggleSidebar,
   onNewChat,
@@ -142,9 +139,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
 
   const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
   const skills = useSelector((state: RootState) => state.skill.skills);
-  const activeKitIds = useSelector((state: RootState) => state.kit.activeKitIds);
-  const installedKits = useSelector((state: RootState) => state.kit.installedKits);
-  const marketplaceKits = useSelector((state: RootState) => state.kit.marketplaceKits);
   const quickActions = useSelector((state: RootState) => state.quickAction.actions);
   const selectedActionId = useSelector((state: RootState) => state.quickAction.selectedActionId);
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
@@ -199,15 +193,9 @@ const CoworkView: React.FC<CoworkViewProps> = ({
     isHomeView,
   ]);
 
-  const buildCapabilitySelection = useCallback((skillIds: string[], kitIds: string[]) => {
-    return buildCoworkCapabilitySelection(
-      skillIds,
-      kitIds,
-      skills,
-      installedKits,
-      marketplaceKits,
-    );
-  }, [installedKits, marketplaceKits, skills]);
+  const buildCapabilitySelection = useCallback((skillIds: string[]) => {
+    return buildCoworkCapabilitySelection(skillIds, skills);
+  }, [skills]);
 
   const resolveEngineStatusText = (status: OpenClawEngineStatus): string => {
     switch (status.phase) {
@@ -371,22 +359,18 @@ const CoworkView: React.FC<CoworkViewProps> = ({
       const now = Date.now();
       const optimisticGoal = applyOptimisticGoalCommand(prompt, null, tempSessionId, now);
 
-      // Capture active skill IDs and kit IDs before clearing them
+      // Capture active skill IDs before clearing them
       const sessionSkillIds = [...activeSkillIds];
-      const sessionKitIds = [...activeKitIds];
 
       const {
         directSkillIds,
         runtimeSkillIds,
-        kitReferences,
-        resolvedKitCapabilities,
-      } = buildCapabilitySelection(sessionSkillIds, sessionKitIds);
+      } = buildCapabilitySelection(sessionSkillIds);
       const isPlanMode = collaborationMode === CoworkCollaborationMode.Plan;
       const goalSettingMetadata = buildGoalSettingMessageMetadata(prompt);
       const displayDirectSkillIds = directSkillIds;
-      const displayKitIds = sessionKitIds;
       const effectiveRuntimeSkillIds = isPlanMode ? [] : runtimeSkillIds;
-      if (isPlanMode && (directSkillIds.length > 0 || runtimeSkillIds.length > 0 || sessionKitIds.length > 0)) {
+      if (isPlanMode && (directSkillIds.length > 0 || runtimeSkillIds.length > 0)) {
         logCoworkViewModel('suppressed selected capabilities for a plan-mode start turn');
       }
       const imageAttachmentPreviews = buildCoworkImageAttachmentPreviews(imageAttachments);
@@ -406,7 +390,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
         thinkingLevel: currentAgentThinkingLevel ?? '',
         executionMode: config.executionMode || 'local',
         activeSkillIds: effectiveRuntimeSkillIds,
-        activeKitIds: displayKitIds.length > 0 ? displayKitIds : undefined,
         agentId: currentAgentId,
         ...(optimisticGoal !== undefined ? { goal: optimisticGoal } : {}),
         messages: [
@@ -415,15 +398,10 @@ const CoworkView: React.FC<CoworkViewProps> = ({
             type: 'user',
             content: prompt,
             timestamp: now,
-            metadata: (displayDirectSkillIds.length > 0 || displayKitIds.length > 0 || imageAttachmentPreviews?.length || (selectedTextSnippets && selectedTextSnippets.length > 0) || (browserAnnotations && browserAnnotations.length > 0) || goalSettingMetadata)
+            metadata: (displayDirectSkillIds.length > 0 || imageAttachmentPreviews?.length || (selectedTextSnippets && selectedTextSnippets.length > 0) || (browserAnnotations && browserAnnotations.length > 0) || goalSettingMetadata)
               ? {
                 ...goalSettingMetadata,
                 ...(displayDirectSkillIds.length > 0 ? { skillIds: displayDirectSkillIds } : {}),
-                ...(displayKitIds.length > 0 ? {
-                  kitIds: displayKitIds,
-                  kitReferences,
-                  resolvedKitCapabilities,
-                } : {}),
                 ...(selectedTextSnippets && selectedTextSnippets.length > 0 ? { selectedTextSnippets } : {}),
                 ...(browserAnnotations && browserAnnotations.length > 0 ? { browserAnnotations } : {}),
                 ...(imageAttachmentPreviews?.length ? { imageAttachmentPreviews } : {}),
@@ -446,11 +424,9 @@ const CoworkView: React.FC<CoworkViewProps> = ({
       }
       dispatch(setStreaming(true));
 
-      // Clear active skills, kits and quick action selection after starting session
+      // Clear active skills and quick action selection after starting session
       // so they don't persist to next session
       dispatch(clearActiveSkills());
-      dispatch(clearActiveKits());
-      dispatch(setDraftKitIds({ draftKey: '__home__', kitIds: [] }));
       dispatch(setDraftSkillIds({ draftKey: '__home__', skillIds: [] }));
       dispatch(clearSelection());
 
@@ -473,9 +449,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
         systemPrompt: combinedSystemPrompt,
         activeSkillIds: displayDirectSkillIds.length > 0 ? displayDirectSkillIds : undefined,
         runtimeSkillIds: isPlanMode ? [] : (effectiveRuntimeSkillIds.length > 0 ? effectiveRuntimeSkillIds : undefined),
-        kitIds: displayKitIds.length > 0 ? displayKitIds : undefined,
-        kitReferences: displayKitIds.length > 0 ? kitReferences : undefined,
-        resolvedKitCapabilities: displayKitIds.length > 0 ? resolvedKitCapabilities : undefined,
         agentId: currentAgentId,
         modelOverride: sessionModelOverride,
         thinkingLevel: currentAgentThinkingLevel,
@@ -574,21 +547,17 @@ const CoworkView: React.FC<CoworkViewProps> = ({
         imageAttachmentsBase64Lengths: imageAttachments?.map(a => a.base64Data.length),
       });
 
-      // Capture active skill IDs and kit IDs before clearing
+      // Capture active skill IDs before clearing
       const sessionSkillIds = [...activeSkillIds];
-      const sessionKitIds = [...activeKitIds];
 
       const {
         directSkillIds,
         runtimeSkillIds,
-        kitReferences,
-        resolvedKitCapabilities,
-      } = buildCapabilitySelection(sessionSkillIds, sessionKitIds);
+      } = buildCapabilitySelection(sessionSkillIds);
       const isPlanMode = collaborationMode === CoworkCollaborationMode.Plan;
       const displayDirectSkillIds = directSkillIds;
-      const displayKitIds = sessionKitIds;
       const effectiveRuntimeSkillIds = isPlanMode ? [] : runtimeSkillIds;
-      if (isPlanMode && (directSkillIds.length > 0 || runtimeSkillIds.length > 0 || sessionKitIds.length > 0)) {
+      if (isPlanMode && (directSkillIds.length > 0 || runtimeSkillIds.length > 0)) {
         logCoworkViewModel('suppressed selected capabilities for a plan-mode continue turn');
       }
 
@@ -602,19 +571,14 @@ const CoworkView: React.FC<CoworkViewProps> = ({
         systemPrompt: combinedSystemPrompt,
         activeSkillIds: displayDirectSkillIds.length > 0 ? displayDirectSkillIds : undefined,
         runtimeSkillIds: isPlanMode ? [] : (effectiveRuntimeSkillIds.length > 0 ? effectiveRuntimeSkillIds : undefined),
-        kitIds: displayKitIds.length > 0 ? displayKitIds : undefined,
-        kitReferences: displayKitIds.length > 0 ? kitReferences : undefined,
-        resolvedKitCapabilities: displayKitIds.length > 0 ? resolvedKitCapabilities : undefined,
         imageAttachments,
         mediaSelection: mediaSelection && mediaSelection.mode !== 'none' ? mediaSelection : undefined,
         mediaReferences,
         selectedTextSnippets,
         browserAnnotations,
       });
-      if (sent && (sessionSkillIds.length > 0 || sessionKitIds.length > 0)) {
+      if (sent && sessionSkillIds.length > 0) {
         dispatch(clearActiveSkills());
-        dispatch(clearActiveKits());
-        dispatch(setDraftKitIds({ draftKey: currentSession.id, kitIds: [] }));
         dispatch(setDraftSkillIds({ draftKey: currentSession.id, skillIds: [] }));
       }
       return sent;
@@ -875,7 +839,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
           {engineStatusBanner}
           <CoworkSessionDetail
             onManageSkills={() => onShowSkills?.()}
-            onManageKits={() => onShowKits?.()}
             onContinue={handleContinueSession}
             onStop={handleStopSession}
             isSidebarCollapsed={isSidebarCollapsed}
@@ -959,7 +922,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
                   showModelSelector={true}
                   showAgentSelector={true}
                   onManageSkills={() => onShowSkills?.()}
-                  onManageKits={() => onShowKits?.()}
                   onGoalCommand={handleStartGoalSession}
                 />
                 <EnterpriseQuotaPrompt

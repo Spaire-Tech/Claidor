@@ -15,6 +15,7 @@ import {
   type OpenClawSessionPatch,
   OpenClawSessionReasoningLevel,
 } from '../../../common/openclawSession';
+import { SessionTitleSource } from '../../../common/sessionTitle';
 import {
   PromptAnalyticsConversationState,
   type PromptAnalyticsConversationState as PromptAnalyticsConversationStateValue,
@@ -3988,6 +3989,8 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       return {
         id: `transient-${sessionKey}`,
         title: sessionKey.split(':').pop() || 'Cron Session',
+        // A transient session is never stored, so it is never renamed.
+        titleSource: SessionTitleSource.Person,
         claudeSessionId: null,
         scheduledTaskId: null,
         status: 'completed' as CoworkSessionStatus,
@@ -4081,6 +4084,8 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       id: `transient-${sessionKey}`,
       agentId: '',
       title: sessionKey.split(':').pop() || 'Cron Session',
+      // A transient session is never stored, so it is never renamed.
+      titleSource: SessionTitleSource.Person,
       claudeSessionId: null,
       scheduledTaskId: null,
       status: 'completed' as CoworkSessionStatus,

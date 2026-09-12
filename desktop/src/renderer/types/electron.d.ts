@@ -90,12 +90,6 @@ import type {
   HtmlShareStatus,
 } from '../../shared/htmlShare/constants';
 import type {
-  InstalledKitRecord,
-  KitReference,
-  KitSkillMetadata,
-  ResolvedKitCapabilities,
-} from '../../shared/kit/constants';
-import type {
   LibraryContentConfig,
   LibraryContentStatus,
   LibrarySearchRequest,
@@ -350,6 +344,17 @@ interface CoworkMemoryStats {
   deleted: number;
   explicit: number;
   implicit: number;
+}
+
+/** What the background tidy-up (formerly « dreaming ») reports. */
+interface DreamingStatusData {
+  enabled: boolean;
+  timezone?: string;
+  shortTermCount: number;
+  groundedSignalCount: number;
+  totalSignalCount: number;
+  promotedToday: number;
+  promotedTotal: number;
 }
 
 interface CoworkPermissionRequest {
@@ -765,24 +770,6 @@ interface IElectronAPI {
     }>;
     onChanged: (callback: () => void) => () => void;
   };
-  kits: {
-    fetchStore: () => Promise<{ success: boolean; data?: string; error?: string }>;
-    install: (params: {
-      kitId: string;
-      bundleUrl: string;
-      version: string;
-      skillListIds: string[];
-      skillList?: KitSkillMetadata[];
-      mcpServers?: unknown[] | null;
-      connectors?: unknown[] | null;
-    }) => Promise<{ success: boolean; skillIds?: string[]; error?: string }>;
-    uninstall: (kitId: string) => Promise<{ success: boolean; error?: string }>;
-    listInstalled: () => Promise<{
-      success: boolean;
-      installed?: Record<string, InstalledKitRecord>;
-      error?: string;
-    }>;
-  };
   skin: {
     getActive: () => Promise<SkinGetActiveResponse>;
     list: () => Promise<SkinListResponse>;
@@ -960,9 +947,6 @@ interface IElectronAPI {
       title?: string;
       activeSkillIds?: string[];
       runtimeSkillIds?: string[];
-      kitIds?: string[];
-      kitReferences?: KitReference[];
-      resolvedKitCapabilities?: ResolvedKitCapabilities;
       selectedTextSnippets?: Array<{ id: string; text: string; sourceMessageId?: string; sourceMessageType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceId?: string; sourceType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceTitle?: string; sourcePath?: string; artifactId?: string; createdAt: number; startOffset?: number; endOffset?: number }>;
       browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
       agentId?: string;
@@ -984,9 +968,6 @@ interface IElectronAPI {
       systemPrompt?: string;
       activeSkillIds?: string[];
       runtimeSkillIds?: string[];
-      kitIds?: string[];
-      kitReferences?: KitReference[];
-      resolvedKitCapabilities?: ResolvedKitCapabilities;
       selectedTextSnippets?: Array<{ id: string; text: string; sourceMessageId?: string; sourceMessageType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceId?: string; sourceType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceTitle?: string; sourcePath?: string; artifactId?: string; createdAt: number; startOffset?: number; endOffset?: number }>;
       browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
       imageAttachments?: Array<{ name: string; mimeType: string; base64Data: string; sizeBytes?: number; localPath?: string; previewMimeType?: string; previewBase64Data?: string }>;
@@ -1230,6 +1211,8 @@ interface IElectronAPI {
     }) => Promise<{ success: boolean; entry?: CoworkUserMemoryEntry; error?: string }>;
     deleteMemoryEntry: (input: { id: string }) => Promise<{ success: boolean; error?: string }>;
     getMemoryStats: () => Promise<{ success: boolean; stats?: CoworkMemoryStats; error?: string }>;
+    /** What the background tidy-up has kept; drives the line under Settings → Memory. */
+    getDreamingStatus: () => Promise<{ success: boolean; data?: DreamingStatusData; error?: string }>;
     readMemoryFileRaw: () => Promise<{ success: boolean; content?: string; error?: string }>;
     writeMemoryFileRaw: (input: {
       content: string;

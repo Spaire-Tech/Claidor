@@ -59,7 +59,6 @@ import {
 import { configService, ConfigServiceEvent } from '../../services/config';
 import { coworkService } from '../../services/cowork';
 import { i18nService } from '../../services/i18n';
-import { getInstalledKitSkillIds } from '../../services/kitCapability';
 import { readLocalServiceProjectDirectoryCandidate } from '../../services/localServiceProjectDirectoryCache';
 import { RootState } from '../../store';
 import {
@@ -104,7 +103,6 @@ import {
   setPlanConfirmationAwaiting,
   setPlanConfirmationHandled,
 } from '../../store/slices/coworkSlice';
-import { setActiveKitIds } from '../../store/slices/kitSlice';
 import { setActiveSkillIds } from '../../store/slices/skillSlice';
 import type { Artifact } from '../../types/artifact';
 import { ArtifactTypeValue, PREVIEWABLE_ARTIFACT_TYPES } from '../../types/artifact';
@@ -192,7 +190,6 @@ import {
   type ToolGroupItem,
 } from './messageDisplayUtils';
 import { parseProposedPlanBlock } from './proposedPlanParser';
-import { buildSelectedKitContextPrompt } from './selectedKitContextPrompt';
 import { buildSelectedSkillRoutingPrompt } from './selectedSkillRoutingPrompt';
 import SelectedTextActionToolbar from './SelectedTextActionToolbar';
 import {
@@ -208,7 +205,6 @@ import UserMessageContent from './UserMessageContent';
 import UserMessageItem from './UserMessageItem';
 interface CoworkSessionDetailProps {
   onManageSkills?: () => void;
-  onManageKits?: () => void;
   onContinue: (
     prompt: string,
     skillPrompt?: string,
@@ -1386,7 +1382,6 @@ const EMPTY_PREVIEW_TABS: ArtifactPreviewTab[] = [];
 
 const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   onManageSkills,
-  onManageKits,
   onContinue,
   onStop,
   isSidebarCollapsed,
@@ -1408,9 +1403,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   const messagesLength = useSelector(selectCurrentMessagesLength);
   const skills = useSelector((state: RootState) => state.skill.skills);
   const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
-  const activeKitIds = useSelector((state: RootState) => state.kit.activeKitIds);
-  const installedKits = useSelector((state: RootState) => state.kit.installedKits);
-  const marketplaceKits = useSelector((state: RootState) => state.kit.marketplaceKits);
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
   const agents = useSelector((state: RootState) => state.agent.agents);
   const availableModels = useSelector((state: RootState) => state.model.availableModels);
@@ -1579,16 +1571,11 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     [currentSession],
   );
   const confirmExecutionSkillPrompt = useMemo(() => {
-    const kitSkillIds = activeKitIds.flatMap(kitId => getInstalledKitSkillIds(installedKits[kitId]));
-    const allSkillIds = [...new Set([...activeSkillIds, ...kitSkillIds])];
-    const activeSkills = allSkillIds
+    const activeSkills = activeSkillIds
       .map(id => skills.find(skill => skill.id === id))
       .filter((skill): skill is NonNullable<typeof skill> => skill !== undefined);
-    return [
-      buildSelectedKitContextPrompt(activeKitIds, marketplaceKits, installedKits),
-      buildSelectedSkillRoutingPrompt(activeSkills),
-    ].filter(Boolean).join('\n\n') || undefined;
-  }, [activeKitIds, activeSkillIds, installedKits, marketplaceKits, skills]);
+    return buildSelectedSkillRoutingPrompt(activeSkills) || undefined;
+  }, [activeSkillIds, skills]);
   useEffect(() => {
     clearHeightCache();
   }, [sessionId]);
@@ -5106,8 +5093,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
       // Restore active skills
       const skillIds = metadata?.skillIds ?? [];
       dispatch(setActiveSkillIds(skillIds));
-      const kitIds = metadata?.kitIds ?? [];
-      dispatch(setActiveKitIds(kitIds));
       // Focus the input
       ref.focus();
     })();
@@ -6001,7 +5986,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
               <UserMessageItem
                 message={turn.userMessage}
                 skills={skills}
-                marketplaceKits={marketplaceKits}
                 sessionId={sessionId}
                 onReEdit={remoteManaged ? undefined : handleReEdit}
                 onLocateSelectedText={handleLocateSelectedText}
@@ -7032,7 +7016,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             size={isArtifactPanelExpanded ? 'compact' : 'large'}
             remoteManaged={remoteManaged}
             onManageSkills={remoteManaged ? undefined : onManageSkills}
-            onManageKits={remoteManaged ? undefined : onManageKits}
             showModelSelector={true}
             showReadOnlyContext={!isArtifactPanelExpanded}
             showNewUserWelcomeLoginOverlay={isNewUserWelcomeSession}

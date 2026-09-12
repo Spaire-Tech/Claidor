@@ -66,7 +66,6 @@ import PlugIcon from './icons/PlugIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
 import IMSettings from './im/IMSettings';
 import LibrarySettingsSection from './library/LibrarySettingsSection';
-import PluginsSettings, { type PluginPendingChanges, type PluginsSettingsHandle } from './plugins/PluginsSettings';
 import BrowserWebAccessSettings from './settings/BrowserWebAccessSettings';
 import MatiesAccountSection from './settings/MatiesAccountSection';
 import {
@@ -90,7 +89,16 @@ import SkinPresentationScope from './skin/SkinPresentationScope';
 import SkinSettingsSection from './skin/SkinSettingsSection';
 import ThemedSelect from './ui/ThemedSelect';
 
-type TabType = 'general' | 'appearance' | 'coworkAgentEngine' | 'model' | 'library' | 'browserWebAccess' | 'coworkMemory' | 'coworkDreaming' | 'shortcuts' | 'im' | 'email' | 'plugins' | 'about';
+/**
+ * The eight tabs of Settings (docs/maties/design.md, section 5).
+ *
+ * The founder's rule for the whole app: the sidebar is where you work;
+ * settings is what it can do and who you are. So Skills and Apps moved in
+ * here from the sidebar, and Plugins, IM Bot, Email, Shortcuts, Agent Engine
+ * and Dreaming were folded away or retired. `model` and `coworkMemory` keep
+ * their historical keys; « You » and « Memory » are what a person reads.
+ */
+type TabType = 'model' | 'apps' | 'skills' | 'coworkMemory' | 'library' | 'appearance' | 'general' | 'about';
 
 const SETTINGS_TAB_ICON_CLASS = 'h-[17px] w-[17px]';
 
@@ -99,12 +107,7 @@ const SETTINGS_TAB_ICON_CLASS = 'h-[17px] w-[17px]';
 const SETTINGS_TABS_WITH_FORM: ReadonlySet<TabType> = new Set<TabType>([
   'general',
   'appearance',
-  'coworkAgentEngine',
   'coworkMemory',
-  'coworkDreaming',
-  'browserWebAccess',
-  'shortcuts',
-  'plugins',
 ]);
 
 const waitForNextPaint = (): Promise<void> => new Promise(resolve => {
@@ -178,15 +181,8 @@ type ShortcutCommandDefinition = {
 const SETTINGS_TAB_SHORTCUT_ACTIONS: Partial<Record<ShortcutAction, TabType>> = {
   [ShortcutAction.OpenSettingsGeneral]: 'general',
   [ShortcutAction.OpenSettingsAppearance]: 'appearance',
-  [ShortcutAction.OpenSettingsAgentEngine]: 'coworkAgentEngine',
   [ShortcutAction.OpenSettingsModel]: 'model',
-  [ShortcutAction.OpenSettingsIm]: 'im',
-  [ShortcutAction.OpenSettingsBrowser]: 'browserWebAccess',
-  [ShortcutAction.OpenSettingsEmail]: 'email',
   [ShortcutAction.OpenSettingsMemory]: 'coworkMemory',
-  [ShortcutAction.OpenSettingsDreaming]: 'coworkDreaming',
-  [ShortcutAction.OpenSettingsPlugins]: 'plugins',
-  [ShortcutAction.OpenSettingsShortcuts]: 'shortcuts',
   [ShortcutAction.OpenSettingsAbout]: 'about',
 };
 
@@ -546,31 +542,6 @@ const buildShortcutSettingAnalyticsSummary = (
   };
 };
 
-const buildPluginSettingsAnalyticsSummary = (
-  pendingChanges: PluginPendingChanges | null,
-): PluginSettingsAnalyticsSummary | null => {
-  if (!pendingChanges) {
-    return null;
-  }
-  const toggleCount = pendingChanges.toggles.length;
-  const configCount = pendingChanges.configs.length;
-  if (toggleCount === 0 && configCount === 0) {
-    return null;
-  }
-  const changedKeys = [
-    ...(toggleCount > 0 ? ['toggle'] : []),
-    ...(configCount > 0 ? ['config'] : []),
-  ].join(',');
-
-  return {
-    changedKeys,
-    configCount,
-    disabledToggleCount: pendingChanges.toggles.filter(change => !change.enabled).length,
-    enabledToggleCount: pendingChanges.toggles.filter(change => change.enabled).length,
-    toggleCount,
-  };
-};
-
 const reportGeneralSettingChanged = (
   settingKey: string,
   settingValue: SettingsAnalyticsValue,
@@ -745,14 +716,8 @@ const AGENT_TASK_SLOT_COMMANDS: ShortcutCommandDefinition[] = [
 const SETTINGS_TAB_SHORTCUT_COMMANDS: ShortcutCommandDefinition[] = [
   { key: ShortcutAction.OpenSettingsGeneral, tabLabelKey: 'general' },
   { key: ShortcutAction.OpenSettingsAppearance, tabLabelKey: 'appearance' },
-  { key: ShortcutAction.OpenSettingsAgentEngine, tabLabelKey: 'coworkAgentEngine' },
-  { key: ShortcutAction.OpenSettingsModel, tabLabelKey: 'settingsCustomModel' },
-  { key: ShortcutAction.OpenSettingsIm, tabLabelKey: 'imBot' },
-  { key: ShortcutAction.OpenSettingsBrowser, tabLabelKey: 'browserWebAccessTab' },
-  { key: ShortcutAction.OpenSettingsEmail, tabLabelKey: 'emailTab' },
+  { key: ShortcutAction.OpenSettingsModel, tabLabelKey: 'matiesAccountTab' },
   { key: ShortcutAction.OpenSettingsMemory, tabLabelKey: 'coworkMemoryTitle' },
-  { key: ShortcutAction.OpenSettingsDreaming, tabLabelKey: 'coworkMemoryTabDreaming' },
-  { key: ShortcutAction.OpenSettingsPlugins, tabLabelKey: 'pluginsTab' },
   { key: ShortcutAction.OpenSettingsAbout, tabLabelKey: 'about' },
 ].map(command => ({
   ...command,
@@ -785,9 +750,8 @@ const SHORTCUT_COMMAND_GROUPS: Array<{
     commands: [
       { key: ShortcutAction.OpenCowork, labelKey: 'shortcutOpenCowork', descriptionKey: 'shortcutDescOpenCowork' },
       { key: ShortcutAction.OpenScheduledTasks, labelKey: 'shortcutOpenScheduledTasks', descriptionKey: 'shortcutDescOpenScheduledTasks' },
-      { key: ShortcutAction.OpenKits, labelKey: 'shortcutOpenKits', descriptionKey: 'shortcutDescOpenKits' },
       { key: ShortcutAction.OpenSkills, labelKey: 'shortcutOpenSkills', descriptionKey: 'shortcutDescOpenSkills' },
-      { key: ShortcutAction.OpenMcp, labelKey: 'shortcutOpenMcp', descriptionKey: 'shortcutDescOpenMcp' },
+      { key: ShortcutAction.OpenMcp, labelKey: 'shortcutOpenApps', descriptionKey: 'shortcutDescOpenApps' },
       { key: ShortcutAction.ToggleSidebar, labelKey: 'shortcutToggleSidebar', descriptionKey: 'shortcutDescToggleSidebar' },
     ],
   },
@@ -795,7 +759,6 @@ const SHORTCUT_COMMAND_GROUPS: Array<{
     titleKey: 'shortcutGroupApp',
     commands: [
       { key: ShortcutAction.Settings, labelKey: 'openSettings', descriptionKey: 'shortcutDescSettings' },
-      { key: ShortcutAction.ShowShortcuts, labelKey: 'shortcutShowShortcuts', descriptionKey: 'shortcutDescShowShortcuts' },
     ],
   },
   {
@@ -871,7 +834,7 @@ const DreamingTabIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 export type SettingsOpenOptions = {
   initialTab?: TabType;
-  /** With `initialTab: 'im'`: the channel to open, for a card that asked for one. */
+  /** With `initialTab: 'apps'`: the channel to open, for a card that asked for one. */
   initialImPlatform?: Platform;
   notice?: string;
   noticeI18nKey?: string;
@@ -880,7 +843,11 @@ export type SettingsOpenOptions = {
 
 interface SettingsProps extends SettingsOpenOptions {
   onClose: () => void;
-  onStartAiSkin?: (text: string, kitId: string) => void;
+  onStartAiSkin?: (text: string, skillId: string) => void;
+  /** Opens the chat with one skill chosen; Skills lives in this sheet now. */
+  onUseSkill?: (skillId: string) => void;
+  /** Starts a conversation that writes a new skill. */
+  onCreateSkillByChat?: () => void;
   initialTabRequestId?: number;
   onUpdateFound?: (info: AppUpdateInfo) => void;
   enterpriseConfig?: {
@@ -1263,6 +1230,8 @@ const SettingsNumberInputRow: React.FC<{
 const Settings: React.FC<SettingsProps> = ({
   onClose,
   onStartAiSkin,
+  onUseSkill,
+  onCreateSkillByChat,
   initialTab,
   initialImPlatform,
   initialTabRequestId,
@@ -1337,7 +1306,6 @@ const Settings: React.FC<SettingsProps> = ({
   }, []);
 
   // Plugin settings handle (deferred save)
-  const pluginsSettingsRef = useRef<PluginsSettingsHandle>(null);
 
   // Provider that supplies the legacy `config.api` fallback when nothing is enabled.
   const [activeProvider, setActiveProvider] = useState<ProviderType>(getDefaultActiveProvider());
@@ -2617,7 +2585,6 @@ const Settings: React.FC<SettingsProps> = ({
         FontPreferences.CodeFontSizeMin,
         FontPreferences.CodeFontSizeMax,
       );
-      let savedPluginPendingChanges: PluginPendingChanges | null = null;
 
       await configService.updateConfig({
         api: {
@@ -2730,16 +2697,6 @@ const Settings: React.FC<SettingsProps> = ({
         throw new Error(i18nService.t('settingsSavedButOpenClawSyncFailed'));
       }
 
-      // Batch save plugin changes (toggles + configs) if any pending
-      if (activeTab === 'plugins' && pluginsSettingsRef.current) {
-        const pendingChanges = pluginsSettingsRef.current.getPendingChanges();
-        if (pendingChanges) {
-          await window.electron?.plugins.batchSave(pendingChanges);
-          savedPluginPendingChanges = pendingChanges;
-          pluginsSettingsRef.current.resetDirty();
-        }
-      }
-
       if (usageAnalyticsEnabled) {
         if (previousConfig.language !== language) {
           reportGeneralSettingChanged('language', language, previousConfig.language);
@@ -2842,10 +2799,6 @@ const Settings: React.FC<SettingsProps> = ({
         if (shortcutSettingsSummary) {
           reportShortcutSettingChanged(shortcutSettingsSummary);
         }
-        const pluginSettingsSummary = buildPluginSettingsAnalyticsSummary(savedPluginPendingChanges);
-        if (pluginSettingsSummary) {
-          reportPluginSettingsSaved(pluginSettingsSummary);
-        }
         const customModelSettingsSummary = buildCustomModelSettingsAnalyticsSummary(
           previousProviders,
           normalizedProviders,
@@ -2878,20 +2831,13 @@ const Settings: React.FC<SettingsProps> = ({
 
   const handleTabChange = useCallback((tab: TabType) => {
     if (isBackingUpOpenClawData || isRestoringOpenClawData) return;
-    if (activeTab === 'plugins' && pluginsSettingsRef.current?.guardLeave(() => doTabChange(tab))) {
-      return;
-    }
     doTabChange(tab);
-  }, [activeTab, doTabChange, isBackingUpOpenClawData, isRestoringOpenClawData]);
+  }, [doTabChange, isBackingUpOpenClawData, isRestoringOpenClawData]);
 
-  // Guarded close: check plugin dirty state before closing
   const guardedClose = useCallback(() => {
     if (isBackingUpOpenClawData || isRestoringOpenClawData) return;
-    if (activeTab === 'plugins' && pluginsSettingsRef.current?.guardLeave(() => onClose())) {
-      return;
-    }
     onClose();
-  }, [activeTab, isBackingUpOpenClawData, isRestoringOpenClawData, onClose]);
+  }, [isBackingUpOpenClawData, isRestoringOpenClawData, onClose]);
 
   const shortcutCommandMap = useMemo(
     () => new Map(SHORTCUT_COMMANDS.map(command => [command.key, command])),
@@ -2992,19 +2938,14 @@ const Settings: React.FC<SettingsProps> = ({
   const sidebarTabs: { key: TabType; label: string; icon: React.ReactNode }[] = (() => {
     // Tab order from docs/maties/design.md, section 5. Icons at 17px.
     const allTabs = [
-      { key: 'general' as TabType,        label: i18nService.t('general'),        icon: <SettingsSlidersIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'appearance' as TabType,     label: i18nService.t('appearance'),     icon: <SunIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'model' as TabType,          label: i18nService.t('matiesAccountTab'), icon: <CubeIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'library' as TabType,        label: i18nService.t('librarySettingsTab'), icon: <BookOpenIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'coworkAgentEngine' as TabType, label: i18nService.t('coworkAgentEngine'), icon: <CpuChipIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'model' as TabType,          label: i18nService.t('settingsTabYou'),  icon: <CubeIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'apps' as TabType,           label: i18nService.t('apps'),            icon: <SidebarMcpIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'skills' as TabType,         label: i18nService.t('skills'),          icon: <SkillIcon className={SETTINGS_TAB_ICON_CLASS} /> },
       { key: 'coworkMemory' as TabType,   label: i18nService.t('coworkMemoryTitle'), icon: <BrainIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'coworkDreaming' as TabType, label: i18nService.t('coworkMemoryTabDreaming'), icon: <DreamingTabIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'browserWebAccess' as TabType, label: i18nService.t('browserWebAccessTab'), icon: <GlobeAltIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'im' as TabType,             label: i18nService.t('imBot'),          icon: <ChatBubbleLeftIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'email' as TabType,          label: i18nService.t('emailTab'),       icon: <EnvelopeIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'plugins' as TabType,        label: i18nService.t('pluginsTab'),     icon: <PlugIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'shortcuts' as TabType,      label: i18nService.t('shortcuts'),      icon: <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={SETTINGS_TAB_ICON_CLASS}><rect x="2" y="4" width="20" height="14" rx="2" /><line x1="6" y1="8" x2="8" y2="8" /><line x1="10" y1="8" x2="12" y2="8" /><line x1="14" y1="8" x2="16" y2="8" /><line x1="6" y1="12" x2="8" y2="12" /><line x1="10" y1="12" x2="14" y2="12" /><line x1="16" y1="12" x2="18" y2="12" /><line x1="8" y1="15.5" x2="16" y2="15.5" /></svg> },
-      { key: 'about' as TabType,          label: i18nService.t('about'),          icon: <InformationCircleIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'library' as TabType,        label: i18nService.t('librarySettingsTab'), icon: <BookOpenIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'appearance' as TabType,     label: i18nService.t('appearance'),      icon: <SunIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'general' as TabType,        label: i18nService.t('general'),         icon: <SettingsSlidersIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'about' as TabType,          label: i18nService.t('about'),           icon: <InformationCircleIcon className={SETTINGS_TAB_ICON_CLASS} /> },
     ];
     // Filter out tabs hidden by enterprise config
     // Filter out tabs with 'hide' action in enterprise config

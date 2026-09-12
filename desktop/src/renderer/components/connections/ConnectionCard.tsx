@@ -26,13 +26,24 @@ const TAG_LABEL_KEYS: Record<ConnectionTag, string> = {
   [ConnectionTag.ThroughYourBrowser]: 'matiesConnectionsTagBrowser',
 };
 
-export const ConnectionLogo: React.FC<{ name: string; logo?: string }> = ({ name, logo }) => {
+/** The founder's 48px tile; `size` shrinks the whole thing for a menu row. */
+export const ConnectionLogo: React.FC<{ name: string; logo?: string; size?: number }> = ({
+  name,
+  logo,
+  size = 48,
+}) => {
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(logo) && !failed;
   return (
     <span
       aria-hidden="true"
-      className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[#f6f7f9] text-[18px] font-medium text-[#4a4f57]"
+      className="relative flex shrink-0 items-center justify-center bg-[#f6f7f9] font-medium text-[#4a4f57]"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.round(size * 0.29),
+        fontSize: Math.round(size * 0.375),
+      }}
     >
       {!showImage && <span>{connectionMonogram(name)}</span>}
       {showImage && (
@@ -41,7 +52,8 @@ export const ConnectionLogo: React.FC<{ name: string; logo?: string }> = ({ name
           alt=""
           draggable={false}
           onError={() => setFailed(true)}
-          className="h-7 w-7 object-contain"
+          className="object-contain"
+          style={{ width: Math.round(size * 0.583), height: Math.round(size * 0.583) }}
         />
       )}
     </span>

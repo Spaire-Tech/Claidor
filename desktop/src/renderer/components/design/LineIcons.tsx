@@ -150,23 +150,6 @@ export const PaperclipLineIcon: React.FC<LineIconProps> = (props) => (
   </svg>
 );
 
-/** Mention: the @. */
-export const MentionLineIcon: React.FC<LineIconProps> = (props) => (
-  <svg {...svgProps(props, 1.8)}>
-    <circle cx="12" cy="12" r="4" />
-    <path d="M16 8v5a3 3 0 0 0 5 -2.2A9 9 0 1 0 16.5 19.4" />
-  </svg>
-);
-
-/** Use my selection: the window with a selected cell. */
-export const SelectionLineIcon: React.FC<LineIconProps> = (props) => (
-  <svg {...svgProps(props, 1.7)}>
-    <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
-    <line x1="3.5" y1="9.5" x2="20.5" y2="9.5" />
-    <line x1="9" y1="9.5" x2="9" y2="19.5" />
-  </svg>
-);
-
 /** The « ⋯ » of an overflow. */
 export const EllipsisLineIcon: React.FC<LineIconProps> = (props) => (
   <svg {...svgProps(props, 2.4)}>
