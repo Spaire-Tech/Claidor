@@ -175,6 +175,7 @@ import type {
   SkinGetActiveResponse,
   SkinListResponse,
 } from '../../shared/skin/types';
+import type { SpeakResult, SpeechVoicesResult } from '../../shared/speech/constants';
 import type { CoworkTempDirPreview } from './cowork';
 interface ApiResponse {
   ok: boolean;
@@ -830,6 +831,10 @@ interface IElectronAPI {
     setEnabled: (enabled: boolean) => Promise<{ enabled: boolean }>;
     openWorkbench: () => Promise<{ url: string }>;
     stop: () => Promise<{ phase: string; port: number | null; version: string | null; errorCode: string | null }>;
+  };
+  speech: {
+    listVoices: () => Promise<SpeechVoicesResult>;
+    speak: (voiceId: string, text: string) => Promise<SpeakResult>;
   };
   openclaw: {
     engine: {
