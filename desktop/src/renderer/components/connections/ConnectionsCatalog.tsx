@@ -22,7 +22,7 @@ const GROUP_TITLE_KEYS: Record<ConnectionGroupId, string> = Object.fromEntries(
 /**
  * « Some more connections » (docs/maties/onboarding.md, screen 5): the
  * count, the search, the intro line, then the eleven groups as the founder
- * drew them. Shown in the onboarding and in Skills & Connectors alike.
+ * drew them. Shown in the onboarding and in Settings → Apps alike.
  */
 const ConnectionsCatalog: React.FC = () => {
   const { connectors, busySlug, connect, disconnect } = useConnectionsState();

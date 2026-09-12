@@ -245,7 +245,12 @@ const ToolCallGroup: React.FC<{
   const stepState: StepState = isToolError
     ? StepState.Failed
     : (isRunning && isSessionStreaming ? StepState.Running : StepState.Done);
-  const stepSublineText = stepState === StepState.Failed ? getToolStepFailureText(stepKind) : stepSubline;
+  // Where a run of identical failures folded into this card, the sub-line
+  // carries the whole run: what failed, and that it tried more than once
+  // before changing approach.
+  const stepSublineText = stepState === StepState.Failed
+    ? getToolStepFailureText(stepKind, group.repeatedFailure)
+    : stepSubline;
 
   // The approval card, when this step needs the person's yes, sits where
   // the result card would be.

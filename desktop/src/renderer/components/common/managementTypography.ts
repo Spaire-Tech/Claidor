@@ -1,5 +1,5 @@
 /**
- * Type scale for the management pages (Kits / Skills / MCP).
+ * Type scale for the management pages (Skills / Apps).
  *
  * Sizes derive from `--lobster-ui-font-size` — the single "UI font size" the
  * user sets under Appearance — so one slider moves the whole page instead of
@@ -13,7 +13,7 @@
  * Compact controls use `text-xs`, which resolves to 13px and already scales.
  */
 
-/** Page header titles in the top bar (Kits / Scheduled Tasks / Skills tabs). */
+/** Page header titles in the top bar (Scheduled Tasks, Library). */
 export const MANAGEMENT_PAGE_TITLE_TEXT =
   'text-[length:calc(var(--lobster-ui-font-size)_+_0.5px)]';
 

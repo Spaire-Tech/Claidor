@@ -7,7 +7,6 @@ import React, { useMemo } from 'react';
 import type { Artifact } from '../../types/artifact';
 import { PREVIEWABLE_ARTIFACT_TYPES } from '../../types/artifact';
 import type { CoworkMessage } from '../../types/cowork';
-import type { MarketplaceKit } from '../../types/kit';
 import type { Skill } from '../../types/skill';
 import AssistantTurnBlock from './AssistantTurnBlock';
 import LazyRenderTurn from './LazyRenderTurn';
@@ -21,7 +20,6 @@ export interface ConversationTurnsViewProps {
   messages: CoworkMessage[];
   isStreaming?: boolean;
   skills?: Skill[];
-  marketplaceKits?: MarketplaceKit[];
   artifacts?: Artifact[];
   resolveLocalFilePath?: (href: string, text: string) => string | null;
   mapDisplayText?: (value: string) => string;
@@ -41,14 +39,12 @@ export interface ConversationTurnsViewProps {
 }
 
 const EMPTY_SKILLS: Skill[] = [];
-const EMPTY_KITS: MarketplaceKit[] = [];
 const EMPTY_ARTIFACTS: Artifact[] = [];
 
 const ConversationTurnsView: React.FC<ConversationTurnsViewProps> = ({
   messages,
   isStreaming = false,
   skills = EMPTY_SKILLS,
-  marketplaceKits = EMPTY_KITS,
   artifacts = EMPTY_ARTIFACTS,
   resolveLocalFilePath,
   mapDisplayText,
@@ -112,7 +108,6 @@ const ConversationTurnsView: React.FC<ConversationTurnsViewProps> = ({
                 <UserMessageItem
                   message={turn.userMessage}
                   skills={skills}
-                  marketplaceKits={marketplaceKits}
                   onReEdit={readOnly ? undefined : onReEdit}
                 />
               </div>

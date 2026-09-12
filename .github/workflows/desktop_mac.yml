@@ -9,6 +9,11 @@ on:
   workflow_dispatch:
   push:
     branches:
+      # `main` first and permanently: without it, merging changed the app
+      # and produced no app, and the only way to a build was to know that
+      # the trigger named a working branch instead. Every future branch
+      # would have had to edit this file to get an installer.
+      - main
       - claude/pierce-phase-6-writing-mjkaj6
     paths:
       - "desktop/**"

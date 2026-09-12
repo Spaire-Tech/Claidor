@@ -1,14 +1,17 @@
 import { describe, expect, test } from 'vitest';
 
 import type { CoworkMessage } from '../../types/cowork';
-import type { ToolGroupItem } from './messageDisplayUtils';
+import type { ConsolidatedItem, ToolGroupItem } from './messageDisplayUtils';
 import {
+  collapseRepeatedFailures,
+  FailureRunSlotKind,
   getFileBasename,
   getToolStepFailureText,
   getToolStepKind,
   getToolStepResult,
   getToolStepSubline,
   getToolStepTitle,
+  planRepeatedFailureCollapse,
   stripEngineMarkers,
   ToolStepKind,
 } from './toolStepPresentation';
@@ -213,5 +216,144 @@ describe('a step in plain words', () => {
     expect(getFileBasename('/a/b/c.txt')).toBe('c.txt');
     expect(getFileBasename('C:\\a\\b\\')).toBe('b');
     expect(getFileBasename('plain.md')).toBe('plain.md');
+  });
+});
+
+describe('a run of failures is one card', () => {
+  const failure = (tool: string) => ({ kind: FailureRunSlotKind.Failure, tool } as const);
+  const worked = { kind: FailureRunSlotKind.Boundary } as const;
+  const thinking = { kind: FailureRunSlotKind.Transparent } as const;
+
+  test('three fumbles of the same tool leave one card standing', () => {
+    const plan = planRepeatedFailureCollapse([
+      failure('browser'),
+      failure('browser'),
+      failure('browser'),
+      worked,
+    ]);
+    // The first attempt survives with its real error text; only the
+    // repeats fold into it.
+    expect([...plan.foldedIndexes]).toEqual([1, 2]);
+    expect(plan.repeatedByIndex.get(0)).toEqual({ attempts: 3, changedApproach: true });
+  });
+
+  test('thinking between two attempts does not break the run; an answer does', () => {
+    expect([...planRepeatedFailureCollapse([
+      failure('browser'),
+      thinking,
+      failure('browser'),
+    ]).foldedIndexes]).toEqual([2]);
+
+    // A word addressed to the person is a real boundary: two separate
+    // failures either side of it are two separate pieces of news.
+    expect([...planRepeatedFailureCollapse([
+      failure('browser'),
+      worked,
+      failure('browser'),
+    ]).foldedIndexes]).toEqual([]);
+  });
+
+  test('different tools are different news and never fold together', () => {
+    const plan = planRepeatedFailureCollapse([failure('browser'), failure('exec')]);
+    expect([...plan.foldedIndexes]).toEqual([]);
+    expect(plan.repeatedByIndex.size).toBe(0);
+  });
+
+  test('a run that is still the last thing that happened does not claim a pivot', () => {
+    const plan = planRepeatedFailureCollapse([failure('browser'), failure('browser')]);
+    expect(plan.repeatedByIndex.get(0)).toEqual({ attempts: 2, changedApproach: false });
+  });
+
+  test('a single failure is never folded, and never annotated', () => {
+    const plan = planRepeatedFailureCollapse([failure('browser'), worked]);
+    expect([...plan.foldedIndexes]).toEqual([]);
+    expect(plan.repeatedByIndex.size).toBe(0);
+  });
+
+  test('the card says what failed and that it tried more than once', () => {
+    // Without a run, the wording is exactly what it always was.
+    expect(getToolStepFailureText(ToolStepKind.Browser)).toBe('The page could not be opened');
+    expect(getToolStepFailureText(ToolStepKind.Browser, { attempts: 1, changedApproach: true }))
+      .toBe('The page could not be opened');
+    expect(getToolStepFailureText(ToolStepKind.Browser, { attempts: 3, changedApproach: true }))
+      .toBe('The page could not be opened · tried 3 times, then changed approach');
+    // Still fumbling: the card reports the attempts and claims nothing more.
+    expect(getToolStepFailureText(ToolStepKind.Browser, { attempts: 3, changedApproach: false }))
+      .toBe('The page could not be opened · tried 3 times');
+  });
+
+  describe('over the rendered step list', () => {
+    const step = (id: string, tool: string, isError: boolean, done = true): ConsolidatedItem => ({
+      type: 'tool_group',
+      group: {
+        type: 'tool_group',
+        toolUse: { id, type: 'tool_use', content: '', timestamp: 1, metadata: { toolName: tool, toolInput: {} } },
+        toolResult: done
+          ? { id: `${id}-r`, type: 'tool_result', content: isError ? 'element not found' : 'ok', timestamp: 2, metadata: { isError } }
+          : null,
+      },
+    });
+    const answer = (id: string): ConsolidatedItem => ({
+      type: 'assistant',
+      message: { id, type: 'assistant', content: 'Here is what I found.', timestamp: 3 },
+    });
+
+    test('the founder’s three identical browser clicks become one step', () => {
+      const collapsed = collapseRepeatedFailures([
+        step('a', 'browser', true),
+        step('b', 'browser', true),
+        step('c', 'browser', true),
+        step('d', 'read', false),
+        answer('e'),
+      ]);
+
+      expect(collapsed).toHaveLength(3);
+      const first = collapsed[0];
+      expect(first.type === 'tool_group' && first.group.toolUse.id).toBe('a');
+      expect(first.type === 'tool_group' && first.group.repeatedFailure)
+        .toEqual({ attempts: 3, changedApproach: true });
+      // The answer and the step that worked are untouched and in place.
+      expect(collapsed[1].type === 'tool_group' && collapsed[1].group.toolUse.id).toBe('d');
+      expect(collapsed[2].type).toBe('assistant');
+    });
+
+    test('a real failure still reaches the card, with its own reason', () => {
+      // One failure is news. It is neither folded, annotated, nor stripped
+      // of the reason the step gives for failing: a filter that learns to
+      // swallow bad news is worse than the noise it removed.
+      const items = [step('a', 'browser', true), answer('b')];
+      const collapsed = collapseRepeatedFailures(items);
+      expect(collapsed).toBe(items);
+
+      const failed = collapsed[0];
+      expect(failed.type === 'tool_group' && failed.group.repeatedFailure).toBeUndefined();
+      expect(failed.type === 'tool_group' && getToolStepResult(failed.group))
+        .toEqual({ type: 'line', text: 'element not found' });
+    });
+
+    test('the surviving card of a run keeps the failure’s own reason', () => {
+      const collapsed = collapseRepeatedFailures([
+        step('a', 'browser', true),
+        step('b', 'browser', true),
+        answer('c'),
+      ]);
+      const survivor = collapsed[0];
+      expect(survivor.type === 'tool_group' && getToolStepResult(survivor.group))
+        .toEqual({ type: 'line', text: 'element not found' });
+    });
+
+    test('a step still running is never folded away underneath a person', () => {
+      const items = [
+        step('a', 'browser', true),
+        step('b', 'browser', false, false),
+        step('c', 'browser', true),
+      ];
+      const collapsed = collapseRepeatedFailures(items);
+      // The running step sits between two failures of the same tool: it is
+      // neither a failure nor a boundary, so the run spans it and the
+      // running card stays exactly where it is.
+      expect(collapsed).toHaveLength(2);
+      expect(collapsed[1].type === 'tool_group' && collapsed[1].group.toolUse.id).toBe('b');
+    });
   });
 });

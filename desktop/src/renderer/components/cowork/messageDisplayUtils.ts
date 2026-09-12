@@ -14,6 +14,8 @@ import { i18nService } from '../../services/i18n';
 import type { Artifact } from '../../types/artifact';
 import type { CoworkMessage, CoworkMessageMetadata } from '../../types/cowork';
 import type { MediaPollingGroup } from './MediaPollingIndicator';
+// Type-only: erased at emit, so the two modules do not form a runtime cycle.
+import type { RepeatedFailure } from './toolStepPresentation';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +32,12 @@ export type ToolGroupItem = {
   toolUse: CoworkMessage;
   toolResult?: CoworkMessage | null;
   mediaPollOrdinal?: number;
+  /**
+   * Set on the first of a run of identical failures, once the repeats have
+   * been folded into it: this card now stands for the whole run. See
+   * `planRepeatedFailureCollapse` in `toolStepPresentation.tsx`.
+   */
+  repeatedFailure?: RepeatedFailure;
 };
 
 export type DisplayItem =

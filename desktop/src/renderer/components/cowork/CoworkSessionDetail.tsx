@@ -59,7 +59,6 @@ import {
 import { configService, ConfigServiceEvent } from '../../services/config';
 import { coworkService } from '../../services/cowork';
 import { i18nService } from '../../services/i18n';
-import { getInstalledKitSkillIds } from '../../services/kitCapability';
 import { readLocalServiceProjectDirectoryCandidate } from '../../services/localServiceProjectDirectoryCache';
 import { RootState } from '../../store';
 import {
@@ -88,6 +87,7 @@ import {
   selectActivePreviewTab,
   selectIsPanelOpen,
   selectPanelWidth,
+  setPanelWidth,
   togglePanel,
   updateLocalServiceProjectMetadata,
 } from '../../store/slices/artifactSlice';
@@ -104,7 +104,6 @@ import {
   setPlanConfirmationAwaiting,
   setPlanConfirmationHandled,
 } from '../../store/slices/coworkSlice';
-import { setActiveKitIds } from '../../store/slices/kitSlice';
 import { setActiveSkillIds } from '../../store/slices/skillSlice';
 import type { Artifact } from '../../types/artifact';
 import { ArtifactTypeValue, PREVIEWABLE_ARTIFACT_TYPES } from '../../types/artifact';
@@ -147,6 +146,10 @@ import MarkdownContent from '../MarkdownContent';
 import CloudWorkStrip from '../maty/CloudWorkStrip';
 import { type ToastEventDetail } from '../Toast';
 import { resolveAgentModelSelection, useAgentSelectedModel } from './agentModelSelection';
+import {
+  computeArtifactPanelWidthBounds,
+  computeEvenSplitArtifactPanelWidth,
+} from './artifactPanelLayout';
 import AssistantTurnBlock, { ContextCompactionDivider } from './AssistantTurnBlock';
 import type { BrowserAnnotationAttachmentOpenPayload } from './BrowserAnnotationMessageAttachments';
 import { type CoworkOpenShareOptionsEventDetail, CoworkUiEvent } from './constants';
@@ -192,7 +195,6 @@ import {
   type ToolGroupItem,
 } from './messageDisplayUtils';
 import { parseProposedPlanBlock } from './proposedPlanParser';
-import { buildSelectedKitContextPrompt } from './selectedKitContextPrompt';
 import { buildSelectedSkillRoutingPrompt } from './selectedSkillRoutingPrompt';
 import SelectedTextActionToolbar from './SelectedTextActionToolbar';
 import {
@@ -208,7 +210,6 @@ import UserMessageContent from './UserMessageContent';
 import UserMessageItem from './UserMessageItem';
 interface CoworkSessionDetailProps {
   onManageSkills?: () => void;
-  onManageKits?: () => void;
   onContinue: (
     prompt: string,
     skillPrompt?: string,
@@ -220,6 +221,8 @@ interface CoworkSessionDetailProps {
   ) => boolean | void | Promise<boolean | void>;
   onStop: () => void;
   isSidebarCollapsed?: boolean;
+  /** Width the sidebar gives back when it steps aside for the artifact panel. */
+  sidebarWidth?: number;
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
   updateBadge?: React.ReactNode;
@@ -296,6 +299,15 @@ const ARTIFACT_PANEL_TRANSITION_MS = 200;
 const ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH = 4;
 const COWORK_DETAIL_MIN_WIDTH = 480;
 const ARTIFACT_PANEL_MIN_WIDTH_RATIO = 1 / 6;
+
+const buildArtifactPanelWidthInput = (contentRowWidth: number) => ({
+  contentRowWidth,
+  conversationMinWidth: COWORK_DETAIL_MIN_WIDTH,
+  resizeHandleWidth: ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH,
+  minWidthRatio: ARTIFACT_PANEL_MIN_WIDTH_RATIO,
+  hardMinWidth: MIN_PANEL_WIDTH,
+  hardMaxWidth: MAX_PANEL_WIDTH,
+});
 const SUBAGENT_PANEL_POLL_INTERVAL_MS = 5_000;
 const INVALID_FILE_NAME_PATTERN = /[<>:"/\\|?*\u0000-\u001F]/g;
 const SELECTED_TEXT_ACTION_HALF_WIDTH = 150;
@@ -1386,10 +1398,10 @@ const EMPTY_PREVIEW_TABS: ArtifactPreviewTab[] = [];
 
 const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   onManageSkills,
-  onManageKits,
   onContinue,
   onStop,
   isSidebarCollapsed,
+  sidebarWidth,
   onToggleSidebar,
   onNewChat,
   updateBadge,
@@ -1408,9 +1420,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   const messagesLength = useSelector(selectCurrentMessagesLength);
   const skills = useSelector((state: RootState) => state.skill.skills);
   const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
-  const activeKitIds = useSelector((state: RootState) => state.kit.activeKitIds);
-  const installedKits = useSelector((state: RootState) => state.kit.installedKits);
-  const marketplaceKits = useSelector((state: RootState) => state.kit.marketplaceKits);
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
   const agents = useSelector((state: RootState) => state.agent.agents);
   const availableModels = useSelector((state: RootState) => state.model.availableModels);
@@ -1579,16 +1588,11 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     [currentSession],
   );
   const confirmExecutionSkillPrompt = useMemo(() => {
-    const kitSkillIds = activeKitIds.flatMap(kitId => getInstalledKitSkillIds(installedKits[kitId]));
-    const allSkillIds = [...new Set([...activeSkillIds, ...kitSkillIds])];
-    const activeSkills = allSkillIds
+    const activeSkills = activeSkillIds
       .map(id => skills.find(skill => skill.id === id))
       .filter((skill): skill is NonNullable<typeof skill> => skill !== undefined);
-    return [
-      buildSelectedKitContextPrompt(activeKitIds, marketplaceKits, installedKits),
-      buildSelectedSkillRoutingPrompt(activeSkills),
-    ].filter(Boolean).join('\n\n') || undefined;
-  }, [activeKitIds, activeSkillIds, installedKits, marketplaceKits, skills]);
+    return buildSelectedSkillRoutingPrompt(activeSkills) || undefined;
+  }, [activeSkillIds, skills]);
   useEffect(() => {
     clearHeightCache();
   }, [sessionId]);
@@ -2398,6 +2402,20 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     };
   }, [clearAutoPreviewArtifactSettleTimer]);
 
+  // A panel opens level with the conversation instead of at whatever width it
+  // was last dragged to. The sidebar closes on the same event (see
+  // sidebarAutoCollapseState), so the row is about to grow by the width the
+  // sidebar gives back; splitting the row it will have avoids opening at one
+  // width and jumping to another a moment later.
+  const applyEvenArtifactPanelSplit = useCallback(() => {
+    const contentWidth = contentRowRef.current?.clientWidth ?? 0;
+    if (contentWidth <= 0) return;
+    const reclaimedSidebarWidth = isSidebarCollapsed ? 0 : Math.max(0, sidebarWidth ?? 0);
+    dispatch(setPanelWidth(computeEvenSplitArtifactPanelWidth(
+      buildArtifactPanelWidthInput(contentWidth + reclaimedSidebarWidth),
+    )));
+  }, [dispatch, isSidebarCollapsed, sidebarWidth]);
+
   useEffect(() => {
     let animationFrame: number | undefined;
     let transitionTimeout: number | undefined;
@@ -2410,6 +2428,7 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     }
 
     if (isPanelOpen) {
+      applyEvenArtifactPanelSplit();
       setShouldRenderArtifactPanel(true);
       setIsArtifactPanelVisible(false);
       setIsArtifactPanelTransitioning(true);
@@ -2438,18 +2457,17 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
         window.clearTimeout(transitionTimeout);
       }
     };
-  }, [isPanelOpen]);
+  }, [applyEvenArtifactPanelSplit, isPanelOpen]);
 
   const updateArtifactPanelMaxWidth = useCallback(() => {
     const contentWidth = contentRowRef.current?.clientWidth ?? 0;
     if (contentWidth <= 0) return;
     setContentRowWidth(contentWidth);
-    const availablePanelWidth = contentWidth - COWORK_DETAIL_MIN_WIDTH - ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH;
-    const nextMaxWidth = Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, availablePanelWidth));
-    const proportionalMinWidth = Math.floor(contentWidth * ARTIFACT_PANEL_MIN_WIDTH_RATIO);
-    const nextMinWidth = Math.min(nextMaxWidth, Math.max(MIN_PANEL_WIDTH, proportionalMinWidth));
-    setArtifactPanelMinWidth(nextMinWidth);
-    setArtifactPanelMaxWidth(nextMaxWidth);
+    const bounds = computeArtifactPanelWidthBounds(
+      buildArtifactPanelWidthInput(contentWidth),
+    );
+    setArtifactPanelMinWidth(bounds.minWidth);
+    setArtifactPanelMaxWidth(bounds.maxWidth);
   }, []);
 
   useLayoutEffect(() => {
@@ -5106,8 +5124,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
       // Restore active skills
       const skillIds = metadata?.skillIds ?? [];
       dispatch(setActiveSkillIds(skillIds));
-      const kitIds = metadata?.kitIds ?? [];
-      dispatch(setActiveKitIds(kitIds));
       // Focus the input
       ref.focus();
     })();
@@ -6001,7 +6017,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
               <UserMessageItem
                 message={turn.userMessage}
                 skills={skills}
-                marketplaceKits={marketplaceKits}
                 sessionId={sessionId}
                 onReEdit={remoteManaged ? undefined : handleReEdit}
                 onLocateSelectedText={handleLocateSelectedText}
@@ -7032,7 +7047,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             size={isArtifactPanelExpanded ? 'compact' : 'large'}
             remoteManaged={remoteManaged}
             onManageSkills={remoteManaged ? undefined : onManageSkills}
-            onManageKits={remoteManaged ? undefined : onManageKits}
             showModelSelector={true}
             showReadOnlyContext={!isArtifactPanelExpanded}
             showNewUserWelcomeLoginOverlay={isNewUserWelcomeSession}

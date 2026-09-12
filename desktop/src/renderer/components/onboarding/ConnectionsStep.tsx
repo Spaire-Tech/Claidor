@@ -3,7 +3,7 @@ import React from 'react';
 import ConnectionsCatalog from '../connections/ConnectionsCatalog';
 
 /**
- * Screen 5, « Some more connections »: the catalogue the Connectors page
+ * Screen 5, « Some more connections »: the catalogue Settings → Apps
  * shares, with its own header, count and search.
  */
 const ConnectionsStep: React.FC = () => (

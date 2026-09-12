@@ -117,6 +117,7 @@ vi.mock('./openclawLocalExtensions', () => ({
   ),
   hasRuntimeBundledOpenClawExtension: (id: string) => (
     id === 'xai'
+    || id === 'memory-wiki'
     || (id === 'duckduckgo' && mockRuntimeState.searchPluginAvailable)
   ),
   resolveOpenClawExtensionPluginId: (id: string) => {
@@ -1852,6 +1853,35 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('Built-in `web_search` is not available in this build');
   });
 
+  // --- The wiki (docs/maties/library.md) ---
+
+  test('permits the wiki, pinned to the vault mode that reads nothing else', async () => {
+    const sync = await createSync();
+    expect(sync.sync('wiki-on')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // Both lines are required. The plugin ships in the build and was dead
+    // twice over: no entry, and absent from the strict allowlist, so the
+    // engine never loaded it and nothing said so.
+    //
+    // The exact shape matters as much as the values. A plugin entry is
+    // validated by a strict schema knowing only enabled/hooks/subagent/
+    // llm/config, nested inside the strict schema for the whole config
+    // file — so settings belong under `config`, and a stray key at the top
+    // does not fail the wiki, it fails the config.
+    expect(config.plugins.entries['memory-wiki']).toEqual({
+      enabled: true,
+      config: { vaultMode: 'isolated' },
+    });
+    expect(config.plugins.allow).toContain('memory-wiki');
+
+    // The one mode this product must never enable: it reads anywhere on
+    // the person's disk and its own authors mark it experimental. Naming
+    // the mode above is what stops it arriving later as somebody's
+    // default, and this assertion is what keeps it named.
+    expect(JSON.stringify(config)).not.toContain('unsafe-local');
+  });
+
   test('declares and allowlists the bundled xai plugin so its compat hooks load', async () => {
     const sync = await createSync();
 
@@ -2759,6 +2789,32 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.plugins.entries['search-library']).toEqual({ enabled: true });
   });
 
+  test('tells the assistant to replace an approach that failed, not repeat it', async () => {
+    const sync = await createSync();
+    expect(sync.sync('changed-approach-prompt').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## When A Step Fails');
+    expect(agentsMd).toContain('An approach that has failed is replaced, not repeated.');
+    expect(agentsMd).toContain('Never report a step as done when it did not do what it set out to do.');
+  });
+
+  test('offers the sign-in instead of a lecture when a connected app is asked for visually', async () => {
+    const sync = await createSync();
+    expect(sync.sync('connected-app-prompt').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## Seeing A Connected App');
+    // The false success is the worse of the two faults, because it cannot
+    // be seen: the sign-in page is never reported as a finished step.
+    expect(agentsMd).toContain('Do not report the step as done');
+    expect(agentsMd).toContain('sign in once in the Maties browser window');
+    // And no lecture: the words the founder was given are named and banned.
+    expect(agentsMd).toContain('do not use the words "API", "OAuth", "authentication flow" or "browser login flow"');
+    // It follows the browser policy it qualifies.
+    expect(agentsMd.indexOf('## Seeing A Connected App')).toBeGreaterThan(agentsMd.indexOf('## Browser Policy'));
+  });
+
   test('enables managed OpenClaw tool loop detection', async () => {
     const sync = await createSync();
 
@@ -2769,8 +2825,8 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.loopDetection).toEqual({
       enabled: true,
       historySize: 48,
-      warningThreshold: 6,
-      unknownToolThreshold: 6,
+      warningThreshold: 3,
+      unknownToolThreshold: 3,
       criticalThreshold: 10,
       globalCircuitBreakerThreshold: 30,
       detectors: {

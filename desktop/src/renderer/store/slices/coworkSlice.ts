@@ -77,10 +77,10 @@ interface CoworkState {
   draftSelectedTextSnippets: Record<string, CoworkSelectedTextSnippet[]>;
   /** Keyed by draftKey; screenshots are referenced by assetId and live in main. */
   draftBrowserAnnotationBatches: Record<string, CoworkBrowserAnnotationBatch[]>;
-  /** Keyed by draftKey, stores active kit IDs per draft so they survive view switches */
-  draftKitIds: Record<string, string[]>;
   /** Keyed by draftKey, stores active skill IDs per draft so they survive view switches */
   draftSkillIds: Record<string, string[]>;
+  /** Keyed by draftKey: the connected app this turn should look in first, if any. */
+  draftAppSlugs: Record<string, string>;
   /** Keyed by draftKey, stores the active collaboration mode for the draft/session. */
   draftCollaborationModes: Record<string, CoworkCollaborationModeType>;
   /** Keyed by sessionId, stores the latest proposed plan confirmation UI state. */
@@ -129,8 +129,8 @@ const initialState: CoworkState = {
   draftAttachments: {},
   draftSelectedTextSnippets: {},
   draftBrowserAnnotationBatches: {},
-  draftKitIds: {},
   draftSkillIds: {},
+  draftAppSlugs: {},
   draftCollaborationModes: {},
   planConfirmations: {},
   btwThreadsBySessionId: {},
@@ -1455,12 +1455,12 @@ const coworkSlice = createSlice({
       delete state.draftBrowserAnnotationBatches[action.payload];
     },
 
-    setDraftKitIds(state, action: PayloadAction<{ draftKey: string; kitIds: string[] }>) {
-      const { draftKey, kitIds } = action.payload;
-      if (kitIds.length === 0) {
-        delete state.draftKitIds[draftKey];
+    setDraftAppSlug(state, action: PayloadAction<{ draftKey: string; appSlug?: string }>) {
+      const { draftKey, appSlug } = action.payload;
+      if (!appSlug) {
+        delete state.draftAppSlugs[draftKey];
       } else {
-        state.draftKitIds[draftKey] = kitIds;
+        state.draftAppSlugs[draftKey] = appSlug;
       }
     },
 
@@ -1581,7 +1581,7 @@ export const {
   setPlanConfirmationAwaiting,
   setPlanConfirmationHandled,
   clearPlanConfirmation,
-  setDraftKitIds,
+  setDraftAppSlug,
   setDraftSkillIds,
   setDraftCollaborationMode,
   clearMediaAccountState,

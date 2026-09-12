@@ -21,8 +21,11 @@ Only Claidor's two hosts, and nowhere else:
   (`src/main/libs/endpoints.ts`; the server side is
   `server/polar/desktop`). Sign-in, token refresh, profile, quota, the
   model list, the metered model proxy, and the stubs the app asks for
-  (update check, skill store, kit store, client activities and banners:
-  they answer « nothing newer » / « empty »).
+  (update check, client activities and banners: they answer « nothing
+  newer » / « empty »). The app no longer asks for the kit store or the
+  MCP marketplace at all — the shops were empty, so the screens went (see
+  « The clear-out » below); the skill-store call remains for skill names
+  and descriptions.
 - Web app: `https://app.claidor.com` (`src/renderer/services/endpoints.ts`):
   where the browser sign-in happens and where the account links open.
 
@@ -84,14 +87,12 @@ deleted; the media picker in the prompt bar is behind
 Harness (DSH) settings tab, voice input (Youdao speech recognition, behind
 `MATIES_VOICE_INPUT_ENABLED = false`; the main-process ASR code remains),
 credit campaigns and daily check-in (the server answers « no activity »),
-the Windows Computer Use kit (its runtime zip and bundle were downloaded
+Windows Computer Use (its runtime zip and bundle were downloaded
 from NetEase's CDN; `isComputerUseKitSupportedPlatform()` returns false
 until Claidor hosts the files), usage analytics to Youdao (events now go
 to `/desktop/api/analytics/events` on Claidor, which acknowledges and
 keeps nothing, and only when the person allows statistics in Settings),
-the MCP marketplace from Youdao (Claidor serves the fifteen-server
-catalogue from `server/polar/desktop/mcp_marketplace.json`),
-the Qichacha MCP bundle, the provider and API-key screens (the Model tab
+the MCP marketplace, the Qichacha MCP bundle, the provider and API-key screens (the Model tab
 is now `MatiesAccountSection`: sign in, usage this month, available models;
 the provider config is still saved and read by the engine sync, so an
 enterprise config or an old profile still works), the upstream docs,
@@ -113,6 +114,26 @@ CDN) have no entry point left in the UI; the model-provider registry in
 (Youdao Zhiyun, Qianfan, …) that no screen shows; the retired channel
 gateways keep their NetEase URLs. Delete these when a channel or engine
 round comes.
+
+The clear-out (September 12, 2026). The founder walked the built app and
+found it crowded and duplicated, and set one rule: **the sidebar is where
+you work; settings is what it can do and who you are.** Removed, whole:
+Kits (the screen, the sidebar row, the composer button, the
+`kit://` scheme, the kit-store call, `shared/kit/constants.ts`, the
+`ipcHandlers/kits` module and the skin-pack kit that rode on it — the AI
+appearance designer now switches on the bundled `skin-creator` skill
+instead, `src/renderer/services/skinSkillOnboarding.ts`); the MCP
+marketplace and its catalogue, leaving only the servers a person adds by
+hand; the Skills screen's Market tab; the composer's « Mention » and
+« Use my selection » menu items; and the Settings tabs Plugins, IM Bot,
+Email, Shortcuts, Agent Engine and Dreaming. Skills and Connectors left
+the sidebar for Settings, Connectors renamed **Apps**; Memory and Dreaming
+merged into one Memory screen (Dreaming's behaviour is untouched, only its
+name and its tab went); thirteen Settings tabs became eight. Two screens
+still ask for an API key and are **not** covered by this round: Settings →
+Memory → « How memory is searched » (the embedding provider, base URL and
+key, kept behind one quiet disclosure), and the per-model provider config
+that no screen shows but the engine sync still reads.
 
 Added, not from upstream: the personal library (`docs/maties/library.md`).
 An index of the person's documents built on the machine: the contract in

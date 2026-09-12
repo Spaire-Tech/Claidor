@@ -2,7 +2,7 @@
  * The connections catalogue (docs/maties/onboarding.md, screens 4 and 5,
  * « In the workspace »): the six ways to reach the assistant and the
  * sixty-five services in eleven groups, as the founder listed them. One
- * catalogue, shown in the onboarding and in Skills & Connectors.
+ * catalogue, shown in the onboarding and in Settings → Apps.
  *
  * Every entry knows what it is (`kind`), so every card can do something
  * honest. « Connected » is never stored here: the renderer reads it from

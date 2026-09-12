@@ -1,4 +1,8 @@
-import type { LocalizedText } from '../kit/constants';
+/** A name or description the bundle carries; English only in Maties. */
+export interface LocalizedText {
+  en: string;
+  zh?: string;
+}
 
 export const ComputerUseKitId = {
   BuiltIn: 'computer-use',

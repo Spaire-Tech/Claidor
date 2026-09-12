@@ -7,6 +7,11 @@ import type { Platform } from '@shared/platform/constants';
 export const ConnectionsUiEvent = {
   /** Open Settings → IM Bot on one platform (detail: `OpenChannelSettingsEventDetail`). */
   OpenChannelSettings: 'connections:open-channel-settings',
+  /**
+   * A sign-in page is open in the assistant's browser panel: step out of the
+   * way so the person can see it.
+   */
+  ShowAssistantBrowser: 'connections:show-assistant-browser',
 } as const;
 export type ConnectionsUiEvent = typeof ConnectionsUiEvent[keyof typeof ConnectionsUiEvent];
 
@@ -18,6 +23,10 @@ export const requestChannelSettings = (platform: Platform): void => {
   window.dispatchEvent(new CustomEvent<OpenChannelSettingsEventDetail>(ConnectionsUiEvent.OpenChannelSettings, {
     detail: { platform },
   }));
+};
+
+export const requestAssistantBrowser = (): void => {
+  window.dispatchEvent(new CustomEvent(ConnectionsUiEvent.ShowAssistantBrowser));
 };
 
 /** The « Tell me when » sheet: what it shows after the button. */

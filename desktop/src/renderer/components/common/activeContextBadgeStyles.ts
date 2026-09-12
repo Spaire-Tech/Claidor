@@ -1,4 +1,4 @@
-// The chip of a chosen skill, kit or mode in the composer, as the founder drew
+// The chip of a chosen skill, app or mode in the composer, as the founder drew
 // the skill chip: a 32px pill, hairline border, off-white ground, blue text,
 // and the × that removes it at the right on hover. leading-5 (not
 // leading-none): the label span truncates with overflow-hidden, which clips

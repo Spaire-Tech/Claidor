@@ -4,6 +4,7 @@ import { i18nService } from '../../services/i18n';
 import type { CoworkMessage } from '../../types/cowork';
 import { computeDiffStats, type DiffStats, extractDiffFromToolInput } from './DiffView';
 import {
+  type ConsolidatedItem,
   getToolInputString,
   getToolResultRawText,
   getToolStepDisplay,
@@ -122,10 +123,161 @@ const FAILURE_KEY_BY_KIND: Partial<Record<ToolStepKind, string>> = {
 
 export const getToolStepTitle = (kind: ToolStepKind): string => i18nService.t(TITLE_KEY_BY_KIND[kind]);
 
-/** What failed, in plain words. */
-export const getToolStepFailureText = (kind: ToolStepKind): string => (
-  i18nService.t(FAILURE_KEY_BY_KIND[kind] ?? 'matiesStepFailedGeneric')
-);
+/**
+ * What failed, in plain words — and, where a run of identical failures was
+ * folded into this one card, that it tried more than once.
+ */
+export const getToolStepFailureText = (
+  kind: ToolStepKind,
+  repeated?: RepeatedFailure | null,
+): string => {
+  const text = i18nService.t(FAILURE_KEY_BY_KIND[kind] ?? 'matiesStepFailedGeneric');
+  if (!repeated || repeated.attempts < REPEATED_FAILURE_MIN_ATTEMPTS) return text;
+  const key = repeated.changedApproach
+    ? 'matiesStepTriedThenChanged'
+    : 'matiesStepTriedAgain';
+  return `${text} · ${i18nService.t(key).replace('{count}', String(repeated.attempts))}`;
+};
+
+// ── A run of failures is one card ────────────────────────────────────────────
+//
+// The founder watched Maties fumble the same browser click three times in
+// front of them, and the step list rendered three red cards for it. The
+// keystrokes are three; the outcome is one — it tried, it could not, it
+// changed approach. This folds the repeats into the first card and leaves
+// that card saying how many attempts it stands for.
+//
+// What is emphatically not done here: dropping the failure. The first
+// attempt's card survives untouched, error text and all, so a real failure
+// still reaches the person exactly as before. Only the repeats go. A filter
+// that learns to swallow bad news is worse than the noise it removed.
+
+/** Below two attempts there is nothing to fold. */
+export const REPEATED_FAILURE_MIN_ATTEMPTS = 2;
+
+/** What one item in the step list is, as far as folding is concerned. */
+export const FailureRunSlotKind = {
+  /** A step that failed, named by the tool it used. Joins a run. */
+  Failure: 'failure',
+  /** Neither joins a run nor ends one: thinking, a poll indicator. */
+  Transparent: 'transparent',
+  /** Ends any run: a step that worked, or a word addressed to the person. */
+  Boundary: 'boundary',
+} as const;
+export type FailureRunSlotKind = typeof FailureRunSlotKind[keyof typeof FailureRunSlotKind];
+
+export type FailureRunSlot =
+  | { kind: typeof FailureRunSlotKind.Failure; tool: string }
+  | { kind: typeof FailureRunSlotKind.Transparent }
+  | { kind: typeof FailureRunSlotKind.Boundary };
+
+/** A run of identical failures, as the surviving card reports it. */
+export type RepeatedFailure = {
+  /** How many attempts this one card now stands for. */
+  attempts: number;
+  /**
+   * Whether the run actually ended in something else. While the run is
+   * still the last thing that happened, nothing has changed approach yet
+   * and the card must not claim otherwise.
+   */
+  changedApproach: boolean;
+};
+
+export type FailureCollapsePlan = {
+  /** Index of a surviving card -> the run it now stands for. */
+  repeatedByIndex: Map<number, RepeatedFailure>;
+  /** Indexes whose cards fold into the surviving one. */
+  foldedIndexes: Set<number>;
+};
+
+/**
+ * Which cards survive a run of failures, and what each survivor now stands
+ * for. The *first* attempt survives, not the last: its error text is the
+ * real reason (identical calls fail identically), and keeping the first
+ * keeps the card's identity stable while the run grows under a live stream,
+ * so nothing on screen jumps as the third attempt arrives.
+ */
+export const planRepeatedFailureCollapse = (
+  slots: readonly FailureRunSlot[],
+): FailureCollapsePlan => {
+  const repeatedByIndex = new Map<number, RepeatedFailure>();
+  const foldedIndexes = new Set<number>();
+  let runTool: string | null = null;
+  let runStart = -1;
+  let runAttempts = 0;
+
+  const closeRun = (changedApproach: boolean) => {
+    if (runAttempts >= REPEATED_FAILURE_MIN_ATTEMPTS) {
+      repeatedByIndex.set(runStart, { attempts: runAttempts, changedApproach });
+    }
+    runTool = null;
+    runStart = -1;
+    runAttempts = 0;
+  };
+
+  slots.forEach((slot, index) => {
+    if (slot.kind === FailureRunSlotKind.Transparent) return;
+    if (slot.kind === FailureRunSlotKind.Boundary) {
+      closeRun(true);
+      return;
+    }
+    if (runTool !== slot.tool) {
+      closeRun(true);
+      runTool = slot.tool;
+      runStart = index;
+      runAttempts = 1;
+      return;
+    }
+    runAttempts += 1;
+    foldedIndexes.add(index);
+  });
+  closeRun(false);
+
+  return { repeatedByIndex, foldedIndexes };
+};
+
+/** How one step card reads to the folding rule above. */
+export const getFailureRunSlot = (group: ToolGroupItem): FailureRunSlot => {
+  const toolResult = group.toolResult;
+  // A step with no result yet is still running: it has neither failed nor
+  // succeeded, so it neither joins a run nor ends one.
+  if (!toolResult) return { kind: FailureRunSlotKind.Transparent };
+  const isError = Boolean(toolResult.metadata?.isError || toolResult.metadata?.error);
+  if (!isError) return { kind: FailureRunSlotKind.Boundary };
+  const rawToolName = typeof group.toolUse.metadata?.toolName === 'string'
+    ? group.toolUse.metadata.toolName
+    : '';
+  return { kind: FailureRunSlotKind.Failure, tool: normalizeToolName(rawToolName) };
+};
+
+/**
+ * The step list with runs of identical failures folded. The surviving card
+ * of each run carries `repeatedFailure`; the repeats are gone. Everything
+ * that is not a tool step is returned untouched and in place — an answer the
+ * assistant wrote is never folded away by this.
+ */
+export const collapseRepeatedFailures = (items: ConsolidatedItem[]): ConsolidatedItem[] => {
+  const plan = planRepeatedFailureCollapse(items.map((item) => (
+    item.type === 'tool_group'
+      ? getFailureRunSlot(item.group)
+      : item.type === 'assistant' && item.message.metadata?.isThinking !== true
+        ? { kind: FailureRunSlotKind.Boundary }
+        : { kind: FailureRunSlotKind.Transparent }
+  )));
+  if (plan.foldedIndexes.size === 0) return items;
+
+  const collapsed: ConsolidatedItem[] = [];
+  items.forEach((item, index) => {
+    if (plan.foldedIndexes.has(index)) return;
+    const repeated = plan.repeatedByIndex.get(index);
+    if (repeated && item.type === 'tool_group') {
+      collapsed.push({ ...item, group: { ...item.group, repeatedFailure: repeated } });
+      return;
+    }
+    collapsed.push(item);
+  });
+  return collapsed;
+};
 
 const FILE_PATH_KEYS = ['file_path', 'path', 'filePath', 'target_file', 'targetFile'];
 
