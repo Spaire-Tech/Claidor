@@ -117,6 +117,7 @@ vi.mock('./openclawLocalExtensions', () => ({
   ),
   hasRuntimeBundledOpenClawExtension: (id: string) => (
     id === 'xai'
+    || id === 'elevenlabs'
     || id === 'memory-wiki'
     || (id === 'duckduckgo' && mockRuntimeState.searchPluginAvailable)
   ),
@@ -1851,6 +1852,39 @@ describe('OpenClawConfigSync runtime config output', () => {
     const workspaceDir = path.join(stateDir, 'workspace-main');
     const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
     expect(agentsMd).toContain('Built-in `web_search` is not available in this build');
+  });
+
+  // --- The voice (docs/maties/plan.md, step 1) ---
+
+  test('gives the voice a loopback address and no key', async () => {
+    mockRuntimeState.proxyPort = 45123;
+    const sync = await createSync();
+    expect(sync.sync('voice-on')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // The address is the whole arrangement. Point it anywhere else and
+    // the engine talks to ElevenLabs directly with a placeholder key,
+    // which reads as a broken account rather than a wiring mistake.
+    expect(config.talk.provider).toBe('elevenlabs');
+    expect(config.talk.providers.elevenlabs.baseUrl)
+      .toBe('http://127.0.0.1:45123/speech');
+    // Permitted, or the strict allowlist drops it and nothing says so.
+    expect(config.plugins.allow).toContain('elevenlabs');
+    expect(config.plugins.entries.elevenlabs).toEqual({ enabled: true });
+  });
+
+  test('offers no voice at all when there is no proxy to reach it through', async () => {
+    mockRuntimeState.proxyPort = null;
+    const sync = await createSync();
+    expect(sync.sync('voice-off')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // Absent, not empty: `talk.provider` must name a key in
+    // `talk.providers` or the whole config fails to validate. And a
+    // voice that is missing is recoverable, where one that claims to
+    // work and does not is the failure this file already has once.
+    expect(config.talk).toBeUndefined();
+    expect(config.plugins.allow).not.toContain('elevenlabs');
   });
 
   // --- The wiki (docs/maties/library.md) ---
