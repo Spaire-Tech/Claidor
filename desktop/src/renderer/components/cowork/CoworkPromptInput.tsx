@@ -14,6 +14,10 @@ import {
   type CoworkBrowserAnnotationMessageBatch,
   normalizeBrowserAnnotationBatches,
 } from '@shared/cowork/browserAnnotations';
+import {
+  MatyOutcome,
+  MatyWorkPlace,
+} from '@shared/maty/constants';
 import { ProviderName } from '@shared/providers';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -57,6 +61,7 @@ import {
   LogReporterEntry,
   reportYdAnalyzer,
 } from '../../services/logReporter';
+import { matyService } from '../../services/maty';
 import { getOnboardingErrorCode, reportOnboardingAction } from '../../services/onboardingAnalytics';
 import { resolveLocalizedText, skillService } from '../../services/skill';
 import { RootState } from '../../store';
@@ -132,6 +137,9 @@ import TaskPauseIcon from '../icons/TaskPauseIcon';
 import TrashIcon from '../icons/TrashIcon';
 import XMarkIcon from '../icons/XMarkIcon';
 import { ActiveKitBadge, KitsButton } from '../kits';
+import { setMatyWorkPlace } from '../maty/matyPreferences';
+import RunsWhereChip from '../maty/RunsWhereChip';
+import { useMatyState, useMatyWorkPlace } from '../maty/useMatyState';
 import ModelSelector, {
   isModelAgenticBlocked,
   ModelAccessPromptKind,
@@ -706,6 +714,15 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   // The tray (the lower card) carries the working folder and the agent; the
   // compact composer beside an open artifact has no room for it.
   const useComposerTray = isLarge && !isCompact && (showFolderSelector || showAgentSelector || showReadOnlyContext);
+
+  // Where the next piece of work runs (docs/maties/cloud.md). The choice is
+  // offered only when Claidor says the cloud engine will take work: there is
+  // no greyed-out version of this chip, because a control that cannot be
+  // honoured is not a control.
+  const matyState = useMatyState();
+  const matyWorkPlace = useMatyWorkPlace();
+  const offerCloudChoice = isLarge && !remoteManaged && matyState.available;
+  const sendsToCloud = offerCloudChoice && matyWorkPlace === MatyWorkPlace.Cloud;
 
   const effectiveSelectedModel = resolveEffectiveModel({
     sessionId,
@@ -1423,6 +1440,34 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     modelSupportsImage,
     reportPromptControl,
   ]);
+
+  /**
+   * Send what is in the box to the cloud engine instead of running it here
+   * (docs/maties/cloud.md). Only the words travel: the contract carries a
+   * prompt and nothing else, so attached files, the working folder and the
+   * chosen agent all stay on this computer, and the toast says so.
+   */
+  const sendPromptToCloud = useCallback(async (): Promise<void> => {
+    const prompt = value.trim();
+    if (!prompt) return;
+    const result = await matyService.send(prompt);
+    if (result.outcome === MatyOutcome.Sent) {
+      showToast(i18nService.t(hasAttachments ? 'matySentWithoutFiles' : 'matySent'));
+      if (draftKeyRef.current === draftKey) {
+        setValue('');
+        dispatch(setDraftPrompt({ sessionId: draftKey, draft: '' }));
+      }
+      return;
+    }
+    if (result.outcome === MatyOutcome.Unavailable) {
+      // Claidor has switched the cloud engine off since the chip was drawn.
+      // The choice goes away and the words stay where they are.
+      setMatyWorkPlace(MatyWorkPlace.Here);
+      showToast(i18nService.t('matyUnavailable'));
+      return;
+    }
+    showToast(i18nService.t('matySendFailed').replace('{reason}', result.error ?? ''));
+  }, [value, hasAttachments, draftKey, dispatch]);
 
   const handleSubmit = useCallback(async (submitMethod: 'button' | 'keyboard' | 'voice' = 'button') => {
     let effectiveSubmitMethod = submitMethod;

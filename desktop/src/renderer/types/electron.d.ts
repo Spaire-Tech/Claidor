@@ -122,6 +122,10 @@ import type {
   ListLocalWebServicesOptions,
   LocalWebService,
 } from '../../shared/localWebServices/constants';
+import type {
+  MatyActionResult,
+  MatyState,
+} from '../../shared/maty/constants';
 import type { OnboardingProfile } from '../../shared/onboarding/constants';
 import type {
   OpenClawEngineErrorCode,
@@ -1499,6 +1503,19 @@ interface IElectronAPI {
     connect: (slug: string) => Promise<ConnectorActionResult>;
     disconnect: (accountId: string) => Promise<ConnectorActionResult>;
     onChanged: (callback: (state: ConnectorsState) => void) => () => void;
+  };
+  /** Work sent to the cloud engine (docs/maties/cloud.md). */
+  maty: {
+    /** The last thing Claidor said; it never asks by itself. */
+    getState: () => Promise<MatyState>;
+    /** Ask Claidor now, and start watching a live job again. */
+    refresh: () => Promise<MatyState>;
+    /** Send one piece of work up. Only the words travel. */
+    send: (prompt: string) => Promise<MatyActionResult>;
+    getJob: (jobId: string) => Promise<MatyActionResult>;
+    /** Take a job back; Claidor allows it only while it is queued. */
+    cancel: (jobId: string) => Promise<MatyActionResult>;
+    onChanged: (callback: (state: MatyState) => void) => () => void;
   };
   sites: {
     list: (options?: SiteListOptions) => Promise<SiteResult<SiteListData>>;
