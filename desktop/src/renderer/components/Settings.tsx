@@ -3455,280 +3455,9 @@ const Settings: React.FC<SettingsProps> = ({
       case 'appearance':
         return renderAppearanceSettings();
 
-      case 'email':
-        return <EmailSkillConfig />;
-
-      case 'coworkAgentEngine':
-        return (
-          <div className="space-y-8 pb-2">
-            {isOpenClawAgentEngine && (
-              <>
-                <section className="space-y-2.5">
-                  <Eyebrow className="px-1">{i18nService.t('openClawRuntimeStatusTitle')}</Eyebrow>
-
-                  <div className="maties-card-row p-4">
-                    <div className="flex items-start gap-3.5">
-                      <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${openClawStatusTone.iconClassName}`}>
-                        <OpenClawStatusIcon className={`h-5 w-5 ${openClawStatusTone.spinIcon ? 'animate-spin' : ''}`} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="maties-row-title min-w-0">
-                            {resolveOpenClawStatusText(openClawEngineStatus)}
-                          </div>
-                          <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${openClawStatusTone.badgeClassName}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${openClawStatusTone.badgeDotClassName} ${openClawStatusTone.inProgress ? 'animate-pulse' : ''}`} />
-                            {i18nService.t(openClawStatusTone.badgeLabelKey)}
-                          </span>
-                        </div>
-
-                        {openClawGatewayHttpUrl ? (
-                          <div className="maties-raised-2 mt-3 flex max-w-full items-center gap-2 rounded-[10px] p-1.5">
-                            <span className="maties-caption shrink-0 rounded-md bg-white px-2 py-1 text-[11.5px] font-medium dark:bg-[#1c1e23]">
-                              {i18nService.t('openClawGatewayAddress')}
-                            </span>
-                            <code
-                              className="min-w-0 flex-1 select-all truncate px-1 font-mono text-[13px] leading-6 text-foreground"
-                              title={openClawGatewayHttpUrl}
-                            >
-                              {openClawGatewayHttpUrl}
-                            </code>
-                            <button
-                              type="button"
-                              onClick={handleCopyOpenClawGatewayUrl}
-                              title={openClawGatewayCopied ? i18nService.t('copied') : i18nService.t('copyToClipboard')}
-                              aria-label={openClawGatewayCopied ? i18nService.t('copied') : i18nService.t('copyToClipboard')}
-                              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-secondary transition-colors hover:bg-background hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-                            >
-                              {openClawGatewayCopied
-                                ? <CheckCircleIcon className="h-4 w-4 text-primary" />
-                                : <MessageCopyIcon className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        ) : (
-                          <p className="mt-2 text-sm text-secondary">
-                            {resolveOpenClawStatusDescription(openClawEngineStatus)}
-                          </p>
-                        )}
-
-                        {openClawStatusTone.inProgress && openClawProgressPercent !== null && (
-                          <div className="mt-3 space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-secondary">{i18nService.t('openClawStartupProgressLabel')}</span>
-                              <span className="font-medium tabular-nums text-foreground">{openClawProgressPercent}%</span>
-                            </div>
-                            <div className="h-1.5 overflow-hidden rounded-full bg-surface-raised">
-                              <div
-                                className={`h-full rounded-full transition-all ${openClawStatusTone.progressClassName}`}
-                                style={{ width: `${openClawProgressPercent}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="space-y-2.5">
-                  <Eyebrow className="px-1">{i18nService.t('openClawBackgroundRuntimeTitle')}</Eyebrow>
-
-                  <div className="maties-card-row p-4">
-                    <div className="flex items-start gap-3.5">
-                      <span
-                        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
-                          openClawHeartbeatEnabled
-                            ? 'bg-primary-muted text-primary'
-                            : 'bg-surface-raised text-secondary'
-                        }`}
-                      >
-                        <SignalIcon className="h-5 w-5" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <h4 className="maties-row-title min-w-0">
-                            {i18nService.t('openClawHeartbeatEnabled')}
-                          </h4>
-                          <SettingsSwitch
-                            checked={openClawHeartbeatEnabled}
-                            label={i18nService.t('openClawHeartbeatEnabled')}
-                            onClick={() => {
-                              setOpenClawHeartbeatEnabled((prev) => !prev);
-                            }}
-                          />
-                        </div>
-                        <p className="maties-row-desc">
-                          {i18nService.t('openClawHeartbeatEnabledDescription')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="space-y-2.5">
-                  <Eyebrow className="px-1">{i18nService.t('openClawMaintenanceTitle')}</Eyebrow>
-
-                  <div className="maties-card-row maties-divide overflow-hidden">
-                    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
-                          <WrenchScrewdriverIcon className="h-[18px] w-[18px]" />
-                        </span>
-                        <div className="min-w-0">
-                          <div className="maties-row-title">
-                            {i18nService.t('openClawRepairGatewayStateTitle')}
-                          </div>
-                          <div className="maties-row-desc">
-                            {i18nService.t('openClawRepairGatewayStateDesc')}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowOpenClawRepairConfirm(true)}
-                        disabled={isRepairingOpenClaw}
-                        className={`${SETTINGS_ROW_PILL_CLASS} shrink-0 self-start sm:self-auto`}
-                      >
-                        {isRepairingOpenClaw && (
-                          <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                        )}
-                        {isRepairingOpenClaw
-                          ? i18nService.t('openClawRepairRunning')
-                          : i18nService.t('openClawRepairConfirmAction')}
-                      </button>
-                    </div>
-
-                    {openClawDataBackupResult && (
-                      <div className="flex flex-col gap-3 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0 space-y-1">
-                          <div className="font-medium text-foreground">
-                            {i18nService.t('openClawDataBackupSavedTitle')}
-                          </div>
-                          <div className="break-all font-mono text-xs leading-5 text-secondary">
-                            {openClawDataBackupResult.path}
-                          </div>
-                          {formatBackupSize(openClawDataBackupResult.sizeBytes) && (
-                            <div className="text-xs text-secondary">
-                              {i18nService.t('openClawDataBackupSize')}: {formatBackupSize(openClawDataBackupResult.sizeBytes)}
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => { void handleRevealOpenClawDataBackup(); }}
-                          className={`${SETTINGS_ROW_PILL_CLASS} shrink-0`}
-                        >
-                          {i18nService.t('showInFolder')}
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
-                          <ArchiveBoxIcon className="h-[18px] w-[18px]" />
-                        </span>
-                        <div className="min-w-0">
-                          <div className="maties-row-title">
-                            {i18nService.t('openClawDataBackupTitle')}
-                          </div>
-                          <div className="maties-row-desc">
-                            {i18nService.t('openClawDataBackupDesc')}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => { void handleOpenClawDataBackup(); }}
-                        disabled={isBackingUpOpenClawData || isRestoringOpenClawData}
-                        className={`${SETTINGS_ROW_PILL_CLASS} shrink-0 self-start sm:self-auto`}
-                      >
-                        {isBackingUpOpenClawData && (
-                          <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                        )}
-                        {isBackingUpOpenClawData
-                          ? i18nService.t('openClawDataBackupRunning')
-                          : i18nService.t('openClawDataBackupAction')}
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
-                          <ArrowPathRoundedSquareIcon className="h-[18px] w-[18px]" />
-                        </span>
-                        <div className="min-w-0">
-                          <div className="maties-row-title">
-                            {i18nService.t('openClawDataMigrationTitle')}
-                          </div>
-                          <div className="maties-row-desc">
-                            {i18nService.t('openClawDataMigrationDesc')}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowOpenClawDataRestoreConfirm(true)}
-                        disabled={isBackingUpOpenClawData || isRestoringOpenClawData}
-                        className={`${SETTINGS_ROW_PILL_CLASS} shrink-0 self-start sm:self-auto`}
-                      >
-                        {isRestoringOpenClawData && (
-                          <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                        )}
-                        {isRestoringOpenClawData
-                          ? i18nService.t('openClawDataMigrationRunning')
-                          : i18nService.t('openClawDataMigrationAction')}
-                      </button>
-                    </div>
-                  </div>
-                </section>
-
-                {openClawRepairResult && (
-                  <div className={`rounded-lg border px-3 py-3 text-sm ${openClawRepairResult.success
-                    ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300'
-                    : 'border-red-300 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300'}`}
-                  >
-                    <div className="font-medium">
-                      {resolveOpenClawRepairMessage(openClawRepairResult)}
-                    </div>
-                    {openClawRepairResult.backupPath && (
-                      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0 text-xs opacity-90">
-                          <span>{i18nService.t('openClawRepairBackupPath')}: </span>
-                          <span className="font-mono break-all">{openClawRepairResult.backupPath}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => { void handleRevealOpenClawRepairBackup(); }}
-                          className="inline-flex shrink-0 items-center justify-center rounded-lg border border-current/30 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-current/10"
-                        >
-                          {i18nService.t('showInFolder')}
-                        </button>
-                      </div>
-                    )}
-                    {!openClawRepairResult.success && (
-                      <div className="mt-3">
-                        <button
-                          type="button"
-                          onClick={() => { void coworkService.restartOpenClawGateway(); }}
-                          className="inline-flex items-center justify-center rounded-lg border border-current/30 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-current/10"
-                        >
-                          {i18nService.t('coworkOpenClawRestartGateway')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        );
-
+      // « Memory »: what it remembers about you, and when it tidies up. The
+      // second half was the Dreaming tab; the behaviour stayed, the name went.
       case 'coworkMemory': {
-        const memoryTabs = [
-          { key: 'entries' as const, titleKey: 'coworkMemoryTabEntries' },
-          { key: 'embedding' as const, titleKey: 'coworkMemoryTabEmbedding' },
-        ];
         const coworkMemoryGroups: Array<{ section?: string; entries: CoworkUserMemoryEntry[] }> = [];
         for (const entry of coworkMemoryEntries) {
           const lastGroup = coworkMemoryGroups[coworkMemoryGroups.length - 1];
@@ -3739,27 +3468,9 @@ const Settings: React.FC<SettingsProps> = ({
           }
         }
         return (
-          <div className="flex flex-col h-full space-y-4">
-            <div
-              className="flex shrink-0 gap-1.5"
-              role="tablist"
-              aria-label={i18nService.t('coworkMemoryTitle')}
-            >
-              {memoryTabs.map((tab) => (
-                <Pill
-                  key={tab.key}
-                  role="tab"
-                  compact
-                  aria-selected={memoryTab === tab.key}
-                  tone={memoryTab === tab.key ? PillTone.Selected : PillTone.Quiet}
-                  onClick={() => setMemoryTab(tab.key)}
-                >
-                  {i18nService.t(tab.titleKey)}
-                </Pill>
-              ))}
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              {memoryTab === 'entries' && (
+          <div className="space-y-8">
+            <SettingsGroup title={i18nService.t('memoryRemembersTitle')}>
+              {(
                 <div className="maties-card-row space-y-4 px-5 py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -3936,8 +3647,32 @@ const Settings: React.FC<SettingsProps> = ({
                   )}
                 </div>
               )}
+            </SettingsGroup>
 
-              {memoryTab === 'embedding' && (
+            <SettingsGroup title={i18nService.t('memoryTidyingGroup')}>
+              <MemoryTidyingSection
+                enabled={dreamingEnabled}
+                frequency={dreamingFrequency}
+                onEnabledChange={setDreamingEnabled}
+                onFrequencyChange={setDreamingFrequency}
+              />
+            </SettingsGroup>
+
+            {/* How memory is searched. Kept behind one quiet row: it names
+                outside services and asks for a key, which nothing else in
+                Maties does. */}
+            <SettingsGroup title={i18nService.t('memorySearchGroup')}>
+              <button
+                type="button"
+                onClick={() => setShowMemorySearchSettings((previous) => !previous)}
+                className={SETTINGS_ROW_PILL_CLASS}
+                aria-expanded={showMemorySearchSettings}
+              >
+                {showMemorySearchSettings
+                  ? i18nService.t('coworkMemoryAdvancedHide')
+                  : i18nService.t('coworkMemoryAdvancedShow')}
+              </button>
+              {showMemorySearchSettings && (
                 <EmbeddingSettingsSection
                   embeddingEnabled={embeddingEnabled}
                   embeddingProvider={embeddingProvider}
@@ -3953,31 +3688,10 @@ const Settings: React.FC<SettingsProps> = ({
                   onEmbeddingRemoteApiKeyChange={setEmbeddingRemoteApiKey}
                 />
               )}
-
-            </div>
+            </SettingsGroup>
           </div>
         );
       }
-
-      case 'coworkDreaming':
-        return (
-          <div className="min-h-full">
-            <DreamingSettingsSection
-              dreamingEnabled={dreamingEnabled}
-              dreamingFrequency={dreamingFrequency}
-              onDreamingEnabledChange={setDreamingEnabled}
-              onDreamingFrequencyChange={setDreamingFrequency}
-            />
-          </div>
-        );
-
-      case 'browserWebAccess':
-        return (
-          <BrowserWebAccessSettings
-            value={browserWebAccess}
-            onChange={setBrowserWebAccess}
-          />
-        );
 
       case 'model':
         return <MatiesAccountSection />;
@@ -3985,103 +3699,42 @@ const Settings: React.FC<SettingsProps> = ({
       case 'library':
         return <LibrarySettingsSection />;
 
-      case 'shortcuts':
+      // « Apps » (the sidebar's old Connectors entry, renamed): how to reach
+      // the assistant, the channels it answers on, the accounts it can use,
+      // and the servers the person adds by hand.
+      case 'apps':
         return (
-          <div className="space-y-4">
-            <div className="relative">
-              <MagnifyingGlassIcon className="maties-input-icon-glyph h-4 w-4" />
-              <input
-                value={shortcutSearchQuery}
-                onChange={(event) => setShortcutSearchQuery(event.target.value)}
-                placeholder={i18nService.t('shortcutSearchPlaceholder')}
-                className="maties-input maties-input-icon"
+          <div className="flex flex-col gap-12">
+            <section className="flex flex-col gap-[14px]">
+              <h2 className="maties-page-title">
+                {i18nService.t('matiesConnectionsReachTitle').replace('{name}', assistantName)}
+              </h2>
+              <ReachList assistantName={assistantName} />
+            </section>
+            <section className="flex flex-col gap-[14px]">
+              <h2 className="maties-page-title">{i18nService.t('appsChannelsTitle')}</h2>
+              <IMSettings
+                initialPlatform={initialImPlatform}
+                initialPlatformRequestId={initialTabRequestId}
               />
-            </div>
-            <p className="maties-caption">
-              {i18nService.t('shortcutScopeHint')}
-            </p>
-            <div className="maties-card-row overflow-hidden">
-              {filteredShortcutGroups.length > 0 ? filteredShortcutGroups.map((group, groupIndex) => (
-                <div key={group.titleKey}>
-                  <div className={`px-5 pb-1.5 pt-4 ${groupIndex === 0 ? '' : 'maties-hairline-top'}`}>
-                    <Eyebrow>{i18nService.t(group.titleKey)}</Eyebrow>
-                  </div>
-                  {group.commands.map((command, commandIndex) => {
-                    const value = shortcuts[command.key] ?? '';
-                    const commandLabel = getShortcutCommandText(command, 'labelKey');
-                    return (
-                      <div
-                        key={command.key}
-                        className={`group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-2.5 ${
-                          commandIndex === 0 ? '' : 'maties-hairline-top'
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate text-[13.5px] font-medium text-[#1c1f23] dark:text-[#f2f3f5]">
-                            {commandLabel}
-                          </div>
-                          <div className="maties-caption mt-0.5 line-clamp-2">
-                            {getShortcutCommandText(command, 'descriptionKey')}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-end gap-2">
-                          {command.inputType === 'send' ? (
-                            <SendShortcutSelect
-                              value={value}
-                              onChange={(nextValue) => handleShortcutChange(command.key, nextValue)}
-                            />
-                          ) : (
-                            <ShortcutRecorder
-                              value={value}
-                              label={commandLabel}
-                              onChange={(nextValue) => handleShortcutChange(command.key, nextValue)}
-                            />
-                          )}
-                          {value ? (
-                            <button
-                              type="button"
-                              onClick={() => handleShortcutChange(command.key, '')}
-                              title={i18nService.t('shortcutClear')}
-                              aria-label={i18nService.t('shortcutClear')}
-                              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-secondary transition-colors hover:bg-surface-raised hover:text-foreground"
-                            >
-                              <TrashIcon className="h-3.5 w-3.5" />
-                            </button>
-                          ) : (
-                            <span className="h-6 w-6 shrink-0" aria-hidden="true" />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )) : (
-                <div className="maties-caption px-5 py-8 text-center">
-                  {i18nService.t('shortcutNoResults')}
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleResetShortcuts}
-                className={SETTINGS_ROW_PILL_CLASS}
-              >
-                {i18nService.t('shortcutResetAll')}
-              </button>
-            </div>
+            </section>
+            <ConnectionsCatalog />
+            <section className="flex flex-col gap-[14px]">
+              <h2 className="maties-page-title">{i18nService.t('matiesConnectionsOwnServers')}</h2>
+              <McpManager />
+            </section>
           </div>
         );
 
-      case 'im':
-        return <IMSettings initialPlatform={initialImPlatform} initialPlatformRequestId={initialTabRequestId} />;
-
-      case 'plugins':
+      case 'skills':
         return (
-          <PluginsSettings
-            handleRef={pluginsSettingsRef}
+          <SkillsManager
+            readOnly={enterpriseConfig?.ui?.skills === 'readonly'}
+            onCreateByChat={onCreateSkillByChat}
+            onUseSkill={onUseSkill}
           />
         );
+
 
       case 'about':
         return (
