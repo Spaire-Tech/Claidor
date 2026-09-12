@@ -3991,7 +3991,7 @@ const translations: Record<'en', Record<string, string>> = {
     emailSaving: 'Saving...',
     emailDeleting: 'Deleting...',
 
-    // Connections catalogue (docs/maties/onboarding.md, screens 4 and 5, and Skills & Connectors)
+    // Connections catalogue (docs/maties/onboarding.md, screens 4 and 5, and Settings → Apps)
     matiesConnectionsMoreTitle: 'Some more connections',
     matiesConnectionsSearchPlaceholder: 'Search',
     matiesConnectionsIntro: 'A connector lets your Maty act inside a service you already use. Where there\'s no connector, it uses your computer and your browser instead, so nothing is out of reach.',

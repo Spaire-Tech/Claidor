@@ -265,7 +265,6 @@ import { registerMcpHandlers } from './ipcHandlers/mcp';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
 import { readOnboardingProfile, registerOnboardingHandlers } from './ipcHandlers/onboarding';
 import { registerPermissionIpcHandlers } from './ipcHandlers/permissions/handlers';
-import { registerPluginHandlers } from './ipcHandlers/plugins';
 import {
   getCronJobService,
   initCronJobServiceManager,
@@ -11141,7 +11140,6 @@ if (!gotTheLock) {
 
   // ==================== Plugin Management IPC Handlers ====================
 
-  registerPluginHandlers({ getCoworkStore, syncOpenClawConfig });
 
   // ==================== Scheduled Task IPC Handlers (OpenClaw) ====================
 

@@ -53,7 +53,7 @@ export const ClockLineIcon: React.FC<LineIconProps> = (props) => (
   </svg>
 );
 
-/** Kits: the four squares. */
+/** Apps: the four squares. */
 export const SquaresLineIcon: React.FC<LineIconProps> = (props) => (
   <svg {...svgProps(props)}>
     <rect x="4" y="4" width="7" height="7" rx="1.6" />
@@ -63,7 +63,7 @@ export const SquaresLineIcon: React.FC<LineIconProps> = (props) => (
   </svg>
 );
 
-/** Skills & Connectors: the puzzle piece. */
+/** Skills: the puzzle piece. */
 export const PuzzleLineIcon: React.FC<LineIconProps> = (props) => (
   <svg {...svgProps(props)}>
     <path d="M10.5 4.2a2 2 0 0 1 3.9 0v1.6h2.4a1.2 1.2 0 0 1 1.2 1.2v2.6h1.6a2 2 0 0 1 0 3.9h-1.6v3.3a1.2 1.2 0 0 1-1.2 1.2h-3.3v-1.6a2 2 0 0 0-3.9 0v1.6H6.3a1.2 1.2 0 0 1-1.2-1.2V13.5H6.7a2 2 0 0 0 0-3.9H5.1V7a1.2 1.2 0 0 1 1.2-1.2h4.2z" />

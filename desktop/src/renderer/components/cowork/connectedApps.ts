@@ -5,8 +5,8 @@
  */
 import {
   CONNECTION_ITEMS,
-  type ConnectionItem,
   connectionAppSlug,
+  type ConnectionItem,
 } from '@shared/connections/catalog';
 import type { ConnectorsState } from '@shared/connectors/constants';
 

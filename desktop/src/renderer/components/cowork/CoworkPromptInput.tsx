@@ -83,11 +83,11 @@ import {
   removeDraftSelectedTextSnippet,
   removePendingSteer,
   removeRejectedSteer,
+  setDraftAppSlug,
   setDraftAttachments,
   setDraftBrowserAnnotationBatches,
   setDraftCollaborationMode,
   setDraftPrompt,
-  setDraftAppSlug,
   setDraftSelectedTextSnippets,
   setDraftSkillIds,
   setPlanConfirmationHandled,
@@ -142,13 +142,13 @@ import ModelSelector, {
   ModelSelectorGroup,
 } from '../ModelSelector';
 import { ActiveSkillBadge, SkillsPopover } from '../skills';
+import ActiveAppBadge from './ActiveAppBadge';
 import {
   resolveAgentModelSelection,
   resolveEffectiveModel,
   resolveModelThinkingLevel,
   useAgentSelectedModel,
 } from './agentModelSelection';
-import ActiveAppBadge from './ActiveAppBadge';
 import AppPickerButton from './AppPickerButton';
 import AttachmentCard from './AttachmentCard';
 import BrowserAnnotationAttachmentBadge from './BrowserAnnotationAttachmentBadge';

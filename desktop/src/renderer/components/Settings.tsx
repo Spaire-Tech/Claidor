@@ -52,6 +52,7 @@ import Modal from './common/Modal';
 import { ConnectionsCatalog, ReachList, useAssistantName } from './connections';
 import EmbeddingSettingsSection from './cowork/EmbeddingSettingsSection';
 import Eyebrow from './design/Eyebrow';
+import { PuzzleLineIcon, SquaresLineIcon } from './design/LineIcons';
 import Pill, { PillTone } from './design/Pill';
 import Sphere from './design/Sphere';
 import Switch from './design/Switch';
@@ -59,8 +60,6 @@ import ErrorMessage from './ErrorMessage';
 import BrainIcon from './icons/BrainIcon';
 import EditIcon from './icons/EditIcon';
 import PlusCircleIcon from './icons/PlusCircleIcon';
-import SidebarMcpIcon from './icons/SidebarMcpIcon';
-import SkillIcon from './icons/SkillIcon';
 import IMSettings from './im/IMSettings';
 import LibrarySettingsSection from './library/LibrarySettingsSection';
 import { McpManager } from './mcp';
@@ -2332,8 +2331,8 @@ const Settings: React.FC<SettingsProps> = ({
     // Tab order from docs/maties/design.md, section 5. Icons at 17px.
     const allTabs = [
       { key: 'model' as TabType,          label: i18nService.t('settingsTabYou'),  icon: <CubeIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'apps' as TabType,           label: i18nService.t('apps'),            icon: <SidebarMcpIcon className={SETTINGS_TAB_ICON_CLASS} /> },
-      { key: 'skills' as TabType,         label: i18nService.t('skills'),          icon: <SkillIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'apps' as TabType,           label: i18nService.t('apps'),            icon: <SquaresLineIcon className={SETTINGS_TAB_ICON_CLASS} /> },
+      { key: 'skills' as TabType,         label: i18nService.t('skills'),          icon: <PuzzleLineIcon className={SETTINGS_TAB_ICON_CLASS} /> },
       { key: 'coworkMemory' as TabType,   label: i18nService.t('coworkMemoryTitle'), icon: <BrainIcon className={SETTINGS_TAB_ICON_CLASS} /> },
       { key: 'library' as TabType,        label: i18nService.t('librarySettingsTab'), icon: <BookOpenIcon className={SETTINGS_TAB_ICON_CLASS} /> },
       { key: 'appearance' as TabType,     label: i18nService.t('appearance'),      icon: <SunIcon className={SETTINGS_TAB_ICON_CLASS} /> },

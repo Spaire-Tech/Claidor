@@ -69,7 +69,7 @@ export const getHtmlSharePublicBaseUrl = (): string => {
   return `${getServerApiBaseUrl()}${HtmlSharePublicRoute.Root}`;
 };
 
-// Updates, the skill store and the kit store are answered by Claidor's API
+// Updates and the skill store are answered by Claidor's API
 // under the same /desktop namespace. Until Claidor publishes releases and
 // catalogues they answer « nothing new » and « empty », never an error.
 export const getUpdateCheckUrl = (): string => `${getServerApiBaseUrl()}/api/updates/check`;

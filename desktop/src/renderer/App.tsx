@@ -1325,6 +1325,12 @@ const App: React.FC = () => {
         return;
       }
 
+      if (matchesAction(ShortcutAction.OpenLibrary)) {
+        event.preventDefault();
+        handleShowLibrary();
+        return;
+      }
+
       if (matchesAction(ShortcutAction.OpenSkills)) {
         event.preventDefault();
         handleShowSkills();
@@ -1344,6 +1350,7 @@ const App: React.FC = () => {
     handleNewChat,
     handleShowApps,
     handleShowCowork,
+    handleShowLibrary,
     handleShowScheduledTasks,
     handleShowSettings,
     handleShowSkills,
@@ -1806,8 +1813,8 @@ const App: React.FC = () => {
         <Settings
           onClose={handleCloseSettings}
           onStartAiSkin={handleStartAiSkinFromSettings}
-          onUseSkill={handleSkillUse}
-          onCreateSkillByChat={handleCreateSkillByChat}
+          onUseSkill={(skillId) => { handleCloseSettings(); handleSkillUse(skillId); }}
+          onCreateSkillByChat={() => { handleCloseSettings(); handleCreateSkillByChat(); }}
           initialTab={settingsOptions.initialTab}
           initialTabRequestId={settingsOptions.requestId}
           notice={settingsOptions.notice}

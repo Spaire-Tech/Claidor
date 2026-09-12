@@ -112,17 +112,26 @@ states (idle, working, waiting, done) replace the still picture.
 1. Search chats: a full-width box, `#f6f7f9`, radius 11, icon
    `#9aa1ab`, placeholder `#8f96a0`, `⌘K` pill at the right. Opens the
    search modal.
-2. Five rows, 14.5 px, `#31353b`, icon 17 px `#6b7280`, radius 9,
+2. Three rows, 14.5 px, `#31353b`, icon 17 px `#6b7280`, radius 9,
    padding 9 10, hover `rgba(16,20,28,.05)`: New Task, Scheduled Tasks,
-   Kits, Skills & Connectors, Library. The icons are the founder's line
-   drawings (pencil, clock, four squares, puzzle piece, books).
+   Library. The icons are the founder's line drawings (pencil, clock,
+   books). The founder's rule after walking the built app, September 12:
+   **the sidebar is where you work; settings is what it can do and who you
+   are.** So Kits went entirely, and Skills and Apps became Settings tabs.
+   What is left in the sidebar is new chat, the chats themselves, the
+   scheduled ones, and the library.
 3. Eyebrow « MY AGENTS », padding 26 11 8.
 4. One white card per agent with the resting shadow (radius 11, padding
-   10 11, the agent's icon at 17 px): the agent's name. Under the open
-   agent, its conversations: title on the left (13.5 px, `#4a4f57`,
-   truncated), age on the right in 11.5 px `#a2a29c` (« 1h », « 2d »),
-   the current one on `#f0f0f2`. Hover shows the row's menu (rename,
-   delete) at the right. A subagent's conversations indent under it.
+   10 11, the agent's icon at 17 px): the agent's name. An agent starts
+   **shut**, and a shut row carries its conversation count in JetBrains
+   Mono 11.5 px `#a2a29c` at the right, so a container never reads as an
+   absence. Clicking the row opens and shuts it and does nothing else; the
+   pencil beside it starts a new chat. Open/shut is remembered per agent.
+   Under the open agent, its conversations: title on the left (13.5 px,
+   `#4a4f57`, truncated), age on the right in 11.5 px `#a2a29c` (« 1h »,
+   « 2d »), the current one on `#f0f0f2`. Hover shows the row's menu
+   (rename, delete) at the right. A subagent's conversations indent under
+   it.
 5. The bottom row: the person's initials in a 26 px circle (`#e8effa`,
    blue letters) or their picture, their first name, and the gear at the
    far right for Settings. Signed out, the same row reads « Sign in »
@@ -154,8 +163,10 @@ they do now. The bird at the bottom right.
 **The composer** is two cards. The upper card (white, radius 24, lifted
 shadow, padding 16 14 13 20): the text box (« Assign a task or ask any
 question », 15 px, grows to fit, ⇧⏎ for a new line), then a row: the
-« + » (34 px round, opens the menu: Attach a file ⌘⇧A, Mention @, Use
-my selection), the kits/skills button (four squares), space, the model
+« + » (34 px round, opens the menu: Attach a file ⌘⇧A, then « More »),
+the app picker (four squares) — the apps the person has connected, one
+of which can be named as the place to look in first; a hint, never a
+gate, and not drawn at all when nothing is connected — space, the model
 chip (provider mark, name, chevron; opens the model menu), the send
 button (36 px black circle `#1d1d1f`, white arrow; grey while empty;
 becomes a square « stop » while an answer streams). The lower card
@@ -261,15 +272,28 @@ title in Newsreader 23 px at the top of the content, sections as
 eyebrows, rows as white cards with hairlines between them (radius 16),
 switches as the app's switch in the one blue, buttons as pills. « Save »
 and « Cancel » only where a tab has a form; tabs that save on change say
-so with a quiet « Saved » that fades. Tabs in order: General, Appearance,
-Account (the sphere, the person, usage this month, the models with their
-provider marks), Library, Agent Engine, Memory, Dreaming, Browser, IM
-Bot, Email, Plugins, Shortcuts, About (the sphere, the name, the version,
-the MIT notice).
+so with a quiet « Saved » that fades. Eight tabs in order: **You** (the
+sphere, the person, usage this month, the models with their provider
+marks), **Apps** (how to reach {name}, the channels it answers on, the
+catalogue of accounts, then your own servers), **Skills**, **Memory**
+(what it remembers about you, and when it tidies up), **Library**,
+**Appearance**, **General** (the basics, scheduled tasks, whether it
+keeps working in the background, the browser, your data), **About** (the
+sphere, the name, the version, the MIT notice).
+
+Thirteen tabs became these eight on September 12. Agent Engine was folded
+away — there is one engine and a person should not have to know engines
+exist; its background-work switch and its data backup and import moved to
+General in words about the person, while its runtime status and « Repair
+Startup » went, repair being already offered where a failure is actually
+seen. Dreaming kept its behaviour and lost its name, its mascot and its
+tab: it is the second half of Memory, « Tidying up ». Plugins, IM Bot,
+Email and Shortcuts went; the channels live under Apps, and the shortcuts
+are the app's own and no longer editable.
 
 ## 6. The other screens
 
-- **Scheduled Tasks, Kits, Skills & Connectors, Library**: a page with
+- **Scheduled Tasks, Library**: a page with
   the title in Newsreader 23 px at 28 36, one line of explanation in 14
   px `#86868b`, then cards (white, radius 18, resting shadow) in a grid
   or a list, the primary action as one blue pill at the top right,
@@ -376,6 +400,7 @@ app, or a quiet label with no button: « Uses your browser », « On this
 computer ». A « Connect » on something not wired yet opens a small sheet
 that says so, with « Tell me when »; nothing is hidden and nothing
 pretends. Eleven groups with a mono count and a note, a search pill at
-the top right. The same cards are the Connectors section of Skills &
-Connectors, with « How to reach {name} » above them and « Your own
-servers » (the MCP manager) below.
+the top right. The same cards are Settings → Apps, with « How to reach
+{name} » and the channels above them and « Your own servers » (the MCP
+manager) below. There is no catalogue of MCP servers to browse: that shop
+was empty, and it was the last screen that asked a person for an API key.

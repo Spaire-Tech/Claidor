@@ -22,8 +22,8 @@ import rehypeFileChips, { FILE_CHIP_CLASS } from './design/rehypeFileChips';
 import rehypeStreamWords from './design/rehypeStreamWords';
 import { useAnswerStream } from './design/useAnswerStream';
 
-const SAFE_URL_PROTOCOLS = new Set(['http', 'https', 'mailto', 'tel', 'file', 'localfile', 'kit']);
-const INTERNAL_URL_PROTOCOLS = new Set(['kit']);
+const SAFE_URL_PROTOCOLS = new Set(['http', 'https', 'mailto', 'tel', 'file', 'localfile']);
+const INTERNAL_URL_PROTOCOLS = new Set<string>();
 const LINK_CLASS_NAME = 'text-primary hover:text-primary-hover hover:underline underline-offset-2 transition-colors break-words [overflow-wrap:anywhere]';
 const LARGE_MARKDOWN_RENDER_THRESHOLD = 8 * 1024;
 const LARGE_MARKDOWN_PREVIEW_HEAD_LENGTH = 4 * 1024;
