@@ -39,6 +39,10 @@ import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import { ScheduledTasksView } from './components/scheduledTasks';
 import Settings, { type SettingsOpenOptions } from './components/Settings';
 import Sidebar from './components/Sidebar';
+import {
+  resolveSidebarAutoCollapse,
+  SidebarAutoCollapseEffect,
+} from './components/sidebarAutoCollapseState';
 import SkinBackdrop, { SkinBackdropVariant } from './components/skin/SkinBackdrop';
 import SkinPresentationScope from './components/skin/SkinPresentationScope';
 import StartupCreditCampaign from './components/StartupCreditCampaign';
@@ -83,7 +87,7 @@ import {
   selectHasRunningCoworkSessions,
   selectPendingPermissions,
 } from './store/selectors/coworkSelectors';
-import { openArtifactPreviewTab } from './store/slices/artifactSlice';
+import { openArtifactPreviewTab, selectIsPanelOpen } from './store/slices/artifactSlice';
 import {
   clearDraftAttachments,
   clearDraftSelectedTextSnippets,
@@ -221,6 +225,12 @@ const App: React.FC = () => {
   const dispatch = useDispatch();
   const defaultSelectedModel = useSelector((state: RootState) => state.model.defaultSelectedModel);
   const currentSessionId = useSelector(selectCurrentSessionId);
+  const isArtifactPanelOpen = useSelector((state: RootState) => (
+    currentSessionId ? selectIsPanelOpen(state, currentSessionId) : false
+  ));
+  /** True while the sidebar is closed because the right-hand panel closed it. */
+  const sidebarOwnsCollapseRef = useRef(false);
+  const wasArtifactPanelOpenRef = useRef(false);
   const pendingPermission = useSelector(selectFirstCurrentSessionPendingPermission);
   const pendingPermissions = useSelector(selectPendingPermissions);
   const authUser = useSelector((state: RootState) => state.auth.user);
@@ -780,8 +790,30 @@ const App: React.FC = () => {
       activeView: mainView,
       isCollapsed: isSidebarCollapsed,
     });
+    // The person has moved the sidebar themselves: from here on it is theirs,
+    // and we stop reopening it when the right-hand panel closes.
+    sidebarOwnsCollapseRef.current = false;
     setIsSidebarCollapsed((prev) => !prev);
   }, [isSidebarCollapsed, mainView]);
+
+  // One panel at a time: the sidebar steps aside while the right-hand panel is
+  // open, otherwise the conversation is squeezed between three columns.
+  useEffect(() => {
+    const wasPanelOpen = wasArtifactPanelOpenRef.current;
+    wasArtifactPanelOpenRef.current = isArtifactPanelOpen;
+    const outcome = resolveSidebarAutoCollapse({
+      isPanelOpen: isArtifactPanelOpen,
+      wasPanelOpen,
+      isSidebarCollapsed,
+      ownsCollapse: sidebarOwnsCollapseRef.current,
+    });
+    sidebarOwnsCollapseRef.current = outcome.ownsCollapse;
+    if (outcome.effect === SidebarAutoCollapseEffect.Collapse) {
+      setIsSidebarCollapsed(true);
+    } else if (outcome.effect === SidebarAutoCollapseEffect.Restore) {
+      setIsSidebarCollapsed(false);
+    }
+  }, [isArtifactPanelOpen, isSidebarCollapsed]);
 
   const handleToggleTaskFilter = useCallback(() => {
     const nextActive = !isTaskFilterActive;
@@ -1787,6 +1819,7 @@ const App: React.FC = () => {
               <CoworkView
                 onShowSkills={handleShowSkills}
                 isSidebarCollapsed={isSidebarCollapsed}
+                sidebarWidth={sidebarWidth}
                 onToggleSidebar={handleToggleSidebar}
                 onNewChat={handleNewChat}
                 updateBadge={collapsedHeaderUpdateBadge}

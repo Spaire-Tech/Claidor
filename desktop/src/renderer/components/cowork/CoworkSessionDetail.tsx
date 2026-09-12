@@ -87,6 +87,7 @@ import {
   selectActivePreviewTab,
   selectIsPanelOpen,
   selectPanelWidth,
+  setPanelWidth,
   togglePanel,
   updateLocalServiceProjectMetadata,
 } from '../../store/slices/artifactSlice';
@@ -145,6 +146,10 @@ import MarkdownContent from '../MarkdownContent';
 import CloudWorkStrip from '../maty/CloudWorkStrip';
 import { type ToastEventDetail } from '../Toast';
 import { resolveAgentModelSelection, useAgentSelectedModel } from './agentModelSelection';
+import {
+  computeArtifactPanelWidthBounds,
+  computeEvenSplitArtifactPanelWidth,
+} from './artifactPanelLayout';
 import AssistantTurnBlock, { ContextCompactionDivider } from './AssistantTurnBlock';
 import type { BrowserAnnotationAttachmentOpenPayload } from './BrowserAnnotationMessageAttachments';
 import { type CoworkOpenShareOptionsEventDetail, CoworkUiEvent } from './constants';
@@ -216,6 +221,8 @@ interface CoworkSessionDetailProps {
   ) => boolean | void | Promise<boolean | void>;
   onStop: () => void;
   isSidebarCollapsed?: boolean;
+  /** Width the sidebar gives back when it steps aside for the artifact panel. */
+  sidebarWidth?: number;
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
   updateBadge?: React.ReactNode;
@@ -292,6 +299,15 @@ const ARTIFACT_PANEL_TRANSITION_MS = 200;
 const ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH = 4;
 const COWORK_DETAIL_MIN_WIDTH = 480;
 const ARTIFACT_PANEL_MIN_WIDTH_RATIO = 1 / 6;
+
+const buildArtifactPanelWidthInput = (contentRowWidth: number) => ({
+  contentRowWidth,
+  conversationMinWidth: COWORK_DETAIL_MIN_WIDTH,
+  resizeHandleWidth: ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH,
+  minWidthRatio: ARTIFACT_PANEL_MIN_WIDTH_RATIO,
+  hardMinWidth: MIN_PANEL_WIDTH,
+  hardMaxWidth: MAX_PANEL_WIDTH,
+});
 const SUBAGENT_PANEL_POLL_INTERVAL_MS = 5_000;
 const INVALID_FILE_NAME_PATTERN = /[<>:"/\\|?*\u0000-\u001F]/g;
 const SELECTED_TEXT_ACTION_HALF_WIDTH = 150;
@@ -1385,6 +1401,7 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   onContinue,
   onStop,
   isSidebarCollapsed,
+  sidebarWidth,
   onToggleSidebar,
   onNewChat,
   updateBadge,
@@ -2385,6 +2402,20 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     };
   }, [clearAutoPreviewArtifactSettleTimer]);
 
+  // A panel opens level with the conversation instead of at whatever width it
+  // was last dragged to. The sidebar closes on the same event (see
+  // sidebarAutoCollapseState), so the row is about to grow by the width the
+  // sidebar gives back; splitting the row it will have avoids opening at one
+  // width and jumping to another a moment later.
+  const applyEvenArtifactPanelSplit = useCallback(() => {
+    const contentWidth = contentRowRef.current?.clientWidth ?? 0;
+    if (contentWidth <= 0) return;
+    const reclaimedSidebarWidth = isSidebarCollapsed ? 0 : Math.max(0, sidebarWidth ?? 0);
+    dispatch(setPanelWidth(computeEvenSplitArtifactPanelWidth(
+      buildArtifactPanelWidthInput(contentWidth + reclaimedSidebarWidth),
+    )));
+  }, [dispatch, isSidebarCollapsed, sidebarWidth]);
+
   useEffect(() => {
     let animationFrame: number | undefined;
     let transitionTimeout: number | undefined;
@@ -2397,6 +2428,7 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     }
 
     if (isPanelOpen) {
+      applyEvenArtifactPanelSplit();
       setShouldRenderArtifactPanel(true);
       setIsArtifactPanelVisible(false);
       setIsArtifactPanelTransitioning(true);
@@ -2425,18 +2457,17 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
         window.clearTimeout(transitionTimeout);
       }
     };
-  }, [isPanelOpen]);
+  }, [applyEvenArtifactPanelSplit, isPanelOpen]);
 
   const updateArtifactPanelMaxWidth = useCallback(() => {
     const contentWidth = contentRowRef.current?.clientWidth ?? 0;
     if (contentWidth <= 0) return;
     setContentRowWidth(contentWidth);
-    const availablePanelWidth = contentWidth - COWORK_DETAIL_MIN_WIDTH - ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH;
-    const nextMaxWidth = Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, availablePanelWidth));
-    const proportionalMinWidth = Math.floor(contentWidth * ARTIFACT_PANEL_MIN_WIDTH_RATIO);
-    const nextMinWidth = Math.min(nextMaxWidth, Math.max(MIN_PANEL_WIDTH, proportionalMinWidth));
-    setArtifactPanelMinWidth(nextMinWidth);
-    setArtifactPanelMaxWidth(nextMaxWidth);
+    const bounds = computeArtifactPanelWidthBounds(
+      buildArtifactPanelWidthInput(contentWidth),
+    );
+    setArtifactPanelMinWidth(bounds.minWidth);
+    setArtifactPanelMaxWidth(bounds.maxWidth);
   }, []);
 
   useLayoutEffect(() => {

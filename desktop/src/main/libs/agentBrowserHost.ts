@@ -2,6 +2,7 @@ import {
   type BrowserWindow,
   type Session,
   session,
+  type WebContents,
   WebContentsView,
 } from 'electron';
 import fs from 'fs';
@@ -68,6 +69,32 @@ const DEFAULT_PAGE_URL = 'about:blank';
 const DEFAULT_OPERATION_TIMEOUT_MS = 30_000;
 const MAX_OPERATION_TIMEOUT_MS = 60_000;
 const MAX_SNAPSHOT_NODES = 2_000;
+
+/**
+ * Every in-app page is laid out at this CSS width, whatever the panel measures,
+ * and the picture is then scaled down to fit. Without it a 700px panel really
+ * is a 700px screen and every site serves its tablet layout.
+ */
+const DESKTOP_VIEWPORT_WIDTH = 1_440;
+
+/**
+ * Chromium's own smallest zoom step. The panel is never this narrow in practice;
+ * the floor is here so an unmeasured panel cannot ask for an absurd zoom.
+ */
+const MIN_DESKTOP_VIEWPORT_ZOOM_FACTOR = 0.25;
+
+/**
+ * The zoom that gives a {@link DESKTOP_VIEWPORT_WIDTH} CSS viewport inside a
+ * panel of `panelWidth` device-independent pixels. Never above 1: a panel wider
+ * than a desktop keeps its own width instead of magnifying every page.
+ */
+export const resolveDesktopViewportZoomFactor = (panelWidth: number): number => {
+  if (!Number.isFinite(panelWidth) || panelWidth <= 0) return 1;
+  return Math.min(1, Math.max(
+    MIN_DESKTOP_VIEWPORT_ZOOM_FACTOR,
+    panelWidth / DESKTOP_VIEWPORT_WIDTH,
+  ));
+};
 
 type AxValue = {
   value?: unknown;
@@ -535,7 +562,10 @@ export class AgentBrowserHost {
         this.pressKey(this.resolvePage(args.pageId), readString(args.key));
         return textResult('Key pressed.');
       case BrowserMcpTool.ResizePage:
-        return textResult('The in-app browser size is controlled by the Maties panel.');
+        return textResult(
+          `The in-app browser always renders at a ${DESKTOP_VIEWPORT_WIDTH}px desktop viewport, `
+          + 'scaled to fit the Maties panel.',
+        );
       case BrowserMcpTool.HandleDialog:
         await this.handleDialog(this.resolvePage(args.pageId), readString(args.action), readString(args.promptText));
         return textResult('Dialog handled.');
@@ -594,6 +624,7 @@ export class AgentBrowserHost {
       },
     });
     view.setBackgroundColor('#ffffff');
+    this.applyDesktopViewport(view.webContents);
     const page: BrowserPage = {
       pageId,
       view,
@@ -629,7 +660,13 @@ export class AgentBrowserHost {
       emit();
     });
     webContents.on('page-title-updated', emit);
-    webContents.on('did-navigate', emit);
+    webContents.on('did-navigate', () => {
+      this.applyDesktopViewport(webContents);
+      emit();
+    });
+    webContents.on('did-finish-load', () => {
+      this.applyDesktopViewport(webContents);
+    });
     webContents.on('did-navigate-in-page', emit);
     webContents.on('ipc-message', (_event, channel, ...args) => {
       if (channel !== ManualCredentialCaptureChannel.Event) return;
@@ -785,11 +822,17 @@ export class AgentBrowserHost {
     await this.ensureDebugger(page);
     const format = readString(args.format).toLowerCase() === 'jpeg' ? 'jpeg' : 'png';
     const uid = readString(args.uid);
-    const clip = uid ? await this.getElementClip(page, uid) : undefined;
+    const fullPage = args.fullPage === true;
+    // Clips are given in CSS pixels at scale 1, so the capture comes back at the
+    // desktop size the page is laid out at rather than the smaller number of
+    // device pixels the zoomed-out panel paints.
+    const clip = uid
+      ? await this.getElementClip(page, uid)
+      : fullPage ? undefined : await this.getViewportClip(page);
     const result = await page.view.webContents.debugger.sendCommand('Page.captureScreenshot', {
       format,
       fromSurface: true,
-      captureBeyondViewport: args.fullPage === true,
+      captureBeyondViewport: fullPage,
       ...(clip ? { clip: { ...clip, scale: 1 } } : {}),
     }) as { data: string };
     return textResult('Screenshot captured.', {
@@ -1000,6 +1043,30 @@ export class AgentBrowserHost {
     };
   }
 
+  /** The visible part of the page, in CSS pixels, or nothing if it is unreadable. */
+  private async getViewportClip(
+    page: BrowserPage,
+  ): Promise<{ x: number; y: number; width: number; height: number } | undefined> {
+    try {
+      const metrics = await page.view.webContents.debugger.sendCommand('Page.getLayoutMetrics') as {
+        cssLayoutViewport?: {
+          pageX?: number;
+          pageY?: number;
+          clientWidth?: number;
+          clientHeight?: number;
+        };
+      };
+      const viewport = metrics.cssLayoutViewport;
+      const width = viewport?.clientWidth ?? 0;
+      const height = viewport?.clientHeight ?? 0;
+      if (width <= 0 || height <= 0) return undefined;
+      return { x: viewport?.pageX ?? 0, y: viewport?.pageY ?? 0, width, height };
+    } catch (error) {
+      console.warn('[AgentBrowserHost] Failed to read the page layout metrics:', error);
+      return undefined;
+    }
+  }
+
   private async getElementCenter(page: BrowserPage, uid: string): Promise<{ x: number; y: number }> {
     const clip = await this.getElementClip(page, uid);
     return {
@@ -1074,6 +1141,25 @@ export class AgentBrowserHost {
     return { x, y, width, height };
   }
 
+  /**
+   * Pin the page to a desktop-sized CSS viewport for the panel it is drawn in.
+   *
+   * Chromium keeps the zoom level per host, so it has to be re-applied after
+   * every navigation as well as whenever the panel is resized. Agent input is
+   * unaffected: both `DOM.getBoxModel` and `Input.dispatchMouseEvent` speak CSS
+   * pixels, which the zoom leaves alone, and `click`/`fill` go through the DOM.
+   */
+  private applyDesktopViewport(webContents: WebContents): void {
+    if (webContents.isDestroyed()) return;
+    try {
+      webContents.setZoomFactor(
+        resolveDesktopViewportZoomFactor(this.normalizeBounds(this.bounds).width),
+      );
+    } catch (error) {
+      console.warn('[AgentBrowserHost] Failed to apply the desktop viewport zoom:', error);
+    }
+  }
+
   private syncAttachment(): void {
     const mainWindow = this.deps.getMainWindow();
     const shouldAttach = this.desiredVisible
@@ -1094,6 +1180,10 @@ export class AgentBrowserHost {
         this.credentialLoginViewAttached = true;
       }
       this.credentialLoginView.setBounds(this.normalizeBounds(this.bounds));
+      // The login view shares the browser partition, so it inherits the host's
+      // stored zoom anyway. Setting it explicitly keeps the sign-in page at the
+      // same scale as the page the agent was on instead of a stale one.
+      this.applyDesktopViewport(this.credentialLoginView.webContents);
       return;
     }
 
@@ -1105,7 +1195,9 @@ export class AgentBrowserHost {
       mainWindow.contentView.addChildView(page.view);
       this.attachedPageId = page.pageId;
     }
-    this.pages.get(this.attachedPageId!)?.view.setBounds(this.normalizeBounds(this.bounds));
+    const attachedPage = this.pages.get(this.attachedPageId!);
+    attachedPage?.view.setBounds(this.normalizeBounds(this.bounds));
+    if (attachedPage) this.applyDesktopViewport(attachedPage.view.webContents);
   }
 
   private detachPage(pageId: number | undefined): void {

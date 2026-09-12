@@ -71,6 +71,8 @@ const logCoworkViewModel = (message: string): void => {
 export interface CoworkViewProps {
   onShowSkills?: () => void;
   isSidebarCollapsed?: boolean;
+  /** Width the sidebar gives back when it steps aside for the artifact panel. */
+  sidebarWidth?: number;
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
   updateBadge?: React.ReactNode;
@@ -82,6 +84,7 @@ export interface CoworkViewProps {
 const CoworkView: React.FC<CoworkViewProps> = ({
   onShowSkills,
   isSidebarCollapsed,
+  sidebarWidth,
   onToggleSidebar,
   onNewChat,
   updateBadge,
@@ -832,6 +835,7 @@ const CoworkView: React.FC<CoworkViewProps> = ({
             onContinue={handleContinueSession}
             onStop={handleStopSession}
             isSidebarCollapsed={isSidebarCollapsed}
+            sidebarWidth={sidebarWidth}
             onToggleSidebar={onToggleSidebar}
             onNewChat={onNewChat}
             updateBadge={updateBadge}
