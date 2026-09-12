@@ -219,27 +219,21 @@ export const useAgentSidebarState = ({
   const [visibleTaskLimitByAgentId, setVisibleTaskLimitByAgentId] = useState<Record<string, number>>({});
   const [taskPreviewsByAgentId, setTaskPreviewsByAgentId] = useState<Record<string, CoworkSessionSummary[]>>({});
   const [hasMoreTasksByAgentId, setHasMoreTasksByAgentId] = useState<Record<string, boolean>>({});
-  const [taskCountByAgentId, setTaskCountByAgentId] = useState<Record<string, number>>({});
   const [loadingAgentIds, setLoadingAgentIds] = useState<string[]>([]);
   const [failedAgentIds, setFailedAgentIds] = useState<string[]>([]);
   const [preferenceLoaded, setPreferenceLoaded] = useState(false);
 
   const loadedAgentIdsRef = useRef(new Set<string>());
-  // Read inside a state updater, so it must not be a stale closure capture.
-  const taskPreviewsByAgentIdRef = useRef<Record<string, CoworkSessionSummary[]>>({});
   const loadingKeysRef = useRef(new Set<string>());
   const activeAgentIdsRef = useRef(new Set<string>());
   const loggedScheduledMarkerSignatureByAgentIdRef = useRef(new Map<string, string>());
+  const initializedDefaultExpansionRef = useRef(false);
 
   useEffect(() => {
     return () => {
       activeAgentIdsRef.current.clear();
     };
   }, []);
-
-  useEffect(() => {
-    taskPreviewsByAgentIdRef.current = taskPreviewsByAgentId;
-  }, [taskPreviewsByAgentId]);
 
   const enabledAgents = useMemo(() => {
     return agents
@@ -309,6 +303,17 @@ export const useAgentSidebarState = ({
     expandedTaskListAgentIds,
     preferenceLoaded,
   ]);
+
+  useEffect(() => {
+    if (!preferenceLoaded || initializedDefaultExpansionRef.current) return;
+    if (sortedEnabledAgents.length === 0) return;
+    initializedDefaultExpansionRef.current = true;
+    setExpandedAgentIds((previous) => {
+      if (previous.length > 0) return previous;
+      const currentAgentExists = sortedEnabledAgents.some((agent) => agent.id === currentAgentId);
+      return [currentAgentExists ? currentAgentId : sortedEnabledAgents[0].id];
+    });
+  }, [currentAgentId, preferenceLoaded, sortedEnabledAgents]);
 
   const setAgentLoading = useCallback((agentId: string, isLoading: boolean) => {
     setLoadingAgentIds((previous) => {
@@ -384,9 +389,6 @@ export const useAgentSidebarState = ({
         ...previous,
         [agentId]: result.hasMore ?? false,
       }));
-      if (typeof result.total === 'number') {
-        setTaskCountByAgentId((previous) => ({ ...previous, [agentId]: result.total as number }));
-      }
     } catch (error) {
       logAgentSidebarLoadIssue(
         'error',
@@ -446,18 +448,6 @@ export const useAgentSidebarState = ({
       Object.entries(previous).forEach(([agentId, hasMore]) => {
         if (activeAgentIds.has(agentId)) {
           next[agentId] = hasMore;
-          return;
-        }
-        changed = true;
-      });
-      return changed ? next : previous;
-    });
-    setTaskCountByAgentId((previous) => {
-      let changed = false;
-      const next: Record<string, number> = {};
-      Object.entries(previous).forEach(([agentId, count]) => {
-        if (activeAgentIds.has(agentId)) {
-          next[agentId] = count;
           return;
         }
         changed = true;
@@ -575,9 +565,6 @@ export const useAgentSidebarState = ({
           ...previous,
           [agentId]: result.hasMore ?? false,
         }));
-        if (typeof result.total === 'number') {
-          setTaskCountByAgentId((previous) => ({ ...previous, [agentId]: result.total as number }));
-        }
       } catch (error) {
         logAgentSidebarLoadIssue(
           'error',
@@ -663,33 +650,17 @@ export const useAgentSidebarState = ({
     });
   }, []);
 
-  const decrementTaskCounts = useCallback((sessionIds: string[]) => {
-    setTaskCountByAgentId((previous) => {
-      const next = { ...previous };
-      let changed = false;
-      Object.entries(taskPreviewsByAgentIdRef.current).forEach(([agentId, tasks]) => {
-        const removed = tasks.filter((task) => sessionIds.includes(task.id)).length;
-        if (removed === 0 || typeof next[agentId] !== 'number') return;
-        next[agentId] = Math.max(0, next[agentId] - removed);
-        changed = true;
-      });
-      return changed ? next : previous;
-    });
-  }, []);
-
   const removeTaskPreview = useCallback((sessionId: string) => {
-    decrementTaskCounts([sessionId]);
     setTaskPreviewsByAgentId((previous) => {
       return removeAgentSidebarTaskPreviews(previous, [sessionId]);
     });
-  }, [decrementTaskCounts]);
+  }, []);
 
   const removeTaskPreviews = useCallback((sessionIds: string[]) => {
-    decrementTaskCounts(sessionIds);
     setTaskPreviewsByAgentId((previous) => {
       return removeAgentSidebarTaskPreviews(previous, sessionIds);
     });
-  }, [decrementTaskCounts]);
+  }, []);
 
   const removeAgentTaskPreviews = useCallback((agentId: string) => {
     loadedAgentIdsRef.current.delete(agentId);
@@ -703,12 +674,6 @@ export const useAgentSidebarState = ({
       return removeAgentSidebarAgentTaskPreviews(previous, agentId);
     });
     setHasMoreTasksByAgentId((previous) => {
-      if (!Object.prototype.hasOwnProperty.call(previous, agentId)) return previous;
-      const next = { ...previous };
-      delete next[agentId];
-      return next;
-    });
-    setTaskCountByAgentId((previous) => {
       if (!Object.prototype.hasOwnProperty.call(previous, agentId)) return previous;
       const next = { ...previous };
       delete next[agentId];
@@ -772,7 +737,6 @@ export const useAgentSidebarState = ({
       });
       const node = {
         ...agent,
-        taskCount: taskCountByAgentId[agent.id] ?? sortedTaskPreviews.length,
         isExpanded: expandedAgentIdSet.has(agent.id),
         isTaskListExpanded,
         canExpandTasks,
@@ -806,7 +770,6 @@ export const useAgentSidebarState = ({
     loadingAgentIdSet,
     pendingPermissionSessionIdSet,
     sortedEnabledAgents,
-    taskCountByAgentId,
     taskPreviewsByAgentId,
     visibleTaskLimitByAgentId,
   ]);

@@ -21,12 +21,6 @@ import { COWORK_TEMP_DIR_NAME } from '../../shared/cowork/constants';
 import { CoworkErrorModelSource } from '../../shared/cowork/errorDetail';
 import { LIBRARY_SEARCH_PLUGIN_ID, LIBRARY_SEARCH_TOOL_NAME } from '../../shared/library/contentConstants';
 import { normalizeMcpServerUrlInput } from '../../shared/mcp/url';
-import {
-  type AssistantVoice,
-  DEFAULT_ASSISTANT_VOICE,
-  isAssistantVoice,
-  type OnboardingProfile,
-} from '../../shared/onboarding/constants';
 import { OPENCLAW_PLUGIN_INDEX_MANAGED_KEYS } from '../../shared/openclawEngine/constants';
 import { OpenClawTranscriptSafetyLimit } from '../../shared/openclawTranscript/constants';
 import type {
@@ -62,7 +56,6 @@ import {
   resolveAllProviderApiKeys,
   resolveRawApiConfig,
 } from './claudeSettings';
-import { buildConnectorMcpServers } from './connectors/connectorMcpServers';
 import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
@@ -81,8 +74,6 @@ import type { OpenClawEngineManager } from './openclawEngineManager';
 import { repairHeartbeatFile, stripProactiveHeartbeatSection } from './openclawHeartbeatRepair';
 import { getMainAgentWorkspacePath } from './openclawMemoryFile';
 import { resolveOpenClawCatalogModelMaxTokens } from './openclawModelCatalog';
-import { buildManagedVoicePrompt } from './openclawVoicePrompt';
-import { applyProfileToWorkspace } from './openclawWorkspaceProfile';
 
 const gwDiagTs = (): string => {
   const d = new Date();
@@ -331,126 +322,7 @@ const MANAGED_OWNER_ALLOW_FROM = [
   '*',
 ];
 
-// Nothing is denied outright any more. `web_search` used to be, back when
-// our packaging deleted every search provider; it is now served by the
-// bundled DuckDuckGo plugin, which needs no key and no account
-// (docs/maties/models-and-search.md, section 3).
-const MANAGED_TOOL_DENY: readonly string[] = [];
-
-/**
- * The one search provider Maties ships. Free, keyless, and kept by
- * `scripts/prune-openclaw-runtime.cjs`. Three things have to agree or
- * search fails silently: the plugin must survive packaging, it must be
- * named in the strict `plugins.allow` list, and `web_search` must not be
- * denied. A build that lost the plugin falls back to no search at all,
- * and the workspace instructions say so rather than leaving the
- * assistant holding a tool that does not work.
- */
-const DUCKDUCKGO_PLUGIN_ID = 'duckduckgo';
-
-const hasDuckDuckGoPlugin = (): boolean =>
-  hasRuntimeBundledOpenClawExtension(DUCKDUCKGO_PLUGIN_ID);
-
-/**
- * The wiki: what the assistant knows about the person, as pages rather
- * than as a pile of notes (`docs/maties/plan.md`, step 6).
- *
- * It ships in our build and was dead twice over — absent from the strict
- * `plugins.allow` list below, so the engine never loaded it, and hidden
- * from the plugins screen, so nobody could switch it on. It was found by
- * the engine audit of September 11 (`docs/maties/engine-audit.md`,
- * section 1.1) and is permitted here.
- *
- * It keeps *claims*, not prose: each carries its confidence, where it came
- * from, and what contradicts it, with contradictions and open questions
- * surfaced rather than buried. That is the shape the founder asked for —
- * « like Wikipedia, structured, not a robotic text » — and it is the
- * reason to use this rather than write one.
- *
- * **`isolated`, pinned, never `unsafe-local`.** The plugin offers three
- * vault modes. `isolated` keeps the wiki to its own vault and reads
- * nothing else. `bridge` additionally imports what the memory system
- * exports, which our audit could not confirm produces anything on our
- * setup. `unsafe-local` reads anywhere on the person's disk and is marked
- * experimental by its own authors: it is the one mode this product must
- * never enable, and naming the mode here is what stops it arriving later
- * by default.
- *
- * The mode goes under `config`, which is where the engine hands a plugin
- * its own settings. The entry itself is validated by a strict schema that
- * knows only `enabled`, `hooks`, `subagent`, `llm` and `config`, and that
- * schema sits inside the strict schema for the whole config file — so a
- * stray key here does not fail the wiki, it fails the config.
- */
-const MEMORY_WIKI_PLUGIN_ID = 'memory-wiki';
-/**
- * Off since 12 September. It was switched on without anyone watching a
- * gateway load it, in the same afternoon as the un-pruning that broke the
- * browser, and both share one failure mode: plugin loading is
- * all-or-nothing, so a plugin that cannot activate takes every other
- * plugin down with it.
- *
- * Turn this back on only after starting the gateway with the wiki enabled
- * and reading the plugin registry to see it loaded rather than errored.
- */
-const MEMORY_WIKI_ENABLED = false;
-const MEMORY_WIKI_VAULT_MODE = 'isolated';
-
-const hasMemoryWikiPlugin = (): boolean =>
-  hasRuntimeBundledOpenClawExtension(MEMORY_WIKI_PLUGIN_ID);
-
-/**
- * The voice.
- *
- * `docs/maties/plan.md`, step 1: « voices come from a speech service
- * behind Claidor's API, never from a key in the app ». So the engine is
- * given a loopback address where ElevenLabs' own address would go, and
- * the token proxy puts the person's session token on the request and
- * forwards it to Claidor, which holds the real key. The engine carries
- * no credential, and nothing of ours expires inside it — the same
- * arrangement the model proxy and the connections already use.
- *
- * `apiKey` is required by the provider before it will register itself,
- * and what goes there travels no further than our own loopback port,
- * where it is ignored. It is named for what it is rather than made to
- * look like a key, so nobody later mistakes it for one worth protecting.
- *
- * Without a proxy port there is no address to give, so no `talk` block is
- * written at all and the provider is not offered. That is deliberate:
- * this file has one bug of exactly that shape already — the in-app
- * browser, which asked for a bridge that was not up yet, quietly took
- * the other path, and told nobody for the rest of the session. A voice
- * that is absent is recoverable; a voice that claims to work and does
- * not is the failure worth avoiding.
- */
-const ELEVENLABS_PLUGIN_ID = 'elevenlabs';
-const ELEVENLABS_TALK_PROVIDER_ID = 'elevenlabs';
-const ELEVENLABS_MANAGED_KEY_PLACEHOLDER = 'managed-by-claidor';
-const SPEECH_PROXY_PATH_PREFIX = '/speech';
-
-const hasElevenLabsPlugin = (): boolean =>
-  hasRuntimeBundledOpenClawExtension(ELEVENLABS_PLUGIN_ID);
-
-/**
- * The `talk` block, or null when the voice cannot be offered. Exported
- * for its own test: the address is the whole of the arrangement, and a
- * wrong one fails by speaking to ElevenLabs directly with a placeholder
- * key, which looks like a broken account rather than a wiring mistake.
- */
-export const buildManagedTalkConfig = (
-  proxyPort: number | null,
-): Record<string, unknown> | null => {
-  if (!proxyPort) return null;
-  return {
-    provider: ELEVENLABS_TALK_PROVIDER_ID,
-    providers: {
-      [ELEVENLABS_TALK_PROVIDER_ID]: {
-        apiKey: ELEVENLABS_MANAGED_KEY_PLACEHOLDER,
-        baseUrl: `http://127.0.0.1:${proxyPort}${SPEECH_PROXY_PATH_PREFIX}`,
-      },
-    },
-  };
-};
+const MANAGED_TOOL_DENY = ['web_search'] as const;
 // knownPollNoProgress is off: polling a live background process that stays
 // quiet (builds, installs, downloads) legitimately repeats identical calls
 // with identical output, and the detector killed such runs after 10 polls
@@ -460,24 +332,11 @@ export const buildManagedTalkConfig = (
 // historySize must stay comfortably above globalCircuitBreakerThreshold or
 // interleaved tool calls push streak entries out of the window and the
 // breaker becomes unreachable.
-// The warning thresholds are 3, not 6. The founder watched Maties fumble the
-// same browser click three times in a row, and at 6 nothing fired: the
-// settings were tuned to stop a runaway, not to nudge a pivot. Three
-// identical calls is already the moment to try something else.
-//
-// Only the warning moved. A warning is a line of guidance in the
-// conversation; it never interrupts work, so a false positive on a
-// legitimate poll costs a sentence. criticalThreshold does interrupt, and a
-// poll of a live background process (a build, an install, a download)
-// genuinely repeats an identical call many times — knownPollNoProgress is
-// already off for exactly that reason, and genericRepeat still counts those
-// calls. Interrupting such a run is worse than the noise we set out to
-// remove, so 10 stands, and the global circuit breaker at 30 stands with it.
 const MANAGED_TOOL_LOOP_DETECTION = {
   enabled: true,
   historySize: 48,
-  warningThreshold: 3,
-  unknownToolThreshold: 3,
+  warningThreshold: 6,
+  unknownToolThreshold: 6,
   criticalThreshold: 10,
   globalCircuitBreakerThreshold: 30,
   detectors: {
@@ -524,32 +383,14 @@ const providerApiKeyEnvVar = (providerName: string): string => {
   return `LOBSTER_APIKEY_${envName}`;
 };
 
-const MANAGED_WEB_SEARCH_ENABLED_PROMPT = [
+const MANAGED_WEB_SEARCH_POLICY_PROMPT = [
   '## Web Search',
   '',
-  'Built-in `web_search` is available in this workspace and searches with DuckDuckGo.',
-  '',
-  'When you need live web information:',
-  '- To find pages you do not already have a URL for, use `web_search`.',
-  '- If you already have a specific URL, use `web_fetch` instead.',
-  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `web_search`.',
-  '- For dynamic pages, interactive browsing, login-required, JavaScript-heavy, or anti-automation pages, use the built-in `browser` tool.',
-  '- The Maties `web-search` skill needs local command execution. Native channel sessions may deny `exec`, so prefer `web_search`, `browser` or `web_fetch` there.',
-  '- Exception: the `imap-smtp-email` skill must always use `exec` to run its scripts, even in native channel sessions. Do not skip it because of exec restrictions.',
-  '',
-  'Whatever you type into `web_search` goes to DuckDuckGo. Nothing else about this session does. Searching for the contents of the person\'s own files is not a reason to send them anywhere: use the library first.',
-  '',
-  'Do not claim you searched the web unless you actually used `web_search`, `browser`, or `web_fetch`.',
-].join('\n');
-
-const MANAGED_WEB_SEARCH_UNAVAILABLE_PROMPT = [
-  '## Web Search',
-  '',
-  'Built-in `web_search` is not available in this build: no search provider is installed.',
+  'Built-in `web_search` is disabled in this workspace. Do not ask for or rely on the Brave Search API.',
   '',
   'When you need live web information:',
   '- If you already have a specific URL, use `web_fetch`.',
-  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `browser` instead.',
+  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `browser` or an available search skill instead.',
   '- If you need search discovery, dynamic pages, or interactive browsing, use the built-in `browser` tool.',
   '- For login-required, JavaScript-heavy, or anti-automation pages, use `browser` instead of `web_fetch`.',
   '- Only use the Maties `web-search` skill when local command execution is available. Native channel sessions may deny `exec`, so prefer `browser` or `web_fetch` there.',
@@ -557,16 +398,6 @@ const MANAGED_WEB_SEARCH_UNAVAILABLE_PROMPT = [
   '',
   'Do not claim you searched the web unless you actually used `browser`, `web_fetch`, or the Maties `web-search` skill.',
 ].join('\n');
-
-/**
- * The workspace instruction has to match what the tools actually are. An
- * assistant told search is off while `web_search` is allowed will not
- * use it, and that reads as stupidity rather than as a switched-off
- * feature; the reverse sends it at a tool that is not there.
- */
-const buildManagedWebSearchPolicyPrompt = (searchEnabled: boolean): string => (
-  searchEnabled ? MANAGED_WEB_SEARCH_ENABLED_PROMPT : MANAGED_WEB_SEARCH_UNAVAILABLE_PROMPT
-);
 
 const MANAGED_LIBRARY_PROMPT = [
   '## Personal Library',
@@ -589,50 +420,6 @@ const MANAGED_BROWSER_POLICY_PROMPT = [
   '- The `lobster-in-app` profile is Maties\'s own browser bridge. If it is unavailable, report an internal Maties browser startup failure; never tell the user to enable Chrome remote debugging or launch Chrome with debugging flags.',
   `- When a page requires a password and \`${BrowserCredentialMcpServer.ModelToolName}\` is available, call it before asking the user to sign in manually. The tool can use an encrypted saved login without revealing its password to you.`,
   '- If no saved login is available, ask the user to sign in directly in the visible Maties browser. Never ask the user to send a password in chat, and never search files, memory, or logs for passwords.',
-].join('\n');
-
-/**
- * Replace an approach that failed; do not repeat it.
- *
- * The founder watched Maties try the same browser click three times in a
- * row. Asked about it afterwards, the assistant believed it already had this
- * guidance. It did not: nothing in the managed sections said anything about
- * what to do after a step fails. This says it.
- *
- * The app now collapses a run of identical failures into one step card
- * (`toolStepPresentation.tsx`) and OpenClaw's loop detection warns at three,
- * but both of those are downstream of the mistake. This is upstream of it.
- */
-const MANAGED_CHANGED_APPROACH_PROMPT = [
-  '## When A Step Fails',
-  '',
-  '- An approach that has failed is replaced, not repeated. Do not run the same tool call with the same arguments again hoping for a different answer.',
-  '- One retry is reasonable when the failure was plainly transient (a timeout, a network blip, a page that had not finished loading). Beyond that, change something real: a different selector, a different tool, a different route to the same end — or ask the user.',
-  '- If you have tried two or three times and are out of approaches, say so plainly and say what you tried. That is a better answer than a fourth attempt.',
-  '- Never report a step as done when it did not do what it set out to do.',
-].join('\n');
-
-/**
- * Seeing an app the person has connected.
- *
- * The founder connected Gmail, asked to see their email, and got Google's
- * sign-in page plus a paragraph about API access versus browser login flows
- * — and the word "Done" over a sign-in form, having achieved nothing. Two
- * faults: the lecture, and the false success. A false success is the worse
- * of the two because it cannot be seen.
- *
- * The engine keeps its own browser profile, so a sign-in done there once
- * holds. That makes the honest answer a short offer, not an explanation.
- */
-const MANAGED_CONNECTED_APP_VISIBILITY_PROMPT = [
-  '## Seeing A Connected App',
-  '',
-  'When the user asks to see something in an app — their inbox, their calendar, a document, a page of a service — and the browser lands on a sign-in page:',
-  '',
-  '- Stop there. Do not report the step as done, and do not summarise an empty page as though you had read it. You saw a sign-in form; say so.',
-  '- Say it in one sentence and offer the sign-in: that the app needs them to sign in once in the Maties browser window, and that you will carry on as soon as they have. The browser keeps the session afterwards, so it is asked for once and not again.',
-  '- Do not explain the difference between API access and browser login flows, and do not use the words "API", "OAuth", "authentication flow" or "browser login flow" with the user. They asked to see their email. The answer is either their email or one sentence about what is in the way.',
-  '- If a connected tool can answer the same question without the browser, use it and say what you found. Prefer that over the browser whenever it gets the user their answer.',
 ].join('\n');
 
 const MANAGED_EXEC_SAFETY_PROMPT = [
@@ -2079,11 +1866,6 @@ type OpenClawConfigSyncDeps = {
   getWeixinConfig: () => WeixinOpenClawConfig | null;
   getIMSettings?: () => IMSettings | null;
   getResolvedMcpServers?: () => ResolvedMcpServer[];
-  /**
-   * The services the person has connected (docs/maties/connectors.md): one
-   * MCP entry each, pointing at Claidor's proxy and at nothing else.
-   */
-  getConnectedConnectorSlugs?: () => string[];
   getAskUserCallbackUrl?: () => string | null;
   /** Bridge route the search-library extension posts to; null until the bridge is up. */
   getLibrarySearchCallbackUrl?: () => string | null | undefined;
@@ -2096,12 +1878,6 @@ type OpenClawConfigSyncDeps = {
   getAgents?: () => Agent[];
   getUserPlugins?: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   canUseMediaGeneration?: () => boolean;
-  /** The onboarding decisions (docs/maties/onboarding.md): name, voice, time zone, defaults filled. */
-  getOnboardingProfile?: () => OnboardingProfile | null | undefined;
-  /** True once « Go to workspace » was pressed; before that the workspace files are left to the engine. */
-  isOnboardingCompleted?: () => boolean;
-  /** The signed-in person's display name, for the engine's user file. */
-  getPersonName?: () => string;
 };
 
 export class OpenClawConfigSync {
@@ -2123,7 +1899,6 @@ export class OpenClawConfigSync {
   private readonly getWeixinConfig: () => WeixinOpenClawConfig | null;
   private readonly getIMSettings?: () => IMSettings | null;
   private readonly getResolvedMcpServers?: () => ResolvedMcpServer[];
-  private readonly getConnectedConnectorSlugs?: () => string[];
   private readonly getAskUserCallbackUrl?: () => string | null;
   private readonly getLibrarySearchCallbackUrl?: () => string | null | undefined;
   private readonly getMediaCallbackUrl?: () => string | null;
@@ -2135,9 +1910,6 @@ export class OpenClawConfigSync {
   private readonly getAgents?: () => Agent[];
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
-  private readonly getOnboardingProfile?: () => OnboardingProfile | null | undefined;
-  private readonly isOnboardingCompleted?: () => boolean;
-  private readonly getPersonName?: () => string;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
 
@@ -2160,7 +1932,6 @@ export class OpenClawConfigSync {
     this.getWeixinConfig = deps.getWeixinConfig;
     this.getIMSettings = deps.getIMSettings;
     this.getResolvedMcpServers = deps.getResolvedMcpServers;
-    this.getConnectedConnectorSlugs = deps.getConnectedConnectorSlugs;
     this.getAskUserCallbackUrl = deps.getAskUserCallbackUrl;
     this.getLibrarySearchCallbackUrl = deps.getLibrarySearchCallbackUrl;
     this.getMediaCallbackUrl = deps.getMediaCallbackUrl;
@@ -2172,45 +1943,6 @@ export class OpenClawConfigSync {
     this.getAgents = deps.getAgents;
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
-    this.getOnboardingProfile = deps.getOnboardingProfile;
-    this.isOnboardingCompleted = deps.isOnboardingCompleted;
-    this.getPersonName = deps.getPersonName;
-  }
-
-  /**
-   * Once the onboarding is done, the main workspace's identity files say
-   * what was chosen there and the engine's questionnaire is gone, on every
-   * sync: a workspace the engine re-seeds, or a name changed later, is put
-   * right the next time the config is written.
-   */
-  private syncMainWorkspaceProfile(mainWorkspacePath: string): void {
-    if (!this.isOnboardingCompleted?.()) return;
-    const profile = this.getOnboardingProfile?.();
-    if (!profile) return;
-    try {
-      const written = applyProfileToWorkspace(mainWorkspacePath, profile, { name: this.getPersonName?.() ?? '' });
-      if (written.identityWritten || written.userWritten || written.soulWritten || written.bootstrapRemoved) {
-        console.log(`[OpenClawConfigSync] main workspace identity updated: ${JSON.stringify(written)}`);
-      }
-    } catch (error) {
-      console.warn('[OpenClawConfigSync] could not update the main workspace identity files:', error);
-    }
-  }
-
-  /** The voice chosen at onboarding; the default until one is chosen. */
-  private resolveAssistantVoice(): AssistantVoice {
-    const voice = this.getOnboardingProfile?.()?.voice;
-    return isAssistantVoice(voice) ? voice : DEFAULT_ASSISTANT_VOICE;
-  }
-
-  /** The name chosen at onboarding, or empty when none is stored. */
-  private resolveAssistantName(): string {
-    return this.getOnboardingProfile?.()?.assistantName?.trim() ?? '';
-  }
-
-  /** The time zone chosen at onboarding, or empty when none is stored. */
-  private resolveUserTimezone(): string {
-    return this.getOnboardingProfile?.()?.timezone?.trim() ?? '';
   }
 
   /**
@@ -2315,20 +2047,15 @@ export class OpenClawConfigSync {
         : {}),
     };
 
-    const searchEnabled = hasDuckDuckGoPlugin();
-
     return {
       deny: [
         ...MANAGED_TOOL_DENY
       ],
 loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       web: {
-        // Named rather than left to auto-detection: DuckDuckGo is the
-        // only provider we ship, and saying so keeps the choice out of
-        // whatever credentials happen to be around.
-        search: searchEnabled
-          ? { enabled: true, provider: DUCKDUCKGO_PLUGIN_ID }
-          : { enabled: false },
+        search: {
+          enabled: false,
+        },
         fetch: fetchConfig,
       },
     };
@@ -2370,10 +2097,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         // Still sync AGENTS.md even when API is not configured — skills/systemPrompt
         // may already be set and should be available when the user configures a model.
         const mainWorkspacePath = getMainAgentWorkspacePath(this.engineManager.getStateDir());
-        const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig, {
-          voice: this.resolveAssistantVoice(),
-        });
-        this.syncMainWorkspaceProfile(mainWorkspacePath);
+        const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig);
         this.syncPerAgentWorkspaces(mainWorkspacePath, coworkConfig);
         if (agentsMdWarning) result.agentsMdWarning = agentsMdWarning;
         return result;
@@ -2610,7 +2334,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       coworkConfig.executionMode || 'local',
       this.isEnterprise(),
     );
-    const userTimezone = this.resolveUserTimezone();
     const availableProviders = buildProviderModelCatalog(allProvidersMap);
     const agentModelDefaults = Object.keys(perModelCustomDefaults).length > 0
       ? buildCompleteAgentModelDefaults(allProvidersMap, perModelCustomDefaults)
@@ -2642,24 +2365,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // OAuth refresh hook for credentials in the auth-profiles store. Declare
     // it only when the runtime actually bundles it (older runtimes pruned it).
     const hasXaiPlugin = hasRuntimeBundledOpenClawExtension('xai');
-    // The DuckDuckGo search provider. Declared and allowlisted only when
-    // the runtime actually bundles it, exactly like xai above: a build
-    // whose packaging dropped it must not carry a stale entry, and
-    // OpenClaw rejects a config naming a plugin it cannot find.
-    const hasSearchPlugin = hasDuckDuckGoPlugin();
-    // Held back on 12 September, with the un-pruning that broke the
-    // browser. Enabling a plugin is not free: plugin loading is
-    // all-or-nothing — `maybeThrowOnPluginLoadError` throws for the whole
-    // registry the moment one plugin is in an error state — so a wiki that
-    // cannot activate takes `browser` and `memory-core` down with it. It
-    // was switched on here without ever watching a gateway load it.
-    //
-    // To bring it back: start the gateway with it enabled, read the plugin
-    // registry, see it listed as loaded rather than errored, and only then
-    // make this true again.
-    const hasWikiPlugin = MEMORY_WIKI_ENABLED && hasMemoryWikiPlugin();
-    const talkConfig = buildManagedTalkConfig(getOpenClawTokenProxyPort());
-    const hasVoice = hasElevenLabsPlugin() && talkConfig !== null;
     const qwenPortalAuthPluginId = resolveOpenClawExtensionPluginId('qwen-portal-auth');
 
     // Detect if any provider uses Qwen/Aliyun DashScope URLs — OpenClaw auto-injects
@@ -2760,8 +2465,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           model: {
             primary: primaryModel,
           },
-          // The zone of the system prompt's date block (docs/concepts/timezone.md); host zone when unset.
-          ...(userTimezone ? { userTimezone } : {}),
           sandbox: {
             mode: sandboxMode,
           },
@@ -2823,10 +2526,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       },
       tools: this.buildWebToolsConfig(browserWebAccess),
       browser: this.buildBrowserConfig(browserWebAccess),
-      // Omitted entirely rather than written empty when the voice cannot
-      // be offered: `talk.provider` must name a key in `talk.providers`
-      // or the whole config fails validation.
-      ...(hasVoice && talkConfig ? { talk: talkConfig } : {}),
       skills: {
         entries: {
           ...this.buildSkillEntries(),
@@ -2927,19 +2626,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // exists, otherwise it becomes a stale entry on every startup.
           ...(hasQwenProvider && qwenPortalAuthPluginId ? { [qwenPortalAuthPluginId]: { enabled: true } } : {}),
           ...(hasXaiPlugin ? { xai: { enabled: true } } : {}),
-          ...(hasSearchPlugin ? { [DUCKDUCKGO_PLUGIN_ID]: { enabled: true } } : {}),
-          ...(hasVoice ? { [ELEVENLABS_PLUGIN_ID]: { enabled: true } } : {}),
-          // The vault mode is named rather than left to the plugin's own
-          // default: the default is not ours to inherit, and `unsafe-local`
-          // must never arrive by one.
-          ...(hasWikiPlugin
-            ? {
-              [MEMORY_WIKI_PLUGIN_ID]: {
-                enabled: true,
-                config: { vaultMode: MEMORY_WIKI_VAULT_MODE },
-              },
-            }
-            : {}),
           // User-installed plugins: merge enabled state and config from user_plugins table
           ...Object.fromEntries(
             userPlugins.map(p => [p.pluginId, {
@@ -2966,9 +2652,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // plugins we rely on must be listed here explicitly or they never
           // load — entries.enabled alone is not enough.
           ...(hasXaiPlugin ? ['xai'] : []),
-          ...(hasSearchPlugin ? [DUCKDUCKGO_PLUGIN_ID] : []),
-          ...(hasWikiPlugin ? [MEMORY_WIKI_PLUGIN_ID] : []),
-          ...(hasVoice ? [ELEVENLABS_PLUGIN_ID] : []),
           ...(hasModelCompatConfig
             ? [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]
             : []),
@@ -3030,30 +2713,13 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         };
       }
     }
-    // The connected services (docs/maties/connectors.md): one entry each,
-    // reaching the loopback token proxy rather than Claidor directly. The
-    // proxy attaches the person's live session token per request, so no
-    // credential is written here and none goes stale; Claidor then adds the
-    // connector service's key and pins the person. Nothing about that service
-    // exists on this machine.
-    const connectorSlugs = this.getConnectedConnectorSlugs?.() ?? [];
-    const connectorsProxyPort = getOpenClawTokenProxyPort();
-    const connectorServers = connectorSlugs.length > 0 && connectorsProxyPort
-      ? buildConnectorMcpServers(`http://127.0.0.1:${connectorsProxyPort}`, connectorSlugs)
-      : {};
-    const connectorServerCount = Object.keys(connectorServers).length;
-    Object.assign(nativeMcpServers, connectorServers);
-
     const nativeMcpServerCount = Object.keys(nativeMcpServers).length;
     if (nativeMcpServerCount > 0) {
       (managedConfig as Record<string, unknown>).mcp = {
         servers: nativeMcpServers,
       };
     }
-    console.log(
-      `[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s), `
-      + `${connectorServerCount} of them connected accounts`,
-    );
+    console.log(`[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s)`);
 
     // Sync AskUserQuestion plugin config
     const askUserCallbackUrl = this.getAskUserCallbackUrl?.();
@@ -3625,16 +3291,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     })();
 
     let changedTopLevelKeys: string[] = [];
-    // The gateway binds its browser profile once, at startup, and never
-    // re-reads it on a hot config update. That made the in-app browser
-    // unreachable on every launch: the first sync runs before the MCP bridge
-    // has a port, so `buildBrowserConfig` cannot offer the in-app profile and
-    // writes the external one; the gateway starts on that. A later sync, with
-    // the bridge up, corrects the file — but `browser` was not a key that
-    // asked for a restart, so the running gateway kept driving its own
-    // Chromium. The config on disk said in-app, the engine did the opposite,
-    // and both were telling the truth about different things.
-    let browserProfileChanged = false;
     if (configChanged) {
       // Diagnostic: diff gateway and plugins sections to identify what triggers OpenClaw restart
       try {
@@ -3667,21 +3323,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           return JSON.stringify(currentObj[k]) !== JSON.stringify(nextObj[k]);
         });
         console.log(`${gwDiagTs()} top-level changed keys:`, changedTopLevelKeys.join(',') || '(none)');
-        // Only the profile, not every browser setting: the rest of that
-        // section does hot-apply, and turning each of them into a hard
-        // restart would be a worse bug than the one being fixed.
-        const currentBrowserProfile = (currentObj.browser as { defaultProfile?: unknown } | undefined)
-          ?.defaultProfile ?? null;
-        const nextBrowserProfile = (nextObj.browser as { defaultProfile?: unknown } | undefined)
-          ?.defaultProfile ?? null;
-        browserProfileChanged = currentBrowserProfile !== nextBrowserProfile;
-        if (browserProfileChanged) {
-          console.log(
-            `${gwDiagTs()} browser profile changed:`,
-            `${String(currentBrowserProfile)} -> ${String(nextBrowserProfile)}`,
-            '(requires gateway restart)',
-          );
-        }
       } catch { /* ignore parse errors in diag */ }
       try {
         ensureDir(path.dirname(configPath));
@@ -3710,10 +3351,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // Sync AGENTS.md with skills routing prompt to the OpenClaw workspace directory.
     // This runs on every sync regardless of openclaw.json changes, because skills
     // may have been installed/enabled/disabled independently.
-    const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig, {
-      voice: this.resolveAssistantVoice(),
-    });
-    this.syncMainWorkspaceProfile(mainWorkspacePath);
+    const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig);
 
     // Sync per-agent workspace files (SOUL.md, IDENTITY.md, AGENTS.md) for non-main agents
     this.syncPerAgentWorkspaces(mainWorkspacePath, coworkConfig);
@@ -3724,7 +3362,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       configPath,
       ...(bindingsChanged ? { bindingsChanged } : {}),
       ...(changedTopLevelKeys.length > 0 ? { changedTopLevelKeys } : {}),
-      ...(changedTopLevelKeys.includes('mcp') || browserProfileChanged || modelCompatRestartRequired
+      ...(changedTopLevelKeys.includes('mcp') || modelCompatRestartRequired
         ? { restartImpact: OpenClawConfigImpact.Restart }
         : {}),
       ...(agentsMdWarning ? { agentsMdWarning } : {}),
@@ -4158,14 +3796,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
    * native channel connectors (DingTalk, Feishu, etc.) can discover and
    * invoke Maties skills.
    */
-  private syncAgentsMd(
-    workspaceDir: string,
-    coworkConfig: CoworkConfig,
-    options: {
-      /** The assistant's voice (docs/maties/onboarding.md): rendered for the main workspace only. */
-      voice?: AssistantVoice;
-    } = {},
-  ): string | undefined {
+  private syncAgentsMd(workspaceDir: string, coworkConfig: CoworkConfig): string | undefined {
     const MARKER = '<!-- Maties managed: do not edit below this line -->';
 
     try {
@@ -4181,19 +3812,12 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         sections.push(`## System Prompt\n\n${systemPrompt}`);
       }
 
-      // How the assistant writes, chosen at onboarding.
-      if (options.voice) {
-        sections.push(buildManagedVoicePrompt(options.voice));
-      }
-
       // Skills are now loaded by OpenClaw natively via skills.load.extraDirs
       // in openclaw.json, so we no longer embed the skills routing prompt here.
 
-      sections.push(buildManagedWebSearchPolicyPrompt(hasDuckDuckGoPlugin()));
+      sections.push(MANAGED_WEB_SEARCH_POLICY_PROMPT);
       sections.push(MANAGED_LIBRARY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
-      sections.push(MANAGED_CONNECTED_APP_VISIBILITY_PROMPT);
-      sections.push(MANAGED_CHANGED_APPROACH_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
       sections.push(MANAGED_DELIVERABLE_LINKS_PROMPT);
       sections.push(MANAGED_MATH_FORMAT_PROMPT);
@@ -4286,8 +3910,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             id: AgentId.Main,
             default: true,
             identity: {
-              // No row yet: the name chosen at onboarding, else the product name.
-              name: this.resolveAssistantName() || DefaultAgentProfile.Name,
+              name: DefaultAgentProfile.Name,
             },
             model: {
               primary: defaultPrimaryModel,

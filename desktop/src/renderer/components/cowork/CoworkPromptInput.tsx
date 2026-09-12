@@ -1,12 +1,13 @@
 import {
   ArrowTurnDownRightIcon,
   CheckIcon,
+  ChevronDownIcon,
   ChevronRightIcon,
   ExclamationTriangleIcon,
   PauseCircleIcon,
   PlayCircleIcon,
 } from '@heroicons/react/24/outline';
-import { ArrowUpIcon } from '@heroicons/react/24/solid';
+import { ArrowUpIcon, FolderIcon } from '@heroicons/react/24/solid';
 import { AuthSubscriptionStatus } from '@shared/auth/constants';
 import {
   BrowserAnnotationScreenshotStatus,
@@ -14,12 +15,8 @@ import {
   type CoworkBrowserAnnotationMessageBatch,
   normalizeBrowserAnnotationBatches,
 } from '@shared/cowork/browserAnnotations';
-import {
-  MatyOutcome,
-  MatyWorkPlace,
-} from '@shared/maty/constants';
 import { ProviderName } from '@shared/providers';
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -55,14 +52,14 @@ import {
 } from '../../services/coworkPromptPayload';
 import { getPortalPricingUrl } from '../../services/endpoints';
 import { i18nService } from '../../services/i18n';
+import { getInstalledKitSkillIds } from '../../services/kitCapability';
 import {
   LogReporterAction,
   LogReporterEntry,
   reportYdAnalyzer,
 } from '../../services/logReporter';
-import { matyService } from '../../services/maty';
 import { getOnboardingErrorCode, reportOnboardingAction } from '../../services/onboardingAnalytics';
-import { skillService } from '../../services/skill';
+import { resolveLocalizedText, skillService } from '../../services/skill';
 import { RootState } from '../../store';
 import { selectDraftPrompts } from '../../store/selectors/coworkSelectors';
 import {
@@ -83,10 +80,10 @@ import {
   removeDraftSelectedTextSnippet,
   removePendingSteer,
   removeRejectedSteer,
-  setDraftAppSlug,
   setDraftAttachments,
   setDraftBrowserAnnotationBatches,
   setDraftCollaborationMode,
+  setDraftKitIds,
   setDraftPrompt,
   setDraftSelectedTextSnippets,
   setDraftSkillIds,
@@ -95,6 +92,7 @@ import {
   updateCurrentSessionModelOverride,
   updateSessionGoal,
 } from '../../store/slices/coworkSlice';
+import { setActiveKitIds, toggleActiveKit } from '../../store/slices/kitSlice';
 import type { Model } from '../../store/slices/modelSlice';
 import { isSameModelIdentity } from '../../store/slices/modelSlice';
 import { setActiveSkillIds, setSkills, toggleActiveSkill } from '../../store/slices/skillSlice';
@@ -113,27 +111,17 @@ import {
   ACTIVE_CONTEXT_BADGE_REMOVE_ICON_CLASS,
 } from '../common/activeContextBadgeStyles';
 import Modal from '../common/Modal';
-import {
-  ArrowUpLineIcon,
-  ChevronDownLineIcon,
-  EllipsisLineIcon,
-  FolderLineIcon,
-  PaperclipLineIcon,
-  PlusLineIcon,
-} from '../design/LineIcons';
-import { formatShortcutGlyphs } from '../design/shortcutGlyphs';
 import DefaultAgentIcon from '../icons/DefaultAgentIcon';
 import EditIcon from '../icons/EditIcon';
 import GoalIcon from '../icons/GoalIcon';
 import PaperClipIcon from '../icons/PaperClipIcon';
 import PlanModeIcon from '../icons/PlanModeIcon';
+import PromptAddIcon from '../icons/PromptAddIcon';
 import SkillIcon from '../icons/SkillIcon';
 import TaskPauseIcon from '../icons/TaskPauseIcon';
 import TrashIcon from '../icons/TrashIcon';
 import XMarkIcon from '../icons/XMarkIcon';
-import { setMatyWorkPlace } from '../maty/matyPreferences';
-import RunsWhereChip from '../maty/RunsWhereChip';
-import { useMatyState, useMatyWorkPlace } from '../maty/useMatyState';
+import { ActiveKitBadge, KitsButton } from '../kits';
 import ModelSelector, {
   isModelAgenticBlocked,
   ModelAccessPromptKind,
@@ -142,23 +130,19 @@ import ModelSelector, {
   ModelSelectorGroup,
 } from '../ModelSelector';
 import { ActiveSkillBadge, SkillsPopover } from '../skills';
-import ActiveAppBadge from './ActiveAppBadge';
 import {
   resolveAgentModelSelection,
   resolveEffectiveModel,
   resolveModelThinkingLevel,
   useAgentSelectedModel,
 } from './agentModelSelection';
-import AppPickerButton from './AppPickerButton';
 import AttachmentCard from './AttachmentCard';
 import BrowserAnnotationAttachmentBadge from './BrowserAnnotationAttachmentBadge';
 import ChatLoginExperienceModal from './ChatLoginExperienceModal';
 import { getClipboardAttachmentFiles } from './clipboardAttachments';
-import { findConnectedApp } from './connectedApps';
-import { CoworkUiEvent, HOME_DRAFT_KEY } from './constants';
+import { CoworkUiEvent } from './constants';
 import FolderSelectorPopover from './FolderSelectorPopover';
 import { getCaretPixelPosition } from './getCaretPosition';
-import { resolveHomeDraftAppHandover } from './homeDraftAppHandover';
 import MediaMentionPicker from './MediaMentionPicker';
 import {
   buildMediaMentionSegments,
@@ -170,6 +154,7 @@ import {
 import MediaModelPicker from './MediaModelPicker';
 import {
   getAttachmentAnalyticsParams,
+  getKitAnalyticsParams,
   getModelAnalyticsParams,
   getPromptAnalyticsConversationState,
   getPromptAnalyticsSurface,
@@ -178,11 +163,10 @@ import {
   reportPromptControlAction,
   reportPromptSubmit,
 } from './promptAnalytics';
-import { buildSelectedAppContextPrompt } from './selectedAppContextPrompt';
+import { buildSelectedKitContextPrompt } from './selectedKitContextPrompt';
 import { buildSelectedSkillRoutingPrompt } from './selectedSkillRoutingPrompt';
 import SelectedTextSnippetBadge from './SelectedTextSnippetBadge';
 import { buildPlanModeSystemPrompt } from './skillSystemPrompt';
-import { useConnectedApps } from './useConnectedApps';
 import { usePersistAgentModelSelection } from './usePersistAgentModelSelection';
 import { useCoworkVoiceInput } from './voiceInput/useCoworkVoiceInput';
 import VoiceInputButton from './voiceInput/VoiceInputButton';
@@ -365,22 +349,6 @@ const ContextLabelMaxLength = {
 
 const READ_ONLY_CONTEXT_COMPACT_WIDTH = 168;
 const LARGE_TOOLBAR_COMPACT_WIDTH = 520;
-// The two-card composer (docs/maties/design.md, section 4): the lifted white
-// card, and the grey tray card 34px behind it that reaches 44px below it.
-const COMPOSER_CARD_SHADOW = '0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09), inset 0 1px 0 rgba(255,255,255,.7)';
-const COMPOSER_TRAY_TOP_OFFSET = 34;
-const COMPOSER_TRAY_HEIGHT = 44;
-/** The agent menu's width; it floats over the window, anchored to its chip in the tray. */
-const AGENT_MENU_WIDTH = 256;
-const COMPOSER_ROUND_BUTTON_CLASS_NAME =
-  'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-[#4a4f57] transition-colors hover:bg-[#f3f3f1] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent';
-const COMPOSER_TRAY_CHIP_CLASS_NAME =
-  'flex h-[34px] min-w-0 items-center gap-[9px] rounded-[10px] border-0 bg-transparent px-[11px] text-[14.5px] tracking-[-.008em] text-[#31353b] transition-colors hover:bg-[#f3f3f1]';
-const ADD_MENU_ICON_CLASS_NAME = 'text-[#4a4f57]';
-// « Runs where » sits beside the model chip and is cut from the same cloth:
-// both say how the next answer is made (docs/maties/cloud.md, section 1).
-const RUNS_WHERE_CHIP_CLASS_NAME =
-  'flex h-8 min-w-0 max-w-[190px] items-center gap-[7px] rounded-full border-0 bg-transparent px-[10px] text-[13.5px] leading-5 tracking-[-.006em] text-[#4a4f57] transition-colors hover:bg-[#f3f3f1]';
 // Fixed textarea height while it holds quick-action template text (~7 lines
 // at 22px line-height plus padding). Shorter than maxHeight so the shortest
 // templates don't leave a large blank area; longer templates scroll inside.
@@ -484,6 +452,7 @@ interface CoworkPromptInputProps {
   readOnlyContextTrailingText?: string;
   contextAgentId?: string;
   onManageSkills?: () => void;
+  onManageKits?: () => void;
   sessionId?: string;
   contextUsageControl?: React.ReactNode;
   goal?: CoworkGoal | null;
@@ -521,6 +490,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       readOnlyContextTrailingText,
       contextAgentId,
       onManageSkills,
+      onManageKits,
       sessionId,
       contextUsageControl,
       goal,
@@ -533,7 +503,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       showNewUserWelcomeLoginOverlay = false,
     } = props;
     const dispatch = useDispatch();
-    const draftKey = sessionId || HOME_DRAFT_KEY;
+    const draftKey = sessionId || '__home__';
     const draftPrompt = useSelector((state: RootState) => selectDraftPrompts(state)[draftKey] || '');
     const steerDraft = useSelector((state: RootState) => (
       sessionId ? state.cowork.steerDrafts[sessionId] || '' : ''
@@ -573,9 +543,6 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     const [imageVisionHint, setImageVisionHint] = useState(false);
     const [isPatchingModel, setIsPatchingModel] = useState(false);
     const [showAgentMenu, setShowAgentMenu] = useState(false);
-    // The agent menu leaves the tray (which sits under the composer card) and
-    // floats over everything, anchored to its chip.
-    const [agentMenuStyle, setAgentMenuStyle] = useState<React.CSSProperties>({});
     const [isReadOnlyContextCompact, setIsReadOnlyContextCompact] = useState(false);
     const [mentionPickerOpen, setMentionPickerOpen] = useState(false);
     const [mentionFilter, setMentionFilter] = useState('');
@@ -583,7 +550,6 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     const [mentionPickerPosition, setMentionPickerPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
     const [textareaScrollTop, setTextareaScrollTop] = useState(0);
     const [showAddMenu, setShowAddMenu] = useState(false);
-    const [showMoreMenuOptions, setShowMoreMenuOptions] = useState(false);
     const [showSkillsPopover, setShowSkillsPopover] = useState(false);
     const [goalInputActive, setGoalInputActive] = useState(false);
     const [goalInputMode, setGoalInputMode] = useState<GoalInputMode>('start');
@@ -669,32 +635,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
   const skills = useSelector((state: RootState) => state.skill.skills);
   const hasActiveSkills = activeSkillIds.some(id => skills.some(skill => skill.id === id));
-  // The app picker (docs/maties/design.md, section 4): the apps the person has
-  // connected, and the one this turn should look in first. A hint, not a gate.
-  const connectedApps = useConnectedApps();
-  const draftAppSlug = useSelector((state: RootState) => state.cowork.draftAppSlugs[draftKey]);
-  const homeDraftAppSlug = useSelector(
-    (state: RootState) => state.cowork.draftAppSlugs[HOME_DRAFT_KEY],
-  );
-  // The chosen app has to survive the one moment the draft key changes
-  // underneath it: the first message turning the home screen into a
-  // conversation. See homeDraftAppHandover for which transitions move it.
-  const previousSessionIdRef = useRef(sessionId);
-  useEffect(() => {
-    const previousSessionId = previousSessionIdRef.current;
-    previousSessionIdRef.current = sessionId;
-    const adopted = resolveHomeDraftAppHandover({
-      previousSessionId,
-      nextSessionId: sessionId,
-      homeAppSlug: homeDraftAppSlug,
-      existingAppSlug: draftAppSlug,
-    });
-    if (!adopted || !sessionId) return;
-    dispatch(setDraftAppSlug({ draftKey: sessionId, appSlug: adopted }));
-    dispatch(setDraftAppSlug({ draftKey: HOME_DRAFT_KEY }));
-  }, [sessionId, homeDraftAppSlug, draftAppSlug, dispatch]);
-  const selectedApp = findConnectedApp(connectedApps, draftAppSlug);
-  const selectedAppPrompt = buildSelectedAppContextPrompt(selectedApp);
+  const activeKitIds = useSelector((state: RootState) => state.kit.activeKitIds);
+  const installedKits = useSelector((state: RootState) => state.kit.installedKits);
+  const marketplaceKits = useSelector((state: RootState) => state.kit.marketplaceKits);
+  const hasActiveKits = activeKitIds.length > 0;
+  const draftKitIdsForKey = useSelector((state: RootState) => state.cowork.draftKitIds[draftKey]);
   const draftSkillIdsForKey = useSelector((state: RootState) => state.cowork.draftSkillIds[draftKey]);
   const draftCollaborationMode = useSelector(
     (state: RootState) => state.cowork.draftCollaborationModes[draftKey] || CoworkCollaborationMode.Default
@@ -726,23 +671,17 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const isCompact = size === 'compact';
   const isLarge = size === 'large' || isCompact;
   const useHomeContextLayout = isLarge && showAgentSelector;
-  const hasActiveContext = hasActiveSkills || Boolean(selectedApp) || isPlanMode || goalInputActive || steerInputActive;
+  const useCompactSendButton = isLarge && (useHomeContextLayout || showReadOnlyContext || isCompact);
+  const hasActiveContext = hasActiveSkills || hasActiveKits || isPlanMode || goalInputActive || steerInputActive;
   const hasAttachments = attachments.length > 0;
-  // One line of text (22px) that grows to fit, as the founder drew it.
-  const minHeight = isCompact ? 20 : isLarge ? 22 : 24;
+  const minHeight = isCompact
+    ? hasAttachments ? 30 : hasActiveContext ? 30 : 28
+    : isLarge
+      ? useHomeContextLayout
+        ? hasAttachments ? 34 : hasActiveContext ? 36 : 52
+        : hasAttachments ? 38 : hasActiveContext ? 44 : 60
+      : 24;
   const maxHeight = isCompact ? 96 : 200;
-  // The tray (the lower card) carries the working folder and the agent; the
-  // compact composer beside an open artifact has no room for it.
-  const useComposerTray = isLarge && !isCompact && (showFolderSelector || showAgentSelector || showReadOnlyContext);
-
-  // Where the next piece of work runs (docs/maties/cloud.md). The choice is
-  // offered only when Claidor says the cloud engine will take work: there is
-  // no greyed-out version of this chip, because a control that cannot be
-  // honoured is not a control.
-  const matyState = useMatyState();
-  const matyWorkPlace = useMatyWorkPlace();
-  const offerCloudChoice = isLarge && !remoteManaged && matyState.available;
-  const sendsToCloud = offerCloudChoice && matyWorkPlace === MatyWorkPlace.Cloud;
 
   const effectiveSelectedModel = resolveEffectiveModel({
     sessionId,
@@ -898,13 +837,17 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
 
   const getPromptCapabilityAnalyticsParams = useCallback(() => ({
     ...getSkillAnalyticsParams(activeSkillIds, skills),
+    ...getKitAnalyticsParams(activeKitIds, marketplaceKits, installedKits),
     ...getAttachmentAnalyticsParams(attachments),
     ...getModelAnalyticsParams(effectiveSelectedModel),
     selectedTextSnippetCount: selectedTextSnippets.length,
   }), [
+    activeKitIds,
     activeSkillIds,
     attachments,
     effectiveSelectedModel,
+    installedKits,
+    marketplaceKits,
     selectedTextSnippets.length,
     skills,
   ]);
@@ -1077,6 +1020,8 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
         setValue('');
         dispatch(clearDraftAttachments(draftKey));
         dispatch(clearDraftSelectedTextSnippets(draftKey));
+        dispatch(setDraftKitIds({ draftKey, kitIds: [] }));
+        dispatch(setActiveKitIds([]));
         setImageVisionHint(false);
       }
       requestAnimationFrame(() => {
@@ -1164,29 +1109,6 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     };
   }, [showAgentMenu]);
 
-  // Place the agent menu above its chip, in window coordinates, and follow the chip while open.
-  useLayoutEffect(() => {
-    if (!showAgentMenu) return;
-    const place = () => {
-      const rect = agentButtonRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      setAgentMenuStyle({
-        position: 'fixed',
-        left: Math.max(8, Math.min(rect.left, window.innerWidth - AGENT_MENU_WIDTH - 8)),
-        bottom: window.innerHeight - rect.top + 4,
-        width: AGENT_MENU_WIDTH,
-        zIndex: 10000,
-      });
-    };
-    place();
-    window.addEventListener('resize', place);
-    window.addEventListener('scroll', place, true);
-    return () => {
-      window.removeEventListener('resize', place);
-      window.removeEventListener('scroll', place, true);
-    };
-  }, [showAgentMenu]);
-
   useEffect(() => {
     if (!showAddMenu) return;
 
@@ -1264,11 +1186,17 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     }
   }, [steerInputActive, steerValue, value]);
 
-  // Restore active skill IDs from draft when draftKey changes
+  // Restore active kit/skill IDs from draft when draftKey changes
   useEffect(() => {
+    dispatch(setActiveKitIds(draftKitIdsForKey || []));
     dispatch(setActiveSkillIds(draftSkillIdsForKey || []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftKey]); // intentionally only trigger on session/draft switch
+
+  // Persist active kit IDs to draft store
+  useEffect(() => {
+    dispatch(setDraftKitIds({ draftKey, kitIds: activeKitIds }));
+  }, [activeKitIds, draftKey, dispatch]);
 
   // Persist active skill IDs to draft store
   useEffect(() => {
@@ -1449,34 +1377,6 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     reportPromptControl,
   ]);
 
-  /**
-   * Send what is in the box to the cloud engine instead of running it here
-   * (docs/maties/cloud.md). Only the words travel: the contract carries a
-   * prompt and nothing else, so attached files, the working folder and the
-   * chosen agent all stay on this computer, and the toast says so.
-   */
-  const sendPromptToCloud = useCallback(async (): Promise<void> => {
-    const prompt = value.trim();
-    if (!prompt) return;
-    const result = await matyService.send(prompt);
-    if (result.outcome === MatyOutcome.Sent) {
-      showToast(i18nService.t(hasAttachments ? 'matySentWithoutFiles' : 'matySent'));
-      if (draftKeyRef.current === draftKey) {
-        setValue('');
-        dispatch(setDraftPrompt({ sessionId: draftKey, draft: '' }));
-      }
-      return;
-    }
-    if (result.outcome === MatyOutcome.Unavailable) {
-      // Claidor has switched the cloud engine off since the chip was drawn.
-      // The choice goes away and the words stay where they are.
-      setMatyWorkPlace(MatyWorkPlace.Here);
-      showToast(i18nService.t('matyUnavailable'));
-      return;
-    }
-    showToast(i18nService.t('matySendFailed').replace('{reason}', result.error ?? ''));
-  }, [value, hasAttachments, draftKey, dispatch]);
-
   const handleSubmit = useCallback(async (submitMethod: 'button' | 'keyboard' | 'voice' = 'button') => {
     let effectiveSubmitMethod = submitMethod;
     if (submitDisabled) {
@@ -1486,13 +1386,6 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
         ...getPromptTextAnalyticsParams(value),
         ...getPromptCapabilityAnalyticsParams(),
       });
-      return;
-    }
-    // « In the cloud » takes the whole send: the work goes up to Claidor and
-    // nothing starts here. A goal, a steer and a dictation are all part of a
-    // conversation already running on this computer, so they never do.
-    if (sendsToCloud && !goalInputActive && !steerInputActive && !isVoiceRecording) {
-      await sendPromptToCloud();
       return;
     }
     const btwCommand = !goalInputActive && !steerInputActive && !isVoiceRecording
@@ -1663,12 +1556,21 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
           ? { dataUrl: attachment.dataUrl }
           : {}),
       }));
-      const queuedCapabilities = buildCoworkCapabilitySelection(activeSkillIds, skills);
-      const queuedSkills = activeSkillIds
+      const queuedCapabilities = buildCoworkCapabilitySelection(
+        activeSkillIds,
+        activeKitIds,
+        skills,
+        installedKits,
+        marketplaceKits,
+      );
+      const queuedKitSkillIds = activeKitIds.flatMap(kitId => getInstalledKitSkillIds(installedKits[kitId]));
+      const queuedSkillIds = [...new Set([...activeSkillIds, ...queuedKitSkillIds])];
+      const queuedSkills = queuedSkillIds
         .map(id => skills.find(skill => skill.id === id))
         .filter((skill): skill is Skill => skill !== undefined);
+      const queuedKitPrompt = buildSelectedKitContextPrompt(activeKitIds, marketplaceKits, installedKits);
       const queuedSkillPrompt = [
-        selectedAppPrompt,
+        queuedKitPrompt,
         buildSelectedSkillRoutingPrompt(queuedSkills),
       ].filter(Boolean).join('\n\n') || undefined;
 
@@ -1699,6 +1601,13 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
           : undefined,
         runtimeSkillIds: queuedCapabilities.runtimeSkillIds.length > 0
           ? queuedCapabilities.runtimeSkillIds
+          : undefined,
+        kitIds: activeKitIds.length > 0 ? [...activeKitIds] : undefined,
+        kitReferences: queuedCapabilities.kitReferences.length > 0
+          ? queuedCapabilities.kitReferences
+          : undefined,
+        resolvedKitCapabilities: activeKitIds.length > 0
+          ? queuedCapabilities.resolvedKitCapabilities
           : undefined,
         mediaSelection: queuedMediaSelection?.mode !== 'none' ? queuedMediaSelection : undefined,
         status: CoworkSteerStatus.Pending,
@@ -1902,15 +1811,18 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       return;
     }
 
-    // Get selected skill routing metadata.
+    // Get selected skill routing metadata, including skills from active kits.
     // OpenClaw loads SKILL.md files natively; do not inline full skill bodies here.
-    const activeSkills = activeSkillIds
+    const kitSkillIds = activeKitIds.flatMap(kitId => getInstalledKitSkillIds(installedKits[kitId]));
+    const allSkillIds = [...new Set([...activeSkillIds, ...kitSkillIds])];
+    const activeSkills = allSkillIds
       .map(id => skills.find(s => s.id === id))
       .filter((s): s is Skill => s !== undefined);
+    const kitPrompt = buildSelectedKitContextPrompt(activeKitIds, marketplaceKits, installedKits);
     const skillPrompt = effectivePlanMode
       ? buildPlanModeSystemPrompt()
       : [
-        selectedAppPrompt,
+        kitPrompt,
         buildSelectedSkillRoutingPrompt(activeSkills),
       ].filter(Boolean).join('\n\n') || undefined;
     if (effectivePlanMode) {
@@ -2052,19 +1964,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     dispatch(clearDraftAttachments(draftKey));
     dispatch(clearDraftSelectedTextSnippets(draftKey));
     dispatch(clearDraftBrowserAnnotationBatches(draftKey));
-    // The app stays chosen for the conversation. It used to be cleared here,
-    // on the theory that it was a hint for one turn like the chosen skills.
-    // That was wrong: picking Gmail says what this conversation is about, not
-    // what one sentence is about. Clearing it meant the chip vanished the
-    // moment you pressed send and every message after the first carried no
-    // app at all — a control that looked like it did nothing, because from
-    // the second message on it did nothing. The person clears it with the
-    // picker's own clear action when they are done with it.
     setImageVisionHint(false);
     resetGoalInput(false);
     draftStartedAnalyticsRef.current = false;
     inputSourceOverrideRef.current = null;
-  }, [sendsToCloud, sendPromptToCloud, value, steerInputActive, steerValue, isVoiceRecording, stopVoiceRecordingAndRecognize, goalInputActive, goalInputMode, resetGoalInput, isStreaming, canSteer, remoteManaged, disabled, submitDisabled, isPatchingModel, onSubmit, onGoalCommand, activeSkillIds, skills, selectedAppPrompt, attachments, browserAnnotationBatches, showFolderSelector, workingDirectory, dispatch, draftKey, selectedTextSnippets, pendingSteers.length, resolveSubmitModelAccessPrompt, isLoggedIn, hasAccessibleUserModel, isPlanMode, planConfirmation, reportPromptControl, getPromptCapabilityAnalyticsParams, getPromptContextAnalyticsParams, getPromptInputSource, goal, sessionId, preparePromptPayload, modelSupportsImage, queuedMediaSelection, authOwnerAccountKey, authAccountGeneration, effectiveModelIsAvailable, modelSelectionRefreshPending, effectiveSelectedModel?.id, effectiveSelectedModel?.providerKey]);
+  }, [value, steerInputActive, steerValue, isVoiceRecording, stopVoiceRecordingAndRecognize, goalInputActive, goalInputMode, resetGoalInput, isStreaming, canSteer, remoteManaged, disabled, submitDisabled, isPatchingModel, onSubmit, onGoalCommand, activeSkillIds, skills, activeKitIds, marketplaceKits, installedKits, attachments, browserAnnotationBatches, showFolderSelector, workingDirectory, dispatch, draftKey, selectedTextSnippets, pendingSteers.length, resolveSubmitModelAccessPrompt, isLoggedIn, hasAccessibleUserModel, isPlanMode, planConfirmation, reportPromptControl, getPromptCapabilityAnalyticsParams, getPromptContextAnalyticsParams, getPromptInputSource, goal, sessionId, preparePromptPayload, modelSupportsImage, queuedMediaSelection, authOwnerAccountKey, authAccountGeneration, effectiveModelIsAvailable, modelSelectionRefreshPending, effectiveSelectedModel?.id, effectiveSelectedModel?.providerKey]);
   handleSubmitRef.current = handleSubmit;
 
   const handleSelectSkill = useCallback((skill: Skill) => {
@@ -2090,6 +1994,44 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     }
   }, [activeSkillIds.length, onManageSkills, reportPromptControl]);
 
+  const handleSelectKit = useCallback((kitId: string) => {
+    const willSelect = !activeKitIds.includes(kitId);
+    const marketplaceKit = marketplaceKits.find(kit => kit.id === kitId);
+    const installedKit = installedKits[kitId];
+    reportPromptControl('kit_toggle', {
+      kitId,
+      kitName: marketplaceKit ? resolveLocalizedText(marketplaceKit.name) : installedKit?.id ?? kitId,
+      kitSource: marketplaceKit ? 'maties-kits' : 'installed',
+      targetEnabled: willSelect,
+      isInstalled: !!installedKit,
+      skillCount: installedKit?.skills?.skillIds.length ?? marketplaceKit?.skills?.list.length,
+      mcpServerCount: installedKit?.mcpServers.length ?? marketplaceKit?.mcpServers?.length,
+      connectorCount: installedKit?.connectors.length ?? marketplaceKit?.connectors?.length,
+    });
+    dispatch(toggleActiveKit(kitId));
+    if (willSelect) {
+      void reportYdAnalyzer({
+        action: LogReporterAction.ExpertKitSelected,
+        kitId,
+        kitName: marketplaceKit ? resolveLocalizedText(marketplaceKit.name) : undefined,
+        kitSource: marketplaceKit ? 'maties-kits' : 'installed',
+        isInstalled: !!installedKit,
+        skillCount: installedKit?.skills?.skillIds.length ?? marketplaceKit?.skills?.list.length,
+        mcpServerCount: installedKit?.mcpServers.length ?? marketplaceKit?.mcpServers?.length,
+        connectorCount: installedKit?.connectors.length ?? marketplaceKit?.connectors?.length,
+      });
+    }
+  }, [activeKitIds, dispatch, installedKits, marketplaceKits, reportPromptControl]);
+
+  const handleManageKits = useCallback(() => {
+    reportPromptControl('manage_kits_click', {
+      activeKitCount: activeKitIds.length,
+    });
+    if (onManageKits) {
+      onManageKits();
+    }
+  }, [activeKitIds.length, onManageKits, reportPromptControl]);
+
   const handleSelectAgent = useCallback((agentId: string) => {
     if (!agentId || agentId === currentAgentId) {
       setShowAgentMenu(false);
@@ -2110,19 +2052,6 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const isComposing = event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
-
-    // « Attach a file » from the keyboard: ⌘⇧A on a Mac, Ctrl+Shift+A elsewhere.
-    if (
-      (event.metaKey || event.ctrlKey)
-      && event.shiftKey
-      && !event.altKey
-      && event.key.toLowerCase() === 'a'
-      && !remoteManaged
-    ) {
-      event.preventDefault();
-      void handleAddFile();
-      return;
-    }
 
     if (event.key === 'Backspace' && !isComposing) {
       const textarea = event.currentTarget;
@@ -2242,15 +2171,22 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     voiceInputLocksEditing,
   ]);
 
-  // The large composer draws its own two cards inside; the container only anchors them.
-  const containerClass = isLarge
-    ? 'relative'
+  const containerClass = isCompact
+    ? 'relative rounded-2xl border border-border bg-surface shadow-subtle'
+    : isLarge
+    ? useHomeContextLayout
+      ? 'relative rounded-2xl'
+      : `relative rounded-2xl border border-border bg-surface ${showReadOnlyContext ? '' : 'shadow-card'}`
     : 'relative flex items-end gap-2 p-3 rounded-xl border border-border bg-surface';
 
   const textareaClass = isCompact
-    ? `w-full resize-none bg-transparent px-0 pb-0 pt-0 text-[14px] leading-[20px] text-[#15171b] placeholder:text-[#8f96a0] focus:outline-none min-h-[${minHeight}px] max-h-[${maxHeight}px]`
+    ? `w-full resize-none bg-transparent px-4 pb-1.5 text-sm leading-[var(--lobster-leading-sm)] text-foreground placeholder:dark:text-foregroundSecondary/60 placeholder:text-secondary/60 focus:outline-none min-h-[${minHeight}px] max-h-[${maxHeight}px] ${hasActiveContext ? 'pt-1.5' : 'pt-2'}`
     : isLarge
-    ? `w-full resize-none bg-transparent px-0 pb-0 pt-0 text-[15px] leading-[22px] tracking-[-.004em] text-[#15171b] placeholder:text-[#8f96a0] focus:outline-none min-h-[${minHeight}px] max-h-[${maxHeight}px]`
+    ? `w-full resize-none bg-transparent px-4 pb-2 text-foreground placeholder:dark:text-foregroundSecondary/60 placeholder:text-secondary/60 focus:outline-none min-h-[${minHeight}px] max-h-[${maxHeight}px] ${
+      useHomeContextLayout
+        ? `${hasActiveContext ? 'pt-2' : 'pt-3'} text-sm leading-[var(--lobster-leading-prompt)]`
+        : `${hasActiveContext ? 'pt-2' : 'pt-2.5'} text-[length:var(--lobster-text-promptLarge)] leading-[var(--lobster-leading-promptLarge)]`
+    }`
     : 'flex-1 resize-none bg-transparent text-foreground placeholder:placeholder:text-secondary focus:outline-none text-sm leading-relaxed min-h-[24px] max-h-[200px]';
 
   const truncatePath = (path: string, maxLength: number = ContextLabelMaxLength.DefaultFolder): string => {
@@ -2616,13 +2552,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const handleOpenAddMenu = useCallback(() => {
     reportPromptControl(showAddMenu ? 'add_menu_close' : 'add_menu_open', {
       activeSkillCount: activeSkillIds.length,
+      activeKitCount: activeKitIds.length,
     });
-    if (!showAddMenu) {
-      setShowMoreMenuOptions(false);
-    }
     setShowSkillsPopover(false);
     setShowAddMenu(prev => !prev);
-  }, [activeSkillIds.length, reportPromptControl, showAddMenu]);
+  }, [activeKitIds.length, activeSkillIds.length, reportPromptControl, showAddMenu]);
 
   const handleOpenSkillsPopover = useCallback(() => {
     if (skillSubmenuCloseTimerRef.current) {
@@ -2955,18 +2889,10 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     return () => window.removeEventListener(ConfigServiceEvent.Updated, syncFromConfig);
   }, []);
 
-  const largeRunsWhereChip = offerCloudChoice ? (
-    <RunsWhereChip
-      place={matyWorkPlace}
-      className={RUNS_WHERE_CHIP_CLASS_NAME}
-      compact={useLargeToolbarCompactLayout}
-    />
-  ) : null;
-
   const largeModelSelector = showModelSelector ? (
     <div className="flex flex-col items-start gap-1">
       <ModelSelector
-        chip
+        compact={useHomeContextLayout}
         dropdownDirection="up"
         alignDropdownToTriggerEnd={useHomeContextLayout}
         portal={showReadOnlyContext}
@@ -3079,29 +3005,25 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     </div>
   ) : null;
 
-  // The « + » menu (docs/maties/design.md, section 4): Attach a file. What the
-  // design has no place for (skills, the goal, plan mode) waits behind
-  // « More » rather than being taken away.
-  const attachShortcutLabel = formatShortcutGlyphs('CommandOrControl+Shift+A', isMacPlatform);
   const addMenuAction = !remoteManaged ? (
     <div className="relative">
       <button
         ref={addMenuButtonRef}
         type="button"
         onClick={handleOpenAddMenu}
-        className={COMPOSER_ROUND_BUTTON_CLASS_NAME}
+        className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-secondary hover:bg-surface-raised hover:text-foreground transition-colors"
         title={i18nService.t('add')}
         aria-label={i18nService.t('add')}
         aria-haspopup="menu"
         aria-expanded={showAddMenu || showSkillsPopover}
       >
-        <PlusLineIcon />
+        <PromptAddIcon className="h-5 w-5" />
       </button>
 
       {showAddMenu && (
         <div
           ref={addMenuRef}
-          className="maties-menu absolute bottom-full left-0 z-50 mb-2 w-[328px]"
+          className="absolute bottom-full left-0 z-50 mb-2 w-48 rounded-xl border border-border bg-surface py-1 shadow-popover"
           role="menu"
           onMouseEnter={cancelCloseSkillsPopover}
           onMouseLeave={scheduleCloseSkillsPopover}
@@ -3112,83 +3034,67 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
             onMouseEnter={handleCloseSkillsPopover}
             onFocus={handleCloseSkillsPopover}
             disabled={disabled || isAddingFile || voiceInputLocksEditing}
-            className="maties-menu-item"
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
             role="menuitem"
           >
-            <PaperclipLineIcon className={ADD_MENU_ICON_CLASS_NAME} />
-            <span className="min-w-0 flex-1 truncate">{i18nService.t('coworkAttachFile')}</span>
-            <span className="shrink-0 text-[13px] text-[#9a9a95]">{attachShortcutLabel}</span>
+            <PaperClipIcon className="h-5 w-5 shrink-0 text-secondary" />
+            <span className="min-w-0 truncate">{i18nService.t('coworkAddFile')}</span>
           </button>
-          <div className="maties-menu-divider" aria-hidden="true" />
+          <button
+            ref={skillMenuItemRef}
+            type="button"
+            onClick={handleOpenSkillsPopover}
+            onMouseEnter={handleOpenSkillsPopover}
+            onFocus={handleOpenSkillsPopover}
+            className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-foreground transition-colors ${
+              showSkillsPopover ? 'bg-surface-raised' : 'hover:bg-surface-raised'
+            }`}
+            role="menuitem"
+            aria-haspopup="menu"
+            aria-expanded={showSkillsPopover}
+          >
+            <SkillIcon className="h-5 w-5 shrink-0 text-secondary" />
+            <span className="min-w-0 flex-1 truncate">{i18nService.t('useSkill')}</span>
+            <ChevronRightIcon className="h-4 w-4 shrink-0 text-secondary" />
+          </button>
           <button
             type="button"
-            onClick={() => setShowMoreMenuOptions((current) => !current)}
+            onClick={() => {
+              if (goal?.objective) {
+                handleOpenGoalEditModal(goal.objective);
+              } else {
+                handleEnableGoalInput('start');
+              }
+            }}
             onMouseEnter={handleCloseSkillsPopover}
             onFocus={handleCloseSkillsPopover}
-            className="maties-menu-item"
+            disabled={disabled || voiceInputLocksEditing || !onGoalCommand}
+            className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              goalInputActive ? 'bg-surface-raised text-foreground' : 'text-foreground hover:bg-surface-raised'
+            }`}
             role="menuitem"
-            aria-expanded={showMoreMenuOptions}
           >
-            <EllipsisLineIcon className={ADD_MENU_ICON_CLASS_NAME} />
-            <span className="min-w-0 flex-1 truncate">{i18nService.t('coworkMoreOptions')}</span>
-            <ChevronDownLineIcon className={`text-[#a2a29c] transition-transform ${showMoreMenuOptions ? 'rotate-180' : ''}`} />
+            <GoalIcon className="h-5 w-5 shrink-0 text-secondary" />
+            <span className="shrink-0 text-foreground">{i18nService.t('coworkGoal')}</span>
+            {goal?.objective && (
+              <span className="min-w-0 flex-1 truncate text-secondary">
+                {goal.objective}
+              </span>
+            )}
           </button>
-          {showMoreMenuOptions && (
-            <>
-              <button
-                ref={skillMenuItemRef}
-                type="button"
-                onClick={handleOpenSkillsPopover}
-                onMouseEnter={handleOpenSkillsPopover}
-                onFocus={handleOpenSkillsPopover}
-                className={`maties-menu-item ${showSkillsPopover ? 'bg-[rgba(16,20,28,.06)]' : ''}`}
-                role="menuitem"
-                aria-haspopup="menu"
-                aria-expanded={showSkillsPopover}
-              >
-                <SkillIcon className="h-[17px] w-[17px] shrink-0 text-[#4a4f57]" />
-                <span className="min-w-0 flex-1 truncate">{i18nService.t('useSkill')}</span>
-                <ChevronRightIcon className="h-4 w-4 shrink-0 text-[#a2a29c]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (goal?.objective) {
-                    handleOpenGoalEditModal(goal.objective);
-                  } else {
-                    handleEnableGoalInput('start');
-                  }
-                }}
-                onMouseEnter={handleCloseSkillsPopover}
-                onFocus={handleCloseSkillsPopover}
-                disabled={disabled || voiceInputLocksEditing || !onGoalCommand}
-                className={`maties-menu-item ${goalInputActive ? 'bg-[rgba(16,20,28,.06)]' : ''}`}
-                role="menuitem"
-              >
-                <GoalIcon className="h-[17px] w-[17px] shrink-0 text-[#4a4f57]" />
-                <span className="shrink-0">{i18nService.t('coworkGoal')}</span>
-                {goal?.objective && (
-                  <span className="min-w-0 flex-1 truncate text-[13px] text-[#9a9a95]">
-                    {goal.objective}
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={handleTogglePlanMode}
-                onMouseEnter={handleCloseSkillsPopover}
-                onFocus={handleCloseSkillsPopover}
-                disabled={disabled || isStreaming || voiceInputLocksEditing}
-                className="maties-menu-item"
-                role="menuitemcheckbox"
-                aria-checked={isPlanMode}
-              >
-                <PlanModeIcon className="h-[17px] w-[17px] shrink-0 text-[#4a4f57]" />
-                <span className="min-w-0 flex-1 truncate">{i18nService.t('coworkPlanMode')}</span>
-                {isPlanMode && <CheckIcon className="h-4 w-4 shrink-0 text-[#0060d0]" />}
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={handleTogglePlanMode}
+            onMouseEnter={handleCloseSkillsPopover}
+            onFocus={handleCloseSkillsPopover}
+            disabled={disabled || isStreaming || voiceInputLocksEditing}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
+            role="menuitemcheckbox"
+            aria-checked={isPlanMode}
+          >
+            <PlanModeIcon className="h-5 w-5 shrink-0 text-secondary" />
+            <span className="min-w-0 flex-1 truncate">{i18nService.t('coworkPlanMode')}</span>
+          </button>
 
           <SkillsPopover
             isOpen={showSkillsPopover}
@@ -3205,30 +3111,19 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       )}
     </div>
   ) : null;
-  const appPickerAction = (
-    <AppPickerButton
-      apps={connectedApps}
-      selectedSlug={selectedApp?.slug}
-      onSelect={(slug) => {
-        reportPromptControl('app_hint_toggle', {
-          appSlug: slug,
-          targetEnabled: Boolean(slug),
-          connectedAppCount: connectedApps.length,
-        });
-        dispatch(setDraftAppSlug({ draftKey, appSlug: slug }));
-      }}
-      buttonClassName={COMPOSER_ROUND_BUTTON_CLASS_NAME}
-      onOpenChange={(open) => {
-        reportPromptControl(open ? 'app_menu_open' : 'app_menu_close', {
-          connectedAppCount: connectedApps.length,
-        });
-      }}
-    />
-  );
+
   const largeInputActions = !remoteManaged ? (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-0.5">
       {addMenuAction}
-      {appPickerAction}
+      <KitsButton
+        onSelectKit={handleSelectKit}
+        onManageKits={handleManageKits}
+        onOpenChange={(open) => {
+          reportPromptControl(open ? 'kit_menu_open' : 'kit_menu_close', {
+            activeKitCount: activeKitIds.length,
+          });
+        }}
+      />
     </div>
   ) : null;
 
@@ -3259,24 +3154,22 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       )}
     </div>
   );
-  // The send button: a 36px black circle with a white arrow; grey while
-  // there is nothing to send; a square « stop » while an answer streams.
-  const largeSendButtonSizeClass = isCompact ? 'h-8 w-8' : 'h-9 w-9';
-  const largeSendIconSize = isCompact ? 14 : 16;
+  const largeSendButtonSizeClass = useCompactSendButton ? 'h-7 w-7' : 'h-8 w-8';
+  const largeSendIconSizeClass = useCompactSendButton ? 'h-4 w-4' : 'h-[18px] w-[18px]';
   const largeVoiceInputButton = !remoteManaged ? renderVoiceInputButton(
     `flex ${largeSendButtonSizeClass} shrink-0 items-center justify-center rounded-full`,
-    isCompact ? 'h-4 w-4' : 'h-[18px] w-[18px]',
+    largeSendIconSizeClass,
   ) : null;
 
   const largeTaskStopButton = (
     <button
       type="button"
       onClick={handleStopClick}
-      className={`flex ${largeSendButtonSizeClass} shrink-0 items-center justify-center rounded-full bg-[#16181c] text-white shadow-[0_1px_2px_rgba(16,22,35,.22)] transition-colors hover:bg-[#2a2d33] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0060d0]/40`}
+      className="flex h-[34px] w-[34px] items-center justify-center rounded-full transition-all hover:opacity-90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/40"
       aria-label={stopButtonLabel}
       title={stopButtonLabel}
     >
-      <span aria-hidden="true" className="block h-[12px] w-[12px] rounded-[2px] bg-white" />
+      <TaskPauseIcon className="h-[34px] w-[34px]" aria-hidden="true" />
     </button>
   );
 
@@ -3288,15 +3181,15 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       data-onboarding-target={isLarge && useHomeContextLayout ? 'home-prompt-send' : undefined}
       onClick={() => handleSubmit('button')}
       disabled={!canUseSubmitButton}
-      className={`flex ${largeSendButtonSizeClass} shrink-0 items-center justify-center rounded-full text-white transition-colors ${
+      className={`flex ${largeSendButtonSizeClass} shrink-0 items-center justify-center rounded-full transition-all ${
         canUseSubmitButton
-          ? 'cursor-pointer bg-[#16181c] shadow-[0_1px_2px_rgba(16,22,35,.22)] hover:bg-[#2a2d33]'
-          : 'cursor-default bg-[#c9ccd2]'
+          ? 'bg-neutral-950 text-white shadow-subtle hover:bg-neutral-800 active:scale-95 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200'
+          : 'cursor-not-allowed bg-neutral-300 text-white dark:bg-neutral-700 dark:text-neutral-500'
       }`}
       aria-label={i18nService.t('sendMessage')}
       title={sendButtonTitle}
     >
-      <ArrowUpLineIcon size={largeSendIconSize} />
+      <ArrowUpIcon className={largeSendIconSizeClass} />
     </button>
   );
 
@@ -3320,17 +3213,14 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     </div>
   ) : null;
 
-  // Inside the large card the padding is the card's; each preview only keeps a gap below.
-  const largePreviewClassName = isLarge ? (isCompact ? 'pb-2' : 'pb-3') : (isCompact ? 'px-3 pt-2' : 'px-4 pt-3');
-
   const largeAttachmentPreview = hasAttachments ? (
-    <div className={`${isCompact ? 'max-h-[88px]' : 'max-h-[156px]'} ${largePreviewClassName} overflow-y-auto`}>
+    <div className={`${isCompact ? 'max-h-[88px] px-3 pb-1 pt-2' : 'max-h-[156px] px-4 pb-1 pt-3'} overflow-y-auto`}>
       {attachmentPreviewContent}
     </div>
   ) : null;
 
   const selectedTextSnippetPreview = selectedTextSnippets.length > 0 ? (
-    <div className={largePreviewClassName}>
+    <div className={`${isCompact ? 'px-3 pt-2' : 'px-4 pt-3'}`}>
       <SelectedTextSnippetBadge
         snippets={selectedTextSnippets}
         onClear={() => dispatch(clearDraftSelectedTextSnippets(draftKey))}
@@ -3340,7 +3230,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   ) : null;
 
   const browserAnnotationPreview = browserAnnotationBatches.length > 0 ? (
-    <div className={largePreviewClassName}>
+    <div className={`${isCompact ? 'px-3 pt-2' : 'px-4 pt-3'}`}>
       <BrowserAnnotationAttachmentBadge
         draftKey={draftKey}
         batches={browserAnnotationBatches}
@@ -3478,7 +3368,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   ];
   const externalSteerPreviewClass = `${isCompact ? 'mx-3' : 'mx-5'} max-h-[156px] overflow-y-auto rounded-t-2xl rounded-b-none border border-b-0 border-border bg-surface-raised/60`;
   const steerPreviewNode = steerPreviewItems.length > 0 ? (
-    <div className={shouldUseExternalSteerPreview ? externalSteerPreviewClass : largePreviewClassName}>
+    <div className={shouldUseExternalSteerPreview ? externalSteerPreviewClass : `${isCompact ? 'px-3 pt-2' : 'px-4 pt-3'}`}>
       <div className={shouldUseExternalSteerPreview ? '' : 'space-y-1.5'}>
         {steerPreviewItems.map(({ steer, source }, index) => renderSteerQueueItem(steer, source, {
           external: shouldUseExternalSteerPreview,
@@ -3506,7 +3396,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       ? i18nService.t('coworkGoalPause')
       : i18nService.t('coworkGoalResume');
     return (
-      <div className={shouldUseExternalGoalStatusBar ? '' : largePreviewClassName}>
+      <div className={shouldUseExternalGoalStatusBar ? '' : `${isCompact ? 'px-3 pt-2' : 'px-4 pt-3'}`}>
         <div
           role="status"
           title={detail}
@@ -3633,14 +3523,15 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     </div>
   ) : null;
 
-  // The chosen skill, app or mode sits in the button row beside the « + », as the founder drew the skill chip.
   const activeSkillContextRow = isLarge && hasActiveContext ? (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+    <div
+      className={`flex cursor-text flex-wrap items-center gap-x-2 gap-y-1 px-4 ${isCompact ? 'pt-2' : 'pt-4'}`}
+      onClick={() => {
+        if (!disabled && !voiceInputLocksEditing) textareaRef.current?.focus();
+      }}
+    >
       <ActiveSkillBadge />
-      <ActiveAppBadge
-        app={selectedApp}
-        onClear={() => dispatch(setDraftAppSlug({ draftKey }))}
-      />
+      <ActiveKitBadge />
       {goalModeBadge}
       {planModeBadge}
       {steerModeBadge}
@@ -3715,6 +3606,53 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       </div>
     );
 
+  const readOnlyContextRow = isLarge && showReadOnlyContext && !useHomeContextLayout ? (
+    <div className="mt-2 grid min-h-7 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4">
+      <div ref={readOnlyContextGroupRef} className="flex min-w-0 items-center gap-1">
+        <button
+          type="button"
+          onClick={handleOpenWorkingDirectory}
+          disabled={!hasWorkingDirectory}
+          className={`flex h-7 items-center rounded-lg text-[13px] text-secondary transition-colors ${
+            hasWorkingDirectory ? 'hover:bg-background/80 hover:text-foreground' : 'cursor-default'
+          } ${
+            isReadOnlyContextCompact
+              ? 'w-7 flex-none justify-center'
+              : 'min-w-0 max-w-[260px] shrink gap-1.5 px-2'
+          }`}
+          title={workingDirectory || i18nService.t('noFolderSelected')}
+          aria-label={i18nService.t('coworkOpenFolder')}
+        >
+          <FolderIcon className="h-4 w-4 shrink-0" />
+          {!isReadOnlyContextCompact && (
+            <span className="min-w-0 truncate">
+              {truncatePath(workingDirectory, ContextLabelMaxLength.Folder)}
+            </span>
+          )}
+        </button>
+        <div
+          className={`flex h-7 items-center rounded-lg text-[13px] text-secondary ${
+            isReadOnlyContextCompact
+              ? 'w-7 flex-none justify-center'
+              : 'min-w-0 max-w-[220px] shrink gap-1.5 px-2'
+          }`}
+          title={`${i18nService.t('coworkCurrentAgent')}: ${readOnlyContextAgentName}`}
+        >
+          <AgentContextAvatar agent={readOnlyContextAgentForDisplay} />
+          {!isReadOnlyContextCompact && (
+            <span className="min-w-0 truncate">{readOnlyContextAgentLabel}</span>
+          )}
+        </div>
+      </div>
+      {readOnlyContextTrailingText && (
+        <span className="pointer-events-none min-w-0 max-w-full select-none truncate text-center text-[13px] text-muted opacity-85">
+          {readOnlyContextTrailingText}
+        </span>
+      )}
+      <div aria-hidden="true" />
+    </div>
+  ) : null;
+
   const voiceQuotaLimitSeconds = asrQuota.limitSecondsToday
     ?? (isAsrSubscribed ? DEFAULT_SUBSCRIBED_ASR_LIMIT_SECONDS : DEFAULT_FREE_ASR_LIMIT_SECONDS);
   const voiceQuotaLimitText = formatVoiceInputQuotaLimit(voiceQuotaLimitSeconds);
@@ -3740,11 +3678,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   );
 
   return (
-    <div
-      data-skin-prompt-input="true"
-      className="relative"
-      style={useComposerTray ? { marginBottom: COMPOSER_TRAY_HEIGHT } : undefined}
-    >
+    <div data-skin-prompt-input="true" className="relative">
       {goalEditModalOpen && (
         <Modal
           onClose={handleCloseGoalEditModal}
@@ -3862,31 +3796,149 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
           </div>
         )}
         {isLarge ? (
-          <>
-            {/* The composer is two cards (docs/maties/design.md, section 4): the
-                white lifted card, and the grey tray card 34px behind it and 44px
-                below it that carries the working folder and the agent. */}
-            {useComposerTray && (
+          useHomeContextLayout ? (
+            <>
               <div
-                aria-hidden="true"
-                className="absolute inset-x-0 z-0 rounded-[24px] border border-[rgba(16,22,35,.05)] bg-[#f2f3f5]"
-                style={{ top: COMPOSER_TRAY_TOP_OFFSET, bottom: -COMPOSER_TRAY_HEIGHT }}
-              />
-            )}
-            <div
-              data-onboarding-target={useHomeContextLayout ? 'home-prompt' : undefined}
-              className={`relative z-10 border bg-white transition-[border-color,box-shadow] duration-200 ${
-                isCompact ? 'rounded-[18px] px-3 pb-2 pt-2.5' : 'rounded-[24px] pb-[13px] pl-[20px] pr-[14px] pt-4'
-              } ${isDraggingFiles ? 'border-[rgba(0,96,208,.5)]' : 'border-[rgba(16,22,35,.07)]'}`}
-              style={{ boxShadow: COMPOSER_CARD_SHADOW }}
-            >
+                data-onboarding-target="home-prompt"
+                className="relative z-10 rounded-2xl border border-border bg-surface shadow-card transition-[border-color,box-shadow] duration-200 focus-within:border-primary/35 focus-within:shadow-elevated"
+              >
+                {largeAttachmentPreview}
+                {selectedTextSnippetPreview}
+                {browserAnnotationPreview}
+                {steerPreview}
+                {sessionGoalStatusBar}
+                {activeSkillContextRow}
+                {renderMentionTextarea({
+                  rows: 2,
+                  placeholder: textareaPlaceholder,
+                  style: { minHeight: `${minHeight}px` },
+                })}
+                {mentionPickerOpen && (
+                  <MediaMentionPicker
+                    items={mediaLabels}
+                    filter={mentionFilter}
+                    position={mentionPickerPosition}
+                    onSelect={handleMentionSelect}
+                    onDismiss={() => setMentionPickerOpen(false)}
+                  />
+                )}
+                <div ref={largeToolbarRef} className={`relative flex items-center justify-between ${largeToolbarGapClass} px-4 pb-2 pt-1`}>
+                  {voiceRecordingUiState.showFooterRecordingStatus && (
+                    <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-center">
+                      <VoiceInputRecordingStatus
+                        elapsedSeconds={recordingElapsedSeconds}
+                        showHint={!hasPromptText}
+                      />
+                    </div>
+                  )}
+                  <div className={`flex min-w-0 items-center ${largeToolbarControlGapClass}`}>
+                    {voiceRecordingUiState.showLargeInputControls && largeInputToolActions}
+                  </div>
+                  <div className={`flex shrink-0 items-center ${largeToolbarControlGapClass}`}>
+                    {contextUsageControl}
+                    {voiceRecordingUiState.showLargeModelSelector && largeModelSelector}
+                    {largeVoiceInputButton}
+                    {largeSendButton}
+                  </div>
+                </div>
+              </div>
+              <div className="-mt-2 flex min-h-10 items-center gap-1 rounded-b-2xl bg-black/[0.035] px-4 pb-2 pt-3.5 dark:bg-white/[0.05]">
+                {showFolderSelector && (
+                  <div className="relative min-w-0 shrink">
+                    <button
+                      ref={folderButtonRef as React.RefObject<HTMLButtonElement>}
+                      type="button"
+                      onClick={() => {
+                        reportPromptControl(showFolderMenu ? 'working_directory_selector_close' : 'working_directory_selector_open', {
+                          source: 'home_context',
+                        });
+                        setShowFolderMenu(!showFolderMenu);
+                      }}
+                      className={`flex h-7 max-w-[260px] items-center gap-1.5 rounded-lg px-2 text-[13px] transition-colors ${
+                        showFolderRequiredWarning
+                          ? 'ring-1 ring-warning text-warning animate-shake'
+                          : `text-secondary hover:bg-background/80 hover:text-foreground ${
+                            showFolderMenu ? 'bg-background/80 text-foreground' : ''
+                          }`
+                      }`}
+                    >
+                      <FolderIcon className="h-4 w-4 shrink-0" />
+                      <span className="min-w-0 truncate">
+                        {truncatePath(workingDirectory, ContextLabelMaxLength.Folder)}
+                      </span>
+                      <ChevronDownIcon className="h-3.5 w-3.5 shrink-0" />
+                    </button>
+                    <FolderSelectorPopover
+                      isOpen={showFolderMenu}
+                      onClose={() => setShowFolderMenu(false)}
+                      onSelectFolder={handleFolderSelect}
+                      anchorRef={folderButtonRef as React.RefObject<HTMLElement>}
+                      portal
+                    />
+                    {showFolderRequiredWarning && (
+                      <div className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded-md bg-surface-raised px-2 py-1 text-xs text-warning shadow-subtle animate-fade-in-up">
+                        {i18nService.t('coworkSelectFolderFirst')}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="relative min-w-0 shrink">
+                  <button
+                    ref={agentButtonRef}
+                    type="button"
+                    onClick={() => {
+                      reportPromptControl(showAgentMenu ? 'agent_selector_close' : 'agent_selector_open', {
+                        agentCount: agentOptions.length,
+                      });
+                      setShowAgentMenu(!showAgentMenu);
+                    }}
+                    className={`flex h-7 max-w-[220px] items-center gap-1.5 rounded-lg px-2 text-[13px] text-secondary transition-colors hover:bg-background/80 hover:text-foreground ${
+                      showAgentMenu ? 'bg-background/80 text-foreground' : ''
+                    }`}
+                    aria-label={i18nService.t('coworkSelectAgent')}
+                    title={`${i18nService.t('coworkCurrentAgent')}: ${currentAgentName}`}
+                  >
+                    <AgentContextAvatar agent={currentAgentForDisplay} />
+                    <span className="min-w-0 truncate">{homeContextAgentName}</span>
+                    <ChevronDownIcon className="h-3.5 w-3.5 shrink-0" />
+                  </button>
+                  {showAgentMenu && (
+                    <div
+                      ref={agentMenuRef}
+                      className="absolute bottom-full left-0 z-50 mb-1 max-h-64 w-64 overflow-y-auto rounded-xl border border-border bg-surface py-1 shadow-popover"
+                    >
+                      {agentOptions.map((agent) => {
+                        const isSelectedAgent = agent.id === currentAgentId;
+                        return (
+                          <button
+                            key={agent.id}
+                            type="button"
+                            onClick={() => handleSelectAgent(agent.id)}
+                            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-raised ${
+                              isSelectedAgent ? 'bg-surface-raised/70 text-foreground' : 'text-foreground'
+                            }`}
+                          >
+                            <AgentContextAvatar agent={agent} />
+                            <span className="min-w-0 flex-1 truncate">{getAgentDisplayName(agent)}</span>
+                            {isSelectedAgent && <CheckIcon className="h-4 w-4 shrink-0 text-primary" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
               {largeAttachmentPreview}
               {selectedTextSnippetPreview}
               {browserAnnotationPreview}
               {steerPreview}
               {sessionGoalStatusBar}
+              {activeSkillContextRow}
               {renderMentionTextarea({
-                rows: 1,
+                rows: isCompact ? 1 : 2,
                 placeholder: textareaPlaceholder,
                 style: { minHeight: `${minHeight}px` },
               })}
@@ -3899,10 +3951,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
                   onDismiss={() => setMentionPickerOpen(false)}
                 />
               )}
-              <div
-                ref={largeToolbarRef}
-                className={`relative flex items-center ${largeToolbarGapClass} ${isCompact ? 'pt-1.5' : 'pt-3'}`}
-              >
+              <div ref={largeToolbarRef} className={`relative flex items-center justify-between ${largeToolbarGapClass} px-4 ${isCompact ? 'pb-1.5 pt-0.5' : 'pb-2 pt-1.5'}`}>
                 {voiceRecordingUiState.showFooterRecordingStatus && (
                   <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-center">
                     <VoiceInputRecordingStatus
@@ -3911,150 +3960,63 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
                     />
                   </div>
                 )}
-                <div className={`flex min-w-0 flex-1 flex-wrap items-center ${largeToolbarControlGapClass}`}>
+                <div className={`relative flex min-w-0 items-center ${largeToolbarControlGapClass}`}>
+                  {voiceRecordingUiState.showLargeInputControls && showFolderSelector && (
+                    <>
+                      <div className="flex items-center">
+                        <button
+                          ref={folderButtonRef as React.RefObject<HTMLButtonElement>}
+                          type="button"
+                          onClick={() => setShowFolderMenu(!showFolderMenu)}
+                          className={`flex items-center gap-1.5 pl-2.5 pr-1.5 py-1.5 rounded-lg text-sm transition-colors ${
+                            showFolderRequiredWarning
+                              ? 'ring-1 ring-warning text-warning animate-shake'
+                              : 'text-secondary hover:bg-surface-raised hover:text-foreground'
+                          }`}
+                        >
+                          <FolderIcon className="h-4 w-4 flex-shrink-0" />
+                          <span className="max-w-[150px] truncate text-xs">
+                            {truncatePath(workingDirectory)}
+                          </span>
+                          {workingDirectory && (
+                            <span
+                              role="button"
+                              tabIndex={-1}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleFolderSelect('');
+                              }}
+                              className="flex-shrink-0 ml-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                            >
+                              <XMarkIcon className="h-3 w-3" />
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                      <FolderSelectorPopover
+                        isOpen={showFolderMenu}
+                        onClose={() => setShowFolderMenu(false)}
+                        onSelectFolder={handleFolderSelect}
+                        anchorRef={folderButtonRef as React.RefObject<HTMLElement>}
+                      />
+                      {showFolderRequiredWarning && (
+                        <div className="absolute left-0 top-full mt-1 px-2 py-1 rounded-md bg-surface-raised text-warning text-xs whitespace-nowrap animate-fade-in-up shadow-subtle z-10">
+                          {i18nService.t('coworkSelectFolderFirst')}
+                        </div>
+                      )}
+                    </>
+                  )}
                   {voiceRecordingUiState.showLargeInputControls && largeInputToolActions}
-                  {activeSkillContextRow}
                 </div>
-                <div className={`ml-auto flex shrink-0 items-center ${largeToolbarControlGapClass}`}>
+                <div className={`flex shrink-0 items-center ${largeToolbarControlGapClass}`}>
                   {contextUsageControl}
-                  {largeRunsWhereChip}
                   {voiceRecordingUiState.showLargeModelSelector && largeModelSelector}
                   {largeVoiceInputButton}
                   {largeSendButton}
                 </div>
               </div>
-            </div>
-            {useComposerTray && (
-              <div
-                ref={readOnlyContextGroupRef}
-                className="absolute inset-x-0 top-full z-[1] flex items-center gap-1 px-[14px]"
-                style={{ height: COMPOSER_TRAY_HEIGHT }}
-              >
-                {showFolderSelector && (
-                  <div className="relative min-w-0 shrink">
-                    <button
-                      ref={folderButtonRef as React.RefObject<HTMLButtonElement>}
-                      type="button"
-                      onClick={() => {
-                        reportPromptControl(showFolderMenu ? 'working_directory_selector_close' : 'working_directory_selector_open', {
-                          source: 'home_context',
-                        });
-                        setShowFolderMenu(!showFolderMenu);
-                      }}
-                      className={`${COMPOSER_TRAY_CHIP_CLASS_NAME} max-w-[260px] ${
-                        showFolderRequiredWarning
-                          ? 'animate-shake text-[#c8790a] ring-1 ring-[#c8790a]'
-                          : showFolderMenu ? 'bg-[#f3f3f1]' : ''
-                      }`}
-                      title={workingDirectory || i18nService.t('noFolderSelected')}
-                    >
-                      <FolderLineIcon className="text-[#4a4f57]" />
-                      <span className="min-w-0 truncate">
-                        {truncatePath(workingDirectory, ContextLabelMaxLength.Folder)}
-                      </span>
-                      <ChevronDownLineIcon className="text-[#8f96a0]" />
-                    </button>
-                    <FolderSelectorPopover
-                      isOpen={showFolderMenu}
-                      onClose={() => setShowFolderMenu(false)}
-                      onSelectFolder={handleFolderSelect}
-                      anchorRef={folderButtonRef as React.RefObject<HTMLElement>}
-                      portal
-                    />
-                    {showFolderRequiredWarning && (
-                      <div className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded-[9px] bg-white px-2 py-1 text-[12.5px] text-[#c8790a] shadow-[0_1px_2px_rgba(16,22,35,.04),0_6px_18px_rgba(16,22,35,.06)] animate-fade-in-up">
-                        {i18nService.t('coworkSelectFolderFirst')}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {showAgentSelector && (
-                  <div className="relative min-w-0 shrink">
-                    <button
-                      ref={agentButtonRef}
-                      type="button"
-                      onClick={() => {
-                        reportPromptControl(showAgentMenu ? 'agent_selector_close' : 'agent_selector_open', {
-                          agentCount: agentOptions.length,
-                        });
-                        setShowAgentMenu(!showAgentMenu);
-                      }}
-                      className={`${COMPOSER_TRAY_CHIP_CLASS_NAME} max-w-[220px] ${showAgentMenu ? 'bg-[#f3f3f1]' : ''}`}
-                      aria-label={i18nService.t('coworkSelectAgent')}
-                      title={`${i18nService.t('coworkCurrentAgent')}: ${currentAgentName}`}
-                    >
-                      <AgentContextAvatar agent={currentAgentForDisplay} className="h-[17px] w-[17px]" />
-                      <span className="min-w-0 truncate">{homeContextAgentName}</span>
-                      <ChevronDownLineIcon className="text-[#8f96a0]" />
-                    </button>
-                    {showAgentMenu && createPortal(
-                      <div
-                        ref={agentMenuRef}
-                        className="maties-menu max-h-64 overflow-y-auto"
-                        style={agentMenuStyle}
-                        role="menu"
-                      >
-                        {agentOptions.map((agent) => {
-                          const isSelectedAgent = agent.id === currentAgentId;
-                          return (
-                            <button
-                              key={agent.id}
-                              type="button"
-                              onClick={() => handleSelectAgent(agent.id)}
-                              className={`maties-menu-item ${isSelectedAgent ? 'bg-[rgba(16,20,28,.04)]' : ''}`}
-                              role="menuitem"
-                            >
-                              <AgentContextAvatar agent={agent} className="h-[17px] w-[17px]" />
-                              <span className="min-w-0 flex-1 truncate">{getAgentDisplayName(agent)}</span>
-                              {isSelectedAgent && <CheckIcon className="h-4 w-4 shrink-0 text-[#0060d0]" />}
-                            </button>
-                          );
-                        })}
-                      </div>,
-                      document.body,
-                    )}
-                  </div>
-                )}
-                {showReadOnlyContext && !useHomeContextLayout && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleOpenWorkingDirectory}
-                      disabled={!hasWorkingDirectory}
-                      className={`${COMPOSER_TRAY_CHIP_CLASS_NAME} ${
-                        isReadOnlyContextCompact ? 'w-[34px] flex-none justify-center px-0' : 'max-w-[260px]'
-                      } ${hasWorkingDirectory ? '' : 'cursor-default hover:bg-transparent'}`}
-                      title={workingDirectory || i18nService.t('noFolderSelected')}
-                      aria-label={i18nService.t('coworkOpenFolder')}
-                    >
-                      <FolderLineIcon className="text-[#4a4f57]" />
-                      {!isReadOnlyContextCompact && (
-                        <span className="min-w-0 truncate">
-                          {truncatePath(workingDirectory, ContextLabelMaxLength.Folder)}
-                        </span>
-                      )}
-                    </button>
-                    <div
-                      className={`${COMPOSER_TRAY_CHIP_CLASS_NAME} cursor-default hover:bg-transparent ${
-                        isReadOnlyContextCompact ? 'w-[34px] flex-none justify-center px-0' : 'max-w-[220px]'
-                      }`}
-                      title={`${i18nService.t('coworkCurrentAgent')}: ${readOnlyContextAgentName}`}
-                    >
-                      <AgentContextAvatar agent={readOnlyContextAgentForDisplay} className="h-[17px] w-[17px]" />
-                      {!isReadOnlyContextCompact && (
-                        <span className="min-w-0 truncate">{readOnlyContextAgentLabel}</span>
-                      )}
-                    </div>
-                  </>
-                )}
-                {readOnlyContextTrailingText && (
-                  <span className="pointer-events-none ml-auto min-w-0 select-none truncate pl-2 text-right text-[12.5px] tracking-[-.006em] text-[#9aa1ab]">
-                    {readOnlyContextTrailingText}
-                  </span>
-                )}
-              </div>
-            )}
-          </>
+            </>
+          )
         ) : (
           <>
             {renderMentionTextarea({
@@ -4126,6 +4088,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
           </>
         )}
       </div>
+      {readOnlyContextRow}
       {showChatLoginExperiencePrompt && (
         <ChatLoginExperienceModal
           loginPending={chatLoginExperiencePending}

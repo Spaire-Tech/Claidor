@@ -21,11 +21,8 @@ Only Claidor's two hosts, and nowhere else:
   (`src/main/libs/endpoints.ts`; the server side is
   `server/polar/desktop`). Sign-in, token refresh, profile, quota, the
   model list, the metered model proxy, and the stubs the app asks for
-  (update check, client activities and banners: they answer « nothing
-  newer » / « empty »). The app no longer asks for the kit store or the
-  MCP marketplace at all — the shops were empty, so the screens went (see
-  « The clear-out » below); the skill-store call remains for skill names
-  and descriptions.
+  (update check, skill store, kit store, client activities and banners:
+  they answer « nothing newer » / « empty »).
 - Web app: `https://app.claidor.com` (`src/renderer/services/endpoints.ts`):
   where the browser sign-in happens and where the account links open.
 
@@ -46,19 +43,15 @@ founder's final name) everywhere: `package.json`, `electron-builder.json`
 for either rename: nothing had shipped. The MIT notices stay in `LICENSE`,
 in the source headers that carried them, and on the About screen.
 
-Logo: the sphere, as the founder drew it in the chat design
-(`docs/maties/design.md`, section 2): three blurred gradient layers in a
-circle, alive in the app (`src/renderer/components/design/Sphere.tsx`)
-and rendered still by `scripts/render-brand-assets.cjs` (Chromium through
-Playwright, no ImageMagick) into every raster the app ships: the PNG
+Logo: the founder's mark, one brush stroke like a wave. Until the original
+vector file is in the repository, `scripts/generate-maties-mark.cjs` writes
+a hand-traced `build/logo/maties-mark.svg` from a centre line, and
+`scripts/render-brand-assets.cjs` (Chromium through Playwright, no
+ImageMagick) renders from that SVG every raster the app ships: the PNG
 ladder under `build/icons/png`, `build/icons/mac/icon.icns`,
-`build/icons/win/icon.ico`, `public/logo.png` (the sphere on a white
-rounded tile) and the menu-bar icons under `resources/tray`. `npm run
-brand:render` regenerates them. The design itself: the founder's chat
-screen under `docs/maties/design/`, its rules in `docs/maties/design.md`,
-its fonts (Google Fonts, SIL Open Font License) under `public/fonts`, the
-default avatar under `public/avatars`, the file marks under
-`public/file-icons`.
+`build/icons/win/icon.ico`, `public/logo.png` (the mark on a white rounded
+tile) and the menu-bar icons under `resources/tray` (the mark alone). To
+use the real logo, replace the SVG and run `npm run brand:render`.
 
 Language: English only. The Chinese dictionaries in
 `src/renderer/services/i18n.ts` and `src/main/i18n.ts` were deleted;
@@ -87,12 +80,14 @@ deleted; the media picker in the prompt bar is behind
 Harness (DSH) settings tab, voice input (Youdao speech recognition, behind
 `MATIES_VOICE_INPUT_ENABLED = false`; the main-process ASR code remains),
 credit campaigns and daily check-in (the server answers « no activity »),
-Windows Computer Use (its runtime zip and bundle were downloaded
+the Windows Computer Use kit (its runtime zip and bundle were downloaded
 from NetEase's CDN; `isComputerUseKitSupportedPlatform()` returns false
 until Claidor hosts the files), usage analytics to Youdao (events now go
 to `/desktop/api/analytics/events` on Claidor, which acknowledges and
 keeps nothing, and only when the person allows statistics in Settings),
-the MCP marketplace, the Qichacha MCP bundle, the provider and API-key screens (the Model tab
+the MCP marketplace from Youdao (Claidor serves the fifteen-server
+catalogue from `server/polar/desktop/mcp_marketplace.json`),
+the Qichacha MCP bundle, the provider and API-key screens (the Model tab
 is now `MatiesAccountSection`: sign in, usage this month, available models;
 the provider config is still saved and read by the engine sync, so an
 enterprise config or an old profile still works), the upstream docs,
@@ -115,26 +110,6 @@ CDN) have no entry point left in the UI; the model-provider registry in
 gateways keep their NetEase URLs. Delete these when a channel or engine
 round comes.
 
-The clear-out (September 12, 2026). The founder walked the built app and
-found it crowded and duplicated, and set one rule: **the sidebar is where
-you work; settings is what it can do and who you are.** Removed, whole:
-Kits (the screen, the sidebar row, the composer button, the
-`kit://` scheme, the kit-store call, `shared/kit/constants.ts`, the
-`ipcHandlers/kits` module and the skin-pack kit that rode on it — the AI
-appearance designer now switches on the bundled `skin-creator` skill
-instead, `src/renderer/services/skinSkillOnboarding.ts`); the MCP
-marketplace and its catalogue, leaving only the servers a person adds by
-hand; the Skills screen's Market tab; the composer's « Mention » and
-« Use my selection » menu items; and the Settings tabs Plugins, IM Bot,
-Email, Shortcuts, Agent Engine and Dreaming. Skills and Connectors left
-the sidebar for Settings, Connectors renamed **Apps**; Memory and Dreaming
-merged into one Memory screen (Dreaming's behaviour is untouched, only its
-name and its tab went); thirteen Settings tabs became eight. Two screens
-still ask for an API key and are **not** covered by this round: Settings →
-Memory → « How memory is searched » (the embedding provider, base URL and
-key, kept behind one quiet disclosure), and the per-model provider config
-that no screen shows but the engine sync still reads.
-
 Added, not from upstream: the personal library (`docs/maties/library.md`).
 An index of the person's documents built on the machine: the contract in
 `src/shared/library/contentConstants.ts`, the tables in
@@ -148,56 +123,10 @@ bridge (`/library/search`), and Settings → Library
 (git-ignored, pinned revision and checksums) and shipped as an extra
 resource; the app never downloads it.
 
-Added September 10, later: the onboarding (`docs/maties/onboarding.md`,
-the look in `docs/maties/design.md` section 10). Six screens a person sees
-once (`src/renderer/components/onboarding/`), replacing the upstream tour
-cards over the app and the « new user welcome task » conversation, which
-are removed. The three decisions land in the main process
-(`src/main/ipcHandlers/onboarding/`): the name becomes the main agent's
-row name (`agents`, id `main`), which the engine config reads as
-`identity.name`; the voice becomes a « Voice » section in the managed
-`AGENTS.md` of the main workspace (`src/main/libs/openclawVoicePrompt.ts`);
-the time zone (`app.timezone`) becomes `agents.defaults.userTimezone` in
-the engine config, the zone of the local-time hint sent with every turn,
-and the default zone of a new scheduled task. The contract is
-`src/shared/onboarding/constants.ts`. The assistant is a « Maty » in the
-copy; « Matey » is never written.
-
-With it, the connections catalogue (`src/shared/connections/catalog.ts`):
-the six ways to reach the assistant and sixty-five services in eleven
-groups, each card knowing whether it is an MCP server from Claidor's
-catalogue, a channel, the person's own browser, something already on the
-computer, or not wired yet (« Soon », with « Tell me when » remembered
-under `connections.wanted`). Shown in the onboarding and as the Connectors
-section of Skills & Connectors (`src/renderer/components/connections/`).
-The logos ship with the app under `public/logos/apps`: the founder's own
-files, and the brand marks written from the `simple-icons` package (CC0)
-by `scripts/fetch-app-logos.cjs`; nothing is fetched at run time.
-
-Added September 11 (`docs/maties/models-and-search.md`): **a second
-model supplier and web search.** The model list Claidor serves now
-carries GPT entries alongside the Claude ones, and the proxy routes on
-the provider each entry names — each side in its own wire format,
-Anthropic's `/v1/messages` and OpenAI's `/v1/chat/completions`, with no
-converter between them. This does **not** bring back the API-key screen
-retired above and never will: a person picks a model, the key is
-Claidor's and stays on Claidor's server. A supplier Claidor holds no key
-for is simply absent from the list.
-
-Web search is on, with DuckDuckGo (free, no key, no account): the
-provider is kept by `scripts/prune-openclaw-runtime.cjs`, declared and
-allowlisted in `openclawConfigSync.ts`, `web_search` is no longer denied,
-and the workspace instruction says search is available instead of telling
-the assistant not to ask for it. All four have to agree, or search fails
-silently. A build whose packaging lost the provider falls back to no
-search and the instruction says so.
-
 Not done yet: no Slack, Teams, WhatsApp or iMessage channel (the founder's
-plan lists them; the catalogue shows them as « Soon »). No integration
-service behind the apps with an API (« Soon » until the founder chooses
-one). No signed build, no release, no update feed. The account links on
-the web app open its home page because the web app has no account pages
-for the desktop yet.
+plan lists them; none is added). No signed build, no release, no update
+feed. The account links on the web app open its home page because the
+web app has no account pages for the desktop yet.
 
 ## Safety of the engine, unchanged from upstream
 

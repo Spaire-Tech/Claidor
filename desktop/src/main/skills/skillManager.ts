@@ -1671,7 +1671,7 @@ export class SkillManager {
       const skillDirs = listSkillDirs(root);
       skillDirs.forEach(dir => {
         const skillId = path.basename(dir);
-        if (skillId === ComputerUseSkillId.BuiltIn && !isComputerUseKitInstalled()) {
+        if (skillId === ComputerUseSkillId.BuiltIn && !isComputerUseKitInstalled(this.getStore())) {
           return;
         }
         const skill = this.parseSkillDir(dir, state, defaults, builtInSkillIds.has(skillId) || this.pluginSkillIds.has(skillId));

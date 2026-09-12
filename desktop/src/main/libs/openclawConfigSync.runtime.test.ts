@@ -23,9 +23,6 @@ vi.mock('electron', () => ({
 const mockRuntimeState = vi.hoisted(() => ({
   proxyPort: null as number | null,
   modelCompatPluginAvailable: true,
-  // The bundled DuckDuckGo search provider. Off by default so the
-  // existing expectations describe a build without search.
-  searchPluginAvailable: false,
   serverModels: [] as Array<{
     modelId: string;
     modelName?: string;
@@ -115,12 +112,7 @@ vi.mock('./openclawLocalExtensions', () => ({
     id !== 'qwen-portal-auth'
     && (id !== 'maties-model-compat' || mockRuntimeState.modelCompatPluginAvailable)
   ),
-  hasRuntimeBundledOpenClawExtension: (id: string) => (
-    id === 'xai'
-    || id === 'elevenlabs'
-    || id === 'memory-wiki'
-    || (id === 'duckduckgo' && mockRuntimeState.searchPluginAvailable)
-  ),
+  hasRuntimeBundledOpenClawExtension: (id: string) => id === 'xai',
   resolveOpenClawExtensionPluginId: (id: string) => {
     const manifestIds: Record<string, string> = {
       'clawemail-email': 'email',
@@ -143,7 +135,6 @@ describe('OpenClawConfigSync runtime config output', () => {
   beforeEach(() => {
     mockRuntimeState.proxyPort = null;
     mockRuntimeState.modelCompatPluginAvailable = true;
-    mockRuntimeState.searchPluginAvailable = false;
     mockRuntimeState.serverModels = [];
     mockRuntimeState.enabledProviders = [];
     mockRuntimeState.providerSourceEntries = [];
@@ -1735,203 +1726,6 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.agents.defaults.models).toBeUndefined();
   });
 
-  // --- The second model (docs/maties/models-and-search.md, section 2) ---
-
-  test('offers both providers through the one loopback proxy, each in its own wire format', async () => {
-    mockRuntimeState.proxyPort = 56646;
-    mockRuntimeState.serverModels = [
-      {
-        modelId: 'claude-sonnet-5',
-        modelName: 'Claude Sonnet 5',
-        provider: 'anthropic',
-        apiFormat: 'anthropic',
-        supportsImage: true,
-      },
-      {
-        modelId: 'gpt-5.6-terra',
-        modelName: 'GPT-5.6 Terra',
-        provider: 'openai',
-        apiFormat: 'openai',
-        supportsImage: true,
-        contextWindow: 1_050_000,
-      },
-      {
-        modelId: 'gpt-6-astra',
-        modelName: 'GPT-6 Astra',
-        provider: 'openai',
-        apiFormat: 'openai',
-        supportsImage: true,
-        contextWindow: 1_050_000,
-      },
-    ];
-
-    const sync = await createSync();
-    expect(sync.sync('two-providers')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const maties = config.models.providers['maties-server'];
-
-    // One provider, one address: the person's key never leaves Claidor,
-    // so both suppliers are reached through the same metered proxy.
-    expect(maties.baseUrl).toBe('http://127.0.0.1:56646/v1');
-
-    // The wire format follows the model, not the provider entry. Without
-    // the per-model `api` a GPT model would be sent down Anthropic's
-    // /v1/messages, which is the converter we deliberately did not build.
-    expect(Object.fromEntries(
-      maties.models.map((model: { id: string; api: string }) => [model.id, model.api]),
-    )).toEqual({
-      'claude-sonnet-5': 'anthropic-messages',
-      'gpt-5.6-terra': 'openai-completions',
-      'gpt-6-astra': 'openai-completions',
-    });
-  });
-
-  test('offers only the models the server lists, so an unconfigured key is a shorter menu', async () => {
-    mockRuntimeState.proxyPort = 56646;
-    mockRuntimeState.serverModels = [
-      {
-        modelId: 'claude-sonnet-5',
-        modelName: 'Claude Sonnet 5',
-        provider: 'anthropic',
-        apiFormat: 'anthropic',
-      },
-    ];
-
-    const sync = await createSync();
-    expect(sync.sync('anthropic-only')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const ids = config.models.providers['maties-server'].models
-      .map((model: { id: string }) => model.id);
-    expect(ids).toEqual(['claude-sonnet-5']);
-  });
-
-  // --- Search (docs/maties/models-and-search.md, section 3) ---
-
-  test('switches web_search on with DuckDuckGo when the provider is bundled', async () => {
-    mockRuntimeState.searchPluginAvailable = true;
-
-    const sync = await createSync();
-    expect(sync.sync('search-on')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // Three things have to agree or search fails silently.
-    expect(config.tools.deny).not.toContain('web_search');
-    expect(config.tools.web.search).toEqual({
-      enabled: true,
-      provider: 'duckduckgo',
-    });
-    expect(config.plugins.entries.duckduckgo).toEqual({ enabled: true });
-    // plugins.allow is a strict allowlist once non-empty — a bundled
-    // plugin missing from it never loads, and nothing says so.
-    expect(config.plugins.allow).toContain('duckduckgo');
-
-    const workspaceDir = path.join(stateDir, 'workspace-main');
-    const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
-    // The instruction must match the tools. Telling the assistant search
-    // is off while the tool is allowed reads as stupidity, not as a
-    // switched-off feature.
-    expect(agentsMd).toContain('Built-in `web_search` is available in this workspace');
-    expect(agentsMd).toContain('DuckDuckGo');
-    expect(agentsMd).not.toContain('Brave Search API');
-    expect(agentsMd).not.toContain('`web_search` is disabled');
-  });
-
-  test('leaves web_search off and says so when no search provider is bundled', async () => {
-    mockRuntimeState.searchPluginAvailable = false;
-
-    const sync = await createSync();
-    expect(sync.sync('search-off')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.tools.web.search).toEqual({ enabled: false });
-    expect(config.plugins.entries).not.toHaveProperty('duckduckgo');
-    expect(config.plugins.allow).not.toContain('duckduckgo');
-
-    const workspaceDir = path.join(stateDir, 'workspace-main');
-    const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('Built-in `web_search` is not available in this build');
-  });
-
-  // --- The voice (docs/maties/plan.md, step 1) ---
-
-  test('gives the voice a loopback address and no key', async () => {
-    mockRuntimeState.proxyPort = 45123;
-    const sync = await createSync();
-    expect(sync.sync('voice-on')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // The address is the whole arrangement. Point it anywhere else and
-    // the engine talks to ElevenLabs directly with a placeholder key,
-    // which reads as a broken account rather than a wiring mistake.
-    expect(config.talk.provider).toBe('elevenlabs');
-    expect(config.talk.providers.elevenlabs.baseUrl)
-      .toBe('http://127.0.0.1:45123/speech');
-    // Permitted, or the strict allowlist drops it and nothing says so.
-    expect(config.plugins.allow).toContain('elevenlabs');
-    expect(config.plugins.entries.elevenlabs).toEqual({ enabled: true });
-  });
-
-  test('offers no voice at all when there is no proxy to reach it through', async () => {
-    mockRuntimeState.proxyPort = null;
-    const sync = await createSync();
-    expect(sync.sync('voice-off')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // Absent, not empty: `talk.provider` must name a key in
-    // `talk.providers` or the whole config fails to validate. And a
-    // voice that is missing is recoverable, where one that claims to
-    // work and does not is the failure this file already has once.
-    expect(config.talk).toBeUndefined();
-    expect(config.plugins.allow).not.toContain('elevenlabs');
-  });
-
-  // --- The wiki (docs/maties/library.md) ---
-
-  test('leaves the wiki switched off until a gateway has been seen to load it', async () => {
-    // Held back on 12 September. It had been switched on without anyone
-    // watching a gateway load it, alongside an un-pruning that broke the
-    // browser; plugin loading is all-or-nothing, so a plugin that cannot
-    // activate takes every other plugin down with it.
-    const sync = await createSync();
-    expect(sync.sync('wiki-off')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.plugins.entries).not.toHaveProperty('memory-wiki');
-    expect(config.plugins.allow).not.toContain('memory-wiki');
-    // The rule that outlives the switch: whenever it does come back, it
-    // comes back in the mode that cannot read the person's disk.
-    expect(JSON.stringify(config)).not.toContain('unsafe-local');
-  });
-
-  test.skip('permits the wiki, pinned to the vault mode that reads nothing else', async () => {
-    const sync = await createSync();
-    expect(sync.sync('wiki-on')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // Both lines are required. The plugin ships in the build and was dead
-    // twice over: no entry, and absent from the strict allowlist, so the
-    // engine never loaded it and nothing said so.
-    //
-    // The exact shape matters as much as the values. A plugin entry is
-    // validated by a strict schema knowing only enabled/hooks/subagent/
-    // llm/config, nested inside the strict schema for the whole config
-    // file — so settings belong under `config`, and a stray key at the top
-    // does not fail the wiki, it fails the config.
-    expect(config.plugins.entries['memory-wiki']).toEqual({
-      enabled: true,
-      config: { vaultMode: 'isolated' },
-    });
-    expect(config.plugins.allow).toContain('memory-wiki');
-
-    // The one mode this product must never enable: it reads anywhere on
-    // the person's disk and its own authors mark it experimental. Naming
-    // the mode above is what stops it arriving later as somebody's
-    // default, and this assertion is what keeps it named.
-    expect(JSON.stringify(config)).not.toContain('unsafe-local');
-  });
-
   test('declares and allowlists the bundled xai plugin so its compat hooks load', async () => {
     const sync = await createSync();
 
@@ -2839,32 +2633,6 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.plugins.entries['search-library']).toEqual({ enabled: true });
   });
 
-  test('tells the assistant to replace an approach that failed, not repeat it', async () => {
-    const sync = await createSync();
-    expect(sync.sync('changed-approach-prompt').ok).toBe(true);
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## When A Step Fails');
-    expect(agentsMd).toContain('An approach that has failed is replaced, not repeated.');
-    expect(agentsMd).toContain('Never report a step as done when it did not do what it set out to do.');
-  });
-
-  test('offers the sign-in instead of a lecture when a connected app is asked for visually', async () => {
-    const sync = await createSync();
-    expect(sync.sync('connected-app-prompt').ok).toBe(true);
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## Seeing A Connected App');
-    // The false success is the worse of the two faults, because it cannot
-    // be seen: the sign-in page is never reported as a finished step.
-    expect(agentsMd).toContain('Do not report the step as done');
-    expect(agentsMd).toContain('sign in once in the Maties browser window');
-    // And no lecture: the words the founder was given are named and banned.
-    expect(agentsMd).toContain('do not use the words "API", "OAuth", "authentication flow" or "browser login flow"');
-    // It follows the browser policy it qualifies.
-    expect(agentsMd.indexOf('## Seeing A Connected App')).toBeGreaterThan(agentsMd.indexOf('## Browser Policy'));
-  });
-
   test('enables managed OpenClaw tool loop detection', async () => {
     const sync = await createSync();
 
@@ -2875,8 +2643,8 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.loopDetection).toEqual({
       enabled: true,
       historySize: 48,
-      warningThreshold: 3,
-      unknownToolThreshold: 3,
+      warningThreshold: 6,
+      unknownToolThreshold: 6,
       criticalThreshold: 10,
       globalCircuitBreakerThreshold: 30,
       detectors: {
@@ -2885,87 +2653,6 @@ describe('OpenClawConfigSync runtime config output', () => {
         pingPong: true,
       },
     });
-  });
-
-  test('renders the main agent under its stored row name and the chosen voice in AGENTS.md', async () => {
-    const { AssistantVoice } = await import('../../shared/onboarding/constants');
-    const { ASSISTANT_VOICE_INSTRUCTIONS } = await import('./openclawVoicePrompt');
-    const sync = await createSync({
-      getOnboardingProfile: () => ({
-        assistantName: 'Juno',
-        voice: AssistantVoice.Warm,
-        timezone: 'Europe/Paris',
-      }),
-      getAgents: () => [
-        {
-          id: 'main',
-          name: 'Juno',
-          description: '',
-          systemPrompt: '',
-          identity: '',
-          model: '',
-          workingDirectory: '',
-          icon: '',
-          skillIds: [],
-          enabled: true,
-          isDefault: true,
-          source: 'custom',
-          presetId: '',
-          createdAt: 1,
-          updatedAt: 1,
-        },
-      ],
-    });
-
-    const result = sync.sync('onboarding-profile');
-    expect(result.ok).toBe(true);
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const mainEntry = config.agents.list.find((entry: { id?: string }) => entry.id === 'main');
-    expect(mainEntry.identity).toEqual({ name: 'Juno' });
-    expect(config.agents.defaults.userTimezone).toBe('Europe/Paris');
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## Voice');
-    expect(agentsMd).toContain(ASSISTANT_VOICE_INSTRUCTIONS[AssistantVoice.Warm]);
-    expect(agentsMd).not.toContain(ASSISTANT_VOICE_INSTRUCTIONS[AssistantVoice.Concise]);
-    // The voice comes before the policies, right where the system prompt would be.
-    expect(agentsMd.indexOf('## Voice')).toBeLessThan(agentsMd.indexOf('## Web Search'));
-  });
-
-  test('uses the stored assistant name for the main agent when it has no row yet', async () => {
-    const { AssistantVoice } = await import('../../shared/onboarding/constants');
-    const sync = await createSync({
-      getOnboardingProfile: () => ({
-        assistantName: 'Marlow',
-        voice: AssistantVoice.Direct,
-        timezone: 'UTC',
-      }),
-      getAgents: () => [],
-    });
-
-    const result = sync.sync('onboarding-profile-no-row');
-    expect(result.ok).toBe(true);
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const mainEntry = config.agents.list.find((entry: { id?: string }) => entry.id === 'main');
-    expect(mainEntry.identity).toEqual({ name: 'Marlow' });
-    expect(mainEntry.default).toBe(true);
-  });
-
-  test('renders the default voice and no user time zone before onboarding', async () => {
-    const { DEFAULT_ASSISTANT_VOICE } = await import('../../shared/onboarding/constants');
-    const { ASSISTANT_VOICE_INSTRUCTIONS } = await import('./openclawVoicePrompt');
-    const sync = await createSync();
-
-    const result = sync.sync('onboarding-defaults');
-    expect(result.ok).toBe(true);
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.agents.defaults).not.toHaveProperty('userTimezone');
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain(ASSISTANT_VOICE_INSTRUCTIONS[DEFAULT_ASSISTANT_VOICE]);
   });
 
   test('writes browser and web fetch access settings', async () => {
@@ -3163,42 +2850,6 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(leaveInAppResult.ok).toBe(true);
     const leaveInAppConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(leaveInAppConfig.mcp).toBeUndefined();
-  });
-
-  // The founder's Mac, 12 September: Settings read "Built-in browser", the
-  // generated config read the in-app profile, and the engine drove its own
-  // Chromium anyway. This is that sequence.
-  test('asks for a restart when the browser profile changes, or the in-app browser never arrives', async () => {
-    const { OpenClawConfigImpact } = await import('./openclawConfigImpact');
-    const { BrowserDisplayMode, BrowserRuntimeProfile } = await import(
-      '../../shared/browserWebAccess/constants'
-    );
-    // The bridge has no port yet, which is the real state of the app for the
-    // first seconds after launch.
-    let browserCallbackUrl: string | null = null;
-    const sync = await createSync({
-      getBrowserWebAccessConfig: () => ({ displayMode: BrowserDisplayMode.InApp }),
-      getBrowserCallbackUrl: () => browserCallbackUrl,
-      getLobsterBrowserMcpCommand: () => '/tmp/lobster-browser-mcp',
-    });
-
-    const beforeBridge = sync.sync('browser-bridge-not-ready');
-    expect(beforeBridge.ok).toBe(true);
-    const externalConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // In-app was asked for and could not be given: the engine gets the
-    // external browser, and this is the state the gateway starts on.
-    expect(externalConfig.browser.defaultProfile).not.toBe(BrowserRuntimeProfile.InApp);
-
-    // The bridge comes up a second or two later and the next sync corrects
-    // the file. Correcting the file is not enough on its own.
-    browserCallbackUrl = 'http://127.0.0.1:58260/browser/tool';
-    const afterBridge = sync.sync('browser-bridge-ready');
-    expect(afterBridge.ok).toBe(true);
-    const inAppConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(inAppConfig.browser.defaultProfile).toBe(BrowserRuntimeProfile.InApp);
-    // Without this the gateway keeps the profile it booted with, and the
-    // built-in browser panel never receives a page.
-    expect(afterBridge.restartImpact).toBe(OpenClawConfigImpact.Restart);
   });
 
   test('marks MCP server config changes as restart impact', async () => {

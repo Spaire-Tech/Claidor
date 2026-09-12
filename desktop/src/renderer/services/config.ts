@@ -192,9 +192,10 @@ const normalizeProvidersConfig = (providers: AppConfig['providers']): AppConfig[
 
 const legacyShortcutDefaults: Partial<Record<ShortcutAction, string[]>> = {
   [ShortcutAction.NewChat]: ['Ctrl+N'],
-  [ShortcutAction.Search]: ['Ctrl+K'],
+  [ShortcutAction.Search]: ['Ctrl+F'],
   [ShortcutAction.Settings]: ['Ctrl+,'],
-  [ShortcutAction.FocusPrompt]: ['Ctrl+L'],
+  [ShortcutAction.ShowShortcuts]: ['Ctrl+/'],
+  [ShortcutAction.FocusPrompt]: ['Ctrl+K'],
   [ShortcutAction.StopCurrentTask]: ['Ctrl+.'],
   [ShortcutAction.ToggleSidebar]: ['Ctrl+B'],
   [ShortcutAction.ToggleArtifacts]: ['Ctrl+Shift+B'],
@@ -212,7 +213,7 @@ const legacyShortcutDefaults: Partial<Record<ShortcutAction, string[]>> = {
   [ShortcutAction.OpenAgentTask9]: ['Ctrl+Alt+9', 'CommandOrControl+Shift+9'],
   [ShortcutAction.OpenCowork]: ['Ctrl+1'],
   [ShortcutAction.OpenScheduledTasks]: ['Ctrl+2'],
-  [ShortcutAction.OpenLibrary]: ['Ctrl+3'],
+  [ShortcutAction.OpenKits]: ['Ctrl+3'],
   [ShortcutAction.OpenSkills]: ['Ctrl+4'],
   [ShortcutAction.OpenMcp]: ['Ctrl+5'],
 };

@@ -394,17 +394,10 @@ function translateIMError(error: string | null): string {
   return error;
 }
 
-interface IMSettingsProps {
-  /** The platform to open first, when a connection card asked for one. */
-  initialPlatform?: Platform;
-  /** Changes with each request, so the same platform can be asked for twice. */
-  initialPlatformRequestId?: number;
-}
-
-const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatformRequestId }) => {
+const IMSettings: React.FC = () => {
   const dispatch = useDispatch();
   const { config, status, isLoading } = useSelector((state: RootState) => state.im);
-  const [activePlatform, setActivePlatform] = useState<Platform>(initialPlatform ?? 'weixin');
+  const [activePlatform, setActivePlatform] = useState<Platform>('weixin');
   const [activeQQInstanceId, setActiveQQInstanceId] = useState<string | null>(null);
   const [activeFeishuInstanceId, setActiveFeishuInstanceId] = useState<string | null>(null);
   const [activeDingTalkInstanceId, setActiveDingTalkInstanceId] = useState<string | null>(null);
@@ -1067,13 +1060,6 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
     }
   }, [platforms, activePlatform]);
 
-  // A connection card asked for one platform: show it, also when the tab is already open.
-  useEffect(() => {
-    if (initialPlatform && platforms.includes(initialPlatform)) {
-      setActivePlatform(initialPlatform);
-    }
-  }, [initialPlatform, initialPlatformRequestId, platforms]);
-
   // Check if platform can be started
   const canStart = (platform: Platform): boolean => {
     if (platform === 'dingtalk') {
@@ -1201,7 +1187,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
     if (displayState === IMRuntimeDisplayState.Connecting || displayState === IMRuntimeDisplayState.Starting) return 'bg-sky-500';
     if (displayState === IMRuntimeDisplayState.Failed) return 'bg-red-500';
     if (displayState === IMRuntimeDisplayState.PendingSave) return 'bg-yellow-500';
-    return 'bg-[#d9dbe0] dark:bg-[#3a3f48]';
+    return 'bg-gray-300 dark:bg-gray-600';
   };
 
   const getPlatformStatusDotClass = (platform: Platform): string | null => {
@@ -1859,7 +1845,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
         className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
           instance.enabled
             ? (connected ? 'bg-green-500' : 'bg-yellow-500')
-            : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
+            : 'bg-gray-300 dark:bg-gray-600'
         } ${canEnable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
         aria-label={instance.enabled ? i18nService.t('stop') : i18nService.t('start')}
       >
@@ -2131,7 +2117,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
               {!isMultiInstancePlatform(platform) && (
                 <span
                   className={`ml-2 flex h-4 w-7 flex-shrink-0 items-center rounded-full transition-colors ${
-                    isEnabled ? getPlatformSwitchColorClass(platform) : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
+                    isEnabled ? getPlatformSwitchColorClass(platform) : 'bg-gray-300 dark:bg-gray-600'
                   } ${(!canToggle || togglingPlatform === platform) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                   onClick={(event) => {
                     event.stopPropagation();

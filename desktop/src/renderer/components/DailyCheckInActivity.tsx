@@ -424,12 +424,7 @@ const useDailyCheckInEntryController = ({
   };
 };
 
-// The design (docs/maties/design.md) has no place for a daily check-in: the
-// header entry renders nothing where CoworkView mounts it. The retired entry
-// stays below as a record.
-export const DailyCheckInHeaderEntry: React.FC<DailyCheckInHeaderEntryProps> = () => null;
-
-export const RetiredDailyCheckInHeaderEntry: React.FC<
+export const DailyCheckInHeaderEntry: React.FC<
   DailyCheckInHeaderEntryProps
 > = ({ enabled = true, suppressed = false }) => {
   const {

@@ -1,9 +1,11 @@
+import { FolderIcon } from '@heroicons/react/24/solid';
 import React, { useEffect, useState } from 'react';
 
 import { i18nService } from '../../services/i18n';
 import type { DraftAttachment } from '../../store/slices/coworkSlice';
-import FileIcon from '../design/FileIcon';
-import { CloseLineIcon, FolderLineIcon } from '../design/LineIcons';
+import FileTypeIcon from '../icons/fileTypes/FileTypeIcon';
+import { getFileTypeInfo, ImageFileIcon } from '../icons/fileTypes/index';
+import XMarkIcon from '../icons/XMarkIcon';
 import ImagePreviewModal, { type ImagePreviewSource } from './ImagePreviewModal';
 
 interface AttachmentCardProps {
@@ -13,43 +15,34 @@ interface AttachmentCardProps {
 }
 
 /**
- * An attached file as the design draws it (docs/maties/design.md, section
- * 4): a chip above the text with the file's icon and an × on hover. An
- * image shows a small thumbnail in place of the icon and opens on click.
+ * Renders a single attachment as a card.
+ * - Image attachments: fixed thumbnail with a clear media mention label
+ * - Non-image attachments: horizontal card with file-type icon + name + type label
  */
-export const ATTACHMENT_CHIP_CLASS_NAME =
-  'group relative inline-flex h-8 max-w-[260px] items-center gap-[7px] rounded-full border border-[#e2e1de] bg-[#fbfbfa] pl-[7px] pr-[26px] text-[13.5px] tracking-[-.006em] text-[#31353b]';
-
-const RemoveButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="absolute right-[6px] top-1/2 flex h-[18px] w-[18px] -translate-y-1/2 items-center justify-center rounded-full text-[#a2a29c] opacity-0 transition-opacity hover:bg-[rgba(16,20,28,.06)] hover:text-[#1c1f23] focus-visible:opacity-100 group-hover:opacity-100"
-    aria-label={i18nService.t('coworkAttachmentRemove')}
-    title={i18nService.t('coworkAttachmentRemove')}
-  >
-    <CloseLineIcon size={10} />
-  </button>
-);
-
 const AttachmentCard: React.FC<AttachmentCardProps> = ({ attachment, onRemove, label }) => {
   if (attachment.isImage) {
-    return <ImageChip attachment={attachment} onRemove={onRemove} label={label} />;
+    return <ImageCard attachment={attachment} onRemove={onRemove} label={label} />;
   }
-  return <FileChip attachment={attachment} onRemove={onRemove} label={label} />;
+  return <FileCard attachment={attachment} onRemove={onRemove} label={label} />;
 };
 
-const ImageChip: React.FC<AttachmentCardProps> = ({ attachment, onRemove, label }) => {
+// ── Image thumbnail card ──────────────────────────────────────────
+
+const ImageCard: React.FC<AttachmentCardProps> = ({ attachment, onRemove, label }) => {
   const [thumbUrl, setThumbUrl] = useState<string | null>(attachment.dataUrl ?? null);
   const [imgError, setImgError] = useState(false);
+  const [loading, setLoading] = useState(!attachment.dataUrl);
   const [preview, setPreview] = useState<ImagePreviewSource | null>(null);
 
+  // If no dataUrl, try loading via IPC
   useEffect(() => {
     if (attachment.dataUrl) {
       setThumbUrl(attachment.dataUrl);
+      setLoading(false);
       return;
     }
     if (!attachment.path || attachment.path.startsWith('inline:')) {
+      setLoading(false);
       return;
     }
     let cancelled = false;
@@ -60,53 +53,104 @@ const ImageChip: React.FC<AttachmentCardProps> = ({ attachment, onRemove, label 
           setThumbUrl(result.dataUrl);
         }
       } catch {
-        // The chip falls back to the file icon.
+        // ignore – will show fallback icon
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
   }, [attachment.dataUrl, attachment.path]);
 
-  const hasThumb = Boolean(thumbUrl) && !imgError;
-  const displayName = label ? `${label} · ${attachment.name}` : attachment.name;
+  const showFallback = imgError || (!thumbUrl && !loading);
 
   return (
-    <div className={ATTACHMENT_CHIP_CLASS_NAME} title={attachment.path}>
-      {hasThumb ? (
-        <button
-          type="button"
-          className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden rounded-[6px]"
-          onClick={() => setPreview({ src: thumbUrl!, name: attachment.name, alt: attachment.name })}
-          aria-label={attachment.name}
-        >
-          <img
-            src={thumbUrl!}
-            alt=""
-            className="h-full w-full object-cover"
-            onError={() => setImgError(true)}
-            draggable={false}
-          />
-        </button>
+    <div
+      className="group relative h-[72px] w-[72px] flex-shrink-0"
+      title={attachment.path}
+    >
+      {/* Thumbnail or fallback */}
+      {loading ? (
+        <div className="flex h-full w-full items-center justify-center rounded-md border border-border bg-background shadow-subtle">
+          <ImageFileIcon className="h-6 w-6 text-blue-400 animate-pulse" />
+        </div>
+      ) : showFallback ? (
+        <div className="flex h-full w-full items-center justify-center rounded-md border border-border bg-background shadow-subtle">
+          <ImageFileIcon className="h-6 w-6 text-blue-400" />
+        </div>
       ) : (
-        <FileIcon fileName={attachment.name} size={20} />
+        <img
+          src={thumbUrl!}
+          alt={attachment.name}
+          className="h-full w-full cursor-pointer rounded-md border border-border object-cover shadow-subtle"
+          onError={() => setImgError(true)}
+          onClick={() => setPreview({ src: thumbUrl!, name: attachment.name, alt: attachment.name })}
+          draggable={false}
+        />
       )}
-      <span className="min-w-0 truncate">{displayName}</span>
-      <RemoveButton onClick={() => onRemove(attachment.path)} />
+
+      {/* Media label badge — bottom */}
+      {label && (
+        <div className="absolute inset-x-0 bottom-0 flex h-5 items-center justify-center border-t border-white/45 bg-neutral-300/60 px-1.5 backdrop-blur-md">
+          <span className="text-[10px] font-semibold leading-none text-white drop-shadow-sm">{label}</span>
+        </div>
+      )}
+
+      {/* Delete button — top-right */}
+      <button
+        type="button"
+        onClick={() => onRemove(attachment.path)}
+        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-950 text-white shadow-subtle hover:bg-neutral-800"
+        aria-label={i18nService.t('coworkAttachmentRemove')}
+        title={i18nService.t('coworkAttachmentRemove')}
+      >
+        <XMarkIcon className="h-2.5 w-2.5" />
+      </button>
+
       <ImagePreviewModal image={preview} onClose={() => setPreview(null)} />
     </div>
   );
 };
 
-const FileChip: React.FC<AttachmentCardProps> = ({ attachment, onRemove, label }) => {
-  const displayName = label ? `${label} · ${attachment.name}` : attachment.name;
+// ── Non-image file card ───────────────────────────────────────────
+
+const FileCard: React.FC<AttachmentCardProps> = ({ attachment, onRemove, label }) => {
+  const { label: typeLabel } = getFileTypeInfo(attachment.name);
+  const displayTypeLabel = attachment.isDirectory ? i18nService.t('folderAttachmentType') : typeLabel;
+
   return (
-    <div className={ATTACHMENT_CHIP_CLASS_NAME} title={attachment.path}>
-      {attachment.isDirectory ? (
-        <FolderLineIcon size={18} className="text-[#4a4f57]" />
-      ) : (
-        <FileIcon fileName={attachment.name} size={20} />
-      )}
-      <span className="min-w-0 truncate">{displayName}</span>
-      <RemoveButton onClick={() => onRemove(attachment.path)} />
+    <div
+      className="group relative flex h-[68px] w-[220px] flex-shrink-0 items-center gap-3 rounded-xl border border-border bg-background px-3 shadow-subtle dark:bg-surface"
+      title={attachment.path}
+    >
+      {/* File type icon */}
+      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-black/[0.04] dark:bg-white/[0.08]">
+        {attachment.isDirectory ? (
+          <FolderIcon className="h-7 w-7 flex-shrink-0 text-amber-500" />
+        ) : (
+          <FileTypeIcon fileName={attachment.name} className="h-7 w-7 flex-shrink-0" />
+        )}
+      </div>
+
+      {/* File name + type label */}
+      <div className="flex min-w-0 flex-1 flex-col justify-center pr-4">
+        <span className="truncate text-sm font-medium text-foreground">
+          {label ? `${label} · ${attachment.name}` : attachment.name}
+        </span>
+        <span className="mt-0.5 text-xs text-secondary">
+          {displayTypeLabel}
+        </span>
+      </div>
+
+      {/* Delete button — top-right */}
+      <button
+        type="button"
+        onClick={() => onRemove(attachment.path)}
+        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-950 text-white shadow-subtle hover:bg-neutral-800"
+        aria-label={i18nService.t('coworkAttachmentRemove')}
+        title={i18nService.t('coworkAttachmentRemove')}
+      >
+        <XMarkIcon className="h-2.5 w-2.5" />
+      </button>
     </div>
   );
 };

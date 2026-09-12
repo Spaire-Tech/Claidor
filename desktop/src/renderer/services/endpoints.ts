@@ -23,8 +23,6 @@ const getPortalBase = () => (isTestModeEnabled() ? CLAIDOR_DEV_APP_BASE_URL : CL
 export const getFallbackDownloadUrl = () => `${getPortalBase()}/desktop`;
 
 export const PortalPricingKeyfrom = {
-  /** The price card of a connection (docs/maties/connectors.md, section 1). */
-  Connectors: 'connectors',
   HtmlShare: 'html_share',
   SiteDeployment: 'site_deployment',
 } as const;
@@ -39,9 +37,6 @@ export interface PortalPricingUrlOptions {
 // Claidor's web app has one account area today. Every account link below
 // opens it; the query parameters are kept so the web app can route later.
 export const getPortalLoginUrl = () => `${getPortalBase()}/login`;
-/** The terms and the privacy policy, linked from the welcome screen and the onboarding footer. */
-export const getPortalTermsUrl = () => `${getPortalBase()}/terms`;
-export const getPortalPrivacyUrl = () => `${getPortalBase()}/privacy`;
 export const getPortalPricingUrl = (
   keyfrom?: PortalPricingKeyfrom,
   options: PortalPricingUrlOptions = {},

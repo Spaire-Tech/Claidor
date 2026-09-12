@@ -1,3 +1,4 @@
+import type { InstalledKitRecord } from '../../shared/kit/constants';
 import { SkinToolName } from '../../shared/skin/constants';
 import type { MediaSelectionState } from '../mediaGenerationPolicy';
 import { SkinMediaBridge } from './skinMediaBridge';
@@ -11,7 +12,7 @@ import {
 
 export interface SkinRuntimeControllerOptions {
   rootDir: string;
-  isSkinSkillEnabled: () => boolean;
+  getInstalledKits: () => Record<string, InstalledKitRecord>;
   getParentSessionId: (sessionId: string) => string | null;
   resolveSessionId: (sessionKey: string) => string | null;
   resolveMediaSelection: (sessionId: string | null) => MediaSelectionState | undefined;
@@ -26,7 +27,7 @@ export class SkinRuntimeController {
   constructor(options: SkinRuntimeControllerOptions) {
     this.store = new SkinStore({ rootDir: options.rootDir });
     this.workflowRegistry = new SkinWorkflowRegistry({
-      isSkinSkillEnabled: options.isSkinSkillEnabled,
+      getInstalledKits: options.getInstalledKits,
       getParentSessionId: options.getParentSessionId,
     });
     this.mediaBridge = new SkinMediaBridge({

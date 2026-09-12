@@ -4,7 +4,7 @@ import { DeliveryMode, PayloadKind, ScheduleKind, SessionTarget, WakeMode } from
 import type { ScheduledTask, ScheduledTaskChannelOption } from '../../../scheduledTask/types';
 import { i18nService } from '../../services/i18n';
 import { getScheduleAnalyticsParams } from './analytics';
-import { buildScheduleInput, createScheduledTaskFormState } from './TaskForm';
+import { createScheduledTaskFormState } from './TaskForm';
 import {
   SCHEDULED_TASK_TEMPLATES,
   ScheduledTaskTemplateId,
@@ -102,37 +102,6 @@ describe('createScheduledTaskFormState', () => {
     expect(form.minute).toBe(30);
     expect(form.weekdays).toEqual([1, 2, 3, 4, 5]);
     expect(form.modelId).toBe(fallbackModelRef);
-  });
-
-  test('schedules a new task in the chosen time zone by default', () => {
-    const form = createScheduledTaskFormState(undefined, fallbackModelRef, null, 'Europe/Paris');
-
-    expect(form.cronTz).toBe('Europe/Paris');
-    expect(buildScheduleInput(form)).toEqual({ kind: ScheduleKind.Cron, expr: '0 9 * * *', tz: 'Europe/Paris' });
-  });
-
-  test('keeps the chosen time zone when a template is applied', () => {
-    const template = SCHEDULED_TASK_TEMPLATES.find(
-      item => item.id === ScheduledTaskTemplateId.TechBriefing,
-    );
-
-    const form = createScheduledTaskFormState(undefined, fallbackModelRef, template, 'Asia/Tokyo');
-
-    expect(form.cronTz).toBe('Asia/Tokyo');
-  });
-
-  test('leaves an existing task in the zone it was saved with', () => {
-    const withoutZone = createScheduledTaskFormState(makeTask(), fallbackModelRef, null, 'Europe/Paris');
-    expect(withoutZone.cronTz).toBe('');
-    expect(buildScheduleInput(withoutZone)).toEqual({ kind: ScheduleKind.Cron, expr: '0 9 * * *' });
-
-    const withZone = createScheduledTaskFormState(
-      makeTask({ schedule: { kind: ScheduleKind.Cron, expr: '0 9 * * *', tz: 'America/New_York' } }),
-      fallbackModelRef,
-      null,
-      'Europe/Paris',
-    );
-    expect(withZone.cronTz).toBe('America/New_York');
   });
 });
 

@@ -22,8 +22,8 @@ const ScheduledTaskTemplatePickerModal: React.FC<ScheduledTaskTemplatePickerModa
     <Modal
       isOpen
       onClose={onClose}
-      overlayClassName="maties-backdrop fixed inset-0 z-[60] flex items-center justify-center"
-      className="maties-card-prose maties-in flex max-h-[82vh] w-[calc(100vw-56px)] max-w-[820px] flex-col overflow-hidden"
+      overlayClassName="fixed inset-0 z-[60] flex items-center justify-center bg-black/10 dark:bg-black/50"
+      className="w-[calc(100vw-56px)] max-w-[820px] max-h-[82vh] rounded-xl border border-surface bg-surface shadow-[0_12px_40px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col"
     >
       <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-4">
         <div className="min-w-0">

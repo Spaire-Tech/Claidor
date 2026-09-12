@@ -39,7 +39,6 @@ const makeAgent = (
   icon: '',
   enabled: true,
   pinned: false,
-  taskCount: tasks.length,
   isExpanded: false,
   isTaskListExpanded: true,
   canExpandTasks: true,

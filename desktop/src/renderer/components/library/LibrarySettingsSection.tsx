@@ -7,9 +7,6 @@ import {
   type LibraryContentStatus,
 } from '../../../shared/library/contentConstants';
 import { i18nService } from '../../services/i18n';
-import Eyebrow from '../design/Eyebrow';
-import Switch from '../design/Switch';
-import { announceSettingsSaved } from '../settings/settingsSavedSignal';
 import {
   describeLibraryCloudOnly,
   describeLibraryDocuments,
@@ -23,7 +20,6 @@ import {
  * A switch, the folders being indexed, the kinds of files read, a status
  * line, and Pause / Rebuild. Everything is built on this computer; this
  * screen only talks to the main process over `window.electron.libraryContent`.
- * The tab saves on change and says so through the sheet's « Saved ».
  */
 
 const RELATIVE_TIME_TICK_MS = 30_000;
@@ -36,15 +32,18 @@ const LibrarySettingsBusy = {
 } as const;
 type LibrarySettingsBusy = typeof LibrarySettingsBusy[keyof typeof LibrarySettingsBusy];
 
+// The small building blocks below mirror MatiesAccountSection so the two
+// screens look the same; they are kept local on purpose.
+
 const SectionCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="space-y-2.5">
-    <Eyebrow className="px-1">{title}</Eyebrow>
-    <div className="maties-card-row maties-divide">{children}</div>
+    <h4 className="px-1 text-xs font-semibold uppercase tracking-wider text-secondary">{title}</h4>
+    <div className="divide-y divide-border rounded-xl border border-border bg-surface">{children}</div>
   </section>
 );
 
 const Row: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="px-5 py-4">{children}</div>
+  <div className="px-4 py-3.5">{children}</div>
 );
 
 const PrimaryButton: React.FC<{
@@ -52,7 +51,12 @@ const PrimaryButton: React.FC<{
   disabled?: boolean;
   children: React.ReactNode;
 }> = ({ onClick, disabled, children }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="maties-pill-sm is-primary">
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className="rounded-lg bg-claude-accent px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-claude-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+  >
     {children}
   </button>
 );
@@ -62,8 +66,45 @@ const SecondaryButton: React.FC<{
   disabled?: boolean;
   children: React.ReactNode;
 }> = ({ onClick, disabled, children }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="maties-pill-sm">
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className="rounded-lg border border-border bg-transparent px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+  >
     {children}
+  </button>
+);
+
+// Same look as the SettingsSwitch inside Settings.tsx, which is not exported.
+const Switch: React.FC<{
+  checked: boolean;
+  label: string;
+  disabled?: boolean;
+  onClick: () => void | Promise<void>;
+}> = ({ checked, label, disabled, onClick }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={label}
+    onClick={() => {
+      void onClick();
+    }}
+    disabled={disabled}
+    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+      disabled ? 'opacity-50 cursor-not-allowed' : ''
+    } ${
+      checked
+        ? 'bg-primary'
+        : 'bg-gray-300 dark:bg-gray-600'
+    }`}
+  >
+    <span
+      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+        checked ? 'translate-x-6' : 'translate-x-1'
+      }`}
+    />
   </button>
 );
 
@@ -74,13 +115,13 @@ const FolderList: React.FC<{
   onRemove: (folder: string) => void;
 }> = ({ folders, emptyText, disabled, onRemove }) => {
   if (folders.length === 0) {
-    return <p className="maties-caption">{emptyText}</p>;
+    return <p className="text-sm text-secondary">{emptyText}</p>;
   }
   return (
     <ul className="space-y-2">
       {folders.map((folder) => (
         <li key={folder} className="flex items-center justify-between gap-4">
-          <span className="maties-mono min-w-0 truncate text-[12.5px] text-[#1c1f23] dark:text-[#f2f3f5]" title={folder}>{folder}</span>
+          <span className="min-w-0 truncate text-sm text-foreground" title={folder}>{folder}</span>
           <SecondaryButton onClick={() => onRemove(folder)} disabled={disabled}>
             {i18nService.t('librarySettingsRemove')}
           </SecondaryButton>
@@ -143,7 +184,6 @@ const LibrarySettingsSection: React.FC = () => {
     try {
       const next = await api.setConfig(update);
       setConfig(next);
-      announceSettingsSaved();
     } catch (error) {
       console.warn('[LibrarySettings] failed to save the library settings:', error);
       setNotice(t('librarySettingsSaveFailed'));
@@ -217,7 +257,7 @@ const LibrarySettingsSection: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <p className="maties-subtitle">{t('librarySettingsLoading')}</p>;
+    return <p className="text-sm text-secondary">{t('librarySettingsLoading')}</p>;
   }
 
   const enabled = config?.enabled ?? false;
@@ -232,26 +272,26 @@ const LibrarySettingsSection: React.FC = () => {
     <div className="space-y-8">
       <SectionCard title={t('librarySettingsTitle')}>
         <Row>
-          <div className="flex items-center justify-between gap-6">
+          <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="maties-row-title">{t('librarySettingsSwitchLabel')}</p>
-              <p className="maties-row-desc">{t('librarySettingsSwitchDesc')}</p>
+              <p className="text-sm font-medium text-foreground">{t('librarySettingsSwitchLabel')}</p>
+              <p className="mt-0.5 text-xs text-secondary">{t('librarySettingsSwitchDesc')}</p>
             </div>
             <Switch
               checked={enabled}
               label={t('librarySettingsSwitchLabel')}
               disabled={!config || busy !== null}
-              onChange={handleToggle}
+              onClick={handleToggle}
             />
           </div>
-          {notice && <p className="maties-caption mt-2">{notice}</p>}
+          {notice && <p className="mt-2 text-xs text-secondary">{notice}</p>}
         </Row>
       </SectionCard>
 
       <div className={`space-y-8 transition-opacity ${enabled ? '' : 'opacity-50'}`}>
         <SectionCard title={t('librarySettingsFoldersTitle')}>
           <Row>
-            <p className="maties-row-desc mb-3 mt-0">{t('librarySettingsFoldersDesc')}</p>
+            <p className="mb-3 text-xs text-secondary">{t('librarySettingsFoldersDesc')}</p>
             <FolderList
               folders={folders}
               emptyText={t('librarySettingsFoldersEmpty')}
@@ -268,8 +308,8 @@ const LibrarySettingsSection: React.FC = () => {
             </div>
           </Row>
           <Row>
-            <p className="maties-row-title">{t('librarySettingsSkippedTitle')}</p>
-            <p className="maties-row-desc mb-3">{t('librarySettingsSkippedDesc')}</p>
+            <p className="text-sm font-medium text-foreground">{t('librarySettingsSkippedTitle')}</p>
+            <p className="mb-3 mt-0.5 text-xs text-secondary">{t('librarySettingsSkippedDesc')}</p>
             <FolderList
               folders={excludedFolders}
               emptyText={t('librarySettingsSkippedEmpty')}
@@ -289,24 +329,24 @@ const LibrarySettingsSection: React.FC = () => {
 
         <SectionCard title={t('librarySettingsWhatIsReadTitle')}>
           <Row>
-            <p className="maties-row-desc mt-0">{t('librarySettingsWhatIsRead')}</p>
+            <p className="text-sm text-secondary">{t('librarySettingsWhatIsRead')}</p>
           </Row>
         </SectionCard>
 
         <SectionCard title={t('librarySettingsStatusTitle')}>
           <Row>
-            <div className="flex items-center justify-between gap-6">
+            <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <p className="maties-row-title">
+                <p className="text-sm font-medium text-foreground">
                   {status ? describeLibraryPhase(status, t) : t('librarySettingsPhaseOff')}
                 </p>
                 {status && (
-                  <p className="maties-row-desc">
+                  <p className="mt-0.5 text-xs text-secondary">
                     {describeLibraryDocuments(status, now, t)}
                   </p>
                 )}
-                {cloudOnly && <p className="maties-row-desc">{cloudOnly}</p>}
-                {failures && <p className="maties-row-desc maties-status-attention">{failures}</p>}
+                {cloudOnly && <p className="mt-0.5 text-xs text-secondary">{cloudOnly}</p>}
+                {failures && <p className="mt-0.5 text-xs text-secondary">{failures}</p>}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <SecondaryButton
