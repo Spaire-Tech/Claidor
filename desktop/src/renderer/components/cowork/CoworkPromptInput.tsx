@@ -155,9 +155,10 @@ import BrowserAnnotationAttachmentBadge from './BrowserAnnotationAttachmentBadge
 import ChatLoginExperienceModal from './ChatLoginExperienceModal';
 import { getClipboardAttachmentFiles } from './clipboardAttachments';
 import { findConnectedApp } from './connectedApps';
-import { CoworkUiEvent } from './constants';
+import { CoworkUiEvent, HOME_DRAFT_KEY } from './constants';
 import FolderSelectorPopover from './FolderSelectorPopover';
 import { getCaretPixelPosition } from './getCaretPosition';
+import { resolveHomeDraftAppHandover } from './homeDraftAppHandover';
 import MediaMentionPicker from './MediaMentionPicker';
 import {
   buildMediaMentionSegments,
@@ -532,7 +533,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       showNewUserWelcomeLoginOverlay = false,
     } = props;
     const dispatch = useDispatch();
-    const draftKey = sessionId || '__home__';
+    const draftKey = sessionId || HOME_DRAFT_KEY;
     const draftPrompt = useSelector((state: RootState) => selectDraftPrompts(state)[draftKey] || '');
     const steerDraft = useSelector((state: RootState) => (
       sessionId ? state.cowork.steerDrafts[sessionId] || '' : ''
@@ -672,6 +673,26 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   // connected, and the one this turn should look in first. A hint, not a gate.
   const connectedApps = useConnectedApps();
   const draftAppSlug = useSelector((state: RootState) => state.cowork.draftAppSlugs[draftKey]);
+  const homeDraftAppSlug = useSelector(
+    (state: RootState) => state.cowork.draftAppSlugs[HOME_DRAFT_KEY],
+  );
+  // The chosen app has to survive the one moment the draft key changes
+  // underneath it: the first message turning the home screen into a
+  // conversation. See homeDraftAppHandover for which transitions move it.
+  const previousSessionIdRef = useRef(sessionId);
+  useEffect(() => {
+    const previousSessionId = previousSessionIdRef.current;
+    previousSessionIdRef.current = sessionId;
+    const adopted = resolveHomeDraftAppHandover({
+      previousSessionId,
+      nextSessionId: sessionId,
+      homeAppSlug: homeDraftAppSlug,
+      existingAppSlug: draftAppSlug,
+    });
+    if (!adopted || !sessionId) return;
+    dispatch(setDraftAppSlug({ draftKey: sessionId, appSlug: adopted }));
+    dispatch(setDraftAppSlug({ draftKey: HOME_DRAFT_KEY }));
+  }, [sessionId, homeDraftAppSlug, draftAppSlug, dispatch]);
   const selectedApp = findConnectedApp(connectedApps, draftAppSlug);
   const selectedAppPrompt = buildSelectedAppContextPrompt(selectedApp);
   const draftSkillIdsForKey = useSelector((state: RootState) => state.cowork.draftSkillIds[draftKey]);
@@ -2031,8 +2052,14 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     dispatch(clearDraftAttachments(draftKey));
     dispatch(clearDraftSelectedTextSnippets(draftKey));
     dispatch(clearDraftBrowserAnnotationBatches(draftKey));
-    // The app is a hint for one turn, like the chosen skills: it does not stick.
-    dispatch(setDraftAppSlug({ draftKey }));
+    // The app stays chosen for the conversation. It used to be cleared here,
+    // on the theory that it was a hint for one turn like the chosen skills.
+    // That was wrong: picking Gmail says what this conversation is about, not
+    // what one sentence is about. Clearing it meant the chip vanished the
+    // moment you pressed send and every message after the first carried no
+    // app at all — a control that looked like it did nothing, because from
+    // the second message on it did nothing. The person clears it with the
+    // picker's own clear action when they are done with it.
     setImageVisionHint(false);
     resetGoalInput(false);
     draftStartedAnalyticsRef.current = false;

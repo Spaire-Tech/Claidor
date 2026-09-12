@@ -86,6 +86,16 @@ const BUNDLED_EXTENSIONS_TO_KEEP = new Set([
   'duckduckgo',
   // --- Media / voice (bundled defaults, may be used by agents) ---
   'image-generation-core', 'media-understanding-core', 'speech-core', 'talk-voice',
+  // --- Voice, and being reachable by phone ---
+  // `talk-voice` was kept and offers ElevenLabs as a provider, but the
+  // extension that registers that provider and reads the key was pruned, so
+  // choosing it could never have worked. `voice-call` is the telephony
+  // feature — inbound and outbound calls over Telnyx, Twilio or Plivo, with
+  // a caller allowlist and per-phone session memory. `imessage` is a real
+  // channel that reads the Mac's own Messages database. None of the three
+  // does anything until it is configured and given credentials; keeping them
+  // only makes that possible.
+  'elevenlabs', 'voice-call', 'imessage',
   // --- Internal ---
   'acpx', 'thread-ownership', 'memory-lancedb', 'memory-wiki',
 ]);

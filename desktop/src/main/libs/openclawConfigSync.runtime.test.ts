@@ -117,6 +117,7 @@ vi.mock('./openclawLocalExtensions', () => ({
   ),
   hasRuntimeBundledOpenClawExtension: (id: string) => (
     id === 'xai'
+    || id === 'elevenlabs'
     || id === 'memory-wiki'
     || (id === 'duckduckgo' && mockRuntimeState.searchPluginAvailable)
   ),
@@ -1853,6 +1854,39 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('Built-in `web_search` is not available in this build');
   });
 
+  // --- The voice (docs/maties/plan.md, step 1) ---
+
+  test('gives the voice a loopback address and no key', async () => {
+    mockRuntimeState.proxyPort = 45123;
+    const sync = await createSync();
+    expect(sync.sync('voice-on')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // The address is the whole arrangement. Point it anywhere else and
+    // the engine talks to ElevenLabs directly with a placeholder key,
+    // which reads as a broken account rather than a wiring mistake.
+    expect(config.talk.provider).toBe('elevenlabs');
+    expect(config.talk.providers.elevenlabs.baseUrl)
+      .toBe('http://127.0.0.1:45123/speech');
+    // Permitted, or the strict allowlist drops it and nothing says so.
+    expect(config.plugins.allow).toContain('elevenlabs');
+    expect(config.plugins.entries.elevenlabs).toEqual({ enabled: true });
+  });
+
+  test('offers no voice at all when there is no proxy to reach it through', async () => {
+    mockRuntimeState.proxyPort = null;
+    const sync = await createSync();
+    expect(sync.sync('voice-off')).toMatchObject({ ok: true });
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // Absent, not empty: `talk.provider` must name a key in
+    // `talk.providers` or the whole config fails to validate. And a
+    // voice that is missing is recoverable, where one that claims to
+    // work and does not is the failure this file already has once.
+    expect(config.talk).toBeUndefined();
+    expect(config.plugins.allow).not.toContain('elevenlabs');
+  });
+
   // --- The wiki (docs/maties/library.md) ---
 
   test('permits the wiki, pinned to the vault mode that reads nothing else', async () => {
@@ -3113,6 +3147,42 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(leaveInAppResult.ok).toBe(true);
     const leaveInAppConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(leaveInAppConfig.mcp).toBeUndefined();
+  });
+
+  // The founder's Mac, 12 September: Settings read "Built-in browser", the
+  // generated config read the in-app profile, and the engine drove its own
+  // Chromium anyway. This is that sequence.
+  test('asks for a restart when the browser profile changes, or the in-app browser never arrives', async () => {
+    const { OpenClawConfigImpact } = await import('./openclawConfigImpact');
+    const { BrowserDisplayMode, BrowserRuntimeProfile } = await import(
+      '../../shared/browserWebAccess/constants'
+    );
+    // The bridge has no port yet, which is the real state of the app for the
+    // first seconds after launch.
+    let browserCallbackUrl: string | null = null;
+    const sync = await createSync({
+      getBrowserWebAccessConfig: () => ({ displayMode: BrowserDisplayMode.InApp }),
+      getBrowserCallbackUrl: () => browserCallbackUrl,
+      getLobsterBrowserMcpCommand: () => '/tmp/lobster-browser-mcp',
+    });
+
+    const beforeBridge = sync.sync('browser-bridge-not-ready');
+    expect(beforeBridge.ok).toBe(true);
+    const externalConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // In-app was asked for and could not be given: the engine gets the
+    // external browser, and this is the state the gateway starts on.
+    expect(externalConfig.browser.defaultProfile).not.toBe(BrowserRuntimeProfile.InApp);
+
+    // The bridge comes up a second or two later and the next sync corrects
+    // the file. Correcting the file is not enough on its own.
+    browserCallbackUrl = 'http://127.0.0.1:58260/browser/tool';
+    const afterBridge = sync.sync('browser-bridge-ready');
+    expect(afterBridge.ok).toBe(true);
+    const inAppConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(inAppConfig.browser.defaultProfile).toBe(BrowserRuntimeProfile.InApp);
+    // Without this the gateway keeps the profile it booted with, and the
+    // built-in browser panel never receives a page.
+    expect(afterBridge.restartImpact).toBe(OpenClawConfigImpact.Restart);
   });
 
   test('marks MCP server config changes as restart impact', async () => {

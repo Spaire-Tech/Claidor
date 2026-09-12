@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 
 import type { AssistantVoice } from '../../../shared/onboarding/constants';
 import { i18nService } from '../../services/i18n';
+import { speakAsMaty, stopMatiesVoice } from '../../services/matiesVoice';
 import VoiceOrb, { useGrainUrl } from './VoiceOrb';
 import { getVoiceDefinition, speakVoiceSample, stopVoiceSample, VOICES, wrapVoiceIndex } from './voices';
 
@@ -40,16 +41,32 @@ const VoiceStep: React.FC<VoiceStepProps> = ({ assistantName, voice, onVoiceChan
   const selectedIndex = Math.max(0, VOICES.findIndex((candidate) => candidate.id === voice));
   const selected = getVoiceDefinition(voice);
 
-  useEffect(() => () => stopVoiceSample(), []);
+  // Both have to be stopped: whichever one spoke last is the one still
+  // making a sound.
+  const silence = useCallback(() => {
+    stopMatiesVoice();
+    stopVoiceSample();
+  }, []);
+
+  useEffect(() => () => silence(), [silence]);
 
   const pick = useCallback((index: number) => {
-    stopVoiceSample();
+    silence();
     onVoiceChange(VOICES[index].id);
-  }, [onVoiceChange]);
+  }, [onVoiceChange, silence]);
 
   const play = useCallback(() => {
-    speakVoiceSample(selected, i18nService.t(selected.sampleKey));
-  }, [selected]);
+    const sentence = i18nService.t(selected.sampleKey);
+    silence();
+    // Maty's own voice where Claidor can supply one; the computer's
+    // synthesiser where it cannot. The voice is absent for ordinary
+    // reasons — no key on the server yet, no network, credits used up —
+    // and a play button that goes quiet on those days is a worse screen
+    // than one that still says the sentence in a plainer voice.
+    void speakAsMaty(selected.id, sentence).then(spoken => {
+      if (!spoken) speakVoiceSample(selected, sentence);
+    });
+  }, [selected, silence]);
 
   const orbs = ORB_OFFSETS.map((offset) => {
     const index = wrapVoiceIndex(selectedIndex, offset);

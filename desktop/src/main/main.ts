@@ -207,6 +207,11 @@ import {
 import type { ShellOpenFailureReason as ShellOpenFailureReasonType } from '../shared/shell/constants';
 import { type ShellGetBrowserAppsInput, ShellIpc, ShellOpenFailureReason } from '../shared/shell/constants';
 import { SkinPackSkillId } from '../shared/skin/kit';
+import {
+  type SpeakResult,
+  SpeechIpc,
+  type SpeechVoicesResult,
+} from '../shared/speech/constants';
 import { AgentManager } from './agentManager';
 import { APP_NAME, APP_USER_MODEL_ID, DB_FILENAME } from './appConstants';
 import { createLocalFileProtocolResponse } from './artifactLocalFileProtocol';
@@ -513,6 +518,7 @@ import {
   ShareDeploymentAccessSyncOperation,
   ShareDeploymentOperationCoordinator,
 } from './libs/shareDeployment/shareDeploymentOperationCoordinator';
+import { SpeechClient } from './libs/speech/speechClient';
 import { SqliteBackupTrigger } from './libs/sqliteBackup/constants';
 import { SqliteBackupManager } from './libs/sqliteBackup/sqliteBackupManager';
 import {
@@ -2220,6 +2226,14 @@ const getBrowserCredentialApprovalService = (): BrowserCredentialApprovalService
   }
   return browserCredentialApprovalService;
 };
+
+/**
+ * The voice. `fetchWithAuth` is a local of the auth setup below, so the
+ * client is built there and kept here for the IPC handlers to reach.
+ * It holds no state and no key — only Claidor's address and the app's
+ * own authenticated-request path.
+ */
+let speechClient: SpeechClient | null = null;
 
 const getAgentBrowserHost = (): AgentBrowserHost => {
   if (!agentBrowserHost) {
@@ -5453,6 +5467,11 @@ if (!gotTheLock) {
   // The quit cleanup watchdog force-exits at ten seconds, so the last sync gets
   // a short deadline of its own and is dropped when the network is slow.
   const MEMORY_SYNC_QUIT_DEADLINE_MS = 4_000;
+
+  speechClient = new SpeechClient({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+  });
 
   const memorySyncService = createMemorySyncService({
     getServerBaseUrl: getServerApiBaseUrl,
@@ -8916,6 +8935,30 @@ if (!gotTheLock) {
    * that is the host's persistent partition; otherwise it is the engine's own
    * managed browser, which the control gateway opens a tab in.
    */
+  // --- the voice -----------------------------------------------------------
+  // The app asks Claidor to say something; Claidor holds the ElevenLabs
+  // key. No key ever reaches this process, which is why there is no
+  // API-key screen for it and will not be one (docs/maties/plan.md step 1).
+  // Asked for before sign-in is wired is a real state during startup, and
+  // it is answered rather than thrown: an IPC rejection would reach the
+  // renderer as an unhandled error where « not yet » is the whole truth.
+  const SPEECH_NOT_READY = 'The voice is not ready yet.';
+
+  ipcMain.handle(SpeechIpc.ListVoices, async (): Promise<SpeechVoicesResult> => (
+    speechClient
+      ? speechClient.listVoices()
+      : { ok: false, voices: [], error: SPEECH_NOT_READY }
+  ));
+
+  ipcMain.handle(
+    SpeechIpc.Speak,
+    async (_event, request?: { voiceId?: string; text?: string }): Promise<SpeakResult> => (
+      speechClient
+        ? speechClient.speak(request?.voiceId ?? '', request?.text ?? '')
+        : { ok: false, error: SPEECH_NOT_READY }
+    ),
+  );
+
   ipcMain.handle(
     BrowserIpc.OpenAgentPage,
     async (_event, request?: AgentBrowserOpenPageRequest): Promise<AgentBrowserOpenPageResponse> => {

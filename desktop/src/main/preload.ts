@@ -131,6 +131,11 @@ import type {
   SkinGetActiveResponse,
   SkinListResponse,
 } from '../shared/skin/types';
+import {
+  type SpeakResult,
+  SpeechIpc,
+  type SpeechVoicesResult,
+} from '../shared/speech/constants';
 import { NimQrLoginIpc } from './ipcHandlers/nimQrLogin';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
@@ -328,6 +333,13 @@ contextBridge.exposeInMainWorld('electron', {
     setEnabled: (enabled: boolean) => ipcRenderer.invoke(DshIpcChannel.SetEnabled, enabled),
     openWorkbench: () => ipcRenderer.invoke(DshIpcChannel.OpenWorkbench),
     stop: () => ipcRenderer.invoke(DshIpcChannel.Stop),
+  },
+  // The voice: the app asks Claidor to say something. No key is involved
+  // on this side of the wire (docs/maties/plan.md step 1).
+  speech: {
+    listVoices: (): Promise<SpeechVoicesResult> => ipcRenderer.invoke(SpeechIpc.ListVoices),
+    speak: (voiceId: string, text: string): Promise<SpeakResult> =>
+      ipcRenderer.invoke(SpeechIpc.Speak, { voiceId, text }),
   },
   openclaw: {
     engine: {

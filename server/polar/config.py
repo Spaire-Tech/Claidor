@@ -196,6 +196,16 @@ class Settings(BaseSettings):
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
     DESKTOP_OPENAI_BASE_URL: str = "https://api.openai.com"
 
+    # The voice (polar/desktop/speech.py, docs/maties/plan.md step 1).
+    # Voices come from a speech service behind Claidor's API and never
+    # from a key in the app, so the key lives here beside the model keys
+    # and the desktop speaks only to Claidor. Left empty, the speech
+    # routes answer 503 and the app offers no voice at all — a missing
+    # key must read as « not available here », never as an error at the
+    # moment somebody asks to be read to.
+    ELEVENLABS_API_KEY: str = ""
+    DESKTOP_ELEVENLABS_BASE_URL: str = "https://api.elevenlabs.io"
+
     # Connections (polar/connectors/, docs/maties/connectors.md). The
     # middleman that holds the sign-in plumbing for the forty services a
     # person connects an account to. Its developer token is project-wide

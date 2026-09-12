@@ -387,6 +387,59 @@ const MEMORY_WIKI_VAULT_MODE = 'isolated';
 
 const hasMemoryWikiPlugin = (): boolean =>
   hasRuntimeBundledOpenClawExtension(MEMORY_WIKI_PLUGIN_ID);
+
+/**
+ * The voice.
+ *
+ * `docs/maties/plan.md`, step 1: « voices come from a speech service
+ * behind Claidor's API, never from a key in the app ». So the engine is
+ * given a loopback address where ElevenLabs' own address would go, and
+ * the token proxy puts the person's session token on the request and
+ * forwards it to Claidor, which holds the real key. The engine carries
+ * no credential, and nothing of ours expires inside it — the same
+ * arrangement the model proxy and the connections already use.
+ *
+ * `apiKey` is required by the provider before it will register itself,
+ * and what goes there travels no further than our own loopback port,
+ * where it is ignored. It is named for what it is rather than made to
+ * look like a key, so nobody later mistakes it for one worth protecting.
+ *
+ * Without a proxy port there is no address to give, so no `talk` block is
+ * written at all and the provider is not offered. That is deliberate:
+ * this file has one bug of exactly that shape already — the in-app
+ * browser, which asked for a bridge that was not up yet, quietly took
+ * the other path, and told nobody for the rest of the session. A voice
+ * that is absent is recoverable; a voice that claims to work and does
+ * not is the failure worth avoiding.
+ */
+const ELEVENLABS_PLUGIN_ID = 'elevenlabs';
+const ELEVENLABS_TALK_PROVIDER_ID = 'elevenlabs';
+const ELEVENLABS_MANAGED_KEY_PLACEHOLDER = 'managed-by-claidor';
+const SPEECH_PROXY_PATH_PREFIX = '/speech';
+
+const hasElevenLabsPlugin = (): boolean =>
+  hasRuntimeBundledOpenClawExtension(ELEVENLABS_PLUGIN_ID);
+
+/**
+ * The `talk` block, or null when the voice cannot be offered. Exported
+ * for its own test: the address is the whole of the arrangement, and a
+ * wrong one fails by speaking to ElevenLabs directly with a placeholder
+ * key, which looks like a broken account rather than a wiring mistake.
+ */
+export const buildManagedTalkConfig = (
+  proxyPort: number | null,
+): Record<string, unknown> | null => {
+  if (!proxyPort) return null;
+  return {
+    provider: ELEVENLABS_TALK_PROVIDER_ID,
+    providers: {
+      [ELEVENLABS_TALK_PROVIDER_ID]: {
+        apiKey: ELEVENLABS_MANAGED_KEY_PLACEHOLDER,
+        baseUrl: `http://127.0.0.1:${proxyPort}${SPEECH_PROXY_PATH_PREFIX}`,
+      },
+    },
+  };
+};
 // knownPollNoProgress is off: polling a live background process that stays
 // quiet (builds, installs, downloads) legitimately repeats identical calls
 // with identical output, and the detector killed such runs after 10 polls
@@ -2584,6 +2637,8 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // OpenClaw rejects a config naming a plugin it cannot find.
     const hasSearchPlugin = hasDuckDuckGoPlugin();
     const hasWikiPlugin = hasMemoryWikiPlugin();
+    const talkConfig = buildManagedTalkConfig(getOpenClawTokenProxyPort());
+    const hasVoice = hasElevenLabsPlugin() && talkConfig !== null;
     const qwenPortalAuthPluginId = resolveOpenClawExtensionPluginId('qwen-portal-auth');
 
     // Detect if any provider uses Qwen/Aliyun DashScope URLs — OpenClaw auto-injects
@@ -2747,6 +2802,10 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       },
       tools: this.buildWebToolsConfig(browserWebAccess),
       browser: this.buildBrowserConfig(browserWebAccess),
+      // Omitted entirely rather than written empty when the voice cannot
+      // be offered: `talk.provider` must name a key in `talk.providers`
+      // or the whole config fails validation.
+      ...(hasVoice && talkConfig ? { talk: talkConfig } : {}),
       skills: {
         entries: {
           ...this.buildSkillEntries(),
@@ -2848,6 +2907,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           ...(hasQwenProvider && qwenPortalAuthPluginId ? { [qwenPortalAuthPluginId]: { enabled: true } } : {}),
           ...(hasXaiPlugin ? { xai: { enabled: true } } : {}),
           ...(hasSearchPlugin ? { [DUCKDUCKGO_PLUGIN_ID]: { enabled: true } } : {}),
+          ...(hasVoice ? { [ELEVENLABS_PLUGIN_ID]: { enabled: true } } : {}),
           // The vault mode is named rather than left to the plugin's own
           // default: the default is not ours to inherit, and `unsafe-local`
           // must never arrive by one.
@@ -2887,6 +2947,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           ...(hasXaiPlugin ? ['xai'] : []),
           ...(hasSearchPlugin ? [DUCKDUCKGO_PLUGIN_ID] : []),
           ...(hasWikiPlugin ? [MEMORY_WIKI_PLUGIN_ID] : []),
+          ...(hasVoice ? [ELEVENLABS_PLUGIN_ID] : []),
           ...(hasModelCompatConfig
             ? [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]
             : []),
@@ -3543,6 +3604,16 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     })();
 
     let changedTopLevelKeys: string[] = [];
+    // The gateway binds its browser profile once, at startup, and never
+    // re-reads it on a hot config update. That made the in-app browser
+    // unreachable on every launch: the first sync runs before the MCP bridge
+    // has a port, so `buildBrowserConfig` cannot offer the in-app profile and
+    // writes the external one; the gateway starts on that. A later sync, with
+    // the bridge up, corrects the file — but `browser` was not a key that
+    // asked for a restart, so the running gateway kept driving its own
+    // Chromium. The config on disk said in-app, the engine did the opposite,
+    // and both were telling the truth about different things.
+    let browserProfileChanged = false;
     if (configChanged) {
       // Diagnostic: diff gateway and plugins sections to identify what triggers OpenClaw restart
       try {
@@ -3575,6 +3646,21 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           return JSON.stringify(currentObj[k]) !== JSON.stringify(nextObj[k]);
         });
         console.log(`${gwDiagTs()} top-level changed keys:`, changedTopLevelKeys.join(',') || '(none)');
+        // Only the profile, not every browser setting: the rest of that
+        // section does hot-apply, and turning each of them into a hard
+        // restart would be a worse bug than the one being fixed.
+        const currentBrowserProfile = (currentObj.browser as { defaultProfile?: unknown } | undefined)
+          ?.defaultProfile ?? null;
+        const nextBrowserProfile = (nextObj.browser as { defaultProfile?: unknown } | undefined)
+          ?.defaultProfile ?? null;
+        browserProfileChanged = currentBrowserProfile !== nextBrowserProfile;
+        if (browserProfileChanged) {
+          console.log(
+            `${gwDiagTs()} browser profile changed:`,
+            `${String(currentBrowserProfile)} -> ${String(nextBrowserProfile)}`,
+            '(requires gateway restart)',
+          );
+        }
       } catch { /* ignore parse errors in diag */ }
       try {
         ensureDir(path.dirname(configPath));
@@ -3617,7 +3703,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       configPath,
       ...(bindingsChanged ? { bindingsChanged } : {}),
       ...(changedTopLevelKeys.length > 0 ? { changedTopLevelKeys } : {}),
-      ...(changedTopLevelKeys.includes('mcp') || modelCompatRestartRequired
+      ...(changedTopLevelKeys.includes('mcp') || browserProfileChanged || modelCompatRestartRequired
         ? { restartImpact: OpenClawConfigImpact.Restart }
         : {}),
       ...(agentsMdWarning ? { agentsMdWarning } : {}),
