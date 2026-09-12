@@ -383,6 +383,17 @@ const hasDuckDuckGoPlugin = (): boolean =>
  * stray key here does not fail the wiki, it fails the config.
  */
 const MEMORY_WIKI_PLUGIN_ID = 'memory-wiki';
+/**
+ * Off since 12 September. It was switched on without anyone watching a
+ * gateway load it, in the same afternoon as the un-pruning that broke the
+ * browser, and both share one failure mode: plugin loading is
+ * all-or-nothing, so a plugin that cannot activate takes every other
+ * plugin down with it.
+ *
+ * Turn this back on only after starting the gateway with the wiki enabled
+ * and reading the plugin registry to see it loaded rather than errored.
+ */
+const MEMORY_WIKI_ENABLED = false;
 const MEMORY_WIKI_VAULT_MODE = 'isolated';
 
 const hasMemoryWikiPlugin = (): boolean =>
@@ -2636,7 +2647,17 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // whose packaging dropped it must not carry a stale entry, and
     // OpenClaw rejects a config naming a plugin it cannot find.
     const hasSearchPlugin = hasDuckDuckGoPlugin();
-    const hasWikiPlugin = hasMemoryWikiPlugin();
+    // Held back on 12 September, with the un-pruning that broke the
+    // browser. Enabling a plugin is not free: plugin loading is
+    // all-or-nothing — `maybeThrowOnPluginLoadError` throws for the whole
+    // registry the moment one plugin is in an error state — so a wiki that
+    // cannot activate takes `browser` and `memory-core` down with it. It
+    // was switched on here without ever watching a gateway load it.
+    //
+    // To bring it back: start the gateway with it enabled, read the plugin
+    // registry, see it listed as loaded rather than errored, and only then
+    // make this true again.
+    const hasWikiPlugin = MEMORY_WIKI_ENABLED && hasMemoryWikiPlugin();
     const talkConfig = buildManagedTalkConfig(getOpenClawTokenProxyPort());
     const hasVoice = hasElevenLabsPlugin() && talkConfig !== null;
     const qwenPortalAuthPluginId = resolveOpenClawExtensionPluginId('qwen-portal-auth');

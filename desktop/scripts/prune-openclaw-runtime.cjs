@@ -86,16 +86,23 @@ const BUNDLED_EXTENSIONS_TO_KEEP = new Set([
   'duckduckgo',
   // --- Media / voice (bundled defaults, may be used by agents) ---
   'image-generation-core', 'media-understanding-core', 'speech-core', 'talk-voice',
-  // --- Voice, and being reachable by phone ---
-  // `talk-voice` was kept and offers ElevenLabs as a provider, but the
-  // extension that registers that provider and reads the key was pruned, so
-  // choosing it could never have worked. `voice-call` is the telephony
-  // feature — inbound and outbound calls over Telnyx, Twilio or Plivo, with
-  // a caller allowlist and per-phone session memory. `imessage` is a real
-  // channel that reads the Mac's own Messages database. None of the three
-  // does anything until it is configured and given credentials; keeping them
-  // only makes that possible.
-  'elevenlabs', 'voice-call', 'imessage',
+  // --- Voice, telephony and iMessage: REMOVED AGAIN, deliberately ---
+  // These three were added to this list on 12 September and taken out the
+  // same day, because keeping them broke the browser and with it every
+  // other plugin.
+  //
+  // Plugin loading is all-or-nothing: `maybeThrowOnPluginLoadError` throws
+  // for the whole registry the moment any single plugin is in an error
+  // state, so one extension that cannot load takes down `browser`,
+  // `memory-core` and the rest with it. `voice-call` declares four
+  // dependencies (ws, commander, typebox, zod) that our packaging has never
+  // installed, because the extension had always been deleted before that
+  // mattered.
+  //
+  // Before any of them comes back: install each one's dependencies in the
+  // packaged runtime, then start the gateway and read the plugin registry
+  // to see it actually loaded. Adding the name here is the last step, not
+  // the first.
   // --- Internal ---
   'acpx', 'thread-ownership', 'memory-lancedb', 'memory-wiki',
 ]);
