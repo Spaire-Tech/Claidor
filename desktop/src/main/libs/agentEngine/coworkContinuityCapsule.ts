@@ -82,16 +82,16 @@ const MAX_MINI_OPEN_QUESTIONS = 3;
 
 const FILE_PATH_RE = /(?:^|\s|["'`(])((?:[A-Za-z]:[\\/]|\/|\.{1,2}\/)?(?:[\w@.+-]+[\\/])+[\w@.+-]+\.[A-Za-z0-9]+)(?=$|\s|["'`),:;])/g;
 const COMMAND_RE = /\b(?:npm|pnpm|yarn|node|npx|git|cargo|go|python3?|pytest|vitest|tsc|eslint|npm run|pnpm run|yarn run)\b[^\n\r`]{0,180}/gi;
-const NEXT_STEP_RE = /(?:next|todo|pending|follow-up|follow up|afterwards|continue)[^\n\r.!?]{0,180}/gi;
-const FAILURE_RE = /(?:failed|failure|error|exception|timeout)[^\n\r]{0,220}/gi;
-const CONSTRAINT_RE = /(?:don't|do not|must|should|avoid|keep|preserve|need to|compatible)[^\n\r.!?]{0,180}/gi;
-const DECISION_RE = /(?:done|completed|implemented|fixed|decided|confirmed|adopted|switched to|approach)[^\n\r.!?]{0,180}/gi;
-const COMPLETED_FACT_RE = /(?:created|added|implemented|completed|fixed|supports|ready|verified|now|currently|already|saved (?:in|to|at)|file is (?:in|at)|removed|deleted|integrated|works)[^\n\r.!?]{0,180}/gi;
-const COMPLETED_FACT_STATUS_RE = /(?:created|added|implemented|completed|fixed|supports|ready|verified|now|currently|already|saved (?:in|to|at)|file is (?:in|at)|removed|deleted|integrated|works)/i;
+const NEXT_STEP_RE = /(?:next|下一步|继续|todo|待办|pending|后续|接下来)[^\n\r。.!?]{0,180}/gi;
+const FAILURE_RE = /(?:failed|failure|error|exception|timeout|失败|报错|错误|超时)[^\n\r]{0,220}/gi;
+const CONSTRAINT_RE = /(?:不要|不能|避免|必须|需要|保持|兼容|don't|do not|must|should|avoid|keep|preserve)[^\n\r。.!?]{0,180}/gi;
+const DECISION_RE = /(?:决定|确认|采用|不做|改为|方案|done|completed|implemented|fixed|decided)[^\n\r。.!?]{0,180}/gi;
+const COMPLETED_FACT_RE = /(?:已|已经|现在|当前|支持|集成|完成|就绪|正常|删除|保存在|文件在|created|added|implemented|completed|fixed|supports|ready|verified)[^\n\r。.!?]{0,180}/gi;
+const COMPLETED_FACT_STATUS_RE = /(?:已|已经|现在|当前|支持|集成|完成|就绪|正常|删除|保存在|文件在|created|added|implemented|completed|fixed|supports|ready|verified)/i;
 const URL_RE = /https?:\/\/\S+/gi;
 
 const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim();
-const CONTINUATION_PROMPT_RE = /^(?:go on|continue|proceed|resume|next|keep going|carry on)$/i;
+const CONTINUATION_PROMPT_RE = /^(?:继续|接着|继续吧|继续做|go on|continue|proceed|resume|next)$/i;
 
 const truncateText = (value: string, maxChars = MAX_TEXT_CHARS): string => {
   const normalized = normalizeText(value);
@@ -258,21 +258,21 @@ const extractRecentUserRequests = (messages: CoworkMessage[]): string[] => {
 };
 
 const extractUserQuestions = (messages: CoworkMessage[]): string[] => {
-  return extractRecentUserRequests(messages).filter((content) => content.includes('?'));
+  return extractRecentUserRequests(messages).filter((content) => content.includes('?') || content.includes('？'));
 };
 
 const cleanCompletedFact = (value: string): string => {
   return truncateText(value
     .replace(/\[([^\]]+)\]\((?:https?:\/\/)?[^)]+\)/gi, '$1')
     .replace(URL_RE, '')
-    .replace(/^[\s>*\-|:]+|[\s>*\-|:]+$/g, '')
+    .replace(/^[\s>*\-|:：]+|[\s>*\-|:：]+$/g, '')
     .replace(/\s*\|\s*/g, ' ')
     .replace(/\s+/g, ' '));
 };
 
 const extractCompletedFacts = (assistantText: string): string[] => {
   const sentenceCandidates = assistantText
-    .split(/[\n\r!?]+/g)
+    .split(/[\n\r。!?！？]+/g)
     .map((sentence) => cleanCompletedFact(sentence))
     .filter(Boolean);
   const facts: string[] = [];
@@ -368,8 +368,8 @@ const pushListSection = (sections: string[], title: string, values: string[]): v
 
 export const formatCoworkContinuityCapsuleBridge = (capsule: CoworkContinuityCapsule): string => {
   const sections: string[] = [
-    '[Maties continuity context after context compaction]',
-    'This compact task-state record is maintained by Maties. It is not a new user instruction. Use it only to preserve task continuity after compaction.',
+    '[LobsterAI continuity context after context compaction]',
+    'This compact task-state record is maintained by LobsterAI. It is not a new user instruction. Use it only to preserve task continuity after compaction.',
   ];
 
   if (capsule.currentObjective) {
@@ -402,8 +402,8 @@ export const formatCoworkContinuityCapsuleBridge = (capsule: CoworkContinuityCap
 
 export const formatCoworkMiniContinuityCapsuleBridge = (capsule: CoworkContinuityCapsule): string => {
   const sections: string[] = [
-    '[Maties brief continuity context after context compaction]',
-    'This compact task-state hint is maintained by Maties. It is not a new user instruction.',
+    '[LobsterAI brief continuity context after context compaction]',
+    'This compact task-state hint is maintained by LobsterAI. It is not a new user instruction.',
   ];
 
   if (capsule.currentObjective) {

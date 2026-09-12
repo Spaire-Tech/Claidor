@@ -510,10 +510,9 @@ windows_search_events() {
 # ==================== Permission Helper ====================
 
 # Check if error is permission-related
-# ("Can't get object" is the AppleScript wording when Calendar access is denied)
 is_permission_error() {
     local error_msg="$1"
-    [[ "$error_msg" == *"t get object"* ]] || \
+    [[ "$error_msg" == *"不能获取对象"* ]] || \
     [[ "$error_msg" == *"not authorized"* ]] || \
     [[ "$error_msg" == *"Permission denied"* ]] || \
     [[ "$error_msg" == *"Access denied"* ]] || \

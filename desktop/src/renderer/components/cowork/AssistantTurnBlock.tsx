@@ -296,14 +296,14 @@ const CreditQuotaExhaustedBanner: React.FC = () => {
 // ── SystemErrorTechnicalDetail ───────────────────────────────────────────────
 
 /**
- * User-facing model source label. Users only need two buckets — the Maties
+ * User-facing model source label. Users only need two buckets — the LobsterAI
  * plan vs. a model they configured themselves; finer detail (provider name,
  * Coding Plan, OAuth) goes into the parenthesized qualifier.
  */
 const buildErrorModelSourceLabel = (detail: CoworkErrorDetail): string | null => {
   if (!detail.modelSource) return null;
-  if (detail.modelSource === CoworkErrorModelSource.MatiesPlan) {
-    return i18nService.t('coworkErrorModelSourceMatiesPlan');
+  if (detail.modelSource === CoworkErrorModelSource.LobsterAIPlan) {
+    return i18nService.t('coworkErrorModelSourceLobsterAIPlan');
   }
 
   const qualifiers: string[] = [];

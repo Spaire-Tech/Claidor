@@ -1616,7 +1616,7 @@ export class IMStore {
     }
   }
 
-  // ==================== Weixin ====================
+  // ==================== Weixin (微信) ====================
 
   getWeixinConfig(): WeixinOpenClawConfig {
     const stored = this.getConfigValue<WeixinOpenClawConfig>('weixin');

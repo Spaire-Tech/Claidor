@@ -11,7 +11,7 @@ import {
 import { EnterpriseAccountMode } from '@shared/enterpriseAccount/constants';
 import {
   type ModelThinkingConfig,
-  parseMatiesRequestCapabilities,
+  parseLobsterAIRequestCapabilities,
   parseModelThinkingConfig,
   ProviderName,
 } from '@shared/providers';
@@ -200,7 +200,7 @@ export function mapPricingCatalogTextModelsToServerModels(
     const modelName = readString(model.modelName) || modelId;
     const provider = readString(model.providerLabel)
       || readString(model.provider)
-      || 'Maties';
+      || 'LobsterAI';
     const contextWindow = readPositiveNumber(model.contextWindow);
     const costMultiplier = readPositiveNumber(model.costMultiplier);
     const thinkingConfig = model.supportsThinking === true
@@ -211,7 +211,7 @@ export function mapPricingCatalogTextModelsToServerModels(
       id: modelId,
       name: modelName,
       provider,
-      providerKey: ProviderName.MatiesServer,
+      providerKey: ProviderName.LobsteraiServer,
       isServerModel: true,
       supportsImage: model.supportsImage === true,
       supportsThinking: model.supportsThinking === true,
@@ -240,12 +240,12 @@ export function mapAvailableServerModelsToModels(
     const thinkingConfig = model.supportsThinking === true
       ? parseModelThinkingConfig(model.thinkingConfig)
       : undefined;
-    const requestCapabilities = parseMatiesRequestCapabilities(model.requestCapabilities);
+    const requestCapabilities = parseLobsterAIRequestCapabilities(model.requestCapabilities);
     return {
       id: model.modelId,
       name: model.modelName,
       provider: model.provider,
-      providerKey: ProviderName.MatiesServer,
+      providerKey: ProviderName.LobsteraiServer,
       isServerModel: true,
       serverApiFormat: model.apiFormat,
       runtimeProfile: model.runtimeProfile,
@@ -458,8 +458,8 @@ class AuthService {
     writeAuthRendererLog('info', `login attempt ${attemptId} started`);
 
     try {
-      // The main process opens `${Claidor API}/desktop/login`; no lookup is needed.
-      const result = await window.electron.auth.login();
+      const loginUrl = await this.fetchLoginUrl();
+      const result = await window.electron.auth.login(loginUrl);
       if (result.success) {
         writeAuthRendererLog('info', `login attempt ${attemptId} handed off to the system browser`);
       } else {
@@ -470,6 +470,34 @@ class AuthService {
       writeAuthRendererLog('warn', `login attempt ${attemptId} failed before browser handoff`, error);
       throw error;
     }
+  }
+
+  /**
+   * Fetch login URL from overmind, fallback to Portal login page.
+   */
+  private async fetchLoginUrl(): Promise<string> {
+    const { getLoginOvermindUrl } = await import('./endpoints');
+    const url = getLoginOvermindUrl();
+    try {
+      const response = await window.electron.api.fetch({
+        url,
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
+      if (response.ok && typeof response.data === 'object' && response.data !== null) {
+        const value = (response.data as any)?.data?.value;
+        if (typeof value === 'string' && value.trim()) {
+          writeAuthRendererLog('debug', 'resolved login URL from overmind');
+          return value.trim();
+        }
+      }
+    } catch (e) {
+      writeAuthRendererLog('warn', 'failed to resolve login URL from overmind', e);
+    }
+    // Fallback: use Portal login page directly
+    const { getPortalLoginUrl } = await import('./endpoints');
+    writeAuthRendererLog('info', 'using fallback portal login URL');
+    return getPortalLoginUrl();
   }
 
   /**
@@ -814,7 +842,7 @@ class AuthService {
     const cleanup = this.applyLoggedOutState(true);
     const toastKey = event.reason === AuthSessionChangeReason.EnterpriseMembershipRevoked
       ? 'coworkErrorEnterpriseMembershipRevoked'
-      : 'coworkErrorMatiesLoginExpired';
+      : 'coworkErrorLobsterAILoginExpired';
     window.dispatchEvent(new CustomEvent('app:showToast', {
       detail: i18nService.t(toastKey),
     }));

@@ -12,12 +12,12 @@ import { stripGoalCommandPrefixForDisplay } from '../../common/sessionTitle';
 
 // --------------- Pattern A: NIM/DingTalk ---------------
 
-// Placeholder line — e.g. "[Photo] https://example.com/..."
+// Placeholder line — e.g. "[图片] https://nos.netease.com/..."
 // Capture the URL (group 2) so we can preserve it as plain text instead of stripping it.
-const NIM_PLACEHOLDER_RE = /^\[(Photo|Voice Message|Video|File|Media Message)\](?:\s+(https?:\/\/\S+))?\s*$/m;
+const NIM_PLACEHOLDER_RE = /^\[(图片|语音消息|视频|文件|多媒体消息)\](?:\s+(https?:\/\/\S+))?\s*$/m;
 
-// [Attachment Info] block — header line followed by "- ..." lines
-const ATTACHMENT_INFO_BLOCK_RE = /\n?\[Attachment Info\]\n(?:- .+(?:\n|$))+/;
+// [附件信息] block — header line followed by "- ..." lines
+const ATTACHMENT_INFO_BLOCK_RE = /\n?\[附件信息\]\n(?:- .+(?:\n|$))+/;
 
 // --------------- Pattern B: OpenClaw gateway ---------------
 
@@ -72,7 +72,7 @@ export function parseUserMessageForDisplay(
 
   // Normalize \r\n to \n so all line-anchored regexes work correctly
   let result = (content || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  // Maties sends goal-mode submissions to OpenClaw as local /goal commands.
+  // LobsterAI sends goal-mode submissions to OpenClaw as local /goal commands.
   // The command is transport/control syntax, not user-facing message text.
   result = stripGoalCommandPrefixForDisplay(result);
 
@@ -97,15 +97,15 @@ export function parseUserMessageForDisplay(
 
   // --- Pattern A: NIM/DingTalk ---
 
-  if (result.includes('[Photo]') || result.includes('[Voice Message]') || result.includes('[Video]')
-    || result.includes('[File]') || result.includes('[Media Message]') || result.includes('[Attachment Info]')) {
+  if (result.includes('[图片]') || result.includes('[语音消息]') || result.includes('[视频]')
+    || result.includes('[文件]') || result.includes('[多媒体消息]') || result.includes('[附件信息]')) {
 
-    // Strip [Photo] etc. but preserve the URL as plain text
+    // Strip [图片] etc. but preserve the URL as plain text
     result = result.replace(NIM_PLACEHOLDER_RE, (_match, _type, url) => url || '');
     result = result.replace(ATTACHMENT_INFO_BLOCK_RE, '');
   }
 
-  // --- Pattern B: OpenClaw gateway (WeChat/Feishu/WeCom) ---
+  // --- Pattern B: OpenClaw gateway (微信/飞书/企微) ---
 
   if (result.includes('[media attached:')) {
     // Extract image paths

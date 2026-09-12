@@ -150,7 +150,6 @@ import type {
 } from '../shared/kit/constants';
 import { KitStoreKey } from '../shared/kit/constants';
 import { LibraryChangeReason, LibraryIpc } from '../shared/library/constants';
-import { type LibraryContentConfig, LibraryContentIpc, type LibraryContentStatus } from '../shared/library/contentConstants';
 import {
   getLibraryThumbnailFailureDetails,
   isLibraryThumbnailFailureRetryable,
@@ -271,11 +270,6 @@ import {
 import { registerSessionDiagnosticsHandlers } from './ipcHandlers/sessionDiagnostics';
 import { registerSiteIpcHandlers } from './ipcHandlers/site';
 import { registerSkillHandlers } from './ipcHandlers/skills';
-import { LibraryDocumentWorkerClient } from './library/content/documentWorkerClient';
-import { LibraryContentIndexer } from './library/content/libraryContentIndexer';
-import { normalizeLibrarySearchRequest, registerLibraryContentIpcHandlers } from './library/content/libraryContentIpc';
-import { LibraryContentStore } from './library/content/libraryContentStore';
-import { resolveLibraryModelDir, resolveLibraryWorkerEntryPath } from './library/content/modelPath';
 import { LibraryIndexService } from './library/libraryIndexService';
 import { registerLibraryIpcHandlers } from './library/libraryIpc';
 import { LibraryLocalStore } from './library/libraryLocalStore';
@@ -1634,14 +1628,14 @@ const buildAvailableOpenClawProviders = (): Record<string, { models: Array<{ id:
     .map(model => model.modelId.trim())
     .filter(Boolean);
   if (serverModelIds.length > 0) {
-    const serverProvider = providerMap[OpenClawProviderId.MatiesServer]
+    const serverProvider = providerMap[OpenClawProviderId.LobsteraiServer]
       ?? { models: [] };
     for (const modelId of serverModelIds) {
       if (!serverProvider.models.some(model => model.id === modelId)) {
         serverProvider.models.push({ id: modelId });
       }
     }
-    providerMap[OpenClawProviderId.MatiesServer] = serverProvider;
+    providerMap[OpenClawProviderId.LobsteraiServer] = serverProvider;
   }
 
   return providerMap;
@@ -1658,7 +1652,7 @@ const openClawConfigHasServerModels = (modelIds: string[]): boolean => {
         providers?: Record<string, { models?: Array<{ id?: string }> }>;
       };
     };
-    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.MatiesServer]?.models;
+    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.LobsteraiServer]?.models;
     if (!Array.isArray(serverProviderModels)) return false;
 
     const configuredModelIds = new Set(
@@ -1713,7 +1707,7 @@ const resolveInlineAttachmentDir = (cwd?: string): string => {
       return path.join(resolved, COWORK_TEMP_DIR_NAME, COWORK_TEMP_ATTACHMENTS_DIR_NAME, 'manual');
     }
   }
-  return path.join(app.getPath('temp'), 'maties', 'attachments');
+  return path.join(app.getPath('temp'), 'lobsterai', 'attachments');
 };
 
 const ensurePngFileName = (value: string): string => {
@@ -1730,7 +1724,7 @@ const buildLogExportFileName = (): string => {
   const now = new Date();
   const datePart = `${now.getFullYear()}${padTwoDigits(now.getMonth() + 1)}${padTwoDigits(now.getDate())}`;
   const timePart = `${padTwoDigits(now.getHours())}${padTwoDigits(now.getMinutes())}${padTwoDigits(now.getSeconds())}`;
-  return `maties-logs-${datePart}-${timePart}.zip`;
+  return `lobsterai-logs-${datePart}-${timePart}.zip`;
 };
 
 const OPENCLAW_DAILY_LOG_RETENTION_DAYS = 7;
@@ -1918,7 +1912,7 @@ const savePngWithDialog = async (
   const defaultName = getDefaultExportImageName(defaultFileName);
   // Automation hook: end-to-end tests cannot drive the native save dialog, so
   // an explicit directory override saves the PNG directly.
-  const autosaveDir = process.env.MATIES_EXPORT_IMAGE_AUTOSAVE_DIR;
+  const autosaveDir = process.env.LOBSTERAI_EXPORT_IMAGE_AUTOSAVE_DIR;
   if (autosaveDir) {
     const outputPath = ensurePngFileName(path.join(autosaveDir, defaultName));
     await fs.promises.mkdir(autosaveDir, { recursive: true });
@@ -1979,8 +1973,8 @@ const DEV_SERVER_URL = process.env.ELECTRON_START_URL || 'http://localhost:5175'
 const enableVerboseLogging =
   process.env.ELECTRON_ENABLE_LOGGING === '1' || process.env.ELECTRON_ENABLE_LOGGING === 'true';
 const disableGpu =
-  process.env.MATIES_DISABLE_GPU === '1' ||
-  process.env.MATIES_DISABLE_GPU === 'true' ||
+  process.env.LOBSTERAI_DISABLE_GPU === '1' ||
+  process.env.LOBSTERAI_DISABLE_GPU === 'true' ||
   process.env.ELECTRON_DISABLE_GPU === '1' ||
   process.env.ELECTRON_DISABLE_GPU === 'true';
 const reloadOnChildProcessGone =
@@ -2034,9 +2028,9 @@ const normalizeWindowsShellPath = (inputPath: string): string => {
   return normalized;
 };
 
-// App configuration
-// Disable the Chromium sandbox on Linux/Windows: the desktop app renders its own code, so the risk is contained;
-// on Windows, when running as administrator the sandbox cannot drop privileges and the GPU process fails to start (error_code=18)
+// 配置应用
+// Linux/Windows 禁用 Chromium 沙箱：桌面应用渲染自有代码，风险可控；
+// Windows 下以管理员运行时沙箱无法降权会导致 GPU 进程启动失败 (error_code=18)
 if (isLinux || isWindows) {
   app.commandLine.appendSwitch('no-sandbox');
 }
@@ -2046,7 +2040,7 @@ if (isLinux) {
 if (disableGpu) {
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-software-rasterizer');
-  // Disable hardware acceleration
+  // 禁用硬件加速
   app.disableHardwareAcceleration();
 }
 if (enableVerboseLogging) {
@@ -2054,16 +2048,16 @@ if (enableVerboseLogging) {
   app.commandLine.appendSwitch('v', '1');
 }
 
-// Network service configuration
+// 配置网络服务
 app.on('ready', () => {
-  // Configure the host resolver
+  // 配置网络服务重启策略
   app.configureHostResolver({
     enableBuiltInResolver: true,
     secureDnsMode: 'off',
   });
 });
 
-// Error handling
+// 添加错误处理
 app.on('render-process-gone', (_event, webContents, details) => {
   console.error('Render process gone:', details);
   const shouldReload =
@@ -2084,7 +2078,7 @@ app.on('child-process-gone', (_event, details) => {
   }
 });
 
-// Handle uncaught exceptions
+// 处理未捕获的异常
 process.on('uncaughtException', error => {
   console.error('Uncaught Exception:', error);
 });
@@ -2122,7 +2116,6 @@ let preventSleepBlockerId: number | null = null;
 let appUpdateCoordinator: AppUpdateCoordinator | null = null;
 let mainLogReporter: MainLogReporter | null = null;
 let libraryIndexService: LibraryIndexService | null = null;
-let libraryContentIndexer: LibraryContentIndexer | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
   if (enabled) {
@@ -2448,13 +2441,13 @@ const resolveSessionWorkingDirectory = (options: { cwd?: string; agentId?: strin
 const NEW_USER_WELCOME_SESSION_ID_STORE_KEY = 'new_user_welcome_session_id';
 const NEW_USER_WELCOME_CONTENT_MAX_LENGTH = 4000;
 
-const isMatiesServerModelRef = (modelRef: string): boolean => {
+const isLobsteraiServerModelRef = (modelRef: string): boolean => {
   const normalized = modelRef.trim();
   if (!normalized) return false;
 
   const parsed = parsePrimaryModelRef(normalized);
   if (parsed) {
-    return parsed.providerId === ProviderName.MatiesServer;
+    return parsed.providerId === ProviderName.LobsteraiServer;
   }
 
   return getAllServerModelMetadata().some(model => model.modelId === normalized);
@@ -2464,18 +2457,18 @@ const shouldRefreshServerQuotaForSession = (sessionId: string): boolean => {
   const session = getCoworkStore().getSession(sessionId);
   const sessionModelRef = session?.modelOverride?.trim();
   if (sessionModelRef) {
-    return isMatiesServerModelRef(sessionModelRef);
+    return isLobsteraiServerModelRef(sessionModelRef);
   }
 
   const agentModelRef = session?.agentId
     ? getAgentManager().getAgent(session.agentId)?.model?.trim()
     : '';
   if (agentModelRef) {
-    return isMatiesServerModelRef(agentModelRef);
+    return isLobsteraiServerModelRef(agentModelRef);
   }
 
   const apiConfig = resolveCurrentApiConfig();
-  return apiConfig.providerMetadata?.providerName === ProviderName.MatiesServer;
+  return apiConfig.providerMetadata?.providerName === ProviderName.LobsteraiServer;
 };
 
 const resolveCoworkAgentEngine = (): CoworkAgentEngine => {
@@ -2584,7 +2577,6 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         return getMcpRuntime().getResolvedServersCache();
       },
       getAskUserCallbackUrl: () => getMcpRuntime().getAskUserCallbackUrl(),
-      getLibrarySearchCallbackUrl: () => getMcpRuntime().getLibrarySearchCallbackUrl(),
       getMediaCallbackUrl: () => getMcpRuntime().getMediaCallbackUrl(),
       getBrowserCallbackUrl: () => getMcpRuntime().getBrowserCallbackUrl(),
       getLobsterBrowserMcpCommand: () => {
@@ -3936,7 +3928,7 @@ function normalizeSelectedTextSnippetsForIpc(value: unknown): CoworkSelectedText
   return result.snippets;
 }
 
-// Resolve the correct preload script path
+// 获取正确的预加载脚本路径
 const PRELOAD_PATH = app.isPackaged
   ? path.join(__dirname, 'preload.js')
   : path.join(__dirname, '../dist-electron/preload.js');
@@ -3945,7 +3937,7 @@ const BROWSER_ANNOTATION_PRELOAD_PATH = app.isPackaged
   ? path.join(__dirname, 'browserAnnotationPreload.js')
   : path.join(__dirname, '../dist-electron/browserAnnotationPreload.js');
 
-// Resolve the app icon path (.ico on Windows, .png elsewhere)
+// 获取应用图标路径（Windows 使用 .ico，其他平台使用 .png）
 const getAppIconPath = (): string | undefined => {
   if (process.platform !== 'win32' && process.platform !== 'linux') return undefined;
   const basePath = app.isPackaged
@@ -3969,7 +3961,7 @@ const getNotificationIconPath = (): string | null => {
   return candidates.find(candidate => fs.existsSync(candidate)) ?? null;
 };
 
-// Keep a reference to the main window
+// 保存对主窗口的引用
 let mainWindow: BrowserWindow | null = null;
 let dataMigrationRestoreWindow: BrowserWindow | null = null;
 let desktopNotificationManager: DesktopNotificationManager | null = null;
@@ -4058,7 +4050,7 @@ const hideMainWindowForClose = (win: BrowserWindow): void => {
   }
 };
 
-// Active streaming request controllers
+// 存储活跃的流式请求控制器
 const activeStreamControllers = new Map<string, AbortController>();
 
 // Media generation selection and authenticated owner per session turn.
@@ -4300,7 +4292,7 @@ const resolveHappyHorse11Selection = (
     return {
       type: 't2v',
       upstreamModel: 'happyhorse-1.1-t2v',
-      reason: 'No input image detected; using the text-to-video sub-model happyhorse-1.1-t2v',
+      reason: '未检测到输入图片，使用文生视频子模型 happyhorse-1.1-t2v',
       imageCount,
     };
   }
@@ -4308,14 +4300,14 @@ const resolveHappyHorse11Selection = (
     return {
       type: 'i2v',
       upstreamModel: 'happyhorse-1.1-i2v',
-      reason: '1 input image detected; using the image-to-video sub-model happyhorse-1.1-i2v',
+      reason: '检测到 1 张输入图片，使用图生视频子模型 happyhorse-1.1-i2v',
       imageCount,
     };
   }
   return {
     type: 'r2v',
     upstreamModel: 'happyhorse-1.1-r2v',
-    reason: `${imageCount} input images detected; using the reference-to-video sub-model happyhorse-1.1-r2v`,
+    reason: `检测到 ${imageCount} 张输入图片，使用参考生视频子模型 happyhorse-1.1-r2v`,
     imageCount,
   };
 };
@@ -4614,7 +4606,7 @@ const scheduleReload = (reason: string, webContents?: WebContents) => {
   target.reloadIgnoringCache();
 };
 
-// Ensure only one instance of the app runs
+// 确保应用程序只有一个实例
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -4624,11 +4616,11 @@ if (!gotTheLock) {
   if (!app.isPackaged) {
     // In dev mode, setAsDefaultProtocolClient needs the electron exe path
     // and the app entry point as extra args so the OS can relaunch correctly
-    app.setAsDefaultProtocolClient('maties', process.execPath, [
+    app.setAsDefaultProtocolClient('lobsterai', process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   } else {
-    app.setAsDefaultProtocolClient('maties');
+    app.setAsDefaultProtocolClient('lobsterai');
   }
 
   const authCallbackRouter = new AuthCallbackRouter({
@@ -4642,7 +4634,7 @@ if (!gotTheLock) {
   });
 
   /**
-   * Parse a maties:// deep link and send (or buffer) the auth code.
+   * Parse a lobsterai:// deep link and send (or buffer) the auth code.
    */
   const handleDeepLink = (url: string) => {
     authCallbackRouter.handleDeepLink(url);
@@ -4721,7 +4713,7 @@ if (!gotTheLock) {
     }
 
     // Check for deep link in command line args (Windows/Linux)
-    const deepLink = commandLine.find(arg => arg.startsWith('maties://'));
+    const deepLink = commandLine.find(arg => arg.startsWith('lobsterai://'));
     if (deepLink) {
       handleDeepLink(deepLink);
     }
@@ -4729,7 +4721,7 @@ if (!gotTheLock) {
     focusMainWindow('second instance activation');
   });
 
-  // IPC handlers
+  // IPC 处理程序
   // One-shot arrival log: renderer startup has stalled on this invoke in the
   // field, and this line tells whether the request reached the main process.
   let firstStoreGetLogged = false;
@@ -4882,7 +4874,7 @@ if (!gotTheLock) {
             ? [
                 {
                   archiveName: 'install-timing.log',
-                  filePath: path.join(app.getPath('appData'), 'Maties', 'install-timing.log'),
+                  filePath: path.join(app.getPath('appData'), 'LobsterAI', 'install-timing.log'),
                 },
               ]
             : []),
@@ -6064,23 +6056,23 @@ if (!gotTheLock) {
         const costPoints = durationSec ? durationSec * 100 : null;
         const portalTasksUrl = getPortalTasksUrl();
         const subtitle = costPoints
-          ? `This generation is expected to use about **${costPoints}** credits`
-          : 'The cost is about **100** credits per second';
+          ? `本次生成大约预计消耗 **${costPoints}** 积分`
+          : '费用约为 **100** 积分/秒';
         const questionText = [
-          'Please confirm the description is correct; the task cannot be cancelled once submitted.',
-          'Video generation takes a while, so please be patient.',
+          '请确认当前描述无误，提交后将无法取消。',
+          '视频生成任务耗时较长，请耐心等待。',
           '',
-          `Save the video once it is generated. If it is deleted by mistake, it can be downloaded again from [Profile > Usage > Generation tasks](${portalTasksUrl})`,
-          '~~(The link expires, so download it soon)~~',
+          `生成后请妥善保存视频，若误删可在[「个人主页-用量详情-生成任务」](${portalTasksUrl})中下载`,
+          '~~（链接有时效性，请尽快下载）~~',
         ].join('\n');
         const confirmResponse = await getMcpRuntime().askUserInternal(
           [{
             question: questionText,
-            title: 'Generate this video?',
+            title: '确认生成视频？',
             subtitle,
             options: [
-              { label: 'Generate', description: 'Start the video generation task' },
-              { label: 'Cancel', description: 'Do not generate for now' },
+              { label: '确认生成', description: '开始视频生成任务' },
+              { label: '取消', description: '暂不生成' },
             ],
           }],
           undefined,
@@ -6088,7 +6080,7 @@ if (!gotTheLock) {
         );
 
         const userCancelled = confirmResponse?.behavior === 'deny'
-          || confirmResponse?.answers?.[questionText] === 'Cancel';
+          || confirmResponse?.answers?.[questionText] === '取消';
 
         if (!isRequestAccountCurrent()) return staleAccountResult();
         if (userCancelled) {
@@ -8563,7 +8555,7 @@ if (!gotTheLock) {
       console.error('[DataMigration] backup failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to back up Maties data',
+        error: error instanceof Error ? error.message : 'Failed to back up LobsterAI data',
       };
     }
   });
@@ -8622,11 +8614,11 @@ if (!gotTheLock) {
         success,
         scheduledRestart: rendererReleased,
         rollbackPath: restoreResult?.rollbackPath,
-        error: success ? undefined : restoreResult?.error || 'Failed to import Maties data backup',
+        error: success ? undefined : restoreResult?.error || 'Failed to import LobsterAI data backup',
       };
     } catch (error) {
       isCleanupInProgress = false;
-      const message = error instanceof Error ? error.message : 'Failed to import Maties data backup';
+      const message = error instanceof Error ? error.message : 'Failed to import LobsterAI data backup';
       console.error('[DataMigration] restore scheduling failed:', error);
       if (rendererReleased) {
         dialog.showErrorBox(t('dataMigrationRestoreDialogTitle'), message);
@@ -8716,7 +8708,7 @@ if (!gotTheLock) {
     try {
       return { success: true, state: await action() };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Maties in-app browser action failed.';
+      const message = error instanceof Error ? error.message : 'LobsterAI in-app browser action failed.';
       return {
         success: false,
         state: {
@@ -8939,7 +8931,7 @@ if (!gotTheLock) {
       const providers = { ...(appConfig?.providers ?? {}) };
       // The billed built-in provider authenticates through the token proxy;
       // syncing its raw key/baseUrl into dsh would produce a dead route.
-      delete providers[ProviderName.MatiesServer];
+      delete providers[ProviderName.LobsteraiServer];
       return providers;
     },
     getPlanProvider: () => {
@@ -12055,7 +12047,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().startFeishuInstallQrcode(isLark);
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to get the QR code');
+      throw new Error(error instanceof Error ? error.message : '获取二维码失败');
     }
   });
 
@@ -12063,7 +12055,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().pollFeishuInstall(deviceCode);
     } catch (error) {
-      return { done: false, error: error instanceof Error ? error.message : 'Polling failed' };
+      return { done: false, error: error instanceof Error ? error.message : '轮询失败' };
     }
   });
 
@@ -12073,7 +12065,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().verifyFeishuCredentials(appId, appSecret);
       } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : 'Verification failed' };
+        return { success: false, error: error instanceof Error ? error.message : '验证失败' };
       }
     },
   );
@@ -12083,7 +12075,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().startDingTalkInstallQrcode();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to get the QR code');
+      throw new Error(error instanceof Error ? error.message : '获取二维码失败');
     }
   });
 
@@ -12093,7 +12085,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().pollDingTalkInstall(deviceCode);
       } catch (error) {
-        return { done: false, error: error instanceof Error ? error.message : 'Polling failed' };
+        return { done: false, error: error instanceof Error ? error.message : '轮询失败' };
       }
     },
   );
@@ -12104,7 +12096,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().verifyDingTalkCredentials(clientId, clientSecret);
       } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : 'Verification failed' };
+        return { success: false, error: error instanceof Error ? error.message : '验证失败' };
       }
     },
   );
@@ -12769,7 +12761,7 @@ if (!gotTheLock) {
     }
   };
 
-  // Shell handlers - open files/folders
+  // Shell handlers - 打开文件/文件夹
   ipcMain.handle(ShellIpc.OpenPath, async (_event, filePath: string) => {
     try {
       const normalizedPath = normalizeWindowsShellPath(filePath);
@@ -12824,7 +12816,7 @@ if (!gotTheLock) {
 
   ipcMain.handle(ShellIpc.OpenHtmlInBrowser, async (_event, htmlContent: string) => {
     try {
-      const tmpDir = path.join(os.tmpdir(), 'maties-preview');
+      const tmpDir = path.join(os.tmpdir(), 'lobsterai-preview');
       fs.mkdirSync(tmpDir, { recursive: true });
       const tmpFile = path.join(tmpDir, `preview-${Date.now()}.html`);
       fs.writeFileSync(tmpFile, htmlContent, 'utf-8');
@@ -13141,7 +13133,7 @@ if (!gotTheLock) {
     }
   };
 
-  // API proxy handlers - work around CORS
+  // API 代理处理程序 - 解决 CORS 问题
   ipcMain.handle(
     'api:fetch',
     async (
@@ -13232,7 +13224,7 @@ if (!gotTheLock) {
     },
   );
 
-  // SSE streaming API proxy
+  // SSE 流式 API 代理
   ipcMain.handle(
     'api:stream',
     async (
@@ -13247,7 +13239,7 @@ if (!gotTheLock) {
     ) => {
       const controller = new AbortController();
 
-      // Keep the controller so the request can be cancelled later
+      // 存储 controller 以便后续取消
       activeStreamControllers.set(options.requestId, controller);
 
       try {
@@ -13298,7 +13290,7 @@ if (!gotTheLock) {
           };
         }
 
-        // Read the streamed response and forward it over IPC
+        // 读取流式响应并通过 IPC 发送
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
@@ -13327,7 +13319,7 @@ if (!gotTheLock) {
           }
         };
 
-        // Read the stream asynchronously and return success immediately
+        // 异步读取流，立即返回成功状态
         readStream();
 
         return {
@@ -13347,7 +13339,7 @@ if (!gotTheLock) {
     },
   );
 
-  // Cancel a streaming request
+  // 取消流式请求
   ipcMain.handle('api:stream:cancel', (_event, requestId: string) => {
     const controller = activeStreamControllers.get(requestId);
     if (controller) {
@@ -13360,7 +13352,7 @@ if (!gotTheLock) {
 
   // ─── end OAuth ───
 
-  // Allowed domains for the WeCom SDK authorization popup
+  // 企微 SDK 授权弹窗白名单域名
   const WECOM_AUTH_HOSTNAMES = new Set([
     'work.weixin.qq.com',
     'open.work.weixin.qq.com',
@@ -13390,7 +13382,7 @@ if (!gotTheLock) {
     }
   };
 
-  // Set the Content Security Policy
+  // 设置 Content Security Policy
   const sanitizeResponseHeaders = (
     headers: Record<string, string[]> | undefined
   ): Record<string, string[]> => {
@@ -13412,19 +13404,19 @@ if (!gotTheLock) {
 
   const setContentSecurityPolicy = () => {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      // Skip the WeCom authorization page so it uses its own CSP (otherwise external scripts are blocked and the page is blank)
+      // 跳过企微授权页面，让其使用自身的 CSP（否则外部脚本被阻止导致空白页）
       if (isWecomAuthUrl(details.url)) {
         callback({ responseHeaders: sanitizeResponseHeaders(details.responseHeaders) });
         return;
       }
 
-      // Skip the CSP for the artifact sandbox and its vendor scripts (isolated by iframe sandbox="allow-scripts")
+      // 跳过 artifact 沙箱及其 vendor 脚本的 CSP（iframe sandbox="allow-scripts" 隔离）
       if (isArtifactSandboxUrl(details.url)) {
         callback({ responseHeaders: sanitizeResponseHeaders(details.responseHeaders) });
         return;
       }
 
-      // Skip the CSP for the HTML preview server (a local HTTP server serves file-based HTML previews)
+      // 跳过 HTML 预览服务器的 CSP（本地 HTTP Server 提供文件类 HTML 预览）
       if (isPreviewServerUrl(details.url)) {
         callback({ responseHeaders: details.responseHeaders });
         return;
@@ -13438,7 +13430,7 @@ if (!gotTheLock) {
           : "script-src 'self'",
         "style-src 'self' 'unsafe-inline' https:",
         `img-src 'self' data: blob: https: http: ${ArtifactPreviewProtocol.LocalFile}: ${SKIN_PRIVILEGED_SCHEME.scheme}:`,
-        // Allow connections to any domain, no restriction
+        // 允许连接到所有域名，不做限制
         'connect-src *',
         "font-src 'self' data: blob: https:",
         `media-src 'self' data: blob: file: https: http: ${ArtifactPreviewProtocol.LocalFile}:`,
@@ -13455,9 +13447,9 @@ if (!gotTheLock) {
     });
   };
 
-  // Create the main window
+  // 创建主窗口
   const createWindow = () => {
-    // If the window already exists, do not create another one
+    // 如果窗口已经存在，就不再创建新窗口
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       if (!mainWindow.isVisible()) mainWindow.show();
@@ -13516,7 +13508,7 @@ if (!gotTheLock) {
       enableLargerThanScreen: false,
     });
 
-    // Set the macOS Dock icon (in dev mode Electron's default icon is not the app logo)
+    // 设置 macOS Dock 图标（开发模式下 Electron 默认图标不是应用 Logo）
     if (isMac && isDev) {
       const iconPath = getNotificationIconPath();
       if (iconPath) {
@@ -13524,11 +13516,11 @@ if (!gotTheLock) {
       }
     }
 
-    // Disable the window menu
+    // 禁用窗口菜单
     mainWindow.setMenu(null);
     installEditContextMenu(mainWindow.webContents);
 
-    // Handle window.open requests (WeCom SDK authorization popup, etc.)
+    // 处理 window.open 请求（企微 SDK 授权弹窗等）
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       if (isWecomAuthUrl(url)) {
         return {
@@ -13536,7 +13528,7 @@ if (!gotTheLock) {
           overrideBrowserWindowOptions: {
             width: 950,
             height: 640,
-            title: 'WeCom Authorization',
+            title: '企业微信授权',
             autoHideMenuBar: true,
             webPreferences: {
               nodeIntegration: false,
@@ -13571,9 +13563,9 @@ if (!gotTheLock) {
       }
     });
 
-    // Listen for child window creation (security restrictions for the WeCom authorization popup)
+    // 监听子窗口创建事件（企微授权弹窗安全限制）
     mainWindow.webContents.on('did-create-window', childWindow => {
-      // Restrict child windows to WeCom domains so they cannot be hijacked to other sites
+      // 限制子窗口只能导航到企微域名，防止被劫持到其他站点
       childWindow.webContents.on('will-navigate', (event, navUrl) => {
         if (!isWecomAuthUrl(navUrl)) {
           event.preventDefault();
@@ -13581,7 +13573,7 @@ if (!gotTheLock) {
       });
     });
 
-    // Set the window's minimum size
+    // 设置窗口的最小尺寸
     mainWindow.setMinimumSize(MIN_APP_WINDOW_WIDTH, MIN_APP_WINDOW_HEIGHT);
     if (shouldRestoreMaximized) {
       mainWindow.maximize();
@@ -13595,11 +13587,9 @@ if (!gotTheLock) {
       }
     };
 
-    // Window load watchdog. A single 30s timeout could not rescue a first launch
-    // slowed down by antivirus scanning (field case: first load took over 30s, the
-    // one and only reload fired and nothing took over afterwards, leaving the window
-    // blank forever). Retry with backoff instead, and stop after the cap so the
-    // state stays inspectable.
+    // 窗口加载看门狗。一次性 30s 超时救不回被杀软扫描拖慢的首启动(现场案例:
+    // 首次加载超 30s,唯一一次 reload 后再无人接管,窗口永久空白),改为按退避
+    // 重试,封顶后停手保留现场。
     const LOAD_WATCHDOG_DELAYS_MS = [30_000, 45_000, 60_000, 90_000];
     let loadRecoveryAttempts = 0;
     let loadWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
@@ -13636,9 +13626,8 @@ if (!gotTheLock) {
     };
     scheduleLoadWatchdog();
 
-    // Fallback display: if the first frame is slow to arrive, better to show the user
-    // a plain background-colored window than to look like "the app did not open".
-    // On auto-launch stay tray-only and do not pop up a window.
+    // 兜底显示:首帧迟迟不来时,宁可让用户看到纯背景色的窗口,也不能看起来
+    // "应用没打开"。开机自启保持仅托盘,不弹窗。
     const SHOW_FALLBACK_DELAY_MS = 10_000;
     const showFallbackTimer = setTimeout(() => {
       if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -13664,7 +13653,7 @@ if (!gotTheLock) {
       }
     });
 
-    // Handle window close
+    // 处理窗口关闭
     mainWindow.on('close', (e) => {
       windowStatePersist.cleanup();
       windowStatePersist.persist();
@@ -13686,7 +13675,7 @@ if (!gotTheLock) {
     mainWindow.on('hide', () => agentBrowserHost?.setWindowVisible(false));
     mainWindow.on('minimize', () => agentBrowserHost?.setWindowVisible(false));
 
-    // Handle renderer process crash or exit
+    // 处理渲染进程崩溃或退出
     mainWindow.webContents.on('render-process-gone', (_event, details) => {
       authCallbackRouter.markRendererUnavailable();
       console.error('Window render process gone:', details);
@@ -13694,7 +13683,7 @@ if (!gotTheLock) {
     });
 
     if (isDev) {
-      // Development environment
+      // 开发环境
       const maxRetries = 3;
       let retryCount = 0;
 
@@ -13717,20 +13706,20 @@ if (!gotTheLock) {
 
       tryLoadURL();
 
-      // Open the developer tools
+      // 打开开发者工具
       mainWindow.webContents.openDevTools();
     } else {
-      // Production environment
+      // 生产环境
       mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
     }
 
-    // Error handling
+    // 添加错误处理
     mainWindow.webContents.on(
       'did-fail-load',
       (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
         if (!isMainFrame) return;
         console.error('Page failed to load:', errorCode, errorDescription);
-        // If loading failed, try to reload
+        // 如果加载失败，尝试重新加载
         if (isDev) {
           setTimeout(() => {
             scheduleReload('did-fail-load');
@@ -13754,7 +13743,7 @@ if (!gotTheLock) {
       authCallbackRouter.handleNavigationStarted({ isMainFrame, isInPlace });
     });
 
-    // Clear the reference when the window is closed
+    // 当窗口关闭时，清除引用
     mainWindow.on('closed', () => {
       clearLoadWatchdog();
       clearTimeout(showFallbackTimer);
@@ -13767,10 +13756,10 @@ if (!gotTheLock) {
 
     windowStatePersist.bindWindowEvents(initialWindowBounds, shouldRestoreMaximized);
 
-    // Wait for the content to finish loading before showing the window
+    // 等待内容加载完成后再显示窗口
     mainWindow.once('ready-to-show', () => {
       clearTimeout(showFallbackTimer);
-      // On auto-launch do not show the window, only the tray icon
+      // 开机自启时不显示窗口，仅显示托盘图标
       if (!isAutoLaunched()) {
         mainWindow?.show();
       }
@@ -13778,7 +13767,7 @@ if (!gotTheLock) {
       // Initialize main-process i18n from stored language before creating UI elements.
       const initLang = getStore().get<{ language?: string }>('app_config')?.language;
       setLanguage(initLang === 'en' ? 'en' : 'zh');
-      // Create the system tray once the window is ready
+      // 窗口就绪后创建系统托盘
       createTray(() => mainWindow);
 
       // Start cron polling after the window is ready.
@@ -14067,7 +14056,6 @@ if (!gotTheLock) {
 
     sqliteBackupManager?.stopPeriodicBackupLoop();
     libraryIndexService?.stop();
-    libraryContentIndexer?.stop();
     libraryThumbnailRenderer.dispose();
 
     // Close the SQLite database to flush the WAL and release the file lock.
@@ -14178,7 +14166,7 @@ if (!gotTheLock) {
   process.once('SIGINT', () => handleTerminationSignal('SIGINT'));
   process.once('SIGTERM', () => handleTerminationSignal('SIGTERM'));
 
-  // Initialize the app
+  // 初始化应用
   const initApp = async () => {
     const profiler = new StartupProfiler();
 
@@ -14192,14 +14180,14 @@ if (!gotTheLock) {
     // We don't trigger permission dialogs at startup to avoid annoying users
 
     // Ensure default working directory exists
-    const defaultProjectDir = path.join(os.homedir(), 'maties', 'project');
+    const defaultProjectDir = path.join(os.homedir(), 'lobsterai', 'project');
     if (!fs.existsSync(defaultProjectDir)) {
       fs.mkdirSync(defaultProjectDir, { recursive: true });
       console.log('Created default project directory:', defaultProjectDir);
     }
     console.log('[Main] initApp: default project dir ensured');
 
-    // Register the custom localfile:// protocol for safely loading local media files.
+    // 注册 localfile:// 自定义协议，用于安全加载本地媒体文件。
     protocol.handle(ArtifactPreviewProtocol.LocalFile, createLocalFileProtocolResponse);
     registerSkinElectronIntegration(getSkinRuntimeController().store);
 
@@ -14232,62 +14220,10 @@ if (!gotTheLock) {
     });
     libraryIndexService.start();
 
-    // The personal library: an index of the person's documents, built on
-    // this machine (docs/maties/library.md). The agent reaches it through the
-    // search_library tool over the loopback bridge.
-    const libraryContentStore = new LibraryContentStore(store.getDatabase());
-    const readLibraryContentConfig = (): LibraryContentConfig => {
-      const config = getCoworkStore().getConfig();
-      return {
-        enabled: config.libraryEnabled,
-        folders: config.libraryFolders,
-        excludedFolders: config.libraryExcludedFolders,
-      };
-    };
-    libraryContentIndexer = new LibraryContentIndexer({
-      store: libraryContentStore,
-      getConfig: readLibraryContentConfig,
-      createWorker: onExit => new LibraryDocumentWorkerClient({
-        modelDir: resolveLibraryModelDir(),
-        workerEntryPath: resolveLibraryWorkerEntryPath(),
-        onExit,
-      }),
-      onStatus: (status: LibraryContentStatus) => {
-        for (const window of BrowserWindow.getAllWindows()) {
-          if (!window.isDestroyed()) window.webContents.send(LibraryContentIpc.StatusChanged, status);
-        }
-      },
-      getMetadata: key => store?.get(key),
-      setMetadata: (key, value) => store?.set(key, value),
-      excludedRoots: [app.getPath('userData')],
-    });
-    const libraryContentIndexerInstance = libraryContentIndexer;
-    registerLibraryContentIpcHandlers({
-      indexer: libraryContentIndexerInstance,
-      store: libraryContentStore,
-      getConfig: readLibraryContentConfig,
-      setConfig: update => {
-        getCoworkStore().setConfig({
-          ...(update.enabled !== undefined ? { libraryEnabled: update.enabled } : {}),
-          ...(update.folders !== undefined ? { libraryFolders: update.folders } : {}),
-          ...(update.excludedFolders !== undefined ? { libraryExcludedFolders: update.excludedFolders } : {}),
-        });
-        return readLibraryContentConfig();
-      },
-      pickFolder: async () => {
-        const result = await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] });
-        return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
-      },
-    });
-    getMcpRuntime().setLibrarySearchHandler(request => (
-      libraryContentIndexerInstance.search(normalizeLibrarySearchRequest(request))
-    ));
-    libraryContentIndexer.start();
-
     // Dev/E2E convenience: boot the dsh engine once the app is ready and the
     // store can answer provider queries, so app-level checks can assert
     // readiness from logs without driving the settings UI.
-    if (process.env.MATIES_DSH_AUTOSTART === '1') {
+    if (process.env.LOBSTERAI_DSH_AUTOSTART === '1') {
       ensureDshEngineReady()
         .then(url => console.log(`[DSH] Autostart ready at ${url}`))
         .catch(error => console.error('[DSH] Autostart failed', error));
@@ -14321,7 +14257,7 @@ if (!gotTheLock) {
     }
     // Inject store getter into claudeSettings
     setStoreGetter(() => store);
-    // Inject auth getters for maties-server provider routing
+    // Inject auth getters for lobsterai-server provider routing
     // The getter proactively triggers a background token refresh when the
     // accessToken is within 5 minutes of expiry, so that the SDK always
     // gets a fresh token without blocking.
@@ -14366,7 +14302,7 @@ if (!gotTheLock) {
         });
     }
 
-    registerProxyTokenRefresher(ProviderName.MatiesServer, async rejectedToken => {
+    registerProxyTokenRefresher(ProviderName.LobsteraiServer, async rejectedToken => {
       const latestAccessToken = getAuthTokens()?.accessToken;
       if (latestAccessToken && rejectedToken && latestAccessToken !== rejectedToken) {
         return {
@@ -14392,7 +14328,7 @@ if (!gotTheLock) {
     });
 
     // Start the lightweight token proxy before OpenClaw config sync so that
-    // maties-server provider can use the proxy URL in its config.
+    // lobsterai-server provider can use the proxy URL in its config.
     profiler.mark('openClawTokenProxy');
     try {
       await startOpenClawTokenProxy({
@@ -14549,7 +14485,7 @@ if (!gotTheLock) {
     }
 
     // Agent model migration — runs after cache warmup so resolveMatchedProvider
-    // can match maties-server models without falling back.
+    // can match lobsterai-server models without falling back.
     const defaultAgentModelRef = resolveDefaultAgentModelRef();
     const backfilledAgentModels = getCoworkStore().backfillEmptyAgentModels(defaultAgentModelRef);
     const qualifiedAgentModels = migrateAgentModelRefs({
@@ -14711,7 +14647,7 @@ if (!gotTheLock) {
 
     // Windows/Linux cold start: parse deep link from process.argv.
     // The router buffers it because the renderer is not ready yet after createWindow().
-    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('maties://'));
+    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('lobsterai://'));
     if (coldStartDeepLink) {
       handleDeepLink(coldStartDeepLink);
     }
@@ -14741,7 +14677,7 @@ if (!gotTheLock) {
       });
     }
 
-    // Enable launch at login by default on first start, and write the actual system login-item state back to the local flag.
+    // 首次启动时默认开启开机自启动，并以系统登录项的实际状态回写本地标记。
     if (!getStore().get('auto_launch_initialized')) {
       getStore().set('auto_launch_initialized', true);
       try {
@@ -14778,7 +14714,7 @@ if (!gotTheLock) {
     );
     getStore().onDidChange<AppConfigSettings>('app_config', (newConfig, oldConfig) => {
       updateTitleBarOverlay();
-      // Only refresh the tray menu text when the language changes
+      // 仅在语言变更时刷新托盘菜单文本
       const currentLanguage = newConfig?.language;
       if (currentLanguage !== lastLanguage) {
         lastLanguage = currentLanguage;
@@ -14825,7 +14761,7 @@ if (!gotTheLock) {
       lastSqliteAutoBackupEnabled = currentSqliteAutoBackupEnabled;
     });
 
-    // On macOS, show the existing window or recreate it when the dock icon is clicked
+    // 在 macOS 上，当点击 dock 图标时显示已有窗口或重新创建
     app.on('activate', () => {
       if (isDataMigrationRestoreInProgress) {
         return;
@@ -14841,10 +14777,10 @@ if (!gotTheLock) {
     });
   };
 
-  // Start the app
+  // 启动应用
   initApp().catch(console.error);
 
-  // Quit the app when all windows are closed
+  // 当所有窗口关闭时退出应用
   app.on('window-all-closed', () => {
     if (isDataMigrationRestoreInProgress) {
       return;

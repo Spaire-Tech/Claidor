@@ -2,7 +2,7 @@ import React from 'react';
 
 import { i18nService } from '@/services/i18n';
 
-const SERVICE_TERMS_URL = 'https://app.claidor.com/terms';
+const SERVICE_TERMS_URL = 'https://c.youdao.com/dict/hardware/lobsterai/lobsterai_service.html';
 
 // Ripple rings radiating from the logo: diameter and opacity per ring.
 const LOGO_RINGS: Array<{ size: number; opacity: number }> = [
@@ -76,7 +76,7 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({
           </div>
           <img
             src="logo.png"
-            alt="Maties"
+            alt="LobsterAI"
             width={72}
             height={72}
             className="relative rounded-2xl select-none"

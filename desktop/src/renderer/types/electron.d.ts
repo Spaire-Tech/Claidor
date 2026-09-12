@@ -92,12 +92,6 @@ import type {
   ResolvedKitCapabilities,
 } from '../../shared/kit/constants';
 import type {
-  LibraryContentConfig,
-  LibraryContentStatus,
-  LibrarySearchRequest,
-  LibrarySearchResponse,
-} from '../../shared/library/contentConstants';
-import type {
   LibraryAddLocalFilesData,
   LibraryArtifactCandidate,
   LibraryBackfillState,
@@ -500,7 +494,7 @@ interface McpServerConfigIPC {
 interface McpMarketplaceServer {
   id: string;
   name: string;
-  description_zh?: string;
+  description_zh: string;
   description_en: string;
   category: string;
   transportType: 'stdio' | 'sse' | 'http';
@@ -512,7 +506,7 @@ interface McpMarketplaceServer {
 
 interface McpMarketplaceCategory {
   id: string;
-  name_zh?: string;
+  name_zh: string;
   name_en: string;
 }
 
@@ -1530,20 +1524,6 @@ interface IElectronAPI {
     ) => Promise<LibraryResult<LibraryBackfillState>>;
     onChanged: (callback: (payload: LibraryChangedPayload) => void) => () => void;
   };
-  /** The personal library: the index of the person's documents (docs/maties/library.md). */
-  libraryContent: {
-    getStatus: () => Promise<LibraryContentStatus>;
-    getConfig: () => Promise<LibraryContentConfig>;
-    setConfig: (update: Partial<LibraryContentConfig>) => Promise<LibraryContentConfig>;
-    /** The folder the person picked in the system dialog, or null when they cancelled. */
-    pickFolder: () => Promise<string | null>;
-    setPaused: (paused: boolean) => Promise<LibraryContentStatus>;
-    rebuild: () => Promise<LibraryContentStatus>;
-    search: (request: LibrarySearchRequest) => Promise<LibrarySearchResponse>;
-    openFile: (filePath: string) => Promise<void>;
-    revealFile: (filePath: string) => Promise<void>;
-    onStatusChanged: (callback: (status: LibraryContentStatus) => void) => () => void;
-  };
   asr: {
     createRealtimeSession: (options: AsrRealtimeSessionRequest) => Promise<AsrRealtimeSessionResult>;
   };
@@ -2034,7 +2014,7 @@ interface IElectronAPI {
         supportsVideo?: boolean;
         supportsThinking?: boolean;
         thinkingConfig?: import('../../shared/providers/modelThinking').ModelThinkingConfig;
-        requestCapabilities?: import('../../shared/providers/matiesRequestOptions').MatiesRequestCapability[];
+        requestCapabilities?: import('../../shared/providers/lobsterAIRequestOptions').LobsterAIRequestCapability[];
         supportsToolCalling?: boolean;
         agenticReady?: boolean;
         contextWindow?: number;

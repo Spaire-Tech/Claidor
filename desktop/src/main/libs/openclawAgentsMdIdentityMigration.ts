@@ -9,11 +9,9 @@ import {
 } from '../../shared/agent/constants';
 
 const AGENTS_MD_FILENAME = 'AGENTS.md';
-const MATIES_MIGRATIONS_DIR = path.join('.maties', 'migrations');
-// Literal heading written by older releases into AGENTS.md ("## Identity (must follow)").
-// It must match the on-disk text exactly, so it is kept as escape sequences.
-const LEGACY_IDENTITY_TITLE = '## Identity\uff08\u5fc5\u987b\u9075\u5b88\uff09';
-const MANAGED_MARKER = '<!-- Maties managed: do not edit below this line -->';
+const LOBSTERAI_MIGRATIONS_DIR = path.join('.lobsterai', 'migrations');
+const LEGACY_IDENTITY_TITLE = '## Identity（必须遵守）';
+const MANAGED_MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
 const MAX_LEGACY_IDENTITY_BLOCK_CHARS = 20_000;
 
 const TEMPLATE_ANCHORS = [
@@ -173,7 +171,7 @@ const buildBackupPath = (workspaceDir: string, originalContent: string, now: Dat
   const hash = crypto.createHash('sha256').update(originalContent).digest('hex').slice(0, 12);
   return path.join(
     workspaceDir,
-    MATIES_MIGRATIONS_DIR,
+    LOBSTERAI_MIGRATIONS_DIR,
     `agents-md-before-legacy-identity-cleanup-${formatBackupTimestamp(now)}-${hash}.md`,
   );
 };

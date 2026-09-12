@@ -18,23 +18,23 @@ exports.default = async function notarizing(context) {
   }
 
   if (!process.env.APPLE_ID || !process.env.APPLE_APP_SPECIFIC_PASSWORD) {
-    console.warn('⚠️  Skipping notarization: APPLE_ID or APPLE_APP_SPECIFIC_PASSWORD is not set');
-    console.warn('   To enable notarization, create a .env file with your Apple Developer credentials');
-    console.warn('   See the .env.example template');
+    console.warn('⚠️  跳过公证: 未设置 APPLE_ID 或 APPLE_APP_SPECIFIC_PASSWORD');
+    console.warn('   如需启用公证，请创建 .env 文件并配置 Apple Developer 凭据');
+    console.warn('   参考 .env.example 模板');
     return;
   }
 
   if (!process.env.APPLE_TEAM_ID) {
-    console.warn('⚠️  Skipping notarization: APPLE_TEAM_ID is not set');
-    console.warn('   Notarization requires APPLE_TEAM_ID');
+    console.warn('⚠️  跳过公证: 未设置 APPLE_TEAM_ID');
+    console.warn('   公证需要 APPLE_TEAM_ID');
     return;
   }
 
   const appName = context.packager.appInfo.productFilename;
   const appPath = path.join(appOutDir, `${appName}.app`);
 
-  console.log(`🔐 Notarizing ${appName}...`);
-  console.log(`   App path: ${appPath}`);
+  console.log(`🔐 正在公证 ${appName}...`);
+  console.log(`   应用路径: ${appPath}`);
   console.log(`   Apple ID: ${process.env.APPLE_ID}`);
   console.log(`   Team ID: ${process.env.APPLE_TEAM_ID}`);
 
@@ -46,12 +46,12 @@ exports.default = async function notarizing(context) {
       teamId: process.env.APPLE_TEAM_ID,
     });
 
-    console.log('✅ Notarization succeeded');
-    console.log('   The app is signed and notarized and can be distributed to users');
+    console.log('✅ 公证成功！');
+    console.log('   应用已签名并通过公证，可以分发给用户');
   } catch (error) {
-    console.error('❌ Notarization failed:', error.message);
-    console.error('   Check your Apple Developer credentials and try again');
-    console.error('   See https://appstoreconnect.apple.com/notarization-history for details');
+    console.error('❌ 公证失败:', error.message);
+    console.error('   请检查 Apple Developer 凭据并重试');
+    console.error('   访问 https://appstoreconnect.apple.com/notarization-history 查看详情');
     throw error;
   }
 };

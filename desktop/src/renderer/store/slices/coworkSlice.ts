@@ -173,9 +173,6 @@ const initialState: CoworkState = {
     dreamingFrequency: '0 3 * * *',
     dreamingModel: '',
     dreamingTimezone: '',
-    libraryEnabled: true,
-    libraryFolders: [],
-    libraryExcludedFolders: [],
     openClawSessionPolicy: {
       keepAlive: '30d',
     },
@@ -234,7 +231,7 @@ const buildRailIndexItemFromMessage = (
     timestamp: message.timestamp,
     preview: getCoworkRailPreview(
       message.content,
-      message.type === 'user' ? `Turn ${fallbackLabelIndex + 1}` : 'Maties',
+      message.type === 'user' ? `Turn ${fallbackLabelIndex + 1}` : 'LobsterAI',
       COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH,
     ),
     contentLen: message.content.length,
@@ -327,8 +324,8 @@ const removeLoadedDetachedTailMessages = (
 };
 
 const MediaGenerationToolName = {
-  Image: 'maties_image_generate',
-  Video: 'maties_video_generate',
+  Image: 'lobsterai_image_generate',
+  Video: 'lobsterai_video_generate',
 } as const;
 
 const MediaGenerationActionName = {

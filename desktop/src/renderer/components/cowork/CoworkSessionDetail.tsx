@@ -434,7 +434,7 @@ const stripRailLabelMarkdown = (value: string): string => value
   .replace(/\s+/g, ' ')
   .trim()
   .replace(
-    /^(?:#{1,6}\s*)?(?:Summary|Implementation Approach|Key Changes|Validation|Assumptions or Questions)(?:\s*:|\s+)\s*/i,
+    /^(?:#{1,6}\s*)?(?:Summary|Implementation Approach|Key Changes|Validation|Assumptions or Questions)(?:\s*[:：]|\s+|(?=为))\s*/i,
     '',
   )
   .trim();
@@ -492,9 +492,9 @@ const buildRailItems = (
       messageId: primaryMessageId,
       turnIndex: index,
       absoluteIndex: messageOffsetById.get(primaryMessageId) ?? items.length,
-      label: turn.userMessage ? getRailLabel(userContent, `Turn ${index + 1}`) : 'Maties',
+      label: turn.userMessage ? getRailLabel(userContent, `Turn ${index + 1}`) : 'LobsterAI',
       summary: assistantContent
-        ? getRailLabel(assistantContent, 'Maties', COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH)
+        ? getRailLabel(assistantContent, 'LobsterAI', COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH)
         : '',
       contentLen: userContent.length + assistantContent.length,
       isUser: false,
@@ -562,7 +562,7 @@ const buildRailItemsFromIndex = (
       messageId: current.messageId,
       turnIndex: loadedTurnIndex,
       absoluteIndex: current.messageOffset,
-      label: 'Maties',
+      label: 'LobsterAI',
       summary: current.preview,
       contentLen: current.contentLen,
       isUser: false,
@@ -1022,10 +1022,10 @@ const domRectToCaptureRect = (rect: DOMRect): CaptureRect => ({
   height: Math.max(0, Math.round(rect.height)),
 });
 
-/** Format a date as "YYYY-MM-DD" for the export header. */
+/** Format a date as "YYYY年MM月DD日" for the export header. */
 const formatExportDate = (ts: number): string => {
   const d = new Date(ts);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日`;
 };
 
 /** Draw a rounded-rectangle path (for card clipping / filling). */
@@ -1193,11 +1193,11 @@ const composeExportCanvas = async (
 
   ctx.fillStyle = brandColor;
   ctx.font = `600 ${brandFontSize}px ${fontStack}`;
-  ctx.fillText('Maties', textX, footerCenterY - taglineFontSize / 2 - 2);
+  ctx.fillText('LobsterAI — 全场景办公助手 Agent', textX, footerCenterY - taglineFontSize / 2 - 2);
 
   ctx.fillStyle = subtitleColor;
   ctx.font = `400 ${taglineFontSize}px ${fontStack}`;
-  ctx.fillText('Made with Maties', textX, footerCenterY + brandFontSize / 2 + 3);
+  ctx.fillText('国内大厂首个开源桌面级 Agent，网易有道出品', textX, footerCenterY + brandFontSize / 2 + 3);
 
   ctx.restore(); // card clip
 

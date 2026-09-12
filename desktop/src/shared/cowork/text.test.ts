@@ -10,7 +10,7 @@ describe('stripNullChars', () => {
   });
 
   test('returns clean strings unchanged', () => {
-    const value = 'line1\nline2\ttab café';
+    const value = 'line1\nline2\ttab 中文';
     expect(stripNullChars(value)).toBe(value);
   });
 

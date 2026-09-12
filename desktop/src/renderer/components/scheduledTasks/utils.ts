@@ -189,7 +189,7 @@ function formatCronExpr(schedule: ScheduleCron): string {
             time,
           });
         }
-        const separator = ', ';
+        const separator = i18nService.getLanguage() === 'zh' ? '、' : ', ';
         const sortedDays =
           i18nService.getLanguage() === 'zh' ? [...days].sort((a, b) => (a || 7) - (b || 7)) : days;
         const dayNames = sortedDays.map(d => i18nService.t(WEEKDAY_KEYS[d]));
@@ -319,7 +319,7 @@ export function stripCronMetadataPrefix(text: string): string {
 
 /**
  * Format a future timestamp as a relative "time until" string.
- * e.g. "in 5 min" / "in 2 h" / "in 3 d"
+ * e.g. "5 分钟后" / "2 小时后" / "3 天后" (zh) or "in 5 min" / "in 2 h" / "in 3 d" (en)
  * Returns null if nextRunAtMs is null or in the past.
  */
 export function formatNextRunRelative(nextRunAtMs: number | null): string | null {
@@ -327,20 +327,23 @@ export function formatNextRunRelative(nextRunAtMs: number | null): string | null
   const diffMs = nextRunAtMs - Date.now();
   if (diffMs <= 0) return null;
 
+  const lang = i18nService.getLanguage();
+  const isChinese = lang === 'zh';
+
   const minutes = Math.round(diffMs / 60_000);
   const hours = Math.round(diffMs / 3_600_000);
   const days = Math.round(diffMs / 86_400_000);
 
   if (diffMs < 60_000) {
-    return 'in < 1 min';
+    return isChinese ? '不到 1 分钟后' : 'in < 1 min';
   }
   if (diffMs < 3_600_000) {
-    return `in ${minutes} min`;
+    return isChinese ? `${minutes} 分钟后` : `in ${minutes} min`;
   }
   if (diffMs < 86_400_000) {
-    return `in ${hours} h`;
+    return isChinese ? `${hours} 小时后` : `in ${hours} h`;
   }
-  return `in ${days} d`;
+  return isChinese ? `${days} 天后` : `in ${days} d`;
 }
 
 export function formatPayloadLabel(payload: ScheduledTaskPayload): string {
@@ -354,7 +357,7 @@ export function formatPayloadLabel(payload: ScheduledTaskPayload): string {
 
 /**
  * Resolve a channel name to a user-friendly display name via i18n + PlatformRegistry.
- * e.g. 'telegram' → 'Telegram', 'discord' → 'Discord', 'moltbot-popo' → 'POPO'
+ * e.g. 'feishu' → '飞书', 'openclaw-weixin' → '微信', 'moltbot-popo' → 'POPO'
  */
 function resolveChannelDisplayName(channel: string): string {
   const platform = PlatformRegistry.platformOfChannel(channel);
@@ -364,7 +367,7 @@ function resolveChannelDisplayName(channel: string): string {
   return channel;
 }
 
-/** Localized label for a conversation peer kind ('direct' → DM). */
+/** Localized label for a conversation peer kind ('direct' → 私聊/DM). */
 function conversationPeerKindLabel(peerKind: string | undefined): string {
   switch (peerKind) {
     case ImPeerKind.Direct:
@@ -378,7 +381,7 @@ function conversationPeerKindLabel(peerKind: string | undefined): string {
   }
 }
 
-/** Dropdown label for a conversation option, e.g. "DM · John" instead of raw IDs. */
+/** Dropdown label for a conversation option, e.g. "私聊 · 张三" instead of raw IDs. */
 export function formatConversationOptionLabel(option: ScheduledTaskConversationOption): string {
   const name = option.displayName?.trim() || imConversationDisplayName(option.conversationId);
   const kind = conversationPeerKindLabel(
@@ -455,7 +458,7 @@ export function channelOptionMatchesSelection(
 
 /**
  * Display label for a channel option. Multi-instance platforms get a
- * "Platform · instance name" suffix only when more than one instance of that platform is
+ * "平台 · 实例名" suffix only when more than one instance of that platform is
  * present; unnamed instances fall back to an ordinal instead of an account id.
  */
 export function formatChannelOptionLabel(
@@ -479,7 +482,7 @@ export function formatChannelOptionLabel(
 
 /**
  * Resolve a saved delivery target against known conversations so the label
- * shows the human-friendly name ("DM · John") instead of the raw peer id.
+ * shows the human-friendly name ("私聊 · 张三") instead of the raw peer id.
  */
 function resolveDeliveryTargetLabel(
   channel: string,
@@ -494,7 +497,7 @@ function resolveDeliveryTargetLabel(
 
 /**
  * Channel label matching the form picker: platform name plus the instance
- * name when several instances of that platform exist ("Telegram · #2").
+ * name when several instances of that platform exist ("企业微信 · 2 号").
  */
 function resolveDeliveryChannelLabel(
   channel: string,

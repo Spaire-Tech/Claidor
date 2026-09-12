@@ -6,7 +6,7 @@ appears stale.
 
 ## Instruction Scope
 
-This root `AGENTS.md` is repository-level guidance for Maties. Codex may also
+This root `AGENTS.md` is repository-level guidance for LobsterAI. Codex may also
 load more specific `AGENTS.md` or `AGENTS.override.md` files from subdirectories
 when the current working directory is inside those subtrees. More specific
 instructions override broader ones.
@@ -17,20 +17,16 @@ historical context and verify against the current source.
 
 ## Project Snapshot
 
-Maties is an Electron + React desktop application, derived from LobsterAI
-(NetEase Youdao, MIT) and vendored into the Claidor monorepo under
-`desktop/`. Its core user-facing product is a desktop agent experience that
-can work with local projects, files, browser previews, chat channels, skills,
-MCP servers, scheduled tasks, and rich artifacts. It signs in through the
-Claidor API (`server/polar/desktop`); there is no provider or API-key screen.
-Maties is English-only. See `CLAIDOR-NOTES.md` for what was retired from the
-upstream app.
+LobsterAI is an Electron + React desktop application. Its core user-facing
+product is a desktop agent experience that can work with local projects,
+files, browser previews, IM channels, skills, MCP servers, scheduled tasks,
+and rich artifacts.
 
 ### Cowork vs OpenClaw
 
-`Cowork` is Maties' product/session layer. The name is historical: it
+`Cowork` is LobsterAI's product/session layer. The name is historical: it
 started as a Claude Code-like in-house coding assistant, but in the current
-codebase it means the Maties layer that owns sessions, messages,
+codebase it means the LobsterAI layer that owns sessions, messages,
 permissions, UI state, local persistence, context usage, artifacts, and IPC
 contracts.
 
@@ -177,15 +173,15 @@ Main integration points:
 
 ### Patch Policy
 
-When changing OpenClaw-related behavior, first look for a Maties-side
+When changing OpenClaw-related behavior, first look for a LobsterAI-side
 integration point: adapter code, config sync, plugin configuration, runtime
 packaging, UI handling, or local data-layer handling. Prefer changing
-Maties when the behavior is product-specific or can be expressed cleanly at
+LobsterAI when the behavior is product-specific or can be expressed cleanly at
 the integration boundary.
 
 Use version-scoped OpenClaw patches only when the required behavior is inside
-OpenClaw and there is no clean Maties-side hook. Do not avoid a patch by
-adding brittle or contorted Maties workarounds.
+OpenClaw and there is no clean LobsterAI-side hook. Do not avoid a patch by
+adding brittle or contorted LobsterAI workarounds.
 
 Patches live under `scripts/patches/<openclaw.version>/` and are applied by
 `npm run openclaw:patch`. Do not leave manual edits in the sibling OpenClaw
@@ -204,7 +200,7 @@ Key modules:
 - `src/main/libs/openclawEngineManager.ts`: manages the bundled OpenClaw
   gateway process, state directory, config path, ports, tokens, gateway logs,
   restart/repair behavior, and runtime readiness.
-- `src/main/libs/openclawConfigSync.ts`: renders Maties state into
+- `src/main/libs/openclawConfigSync.ts`: renders LobsterAI state into
   OpenClaw config: providers/models, agents, IM bindings, plugins, MCP servers,
   skills extra dirs, sandbox mode, and managed workspace `AGENTS.md` sections.
 - `src/main/libs/agentEngine/openclawRuntimeAdapter.ts`: translates between
@@ -275,7 +271,7 @@ Useful shared areas:
 
 ## Data Model
 
-SQLite lives in Electron `app.getPath('userData')` as `maties.sqlite`.
+SQLite lives in Electron `app.getPath('userData')` as `lobsterai.sqlite`.
 
 Important tables:
 - `kv`: app-wide JSON values, including auth/config flags.
@@ -309,10 +305,10 @@ Migrations are mostly ad-hoc `PRAGMA table_info()` checks in
 OpenClaw runtime state is under Electron `userData/openclaw`.
 
 Important paths:
-- `%APPDATA%/Maties/openclaw/state/openclaw.json` on Windows: generated
+- `%APPDATA%/LobsterAI/openclaw/state/openclaw.json` on Windows: generated
   OpenClaw config.
-- `%APPDATA%/Maties/openclaw/state/workspace-main`: main agent workspace.
-- `%APPDATA%/Maties/openclaw/state/workspace-{agentId}`: non-main agent
+- `%APPDATA%/LobsterAI/openclaw/state/workspace-main`: main agent workspace.
+- `%APPDATA%/LobsterAI/openclaw/state/workspace-{agentId}`: non-main agent
   workspaces.
 
 The main workspace path is resolved by `getMainAgentWorkspacePath()`.
@@ -320,7 +316,7 @@ Non-main agent workspaces follow OpenClaw's state-dir fallback and are synced by
 `openclawConfigSync.ts`.
 
 Workspace files include:
-- `AGENTS.md`: OpenClaw workspace instructions with a Maties-managed section.
+- `AGENTS.md`: OpenClaw workspace instructions with a LobsterAI-managed section.
 - `MEMORY.md`: durable memory facts.
 - `memory/YYYY-MM-DD.md`: daily notes.
 - `USER.md`: user profile/context.
@@ -336,15 +332,15 @@ Main process logging uses `electron-log` via `src/main/logger.ts`, which
 intercepts `console.*`.
 
 Main logs:
-- Windows: `%APPDATA%/Maties/logs/main-YYYY-MM-DD.log`
-- macOS: `~/Library/Logs/Maties/main-YYYY-MM-DD.log`
-- Linux: `~/.config/Maties/logs/main-YYYY-MM-DD.log`
+- Windows: `%APPDATA%/LobsterAI/logs/main-YYYY-MM-DD.log`
+- macOS: `~/Library/Logs/LobsterAI/main-YYYY-MM-DD.log`
+- Linux: `~/.config/LobsterAI/logs/main-YYYY-MM-DD.log`
 
 Main log retention is 7 days. Max file size is 80 MB; overflow rotates to
 `.old.log`.
 
 OpenClaw gateway capture logs:
-- Windows: `%APPDATA%/Maties/openclaw/logs/gateway-YYYY-MM-DD.log`
+- Windows: `%APPDATA%/LobsterAI/openclaw/logs/gateway-YYYY-MM-DD.log`
 - Retention is 3 days.
 
 OpenClaw's own daily logs may also exist in a temp directory. On Windows,
@@ -432,17 +428,12 @@ Do not hardcode user-visible UI strings.
 
 Renderer:
 - Use `t('key')` from `src/renderer/services/i18n.ts`.
-- Add the `en` translation only. Maties is English-only: the `zh` dictionaries
-  were removed, `LanguageType` keeps `'zh'` for compatibility, and
-  `getLanguage()` always returns `'en'`.
+- Add both `zh` and `en` translations.
 
 Main process:
 - Use `t('key')` from `src/main/i18n.ts` for user-visible tray/menu/session
   titles/notifications.
-- Add the `en` translation only.
-
-Never add Chinese text (strings, comments, prompts, fixtures) to this
-directory.
+- Add both `zh` and `en` translations.
 
 Developer-only logs and DevTools-only diagnostics are exempt.
 
@@ -479,11 +470,9 @@ Agents:
 IM:
 - IM config is stored in SQLite and synced into OpenClaw config where the
   channel is OpenClaw-backed.
-- Offered platforms are Telegram, Discord, and email
-  (`src/shared/platform/constants.ts`). WeChat, WeCom, DingTalk, Feishu, QQ,
-  NIM, NetEase Bee, and POPO are `retired: true` there: their code still
-  compiles, they are never listed, and their OpenClaw plugins are not bundled.
-  Do not extend the retired platforms.
+- Multi-instance platforms include DingTalk, Feishu/Lark, QQ, Telegram,
+  Discord, WeCom, NIM, POPO, and email.
+- Weixin and NetEase Bee have single-instance style config.
 - IM session mappings preserve conversation/session/agent relationships.
 
 MCP:
@@ -522,19 +511,6 @@ storage, runtime, windowing, or OpenClaw config/restart behavior.
 
 ## Practical Guidance
 
-- **Assume it is already built.** Read `docs/maties/before-you-build.md`
-  before writing anything: what already exists, and the traps that have
-  cost real time. The engine we bundle ships far more than we surface,
-  and much of the app and server is already written. Add to that note
-  whenever a session finds either.
-- **Before adding a name to any list, read what the list is protecting.**
-  `scripts/prune-openclaw-runtime.cjs` is the sharpest example: plugin
-  loading is all-or-nothing, so one extension that cannot load kills
-  every other plugin, and the app loses the internet.
-- **Run it, or say you did not.** Every fault in the first pass at this
-  app was found by the founder using it, never by a test. Tests, types
-  and lint all passed on all of it. They do not answer « does the product
-  work », and neither does a clean diff.
 - Prefer `rg` for search.
 - Verify historical notes against current source before acting.
 - Ignore stale docs that conflict with `package.json`, `src/main`, `src/shared`,

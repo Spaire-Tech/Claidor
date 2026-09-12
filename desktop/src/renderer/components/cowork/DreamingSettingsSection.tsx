@@ -130,7 +130,7 @@ function formatPhaseRunLabel(phase: DreamingPhaseInfo | undefined, fallbackCron:
 function getDreamingInsightMessages(): string[] {
   const messages = i18nService
     .t('coworkDreamingInsightMessages')
-    .split(',')
+    .split(/[,，]/)
     .map((message) => message.trim())
     .filter(Boolean);
 

@@ -2,13 +2,13 @@ import { describe, expect, test } from 'vitest';
 
 import {
   hasModelRuntimeProfile,
-  MatiesModelRuntimeProfile,
+  LobsterAIModelRuntimeProfile,
   ModelProfileTransportDecision,
   parseModelProfileMap,
   resolveModelProfileTransportDecision,
-} from '../openclaw-extensions/maties-model-compat/profileMapping';
+} from '../openclaw-extensions/lobsterai-model-compat/profileMapping';
 
-describe('maties-model-compat profile mapping', () => {
+describe('lobsterai-model-compat profile mapping', () => {
   test('keeps only exact valid model refs and known profiles in deterministic order', () => {
     expect(parseModelProfileMap({
       'custom_2/alias-k3': 'moonshot-kimi-k3',
@@ -16,8 +16,8 @@ describe('maties-model-compat profile mapping', () => {
       'invalid-ref': 'moonshot-kimi-k3',
       'custom_1/other': 'unknown-profile',
     })).toEqual({
-      'custom_0/kimi-k3': MatiesModelRuntimeProfile.MoonshotKimiK3,
-      'custom_2/alias-k3': MatiesModelRuntimeProfile.MoonshotKimiK3,
+      'custom_0/kimi-k3': LobsterAIModelRuntimeProfile.MoonshotKimiK3,
+      'custom_2/alias-k3': LobsterAIModelRuntimeProfile.MoonshotKimiK3,
     });
   });
 
@@ -30,13 +30,13 @@ describe('maties-model-compat profile mapping', () => {
       profiles,
       'custom_0',
       'Kimi_K3',
-      MatiesModelRuntimeProfile.MoonshotKimiK3,
+      LobsterAIModelRuntimeProfile.MoonshotKimiK3,
     )).toBe(true);
     expect(hasModelRuntimeProfile(
       profiles,
       'custom_0',
       'kimi-k3',
-      MatiesModelRuntimeProfile.MoonshotKimiK3,
+      LobsterAIModelRuntimeProfile.MoonshotKimiK3,
     )).toBe(false);
   });
 
@@ -72,11 +72,11 @@ describe('maties-model-compat profile mapping', () => {
       modelProfiles: profiles,
       provider: 'custom_0',
       modelId: 'my-kimi-prod',
-      modelApi: 'maties-model-compat',
+      modelApi: 'lobsterai-model-compat',
     })).toEqual({
       kind: ModelProfileTransportDecision.Reject,
       expectedApi: 'openai-completions',
-      actualApi: 'maties-model-compat',
+      actualApi: 'lobsterai-model-compat',
     });
   });
 });

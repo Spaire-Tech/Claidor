@@ -201,9 +201,6 @@ export interface CoworkConfig {
   dreamingFrequency: string;
   dreamingModel: string;
   dreamingTimezone: string;
-  libraryEnabled: boolean;
-  libraryFolders: string[];
-  libraryExcludedFolders: string[];
   openClawSessionPolicy: OpenClawSessionPolicyConfig;
 }
 
@@ -242,9 +239,6 @@ export type CoworkConfigUpdate = Partial<Pick<
   | 'dreamingFrequency'
   | 'dreamingModel'
   | 'dreamingTimezone'
-  | 'libraryEnabled'
-  | 'libraryFolders'
-  | 'libraryExcludedFolders'
 >>;
 
 export interface CoworkApiConfig {

@@ -6,13 +6,43 @@ Legal research platform for OHADA law (see README.md). Monorepo with Python/Fast
 
 This repository carried the Swens build (a model review platform for finance). It is archived, switched off and kept as a record: the engine under `server/polar/tieout` (routes no longer mounted; tests not collected), the screens under `clients/apps/web/src/components/Workspace` (no longer rendered), the scripts under `server/scripts`, and the documents of record under `docs/pierce` (`swens.md`, `swens-plan.md`, `notes.md`). The last working state is the git tag `swens-final`. Do not extend it; answer questions about it from those documents, never from memory.
 
-## desktop/ — Maties, the desktop app
+## desktop/ — LobsterAI, restarted from upstream (12 September 2026)
 
-`desktop/` is Maties, Claidor's desktop assistant for office workers: the LobsterAI desktop app (NetEase Youdao, MIT) on top of the OpenClaw agent engine, vendored with `git subtree` (squashed; upstream commit named in the vendoring commit) and then reshaped: English only, Maties branding (`com.claidor.maties`, deep link `maties://`), Telegram/Discord/email channels only (the Chinese messengers are retired in `desktop/src/shared/platform/constants.ts`), no provider or API-key screens, no media generation, no Chinese services. It builds on its own with its own `package.json` (Node 24); it is not part of the `clients/` pnpm workspace. Keep the MIT notices. Never add Chinese text there. See `desktop/CLAIDOR-NOTES.md` for what was retired and what is still pending.
+`desktop/` is the LobsterAI desktop app (NetEase Youdao, MIT), vendored
+with `git subtree` (squashed; upstream commit named in the vendoring
+commit) and, as of 12 September, **exactly as upstream ships it**. Keep the
+MIT notices.
 
-Its sign-in is wired to this API: `server/polar/desktop` serves the account protocol under `/desktop` (browser login through the web app, auth code, token exchange and refresh, profile, quota, the model list, a metered proxy to Anthropic on Claidor's key, and empty stubs for updates, skill store, kit store and client activities). The app talks only to `api.claidor.com` and `app.claidor.com` (`desktop/src/main/libs/endpoints.ts`, `desktop/src/renderer/services/endpoints.ts`). Settings: `DESKTOP_*` in `server/polar/config.py`.
+The first pass turned it into Maties — English only, Claidor sign-in, no
+API-key screens, a new design, onboarding, connections, a voice. That pass
+was reverted whole, by the founder's decision, after a week in which every
+fault was found by them using the app and none by any test. It is not
+lost: it is the history of this branch and of `main`, and its last state
+is the commit before the revert. Read
+`docs/maties/before-you-build.md` before starting again — it is what that
+pass learned.
 
-The plan of record for Maties (business, the four sentences we may say, the two-engine account, the library, pricing, order of work) is `docs/maties/plan.md`. Change it before changing direction. The personal library (an index of the person's documents built on the machine, step 2 of the plan) is designed in `docs/maties/library.md` and lives under `desktop/src/main/library/content`, `desktop/openclaw-extensions/search-library` and `desktop/src/renderer/components/library`. The look of the app is the founder's chat screen, its rules written in `docs/maties/design.md` (the sphere is the logo; serif for the assistant, sans for the app; the stream). The macOS installer builds on GitHub Actions (`.github/workflows/desktop_mac.yml`), unsigned until an Apple certificate exists.
+**Nothing in `server/` or `runner/` was reverted.** Claidor still serves
+the desktop account protocol under `/desktop` (browser login, tokens, the
+metered model proxy, connections, the speech routes, the job queue), the
+cloud runner is untouched, and `render.yaml` and the deployed services are
+unchanged. All of it is live and, for now, nothing in the app calls it:
+the app at this commit is upstream LobsterAI and signs in to nobody.
+
+So the app currently has what upstream ships and we had removed: Chinese
+services and Chinese text, provider and API-key screens, NetEase's own
+growth surfaces (a sidebar ad slot, credit campaigns, a first-run tour),
+and thirteen settings tabs. That is expected at this commit, not a defect.
+
+The plan of record is still `docs/maties/plan.md`, and the design rules
+are still `docs/maties/design.md`; both describe where we are going, not
+where the code is. Change them before changing direction. The macOS
+installer builds on GitHub Actions (`.github/workflows/desktop_mac.yml`),
+unsigned until an Apple certificate exists.
+
+**The one rule the second pass exists to obey: run it, or say you did
+not.** Tests, types and lint passed on every change of the first pass.
+They never answered « does the product work ».
 
 ## Quick Start
 

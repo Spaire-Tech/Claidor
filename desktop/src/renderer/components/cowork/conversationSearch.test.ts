@@ -38,10 +38,10 @@ describe('conversation search', () => {
     ))).toBeNull();
   });
 
-  test('matches accented and mixed-language text literally', () => {
+  test('matches Chinese and mixed-language text literally', () => {
     const matches = findConversationSearchMatches([
-      message('mixed', 'assistant', 'Voici la recherche de conversation de Maties.'),
-    ], 'de conversation de Maties');
+      message('mixed', 'assistant', '这是 LobsterAI 的当前对话搜索。'),
+    ], 'LobsterAI 的当前对话');
 
     expect(matches).toHaveLength(1);
   });

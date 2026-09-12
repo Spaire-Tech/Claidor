@@ -100,7 +100,7 @@ describe('htmlShareClient', () => {
       'https://lobsterai-server.inner.youdao.com/s',
       async () => new Response(JSON.stringify({
         code: HtmlShareErrorCode.TooLarge,
-        message: 'The shared video exceeds the file size limit',
+        message: '分享视频超过文件大小限制',
         data: {
           limitBytes: 100 * 1024 * 1024,
           actualBytes: 101 * 1024 * 1024,
@@ -254,14 +254,14 @@ describe('htmlShareClient', () => {
       'https://lobsterai-server.inner.youdao.com',
       async () => new Response(JSON.stringify({
         code: 41315,
-        message: 'Stop sharing before deleting permanently',
+        message: '请先停止分享，再永久删除',
       }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
       'shr_live',
     );
 
     expect(result).toEqual({
       success: false,
-      error: 'Stop sharing before deleting permanently',
+      error: '请先停止分享，再永久删除',
       code: 41315,
       httpStatus: 200,
     });

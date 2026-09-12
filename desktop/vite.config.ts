@@ -83,7 +83,7 @@ export default defineConfig({
     pdfJsStaticAssetsPlugin(),
     electron([
       {
-        // Main-process entry file
+        // 主进程入口文件
         entry: 'src/main/main.ts',
         vite: {
           build: {
@@ -110,33 +110,7 @@ export default defineConfig({
         },
       },
       {
-        // The library document worker: a utilityProcess that reads, chunks and
-        // embeds documents. The model runtime and its native binaries stay
-        // outside the bundle; pdfjs-dist is an ES module that resolves its
-        // worker script next to itself, so it is loaded from node_modules too.
-        entry: 'src/main/library/content/documentWorker.ts',
-        vite: {
-          build: {
-            sourcemap: true,
-            outDir: 'dist-electron',
-            minify: false,
-            rollupOptions: {
-              external: (id) => {
-                const staticExternals = ['@huggingface/transformers', 'onnxruntime-node', 'sharp', 'better-sqlite3'];
-                if (staticExternals.includes(id)) return true;
-                if (id === 'pdfjs-dist' || id.startsWith('pdfjs-dist/')) return true;
-                return false;
-              },
-              output: {
-                inlineDynamicImports: true,
-              },
-            },
-          },
-        },
-        onstart() {},
-      },
-      {
-        // Preload script entry file
+        // 预加载脚本入口文件
         entry: 'src/main/preload.ts',
         vite: {
           build: {

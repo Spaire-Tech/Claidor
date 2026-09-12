@@ -161,9 +161,9 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
     const url = getSkillStoreUrl();
     console.log(`[SkillMarketplace] fetching from: ${url}`);
     try {
-      const client = url.startsWith('http:') ? await import('http') : await import('https');
+      const https = await import('https');
       const data = await new Promise<string>((resolve, reject) => {
-        const req = client.get(url, { timeout: 10000 }, (res) => {
+        const req = https.get(url, { timeout: 10000 }, (res) => {
           if (res.statusCode !== 200) {
             reject(new Error(`HTTP ${res.statusCode}`));
             res.resume();

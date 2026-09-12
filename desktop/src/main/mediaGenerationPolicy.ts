@@ -1,6 +1,6 @@
 export const MediaGenerationTool = {
-  Image: 'maties_image_generate',
-  Video: 'maties_video_generate',
+  Image: 'lobsterai_image_generate',
+  Video: 'lobsterai_video_generate',
 } as const;
 export type MediaGenerationTool = typeof MediaGenerationTool[keyof typeof MediaGenerationTool];
 

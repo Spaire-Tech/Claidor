@@ -36,7 +36,7 @@ const {
 // ---- helpers ----------------------------------------------------------------
 
 function makeTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'maties-memoryfile-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-memoryfile-test-'));
 }
 
 function cleanupDir(dir) {

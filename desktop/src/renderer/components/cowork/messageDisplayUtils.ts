@@ -76,7 +76,7 @@ export const COWORK_DETAIL_GUTTER_CLASS = 'px-6 sm:px-8 lg:px-10';
 const TOOL_USE_ERROR_TAG_PATTERN = /^<tool_use_error>([\s\S]*?)<\/tool_use_error>$/i;
 const ANSI_ESCAPE_PATTERN = /\u001B\[[0-?]*[ -/]*[@-~]/g;
 export const MEDIA_TOKEN_DISPLAY_RE = /\n?MEDIA:\s*`?[^`\n]+?`?\s*$/gim;
-const SILENT_TOKEN_RE = /^[`*_~"'()[\]{}<>.,!?;:\s-]{0,8}NO_REPLY[`*_~"'()[\]{}<>.,!?;:\s-]{0,8}$/i;
+const SILENT_TOKEN_RE = /^[`*_~"'""''()[\]{}<>.,!?;:，。！？；：\s-]{0,8}NO_REPLY[`*_~"'""''()[\]{}<>.,!?;:，。！？；：\s-]{0,8}$/i;
 export const TOOL_RESULT_COLLAPSED_FULL_DISPLAY_MAX_CHARS = 16 * 1024;
 export const TOOL_RESULT_COLLAPSED_PREVIEW_MAX_CHARS = 4 * 1024;
 export const STRUCTURED_TEXT_FORMAT_MAX_CHARS = 128 * 1024;
@@ -587,7 +587,7 @@ export const getTurnEndTimestamp = (turn: ConversationTurn): number | null => {
   return latest;
 };
 
-/** Localized duration for the collapsed-process line, e.g. "21m 45s". */
+/** Localized duration for the collapsed-process line, e.g. "21分钟 45秒" / "21m 45s". */
 export const formatTurnDuration = (durationMs: number): string => {
   const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
   const hours = Math.floor(totalSeconds / 3600);
@@ -788,10 +788,10 @@ export const getContextCompactionMessageLabel = (message: CoworkMessage, fallbac
 const MEDIA_TOKEN_MARKER_RE = /(^|\n)\s*MEDIA(?::\s*`?[^`\n]+?`?)?\s*$/im;
 const PARTIAL_MEDIA_TOKEN_MARKER_RE = /(^|\n)\s*(?:M|ME|MED|MEDI|MEDIA)(?::\s*`?[^`\n]+?`?)?\s*$/im;
 const MEDIA_FILE_LINK_DISPLAY_RE = /\[([^\]]+)\]\((file:\/\/[^)]*\.(?:png|jpe?g|gif|webp|bmp|avif|mp4|webm|mov)(?:\?[^)]*)?)\)/gi;
-const LOCAL_VIDEO_PATH_DISPLAY_RE = /(?:^|[\s"'`(:])((?:\/|[A-Za-z]:\/)[^\n"'`()\[\]]+\.(?:mp4|webm|mov))(?:[\s"'`)]|$)/gi;
+const LOCAL_VIDEO_PATH_DISPLAY_RE = /(?:^|[\s"'`(：:])((?:\/|[A-Za-z]:\/)[^\n"'`()\[\]]+\.(?:mp4|webm|mov))(?:[\s"'`)]|$)/gi;
 const SAVED_GENERATED_MEDIA_RE = /^Saved generated (?:video|image)s?:/i;
 const GENERATED_MEDIA_SUCCEEDED_RE = /^(?:Video|Image) generation succeeded\./i;
-const GENERATED_VIDEO_TEXT_RE = /video\s+(?:generated|generation\s+succeeded|generation\s+complete)/i;
+const GENERATED_VIDEO_TEXT_RE = /(?:视频(?:已生成|生成完成)|video\s+(?:generated|generation\s+succeeded|generation\s+complete))/i;
 const TERMINAL_MEDIA_STATUSES = new Set(['succeeded', 'failed', 'timeout', 'cancelled']);
 
 export type MediaStreamingInfo = {
@@ -832,7 +832,7 @@ const getDisplayPathFromFileUrl = (url: string): string => {
 const stripMediaFileLinksForDisplay = (value: string): string =>
   value
     .replace(MEDIA_FILE_LINK_DISPLAY_RE, (_match, _label: string, url: string) => getDisplayPathFromFileUrl(url))
-    .replace(/(:)\s*\n\s*((?:\/|[A-Za-z]:\/)[^\n]+\.(?:png|jpe?g|gif|webp|bmp|avif|mp4|webm|mov))/gi, '$1 $2')
+    .replace(/([:：])\s*\n\s*((?:\/|[A-Za-z]:\/)[^\n]+\.(?:png|jpe?g|gif|webp|bmp|avif|mp4|webm|mov))/gi, '$1 $2')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trimEnd();
@@ -917,7 +917,7 @@ export const isMediaStatusPoll = (group: ToolGroupItem): boolean => {
   const toolName = group.toolUse.metadata?.toolName;
   if (!toolName) return false;
   const normalized = normalizeToolName(toolName);
-  if (normalized !== 'matiesvideogenerate' && normalized !== 'matiesimagegenerate') return false;
+  if (normalized !== 'lobsteraivideogenerate' && normalized !== 'lobsteraiimagegenerate') return false;
   const input = group.toolUse.metadata?.toolInput as Record<string, unknown> | undefined;
   return input?.action === 'status' && typeof input?.taskId === 'string';
 };
@@ -967,7 +967,7 @@ export const isMediaGenerateRunning = (group: ToolGroupItem): boolean => {
   const toolName = group.toolUse.metadata?.toolName;
   if (!toolName) return false;
   const normalized = normalizeToolName(toolName);
-  if (normalized !== 'matiesvideogenerate') return false;
+  if (normalized !== 'lobsteraivideogenerate') return false;
   const input = group.toolUse.metadata?.toolInput as Record<string, unknown> | undefined;
   const action = input?.action;
   if (action !== 'generate' && action !== undefined) return false;
@@ -1353,7 +1353,7 @@ const countActivityCategories = (items: ConsolidatedItem[]): ActivityCategoryCou
 
 /**
  * Natural-language summary for a collapsed activity group, e.g.
- * "Ran 3 commands, read 2 files".
+ * "运行了 3 个命令、读取了 2 个文件" / "Ran 3 commands, read 2 files".
  * A single-step group shows the concrete action ("Read App.tsx") instead.
  */
 export const getActivityGroupHeaderLabel = (items: ConsolidatedItem[]): string => {
@@ -1423,7 +1423,7 @@ export const getActivityStepDisplay = (item: ConsolidatedItem): ActivityStepDisp
 
 /**
  * Live header text while the current step is still running: a verb phrase
- * mirroring the Claude Code app ("Editing Settings.tsx", "Running npm test").
+ * mirroring the Claude Code app ("Editing Settings.tsx", "正在运行 npm test").
  */
 export const getActivityCurrentActionText = (item: ConsolidatedItem): string => {
   if (item.type === 'assistant') {
@@ -1435,7 +1435,7 @@ export const getActivityCurrentActionText = (item: ConsolidatedItem): string => 
       ? item.group.toolUse.metadata?.toolName
       : null;
   if (typeof mediaToolName === 'string') {
-    const isVideo = normalizeToolName(mediaToolName) === 'matiesvideogenerate';
+    const isVideo = normalizeToolName(mediaToolName) === 'lobsteraivideogenerate';
     return i18nService.t(isVideo ? 'mediaGeneratingVideo' : 'mediaGeneratingImage');
   }
   if (item.type === 'tool_group') {

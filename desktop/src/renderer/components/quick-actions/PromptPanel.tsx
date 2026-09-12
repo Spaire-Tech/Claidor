@@ -31,7 +31,7 @@ const PromptPanel: React.FC<PromptPanelProps> = ({ action, onPromptSelect, onClo
 
   return (
     <div data-skin-prompt-panel="true" className="w-full animate-fade-in-up">
-      {/* Title */}
+      {/* 标题 */}
       <div className="mb-2.5 flex items-center justify-between px-0.5">
         <span className="text-xs font-medium text-secondary">
           {action.label}
@@ -49,7 +49,7 @@ const PromptPanel: React.FC<PromptPanelProps> = ({ action, onPromptSelect, onClo
         )}
       </div>
 
-      {/* Prompt card grid */}
+      {/* 提示词卡片网格 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {action.prompts.map((prompt) => {
           const isPromptSelected = selectedPromptId === prompt.id;
@@ -69,7 +69,7 @@ const PromptPanel: React.FC<PromptPanelProps> = ({ action, onPromptSelect, onClo
                 }
               `}
             >
-              {/* Title */}
+              {/* 标题 */}
               <div className="flex items-center justify-between w-full">
                 <span className={`text-sm font-medium ${isPromptSelected ? 'text-primary' : 'text-foreground'}`}>
                   {prompt.label}
@@ -86,7 +86,7 @@ const PromptPanel: React.FC<PromptPanelProps> = ({ action, onPromptSelect, onClo
                 />
               </div>
 
-              {/* Description */}
+              {/* 描述 */}
               {prompt.description && (
                 <p className="text-xs text-secondary line-clamp-2">
                   {prompt.description}

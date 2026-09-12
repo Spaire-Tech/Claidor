@@ -33,16 +33,16 @@ describe('library item presentation', () => {
 
   test('restores the original Unicode title for legacy sanitized cloud entries', () => {
     const item = makeSharedFile({
-      title: 'Résumé.xlsx',
-      entryFile: 'R_sum_.xlsx',
+      title: '员工信息表.xlsx',
+      entryFile: '_____.xlsx',
     });
 
-    expect(getLibraryDisplayFileName(item)).toBe('Résumé.xlsx');
+    expect(getLibraryDisplayFileName(item)).toBe('员工信息表.xlsx');
   });
 
   test('keeps the archive entry when it is intentionally different from the title', () => {
     const item = makeSharedFile({
-      title: 'Quarterly report',
+      title: '季度报告',
       entryFile: 'index.html',
     });
 
@@ -51,10 +51,10 @@ describe('library item presentation', () => {
 
   test('displays a Unicode archive entry from new clients unchanged', () => {
     const item = makeSharedFile({
-      title: 'Résumé.xlsx',
-      entryFile: 'Résumé.xlsx',
+      title: '员工信息表.xlsx',
+      entryFile: '员工信息表.xlsx',
     });
 
-    expect(getLibraryDisplayFileName(item)).toBe('Résumé.xlsx');
+    expect(getLibraryDisplayFileName(item)).toBe('员工信息表.xlsx');
   });
 });

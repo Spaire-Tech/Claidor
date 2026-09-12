@@ -1,7 +1,7 @@
 import { net } from 'electron';
 import http from 'http';
 
-import { isMatiesQuotaExhaustedError } from '../../common/coworkErrorClassify';
+import { isLobsterAIQuotaExhaustedError } from '../../common/coworkErrorClassify';
 import {
   AuthRefreshOutcome,
   AuthRefreshReason,
@@ -10,9 +10,9 @@ import {
 } from '../../shared/auth/constants';
 import { EnterpriseApiErrorCode } from '../../shared/enterpriseAccount/constants';
 import {
-  MATIES_CLIENT_CAPABILITIES,
-  MATIES_CLIENT_CAPABILITIES_HEADER,
-  MATIES_CLIENT_VERSION_HEADER,
+  LOBSTERAI_CLIENT_CAPABILITIES,
+  LOBSTERAI_CLIENT_CAPABILITIES_HEADER,
+  LOBSTERAI_CLIENT_VERSION_HEADER,
 } from '../../shared/providers/modelRuntimeProfiles';
 import type { EnterpriseAuthSessionSnapshot } from '../enterpriseAccount/membershipRevocation';
 
@@ -150,7 +150,7 @@ function collectRequestBody(req: http.IncomingMessage): Promise<Buffer> {
   });
 }
 
-function shouldRefreshMatiesToken(status: number): boolean {
+function shouldRefreshLobsterAIToken(status: number): boolean {
   return status === 401;
 }
 
@@ -234,7 +234,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return;
     }
 
-    if (shouldRefreshMatiesToken(result.status) && tokenRefresher) {
+    if (shouldRefreshLobsterAIToken(result.status) && tokenRefresher) {
       const latestAccessToken = tokenGetter?.()?.accessToken;
       if (latestAccessToken && latestAccessToken !== tokens.accessToken) {
         result = await forwardRequest(
@@ -665,9 +665,9 @@ function extractQuotaErrorFromProxyErrorPayload(
   const proxyError = extractStructuredProxyError(payload, event);
   if (proxyError) {
     const searchable = `${proxyError.message} ${proxyError.code ?? ''} ${payload}`;
-    return isMatiesQuotaExhaustedError(searchable) ? proxyError : null;
+    return isLobsterAIQuotaExhaustedError(searchable) ? proxyError : null;
   }
-  return event === 'error' && isMatiesQuotaExhaustedError(payload)
+  return event === 'error' && isLobsterAIQuotaExhaustedError(payload)
     ? { message: payload }
     : null;
 }
@@ -867,8 +867,8 @@ function buildUpstreamRequestHeaders(
     ...accountContextHeaders,
     'Authorization': `Bearer ${accessToken}`,
     'Content-Type': incomingHeaders['content-type'] || 'application/json',
-    [MATIES_CLIENT_CAPABILITIES_HEADER]: MATIES_CLIENT_CAPABILITIES,
-    [MATIES_CLIENT_VERSION_HEADER]: clientVersion,
+    [LOBSTERAI_CLIENT_CAPABILITIES_HEADER]: LOBSTERAI_CLIENT_CAPABILITIES,
+    [LOBSTERAI_CLIENT_VERSION_HEADER]: clientVersion,
   };
 
   // Forward accept header for SSE streaming
@@ -1164,5 +1164,5 @@ export const __openClawTokenProxyTestUtils = {
   pipeStreamingResponseWithQuotaScan,
   isTemporaryAuthRefreshFailure,
   isProxySessionKeyCurrent,
-  shouldRefreshMatiesToken,
+  shouldRefreshLobsterAIToken,
 };

@@ -10,7 +10,7 @@ export const KitReferenceScheme = {
 } as const;
 
 export const KitReferenceSource = {
-  LobsterAiKits: 'maties-kits',
+  LobsterAiKits: 'lobsterai-kits',
 } as const;
 
 export type KitReferenceSource =
@@ -32,7 +32,7 @@ export interface ResolvedKitCapabilities {
 
 export interface LocalizedText {
   en: string;
-  zh?: string;
+  zh: string;
 }
 
 export interface KitSkillMetadata {

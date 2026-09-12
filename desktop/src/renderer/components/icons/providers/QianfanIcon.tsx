@@ -10,7 +10,7 @@ const QianfanIcon: React.FC<{ className?: string }> = ({ className }) => (
       </linearGradient>
     </defs>
     <rect width="20" height="20" x="2" y="2" rx="4" fill="url(#qianfan-grad)" />
-    <text x="12" y="16.5" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="bold" fontFamily="-apple-system, sans-serif">Q</text>
+    <text x="12" y="16.5" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="bold" fontFamily="-apple-system, sans-serif">千</text>
   </svg>
 );
 

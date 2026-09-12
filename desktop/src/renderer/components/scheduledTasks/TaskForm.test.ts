@@ -164,9 +164,9 @@ describe('formatConversationOptionLabel', () => {
       ...baseOption,
       conversationId: 'cebef798:direct:8368898190',
       peerKind: 'direct',
-      displayName: 'John Doe',
+      displayName: '张三',
     });
-    expect(label).toBe(`${i18nService.t('scheduledTasksConvKindDirect')} · John Doe`);
+    expect(label).toBe(`${i18nService.t('scheduledTasksConvKindDirect')} · 张三`);
   });
 
   test('derives name and kind from the conversation id when fields are missing', () => {

@@ -12,7 +12,7 @@ import { EnterpriseQuotaPrompt } from '../../features/enterpriseAccount/componen
 import { refreshEnterpriseAccountContext } from '../../features/enterpriseAccount/context';
 import {
   resolveBlockingEnterpriseQuotaReason,
-  usesMatiesServerQuota,
+  usesLobsterAIServerQuota,
 } from '../../features/enterpriseAccount/modelQuotaGate';
 import {
   selectEnterpriseAccountContext,
@@ -174,7 +174,7 @@ const CoworkView: React.FC<CoworkViewProps> = ({
   const currentAgentSelectedModelRef = currentAgentSelectedModel
     ? toOpenClawModelRef(currentAgentSelectedModel)
     : '';
-  const homeModelUsesServerQuota = usesMatiesServerQuota(currentAgentSelectedModel);
+  const homeModelUsesServerQuota = usesLobsterAIServerQuota(currentAgentSelectedModel);
   const blockingHomeQuotaReason = resolveBlockingEnterpriseQuotaReason(
     homeQuotaReason,
     currentAgentSelectedModel,

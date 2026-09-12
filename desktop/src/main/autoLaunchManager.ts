@@ -93,7 +93,7 @@ export function setAutoLaunchEnabled(enabled: boolean): void {
       openAtLogin: enabled,
       // macOS: kept for older versions; Electron marks this deprecated on macOS 13+.
       openAsHidden: isMac ? enabled : false,
-      // Windows: mark auto-launch via a command-line argument
+      // Windows: 通过命令行参数标记自启动
       args: isWindows ? AUTO_LAUNCH_ARGS : [],
     });
   } catch (error) {
@@ -108,7 +108,7 @@ export function isAutoLaunched(): boolean {
       const settings = app.getLoginItemSettings();
       return settings.wasOpenedAtLogin || false;
     }
-    // Windows: check the command-line arguments
+    // Windows: 检查命令行参数
     return process.argv.includes('--auto-launched');
   } catch (error) {
     console.error('Failed to check auto-launch status:', error);

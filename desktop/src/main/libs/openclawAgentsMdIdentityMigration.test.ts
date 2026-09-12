@@ -12,14 +12,12 @@ import {
   removeLegacyAgentsMdIdentityBlock,
 } from './openclawAgentsMdIdentityMigration';
 
-const MARKER = '<!-- Maties managed: do not edit below this line -->';
-// Byte-for-byte legacy heading older releases wrote ("## Identity (must follow)"); mirrors LEGACY_IDENTITY_TITLE in the product code.
-const LEGACY_IDENTITY_TITLE = '## Identity\uff08\u5fc5\u987b\u9075\u5b88\uff09';
+const MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
 
-const buildLegacyAgentsMd = (legacyBody = 'Your name is "Little Translator".'): string => [
+const buildLegacyAgentsMd = (legacyBody = '你的名字是"小小翻译家"。'): string => [
   '# AGENTS.md - Your Workspace',
   '',
-  LEGACY_IDENTITY_TITLE,
+  '## Identity（必须遵守）',
   '',
   legacyBody,
   '',
@@ -45,7 +43,7 @@ afterEach(() => {
 });
 
 const makeTempWorkspace = (): string => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-agents-md-migration-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-agents-md-migration-'));
   tmpDirs.push(dir);
   return dir;
 };
@@ -59,15 +57,15 @@ describe('removeLegacyAgentsMdIdentityBlock', () => {
     expect(result.nextContent).toContain('This folder is home. Treat it that way.');
     expect(result.nextContent).toContain(MARKER);
     expect(result.nextContent).toContain('## System Prompt');
-    expect(result.nextContent).not.toContain(LEGACY_IDENTITY_TITLE);
-    expect(result.nextContent).not.toContain('Little Translator');
+    expect(result.nextContent).not.toContain('## Identity（必须遵守）');
+    expect(result.nextContent).not.toContain('小小翻译家');
   });
 
   test('removes the legacy block when there is no managed marker', () => {
     const result = removeLegacyAgentsMdIdentityBlock([
       '# AGENTS.md - Your Workspace',
       '',
-      LEGACY_IDENTITY_TITLE,
+      '## Identity（必须遵守）',
       '',
       'legacy identity',
       '',
@@ -107,7 +105,7 @@ describe('removeLegacyAgentsMdIdentityBlock', () => {
     const content = [
       '# AGENTS.md - Your Workspace',
       '',
-      LEGACY_IDENTITY_TITLE,
+      '## Identity（必须遵守）',
       '',
       'legacy identity',
       '',
@@ -128,7 +126,7 @@ describe('removeLegacyAgentsMdIdentityBlock', () => {
     const content = [
       '# AGENTS.md - Your Workspace',
       '',
-      LEGACY_IDENTITY_TITLE,
+      '## Identity（必须遵守）',
       '',
       'legacy identity',
       '',
@@ -153,7 +151,7 @@ describe('removeLegacyAgentsMdIdentityBlock', () => {
 
     expect(result.changed).toBe(true);
     expect(result.nextContent).toContain('\r\n');
-    expect(result.nextContent).not.toContain(LEGACY_IDENTITY_TITLE);
+    expect(result.nextContent).not.toContain('## Identity（必须遵守）');
   });
 
   test('is idempotent after cleanup', () => {
@@ -195,9 +193,9 @@ describe('cleanupLegacyAgentsMdIdentityBlockInWorkspace', () => {
     if (result.status !== AgentLegacyIdentityCleanupStatus.Cleaned) {
       throw new Error('expected cleanup to be cleaned');
     }
-    expect(fs.readFileSync(agentsMdPath, 'utf8')).not.toContain(LEGACY_IDENTITY_TITLE);
+    expect(fs.readFileSync(agentsMdPath, 'utf8')).not.toContain('## Identity（必须遵守）');
     expect(fs.readFileSync(result.backupPath, 'utf8')).toBe(original);
-    expect(result.backupPath).toContain(path.join('.maties', 'migrations'));
+    expect(result.backupPath).toContain(path.join('.lobsterai', 'migrations'));
   });
 
   test('skips when AGENTS.md does not exist', () => {

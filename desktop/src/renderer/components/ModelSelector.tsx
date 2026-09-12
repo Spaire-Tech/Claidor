@@ -12,7 +12,7 @@ import {
   type ModelThinkingConfig,
   type ModelThinkingLevel as ModelThinkingLevelType,
   ProviderName,
-  supportsMatiesRequestOptionsV1,
+  supportsLobsterAIRequestOptionsV1,
 } from '@shared/providers';
 import React from 'react';
 import { createPortal } from 'react-dom';
@@ -358,7 +358,7 @@ export function canConfigureModelThinking(
   > | null | undefined,
 ): boolean {
   return !!model?.thinkingConfig
-    && supportsMatiesRequestOptionsV1(model.requestCapabilities)
+    && supportsLobsterAIRequestOptionsV1(model.requestCapabilities)
     && model.accessible !== false
     && !isModelAgenticBlocked(model);
 }
@@ -367,11 +367,11 @@ export function supportsConfigurableModelThinkingProtocol(
   model: Pick<Model, 'requestCapabilities' | 'thinkingConfig'> | null | undefined,
 ): boolean {
   return !!model?.thinkingConfig
-    && supportsMatiesRequestOptionsV1(model.requestCapabilities);
+    && supportsLobsterAIRequestOptionsV1(model.requestCapabilities);
 }
 
 const MODEL_ICON_PROVIDER_HINTS: Array<{ pattern: RegExp; providerName: ProviderName | ProviderIconId }> = [
-  { pattern: /doubao/i, providerName: ProviderIconId.Doubao },
+  { pattern: /doubao|豆包/i, providerName: ProviderIconId.Doubao },
   { pattern: /deepseek/i, providerName: ProviderName.DeepSeek },
   { pattern: /minimax/i, providerName: ProviderName.Minimax },
   { pattern: /kimi|moonshot/i, providerName: ProviderName.Moonshot },
@@ -485,7 +485,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   const triggerIconClassName = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
   const resolveModelIconProviderKey = (model: Model): string => {
     const providerKey = model.providerKey?.trim();
-    if (providerKey && providerKey !== ProviderName.MatiesServer) return providerKey;
+    if (providerKey && providerKey !== ProviderName.LobsteraiServer) return providerKey;
 
     const searchableText = `${model.name} ${model.id}`;
     return MODEL_ICON_PROVIDER_HINTS.find(({ pattern }) => pattern.test(searchableText))?.providerName
@@ -502,7 +502,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     });
   };
 
-  // Close the dropdown when clicking outside
+  // 点击外部区域关闭下拉框
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -802,7 +802,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     showSelectedModelUnavailableFallback,
   ]);
 
-  // Show a hint when no models are available
+  // 如果没有可用模型，显示提示
   if (availableModels.length === 0) {
     if (showSelectedModelUnavailableFallback) {
       return (

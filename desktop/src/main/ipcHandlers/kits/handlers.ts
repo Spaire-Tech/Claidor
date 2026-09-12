@@ -214,14 +214,14 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
     isComputerUseKitSupportedPlatform() ? [buildComputerUseMarketplaceKit()] : []
   );
 
-  // Fetch the kit store catalogue from Claidor's API
+  // Fetch kit store catalog from overmind
   ipcMain.handle('kits:fetchStore', async () => {
     const url = getKitStoreUrl();
     console.log(`[KitStore] fetching from: ${url}`);
     try {
-      const client = url.startsWith('http:') ? await import('http') : await import('https');
+      const https = await import('https');
       const data = await new Promise<string>((resolve, reject) => {
-        const req = client.get(url, { timeout: 10000 }, (res) => {
+        const req = https.get(url, { timeout: 10000 }, (res) => {
           if (res.statusCode !== 200) {
             reject(new Error(`HTTP ${res.statusCode}`));
             res.resume();
@@ -290,7 +290,7 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
       }
 
       // 1. Download zip
-      tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'maties-kit-'));
+      tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-kit-'));
       const buffer = await downloadBuffer(bundleUrl);
       if (isComputerUseKit) {
         if (buffer.length !== ComputerUseKitBundleIntegrity.SizeBytes) {

@@ -20,7 +20,7 @@ import { ComputerUseRuntime } from './computerUseRuntime';
 
 const SKILLS_DIR_NAME = 'SKILLs';
 const SKILL_STATE_KEY = 'skills_state';
-const COMPUTER_USE_KIT_ICON_URL = '';
+const COMPUTER_USE_KIT_ICON_URL = 'https://ydhardwarecommon.nosdn.127.net/c0c9390a70b99645de82a673a66d5ae1.png';
 const COMPUTER_USE_MCP_REF = {
   id: ComputerUseKitId.BuiltIn,
   name: 'Computer Use',
@@ -30,13 +30,9 @@ const COMPUTER_USE_MCP_REF = {
 type InstalledKitsMap = Record<string, InstalledKitRecord>;
 type SkillStateMap = Record<string, { enabled: boolean }>;
 
-// The Computer Use kit is switched off: its Windows runtime zip and its kit
-// bundle are hosted on NetEase's CDN, and Maties must not fetch binaries from
-// there. Restore the platform check below once Claidor hosts the files:
-//   return process.platform === ComputerUseRuntime.Platform
-//     && process.arch === ComputerUseRuntime.Arch;
 export function isComputerUseKitSupportedPlatform(): boolean {
-  return false;
+  return process.platform === ComputerUseRuntime.Platform
+    && process.arch === ComputerUseRuntime.Arch;
 }
 
 export function buildComputerUseMarketplaceKit(): Record<string, unknown> {
@@ -45,14 +41,16 @@ export function buildComputerUseMarketplaceKit(): Record<string, unknown> {
     name: ComputerUseKitMetadata.Name,
     description: ComputerUseKitMetadata.Description,
     icon: COMPUTER_USE_KIT_ICON_URL,
-    author: 'Maties',
+    author: 'LobsterAI',
     version: ComputerUseRuntime.Version,
     tryAsking: [
       {
         en: 'Open Notepad and type a short note',
+        zh: '打开记事本并输入一段简短笔记',
       },
       {
         en: 'List the desktop applications I can control',
+        zh: '列出可以操作的桌面应用',
       },
     ],
     skills: {

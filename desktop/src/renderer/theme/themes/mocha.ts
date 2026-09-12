@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const mocha: ThemeDefinition = {
   meta: {
     id: 'mocha',
-    name: 'Mocha',
-    description: 'A rich, warm coffee-brown dark theme',
+    name: '摩卡棕黑',
+    description: '醇厚温暖的咖啡色暗色主题',
     appearance: 'dark',
     preview: ['#1a1210', '#d97706', '#f59e0b', '#a78bfa'],
   },

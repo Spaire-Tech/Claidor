@@ -116,9 +116,9 @@ describe('buildInstalledMcpItems', () => {
 
 
 describe('localized registry text', () => {
-  test('uses the localized name in zh and the plain name in en', () => {
-    const entry = registryEntry('amap', { name: 'Amap Maps', name_zh: 'Amap Maps (localized)' });
-    expect(getRegistryEntryDisplayName(entry, 'zh')).toBe('Amap Maps (localized)');
+  test('uses the Chinese name in zh and the plain name in en', () => {
+    const entry = registryEntry('amap', { name: 'Amap Maps', name_zh: '高德地图' });
+    expect(getRegistryEntryDisplayName(entry, 'zh')).toBe('高德地图');
     expect(getRegistryEntryDisplayName(entry, 'en')).toBe('Amap Maps');
   });
 
@@ -133,14 +133,14 @@ describe('localized registry text', () => {
   });
 
   test('resolves descriptions from the per-language pair', () => {
-    const entry = registryEntry('amap', { description_zh: 'Map service (localized)', description_en: 'Maps' });
-    expect(getRegistryEntryLocalizedDescription(entry, 'zh')).toBe('Map service (localized)');
+    const entry = registryEntry('amap', { description_zh: '地图服务', description_en: 'Maps' });
+    expect(getRegistryEntryLocalizedDescription(entry, 'zh')).toBe('地图服务');
     expect(getRegistryEntryLocalizedDescription(entry, 'en')).toBe('Maps');
     expect(getRegistryEntryLocalizedDescription(registryEntry('x'), 'zh')).toBe('');
   });
 
   test('falls back to the other language when one description is missing', () => {
-    const zhOnly = registryEntry('amap', { description_zh: 'Map service (localized)' });
-    expect(getRegistryEntryLocalizedDescription(zhOnly, 'en')).toBe('Map service (localized)');
+    const zhOnly = registryEntry('amap', { description_zh: '地图服务' });
+    expect(getRegistryEntryLocalizedDescription(zhOnly, 'en')).toBe('地图服务');
   });
 });

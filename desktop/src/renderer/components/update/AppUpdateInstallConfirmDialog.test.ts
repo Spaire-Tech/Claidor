@@ -14,10 +14,10 @@ describe('AppUpdateInstallConfirmDialog', () => {
     );
 
     expect(html).toContain('role="alertdialog"');
-    expect(html).toContain('A task is still running');
-    expect(html).toContain('Updating now will interrupt the task that is currently running');
-    expect(html).toContain('Update anyway');
-    expect(html).toContain('Cancel');
+    expect(html).toContain('有任务正在进行中');
+    expect(html).toContain('更新会中断当前正在进行的任务');
+    expect(html).toContain('继续更新');
+    expect(html).toContain('取消');
     expect(html).toContain('z-[9999]');
   });
 });

@@ -3,7 +3,7 @@ import {
   AuthSessionChangeReason,
   AuthSessionStatus,
 } from '@shared/auth/constants';
-import { MatiesRequestCapability,ProviderName } from '@shared/providers';
+import { LobsterAIRequestCapability, ProviderName } from '@shared/providers';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
@@ -22,6 +22,7 @@ import {
   mapPricingCatalogTextModelsToServerModels,
   mapPricingCatalogToPublicServerModels,
 } from './auth';
+import { i18nService } from './i18n';
 
 afterEach(() => {
   authService.destroy();
@@ -31,6 +32,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  i18nService.setLanguage('zh', { persist: false });
 });
 
 describe('pricing catalog model mapping', () => {
@@ -39,8 +41,8 @@ describe('pricing catalog model mapping', () => {
       {
         modelId: 'qwen3.7-plus',
         modelName: 'Qwen3.7-Plus',
-        provider: 'Maties',
-        providerLabel: 'Maties Plan',
+        provider: 'LobsterAI',
+        providerLabel: 'LobsterAI Plan',
         description: 'Strong multimodal model',
         supportsImage: true,
         supportsThinking: true,
@@ -61,8 +63,8 @@ describe('pricing catalog model mapping', () => {
     expect(model).toMatchObject({
       id: 'qwen3.7-plus',
       name: 'Qwen3.7-Plus',
-      provider: 'Maties Plan',
-      providerKey: ProviderName.MatiesServer,
+      provider: 'LobsterAI Plan',
+      providerKey: ProviderName.LobsteraiServer,
       isServerModel: true,
       accessible: false,
       description: 'Strong multimodal model',
@@ -128,7 +130,7 @@ describe('authenticated server model mapping', () => {
         ],
         defaultLevel: 'high',
       },
-      requestCapabilities: [MatiesRequestCapability.OptionsV1],
+      requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
       supportsToolCalling: true,
       agenticReady: false,
       contextWindow: 1_048_576,
@@ -139,7 +141,7 @@ describe('authenticated server model mapping', () => {
 
     expect(model).toMatchObject({
       id: 'kimi-k3-YoudaoInner',
-      providerKey: ProviderName.MatiesServer,
+      providerKey: ProviderName.LobsteraiServer,
       isServerModel: true,
       serverApiFormat: 'openai',
       runtimeProfile: 'moonshot-kimi-k3',
@@ -154,7 +156,7 @@ describe('authenticated server model mapping', () => {
         ],
         defaultLevel: 'high',
       },
-      requestCapabilities: [MatiesRequestCapability.OptionsV1],
+      requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
       supportsToolCalling: true,
       agenticReady: false,
       contextWindow: 1_048_576,
@@ -168,7 +170,7 @@ describe('authenticated server model mapping', () => {
     const [model] = mapAvailableServerModelsToModels([{
       modelId: 'deepseek-v4-flash',
       modelName: 'DeepSeek V4 Flash',
-      provider: 'Maties',
+      provider: 'LobsterAI',
       apiFormat: 'openai',
       supportsThinking: true,
       thinkingConfig: {
@@ -189,15 +191,15 @@ describe('authenticated server model mapping', () => {
     const [model] = mapAvailableServerModelsToModels([{
       modelId: 'capability-test',
       modelName: 'Capability Test',
-      provider: 'Maties',
+      provider: 'LobsterAI',
       apiFormat: 'openai',
       requestCapabilities: [
-        MatiesRequestCapability.OptionsV1,
+        LobsterAIRequestCapability.OptionsV1,
         'future-unknown-capability',
       ],
     }]);
 
-    expect(model.requestCapabilities).toEqual([MatiesRequestCapability.OptionsV1]);
+    expect(model.requestCapabilities).toEqual([LobsterAIRequestCapability.OptionsV1]);
   });
 });
 
@@ -267,13 +269,19 @@ describe('login diagnostics', () => {
     const fromRenderer = vi.fn();
     const loginResult = {
       success: true,
-      redirectUrl: 'https://api.claidor.com/desktop/login?source=electron',
+      redirectUrl: 'https://lobsterai.youdao.com/portal#/login?source=electron',
     };
     const login = vi.fn().mockResolvedValue(loginResult);
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'debug').mockImplementation(() => {});
     vi.stubGlobal('window', {
       electron: {
+        api: {
+          fetch: vi.fn().mockResolvedValue({
+            ok: true,
+            data: { data: { value: 'https://lobsterai.youdao.com/portal#/login' } },
+          }),
+        },
         auth: { login },
         log: { fromRenderer },
       },
@@ -281,9 +289,7 @@ describe('login diagnostics', () => {
 
     await expect(authService.login()).resolves.toEqual(loginResult);
 
-    // The main process owns the login address; the renderer passes nothing.
-    expect(login).toHaveBeenCalledOnce();
-    expect(login).toHaveBeenCalledWith();
+    expect(login).toHaveBeenCalledWith('https://lobsterai.youdao.com/portal#/login');
     expect(fromRenderer).toHaveBeenCalledWith(
       'info',
       'AuthService',
@@ -294,7 +300,7 @@ describe('login diagnostics', () => {
       'AuthService',
       expect.stringMatching(/^login attempt \d+ handed off to the system browser$/),
     );
-    expect(fromRenderer.mock.calls.flat().join(' ')).not.toContain('claidor.com');
+    expect(fromRenderer.mock.calls.flat().join(' ')).not.toContain('lobsterai.youdao.com');
   });
 
   test('returns the IPC failure result without throwing and records a warning', async () => {
@@ -304,6 +310,12 @@ describe('login diagnostics', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.stubGlobal('window', {
       electron: {
+        api: {
+          fetch: vi.fn().mockResolvedValue({
+            ok: true,
+            data: { data: { value: 'https://lobsterai.youdao.com/portal#/login' } },
+          }),
+        },
         auth: { login: vi.fn().mockResolvedValue({ success: false, error: 'open failed' }) },
         log: { fromRenderer },
       },
@@ -366,7 +378,7 @@ describe('quota checks', () => {
       models: [{
         modelId: 'qwen3.7-plus',
         modelName: 'Qwen3.7 Plus',
-        provider: 'Maties',
+        provider: 'LobsterAI',
         apiFormat: 'openai',
         accessible: true,
       }],
@@ -402,7 +414,7 @@ describe('quota checks', () => {
     expect(store.getState().model.availableModels).toEqual(expect.arrayContaining([
       expect.objectContaining({
         id: 'qwen3.7-plus',
-        providerKey: ProviderName.MatiesServer,
+        providerKey: ProviderName.LobsteraiServer,
         accessible: true,
       }),
     ]));
@@ -575,7 +587,7 @@ describe('server model loading', () => {
   const serverModel = {
     modelId: 'qwen3.7-plus',
     modelName: 'Qwen3.7 Plus',
-    provider: 'Maties',
+    provider: 'LobsterAI',
     apiFormat: 'openai',
     accessible: true,
   };
@@ -828,11 +840,11 @@ describe('enterprise quota period boundary refresh', () => {
 describe('auth state restoration', () => {
   const user = {
     yid: 'user@example.com',
-    nickname: 'Maties User',
+    nickname: 'Lobster User',
     avatarUrl: null,
   };
   const quota = {
-    planName: 'Pro',
+    planName: '专业',
     subscriptionStatus: 'active',
     creditsLimit: 1_000,
     creditsUsed: 100,
@@ -934,7 +946,7 @@ describe('auth state restoration', () => {
     expect(dispatchEvent).toHaveBeenCalledOnce();
     const toastEvent = dispatchEvent.mock.calls[0][0] as CustomEvent<string>;
     expect(toastEvent.type).toBe('app:showToast');
-    expect(toastEvent.detail).toContain('Your login session has expired');
+    expect(toastEvent.detail).toContain('登录状态已过期');
   });
 
   test('shows the dedicated signed-out toast when enterprise membership is revoked', async () => {
@@ -969,7 +981,13 @@ describe('auth state restoration', () => {
     expect(dispatchEvent).toHaveBeenCalledOnce();
     const toastEvent = dispatchEvent.mock.calls[0][0] as CustomEvent<string>;
     expect(toastEvent.type).toBe('app:showToast');
-    expect(toastEvent.detail).toBe(
+    expect(toastEvent.detail).toBe('你已被移出当前团队，已退出登录。请重新登录并选择可用身份。');
+  });
+
+  test('provides the enterprise membership revocation message in English', () => {
+    i18nService.setLanguage('en', { persist: false });
+
+    expect(i18nService.t('coworkErrorEnterpriseMembershipRevoked')).toBe(
       'You have been removed from the current team and signed out. '
       + 'Sign in again to choose an available identity.',
     );

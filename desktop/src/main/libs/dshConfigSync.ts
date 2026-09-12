@@ -1,7 +1,7 @@
-// Renders Maties provider configuration into the dsh settings file
+// Renders LobsterAI provider configuration into the dsh settings file
 // ($DSH_HOME/settings.yaml) so a kit-installed dsh boots with the user's
 // models already available. Ownership rules:
-//   - only providers keyed `maties-<id>` are managed (rewritten each sync);
+//   - only providers keyed `lobsterai-<id>` are managed (rewritten each sync);
 //     everything else in the file — user-created routes, other namespaces — is
 //     preserved byte-for-byte at the data level;
 //   - API keys never touch disk: routes reference env vars (apiKeyEnv) that
@@ -24,18 +24,18 @@ import * as path from 'path';
 import { ApiFormat, ProviderRegistry } from '../../shared/providers/constants';
 import type { ProviderConfig } from '../../shared/providers/types';
 
-export const DSH_MANAGED_PROVIDER_PREFIX = 'maties-';
+export const DSH_MANAGED_PROVIDER_PREFIX = 'lobsterai-';
 
 // dsh groups its model picker by display name, so every synced route carries
-// this marker: without it a Maties-managed provider is indistinguishable
+// this marker: without it a LobsterAI-managed provider is indistinguishable
 // from one the user added inside dsh.
-export const DSH_MANAGED_LABEL_PREFIX = 'Maties · ';
+export const DSH_MANAGED_LABEL_PREFIX = 'LobsterAI · ';
 
 // Route ids for the built-in billed provider, whose requests go through the
 // local token proxy rather than a user-supplied key. One route per wire
 // protocol, since a dsh route declares exactly one.
-export const DSH_PLAN_ROUTE_ID = 'maties-plan';
-export const DSH_PLAN_ANTHROPIC_ROUTE_ID = 'maties-plan-anthropic';
+export const DSH_PLAN_ROUTE_ID = 'lobsterai-plan';
+export const DSH_PLAN_ANTHROPIC_ROUTE_ID = 'lobsterai-plan-anthropic';
 
 // The proxy replaces the Authorization header with the real access token, so
 // the credential dsh sends is a placeholder that only has to be non-empty.
@@ -102,7 +102,7 @@ export function deriveDshApiKeyEnvRef(routeId: string): string {
 
 export function mapApiFormatToDshProtocol(apiFormat: string | undefined): DshProviderRoute['api'] | null {
   if (apiFormat === ApiFormat.Anthropic) return 'anthropic-messages';
-  // Maties' OpenAI-format providers are overwhelmingly third-party
+  // LobsterAI's OpenAI-format providers are overwhelmingly third-party
   // compatible endpoints; chat-completions is the universally supported wire.
   if (apiFormat === ApiFormat.OpenAI || apiFormat === undefined) return 'openai-completions';
   return null;
@@ -157,7 +157,7 @@ export function renderDshManagedSettings(
     envVars[apiKeyEnv] = apiKey;
     routes[routeId] = {
       // Prefer the canonical label ("DeepSeek") over the raw config key
-      // ("deepseek"), and mark the entry as Maties-managed.
+      // ("deepseek"), and mark the entry as LobsterAI-managed.
       displayName:
         DSH_MANAGED_LABEL_PREFIX
         + (config.displayName?.trim() || ProviderRegistry.get(providerId)?.label || providerId),

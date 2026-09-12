@@ -1,4 +1,4 @@
-import { MatiesRequestCapability } from '@shared/providers/matiesRequestOptions';
+import { LobsterAIRequestCapability } from '@shared/providers/lobsterAIRequestOptions';
 import { ModelThinkingLevel, OpenClawThinkingLevel } from '@shared/providers/modelThinking';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 
@@ -9,15 +9,15 @@ import {
   resolveThinkingLevelForModel,
 } from './modelThinkingLevelMemory';
 
-const STORAGE_KEY = 'maties.model-thinking-levels';
-const PRO_KEY = 'maties-server::deepseek-v4-pro';
-const FLASH_KEY = 'maties-server::deepseek-v4-flash';
+const STORAGE_KEY = 'lobsterai.model-thinking-levels';
+const PRO_KEY = 'lobsterai-server::deepseek-v4-pro';
+const FLASH_KEY = 'lobsterai-server::deepseek-v4-flash';
 
 const PRO_MODEL = {
   id: 'deepseek-v4-pro',
-  providerKey: 'maties-server',
+  providerKey: 'lobsterai-server',
   isServerModel: true,
-  requestCapabilities: [MatiesRequestCapability.OptionsV1],
+  requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
   thinkingConfig: {
     options: [
       { level: ModelThinkingLevel.High, openclawLevel: OpenClawThinkingLevel.High },

@@ -14,63 +14,58 @@ test('normalizes model-detected IM reminder requests into direct cron.add inputs
     {
       shouldCreateTask: true,
       scheduleAt: '2026-03-15T16:30:00+08:00',
-      reminderBody: 'drink water',
-      taskName: 'drink water reminder',
+      reminderBody: '喝饮料',
+      taskName: '喝饮料提醒',
     },
-    'Remind me to drink water in 2 minutes',
+    '2分钟后提醒我喝饮料',
     new Date('2026-03-15T16:28:00+08:00'),
   );
 
   assert.ok(parsed);
   assert.equal(parsed.kind, 'create');
-  assert.equal(parsed.reminderBody, 'drink water');
-  // The task name keeps the detector's name; the handler only normalizes/suffixes it.
-  assert.match(parsed.taskName, /drink water reminder/u);
-  // The cron payload is the reminder body behind the stable alarm-clock marker.
-  assert.match(parsed.payloadText, /^⏰ .*drink water$/u);
-  // The relative delay label is localized wording around the "2 minutes" figure.
-  assert.match(parsed.delayLabel, /2/u);
+  assert.equal(parsed.reminderBody, '喝饮料');
+  assert.equal(parsed.taskName, '喝饮料提醒');
+  assert.equal(parsed.payloadText, '⏰ 提醒：喝饮料');
+  assert.equal(parsed.delayLabel, '2分钟后');
   // scheduleAt may be in any timezone representation; compare as absolute timestamps
   assert.equal(new Date(parsed.scheduleAt).getTime(), new Date('2026-03-15T16:30:00+08:00').getTime());
-  // The confirmation names the clock time and the reminder body.
-  assert.match(parsed.confirmationText, /16:30/u);
-  assert.match(parsed.confirmationText, /drink water/u);
+  assert.match(parsed.confirmationText, /2分钟后.*会提醒你喝饮料/u);
 });
 
 test('only uses heuristic as a cheap reminder candidate prefilter', () => {
-  assert.equal(looksLikeIMScheduledTaskCandidate("Summarize today's meeting notes for me"), false);
-  assert.equal(looksLikeIMScheduledTaskCandidate('Remind me to drink water in 2 minutes'), true);
+  assert.equal(looksLikeIMScheduledTaskCandidate('帮我总结一下今天的会议纪要'), false);
+  assert.equal(looksLikeIMScheduledTaskCandidate('2分钟后提醒我喝饮料'), true);
 });
 
 test('rejects detector payloads without a future timezone-aware timestamp', () => {
   assert.equal(normalizeDetectedScheduledTaskRequest({
     shouldCreateTask: true,
     scheduleAt: '2026-03-15T16:30:00',
-    reminderBody: 'drink water',
-  }, 'Remind me to drink water', new Date('2026-03-15T16:28:00+08:00')), null);
+    reminderBody: '喝水',
+  }, '提醒我喝水', new Date('2026-03-15T16:28:00+08:00')), null);
 });
 
 test('identifies reminder system turns for async IM delivery', () => {
   assert.equal(isReminderSystemTurn([
-    { type: 'assistant', content: 'A regular reply' },
+    { type: 'assistant', content: '普通回复' },
   ]), false);
 
   assert.equal(isReminderSystemTurn([
-    { type: 'system', content: '⏰ Reminder: drink water' },
-    { type: 'assistant', content: 'Time to drink some water!' },
+    { type: 'system', content: '⏰ 提醒：喝饮料' },
+    { type: 'assistant', content: '该喝饮料啦！' },
   ]), true);
 });
 
 test('keeps recognizing legacy reminder system messages during transition', () => {
   assert.equal(isReminderSystemTurn([
-    { type: 'system', content: 'System: [Sunday, March 15th, 2026 — 4:30 PM] ⏰ Reminder: drink water' },
-    { type: 'assistant', content: 'Time to drink some water!' },
+    { type: 'system', content: 'System: [Sunday, March 15th, 2026 — 4:30 PM] ⏰ 提醒：喝饮料' },
+    { type: 'assistant', content: '该喝饮料啦！' },
   ]), true);
 });
 
 test('recognizes plain reminder text turns during runtime hotfix rollout', () => {
   assert.equal(isReminderSystemTurn([
-    { type: 'user', content: '⏰ Reminder: time to clock in! Don\'t forget.' },
-    { type: 'assistant', content: '⏰ Time is up, go clock in.' },
+    { type: 'user', content: '⏰ 提醒：该去钉钉打卡啦！别忘了打卡哦～' },
+    { type: 'assistant', content: '⏰ 时间到啦，该去打卡了。' },
   ]), true);
 });

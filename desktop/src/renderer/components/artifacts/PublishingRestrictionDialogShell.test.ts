@@ -13,11 +13,11 @@ describe('PublishingRestrictionDialogShell', () => {
         descriptionId: 'restriction-description',
         onClose: () => {},
         children: [
-          React.createElement('h2', { id: 'restriction-title', key: 'title' }, 'Sharing'),
+          React.createElement('h2', { id: 'restriction-title', key: 'title' }, '分享功能'),
           React.createElement(
             'p',
             { id: 'restriction-description', key: 'description' },
-            'The usage limit has been reached',
+            '已达到使用上限',
           ),
         ],
       },
@@ -28,7 +28,7 @@ describe('PublishingRestrictionDialogShell', () => {
     expect(html).toContain('aria-describedby="restriction-description"');
     expect(html).toContain('rounded-2xl');
     expect(html).toContain('max-h-[calc(100vh-2rem)]');
-    expect(html).toContain('aria-label="Close"');
+    expect(html).toContain('aria-label="关闭"');
     expect(html).not.toContain('rounded-none');
   });
 });

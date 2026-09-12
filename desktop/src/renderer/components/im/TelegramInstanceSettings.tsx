@@ -105,6 +105,7 @@ const TelegramInstanceSettings: React.FC<TelegramInstanceSettingsProps> = ({
   onTestConnectivity,
   testingPlatform,
   connectivityResults,
+  language,
   headerLeading,
 }) => {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -303,7 +304,7 @@ const TelegramInstanceSettings: React.FC<TelegramInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || 'Add'}
+                {i18nService.t('add') || '添加'}
               </button>
             </div>
             {instance.allowFrom.length > 0 && (
@@ -375,7 +376,7 @@ const TelegramInstanceSettings: React.FC<TelegramInstanceSettingsProps> = ({
                     }
                   }}
                   className="block flex-1 rounded-lg bg-surface border-border-subtle border focus:border-primary focus:ring-1 focus:ring-primary/30 text-foreground px-3 py-2 text-sm transition-colors"
-                  placeholder={'Enter Telegram Group ID'}
+                  placeholder={language === 'zh' ? '输入 Telegram Group ID' : 'Enter Telegram Group ID'}
                 />
                 <button
                   type="button"
@@ -390,7 +391,7 @@ const TelegramInstanceSettings: React.FC<TelegramInstanceSettingsProps> = ({
                   }}
                   className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                 >
-                  {i18nService.t('add') || 'Add'}
+                  {i18nService.t('add') || '添加'}
                 </button>
               </div>
               {instance.groupAllowFrom.length > 0 && (

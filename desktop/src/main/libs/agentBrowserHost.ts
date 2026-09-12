@@ -442,10 +442,10 @@ export class AgentBrowserHost {
   async handleToolRequest(request: BrowserToolRequest): Promise<BrowserToolResponse> {
     const config = normalizeBrowserWebAccessConfig(this.deps.getBrowserConfig());
     if (config.displayMode !== BrowserDisplayMode.InApp) {
-      return errorResult('The Maties in-app browser mode is not enabled.');
+      return errorResult('The LobsterAI in-app browser mode is not enabled.');
     }
     if (request.tool === BrowserMcpTool.EvaluateScript && !config.evaluateEnabled) {
-      return errorResult('Browser script evaluation is disabled in Maties settings.');
+      return errorResult('Browser script evaluation is disabled in LobsterAI settings.');
     }
     if (this.credentialLogin.isActive && request.tool !== BrowserMcpTool.LoginWithSavedCredential) {
       return errorResult('A secure saved-credential sign-in is in progress. Wait for it to finish.');
@@ -535,7 +535,7 @@ export class AgentBrowserHost {
         this.pressKey(this.resolvePage(args.pageId), readString(args.key));
         return textResult('Key pressed.');
       case BrowserMcpTool.ResizePage:
-        return textResult('The in-app browser size is controlled by the Maties panel.');
+        return textResult('The in-app browser size is controlled by the LobsterAI panel.');
       case BrowserMcpTool.HandleDialog:
         await this.handleDialog(this.resolvePage(args.pageId), readString(args.action), readString(args.promptText));
         return textResult('Dialog handled.');
@@ -569,7 +569,7 @@ export class AgentBrowserHost {
         };
       }
       default:
-        throw new Error(`Unsupported Maties browser tool: ${tool}`);
+        throw new Error(`Unsupported LobsterAI browser tool: ${tool}`);
     }
   }
 
@@ -671,7 +671,7 @@ export class AgentBrowserHost {
     const preventBlockedNavigation = (event: Electron.Event, targetUrl: string) => {
       if (!this.isAllowedUrl(targetUrl)) {
         event.preventDefault();
-        this.lastError = 'Navigation was blocked by the Maties browser access policy.';
+        this.lastError = 'Navigation was blocked by the LobsterAI browser access policy.';
         emit();
       }
     };
@@ -689,7 +689,7 @@ export class AgentBrowserHost {
 
   private async navigatePage(page: BrowserPage, url: string, timeoutMs: number): Promise<void> {
     if (!this.isAllowedUrl(url)) {
-      throw new Error('Navigation was blocked by the Maties browser access policy.');
+      throw new Error('Navigation was blocked by the LobsterAI browser access policy.');
     }
     this.lastError = undefined;
     await this.proxyReady;
@@ -1034,7 +1034,7 @@ export class AgentBrowserHost {
 
   private resolvePage(value: unknown): BrowserPage {
     const pageId = readPageId(value) ?? this.selectedPageId;
-    if (!pageId) throw new Error('No Maties browser page is open.');
+    if (!pageId) throw new Error('No LobsterAI browser page is open.');
     return this.requirePage(pageId);
   }
 
@@ -1052,7 +1052,7 @@ export class AgentBrowserHost {
 
   private requireSelectedPage(): BrowserPage {
     const page = this.getSelectedPage();
-    if (!page) throw new Error('No Maties browser page is open.');
+    if (!page) throw new Error('No LobsterAI browser page is open.');
     return page;
   }
 

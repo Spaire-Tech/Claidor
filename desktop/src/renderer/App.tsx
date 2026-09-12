@@ -114,7 +114,7 @@ const AGENT_TASK_SLOT_SHORTCUT_ACTIONS = [
   ShortcutAction.OpenAgentTask9,
 ] as const;
 
-const NEW_USER_WELCOME_AFTER_LOGIN_STORAGE_KEY = 'maties:newUserWelcomeAfterLogin';
+const NEW_USER_WELCOME_AFTER_LOGIN_STORAGE_KEY = 'lobsterai:newUserWelcomeAfterLogin';
 const NEW_USER_WELCOME_AFTER_LOGIN_RESTART_GRACE_MS = 1800;
 const NEW_USER_WELCOME_AFTER_LOGIN_ENGINE_SETTLE_MS = 700;
 const NEW_USER_WELCOME_UNAUTHENTICATED_RETURN_DELAY_MS = 600;
@@ -365,7 +365,7 @@ const App: React.FC = () => {
     []
   );
 
-  // Initialize the app
+  // 初始化应用
   const applyConfigToApp = useCallback((log?: (label: string) => void) => {
     const config = configService.getConfig();
     applyTypographyPreferences(config);
@@ -1818,7 +1818,7 @@ const App: React.FC = () => {
     };
   }, [dispatch]);
 
-  // Listen for the tray menu IPC event that opens Settings
+  // 监听托盘菜单打开设置的 IPC 事件
   useEffect(() => {
     const unsubscribe = window.electron.ipcRenderer.on('app:openSettings', () => {
       handleShowSettings();
@@ -1826,7 +1826,7 @@ const App: React.FC = () => {
     return unsubscribe;
   }, [handleShowSettings]);
 
-  // Listen for the tray menu IPC event that creates a new task
+  // 监听托盘菜单新建任务的 IPC 事件
   useEffect(() => {
     const unsubscribe = window.electron.ipcRenderer.on('app:newTask', () => {
       handleNewChat();
@@ -1866,9 +1866,8 @@ const App: React.FC = () => {
       if (cancelled) return;
       const now = Date.now();
       if (lastCheckTime > 0 && now - lastCheckTime < APP_UPDATE_POLL_INTERVAL_MS) return;
-      // Skip checks that are bound to fail while offline (during the window after
-      // waking from sleep, before the network stack recovers, requests return
-      // ERR_NETWORK_IO_SUSPENDED); catch up on the 'online' event instead.
+      // 离线时不发起注定失败的检查（休眠唤醒后网络栈尚未恢复的窗口会返回
+      // ERR_NETWORK_IO_SUSPENDED），等 'online' 事件再补查。
       if (!navigator.onLine) {
         console.log(`[App] auto update check skipped while offline, reason=${reason}`);
         return;
@@ -1876,23 +1875,22 @@ const App: React.FC = () => {
       lastCheckTime = now;
       console.log(`[App] auto update check triggered, reason=${reason}, at=${new Date(now).toISOString()}`);
       const ok = await runUpdateCheck();
-      // A failed check must not consume the 2-hour polling window: release the
-      // gate so the 30-minute heartbeat, window visibility or network recovery
-      // can retry as soon as possible.
+      // 失败的检查不占用 2 小时轮询窗口：释放门槛让 30 分钟心跳、
+      // 窗口重新可见或网络恢复时能尽快重试。
       if (!ok && !cancelled && lastCheckTime === now) {
         lastCheckTime = 0;
       }
     };
 
-    // Check immediately on startup
+    // 启动时立即检查
     void maybeCheck('startup');
 
-    // Heartbeat: every 30 minutes, check whether more than 2 hours have passed since the last check
+    // 心跳：每 30 分钟检测是否距上次检查已超过 2 小时
     const timer = window.setInterval(() => {
       void maybeCheck('heartbeat');
     }, APP_UPDATE_HEARTBEAT_INTERVAL_MS);
 
-    // Check when the window becomes visible again (covers waking from sleep)
+    // 窗口恢复可见时检测（覆盖休眠唤醒场景）
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         void maybeCheck('visibility');
@@ -1900,9 +1898,8 @@ const App: React.FC = () => {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Run a catch-up check when the network recovers (after waking, the network
-    // comes back later than window visibility; the check skipped while offline is
-    // made up here)
+    // 网络恢复时补一次检查（唤醒场景下网络恢复晚于窗口可见，
+    // 离线跳过的那次检查在这里补上）
     const handleOnline = () => {
       void maybeCheck('online');
     };
@@ -1916,13 +1913,12 @@ const App: React.FC = () => {
     };
   }, [isInitialized, runUpdateCheck, enterpriseConfig]);
 
-  // Pick the permission component for the scenario. Keep the component mounted
-  // while minimized (only visually hidden) so the user's selections/input survive
-  // re-expanding; the key isolates state per requestId.
+  // 根据场景选择使用哪个权限组件。最小化时保持组件挂载（仅视觉隐藏），
+  // 避免重新展开后丢失用户已选择/已输入的内容；key 按 requestId 隔离不同请求的状态。
   const permissionModal = useMemo(() => {
     if (!pendingPermission) return null;
 
-    // If this is an AskUserQuestion with multiple questions -> use the wizard component
+    // 检查是否为 AskUserQuestion 且有多个问题 -> 使用向导式组件
     const isQuestionTool = pendingPermission.toolName === 'AskUserQuestion';
     if (isQuestionTool && pendingPermission.toolInput) {
       const rawQuestions = (pendingPermission.toolInput as Record<string, unknown>).questions;
@@ -1941,7 +1937,7 @@ const App: React.FC = () => {
       }
     }
 
-    // Otherwise use the regular permission modal
+    // 其他情况使用原有的权限模态框
     return (
       <CoworkPermissionModal
         key={pendingPermission.requestId}
@@ -2195,7 +2191,7 @@ const App: React.FC = () => {
         suspended={showSettings || showUpdateModal || showUpdateInstallConfirm || isPermissionModalOpen}
       />
 
-      {/* The settings window renders above all main content without blocking interaction with the main UI */}
+      {/* 设置窗口显示在所有主内容之上，但不影响主界面的交互 */}
       {showSettings && (
         <Settings
           onClose={handleCloseSettings}

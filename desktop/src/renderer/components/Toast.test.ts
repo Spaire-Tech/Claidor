@@ -7,8 +7,8 @@ import Toast from './Toast';
 describe('Toast', () => {
   test('renders non-blocking feedback without a modal backdrop', () => {
     const html = renderToStaticMarkup(React.createElement(Toast, {
-      message: 'Message copied',
-      closeLabel: 'Close',
+      message: '消息已复制',
+      closeLabel: '关闭',
       onClose: () => {},
     }));
 
@@ -20,7 +20,7 @@ describe('Toast', () => {
     expect(html).not.toContain('bottom-5');
     expect(html).toContain('role="status"');
     expect(html).toContain('aria-live="polite"');
-    expect(html).toContain('aria-label="Close"');
+    expect(html).toContain('aria-label="关闭"');
     expect(html).not.toContain('modal-backdrop');
     expect(html).not.toContain('fixed inset-0');
   });

@@ -14,7 +14,7 @@ interface QuickActionBarProps {
   onActionSelect: (actionId: string) => void;
 }
 
-// Icon mapping
+// 图标映射
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   PresentationChartBarIcon,
   GlobeAltIcon,

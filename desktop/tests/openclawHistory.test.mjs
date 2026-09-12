@@ -57,7 +57,7 @@ test('extractGatewayHistoryEntry remaps scheduled reminder prompts to system mes
     role: 'user',
     content: `A scheduled reminder has been triggered. The reminder content is:
 
-⏰ Reminder: time to buy groceries!
+⏰ 提醒：该去买菜了！
 
 Handle this reminder internally. Do not relay it to the user unless explicitly requested.
 Current time: Sunday, March 15th, 2026 — 11:27 (Asia/Shanghai)`,
@@ -65,22 +65,22 @@ Current time: Sunday, March 15th, 2026 — 11:27 (Asia/Shanghai)`,
 
   assert.deepEqual(entry, {
     role: 'system',
-    text: '⏰ Reminder: time to buy groceries!',
+    text: '⏰ 提醒：该去买菜了！',
   });
 });
 
 test('extractGatewayHistoryEntry remaps plain scheduled reminder text to a system message', () => {
   const entry = extractGatewayHistoryEntry({
     role: 'user',
-    content: '⏰ Reminder: time to clock in! Do not forget.',
+    content: '⏰ 提醒：该去钉钉打卡啦！别忘了打卡哦～',
   });
 
   assert.deepEqual(entry, {
     role: 'system',
-    text: '⏰ Reminder: time to clock in! Do not forget.',
+    text: '⏰ 提醒：该去钉钉打卡啦！别忘了打卡哦～',
   });
 });
 
 test('buildScheduledReminderSystemMessage returns null for regular user text', () => {
-  assert.equal(buildScheduledReminderSystemMessage('just a regular chat message'), null);
+  assert.equal(buildScheduledReminderSystemMessage('普通聊天消息'), null);
 });

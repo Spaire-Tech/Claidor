@@ -1,7 +1,7 @@
 {
-  "name": "@maties/openclaw-mcp-bridge",
+  "name": "@lobsterai/openclaw-mcp-bridge",
   "version": "0.0.0",
-  "description": "Expose Maties-managed MCP servers as native OpenClaw tools.",
+  "description": "Expose LobsterAI-managed MCP servers as native OpenClaw tools.",
   "type": "module",
   "dependencies": {
     "@sinclair/typebox": "0.34.49"

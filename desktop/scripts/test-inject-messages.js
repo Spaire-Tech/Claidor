@@ -1,12 +1,11 @@
-/* global window, document, requestAnimationFrame */
 /**
- * Paste and run this script in the DevTools console.
- * Injects 200 mock messages into the current Cowork session for performance testing.
+ * 在 DevTools Console 中粘贴运行此脚本
+ * 向当前 Cowork 会话注入 200 条模拟消息用于性能测试
  *
- * Usage:
- *   1. Open a Cowork session
- *   2. Open DevTools (Cmd+Shift+I)
- *   3. Paste this script into the console and press Enter
+ * 使用方法:
+ *   1. 先打开一个 Cowork 会话
+ *   2. 打开 DevTools (Cmd+Shift+I)
+ *   3. 粘贴此脚本到 Console 并回车
  */
 
 (function injectTestMessages() {
@@ -75,27 +74,27 @@
   console.log(`Injecting 200 messages into session: ${sessionId}`);
 
   const sampleContents = [
-    'Hi, could you help me analyze the performance of this piece of code?',
-    'Sure. Let me take a look at your code...\n\n```typescript\nfunction fibonacci(n: number): number {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}\n```\n\nThis recursive implementation has O(2^n) time complexity. I recommend optimizing it with dynamic programming.',
-    'Can you give me the optimized version?',
-    'Of course, here is the version optimized with dynamic programming:\n\n```typescript\nfunction fibonacci(n: number): number {\n  if (n <= 1) return n;\n  let prev = 0, curr = 1;\n  for (let i = 2; i <= n; i++) {\n    [prev, curr] = [curr, prev + curr];\n  }\n  return curr;\n}\n```\n\nTime complexity drops from O(2^n) to O(n), with O(1) space.',
-    'That looks good! Any other optimization ideas?',
-    'You could also use **matrix exponentiation** to bring the time complexity down to O(log n):\n\n$$\\begin{pmatrix} F(n+1) \\\\ F(n) \\end{pmatrix} = \\begin{pmatrix} 1 & 1 \\\\ 1 & 0 \\end{pmatrix}^n \\begin{pmatrix} 1 \\\\ 0 \\end{pmatrix}$$\n\nFor most use cases, though, the O(n) version is more than enough.',
-    'Write me a React component that shows a drag-and-drop sortable list.',
-    'Happy to. This one uses the `@dnd-kit/core` library:\n\n```tsx\nimport { DndContext, closestCenter } from \'@dnd-kit/core\';\nimport { SortableContext, verticalListSortingStrategy } from \'@dnd-kit/sortable\';\n\nfunction SortableList({ items, onReorder }) {\n  return (\n    <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>\n      <SortableContext items={items} strategy={verticalListSortingStrategy}>\n        {items.map(item => <SortableItem key={item.id} item={item} />)}\n      </SortableContext>\n    </DndContext>\n  );\n}\n```',
-    'Thanks! Can you help me figure out why TypeScript is complaining?',
-    'Please paste the error message.',
+    '你好，请帮我分析一下这段代码的性能问题。',
+    '当然可以。让我看看你的代码...\n\n```typescript\nfunction fibonacci(n: number): number {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}\n```\n\n这个递归实现的时间复杂度是 O(2^n)，建议使用动态规划优化。',
+    '能给个优化后的版本吗？',
+    '好的，这是使用动态规划优化后的版本：\n\n```typescript\nfunction fibonacci(n: number): number {\n  if (n <= 1) return n;\n  let prev = 0, curr = 1;\n  for (let i = 2; i <= n; i++) {\n    [prev, curr] = [curr, prev + curr];\n  }\n  return curr;\n}\n```\n\n时间复杂度从 O(2^n) 降到了 O(n)，空间复杂度 O(1)。',
+    '这个方案不错！还有别的优化思路吗？',
+    '还可以使用**矩阵快速幂**，将时间复杂度进一步降到 O(log n)：\n\n$$\\begin{pmatrix} F(n+1) \\\\ F(n) \\end{pmatrix} = \\begin{pmatrix} 1 & 1 \\\\ 1 & 0 \\end{pmatrix}^n \\begin{pmatrix} 1 \\\\ 0 \\end{pmatrix}$$\n\n不过对于大多数应用场景，O(n) 的方案已经足够了。',
+    '帮我写一个 React 组件，显示一个可以拖拽排序的列表。',
+    '我来帮你实现。这里使用 `@dnd-kit/core` 库：\n\n```tsx\nimport { DndContext, closestCenter } from \'@dnd-kit/core\';\nimport { SortableContext, verticalListSortingStrategy } from \'@dnd-kit/sortable\';\n\nfunction SortableList({ items, onReorder }) {\n  return (\n    <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>\n      <SortableContext items={items} strategy={verticalListSortingStrategy}>\n        {items.map(item => <SortableItem key={item.id} item={item} />)}\n      </SortableContext>\n    </DndContext>\n  );\n}\n```',
+    '谢谢！能帮我看看为什么 TypeScript 报错了吗？',
+    '请把报错信息发给我看看。',
     '```\nTS2345: Argument of type \'string\' is not assignable to parameter of type \'number\'.\n```',
-    'That is a type mismatch. You passed a string where the function expects a number. Convert it with `parseInt()` or `Number()`.',
-    'Could you walk me through the directory structure of this project?',
-    'Sure, let me look at the current project layout...\n\n```\nsrc/\n├── main/          # Electron main process\n├── renderer/      # React renderer process\n│   ├── components/\n│   ├── services/\n│   ├── store/\n│   └── types/\n└── shared/        # Shared types and utilities\n```',
-    'Write a unit test for me.',
+    '这是类型不匹配的错误。你传入了一个字符串，但函数期望的是数字类型。可以使用 `parseInt()` 或 `Number()` 进行转换。',
+    '这个项目的目录结构能帮我梳理一下吗？',
+    '好的，我来看一下当前项目结构...\n\n```\nsrc/\n├── main/          # Electron 主进程\n├── renderer/      # React 渲染进程\n│   ├── components/\n│   ├── services/\n│   ├── store/\n│   └── types/\n└── shared/        # 共享类型和工具\n```',
+    '帮我写一个单元测试。',
     '```typescript\nimport { describe, it, expect } from \'vitest\';\nimport { fibonacci } from \'./fibonacci\';\n\ndescribe(\'fibonacci\', () => {\n  it(\'should return 0 for n=0\', () => {\n    expect(fibonacci(0)).toBe(0);\n  });\n  it(\'should return 1 for n=1\', () => {\n    expect(fibonacci(1)).toBe(1);\n  });\n  it(\'should return 55 for n=10\', () => {\n    expect(fibonacci(10)).toBe(55);\n  });\n});\n```',
-    'All tests passed ✅',
-    'Great! The tests cover the edge cases and the normal path, so the code quality is in good shape.',
-    'Anything else worth optimizing?',
-    'I would add a few more tests:\n\n1. **Negative input** - check how `fibonacci(-1)` behaves\n2. **Large input** - check `fibonacci(50)` does not overflow\n3. **Performance** - make sure large inputs finish in a reasonable time',
-    'Okay, I will add those test cases.',
+    '运行结果全部通过了 ✅',
+    '太好了！测试覆盖了边界情况和正常情况，代码质量有保障。',
+    '还有什么需要优化的地方吗？',
+    '建议再加几个方面的测试：\n\n1. **负数输入** - 测试 `fibonacci(-1)` 的行为\n2. **大数输入** - 测试 `fibonacci(50)` 确保不会溢出\n3. **性能测试** - 确保大数计算在合理时间内完成',
+    '好的，我加上这些测试用例。',
   ];
 
   const now = Date.now();

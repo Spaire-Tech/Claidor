@@ -1,11 +1,10 @@
 /**
  * QQ Media Download Utilities
- * QQ media download helpers (inbound side)
+ * QQ 媒体下载工具函数（接收端）
  */
-import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-
+import { app } from 'electron';
 import { fetchWithSystemProxy } from './http';
 import type { IMMediaType } from './types';
 
@@ -13,7 +12,7 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 const INBOUND_DIR = 'qq-inbound';
 
 /**
- * Get the QQ media storage directory
+ * 获取 QQ 媒体存储目录
  */
 export function getQQMediaDir(): string {
   const userDataPath = app.getPath('userData');
@@ -27,7 +26,7 @@ export function getQQMediaDir(): string {
 }
 
 /**
- * Generate a unique file name
+ * 生成唯一文件名
  */
 function generateFileName(extension: string): string {
   const timestamp = Date.now();
@@ -36,7 +35,7 @@ function generateFileName(extension: string): string {
 }
 
 /**
- * Get the file extension for a MIME type
+ * 根据 MIME 类型获取文件扩展名
  */
 function getExtensionFromMime(mimeType: string): string {
   const mimeMap: Record<string, string> = {
@@ -59,7 +58,7 @@ function getExtensionFromMime(mimeType: string): string {
 }
 
 /**
- * Map the type parsed by the QQ SDK to IMMediaType
+ * 将 QQ SDK 解析的 type 映射为 IMMediaType
  */
 export function mapQQMediaType(type: string): IMMediaType {
   switch (type) {
@@ -72,7 +71,7 @@ export function mapQQMediaType(type: string): IMMediaType {
 }
 
 /**
- * Infer the MIME type from the file name
+ * 根据文件名推断 MIME 类型
  */
 function inferMimeType(type: string, fileName?: string): string {
   if (fileName) {
@@ -107,11 +106,11 @@ function inferMimeType(type: string, fileName?: string): string {
 }
 
 /**
- * Download a QQ attachment
+ * 下载 QQ 附件
  *
- * @param url QQ CDN download URL
- * @param type Media type parsed by the SDK (image/video/audio/file)
- * @param fileName Original file name (optional)
+ * @param url QQ CDN 下载 URL
+ * @param type SDK 解析的媒体类型 (image/video/audio/file)
+ * @param fileName 原始文件名（可选）
  */
 export async function downloadQQAttachment(
   url: string,
@@ -120,7 +119,7 @@ export async function downloadQQAttachment(
 ): Promise<{ localPath: string; fileSize: number; mimeType: string } | null> {
   try {
     const mimeType = inferMimeType(type, fileName);
-    console.log(`[QQ Media] Downloading attachment:`, JSON.stringify({
+    console.log(`[QQ Media] 下载附件:`, JSON.stringify({
       type,
       mimeType,
       fileName,
@@ -128,18 +127,18 @@ export async function downloadQQAttachment(
 
     const response = await fetchWithSystemProxy(url);
     if (!response.ok) {
-      console.error(`[QQ Media] Download failed: HTTP ${response.status}`);
+      console.error(`[QQ Media] 下载失败: HTTP ${response.status}`);
       return null;
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
 
     if (buffer.length > MAX_FILE_SIZE) {
-      console.warn(`[QQ Media] File too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB (limit: 25MB)`);
+      console.warn(`[QQ Media] 文件过大: ${(buffer.length / 1024 / 1024).toFixed(1)}MB (限制: 25MB)`);
       return null;
     }
 
-    // Determine the file extension
+    // 确定文件扩展名
     let extension = getExtensionFromMime(mimeType);
     if (fileName) {
       const ext = path.extname(fileName);
@@ -152,7 +151,7 @@ export async function downloadQQAttachment(
 
     fs.writeFileSync(localPath, buffer);
 
-    console.log(`[QQ Media] Downloaded: ${localFileName} (${(buffer.length / 1024).toFixed(1)} KB)`);
+    console.log(`[QQ Media] 下载成功: ${localFileName} (${(buffer.length / 1024).toFixed(1)} KB)`);
 
     return {
       localPath,
@@ -160,14 +159,14 @@ export async function downloadQQAttachment(
       mimeType,
     };
   } catch (error: any) {
-    console.error(`[QQ Media] Download failed: ${error.message}`);
+    console.error(`[QQ Media] 下载失败: ${error.message}`);
     return null;
   }
 }
 
 /**
- * Remove expired media files
- * @param maxAgeDays Maximum retention in days, default 7
+ * 清理过期的媒体文件
+ * @param maxAgeDays 最大保留天数，默认 7 天
  */
 export function cleanupOldQQMediaFiles(maxAgeDays: number = 7): void {
   const mediaDir = getQQMediaDir();
@@ -191,14 +190,14 @@ export function cleanupOldQQMediaFiles(maxAgeDays: number = 7): void {
           cleanedCount++;
         }
       } catch (err: any) {
-        console.warn(`[QQ Media] Failed to clean up file ${file}: ${err.message}`);
+        console.warn(`[QQ Media] 清理文件失败 ${file}: ${err.message}`);
       }
     }
 
     if (cleanedCount > 0) {
-      console.log(`[QQ Media] Cleaned up ${cleanedCount} expired files`);
+      console.log(`[QQ Media] 清理了 ${cleanedCount} 个过期文件`);
     }
   } catch (error: any) {
-    console.warn(`[QQ Media] Cleanup error: ${error.message}`);
+    console.warn(`[QQ Media] 清理错误: ${error.message}`);
   }
 }

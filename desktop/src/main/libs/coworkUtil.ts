@@ -459,11 +459,11 @@ export function ensureElectronNodeShim(electronPath: string, npmBinDir?: string)
     const nodeSh = join(shimDir, 'node');
     const nodeShContent = [
       '#!/usr/bin/env bash',
-      'if [ -z "${MATIES_ELECTRON_PATH:-}" ]; then',
-      '  echo "MATIES_ELECTRON_PATH is not set" >&2',
+      'if [ -z "${LOBSTERAI_ELECTRON_PATH:-}" ]; then',
+      '  echo "LOBSTERAI_ELECTRON_PATH is not set" >&2',
       '  exit 127',
       'fi',
-      'exec env ELECTRON_RUN_AS_NODE=1 "${MATIES_ELECTRON_PATH}" "$@"',
+      'exec env ELECTRON_RUN_AS_NODE=1 "${LOBSTERAI_ELECTRON_PATH}" "$@"',
       '',
     ].join('\n');
 
@@ -480,12 +480,12 @@ export function ensureElectronNodeShim(electronPath: string, npmBinDir?: string)
       const nodeCmd = join(shimDir, 'node.cmd');
       const nodeCmdContent = [
         '@echo off',
-        'if "%MATIES_ELECTRON_PATH%"=="" (',
-        '  echo MATIES_ELECTRON_PATH is not set 1>&2',
+        'if "%LOBSTERAI_ELECTRON_PATH%"=="" (',
+        '  echo LOBSTERAI_ELECTRON_PATH is not set 1>&2',
         '  exit /b 127',
         ')',
         'set ELECTRON_RUN_AS_NODE=1',
-        '"%MATIES_ELECTRON_PATH%" %*',
+        '"%LOBSTERAI_ELECTRON_PATH%" %*',
         '',
       ].join('\r\n');
       writeFileSync(nodeCmd, nodeCmdContent, 'utf8');
@@ -519,17 +519,17 @@ export function ensureElectronNodeShim(electronPath: string, npmBinDir?: string)
         try { chmodSync(npxSh, 0o755); } catch { /* ignore */ }
         coworkLog('INFO', 'resolveNodeShim', `Created npx bash shim: ${npxSh} -> ${npxCliJsPosix}`);
 
-        // npx.cmd for Windows — uses %MATIES_NPM_BIN_DIR% env var to avoid
+        // npx.cmd for Windows — uses %LOBSTERAI_NPM_BIN_DIR% env var to avoid
         // hardcoding paths that may contain non-ASCII chars (breaks GBK cmd.exe).
         if (process.platform === 'win32') {
           const npxCmd = join(shimDir, 'npx.cmd');
           const npxCmdContent = [
             '@echo off',
-            '"%~dp0node.cmd" "%MATIES_NPM_BIN_DIR%\\npx-cli.js" %*',
+            '"%~dp0node.cmd" "%LOBSTERAI_NPM_BIN_DIR%\\npx-cli.js" %*',
             '',
           ].join('\r\n');
           writeFileSync(npxCmd, npxCmdContent, 'utf8');
-          coworkLog('INFO', 'resolveNodeShim', `Created npx.cmd shim: ${npxCmd} (using env var MATIES_NPM_BIN_DIR)`);
+          coworkLog('INFO', 'resolveNodeShim', `Created npx.cmd shim: ${npxCmd} (using env var LOBSTERAI_NPM_BIN_DIR)`);
         }
       } else {
         coworkLog('WARN', 'resolveNodeShim', `npx-cli.js not found at: ${npxCliJs}`);
@@ -548,17 +548,17 @@ export function ensureElectronNodeShim(electronPath: string, npmBinDir?: string)
         try { chmodSync(npmSh, 0o755); } catch { /* ignore */ }
         coworkLog('INFO', 'resolveNodeShim', `Created npm bash shim: ${npmSh} -> ${npmCliJsPosix}`);
 
-        // npm.cmd for Windows — uses %MATIES_NPM_BIN_DIR% env var to avoid
+        // npm.cmd for Windows — uses %LOBSTERAI_NPM_BIN_DIR% env var to avoid
         // hardcoding paths that may contain non-ASCII chars (breaks GBK cmd.exe).
         if (process.platform === 'win32') {
           const npmCmd = join(shimDir, 'npm.cmd');
           const npmCmdContent = [
             '@echo off',
-            '"%~dp0node.cmd" "%MATIES_NPM_BIN_DIR%\\npm-cli.js" %*',
+            '"%~dp0node.cmd" "%LOBSTERAI_NPM_BIN_DIR%\\npm-cli.js" %*',
             '',
           ].join('\r\n');
           writeFileSync(npmCmd, npmCmdContent, 'utf8');
-          coworkLog('INFO', 'resolveNodeShim', `Created npm.cmd shim: ${npmCmd} (using env var MATIES_NPM_BIN_DIR)`);
+          coworkLog('INFO', 'resolveNodeShim', `Created npm.cmd shim: ${npmCmd} (using env var LOBSTERAI_NPM_BIN_DIR)`);
         }
       } else {
         coworkLog('WARN', 'resolveNodeShim', `npm-cli.js not found at: ${npmCliJs}`);
@@ -625,7 +625,7 @@ function resolveWindowsGitBashPath(): string | null {
   // 1. Explicit env var (user override)
   pushCandidate(process.env.CLAUDE_CODE_GIT_BASH_PATH ?? null, 'env:CLAUDE_CODE_GIT_BASH_PATH');
 
-  // 2. Bundled PortableGit (preferred default in Maties package)
+  // 2. Bundled PortableGit (preferred default in LobsterAI package)
   for (const bundledCandidate of getBundledGitBashCandidates()) {
     pushCandidate(bundledCandidate, 'bundled:resources/mingit');
   }
@@ -834,10 +834,10 @@ function ensureWindowsBashBootstrapPath(env: Record<string, string | undefined>)
 /**
  * Convert a single Windows path to MSYS2/POSIX format.
  *
- * When the Windows path contains non-ASCII characters (e.g. non-Latin usernames
- * like C:\Users\<non-ascii-user>\...), MSYS2's automatic Windows→POSIX conversion may
+ * When the Windows path contains non-ASCII characters (e.g. Chinese usernames
+ * like C:\Users\中文用户\...), MSYS2's automatic Windows→POSIX conversion may
  * corrupt the path if it runs before LANG=C.UTF-8 takes effect. Pre-converting
- * to POSIX format (/c/Users/<non-ascii-user>/...) bypasses this problematic conversion
+ * to POSIX format (/c/Users/中文用户/...) bypasses this problematic conversion
  * because MSYS2 recognises the value as already POSIX and passes it through
  * directly to its internal wide-char file APIs.
  */
@@ -937,7 +937,7 @@ function ensureWindowsBashUtf8InitScript(): string | null {
     const initScript = join(initDir, 'bash_utf8_init.sh');
     const content = [
       '#!/usr/bin/env bash',
-      '# Auto-generated by Maties – switch Windows console code page to UTF-8',
+      '# Auto-generated by LobsterAI – switch Windows console code page to UTF-8',
       '# to prevent garbled output from Windows native commands.',
       'if command -v chcp.com >/dev/null 2>&1; then',
       '  chcp.com 65001 >/dev/null 2>&1',
@@ -962,13 +962,13 @@ function ensureWindowsBashUtf8InitScript(): string | null {
 function applyPackagedEnvOverrides(env: Record<string, string | undefined>): void {
   const electronNodeRuntimePath = getElectronNodeRuntimePath();
 
-  if (app.isPackaged && !env.MATIES_ELECTRON_PATH) {
-    env.MATIES_ELECTRON_PATH = electronNodeRuntimePath;
+  if (app.isPackaged && !env.LOBSTERAI_ELECTRON_PATH) {
+    env.LOBSTERAI_ELECTRON_PATH = electronNodeRuntimePath;
   }
 
   // On Windows, resolve git-bash and ensure Git toolchain directories are available in PATH.
   if (process.platform === 'win32') {
-    env.MATIES_ELECTRON_PATH = electronNodeRuntimePath;
+    env.LOBSTERAI_ELECTRON_PATH = electronNodeRuntimePath;
 
     // Force UTF-8 encoding for MSYS2/git-bash.
     //
@@ -1057,7 +1057,7 @@ function applyPackagedEnvOverrides(env: Record<string, string | undefined>): voi
           const diagnostic = truncateDiagnostic(
             `Configured bash is unhealthy (${configuredBashPath}): ${configuredHealth.reason || 'unknown reason'}`
           );
-          env.MATIES_GIT_BASH_RESOLUTION_ERROR = diagnostic;
+          env.LOBSTERAI_GIT_BASH_RESOLUTION_ERROR = diagnostic;
           coworkLog('WARN', 'resolveGitBash', diagnostic);
           bashPath = null;
         }
@@ -1066,7 +1066,7 @@ function applyPackagedEnvOverrides(env: Record<string, string | undefined>): voi
 
     if (bashPath) {
       env.CLAUDE_CODE_GIT_BASH_PATH = bashPath;
-      delete env.MATIES_GIT_BASH_RESOLUTION_ERROR;
+      delete env.LOBSTERAI_GIT_BASH_RESOLUTION_ERROR;
       coworkLog('INFO', 'resolveGitBash', `Using Windows git-bash: ${bashPath}`);
       const gitToolDirs = getWindowsGitToolDirs(bashPath);
       env.PATH = appendEnvPath(env.PATH, gitToolDirs);
@@ -1074,7 +1074,7 @@ function applyPackagedEnvOverrides(env: Record<string, string | undefined>): voi
       ensureWindowsBashBootstrapPath(env);
     } else {
       const diagnostic = cachedGitBashResolutionError || 'git-bash not found or failed health checks';
-      env.MATIES_GIT_BASH_RESOLUTION_ERROR = truncateDiagnostic(diagnostic);
+      env.LOBSTERAI_GIT_BASH_RESOLUTION_ERROR = truncateDiagnostic(diagnostic);
     }
 
     appendPythonRuntimeToEnv(env);
@@ -1174,7 +1174,7 @@ function applyPackagedEnvOverrides(env: Record<string, string | undefined>): voi
 
   // Set env var so .cmd shims can reference npmBinDir without hardcoding
   // non-ASCII characters (which break on Windows when cmd.exe uses GBK code page).
-  env.MATIES_NPM_BIN_DIR = npmBinDir;
+  env.LOBSTERAI_NPM_BIN_DIR = npmBinDir;
 
   const hasSystemNode = hasCommandInEnv('node', env);
   const hasSystemNpx = hasCommandInEnv('npx', env);
@@ -1187,7 +1187,7 @@ function applyPackagedEnvOverrides(env: Record<string, string | undefined>): voi
     const shimDir = ensureElectronNodeShim(electronNodeRuntimePath, npmBinDir);
     if (shimDir) {
       env.PATH = [shimDir, env.PATH].filter(Boolean).join(delimiter);
-      env.MATIES_NODE_SHIM_ACTIVE = '1';
+      env.LOBSTERAI_NODE_SHIM_ACTIVE = '1';
       coworkLog('INFO', 'resolveNodeShim', `Injected Electron Node/npx/npm shim PATH entry: ${shimDir}`);
       if (shouldForcePackagedDarwinShim) {
         coworkLog('INFO', 'resolveNodeShim', 'Packaged macOS build: forcing bundled Electron node/npx/npm shims to avoid stale system Node versions');
@@ -1200,7 +1200,7 @@ function applyPackagedEnvOverrides(env: Record<string, string | undefined>): voi
       }
     }
   } else {
-    delete env.MATIES_NODE_SHIM_ACTIVE;
+    delete env.LOBSTERAI_NODE_SHIM_ACTIVE;
     coworkLog('INFO', 'resolveNodeShim', 'System node/npx/npm detected; skipped Electron node shim injection');
   }
 
@@ -1261,7 +1261,7 @@ function verifyNodeEnvironment(env: Record<string, string | undefined>): void {
           try {
             let execTarget = resolvedForExec;
             if (process.platform === 'win32' && /\.cmd$/i.test(resolvedForExec)) {
-              execTarget = env.MATIES_ELECTRON_PATH || process.execPath;
+              execTarget = env.LOBSTERAI_ELECTRON_PATH || process.execPath;
             }
             const versionResult = spawnSync(execTarget, ['--version'], {
               env: { ...env, ELECTRON_RUN_AS_NODE: '1' } as NodeJS.ProcessEnv,
@@ -1290,8 +1290,8 @@ function verifyNodeEnvironment(env: Record<string, string | undefined>): void {
 
   // Log key env vars
   coworkLog('INFO', tag, `NODE_PATH=${env.NODE_PATH || '(not set)'}`);
-  coworkLog('INFO', tag, `MATIES_ELECTRON_PATH=${env.MATIES_ELECTRON_PATH || '(not set)'}`);
-  coworkLog('INFO', tag, `MATIES_NPM_BIN_DIR=${env.MATIES_NPM_BIN_DIR || '(not set)'}`);
+  coworkLog('INFO', tag, `LOBSTERAI_ELECTRON_PATH=${env.LOBSTERAI_ELECTRON_PATH || '(not set)'}`);
+  coworkLog('INFO', tag, `LOBSTERAI_NPM_BIN_DIR=${env.LOBSTERAI_NPM_BIN_DIR || '(not set)'}`);
   coworkLog('INFO', tag, `HOME=${env.HOME || '(not set)'}`);
 }
 
@@ -1306,7 +1306,7 @@ export function getSkillsRoot(): string {
 
   // In development, __dirname can vary with bundling output (e.g. dist-electron/ or dist-electron/libs/).
   // Resolve from several stable anchors and pick the first existing SKILLs directory.
-  const envRoots = [process.env.MATIES_SKILLS_ROOT, process.env.SKILLS_ROOT]
+  const envRoots = [process.env.LOBSTERAI_SKILLS_ROOT, process.env.SKILLS_ROOT]
     .map((value) => value?.trim())
     .filter((value): value is string => Boolean(value));
   const candidates = [
@@ -1328,10 +1328,10 @@ export function getSkillsRoot(): string {
 }
 
 function finalizeNodeToolEnv(env: Record<string, string | undefined>): void {
-  if (process.platform === 'win32' || env.MATIES_NODE_SHIM_ACTIVE === '1') {
-    env.MATIES_ELECTRON_PATH = getElectronNodeRuntimePath().replace(/\\/g, '/');
+  if (process.platform === 'win32' || env.LOBSTERAI_NODE_SHIM_ACTIVE === '1') {
+    env.LOBSTERAI_ELECTRON_PATH = getElectronNodeRuntimePath().replace(/\\/g, '/');
   } else {
-    delete env.MATIES_ELECTRON_PATH;
+    delete env.LOBSTERAI_ELECTRON_PATH;
   }
 }
 
@@ -1389,7 +1389,7 @@ export async function getEnhancedEnv(target: OpenAICompatProxyTarget = 'local'):
   // backslashes as escape characters).
   const skillsRoot = getSkillsRoot().replace(/\\/g, '/');
   env.SKILLS_ROOT = skillsRoot;
-  env.MATIES_SKILLS_ROOT = skillsRoot; // Alternative name for clarity
+  env.LOBSTERAI_SKILLS_ROOT = skillsRoot; // Alternative name for clarity
   finalizeNodeToolEnv(env);
   await injectSystemProxyForSubprocess(env);
 
