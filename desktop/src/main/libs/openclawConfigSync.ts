@@ -350,6 +350,43 @@ const DUCKDUCKGO_PLUGIN_ID = 'duckduckgo';
 
 const hasDuckDuckGoPlugin = (): boolean =>
   hasRuntimeBundledOpenClawExtension(DUCKDUCKGO_PLUGIN_ID);
+
+/**
+ * The wiki: what the assistant knows about the person, as pages rather
+ * than as a pile of notes (`docs/maties/plan.md`, step 6).
+ *
+ * It ships in our build and was dead twice over — absent from the strict
+ * `plugins.allow` list below, so the engine never loaded it, and hidden
+ * from the plugins screen, so nobody could switch it on. It was found by
+ * the engine audit of September 11 (`docs/maties/engine-audit.md`,
+ * section 1.1) and is permitted here.
+ *
+ * It keeps *claims*, not prose: each carries its confidence, where it came
+ * from, and what contradicts it, with contradictions and open questions
+ * surfaced rather than buried. That is the shape the founder asked for —
+ * « like Wikipedia, structured, not a robotic text » — and it is the
+ * reason to use this rather than write one.
+ *
+ * **`isolated`, pinned, never `unsafe-local`.** The plugin offers three
+ * vault modes. `isolated` keeps the wiki to its own vault and reads
+ * nothing else. `bridge` additionally imports what the memory system
+ * exports, which our audit could not confirm produces anything on our
+ * setup. `unsafe-local` reads anywhere on the person's disk and is marked
+ * experimental by its own authors: it is the one mode this product must
+ * never enable, and naming the mode here is what stops it arriving later
+ * by default.
+ *
+ * The mode goes under `config`, which is where the engine hands a plugin
+ * its own settings. The entry itself is validated by a strict schema that
+ * knows only `enabled`, `hooks`, `subagent`, `llm` and `config`, and that
+ * schema sits inside the strict schema for the whole config file — so a
+ * stray key here does not fail the wiki, it fails the config.
+ */
+const MEMORY_WIKI_PLUGIN_ID = 'memory-wiki';
+const MEMORY_WIKI_VAULT_MODE = 'isolated';
+
+const hasMemoryWikiPlugin = (): boolean =>
+  hasRuntimeBundledOpenClawExtension(MEMORY_WIKI_PLUGIN_ID);
 // knownPollNoProgress is off: polling a live background process that stays
 // quiet (builds, installs, downloads) legitimately repeats identical calls
 // with identical output, and the detector killed such runs after 10 polls
@@ -2546,6 +2583,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // whose packaging dropped it must not carry a stale entry, and
     // OpenClaw rejects a config naming a plugin it cannot find.
     const hasSearchPlugin = hasDuckDuckGoPlugin();
+    const hasWikiPlugin = hasMemoryWikiPlugin();
     const qwenPortalAuthPluginId = resolveOpenClawExtensionPluginId('qwen-portal-auth');
 
     // Detect if any provider uses Qwen/Aliyun DashScope URLs — OpenClaw auto-injects
@@ -2810,6 +2848,17 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           ...(hasQwenProvider && qwenPortalAuthPluginId ? { [qwenPortalAuthPluginId]: { enabled: true } } : {}),
           ...(hasXaiPlugin ? { xai: { enabled: true } } : {}),
           ...(hasSearchPlugin ? { [DUCKDUCKGO_PLUGIN_ID]: { enabled: true } } : {}),
+          // The vault mode is named rather than left to the plugin's own
+          // default: the default is not ours to inherit, and `unsafe-local`
+          // must never arrive by one.
+          ...(hasWikiPlugin
+            ? {
+              [MEMORY_WIKI_PLUGIN_ID]: {
+                enabled: true,
+                config: { vaultMode: MEMORY_WIKI_VAULT_MODE },
+              },
+            }
+            : {}),
           // User-installed plugins: merge enabled state and config from user_plugins table
           ...Object.fromEntries(
             userPlugins.map(p => [p.pluginId, {
@@ -2837,6 +2886,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // load — entries.enabled alone is not enough.
           ...(hasXaiPlugin ? ['xai'] : []),
           ...(hasSearchPlugin ? [DUCKDUCKGO_PLUGIN_ID] : []),
+          ...(hasWikiPlugin ? [MEMORY_WIKI_PLUGIN_ID] : []),
           ...(hasModelCompatConfig
             ? [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]
             : []),
