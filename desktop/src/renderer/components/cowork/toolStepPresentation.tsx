@@ -368,6 +368,14 @@ const RUNTIME_NOISE_LINE = [
   /^\(Use `node --trace-\w+ \.\.\.` to show where the \w+ was created\)$/,
   // `npm notice …`, `npm warn …` — housekeeping, never an answer.
   /^npm (notice|warn|WARN)\b/,
+  // The block count `ls -l` prints above its listing. The founder was
+  // shown « total 24157976 » as the whole answer to « check my storage »,
+  // which is a number in blocks, about a directory, with no unit on it.
+  /^total\s+\d+$/,
+  // A tool saying it produced nothing, in its own parentheses: a poll that
+  // found no new output, a command with an empty result. « (no new
+  // output) » is not an answer to anything a person asked.
+  /^\((?:no\s+(?:new\s+)?output|empty|nothing)\)$/i,
 ];
 
 const isRuntimeNoise = (line: string): boolean => {
@@ -541,9 +549,12 @@ export const getToolStepResult = (
 
   if (kind === ToolStepKind.WebPage || kind === ToolStepKind.Browser) {
     const title = hasText(resultText) ? findPageTitle(resultText) : null;
-    const url = getToolInputString(toolInput ?? {}, ['url', 'href']);
     if (title) return { type: 'line', text: title };
-    if (url) return { type: 'line', text: truncatePreview(url, 110) };
+    // No fallback to the address. The subline of a page step is already the
+    // url (`getToolStepSubline`), so printing it here put it on screen
+    // twice — which is what the founder was looking at when they asked
+    // « what are those. and why do you show me it? ». Falling through gives
+    // the page's own answer, or « Done ».
   }
 
   const isSearchKind = kind === ToolStepKind.WebSearch
@@ -567,7 +578,13 @@ export const getToolStepResult = (
     if (count > 0) return countResult(count, COUNT_KEYS_RESULTS);
   }
 
-  return { type: 'line', text: firstMeaningfulLine(resultText) ?? doneText };
+  const line = firstMeaningfulLine(resultText);
+  // A result that only repeats the subline says nothing: the person reads
+  // the same string twice on one card and learns nothing the second time.
+  if (!line || line === getToolStepSubline(rawToolName, toolInput)) {
+    return { type: 'line', text: doneText };
+  }
+  return { type: 'line', text: line };
 };
 
 // ── Icons ────────────────────────────────────────────────────────────────────

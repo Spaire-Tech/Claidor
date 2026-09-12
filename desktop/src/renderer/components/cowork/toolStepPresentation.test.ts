@@ -356,4 +356,57 @@ describe('a run of failures is one card', () => {
       expect(collapsed[1].type === 'tool_group' && collapsed[1].group.toolUse.id).toBe('b');
     });
   });
+
+  // The founder, reading three step cards in a row: « (no new output) —
+  // total 24157976 — https://mail.google.com … what are those. and why do
+  // you show me it? » None of the three is an answer to anything asked.
+  describe('the three noises the founder was shown', () => {
+    test('a page step does not print the address a second time', () => {
+      // The subline of a page step is already the url, so printing it as
+      // the result put the same string on the card twice.
+      const page = group(
+        toolUse('webfetch', { url: 'https://mail.google.com' }),
+        toolResult(''),
+      );
+      expect(getToolStepSubline('webfetch', { url: 'https://mail.google.com' }))
+        .toBe('https://mail.google.com');
+      const result = getToolStepResult(page);
+      expect(result).toMatchObject({ type: 'line' });
+      expect(result && result.type === 'line' && result.text)
+        .not.toContain('mail.google.com');
+    });
+
+    test('a page with a title still shows the title', () => {
+      const page = group(
+        toolUse('webfetch', { url: 'https://example.com' }),
+        toolResult('<title>Quarterly report</title>'),
+      );
+      expect(getToolStepResult(page)).toEqual({ type: 'line', text: 'Quarterly report' });
+    });
+
+    test('the block count above a listing is not the answer to « check my storage »', () => {
+      const listing = group(
+        toolUse('bash', { command: 'ls -la ~/Downloads' }),
+        toolResult('total 24157976\n-rw-r--r--  1 someone staff 461373440 Maties.dmg'),
+      );
+      expect(getToolStepResult(listing))
+        .toMatchObject({ type: 'line', text: expect.stringContaining('Maties.dmg') });
+    });
+
+    test('a tool that produced nothing says « Done », not « (no new output) »', () => {
+      const poll = group(toolUse('bash', { command: 'poll' }), toolResult('(no new output)'));
+      const result = getToolStepResult(poll);
+      expect(result && result.type === 'line' && result.text).not.toContain('no new output');
+    });
+
+    test('a real error still says what went wrong', () => {
+      // The filter must never quiet a step that actually failed.
+      const failed = group(
+        toolUse('bash', { command: 'x' }),
+        { ...toolResult('total 5\nPermission denied'), metadata: { isError: true } } as never,
+      );
+      expect(getToolStepResult(failed))
+        .toMatchObject({ type: 'line', text: expect.stringContaining('Permission denied') });
+    });
+  });
 });
