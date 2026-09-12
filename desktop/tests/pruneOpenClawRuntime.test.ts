@@ -26,6 +26,16 @@ test('pruneOpenClawRuntime removes the search providers that need a key', () => 
   expect(shouldKeepBundledExtension('perplexity')).toBe(false);
 });
 
+test('pruneOpenClawRuntime keeps voice, telephony and iMessage', () => {
+  // All three shipped upstream and all three were deleted by this script,
+  // which is why ElevenLabs could be named in the voice picker and never
+  // work: talk-voice offers the provider, the pruned extension is what
+  // registers it and reads the key.
+  expect(shouldKeepBundledExtension('elevenlabs')).toBe(true);
+  expect(shouldKeepBundledExtension('voice-call')).toBe(true);
+  expect(shouldKeepBundledExtension('imessage')).toBe(true);
+});
+
 test('pruneOpenClawRuntime removes explicitly unwanted bundled extensions', () => {
   expect(shouldKeepBundledExtension('amazon-bedrock')).toBe(false);
   expect(shouldKeepBundledExtension('amazon-bedrock-mantle')).toBe(false);
