@@ -414,3 +414,93 @@ was renamed.
 and were seen working there, but no orb has been drawn by this code and
 no token has been applied to a screen. That happens in Stage 4, and it is
 where the design stops being a claim.
+
+---
+
+## Stage 4 — The Messages shell (first half)
+
+The screens exist. Nothing is wired to the engine yet, and nothing has
+been rendered — this is the shell built against the design, ready for the
+IPC layer underneath it.
+
+### The part that is actual engineering
+
+`design/thread/fromEngine.ts`. The engine emits thinking blocks, tool
+calls, tool results, streaming partials, token counts and errors; the
+design has five things. Deciding what a person never sees is the whole of
+the design's discipline, and it now lives in one file with a table saying
+why for each.
+
+What is dropped: **thinking**, because the design has no block for it and
+watching a model think is not company. **Tool results**, because their
+arrival is what removes the status above them, and their content is the
+agent's to summarise in its own words rather than ours to dump. **Empty
+replies**, because a bubble with nothing in it is a bug wearing a design.
+
+What is changed: **errors become centred grey lines**, not red banners. A
+banner would be the only shouting in an app that never shouts. And a long
+reply becomes **up to three short bubbles** — the tail kept in the last
+one rather than thrown away, because losing an answer to a formatting
+rule would be the app quietly eating it.
+
+### Never a tool name
+
+`design/thread/toolVerbs.ts`. The engine's tools are `bash`,
+`sessions_spawn`, `mcp__gmail__send_message`. The voice brief says never
+to dump tool names, and the design has one line for this — an orb and a
+shimmering verb.
+
+So every tool becomes a phrase a person would use: `bash` is "Running
+commands", `glob` is "Looking through files" because nobody says they are
+globbing. Connector tools name the service — `mcp__google-calendar__*`
+becomes "Working in Google Calendar" — because the service is the part a
+person recognises and there is no list of those tools to maintain. An
+unknown tool is "Working", never its own name. A test asserts no
+underscore ever reaches the thread.
+
+### The screens
+
+`SignIn` — one screen, not a flow, because the founder has not designed
+onboarding yet. A door: no tour, no feature grid, no invented welcome
+copy standing in for copy they will write. It is never empty — an orb is
+already breathing before anybody clicks — and a failed attempt is a
+sentence in the same grey as everything else.
+
+`Sidebar` — the conversation list. Search filters by name only;
+pretending to search message content in a filter box is how a search box
+becomes untrustworthy.
+
+`Thread` — pins to the bottom while you are at the bottom and stops the
+moment you scroll up, so a long answer arriving does not yank you away
+from something you are reading.
+
+`Composer` — the send button is a microphone when empty and an arrow with
+a draft. One control, two jobs, no dead button ever shown.
+
+`ThreadItemView` — one component per kind and a switch, deliberately not
+one clever renderer: the kinds have nothing in common but their
+container, and the moment they share code the list stops being closed.
+
+`MessagesShell` — 300px of sidebar and everything else, the 34px ground
+grid, the centred Text/Voice toggle, and the computer icon that will open
+the inherited panel.
+
+### Verified
+
+- 24 tests on the mapper and the verbs, including the one that matters
+  most: no tool name, no `mcp__`, no underscore reaches a thread.
+- `vitest run` **3968 passed** across 399 files; `tsc` clean on both
+  projects; `eslint --max-warnings 0` clean on the whole design
+  directory.
+
+**Not verified, and it is the whole point:** nothing has been rendered.
+No orb drawn, no thread scrolled, no button pressed. The components
+type-check and their logic is tested; whether they *look* right is a
+question only opening the app answers.
+
+### What is left in this stage
+
+Wiring to the real IPC layer — `services/cowork.ts` and `coworkSlice`
+already carry sessions, messages, streaming and permissions, so this is
+connection rather than construction. Then compose, Apps and Settings,
+which are modals over this.
