@@ -239,3 +239,52 @@ that sentence away from us.
 11. One computer: this one. No second machine, no cloud machine.
 12. Connectors carry context from `cursor/plugins`; sign-in method open,
     with a Pipedream integration already written and mounted.
+
+---
+
+## 11. Models: OpenAI throughout, Claude as the fallback
+
+OpenAI powers everything. The founder's reason is cost, and our own
+catalogue bears it out (`server/polar/desktop/pricing.py`, per million
+tokens): Luna $0.20 in / $1.20 out, Terra $2.00 / $12.00, Astra $10.00 /
+$50.00, against Haiku $0.60 / $3.00, Sonnet $3.00 / $15.00 and Opus
+$15.00 / $75.00. Terra undercuts Sonnet by a third and Luna undercuts
+Haiku threefold. OpenAI also charges nothing to write its cache where
+Anthropic charges 1.25×, which for an agent replaying a system prompt
+and tool definitions every turn is money on every message. And the
+OpenAI context window is 1,050,000 against Claude's 200,000.
+
+**The agent does not pick its model.** A router must choose before it
+knows how hard the task is, costs a round trip on every message in an
+app whose whole feel is timing, and makes the usage meter
+unpredictable — and today it would be choosing between models whose
+differences are switched off. Instead: one model the person talks to,
+and cheap models for machinery they never see. Every slot already exists
+in OpenClaw config (`src/config/types.agent-defaults.ts`):
+
+| Slot | Model |
+|---|---|
+| `model.primary` | Terra — everything the person reads |
+| `model.fallbacks` | Claude Sonnet 5 — never default, never shown |
+| `subagents.model` | Luna |
+| `compaction.model` | Luna |
+| `compaction.memoryFlush.model` | Luna |
+| `heartbeat.model` | Luna |
+
+App-side cheap work — chat titles, sidebar previews, intent sorting —
+also Luna.
+
+**Astra is not offered.** On `/v1/chat/completions` OpenAI refuses
+`reasoning_effort` alongside function tools, so our proxy sends
+`reasoning_effort: "none"` whenever tools are present, which for an agent
+is always. Astra costs five times Terra for a capability we then switch
+off. It comes back when `/v1/responses` exists, and not before.
+
+**Escalation, when it exists, is on evidence and never on prediction:**
+the person asks, a step has failed twice, or the agent asks. And it is
+said in the thread as a `system` line, so the meter stays explicable.
+
+**The fallback is agreed.** Sole-provider means one outage is a total
+outage. Claude stays configured as the per-agent fallback — never the
+default, never in the UI, never in the model list. It costs nothing until
+the day it is the only thing that answers.
