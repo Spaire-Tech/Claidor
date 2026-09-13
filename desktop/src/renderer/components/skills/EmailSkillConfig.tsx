@@ -65,15 +65,35 @@ const PROVIDER_PRESETS: Record<string, ProviderPreset> = {
     smtpSecure: false,
     helpUrl: 'https://support.microsoft.com/office/pop-imap-and-smtp-settings-8361e398-8af4-4e97-b147-6c6c4ac95353',
   },
-  icloud: {
-    label: 'iCloud Mail',
-    imapHost: 'imap.mail.me.com',
+  '163': {
+    label: '163.com',
+    imapHost: 'imap.163.com',
     imapPort: 993,
-    smtpHost: 'smtp.mail.me.com',
+    smtpHost: 'smtp.163.com',
+    smtpPort: 465,
+    smtpSecure: true,
+    hint: 'emailHint163',
+    helpUrl: 'https://help.mail.163.com/faqDetail.do?code=d7a5dc8471cd0c0e8b4b8f4f8e49998b374173cfe9171305fa1ce630d7f67ac286624f309a1a7089',
+  },
+  '126': {
+    label: '126.com',
+    imapHost: 'imap.126.com',
+    imapPort: 993,
+    smtpHost: 'smtp.126.com',
+    smtpPort: 465,
+    smtpSecure: true,
+    hint: 'emailHint163',
+    helpUrl: 'https://help.mail.163.com/faqDetail.do?code=d7a5dc8471cd0c0e8b4b8f4f8e49998b374173cfe9171305fa1ce630d7f67ac286624f309a1a7089',
+  },
+  qq: {
+    label: 'QQ Mail',
+    imapHost: 'imap.qq.com',
+    imapPort: 993,
+    smtpHost: 'smtp.qq.com',
     smtpPort: 587,
     smtpSecure: false,
-    hint: 'emailHintIcloud',
-    helpUrl: 'https://support.apple.com/102654',
+    hint: 'emailHintQQ',
+    helpUrl: 'https://help.mail.qq.com/detail/106/985',
   },
   custom: {
     label: '',
@@ -459,19 +479,19 @@ const EmailSkillConfig: React.FC = () => {
   const buildAskAIPrompt = useCallback((result: EmailConnectivityTestResult | null): string => {
     const account = activeAccount;
     const lines: string[] = [];
-    lines.push('I ran into a problem configuring the IMAP/SMTP connection for my email. Please help me troubleshoot it and suggest a fix.');
+    lines.push('我在配置邮件的 IMAP/SMTP 连接时遇到了问题，请帮我排查并给出解决方案。');
     if (account) {
-      lines.push(`Email account: ${getAccountDisplayName(account)}`);
-      lines.push(`Email address: ${account.email}`);
-      lines.push(`IMAP server: ${account.imapHost}:${account.imapPort}`);
-      lines.push(`SMTP server: ${account.smtpHost}:${account.smtpPort}`);
+      lines.push(`邮箱账号：${getAccountDisplayName(account)}`);
+      lines.push(`邮箱地址：${account.email}`);
+      lines.push(`IMAP 服务器：${account.imapHost}:${account.imapPort}`);
+      lines.push(`SMTP 服务器：${account.smtpHost}:${account.smtpPort}`);
     }
-    lines.push('The connection test failed with the following errors:');
+    lines.push('连接测试失败，错误信息如下：');
     if (result) {
       result.checks.forEach(check => {
         const label = check.code === 'imap_connection' ? 'IMAP' : 'SMTP';
-        const status = check.level === 'pass' ? 'succeeded' : 'failed';
-        lines.push(`- ${label} connection ${status}: ${check.message} (took ${check.durationMs}ms)`);
+        const status = check.level === 'pass' ? '成功' : '失败';
+        lines.push(`- ${label} 连接${status}：${check.message}（耗时 ${check.durationMs}ms）`);
       });
     } else if (connectivityError) {
       lines.push(`- ${connectivityError}`);
@@ -503,7 +523,7 @@ const EmailSkillConfig: React.FC = () => {
         void persistAccountPatch(account.id, { enabled: !account.enabled });
       }}
       className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-        account.enabled ? 'bg-green-500' : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
+        account.enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
       }`}
       aria-label={account.enabled ? i18nService.t('disable') : i18nService.t('enable')}
       title={account.enabled ? i18nService.t('disable') : i18nService.t('enable')}
@@ -981,8 +1001,8 @@ const EmailSkillConfig: React.FC = () => {
         <Modal
           onClose={() => setPendingDeleteAccountId(null)}
           onEscape={() => setPendingDeleteAccountId(null)}
-          overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center"
-          className="maties-card-prose maties-in w-full max-w-sm p-6"
+          overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 shadow-2xl"
         >
           <div className="text-sm font-semibold text-foreground">
             {i18nService.t('confirmDelete')}

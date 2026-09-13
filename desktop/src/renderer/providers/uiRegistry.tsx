@@ -2,8 +2,8 @@ import { ProviderName } from '@shared/providers';
 import React from 'react';
 
 import {
+  AnthropicIcon,
   BananaIcon,
-  ClaudeIcon,
   CustomProviderIcon,
   DeepSeekIcon,
   DoubaoIcon,
@@ -44,9 +44,7 @@ const PROVIDER_ICON_MAP: Record<string, React.ReactNode> = {
   [ProviderIconId.Kling]:      <KlingIcon />,
   [ProviderName.Gemini]:       <GeminiIcon />,
   [ProviderName.Xai]:          <XaiIcon />,
-  // Claude's mark, not the company's: the list names Claude Sonnet and
-  // Claude Opus, and a person choosing one is choosing Claude.
-  [ProviderName.Anthropic]:    <ClaudeIcon />,
+  [ProviderName.Anthropic]:    <AnthropicIcon />,
   [ProviderName.Moonshot]:     <MoonshotIcon />,
   [ProviderName.Zhipu]:        <ZhipuIcon />,
   [ProviderName.Minimax]:      <MiniMaxIcon />,

@@ -309,7 +309,7 @@ function buildSkillEnv(): Record<string, string | undefined> {
 
   // Expose Electron executable so skill scripts can run JS with ELECTRON_RUN_AS_NODE
   // even when system Node.js is not installed.
-  env.MATIES_ELECTRON_PATH = getElectronNodeRuntimePath();
+  env.LOBSTERAI_ELECTRON_PATH = getElectronNodeRuntimePath();
   appendPythonRuntimeToEnv(env);
 
   // Re-normalize after appendPythonRuntimeToEnv may have added a PATH key
@@ -942,15 +942,15 @@ const downloadGithubArchive = async (
     archiveUrlCandidates.push(
       {
         url: `https://github.com/${source.owner}/${source.repo}/archive/refs/heads/${encodedRef}.zip`,
-        headers: { 'User-Agent': 'Maties Skill Downloader' },
+        headers: { 'User-Agent': 'LobsterAI Skill Downloader' },
       },
       {
         url: `https://github.com/${source.owner}/${source.repo}/archive/refs/tags/${encodedRef}.zip`,
-        headers: { 'User-Agent': 'Maties Skill Downloader' },
+        headers: { 'User-Agent': 'LobsterAI Skill Downloader' },
       },
       {
         url: `https://github.com/${source.owner}/${source.repo}/archive/${encodedRef}.zip`,
-        headers: { 'User-Agent': 'Maties Skill Downloader' },
+        headers: { 'User-Agent': 'LobsterAI Skill Downloader' },
       }
     );
   }
@@ -959,7 +959,7 @@ const downloadGithubArchive = async (
     url: `https://api.github.com/repos/${source.owner}/${source.repo}/zipball${encodedRef ? `/${encodedRef}` : ''}`,
     headers: {
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'Maties Skill Downloader',
+      'User-Agent': 'LobsterAI Skill Downloader',
       'X-GitHub-Api-Version': '2022-11-28',
     },
   });
@@ -1256,7 +1256,7 @@ const isRemoteZipUrl = (source: string): boolean => {
 const downloadZipUrl = async (zipUrl: string, tempRoot: string): Promise<string> => {
   const response = await session.defaultSession.fetch(zipUrl, {
     method: 'GET',
-    headers: { 'User-Agent': 'Maties Skill Downloader' },
+    headers: { 'User-Agent': 'LobsterAI Skill Downloader' },
   });
 
   if (!response.ok) {
@@ -1944,7 +1944,7 @@ export class SkillManager {
         if (stat.isFile()) {
           if (isZipFile(localSource)) {
             console.log('[SkillManager] downloadSkill: detected local zip file');
-            const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'maties-skill-zip-'));
+            const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-skill-zip-'));
             await extractZip(localSource, { dir: tempRoot });
             localSource = tempRoot;
             cleanupPath = tempRoot;
@@ -1959,19 +1959,19 @@ export class SkillManager {
         }
       } else if (isRemoteZipUrl(trimmed)) {
         console.log('[SkillManager] downloadSkill: detected remote zip URL');
-        const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'maties-skill-zip-'));
+        const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-skill-zip-'));
         cleanupPath = tempRoot;
         localSource = await downloadZipUrl(trimmed, tempRoot);
       } else if (isNpmPackageSpec(trimmed)) {
         console.log(`[SkillManager] downloadSkill: detected npm package spec "${trimmed}"`);
-        const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'maties-skill-npm-'));
+        const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-skill-npm-'));
         cleanupPath = tempRoot;
         localSource = await downloadNpmPackage(trimmed, tempRoot);
         console.log(`[SkillManager] downloadSkill: npm package extracted to ${localSource}`);
       } else if (parseClawhubUrl(trimmed)) {
         const clawhubParsed = parseClawhubUrl(trimmed)!;
         console.log(`[SkillManager] downloadSkill: detected ClawHub URL, skill name="${clawhubParsed.name}"`);
-        const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'maties-skill-clawhub-'));
+        const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-skill-clawhub-'));
         cleanupPath = tempRoot;
         const env = buildSkillEnv();
         await downloadClawhubSkill(clawhubParsed.name, tempRoot, env);
@@ -1981,7 +1981,7 @@ export class SkillManager {
         if (!normalized) {
           return { success: false, error: t('skillErrInvalidSource') };
         }
-        const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'maties-skill-'));
+        const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-skill-'));
         cleanupPath = tempRoot;
         const repoName = normalizeFolderName(normalized.repoNameHint || deriveRepoName(normalized.repoUrl));
         const clonePath = path.join(tempRoot, repoName);
@@ -2171,7 +2171,7 @@ export class SkillManager {
       const root = this.ensureSkillsRoot();
 
       // Download new version (reuse downloadSkill's download logic)
-      const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'maties-skill-upgrade-'));
+      const tempRoot = fs.mkdtempSync(path.join(app.getPath('temp'), 'lobsterai-skill-upgrade-'));
       cleanupPath = tempRoot;
 
       let localSource: string;

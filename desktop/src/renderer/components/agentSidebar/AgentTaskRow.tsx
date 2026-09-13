@@ -10,9 +10,9 @@ import {
   getIMSessionPlatformLabel,
   getIMSessionPlatformLogo,
 } from '../cowork/imSessionDisplay';
-import { EllipsisLineIcon } from '../design/LineIcons';
 import ClockIcon from '../icons/ClockIcon';
 import EditIcon from '../icons/EditIcon';
+import EllipsisHorizontalIcon from '../icons/EllipsisHorizontalIcon';
 import ListChecksIcon from '../icons/ListChecksIcon';
 import LoadingIcon from '../icons/LoadingIcon';
 import PushPinIcon from '../icons/PushPinIcon';
@@ -61,16 +61,9 @@ interface AgentTaskRowProps {
 
 const ACTION_MENU_VIEWPORT_PADDING = 8;
 const ACTION_MENU_VERTICAL_GAP = 4;
-// Four rows of 38px inside 6px of padding; the batch row adds one more.
 const ACTION_MENU_HEIGHT = 164;
-const ACTION_MENU_WITH_BATCH_HEIGHT = 202;
-const MENU_ICON_CLASS_NAME = 'h-[15px] w-[15px] shrink-0 text-[#4a4f57]';
+const ACTION_MENU_WITH_BATCH_HEIGHT = 196;
 
-/**
- * One conversation under an agent (docs/maties/design.md, section 3, row 4):
- * the title on the left, the age on the right, the current one on grey, and
- * the row's menu at the right on hover.
- */
 const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
   task,
   isBatchMode,
@@ -106,6 +99,7 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
   const [menuPosition, setMenuPosition] = useState<{ right: number; top: number } | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
+  const [suppressPinHover, setSuppressPinHover] = useState(false);
   const [renameValue, setRenameValue] = useState(editableTitle);
   const menuRef = useRef<HTMLDivElement>(null);
   const actionButtonRef = useRef<HTMLButtonElement>(null);
@@ -261,32 +255,62 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
     : task.indicator === AgentSidebarIndicator.Running
       ? i18nService.t('myAgentSidebarRunning')
       : i18nService.t('myAgentSidebarUnreadResult');
+  const menuItemClassName =
+    'flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1.5 text-left text-[13px] text-foreground transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]';
+  const menuIconClassName = 'h-3.5 w-3.5';
   const relativeTime = formatAgentTaskRelativeTime(task.updatedAt || task.createdAt);
   const showRelativeTime = !contextLabel && task.indicator === AgentSidebarIndicator.None;
-  const isActivityRow = !!contextLabel;
-  const isCurrent = task.isSelected && !hasActiveSubagent;
-  const scheduledTaskLabel = i18nService.t('myAgentSidebarScheduledTask');
   const pinLabel = task.pinned ? i18nService.t('coworkUnpinSession') : i18nService.t('coworkPinSession');
+  const isActivityRow = !!contextLabel;
+  const scheduledTaskLabel = i18nService.t('myAgentSidebarScheduledTask');
 
   return (
     <div
-      className={`group relative flex w-full items-center gap-[10px] rounded-[9px] pl-[11px] pr-[11px] text-left transition-colors ${
-        isActivityRow ? 'min-h-[48px] py-[6px]' : 'py-2'
+      className={`group relative -ml-[6px] flex w-[calc(100%+12px)] items-center gap-2 rounded-md ${
+        isActivityRow ? 'min-h-[48px] py-1.5' : 'h-[30px]'
       } ${
+        isBatchMode ? 'pl-4' : isActivityRow ? 'pl-3.5' : 'pl-[38px]'
+      } pr-2.5 text-sm font-normal transition-colors ${
         isSelectionDisabled
-          ? 'cursor-default text-[#4a4f57]/40'
-          : isCurrent
-            ? 'cursor-pointer bg-[rgba(16,20,28,.06)] text-[#15171b]'
-            : 'cursor-pointer text-[#4a4f57] hover:bg-[rgba(16,20,28,.05)] hover:text-[#1c1f23]'
-      } ${isSelectionDisabled ? '' : 'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0060d0]/40'}`}
+          ? 'cursor-default text-foreground/30'
+          : task.isSelected && !hasActiveSubagent
+          ? 'cursor-pointer bg-black/[0.06] font-medium text-foreground dark:bg-white/[0.07]'
+          : 'cursor-pointer text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
+      }`}
       onClick={handleRowClick}
       onKeyDown={handleRowKeyDown}
+      onMouseMove={() => setSuppressPinHover(false)}
+      onMouseLeave={() => setSuppressPinHover(false)}
       role="treeitem"
       tabIndex={isSelectionDisabled ? -1 : 0}
       aria-level={isActivityRow ? 1 : 2}
       aria-selected={task.isSelected}
       aria-disabled={isSelectionDisabled || undefined}
     >
+      {!isActivityRow && !isBatchMode && !isRenaming && !isSelectionDisabled && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            const nextPinned = !task.pinned;
+            setSuppressPinHover(true);
+            event.currentTarget.blur();
+            void onTogglePin(nextPinned);
+          }}
+          className={`absolute left-[13px] top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-foreground transition-opacity hover:opacity-[0.46] focus:outline-none ${
+            suppressPinHover
+              ? 'pointer-events-none opacity-0'
+              : task.pinned
+                ? 'opacity-[0.46]'
+                : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-[0.3] focus-visible:pointer-events-auto focus-visible:opacity-[0.46]'
+          }`}
+          aria-label={pinLabel}
+          title={pinLabel}
+        >
+          <PushPinIcon className="h-3.5 w-3.5" />
+        </button>
+      )}
+
       {isBatchMode && (
         <input
           type="checkbox"
@@ -296,7 +320,7 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
             onToggleSelection();
           }}
           onClick={(event) => event.stopPropagation()}
-          className="h-3.5 w-3.5 shrink-0 rounded border-[#c9ccd2] accent-[#0060d0]"
+          className="h-3.5 w-3.5 shrink-0 rounded border-gray-300 accent-primary"
         />
       )}
 
@@ -315,13 +339,15 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
               handleRenameCancel();
             }
           }}
-          className="min-w-0 flex-1 rounded-[7px] border border-[rgba(16,22,35,.07)] bg-white px-1.5 py-0.5 text-[14px] text-[#1c1f23] focus:outline-none focus:ring-1 focus:ring-[#0060d0]/40"
+          className="min-w-0 flex-1 rounded-md border border-border bg-background px-1.5 py-0.5 text-sm font-normal text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         />
       ) : (
         <>
           {task.isScheduledTask && (
             <span
-              className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-[#9aa1ab]"
+              className={`inline-flex h-4 w-4 shrink-0 items-center justify-center ${
+                isSelectionDisabled ? 'text-foreground/30' : 'text-secondary'
+              }`}
               role="img"
               title={scheduledTaskLabel}
               aria-label={scheduledTaskLabel}
@@ -344,10 +370,10 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
               />
             </span>
           )}
-          <span className={`min-w-0 flex-1 text-[14px] tracking-[-.008em] ${isActivityRow ? 'flex flex-col gap-0.5' : 'truncate'}`}>
+          <span className={`min-w-0 flex-1 ${isActivityRow ? 'flex flex-col gap-0.5' : 'truncate'}`}>
             <span className="truncate">{displayTitle}</span>
             {contextLabel && (
-              <span className="flex min-w-0 items-center gap-1 text-[11.5px] leading-4 text-[#a2a29c]">
+              <span className="flex min-w-0 items-center gap-1 text-[11px] font-normal leading-4 text-secondary">
                 {contextIcon && (
                   <span className="flex h-3 w-3 shrink-0 items-center justify-center" aria-hidden="true">
                     {contextIcon}
@@ -357,23 +383,13 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
               </span>
             )}
           </span>
-          {task.pinned && !isBatchMode && (
-            <span
-              className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[#a2a29c] transition-opacity group-hover:opacity-0"
-              title={pinLabel}
-              aria-label={pinLabel}
-              role="img"
-            >
-              <PushPinIcon className="h-3 w-3" />
-            </span>
-          )}
           {task.indicator === AgentSidebarIndicator.PendingPermission && (
             <span
-              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[rgba(0,96,208,.08)] px-1.5 py-0.5 text-[10.5px] font-medium leading-3 text-[#0060d0] transition-opacity group-hover:opacity-0"
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium leading-3 text-primary transition-opacity group-hover:opacity-0"
               title={indicatorLabel}
               aria-label={indicatorLabel}
             >
-              <span className="h-1 w-1 shrink-0 rounded-full bg-[#0060d0]" aria-hidden="true" />
+              <span className="h-1 w-1 shrink-0 rounded-full bg-primary animate-pulse" aria-hidden="true" />
               {indicatorLabel}
             </span>
           )}
@@ -383,19 +399,19 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
               title={indicatorLabel}
               aria-label={indicatorLabel}
             >
-              <LoadingIcon className="h-3 w-3 animate-spin text-[#9aa1ab]" aria-hidden="true" />
+              <LoadingIcon className="h-3 w-3 animate-spin text-secondary" aria-hidden="true" />
             </span>
           )}
           {task.indicator === AgentSidebarIndicator.CompletedUnread && (
             <span
-              className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#0060d0] transition-opacity group-hover:opacity-0"
+              className="h-[7px] w-[7px] shrink-0 rounded-full bg-blue-500 transition-opacity group-hover:opacity-0"
               title={indicatorLabel}
               aria-label={indicatorLabel}
             />
           )}
           {showRelativeTime && (
             <span
-              className="shrink-0 whitespace-nowrap text-[12px] text-[#9aa1ab] transition-opacity group-hover:opacity-0"
+              className="shrink-0 whitespace-nowrap text-[12px] font-normal text-foreground/45 transition-opacity group-hover:opacity-0"
               title={relativeTime.full}
             >
               {relativeTime.compact}
@@ -409,19 +425,19 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
           ref={actionButtonRef}
           type="button"
           onClick={toggleMenu}
-          className={`absolute right-[7px] top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[7px] text-[#6b7280] transition-opacity hover:bg-[rgba(16,20,28,.06)] hover:text-[#1c1f23] ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+          className={`absolute right-1 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-foreground transition-opacity hover:opacity-[0.46] ${
+            isMenuOpen ? 'opacity-[0.46]' : 'opacity-0 group-hover:opacity-[0.3] focus-visible:opacity-[0.46]'
           }`}
           aria-label={i18nService.t('coworkSessionActions')}
         >
-          <EllipsisLineIcon size={16} />
+          <EllipsisHorizontalIcon className="h-4 w-4" />
         </button>
       )}
 
       {menuPosition && (
         <div
           ref={menuRef}
-          className="maties-menu fixed z-[60] w-[200px] max-w-[calc(100vw-16px)]"
+          className="fixed z-[60] w-max min-w-[124px] max-w-[calc(100vw-16px)] overflow-hidden rounded-lg border border-border bg-surface shadow-lg"
           style={{ top: menuPosition.top, right: menuPosition.right }}
           role="menu"
           onKeyDown={handleMenuKeyDown}
@@ -434,10 +450,10 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
                 closeMenu();
                 onEnterBatchMode();
               }}
-              className="maties-menu-item"
+              className={menuItemClassName}
               role="menuitem"
             >
-              <ListChecksIcon className={MENU_ICON_CLASS_NAME} />
+              <ListChecksIcon className={menuIconClassName} />
               {i18nService.t('batchOperations')}
             </button>
           )}
@@ -449,10 +465,10 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
               onSidebarAction?.('task_rename_start', analyticsParams);
               setIsRenaming(true);
             }}
-            className="maties-menu-item"
+            className={menuItemClassName}
             role="menuitem"
           >
-            <EditIcon className={MENU_ICON_CLASS_NAME} />
+            <EditIcon className={menuIconClassName} />
             {i18nService.t('renameConversation')}
           </button>
           <button
@@ -462,11 +478,11 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
               closeMenu();
               void onTogglePin(!task.pinned);
             }}
-            className="maties-menu-item"
+            className={menuItemClassName}
             role="menuitem"
           >
-            <PushPinIcon slashed={task.pinned} className={MENU_ICON_CLASS_NAME} />
-            {pinLabel}
+            <PushPinIcon slashed={task.pinned} className={menuIconClassName} />
+            {task.pinned ? i18nService.t('coworkUnpinSession') : i18nService.t('coworkPinSession')}
           </button>
           <button
             type="button"
@@ -475,10 +491,10 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
               closeMenu();
               void onShare();
             }}
-            className="maties-menu-item"
+            className={menuItemClassName}
             role="menuitem"
           >
-            <ShareIcon className={MENU_ICON_CLASS_NAME} />
+            <ShareIcon className={menuIconClassName} />
             {i18nService.t('coworkShareSession')}
           </button>
           <button
@@ -489,11 +505,10 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
               onSidebarAction?.('task_delete_confirm_open', analyticsParams);
               setShowConfirmDelete(true);
             }}
-            className="maties-menu-item"
-            data-danger="true"
+            className={menuItemClassName}
             role="menuitem"
           >
-            <TrashIcon className="h-[15px] w-[15px] shrink-0" />
+            <TrashIcon className={menuIconClassName} />
             {i18nService.t('deleteSession')}
           </button>
         </div>
@@ -502,29 +517,29 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
       {showConfirmDelete && (
         <Modal
           onClose={() => setShowConfirmDelete(false)}
-          className="mx-4 w-full max-w-sm overflow-hidden rounded-[20px] bg-white shadow-[0_1px_2px_rgba(16,22,35,.05),0_12px_32px_rgba(16,22,35,.09)]"
+          className="w-full max-w-sm mx-4 bg-surface rounded-2xl shadow-xl overflow-hidden"
         >
           <div className="flex items-center gap-3 px-5 py-4">
-            <div className="rounded-full bg-[#fdecec] p-2">
-              <ExclamationTriangleIcon className="h-5 w-5 text-[#e0322d]" />
+            <div className="p-2 rounded-full bg-red-100 dark:bg-red-900/30">
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-500" />
             </div>
-            <h2 className="text-[15px] font-medium text-[#1c1f23]">
+            <h2 className="text-base font-semibold text-foreground">
               {i18nService.t('deleteTaskConfirmTitle')}
             </h2>
           </div>
           <div className="px-5 pb-4">
-            <p className="text-[13.5px] text-[#4a4f57]">
+            <p className="text-sm text-secondary">
               {i18nService.t('deleteTaskConfirmMessage')}
             </p>
           </div>
-          <div className="flex items-center justify-end gap-2 border-t border-[rgba(16,22,35,.07)] px-5 py-4">
+          <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border">
             <button
               type="button"
               onClick={() => {
                 onSidebarAction?.('task_delete_cancel', analyticsParams);
                 setShowConfirmDelete(false);
               }}
-              className="rounded-full px-4 py-2 text-[13.5px] font-medium text-[#4a4f57] transition-colors hover:bg-[rgba(16,20,28,.05)]"
+              className="px-4 py-2 text-sm font-medium rounded-lg text-secondary hover:bg-surface-raised transition-colors"
             >
               {i18nService.t('cancel')}
             </button>
@@ -535,7 +550,7 @@ const AgentTaskRow: React.FC<AgentTaskRowProps> = ({
                 setShowConfirmDelete(false);
                 void onDelete();
               }}
-              className="rounded-full bg-[#e0322d] px-4 py-2 text-[13.5px] font-medium text-white transition-colors hover:bg-[#c92b27]"
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 text-white transition-colors hover:bg-red-600"
             >
               {i18nService.t('deleteSession')}
             </button>

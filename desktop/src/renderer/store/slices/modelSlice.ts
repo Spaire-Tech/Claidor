@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { ProviderName } from '@shared/providers/constants';
-import type { MatiesRequestCapability } from '@shared/providers/matiesRequestOptions';
+import type { LobsterAIRequestCapability } from '@shared/providers/lobsterAIRequestOptions';
 import type { ModelRuntimeProfile } from '@shared/providers/modelRuntimeProfiles';
 import type { ModelThinkingConfig } from '@shared/providers/modelThinking';
 
@@ -10,31 +10,31 @@ import { resolveOpenClawModelRef } from '../../utils/openclawModelRef';
 export interface Model {
   id: string;
   name: string;
-  provider?: string; // Provider the model belongs to
-  providerKey?: string; // Key of the provider the model belongs to (unique identifier)
+  provider?: string; // 模型所属的提供商
+  providerKey?: string; // 模型所属的提供商 key（用于唯一标识）
   openClawProviderId?: string; // OpenClaw runtime provider id
-  runtimeProfile?: ModelRuntimeProfile; // Controlled runtime compatibility profile
+  runtimeProfile?: ModelRuntimeProfile; // 受控的运行时兼容档案
   supportsImage?: boolean;
   supportsVideo?: boolean;
   supportsThinking?: boolean;
   thinkingConfig?: ModelThinkingConfig;
-  requestCapabilities?: MatiesRequestCapability[];
+  requestCapabilities?: LobsterAIRequestCapability[];
   supportsToolCalling?: boolean;
   agenticReady?: boolean;
   contextWindow?: number;
   maxTokens?: number;
-  isServerModel?: boolean; // Whether this is a server-side plan model
-  serverApiFormat?: string; // API format of the server model ("openai" | "anthropic")
-  explicitContextCache?: boolean; // Whether server-side explicit context caching is supported
-  description?: string; // Short description of the model's capabilities
-  costMultiplier?: number; // Credit consumption multiplier (1.0 = standard)
-  moreModel?: boolean; // Whether to collapse into the "More models" group
-  accessible?: boolean; // false = model is visible but the user cannot use it (greyed out)
-  restrictionHint?: string; // Restriction hint (e.g. "Available with a subscription plan / booster pack")
+  isServerModel?: boolean; // 是否为服务端套餐模型
+  serverApiFormat?: string; // 服务端模型的 API 格式 ("openai" | "anthropic")
+  explicitContextCache?: boolean; // 是否支持服务端显式上下文缓存
+  description?: string; // 模型能力简介
+  costMultiplier?: number; // 积分消耗倍率 (1.0=标准)
+  moreModel?: boolean; // 是否收起到“更多模型”分组
+  accessible?: boolean; // false = 模型可见但用户无权使用（置灰）
+  restrictionHint?: string; // 限制提示（如 "订阅套餐/购买加油包可用"）
 }
 
 function isServerModelIdentity(model: Pick<Model, 'providerKey' | 'isServerModel'>): boolean {
-  return model.isServerModel === true || model.providerKey === ProviderName.MatiesServer;
+  return model.isServerModel === true || model.providerKey === ProviderName.LobsteraiServer;
 }
 
 export function getModelIdentityKey(model: Pick<Model, 'id' | 'providerKey' | 'isServerModel'>): string {
@@ -54,7 +54,7 @@ export function isSameModelIdentity(
   if (modelA.providerKey && modelB.providerKey) {
     return modelA.providerKey === modelB.providerKey;
   }
-  // Backwards compatibility: fall back to id matching when providerKey is missing
+  // 兼容旧配置：缺失 providerKey 时回退到 id 匹配
   return true;
 }
 
@@ -73,7 +73,7 @@ function selectPreferredAccessibleModel(
   return allAvailableModels.find(isModelAccessible) ?? matchedModel ?? allAvailableModels[0] ?? currentModel;
 }
 
-// Build the initial list of available models from the providers configuration
+// 从 providers 配置中构建初始可用模型列表
 function buildInitialModels(): Model[] {
   const models: Model[] = [];
   if (defaultConfig.providers) {
@@ -94,7 +94,7 @@ function buildInitialModels(): Model[] {
   return models.length > 0 ? models : defaultConfig.model.availableModels;
 }
 
-// Initial list of available models (updated at runtime)
+// 初始可用模型列表（会在运行时更新）
 export let availableModels: Model[] = buildInitialModels();
 const defaultModelProvider = defaultConfig.model.defaultModelProvider;
 
@@ -153,7 +153,7 @@ function syncSelectedModelByAgent(
 }
 
 const initialState: ModelState = {
-  // Use the default model from config
+  // 使用 config 中的默认模型
   defaultSelectedModel: availableModels.find(
     model => model.id === defaultConfig.model.defaultModel
       && (!defaultModelProvider || model.providerKey === defaultModelProvider)
@@ -178,45 +178,45 @@ const modelSlice = createSlice({
       delete state.selectedModelByAgent[action.payload];
     },
     setAvailableModels: (state, action: PayloadAction<Model[]>) => {
-      // Keep existing server models and only update user-configured models (mirror of setServerModels)
+      // 保留已有的服务端模型，只更新用户自配模型（与 setServerModels 对称）
       const serverModels = state.availableModels.filter(m => m.isServerModel);
       state.availableModels = [...serverModels, ...action.payload];
-      // Update the exported availableModels
+      // 更新导出的 availableModels
       availableModels = state.availableModels;
-      // Sync defaultSelectedModel
+      // 同步 defaultSelectedModel
       if (state.availableModels.length > 0) {
         state.defaultSelectedModel = selectPreferredAccessibleModel(
           state.availableModels,
           state.defaultSelectedModel,
         );
       }
-      // Sync the per-agent selected models
+      // 同步 per-agent 选中模型
       syncSelectedModelByAgent(state.selectedModelByAgent, state.availableModels);
     },
     setServerModels: (state, action: PayloadAction<Model[]>) => {
-      // Server models go first, user-configured models stay after them
+      // 服务端模型放前面，自配模型保留在后面
       const userModels = state.availableModels.filter(m => !m.isServerModel);
       state.availableModels = [...action.payload, ...userModels];
       availableModels = state.availableModels;
-      // Sync defaultSelectedModel (prefer an accessible model)
+      // 同步 defaultSelectedModel（优先选择 accessible 的模型）
       if (state.availableModels.length > 0) {
         state.defaultSelectedModel = selectPreferredAccessibleModel(
           state.availableModels,
           state.defaultSelectedModel,
         );
       }
-      // Sync the per-agent selected models
+      // 同步 per-agent 选中模型
       syncSelectedModelByAgent(state.selectedModelByAgent, state.availableModels);
     },
     clearServerModels: (state) => {
       state.availableModels = state.availableModels.filter(m => !m.isServerModel);
       availableModels = state.availableModels;
-      // If defaultSelectedModel is a server model, switch to the first available model
+      // 如果 defaultSelectedModel 是服务端模型，切换到第一个可用模型
       if (state.defaultSelectedModel.isServerModel && state.availableModels.length > 0) {
         state.defaultSelectedModel = state.availableModels.find(isModelAccessible)
           ?? state.defaultSelectedModel;
       }
-      // Sync the per-agent selected models
+      // 同步 per-agent 选中模型
       syncSelectedModelByAgent(state.selectedModelByAgent, state.availableModels);
     },
   },

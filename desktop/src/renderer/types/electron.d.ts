@@ -39,10 +39,6 @@ import type {
   BrowserRuntimeProfile,
 } from '../../shared/browserWebAccess/constants';
 import type {
-  ConnectorActionResult,
-  ConnectorsState,
-} from '../../shared/connectors/constants';
-import type {
   BrowserAnnotationRect,
   BrowserAnnotationScreenshotRef,
   CoworkBrowserAnnotationMessageBatch,
@@ -96,12 +92,6 @@ import type {
   ResolvedKitCapabilities,
 } from '../../shared/kit/constants';
 import type {
-  LibraryContentConfig,
-  LibraryContentStatus,
-  LibrarySearchRequest,
-  LibrarySearchResponse,
-} from '../../shared/library/contentConstants';
-import type {
   LibraryAddLocalFilesData,
   LibraryArtifactCandidate,
   LibraryBackfillState,
@@ -122,11 +112,6 @@ import type {
   ListLocalWebServicesOptions,
   LocalWebService,
 } from '../../shared/localWebServices/constants';
-import type {
-  MatyActionResult,
-  MatyState,
-} from '../../shared/maty/constants';
-import type { OnboardingProfile } from '../../shared/onboarding/constants';
 import type {
   OpenClawEngineErrorCode,
   OpenClawEnginePhase as SharedOpenClawEnginePhase,
@@ -509,7 +494,7 @@ interface McpServerConfigIPC {
 interface McpMarketplaceServer {
   id: string;
   name: string;
-  description_zh?: string;
+  description_zh: string;
   description_en: string;
   category: string;
   transportType: 'stdio' | 'sse' | 'http';
@@ -521,7 +506,7 @@ interface McpMarketplaceServer {
 
 interface McpMarketplaceCategory {
   id: string;
-  name_zh?: string;
+  name_zh: string;
   name_en: string;
 }
 
@@ -660,11 +645,6 @@ interface IElectronAPI {
     get: (key: string) => Promise<any>;
     set: (key: string, value: any) => Promise<void>;
     remove: (key: string) => Promise<void>;
-  };
-  /** The onboarding profile (docs/maties/onboarding.md): read as stored, or store, rename the main agent and resync the engine. */
-  onboarding: {
-    getProfile: () => Promise<OnboardingProfile>;
-    applyProfile: (profile: OnboardingProfile) => Promise<void>;
   };
   skills: {
     list: () => Promise<{ success: boolean; skills?: Skill[]; error?: string }>;
@@ -1495,28 +1475,6 @@ interface IElectronAPI {
       options: ShareDeploymentDownloadPersistenceInput,
     ) => Promise<ShareDeploymentDownloadPersistenceResult>;
   };
-  /** Connections to accounts (docs/maties/connectors.md). */
-  connectors: {
-    /** Asks Claidor afresh: what is connected, and may this person connect at all. */
-    getState: () => Promise<ConnectorsState>;
-    /** Opens the sign-in window and settles when it closes. */
-    connect: (slug: string) => Promise<ConnectorActionResult>;
-    disconnect: (accountId: string) => Promise<ConnectorActionResult>;
-    onChanged: (callback: (state: ConnectorsState) => void) => () => void;
-  };
-  /** Work sent to the cloud engine (docs/maties/cloud.md). */
-  maty: {
-    /** The last thing Claidor said; it never asks by itself. */
-    getState: () => Promise<MatyState>;
-    /** Ask Claidor now, and start watching a live job again. */
-    refresh: () => Promise<MatyState>;
-    /** Send one piece of work up. Only the words travel. */
-    send: (prompt: string) => Promise<MatyActionResult>;
-    getJob: (jobId: string) => Promise<MatyActionResult>;
-    /** Take a job back; Claidor allows it only while it is queued. */
-    cancel: (jobId: string) => Promise<MatyActionResult>;
-    onChanged: (callback: (state: MatyState) => void) => () => void;
-  };
   sites: {
     list: (options?: SiteListOptions) => Promise<SiteResult<SiteListData>>;
     get: (shareId: string) => Promise<SiteResult<SiteDetail>>;
@@ -1565,20 +1523,6 @@ interface IElectronAPI {
       state: LibraryBackfillState,
     ) => Promise<LibraryResult<LibraryBackfillState>>;
     onChanged: (callback: (payload: LibraryChangedPayload) => void) => () => void;
-  };
-  /** The personal library: the index of the person's documents (docs/maties/library.md). */
-  libraryContent: {
-    getStatus: () => Promise<LibraryContentStatus>;
-    getConfig: () => Promise<LibraryContentConfig>;
-    setConfig: (update: Partial<LibraryContentConfig>) => Promise<LibraryContentConfig>;
-    /** The folder the person picked in the system dialog, or null when they cancelled. */
-    pickFolder: () => Promise<string | null>;
-    setPaused: (paused: boolean) => Promise<LibraryContentStatus>;
-    rebuild: () => Promise<LibraryContentStatus>;
-    search: (request: LibrarySearchRequest) => Promise<LibrarySearchResponse>;
-    openFile: (filePath: string) => Promise<void>;
-    revealFile: (filePath: string) => Promise<void>;
-    onStatusChanged: (callback: (status: LibraryContentStatus) => void) => () => void;
   };
   asr: {
     createRealtimeSession: (options: AsrRealtimeSessionRequest) => Promise<AsrRealtimeSessionResult>;
@@ -2070,7 +2014,7 @@ interface IElectronAPI {
         supportsVideo?: boolean;
         supportsThinking?: boolean;
         thinkingConfig?: import('../../shared/providers/modelThinking').ModelThinkingConfig;
-        requestCapabilities?: import('../../shared/providers/matiesRequestOptions').MatiesRequestCapability[];
+        requestCapabilities?: import('../../shared/providers/lobsterAIRequestOptions').LobsterAIRequestCapability[];
         supportsToolCalling?: boolean;
         agenticReady?: boolean;
         contextWindow?: number;

@@ -381,7 +381,7 @@ type IMInstanceRenameTarget = IMInstanceTarget & {
 
 // Map of backend error messages to i18n keys
 const errorMessageI18nMap: Record<string, string> = {
-  'Account signed in elsewhere': 'kickedByOtherClient',
+  '账号已在其它地方登录': 'kickedByOtherClient',
 };
 
 // Helper function to translate IM error messages
@@ -394,17 +394,10 @@ function translateIMError(error: string | null): string {
   return error;
 }
 
-interface IMSettingsProps {
-  /** The platform to open first, when a connection card asked for one. */
-  initialPlatform?: Platform;
-  /** Changes with each request, so the same platform can be asked for twice. */
-  initialPlatformRequestId?: number;
-}
-
-const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatformRequestId }) => {
+const IMSettings: React.FC = () => {
   const dispatch = useDispatch();
   const { config, status, isLoading } = useSelector((state: RootState) => state.im);
-  const [activePlatform, setActivePlatform] = useState<Platform>(initialPlatform ?? 'weixin');
+  const [activePlatform, setActivePlatform] = useState<Platform>('weixin');
   const [activeQQInstanceId, setActiveQQInstanceId] = useState<string | null>(null);
   const [activeFeishuInstanceId, setActiveFeishuInstanceId] = useState<string | null>(null);
   const [activeDingTalkInstanceId, setActiveDingTalkInstanceId] = useState<string | null>(null);
@@ -587,7 +580,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
     } catch (err: any) {
       if (!isMountedRef.current) return;
       setFeishuQrStatus('error');
-      setFeishuQrError(err?.message || 'Failed to fetch the QR code');
+      setFeishuQrError(err?.message || '获取二维码失败');
     }
   };
 
@@ -879,7 +872,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
 
   const handleEmailGetApiKey = async () => {
     if (!activeEmailInstanceId) return;
-    const apiKeyUrl = 'https://claw.163.com/projects/dashboard/?channel=Maties#/api-keys';
+    const apiKeyUrl = 'https://claw.163.com/projects/dashboard/?channel=LobsterAI#/api-keys';
     try {
       await window.electron.shell.openExternal(apiKeyUrl);
     } catch {
@@ -1067,13 +1060,6 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
     }
   }, [platforms, activePlatform]);
 
-  // A connection card asked for one platform: show it, also when the tab is already open.
-  useEffect(() => {
-    if (initialPlatform && platforms.includes(initialPlatform)) {
-      setActivePlatform(initialPlatform);
-    }
-  }, [initialPlatform, initialPlatformRequestId, platforms]);
-
   // Check if platform can be started
   const canStart = (platform: Platform): boolean => {
     if (platform === 'dingtalk') {
@@ -1201,7 +1187,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
     if (displayState === IMRuntimeDisplayState.Connecting || displayState === IMRuntimeDisplayState.Starting) return 'bg-sky-500';
     if (displayState === IMRuntimeDisplayState.Failed) return 'bg-red-500';
     if (displayState === IMRuntimeDisplayState.PendingSave) return 'bg-yellow-500';
-    return 'bg-[#d9dbe0] dark:bg-[#3a3f48]';
+    return 'bg-gray-300 dark:bg-gray-600';
   };
 
   const getPlatformStatusDotClass = (platform: Platform): string | null => {
@@ -1859,7 +1845,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
         className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
           instance.enabled
             ? (connected ? 'bg-green-500' : 'bg-yellow-500')
-            : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
+            : 'bg-gray-300 dark:bg-gray-600'
         } ${canEnable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
         aria-label={instance.enabled ? i18nService.t('stop') : i18nService.t('start')}
       >
@@ -2131,7 +2117,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
               {!isMultiInstancePlatform(platform) && (
                 <span
                   className={`ml-2 flex h-4 w-7 flex-shrink-0 items-center rounded-full transition-colors ${
-                    isEnabled ? getPlatformSwitchColorClass(platform) : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
+                    isEnabled ? getPlatformSwitchColorClass(platform) : 'bg-gray-300 dark:bg-gray-600'
                   } ${(!canToggle || togglingPlatform === platform) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -2801,7 +2787,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
           );
         })()}
 
-        {/* NetEase Bee settings */}
+        {/* 小蜜蜂设置*/}
         {activePlatform === 'netease-bee' && (
           <div className="space-y-3">
             {/* Client ID */}
@@ -2816,7 +2802,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
                   onChange={(e) => handleNeteaseBeeChanChange('clientId', e.target.value)}
                   onBlur={handleSaveConfig}
                   className="block w-full rounded-lg bg-surface border-border-subtle border focus:border-primary focus:ring-1 focus:ring-primary/30 text-foreground px-3 py-2 pr-8 text-sm transition-colors"
-                  placeholder={i18nService.t('neteaseBeeChanClientIdPlaceholder') || 'Your Client ID'}
+                  placeholder={i18nService.t('neteaseBeeChanClientIdPlaceholder') || '您的Client ID'}
                 />
                 {config['netease-bee'].clientId && (
                   <div className="absolute right-2 inset-y-0 flex items-center">
@@ -2892,7 +2878,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
           </div>
         )}
 
-        {/* Weixin (WeChat) Settings */}
+        {/* Weixin (微信) Settings */}
         {activePlatform === 'weixin' && (
           <div className="space-y-3">
             {/* Scan QR code section */}
@@ -3118,7 +3104,7 @@ const IMSettings: React.FC<IMSettingsProps> = ({ initialPlatform, initialPlatfor
           </div>
         )}
 
-        {/* WeCom Multi-Instance Settings */}
+        {/* WeCom (企业微信) Multi-Instance Settings */}
         {activePlatform === 'wecom' && (() => {
           const wecomMultiConfig = config.wecom;
           const activeWecomInstance = activeWecomInstanceId

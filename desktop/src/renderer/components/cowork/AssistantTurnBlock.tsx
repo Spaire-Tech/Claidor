@@ -1,6 +1,4 @@
-import '../design/conversation.css';
-
-import { ChevronDownIcon, ChevronUpIcon, FolderIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, FolderIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { classifyErrorKey, CoworkErrorI18nKey } from '../../../common/coworkErrorClassify';
@@ -20,14 +18,11 @@ import type { Artifact } from '../../types/artifact';
 import type { CoworkMessage, CoworkMessageMetadata } from '../../types/cowork';
 import { revealLocalPathWithToast } from '../../utils/localFileActions';
 import { ArtifactPreviewCard } from '../artifacts';
-import { APPROVAL_SLOT_TURN, useApprovalSlotRef } from '../design/approvalSlots';
-import Shimmer from '../design/Shimmer';
-import Sphere from '../design/Sphere';
 import AbnormalIcon from '../icons/AbnormalIcon';
 import ExclamationTriangleIcon from '../icons/ExclamationTriangleIcon';
 import InformationCircleIcon from '../icons/InformationCircleIcon';
 import MarkdownContent from '../MarkdownContent';
-import ActivityGroupBlock, { type ActivityEntryRenderOptions, ActivityGroupMode } from './ActivityGroupBlock';
+import ActivityGroupBlock from './ActivityGroupBlock';
 import AssistantMessageItem from './AssistantMessageItem';
 import { reportConversationBlockAction } from './conversationAnalytics';
 import MediaPollingIndicator from './MediaPollingIndicator';
@@ -37,12 +32,12 @@ import {
   chunkConsolidatedItemsForDisplay,
   collectMediaPollCounts,
   type ConsolidatedItem,
-  type ConsolidatedRenderChunk,
   consolidateMediaPolling,
   type ConversationTurn,
   COWORK_DETAIL_CONTENT_CLASS,
   COWORK_DETAIL_GUTTER_CLASS,
   formatElapsedDuration,
+  formatTurnDuration,
   getActivityIndicatorStatusText,
   getContextCompactionMessageLabel,
   getMediaCompletionDisplayText,
@@ -61,13 +56,9 @@ import {
   isContextCompactionMessage,
   isDuplicateGeneratedVideoAssistantMessage,
   type ToolGroupItem,
-  turnHasSelfIndicatingActivity,
 } from './messageDisplayUtils';
-import StepResultCard from './StepResultCard';
-import { countToolSteps, formatStepsFold } from './stepsFold';
 import ThinkingBlock from './ThinkingBlock';
-import ToolCallGroup, { ToolCallVariant } from './ToolCallGroup';
-import { getToolStepFilePath, getToolStepResult } from './toolStepPresentation';
+import ToolCallGroup from './ToolCallGroup';
 
 const encodeLocalPathForUrl = (filePath: string): string => {
   return filePath
@@ -192,10 +183,20 @@ export const ActivityIndicator: React.FC<{
     ?? getActivityIndicatorStatusText(false, isLongWaiting, hasContent);
 
   return (
-    <div className="flex items-center gap-2.5 py-0.5" role="status" aria-live="polite">
-      <Shimmer text={statusText} />
+    <div className="flex items-center gap-2 py-1 animate-fade-in">
+      <span className="activity-indicator-dot h-2 w-2 rounded-full bg-primary flex-shrink-0" aria-hidden="true" />
+      <span
+        className="shimmer-text text-sm text-secondary min-w-0 truncate"
+        role="status"
+        aria-live="polite"
+      >
+        {statusText}
+      </span>
       {elapsedMs != null && elapsedMs >= ACTIVITY_TIMER_APPEAR_DELAY_MS && (
-        <span className="maties-meta tabular-nums flex-shrink-0" aria-hidden="true">
+        <span
+          className="text-xs text-muted tabular-nums flex-shrink-0 animate-fade-in"
+          aria-hidden="true"
+        >
           {formatElapsedDuration(elapsedMs)}
         </span>
       )}
@@ -295,14 +296,14 @@ const CreditQuotaExhaustedBanner: React.FC = () => {
 // ── SystemErrorTechnicalDetail ───────────────────────────────────────────────
 
 /**
- * User-facing model source label. Users only need two buckets — the Maties
+ * User-facing model source label. Users only need two buckets — the LobsterAI
  * plan vs. a model they configured themselves; finer detail (provider name,
  * Coding Plan, OAuth) goes into the parenthesized qualifier.
  */
 const buildErrorModelSourceLabel = (detail: CoworkErrorDetail): string | null => {
   if (!detail.modelSource) return null;
-  if (detail.modelSource === CoworkErrorModelSource.MatiesPlan) {
-    return i18nService.t('coworkErrorModelSourceMatiesPlan');
+  if (detail.modelSource === CoworkErrorModelSource.LobsterAIPlan) {
+    return i18nService.t('coworkErrorModelSourceLobsterAIPlan');
   }
 
   const qualifiers: string[] = [];
@@ -425,72 +426,6 @@ const getActivityGroupKey = (item: ConsolidatedItem): string => {
   return item.message.id;
 };
 
-const getItemTimestamp = (item: ConsolidatedItem): number | null => {
-  if (item.type === 'tool_group') return item.group.toolUse.timestamp;
-  if (item.type === 'media_polling_group') return item.group.polls[0]?.toolUse.timestamp ?? null;
-  return item.message.timestamp;
-};
-
-/** Files the turn read, wrote or edited: their names become chips in the answer. */
-const collectTurnFiles = (items: ConsolidatedItem[]): string[] => {
-  const files: string[] = [];
-  for (const item of items) {
-    if (item.type !== 'tool_group') continue;
-    const rawName = item.group.toolUse.metadata?.toolName;
-    const filePath = getToolStepFilePath(
-      typeof rawName === 'string' ? rawName : undefined,
-      item.group.toolUse.metadata?.toolInput,
-    );
-    if (filePath && !files.includes(filePath)) files.push(filePath);
-  }
-  return files;
-};
-
-const countSteps = (chunks: ConsolidatedRenderChunk[]): number => countToolSteps(
-  chunks.flatMap((chunk) => (chunk.kind === 'item' ? [chunk.item] : chunk.entries.map((entry) => entry.item))),
-);
-
-/** The last tool step of the process, whose result card stays visible under the fold. */
-const findLastToolGroup = (chunks: ConsolidatedRenderChunk[]): ToolGroupItem | null => {
-  for (let at = chunks.length - 1; at >= 0; at -= 1) {
-    const chunk = chunks[at];
-    if (chunk.kind === 'item') {
-      if (chunk.item.type === 'tool_group') return chunk.item.group;
-      continue;
-    }
-    for (let entryAt = chunk.entries.length - 1; entryAt >= 0; entryAt -= 1) {
-      const item = chunk.entries[entryAt].item;
-      if (item.type === 'tool_group') return item.group;
-    }
-  }
-  return null;
-};
-
-const FoldChevron: React.FC<{ open: boolean }> = ({ open }) => (
-  <svg
-    width={11}
-    height={11}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#c4c8ce"
-    strokeWidth={2.2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ flex: '0 0 11px', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .18s ease' }}
-    aria-hidden
-  >
-    <polyline points="9,5 16,12 9,19" />
-  </svg>
-);
-
-/** Steps are indented 36 px under the sphere's text column. */
-const STEP_INDENT_PX = 36;
-
-/**
- * The assistant's turn (docs/maties/design.md, section 4). No bubble: a
- * still sphere at the left, the column, the line « <mark> Claude Sonnet 5
- * · 12:40 » above it, then whatever the turn contains, in order.
- */
 const AssistantTurnBlock: React.FC<{
   turn: ConversationTurn;
   artifacts?: Artifact[];
@@ -502,8 +437,6 @@ const AssistantTurnBlock: React.FC<{
   onOpenHtmlFile?: (artifact: Artifact) => void;
   onOpenArtifactPreview?: (artifact: Artifact) => void;
   onForkMessage?: (messageId: string) => void;
-  /** Puts the person's message of this turn back in the composer. */
-  onRetryTurn?: (turn: ConversationTurn) => void;
   planConfirmationMessageId?: string | null;
   onConfirmPlan?: (messageId: string) => void;
   onAdjustPlan?: (messageId: string) => void;
@@ -519,8 +452,6 @@ const AssistantTurnBlock: React.FC<{
   isStreamingTurn?: boolean;
   /** True while subagents spawned in this turn are still running; keeps the process unfolded. */
   hasRunningSubagents?: boolean;
-  /** Hide the sphere at the left (a subagent's own view draws its own). */
-  hideTurnHeader?: boolean;
 }> = ({
   turn,
   artifacts,
@@ -532,7 +463,6 @@ const AssistantTurnBlock: React.FC<{
   onOpenHtmlFile,
   onOpenArtifactPreview,
   onForkMessage,
-  onRetryTurn,
   planConfirmationMessageId,
   onConfirmPlan,
   onAdjustPlan,
@@ -545,7 +475,6 @@ const AssistantTurnBlock: React.FC<{
   searchTargetMessageId,
   isStreamingTurn = false,
   hasRunningSubagents = false,
-  hideTurnHeader = false,
 }) => {
   const [artifactCardsExpanded, setArtifactCardsExpanded] = useState(false);
   const [processExpanded, setProcessExpanded] = useState(false);
@@ -596,11 +525,6 @@ const AssistantTurnBlock: React.FC<{
     }
     return next;
   }, [currentMediaPollCounts]);
-  const knownFiles = useMemo(() => collectTurnFiles(consolidatedItems), [consolidatedItems]);
-  const isTurnLive = isStreamingTurn || hasRunningSubagents;
-
-  // A request that arrives before its step is on screen lands here.
-  const turnApprovalSlotRef = useApprovalSlotRef<HTMLDivElement>(isStreamingTurn ? APPROVAL_SLOT_TURN : null);
 
   useEffect(() => {
     retainedMediaPollCountsRef.current = retainedMediaPollCounts;
@@ -645,23 +569,21 @@ const AssistantTurnBlock: React.FC<{
     const errorModelLine = errorDetail ? buildErrorModelLine(errorDetail) : null;
 
     return (
-      <div className="maties-card" style={{ padding: '12px 18px 12px 15px' }}>
-        <div className="flex items-start gap-2.5">
-          <span className="mt-0.5 flex-shrink-0" style={{ color: isError ? '#c8790a' : '#8f96a0' }}>
-            {isError
-              ? <ExclamationTriangleIcon className="h-4 w-4" />
-              : <InformationCircleIcon className="h-4 w-4" />
-            }
-          </span>
-          <div className="min-w-0" style={{ fontSize: 13.5, color: '#4a4f57' }}>
+      <div className="rounded-lg border border-border bg-background px-3 py-2">
+        <div className="flex items-center gap-2">
+          {isError
+            ? <ExclamationTriangleIcon className="h-4 w-4 text-secondary flex-shrink-0" />
+            : <InformationCircleIcon className="h-4 w-4 text-secondary flex-shrink-0" />
+          }
+          <div className="min-w-0 text-xs text-secondary">
             <MarkdownContent
               content={content}
-              className="!text-[13.5px] !leading-5 [&_a]:!text-primary [&_p]:!my-0 [&_p]:!text-secondary [&_p]:!leading-5"
+              className="!text-xs !leading-5 [&_a]:!text-primary [&_p]:!my-0 [&_p]:!text-secondary [&_p]:!leading-5"
             />
           </div>
         </div>
         {errorModelLine && (
-          <div className="maties-meta mt-1 pl-6">{errorModelLine}</div>
+          <div className="mt-1 pl-6 text-xs text-muted">{errorModelLine}</div>
         )}
         {errorDetail && <SystemErrorTechnicalDetail detail={errorDetail} />}
       </div>
@@ -679,31 +601,37 @@ const AssistantTurnBlock: React.FC<{
     const displayText = hasToolResultText ? toolResultDisplay : fallbackText;
     return (
       <div className="py-1">
-        <div className="flex items-start gap-3">
-          <span
-            className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full`}
-            style={{ background: isToolError ? '#e0322d' : '#e7e7ea' }}
-          />
-          <div className="min-w-0 flex-1">
-            <div style={{ fontSize: 14, fontWeight: 500, color: '#31353b' }}>
+        <div className="flex items-start gap-2">
+          <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
+            isToolError ? 'bg-red-500' : 'bg-surface-raised'
+          }`} />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-secondary">
               {i18nService.t('coworkToolResult')}
             </div>
             {resultLineCount > 0 && (
-              <div className="maties-meta mt-0.5">
+              <div className="text-xs text-muted mt-0.5">
                 {getToolResultLineCountSummary(resultLineCount)}
               </div>
             )}
             {resultLineCount === 0 && showNoDetailError && (
-              <div className="mt-0.5 text-xs" style={{ color: isToolError ? '#e0322d' : '#8f96a0' }}>
+              <div className={`text-xs mt-0.5 ${
+                isToolError
+                  ? 'text-red-500/80'
+                  : 'text-muted'
+              }`}>
                 {fallbackText}
               </div>
             )}
             {(hasToolResultText || showNoDetailError) && (
-              <div className="maties-inset mt-2 max-h-64 overflow-y-auto px-4 py-3">
-                <pre
-                  className="maties-mono whitespace-pre-wrap break-words"
-                  style={{ fontSize: 12.5, lineHeight: 1.55, color: isToolError ? '#e0322d' : hasToolResultText ? '#1c1f23' : '#8f96a0' }}
-                >
+              <div className="mt-2 px-3 py-2 rounded-lg bg-surface-raised max-h-64 overflow-y-auto">
+                <pre className={`text-code whitespace-pre-wrap break-words font-mono ${
+                  isToolError
+                    ? 'text-red-500'
+                    : hasToolResultText
+                      ? 'text-foreground'
+                      : 'text-secondary italic'
+                }`}>
                   {displayText}
                 </pre>
               </div>
@@ -721,14 +649,25 @@ const AssistantTurnBlock: React.FC<{
       && !(item.type === 'tool_group' && toolGroupOverrides.has(item.group.toolUse.id)),
   );
 
+  // Indices that render as standalone timeline rows; the timeline connector
+  // only draws between two consecutive ones (collapsed groups broke the old
+  // next-item heuristic).
+  const timelineToolIndices = new Set(
+    renderChunks
+      .filter((chunk): chunk is Extract<typeof renderChunks[number], { kind: 'item' }> => chunk.kind === 'item')
+      .filter((chunk) => chunk.item.type === 'tool_group' || chunk.item.type === 'media_polling_group')
+      .map((chunk) => chunk.index),
+  );
+
   const renderConsolidatedItem = (
     item: ConsolidatedItem,
     index: number,
-    options: ActivityEntryRenderOptions = { variant: 'step' },
+    displayVariant: 'timeline' | 'row' = 'timeline',
+    rowInitiallyExpanded = false,
   ): React.ReactNode => {
-    const isRowVariant = options.variant === 'row';
-    const nextItem = consolidatedItems[index + 1];
+    const isRowVariant = displayVariant === 'row';
     if (item.type === 'media_polling_group') {
+      const isLastInSequence = isRowVariant || !timelineToolIndices.has(index + 1);
       const retainedPollCount = getRetainedMediaPollCount(
         { taskId: item.group.taskId, upstreamTaskId: item.group.upstreamTaskId },
         retainedMediaPollCounts,
@@ -740,11 +679,11 @@ const AssistantTurnBlock: React.FC<{
             ...item.group,
             pollCount: retainedPollCount ?? item.group.pollCount,
           }}
-          isLastInSequence
+          isLastInSequence={isLastInSequence}
         />
       );
       return isRowVariant
-        ? <div key={`media-poll-${item.group.taskId}`} className="px-2 py-1.5">{indicator}</div>
+        ? <div key={`media-poll-${item.group.taskId}`} className="px-4 py-1.5">{indicator}</div>
         : indicator;
     }
 
@@ -755,10 +694,8 @@ const AssistantTurnBlock: React.FC<{
             key={item.message.id}
             message={item.message}
             mapDisplayText={mapDisplayText}
-            endTimestamp={nextItem ? getItemTimestamp(nextItem) : null}
             variant={isRowVariant ? 'row' : 'default'}
-            initiallyExpanded={options.initiallyExpanded}
-            isLive={isTurnLive ? undefined : false}
+            initiallyExpanded={rowInitiallyExpanded}
           />
         );
       }
@@ -784,7 +721,6 @@ const AssistantTurnBlock: React.FC<{
       const hasAssistantAfter = consolidatedItems
         .slice(index + 1)
         .some(laterItem => laterItem.type === 'assistant');
-      const isMessageStreaming = isStreamingTurn && Boolean(item.message.metadata?.isStreaming);
 
       return (
         <AssistantMessageItem
@@ -794,15 +730,12 @@ const AssistantTurnBlock: React.FC<{
           mapDisplayText={mapDisplayText}
           showCopyButton={isLastAssistant}
           onFork={isLastAssistant ? onForkMessage : undefined}
-          onRetry={isLastAssistant && onRetryTurn && turn.userMessage ? () => onRetryTurn(turn) : undefined}
           turnMetadata={isLastAssistant ? (item.message.metadata as CoworkMessageMetadata) : undefined}
           completedGoal={isLastAssistant && !hasAssistantAfter ? completedGoal : null}
           planConfirmationMessageId={planConfirmationMessageId}
           onConfirmPlan={onConfirmPlan}
           onAdjustPlan={onAdjustPlan}
           forceSearchExpanded={searchTargetMessageId === item.message.id}
-          streaming={isMessageStreaming}
-          knownFiles={knownFiles}
         />
       );
     }
@@ -811,20 +744,21 @@ const AssistantTurnBlock: React.FC<{
       const override = toolGroupOverrides.get(item.group.toolUse.id);
       if (override) {
         return (
-          <div key={`tool-${item.group.toolUse.id}`} style={{ paddingLeft: isRowVariant ? 0 : STEP_INDENT_PX }}>
+          <div key={`tool-${item.group.toolUse.id}`}>
             {override}
           </div>
         );
       }
+      const isLastInSequence = isRowVariant || !timelineToolIndices.has(index + 1);
       return (
         <ToolCallGroup
           key={`tool-${item.group.toolUse.id}`}
           group={item.group}
+          isLastInSequence={isLastInSequence}
           mapDisplayText={mapDisplayText}
           retainedMediaPollCounts={retainedMediaPollCounts}
-          variant={isRowVariant ? ToolCallVariant.Row : ToolCallVariant.Step}
-          initiallyExpanded={options.initiallyExpanded}
-          isLive={isTurnLive}
+          variant={displayVariant}
+          initiallyExpanded={rowInitiallyExpanded}
         />
       );
     }
@@ -842,44 +776,34 @@ const AssistantTurnBlock: React.FC<{
     }
 
     return (
-      <div key={item.message.id} className={isRowVariant ? 'px-2 py-1.5' : undefined}>
+      <div key={item.message.id} className={isRowVariant ? 'px-4 py-1.5' : undefined}>
         {renderOrphanToolResult(item.message)}
       </div>
     );
   };
 
-  const renderChunk = (
-    chunk: ConsolidatedRenderChunk,
-    groupMode: ActivityGroupMode,
-  ): React.ReactNode => {
+  const renderChunk = (chunk: (typeof renderChunks)[number], chunkIndex: number): React.ReactNode => {
     if (chunk.kind === 'item') {
-      return <React.Fragment key={`item-${chunk.index}`}>{renderConsolidatedItem(chunk.item, chunk.index)}</React.Fragment>;
+      return renderConsolidatedItem(chunk.item, chunk.index);
     }
-    const lastGroup = groupMode === ActivityGroupMode.Folded ? findLastToolGroup([chunk]) : null;
-    const lastResult = lastGroup && !toolGroupOverrides.has(lastGroup.toolUse.id)
-      ? getToolStepResult(lastGroup, mapDisplayText)
-      : null;
     return (
-      <div key={`activity-${getActivityGroupKey(chunk.entries[0].item)}`} style={{ paddingLeft: STEP_INDENT_PX }}>
-        <ActivityGroupBlock
-          entries={chunk.entries}
-          mode={groupMode}
-          renderEntry={(entry, options) => renderConsolidatedItem(entry.item, entry.index, options)}
-          keptResult={lastResult ? (
-            <StepResultCard
-              result={lastResult}
-              failed={Boolean(lastGroup?.toolResult?.metadata?.isError || lastGroup?.toolResult?.metadata?.error)}
-            />
-          ) : undefined}
-        />
-      </div>
+      <ActivityGroupBlock
+        key={`activity-${getActivityGroupKey(chunk.entries[0].item)}`}
+        entries={chunk.entries}
+        isStreamingTail={isStreamingTurn && chunkIndex === renderChunks.length - 1}
+        renderEntry={(entry, options) =>
+          renderConsolidatedItem(entry.item, entry.index, 'row', options?.initiallyExpanded)}
+      />
     );
   };
 
-  // Once the turn completes, the steps fold into one line (« 4 steps ·
-  // 12 s ») that opens to the full list, and the last result card stays
-  // visible. A turn with subagents still running is not complete; neither
-  // is one with no trailing answer yet.
+  // Once the turn completes, everything before the final answer folds behind
+  // a single duration line so the user reads input → answer, expanding only
+  // when they want the process. A turn with subagents still running is not
+  // complete — their working cards must stay visible. Neither is a turn with
+  // no trailing answer yet (it ended waiting for subagents, or sits in the
+  // gap before the parent run resumes after they hand back): folding then
+  // would hide everything behind an empty duration line.
   const answerStartIndex = getTurnAnswerStartIndex(renderChunks);
   const processChunks = renderChunks.slice(0, answerStartIndex);
   const answerChunks = renderChunks.slice(answerStartIndex);
@@ -891,19 +815,17 @@ const AssistantTurnBlock: React.FC<{
       && chunk.item.type === 'assistant'
       && chunk.item.message.id === searchTargetMessageId,
   );
+  // Tool errors stay on their own step row (Codex app behavior); they do not
+  // color this duration line or force the fold open.
   const isProcessExpanded = processExpanded || processContainsSearchTarget;
   const turnStartTimestamp = getTurnStartTimestamp(turn);
   const turnEndTimestamp = getTurnEndTimestamp(turn);
   const processDurationMs = turnStartTimestamp != null && turnEndTimestamp != null
     ? turnEndTimestamp - turnStartTimestamp
     : null;
-  const processStepCount = countSteps(processChunks);
-  const processLabel = formatStepsFold(processStepCount, processDurationMs);
-  const lastProcessGroup = shouldFoldProcess ? findLastToolGroup(processChunks) : null;
-  const keptResult = lastProcessGroup && !toolGroupOverrides.has(lastProcessGroup.toolUse.id)
-    ? getToolStepResult(lastProcessGroup, mapDisplayText)
-    : null;
-  const keptResultFailed = Boolean(lastProcessGroup?.toolResult?.metadata?.isError || lastProcessGroup?.toolResult?.metadata?.error);
+  const processLabel = processDurationMs != null && processDurationMs >= 1000
+    ? i18nService.t('coworkTurnProcessDuration').replace('{duration}', formatTurnDuration(processDurationMs))
+    : i18nService.t('coworkTurnProcess');
 
   const handleProcessToggle = () => {
     const nextExpanded = !isProcessExpanded;
@@ -918,63 +840,37 @@ const AssistantTurnBlock: React.FC<{
     setProcessExpanded(nextExpanded);
   };
 
-  // While a step carries its own ring, the turn's « Thinking » line stays
-  // hidden, so at most one thing moves on screen.
-  const lastItem = consolidatedItems[consolidatedItems.length - 1];
-  const answerIsStreaming = Boolean(
-    lastItem
-    && lastItem.type === 'assistant'
-    && !lastItem.message.metadata?.isThinking
-    && lastItem.message.metadata?.isStreaming,
-  );
-  // ... and while the answer's own words are moving, nothing else needs to.
-  const stepIsLive = turnHasSelfIndicatingActivity(turn) || answerIsStreaming;
-
-  const liveChunks = renderChunks.map((chunk, chunkIndex) => renderChunk(
-    chunk,
-    isStreamingTurn && chunkIndex === renderChunks.length - 1 ? ActivityGroupMode.Live : ActivityGroupMode.Folded,
-  ));
-
   return (
-    <div className={`py-3 ${COWORK_DETAIL_GUTTER_CLASS}`}>
+    <div className={`py-2 ${COWORK_DETAIL_GUTTER_CLASS}`}>
       <div className={COWORK_DETAIL_CONTENT_CLASS}>
-        <div className="flex items-start gap-[14px]">
-          {!hideTurnHeader && (
-            <Sphere size={22} still className="mt-[1px]" />
-          )}
-          <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0 py-3 space-y-3">
             {shouldFoldProcess ? (
               <>
-                <div className="flex flex-col gap-3">
+                <div className="py-1">
                   <button
                     type="button"
                     onClick={handleProcessToggle}
-                    className="flex max-w-full items-center gap-1.5 text-left"
+                    className="group flex max-w-full items-center gap-1.5 text-left"
                     aria-expanded={isProcessExpanded}
                   >
-                    <span className="maties-caption min-w-0 truncate" style={{ color: '#6b7280' }}>{processLabel}</span>
-                    <FoldChevron open={isProcessExpanded} />
+                    <span className="min-w-0 truncate text-sm text-secondary transition-colors group-hover:text-foreground">
+                      {processLabel}
+                    </span>
+                    <ChevronRightIcon
+                      className={`h-3.5 w-3.5 flex-shrink-0 text-muted transition-transform duration-200 group-hover:text-secondary ${
+                        isProcessExpanded ? 'rotate-90' : ''
+                      }`}
+                    />
                   </button>
-                  {isProcessExpanded && (
-                    <div className="maties-in flex flex-col gap-3">
-                      {processChunks.map((chunk) => renderChunk(chunk, ActivityGroupMode.Open))}
-                    </div>
-                  )}
-                  {!isProcessExpanded && keptResult && (
-                    <div style={{ paddingLeft: STEP_INDENT_PX }}>
-                      <StepResultCard result={keptResult} failed={keptResultFailed} />
-                    </div>
-                  )}
                 </div>
-                {answerChunks.map((chunk) => renderChunk(chunk, ActivityGroupMode.Folded))}
+                {isProcessExpanded && processChunks.map((chunk, index) => renderChunk(chunk, index))}
+                {answerChunks.map((chunk, index) => renderChunk(chunk, answerStartIndex + index))}
               </>
             ) : (
-              liveChunks
+              renderChunks.map((chunk, chunkIndex) => renderChunk(chunk, chunkIndex))
             )}
-            {isStreamingTurn && (
-              <div ref={turnApprovalSlotRef} data-maties-approval-slot={APPROVAL_SLOT_TURN} className="empty:hidden" style={{ paddingLeft: STEP_INDENT_PX }} />
-            )}
-            {showActivityIndicator && !stepIsLive && (
+            {showActivityIndicator && (
               <ActivityIndicator
                 fingerprint={getTurnActivityFingerprint(turn)}
                 hasContent={visibleAssistantItems.length > 0}
@@ -985,7 +881,7 @@ const AssistantTurnBlock: React.FC<{
             {artifacts && artifacts.length > 0 && (
               <div className="space-y-2 pt-1">
                 <VideoArtifactPathList artifacts={videoPathArtifacts} />
-                <div className="artifact-preview-card-group w-full overflow-hidden rounded-2xl" style={{ boxShadow: '0 0 0 .5px rgba(30,32,38,.07), 0 8px 24px rgba(16,20,28,.05)' }}>
+                <div className="artifact-preview-card-group w-full overflow-hidden rounded-lg border border-border">
                   <div className="divide-y divide-border">
                     {visibleArtifactCards.map(artifact => (
                       <ArtifactPreviewCard
@@ -1005,7 +901,7 @@ const AssistantTurnBlock: React.FC<{
                         <button
                           type="button"
                           onClick={() => setArtifactCardsExpanded(true)}
-                          className="maties-button maties-button-ghost"
+                          className="inline-flex items-center justify-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-secondary hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.035] transition-colors"
                         >
                           <span>{i18nService.t('artifactPreviewCardShowMore').replace('{count}', String(hiddenArtifactCardCount))}</span>
                           <ChevronDownIcon className="h-4 w-4" />
@@ -1014,7 +910,7 @@ const AssistantTurnBlock: React.FC<{
                         <button
                           type="button"
                           onClick={() => setArtifactCardsExpanded(false)}
-                          className="maties-button maties-button-ghost"
+                          className="inline-flex items-center justify-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-secondary hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.035] transition-colors"
                         >
                           <span>{i18nService.t('artifactPreviewCardShowLess')}</span>
                           <ChevronUpIcon className="h-4 w-4" />

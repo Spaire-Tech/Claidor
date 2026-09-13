@@ -39,8 +39,8 @@ const LibraryShareDeleteDialog: React.FC<LibraryShareDeleteDialogProps> = ({
     <Modal
       onClose={cancel}
       onEscape={cancel}
-      overlayClassName="maties-backdrop fixed inset-0 z-[9999] flex items-center justify-center px-4"
-      className="maties-card-prose maties-in w-full max-w-[460px] p-6"
+      overlayClassName="fixed inset-0 z-[9999] flex items-center justify-center modal-backdrop px-4"
+      className="modal-content w-full max-w-[460px] rounded-2xl border border-border bg-surface p-6 shadow-modal"
     >
       <div
         role="alertdialog"

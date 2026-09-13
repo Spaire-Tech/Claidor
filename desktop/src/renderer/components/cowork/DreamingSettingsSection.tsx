@@ -3,8 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dreamingLobsterSrc from '../../assets/dreaming-lobster.png';
 import { i18nService } from '../../services/i18n';
 import type { DreamDiaryData, DreamingEntry, DreamingPhaseInfo, DreamingStatusData } from '../../types/cowork';
-import Pill, { PillTone } from '../design/Pill';
-import Switch from '../design/Switch';
 
 interface DreamingSettingsSectionProps {
   dreamingEnabled: boolean;
@@ -132,7 +130,7 @@ function formatPhaseRunLabel(phase: DreamingPhaseInfo | undefined, fallbackCron:
 function getDreamingInsightMessages(): string[] {
   const messages = i18nService
     .t('coworkDreamingInsightMessages')
-    .split(',')
+    .split(/[,，]/)
     .map((message) => message.trim())
     .filter(Boolean);
 
@@ -712,31 +710,44 @@ const DreamingSettingsSection: React.FC<DreamingSettingsSectionProps> = ({
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="maties-card-row flex flex-wrap items-center justify-between gap-6 px-5 py-4">
-        <p className="maties-row-desc mt-0 max-w-[64ch]">{i18nService.t('coworkDreamingHeaderSubtitle')}</p>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+        <p className="text-sm text-secondary">{i18nService.t('coworkDreamingHeaderSubtitle')}</p>
 
-        <Switch
-          checked={dreamingEnabled}
-          label={i18nService.t('coworkMemoryTabDreaming')}
-          onChange={() => onDreamingEnabledChange(!dreamingEnabled)}
-        />
+        <button
+          type="button"
+          role="switch"
+          aria-checked={dreamingEnabled}
+          onClick={() => onDreamingEnabledChange(!dreamingEnabled)}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+            dreamingEnabled ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              dreamingEnabled ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
       </div>
 
-      <div className="mb-1 flex flex-wrap gap-1.5">
-        {contentTabs.map((tab) => (
-          <Pill
-            key={tab.key}
-            compact
-            tone={contentTab === tab.key ? PillTone.Selected : PillTone.Quiet}
-            onClick={() => setContentTab(tab.key)}
-          >
-            {i18nService.t(tab.labelKey)}
-          </Pill>
-        ))}
-      </div>
-
-      <div className="maties-card-row p-3">
+      <div className="rounded-xl border border-border bg-surface p-3">
+        <div className="mb-3 flex flex-wrap gap-2 border-b border-border pb-3">
+          {contentTabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.key}
+              onClick={() => setContentTab(tab.key)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                contentTab === tab.key
+                  ? 'bg-primary-muted text-primary'
+                  : 'text-secondary hover:bg-surface-raised hover:text-foreground'
+              }`}
+            >
+              {i18nService.t(tab.labelKey)}
+            </button>
+          ))}
+        </div>
 
         {loadError && (
           <div className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-300">

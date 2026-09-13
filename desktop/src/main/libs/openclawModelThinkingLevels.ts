@@ -5,7 +5,7 @@ import {
 } from '../../shared/providers';
 import { getServerModelMetadata } from './claudeSettings';
 
-const MATIES_SERVER_MODEL_PREFIX = `${OpenClawProviderId.MatiesServer}/`;
+const LOBSTERAI_SERVER_MODEL_PREFIX = `${OpenClawProviderId.LobsteraiServer}/`;
 
 export const resolveOpenClawThinkingLevelForModel = (
   modelRef: string,
@@ -15,12 +15,12 @@ export const resolveOpenClawThinkingLevelForModel = (
   const normalizedProductLevel = parseModelThinkingLevel(productLevel);
   if (
     !normalizedProductLevel
-    || !normalizedModelRef.startsWith(MATIES_SERVER_MODEL_PREFIX)
+    || !normalizedModelRef.startsWith(LOBSTERAI_SERVER_MODEL_PREFIX)
   ) {
     return productLevel;
   }
 
-  const modelId = normalizedModelRef.slice(MATIES_SERVER_MODEL_PREFIX.length);
+  const modelId = normalizedModelRef.slice(LOBSTERAI_SERVER_MODEL_PREFIX.length);
   const thinkingConfig = getServerModelMetadata(modelId)?.thinkingConfig;
   if (!thinkingConfig) return productLevel;
 

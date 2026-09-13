@@ -493,7 +493,7 @@ describe('mapGatewayJob', () => {
 
   test('strips stale channel/to when delivery mode is none', () => {
     // The gateway patch-merges delivery on cron.update and cannot clear a
-    // previously-set channel/to, so a job switched to "do not notify" still returns
+    // previously-set channel/to, so a job switched to "不通知" still returns
     // the old target. mapGatewayJob must drop it so the edit form shows none.
     const job = mapGatewayJob(
       makeGatewayJob({

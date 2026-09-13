@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const classicLight: ThemeDefinition = {
   meta: {
     id: 'classic-light',
-    name: 'Classic Light',
-    description: 'The original default light theme, cool grey-white',
+    name: '经典浅色',
+    description: '原生默认浅色主题，冷调灰白',
     appearance: 'light',
     preview: ['#F8F9FB', '#3B82F6', '#60A5FA', '#6B7280'],
   },

@@ -1,6 +1,6 @@
 import { expect,test } from 'vitest';
 
-import { classifyErrorKey, isMatiesQuotaExhaustedError } from './coworkErrorClassify';
+import { classifyErrorKey, isLobsterAIQuotaExhaustedError } from './coworkErrorClassify';
 
 const classifyError = (error: string) => classifyErrorKey(error) ?? error;
 
@@ -51,7 +51,7 @@ test('auth: provider names containing oauth are not enough to classify auth fail
 });
 
 test('auth: provider model access denied', () => {
-  expect(classifyError('403 You do not have access to glm-x-preview.')).toBe('coworkErrorModelAccessDenied');
+  expect(classifyError('403 您无权访问glm-x-preview。')).toBe('coworkErrorModelAccessDenied');
 });
 
 test('auth: auth scope maps to model access denied', () => {
@@ -68,29 +68,29 @@ test('billing: OpenAI insufficient_quota', () => {
   expect(classifyError('You exceeded your current quota, please check your plan and billing details. insufficient_quota')).toBe('coworkErrorInsufficientBalance');
 });
 
-test('billing: Maties free quota exhausted', () => {
-  expect(classifyError('Your free quota has been used up. Please upgrade your plan.')).toBe('coworkErrorQuotaExhausted');
+test('billing: LobsterAI free quota exhausted', () => {
+  expect(classifyError('免费额度已用完，请升级套餐')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: Maties daily free quota code exhausted', () => {
-  expect(classifyError('{"error":{"message":"Daily free quota has been used up","code":40200}}')).toBe('coworkErrorQuotaExhausted');
+test('billing: LobsterAI daily free quota code exhausted', () => {
+  expect(classifyError('{"error":{"message":"今日免费额度已用完","code":40200}}')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: Maties free quota code exhausted', () => {
-  expect(classifyError('{"error":{"message":"Free quota has been used up. Please upgrade your plan","code":40201}}')).toBe('coworkErrorQuotaExhausted');
+test('billing: LobsterAI free quota code exhausted', () => {
+  expect(classifyError('{"error":{"message":"免费额度已用完，请升级套餐","code":40201}}')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: Maties monthly credits exhausted', () => {
-  expect(classifyError('Your monthly credits have been used up')).toBe('coworkErrorQuotaExhausted');
+test('billing: LobsterAI monthly credits exhausted', () => {
+  expect(classifyError('本月积分已用完')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: Maties monthly quota JSON payload', () => {
-  expect(classifyError('{"type":"error","error":{"type":"proxy_error","message":"Monthly credits have been used up","code":40202}}')).toBe('coworkErrorQuotaExhausted');
+test('billing: LobsterAI monthly quota JSON payload', () => {
+  expect(classifyError('{"type":"error","error":{"type":"proxy_error","message":"本月积分已用完","code":40202}}')).toBe('coworkErrorQuotaExhausted');
 });
 
-test('billing: detects Maties quota exhausted for proxy helpers', () => {
-  expect(isMatiesQuotaExhaustedError('monthly credits exhausted')).toBe(true);
-  expect(isMatiesQuotaExhaustedError('Request failed with status 402')).toBe(false);
+test('billing: detects LobsterAI quota exhausted for proxy helpers', () => {
+  expect(isLobsterAIQuotaExhaustedError('monthly credits exhausted')).toBe(true);
+  expect(isLobsterAIQuotaExhaustedError('Request failed with status 402')).toBe(false);
 });
 
 test('billing: OpenRouter insufficient credits', () => {
@@ -101,8 +101,8 @@ test('billing: Qwen Arrearage', () => {
   expect(classifyError('Arrearage')).toBe('coworkErrorInsufficientBalance');
 });
 
-test('billing: StepFun insufficient funds', () => {
-  expect(classifyError('Insufficient account funds, please top up and retry')).toBe('coworkErrorInsufficientBalance');
+test('billing: StepFun 余额不足', () => {
+  expect(classifyError('账户余额不足，请充值后重试')).toBe('coworkErrorInsufficientBalance');
 });
 
 test('billing: HTTP 402', () => {
@@ -215,8 +215,8 @@ test('content: content filter', () => {
   expect(classifyError('content filter triggered')).toBe('coworkErrorContentFiltered');
 });
 
-test('content: moderation rejected', () => {
-  expect(classifyError('Content moderation rejected the request')).toBe('coworkErrorContentFiltered');
+test('content: 审核未通过', () => {
+  expect(classifyError('审核未通过')).toBe('coworkErrorContentFiltered');
 });
 
 test('content: StepFun HTTP 451', () => {

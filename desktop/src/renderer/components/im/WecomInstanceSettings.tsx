@@ -40,6 +40,7 @@ const WecomInstanceSettings: React.FC<WecomInstanceSettingsProps> = ({
   quickSetupError,
   testingPlatform,
   connectivityResults,
+  language,
   renderPairingSection,
   headerLeading,
 }) => {
@@ -90,7 +91,7 @@ const WecomInstanceSettings: React.FC<WecomInstanceSettingsProps> = ({
             <span
               className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors truncate border-b border-dashed border-gray-400 dark:border-secondary/50 hover:border-primary pb-px"
               onClick={() => setEditingName(true)}
-              title={'Click to rename'}
+              title={language === 'zh' ? '点击重命名' : 'Click to rename'}
             >
               {instance.instanceName}
             </span>
@@ -310,7 +311,7 @@ const WecomInstanceSettings: React.FC<WecomInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || 'Add'}
+                {i18nService.t('add') || '添加'}
               </button>
             </div>
             {instance.allowFrom.length > 0 && (
@@ -382,7 +383,7 @@ const WecomInstanceSettings: React.FC<WecomInstanceSettingsProps> = ({
                     }
                   }}
                   className="block flex-1 rounded-lg bg-surface border-border-subtle border focus:border-primary focus:ring-1 focus:ring-primary/30 text-foreground px-3 py-2 text-sm transition-colors"
-                  placeholder={'Enter Group ID'}
+                  placeholder={language === 'zh' ? '输入群ID' : 'Enter Group ID'}
                 />
                 <button
                   type="button"
@@ -397,7 +398,7 @@ const WecomInstanceSettings: React.FC<WecomInstanceSettingsProps> = ({
                   }}
                   className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                 >
-                  {i18nService.t('add') || 'Add'}
+                  {i18nService.t('add') || '添加'}
                 </button>
               </div>
               {instance.groupAllowFrom.length > 0 && (

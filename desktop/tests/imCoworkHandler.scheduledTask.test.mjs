@@ -45,11 +45,6 @@ class FakeCoworkStore {
     return this.config;
   }
 
-  // No per-agent working directory: the handler falls back to config.workingDirectory.
-  getAgent() {
-    return null;
-  }
-
   createSession(title, cwd, systemPrompt, executionMode) {
     const id = `session-${++this.sessionCounter}`;
     const session = {
@@ -148,7 +143,7 @@ function createMessage(overrides = {}) {
     conversationId: 'conv-1',
     senderId: 'user-1',
     senderName: 'Tester',
-    content: 'Remind me to drink water in 2 minutes',
+    content: '2分钟后提醒我喝水',
     chatType: 'direct',
     timestamp: Date.parse('2026-03-15T16:28:00+08:00'),
     ...overrides,
@@ -167,15 +162,15 @@ test('IM scheduled-task requests bypass agent execution and create a real cron.a
     imStore,
     detectScheduledTaskRequest: async () => ({
       kind: 'create',
-      sourceText: 'Remind me to drink water in 2 minutes',
-      reminderBody: 'drink water',
+      sourceText: '2分钟后提醒我喝水',
+      reminderBody: '喝水',
       delayMs: 120000,
-      delayLabel: 'in 2 minutes',
+      delayLabel: '2分钟后',
       runAt: new Date('2026-03-15T16:30:00+08:00'),
       scheduleAt: '2026-03-15T16:30:00+08:00',
-      taskName: 'drink water reminder',
-      payloadText: '⏰ Reminder: drink water',
-      confirmationText: "Done! I'll remind you to drink water in 2 minutes (16:30).",
+      taskName: '喝水提醒',
+      payloadText: '⏰ 提醒：喝水',
+      confirmationText: '好的，已设置好提醒！2分钟后（16:30）会提醒你喝水。',
     }),
     createScheduledTask: async (params) => {
       createdParams = params;
@@ -183,7 +178,7 @@ test('IM scheduled-task requests bypass agent execution and create a real cron.a
         id: 'job-1',
         name: params.request.taskName,
         agentId: 'main',
-        sessionKey: `agent:main:maties:${params.sessionId}`,
+        sessionKey: `agent:main:lobsterai:${params.sessionId}`,
         payloadText: params.request.payloadText,
         scheduleAt: params.request.scheduleAt,
       };
@@ -192,12 +187,12 @@ test('IM scheduled-task requests bypass agent execution and create a real cron.a
 
   const reply = await handler.processMessage(createMessage());
 
-  assert.match(reply, /drink water in 2 minutes \(16:30\)/u);
+  assert.match(reply, /2分钟后（16:30）会提醒你喝水/u);
   assert.equal(runtime.startCalls.length, 0);
   assert.equal(runtime.continueCalls.length, 0);
   assert.ok(createdParams);
-  assert.equal(createdParams.request.taskName, 'drink water reminder');
-  assert.equal(createdParams.request.payloadText, '⏰ Reminder: drink water');
+  assert.equal(createdParams.request.taskName, '喝水提醒');
+  assert.equal(createdParams.request.payloadText, '⏰ 提醒：喝水');
 
   const [session] = [...coworkStore.sessions.values()];
   assert.ok(session);
@@ -224,21 +219,21 @@ test('async reminder turns on IM-created sessions relay back to the original IM 
     imStore,
     detectScheduledTaskRequest: async () => ({
       kind: 'create',
-      sourceText: 'Remind me to drink water in 2 minutes',
-      reminderBody: 'drink water',
+      sourceText: '2分钟后提醒我喝水',
+      reminderBody: '喝水',
       delayMs: 120000,
-      delayLabel: 'in 2 minutes',
+      delayLabel: '2分钟后',
       runAt: new Date('2026-03-15T16:30:00+08:00'),
       scheduleAt: '2026-03-15T16:30:00+08:00',
-      taskName: 'drink water reminder',
-      payloadText: '⏰ Reminder: drink water',
-      confirmationText: "Done! I'll remind you to drink water in 2 minutes (16:30).",
+      taskName: '喝水提醒',
+      payloadText: '⏰ 提醒：喝水',
+      confirmationText: '好的，已设置好提醒！2分钟后（16:30）会提醒你喝水。',
     }),
     createScheduledTask: async (params) => ({
       id: 'job-1',
       name: params.request.taskName,
       agentId: 'main',
-      sessionKey: `agent:main:maties:${params.sessionId}`,
+      sessionKey: `agent:main:lobsterai:${params.sessionId}`,
       payloadText: params.request.payloadText,
       scheduleAt: params.request.scheduleAt,
     }),
@@ -254,14 +249,14 @@ test('async reminder turns on IM-created sessions relay back to the original IM 
   runtime.emit('message', session.id, {
     id: 'system-1',
     type: 'system',
-    content: '⏰ Reminder: drink water',
+    content: '⏰ 提醒：喝水',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('message', session.id, {
     id: 'assistant-1',
     type: 'assistant',
-    content: '⏰ Time to drink water! Get up and have a glass.',
+    content: '⏰ 该喝水啦！起身喝一杯水吧。',
     timestamp: Date.now(),
     metadata: {},
   });
@@ -273,7 +268,7 @@ test('async reminder turns on IM-created sessions relay back to the original IM 
     {
       platform: 'nim',
       conversationId: 'conv-1',
-      text: '⏰ Time to drink water! Get up and have a glass.',
+      text: '⏰ 该喝水啦！起身喝一杯水吧。',
     },
   ]);
 
@@ -286,8 +281,8 @@ test('async reminder turns on channel-synced sessions are tracked lazily and rel
   const imStore = new FakeIMStore();
   const relayedReplies = [];
 
-  const session = coworkStore.createSession('IM-telegram', process.cwd(), '', 'auto');
-  imStore.createSessionMapping('default:user-42', 'telegram', session.id);
+  const session = coworkStore.createSession('IM-dingtalk', process.cwd(), '', 'auto');
+  imStore.createSessionMapping('default:user-42', 'dingtalk', session.id);
 
   const handler = new IMCoworkHandler({
     coworkRuntime: runtime,
@@ -302,14 +297,14 @@ test('async reminder turns on channel-synced sessions are tracked lazily and rel
   runtime.emit('message', session.id, {
     id: 'system-1',
     type: 'system',
-    content: '⏰ Reminder: team meeting',
+    content: '⏰ 提醒：开会',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('message', session.id, {
     id: 'assistant-1',
     type: 'assistant',
-    content: 'Time is up, remember the team meeting.',
+    content: '时间到了，记得开会。',
     timestamp: Date.now(),
     metadata: {},
   });
@@ -319,9 +314,9 @@ test('async reminder turns on channel-synced sessions are tracked lazily and rel
 
   assert.deepEqual(relayedReplies, [
     {
-      platform: 'telegram',
+      platform: 'dingtalk',
       conversationId: 'default:user-42',
-      text: 'Time is up, remember the team meeting.',
+      text: '时间到了，记得开会。',
     },
   ]);
 
@@ -340,23 +335,23 @@ test('falls back to normal agent execution when detector does not recognize a sc
     detectScheduledTaskRequest: async () => null,
   });
 
-  const pending = handler.processMessage(createMessage({ content: "Summarize today's meeting notes for me" }));
+  const pending = handler.processMessage(createMessage({ content: '帮我总结一下今天的会议纪要' }));
   await new Promise((resolve) => setImmediate(resolve));
 
   assert.equal(runtime.startCalls.length, 1);
-  assert.equal(runtime.startCalls[0].prompt, "Summarize today's meeting notes for me");
+  assert.equal(runtime.startCalls[0].prompt, '帮我总结一下今天的会议纪要');
 
   runtime.emit('message', 'session-1', {
     id: 'assistant-1',
     type: 'assistant',
-    content: 'Here is the meeting notes summary.',
+    content: '这是会议纪要摘要。',
     timestamp: Date.now(),
     metadata: {},
   });
   runtime.emit('complete', 'session-1', null);
 
   const reply = await pending;
-  assert.equal(reply, 'Here is the meeting notes summary.');
+  assert.equal(reply, '这是会议纪要摘要。');
 
   handler.destroy();
 });

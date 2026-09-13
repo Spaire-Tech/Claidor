@@ -7,9 +7,9 @@ import {
 } from './libraryDateGrouping';
 
 const titleOptions = {
-  locale: 'en-US',
-  todayLabel: 'Today',
-  yesterdayLabel: 'Yesterday',
+  locale: 'zh-CN',
+  todayLabel: '今天',
+  yesterdayLabel: '昨天',
 };
 
 describe('library date grouping', () => {
@@ -24,11 +24,11 @@ describe('library date grouping', () => {
     expect(formatLibraryDateGroupTitle(
       new Date(2026, 7, 18, 1).getTime(),
       { ...titleOptions, now },
-    )).toBe('Today');
+    )).toBe('今天');
     expect(formatLibraryDateGroupTitle(
       new Date(2026, 7, 17, 23).getTime(),
       { ...titleOptions, now },
-    )).toBe('Yesterday');
+    )).toBe('昨天');
   });
 
   test('shows a concrete date for older groups and includes the year when needed', () => {
@@ -36,11 +36,11 @@ describe('library date grouping', () => {
     expect(formatLibraryDateGroupTitle(
       new Date(2026, 6, 23, 14, 34).getTime(),
       { ...titleOptions, now },
-    )).toBe('July 23');
+    )).toBe('7月23日');
     expect(formatLibraryDateGroupTitle(
       new Date(2025, 11, 31, 14, 34).getTime(),
       { ...titleOptions, now },
-    )).toBe('December 31, 2025');
+    )).toBe('2025年12月31日');
   });
 
   test('orders date and session buckets by their newest item', () => {

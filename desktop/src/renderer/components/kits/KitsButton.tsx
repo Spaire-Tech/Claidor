@@ -8,20 +8,14 @@ interface KitsButtonProps {
   onSelectKit: (kitId: string) => void;
   onManageKits: () => void;
   className?: string;
-  /** Replaces the default trigger classes entirely (the composer's round 34px button). */
-  buttonClassName?: string;
   iconClassName?: string;
   onOpenChange?: (open: boolean) => void;
 }
-
-const DEFAULT_BUTTON_CLASS_NAME =
-  'flex h-[34px] w-[34px] items-center justify-center rounded-lg text-secondary hover:bg-surface-raised hover:text-foreground transition-colors';
 
 const KitsButton: React.FC<KitsButtonProps> = ({
   onSelectKit,
   onManageKits,
   className = '',
-  buttonClassName,
   iconClassName = 'h-5 w-5',
   onOpenChange,
 }) => {
@@ -47,7 +41,7 @@ const KitsButton: React.FC<KitsButtonProps> = ({
         ref={buttonRef}
         type="button"
         onClick={handleButtonClick}
-        className={`${buttonClassName ?? DEFAULT_BUTTON_CLASS_NAME} ${className}`}
+        className={`flex h-[34px] w-[34px] items-center justify-center rounded-lg text-secondary hover:bg-surface-raised hover:text-foreground transition-colors ${className}`}
         title={i18nService.t('kits')}
         aria-label={i18nService.t('kits')}
       >

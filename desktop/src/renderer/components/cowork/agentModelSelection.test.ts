@@ -1,4 +1,4 @@
-import { MatiesRequestCapability } from '@shared/providers/matiesRequestOptions';
+import { LobsterAIRequestCapability } from '@shared/providers/lobsterAIRequestOptions';
 import { ModelThinkingLevel } from '@shared/providers/modelThinking';
 import { describe, expect, test } from 'vitest';
 
@@ -15,7 +15,7 @@ const models: Model[] = [
   { id: 'deepseek-v3.2', name: 'DeepSeek', providerKey: 'anthropic' },
   { id: 'deepseek-v3.2', name: 'DeepSeek Server', providerKey: 'openai', isServerModel: true },
   { id: 'kimi-k2.6', name: 'Kimi K2.6', providerKey: 'moonshot' },
-  { id: 'kimi-k2.6', name: 'Kimi K2.6 Server', providerKey: 'maties-server', isServerModel: true },
+  { id: 'kimi-k2.6', name: 'Kimi K2.6 Server', providerKey: 'lobsterai-server', isServerModel: true },
 ];
 
 const visionModel: Model = { id: 'qwen3.5-plus', name: 'Qwen3.5 Plus', providerKey: 'qwen', supportsImage: true };
@@ -23,8 +23,8 @@ const nonVisionModel: Model = { id: 'glm-5.1', name: 'GLM 5.1', providerKey: 'zh
 const configurableThinkingModel: Model = {
   id: 'deepseek-v4-flash',
   name: 'DeepSeek V4 Flash',
-  providerKey: 'maties-server',
-  requestCapabilities: [MatiesRequestCapability.OptionsV1],
+  providerKey: 'lobsterai-server',
+  requestCapabilities: [LobsterAIRequestCapability.OptionsV1],
   thinkingConfig: {
     options: [
       { level: ModelThinkingLevel.Off, openclawLevel: 'off' },
@@ -93,14 +93,14 @@ describe('resolveAgentModelSelection', () => {
 
   test('resolves same-id server session model to the server model', () => {
     const result = resolveAgentModelSelection({
-      sessionModel: 'maties-server/kimi-k2.6',
+      sessionModel: 'lobsterai-server/kimi-k2.6',
       agentModel: 'moonshot/kimi-k2.6',
       availableModels: models,
       fallbackModel: models[0],
       engine: 'openclaw',
     });
 
-    expect(result.selectedModel?.providerKey).toBe('maties-server');
+    expect(result.selectedModel?.providerKey).toBe('lobsterai-server');
     expect(result.selectedModel?.isServerModel).toBe(true);
     expect(result.usesFallback).toBe(false);
     expect(result.hasInvalidExplicitModel).toBe(false);
@@ -108,13 +108,13 @@ describe('resolveAgentModelSelection', () => {
 
   test('resolves same-id server agent model to the server model', () => {
     const result = resolveAgentModelSelection({
-      agentModel: 'maties-server/kimi-k2.6',
+      agentModel: 'lobsterai-server/kimi-k2.6',
       availableModels: models,
       fallbackModel: models[0],
       engine: 'openclaw',
     });
 
-    expect(result.selectedModel?.providerKey).toBe('maties-server');
+    expect(result.selectedModel?.providerKey).toBe('lobsterai-server');
     expect(result.selectedModel?.isServerModel).toBe(true);
     expect(result.usesFallback).toBe(false);
     expect(result.hasInvalidExplicitModel).toBe(false);

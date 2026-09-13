@@ -88,10 +88,10 @@ describe('openclawHistory', () => {
       extractGatewayHistoryEntry({
         role: 'user',
         content: '[Image]\nDescription:\nA sticker.',
-        MediaPath: String.raw`C:\Users\zhangsan\AppData\Roaming\Maties\openclaw\state\media\inbound\a.jpg`,
+        MediaPath: String.raw`C:\Users\zhangsan\AppData\Roaming\LobsterAI\openclaw\state\media\inbound\a.jpg`,
         MediaPaths: [
-          String.raw`C:\Users\zhangsan\AppData\Roaming\Maties\openclaw\state\media\inbound\a.jpg`,
-          String.raw`C:\Users\zhangsan\AppData\Roaming\Maties\openclaw\state\media\inbound\b.png`,
+          String.raw`C:\Users\zhangsan\AppData\Roaming\LobsterAI\openclaw\state\media\inbound\a.jpg`,
+          String.raw`C:\Users\zhangsan\AppData\Roaming\LobsterAI\openclaw\state\media\inbound\b.png`,
         ],
         MediaType: 'image/jpeg',
         MediaTypes: ['image/jpeg', 'image/png'],
@@ -101,11 +101,11 @@ describe('openclawHistory', () => {
       text: '[Image]\nDescription:\nA sticker.',
       mediaAttachments: [
         {
-          localPath: String.raw`C:\Users\zhangsan\AppData\Roaming\Maties\openclaw\state\media\inbound\a.jpg`,
+          localPath: String.raw`C:\Users\zhangsan\AppData\Roaming\LobsterAI\openclaw\state\media\inbound\a.jpg`,
           mimeType: 'image/jpeg',
         },
         {
-          localPath: String.raw`C:\Users\zhangsan\AppData\Roaming\Maties\openclaw\state\media\inbound\b.png`,
+          localPath: String.raw`C:\Users\zhangsan\AppData\Roaming\LobsterAI\openclaw\state\media\inbound\b.png`,
           mimeType: 'image/png',
         },
       ],
@@ -228,24 +228,24 @@ Do not infer or repeat old tasks from prior chats. If nothing needs attention, r
       role: 'user',
       content: `A scheduled reminder has been triggered. The reminder content is:
 
-⏰ Reminder: time to buy groceries!
+⏰ 提醒：该去买菜了！
 
 Handle this reminder internally. Do not relay it to the user unless explicitly requested.
 Current time: Sunday, March 15th, 2026 — 11:27 (Asia/Shanghai)`,
     });
-    expect(entry).toEqual({ role: 'system', text: '⏰ Reminder: time to buy groceries!' });
+    expect(entry).toEqual({ role: 'system', text: '⏰ 提醒：该去买菜了！' });
   });
 
   test('remaps plain scheduled reminder text to a system message', () => {
     const entry = extractGatewayHistoryEntry({
       role: 'user',
-      content: '⏰ Reminder: time to clock in at work!',
+      content: '⏰ 提醒：该去钉钉打卡啦！别忘了打卡哦～',
     });
-    expect(entry).toEqual({ role: 'system', text: '⏰ Reminder: time to clock in at work!' });
+    expect(entry).toEqual({ role: 'system', text: '⏰ 提醒：该去钉钉打卡啦！别忘了打卡哦～' });
   });
 
   test('buildScheduledReminderSystemMessage returns null for regular user text', () => {
-    expect(buildScheduledReminderSystemMessage('A normal chat message')).toBeNull();
+    expect(buildScheduledReminderSystemMessage('普通聊天消息')).toBeNull();
   });
 
   test('isHeartbeatAckText matches token with lightweight wrappers only', () => {

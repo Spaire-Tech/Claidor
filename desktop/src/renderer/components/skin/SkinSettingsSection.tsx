@@ -107,13 +107,13 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
     || isAppearanceChanging;
 
   return (
-    <section className="maties-card-row mt-7 px-5 py-4">
+    <section className="mt-5 rounded-xl border border-border bg-surface px-4 py-3.5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h4 className="maties-row-title">
+          <h4 className="text-sm font-medium text-foreground">
             {i18nService.t('aiSkin')}
           </h4>
-          <p className="maties-row-desc">
+          <p className="mt-1 text-xs leading-5 text-secondary">
             {i18nService.t('aiSkinCreationGuide')}
           </p>
         </div>
@@ -122,9 +122,9 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
             type="button"
             onClick={() => void handleStartAiSkin()}
             disabled={isMutating}
-            className="maties-pill-sm shrink-0"
+            className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <MagicIcon className="h-3.5 w-3.5" />
+            <MagicIcon className="mr-1.5 h-3.5 w-3.5" />
             {isStartingAiSkin
               ? i18nService.t('aiSkinStarting')
               : i18nService.t('aiSkinCreate')}
@@ -132,7 +132,7 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
         )}
       </div>
       {(actionError || startError) && (
-        <p className="maties-caption maties-status-wrong mt-2">
+        <p className="mt-2 text-xs text-red-600 dark:text-red-400">
           {actionError
             ? i18nService.t(SkinActionErrorI18nKey[actionError])
             : i18nService.t('aiSkinStartFailed')}
@@ -222,9 +222,9 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
           })}
         </div>
       ) : (
-        <div className="maties-raised-2 mt-3 flex items-center justify-center gap-2 rounded-[12px] px-4 py-4 text-[#8f96a0]">
+        <div className="mt-3 flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-4 py-4 text-secondary">
           {!isLoading && <MagicIcon className="h-4 w-4" />}
-          <p className="maties-caption">
+          <p className="text-xs">
             {isLoading ? i18nService.t('loading') : i18nService.t('aiSkinEmpty')}
           </p>
         </div>

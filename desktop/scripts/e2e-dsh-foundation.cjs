@@ -3,7 +3,7 @@
 // End-to-end gate for the dsh feature foundation:
 //   compile -> build runtime -> pack archive -> serve it from an opaque URL
 //   (the shape a per-file CDN hands out) -> install into a fresh base
-//   -> render Maties provider settings -> boot the INSTALLED runtime
+//   -> render LobsterAI provider settings -> boot the INSTALLED runtime
 //   -> load a profile-local external ESM plugin through the production launcher
 //   -> RPC-assert the provider/model are live (the workbench surface)
 //   -> boot again through the production launcher and keep that host live
@@ -415,7 +415,7 @@ async function main() {
   const fromManifest = resolveDshArtifactFromManifest(distDir, manifestName);
   if (fromManifest.sha256 !== artifact.sha256) fail('manifest and config descriptors disagree');
 
-  // [4/8] Start the mock LLM upstream, then render a Maties provider that
+  // [4/8] Start the mock LLM upstream, then render a LobsterAI provider that
   // points at it — settings.yaml on disk, the API key only in the child env.
   const ANSWER = 'E2E mock upstream answer.';
   const mock = await startMockLlmServer(ANSWER);
@@ -441,7 +441,7 @@ async function main() {
     { preferredDefault: { providerId: 'E2E Fake', modelId: 'e2e-model' } }
   );
   const routeIds = Object.keys(managed.routes);
-  if (routeIds.length !== 1 || routeIds[0] !== 'maties-e2e-fake') {
+  if (routeIds.length !== 1 || routeIds[0] !== 'lobsterai-e2e-fake') {
     fail(`unexpected rendered routes: ${routeIds.join(', ')} (skipped: ${JSON.stringify(managed.skipped)})`);
   }
   const written = await writeDshManagedSettings(dshHome, managed);
@@ -458,7 +458,7 @@ async function main() {
       '--dsh-home',
       dshHome,
       '--expect-provider',
-      'maties-e2e-fake',
+      'lobsterai-e2e-fake',
       '--expect-model',
       'e2e-model',
     ],

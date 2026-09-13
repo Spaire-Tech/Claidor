@@ -1,3 +1,4 @@
+import { PhotoIcon } from '@heroicons/react/24/outline';
 import type { CoworkBrowserAnnotationMessageBatch } from '@shared/cowork/browserAnnotations';
 import React, { useCallback, useMemo, useState } from 'react';
 
@@ -14,12 +15,13 @@ import { buildKitReferences } from '../../services/kitCapability';
 import type { CoworkImageAttachment, CoworkMessage, CoworkMessageMetadata } from '../../types/cowork';
 import type { MarketplaceKit } from '../../types/kit';
 import type { Skill } from '../../types/skill';
+import { formatMessageDateTime } from '../../utils/tokenFormat';
 import { parseUserMessageForDisplay } from '../../utils/userMessageDisplay';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
-import { SquaresLineIcon } from '../design/LineIcons';
 import EditIcon from '../icons/EditIcon';
 import GoalIcon from '../icons/GoalIcon';
 import MessageCopyIcon from '../icons/MessageCopyIcon';
+import SidebarKitsIcon from '../icons/SidebarKitsIcon';
 import SkillIcon from '../icons/SkillIcon';
 import BrowserAnnotationAttachmentBadge from './BrowserAnnotationAttachmentBadge';
 import BrowserAnnotationMessageAttachments, {
@@ -30,15 +32,14 @@ import ImagePreviewModal, { type ImagePreviewSource } from './ImagePreviewModal'
 import {
   COWORK_DETAIL_CONTENT_CLASS,
   COWORK_DETAIL_GUTTER_CLASS,
+  getMessageModelLabel,
+  messageMetaClassName,
 } from './messageDisplayUtils';
 import SelectedTextSnippetBadge from './SelectedTextSnippetBadge';
 import UserMessageContent from './UserMessageContent';
 import UserMessageFileAttachments from './UserMessageFileAttachments';
 
-// ── The hover actions at the left of the bubble ─────────────────────────────
-
-const HOVER_ACTION_CLASS_NAME =
-  'inline-flex h-7 w-7 items-center justify-center rounded-[8px] text-[#8f96a0] transition-colors hover:bg-[rgba(16,20,28,.05)] hover:text-[#1c1f23]';
+// ── CopyButton (local) ──────────────────────────────────────────────────────
 
 const CopyButton: React.FC<{
   content: string;
@@ -68,7 +69,9 @@ const CopyButton: React.FC<{
     <button
       type="button"
       onClick={handleCopy}
-      className={HOVER_ACTION_CLASS_NAME}
+      className={`p-1.5 rounded-md hover:bg-surface-raised transition-all duration-200 ${
+        visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
       tabIndex={visible ? 0 : -1}
       title={i18nService.t('copyToClipboard')}
       aria-label={i18nService.t('copyToClipboard')}
@@ -76,23 +79,27 @@ const CopyButton: React.FC<{
       {copied ? (
         <svg
           xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.2"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="h-4 w-4 text-[#1f8a4c]"
+          className="w-4 h-4 text-green-500"
           aria-hidden="true"
         >
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
       ) : (
-        <MessageCopyIcon className="h-4 w-4" />
+        <MessageCopyIcon className="w-4 h-4 text-[var(--icon-secondary)]" />
       )}
     </button>
   );
 };
+
+// ── ReEditButton ─────────────────────────────────────────────────────────────
 
 const ReEditButton: React.FC<{
   visible: boolean;
@@ -100,44 +107,41 @@ const ReEditButton: React.FC<{
 }> = ({ visible, onClick }) => {
   return (
     <button
-      type="button"
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
-      className={HOVER_ACTION_CLASS_NAME}
+      className={`p-1.5 rounded-md hover:bg-surface-raised transition-all duration-200 ${
+        visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
       tabIndex={visible ? 0 : -1}
       title={i18nService.t('coworkReEdit')}
-      aria-label={i18nService.t('coworkReEdit')}
     >
-      <EditIcon className="h-4 w-4" />
+      <EditIcon className="w-4 h-4 text-[var(--icon-secondary)]" />
     </button>
   );
 };
 
-// ── The chips inside the bubble ─────────────────────────────────────────────
-
-const CAPABILITY_CHIP_CLASS_NAME =
-  'inline-flex h-[30px] max-w-[240px] items-center gap-[7px] rounded-full border border-[rgba(16,22,35,.07)] bg-white px-[10px] text-[13px] tracking-[-.006em] text-[#0060d0]';
+// ── UserMessageSkillBadges ───────────────────────────────────────────────────
 
 const UserMessageSkillBadges: React.FC<{ skills: Skill[] }> = ({ skills }) => {
   if (skills.length === 0) return null;
 
   return (
-    <>
+    <div className="flex flex-wrap items-center gap-1.5">
       {skills.map(skill => (
         <div
           key={skill.id}
-          className={CAPABILITY_CHIP_CLASS_NAME}
+          className="inline-flex h-7 max-w-[240px] items-center gap-1.5 rounded-md bg-primary-muted px-2.5 text-[13px] font-normal leading-5 text-foreground"
           title={skill.description}
         >
-          <SkillIcon className="h-3.5 w-3.5 shrink-0" />
+          <SkillIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
           <span className="min-w-0 truncate">
             {skill.name}
           </span>
         </div>
       ))}
-    </>
+    </div>
   );
 };
 
@@ -151,10 +155,10 @@ const UserMessageKitBadges: React.FC<{ kitReferences: KitReference[] }> = ({ kit
         return (
           <div
             key={kitReference.uri || kitReference.id}
-            className={CAPABILITY_CHIP_CLASS_NAME}
+            className="inline-flex h-7 max-w-[240px] items-center gap-1.5 rounded-md bg-primary-muted px-2.5 text-[13px] font-normal leading-5 text-foreground"
             title={kitReference.uri}
           >
-            <SquaresLineIcon size={14} />
+            <SidebarKitsIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="min-w-0 truncate">
               {displayName}
             </span>
@@ -172,7 +176,7 @@ const UserMessageCapabilityBadges: React.FC<{
   if (kitReferences.length === 0 && skills.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-[6px]">
+    <div className="flex flex-wrap items-center gap-1.5">
       <UserMessageKitBadges kitReferences={kitReferences} />
       <UserMessageSkillBadges skills={skills} />
     </div>
@@ -181,11 +185,6 @@ const UserMessageCapabilityBadges: React.FC<{
 
 // ── UserMessageItem ──────────────────────────────────────────────────────────
 
-/**
- * The person's message (docs/maties/design.md, section 4): a pill-cornered
- * bubble on the right, attachments as chips above the text inside it, and
- * copy and edit at the left of the bubble on hover.
- */
 const UserMessageItem: React.FC<{
   message: CoworkMessage;
   skills: Skill[];
@@ -199,6 +198,7 @@ const UserMessageItem: React.FC<{
 }> = React.memo(({ message, skills, marketplaceKits = [], sessionId, onReEdit, onLocateSelectedText, onOpenAnnotation }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [expandedImage, setExpandedImage] = useState<ImagePreviewSource | null>(null);
+  const modelLabel = getMessageModelLabel(message.metadata);
   const handleBlur = useCallback((event: React.FocusEvent<HTMLDivElement>) => {
     const nextTarget = event.relatedTarget;
     if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return;
@@ -251,12 +251,6 @@ const UserMessageItem: React.FC<{
     ? allImageAttachments.filter(image => !isBrowserAnnotationTransportImage(image))
     : allImageAttachments;
   const hasCapabilityBadges = messageKitReferences.length > 0 || messageSkills.length > 0;
-  const hasText = Boolean(displayContent?.trim());
-  const hasAttachmentsAboveText = browserAnnotationCount > 0
-    || selectedTextSnippets.length > 0
-    || hasCapabilityBadges
-    || displayImageAttachments.length > 0
-    || fileAttachments.length > 0;
   const handleImagePreviewOpen = useCallback((image: ImagePreviewSource) => {
     reportConversationMessageAction({
       actionType: 'open_message_image',
@@ -299,22 +293,20 @@ const UserMessageItem: React.FC<{
       onBlur={handleBlur}
     >
       <div className={COWORK_DETAIL_CONTENT_CLASS}>
-        <div className="flex w-full min-w-0 flex-row-reverse items-end gap-2">
-          <div className="flex min-w-0 max-w-[72%] flex-col items-end gap-1">
-            <div
-              className="flex w-fit max-w-full flex-col gap-[10px] rounded-[18px] bg-[#f4f5f7] px-[18px] py-3 text-[14.5px] leading-[1.5] tracking-[-.008em] text-[#1c1f23]"
-              style={{ textWrap: 'pretty' }}
-            >
-              {hasAttachmentsAboveText && (
-                <div className="flex flex-col gap-[8px]">
-                  {browserAnnotationCount > 0 && sessionId && (
-                    <BrowserAnnotationMessageAttachments
-                      draftKey={sessionId}
-                      batches={browserAnnotations}
-                      onOpen={handleOpenAnnotationAttachment}
-                    />
-                  )}
-                  {browserAnnotationCount > 0 && (
+        <div>
+          <div className="flex items-start gap-3 flex-row-reverse">
+            <div className="w-full min-w-0 flex flex-col items-end">
+              <div className="w-fit max-w-full rounded-2xl px-4 py-2.5 bg-surface text-foreground shadow-subtle">
+                {browserAnnotationCount > 0 && sessionId && (
+                  <BrowserAnnotationMessageAttachments
+                    draftKey={sessionId}
+                    batches={browserAnnotations}
+                    onOpen={handleOpenAnnotationAttachment}
+                    className="mb-2"
+                  />
+                )}
+                {browserAnnotationCount > 0 && (
+                  <div className={(selectedTextSnippets.length > 0 || displayContent?.trim() || displayImageAttachments.length > 0 || fileAttachments.length > 0 || hasCapabilityBadges) ? 'mb-2' : ''}>
                     <BrowserAnnotationAttachmentBadge
                       draftKey={sessionId ?? ''}
                       batches={browserAnnotations}
@@ -323,95 +315,97 @@ const UserMessageItem: React.FC<{
                       onOpenAnnotation={handleOpenAnnotationAttachment}
                       readOnly
                     />
-                  )}
-                  {selectedTextSnippets.length > 0 && (
+                  </div>
+                )}
+                {selectedTextSnippets.length > 0 && (
+                  <div className={(displayContent?.trim() || displayImageAttachments.length > 0 || fileAttachments.length > 0 || hasCapabilityBadges) ? 'mb-2' : ''}>
                     <SelectedTextSnippetBadge
                       snippets={selectedTextSnippets}
                       align="right"
                       onLocate={onLocateSelectedText}
                     />
-                  )}
-                  {hasCapabilityBadges && (
+                  </div>
+                )}
+                {hasCapabilityBadges && (
+                  <div className={(displayContent?.trim() || displayImageAttachments.length > 0 || fileAttachments.length > 0) ? 'mb-2' : ''}>
                     <UserMessageCapabilityBadges
                       kitReferences={messageKitReferences}
                       skills={messageSkills}
                     />
-                  )}
-                  {displayImageAttachments.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {displayImageAttachments.map((img, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          className="group relative overflow-hidden rounded-[12px] border border-[rgba(16,22,35,.07)] bg-white"
+                  </div>
+                )}
+                {displayContent?.trim() && (
+                  <div data-cowork-search-message-id={message.id}>
+                    <UserMessageContent
+                      content={displayContent}
+                      className="max-w-none"
+                      onImageClick={handleImagePreviewOpen}
+                    />
+                  </div>
+                )}
+                {displayImageAttachments.length > 0 && (
+                  <div className={`flex flex-wrap gap-2 ${displayContent?.trim() ? 'mt-2' : ''}`}>
+                    {displayImageAttachments.map((img, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={`data:${img.mimeType};base64,${img.base64Data}`}
+                          alt={img.name}
+                          className="max-h-48 max-w-[16rem] rounded-lg object-contain cursor-pointer border border-border hover:border-primary transition-colors"
                           title={img.name}
-                          aria-label={img.name}
                           onClick={() => handleImagePreviewOpen({
                             src: `data:${img.mimeType};base64,${img.base64Data}`,
                             alt: img.name,
                             name: img.name,
                           })}
-                        >
-                          <img
-                            src={`data:${img.mimeType};base64,${img.base64Data}`}
-                            alt={img.name}
-                            className="block max-h-48 max-w-[16rem] object-contain"
-                            draggable={false}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {fileAttachments.length > 0 && (
-                    <UserMessageFileAttachments
-                      attachments={fileAttachments}
-                      onReveal={handleFileAttachmentReveal}
+                        />
+                        <div className="absolute bottom-1 left-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/50 text-white text-[10px] opacity-0 group-hover:opacity-100 transition-opacity truncate pointer-events-none">
+                          <PhotoIcon className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{img.name}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {fileAttachments.length > 0 && (
+                  <UserMessageFileAttachments
+                    attachments={fileAttachments}
+                    className={(displayContent?.trim() || displayImageAttachments.length > 0) ? 'mt-2' : ''}
+                    onReveal={handleFileAttachmentReveal}
+                  />
+                )}
+              </div>
+              <div className="flex w-full items-center justify-end gap-2">
+                <div className={messageMetaClassName(isHovered, 'right')} aria-hidden={!isHovered}>
+                  <span>{formatMessageDateTime(message.timestamp)}</span>
+                  {modelLabel && <span>{modelLabel}</span>}
+                  <CopyButton
+                    content={message.content}
+                    onCopy={(result) => reportConversationMessageAction({
+                      actionType: 'copy_message',
+                      message,
+                      params: {
+                        result,
+                        copySource: 'user_message',
+                        copiedLength: message.content.length,
+                      },
+                    })}
+                    visible={isHovered}
+                  />
+                  {onReEdit && (
+                    <ReEditButton
+                      visible={isHovered}
+                      onClick={handleReEditClick}
                     />
                   )}
                 </div>
-              )}
-              {hasText && (
-                <div data-cowork-search-message-id={message.id}>
-                  <UserMessageContent
-                    content={displayContent}
-                    className="max-w-none"
-                    onImageClick={handleImagePreviewOpen}
-                  />
-                </div>
-              )}
-            </div>
-            {isGoalSettingMessage && (
-              <div className="inline-flex h-5 shrink-0 select-none items-center gap-1 text-[11.5px] leading-none text-[#a2a29c]">
-                <GoalIcon className="h-4 w-4 text-[#9aa1ab]" />
-                <span>{i18nService.t('coworkGoalSetAsGoal')}</span>
+                {isGoalSettingMessage && (
+                  <div className="mt-1 inline-flex h-5 shrink-0 items-center gap-1 text-[11px] leading-none text-zinc-400 dark:text-zinc-500 select-none">
+                    <GoalIcon className="h-4 w-4 text-[var(--icon-secondary)]" />
+                    <span>{i18nService.t('coworkGoalSetAsGoal')}</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div
-            className={`flex shrink-0 items-center gap-0.5 pb-[7px] transition-opacity duration-200 ${
-              isHovered ? 'opacity-100' : 'pointer-events-none opacity-0'
-            }`}
-            aria-hidden={!isHovered}
-          >
-            <CopyButton
-              content={message.content}
-              onCopy={(result) => reportConversationMessageAction({
-                actionType: 'copy_message',
-                message,
-                params: {
-                  result,
-                  copySource: 'user_message',
-                  copiedLength: message.content.length,
-                },
-              })}
-              visible={isHovered}
-            />
-            {onReEdit && (
-              <ReEditButton
-                visible={isHovered}
-                onClick={handleReEditClick}
-              />
-            )}
+            </div>
           </div>
         </div>
       </div>

@@ -32,7 +32,7 @@ describe('prepare-openclaw-host-peer', () => {
   test('marks a required openclaw peerDependency optional', () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'openclaw-host-peer-'));
     writePackageJson(tempDir, {
-      name: '@example/channel-plugin',
+      name: '@clawemail/email',
       version: '0.9.13',
       dependencies: { ws: '^8.20.0' },
       peerDependencies: { openclaw: '>=2026.3.22' },
@@ -46,7 +46,7 @@ describe('prepare-openclaw-host-peer', () => {
     expect(pkg.peerDependencies).toEqual({ openclaw: '>=2026.3.22' });
     expect(pkg.peerDependenciesMeta).toEqual({ openclaw: { optional: true } });
     expect(pkg.dependencies).toEqual({ ws: '^8.20.0' });
-    expect(logs.join('\n')).toContain('@example/channel-plugin');
+    expect(logs.join('\n')).toContain('@clawemail/email');
 
     fs.rmSync(tempDir, { recursive: true, force: true });
   });

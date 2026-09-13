@@ -18,7 +18,7 @@ import {
 
 const tempDirectories: string[] = [];
 const BROTATO_PROJECT_DIR = process.env.SHARE_DEPLOYMENT_BROTATO_PROJECT_DIR ||
-  '/Users/admin/maties/project/brotato-clone';
+  '/Users/admin/lobsterai/project/brotato-clone';
 
 async function makeTempProjectWithPackageJson(packageJson: Record<string, unknown>): Promise<string> {
   const projectDirectory = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'lobster-node-analyzer-test-'));

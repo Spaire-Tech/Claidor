@@ -15,9 +15,6 @@ import { scheduledTaskService } from '../../services/scheduledTask';
 import { RootState } from '../../store';
 import { selectTask, setViewMode } from '../../store/slices/scheduledTaskSlice';
 import { MANAGEMENT_BODY_TEXT, MANAGEMENT_TITLE_TEXT } from '../common/managementTypography';
-import EmptyState from '../design/EmptyState';
-import Eyebrow from '../design/Eyebrow';
-import Pill, { PillTone } from '../design/Pill';
 import EditIcon from '../icons/EditIcon';
 import TrashIcon from '../icons/TrashIcon';
 import { getTaskAnalyticsParams, reportScheduledTaskAction } from './analytics';
@@ -350,7 +347,10 @@ const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   <div>
     {showHeader && (
       <div className="mb-3 flex items-center gap-3">
-        <Eyebrow>{i18nService.t('scheduledTasksTemplatesSection')}</Eyebrow>
+        <span className="text-xs font-medium text-secondary">
+          {i18nService.t('scheduledTasksTemplatesSection')}
+        </span>
+        <div className="h-px flex-1 bg-border-subtle" />
       </div>
     )}
     <div className={cardGridClass}>
@@ -361,9 +361,9 @@ const TemplateGallery: React.FC<TemplateGalleryProps> = ({
             key={template.id}
             type="button"
             onClick={() => onCreateFromTemplate(template)}
-            className="maties-card maties-card-interactive group flex items-start gap-3 p-4 text-left"
+            className="group flex items-start gap-3 rounded-xl border border-border bg-surface p-3 text-left shadow-subtle transition hover:border-primary/50 hover:shadow-card"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-raised text-secondary transition-colors group-hover:bg-primary/10 group-hover:text-primary">
               <Icon className="h-[18px] w-[18px]" />
             </div>
             <div className="min-w-0 flex-1">
@@ -385,9 +385,9 @@ const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         <button
           type="button"
           onClick={onCreateBlank}
-          className="maties-hover group flex items-start gap-3 rounded-[18px] p-4 text-left transition-colors [box-shadow:0_0_0_.5px_rgba(16,22,35,.10)]"
+          className="group flex items-start gap-3 rounded-xl border border-dashed border-border p-3 text-left transition hover:border-primary/50 hover:bg-surface"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] text-[#4a4f57] dark:bg-[#22252b] dark:text-[#c9ccd2]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-raised text-secondary transition-colors group-hover:bg-primary/10 group-hover:text-primary">
             <PlusIcon className="h-[18px] w-[18px]" />
           </div>
           <div className="min-w-0 flex-1">
@@ -464,7 +464,7 @@ const TaskList: React.FC<TaskListProps> = ({
     return (
       <div className={cardGridClass} aria-hidden="true">
         {Array.from({ length: 4 }).map((_, idx) => (
-          <div key={idx} className="maties-card maties-skeleton p-4">
+          <div key={idx} className="animate-pulse rounded-xl border border-border bg-surface p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="h-4 w-1/2 rounded bg-surface-raised" />
               <div className="h-4 w-8 rounded-full bg-surface-raised" />
@@ -501,17 +501,19 @@ const TaskList: React.FC<TaskListProps> = ({
 
   if (tasks.length === 0) {
     return (
-      <div className="space-y-2">
-        {/* Empty: the sphere, one sentence, one pill; the templates under them (design, section 6). */}
-        <EmptyState
-          sentence={i18nService.t('scheduledTasksEmptySentence')}
-          action={(
-            <Pill tone={PillTone.Primary} compact onClick={onCreateNew}>
-              {i18nService.t('scheduledTasksBlankCreate')}
-            </Pill>
-          )}
-          className="py-8"
-        />
+      <div className="space-y-5">
+        {/* First-run funnel: a compact intro, then templates as the primary creation path. */}
+        <div className="flex flex-col items-center pt-4 text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <ClockIcon className="h-6 w-6 text-primary" />
+          </div>
+          <p className="text-base font-semibold text-foreground">
+            {i18nService.t('scheduledTasksEmptyState')}
+          </p>
+          <p className="mt-1 text-sm text-secondary">
+            {i18nService.t('scheduledTasksEmptyHint')}
+          </p>
+        </div>
         <TemplateGallery
           onCreateFromTemplate={onCreateFromTemplate}
           onCreateBlank={onCreateNew}
@@ -524,14 +526,18 @@ const TaskList: React.FC<TaskListProps> = ({
   return (
     <div className="space-y-8">
       {visibleTasks.length === 0 ? (
-        <EmptyState
-          sentence={i18nService.t('scheduledTasksSearchNoResults')}
-          action={(
-            <Pill compact onClick={onClearSearch}>
-              {i18nService.t('scheduledTasksClearSearch')}
-            </Pill>
-          )}
-        />
+        <div className="flex flex-col items-center rounded-xl border border-border px-6 py-10 text-center">
+          <p className="text-sm text-secondary">
+            {i18nService.t('scheduledTasksSearchNoResults')}
+          </p>
+          <button
+            type="button"
+            onClick={onClearSearch}
+            className="mt-3 text-sm text-primary transition-colors hover:text-primary-hover"
+          >
+            {i18nService.t('scheduledTasksClearSearch')}
+          </button>
+        </div>
       ) : (
         <div className={cardGridClass}>
           {visibleTasks.map(task => (

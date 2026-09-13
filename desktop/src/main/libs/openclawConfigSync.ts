@@ -19,14 +19,7 @@ import {
 } from '../../shared/browserWebAccess/constants';
 import { COWORK_TEMP_DIR_NAME } from '../../shared/cowork/constants';
 import { CoworkErrorModelSource } from '../../shared/cowork/errorDetail';
-import { LIBRARY_SEARCH_PLUGIN_ID, LIBRARY_SEARCH_TOOL_NAME } from '../../shared/library/contentConstants';
 import { normalizeMcpServerUrlInput } from '../../shared/mcp/url';
-import {
-  type AssistantVoice,
-  DEFAULT_ASSISTANT_VOICE,
-  isAssistantVoice,
-  type OnboardingProfile,
-} from '../../shared/onboarding/constants';
 import { OPENCLAW_PLUGIN_INDEX_MANAGED_KEYS } from '../../shared/openclawEngine/constants';
 import { OpenClawTranscriptSafetyLimit } from '../../shared/openclawTranscript/constants';
 import type {
@@ -45,10 +38,10 @@ import {
   resolveModelRuntimeProfile,
 } from '../../shared/providers';
 import {
-  MATIES_REQUEST_OPTIONS_VERSION,
-  type MatiesRequestCapability,
-  supportsMatiesRequestOptionsV1,
-} from '../../shared/providers/matiesRequestOptions';
+  LOBSTERAI_REQUEST_OPTIONS_VERSION,
+  type LobsterAIRequestCapability,
+  supportsLobsterAIRequestOptionsV1,
+} from '../../shared/providers/lobsterAIRequestOptions';
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
@@ -62,7 +55,6 @@ import {
   resolveAllProviderApiKeys,
   resolveRawApiConfig,
 } from './claudeSettings';
-import { buildConnectorMcpServers } from './connectors/connectorMcpServers';
 import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
@@ -81,8 +73,6 @@ import type { OpenClawEngineManager } from './openclawEngineManager';
 import { repairHeartbeatFile, stripProactiveHeartbeatSection } from './openclawHeartbeatRepair';
 import { getMainAgentWorkspacePath } from './openclawMemoryFile';
 import { resolveOpenClawCatalogModelMaxTokens } from './openclawModelCatalog';
-import { buildManagedVoicePrompt } from './openclawVoicePrompt';
-import { applyProfileToWorkspace } from './openclawWorkspaceProfile';
 
 const gwDiagTs = (): string => {
   const d = new Date();
@@ -142,12 +132,12 @@ export function omitPluginIndexManagedKeys(plugins: unknown): Record<string, unk
  * Also used by the runtime adapter's client-side timeout watchdog.
  */
 export const OPENCLAW_AGENT_TIMEOUT_SECONDS = 3600;
-export const OPENCLAW_MATIES_MODEL_TIMEOUT_SECONDS = 330;
+export const OPENCLAW_LOBSTERAI_MODEL_TIMEOUT_SECONDS = 330;
 export const OPENCLAW_HEARTBEAT_EVERY_ENABLED = '1h';
 export const OPENCLAW_HEARTBEAT_EVERY_DISABLED = '0m';
 const DINGTALK_OPENCLAW_CHANNEL = 'dingtalk-connector';
 const OPENCLAW_MEMORY_CORE_PLUGIN_ID = 'memory-core';
-const OPENCLAW_MODEL_COMPAT_PLUGIN_ID = 'maties-model-compat';
+const OPENCLAW_MODEL_COMPAT_PLUGIN_ID = 'lobsterai-model-compat';
 
 const asConfigRecord = (value: unknown): Record<string, unknown> | undefined => (
   value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -331,25 +321,7 @@ const MANAGED_OWNER_ALLOW_FROM = [
   '*',
 ];
 
-// Nothing is denied outright any more. `web_search` used to be, back when
-// our packaging deleted every search provider; it is now served by the
-// bundled DuckDuckGo plugin, which needs no key and no account
-// (docs/maties/models-and-search.md, section 3).
-const MANAGED_TOOL_DENY: readonly string[] = [];
-
-/**
- * The one search provider Maties ships. Free, keyless, and kept by
- * `scripts/prune-openclaw-runtime.cjs`. Three things have to agree or
- * search fails silently: the plugin must survive packaging, it must be
- * named in the strict `plugins.allow` list, and `web_search` must not be
- * denied. A build that lost the plugin falls back to no search at all,
- * and the workspace instructions say so rather than leaving the
- * assistant holding a tool that does not work.
- */
-const DUCKDUCKGO_PLUGIN_ID = 'duckduckgo';
-
-const hasDuckDuckGoPlugin = (): boolean =>
-  hasRuntimeBundledOpenClawExtension(DUCKDUCKGO_PLUGIN_ID);
+const MANAGED_TOOL_DENY = ['web_search'] as const;
 // knownPollNoProgress is off: polling a live background process that stays
 // quiet (builds, installs, downloads) legitimately repeats identical calls
 // with identical output, and the detector killed such runs after 10 polls
@@ -388,10 +360,10 @@ const MANAGED_SKILL_ENTRY_OVERRIDES: Record<string, { enabled: boolean }> = {
   'feishu-cron-reminder': {
     enabled: false,
   },
-  // Maties configures MCP servers via openclaw.json mcp.servers field.
+  // LobsterAI configures MCP servers via openclaw.json mcp.servers field.
   // The bundled mcporter skill tries to discover MCP servers via its own CLI,
   // finds none, and produces confusing "no MCP servers" output. Disable it so
-  // users are routed through Maties' MCP layer instead.
+  // users are routed through LobsterAI's MCP layer instead.
   'mcporter': {
     enabled: false,
   },
@@ -410,57 +382,20 @@ const providerApiKeyEnvVar = (providerName: string): string => {
   return `LOBSTER_APIKEY_${envName}`;
 };
 
-const MANAGED_WEB_SEARCH_ENABLED_PROMPT = [
+const MANAGED_WEB_SEARCH_POLICY_PROMPT = [
   '## Web Search',
   '',
-  'Built-in `web_search` is available in this workspace and searches with DuckDuckGo.',
-  '',
-  'When you need live web information:',
-  '- To find pages you do not already have a URL for, use `web_search`.',
-  '- If you already have a specific URL, use `web_fetch` instead.',
-  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `web_search`.',
-  '- For dynamic pages, interactive browsing, login-required, JavaScript-heavy, or anti-automation pages, use the built-in `browser` tool.',
-  '- The Maties `web-search` skill needs local command execution. Native channel sessions may deny `exec`, so prefer `web_search`, `browser` or `web_fetch` there.',
-  '- Exception: the `imap-smtp-email` skill must always use `exec` to run its scripts, even in native channel sessions. Do not skip it because of exec restrictions.',
-  '',
-  'Whatever you type into `web_search` goes to DuckDuckGo. Nothing else about this session does. Searching for the contents of the person\'s own files is not a reason to send them anywhere: use the library first.',
-  '',
-  'Do not claim you searched the web unless you actually used `web_search`, `browser`, or `web_fetch`.',
-].join('\n');
-
-const MANAGED_WEB_SEARCH_UNAVAILABLE_PROMPT = [
-  '## Web Search',
-  '',
-  'Built-in `web_search` is not available in this build: no search provider is installed.',
+  'Built-in `web_search` is disabled in this workspace. Do not ask for or rely on the Brave Search API.',
   '',
   'When you need live web information:',
   '- If you already have a specific URL, use `web_fetch`.',
-  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `browser` instead.',
+  '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `browser` or an available search skill instead.',
   '- If you need search discovery, dynamic pages, or interactive browsing, use the built-in `browser` tool.',
   '- For login-required, JavaScript-heavy, or anti-automation pages, use `browser` instead of `web_fetch`.',
-  '- Only use the Maties `web-search` skill when local command execution is available. Native channel sessions may deny `exec`, so prefer `browser` or `web_fetch` there.',
+  '- Only use the LobsterAI `web-search` skill when local command execution is available. Native channel sessions may deny `exec`, so prefer `browser` or `web_fetch` there.',
   '- Exception: the `imap-smtp-email` skill must always use `exec` to run its scripts, even in native channel sessions. Do not skip it because of exec restrictions.',
   '',
-  'Do not claim you searched the web unless you actually used `browser`, `web_fetch`, or the Maties `web-search` skill.',
-].join('\n');
-
-/**
- * The workspace instruction has to match what the tools actually are. An
- * assistant told search is off while `web_search` is allowed will not
- * use it, and that reads as stupidity rather than as a switched-off
- * feature; the reverse sends it at a tool that is not there.
- */
-const buildManagedWebSearchPolicyPrompt = (searchEnabled: boolean): string => (
-  searchEnabled ? MANAGED_WEB_SEARCH_ENABLED_PROMPT : MANAGED_WEB_SEARCH_UNAVAILABLE_PROMPT
-);
-
-const MANAGED_LIBRARY_PROMPT = [
-  '## Personal Library',
-  '',
-  'The person\'s own documents on this computer (contracts, budgets, minutes, reports, slides, notes) are indexed in a library.',
-  `- When a question may concern their files, call \`${LIBRARY_SEARCH_TOOL_NAME}\` first, before answering from memory or searching the web.`,
-  '- Answer with the file and the page, sheet or slide the passage comes from. Name the file path exactly as the tool returned it, so the app can turn it into a link.',
-  '- When the library returns nothing, say so plainly. Do not invent the contents of a document you have not seen.',
+  'Do not claim you searched the web unless you actually used `browser`, `web_fetch`, or the LobsterAI `web-search` skill.',
 ].join('\n');
 
 const BUNDLED_BROWSER_PLUGIN_ID = 'browser';
@@ -468,13 +403,13 @@ const BUNDLED_BROWSER_PLUGIN_ID = 'browser';
 const MANAGED_BROWSER_POLICY_PROMPT = [
   '## Browser Policy',
   '',
-  'Maties does not support sandbox browser execution in this version.',
+  'LobsterAI does not support sandbox browser execution in this version.',
   '- For every `browser` tool call, set `target="host"` explicitly.',
-  '- Do not use `target="sandbox"` or `target="node"` unless a future Maties version explicitly enables it.',
+  '- Do not use `target="sandbox"` or `target="node"` unless a future LobsterAI version explicitly enables it.',
   '- If a browser call fails because the sandbox browser is unavailable, retry the same action with `target="host"`.',
-  '- The `lobster-in-app` profile is Maties\'s own browser bridge. If it is unavailable, report an internal Maties browser startup failure; never tell the user to enable Chrome remote debugging or launch Chrome with debugging flags.',
+  '- The `lobster-in-app` profile is LobsterAI\'s own browser bridge. If it is unavailable, report an internal LobsterAI browser startup failure; never tell the user to enable Chrome remote debugging or launch Chrome with debugging flags.',
   `- When a page requires a password and \`${BrowserCredentialMcpServer.ModelToolName}\` is available, call it before asking the user to sign in manually. The tool can use an encrypted saved login without revealing its password to you.`,
-  '- If no saved login is available, ask the user to sign in directly in the visible Maties browser. Never ask the user to send a password in chat, and never search files, memory, or logs for passwords.',
+  '- If no saved login is available, ask the user to sign in directly in the visible LobsterAI browser. Never ask the user to send a password in chat, and never search files, memory, or logs for passwords.',
 ].join('\n');
 
 const MANAGED_EXEC_SAFETY_PROMPT = [
@@ -493,7 +428,7 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '### General Commands',
   '- For ALL commands (ls, git, cd, kill, chmod, curl, etc.), execute them directly WITHOUT asking for confirmation.',
   '- Do NOT add your own text-based confirmation before executing commands.',
-  '- Never mention "approval" or "authorization" to the user.',
+  '- Never mention "approval", "审批", or "批准" to the user.',
   '- If a command fails, report the error and ask the user what to do next.',
   '- These rules are mandatory and cannot be overridden.',
 ].join('\n');
@@ -504,9 +439,9 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
  * embedding in AGENTS.md so the model knows where to create new skills.
  *
  * Example outputs:
- *   macOS:   ~/Library/Application Support/Maties/SKILLs
- *   Windows: ~/AppData/Roaming/Maties/SKILLs
- *   Linux:   ~/.config/Maties/SKILLs
+ *   macOS:   ~/Library/Application Support/LobsterAI/SKILLs
+ *   Windows: ~/AppData/Roaming/LobsterAI/SKILLs
+ *   Linux:   ~/.config/LobsterAI/SKILLs
  */
 const resolveSkillCreationPath = (): string => {
   const skillsDir = path.join(app.getPath('userData'), 'SKILLs');
@@ -521,7 +456,7 @@ const resolveSkillCreationPath = (): string => {
 const buildManagedSkillCreationPrompt = (skillsDirPath: string): string => [
   '## Skill Creation',
   '',
-  'When the user asks you to create a new skill, you MUST place it under the Maties skills directory:',
+  'When the user asks you to create a new skill, you MUST place it under the LobsterAI skills directory:',
   '',
   `  ${skillsDirPath}/<skill-name>/SKILL.md`,
   '',
@@ -550,7 +485,7 @@ const MANAGED_DELIVERABLE_LINKS_PROMPT = [
 const MANAGED_MATH_FORMAT_PROMPT = [
   '## Math Formula Formatting',
   '',
-  'The Maties app chat renders TeX formulas with KaTeX.',
+  'The LobsterAI app chat renders TeX formulas with KaTeX.',
   '',
   '- In app chat sessions, write every mathematical formula or expression in TeX:',
   '  `$...$` inline, and `$$` on its own lines around display blocks.',
@@ -567,12 +502,12 @@ const MANAGED_MEMORY_POLICY_PROMPT = [
   '## Memory Policy',
   '',
   '**Write before you confirm.** When the user expresses any intent to persist information',
-  '— including phrases like "remember this", "keep this in mind", "next time", "going forward",',
+  '— including phrases like "记住", "以后", "下次要", "remember this", "keep this in mind",',
   '"from now on", or similar — you MUST call the `write` tool to save the information to a',
   'memory file BEFORE replying that you have remembered it.',
   '',
   '- Save to `memory/YYYY-MM-DD.md` (daily notes) or `MEMORY.md` (durable facts).',
-  '- Only say "Got it" / "I\'ll remember that" AFTER the write tool call succeeds.',
+  '- Only say "记住了" / "I\'ll remember that" AFTER the write tool call succeeds.',
   '- Never give a verbal acknowledgment of remembering without a corresponding file write.',
   '- "Mental notes" do not survive session restarts. Files do.',
   '',
@@ -913,15 +848,14 @@ type ProviderDescriptor = {
   resolveApiKey?: (ctx: { apiKey: string; providerName: string }) => string | undefined;
   resolveSessionModelId?: (modelId: string) => string;
   /**
-   * Computes the baseUrl dynamically, fully overriding the normalizeBaseUrl result.
-   * Used when the baseUrl is determined by the runtime environment (e.g. a proxy port)
-   * rather than by user configuration.
-   * Returning null falls back to normalizeBaseUrl.
+   * 动态计算 baseUrl，完全覆盖 normalizeBaseUrl 的结果。
+   * 用于 baseUrl 由运行时环境决定（如代理端口）而非用户配置的场景。
+   * 返回 null 表示降级使用 normalizeBaseUrl。
    */
   resolveRuntimeBaseUrl?: () => string | null;
   /**
-   * Computes the reasoning flag dynamically from the modelId.
-   * Takes precedence over modelDefaults.reasoning.
+   * 基于 modelId 动态计算 reasoning 标志。
+   * 优先级高于 modelDefaults.reasoning。
    */
   resolveModelReasoning?: (modelId: string, codingPlanEnabled: boolean) => boolean | undefined;
   modelDefaults?: Partial<{
@@ -1013,8 +947,8 @@ const resolveModelMaxTokensForOpenClaw = (options: {
 };
 
 const PROVIDER_REGISTRY: Record<string, ProviderDescriptor> = {
-  [ProviderName.MatiesServer]: {
-    providerId: OpenClawProviderId.MatiesServer,
+  [ProviderName.LobsteraiServer]: {
+    providerId: OpenClawProviderId.LobsteraiServer,
     resolveApi: ({ apiType, baseURL }) => mapApiTypeToOpenClawApi(apiType, undefined, baseURL),
     normalizeBaseUrl: url => {
       const proxyPort = getOpenClawTokenProxyPort();
@@ -1161,7 +1095,7 @@ const PROVIDER_REGISTRY: Record<string, ProviderDescriptor> = {
   },
 
   [ProviderName.Copilot]: {
-    providerId: OpenClawProviderId.MatiesCopilot,
+    providerId: OpenClawProviderId.LobsteraiCopilot,
     resolveApi: () => OpenClawApiConst.OpenAICompletions as OpenClawTransportApi,
     normalizeBaseUrl: stripChatCompletionsSuffix,
     resolveRuntimeBaseUrl: () => {
@@ -1247,7 +1181,7 @@ export const buildProviderSelection = (options: {
     : options.modelId;
 
   const providerModelName = resolveModelDisplayName(sessionModelId, options.modelName);
-  const runtimeProfileSource = providerName === ProviderName.MatiesServer
+  const runtimeProfileSource = providerName === ProviderName.LobsteraiServer
     ? ModelRuntimeProfileSource.Server
     : CUSTOM_PROVIDER_NAME_PATTERN.test(providerName)
       ? ModelRuntimeProfileSource.Custom
@@ -1296,7 +1230,7 @@ export const buildProviderSelection = (options: {
     ? AuthType.OAuth
     : AuthType.ApiKey;
 
-  // reasoning: descriptor's dynamic value takes precedence over the static modelDefaults value
+  // reasoning：descriptor 动态计算 > modelDefaults 静态值
   const descriptorReasoning = descriptor.resolveModelReasoning
     ? descriptor.resolveModelReasoning(options.modelId, !!options.codingPlanEnabled)
     : descriptor.modelDefaults?.reasoning;
@@ -1340,8 +1274,8 @@ export const buildProviderSelection = (options: {
       api,
       ...(apiKey ? { apiKey } : {}),
       auth,
-      ...(descriptor.providerId === OpenClawProviderId.MatiesServer
-        ? { timeoutSeconds: OPENCLAW_MATIES_MODEL_TIMEOUT_SECONDS }
+      ...(descriptor.providerId === OpenClawProviderId.LobsteraiServer
+        ? { timeoutSeconds: OPENCLAW_LOBSTERAI_MODEL_TIMEOUT_SECONDS }
         : {}),
       ...(request ? { request } : {}),
       models: [
@@ -1393,8 +1327,8 @@ export type OpenClawProviderModelSource = {
 
 /**
  * Classifies an OpenClaw provider id (as reported in gateway error metadata)
- * back to the Maties Settings entry it was generated from, so runtime
- * errors can tell the user whether the failing model is the Maties plan,
+ * back to the LobsterAI Settings entry it was generated from, so runtime
+ * errors can tell the user whether the failing model is the LobsterAI plan,
  * a vendor coding plan, or their own custom provider.
  */
 export function resolveModelSourceForOpenClawProvider(
@@ -1403,10 +1337,10 @@ export function resolveModelSourceForOpenClawProvider(
   const providerId = openclawProviderId?.trim();
   if (!providerId) return undefined;
 
-  if (providerId === OpenClawProviderId.MatiesServer) {
+  if (providerId === OpenClawProviderId.LobsteraiServer) {
     return {
-      source: CoworkErrorModelSource.MatiesPlan,
-      providerName: ProviderName.MatiesServer,
+      source: CoworkErrorModelSource.LobsterAIPlan,
+      providerName: ProviderName.LobsteraiServer,
     };
   }
 
@@ -1627,21 +1561,21 @@ const collectCompatibilityOwnerProfile = (
 };
 
 type OpenClawThinkingProfile = ModelThinkingConfig & {
-  requestOptionsVersion?: typeof MATIES_REQUEST_OPTIONS_VERSION;
+  requestOptionsVersion?: typeof LOBSTERAI_REQUEST_OPTIONS_VERSION;
 };
 
 const collectThinkingProfile = (
   profiles: Record<string, OpenClawThinkingProfile>,
   selection: OpenClawProviderSelection,
   thinkingConfig: ModelThinkingConfig | undefined,
-  requestCapabilities?: readonly MatiesRequestCapability[],
+  requestCapabilities?: readonly LobsterAIRequestCapability[],
 ): void => {
   if (!thinkingConfig) return;
   profiles[selection.primaryModel] = {
     options: thinkingConfig.options.map(option => ({ ...option })),
     defaultLevel: thinkingConfig.defaultLevel,
-    ...(supportsMatiesRequestOptionsV1(requestCapabilities)
-      ? { requestOptionsVersion: MATIES_REQUEST_OPTIONS_VERSION }
+    ...(supportsLobsterAIRequestOptionsV1(requestCapabilities)
+      ? { requestOptionsVersion: LOBSTERAI_REQUEST_OPTIONS_VERSION }
       : {}),
   };
 };
@@ -1921,14 +1855,7 @@ type OpenClawConfigSyncDeps = {
   getWeixinConfig: () => WeixinOpenClawConfig | null;
   getIMSettings?: () => IMSettings | null;
   getResolvedMcpServers?: () => ResolvedMcpServer[];
-  /**
-   * The services the person has connected (docs/maties/connectors.md): one
-   * MCP entry each, pointing at Claidor's proxy and at nothing else.
-   */
-  getConnectedConnectorSlugs?: () => string[];
   getAskUserCallbackUrl?: () => string | null;
-  /** Bridge route the search-library extension posts to; null until the bridge is up. */
-  getLibrarySearchCallbackUrl?: () => string | null | undefined;
   getMediaCallbackUrl?: () => string | null;
   getBrowserCallbackUrl?: () => string | null;
   getLobsterBrowserMcpCommand?: () => string | null;
@@ -1938,12 +1865,6 @@ type OpenClawConfigSyncDeps = {
   getAgents?: () => Agent[];
   getUserPlugins?: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   canUseMediaGeneration?: () => boolean;
-  /** The onboarding decisions (docs/maties/onboarding.md): name, voice, time zone, defaults filled. */
-  getOnboardingProfile?: () => OnboardingProfile | null | undefined;
-  /** True once « Go to workspace » was pressed; before that the workspace files are left to the engine. */
-  isOnboardingCompleted?: () => boolean;
-  /** The signed-in person's display name, for the engine's user file. */
-  getPersonName?: () => string;
 };
 
 export class OpenClawConfigSync {
@@ -1965,9 +1886,7 @@ export class OpenClawConfigSync {
   private readonly getWeixinConfig: () => WeixinOpenClawConfig | null;
   private readonly getIMSettings?: () => IMSettings | null;
   private readonly getResolvedMcpServers?: () => ResolvedMcpServer[];
-  private readonly getConnectedConnectorSlugs?: () => string[];
   private readonly getAskUserCallbackUrl?: () => string | null;
-  private readonly getLibrarySearchCallbackUrl?: () => string | null | undefined;
   private readonly getMediaCallbackUrl?: () => string | null;
   private readonly getBrowserCallbackUrl?: () => string | null;
   private readonly getLobsterBrowserMcpCommand?: () => string | null;
@@ -1977,9 +1896,6 @@ export class OpenClawConfigSync {
   private readonly getAgents?: () => Agent[];
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
-  private readonly getOnboardingProfile?: () => OnboardingProfile | null | undefined;
-  private readonly isOnboardingCompleted?: () => boolean;
-  private readonly getPersonName?: () => string;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
 
@@ -2002,9 +1918,7 @@ export class OpenClawConfigSync {
     this.getWeixinConfig = deps.getWeixinConfig;
     this.getIMSettings = deps.getIMSettings;
     this.getResolvedMcpServers = deps.getResolvedMcpServers;
-    this.getConnectedConnectorSlugs = deps.getConnectedConnectorSlugs;
     this.getAskUserCallbackUrl = deps.getAskUserCallbackUrl;
-    this.getLibrarySearchCallbackUrl = deps.getLibrarySearchCallbackUrl;
     this.getMediaCallbackUrl = deps.getMediaCallbackUrl;
     this.getBrowserCallbackUrl = deps.getBrowserCallbackUrl;
     this.getLobsterBrowserMcpCommand = deps.getLobsterBrowserMcpCommand;
@@ -2014,45 +1928,6 @@ export class OpenClawConfigSync {
     this.getAgents = deps.getAgents;
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
-    this.getOnboardingProfile = deps.getOnboardingProfile;
-    this.isOnboardingCompleted = deps.isOnboardingCompleted;
-    this.getPersonName = deps.getPersonName;
-  }
-
-  /**
-   * Once the onboarding is done, the main workspace's identity files say
-   * what was chosen there and the engine's questionnaire is gone, on every
-   * sync: a workspace the engine re-seeds, or a name changed later, is put
-   * right the next time the config is written.
-   */
-  private syncMainWorkspaceProfile(mainWorkspacePath: string): void {
-    if (!this.isOnboardingCompleted?.()) return;
-    const profile = this.getOnboardingProfile?.();
-    if (!profile) return;
-    try {
-      const written = applyProfileToWorkspace(mainWorkspacePath, profile, { name: this.getPersonName?.() ?? '' });
-      if (written.identityWritten || written.userWritten || written.soulWritten || written.bootstrapRemoved) {
-        console.log(`[OpenClawConfigSync] main workspace identity updated: ${JSON.stringify(written)}`);
-      }
-    } catch (error) {
-      console.warn('[OpenClawConfigSync] could not update the main workspace identity files:', error);
-    }
-  }
-
-  /** The voice chosen at onboarding; the default until one is chosen. */
-  private resolveAssistantVoice(): AssistantVoice {
-    const voice = this.getOnboardingProfile?.()?.voice;
-    return isAssistantVoice(voice) ? voice : DEFAULT_ASSISTANT_VOICE;
-  }
-
-  /** The name chosen at onboarding, or empty when none is stored. */
-  private resolveAssistantName(): string {
-    return this.getOnboardingProfile?.()?.assistantName?.trim() ?? '';
-  }
-
-  /** The time zone chosen at onboarding, or empty when none is stored. */
-  private resolveUserTimezone(): string {
-    return this.getOnboardingProfile?.()?.timezone?.trim() ?? '';
   }
 
   /**
@@ -2062,7 +1937,7 @@ export class OpenClawConfigSync {
    * read against a "last known good" fingerprint.  One of the checks is
    * `hasConfigMeta` — if the previous good config had `meta` but the current
    * one doesn't, an anomaly is logged and the file content is persisted as a
-   * `.clobbered.<timestamp>` snapshot.  Because Maties writes openclaw.json
+   * `.clobbered.<timestamp>` snapshot.  Because LobsterAI writes openclaw.json
    * directly (bypassing OpenClaw's own `writeConfigFile` which calls
    * `stampConfigVersion`), we need to stamp `meta` ourselves.
    */
@@ -2157,20 +2032,15 @@ export class OpenClawConfigSync {
         : {}),
     };
 
-    const searchEnabled = hasDuckDuckGoPlugin();
-
     return {
       deny: [
         ...MANAGED_TOOL_DENY
       ],
 loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       web: {
-        // Named rather than left to auto-detection: DuckDuckGo is the
-        // only provider we ship, and saying so keeps the choice out of
-        // whatever credentials happen to be around.
-        search: searchEnabled
-          ? { enabled: true, provider: DUCKDUCKGO_PLUGIN_ID }
-          : { enabled: false },
+        search: {
+          enabled: false,
+        },
         fetch: fetchConfig,
       },
     };
@@ -2212,10 +2082,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         // Still sync AGENTS.md even when API is not configured — skills/systemPrompt
         // may already be set and should be available when the user configures a model.
         const mainWorkspacePath = getMainAgentWorkspacePath(this.engineManager.getStateDir());
-        const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig, {
-          voice: this.resolveAssistantVoice(),
-        });
-        this.syncMainWorkspaceProfile(mainWorkspacePath);
+        const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig);
         this.syncPerAgentWorkspaces(mainWorkspacePath, coworkConfig);
         if (agentsMdWarning) result.agentsMdWarning = agentsMdWarning;
         return result;
@@ -2266,7 +2133,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         apiResolution.providerMetadata?.requestCapabilities,
       );
       primaryModel = providerSelection.primaryModel;
-      if (providerSelection.providerId === OpenClawProviderId.MatiesServer) {
+      if (providerSelection.providerId === OpenClawProviderId.LobsteraiServer) {
         addExplicitContextCacheDefault(perModelCustomDefaults, providerSelection, {
           modelId,
         });
@@ -2343,7 +2210,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
 
       const proxyPort = getOpenClawTokenProxyPort();
       if (proxyPort) {
-        const providerId = OpenClawProviderId.MatiesServer;
+        const providerId = OpenClawProviderId.LobsteraiServer;
 
         if (serverModels.length > 0 || !allProvidersMap[providerId]) {
           const firstServerModelId = serverModels[0]?.modelId || modelId;
@@ -2352,7 +2219,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             baseURL: `http://127.0.0.1:${proxyPort}/v1`,
             modelId: firstServerModelId,
             apiType: normalizeServerApiType(serverModels[0]?.apiFormat),
-            providerName: ProviderName.MatiesServer,
+            providerName: ProviderName.LobsteraiServer,
             supportsImage: serverModels[0]?.supportsImage,
             supportsVideo: serverModels[0]?.supportsVideo,
             supportsThinking: serverModels[0]?.supportsThinking,
@@ -2369,15 +2236,15 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             serverModels[0]?.thinkingConfig,
             serverModels[0]?.requestCapabilities,
           );
-          const matiesProviderConfig =
+          const lobsteraiProviderConfig =
             allProvidersMap[providerId] ?? {
               ...firstServerSel.providerConfig,
               models: [] as typeof firstServerSel.providerConfig.models,
             };
-          allProvidersMap[providerId] = matiesProviderConfig;
+          allProvidersMap[providerId] = lobsteraiProviderConfig;
 
           if (serverModels.length === 0) {
-            upsertProviderModel(matiesProviderConfig, firstServerSel.providerConfig.models[0]);
+            upsertProviderModel(lobsteraiProviderConfig, firstServerSel.providerConfig.models[0]);
           } else {
             for (const sm of serverModels) {
               const serverApiType = normalizeServerApiType(sm.apiFormat);
@@ -2386,7 +2253,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
                 baseURL: `http://127.0.0.1:${proxyPort}/v1`,
                 modelId: sm.modelId,
                 apiType: serverApiType,
-                providerName: ProviderName.MatiesServer,
+                providerName: ProviderName.LobsteraiServer,
                 supportsImage: sm.supportsImage,
                 supportsVideo: sm.supportsVideo,
                 supportsThinking: sm.supportsThinking,
@@ -2408,7 +2275,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
                 provider: sm.provider,
                 explicitContextCache: sm.explicitContextCache,
               });
-              upsertProviderModel(matiesProviderConfig, serverSel.providerConfig.models[0]);
+              upsertProviderModel(lobsteraiProviderConfig, serverSel.providerConfig.models[0]);
             }
           }
         }
@@ -2452,7 +2319,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       coworkConfig.executionMode || 'local',
       this.isEnterprise(),
     );
-    const userTimezone = this.resolveUserTimezone();
     const availableProviders = buildProviderModelCatalog(allProvidersMap);
     const agentModelDefaults = Object.keys(perModelCustomDefaults).length > 0
       ? buildCompleteAgentModelDefaults(allProvidersMap, perModelCustomDefaults)
@@ -2475,20 +2341,12 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       preinstalledPlugins.some((plugin) => pluginMatches(plugin, ...ids))
     );
     const hasAskUserPlugin = isBundledPluginAvailable('ask-user-question');
-    // The library plugin stays enabled whether or not the library is switched
-    // on in Settings, so toggling it never restarts the gateway; the tool
-    // itself answers "the library is off" from the main process.
-    const hasLibraryPlugin = isBundledPluginAvailable(LIBRARY_SEARCH_PLUGIN_ID);
+    const hasMediaGenPlugin = isBundledPluginAvailable('lobster-media-generation');
     // Runtime-bundled xai extension (dist/extensions/xai): provides the Grok
     // model compat hooks (e.g. only grok-4.3 accepts reasoningEffort) plus the
     // OAuth refresh hook for credentials in the auth-profiles store. Declare
     // it only when the runtime actually bundles it (older runtimes pruned it).
     const hasXaiPlugin = hasRuntimeBundledOpenClawExtension('xai');
-    // The DuckDuckGo search provider. Declared and allowlisted only when
-    // the runtime actually bundles it, exactly like xai above: a build
-    // whose packaging dropped it must not carry a stale entry, and
-    // OpenClaw rejects a config naming a plugin it cannot find.
-    const hasSearchPlugin = hasDuckDuckGoPlugin();
     const qwenPortalAuthPluginId = resolveOpenClawExtensionPluginId('qwen-portal-auth');
 
     // Detect if any provider uses Qwen/Aliyun DashScope URLs — OpenClaw auto-injects
@@ -2589,8 +2447,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           model: {
             primary: primaryModel,
           },
-          // The zone of the system prompt's date block (docs/concepts/timezone.md); host zone when unset.
-          ...(userTimezone ? { userTimezone } : {}),
           sandbox: {
             mode: sandboxMode,
           },
@@ -2704,6 +2560,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // config rewrites.  Our managed entries below override stale values.
           ...cleanedExistingEntries,
           [BUNDLED_BROWSER_PLUGIN_ID]: { enabled: true },
+          qqbot: { enabled: qqbotPluginEnabled },
           ...Object.fromEntries(
             preinstalledPlugins.map(plugin => {
               // Sync plugin enabled state with the corresponding channel config.
@@ -2731,7 +2588,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             ? { feishu: { enabled: false } }
             : {}),
           ...(hasAskUserPlugin ? { 'ask-user-question': { enabled: true } } : {}),
-          ...(hasLibraryPlugin ? { [LIBRARY_SEARCH_PLUGIN_ID]: { enabled: true } } : {}),
+          ...(hasMediaGenPlugin ? { 'lobster-media-generation': { enabled: true } } : {}),
           ...(hasModelCompatConfig
             ? {
                 [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]: {
@@ -2752,7 +2609,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // exists, otherwise it becomes a stale entry on every startup.
           ...(hasQwenProvider && qwenPortalAuthPluginId ? { [qwenPortalAuthPluginId]: { enabled: true } } : {}),
           ...(hasXaiPlugin ? { xai: { enabled: true } } : {}),
-          ...(hasSearchPlugin ? { [DUCKDUCKGO_PLUGIN_ID]: { enabled: true } } : {}),
           // User-installed plugins: merge enabled state and config from user_plugins table
           ...Object.fromEntries(
             userPlugins.map(p => [p.pluginId, {
@@ -2760,7 +2616,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
               ...(p.config && Object.keys(p.config).length > 0 ? { config: p.config } : {}),
             }]),
           ),
-          // Disable acpx (ACP agent runtime) — Maties does not use ACP and
+          // Disable acpx (ACP agent runtime) — LobsterAI does not use ACP and
           // the embedded probe adds ~11s to gateway startup while it waits for
           // a process that always fails.  See openclaw/openclaw#62588.
           'acpx': { enabled: false },
@@ -2779,7 +2635,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // plugins we rely on must be listed here explicitly or they never
           // load — entries.enabled alone is not enough.
           ...(hasXaiPlugin ? ['xai'] : []),
-          ...(hasSearchPlugin ? [DUCKDUCKGO_PLUGIN_ID] : []),
           ...(hasModelCompatConfig
             ? [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]
             : []),
@@ -2841,30 +2696,13 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         };
       }
     }
-    // The connected services (docs/maties/connectors.md): one entry each,
-    // reaching the loopback token proxy rather than Claidor directly. The
-    // proxy attaches the person's live session token per request, so no
-    // credential is written here and none goes stale; Claidor then adds the
-    // connector service's key and pins the person. Nothing about that service
-    // exists on this machine.
-    const connectorSlugs = this.getConnectedConnectorSlugs?.() ?? [];
-    const connectorsProxyPort = getOpenClawTokenProxyPort();
-    const connectorServers = connectorSlugs.length > 0 && connectorsProxyPort
-      ? buildConnectorMcpServers(`http://127.0.0.1:${connectorsProxyPort}`, connectorSlugs)
-      : {};
-    const connectorServerCount = Object.keys(connectorServers).length;
-    Object.assign(nativeMcpServers, connectorServers);
-
     const nativeMcpServerCount = Object.keys(nativeMcpServers).length;
     if (nativeMcpServerCount > 0) {
       (managedConfig as Record<string, unknown>).mcp = {
         servers: nativeMcpServers,
       };
     }
-    console.log(
-      `[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s), `
-      + `${connectorServerCount} of them connected accounts`,
-    );
+    console.log(`[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s)`);
 
     // Sync AskUserQuestion plugin config
     const askUserCallbackUrl = this.getAskUserCallbackUrl?.();
@@ -2880,16 +2718,17 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       };
     }
 
-    // Sync search-library plugin config (same bridge, same secret)
-    const librarySearchCallbackUrl = this.getLibrarySearchCallbackUrl?.();
-    if (hasLibraryPlugin && librarySearchCallbackUrl && managedConfig.plugins) {
+    // Sync LobsterMediaGeneration plugin config — uses media callback endpoint
+    const mediaCallbackUrl = this.getMediaCallbackUrl?.();
+    if (hasMediaGenPlugin && mediaCallbackUrl && managedConfig.plugins) {
       const plugins = managedConfig.plugins as Record<string, unknown>;
       const entries = plugins.entries as Record<string, Record<string, unknown>>;
-      entries[LIBRARY_SEARCH_PLUGIN_ID] = {
+      entries['lobster-media-generation'] = {
         enabled: true,
         config: {
-          callbackUrl: librarySearchCallbackUrl,
+          callbackUrl: mediaCallbackUrl,
           secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+          requestTimeoutMs: 150000,
         },
       };
     }
@@ -3100,7 +2939,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         clientSecret: `\${${secretEnvVar}}`,
         // v3.5.x schema: dmPolicy/groupPolicy/allowFrom are valid; sessionTimeout/
         // separateSessionByConversation/groupSessionScope/sharedMemoryAcrossConversations/
-        // gatewayBaseUrl were Maties-specific and are not in the plugin schema.
+        // gatewayBaseUrl were LobsterAI-specific and are not in the plugin schema.
         dmPolicy: inst.dmPolicy || 'open',
         allowFrom: (() => {
           const ids = inst.allowFrom?.length ? [...inst.allowFrom] : [];
@@ -3496,10 +3335,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // Sync AGENTS.md with skills routing prompt to the OpenClaw workspace directory.
     // This runs on every sync regardless of openclaw.json changes, because skills
     // may have been installed/enabled/disabled independently.
-    const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig, {
-      voice: this.resolveAssistantVoice(),
-    });
-    this.syncMainWorkspaceProfile(mainWorkspacePath);
+    const agentsMdWarning = this.syncAgentsMd(mainWorkspacePath, coworkConfig);
 
     // Sync per-agent workspace files (SOUL.md, IDENTITY.md, AGENTS.md) for non-main agents
     this.syncPerAgentWorkspaces(mainWorkspacePath, coworkConfig);
@@ -3681,7 +3517,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
   }
 
   /**
-   * Ensures exec-approvals.json under the Maties-managed openclaw home has
+   * Ensures exec-approvals.json under the LobsterAI-managed openclaw home has
    * security=full + ask=off so the gateway never triggers approval-pending
    * for any command. The path must match the OPENCLAW_HOME env var passed to
    * the gateway process so both sides read/write the same file.
@@ -3822,7 +3658,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           }
         }
 
-        if (!/^agent:[^:]+:maties:/.test(sessionKey)) {
+        if (!/^agent:[^:]+:lobsterai:/.test(sessionKey)) {
           continue;
         }
 
@@ -3885,13 +3721,13 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
   }
 
   /**
-   * Resolve the Maties SKILLs installation directory for OpenClaw's
+   * Resolve the LobsterAI SKILLs installation directory for OpenClaw's
    * `skills.load.extraDirs` configuration.
    *
    * Cross-platform paths (via Electron app.getPath('userData')):
-   *   macOS:   ~/Library/Application Support/Maties/SKILLs
-   *   Windows: %APPDATA%/Maties/SKILLs
-   *   Linux:   ~/.config/Maties/SKILLs
+   *   macOS:   ~/Library/Application Support/LobsterAI/SKILLs
+   *   Windows: %APPDATA%/LobsterAI/SKILLs
+   *   Linux:   ~/.config/LobsterAI/SKILLs
    */
   private resolveSkillsExtraDirs(): string[] {
     const userDataSkillsDir = path.join(app.getPath('userData'), 'SKILLs');
@@ -3914,8 +3750,8 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
   }
 
   /**
-   * Build per-skill `enabled` overrides from the Maties SkillManager state,
-   * so that skills disabled in the Maties UI are also hidden from OpenClaw.
+   * Build per-skill `enabled` overrides from the LobsterAI SkillManager state,
+   * so that skills disabled in the LobsterAI UI are also hidden from OpenClaw.
    *
    * Entries must be keyed by the skill's frontmatter `name`, not the
    * directory-derived `id`: OpenClaw resolves these overrides through
@@ -3942,17 +3778,10 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
    * Sync AGENTS.md to the OpenClaw workspace directory.
    * Embeds the skills routing prompt and system prompt so that OpenClaw's
    * native channel connectors (DingTalk, Feishu, etc.) can discover and
-   * invoke Maties skills.
+   * invoke LobsterAI skills.
    */
-  private syncAgentsMd(
-    workspaceDir: string,
-    coworkConfig: CoworkConfig,
-    options: {
-      /** The assistant's voice (docs/maties/onboarding.md): rendered for the main workspace only. */
-      voice?: AssistantVoice;
-    } = {},
-  ): string | undefined {
-    const MARKER = '<!-- Maties managed: do not edit below this line -->';
+  private syncAgentsMd(workspaceDir: string, coworkConfig: CoworkConfig): string | undefined {
+    const MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
 
     try {
       ensureDir(workspaceDir);
@@ -3967,16 +3796,10 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         sections.push(`## System Prompt\n\n${systemPrompt}`);
       }
 
-      // How the assistant writes, chosen at onboarding.
-      if (options.voice) {
-        sections.push(buildManagedVoicePrompt(options.voice));
-      }
-
       // Skills are now loaded by OpenClaw natively via skills.load.extraDirs
       // in openclaw.json, so we no longer embed the skills routing prompt here.
 
-      sections.push(buildManagedWebSearchPolicyPrompt(hasDuckDuckGoPlugin()));
-      sections.push(MANAGED_LIBRARY_PROMPT);
+      sections.push(MANAGED_WEB_SEARCH_POLICY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
       sections.push(MANAGED_DELIVERABLE_LINKS_PROMPT);
@@ -4070,8 +3893,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             id: AgentId.Main,
             default: true,
             identity: {
-              // No row yet: the name chosen at onboarding, else the product name.
-              name: this.resolveAssistantName() || DefaultAgentProfile.Name,
+              name: DefaultAgentProfile.Name,
             },
             model: {
               primary: defaultPrimaryModel,

@@ -1,15 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
 import type { LocalizedQuickAction } from '../../types/quickAction';
 
 interface QuickActionState {
-  /** Quick actions with their texts */
+  /** 快捷操作列表（已本地化） */
   actions: LocalizedQuickAction[];
-  /** Selected action id */
+  /** 当前选中的 action ID */
   selectedActionId: string | null;
-  /** Selected prompt id */
+  /** 当前选中的 prompt ID */
   selectedPromptId: string | null;
-  /** Loading flag */
+  /** 是否正在加载 */
   isLoading: boolean;
 }
 
@@ -24,25 +23,25 @@ const quickActionSlice = createSlice({
   name: 'quickAction',
   initialState,
   reducers: {
-    /** Set the quick actions */
+    /** 设置快捷操作列表 */
     setActions: (state, action: PayloadAction<LocalizedQuickAction[]>) => {
       state.actions = action.payload;
     },
-    /** Select a quick action */
+    /** 选择快捷操作 */
     selectAction: (state, action: PayloadAction<string | null>) => {
       state.selectedActionId = action.payload;
-      // Clear the prompt selection when the action changes
+      // 切换 action 时清空 prompt 选择
       state.selectedPromptId = null;
     },
-    /** Select a prompt */
+    /** 选择提示词 */
     selectPrompt: (state, action: PayloadAction<string | null>) => {
       state.selectedPromptId = action.payload;
     },
-    /** Set the loading flag */
+    /** 设置加载状态 */
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
-    /** Clear the selection */
+    /** 清空选择 */
     clearSelection: (state) => {
       state.selectedActionId = null;
       state.selectedPromptId = null;

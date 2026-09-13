@@ -64,18 +64,18 @@ describe('artifactFileSharePackager', () => {
   });
 
   test('preserves Unicode file names and replaces only unsafe characters', async () => {
-    const content = '# Résumé trimestriel\n';
+    const content = '# 季度工作汇报\n';
 
     const packaged = await packageArtifactFile({
       sourceType: HtmlShareSourceType.MarkdownFile,
-      fileName: 'Résumé trimestriel:final?.md',
+      fileName: '季度工作汇报:最终版?.md',
       content,
     });
     const zip = await loadZip(packaged.archivePath);
 
-    expect(packaged.entryFile).toBe('Résumé trimestriel_final_.md');
-    expect(zip.file('Résumé trimestriel_final_.md')).not.toBeNull();
-    expect(await zip.file('Résumé trimestriel_final_.md')!.async('string')).toBe(content);
+    expect(packaged.entryFile).toBe('季度工作汇报_最终版_.md');
+    expect(zip.file('季度工作汇报_最终版_.md')).not.toBeNull();
+    expect(await zip.file('季度工作汇报_最终版_.md')!.async('string')).toBe(content);
   });
 
   test('packages Markdown with same-directory local images and omits remote images', async () => {

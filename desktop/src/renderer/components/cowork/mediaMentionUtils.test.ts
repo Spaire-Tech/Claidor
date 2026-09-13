@@ -26,7 +26,7 @@ describe('mediaMentionUtils', () => {
       makeAttachment({ path: '/tmp/c.webp', name: 'c.webp', isImage: true }),
     ]);
 
-    expect(labels.map(label => label.label)).toEqual(['image1', 'image2', 'image3']);
+    expect(labels.map(label => label.label)).toEqual(['图片1', '图片2', '图片3']);
     expect(labels.map(label => label.mediaType)).toEqual([
       MediaMentionType.Image,
       MediaMentionType.Image,
@@ -42,7 +42,7 @@ describe('mediaMentionUtils', () => {
       makeAttachment({ path: '/tmp/second.png', name: 'second.png' }),
     ]);
 
-    expect(labels.map(label => label.label)).toEqual(['image1', 'video1', 'audio1', 'image2']);
+    expect(labels.map(label => label.label)).toEqual(['图片1', '视频1', '音频1', '图片2']);
   });
 
   test('filters by label or file name', () => {
@@ -51,8 +51,8 @@ describe('mediaMentionUtils', () => {
       makeAttachment({ path: '/tmp/demo.mp4', name: 'demo.mp4' }),
     ]);
 
-    expect(filterMediaLabels(labels, 'image').map(label => label.label)).toEqual(['image1']);
-    expect(filterMediaLabels(labels, 'demo').map(label => label.label)).toEqual(['video1']);
+    expect(filterMediaLabels(labels, '图片').map(label => label.label)).toEqual(['图片1']);
+    expect(filterMediaLabels(labels, 'demo').map(label => label.label)).toEqual(['视频1']);
   });
 
   test('extracts valid media references and deduplicates repeated tokens', () => {
@@ -61,11 +61,11 @@ describe('mediaMentionUtils', () => {
       makeAttachment({ path: '/tmp/second.png', name: 'second.png' }),
     ]);
 
-    const refs = extractMediaReferencesFromPrompt('Use @image2 and @image2, ignore @image3', labels);
+    const refs = extractMediaReferencesFromPrompt('参考 @图片2 和 @图片2，忽略 @图片3', labels);
 
     expect(refs).toHaveLength(1);
     expect(refs[0]).toMatchObject({
-      token: '@image2',
+      token: '@图片2',
       mediaType: MediaMentionType.Image,
       index: 2,
       fileId: '/tmp/second.png',
@@ -87,14 +87,14 @@ describe('mediaMentionUtils', () => {
       }),
     ]);
 
-    const refs = extractMediaReferencesFromPrompt('@image1', labels);
+    const refs = extractMediaReferencesFromPrompt('@图片1', labels);
 
     expect(refs).toHaveLength(1);
     expect(refs[0].localPath).toBeUndefined();
     expect(refs[0].dataUrl).toBe(dataUrl);
   });
 
-  test('extracts the second inline image when prompt references @image2', () => {
+  test('extracts the second inline image when prompt references @图片2', () => {
     const firstDataUrl = 'data:image/png;base64,first';
     const secondDataUrl = 'data:image/png;base64,second';
     const labels = computeMediaLabels([
@@ -112,11 +112,11 @@ describe('mediaMentionUtils', () => {
       }),
     ]);
 
-    const refs = extractMediaReferencesFromPrompt('@image2 generate a 4s video', labels);
+    const refs = extractMediaReferencesFromPrompt('@图片2 生成一个4s视频', labels);
 
     expect(refs).toHaveLength(1);
     expect(refs[0]).toMatchObject({
-      token: '@image2',
+      token: '@图片2',
       index: 2,
       fileId: 'inline:second.png:2',
       fileName: 'second.png',
@@ -130,17 +130,17 @@ describe('mediaMentionUtils', () => {
       makeAttachment({ path: '/tmp/first.png', name: 'first.png' }),
     ]);
 
-    const segments = buildMediaMentionSegments('Use @image1, not @image2', labels);
+    const segments = buildMediaMentionSegments('用 @图片1，不用 @图片2', labels);
 
     expect(segments).toEqual([
-      { kind: MediaMentionSegmentKind.Text, text: 'Use ' },
-      { kind: MediaMentionSegmentKind.Mention, text: '@image1', label: 'image1' },
-      { kind: MediaMentionSegmentKind.Text, text: ', not @image2' },
+      { kind: MediaMentionSegmentKind.Text, text: '用 ' },
+      { kind: MediaMentionSegmentKind.Mention, text: '@图片1', label: '图片1' },
+      { kind: MediaMentionSegmentKind.Text, text: '，不用 @图片2' },
     ]);
   });
 
-  test('resolves mention trigger after non-ASCII text', () => {
-    const text = 'Zur Erklärung@';
+  test('resolves mention trigger after Chinese text', () => {
+    const text = '为说明@';
 
     expect(resolveMediaMentionTrigger(text, text.length)).toEqual({
       atIndex: text.indexOf('@'),
@@ -160,27 +160,27 @@ describe('mediaMentionUtils', () => {
   });
 
   test('resolves mention trigger at the beginning of input', () => {
-    const text = '@pic';
+    const text = '@图';
 
     expect(resolveMediaMentionTrigger(text, text.length)).toEqual({
       atIndex: 0,
       cursorPos: text.length,
-      filter: 'pic',
+      filter: '图',
     });
   });
 
   test('does not resolve mention trigger after whitespace in the token', () => {
-    expect(resolveMediaMentionTrigger('@image ', '@image '.length)).toBeNull();
-    expect(resolveMediaMentionTrigger('@image\n', '@image\n'.length)).toBeNull();
+    expect(resolveMediaMentionTrigger('@图片 ', '@图片 '.length)).toBeNull();
+    expect(resolveMediaMentionTrigger('@图片\n', '@图片\n'.length)).toBeNull();
   });
 
   test('uses the nearest at sign before the cursor as the filter token', () => {
-    const text = 'first@old then@pic';
+    const text = '先@旧 再@图';
 
     expect(resolveMediaMentionTrigger(text, text.length)).toEqual({
       atIndex: text.lastIndexOf('@'),
       cursorPos: text.length,
-      filter: 'pic',
+      filter: '图',
     });
   });
 });

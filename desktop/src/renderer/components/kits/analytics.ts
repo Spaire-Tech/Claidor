@@ -27,7 +27,7 @@ export function getKitAnalyticsParams(
   return {
     kitId: kit.id,
     kitName: resolveLocalizedText(kit.name),
-    kitSource: installedKit ? 'installed' : 'maties-kits',
+    kitSource: installedKit ? 'installed' : 'lobsterai-kits',
     isInstalled: Boolean(installedKit),
     version: kit.version,
     installedVersion,

@@ -9,8 +9,12 @@ import { i18nService } from '../../services/i18n';
 import { scheduledTaskService } from '../../services/scheduledTask';
 import { RootState } from '../../store';
 import { selectTask, setViewMode } from '../../store/slices/scheduledTaskSlice';
-import PageTitle from '../design/PageTitle';
-import Pill, { PillTone } from '../design/Pill';
+import {
+  MANAGEMENT_BODY_TEXT,
+  MANAGEMENT_META_TEXT,
+  MANAGEMENT_PAGE_TITLE_TEXT,
+  MANAGEMENT_TITLE_TEXT,
+} from '../common/managementTypography';
 import ComposeIcon from '../icons/ComposeIcon';
 import PlusCircleIcon from '../icons/PlusCircleIcon';
 import SearchIcon from '../icons/SearchIcon';
@@ -39,11 +43,6 @@ type DeleteTaskInfo = {
   analyticsParams: Record<string, string | number | boolean | null | undefined>;
 };
 
-/**
- * Scheduled Tasks (docs/maties/design.md, section 6): the title in
- * Newsreader with one line under it, « New Task » as the one blue pill at
- * the top right, the Tasks / History filter as pills, cards under them.
- */
 const ScheduledTasksView: React.FC<ScheduledTasksViewProps> = ({
   isSidebarCollapsed,
   onToggleSidebar,
@@ -209,26 +208,24 @@ const ScheduledTasksView: React.FC<ScheduledTasksViewProps> = ({
   return (
     <div
       data-skin-management-page="true"
-      className="relative z-10 flex h-full flex-col bg-background"
+      className="relative z-10 flex flex-col bg-background h-full"
     >
-      {/* The top bar: 54px, no background, only the window's buttons. */}
-      <div className="draggable flex h-[54px] shrink-0 items-center px-4">
-        <div className="flex items-center gap-1">
+      {/* Header */}
+      <div className="draggable flex h-12 items-center justify-between px-4 border-b border-border shrink-0">
+        <div className="flex items-center space-x-3 h-8">
           {isSidebarCollapsed && !isWindows && (
             <div className={`non-draggable flex items-center gap-1 ${isMac ? 'pl-[68px]' : ''}`}>
               <button
                 type="button"
                 onClick={onToggleSidebar}
-                aria-label={i18nService.t('expand')}
-                className="maties-icon-button"
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
               >
                 <SidebarToggleIcon className="h-4 w-4" isCollapsed={true} />
               </button>
               <button
                 type="button"
                 onClick={onNewChat}
-                aria-label={i18nService.t('newChat')}
-                className="maties-icon-button"
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
               >
                 <ComposeIcon className="h-4 w-4" />
               </button>
@@ -237,82 +234,98 @@ const ScheduledTasksView: React.FC<ScheduledTasksViewProps> = ({
           )}
           {viewMode !== 'list' && (
             <button
-              type="button"
               onClick={handleBackToList}
-              className="non-draggable maties-icon-button"
+              className="non-draggable p-2 rounded-lg hover:bg-surface-raised text-secondary transition-colors"
               aria-label={i18nService.t('back')}
-              title={i18nService.t('back')}
             >
-              <ArrowLeftIcon className="h-[18px] w-[18px]" />
+              <ArrowLeftIcon className="h-5 w-5" />
             </button>
           )}
+          <h1 className={`${MANAGEMENT_PAGE_TITLE_TEXT} font-semibold text-foreground`}>
+            {i18nService.t('scheduledTasksTitle')}
+          </h1>
         </div>
       </div>
 
+      {/* List mode mirrors the other management pages (Kits / Skills):
+          description, then a sticky search + action + tabs toolbar. */}
       {showTabs ? (
-        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
-          <div className="mx-auto w-full max-w-[1120px]">
-            <PageTitle
-              title={i18nService.t('scheduledTasksTitle')}
-              description={i18nService.t('scheduledTasksPageSubtitle')}
-              action={(
-                <Pill
-                  tone={PillTone.Primary}
-                  compact
-                  onClick={handleCreateNew}
-                  disabled={taskListStatus !== ScheduledTaskDataStatus.Ready}
-                  icon={<PlusCircleIcon className="h-4 w-4" />}
-                >
-                  {i18nService.t('scheduledTasksNewTask')}
-                </Pill>
-              )}
-            />
+        <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable]">
+          <div className="mx-auto w-full max-w-[1120px] px-8 py-6">
+            <div className="space-y-4">
+              <p className={`${MANAGEMENT_BODY_TEXT} pb-2 text-secondary`}>
+                {i18nService.t('scheduledTasksPageSubtitle')}
+              </p>
 
-            <div className="space-y-5 px-9 pb-8 pt-6">
-              {/* Sticky toolbar: the search box and the Tasks / History pills */}
+              {/* Sticky toolbar: Search + New Task + tabs */}
               <div
                 data-skin-management-toolbar="true"
-                className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-background pb-2"
+                className="sticky top-0 z-10 space-y-4 bg-background pb-2"
               >
-                <div className="flex items-center gap-1.5" role="tablist">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
+                    <input
+                      type="text"
+                      value={searchText}
+                      onChange={e => setSearchText(e.target.value)}
+                      placeholder={i18nService.t('scheduledTasksSearchPlaceholder')}
+                      className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-surface text-foreground placeholder-secondary border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    {searchText && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchText('')}
+                        aria-label={i18nService.t('scheduledTasksClearSearch')}
+                        title={i18nService.t('scheduledTasksClearSearch')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-secondary hover:text-primary transition-colors"
+                      >
+                        <XCircleIconSolid className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  {/* Unlike the skills page, creating is THE primary action here,
+                      so the button keeps the loud primary fill. The transparent
+                      border keeps its height in lockstep with the search input. */}
+                  <button
+                    type="button"
+                    onClick={handleCreateNew}
+                    disabled={taskListStatus !== ScheduledTaskDataStatus.Ready}
+                    className="px-3 py-2 text-sm rounded-xl border border-transparent transition-colors bg-primary text-white hover:bg-primary-hover flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-primary"
+                  >
+                    <PlusCircleIcon className="h-4 w-4" />
+                    <span>{i18nService.t('scheduledTasksNewTask')}</span>
+                  </button>
+                </div>
+
+                {/* Tasks / History tabs */}
+                <div className="flex items-center border-b border-border">
                   {(['tasks', 'history'] as const).map(tab => (
-                    <Pill
+                    <button
                       key={tab}
-                      role="tab"
-                      compact
-                      aria-selected={activeTab === tab}
-                      tone={activeTab === tab ? PillTone.Selected : PillTone.Quiet}
+                      type="button"
                       onClick={() => handleTabChange(tab)}
+                      className={`relative px-2.5 pb-2.5 pt-0.5 ${MANAGEMENT_TITLE_TEXT} font-semibold transition-colors ${
+                        activeTab === tab
+                          ? 'text-foreground'
+                          : 'text-secondary hover:text-foreground'
+                      }`}
                     >
                       {i18nService.t(
                         tab === 'tasks' ? 'scheduledTasksTabTasks' : 'scheduledTasksTabHistory',
                       )}
                       {tab === 'tasks' && tasks.length > 0 && (
-                        <span className="maties-mono ml-1 text-[11.5px] text-[#8f96a0]">{tasks.length}</span>
+                        <span className={`ml-1.5 rounded-full bg-surface-raised px-1.5 py-0.5 ${MANAGEMENT_META_TEXT} font-medium text-secondary`}>
+                          {tasks.length}
+                        </span>
                       )}
-                    </Pill>
-                  ))}
-                </div>
-                <div className="relative ml-auto w-full max-w-[320px] flex-1">
-                  <SearchIcon className="maties-input-icon-glyph h-4 w-4" />
-                  <input
-                    type="text"
-                    value={searchText}
-                    onChange={e => setSearchText(e.target.value)}
-                    placeholder={i18nService.t('scheduledTasksSearchPlaceholder')}
-                    className="maties-input maties-input-icon pr-9"
-                  />
-                  {searchText && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchText('')}
-                      aria-label={i18nService.t('scheduledTasksClearSearch')}
-                      title={i18nService.t('scheduledTasksClearSearch')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[#9aa1ab] transition-colors hover:text-[#1c1f23]"
-                    >
-                      <XCircleIconSolid className="h-4 w-4" />
+                      <div
+                        className={`absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full transition-colors ${
+                          activeTab === tab ? 'bg-primary' : 'bg-transparent'
+                        }`}
+                      />
                     </button>
-                  )}
+                  ))}
                 </div>
               </div>
 
@@ -378,21 +391,20 @@ const ScheduledTasksView: React.FC<ScheduledTasksViewProps> = ({
       {/* Unsaved changes confirmation overlay (back arrow) */}
       {showLeaveConfirm &&
         createPortal(
-          <div className="maties-backdrop fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35">
             <div
               role="dialog"
               aria-modal="true"
               onClick={e => e.stopPropagation()}
-              className="maties-card-prose maties-in w-full max-w-sm p-6"
+              className="w-full max-w-sm rounded-2xl bg-background border-border border shadow-modal p-5"
             >
-              <h4 className="maties-row-title text-[15.5px]">
+              <h4 className="text-sm font-semibold text-foreground mb-2">
                 {i18nService.t('taskFormUnsavedChanges')}
               </h4>
-              <p className="maties-row-desc">{i18nService.t('taskFormLeaveConfirm')}</p>
-              <div className="mt-5 flex justify-end gap-2">
-                <Pill
-                  tone={PillTone.Ghost}
-                  compact
+              <p className="text-sm text-secondary mb-4">{i18nService.t('taskFormLeaveConfirm')}</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
                   onClick={() => {
                     reportScheduledTaskAction('form_unsaved_confirm_cancel', {
                       source: 'scheduled_tasks_view',
@@ -401,12 +413,12 @@ const ScheduledTasksView: React.FC<ScheduledTasksViewProps> = ({
                     });
                     setShowLeaveConfirm(false);
                   }}
+                  className="px-4 py-2 text-sm rounded-lg text-secondary hover:bg-surface-raised transition-colors border border-border"
                 >
                   {i18nService.t('taskFormStay')}
-                </Pill>
-                <Pill
-                  tone={PillTone.Primary}
-                  compact
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setShowLeaveConfirm(false);
                     reportScheduledTaskAction('form_unsaved_confirm_submit', {
@@ -417,9 +429,10 @@ const ScheduledTasksView: React.FC<ScheduledTasksViewProps> = ({
                     pendingBackActionRef.current?.();
                     pendingBackActionRef.current = null;
                   }}
+                  className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 >
                   {i18nService.t('taskFormLeave')}
-                </Pill>
+                </button>
               </div>
             </div>
           </div>,

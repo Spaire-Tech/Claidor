@@ -160,7 +160,7 @@ const reportClaimFailure = (
   );
 };
 
-export const RetiredStartupCreditCampaign: React.FC<StartupCreditCampaignProps> = ({
+const StartupCreditCampaign: React.FC<StartupCreditCampaignProps> = ({
   enabled = true,
 }) => {
   const {
@@ -972,9 +972,5 @@ function isValidClaimResponse(
     && response.context.lifecycleState === ActivityLifecycleState.Active
     && response.context.state.claimed;
 }
-
-// The design (docs/maties/design.md) has no place for a startup credit
-// campaign: the mount in App renders nothing and never loads the activity.
-const StartupCreditCampaign: React.FC<StartupCreditCampaignProps> = () => null;
 
 export default StartupCreditCampaign;

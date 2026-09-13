@@ -23,9 +23,6 @@ vi.mock('electron', () => ({
 const mockRuntimeState = vi.hoisted(() => ({
   proxyPort: null as number | null,
   modelCompatPluginAvailable: true,
-  // The bundled DuckDuckGo search provider. Off by default so the
-  // existing expectations describe a build without search.
-  searchPluginAvailable: false,
   serverModels: [] as Array<{
     modelId: string;
     modelName?: string;
@@ -113,12 +110,9 @@ vi.mock('./openclawLocalExtensions', () => ({
   findThirdPartyExtensionsDir: () => null,
   hasBundledOpenClawExtension: (id: string) => (
     id !== 'qwen-portal-auth'
-    && (id !== 'maties-model-compat' || mockRuntimeState.modelCompatPluginAvailable)
+    && (id !== 'lobsterai-model-compat' || mockRuntimeState.modelCompatPluginAvailable)
   ),
-  hasRuntimeBundledOpenClawExtension: (id: string) => (
-    id === 'xai'
-    || (id === 'duckduckgo' && mockRuntimeState.searchPluginAvailable)
-  ),
+  hasRuntimeBundledOpenClawExtension: (id: string) => id === 'xai',
   resolveOpenClawExtensionPluginId: (id: string) => {
     const manifestIds: Record<string, string> = {
       'clawemail-email': 'email',
@@ -141,7 +135,6 @@ describe('OpenClawConfigSync runtime config output', () => {
   beforeEach(() => {
     mockRuntimeState.proxyPort = null;
     mockRuntimeState.modelCompatPluginAvailable = true;
-    mockRuntimeState.searchPluginAvailable = false;
     mockRuntimeState.serverModels = [];
     mockRuntimeState.enabledProviders = [];
     mockRuntimeState.providerSourceEntries = [];
@@ -238,7 +231,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.skills.entries).not.toHaveProperty('remotion');
   });
 
-  test('writes OpenClaw config fields required by Maties patches', async () => {
+  test('writes OpenClaw config fields required by LobsterAI patches', async () => {
     const legacyWorkingDirectory = path.join(tmpDir, 'legacy-working-directory');
     const mainAgentWorkingDirectory = path.join(tmpDir, 'main-agent-working-directory');
 
@@ -276,7 +269,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       ],
     });
 
-    const result = sync.sync('maties-patch-dependent-fields');
+    const result = sync.sync('lobsterai-patch-dependent-fields');
     expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -749,7 +742,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(fs.existsSync(path.join(writerWorkspace, 'USER.md'))).toBe(false);
   });
 
-  test('merges all server models into existing maties provider and updates image input', async () => {
+  test('merges all server models into existing lobsterai provider and updates image input', async () => {
     mockRuntimeState.proxyPort = 56646;
     mockRuntimeState.serverModels = [
       {
@@ -818,7 +811,7 @@ describe('OpenClawConfigSync runtime config output', () => {
         apiType: 'openai',
       },
       providerMetadata: {
-        providerName: 'maties-server',
+        providerName: 'lobsterai-server',
         codingPlanEnabled: false,
         supportsImage: false,
         modelName: 'Qwen3.5 Plus',
@@ -867,7 +860,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const provider = config.models.providers['maties-server'];
+    const provider = config.models.providers['lobsterai-server'];
     expect(provider.baseUrl).toBe('http://127.0.0.1:56646/v1');
     expect(provider.apiKey).toBe('${LOBSTER_PROXY_TOKEN}');
     expect(JSON.stringify(config)).not.toContain('LOBSTER_APIKEY_SERVER');
@@ -918,31 +911,31 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(JSON.stringify(provider.models)).not.toContain('cacheControlFormat');
     expect(JSON.stringify(provider.models)).not.toContain('supportsLongCacheRetention');
     expect(config.agents.defaults.models).toEqual(expect.objectContaining({
-      'maties-server/qwen3.5-plus-YoudaoInner': {
+      'lobsterai-server/qwen3.5-plus-YoudaoInner': {
         params: {
           cacheRetention: 'short',
           contextCacheProvider: 'dashscope',
           contextCacheMode: 'explicit',
         },
       },
-      'maties-server/qwen3.6-plus-YoudaoInner': {
+      'lobsterai-server/qwen3.6-plus-YoudaoInner': {
         params: {
           cacheRetention: 'short',
           contextCacheProvider: 'dashscope',
           contextCacheMode: 'explicit',
         },
       },
-      'maties-server/claude-sonnet-4-6-YoudaoInner': {
+      'lobsterai-server/claude-sonnet-4-6-YoudaoInner': {
         params: {
           cacheRetention: 'short',
         },
       },
-      'maties-server/claude-opus-4-YoudaoInner': {
+      'lobsterai-server/claude-opus-4-YoudaoInner': {
         params: {
           cacheRetention: 'short',
         },
       },
-      'maties-server/claude-sonnet-4-6': {
+      'lobsterai-server/claude-sonnet-4-6': {
         params: {
           cacheRetention: 'short',
           contextCacheProvider: 'anthropic-compatible',
@@ -963,7 +956,7 @@ describe('OpenClawConfigSync runtime config output', () => {
         apiType: 'openai',
       },
       providerMetadata: {
-        providerName: 'maties-server',
+        providerName: 'lobsterai-server',
         codingPlanEnabled: false,
         supportsImage: true,
         supportsThinking: true,
@@ -977,14 +970,14 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.models.providers['maties-server'].models).toEqual(expect.arrayContaining([
+    expect(config.models.providers['lobsterai-server'].models).toEqual(expect.arrayContaining([
       expect.objectContaining({
         id: 'claude-sonnet-4-6',
         api: 'openai-completions',
       }),
     ]));
     expect(config.agents.defaults.models).toEqual(expect.objectContaining({
-      'maties-server/claude-sonnet-4-6': {
+      'lobsterai-server/claude-sonnet-4-6': {
         params: {
           cacheRetention: 'short',
           contextCacheProvider: 'anthropic-compatible',
@@ -1228,15 +1221,15 @@ describe('OpenClawConfigSync runtime config output', () => {
         },
       },
       'deepseek/deepseek-v4-pro': {},
-      'maties-server/MiniMax-M2.7-YoudaoInner': {},
-      'maties-server/kimi-k2.6-inhouse-ZhiYun': {},
+      'lobsterai-server/MiniMax-M2.7-YoudaoInner': {},
+      'lobsterai-server/kimi-k2.6-inhouse-ZhiYun': {},
     }));
     expect(Object.keys(modelDefaults)).toEqual(expect.arrayContaining([
       'deepseek/deepseek-v4-flash',
       'deepseek/deepseek-v4-pro',
       'custom_0/custom-thinking-model',
-      'maties-server/MiniMax-M2.7-YoudaoInner',
-      'maties-server/kimi-k2.6-inhouse-ZhiYun',
+      'lobsterai-server/MiniMax-M2.7-YoudaoInner',
+      'lobsterai-server/kimi-k2.6-inhouse-ZhiYun',
     ]));
   });
 
@@ -1306,14 +1299,14 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     const customProvider = config.models.providers.custom_0;
-    const serverProvider = config.models.providers['maties-server'];
+    const serverProvider = config.models.providers['lobsterai-server'];
     const customK3 = customProvider.models.find((model: { id: string }) =>
       model.id === 'kimi-k3');
     const serverK3 = serverProvider.models.find((model: { id: string }) =>
       model.id === 'kimi-k3-package');
 
-    expect(customProvider.api).toBe('maties-model-compat');
-    expect(serverProvider.api).toBe('maties-model-compat');
+    expect(customProvider.api).toBe('lobsterai-model-compat');
+    expect(serverProvider.api).toBe('lobsterai-model-compat');
     expect(customProvider.models).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'plain-model', api: 'openai-completions' }),
       expect.objectContaining({ id: 'kimi-k3', api: 'openai-completions' }),
@@ -1361,16 +1354,16 @@ describe('OpenClawConfigSync runtime config output', () => {
         },
       },
     });
-    expect(config.plugins.entries['maties-model-compat']).toEqual({
+    expect(config.plugins.entries['lobsterai-model-compat']).toEqual({
       enabled: true,
       config: {
         modelProfiles: {
           'custom_0/kimi-k3': 'moonshot-kimi-k3',
-          'maties-server/kimi-k3-package': 'moonshot-kimi-k3',
+          'lobsterai-server/kimi-k3-package': 'moonshot-kimi-k3',
         },
       },
     });
-    expect(config.plugins.allow).toContain('maties-model-compat');
+    expect(config.plugins.allow).toContain('lobsterai-model-compat');
 
     const unchangedSync = sync.sync('kimi-k3-compat-unchanged');
     expect(unchangedSync.ok).toBe(true);
@@ -1398,14 +1391,14 @@ describe('OpenClawConfigSync runtime config output', () => {
       models: {
         providers: {
           custom_0: {
-            api: 'maties-model-compat',
+            api: 'lobsterai-model-compat',
             models: [{ id: 'plain-model', api: 'openai-completions' }],
           },
         },
       },
       plugins: {
         entries: {
-          'maties-model-compat': {
+          'lobsterai-model-compat': {
             enabled: true,
             config: {
               modelProfiles: {
@@ -1423,7 +1416,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       ...compatConfig,
       plugins: {
         entries: {
-          'maties-model-compat': {
+          'lobsterai-model-compat': {
             enabled: true,
             config: {
               modelProfiles: {
@@ -1439,7 +1432,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       models: {
         providers: {
           custom_0: {
-            api: 'maties-model-compat',
+            api: 'lobsterai-model-compat',
             models: [
               { id: 'another-plain-model', api: 'openai-completions' },
               { id: 'plain-model', api: 'openai-completions' },
@@ -1452,12 +1445,12 @@ describe('OpenClawConfigSync runtime config output', () => {
       ...compatConfig,
       plugins: {
         entries: {
-          'maties-model-compat': {
+          'lobsterai-model-compat': {
             enabled: true,
             config: {
-              modelProfiles: compatConfig.plugins.entries['maties-model-compat'].config.modelProfiles,
+              modelProfiles: compatConfig.plugins.entries['lobsterai-model-compat'].config.modelProfiles,
               thinkingProfiles: {
-                'maties-server/deepseek-v4-flash': {
+                'lobsterai-server/deepseek-v4-flash': {
                   options: [
                     { level: 'off', openclawLevel: 'off' },
                     { level: 'high', openclawLevel: 'high' },
@@ -1504,7 +1497,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       rejectedModelRefs: [],
     });
     for (const providers of [forward, reverse]) {
-      expect(providers.custom_0.api).toBe('maties-model-compat');
+      expect(providers.custom_0.api).toBe('lobsterai-model-compat');
       expect(Object.fromEntries(
         providers.custom_0.models.map(model => [model.id, model.api]),
       )).toEqual({
@@ -1551,7 +1544,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(sync.sync('ordinary-package-api-fallback')).toMatchObject({ ok: true });
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.models.providers['maties-server'].models).toContainEqual(
+    expect(config.models.providers['lobsterai-server'].models).toContainEqual(
       expect.objectContaining({
         id: 'ordinary-package-model',
         api: 'openai-completions',
@@ -1574,15 +1567,15 @@ describe('OpenClawConfigSync runtime config output', () => {
         ],
         defaultLevel: 'high',
       },
-      requestCapabilities: ['maties-options-v1'],
+      requestCapabilities: ['lobsterai-options-v1'],
     }];
 
     const sync = await createSync();
     expect(sync.sync('server-thinking-profile')).toMatchObject({ ok: true });
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.models.providers['maties-server'].api).toBe('openai-completions');
-    expect(config.models.providers['maties-server'].models[0]).toEqual(
+    expect(config.models.providers['lobsterai-server'].api).toBe('openai-completions');
+    expect(config.models.providers['lobsterai-server'].models[0]).toEqual(
       expect.objectContaining({
         thinkingLevelMap: {
           off: 'off',
@@ -1598,11 +1591,11 @@ describe('OpenClawConfigSync runtime config output', () => {
         }),
       }),
     );
-    expect(config.plugins.entries['maties-model-compat']).toEqual({
+    expect(config.plugins.entries['lobsterai-model-compat']).toEqual({
       enabled: true,
       config: {
         thinkingProfiles: {
-          'maties-server/deepseek-v4-flash': {
+          'lobsterai-server/deepseek-v4-flash': {
             options: [
               { level: 'off', openclawLevel: 'off' },
               { level: 'high', openclawLevel: 'high' },
@@ -1614,7 +1607,7 @@ describe('OpenClawConfigSync runtime config output', () => {
         },
       },
     });
-    expect(config.plugins.allow).toContain('maties-model-compat');
+    expect(config.plugins.allow).toContain('lobsterai-model-compat');
   });
 
   test('keeps legacy thinking transport when the server does not advertise request options', async () => {
@@ -1639,8 +1632,8 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(
-      config.plugins.entries['maties-model-compat']
-        .config.thinkingProfiles['maties-server/deepseek-v4-flash'],
+      config.plugins.entries['lobsterai-model-compat']
+        .config.thinkingProfiles['lobsterai-server/deepseek-v4-flash'],
     ).toEqual({
       options: [
         { level: 'off', openclawLevel: 'off' },
@@ -1681,7 +1674,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       ok: false,
       changed: false,
     });
-    expect(result.error).toContain('maties-model-compat');
+    expect(result.error).toContain('lobsterai-model-compat');
     expect(fs.existsSync(configPath)).toBe(false);
   });
 
@@ -1718,7 +1711,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       agents: {
         defaults: {
           models: {
-            'maties-server/MiniMax-M2.7-YoudaoInner': {},
+            'lobsterai-server/MiniMax-M2.7-YoudaoInner': {},
           },
         },
       },
@@ -1733,123 +1726,48 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.agents.defaults.models).toBeUndefined();
   });
 
-  // --- The second model (docs/maties/models-and-search.md, section 2) ---
-
-  test('offers both providers through the one loopback proxy, each in its own wire format', async () => {
-    mockRuntimeState.proxyPort = 56646;
-    mockRuntimeState.serverModels = [
-      {
-        modelId: 'claude-sonnet-5',
-        modelName: 'Claude Sonnet 5',
-        provider: 'anthropic',
-        apiFormat: 'anthropic',
-        supportsImage: true,
-      },
-      {
-        modelId: 'gpt-5.6-terra',
-        modelName: 'GPT-5.6 Terra',
-        provider: 'openai',
-        apiFormat: 'openai',
-        supportsImage: true,
-        contextWindow: 1_050_000,
-      },
-      {
-        modelId: 'gpt-6-astra',
-        modelName: 'GPT-6 Astra',
-        provider: 'openai',
-        apiFormat: 'openai',
-        supportsImage: true,
-        contextWindow: 1_050_000,
-      },
-    ];
-
-    const sync = await createSync();
-    expect(sync.sync('two-providers')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const maties = config.models.providers['maties-server'];
-
-    // One provider, one address: the person's key never leaves Claidor,
-    // so both suppliers are reached through the same metered proxy.
-    expect(maties.baseUrl).toBe('http://127.0.0.1:56646/v1');
-
-    // The wire format follows the model, not the provider entry. Without
-    // the per-model `api` a GPT model would be sent down Anthropic's
-    // /v1/messages, which is the converter we deliberately did not build.
-    expect(Object.fromEntries(
-      maties.models.map((model: { id: string; api: string }) => [model.id, model.api]),
-    )).toEqual({
-      'claude-sonnet-5': 'anthropic-messages',
-      'gpt-5.6-terra': 'openai-completions',
-      'gpt-6-astra': 'openai-completions',
+  test('enables media generation plugin when media entitlement is available', async () => {
+    const sync = await createSync({
+      canUseMediaGeneration: () => true,
+      getMediaCallbackUrl: () => 'http://127.0.0.1:5175/media-callback',
     });
-  });
 
-  test('offers only the models the server lists, so an unconfigured key is a shorter menu', async () => {
-    mockRuntimeState.proxyPort = 56646;
-    mockRuntimeState.serverModels = [
-      {
-        modelId: 'claude-sonnet-5',
-        modelName: 'Claude Sonnet 5',
-        provider: 'anthropic',
-        apiFormat: 'anthropic',
-      },
-    ];
-
-    const sync = await createSync();
-    expect(sync.sync('anthropic-only')).toMatchObject({ ok: true });
+    const result = sync.sync('media-entitlement-enabled');
+    expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const ids = config.models.providers['maties-server'].models
-      .map((model: { id: string }) => model.id);
-    expect(ids).toEqual(['claude-sonnet-5']);
-  });
-
-  // --- Search (docs/maties/models-and-search.md, section 3) ---
-
-  test('switches web_search on with DuckDuckGo when the provider is bundled', async () => {
-    mockRuntimeState.searchPluginAvailable = true;
-
-    const sync = await createSync();
-    expect(sync.sync('search-on')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // Three things have to agree or search fails silently.
-    expect(config.tools.deny).not.toContain('web_search');
-    expect(config.tools.web.search).toEqual({
+    expect(config.plugins.entries['lobster-media-generation']).toEqual({
       enabled: true,
-      provider: 'duckduckgo',
+      config: {
+        callbackUrl: 'http://127.0.0.1:5175/media-callback',
+        secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+        requestTimeoutMs: 150000,
+      },
     });
-    expect(config.plugins.entries.duckduckgo).toEqual({ enabled: true });
-    // plugins.allow is a strict allowlist once non-empty — a bundled
-    // plugin missing from it never loads, and nothing says so.
-    expect(config.plugins.allow).toContain('duckduckgo');
-
-    const workspaceDir = path.join(stateDir, 'workspace-main');
-    const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
-    // The instruction must match the tools. Telling the assistant search
-    // is off while the tool is allowed reads as stupidity, not as a
-    // switched-off feature.
-    expect(agentsMd).toContain('Built-in `web_search` is available in this workspace');
-    expect(agentsMd).toContain('DuckDuckGo');
-    expect(agentsMd).not.toContain('Brave Search API');
-    expect(agentsMd).not.toContain('`web_search` is disabled');
+    expect(config.tools.deny).not.toContain('image_generate');
+    expect(config.tools.deny).not.toContain('video_generate');
   });
 
-  test('leaves web_search off and says so when no search provider is bundled', async () => {
-    mockRuntimeState.searchPluginAvailable = false;
+  test('keeps media generation plugin configured without media entitlement', async () => {
+    const sync = await createSync({
+      canUseMediaGeneration: () => false,
+      getMediaCallbackUrl: () => 'http://127.0.0.1:5175/media-callback',
+    });
 
-    const sync = await createSync();
-    expect(sync.sync('search-off')).toMatchObject({ ok: true });
+    const result = sync.sync('media-entitlement-disabled');
+    expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.tools.web.search).toEqual({ enabled: false });
-    expect(config.plugins.entries).not.toHaveProperty('duckduckgo');
-    expect(config.plugins.allow).not.toContain('duckduckgo');
-
-    const workspaceDir = path.join(stateDir, 'workspace-main');
-    const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('Built-in `web_search` is not available in this build');
+    expect(config.plugins.entries['lobster-media-generation']).toEqual({
+      enabled: true,
+      config: {
+        callbackUrl: 'http://127.0.0.1:5175/media-callback',
+        secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+        requestTimeoutMs: 150000,
+      },
+    });
+    expect(config.tools.deny).not.toContain('image_generate');
+    expect(config.tools.deny).not.toContain('video_generate');
   });
 
   test('declares and allowlists the bundled xai plugin so its compat hooks load', async () => {
@@ -2589,48 +2507,170 @@ describe('OpenClawConfigSync runtime config output', () => {
     ]);
   });
 
-  test('syncs the bundled discord plugin entry with the channel state and drops stale retired plugin ids', async () => {
+  test('prefers external lark for feishu without stale feishu entry and keeps bundled qqbot entry', async () => {
+    const { OpenClawConfigSync } = await import('./openclawConfigSync');
+
     fs.writeFileSync(configPath, JSON.stringify({
       plugins: {
         entries: {
+          feishu: { enabled: false },
           'openclaw-qqbot': { enabled: false },
-          'clawemail-email': { enabled: true },
-          'openclaw-nim-channel': { enabled: true },
-          discord: { enabled: false },
+          qqbot: { enabled: false },
         },
       },
     }, null, 2));
 
-    const sync = await createSync({
-      getDiscordInstances: () => [{
-        instanceId: 'discord-instance-1',
-        instanceName: 'Discord Bot 1',
+    const sync = new OpenClawConfigSync({
+      engineManager: {
+        getConfigPath: () => configPath,
+        getGatewayToken: () => 'gateway-token',
+        getStateDir: () => stateDir,
+        getBaseDir: () => tmpDir,
+      } as never,
+      getCoworkConfig: () => ({
+        workingDirectory: tmpDir,
+        systemPrompt: '',
+        executionMode: 'local',
+        agentEngine: 'openclaw',
+        memoryEnabled: false,
+        memoryImplicitUpdateEnabled: false,
+        memoryLlmJudgeEnabled: false,
+        memoryGuardLevel: 'balanced',
+        memoryUserMemoriesMaxItems: 100,
+        skipMissedJobs: false,
+      }),
+      isEnterprise: () => false,
+      getTelegramOpenClawConfig: () => null,
+      getDiscordOpenClawConfig: () => null,
+      getDingTalkInstances: () => [],
+      getFeishuInstances: () => [{
         enabled: true,
-        botToken: 'discord-bot-token',
+        appId: 'cli_feishu_app',
+        appSecret: 'secret',
+        instanceId: 'feishu-instance-1',
+        instanceName: 'Feishu Bot 1',
+        domain: 'feishu',
         dmPolicy: 'open',
         allowFrom: ['*'],
         groupPolicy: 'allowlist',
         groupAllowFrom: [],
-        guilds: {},
+        groups: { '*': { requireMention: true } },
         historyLimit: 50,
-        streaming: 'partial',
+        streaming: true,
+        replyMode: 'auto',
+        blockStreaming: false,
         mediaMaxMb: 30,
-        proxy: '',
-        debug: false,
       }],
-    });
+      getQQInstances: () => [{
+        enabled: true,
+        appId: 'qq-app-id',
+        clientSecret: 'qq-secret',
+        instanceId: 'qq-instance-1',
+        instanceName: 'QQ Bot 1',
+        allowFrom: ['*'],
+        dmPolicy: 'open',
+        markdownSupport: true,
+      }],
+      getWecomConfig: () => null,
+      getWecomInstances: () => [],
+      getPopoInstances: () => [],
+      getNimConfig: () => null,
+      getNeteaseBeeChanConfig: () => null,
+      getWeixinConfig: () => null,
+      getIMSettings: () => null,
+      getSkillsList: () => [],
+      getAgents: () => [],
+    } as never);
 
-    const result = sync.sync('discord-plugin-entry');
+    const result = sync.sync('feishu-lark-qqbot');
     expect(result.ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.plugins.entries.discord).toEqual({ enabled: true });
+    expect(config.plugins.entries['openclaw-lark']).toEqual({ enabled: true });
+    expect(config.plugins.entries).not.toHaveProperty('feishu');
+    expect(config.plugins.entries.qqbot).toEqual({ enabled: true });
+    expect(config.plugins.entries.discord).toEqual({ enabled: false });
     expect(config.plugins.entries.browser).toEqual({ enabled: true });
     expect(config.plugins.entries).not.toHaveProperty('openclaw-qqbot');
+    expect(config.plugins.allow).toContain('browser');
+    expect(config.plugins.allow).toContain('qqbot');
+    expect(config.plugins.allow).toContain('discord');
+  });
+
+  test('writes plugin entries using manifest ids and removes stale package ids', async () => {
+    const { OpenClawConfigSync } = await import('./openclawConfigSync');
+
+    fs.writeFileSync(configPath, JSON.stringify({
+      plugins: {
+        entries: {
+          'clawemail-email': { enabled: true },
+          'openclaw-nim-channel': { enabled: true },
+        },
+      },
+    }, null, 2));
+
+    const sync = new OpenClawConfigSync({
+      engineManager: {
+        getConfigPath: () => configPath,
+        getGatewayToken: () => 'gateway-token',
+        getStateDir: () => stateDir,
+        getBaseDir: () => tmpDir,
+      } as never,
+      getCoworkConfig: () => ({
+        workingDirectory: tmpDir,
+        systemPrompt: '',
+        executionMode: 'local',
+        agentEngine: 'openclaw',
+        memoryEnabled: false,
+        memoryImplicitUpdateEnabled: false,
+        memoryLlmJudgeEnabled: false,
+        memoryGuardLevel: 'balanced',
+        memoryUserMemoriesMaxItems: 100,
+        skipMissedJobs: false,
+      }),
+      isEnterprise: () => false,
+      getTelegramInstances: () => [],
+      getDiscordOpenClawConfig: () => null,
+      getDingTalkInstances: () => [],
+      getFeishuInstances: () => [],
+      getQQInstances: () => [],
+      getWecomConfig: () => null,
+      getWecomInstances: () => [],
+      getPopoInstances: () => [],
+      getEmailOpenClawConfig: () => ({
+        instances: [{
+          instanceId: 'email-work',
+          instanceName: 'Work Email',
+          enabled: true,
+          transport: 'ws',
+          email: 'user@example.com',
+          apiKey: 'ck_test',
+          agentId: 'main',
+        }],
+      }),
+      getNimInstances: () => [{
+        instanceId: 'nim-work',
+        instanceName: 'NIM Work',
+        enabled: true,
+        appKey: 'nim-app-key',
+        account: 'nim-account',
+        token: 'nim-token',
+      }],
+      getNeteaseBeeChanConfig: () => null,
+      getWeixinConfig: () => null,
+      getIMSettings: () => null,
+      getSkillsList: () => [],
+      getAgents: () => [],
+    } as never);
+
+    const result = sync.sync('manifest-plugin-ids');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(config.plugins.entries).not.toHaveProperty('clawemail-email');
     expect(config.plugins.entries).not.toHaveProperty('openclaw-nim-channel');
-    expect(config.plugins.allow).toContain('browser');
-    expect(config.plugins.allow).toContain('discord');
+    expect(config.plugins.entries.email).toEqual({ enabled: true });
+    expect(config.plugins.entries['nimsuite-openclaw-nim-channel']).toEqual({ enabled: true });
   });
 
   test('writes NIM env vars with the same indexes as enabled channel accounts', async () => {
@@ -2678,6 +2718,63 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(env.LOBSTER_NIM_TOKEN_1).toBe('work-token');
   });
 
+  test('writes weixin channel config using dmPolicy and allowFrom instead of unsupported accountId', async () => {
+    const { OpenClawConfigSync } = await import('./openclawConfigSync');
+
+    const sync = new OpenClawConfigSync({
+      engineManager: {
+        getConfigPath: () => configPath,
+        getGatewayToken: () => 'gateway-token',
+        getStateDir: () => stateDir,
+        getBaseDir: () => tmpDir,
+      } as never,
+      getCoworkConfig: () => ({
+        workingDirectory: tmpDir,
+        systemPrompt: '',
+        executionMode: 'local',
+        agentEngine: 'openclaw',
+        memoryEnabled: false,
+        memoryImplicitUpdateEnabled: false,
+        memoryLlmJudgeEnabled: false,
+        memoryGuardLevel: 'balanced',
+        memoryUserMemoriesMaxItems: 100,
+        skipMissedJobs: false,
+      }),
+      isEnterprise: () => false,
+      getTelegramOpenClawConfig: () => null,
+      getDiscordOpenClawConfig: () => null,
+      getDingTalkInstances: () => [],
+      getFeishuInstances: () => [],
+      getQQInstances: () => [],
+      getWecomConfig: () => null,
+      getWecomInstances: () => [],
+      getPopoInstances: () => [],
+      getNimConfig: () => null,
+      getNeteaseBeeChanConfig: () => null,
+      getWeixinConfig: () => ({
+        enabled: true,
+        accountId: '97a130e3b62f@im.bot',
+        dmPolicy: 'open',
+        allowFrom: [],
+        debug: false,
+      }),
+      getIMSettings: () => null,
+      getSkillsList: () => [],
+      getAgents: () => [],
+    });
+
+    const result = sync.sync('weixin-schema');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.channels['openclaw-weixin']).toEqual({
+      enabled: true,
+      dmPolicy: 'open',
+      allowFrom: ['*'],
+    });
+    expect(config.channels['openclaw-weixin']).not.toHaveProperty('accountId');
+  });
+
   test('writes managed browser policy forcing host target', async () => {
     const { OpenClawConfigSync } = await import('./openclawConfigSync');
 
@@ -2714,49 +2811,9 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const agentsMdPath = path.join(stateDir, 'workspace-main', 'AGENTS.md');
     const agentsMd = fs.readFileSync(agentsMdPath, 'utf8');
-    expect(agentsMd).toContain('Maties does not support sandbox browser execution in this version.');
+    expect(agentsMd).toContain('LobsterAI does not support sandbox browser execution in this version.');
     expect(agentsMd).toContain('For every `browser` tool call, set `target="host"` explicitly.');
     expect(agentsMd).toContain('never tell the user to enable Chrome remote debugging');
-  });
-
-  test('enables the search-library plugin with its bridge config and writes the library paragraph', async () => {
-    const librarySearchCallbackUrl = 'http://127.0.0.1:43210/library/search';
-    const sync = await createSync({
-      getLibrarySearchCallbackUrl: () => librarySearchCallbackUrl,
-    });
-
-    const result = sync.sync('library-plugin');
-    expect(result.ok).toBe(true);
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.plugins.entries['search-library']).toEqual({
-      enabled: true,
-      config: {
-        callbackUrl: librarySearchCallbackUrl,
-        secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
-      },
-    });
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## Personal Library');
-    expect(agentsMd).toContain('call `search_library` first');
-    expect(agentsMd).toContain('Name the file path exactly as the tool returned it, so the app can turn it into a link.');
-    expect(agentsMd).toContain('Do not invent the contents of a document you have not seen.');
-    // The library paragraph follows the web search policy.
-    expect(agentsMd.indexOf('## Personal Library')).toBeGreaterThan(agentsMd.indexOf('## Web Search'));
-    expect(agentsMd.indexOf('## Personal Library')).toBeLessThan(agentsMd.indexOf('## Browser Policy'));
-  });
-
-  test('keeps the search-library plugin enabled without a config when the bridge is not up', async () => {
-    const sync = await createSync({
-      getLibrarySearchCallbackUrl: () => null,
-    });
-
-    const result = sync.sync('library-plugin-no-bridge');
-    expect(result.ok).toBe(true);
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.plugins.entries['search-library']).toEqual({ enabled: true });
   });
 
   test('enables managed OpenClaw tool loop detection', async () => {
@@ -2779,87 +2836,6 @@ describe('OpenClawConfigSync runtime config output', () => {
         pingPong: true,
       },
     });
-  });
-
-  test('renders the main agent under its stored row name and the chosen voice in AGENTS.md', async () => {
-    const { AssistantVoice } = await import('../../shared/onboarding/constants');
-    const { ASSISTANT_VOICE_INSTRUCTIONS } = await import('./openclawVoicePrompt');
-    const sync = await createSync({
-      getOnboardingProfile: () => ({
-        assistantName: 'Juno',
-        voice: AssistantVoice.Warm,
-        timezone: 'Europe/Paris',
-      }),
-      getAgents: () => [
-        {
-          id: 'main',
-          name: 'Juno',
-          description: '',
-          systemPrompt: '',
-          identity: '',
-          model: '',
-          workingDirectory: '',
-          icon: '',
-          skillIds: [],
-          enabled: true,
-          isDefault: true,
-          source: 'custom',
-          presetId: '',
-          createdAt: 1,
-          updatedAt: 1,
-        },
-      ],
-    });
-
-    const result = sync.sync('onboarding-profile');
-    expect(result.ok).toBe(true);
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const mainEntry = config.agents.list.find((entry: { id?: string }) => entry.id === 'main');
-    expect(mainEntry.identity).toEqual({ name: 'Juno' });
-    expect(config.agents.defaults.userTimezone).toBe('Europe/Paris');
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## Voice');
-    expect(agentsMd).toContain(ASSISTANT_VOICE_INSTRUCTIONS[AssistantVoice.Warm]);
-    expect(agentsMd).not.toContain(ASSISTANT_VOICE_INSTRUCTIONS[AssistantVoice.Concise]);
-    // The voice comes before the policies, right where the system prompt would be.
-    expect(agentsMd.indexOf('## Voice')).toBeLessThan(agentsMd.indexOf('## Web Search'));
-  });
-
-  test('uses the stored assistant name for the main agent when it has no row yet', async () => {
-    const { AssistantVoice } = await import('../../shared/onboarding/constants');
-    const sync = await createSync({
-      getOnboardingProfile: () => ({
-        assistantName: 'Marlow',
-        voice: AssistantVoice.Direct,
-        timezone: 'UTC',
-      }),
-      getAgents: () => [],
-    });
-
-    const result = sync.sync('onboarding-profile-no-row');
-    expect(result.ok).toBe(true);
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const mainEntry = config.agents.list.find((entry: { id?: string }) => entry.id === 'main');
-    expect(mainEntry.identity).toEqual({ name: 'Marlow' });
-    expect(mainEntry.default).toBe(true);
-  });
-
-  test('renders the default voice and no user time zone before onboarding', async () => {
-    const { DEFAULT_ASSISTANT_VOICE } = await import('../../shared/onboarding/constants');
-    const { ASSISTANT_VOICE_INSTRUCTIONS } = await import('./openclawVoicePrompt');
-    const sync = await createSync();
-
-    const result = sync.sync('onboarding-defaults');
-    expect(result.ok).toBe(true);
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.agents.defaults).not.toHaveProperty('userTimezone');
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain(ASSISTANT_VOICE_INSTRUCTIONS[DEFAULT_ASSISTANT_VOICE]);
   });
 
   test('writes browser and web fetch access settings', async () => {
@@ -2916,7 +2892,7 @@ describe('OpenClawConfigSync runtime config output', () => {
           timeoutSeconds: 25,
           maxRedirects: 4,
           maxChars: 12000,
-          userAgent: 'Maties Test',
+          userAgent: 'LobsterAI Test',
           readability: false,
           allowRfc2544BenchmarkRange: true,
         },
@@ -2972,7 +2948,7 @@ describe('OpenClawConfigSync runtime config output', () => {
       timeoutSeconds: 25,
       maxRedirects: 4,
       maxChars: 12000,
-      userAgent: 'Maties Test',
+      userAgent: 'LobsterAI Test',
       ssrfPolicy: { allowRfc2544BenchmarkRange: true },
     });
     expect(config.tools.web.fetch.useEnvProxy).toBeUndefined();
@@ -3001,10 +2977,10 @@ describe('OpenClawConfigSync runtime config output', () => {
       }),
       getBrowserWebAccessConfig: () => ({ displayMode: browserDisplayMode }),
       getBrowserCallbackUrl: () => browserCallbackUrl,
-      getLobsterBrowserMcpCommand: () => 'C:/Maties/lobster-browser-mcp.cmd',
+      getLobsterBrowserMcpCommand: () => 'C:/LobsterAI/lobster-browser-mcp.cmd',
       getLobsterBrowserMcpStdioLaunch: () => ({
-        command: 'C:/Maties/Maties.exe',
-        args: ['C:/Maties/lobster-browser-mcp-server.mjs'],
+        command: 'C:/LobsterAI/LobsterAI.exe',
+        args: ['C:/LobsterAI/lobster-browser-mcp-server.mjs'],
         env: { ELECTRON_RUN_AS_NODE: '1' },
       }),
       isEnterprise: () => false,
@@ -3024,7 +3000,7 @@ describe('OpenClawConfigSync runtime config output', () => {
         [BrowserRuntimeProfile.InApp]: {
           driver: 'existing-session',
           attachOnly: true,
-          mcpCommand: 'C:/Maties/lobster-browser-mcp.cmd',
+          mcpCommand: 'C:/LobsterAI/lobster-browser-mcp.cmd',
           mcpArgs: ['--lobster-bridge-url=http://127.0.0.1:3210/browser/tool'],
         },
       },
@@ -3032,9 +3008,9 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(inAppConfig.browser.headless).toBeUndefined();
     expect(inAppConfig.browser.extraArgs).toBeUndefined();
     expect(inAppConfig.mcp.servers[BrowserCredentialMcpServer.Name]).toEqual({
-      command: 'C:/Maties/Maties.exe',
+      command: 'C:/LobsterAI/LobsterAI.exe',
       args: [
-        'C:/Maties/lobster-browser-mcp-server.mjs',
+        'C:/LobsterAI/lobster-browser-mcp-server.mjs',
         BrowserCredentialMcpServer.ToolSetArgument,
       ],
       env: { ELECTRON_RUN_AS_NODE: '1' },
@@ -3113,23 +3089,23 @@ describe('resolveModelSourceForOpenClawProvider', () => {
     mockRuntimeState.providerSourceEntries = [];
   });
 
-  test('classifies the Maties plan without any Settings entry', async () => {
+  test('classifies the LobsterAI plan without any Settings entry', async () => {
     const { resolveModelSourceForOpenClawProvider } = await import('./openclawConfigSync');
-    expect(resolveModelSourceForOpenClawProvider('maties-server')).toEqual({
-      source: 'maties-plan',
-      providerName: ProviderName.MatiesServer,
+    expect(resolveModelSourceForOpenClawProvider('lobsterai-server')).toEqual({
+      source: 'lobsterai-plan',
+      providerName: ProviderName.LobsteraiServer,
     });
   });
 
   test('classifies a custom provider with its display name', async () => {
     mockRuntimeState.providerSourceEntries = [
-      { providerName: ProviderName.Custom, codingPlanEnabled: false, displayName: 'My relay' },
+      { providerName: ProviderName.Custom, codingPlanEnabled: false, displayName: '我的中转' },
     ];
     const { resolveModelSourceForOpenClawProvider } = await import('./openclawConfigSync');
     expect(resolveModelSourceForOpenClawProvider('custom')).toEqual({
       source: 'custom-provider',
       providerName: ProviderName.Custom,
-      providerDisplayName: 'My relay',
+      providerDisplayName: '我的中转',
     });
   });
 

@@ -119,13 +119,11 @@ test('collapsed tool result display summarizes large output without full formatt
 });
 
 test('activity indicator status defaults to thinking and escalates for long waits', () => {
-  expect(getActivityIndicatorStatusText()).toBe('Thinking');
-  expect(getActivityIndicatorStatusText(true)).toBe('Organizing context...');
-  expect(getActivityIndicatorStatusText(false, true)).toBe(
-    'The model is still responding. This may take a little longer…',
-  );
+  expect(getActivityIndicatorStatusText()).toBe('正在思考');
+  expect(getActivityIndicatorStatusText(true)).toBe('正在整理上下文...');
+  expect(getActivityIndicatorStatusText(false, true)).toBe('模型仍在响应，请耐心等待…');
   // Once the turn has shown content, the label switches to "working".
-  expect(getActivityIndicatorStatusText(false, false, true)).toBe('Working');
+  expect(getActivityIndicatorStatusText(false, false, true)).toBe('正在处理');
 });
 
 test('elapsed duration formats seconds, minutes, and hours', () => {
@@ -255,9 +253,9 @@ test('turn end timestamp is the latest message time and duration formats in loca
   }]);
   expect(getTurnEndTimestamp(turn)).toBe(9000);
 
-  expect(formatTurnDuration(45_000)).toBe('45s');
-  expect(formatTurnDuration(21 * 60_000 + 45_000)).toBe('21m 45s');
-  expect(formatTurnDuration(3_720_000)).toBe('1h 2m');
+  expect(formatTurnDuration(45_000)).toBe('45秒');
+  expect(formatTurnDuration(21 * 60_000 + 45_000)).toBe('21分钟 45秒');
+  expect(formatTurnDuration(3_720_000)).toBe('1小时 2分钟');
 });
 
 test('turn answer start index splits trailing answer text from the process', () => {
@@ -435,18 +433,18 @@ test('activity header label summarizes commands, reads, and edits in natural lan
     activityToolItem('tool-3', 'Bash'),
     activityToolItem('tool-4', 'read_file'),
     activityToolItem('tool-5', 'Read'),
-  ])).toBe('Ran 3 commands, read 2 files');
+  ])).toBe('运行了 3 个命令、读取了 2 个文件');
 
   expect(getActivityGroupHeaderLabel([
     activityToolItem('tool-1', 'Edit'),
     activityToolItem('tool-2', 'web_fetch'),
-  ])).toBe('Made 1 edit, used 1 tool');
+  ])).toBe('进行了 1 次编辑、调用了 1 次工具');
 
   // Thinking-only groups fall back to a dedicated label.
   expect(getActivityGroupHeaderLabel([
     activityThinkingItem('think-1'),
     activityThinkingItem('think-2'),
-  ])).toBe('Thought process');
+  ])).toBe('思考过程');
 
   // Single-step groups show the concrete action instead of an aggregate.
   expect(getActivityGroupHeaderLabel([
@@ -476,32 +474,32 @@ test('activity step display shortens file paths to basenames', () => {
 });
 
 test('activity current action text is a verb phrase for the latest step', () => {
-  expect(getActivityCurrentActionText(activityThinkingItem('think-1'))).toBe('Thinking…');
+  expect(getActivityCurrentActionText(activityThinkingItem('think-1'))).toBe('思考中…');
   expect(getActivityCurrentActionText(activityToolItem(
     'tool-1',
     'read_file',
     undefined,
     { file_path: '/tmp/notes.md' },
-  ))).toBe('Reading notes.md');
+  ))).toBe('正在读取 notes.md');
   expect(getActivityCurrentActionText(activityToolItem(
     'tool-2',
     'Bash',
     undefined,
     { command: 'npm run build' },
-  ))).toBe('Running npm run build');
+  ))).toBe('正在运行 npm run build');
   expect(getActivityCurrentActionText(activityToolItem(
     'tool-3',
     'Edit',
     undefined,
     { file_path: '/repo/src/i18n.ts', old_string: 'a', new_string: 'b' },
-  ))).toBe('Editing i18n.ts');
+  ))).toBe('正在编辑 i18n.ts');
   expect(getActivityCurrentActionText(activityToolItem('tool-4', 'web_fetch')))
-    .toBe('Using web_fetch');
+    .toBe('正在使用 web_fetch');
   // Session orchestration tools get plain-language labels instead of raw names.
   expect(getActivityCurrentActionText(activityToolItem('tool-5', 'sessions_yield')))
-    .toBe('Waiting for subagents');
+    .toBe('正在等待子 Agent 完成');
   expect(getActivityStepDisplay(activityToolItem('tool-6', 'sessions_yield')).name)
-    .toBe('Waiting for subagents');
+    .toBe('等待子 Agent 完成');
 });
 
 test('diff stats count added and removed lines', () => {
@@ -511,16 +509,16 @@ test('diff stats count added and removed lines', () => {
 
 test('media polling groups count their polls as steps', () => {
   const polls = [
-    activityToolItem('poll-1', 'maties_video_generate'),
-    activityToolItem('poll-2', 'maties_video_generate'),
-    activityToolItem('poll-3', 'maties_video_generate'),
+    activityToolItem('poll-1', 'lobsterai_video_generate'),
+    activityToolItem('poll-2', 'lobsterai_video_generate'),
+    activityToolItem('poll-3', 'lobsterai_video_generate'),
   ].map(item => (item as Extract<ConsolidatedItem, { type: 'tool_group' }>).group);
 
   const mediaItem = {
     type: 'media_polling_group',
     group: {
       type: 'media_polling_group',
-      toolName: 'maties_video_generate',
+      toolName: 'lobsterai_video_generate',
       taskId: 'task-1',
       lastStatus: 'succeeded',
       pollCount: 3,

@@ -257,7 +257,7 @@ describe('publishing conversion attribution', () => {
 
   test('drops ownerless legacy attribution records', async () => {
     globalThis.localStorage.setItem(
-      'maties_publishing_conversion_attribution_v2',
+      'lobsterai_publishing_conversion_attribution_v2',
       JSON.stringify({
         ...attribution,
         ownerAccountKey: undefined,

@@ -1,4 +1,4 @@
-import { McpRegistryEntry } from '../types/mcp';
+import { McpRegistryEntry, McpRegistryEntryKind } from '../types/mcp';
 
 /**
  * App-managed MCP registry entries.
@@ -7,11 +7,24 @@ import { McpRegistryEntry } from '../types/mcp';
  * cached in localStorage between sessions) — it is deliberately NOT mirrored
  * here, so there is a single source of truth for names, descriptions and the
  * server list itself. This file only holds entries the server payload cannot
- * express, such as flows managed by the app, which `mergeMarketplaceRegistry`
- * re-inserts into whatever the server returns. Maties ships none: the upstream
- * Qichacha (Chinese company data) bundle was removed.
+ * express: flows managed by the app, such as the Qichacha OAuth bundle, which
+ * `mergeMarketplaceRegistry` re-inserts into whatever the server returns.
  */
-export const mcpRegistry: McpRegistryEntry[] = [];
+export const mcpRegistry: McpRegistryEntry[] = [
+  {
+    id: 'qichacha',
+    name: '企查查',
+    descriptionKey: 'mcpDesc_qichacha',
+    category: 'data-api',
+    categoryKey: 'mcpCategoryDataApi',
+    transportType: 'http',
+    command: 'https://agent.qcc.com/mcp',
+    defaultArgs: ['6 servers'],
+    oauthProvider: 'qichacha',
+    kind: McpRegistryEntryKind.Bundle,
+    marketplacePosition: 4,
+  },
+];
 
 /**
  * Category fallbacks with their i18n keys, used until the server list (which

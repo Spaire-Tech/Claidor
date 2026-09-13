@@ -141,7 +141,7 @@ async function fetchBrowserApps(input: ShellGetBrowserAppsInput, cacheKey: strin
 
 const MAX_APPS_IN_LIST = 5;
 const HTML_EXTENSIONS = new Set(['.html', '.htm']);
-const BROWSER_APPS_PROBE_FILE = path.join(os.tmpdir(), 'maties-browser-probe.html');
+const BROWSER_APPS_PROBE_FILE = path.join(os.tmpdir(), 'lobsterai-browser-probe.html');
 const HTML_PROBE_MAX_DEPTH = 4;
 const HTML_PROBE_MAX_ENTRIES = 1200;
 const HTML_PROBE_EXCLUDED_DIRECTORIES = new Set([
@@ -172,6 +172,7 @@ const MACOS_BROWSER_CANDIDATES: Array<{ name: string; bundleId: string; relative
   { name: 'Opera', bundleId: 'com.operasoftware.Opera', relativePath: 'Opera.app' },
   { name: 'Vivaldi', bundleId: 'com.vivaldi.Vivaldi', relativePath: 'Vivaldi.app' },
   { name: 'Chromium', bundleId: 'org.chromium.Chromium', relativePath: 'Chromium.app' },
+  { name: '豆包浏览器', bundleId: 'com.bytedance.macos.doubao.browser', relativePath: '豆包浏览器.app' },
 ];
 
 // Bundle IDs / name fragments that are rarely useful for opening documents.
@@ -224,26 +225,27 @@ const BROWSER_NAME_PATTERNS = [
   /opera/i,
   /vivaldi/i,
   /browser/i,
+  /浏览器/i,
 ];
 
 // Office-class keywords grouped by file family.
 const SPREADSHEET_KEYWORDS = [
   'microsoft excel', 'excel', 'numbers',
-  'wps spreadsheet', 'wps office',
+  'wps spreadsheet', 'wps表格', 'wps office',
   'libreoffice calc', 'libre office calc', 'openoffice calc',
 ];
 const WORD_PROCESSOR_KEYWORDS = [
   'microsoft word', 'word', 'pages',
-  'wps writer', 'wps office',
+  'wps writer', 'wps文字', 'wps office',
   'libreoffice writer', 'libre office writer', 'openoffice writer',
 ];
 const PRESENTATION_KEYWORDS = [
   'microsoft powerpoint', 'powerpoint', 'keynote',
-  'wps presentation', 'wps office',
+  'wps presentation', 'wps演示', 'wps office',
   'libreoffice impress', 'libre office impress', 'openoffice impress',
 ];
 const PDF_KEYWORDS = [
-  'preview', 'adobe acrobat', 'adobe reader',
+  'preview', '预览', 'adobe acrobat', 'adobe reader',
   'pdf expert', 'skim', 'foxit',
 ];
 
@@ -328,7 +330,7 @@ async function ensureBrowserProbeFile(): Promise<void> {
   try {
     await fs.promises.writeFile(
       BROWSER_APPS_PROBE_FILE,
-      '<!doctype html><meta charset="utf-8"><title>Maties browser probe</title>',
+      '<!doctype html><meta charset="utf-8"><title>LobsterAI browser probe</title>',
       'utf8',
     );
   } catch {
@@ -827,7 +829,7 @@ async function extractIcon(appInfo: AppInfo): Promise<string | null> {
 }
 
 async function icnsToPng(icnsPath: string): Promise<string | null> {
-  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'maties-app-icon-'));
+  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'lobsterai-app-icon-'));
   const pngPath = path.join(tmpDir, 'icon.png');
   try {
     await execFileAsync(

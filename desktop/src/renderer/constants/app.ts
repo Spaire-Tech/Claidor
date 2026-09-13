@@ -1,4 +1,4 @@
-export const APP_NAME = 'Maties';
-export const APP_ID = 'maties';
-export const EXPORT_FORMAT_TYPE = 'maties.providers';
-export const EXPORT_PASSWORD = 'maties-APP';
+export const APP_NAME = 'LobsterAI';
+export const APP_ID = 'lobsterai';
+export const EXPORT_FORMAT_TYPE = 'lobsterai.providers';
+export const EXPORT_PASSWORD = 'lobsterai-APP';

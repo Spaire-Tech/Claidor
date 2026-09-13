@@ -12,16 +12,14 @@ const MENU_TRIGGER_GAP_PX = 4;
 const MENU_ITEM_HEIGHT_PX = 36;
 const SUBMENU_MAX_VISIBLE_ITEMS = 4;
 
-// The menu style (docs/maties/design.md, section 1, Depth): blurred white,
-// radius 13, appearing with maties-in .14s.
 export const CARD_OVERFLOW_MENU_SURFACE_CLASSNAME =
-  'maties-menu';
+  'rounded-xl border border-border bg-surface py-1 shadow-popover';
 export const CARD_OVERFLOW_MENU_ITEM_CLASSNAME =
-  `maties-menu-item whitespace-nowrap ${MANAGEMENT_BODY_TEXT}`;
+  `flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left ${MANAGEMENT_BODY_TEXT} transition-colors hover:bg-black/[0.04] disabled:cursor-not-allowed disabled:opacity-45 dark:hover:bg-white/[0.05]`;
 export const CARD_OVERFLOW_MENU_SUBMENU_CLASSNAME =
-  'mx-1 mb-1 overflow-y-auto pl-2';
+  'mx-2 mb-1 overflow-y-auto pl-2';
 export const CARD_OVERFLOW_MENU_SUBITEM_CLASSNAME =
-  `maties-menu-item h-9 whitespace-nowrap ${MANAGEMENT_BODY_TEXT}`;
+  `flex h-9 w-full items-center gap-2 whitespace-nowrap rounded-md px-2 text-left ${MANAGEMENT_BODY_TEXT} transition-colors hover:bg-black/[0.04] disabled:cursor-not-allowed disabled:opacity-45 dark:hover:bg-white/[0.05]`;
 export const CARD_OVERFLOW_MENU_SUBMENU_MAX_HEIGHT_PX =
   SUBMENU_MAX_VISIBLE_ITEMS * MENU_ITEM_HEIGHT_PX;
 
@@ -158,7 +156,7 @@ const CardOverflowMenu: React.FC<CardOverflowMenuProps> = ({
             return (
               <div
                 key={item.key}
-                className={item.separatorBefore ? 'maties-hairline-top mt-1 pt-1' : ''}
+                className={item.separatorBefore ? 'mt-1 border-t border-border pt-1' : ''}
               >
                 <button
                   type="button"
@@ -186,8 +184,9 @@ const CardOverflowMenu: React.FC<CardOverflowMenuProps> = ({
                     setIsOpen(false);
                     item.onSelect?.();
                   }}
-                  data-danger={item.destructive ? 'true' : undefined}
-                  className={CARD_OVERFLOW_MENU_ITEM_CLASSNAME}
+                  className={`${CARD_OVERFLOW_MENU_ITEM_CLASSNAME} ${
+                    item.destructive ? 'text-red-500 dark:text-red-400' : 'text-foreground'
+                  }`}
                 >
                   {item.icon}
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
@@ -219,8 +218,9 @@ const CardOverflowMenu: React.FC<CardOverflowMenuProps> = ({
                           setIsOpen(false);
                           child.onSelect?.();
                         }}
-                        data-danger={child.destructive ? 'true' : undefined}
-                        className={CARD_OVERFLOW_MENU_SUBITEM_CLASSNAME}
+                        className={`${CARD_OVERFLOW_MENU_SUBITEM_CLASSNAME} ${
+                          child.destructive ? 'text-red-500 dark:text-red-400' : 'text-foreground'
+                        }`}
                       >
                         {child.icon}
                         <span className="min-w-0 flex-1 truncate">{child.label}</span>

@@ -49,7 +49,7 @@ export interface MainLogUrlContext {
 }
 
 const logCommons = {
-  _npid: LogReporterProduct.Maties,
+  _npid: LogReporterProduct.LobsterAI,
   _ncat: LogReporterCategory.Actions,
 } as const;
 
@@ -69,7 +69,7 @@ export const buildMainLogUrl = (
   params: MainLogEventParams,
   context: MainLogUrlContext,
 ): string => {
-  const url = new URL(LogReporterEndpoint.Claidor);
+  const url = new URL(LogReporterEndpoint.YoudaoAnalyzer);
   const logParams: Record<string, LogParamValue> = {
     ...params,
     ...logCommons,
@@ -113,8 +113,8 @@ export class MainLogReporter {
       return false;
     }
 
-    if (!params.action.startsWith(LogReporterActionPrefix.Maties)) {
-      console.warn('[MainLogReporter] skipped an event without the Maties action prefix');
+    if (!params.action.startsWith(LogReporterActionPrefix.LobsterAI)) {
+      console.warn('[MainLogReporter] skipped an event without the LobsterAI action prefix');
       return false;
     }
 

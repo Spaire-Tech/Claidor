@@ -11,13 +11,14 @@ import {
   ModelRuntimeProfile,
   type ModelThinkingConfig,
   type ModelThinkingLevel as ModelThinkingLevelType,
-  supportsMatiesRequestOptionsV1,
+  ProviderName,
+  supportsLobsterAIRequestOptionsV1,
 } from '@shared/providers';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { getProviderIcon } from '../providers/uiRegistry';
+import { getProviderIcon, ProviderIconId } from '../providers/uiRegistry';
 import { authService } from '../services/auth';
 import { i18nService } from '../services/i18n';
 import {
@@ -27,9 +28,7 @@ import {
 import { RootState } from '../store';
 import type { Model } from '../store/slices/modelSlice';
 import { getModelIdentityKey, isSameModelIdentity, setSelectedModel } from '../store/slices/modelSlice';
-import { resolveModelIconProviderKey } from '../utils/modelProviderHint';
 import Modal from './common/Modal';
-import { formatCostMultiplier } from './modelCostMultiplier';
 import ModelThinkingMenu, {
   getModelThinkingLevelLabel,
 } from './modelSelector/ModelThinkingMenu';
@@ -49,8 +48,6 @@ interface ModelSelectorProps {
   disabled?: boolean;
   /** Use a denser trigger for compact toolbars. */
   compact?: boolean;
-  /** The composer's model chip (docs/maties/design.md, section 2): provider mark, name, chevron. */
-  chip?: boolean;
   /** Render the dropdown outside the local stacking context. */
   portal?: boolean;
   /** Align the dropdown's trailing edge with the trigger's trailing edge. */
@@ -361,7 +358,7 @@ export function canConfigureModelThinking(
   > | null | undefined,
 ): boolean {
   return !!model?.thinkingConfig
-    && supportsMatiesRequestOptionsV1(model.requestCapabilities)
+    && supportsLobsterAIRequestOptionsV1(model.requestCapabilities)
     && model.accessible !== false
     && !isModelAgenticBlocked(model);
 }
@@ -370,9 +367,21 @@ export function supportsConfigurableModelThinkingProtocol(
   model: Pick<Model, 'requestCapabilities' | 'thinkingConfig'> | null | undefined,
 ): boolean {
   return !!model?.thinkingConfig
-    && supportsMatiesRequestOptionsV1(model.requestCapabilities);
+    && supportsLobsterAIRequestOptionsV1(model.requestCapabilities);
 }
 
+const MODEL_ICON_PROVIDER_HINTS: Array<{ pattern: RegExp; providerName: ProviderName | ProviderIconId }> = [
+  { pattern: /doubao|豆包/i, providerName: ProviderIconId.Doubao },
+  { pattern: /deepseek/i, providerName: ProviderName.DeepSeek },
+  { pattern: /minimax/i, providerName: ProviderName.Minimax },
+  { pattern: /kimi|moonshot/i, providerName: ProviderName.Moonshot },
+  { pattern: /glm|zhipu/i, providerName: ProviderName.Zhipu },
+  { pattern: /qwen|qwq|qvq/i, providerName: ProviderName.Qwen },
+  { pattern: /claude|anthropic/i, providerName: ProviderName.Anthropic },
+  { pattern: /gemini/i, providerName: ProviderName.Gemini },
+  { pattern: /gpt|openai/i, providerName: ProviderName.OpenAI },
+  { pattern: /hy3|youdao/i, providerName: ProviderName.Youdaozhiyun },
+];
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
   dropdownDirection = 'auto',
@@ -381,7 +390,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   defaultLabel,
   disabled = false,
   compact = false,
-  chip = false,
   portal = false,
   alignDropdownToTriggerEnd = false,
   triggerMaxWidthClassName,
@@ -467,35 +475,34 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     ? `${selectedModel.providerKey ?? ''}:${selectedModel.id}`
     : '';
   const selectedModelUnavailableFallbackLogKeyRef = React.useRef('');
-  const triggerMaxWidthClass = triggerMaxWidthClassName ?? (compact || chip ? 'max-w-[220px]' : 'max-w-[280px]');
-  const triggerClassName = chip
-    ? `h-8 gap-[7px] rounded-full px-[10px] ${triggerMaxWidthClass}`
-    : compact
-      ? `space-x-1.5 px-2 py-1 rounded-lg ${triggerMaxWidthClass}`
-      : `space-x-2 px-3 py-1.5 rounded-xl ${triggerMaxWidthClass}`;
-  const triggerTextClassName = chip
-    ? 'font-normal text-[13.5px] leading-5 tracking-[-.006em] text-[#4a4f57]'
-    : compact
-      ? 'font-normal text-[13px] leading-5'
-      : 'font-medium text-sm';
-  const triggerIconClassName = chip ? 'h-[11px] w-[11px] text-[#a2a29c]' : compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
-  const triggerHoverClassName = chip ? 'hover:bg-[#f3f3f1]' : 'hover:bg-surface-raised';
-  const triggerOpenClassName = chip ? 'bg-[#f3f3f1]' : 'bg-surface-raised';
-  const triggerMarkClassName = chip
-    ? 'flex h-[14px] w-[14px] shrink-0 items-center justify-center'
-    : 'flex h-[18px] w-[18px] shrink-0 items-center justify-center text-secondary';
-  const renderProviderIcon = (model: Model, sizeClassName: string = MODEL_ICON_CLASS_NAME): React.ReactNode => {
+  const triggerMaxWidthClass = triggerMaxWidthClassName ?? (compact ? 'max-w-[220px]' : 'max-w-[280px]');
+  const triggerClassName = compact
+    ? `space-x-1.5 px-2 py-1 rounded-lg ${triggerMaxWidthClass}`
+    : `space-x-2 px-3 py-1.5 rounded-xl ${triggerMaxWidthClass}`;
+  const triggerTextClassName = compact
+    ? 'font-normal text-[13px] leading-5'
+    : 'font-medium text-sm';
+  const triggerIconClassName = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
+  const resolveModelIconProviderKey = (model: Model): string => {
+    const providerKey = model.providerKey?.trim();
+    if (providerKey && providerKey !== ProviderName.LobsteraiServer) return providerKey;
+
+    const searchableText = `${model.name} ${model.id}`;
+    return MODEL_ICON_PROVIDER_HINTS.find(({ pattern }) => pattern.test(searchableText))?.providerName
+      ?? providerKey
+      ?? '';
+  };
+  const renderProviderIcon = (model: Model): React.ReactNode => {
     const icon = getProviderIcon(resolveModelIconProviderKey(model));
     if (!React.isValidElement<{ className?: string }>(icon)) return icon;
 
     const existingClassName = icon.props.className ? `${icon.props.className} ` : '';
     return React.cloneElement(icon, {
-      className: `${existingClassName}${sizeClassName}`,
+      className: `${existingClassName}${MODEL_ICON_CLASS_NAME}`,
     });
   };
-  const triggerMarkSizeClassName = chip ? 'h-[14px] w-[14px]' : MODEL_ICON_CLASS_NAME;
 
-  // Close the dropdown when clicking outside
+  // 点击外部区域关闭下拉框
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -795,7 +802,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     showSelectedModelUnavailableFallback,
   ]);
 
-  // Show a hint when no models are available
+  // 如果没有可用模型，显示提示
   if (availableModels.length === 0) {
     if (showSelectedModelUnavailableFallback) {
       return (
@@ -806,8 +813,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             aria-disabled="true"
             className={`flex min-w-0 items-center overflow-hidden text-foreground transition-colors disabled:cursor-wait disabled:opacity-70 ${triggerClassName}`}
           >
-            <span className={triggerMarkClassName}>
-              {renderProviderIcon(selectedModel, triggerMarkSizeClassName)}
+            <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center text-secondary">
+              {renderProviderIcon(selectedModel)}
             </span>
             <span className={`${triggerTextClassName} min-w-0 truncate`}>{selectedModel.name}</span>
             <ChevronDownIcon className={`${triggerIconClassName} shrink-0 dark:text-claude-darkTextSecondary text-claude-textSecondary`} />
@@ -965,7 +972,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         )}
         {model.costMultiplier != null && model.costMultiplier > 0 && (
           <span className="shrink-0 text-[11px] text-secondary whitespace-nowrap">
-            x{formatCostMultiplier(model.costMultiplier)}
+            x{model.costMultiplier}
           </span>
         )}
         <span className="flex-1" />
@@ -1053,7 +1060,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         )}
         {hoveredModel.costMultiplier != null && hoveredModel.costMultiplier > 0 && (
           <div className="mt-2 text-[11px] text-secondary">
-            ({i18nService.t('modelCostMultiplierLabel')} x{formatCostMultiplier(hoveredModel.costMultiplier)})
+            ({i18nService.t('modelCostMultiplierLabel')} x{hoveredModel.costMultiplier})
           </div>
         )}
         {(hoveredModel.supportsImage || hoveredModel.supportsThinking) && (
@@ -1235,11 +1242,11 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         type="button"
         disabled={disabled}
         onClick={toggleOpen}
-        className={`flex min-w-0 items-center overflow-hidden ${triggerHoverClassName} text-foreground transition-colors disabled:opacity-70 disabled:cursor-wait ${triggerClassName} ${isOpen ? triggerOpenClassName : ''}`}
+        className={`flex min-w-0 items-center overflow-hidden hover:bg-surface-raised text-foreground transition-colors disabled:opacity-70 disabled:cursor-wait ${triggerClassName} ${isOpen ? 'bg-surface-raised' : ''}`}
       >
-        {selectedModel && (selectedModel.isServerModel || chip) && (
-          <span className={triggerMarkClassName}>
-            {renderProviderIcon(selectedModel, triggerMarkSizeClassName)}
+        {selectedModel?.isServerModel && (
+          <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center text-secondary">
+            {renderProviderIcon(selectedModel)}
           </span>
         )}
         <span className={`${triggerTextClassName} min-w-0 truncate`}>{selectedModel?.name ?? defaultLabel ?? ''}</span>

@@ -34,7 +34,7 @@ export type LogEventParams = Record<string, LogParamValue> & {
 };
 
 const logCommons = {
-  _npid: LogReporterProduct.Maties,
+  _npid: LogReporterProduct.LobsterAI,
   _ncat: LogReporterCategory.Actions,
 } as const;
 
@@ -193,7 +193,7 @@ export const buildLogUrl = (
   params: LogEventParams,
   options: BuildLogUrlOptions = {},
 ): string => {
-  const url = new URL(LogReporterEndpoint.Claidor);
+  const url = new URL(LogReporterEndpoint.YoudaoAnalyzer);
   const config = configService.getConfig();
   const identity = getAnalyticsIdentitySnapshot();
   const userId = options.userId ?? identity.userId;
@@ -345,8 +345,8 @@ export const reportYdAnalyzer = async (
     return false;
   }
 
-  if (!params.action.startsWith(LogReporterActionPrefix.Maties)) {
-    writeReporterLog('warn', 'skipped an event without the Maties action prefix');
+  if (!params.action.startsWith(LogReporterActionPrefix.LobsterAI)) {
+    writeReporterLog('warn', 'skipped an event without the LobsterAI action prefix');
     return false;
   }
 

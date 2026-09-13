@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Apply version-specific Maties patches to the openclaw source tree.
+ * Apply version-specific LobsterAI patches to the openclaw source tree.
  *
  * Patches are organised in scripts/patches/<version>/ directories, where
  * <version> matches the "openclaw.version" field in package.json (e.g.
@@ -11,7 +11,7 @@
  *   node scripts/apply-openclaw-patches.cjs [openclaw-src-dir]
  *
  * If openclaw-src-dir is not specified, OPENCLAW_SRC is used when present,
- * otherwise the source defaults to ../openclaw relative to the Maties
+ * otherwise the source defaults to ../openclaw relative to the LobsterAI
  * project root.
  *
  * Safe to run multiple times — already-applied patches are skipped.
@@ -195,11 +195,11 @@ const strongPatchValidators = {
       ],
     },
   ],
-  'openclaw-maties-model-compat-api.patch': [
+  'openclaw-lobsterai-model-compat-api.patch': [
     {
       file: 'src/config/types.models.ts',
       snippets: [
-        'MATIES_MODEL_COMPAT_API = "maties-model-compat"',
+        'LOBSTERAI_MODEL_COMPAT_API = "lobsterai-model-compat"',
         'export const MODEL_TRANSPORT_APIS',
         'api?: ModelTransportApi',
       ],
@@ -215,7 +215,7 @@ const strongPatchValidators = {
       file: 'src/agents/embedded-agent-runner/model.inline-provider.test.ts',
       snippets: [
         'keeps a provider API owner out of model transport resolution',
-        'api: "maties-model-compat"',
+        'api: "lobsterai-model-compat"',
       ],
     },
     {
@@ -469,7 +469,7 @@ function assertStrongPatchApplied(patchFile) {
 }
 
 // Reset openclaw source to a clean tag state before applying patches.
-// This removes stale patches left by a different Maties branch that may have
+// This removes stale patches left by a different LobsterAI branch that may have
 // applied different patches for the same openclaw version.
 try {
   execFileSync('git', ['reset', 'HEAD', '.'], { cwd: openclawSrc, stdio: 'pipe' });
@@ -492,7 +492,7 @@ for (const patchFile of patchFiles) {
   const needsNormalize = raw.includes('\r');
   let patchPath = originalPatchPath;
   if (needsNormalize) {
-    patchPath = path.join(os.tmpdir(), `maties-patch-${patchFile}`);
+    patchPath = path.join(os.tmpdir(), `lobsterai-patch-${patchFile}`);
     fs.writeFileSync(patchPath, raw.replace(/\r/g, ''), 'utf8');
   }
 

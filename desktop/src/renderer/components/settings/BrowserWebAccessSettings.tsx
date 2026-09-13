@@ -39,7 +39,7 @@ const SettingRow: React.FC<{
   <div>
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
-        <h4 className="maties-row-title">{title}</h4>
+        <h4 className="text-sm font-medium text-foreground">{title}</h4>
         {description ? <div className="mt-1 text-sm text-secondary">{description}</div> : null}
         {children ? <div className="mt-3">{children}</div> : null}
       </div>
@@ -58,33 +58,33 @@ const HostnameList: React.FC<{
   <section className="space-y-2">
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <h4 className="maties-row-title">{title}</h4>
-        <p className="maties-row-desc">{description}</p>
+        <h4 className="text-sm font-medium text-foreground">{title}</h4>
+        <p className="mt-1 text-sm text-secondary">{description}</p>
       </div>
       <button
         type="button"
         onClick={onAdd}
-        className="maties-pill-sm shrink-0"
+        className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-surface-raised px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
       >
         <PlusIcon className="h-4 w-4" />
         {i18nService.t('add')}
       </button>
     </div>
 
-    <div className="maties-card-row overflow-hidden">
+    <div className="overflow-hidden rounded-lg border border-border bg-background">
       {hostnames.length > 0 ? (
         hostnames.map((hostname, index) => (
           <div
             key={hostname}
-            className={`flex min-h-12 items-center justify-between gap-3 px-4 py-2 ${
-              index > 0 ? 'maties-hairline-top' : ''
+            className={`flex min-h-12 items-center justify-between gap-3 px-3 py-2 ${
+              index > 0 ? 'border-t border-border' : ''
             }`}
           >
-            <span className="maties-mono truncate text-[13px] text-[#1c1f23] dark:text-[#f2f3f5]">{hostname}</span>
+            <span className="truncate text-sm text-foreground">{hostname}</span>
             <button
               type="button"
               onClick={() => onRemove(hostname)}
-              className="maties-icon-button h-7 w-7 hover:text-[#e0322d]"
+              className="rounded-md p-1 text-secondary transition-colors hover:bg-surface-raised hover:text-red-500"
               title={i18nService.t('delete')}
             >
               <TrashIcon className="h-4 w-4" />
@@ -92,7 +92,7 @@ const HostnameList: React.FC<{
           </div>
         ))
       ) : (
-        <div className="maties-caption px-4 py-3">
+        <div className="px-3 py-3 text-sm text-secondary">
           {i18nService.t('browserHostnameListEmpty')}
         </div>
       )}
@@ -290,18 +290,18 @@ const BrowserWebAccessSettings: React.FC<BrowserWebAccessSettingsProps> = ({
         <Modal
           onClose={closeHostnameDialog}
           onEscape={closeHostnameDialog}
-          overlayClassName="maties-backdrop fixed inset-0 z-[60] flex items-center justify-center"
-          className="maties-card-prose maties-in w-full max-w-[420px] p-6"
+          overlayClassName="fixed inset-0 z-[60] flex items-center justify-center bg-black/25"
+          className="w-full max-w-[420px] rounded-2xl border border-border bg-background p-5 shadow-modal"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="maties-row-title text-[15.5px]">{hostnameDialogTitle}</h3>
-              <p className="maties-row-desc">{hostnameDialogDescription}</p>
+              <h3 className="text-base font-semibold text-foreground">{hostnameDialogTitle}</h3>
+              <p className="mt-2 text-sm text-secondary">{hostnameDialogDescription}</p>
             </div>
             <button
               type="button"
               onClick={closeHostnameDialog}
-              className="maties-icon-button -mr-2 -mt-1"
+              className="rounded-md p-1 text-secondary transition-colors hover:bg-surface-raised hover:text-foreground"
             >
               <XMarkIcon className="h-4 w-4" />
             </button>
@@ -319,14 +319,14 @@ const BrowserWebAccessSettings: React.FC<BrowserWebAccessSettingsProps> = ({
               }
             }}
             placeholder={i18nService.t('browserHostnameInputPlaceholder')}
-            className="maties-input mt-4"
+            className="mt-4 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-secondary focus:border-primary focus:ring-1 focus:ring-primary/40"
           />
 
-          <div className="mt-5 flex items-center justify-end gap-2">
+          <div className="mt-4 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={closeHostnameDialog}
-              className="maties-pill-sm is-ghost"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised"
             >
               {i18nService.t('cancel')}
             </button>
@@ -334,7 +334,7 @@ const BrowserWebAccessSettings: React.FC<BrowserWebAccessSettingsProps> = ({
               type="button"
               onClick={submitHostnameDialog}
               disabled={!canAddHostname}
-              className="maties-pill-sm is-primary"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-white"
             >
               {i18nService.t('add')}
             </button>

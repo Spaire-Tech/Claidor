@@ -1,12 +1,12 @@
 # IMAP/SMTP Email Skill
 
-Read and send email via IMAP/SMTP protocol. Works with any IMAP/SMTP server including Gmail and Outlook / Microsoft 365.
+Read and send email via IMAP/SMTP protocol. Works with any IMAP/SMTP server including Gmail, Outlook, 163.com, vip.163.com, 126.com, vip.126.com, 188.com, and vip.188.com.
 
 ## Quick Setup
 
-1. **Configure accounts in Maties Settings > Email.**
+1. **Configure accounts in LobsterAI Settings > Email.**
 
-Maties writes `accounts.json` for multi-account setups. Existing `.env` files are still read as a legacy single-account fallback.
+LobsterAI writes `accounts.json` for multi-account setups. Existing `.env` files are still read as a legacy single-account fallback.
 
 Optional legacy `.env` format:
 
@@ -125,15 +125,20 @@ Sending is blocked unless `--confirmed` is passed after the user confirms recipi
 
 | Provider | IMAP Host | IMAP Port | SMTP Host | SMTP Port |
 |----------|-----------|-----------|-----------|-----------|
-| Gmail | imap.gmail.com | 993 | smtp.gmail.com | 587 (STARTTLS) or 465 (SSL) |
-| Outlook / Microsoft 365 | outlook.office365.com | 993 | smtp.office365.com | 587 |
+| 163.com | imap.163.com | 993 | smtp.163.com | 465 |
+| vip.163.com | imap.vip.163.com | 993 | smtp.vip.163.com | 465 |
+| 126.com | imap.126.com | 993 | smtp.126.com | 465 |
+| vip.126.com | imap.vip.126.com | 993 | smtp.vip.126.com | 465 |
+| 188.com | imap.188.com | 993 | smtp.188.com | 465 |
+| vip.188.com | imap.vip.188.com | 993 | smtp.vip.188.com | 465 |
+| yeah.net | imap.yeah.net | 993 | smtp.yeah.net | 465 |
+| Gmail | imap.gmail.com | 993 | smtp.gmail.com | 587 |
+| Outlook | outlook.office365.com | 993 | smtp.office365.com | 587 |
+| QQ Mail | imap.qq.com | 993 | smtp.qq.com | 587 |
 
-**Important for Gmail:**
-- Use an **App Password** (requires 2-Step Verification), not the account password
-- Enable IMAP in Gmail settings first
-
-**Important for Outlook / Microsoft 365:**
-- Use an app password if the account has multi-factor authentication enabled
+**Important for 163.com:**
+- Use **authorization code** (授权码), not account password
+- Enable IMAP/SMTP in web settings first
 
 ## Configuration Options
 
@@ -163,8 +168,8 @@ Sending is blocked unless `--confirmed` is passed after the user confirms recipi
 - Check host/port settings in `.env`
 
 **Authentication failed:**
-- For Gmail: Use an App Password (not the account password) if 2-Step Verification is enabled
-- For Outlook / Microsoft 365: Use an app password if MFA is enabled
+- For Gmail: Use App Password (not account password if 2FA enabled)
+- For 163.com: Use authorization code (授权码), not account password
 
 **TLS/SSL errors:**
 - For self-signed certs: Set `IMAP_REJECT_UNAUTHORIZED=false` or `SMTP_REJECT_UNAUTHORIZED=false`
@@ -172,7 +177,7 @@ Sending is blocked unless `--confirmed` is passed after the user confirms recipi
 ## Files
 
 - `SKILL.md` - Skill documentation
-- `accounts.json` - Multi-account credentials managed by Maties Settings
+- `accounts.json` - Multi-account credentials managed by LobsterAI Settings
 - `scripts/imap.js` - IMAP CLI tool
 - `scripts/smtp.js` - SMTP CLI tool
 - `package.json` - Node.js dependencies

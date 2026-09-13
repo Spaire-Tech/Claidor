@@ -32,6 +32,7 @@ export type CoworkImageAttachmentPreview = {
 
 /** Historical transport images predate the role marker; match their fixed name pattern. */
 const LEGACY_BROWSER_ANNOTATION_IMAGE_NAME_PREFIXES = [
+  '浏览器注释截图-',
   'Browser annotation screenshot-',
 ];
 

@@ -12,7 +12,7 @@ export const LibrarySourceFilter = {
 export type LibrarySourceFilter = typeof LibrarySourceFilter[keyof typeof LibrarySourceFilter];
 
 export const LibraryNavigationEvent = {
-  OpenCloud: 'maties:library-open-cloud',
+  OpenCloud: 'lobsterai:library-open-cloud',
 } as const;
 
 export type LibraryNavigationEvent =

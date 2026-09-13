@@ -8,7 +8,7 @@ afterEach(() => {
 test('repair language application refreshes the splash hint without rewriting config', async () => {
   const setItem = vi.fn();
   vi.stubGlobal('localStorage', { getItem: vi.fn(() => null), setItem });
-  vi.stubGlobal('navigator', { language: 'fr-FR' });
+  vi.stubGlobal('navigator', { language: 'zh-CN' });
   vi.doMock('./config', () => ({
     configService: {
       getConfig: vi.fn(),
@@ -19,7 +19,7 @@ test('repair language application refreshes the splash hint without rewriting co
 
   i18nService.setLanguage('en', { persist: false });
 
-  expect(setItem).toHaveBeenCalledWith('maties-language', 'en');
+  expect(setItem).toHaveBeenCalledWith('lobster-language', 'en');
 });
 
 test('a late older initialization cannot replace the newest locale result', async () => {
@@ -27,11 +27,11 @@ test('a late older initialization cannot replace the newest locale result', asyn
   const firstLocale = new Promise<string>((resolve) => { resolveFirstLocale = resolve; });
   const getSystemLocale = vi.fn()
     .mockImplementationOnce(() => firstLocale)
-    .mockResolvedValueOnce('fr-FR');
+    .mockResolvedValueOnce('zh-CN');
   const updateConfig = vi.fn(async () => undefined);
   const setItem = vi.fn();
   vi.stubGlobal('localStorage', { getItem: vi.fn(() => null), setItem });
-  vi.stubGlobal('navigator', { language: 'fr-FR' });
+  vi.stubGlobal('navigator', { language: 'zh-CN' });
   vi.stubGlobal('window', {
     electron: { appInfo: { getSystemLocale } },
   });
@@ -48,15 +48,13 @@ test('a late older initialization cannot replace the newest locale result', asyn
   resolveFirstLocale?.('en-US');
   await olderInitialization;
 
-  // Maties is English-only: every locale lookup resolves to 'en', and only the
-  // newest initialization may persist the result.
-  expect(i18nService.getLanguage()).toBe('en');
+  expect(i18nService.getLanguage()).toBe('zh');
   expect(updateConfig).toHaveBeenCalledTimes(1);
   expect(updateConfig).toHaveBeenCalledWith({
-    language: 'en',
+    language: 'zh',
     language_initialized: true,
   });
-  expect(setItem).toHaveBeenLastCalledWith('maties-language', 'en');
+  expect(setItem).toHaveBeenLastCalledWith('lobster-language', 'zh');
 });
 
 test('repair language wins over a locale lookup that completes late', async () => {
@@ -65,7 +63,7 @@ test('repair language wins over a locale lookup that completes late', async () =
   const updateConfig = vi.fn(async () => undefined);
   const setItem = vi.fn();
   vi.stubGlobal('localStorage', { getItem: vi.fn(() => null), setItem });
-  vi.stubGlobal('navigator', { language: 'fr-FR' });
+  vi.stubGlobal('navigator', { language: 'zh-CN' });
   vi.stubGlobal('window', {
     electron: { appInfo: { getSystemLocale: vi.fn(() => locale) } },
   });
@@ -78,11 +76,11 @@ test('repair language wins over a locale lookup that completes late', async () =
   const { i18nService } = await import('./i18n');
 
   const pendingInitialization = i18nService.initialize();
-  i18nService.setLanguage('en', { persist: false });
+  i18nService.setLanguage('zh', { persist: false });
   resolveLocale?.('en-US');
   await pendingInitialization;
 
-  expect(i18nService.getLanguage()).toBe('en');
+  expect(i18nService.getLanguage()).toBe('zh');
   expect(updateConfig).not.toHaveBeenCalled();
-  expect(setItem).toHaveBeenLastCalledWith('maties-language', 'en');
+  expect(setItem).toHaveBeenLastCalledWith('lobster-language', 'zh');
 });

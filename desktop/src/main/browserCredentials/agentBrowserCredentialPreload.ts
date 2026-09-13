@@ -40,8 +40,8 @@ const usernameScore = (input: HTMLInputElement): number => {
   let score = 0;
   if (input.autocomplete === 'username') score += 100;
   if (type === 'email') score += 50;
-  if (/user|email|account|login|phone|mobile/.test(text)) score += 30;
-  if (/search|query|coupon|promo|verification|captcha|otp/.test(text)) score -= 100;
+  if (/user|email|account|login|phone|mobile|用户名|邮箱|账号|手机号/.test(text)) score += 30;
+  if (/search|query|coupon|promo|验证码|verification|captcha|otp/.test(text)) score -= 100;
   return score;
 };
 
@@ -55,7 +55,7 @@ const findUsernameInput = (inputs: HTMLInputElement[]): HTMLInputElement | undef
 const hasMfaInput = (inputs: HTMLInputElement[]): boolean => inputs.some(input => {
   const text = fieldText(input);
   return input.autocomplete === 'one-time-code'
-    || /\botp\b|one.?time|two.?factor|2fa|verification.?code|authenticator|security.?code/.test(text);
+    || /\botp\b|one.?time|two.?factor|2fa|verification.?code|authenticator|动态码|验证码/.test(text);
 });
 
 const hasCaptcha = (): boolean => Boolean(document.querySelector([
@@ -101,7 +101,7 @@ const clickBestSubmit = (input: HTMLInputElement): boolean => {
         && rect.width > 0
         && rect.height > 0;
     });
-  const preferred = candidates.find(element => /sign.?in|log.?in|continue|next|submit|confirm/i.test(
+  const preferred = candidates.find(element => /sign.?in|log.?in|continue|next|submit|登录|继续|下一步|确认/i.test(
     element instanceof HTMLInputElement
       ? element.value
       : `${element.textContent ?? ''} ${element.getAttribute('aria-label') ?? ''}`,

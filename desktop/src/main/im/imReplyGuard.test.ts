@@ -1,13 +1,12 @@
-import { expect,test } from 'vitest';
-
-import { analyzeIMReply, FAILED_REMINDER_FAILURE_REPLY,UNSCHEDULED_REMINDER_FAILURE_REPLY } from './imReplyGuard';
+import { test, expect } from 'vitest';
+import { analyzeIMReply, UNSCHEDULED_REMINDER_FAILURE_REPLY, FAILED_REMINDER_FAILURE_REPLY } from './imReplyGuard';
 
 test('guards IM reminder commitment when no cron.add succeeded', () => {
   const analysis = analyzeIMReply([
     {
       id: 'assistant-1',
       type: 'assistant',
-      content: "Sure, in 2 minutes I'll remind you to have a drink.",
+      content: '好的，2分钟后会提醒你喝饮料。',
       timestamp: Date.now(),
       metadata: {},
     },
@@ -45,7 +44,7 @@ test('preserves reminder reply when cron.add completed successfully', () => {
     {
       id: 'assistant-1',
       type: 'assistant',
-      content: "Sure, in 2 minutes I'll remind you to have a drink.",
+      content: '好的，2分钟后会提醒你喝饮料。',
       timestamp: Date.now(),
       metadata: {},
     },
@@ -53,7 +52,7 @@ test('preserves reminder reply when cron.add completed successfully', () => {
 
   expect(analysis.guardApplied).toBe(false);
   expect(analysis.successfulCronAdds).toBe(1);
-  expect(analysis.text).toBe("Sure, in 2 minutes I'll remind you to have a drink.");
+  expect(analysis.text).toBe('好的，2分钟后会提醒你喝饮料。');
 });
 
 test('returns explicit failure when cron.add was attempted but failed', () => {
@@ -84,7 +83,7 @@ test('returns explicit failure when cron.add was attempted but failed', () => {
     {
       id: 'assistant-1',
       type: 'assistant',
-      content: "Scheduled task created successfully! When the time comes, I'll automatically remind you.",
+      content: '定时任务创建成功！到时间后我会自动提醒你。',
       timestamp: Date.now(),
       metadata: {},
     },
@@ -101,12 +100,12 @@ test('does not guard normal non-reminder assistant replies', () => {
     {
       id: 'assistant-1',
       type: 'assistant',
-      content: 'Cloudy in Shanghai today, 18 to 24 degrees.',
+      content: '今天上海多云，气温 18 到 24 度。',
       timestamp: Date.now(),
       metadata: {},
     },
   ]);
 
   expect(analysis.guardApplied).toBe(false);
-  expect(analysis.text).toBe('Cloudy in Shanghai today, 18 to 24 degrees.');
+  expect(analysis.text).toBe('今天上海多云，气温 18 到 24 度。');
 });

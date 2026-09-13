@@ -105,6 +105,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
   onTestConnectivity,
   testingPlatform,
   connectivityResults,
+  language,
   headerLeading,
 }) => {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -321,7 +322,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || 'Add'}
+                {i18nService.t('add') || '添加'}
               </button>
             </div>
             {instance.allowFrom.length > 0 && (
@@ -408,7 +409,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                   }}
                   className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                 >
-                  {i18nService.t('add') || 'Add'}
+                  {i18nService.t('add') || '添加'}
                 </button>
               </div>
               {instance.groupAllowFrom.length > 0 && (
@@ -440,7 +441,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
           {/* Per-Guild Settings */}
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-secondary">
-              {'Per-Guild Settings'}
+              {language === 'zh' ? 'Guild 独立配置' : 'Per-Guild Settings'}
             </label>
             <div className="flex gap-2">
               <input
@@ -475,7 +476,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || 'Add'}
+                {i18nService.t('add') || '添加'}
               </button>
             </div>
             {Object.keys(instance.guilds).length > 0 && (
@@ -504,7 +505,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                         type="button"
                         onClick={() => handleGuildConfigChange(guildId, { requireMention: !guildCfg.requireMention })}
                         className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                          guildCfg.requireMention ? 'bg-primary' : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
+                          guildCfg.requireMention ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
                         }`}
                       >
                         <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
@@ -515,7 +516,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                     {/* Guild-level systemPrompt */}
                     <div className="space-y-1">
                       <label className="text-xs text-secondary">
-                        {'System Prompt'}
+                        {language === 'zh' ? '系统提示词' : 'System Prompt'}
                       </label>
                       <textarea
                         value={guildCfg.systemPrompt ?? ''}
@@ -527,7 +528,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                         onBlur={() => void onSave()}
                         rows={2}
                         className="block w-full rounded-lg bg-surface border-border-subtle border focus:border-primary focus:ring-1 focus:ring-primary/30 text-foreground px-3 py-2 text-xs transition-colors resize-y"
-                        placeholder={'Custom system prompt for this guild (optional)'}
+                        placeholder={language === 'zh' ? '该 Guild 专属系统提示词（可选）' : 'Custom system prompt for this guild (optional)'}
                       />
                     </div>
                   </div>
@@ -617,7 +618,7 @@ const DiscordInstanceSettings: React.FC<DiscordInstanceSettingsProps> = ({
                 void onSave(update);
               }}
               className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                instance.debug ? 'bg-primary' : 'bg-[#d9dbe0] dark:bg-[#3a3f48]'
+                instance.debug ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
               }`}
             >
               <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${

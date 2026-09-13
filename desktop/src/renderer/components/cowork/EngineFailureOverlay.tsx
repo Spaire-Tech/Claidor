@@ -1,3 +1,4 @@
+import { ArrowPathIcon, ChevronDownIcon, ExclamationTriangleIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
 
 import { OpenClawEngineErrorCode, OpenClawGatewayRepairErrorCode } from '../../../shared/openclawEngine/constants';
@@ -5,8 +6,6 @@ import { coworkService } from '../../services/cowork';
 import { i18nService } from '../../services/i18n';
 import { LogReporterAction, reportYdAnalyzer } from '../../services/logReporter';
 import type { OpenClawEngineStatus, OpenClawGatewayRepairResult } from '../../types/cowork';
-import Pill, { PillTone } from '../design/Pill';
-import Sphere from '../design/Sphere';
 import type { SettingsOpenOptions } from '../Settings';
 
 interface EngineFailureOverlayProps {
@@ -24,12 +23,6 @@ const resolveGatewayRepairErrorText = (result: OpenClawGatewayRepairResult): str
   return result.error?.trim() || i18nService.t('openClawRepairFailed');
 };
 
-/**
- * The engine did not start (docs/maties/design.md, section 6): the plain
- * reason and « Try again ». Repairing (rebuild the engine's settings, then
- * start) stays as the second pill; the exact error, when there is one, sits
- * in mono under the sentence.
- */
 const EngineFailureOverlay: React.FC<EngineFailureOverlayProps> = ({
   onRequestAppSettings,
   suspended = false,
@@ -116,29 +109,34 @@ const EngineFailureOverlay: React.FC<EngineFailureOverlayProps> = ({
 
   // Incomplete installation (runtime files missing): rebuilding the OpenClaw
   // config cannot help. Quick repair still retries recovery from leftover
-  // installer resources, but the honest fix is reinstalling.
+  // installer resources, but the honest fix is allowlist + reinstall.
   const isRuntimeMissing = status.errorCode === OpenClawEngineErrorCode.RuntimeEntryMissing;
-  const busy = isRestartingGateway || isRepairingGateway;
 
   if (isDeferred) {
     return (
       <div className="pointer-events-none fixed inset-x-0 top-4 z-[90] flex justify-center px-4">
-        <div className="maties-menu maties-in pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-1 py-1 pl-3 pr-1">
+        <div className="pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-1.5 rounded-full border border-red-200 bg-surface py-1 pl-3 pr-1 shadow-lg animate-fade-in-down dark:border-red-900/60">
           <button
             type="button"
             onClick={() => setIsDeferred(false)}
-            className="inline-flex min-w-0 items-center gap-2 text-[13px] font-medium text-[#1c1f23] dark:text-[#f2f3f5]"
+            className="inline-flex min-w-0 items-center gap-1.5 text-xs font-medium text-foreground transition-colors hover:text-red-600 dark:hover:text-red-400"
           >
-            <span className="maties-status-dot maties-status-wrong shrink-0" aria-hidden="true" />
-            <span className="truncate">{i18nService.t('matiesEngineFailedShort')}</span>
+            <ExclamationTriangleIcon className="h-3.5 w-3.5 shrink-0 text-red-600 dark:text-red-400" />
+            <span className="truncate">{i18nService.t('coworkOpenClawErrorShort')}</span>
+            <ChevronDownIcon className="h-3 w-3 shrink-0 text-secondary" />
           </button>
           <button
             type="button"
-            onClick={() => { void handleRestartGateway(); }}
-            disabled={busy}
-            className="maties-pill-sm is-link"
+            onClick={handleQuickRepairGateway}
+            disabled={isRepairingGateway || isRestartingGateway}
+            className="inline-flex h-6 shrink-0 items-center justify-center gap-1 rounded-full bg-primary px-2.5 text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
           >
-            {isRestartingGateway ? i18nService.t('loading') : i18nService.t('matiesTryAgain')}
+            {isRepairingGateway
+              ? <ArrowPathIcon className="h-3 w-3 animate-spin" />
+              : <WrenchScrewdriverIcon className="h-3 w-3" />}
+            {isRepairingGateway
+              ? i18nService.t('openClawRepairRunning')
+              : i18nService.t('coworkOpenClawQuickRepair')}
           </button>
         </div>
       </div>
@@ -146,54 +144,80 @@ const EngineFailureOverlay: React.FC<EngineFailureOverlayProps> = ({
   }
 
   return (
-    <div className="maties-backdrop fixed inset-0 z-[90] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm animate-fade-in">
       <div
-        className="maties-card-prose maties-in w-full max-w-[440px] px-8 py-9"
+        className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-xl animate-fade-in-up"
         role="dialog"
         aria-modal="true"
         aria-labelledby="openclaw-gateway-failure-title"
       >
         <div className="flex flex-col items-center text-center">
-          <Sphere size={48} still title="Maties" />
-          <h3 id="openclaw-gateway-failure-title" className="maties-headline mt-5 text-[24px]">
-            {i18nService.t('matiesCouldNotStart')}
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+            <ExclamationTriangleIcon className="h-6 w-6" />
+          </span>
+          <h3 id="openclaw-gateway-failure-title" className="mt-3 text-base font-semibold text-foreground">
+            {i18nService.t(isRuntimeMissing ? 'coworkOpenClawRuntimeMissingError' : 'coworkOpenClawError')}
           </h3>
-          <p className="maties-subtitle mt-2 max-w-[42ch] text-[#4a4f57]">
-            {i18nService.t(isRuntimeMissing ? 'matiesEngineMissingSentence' : 'matiesEngineFailedSentence')}
+          <p className="mt-2 text-[13px] leading-5 text-secondary">
+            {i18nService.t(isRuntimeMissing ? 'coworkOpenClawRuntimeMissingRepairHint' : 'coworkOpenClawErrorRepairHint')}
           </p>
-          {status.message && (
-            <div className="maties-mono-box mt-4 max-h-28 w-full max-w-full text-left break-words">
+          {isRuntimeMissing && status.message && (
+            <p className="mt-2 max-w-full break-all text-xs leading-4 text-secondary/80">
               {status.message}
-            </div>
+            </p>
           )}
           {gatewayRepairError && (
-            <p className="maties-caption maties-status-wrong mt-3">
+            <p className="mt-2 text-[13px] leading-5 text-red-600 dark:text-red-400">
               {gatewayRepairError}
             </p>
           )}
         </div>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-          <Pill tone={PillTone.Ghost} compact onClick={() => setIsDeferred(true)}>
-            {i18nService.t('matiesNotNow')}
-          </Pill>
-          <Pill compact onClick={() => { void handleQuickRepairGateway(); }} disabled={busy}>
-            {isRepairingGateway ? i18nService.t('openClawRepairRunning') : i18nService.t('matiesRepairAndTryAgain')}
-          </Pill>
-          <Pill tone={PillTone.Primary} compact onClick={() => { void handleRestartGateway(); }} disabled={busy}>
-            {isRestartingGateway ? i18nService.t('loading') : i18nService.t('matiesTryAgain')}
-          </Pill>
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={handleRestartGateway}
+            disabled={isRestartingGateway || isRepairingGateway}
+            className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+          >
+            {isRestartingGateway && (
+              <ArrowPathIcon className="h-4 w-4 animate-spin" />
+            )}
+            {i18nService.t('coworkOpenClawRestartGateway')}
+          </button>
+          <button
+            type="button"
+            onClick={handleQuickRepairGateway}
+            disabled={isRepairingGateway || isRestartingGateway}
+            className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+          >
+            {isRepairingGateway
+              ? <ArrowPathIcon className="h-4 w-4 animate-spin" />
+              : <WrenchScrewdriverIcon className="h-4 w-4" />}
+            {isRepairingGateway
+              ? i18nService.t('openClawRepairRunning')
+              : i18nService.t('coworkOpenClawQuickRepair')}
+          </button>
         </div>
-        {onRequestAppSettings && (
-          <div className="mt-3 flex justify-center">
+        <div className="mt-4 flex items-center justify-between gap-4">
+          {onRequestAppSettings ? (
             <button
               type="button"
               onClick={() => onRequestAppSettings({ initialTab: 'coworkAgentEngine' })}
-              className="maties-pill-sm is-link"
+              className="text-xs text-secondary underline-offset-2 transition-colors hover:text-foreground hover:underline"
             >
-              {i18nService.t('matiesEngineSettings')}
+              {i18nService.t('coworkOpenClawGoToSettingsInstall')}
             </button>
-          </div>
-        )}
+          ) : (
+            <span />
+          )}
+          <button
+            type="button"
+            onClick={() => setIsDeferred(true)}
+            className="text-xs text-secondary underline-offset-2 transition-colors hover:text-foreground hover:underline"
+          >
+            {i18nService.t('coworkOpenClawErrorDefer')}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -20,8 +20,6 @@ import CardOverflowMenu, { type CardOverflowMenuItem } from '../common/CardOverf
 import CardToggle from '../common/CardToggle';
 import { MANAGEMENT_BODY_TEXT, MANAGEMENT_META_TEXT, MANAGEMENT_TITLE_TEXT } from '../common/managementTypography';
 import Modal from '../common/Modal';
-import EmptyState from '../design/EmptyState';
-import Pill, { PillTone } from '../design/Pill';
 import ErrorMessage from '../ErrorMessage';
 import EditIcon from '../icons/EditIcon';
 import FolderOpenIcon from '../icons/FolderOpenIcon';
@@ -1072,7 +1070,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
         key={skill.id}
         role="button"
         tabIndex={0}
-        className="maties-card maties-card-interactive group flex cursor-pointer flex-col p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0060d0]/30"
+        className="group flex flex-col cursor-pointer rounded-2xl border border-border bg-surface p-4 shadow-subtle transition-all hover:border-primary/50 hover:shadow-card focus-within:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         onClick={openInstalledDetail}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;
@@ -1154,7 +1152,13 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      <div className="pb-2">
+        <p className={`${MANAGEMENT_BODY_TEXT} text-secondary`}>
+          {i18nService.t('skillsDescription')}
+        </p>
+      </div>
+
       {skillActionError && !isRemoteImportOpen && (
         <ErrorMessage
           message={skillActionError}
@@ -1279,16 +1283,13 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1.5" role="tablist">
+        <div className="flex items-center border-b border-border">
           {SKILL_TAB_ORDER.map((tab) => {
             const count = getSkillTabCount(tab);
             return (
-              <Pill
+              <button
                 key={tab}
-                role="tab"
-                compact
-                aria-selected={activeTab === tab}
-                tone={activeTab === tab ? PillTone.Selected : PillTone.Quiet}
+                type="button"
                 onClick={() => {
                   reportSkillAction('tab_change', {
                     source: 'skills_manager',
@@ -1297,23 +1298,31 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
                   });
                   setActiveTab(tab);
                 }}
+                className={`relative px-2.5 pb-2.5 pt-0.5 ${MANAGEMENT_TITLE_TEXT} font-semibold transition-colors ${
+                  activeTab === tab
+                    ? 'text-foreground'
+                    : 'text-secondary hover:text-foreground'
+                }`}
               >
                 {i18nService.t(SKILL_TAB_LABEL_KEYS[tab])}
                 {count !== null && count > 0 && (
-                  <span className="maties-mono ml-1 text-[11.5px] text-[#8f96a0]">
+                  <span className={`ml-1.5 rounded-full bg-surface-raised px-1.5 py-0.5 ${MANAGEMENT_META_TEXT} font-medium text-secondary`}>
                     {count}
                   </span>
                 )}
-              </Pill>
+                <div className={`absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full transition-colors ${
+                  activeTab === tab ? 'bg-primary' : 'bg-transparent'
+                }`} />
+              </button>
             );
           })}
           {updatableSkills.length > 0 && (
-            <div className="ml-auto">
+            <div className="ml-auto pr-1 pb-1">
               <button
                 type="button"
                 onClick={handleUpgradeAll}
                 disabled={upgradeState?.isActive === true}
-                className="maties-pill-sm maties-status-done"
+                className={`inline-flex items-center gap-1 px-2 py-1 ${MANAGEMENT_META_TEXT} font-medium rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <ArrowPathIcon className="h-3 w-3" />
                 {i18nService.t('skillUpgradeAll').replace('{count}', String(updatableSkills.length))}
@@ -1337,7 +1346,11 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
                 });
                 setActiveMarketTag('all');
               }}
-              className={`maties-pill-sm ${activeMarketTag === 'all' ? 'is-selected' : ''}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                activeMarketTag === 'all'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface-raised text-secondary hover:text-foreground'
+              }`}
             >
               {i18nService.t('skillCategoryAll')}
             </button>
@@ -1355,7 +1368,11 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
                   });
                   setActiveMarketTag(tag.id);
                 }}
-                className={`maties-pill-sm ${activeMarketTag === tag.id ? 'is-selected' : ''}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  activeMarketTag === tag.id
+                    ? 'bg-primary text-white'
+                    : 'bg-surface-raised text-secondary hover:text-foreground'
+                }`}
               >
                 {resolveLocalizedText(tag)}
               </button>
@@ -1369,7 +1386,9 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
       {isInstalledTab && isSkillSearchActive && (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
           {filteredSkills.length === 0 ? (
-            <EmptyState className="col-span-full" sentence={i18nService.t('noSkillsAvailable')} />
+            <div className="col-span-full text-center py-8 text-sm text-secondary">
+              {i18nService.t('noSkillsAvailable')}
+            </div>
           ) : (
             filteredSkills.map((skill) => renderInstalledSkillCard(skill, true))
           )}
@@ -1379,56 +1398,60 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
       {activeTab === SkillTab.Mine && !isSkillSearchActive && (
         mySkills.length === 0 ? (
           readOnly ? (
-            <EmptyState sentence={i18nService.t('noSkillsAvailable')} />
+            <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-secondary">
+              {i18nService.t('noSkillsAvailable')}
+            </div>
           ) : (
-            <EmptyState
-              sentence={i18nService.t('skillsEmptySentence')}
-              action={(
-                <>
-                  <Pill
-                    tone={PillTone.Primary}
-                    compact
-                    icon={<ArrowDownTrayIcon className="h-3.5 w-3.5" />}
-                    onClick={() => {
-                      reportSkillAction('empty_guide_action', {
-                        source: 'skills_manager',
-                        targetAction: SkillTab.Marketplace,
-                      });
-                      setActiveTab(SkillTab.Marketplace);
-                    }}
-                  >
-                    {i18nService.t('skillGroupMineEmptyMarket')}
-                  </Pill>
-                  <Pill
-                    compact
-                    icon={<UploadIcon className="h-3.5 w-3.5" />}
-                    disabled={isDownloadingSkill}
-                    onClick={() => {
-                      reportSkillAction('empty_guide_action', {
-                        source: 'skills_manager',
-                        targetAction: 'upload_zip',
-                      });
-                      handleUploadSkillZip();
-                    }}
-                  >
-                    {i18nService.t('uploadSkillZip')}
-                  </Pill>
-                  <Pill
-                    compact
-                    icon={<EditIcon className="h-3.5 w-3.5" />}
-                    onClick={() => {
-                      reportSkillAction('empty_guide_action', {
-                        source: 'skills_manager',
-                        targetAction: 'create_by_chat',
-                      });
-                      handleCreateByChat();
-                    }}
-                  >
-                    {i18nService.t('createSkillByChat')}
-                  </Pill>
-                </>
-              )}
-            />
+            <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center">
+              <p className="mb-3 text-sm text-secondary">
+                {i18nService.t('skillGroupMineEmptyHint')}
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    reportSkillAction('empty_guide_action', {
+                      source: 'skills_manager',
+                      targetAction: SkillTab.Marketplace,
+                    });
+                    setActiveTab(SkillTab.Marketplace);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-raised transition-colors"
+                >
+                  <ArrowDownTrayIcon className="h-3.5 w-3.5 text-secondary" />
+                  {i18nService.t('skillGroupMineEmptyMarket')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    reportSkillAction('empty_guide_action', {
+                      source: 'skills_manager',
+                      targetAction: 'upload_zip',
+                    });
+                    handleUploadSkillZip();
+                  }}
+                  disabled={isDownloadingSkill}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-raised transition-colors disabled:opacity-50"
+                >
+                  <UploadIcon className="h-3.5 w-3.5 text-secondary" />
+                  {i18nService.t('uploadSkillZip')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    reportSkillAction('empty_guide_action', {
+                      source: 'skills_manager',
+                      targetAction: 'create_by_chat',
+                    });
+                    handleCreateByChat();
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-raised transition-colors"
+                >
+                  <EditIcon className="h-3.5 w-3.5 text-secondary" />
+                  {i18nService.t('createSkillByChat')}
+                </button>
+              </div>
+            </div>
           )
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
@@ -1447,7 +1470,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
         isLoadingMarketplace ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4" aria-hidden="true">
             {Array.from({ length: 6 }).map((_, idx) => (
-              <div key={idx} className="maties-card maties-skeleton p-4">
+              <div key={idx} className="animate-pulse rounded-2xl border border-border bg-surface p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <div className="h-7 w-7 rounded-lg bg-surface-raised" />
                   <div className="h-3.5 w-1/3 rounded bg-surface-raised" />
@@ -1466,7 +1489,9 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
         ) : (
           <>
             {filteredMarketplaceSkills.length === 0 ? (
-              <EmptyState sentence={i18nService.t('skillsMarketplaceEmptySentence')} />
+              <div className="text-center py-12 text-sm text-secondary">
+                {i18nService.t('skillMarketplaceEmpty')}
+              </div>
             ) : (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                 {filteredMarketplaceSkills.map((skill) => {
@@ -1605,7 +1630,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
             });
             setSelectedMarketplaceSkill(null);
           }}
-          overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center"
+          overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
           className="mx-4 flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-border bg-surface shadow-2xl"
         >
             {/* App Store product page: identity + one capsule action up top,
@@ -1739,7 +1764,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
             });
             setSelectedSkill(null);
           }}
-          overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center"
+          overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
           className="mx-4 flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-border bg-surface shadow-2xl"
         >
             {/* Same product-page shape as the marketplace dialog: identity
@@ -1880,8 +1905,8 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
       , document.body)}
 
       {skillPendingDelete && createPortal(
-        <Modal onClose={handleCancelDeleteSkill} overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center" className="maties-card-prose maties-in mx-4 w-full max-w-sm p-6">
-            <div className="maties-row-title text-[15.5px]">
+        <Modal onClose={handleCancelDeleteSkill} overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/60" className="w-full max-w-sm mx-4 rounded-2xl bg-surface border border-border shadow-2xl p-5">
+            <div className="text-lg font-semibold text-foreground">
               {i18nService.t('deleteSkill')}
             </div>
             <p className="mt-2 text-sm text-secondary">
@@ -1897,7 +1922,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
                 type="button"
                 onClick={handleCancelDeleteSkill}
                 disabled={isDeletingSkill}
-                className="maties-pill-sm is-ghost"
+                className="px-3 py-1.5 text-xs rounded-lg border border-border text-secondary hover:bg-surface-raised transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {i18nService.t('cancel')}
               </button>
@@ -1905,7 +1930,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
                 type="button"
                 onClick={handleConfirmDeleteSkill}
                 disabled={isDeletingSkill}
-                className="maties-pill-sm is-primary"
+                className="px-3 py-1.5 text-xs rounded-lg bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {i18nService.t('confirmDelete')}
               </button>
@@ -1924,11 +1949,11 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
             setIsRemoteImportOpen(false);
             setSkillActionError('');
           }}
-          overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center"
-          className="maties-card-prose maties-in mx-4 w-full max-w-md p-6"
+          overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          className="w-full max-w-md mx-4 rounded-2xl bg-surface border border-border shadow-2xl p-6"
         >
             <div className="flex items-start justify-between">
-              <div className="maties-row-title text-[15.5px]">
+              <div className="text-lg font-semibold text-foreground">
                 {i18nService.t('remoteImportTitle')}
               </div>
               <button
@@ -1942,7 +1967,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
                   setIsRemoteImportOpen(false);
                   setSkillActionError('');
                 }}
-                className="maties-icon-button -mr-2 -mt-1"
+                className="p-1.5 rounded-lg text-secondary hover:text-foreground hover:bg-surface-raised transition-colors"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
@@ -1990,7 +2015,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
                 value={skillDownloadSource}
                 onChange={(e) => setSkillDownloadSource(e.target.value)}
                 placeholder={i18nService.t(importTabConfig[importTab].placeholderKey)}
-                className="maties-input"
+                className="w-full px-3 py-2.5 text-sm rounded-xl bg-background text-foreground placeholder-secondary border border-border focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <p className="text-xs text-secondary">
                 {i18nService.t(importTabConfig[importTab].examplesKey)}
@@ -2004,7 +2029,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
                 type="button"
                 onClick={handleImportFromDialog}
                 disabled={isDownloadingSkill || !skillDownloadSource.trim()}
-                className="maties-pill-sm is-primary w-full"
+                className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-50"
               >
                 {isDownloadingSkill ? i18nService.t('importingSkill') : i18nService.t('importSkill')}
               </button>
@@ -2066,8 +2091,8 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
 
       {/* OpenClaw Skill Sync - Loading Overlay */}
       {isSyncingFromOpenClaw && (
-        <div className="maties-backdrop fixed inset-0 z-50 flex items-center justify-center">
-          <div className="maties-card-prose maties-in flex items-center gap-3 p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-background border border-border rounded-xl shadow-lg p-6 flex items-center gap-3">
             <ArrowPathIcon className="h-5 w-5 animate-spin text-primary" />
             <span className="text-sm text-foreground">{i18nService.t('skillsSyncing')}</span>
           </div>
@@ -2076,8 +2101,8 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
 
       {/* OpenClaw Skill Sync - Detection Dialog */}
       {detectedOpenClawSkills !== null && detectedOpenClawSkills.length > 0 && !isSyncingFromOpenClaw && (
-        <div className="maties-backdrop fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="maties-card-prose maties-in w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-background border border-border rounded-xl shadow-lg w-full max-w-md p-6">
             <h3 className="text-base font-semibold text-foreground mb-2">
               {i18nService.t('skillsSyncTitle')}
             </h3>
@@ -2101,14 +2126,14 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({ readOnly, onCreateByChat,
               <button
                 type="button"
                 onClick={() => setDetectedOpenClawSkills(null)}
-                className="maties-pill-sm is-ghost"
+                className="px-4 py-1.5 text-xs rounded-lg border border-border text-secondary hover:bg-surface-raised transition-colors"
               >
                 {i18nService.t('skillsSyncSkip')}
               </button>
               <button
                 type="button"
                 onClick={handleSyncFromOpenClaw}
-                className="maties-pill-sm is-primary"
+                className="px-4 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
               >
                 {i18nService.t('skillsSyncNow')}
               </button>

@@ -18,7 +18,6 @@ export const SkinPackKitBundle = {
 
 export const SkinPackKitMetadata = {
   Version: '0.3.0',
-  // No hosted icon: the app draws a tile from the kit name.
-  IconUrl: '',
+  IconUrl: 'https://ydhardwarecommon.nosdn.127.net/2f862627ac5bd30d4292f9752e7828e6.png',
   WorkflowKind: SkinWorkflowKind.SkinPack,
 } as const;

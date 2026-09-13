@@ -25,7 +25,7 @@ export const CUSTOM_PROVIDER_KEYS = [
 ] as const;
 
 export const providerKeys = [
-  ...Object.values(ProviderName).filter(id => id !== ProviderName.Custom && id !== ProviderName.MatiesServer),
+  ...Object.values(ProviderName).filter(id => id !== ProviderName.Custom && id !== ProviderName.LobsteraiServer),
   ...CUSTOM_PROVIDER_KEYS,
 ] as const;
 

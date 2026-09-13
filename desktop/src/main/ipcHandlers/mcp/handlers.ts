@@ -1,10 +1,8 @@
-import { BrowserWindow, ipcMain } from 'electron';
-import http from 'http';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import https from 'https';
 
 import { McpIpcChannel } from '../../../shared/mcp/constants';
 import { normalizeMcpServerUrlInput } from '../../../shared/mcp/url';
-import { getMcpMarketplaceUrl } from '../../libs/endpoints';
 import { OpenClawConfigImpact } from '../../libs/openclawConfigImpact';
 import type { McpRuntime } from '../../mcp/mcpRuntime';
 import type { McpServerFormData } from '../../mcp/mcpStore';
@@ -21,8 +19,7 @@ export interface McpHandlerDeps {
 
 function fetchText(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const client = url.startsWith('http:') ? http : https;
-    const req = client.get(url, { timeout: 10000 }, res => {
+    const req = https.get(url, { timeout: 10000 }, res => {
       if (res.statusCode !== 200) {
         reject(new Error(`HTTP ${res.statusCode}`));
         res.resume();
@@ -347,7 +344,9 @@ export function registerMcpHandlers(deps: McpHandlerDeps): void {
   });
 
   ipcMain.handle(McpIpcChannel.FetchMarketplace, async () => {
-    const url = getMcpMarketplaceUrl();
+    const url = app.isPackaged
+      ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/mcp-marketplace'
+      : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/mcp-marketplace';
     try {
       const data = await fetchText(url);
       const json = JSON.parse(data);

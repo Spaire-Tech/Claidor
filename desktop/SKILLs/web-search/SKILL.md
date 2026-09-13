@@ -55,11 +55,11 @@ Use the web-search skill when you need:
 bash "$SKILLS_ROOT/web-search/scripts/search.sh" "search query" [max_results]
 ```
 
-For non-ASCII queries (accented characters, non-Latin scripts, etc.), prefer UTF-8 file input to avoid shell encoding issues on Windows:
+For non-ASCII queries (Chinese/Japanese/etc.), prefer UTF-8 file input to avoid shell encoding issues on Windows:
 
 ```bash
 cat > /tmp/web-query.txt <<'TXT'
-Élections européennes 2026 – résultats
+苹果 Siri AI 2026 发布计划
 TXT
 
 bash "$SKILLS_ROOT/web-search/scripts/search.sh" @/tmp/web-query.txt 10

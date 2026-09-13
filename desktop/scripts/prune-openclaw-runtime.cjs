@@ -69,7 +69,7 @@ const DIRS_TO_DELETE = new Set([
 // pruned unless explicitly added here.
 
 const BUNDLED_EXTENSIONS_TO_KEEP = new Set([
-  // --- Providers (Maties may route to these) ---
+  // --- Providers (LobsterAI may route to these) ---
   'anthropic', 'deepseek', 'google', 'kimi-coding', 'minimax', 'moonshot',
   'ollama', 'openai', 'openrouter', 'qianfan', 'qwen', 'stepfun', 'volcengine',
   'xai', 'xiaomi',
@@ -77,13 +77,6 @@ const BUNDLED_EXTENSIONS_TO_KEEP = new Set([
   'telegram', 'discord', 'feishu', 'qqbot',
   // --- Core features ---
   'browser', 'memory-core', 'lobster', 'llm-task', 'zai',
-  // --- Web search ---
-  // DuckDuckGo needs no key and no account, which is why it is the one
-  // search provider Maties ships (docs/maties/models-and-search.md,
-  // section 3). Deleting it here would leave `web_search` allowed in
-  // openclawConfigSync.ts with no provider behind it, which fails
-  // silently and reads as stupidity.
-  'duckduckgo',
   // --- Media / voice (bundled defaults, may be used by agents) ---
   'image-generation-core', 'media-understanding-core', 'speech-core', 'talk-voice',
   // --- Internal ---

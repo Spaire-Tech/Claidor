@@ -3,16 +3,28 @@ import React from 'react';
 import { i18nService } from '../../services/i18n';
 import { TaskDisplayStatus, taskDisplayStatusLabelKey } from './utils';
 
-// Colour is information (docs/maties/design.md, section 1): green for
-// done, amber for attention, red for wrong, the one blue for a run in
-// progress, and nothing for a task that is paused or has never run.
-const toneClasses: Record<TaskDisplayStatus, string> = {
-  [TaskDisplayStatus.Running]: 'maties-status-going',
-  [TaskDisplayStatus.Paused]: 'maties-status-quiet',
-  [TaskDisplayStatus.Success]: 'maties-status-done',
-  [TaskDisplayStatus.Error]: 'maties-status-wrong',
-  [TaskDisplayStatus.Skipped]: 'maties-status-attention',
-  [TaskDisplayStatus.Never]: 'maties-status-quiet',
+const chipClasses: Record<TaskDisplayStatus, string> = {
+  [TaskDisplayStatus.Running]:
+    'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  [TaskDisplayStatus.Paused]:
+    'bg-surface-raised text-secondary',
+  [TaskDisplayStatus.Success]:
+    'bg-green-500/10 text-green-600 dark:text-green-400',
+  [TaskDisplayStatus.Error]:
+    'bg-red-500/10 text-red-600 dark:text-red-400',
+  [TaskDisplayStatus.Skipped]:
+    'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
+  [TaskDisplayStatus.Never]:
+    'bg-surface-raised text-secondary',
+};
+
+const dotClasses: Record<TaskDisplayStatus, string> = {
+  [TaskDisplayStatus.Running]: 'bg-blue-500',
+  [TaskDisplayStatus.Paused]: 'bg-gray-400 dark:bg-gray-500',
+  [TaskDisplayStatus.Success]: 'bg-green-500',
+  [TaskDisplayStatus.Error]: 'bg-red-500',
+  [TaskDisplayStatus.Skipped]: 'bg-yellow-500',
+  [TaskDisplayStatus.Never]: 'bg-gray-400 dark:bg-gray-500',
 };
 
 interface TaskStatusChipProps {
@@ -22,18 +34,34 @@ interface TaskStatusChipProps {
   title?: string;
 }
 
-/** Compact status pill: the ring turning while running, a coloured dot otherwise. */
+/** Compact status pill: spinner while running, colored dot otherwise. */
 const TaskStatusChip: React.FC<TaskStatusChipProps> = ({ status, className, title }) => (
   <span
     title={title}
-    className={`maties-status-pill ${toneClasses[status]} ${className ?? ''}`.trim()}
+    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${chipClasses[status]} ${className ?? ''}`}
   >
     {status === TaskDisplayStatus.Running ? (
-      <span className="maties-ring h-3 w-3" aria-hidden="true" />
+      <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+          className="opacity-25"
+        />
+        <path
+          d="M4 12a8 8 0 018-8"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+          className="opacity-75"
+        />
+      </svg>
     ) : (
-      <span className="maties-status-dot" aria-hidden="true" />
+      <span className={`h-1.5 w-1.5 rounded-full ${dotClasses[status]}`} />
     )}
-    <span className="text-[#31353b] dark:text-[#f2f3f5]">{i18nService.t(taskDisplayStatusLabelKey[status])}</span>
+    {i18nService.t(taskDisplayStatusLabelKey[status])}
   </span>
 );
 

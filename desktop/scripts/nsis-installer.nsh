@@ -478,8 +478,8 @@ FunctionEnd
 
 ; -- Stop every process that might hold file handles in the install dir --
 ;
-; 1. Maties.exe -- the main app AND the OpenClaw gateway (ELECTRON_RUN_AS_NODE)
-; 2. node.exe whose binary lives inside the Maties install tree
+; 1. LobsterAI.exe -- the main app AND the OpenClaw gateway (ELECTRON_RUN_AS_NODE)
+; 2. node.exe whose binary lives inside the LobsterAI install tree
 ;    (Web Search bridge server, MCP servers spawned with detached:true)
 ; 3. any other process whose executable lives under the install root --
 ;    python-win skill/MCP servers, bundled git/ssh helpers -- matched by
@@ -500,32 +500,32 @@ FunctionEnd
 ; healthy path still converges on the first or second round.
 ;
 ; Shared between the installer and the uninstaller via customCheckAppRunning.
-!macro stopMatiesProcesses
-  DetailPrint "[Installer] Stopping running Maties processes"
+!macro stopLobsterAIProcesses
+  DetailPrint "[Installer] Stopping running LobsterAI processes"
   StrCpy $lobsterTargetProcessesStopStatus "helper-not-found"
   System::Call 'kernel32::GetCurrentProcessId()i .r4'
   StrCpy $lobsterCurrentProcessPid $4
   System::Call 'kernel32::GetTickCount()i .r7'
   ; The survivor helper below and every log write in this macro need the
   ; directory, including on the helper-not-found path.
-  CreateDirectory "$APPDATA\Maties"
-  StrCmp $lobsterTrustedPowerShellPath "" StopMatiesProcessesDone
+  CreateDirectory "$APPDATA\LobsterAI"
+  StrCmp $lobsterTrustedPowerShellPath "" StopLobsterAIProcessesDone
   ; The path-prefix sweep in both helpers below needs the install root and
   ; this process id. Both travel through the child environment, not string
   ; interpolation: the install directory is user-selected and may hold shell
-  ; metacharacters. Cleared at StopMatiesProcessesLog, which every path
+  ; metacharacters. Cleared at StopLobsterAIProcessesLog, which every path
   ; reaches.
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_STOP_ROOT", t "$INSTDIR")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_STOP_SELF_PID", t "$lobsterCurrentProcessPid")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_STOP_ROOT", t "$INSTDIR")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_STOP_SELF_PID", t "$lobsterCurrentProcessPid")i'
   Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "\
-    $$root = $$env:MATIES_STOP_ROOT;\
+    $$root = $$env:LOBSTERAI_STOP_ROOT;\
     if ($$root -and -not $$root.EndsWith([char]92)) { $$root = $$root + [char]92 };\
-    $$selfPid = $$env:MATIES_STOP_SELF_PID;\
+    $$selfPid = $$env:LOBSTERAI_STOP_SELF_PID;\
     $$sweep = $$root -and $$root.Length -gt 3;\
     for ($$i = 0; $$i -lt 30; $$i++) {\
       $$procs = @();\
-      $$procs += Get-Process -Name Maties -ErrorAction SilentlyContinue;\
-      $$procs += Get-Process node -ErrorAction SilentlyContinue | Where-Object { $$_.Path -like \"*Maties*\" };\
+      $$procs += Get-Process -Name LobsterAI -ErrorAction SilentlyContinue;\
+      $$procs += Get-Process node -ErrorAction SilentlyContinue | Where-Object { $$_.Path -like \"*LobsterAI*\" };\
       if ($$sweep) { $$procs += Get-Process -ErrorAction SilentlyContinue | Where-Object { $$fp = $$null; try { $$fp = $$_.Path } catch { }; $$fp -and $$fp.StartsWith($$root, [System.StringComparison]::OrdinalIgnoreCase) -and $$_.Id.ToString() -ne $$selfPid } };\
       if ($$procs.Count -eq 0) { exit 0 };\
       $$procs | Stop-Process -Force -ErrorAction SilentlyContinue;\
@@ -540,36 +540,36 @@ FunctionEnd
     StrCpy $lobsterTargetProcessesStopStatus "process-start-blocked"
   StrCmp $R2 "0" 0 +2
     StrCpy $lobsterTargetProcessesStopStatus "success"
-  StrCmp $R2 "3" 0 StopMatiesProcessesLog
+  StrCmp $R2 "3" 0 StopLobsterAIProcessesLog
   ; The exit-3 verdict alone never says WHICH process refused to die. Re-snapshot
   ; and append one process-stop-survivor line per remaining process before the
   ; completion line below. Inputs travel through the child environment, not
   ; string interpolation: the log path contains the user profile directory,
   ; which may hold shell metacharacters. Helper exit code = survivor count at
   ; re-check time; 0 means the blockers died right after the verdict.
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_STOP_LOG_PATH", t "$APPDATA\Maties\install-timing.log")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_STOP_ATTEMPT_ID", t "$lobsterInstallerAttemptId")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_STOP_LOG_PATH", t "$APPDATA\LobsterAI\install-timing.log")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_STOP_ATTEMPT_ID", t "$lobsterInstallerAttemptId")i'
   Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "\
     $$ts = Get-Date -Format \"yyyy-MM-dd HH:mm:ss\";\
-    $$root = $$env:MATIES_STOP_ROOT;\
+    $$root = $$env:LOBSTERAI_STOP_ROOT;\
     if ($$root -and -not $$root.EndsWith([char]92)) { $$root = $$root + [char]92 };\
-    $$selfPid = $$env:MATIES_STOP_SELF_PID;\
+    $$selfPid = $$env:LOBSTERAI_STOP_SELF_PID;\
     $$sweep = $$root -and $$root.Length -gt 3;\
     $$procs = @();\
-    $$procs += Get-Process -Name Maties -ErrorAction SilentlyContinue;\
-    $$procs += Get-Process node -ErrorAction SilentlyContinue | Where-Object { $$_.Path -like \"*Maties*\" };\
+    $$procs += Get-Process -Name LobsterAI -ErrorAction SilentlyContinue;\
+    $$procs += Get-Process node -ErrorAction SilentlyContinue | Where-Object { $$_.Path -like \"*LobsterAI*\" };\
     if ($$sweep) { $$procs += Get-Process -ErrorAction SilentlyContinue | Where-Object { $$fp = $$null; try { $$fp = $$_.Path } catch { }; $$fp -and $$fp.StartsWith($$root, [System.StringComparison]::OrdinalIgnoreCase) -and $$_.Id.ToString() -ne $$selfPid } };\
     foreach ($$p in $$procs) {\
       $$fp = \"unknown\";\
       try { if ($$p.Path) { $$fp = $$p.Path } } catch { };\
-      Add-Content -LiteralPath $$env:MATIES_STOP_LOG_PATH -Value \"$$ts phase=process-stop-survivor attempt_id=$$env:MATIES_STOP_ATTEMPT_ID name=$$($$p.ProcessName) pid=$$($$p.Id) path=$$fp\" -ErrorAction SilentlyContinue;\
+      Add-Content -LiteralPath $$env:LOBSTERAI_STOP_LOG_PATH -Value \"$$ts phase=process-stop-survivor attempt_id=$$env:LOBSTERAI_STOP_ATTEMPT_ID name=$$($$p.ProcessName) pid=$$($$p.Id) path=$$fp\" -ErrorAction SilentlyContinue;\
     };\
     exit $$procs.Count"'
   !insertmacro LobsterExecHiddenExitCode
   Pop $1
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_STOP_LOG_PATH", t "")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_STOP_ATTEMPT_ID", t "")i'
-  FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_STOP_LOG_PATH", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_STOP_ATTEMPT_ID", t "")i'
+  FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $9 0 END
   !insertmacro GetTimestamp $8
   !ifdef BUILD_UNINSTALLER
@@ -578,18 +578,18 @@ FunctionEnd
     FileWrite $9 "$8 phase=process-stop-survivors-logged attempt_id=$lobsterInstallerAttemptId role=installer helper_exit=$1$\r$\n"
   !endif
   FileClose $9
-  Goto StopMatiesProcessesLog
+  Goto StopLobsterAIProcessesLog
 
-  StopMatiesProcessesDone:
+  StopLobsterAIProcessesDone:
   StrCpy $R2 "helper-not-found"
 
-  StopMatiesProcessesLog:
+  StopLobsterAIProcessesLog:
   ; Clearing variables that were never set (helper-not-found path) is a no-op.
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_STOP_ROOT", t "")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_STOP_SELF_PID", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_STOP_ROOT", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_STOP_SELF_PID", t "")i'
   System::Call 'kernel32::GetTickCount()i .r6'
   IntOp $5 $6 - $7
-  FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $9 0 END
   !insertmacro GetTimestamp $8
   !ifdef BUILD_UNINSTALLER
@@ -620,8 +620,8 @@ FunctionEnd
   ${If} ${Silent}
     StrCpy $lobsterSilentSource "argv"
   ${EndIf}
-  !if "$%MATIES_CHANNEL_BUILD%" == "1"
-  !if "$%MATIES_SILENT_ON_DOUBLE_CLICK%" == "1"
+  !if "$%LOBSTERAI_CHANNEL_BUILD%" == "1"
+  !if "$%LOBSTERAI_SILENT_ON_DOUBLE_CLICK%" == "1"
     ${If} ${Silent}
     ${Else}
       ${If} ${isUpdated}
@@ -635,8 +635,8 @@ FunctionEnd
   ${If} ${Silent}
     StrCpy $lobsterUiMode "silent"
   ${EndIf}
-  CreateDirectory "$APPDATA\Maties"
-  FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+  CreateDirectory "$APPDATA\LobsterAI"
+  FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $9 0 END
   !insertmacro GetTimestamp $8
   FileWrite $9 "$8 phase=custom-init-start attempt_id=$lobsterInstallerAttemptId installer_version=${VERSION} invocation_source=$lobsterInvocationSource updated_flag=$lobsterUpdatedFlag ui_mode=$lobsterUiMode silent_source=$lobsterSilentSource launcher_fallback=$lobsterLauncherFallback instdir=$INSTDIR appdata=$APPDATA$\r$\n"
@@ -867,11 +867,11 @@ FunctionEnd
 
     LobsterStagingRelocate:
     CreateDirectory "$INSTDIR"
-    CreateDirectory "$INSTDIR\.maties-staging"
-    IfFileExists "$INSTDIR\.maties-staging" 0 LobsterStagingRelocateCreateFailed
-    StrCpy $appPackageStagingDir "$INSTDIR\.maties-staging"
+    CreateDirectory "$INSTDIR\.lobsterai-staging"
+    IfFileExists "$INSTDIR\.lobsterai-staging" 0 LobsterStagingRelocateCreateFailed
+    StrCpy $appPackageStagingDir "$INSTDIR\.lobsterai-staging"
     DetailPrint "[Installer] Staging installation payload on the install drive"
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=staging-drive-selected attempt_id=$lobsterInstallerAttemptId drive=$3 mode=install-dir free_mb=$5 needed_mb=$6 plugins_drive=$4 plugins_free_mb=$2 plugins_needed_mb=$1 staging=$appPackageStagingDir$\r$\n"
@@ -882,7 +882,7 @@ FunctionEnd
     ; Could not create the relocated staging directory. Keep the default so
     ; behavior matches previous installers; payload validation still stops a
     ; truncated staging tree afterwards.
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=staging-drive-selected attempt_id=$lobsterInstallerAttemptId drive=$4 mode=plugins-dir result=relocate-create-failed free_mb=$2 needed_mb=$1$\r$\n"
@@ -892,7 +892,7 @@ FunctionEnd
     LobsterStagingQueryFailed:
     ; Never turn a failed probe into an install blocker. Extraction plus the
     ; staged-payload validation remain the authority on success.
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=staging-drive-selected attempt_id=$lobsterInstallerAttemptId drive=$4 mode=plugins-dir result=query-failed free_mb=$2 needed_mb=$1$\r$\n"
@@ -900,18 +900,18 @@ FunctionEnd
     Goto LobsterStagingSelected
 
     LobsterStagingNoRoom:
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=staging-preflight-insufficient attempt_id=$lobsterInstallerAttemptId plugins_drive=$4 plugins_free_mb=$2 staging_needed_mb=$1 install_drive=$3 install_free_mb=$5 install_needed_mb=$6 action=abort-install$\r$\n"
     FileClose $9
     !insertmacro customBeforeInstallerQuit "staging-space-insufficient"
-    MessageBox MB_OK|MB_ICONEXCLAMATION "${U+78C1}${U+76D8}${U+7A7A}${U+95F4}${U+4E0D}${U+8DB3}${U+FF0C}${U+65E0}${U+6CD5}${U+5B89}${U+88C5} Maties${U+3002}${U+8BF7}${U+6E05}${U+7406}${U+78C1}${U+76D8}${U+7A7A}${U+95F4}${U+540E}${U+91CD}${U+8BD5}${U+3002}$\r$\n$\r$\nThere is not enough free disk space to install Maties: drive $4 has $2 MB free but staging the installation needs about $1 MB, and installing to drive $3 would need about $6 MB free there. Free up disk space and run the installer again. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "${U+78C1}${U+76D8}${U+7A7A}${U+95F4}${U+4E0D}${U+8DB3}${U+FF0C}${U+65E0}${U+6CD5}${U+5B89}${U+88C5} LobsterAI${U+3002}${U+8BF7}${U+6E05}${U+7406}${U+78C1}${U+76D8}${U+7A7A}${U+95F4}${U+540E}${U+91CD}${U+8BD5}${U+3002}$\r$\n$\r$\nThere is not enough free disk space to install LobsterAI: drive $4 has $2 MB free but staging the installation needs about $1 MB, and installing to drive $3 would need about $6 MB free there. Free up disk space and run the installer again. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
     SetErrorLevel 2
     Quit
 
     LobsterStagingDefaultOk:
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=staging-drive-selected attempt_id=$lobsterInstallerAttemptId drive=$4 mode=plugins-dir free_mb=$2 needed_mb=$1$\r$\n"
@@ -930,7 +930,7 @@ FunctionEnd
     !endif
   FunctionEnd
 
-  ; Remove a relocated staging directory ($INSTDIR\.maties-staging). Runs
+  ; Remove a relocated staging directory ($INSTDIR\.lobsterai-staging). Runs
   ; on the success path once the payload copy is done, and from every
   ; controlled failure exit; a no-op while staging is the default
   ; $PLUGINSDIR (the NSIS temp dir cleans itself up on exit).
@@ -940,7 +940,7 @@ FunctionEnd
     StrCmp $appPackageStagingDir "" LobsterStagingCleanupDone
     StrCmp $appPackageStagingDir "$PLUGINSDIR" LobsterStagingCleanupDone
     RMDir /r "$appPackageStagingDir"
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=staging-relocated-cleanup attempt_id=$lobsterInstallerAttemptId staging=$appPackageStagingDir$\r$\n"
@@ -1009,13 +1009,13 @@ FunctionEnd
 
     ${If} $1 == "ok"
     ${OrIf} $1 == "size-query-failed"
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=payload-staging-validated attempt_id=$lobsterInstallerAttemptId mode=${MODE} result=$1 root=$0 tar_bytes=$2 expected_bytes=$3$\r$\n"
       FileClose $9
     ${Else}
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=payload-staging-validation-failed attempt_id=$lobsterInstallerAttemptId mode=${MODE} reason=$1 root=$0 found_bytes=$2 expected_bytes=$3 action=abort-install$\r$\n"
@@ -1023,7 +1023,7 @@ FunctionEnd
       ; Never commit a partial app: restore the previous installation first,
       ; then report. /SD keeps silent (/S) installs from blocking on the box.
       !insertmacro customBeforeInstallerQuit "payload-staging-validation-failed"
-      MessageBox MB_OK|MB_ICONEXCLAMATION "${U+5B89}${U+88C5}${U+5305}${U+6570}${U+636E}${U+4E0D}${U+5B8C}${U+6574}${U+FF1A}${U+53EF}${U+80FD}${U+662F}${U+4E34}${U+65F6}${U+76EE}${U+5F55}${U+78C1}${U+76D8}${U+7A7A}${U+95F4}${U+4E0D}${U+8DB3}${U+6216}${U+5B89}${U+88C5}${U+5305}${U+4E0B}${U+8F7D}${U+4E0D}${U+5B8C}${U+6574}${U+3002}${U+8BF7}${U+6E05}${U+7406}${U+78C1}${U+76D8}${U+7A7A}${U+95F4}${U+540E}${U+91CD}${U+8BD5}${U+FF0C}${U+6216}${U+91CD}${U+65B0}${U+4E0B}${U+8F7D}${U+5B89}${U+88C5}${U+5305}${U+3002}$\r$\n$\r$\nThe Maties installation stopped because the unpacked installer data is incomplete ($1). This usually means the drive holding the temporary directory ran out of space during extraction, or the installer download was truncated. Free up disk space on the temp drive or download the installer again. No partial application was committed. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "${U+5B89}${U+88C5}${U+5305}${U+6570}${U+636E}${U+4E0D}${U+5B8C}${U+6574}${U+FF1A}${U+53EF}${U+80FD}${U+662F}${U+4E34}${U+65F6}${U+76EE}${U+5F55}${U+78C1}${U+76D8}${U+7A7A}${U+95F4}${U+4E0D}${U+8DB3}${U+6216}${U+5B89}${U+88C5}${U+5305}${U+4E0B}${U+8F7D}${U+4E0D}${U+5B8C}${U+6574}${U+3002}${U+8BF7}${U+6E05}${U+7406}${U+78C1}${U+76D8}${U+7A7A}${U+95F4}${U+540E}${U+91CD}${U+8BD5}${U+FF0C}${U+6216}${U+91CD}${U+65B0}${U+4E0B}${U+8F7D}${U+5B89}${U+88C5}${U+5305}${U+3002}$\r$\n$\r$\nThe LobsterAI installation stopped because the unpacked installer data is incomplete ($1). This usually means the drive holding the temporary directory ran out of space during extraction, or the installer download was truncated. Free up disk space on the temp drive or download the installer again. No partial application was committed. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       SetErrorLevel 2
       Quit
     ${EndIf}
@@ -1098,7 +1098,7 @@ FunctionEnd
       StrCpy $lobsterOldAppRelaunchError "old-footprint-not-verified"
 
     LobsterOldAppRelaunchLog:
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=old-app-relaunch attempt_id=$lobsterInstallerAttemptId status=$lobsterOldAppRelaunchStatus result=$lobsterOldAppRelaunchError source=$lobsterOldInstallOriginalPath args=none$\r$\n"
@@ -1142,7 +1142,7 @@ FunctionEnd
     InitPluginsDir
     SetOutPath "$PLUGINSDIR"
 
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=old-install-rollback-start attempt_id=$lobsterInstallerAttemptId reason=$lobsterOldInstallRollbackReason source=$lobsterOldInstallOriginalPath backup=$lobsterOldInstallBackupPath displaced=$lobsterOldInstallFailedPath$\r$\n"
@@ -1180,12 +1180,12 @@ FunctionEnd
       ; A failed update must not leave its broad, install-scope Defender
       ; exclusion protecting the restored application indefinitely.
       StrCmp $lobsterTrustedPowerShellPath "" LobsterRollbackDefenderCleanupDone
-      System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_DEFENDER_TARGET", t "$lobsterOldInstallOriginalPath")i'
-      Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "try { Remove-MpPreference -ExclusionPath $$env:MATIES_DEFENDER_TARGET -ErrorAction SilentlyContinue } catch {}"'
+      System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_DEFENDER_TARGET", t "$lobsterOldInstallOriginalPath")i'
+      Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "try { Remove-MpPreference -ExclusionPath $$env:LOBSTERAI_DEFENDER_TARGET -ErrorAction SilentlyContinue } catch {}"'
       !insertmacro LobsterExecHiddenToStack
       Pop $0
       Pop $1
-      System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_DEFENDER_TARGET", t "")i'
+      System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_DEFENDER_TARGET", t "")i'
       LobsterRollbackDefenderCleanupDone:
 
       ; The displaced tree is never needed after a verified restore. Pass its
@@ -1194,13 +1194,13 @@ FunctionEnd
       ; metacharacters. The detached launch is deliberately non-blocking and,
       ; unlike NSIS Exec, creates no console window.
       StrCmp $2 "true" 0 LobsterRollbackLog
-      System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_FAILED_CLEANUP_PATH", t "$lobsterOldInstallFailedPath")i'
+      System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_FAILED_CLEANUP_PATH", t "$lobsterOldInstallFailedPath")i'
       ClearErrors
       StrCmp $lobsterTrustedPowerShellPath "" LobsterRollbackFailedTreeCleanupDone
-      Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "Remove-Item -LiteralPath $$env:MATIES_FAILED_CLEANUP_PATH -Recurse -Force -ErrorAction SilentlyContinue"'
+      Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "Remove-Item -LiteralPath $$env:LOBSTERAI_FAILED_CLEANUP_PATH -Recurse -Force -ErrorAction SilentlyContinue"'
       !insertmacro LobsterExecHiddenDetached
       LobsterRollbackFailedTreeCleanupDone:
-      System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_FAILED_CLEANUP_PATH", t "")i'
+      System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_FAILED_CLEANUP_PATH", t "")i'
       Goto LobsterRollbackLog
 
     LobsterRollbackRestoreFailed:
@@ -1228,7 +1228,7 @@ FunctionEnd
     IfFileExists "$lobsterOldInstallBackupPath\*.*" 0 LobsterRollbackBackupChecked
       StrCpy $3 "true"
     LobsterRollbackBackupChecked:
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=old-install-rollback-complete attempt_id=$lobsterInstallerAttemptId status=$lobsterOldInstallRollbackStatus reason=$lobsterOldInstallRollbackReason error=$lobsterOldInstallRollbackError elapsed_ms=$5 source_exists=$2 backup_exists=$3 displaced=$lobsterOldInstallFailedPath$\r$\n"
@@ -1263,7 +1263,7 @@ FunctionEnd
     Push $8
     Push $9
     !insertmacro EnsureInstallerAttemptId
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=installer-quit attempt_id=$lobsterInstallerAttemptId reason=${REASON} ui_mode=$lobsterUiMode rename_status=$lobsterOldInstallRenameStatus$\r$\n"
@@ -1334,7 +1334,7 @@ FunctionEnd
     ; The fresh decision is read-only and precedes every external helper,
     ; process stop, legacy Skills action, old uninstaller and directory rename.
     !insertmacro DetectFreshOrPossibleExisting
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=install-preflight-complete attempt_id=$lobsterInstallerAttemptId installer_version=${VERSION} invocation_source=$lobsterInvocationSource updated_flag=$lobsterUpdatedFlag ui_mode=$lobsterUiMode launcher_fallback=$lobsterLauncherFallback scenario=$lobsterInstallScenario instdir=$INSTDIR$\r$\n"
@@ -1361,33 +1361,33 @@ FunctionEnd
     LegacySkillsSourcePreflightInvalid:
       StrCpy $lobsterLegacySkillsStatus "legacy-source-invalid"
     LegacySkillsSourcePreflightLogged:
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=legacy-skills-source-preflight attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsStatus source=$INSTDIR\resources\SKILLs$\r$\n"
     FileClose $9
 
     !insertmacro ResolveTrustedPowerShell
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=system-tool-resolved attempt_id=$lobsterInstallerAttemptId tool=powershell status=$lobsterTrustedPowerShellStatus source=$lobsterTrustedPowerShellSource path=$lobsterTrustedPowerShellPath$\r$\n"
     FileClose $9
 
-    !insertmacro stopMatiesProcesses
+    !insertmacro stopLobsterAIProcesses
     StrCmp $lobsterTargetProcessesStopStatus "success" TargetProcessesStopped
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=install-failed-before-mutation attempt_id=$lobsterInstallerAttemptId failure_kind=process-stop-failed raw_status=$lobsterTargetProcessesStopStatus exit=$R2 action=old-install-untouched$\r$\n"
       FileClose $9
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties update stopped before replacing the previous version because the old application processes could not be confirmed stopped. Please close Maties and retry. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI update stopped before replacing the previous version because the old application processes could not be confirmed stopped. Please close LobsterAI and retry. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       SetErrorLevel 2
       Quit
     TargetProcessesStopped:
 
     ; -- Backup user-created skills to AppData before extraction overwrites them --
-    ; Copy non-bundled skills to %APPDATA%\Maties\skills-backup\ so they are
+    ; Copy non-bundled skills to %APPDATA%\LobsterAI\skills-backup\ so they are
     ; preserved when NSIS extracts the new version over the existing install.
     ; The backup is restored in customInstall after extraction completes.
     ; Must run before the $INSTDIR rename below -- it reads from $INSTDIR.
@@ -1419,7 +1419,7 @@ FunctionEnd
     SkillBackupSourceReady:
     DetailPrint "[Installer] Backing up user-created skills"
     ClearErrors
-    FileOpen $R0 "$APPDATA\Maties\skill-migrate.log" w
+    FileOpen $R0 "$APPDATA\LobsterAI\skill-migrate.log" w
     IfErrors BackupLogOpenFailed
       !insertmacro GetTimestamp $8
       FileWrite $R0 "$8 phase=backup-start attempt_id=$lobsterInstallerAttemptId instdir=$INSTDIR appdata=$APPDATA$\r$\n"
@@ -1429,16 +1429,16 @@ FunctionEnd
     BackupDoExec:
 
     ReadRegStr $4 SHELL_CONTEXT "${UNINSTALL_REGISTRY_KEY}" DisplayVersion
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_SOURCE", t "$INSTDIR\resources\SKILLs")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_BACKUP_ROOT", t "$APPDATA\Maties\skills-backup")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ATTEMPT_ID", t "$lobsterInstallerAttemptId")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_OLD_VERSION", t "$4")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_SOURCE", t "$INSTDIR\resources\SKILLs")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_BACKUP_ROOT", t "$APPDATA\LobsterAI\skills-backup")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ATTEMPT_ID", t "$lobsterInstallerAttemptId")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_OLD_VERSION", t "$4")i'
     Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "\
       $$ErrorActionPreference = \"Stop\";\
-      $$src       = $$env:MATIES_SKILL_SOURCE;\
-      $$root      = $$env:MATIES_SKILL_BACKUP_ROOT;\
-      $$attempt   = $$env:MATIES_INSTALL_ATTEMPT_ID;\
-      $$oldVer    = $$env:MATIES_OLD_VERSION;\
+      $$src       = $$env:LOBSTERAI_SKILL_SOURCE;\
+      $$root      = $$env:LOBSTERAI_SKILL_BACKUP_ROOT;\
+      $$attempt   = $$env:LOBSTERAI_INSTALL_ATTEMPT_ID;\
+      $$oldVer    = $$env:LOBSTERAI_OLD_VERSION;\
       $$backup    = Join-Path $$root $$attempt;\
       $$staging   = $$backup + \".new\";\
       $$manifest  = Join-Path $$staging \"backup-manifest.json\";\
@@ -1524,10 +1524,10 @@ FunctionEnd
     Pop $0
     Pop $1
     StrCpy $R2 $0
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_SOURCE", t "")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_BACKUP_ROOT", t "")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ATTEMPT_ID", t "")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_OLD_VERSION", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_SOURCE", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_BACKUP_ROOT", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ATTEMPT_ID", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_OLD_VERSION", t "")i'
     System::Call 'kernel32::GetTickCount()i .r6'
     IntOp $5 $6 - $7
 
@@ -1561,10 +1561,10 @@ FunctionEnd
     SkillBackupResultLog:
     System::Call 'kernel32::GetTickCount()i .r6'
     IntOp $5 $6 - $7
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
-    FileWrite $9 "$8 phase=skill-backup-complete attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsStatus exit=$R2 elapsed_ms=$5 backup=$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId$\r$\n"
+    FileWrite $9 "$8 phase=skill-backup-complete attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsStatus exit=$R2 elapsed_ms=$5 backup=$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId$\r$\n"
     FileClose $9
 
     ; User-created skills live inside the installation tree. If their backup
@@ -1578,21 +1578,21 @@ FunctionEnd
       ; disk immediately before any destructive step. If it vanished (e.g.
       ; antivirus quarantine), fail closed now while the old install is still
       ; intact instead of discovering the loss at restore time.
-      IfFileExists "$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId\backup-manifest.json" SkillBackupValidated
+      IfFileExists "$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId\backup-manifest.json" SkillBackupValidated
       StrCpy $lobsterLegacySkillsStatus "legacy-backup-verify-failed"
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
-      FileWrite $9 "$8 phase=skill-backup-manifest-postcheck-missing attempt_id=$lobsterInstallerAttemptId manifest=$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId\backup-manifest.json$\r$\n"
+      FileWrite $9 "$8 phase=skill-backup-manifest-postcheck-missing attempt_id=$lobsterInstallerAttemptId manifest=$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId\backup-manifest.json$\r$\n"
       FileClose $9
     SkillBackupFailedAbort:
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=skill-backup-failed-abort attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsStatus exit=$R2 action=old-install-preserved$\r$\n"
       FileClose $9
       Call lobsterTryRelaunchOldApp
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties update stopped because legacy user skills could not be safely inspected or backed up (status=$lobsterLegacySkillsStatus). The previous installation was not replaced. Please retry the update. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI update stopped because legacy user skills could not be safely inspected or backed up (status=$lobsterLegacySkillsStatus). The previous installation was not replaced. Please retry the update. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       SetErrorLevel 2
       Quit
     SkillBackupValidated:
@@ -1642,7 +1642,7 @@ FunctionEnd
     InitPluginsDir
     SetOutPath "$PLUGINSDIR"
 
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=old-install-rename-start attempt_id=$lobsterInstallerAttemptId instdir=$lobsterOldInstallOriginalPath registered_instdir=$lobsterOldInstallRegisteredPath current_directory=$lobsterOldInstallCurrentDirectory install_mode=$installMode$\r$\n"
@@ -1702,7 +1702,7 @@ FunctionEnd
       Goto OldInstallRenameComplete
 
     OldInstallRenameAttemptFailed:
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=old-install-rename-attempt attempt_id=$lobsterInstallerAttemptId attempt=$lobsterOldInstallRenameAttempts result=failed win32_error=$lobsterOldInstallRenameError$\r$\n"
@@ -1723,12 +1723,12 @@ FunctionEnd
       ; rollback could not restore a single authoritative old tree. Freeze the
       ; attempt with every recovery source preserved; never fall through into
       ; stock uninstall/install while filesystem ownership is ambiguous.
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=old-install-rename-verification-abort attempt_id=$lobsterInstallerAttemptId outcome=recovery-required rollback_status=$lobsterOldInstallRollbackStatus rollback_error=$lobsterOldInstallRollbackError source=$lobsterOldInstallOriginalPath backup=$lobsterOldInstallBackupPath$\r$\n"
       FileClose $9
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because the previous installation move could not be verified and automatic recovery did not complete. No recovery copy was deleted. Restart Windows before retrying. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because the previous installation move could not be verified and automatic recovery did not complete. No recovery copy was deleted. Restart Windows before retrying. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       SetErrorLevel 3
       Quit
 
@@ -1736,12 +1736,12 @@ FunctionEnd
       ; lobsterRollbackOldInstall has already restored and, when its strict
       ; gates allow it, relaunched the old application. This attempt must end
       ; here instead of invoking the stock uninstaller against that live tree.
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=old-install-rename-verification-abort attempt_id=$lobsterInstallerAttemptId outcome=restored rollback_status=$lobsterOldInstallRollbackStatus relaunch_status=$lobsterOldAppRelaunchStatus source=$lobsterOldInstallOriginalPath$\r$\n"
       FileClose $9
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because the previous installation move could not be verified. The previous version was restored. Please retry the installation. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because the previous installation move could not be verified. The previous version was restored. Please retry the installation. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       SetErrorLevel 2
       Quit
 
@@ -1757,7 +1757,7 @@ FunctionEnd
     IfFileExists "$lobsterOldInstallBackupPath\*.*" 0 OldInstallRenameBackupChecked
       StrCpy $3 "true"
     OldInstallRenameBackupChecked:
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=old-install-rename-complete attempt_id=$lobsterInstallerAttemptId status=$lobsterOldInstallRenameStatus reason=$lobsterOldInstallRenameReason attempts=$lobsterOldInstallRenameAttempts win32_error=$lobsterOldInstallRenameError elapsed_ms=$5 source_exists=$2 backup_exists=$3 backup_path=$lobsterOldInstallBackupPath cleanup_mode=deferred$\r$\n"
@@ -1774,7 +1774,7 @@ FunctionEnd
       StrCpy $lobsterLegacySkillsStatus "legacy-not-applicable-fresh-install"
       StrCpy $lobsterOldInstallRenameStatus "not-required"
       StrCpy $lobsterOldInstallRenameReason "fresh-install"
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=fresh-install-old-flow-skipped attempt_id=$lobsterInstallerAttemptId process_stop=skipped legacy_skills=skipped old_staging=skipped$\r$\n"
@@ -1787,7 +1787,7 @@ FunctionEnd
     ; uninstall blocker.
     !insertmacro EnsureInstallerAttemptId
     !insertmacro ResolveTrustedPowerShell
-    !insertmacro stopMatiesProcesses
+    !insertmacro stopLobsterAIProcesses
   !endif
 !macroend
 
@@ -1810,7 +1810,7 @@ FunctionEnd
     ${AndIf} $lobsterOldUninstallCandidatePathNormalized == $lobsterOldInstallOriginalPathNormalized
       ClearErrors
       StrCpy $R0 0
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=old-uninstaller-skipped attempt_id=$lobsterInstallerAttemptId root=${ROOT_KEY} reason=rename-success registered_instdir=$lobsterOldUninstallCandidatePath backup_path=$lobsterOldInstallBackupPath$\r$\n"
@@ -1818,7 +1818,7 @@ FunctionEnd
     ${Else}
       System::Call 'kernel32::GetTickCount()i .r4'
       StrCpy $lobsterOldUninstallStartTick $4
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=old-uninstaller-start attempt_id=$lobsterInstallerAttemptId root=${ROOT_KEY} registered_instdir=$lobsterOldUninstallCandidatePath rename_status=$lobsterOldInstallRenameStatus$\r$\n"
@@ -1835,7 +1835,7 @@ FunctionEnd
       CustomOldUninstallerReturned_${ROOT_KEY}:
       System::Call 'kernel32::GetTickCount()i .r6'
       IntOp $5 $6 - $lobsterOldUninstallStartTick
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=old-uninstaller-returned attempt_id=$lobsterInstallerAttemptId root=${ROOT_KEY} status=$lobsterOldUninstallLaunchStatus exit=$R0 elapsed_ms=$5$\r$\n"
@@ -1859,7 +1859,7 @@ FunctionEnd
 
       System::Call 'kernel32::GetTickCount()i .r6'
       IntOp $5 $6 - $lobsterOldUninstallStartTick
-      FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $9 0 END
       !insertmacro GetTimestamp $8
       FileWrite $9 "$8 phase=old-uninstaller-complete attempt_id=$lobsterInstallerAttemptId root=${ROOT_KEY} status=handled exit=$R0 elapsed_ms=$5$\r$\n"
@@ -1870,11 +1870,11 @@ FunctionEnd
   ; Runs after every old-install root has either been skipped or fully
   ; uninstalled, immediately before installApplicationFiles. This ordering is
   ; important for transition upgrades: already-installed legacy uninstallers
-  ; remove Maties exclusions at the end of their --updated flow.
+  ; remove LobsterAI exclusions at the end of their --updated flow.
   !macro customAfterUninstallOldVersions
     DetailPrint "[Installer] Applying Windows Defender install-scope exclusion"
     !insertmacro ResolveTrustedPowerShell
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=defender-exclusion-start attempt_id=$lobsterInstallerAttemptId point=post-old-uninstaller rename_status=$lobsterOldInstallRenameStatus helper_status=$lobsterTrustedPowerShellStatus$\r$\n"
@@ -1888,9 +1888,9 @@ FunctionEnd
     IfErrors 0 DefenderPostUninstallQueryOnly
 
     CreateDirectory "$INSTDIR"
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ROOT", t "$INSTDIR")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ROOT", t "$INSTDIR")i'
     Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "\
-      $$target = $$env:MATIES_INSTALL_ROOT;\
+      $$target = $$env:LOBSTERAI_INSTALL_ROOT;\
       try { $$beforePaths = @((Get-MpPreference -ErrorAction Stop).ExclusionPath); $$before = if ($$beforePaths -contains $$target) { \"present\" } else { \"absent\" } } catch { $$before = \"query-failed\" };\
       try { Add-MpPreference -ExclusionPath $$target -ErrorAction Stop; $$add = \"added\" } catch { $$add = \"skipped:\" + $$_.Exception.Message.Trim() };\
       try { $$afterPaths = @((Get-MpPreference -ErrorAction Stop).ExclusionPath); $$after = if ($$afterPaths -contains $$target) { \"present\" } else { \"absent\" } } catch { $$after = \"query-failed\" };\
@@ -1899,9 +1899,9 @@ FunctionEnd
     Goto DefenderPostUninstallCommandDone
 
     DefenderPostUninstallQueryOnly:
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ROOT", t "$INSTDIR")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ROOT", t "$INSTDIR")i'
     Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "\
-      $$root = $$env:MATIES_INSTALL_ROOT;\
+      $$root = $$env:LOBSTERAI_INSTALL_ROOT;\
       $$targets = @($$root, (Join-Path $$root \"resources\cfmind\"), (Join-Path $$root \"resources\python-win\"), (Join-Path $$root \"resources\SKILLs\"), (Join-Path $$root \"resources\app.asar.unpacked\"), (Join-Path $$root \"resources\app.asar\"), (Join-Path $$root \"resources\win-resources.tar\"));\
       try { $$beforePaths = @((Get-MpPreference -ErrorAction Stop).ExclusionPath); $$before = @($$targets | Where-Object { $$beforePaths -contains $$_ }).Count } catch { $$before = \"query-failed\" };\
       try { Remove-MpPreference -ExclusionPath $$targets -ErrorAction Stop; $$remove = \"requested\" } catch { $$remove = \"failed:\" + $$_.Exception.Message.Trim() };\
@@ -1913,7 +1913,7 @@ FunctionEnd
     Pop $0
     Pop $1
     StrCpy $R2 $0
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ROOT", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ROOT", t "")i'
     Goto DefenderPostUninstallLog
 
     DefenderPostUninstallHelperMissing:
@@ -1923,7 +1923,7 @@ FunctionEnd
     DefenderPostUninstallLog:
     System::Call 'kernel32::GetTickCount()i .r6'
     IntOp $5 $6 - $7
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=defender-exclusion-complete attempt_id=$lobsterInstallerAttemptId point=post-old-uninstaller exit=$R2 elapsed_ms=$5 output=$1$\r$\n"
@@ -1945,7 +1945,7 @@ FunctionEnd
     !insertmacro EnsureInstallerAttemptId
     System::Call 'kernel32::GetTickCount()i .r0'
     StrCpy $lobsterWebAcquireStartTick $0
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=web-package-acquire-start attempt_id=$lobsterInstallerAttemptId$\r$\n"
@@ -1962,7 +1962,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     IntOp $1 $0 - $lobsterWebAcquireStartTick
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=web-package-acquire-complete attempt_id=$lobsterInstallerAttemptId source=${SOURCE} elapsed_ms=$1 file=$packageFile$\r$\n"
@@ -1980,7 +1980,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     StrCpy $lobsterWebVerifyStartTick $0
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=web-package-verify-start attempt_id=$lobsterInstallerAttemptId attempt=$webDownloadAttempt$\r$\n"
@@ -1997,7 +1997,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     IntOp $1 $0 - $lobsterWebVerifyStartTick
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=web-package-verify-complete attempt_id=$lobsterInstallerAttemptId attempt=$webDownloadAttempt result=${RESULT} elapsed_ms=$1$\r$\n"
@@ -2018,7 +2018,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     StrCpy $lobsterWebDownloadStartTick $0
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=web-package-download-start attempt_id=$lobsterInstallerAttemptId attempt=$webDownloadAttempt mode=${MODE} arch=$packageArch url=$packageUrl dest=$PLUGINSDIR\package.7z$\r$\n"
@@ -2040,7 +2040,7 @@ FunctionEnd
     StrCpy $2 "${STATUS}"
     System::Call 'kernel32::GetTickCount()i .r0'
     IntOp $1 $0 - $lobsterWebDownloadStartTick
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=web-package-download-exit attempt_id=$lobsterInstallerAttemptId attempt=$webDownloadAttempt mode=${MODE} elapsed_ms=$1 status=$2$\r$\n"
@@ -2058,7 +2058,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     StrCpy $lobsterPackageMaterializeStartTick $0
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=payload-materialize-start attempt_id=$lobsterInstallerAttemptId arch=$packageArch dest=$appPackageStagingDir\app-$packageArch.${COMPRESSION_METHOD}$\r$\n"
@@ -2075,7 +2075,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     IntOp $1 $0 - $lobsterPackageMaterializeStartTick
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=payload-materialize-complete attempt_id=$lobsterInstallerAttemptId arch=$packageArch elapsed_ms=$1$\r$\n"
@@ -2092,7 +2092,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     StrCpy $lobsterPackageExtractStartTick $0
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=payload-7z-extract-start attempt_id=$lobsterInstallerAttemptId mode=${MODE} arch=$packageArch source=${SOURCE} dest=$OUTDIR$\r$\n"
@@ -2109,7 +2109,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     IntOp $1 $0 - $lobsterPackageExtractStartTick
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=payload-7z-extract-complete attempt_id=$lobsterInstallerAttemptId mode=${MODE} arch=$packageArch result=${RESULT} elapsed_ms=$1$\r$\n"
@@ -2130,7 +2130,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     StrCpy $lobsterPackageCopyStartTick $0
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=payload-copy-start attempt_id=$lobsterInstallerAttemptId attempt=$R1 source=$appPackageStagingDir\7z-out dest=$OUTDIR$\r$\n"
@@ -2147,7 +2147,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     IntOp $1 $0 - $lobsterPackageCopyStartTick
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=payload-copy-complete attempt_id=$lobsterInstallerAttemptId attempt=$R1 result=${RESULT} elapsed_ms=$1$\r$\n"
@@ -2164,7 +2164,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     StrCpy $lobsterInstallerCacheCopyStartTick $0
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=installer-cache-copy-start attempt_id=$lobsterInstallerAttemptId kind=${KIND}$\r$\n"
@@ -2200,7 +2200,7 @@ FunctionEnd
       Call lobsterQueryFreeMegabytes
       Pop $3
     ${EndIf}
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     ${If} "${RESULT}" == "error"
@@ -2220,7 +2220,7 @@ FunctionEnd
   !macro customEstimatedSizeKnown VALUE
     Push $8
     Push $9
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=estimated-size-scan-skipped attempt_id=$lobsterInstallerAttemptId source=build-estimate value_kb=${VALUE}$\r$\n"
@@ -2244,7 +2244,7 @@ FunctionEnd
     Push $9
     System::Call 'kernel32::GetTickCount()i .r0'
     IntOp $1 $0 - $lobsterEstimatedSizeScanStartTick
-    FileOpen $9 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $9 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $9 0 END
     !insertmacro GetTimestamp $8
     FileWrite $9 "$8 phase=estimated-size-scan-complete attempt_id=$lobsterInstallerAttemptId value_kb=$lobsterEstimatedSizeValue elapsed_ms=$1$\r$\n"
@@ -2259,10 +2259,10 @@ FunctionEnd
 !macro customBeforeRegistryAddInstallInfo
   ; -- Install Timing Log --
   ; Write timestamps to help diagnose slow installation phases.
-  ; Log file: %APPDATA%\Maties\install-timing.log
+  ; Log file: %APPDATA%\LobsterAI\install-timing.log
 
-  CreateDirectory "$APPDATA\Maties"
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  CreateDirectory "$APPDATA\LobsterAI"
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=app-files-install-complete attempt_id=$lobsterInstallerAttemptId$\r$\n"
@@ -2293,7 +2293,7 @@ FunctionEnd
   StrCpy $R3 "none"
   StrCpy $R4 "none"
   !insertmacro ResolveTrustedTar
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=system-tool-resolved attempt_id=$lobsterInstallerAttemptId tool=tar status=$lobsterTrustedTarStatus source=$lobsterTrustedTarSource path=$lobsterTrustedTarPath$\r$\n"
@@ -2305,7 +2305,7 @@ FunctionEnd
   ; execution (the root cause of installers hanging at this phase).
   StrCmp $lobsterTrustedTarPath "" TarExtractElectron
   StrCpy $R3 "system-tar"
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=tar-extract-start attempt_id=$lobsterInstallerAttemptId extractor=system-tar helper=$lobsterTrustedTarPath tar=$INSTDIR\resources\win-resources.tar dest=$INSTDIR\resources$\r$\n"
@@ -2324,7 +2324,7 @@ FunctionEnd
   StrCpy $R2 $0
   System::Call 'kernel32::GetTickCount()i .r6'
   IntOp $5 $6 - $7
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=tar-extract-exit attempt_id=$lobsterInstallerAttemptId extractor=system-tar raw_kind=numeric-or-adapter-exit exit=$R2 elapsed_ms=$5$\r$\n"
@@ -2338,7 +2338,7 @@ FunctionEnd
     Push $R6
     Call lobsterBuildSingleLineTail
     Pop $R6
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=tar-extract-output attempt_id=$lobsterInstallerAttemptId extractor=system-tar exit=$R2 text=$R6$\r$\n"
@@ -2360,7 +2360,7 @@ FunctionEnd
   ; present is treated as success, still gated by TarExtractVerify.
   StrCpy $R3 "electron"
   DetailPrint "[Installer] Launching bundled extractor"
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=tar-extract-start attempt_id=$lobsterInstallerAttemptId extractor=electron tar=$INSTDIR\resources\win-resources.tar dest=$INSTDIR\resources$\r$\n"
@@ -2372,29 +2372,29 @@ FunctionEnd
   Delete "$PLUGINSDIR\lobster-watchdog-$lobsterInstallerAttemptId.marker"
   ; A stale sentinel from an earlier run must never vouch for this attempt.
   Delete "$INSTDIR\resources\.unpack-cfmind-ok"
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_WATCHDOG_MARKER_PATH", t "$PLUGINSDIR\lobster-watchdog-$lobsterInstallerAttemptId.marker")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_EXE", t "$INSTDIR\${APP_EXECUTABLE_FILENAME}")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_SCRIPT", t "$INSTDIR\resources\unpack-cfmind.cjs")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_ARCHIVE", t "$INSTDIR\resources\win-resources.tar")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_DESTINATION", t "$INSTDIR\resources")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_LOG", t "$APPDATA\Maties\install-timing.log")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_WATCHDOG_MARKER_PATH", t "$PLUGINSDIR\lobster-watchdog-$lobsterInstallerAttemptId.marker")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_EXE", t "$INSTDIR\${APP_EXECUTABLE_FILENAME}")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_SCRIPT", t "$INSTDIR\resources\unpack-cfmind.cjs")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_ARCHIVE", t "$INSTDIR\resources\win-resources.tar")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_DESTINATION", t "$INSTDIR\resources")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_LOG", t "$APPDATA\LobsterAI\install-timing.log")i'
   Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "\
     $$ErrorActionPreference = \"Stop\";\
-    $$marker = $$env:MATIES_WATCHDOG_MARKER_PATH;\
+    $$marker = $$env:LOBSTERAI_WATCHDOG_MARKER_PATH;\
     function Write-LobsterWatchdogMarker {\
       param([string] $$value);\
       try {\
         Set-Content -LiteralPath $$marker -Value $$value -NoNewline -ErrorAction Stop\
       } catch {\
-        Write-Output (\"MATIES_WATCHDOG_MARKER_WRITE_FAILED:\" + $$value)\
+        Write-Output (\"LOBSTERAI_WATCHDOG_MARKER_WRITE_FAILED:\" + $$value)\
       }\
     };\
     try {\
-      $$extractorArgs = \"`\"\" + $$env:MATIES_EXTRACTOR_SCRIPT + \"`\" `\"\" + $$env:MATIES_EXTRACTOR_ARCHIVE + \"`\" `\"\" + $$env:MATIES_EXTRACTOR_DESTINATION + \"`\" `\"\" + $$env:MATIES_EXTRACTOR_LOG + \"`\"\";\
-      $$p = Start-Process -FilePath $$env:MATIES_EXTRACTOR_EXE -ArgumentList $$extractorArgs -NoNewWindow -PassThru\
+      $$extractorArgs = \"`\"\" + $$env:LOBSTERAI_EXTRACTOR_SCRIPT + \"`\" `\"\" + $$env:LOBSTERAI_EXTRACTOR_ARCHIVE + \"`\" `\"\" + $$env:LOBSTERAI_EXTRACTOR_DESTINATION + \"`\" `\"\" + $$env:LOBSTERAI_EXTRACTOR_LOG + \"`\"\";\
+      $$p = Start-Process -FilePath $$env:LOBSTERAI_EXTRACTOR_EXE -ArgumentList $$extractorArgs -NoNewWindow -PassThru\
     } catch {\
       Write-LobsterWatchdogMarker \"process-start-blocked\";\
-      Write-Output \"MATIES_WATCHDOG_START_BLOCKED\";\
+      Write-Output \"LOBSTERAI_WATCHDOG_START_BLOCKED\";\
       exit 125\
     };\
     if ($$p.WaitForExit(600000)) {\
@@ -2402,7 +2402,7 @@ FunctionEnd
       if ($$p.ExitCode -eq $$null) {\
         $$sentinelOk = $$false;\
         try {\
-          $$sentinel = Join-Path $$env:MATIES_EXTRACTOR_DESTINATION \".unpack-cfmind-ok\";\
+          $$sentinel = Join-Path $$env:LOBSTERAI_EXTRACTOR_DESTINATION \".unpack-cfmind-ok\";\
           $$sentinelOk = Test-Path -LiteralPath $$sentinel\
         } catch { $$sentinelOk = $$false };\
         if ($$sentinelOk) {\
@@ -2418,26 +2418,26 @@ FunctionEnd
       Stop-Process -Id $$p.Id -Force -ErrorAction Stop;\
       if (-not $$p.WaitForExit(30000)) {\
         Write-LobsterWatchdogMarker \"process-termination-failed\";\
-        Write-Output \"MATIES_WATCHDOG_TERMINATION_FAILED\";\
+        Write-Output \"LOBSTERAI_WATCHDOG_TERMINATION_FAILED\";\
         exit 126\
       }\
     } catch {\
       Write-LobsterWatchdogMarker \"process-termination-failed\";\
-      Write-Output \"MATIES_WATCHDOG_TERMINATION_FAILED\";\
+      Write-Output \"LOBSTERAI_WATCHDOG_TERMINATION_FAILED\";\
       exit 126\
     };\
     Write-LobsterWatchdogMarker \"process-timeout\";\
-    Write-Output \"MATIES_WATCHDOG_TIMEOUT\";\
+    Write-Output \"LOBSTERAI_WATCHDOG_TIMEOUT\";\
     exit 124"'
   !insertmacro LobsterExecHiddenExitCode
   Pop $0
   StrCpy $R2 $0
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_WATCHDOG_MARKER_PATH", t "")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_EXE", t "")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_SCRIPT", t "")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_ARCHIVE", t "")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_DESTINATION", t "")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_EXTRACTOR_LOG", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_WATCHDOG_MARKER_PATH", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_EXE", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_SCRIPT", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_ARCHIVE", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_DESTINATION", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_EXTRACTOR_LOG", t "")i'
   StrCpy $R4 "none"
   ClearErrors
   FileOpen $3 "$PLUGINSDIR\lobster-watchdog-$lobsterInstallerAttemptId.marker" r
@@ -2455,7 +2455,7 @@ FunctionEnd
   TarExtractWatchdogReturned:
   System::Call 'kernel32::GetTickCount()i .r6'
   IntOp $5 $6 - $7
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=tar-extract-exit attempt_id=$lobsterInstallerAttemptId extractor=electron raw_marker=$R4 exit=$R2 elapsed_ms=$5$\r$\n"
@@ -2497,7 +2497,7 @@ FunctionEnd
   StrCpy $R5 "python-entry-missing"
 
   TarExtractRequiredResourceMissing:
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=tar-extract-error attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2 reason=$R5-after-extract$\r$\n"
@@ -2508,35 +2508,35 @@ FunctionEnd
   ; in /S installs unless a silent default is declared, and the in-app update
   ; must never block on an orphan dialog.
   StrCmp $R3 "system-tar" TarExtractElectron
-  MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because resource extraction completed without all required runtime resources ($R5). The installer will not commit a partial application. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+  MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because resource extraction completed without all required runtime resources ($R5). The installer will not commit a partial application. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
   Goto TarExtractFailed
 
   TarExtractProcessFailed:
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=tar-extract-error attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2 raw_marker=$R4 elapsed_ms=$5 reason=process-start-failed$\r$\n"
     FileClose $2
-    MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because the resource extractor could not be started (exit=$R2). The installer will not commit a partial application. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because the resource extractor could not be started (exit=$R2). The installer will not commit a partial application. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
     Goto TarExtractFailed
 
   TarExtractTimeout:
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=tar-extract-error attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2 raw_marker=$R4 elapsed_ms=$5 reason=timeout$\r$\n"
     FileClose $2
-    MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because resource extraction timed out after 10 minutes. The blocked extractor was terminated and the installer will not commit a partial application. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because resource extraction timed out after 10 minutes. The blocked extractor was terminated and the installer will not commit a partial application. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
     Goto TarExtractFailed
 
   TarExtractTerminationFailed:
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=tar-extract-error attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2 raw_marker=$R4 elapsed_ms=$5 reason=process-termination-failed action=preserve-all-no-concurrent-rollback$\r$\n"
     FileClose $2
     System::Call 'Kernel32::SetEnvironmentVariable(t "ELECTRON_RUN_AS_NODE", t "")i'
-    MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because the extractor process could not be confirmed terminated. No automatic rollback or cleanup was attempted while that process may still be writing files. Restart Windows before retrying. Recovery files (if any): $lobsterOldInstallBackupPath. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because the extractor process could not be confirmed terminated. No automatic rollback or cleanup was attempted while that process may still be writing files. Restart Windows before retrying. Recovery files (if any): $lobsterOldInstallBackupPath. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
     SetErrorLevel 3
     Quit
 
@@ -2549,7 +2549,7 @@ FunctionEnd
     ; never trigger deletion, an unreadable exit code alone must never abort
     ; an installation whose payload verifiably exists.)
     IfFileExists "$INSTDIR\resources\.unpack-cfmind-ok" 0 TarExtractOutputValidationFatal
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=tar-extract-sentinel-rescue attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2 raw_marker=$R4 elapsed_ms=$5 sentinel=present$\r$\n"
@@ -2557,25 +2557,25 @@ FunctionEnd
     Goto TarExtractVerify
 
   TarExtractOutputValidationFatal:
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=tar-extract-error attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2 raw_marker=$R4 elapsed_ms=$5 reason=watchdog-output-validation-failed$\r$\n"
     FileClose $2
-    MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because the resource extractor watchdog returned an invalid result. The installer will not commit a partial application. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because the resource extractor watchdog returned an invalid result. The installer will not commit a partial application. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
     Goto TarExtractFailed
 
   TarExtractNonZero:
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=tar-extract-error attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2 raw_marker=$R4 elapsed_ms=$5 reason=numeric-child-exit$\r$\n"
     FileClose $2
-    MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because resource extraction failed (child exit code $R2). The installer will not commit a partial application. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because resource extraction failed (child exit code $R2). The installer will not commit a partial application. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
     Goto TarExtractFailed
 
   TarExtractSucceeded:
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=tar-extract-complete attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2$\r$\n"
@@ -2595,7 +2595,7 @@ FunctionEnd
   Goto TarExtractDone
 
   TarExtractFailed:
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=tar-extract-failed-archive-preserved attempt_id=$lobsterInstallerAttemptId extractor=$R3 exit=$R2 raw_marker=$R4 action=abort-install$\r$\n"
@@ -2603,7 +2603,7 @@ FunctionEnd
   System::Call 'Kernel32::SetEnvironmentVariable(t "ELECTRON_RUN_AS_NODE", t "")i'
   !insertmacro customRollbackOldInstall "resource-extraction-failed"
   StrCmp $lobsterOldInstallRollbackStatus "failed" 0 TarExtractAbort
-    MessageBox MB_OK|MB_ICONEXCLAMATION "The installation failed and automatic rollback did not complete. No recovery copy was deleted. Previous files: $lobsterOldInstallBackupPath. Partial update: $lobsterOldInstallFailedPath. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+    MessageBox MB_OK|MB_ICONEXCLAMATION "The installation failed and automatic rollback did not complete. No recovery copy was deleted. Previous files: $lobsterOldInstallBackupPath. Partial update: $lobsterOldInstallFailedPath. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
   TarExtractAbort:
   SetErrorLevel 3
   Quit
@@ -2616,7 +2616,7 @@ FunctionEnd
   ; fixed skills-backup directory.
   StrCmp $lobsterLegacySkillsStatus "legacy-backup-succeeded" 0 SkipSkillRestore
   System::Call 'kernel32::GetTickCount()i .r7'
-  IfFileExists "$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId\backup-manifest.json" SkillRestoreAttemptBackupReady
+  IfFileExists "$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId\backup-manifest.json" SkillRestoreAttemptBackupReady
     StrCpy $R2 "backup-missing"
     StrCpy $1 "current-attempt-backup-manifest-missing"
     StrCpy $lobsterLegacySkillsRestoreStatus "legacy-restore-backup-missing"
@@ -2624,24 +2624,24 @@ FunctionEnd
 
   SkillRestoreAttemptBackupReady:
     DetailPrint "[Installer] Restoring user-created skills"
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
-    FileWrite $2 "$8 phase=skill-restore-start attempt_id=$lobsterInstallerAttemptId backup=$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId$\r$\n"
+    FileWrite $2 "$8 phase=skill-restore-start attempt_id=$lobsterInstallerAttemptId backup=$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId$\r$\n"
     FileClose $2
 
     StrCmp $lobsterTrustedPowerShellPath "" SkillRestoreHelperMissing
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_SOURCE", t "$lobsterOldInstallOriginalPath\resources\SKILLs")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_BACKUP_ROOT", t "$APPDATA\Maties\skills-backup")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_DESTINATION", t "$INSTDIR\resources\SKILLs")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ATTEMPT_ID", t "$lobsterInstallerAttemptId")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_SOURCE", t "$lobsterOldInstallOriginalPath\resources\SKILLs")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_BACKUP_ROOT", t "$APPDATA\LobsterAI\skills-backup")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_DESTINATION", t "$INSTDIR\resources\SKILLs")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ATTEMPT_ID", t "$lobsterInstallerAttemptId")i'
     Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "\
       $$ErrorActionPreference = \"Stop\";\
-      $$attempt   = $$env:MATIES_INSTALL_ATTEMPT_ID;\
-      $$root      = $$env:MATIES_SKILL_BACKUP_ROOT;\
-      $$source    = $$env:MATIES_SKILL_SOURCE;\
+      $$attempt   = $$env:LOBSTERAI_INSTALL_ATTEMPT_ID;\
+      $$root      = $$env:LOBSTERAI_SKILL_BACKUP_ROOT;\
+      $$source    = $$env:LOBSTERAI_SKILL_SOURCE;\
       $$backup    = Join-Path $$root $$attempt;\
-      $$newSkills = $$env:MATIES_SKILL_DESTINATION;\
+      $$newSkills = $$env:LOBSTERAI_SKILL_DESTINATION;\
       try {\
         if ([string]::IsNullOrWhiteSpace($$attempt)) { throw \"attempt id missing\" };\
         $$manifestPath = Join-Path $$backup \"backup-manifest.json\";\
@@ -2703,10 +2703,10 @@ FunctionEnd
     Pop $0
     Pop $1
     StrCpy $R2 $0
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_SOURCE", t "")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_BACKUP_ROOT", t "")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_SKILL_DESTINATION", t "")i'
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ATTEMPT_ID", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_SOURCE", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_BACKUP_ROOT", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_SKILL_DESTINATION", t "")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ATTEMPT_ID", t "")i'
     Goto SkillRestoreCommandDone
 
     SkillRestoreHelperMissing:
@@ -2723,16 +2723,16 @@ FunctionEnd
       StrCpy $lobsterLegacySkillsRestoreStatus "legacy-restore-failed"
     System::Call 'kernel32::GetTickCount()i .r6'
     IntOp $5 $6 - $7
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
-    FileWrite $2 "$8 phase=skill-restore-complete attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsRestoreStatus exit=$R2 elapsed_ms=$5 backup=$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId$\r$\n"
+    FileWrite $2 "$8 phase=skill-restore-complete attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsRestoreStatus exit=$R2 elapsed_ms=$5 backup=$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId$\r$\n"
     FileWrite $2 "$8 phase=skill-restore-output attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsRestoreStatus text=$1$\r$\n"
     FileClose $2
 
     StrCmp $R2 "0" SkillRestoreValidated
     StrCmp $R2 "20" SkillRestoreConflictPreserved
-      FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $2 0 END
       !insertmacro GetTimestamp $8
       FileWrite $2 "$8 phase=skill-restore-failed attempt_id=$lobsterInstallerAttemptId status=legacy-restore-failed action=attempt-backup-preserved rename_status=$lobsterOldInstallRenameStatus$\r$\n"
@@ -2746,10 +2746,10 @@ FunctionEnd
       System::Call 'Kernel32::SetEnvironmentVariable(t "ELECTRON_RUN_AS_NODE", t "")i'
       !insertmacro customRollbackOldInstall "skill-restore-failed"
       StrCmp $lobsterOldInstallRollbackStatus "success" SkillRestoreRollbackSucceeded
-        MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties update could not restore user skills, and automatic rollback did not complete. No recovery copy was deleted. Previous files: $lobsterOldInstallBackupPath. Partial update: $lobsterOldInstallFailedPath. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+        MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI update could not restore user skills, and automatic rollback did not complete. No recovery copy was deleted. Previous files: $lobsterOldInstallBackupPath. Partial update: $lobsterOldInstallFailedPath. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
         Goto SkillRestoreAbort
       SkillRestoreRollbackSucceeded:
-        MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties update could not restore user skills, so the previous version was restored. Please retry the update. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+        MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI update could not restore user skills, so the previous version was restored. Please retry the update. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       SkillRestoreAbort:
       SetErrorLevel 2
       Quit
@@ -2761,23 +2761,23 @@ FunctionEnd
       ; recovery. The dialog must state exactly what survives: when no backup
       ; exists for this attempt, do not claim one was preserved.
       StrCmp $lobsterLegacySkillsRestoreStatus "legacy-restore-backup-missing" SkillRestoreDegradedBackupMissing
-      FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $2 0 END
       !insertmacro GetTimestamp $8
-      FileWrite $2 "$8 phase=skill-restore-degraded attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsRestoreStatus action=continue-with-attempt-backup-preserved backup=$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId$\r$\n"
+      FileWrite $2 "$8 phase=skill-restore-degraded attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsRestoreStatus action=continue-with-attempt-backup-preserved backup=$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId$\r$\n"
       FileClose $2
-      MessageBox MB_OK|MB_ICONEXCLAMATION "Maties will finish installing, but legacy user skills could not be restored automatically ($lobsterLegacySkillsRestoreStatus). The recovery backup was preserved at $APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "LobsterAI will finish installing, but legacy user skills could not be restored automatically ($lobsterLegacySkillsRestoreStatus). The recovery backup was preserved at $APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       Goto SkillRestoreValidated
 
     SkillRestoreDegradedBackupMissing:
       ; No backup exists for this attempt, so nothing could be restored and
       ; there is no preserved copy to point the user at.
-      FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $2 0 END
       !insertmacro GetTimestamp $8
-      FileWrite $2 "$8 phase=skill-restore-degraded attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsRestoreStatus action=continue-no-backup-found backup=$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId$\r$\n"
+      FileWrite $2 "$8 phase=skill-restore-degraded attempt_id=$lobsterInstallerAttemptId status=$lobsterLegacySkillsRestoreStatus action=continue-no-backup-found backup=$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId$\r$\n"
       FileClose $2
-      MessageBox MB_OK|MB_ICONEXCLAMATION "Maties will finish installing, but the recovery backup for legacy user skills was not found, so no skills were restored ($lobsterLegacySkillsRestoreStatus). Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "LobsterAI will finish installing, but the recovery backup for legacy user skills was not found, so no skills were restored ($lobsterLegacySkillsRestoreStatus). Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       Goto SkillRestoreValidated
 
     SkillRestoreConflictPreserved:
@@ -2785,10 +2785,10 @@ FunctionEnd
       ; copy to be overwritten or deleted. Finish installing the verified new
       ; app, retain the entire attempt backup, and expose a typed state for
       ; user-context import/manual recovery.
-      FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+      FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
       FileSeek $2 0 END
       !insertmacro GetTimestamp $8
-      FileWrite $2 "$8 phase=skill-restore-conflict-preserved attempt_id=$lobsterInstallerAttemptId status=name-conflict action=attempt-backup-preserved backup=$APPDATA\Maties\skills-backup\$lobsterInstallerAttemptId$\r$\n"
+      FileWrite $2 "$8 phase=skill-restore-conflict-preserved attempt_id=$lobsterInstallerAttemptId status=name-conflict action=attempt-backup-preserved backup=$APPDATA\LobsterAI\skills-backup\$lobsterInstallerAttemptId$\r$\n"
       FileClose $2
     SkillRestoreValidated:
   SkipSkillRestore:
@@ -2823,26 +2823,26 @@ FunctionEnd
   IfErrors +2
     StrCpy $R7 "0"
   StrCmp $lobsterTrustedPowerShellPath "" DefenderRebalanceHelperMissing
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ROOT", t "$INSTDIR")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_DEFENDER_ADD_PERMANENT", t "$R7")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ROOT", t "$INSTDIR")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_DEFENDER_ADD_PERMANENT", t "$R7")i'
   Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "\
-    $$root = $$env:MATIES_INSTALL_ROOT;\
+    $$root = $$env:LOBSTERAI_INSTALL_ROOT;\
     try { $$trimTargets = @($$root, (Join-Path $$root \"resources\SKILLs\")); Remove-MpPreference -ExclusionPath $$trimTargets -ErrorAction SilentlyContinue; $$trim = \"removed\" } catch { $$trim = \"failed:\" + $$_.Exception.Message.Trim() };\
-    if ($$env:MATIES_DEFENDER_ADD_PERMANENT -ne \"1\") { $$permanent = \"skipped:opt-out\" } else {\
+    if ($$env:LOBSTERAI_DEFENDER_ADD_PERMANENT -ne \"1\") { $$permanent = \"skipped:opt-out\" } else {\
       try { $$addTargets = @((Join-Path $$root \"resources\cfmind\"), (Join-Path $$root \"resources\python-win\"), (Join-Path $$root \"resources\app.asar.unpacked\"), (Join-Path $$root \"resources\app.asar\"), (Join-Path $$root \"resources\win-resources.tar\")); Add-MpPreference -ExclusionPath $$addTargets -ErrorAction Stop; $$permanent = \"added\" } catch { $$permanent = \"skipped:\" + $$_.Exception.Message.Trim() }\
     };\
     Write-Output (\"trim=\" + $$trim + \" permanent=\" + $$permanent)"'
   !insertmacro LobsterExecHiddenToStack
   Pop $0
   Pop $1
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ROOT", t "")i'
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_DEFENDER_ADD_PERMANENT", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ROOT", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_DEFENDER_ADD_PERMANENT", t "")i'
   Goto DefenderRebalanceLog
   DefenderRebalanceHelperMissing:
   StrCpy $0 "helper-not-found"
   StrCpy $1 "skipped:trusted-powershell-unavailable"
   DefenderRebalanceLog:
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=defender-exclusion-rebalance-complete attempt_id=$lobsterInstallerAttemptId permanent_requested=$R7 exit=$0 output=$1$\r$\n"
@@ -2878,7 +2878,7 @@ FunctionEnd
     StrCmp $lobsterOldInstallRenameStatus "success" 0 NewInstallPrevalidateLog
       StrCpy $lobsterOldInstallRenameStatus "prevalidated"
     NewInstallPrevalidateLog:
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=new-install-prevalidated attempt_id=$lobsterInstallerAttemptId status=$lobsterNewInstallValidationStatus reason=$lobsterNewInstallValidationReason rename_status=$lobsterOldInstallRenameStatus registration=pending backup_path=$lobsterOldInstallBackupPath$\r$\n"
@@ -2886,7 +2886,7 @@ FunctionEnd
     Goto NewInstallPrevalidateDone
 
   NewInstallPrevalidateFailed:
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=new-install-prevalidation-failed attempt_id=$lobsterInstallerAttemptId status=$lobsterNewInstallValidationStatus reason=$lobsterNewInstallValidationReason rename_status=$lobsterOldInstallRenameStatus registration=not-written backup_path=$lobsterOldInstallBackupPath$\r$\n"
@@ -2894,13 +2894,13 @@ FunctionEnd
     StrCmp $lobsterOldInstallRenameStatus "success" 0 NewInstallPrevalidateAbort
     !insertmacro customRollbackOldInstall "new-install-validation-failed"
     StrCmp $lobsterOldInstallRollbackStatus "success" NewInstallPrevalidateRollbackSucceeded
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties update could not be validated, and automatic rollback did not complete. No recovery copy was deleted. Previous files: $lobsterOldInstallBackupPath. Partial update: $lobsterOldInstallFailedPath. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI update could not be validated, and automatic rollback did not complete. No recovery copy was deleted. Previous files: $lobsterOldInstallBackupPath. Partial update: $lobsterOldInstallFailedPath. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       Goto NewInstallPrevalidateAbortAfterMessage
     NewInstallPrevalidateRollbackSucceeded:
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties update could not be validated, so the previous version was restored. Please retry the update. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI update could not be validated, so the previous version was restored. Please retry the update. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
       Goto NewInstallPrevalidateAbortAfterMessage
     NewInstallPrevalidateAbort:
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The Maties installation stopped because the new application could not be validated ($lobsterNewInstallValidationReason). New registration and shortcuts were not written. Details: $APPDATA\Maties\install-timing.log" /SD IDOK
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The LobsterAI installation stopped because the new application could not be validated ($lobsterNewInstallValidationReason). New registration and shortcuts were not written. Details: $APPDATA\LobsterAI\install-timing.log" /SD IDOK
     NewInstallPrevalidateAbortAfterMessage:
     SetErrorLevel 2
     Quit
@@ -2916,7 +2916,7 @@ FunctionEnd
   StrCmp $lobsterNewInstallValidationStatus "success" 0 InstallFinalizeInvariantFailed
   StrCmp $lobsterOldInstallRenameStatus "prevalidated" 0 InstallFinalizeNoRename
     StrCpy $lobsterOldInstallRenameStatus "committed"
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=old-install-commit-complete attempt_id=$lobsterInstallerAttemptId status=$lobsterNewInstallValidationStatus reason=$lobsterNewInstallValidationReason registration=written backup_path=$lobsterOldInstallBackupPath$\r$\n"
@@ -2932,10 +2932,10 @@ FunctionEnd
   ; "scheduled", not complete.
   ${If} $lobsterOldInstallRenameStatus == "committed"
     StrCpy $0 "success"
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_OLD_CLEANUP_PATH", t "$lobsterOldInstallBackupPath")i'
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_OLD_CLEANUP_PATH", t "$lobsterOldInstallBackupPath")i'
     ClearErrors
     StrCmp $lobsterTrustedPowerShellPath "" OldInstallCleanupHelperMissing
-    Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "Remove-Item -LiteralPath $$env:MATIES_OLD_CLEANUP_PATH -Recurse -Force -ErrorAction SilentlyContinue"'
+    Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "Remove-Item -LiteralPath $$env:LOBSTERAI_OLD_CLEANUP_PATH -Recurse -Force -ErrorAction SilentlyContinue"'
     !insertmacro LobsterExecHiddenDetached
     IfErrors 0 +2
       StrCpy $0 "launch-failed"
@@ -2943,8 +2943,8 @@ FunctionEnd
     OldInstallCleanupHelperMissing:
       StrCpy $0 "helper-not-found"
     OldInstallCleanupDispatchDone:
-    System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_OLD_CLEANUP_PATH", t "")i'
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_OLD_CLEANUP_PATH", t "")i'
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=old-install-cleanup-scheduled attempt_id=$lobsterInstallerAttemptId dispatch=$0 backup_path=$lobsterOldInstallBackupPath target=exact-current-backup cleanup_mode=async-exec-after-commit$\r$\n"
@@ -2956,7 +2956,7 @@ FunctionEnd
     ; The version-pinned template contract guarantees the pre-registry hook.
     ; Fail visibly if that contract is ever broken instead of silently
     ; finalizing an unvalidated tree.
-    FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+    FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
     FileSeek $2 0 END
     !insertmacro GetTimestamp $8
     FileWrite $2 "$8 phase=install-finalize-invariant-failed attempt_id=$lobsterInstallerAttemptId validation_status=$lobsterNewInstallValidationStatus rename_status=$lobsterOldInstallRenameStatus$\r$\n"
@@ -2965,7 +2965,7 @@ FunctionEnd
     Quit
 
   InstallFinalizeComplete:
-  FileOpen $2 "$APPDATA\Maties\install-timing.log" a
+  FileOpen $2 "$APPDATA\LobsterAI\install-timing.log" a
   FileSeek $2 0 END
   !insertmacro GetTimestamp $8
   FileWrite $2 "$8 phase=install-complete attempt_id=$lobsterInstallerAttemptId scenario=$lobsterInstallScenario$\r$\n"
@@ -2988,11 +2988,11 @@ FunctionEnd
   ; rebalance step ran.
   !insertmacro ResolveTrustedPowerShell
   StrCmp $lobsterTrustedPowerShellPath "" DefenderUninstallCleanupDone
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ROOT", t "$INSTDIR")i'
-  Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "try { $$root = $$env:MATIES_INSTALL_ROOT; $$targets = @($$root, (Join-Path $$root \"resources\cfmind\"), (Join-Path $$root \"resources\python-win\"), (Join-Path $$root \"resources\SKILLs\"), (Join-Path $$root \"resources\app.asar.unpacked\"), (Join-Path $$root \"resources\win-resources.tar\"), (Join-Path $$root \"resources\app.asar\")); Remove-MpPreference -ExclusionPath $$targets -ErrorAction SilentlyContinue } catch {}"'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ROOT", t "$INSTDIR")i'
+  Push '"$lobsterTrustedPowerShellPath" -NoProfile -NonInteractive -Command "try { $$root = $$env:LOBSTERAI_INSTALL_ROOT; $$targets = @($$root, (Join-Path $$root \"resources\cfmind\"), (Join-Path $$root \"resources\python-win\"), (Join-Path $$root \"resources\SKILLs\"), (Join-Path $$root \"resources\app.asar.unpacked\"), (Join-Path $$root \"resources\win-resources.tar\"), (Join-Path $$root \"resources\app.asar\")); Remove-MpPreference -ExclusionPath $$targets -ErrorAction SilentlyContinue } catch {}"'
   !insertmacro LobsterExecHiddenToStack
   Pop $0
   Pop $1
-  System::Call 'Kernel32::SetEnvironmentVariable(t "MATIES_INSTALL_ROOT", t "")i'
+  System::Call 'Kernel32::SetEnvironmentVariable(t "LOBSTERAI_INSTALL_ROOT", t "")i'
   DefenderUninstallCleanupDone:
 !macroend

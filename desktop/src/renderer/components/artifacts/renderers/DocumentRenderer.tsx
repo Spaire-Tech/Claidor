@@ -290,6 +290,9 @@ function supplementDocxPageNumbers(container: HTMLElement): number {
 
 function supplementDocxPageNumberText(text: string, pageNumber: number, totalPages: number): string {
   let result = text;
+  result = result.replace(/第\s*页/g, `第 ${pageNumber} 页`);
+  result = result.replace(/共\s*页/g, `共 ${totalPages} 页`);
+
   if (/^\s*Page\s*of\s*$/i.test(result)) {
     return result.replace(/Page\s*of/i, `Page ${pageNumber} of ${totalPages}`);
   }
@@ -751,7 +754,7 @@ function getNextSlideShapeId(doc: Document): string {
 
 function hasBackgroundFallback(doc: Document, relId: string): boolean {
   return Array.from(doc.getElementsByTagName('p:cNvPr')).some(node => (
-    node.getAttribute('name') === `Maties Background Fallback ${relId}`
+    node.getAttribute('name') === `LobsterAI Background Fallback ${relId}`
   ));
 }
 
@@ -775,7 +778,7 @@ function createBackgroundFallbackPic(doc: Document, relId: string, blipFill: Ele
   const nvPicPr = createElement(doc, PPTX_PRESENTATION_NS, 'p:nvPicPr');
   const cNvPr = createElement(doc, PPTX_PRESENTATION_NS, 'p:cNvPr', {
     id: getNextSlideShapeId(doc),
-    name: `Maties Background Fallback ${relId}`,
+    name: `LobsterAI Background Fallback ${relId}`,
   });
   const cNvPicPr = createElement(doc, PPTX_PRESENTATION_NS, 'p:cNvPicPr');
   const nvPr = createElement(doc, PPTX_PRESENTATION_NS, 'p:nvPr');
