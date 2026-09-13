@@ -46,19 +46,31 @@ with the provider's own sentence in it. Two hours of my guessing —
 including two confident wrong answers — were ended by reading it. When
 something fails through the proxy, read that first.
 
-**The browser is the open fault.** It was the browser failing all along,
-not GPT; I had them the wrong way round until the founder corrected me.
-It has cost four days and I have given three different explanations for
-it, all wrong. What is actually established: plugin loading is
-all-or-nothing, so one extension that cannot load kills the browser and
-every other plugin (that was 12 September, and it was self-inflicted by
-un-pruning three extensions); and the in-app browser profile is written
-by a later config sync than the one the gateway starts on, while
-`browser` is not a key that asks for a restart — so the file can say
-in-app while the running engine drives its own Chromium. The second is
-still true in upstream and unfixed here. Neither has been proven to be
-the fault the founder actually sees. Get the gateway log before touching
-anything.
+**The browser: unverified, not broken.** It was the browser failing and
+not GPT; I had the two the wrong way round until the founder corrected
+me, and I gave three explanations for it, all wrong. Of the two faults
+that were ever established, both were ours and both went with the reset:
+plugin loading is all-or-nothing, so one extension that cannot load kills
+the browser and every other plugin (12 September, self-inflicted by
+un-pruning three extensions), and a startup-order change of ours. One
+observation survives because it is upstream's: `browser` is in neither
+`COWORK_SYNC_FIELDS` nor `COWORK_RESTART_FIELDS` in
+`openclawConfigImpact.ts`, so a change of browser mode does not ask the
+gateway to restart and the config file can say in-app while the running
+engine drives its own Chromium. That was never proven to be the fault the
+founder saw. Nobody has run the browser in this tree. Do not call it
+broken and do not call it fixed — run it, and if it fails get the gateway
+log before touching code.
+
+**Why there is no machine registry, and what actually differs.** Grok Bot
+needs registered computers because it lives in the cloud and has to reach
+in. Maties runs on the machine, so there is no "which computer", only
+this computer. Two laptops is a v2 problem, and by then we will know
+whether anyone asks. The real difference is in how a file gets worked on:
+Grok Bot copies it to its own machine and copies it back — its words, "my
+computer ≠ your disk … we copy when needed". Maties opens the file where
+it lives. That shows up in spreadsheet formulas, links between workbooks,
+folder structure, and privacy.
 
 The macOS installer builds on GitHub Actions
 (`.github/workflows/desktop_mac.yml`), unsigned until an Apple
