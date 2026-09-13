@@ -46,6 +46,33 @@ for the entire registry if any single plugin is in an error state. Adding
 or enabling a plugin risks every other plugin. Never enable one without
 starting a gateway and seeing it listed as loaded rather than errored.
 
+**Channels fail soft; plugins fail hard.** A channel whose setup entry
+will not resolve is logged at warning level, skipped, and every other
+channel carries on. That difference is why
+`scripts/verify-openclaw-plugins.cjs` fails the build on a plugin and
+only prints a warning for a channel.
+
+**Telegram's setup entry does not load in the packaged runtime.** As of
+13 September the built runtime prints `[channels] failed to load bundled
+channel setup entry telegram: missing generated module`. The file it
+wants, `setup-entry.js`, is right there in
+`dist/extensions/telegram/`, so this is path resolution, not pruning.
+The unpruned source build does not print it, and `desktop/` at this
+commit is exactly upstream, so it is upstream's packaging and not ours.
+Consequence: Telegram's *setup* flow is skipped. Not yet chased.
+
+**`doctor`'s exit code is not a health signal.** It is
+`exitCodeFromFindings`, and the severity floor defaults to `info`, so a
+perfectly healthy runtime exits 1 — ours does, over optional skills with
+missing binaries. Anything gating on `$?` from `openclaw doctor` is
+wrong. Proof that doctor really ran is `checksRun` in its JSON.
+
+**`plugins list --json` cannot report a broken plugin.** It reads
+manifests and sets `status: enabled ? "loaded" : "disabled"`
+(`src/plugins/status-snapshot.ts`); it never imports anything. Pointed
+at a runtime with a deliberately broken extension it reported 24
+plugins, none in error. Use `doctor --lint`, which performs a real load.
+
 **`plugins.allow` is a strict allowlist once non-empty.** A bundled
 plugin missing from it never loads and nothing says so. This has bitten
 twice: the search provider, and the wiki.
