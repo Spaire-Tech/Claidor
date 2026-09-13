@@ -1,8 +1,12 @@
-// Usage events go to Claidor's API and nowhere else. The person can switch
-// them off in Settings; the server acknowledges and keeps nothing yet.
-export const LogReporterEndpoint = {
-  Claidor: 'https://api.claidor.com/desktop/api/analytics/events',
-} as const;
+// There is deliberately no endpoint here. Maties collects no usage
+// analytics, so there is nowhere for an event to be sent — not NetEase's
+// collector, where upstream sent them, and not Claidor either, which was
+// accepting them and throwing them away.
+//
+// The action names below are kept: they are the app's own list of moments
+// worth noticing, and they cost nothing while nothing is reported. If usage
+// analytics is ever wanted, it gets designed and consented to then. Adding
+// an address back here is not that design.
 
 export const LogReporterProduct = {
   Maties: 'wisdom',

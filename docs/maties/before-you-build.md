@@ -126,6 +126,17 @@ modules still run with `pytest --noconftest`.
 **`npm rebuild better-sqlite3`** after `compile:electron`, or vitest
 cannot open the database.
 
+**`windowsInstallerContract.test.ts` is a test of `node_modules`, not of
+the code.** It reads `node_modules/app-builder-lib/**` and
+`patches/app-builder-lib+24.13.3.patch`, and it fails whenever
+patch-package has not applied that patch to the installed tree. It has
+now failed twice for opposite reasons: once because the install still
+carried the patch from a *different* tree, and once (13 September, after
+swapping the app back to Maties) because a fresh `npm install` left the
+package unpatched and patch-package then refused to apply it. Both times
+it looked like a code fault and was not. Before hunting a bug in the
+diff, check whether the file it names carries the patch's own marker.
+
 ---
 
 ## Already built — check here before writing it again
