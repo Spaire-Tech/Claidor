@@ -54,7 +54,7 @@ will be faster than starting cold:
 
 ---
 
-## Stage 0 — Point the app at us
+## Stage 0 — Point the app at us ✔ done
 
 **Nothing visual changes. This is the spine.**
 
@@ -91,7 +91,7 @@ on top of it can be right.
 
 ---
 
-## Stage 1 — Models: one to talk to, cheap ones behind
+## Stage 1 — Models: one to talk to, cheap ones behind ✔ done
 
 Set the slots in `src/main/libs/openclawConfigSync.ts`. All of these are
 existing OpenClaw config fields (`src/config/types.agent-defaults.ts`):
@@ -125,7 +125,7 @@ through to Claude without the person noticing.
 
 ---
 
-## Stage 2 — `/v1/responses`
+## Stage 2 — `/v1/responses` ✔ done
 
 A third wire in the proxy, beside `/v1/messages` and
 `/v1/chat/completions`: different request shape, different response
@@ -144,7 +144,7 @@ can run in parallel with everything below.
 
 ---
 
-## Stage 2b — The design becomes code
+## Stage 3 — The design becomes code ✔ done
 
 The first pass of this plan said "build the Messages shell" and never
 said where the design came from. That was the gap. The canvas is not a
@@ -202,13 +202,13 @@ meets.
 **Done when:** there is a token file, the orb renders fifteen distinct
 agents, and the assets are in the tree.
 
-**Size:** small, and it must land before Stage 3 rather than during it.
+**Size:** small, and it must land before Stage 4 rather than during it.
 Building the shell against ad-hoc values and retrofitting tokens after
 is how a design stops matching its spec.
 
 ---
 
-## Stage 3 — The Messages shell
+## Stage 4 — The Messages shell
 
 **The one real rewrite.** Everything else is wiring.
 
@@ -250,7 +250,7 @@ redo it.
 
 ---
 
-## Stage 4 — The computer icon
+## Stage 5 — The computer icon
 
 Wire the header icon to `ArtifactPanel`, which already exists at 8,676
 lines and already has every tab
@@ -282,7 +282,7 @@ which is why it gets its own stage and an early run.
 
 ---
 
-## Stage 5 — Ask before anything touches the computer
+## Stage 6 — Ask before anything touches the computer
 
 Map the engine's permission requests onto the `auth` message kind:
 warning triangle, device id, **the literal command behind a disclosure
@@ -301,7 +301,7 @@ shows the real command.
 
 ---
 
-## Stage 6 — Agents, kits, the twelve roles
+## Stage 7 — Agents, kits, the twelve roles
 
 Two halves.
 
@@ -329,7 +329,7 @@ engineering.
 
 ---
 
-## Stage 7 — Connectors
+## Stage 8 — Connectors
 
 Server half exists: `server/polar/connectors/` is a working Pipedream
 Connect integration — one-use sign-in link, list connections, remove
@@ -357,7 +357,7 @@ window, and the agent can read your mail.
 
 ---
 
-## Stage 8 — Voice
+## Stage 9 — Voice
 
 OpenAI speech, because it is cheaper than ElevenLabs.
 
@@ -378,7 +378,7 @@ settings on top of one OpenAI voice.
 
 ---
 
-## Stage 9 — The rest of the agent's five tabs
+## Stage 10 — The rest of the agent's five tabs
 
 **Routines.** `src/scheduledTask/` and `CronJobService` already give at /
 every / cron, agent turn or system event, delivery, run history. What is
@@ -420,7 +420,7 @@ lands, so nothing is deleted speculatively:
 
 ---
 
-## Stage 10 — Routines that fire with the Mac shut
+## Stage 11 — Routines that fire with the Mac shut
 
 The stage the first pass was missing, and the one the founder settled by
 answering yes.
@@ -495,7 +495,7 @@ The distinction that may resolve it, but only the founder can say:
   the person never sees it.
 
 **Settled: routines fire when the Mac is closed.** The runner lives, and
-Stage 10 below is the stage this plan was missing. `direction.md` §10
+Stage 11 below is the stage this plan was missing. `direction.md` §10
 draws the line: no cloud computer the person works on, but a headless
 runner that holds no files and is never shown in the app.
 
@@ -552,7 +552,7 @@ The `+` menu has "Attach files", but no message kind draws an attached
 file, and the canvas never shows one. Upstream has the whole thing —
 `DraftAttachment`, media mentions, and a `userAttachment` tab in the
 panel. Either a sixth message kind, or attachments render inside a
-`text` bubble. Needs deciding when Stage 3 is built, not after.
+`text` bubble. Needs deciding when Stage 4 is built, not after.
 
 ### 7. Two header buttons do nothing
 
@@ -590,7 +590,7 @@ Keeping it is a market decision, not an engineering one.
 rewritten, taking a future LobsterAI release stops being a merge and
 becomes a port. The choice is to keep tracking upstream (and keep our
 changes narrow and patch-shaped) or to fork outright and stop pretending.
-Stage 3 makes this decision whether or not anyone makes it deliberately.
+Stage 4 makes this decision whether or not anyone makes it deliberately.
 
 ### 12. The prune list needs more than `webhooks`
 
@@ -618,24 +618,24 @@ Stage 0  point at us          ─┐
 Stage 1  models + fallback     │  the spine: prove it before designing
 Stage 2  /v1/responses        ─┘  (server-only, runs in parallel)
 
-Stage 2b the design becomes code ── tokens and the orb, before the shell
+Stage 3  the design becomes code ── tokens and the orb, before the shell
 
-Stage 3  the Messages shell   ─── the long one
-Stage 4  the computer icon     │  each of these is short
-Stage 5  ask before acting     │  on top of a shell that exists
-Stage 6  agents + kits        ─┘
+Stage 4  the Messages shell   ─── the long one
+Stage 5  the computer icon     │  each of these is short
+Stage 6  ask before acting     │  on top of a shell that exists
+Stage 7  agents + kits        ─┘
 
-Stage 7  connectors           ─┐  content-heavy, parallelisable,
-Stage 8  voice                 │  and none of them blocks the others
-Stage 9  routines, teach, group─┘
+Stage 8  connectors           ─┐  content-heavy, parallelisable,
+Stage 9  voice                 │  and none of them blocks the others
+Stage 10 routines, teach, group─┘
 
-Stage 10 routines fire with the Mac shut ── needs Stage 9's routines and
+Stage 11 routines fire with the Mac shut ── needs Stage 10's routines and
          the account of Stage 0; both ends already deployed
 
 alongside, started early for its lead time: the Apple certificate
 ```
 
-0–2 first because they are cheap and they prove the spine. 2b before 3,
+0–2 first because they are cheap and they prove the spine. 3 before 4,
 because building a shell against ad-hoc values and retrofitting tokens
 after is how a design stops matching its spec. 3 next because everything
 visible sits on it. 4–6 are short once 3 exists. 7–9 are mostly content
@@ -644,16 +644,16 @@ and can be worked in any order.
 One answer is still needed: **what happens before the first thread**
 (§2) — the founder is designing it, to land by the end of Stage 1. The
 other two are settled: routines fire with the Mac shut, so the runner
-lives (§1, Stage 10), and the name is Faiser (§3, applied).
+lives (§1, Stage 11), and the name is Faiser (§3, applied).
 
 ## What I expect to get wrong
 
 Said in advance, because it is cheaper than saying it after:
 
-- **Stage 3 is the risk.** A 543-file renderer has coupling that does not
+- **Stage 4 is the risk.** A 543-file renderer has coupling that does not
   show up until the shell is running. I expect at least one thing there
   to need doing twice.
-- **The browser is unverified.** If Stage 4 finds a real fault, its size
+- **The browser is unverified.** If Stage 5 finds a real fault, its size
   is unknown until the gateway log is read.
 - **Astra.** I am recommending we do not sell it. If `/v1/responses`
   turns out harder than it looks, that recommendation stands for longer

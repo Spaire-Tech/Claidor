@@ -325,3 +325,92 @@ from this code. The shapes come from the engine's implementation rather
 than from a live call, the server is not deployed, and the app has not
 been opened. The first real call is the proof, and
 `desktop.proxy.upstream_refused` is where to look if it is not.
+
+---
+
+## Stage 3 — The design becomes code
+
+The canvas turned into `desktop/src/renderer/design/`. Nothing imports it
+yet, which is the point: the shell gets built against it rather than
+against ad-hoc values retrofitted after. `docs/product/design/
+README-system.md` is the full write-up; this is what happened.
+
+### Tokens
+
+Counted out of the canvas, not invented. `tokens.ts` is written by hand,
+`tokens.css` is generated from it and checked in so the app needs no
+build step, and `tokens.test.ts` fails when they disagree.
+
+Not a fifth theme. The app carries a four-theme skinning contract from
+upstream that the old shell uses; the canvas is one considered look, and
+putting it behind a skinning layer would invite the other four to stay.
+
+### Logos, and a privacy fault in the canvas
+
+The canvas resolves a logo it has no file for by asking
+`icons.duckduckgo.com`, then `www.google.com/s2/favicons`. On the
+installed-connectors row that tells two companies which services this
+person actually uses. Against an instruction to track nothing at all,
+that cannot ship, and it also makes an instant screen wait on two third
+parties.
+
+So: a logo is a file we ship or it is nothing, and nothing is already
+designed — the canvas draws a monogram tile behind every logo and reveals
+it when the image fails.
+
+The 18 bundled logos came out at **1.62 MB** for icons drawn at 26–42px,
+one of them a 1024×1024 PNG at 634 KB. Re-encoded to 128px webp: **55
+KB**. Thirty times smaller.
+
+**34 of ~50 catalogue services still have no logo.** They draw monograms,
+which is correct rather than broken. The list is asserted in a test so it
+shrinks deliberately; which brand assets to ship is a licensing question
+and the founder's.
+
+### The orb
+
+Shaders verbatim. The host rewritten, because the canvas ran four orbs on
+one screen and a sidebar of agents is a different problem:
+
+- **a context budget** — browsers cap live WebGL contexts around sixteen
+  and evict silently past it; sixteen agents plus a header plus the panel
+  is already over. Capped at ten, and an orb under 56px never takes one.
+- **stops when scrolled out of view** — the canvas's loop ran forever.
+- **gives the context back** on disconnect.
+- **survives a context loss** — a GPU reset killed the canvas's orb for
+  the life of the window.
+- **no layout read per frame** — the canvas measured itself every frame,
+  per orb.
+- **respects reduced motion.**
+
+An orb denied a context draws a gradient in the same two colours; at 28px
+nothing is lost, because the motion a person sees there is the CSS pulse
+on the wrapper, not the shader.
+
+**Fifteen palettes**, the canvas's four first and unchanged. The palette
+is derived from the agent's id rather than randomised, because an orb is
+the agent's face: a person finds Mira by colour before reading the name,
+so it must survive a relaunch and a reordering. A separate seed from the
+same id shapes the clouds, so two agents sharing a palette still differ.
+
+### What a test caught
+
+`apple-calendar-mac.webp` came out of the bundle under a name no service
+resolves to — it would have shipped and never drawn. A test asserting
+every bundled file is reachable by its own service name found it, and it
+was renamed.
+
+### Verified
+
+- 27 design tests: token/CSS agreement, every value reaching CSS,
+  property naming, fifteen palettes, the canvas's four exact, the pale
+  colour really being lightest, stability under reordering, spread across
+  1,500 agents, and the logo resolver never returning a remote url.
+- `vitest run` **3944 passed** across 398 files; `tsc` clean on both
+  projects; `eslint --max-warnings 0` clean on the whole design
+  directory.
+
+**Not verified:** nothing has been rendered. The shaders are the canvas's
+and were seen working there, but no orb has been drawn by this code and
+no token has been applied to a screen. That happens in Stage 4, and it is
+where the design stops being a claim.
