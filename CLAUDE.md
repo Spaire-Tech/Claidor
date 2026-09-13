@@ -32,13 +32,33 @@ job queue), the cloud runner is untouched, `render.yaml` and the deployed
 services are unchanged, and the API answers right now. All of it is live
 and, at this commit, nothing in the app calls it.
 
-One thing left unfinished and worth knowing before it is trusted again:
-GPT models fail through the proxy. OpenAI refuses `reasoning_effort`
-together with function tools on `/v1/chat/completions`, the proxy now
-sends `reasoning_effort: "none"` for its OpenAI models, and it was still
-failing after that shipped. The reason for the remaining failure is not
-known. `desktop.proxy.upstream_refused` in the server log carries the
-provider's own words on every refusal; start there rather than guessing.
+**GPT models work.** OpenAI refuses `reasoning_effort` together with
+function tools on `/v1/chat/completions`; the proxy now sends
+`reasoning_effort: "none"` whenever an OpenAI model is holding tools, and
+that is deployed and confirmed working by the founder. The cost is that
+those models run without reasoning whenever tools are in play, which for
+an agent is always; the proper fix is OpenAI's `/v1/responses`, and that
+is a translation layer nobody has built.
+
+That bug was found by one log line and not by reasoning about it. The
+proxy records every provider refusal as `desktop.proxy.upstream_refused`
+with the provider's own sentence in it. Two hours of my guessing —
+including two confident wrong answers — were ended by reading it. When
+something fails through the proxy, read that first.
+
+**The browser is the open fault.** It was the browser failing all along,
+not GPT; I had them the wrong way round until the founder corrected me.
+It has cost four days and I have given three different explanations for
+it, all wrong. What is actually established: plugin loading is
+all-or-nothing, so one extension that cannot load kills the browser and
+every other plugin (that was 12 September, and it was self-inflicted by
+un-pruning three extensions); and the in-app browser profile is written
+by a later config sync than the one the gateway starts on, while
+`browser` is not a key that asks for a restart — so the file can say
+in-app while the running engine drives its own Chromium. The second is
+still true in upstream and unfixed here. Neither has been proven to be
+the fault the founder actually sees. Get the gateway log before touching
+anything.
 
 The macOS installer builds on GitHub Actions
 (`.github/workflows/desktop_mac.yml`), unsigned until an Apple
