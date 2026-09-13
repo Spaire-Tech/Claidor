@@ -144,6 +144,70 @@ can run in parallel with everything below.
 
 ---
 
+## Stage 2b — The design becomes code
+
+The first pass of this plan said "build the Messages shell" and never
+said where the design came from. That was the gap. The canvas is not a
+picture to work from — it is a finished specification, and most of it is
+liftable rather than buildable.
+
+**First: commit the canvas.** It lives in a chat upload today. It goes
+into `docs/product/design/` so it survives, alongside the unpacked
+template and the extracted assets.
+
+**The tokens are already exact.** Counted straight out of the canvas:
+
+| Token | Value | Uses |
+|---|---|---|
+| ink | `#1e3358` | 76 |
+| muted | `#55606f` | 72 |
+| paper | `#fbfbfc` | 39 |
+| fill | `#e9edf2` | 17 |
+| fill-raised | `#eef1f5` | 11 |
+| faint | `#7d8797` | 7 |
+| accent | `#2b6cf5` | 6 |
+| ink-hover | `#2c4674` | 4 |
+| shimmer-ink | `#1c1f23` | 6 |
+| success | `#1a8547` on `#e7f6ec` | |
+| warning | `#e8a300` — the approval triangle | |
+| record | `#e0322d` — teach a task | |
+| hairline | `rgba(16,22,35,.11)` | everywhere |
+
+Type scale: 13, 13.5, 14, 14.5, 15, 15.5, 16, 16.5, 17, 19, 21, 22, 27.
+Radii: 999, 24, 22, 20, 18, 16, 14, 13, 12, 11.
+Ground: `#fbfbfc` with a 34px grid at `rgba(16,22,35,.018)`.
+Glass: `rgba(255,255,255,.94)` + `backdrop-filter: blur(20px)` + a white
+inset top highlight. Used for every modal, popover and raised row.
+
+Five motions, with their timings: `orbIn` .52s
+`cubic-bezier(.22,.68,.36,1)`, `orbIdle` 7.5s, `orbSpeak`, `runShimmer`
+1.9s linear, `msgIn` .16–.22s ease-out.
+
+**The orb is a lift, not a build.** `cloud-orb.js` in the bundle is 195
+lines of self-contained WebGL2 — a custom element with a vertex and
+fragment shader, domain-warped fBm clouds, taking `colors`, `seed` and
+`grain` as attributes. It drops in as-is. The only work is extending the
+canvas's four palettes to **fifteen**, and picking one at random per
+agent.
+
+**The assets come out of the bundle too** — 22 files, the service logos
+as webp, png, svg and jpg. They are extracted, not re-sourced.
+
+**What is left to author** is the part the canvas cannot give: the
+loading, empty, error and offline states of every surface it draws at
+rest. The canvas shows the app working. It does not show the app
+waiting, failing, or empty, and those are most of the states a real user
+meets.
+
+**Done when:** there is a token file, the orb renders fifteen distinct
+agents, and the assets are in the tree.
+
+**Size:** small, and it must land before Stage 3 rather than during it.
+Building the shell against ad-hoc values and retrofitting tokens after
+is how a design stops matching its spec.
+
+---
+
 ## Stage 3 — The Messages shell
 
 **The one real rewrite.** Everything else is wiring.
@@ -356,26 +420,186 @@ lands, so nothing is deleted speculatively:
 
 ---
 
+## The audit: what the first pass missed
+
+Re-run against the code, not against the plan. Twelve things, each with
+a file or a question. Three of them need the founder before they can be
+planned at all, and they are marked.
+
+### 1. Routines and "no cloud computer" contradict each other — **decide**
+
+`render.yaml` deploys a worker called `claidor-maty-runner`. Its own
+README: *"This is the service that does a person's work when they are
+not at their computer. It takes one job at a time from Claidor, does it
+with the same agent engine the desktop app ships, and reports the answer
+back."* It fetches the person's memory, runs the engine in the cloud,
+writes memory back, deletes the directory.
+
+That is a cloud computer. It is deployed and it costs money now.
+
+And the design needs something like it: **Routines** is one of the five
+agent tabs, and a routine that runs "every weekday at 8" cannot run when
+the laptop is shut unless something else runs it.
+
+The distinction that may resolve it, but only the founder can say:
+
+- **Struck:** a cloud computer *the person works on* — files living
+  there, apps installed on it, an update and reset surface, an egress
+  tunnel. That is what the design had and what was called a mistake, and
+  striking it is what keeps "we open your file where it lives".
+- **Possibly not struck:** a headless runner that executes *scheduled
+  jobs with your memory* while your Mac is asleep. It holds no files and
+  the person never sees it.
+
+**The question: does a routine fire when the Mac is closed, or only when
+the app is open?** If only when open, the runner is dead weight and
+should be torn down. If it should fire regardless, the runner lives and
+this plan is missing a stage for it.
+
+### 2. There is no sign-in screen, and no first run — **decide**
+
+The canvas opens straight into a thread with four agents already there.
+An account is mandatory — the model proxy meters against it — so
+something must come before that, and the design does not draw it.
+
+What exists to build on: `libs/authLocalCallbackServer.ts` (browser
+login), `/desktop/login` on the server, and
+`NewUserOnboardingOverlay.tsx` upstream, which is NetEase's tour and
+should go.
+
+What has to be decided: whether first run is a single sign-in screen, or
+sign-in followed by making your first agent — which the design already
+has a form and a voice picker for, and which would double as onboarding
+without drawing anything new.
+
+### 3. The name decides where the data lives — **decide, before release**
+
+`src/main/appConstants.ts` exports `APP_NAME` and `DB_FILENAME`, and
+`APP_NAME` is what Electron's `app.getPath('userData')` resolves
+against. Change it after anyone has installed, and their conversations,
+memory, logins and engine state are orphaned in the old directory.
+
+So the name is not only branding. **Pick it before the first build goes
+to anyone outside**, or accept writing a migration that moves the
+directory on upgrade.
+
+### 4. The design has no error state anywhere
+
+Five message kinds, and none of them is "it failed". No quota-exhausted
+state, no offline state, no engine-won't-start state, no
+connector-expired state. `src/common/coworkErrorClassify.ts` already
+classifies engine failures into i18n keys, so the machinery is there and
+the surface is not.
+
+The smallest honest answer, consistent with the design: failures are
+`system` lines in the thread, in the agent's own voice, never a red
+banner. That keeps the closed list closed. It needs writing.
+
+### 5. Quota at 100% is undrawn
+
+The canvas shows "Trial usage 74%" and "Ends in 6 days". It does not
+show what the app does at 100%. The server has `/api/user/quota` and
+`src/main/authQuota.ts` already gates on entitlement. The behaviour —
+refuse, degrade, or let it run and bill — is a product decision with a
+UI consequence.
+
+### 6. Attachments are in the composer and not in the thread
+
+The `+` menu has "Attach files", but no message kind draws an attached
+file, and the canvas never shows one. Upstream has the whole thing —
+`DraftAttachment`, media mentions, and a `userAttachment` tab in the
+panel. Either a sixth message kind, or attachments render inside a
+`text` bubble. Needs deciding when Stage 3 is built, not after.
+
+### 7. Two header buttons do nothing
+
+Search and share, both without handlers in the canvas. Share has a menu
+("Share as template"). Search does not, and it is not obvious what it
+searches — this thread, or every thread. The sidebar already has its own
+search over agent names. Upstream has session search to build on.
+
+### 8. Notifications exist and are unwired
+
+`src/main/libs/desktopNotificationManager.ts` is in the tree. Nothing in
+the design uses it. A routine that reports back while the app is in the
+background has nowhere to land. The tray manager is there too.
+
+### 9. The mac build is deliberately unsigned
+
+`.github/workflows/desktop_mac.yml` sets
+`CSC_IDENTITY_AUTO_DISCOVERY: "false"` with the comment *"No certificate
+yet: produce an unsigned app instead of failing."* Anyone who installs
+it meets Gatekeeper. That is an adoption blocker, it costs an Apple
+Developer account, and it has a lead time — so it should be started
+early even though it belongs at the end.
+
+### 10. i18n: 8,771 lines of Chinese and English
+
+`renderer/services/i18n.ts` is 7,964 lines and `main/i18n.ts` is 807,
+both carrying `zh` and `en`. The design is English only. Dropping `zh`
+deletes roughly half of the largest non-UI file in the renderer and
+removes a rule that otherwise doubles the cost of every string we write.
+Keeping it is a market decision, not an engineering one.
+
+### 11. Diverging from upstream has a cost nobody has priced
+
+`desktop/` is vendored with `git subtree`, squashed. Once the shell is
+rewritten, taking a future LobsterAI release stops being a merge and
+becomes a port. The choice is to keep tracking upstream (and keep our
+changes narrow and patch-shaped) or to fork outright and stop pretending.
+Stage 3 makes this decision whether or not anyone makes it deliberately.
+
+### 12. The prune list needs more than `webhooks`
+
+`desktop/scripts/prune-openclaw-runtime.cjs` deletes seventy-odd bundled
+extensions for startup speed. Four are worth reconsidering against this
+design, each one line:
+
+| Extension | Why it matters here |
+|---|---|
+| `webhooks` | event-driven routines — "when mail arrives from X" |
+| `document-extract` | reading a document somebody sends the agent |
+| `web-readability` | every "summarise this link" |
+| `active-memory` | looks memory up *before* replying rather than when asked |
+
+And one piece of housekeeping: `speech-core` sits on the keep-list and
+matches nothing in the engine, so the list is protecting a name that
+does not exist.
+
+---
+
 ## Order, and why
 
 ```
 Stage 0  point at us          ─┐
 Stage 1  models + fallback     │  the spine: prove it before designing
-Stage 2  /v1/responses        ─┘  (can run in parallel, server-only)
+Stage 2  /v1/responses        ─┘  (server-only, runs in parallel)
+
+Stage 2b the design becomes code ── tokens and the orb, before the shell
 
 Stage 3  the Messages shell   ─── the long one
-Stage 4  the computer icon     │  each of these is a day or two
+Stage 4  the computer icon     │  each of these is short
 Stage 5  ask before acting     │  on top of a shell that exists
 Stage 6  agents + kits        ─┘
 
 Stage 7  connectors           ─┐  content-heavy, parallelisable,
 Stage 8  voice                 │  and none of them blocks the others
 Stage 9  routines, teach, group─┘
+
+alongside, started early for its lead time: the Apple certificate
 ```
 
-0–2 first because they are cheap and they prove the spine. 3 next because
-everything visible sits on it. 4–6 are short once 3 exists. 7–9 are
-mostly content and can be worked in any order.
+0–2 first because they are cheap and they prove the spine. 2b before 3,
+because building a shell against ad-hoc values and retrofitting tokens
+after is how a design stops matching its spec. 3 next because everything
+visible sits on it. 4–6 are short once 3 exists. 7–9 are mostly content
+and can be worked in any order.
+
+Three answers are needed before the plan is complete, and they are in
+the audit above: **does a routine fire when the Mac is closed** (audit
+§1, and the deployed runner costs money either way), **what happens
+before the first thread** (§2), and **the name** (§3, because it decides
+where a person's data lives and cannot be changed for free later).
 
 ## What I expect to get wrong
 
