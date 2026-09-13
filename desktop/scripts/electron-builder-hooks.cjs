@@ -109,9 +109,25 @@ function verifyPreinstalledPlugins(runtimeRoot, buildHint) {
   for (const plugin of plugins) {
     if (!plugin.id) continue;
     const pluginDir = path.join(extensionsDir, plugin.id);
-    if (!existsSync(pluginDir)) {
-      missing.push(plugin.id);
+    if (existsSync(pluginDir)) continue;
+
+    // `optional` is the installer's own contract: ensure-openclaw-plugins
+    // logs a warning and carries on when an optional plugin will not
+    // install, so demanding it here fails the build over something the
+    // step before it deliberately let go. moltbot-popo is the live case —
+    // NetEase's POPO chat, published only on their internal registry,
+    // which no runner outside NetEase can reach. Said out loud rather
+    // than skipped quietly, so a plugin that should be here going missing
+    // is still visible in the build log.
+    if (plugin.optional) {
+      console.warn(
+        `[electron-builder-hooks] Optional OpenClaw plugin ${plugin.id} is not in the `
+        + 'runtime; packaging without it.',
+      );
+      continue;
     }
+
+    missing.push(plugin.id);
   }
 
   if (missing.length > 0) {
