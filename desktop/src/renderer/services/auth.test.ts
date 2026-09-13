@@ -11,6 +11,7 @@ import {
   EnterpriseQuotaReason,
 } from '../../shared/enterpriseAccount/constants';
 import type { EnterpriseAccountContext } from '../../shared/enterpriseAccount/types';
+import { SERVER_API_BASE_URL } from '../../shared/server/constants';
 import { setEnterpriseAccountContext } from '../features/enterpriseAccount/enterpriseAccountSlice';
 import { store } from '../store';
 import { setLoggedIn, setLoggedOut } from '../store/slices/authSlice';
@@ -289,7 +290,7 @@ describe('login diagnostics', () => {
 
     await expect(authService.login()).resolves.toEqual(loginResult);
 
-    expect(login).toHaveBeenCalledWith('https://lobsterai.youdao.com/portal#/login');
+    expect(login).toHaveBeenCalledWith(`${SERVER_API_BASE_URL}/login`);
     expect(fromRenderer).toHaveBeenCalledWith(
       'info',
       'AuthService',

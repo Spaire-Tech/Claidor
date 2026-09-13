@@ -3,42 +3,32 @@
  * 后续新增的业务接口也应在此文件中配置。
  */
 
+import { SERVER_API_BASE_URL } from '../../shared/server/constants';
 import { configService } from './config';
 
 export const isTestModeEnabled = () => {
   return configService.getConfig().app?.testMode === true;
 };
 
-// 自动更新
-export const getUpdateCheckUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update';
+// The update, skill-store and kit-store calls are all made from the main
+// process (`src/main/libs/endpoints.ts`), which now builds them off our own
+// server. The copies that used to sit here were never imported by the
+// renderer and pointed at NetEase, so they are gone.
 
-// 手动检查更新
-export const getManualUpdateCheckUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update-manual'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update-manual';
+/**
+ * The browser sign-in page. The main process appends `redirect_uri`, `state`
+ * and `source` before opening it. Upstream asked NetEase for this url over a
+ * round trip that could fail; ours is a fixed route on our own server, so it
+ * is built here and the round trip is gone.
+ */
+export const getLoginUrl = () => `${SERVER_API_BASE_URL}/login`;
 
-export const getFallbackDownloadUrl = () => isTestModeEnabled()
-  ? 'https://lobsterai.inner.youdao.com/#/download-list'
-  : 'https://lobsterai.youdao.com/#/download-list';
-
-// Skill 商店
-export const getSkillStoreUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/skill-store'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/skill-store';
-
-// Kit 商店
-export const getKitStoreUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/kit-store'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/kit-store';
-
-// 登录地址
-export const getLoginOvermindUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/login-url'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/login-url';
-
-// Portal 页面
+// The portal is NetEase's web front end and we have none of our own yet.
+// Every url below is handed to `shell.openExternal`, so nothing is fetched
+// unless a person clicks a growth surface — the ad slot, the credits float,
+// the upgrade and pricing links — and those screens go with the Messages
+// shell. They are left pointing where they point rather than at a page that
+// does not exist; when our site exists, this is the one place to change.
 const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';
 const PORTAL_BASE_PROD = 'https://lobsterai.youdao.com/portal#';
 

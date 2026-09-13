@@ -1,6 +1,7 @@
 import { app } from 'electron';
 
 import { HtmlSharePublicRoute } from '../../shared/htmlShare/constants';
+import { SERVER_API_BASE_URL } from '../../shared/server/constants';
 import type { SqliteStore } from '../sqliteStore';
 import { resolveDevelopmentServerBaseUrl } from './developmentServerBaseUrl';
 
@@ -25,23 +26,22 @@ export const isTestModeEnabled = (): boolean => {
 };
 
 /**
- * Server API base URL — switches based on testMode.
- * Used for auth exchange/refresh, models, proxy, etc.
+ * The server base, with a development override. There is no separate test
+ * host yet, so testMode does not change it. See `shared/server/constants.ts`
+ * for what hangs off it.
  */
 export const getServerApiBaseUrl = (): string => {
-  const defaultBaseUrl = isTestModeEnabled()
-    ? 'https://lobsterai-server.inner.youdao.com'
-    : 'https://lobsterai-server.youdao.com';
+  const defaultBaseUrl = SERVER_API_BASE_URL;
   const serverBaseUrl = resolveDevelopmentServerBaseUrl({
     defaultBaseUrl,
-    developmentOverride: process.env.LOBSTER_SERVER_BASE_URL,
+    developmentOverride: process.env.FAISER_SERVER_BASE_URL,
     isDev: process.env.NODE_ENV === 'development',
     isPackaged: app.isPackaged,
   });
   if (serverBaseUrl !== defaultBaseUrl
       && loggedDevelopmentServerBaseUrl !== serverBaseUrl) {
     console.warn(
-      `[Endpoints] routing all Lobster server traffic to development origin ${serverBaseUrl}`,
+      `[Endpoints] routing all server traffic to development origin ${serverBaseUrl}`,
     );
     loggedDevelopmentServerBaseUrl = serverBaseUrl;
   }
@@ -53,17 +53,19 @@ export const getHtmlSharePublicBaseUrl = (): string => {
 };
 
 export const getUpdateCheckUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update'
+  `${getServerApiBaseUrl()}/api/updates/check`
 );
 
 export const getManualUpdateCheckUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update-manual'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update-manual'
+  `${getServerApiBaseUrl()}/api/updates/check-manual`
 );
 
+// The web pages below are NetEase's and we have none of our own yet. They are
+// only ever handed to `shell.openExternal`, so nothing reaches them unless a
+// person clicks a growth surface — the ad slot, the credits float, the upgrade
+// and pricing links — and those screens go when the Messages shell lands. They
+// are left here rather than pointed at a page that does not exist; when the
+// site exists, this block is the one place to change.
 export const getFallbackDownloadUrl = (): string => (
   isTestModeEnabled()
     ? 'https://lobsterai.inner.youdao.com/#/download-list'
@@ -71,9 +73,7 @@ export const getFallbackDownloadUrl = (): string => (
 );
 
 export const getSkillStoreUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/skill-store'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/skill-store'
+  `${getServerApiBaseUrl()}/api/skill-store`
 );
 
 // Portal 页面
@@ -85,7 +85,5 @@ const getPortalBase = (): string => isTestModeEnabled() ? PORTAL_BASE_TEST : POR
 export const getPortalTasksUrl = (): string => `${getPortalBase()}/profile/detail?tab=tasks`;
 
 export const getKitStoreUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/kit-store'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/kit-store'
+  `${getServerApiBaseUrl()}/api/kit-store`
 );
