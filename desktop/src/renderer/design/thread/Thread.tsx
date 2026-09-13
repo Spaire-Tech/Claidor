@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, motion, text } from '../tokens';
+import { showsTypingLine } from './fromEngine';
 import {
   type AuthHandlers,
   type ChoiceHandlers,
@@ -91,7 +92,7 @@ export function Thread({
         <ThreadItemView key={item.id} item={item} choice={choice} auth={auth} />
       ))}
 
-      {typing && (
+      {showsTypingLine(items, typing) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 8 }}>
           <Orb agentId={agentId} size={26} mood={OrbMood.Still} />
           <span

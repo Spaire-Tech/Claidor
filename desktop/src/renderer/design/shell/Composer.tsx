@@ -1,5 +1,6 @@
 import { type KeyboardEvent, useState } from 'react';
 
+import { MicIcon, SendIcon } from '../icons';
 import { color, line, radius, text } from '../tokens';
 
 export interface ComposerProps {
@@ -92,12 +93,10 @@ export function Composer({
             width: 40, height: 40, flex: '0 0 auto', borderRadius: '50%',
             border: 'none', background: color.ink, cursor: disabled ? 'default' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: disabled ? 0.5 : 1,
+            opacity: disabled ? 0.5 : 1, color: color.paper,
           }}
         >
-          <span aria-hidden style={{ color: color.paper, fontSize: 16, lineHeight: 1 }}>
-            {has ? '↑' : '🎙'}
-          </span>
+          {has ? <SendIcon size={17} /> : <MicIcon size={16} />}
         </button>
       </div>
     </div>

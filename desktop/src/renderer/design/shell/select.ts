@@ -115,6 +115,8 @@ export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
 
 export interface ThreadInput {
   agentId: string;
+  /** What the agent is called. Shown; the id never is. */
+  agentName?: string;
   session: StoreSession | undefined;
   /** Everything the engine is waiting on, across all sessions. */
   pendingPermissions: readonly (EnginePermissionRequest & { sessionId: string })[];
@@ -130,12 +132,13 @@ export interface ThreadInput {
  * context for.
  */
 export function threadItems(input: ThreadInput): ThreadItem[] {
-  const { agentId, session, pendingPermissions, deviceName } = input;
+  const { agentId, agentName, session, pendingPermissions, deviceName } = input;
   const mine = session
     ? pendingPermissions.filter(request => request.sessionId === session.id)
     : [];
   return toThreadItems(session?.messages ?? [], {
     agentId,
+    ...(agentName ? { agentName } : {}),
     pending: mine,
     ...(deviceName ? { deviceId: deviceName } : {}),
   });

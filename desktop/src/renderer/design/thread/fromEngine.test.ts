@@ -5,11 +5,12 @@ import {
   commandFromToolInput,
   decisionNote,
   type EngineMessage,
+  showsTypingLine,
   splitIntoBubbles,
   toThreadItems,
 } from './fromEngine';
 import { allVerbs, GENERIC_VERB, verbForTool } from './toolVerbs';
-import { ThreadItemKind } from './types';
+import { type ThreadItem, ThreadItemKind } from './types';
 
 let clock = 1_700_000_000_000;
 const msg = (m: Partial<EngineMessage> & Pick<EngineMessage, 'type'>): EngineMessage => ({
@@ -131,7 +132,7 @@ describe('the approval card', () => {
   };
 
   test('shows the real command, not a summary', () => {
-    const items = toThreadItems([], { pending: [request], agentId: 'Perrin', deviceId: '6c0f8fd9' });
+    const items = toThreadItems([], { pending: [request], agentName: 'Perrin', deviceId: '6c0f8fd9' });
     expect(items).toEqual([
       expect.objectContaining({
         kind: ThreadItemKind.Auth,
@@ -153,6 +154,27 @@ describe('the approval card', () => {
     expect(question).not.toContain('bash');
   });
 
+  test('names the agent, never its id', () => {
+    // The first build passed `agentId` through to the question and the
+    // card read "Allow juno to continue". A person is being asked to
+    // trust something that cannot say its own name.
+    const items = toThreadItems([], {
+      agentId: 'engineering-lead',
+      agentName: 'Engineering Lead',
+      pending: [request],
+    });
+    expect(items[0]).toMatchObject({
+      text: 'Allow Engineering Lead to continue — running commands on your computer?',
+    });
+    expect((items[0] as { text: string }).text).not.toContain('engineering-lead');
+  });
+
+  test('says "this agent" rather than an id when the name is missing', () => {
+    const items = toThreadItems([], { agentId: 'juno', pending: [request] });
+    expect((items[0] as { text: string }).text).toContain('this agent');
+    expect((items[0] as { text: string }).text).not.toContain('juno');
+  });
+
   test('waits at the bottom, where the person is looking', () => {
     const items = toThreadItems(
       [msg({ type: 'assistant', content: 'On it.' })],
@@ -166,6 +188,28 @@ describe('the approval card', () => {
       .toBe('Perrin can run commands on your computer from now on.');
     expect(decisionNote('Perrin', 'never'))
       .toBe("Declined. Perrin can't run commands on your computer.");
+  });
+});
+
+describe('the typing line', () => {
+  const items = (...kinds: ThreadItemKind[]): ThreadItem[] =>
+    kinds.map((kind, i) => ({ kind, id: `i${i}`, at: 0 } as ThreadItem));
+
+  test('does not double up with a live status', () => {
+    // The session stays "running" while a tool runs, so without this the
+    // thread shimmers "Running commands" and "Writing" at once.
+    expect(showsTypingLine(items(ThreadItemKind.Text, ThreadItemKind.Status), true))
+      .toBe(false);
+  });
+
+  test('shows while the agent is composing a reply', () => {
+    expect(showsTypingLine(items(ThreadItemKind.Text), true)).toBe(true);
+    expect(showsTypingLine([], true)).toBe(true);
+  });
+
+  test('never shows when the session is idle', () => {
+    expect(showsTypingLine(items(ThreadItemKind.Text), false)).toBe(false);
+    expect(showsTypingLine(items(ThreadItemKind.Status), undefined)).toBe(false);
   });
 });
 

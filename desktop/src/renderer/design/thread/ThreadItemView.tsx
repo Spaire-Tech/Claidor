@@ -1,5 +1,6 @@
 import { type CSSProperties, useState } from 'react';
 
+import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { type AuthDecision, Speaker,type ThreadItem, ThreadItemKind } from './types';
@@ -134,9 +135,13 @@ function ChoiceCard(
             type="button"
             aria-label="Dismiss"
             onClick={() => handlers.onDismiss?.(item.id)}
-            style={{ width: 22, height: 22, border: 'none', background: 'transparent', cursor: 'pointer', color: color.muted, padding: 0 }}
+            style={{
+              width: 22, height: 22, border: 'none', background: 'transparent',
+              cursor: 'pointer', color: color.muted, padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            ✕
+            <CloseIcon size={13} />
           </button>
         )}
       </div>
@@ -242,7 +247,7 @@ function AuthCard(
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
-        <span aria-hidden style={{ color: color.warning, fontSize: 17, lineHeight: 1.2, marginTop: 1 }}>⚠</span>
+        <WarningIcon size={17} style={{ color: color.warning, marginTop: 2 }} />
         <div style={{ flex: '1 1 auto', minWidth: 0, fontSize: text.emphasis, fontWeight: 500, lineHeight: 1.35, letterSpacing: tracking.body, textWrap: 'pretty' }}>
           {item.text}
         </div>
@@ -277,7 +282,13 @@ function AuthCard(
               font: 'inherit', fontSize: text.body, color: color.muted,
             }}
           >
-            <span style={{ display: 'inline-block', transform: open ? 'rotate(90deg)' : 'none', transition: `transform ${motion.hover.duration} ${motion.hover.easing}` }}>›</span>
+            <ChevronRightIcon
+              size={11}
+              style={{
+                transform: open ? 'rotate(90deg)' : 'none',
+                transition: `transform ${motion.hover.duration} ${motion.hover.easing}`,
+              }}
+            />
             <span>{open ? 'Hide the command' : 'Show the command'}</span>
           </button>
           {open && (

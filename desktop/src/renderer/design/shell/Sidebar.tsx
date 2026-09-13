@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 
+import { AppsIcon, ChevronUpIcon, SearchIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, line, radius, shadow, text, tracking } from '../tokens';
 
@@ -81,7 +82,7 @@ export function Sidebar({
             background: color.fill, border: `1px solid ${line.hairline}`,
           }}
         >
-          <span aria-hidden style={{ color: color.muted, fontSize: 13 }}>⌕</span>
+          <SearchIcon size={14} style={{ color: color.muted }} />
           <input
             value={query}
             onChange={event => setQuery(event.target.value)}
@@ -171,10 +172,10 @@ export function Sidebar({
               width: 34, height: 34, borderRadius: '50%', background: color.fill,
               border: `1px solid ${line.hairline}`, flex: '0 0 auto',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: color.muted, fontSize: 13,
+              color: color.muted,
             }}
           >
-            ▦
+            <AppsIcon size={15} />
           </span>
           <span style={{ fontSize: text.body }}>Apps</span>
         </button>
@@ -199,7 +200,7 @@ export function Sidebar({
             {(accountName.trim()[0] ?? '?').toUpperCase()}
           </span>
           <span style={{ flex: '1 1 auto', fontSize: text.body }}>{accountName}</span>
-          <span aria-hidden style={{ color: color.faint, fontSize: 12 }}>⌃</span>
+          <ChevronUpIcon size={13} style={{ color: color.faint }} />
         </button>
       </div>
     </div>

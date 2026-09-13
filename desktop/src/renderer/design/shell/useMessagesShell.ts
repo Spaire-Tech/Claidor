@@ -98,10 +98,13 @@ export function useMessagesShell(): MessagesShellState {
   const items = useMemo(
     () => threadItems({
       agentId: activeId,
+      // The id identifies, the name is what a person reads. Passing the
+      // id for both put "Allow juno to continue" on an approval card.
+      ...(active?.name ? { agentName: active.name } : {}),
       session: session ? { ...session, messages } : undefined,
       pendingPermissions,
     }),
-    [activeId, session, messages, pendingPermissions],
+    [activeId, active, session, messages, pendingPermissions],
   );
 
   const typing = currentSession?.status === 'running';

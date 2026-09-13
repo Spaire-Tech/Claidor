@@ -1,3 +1,4 @@
+import { ComputerIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { Thread } from '../thread/Thread';
 import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
@@ -50,6 +51,11 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     choice, auth, onSelect, onSend, onCompose, onApps, onAccount, onMode,
     onOpenPanel, onPlus,
   } = props;
+
+  // "typing" is a text-mode word, and in voice the orb is already
+  // pulsing to say the same thing. The canvas draws the same line:
+  // `typing: s.typing && s.mode === "text"`.
+  const saysTyping = Boolean(typing) && mode === ThreadMode.Text;
 
   const tab = (label: string, value: ThreadMode): JSX.Element => {
     const on = mode === value;
@@ -113,7 +119,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             <span style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title }}>
               {activeName}
             </span>
-            {typing && <span style={{ fontSize: text.caption, color: color.muted }}>typing</span>}
+            {saysTyping && <span style={{ fontSize: text.caption, color: color.muted }}>typing</span>}
 
             <div
               style={{
@@ -143,11 +149,11 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               style={{
                 marginLeft: 'auto', width: 34, height: 34, borderRadius: radius.small,
                 border: '1px solid transparent', background: 'transparent',
-                cursor: 'pointer', color: color.muted, fontSize: 15,
+                cursor: 'pointer', color: color.muted,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              🖵
+              <ComputerIcon size={17} />
             </button>
           </div>
 
@@ -155,7 +161,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             items={items}
             agentId={activeId}
             dayStamp={dayStamp}
-            typing={typing}
+            typing={saysTyping}
             choice={choice}
             auth={auth}
           />

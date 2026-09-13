@@ -65,8 +65,22 @@ export interface EnginePermissionRequest {
 }
 
 export interface ToThreadOptions {
-  /** The agent this thread belongs to, for the orb beside a bubble. */
+  /**
+   * The agent this thread belongs to, for the orb beside a bubble.
+   *
+   * An identity key, never shown. It is what the palette is hashed from,
+   * and it is whatever the store uses — `main`, a uuid, `engineering-lead`.
+   */
   agentId?: string;
+  /**
+   * What the agent is called, for the one sentence that names it.
+   *
+   * Separate from `agentId` on purpose. The first build passed the id here
+   * and an approval card read "Allow juno to continue" — the person is
+   * being asked to trust something that cannot even say its own name
+   * properly. Absent, the card says "this agent", which is honest.
+   */
+  agentName?: string;
   /** Permissions currently waiting. Each becomes an approval card. */
   pending?: readonly EnginePermissionRequest[];
   /** Names the machine on an approval card. */
@@ -245,7 +259,7 @@ export function toThreadItems(
     items.push({
       kind: ThreadItemKind.Auth,
       id: `auth:${request.requestId}`,
-      text: authQuestion(options.agentId, request.toolName),
+      text: authQuestion(options.agentName, request.toolName),
       ...(deviceId ? { deviceId } : {}),
       ...(commandFromToolInput(request.toolInput)
         ? { command: commandFromToolInput(request.toolInput) }
@@ -255,6 +269,23 @@ export function toThreadItems(
   }
 
   return items;
+}
+
+/**
+ * Whether the generic "Writing" line should show under the thread.
+ *
+ * One shimmering line at a time. In this app "typing" is the session
+ * being busy, and it stays busy while a tool runs — so a live status
+ * ("Running commands") and "Writing" would shimmer at each other, two
+ * lines saying the same thing, one of them less precisely. The status
+ * wins, because it says what is actually happening.
+ */
+export function showsTypingLine(
+  items: readonly ThreadItem[],
+  typing: boolean | undefined,
+): boolean {
+  if (!typing) return false;
+  return items[items.length - 1]?.kind !== ThreadItemKind.Status;
 }
 
 /**

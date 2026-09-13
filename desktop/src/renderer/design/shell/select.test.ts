@@ -150,6 +150,18 @@ describe('threadItems', () => {
       .toEqual([]);
   });
 
+  test('puts the agent&apos;s name on the approval card, not its id', () => {
+    const items = threadItems({
+      agentId: 'engineering-lead',
+      agentName: 'Engineering Lead',
+      session: { ...session, agentId: 'engineering-lead' },
+      pendingPermissions: [{ sessionId: 's1', requestId: 'a', toolName: 'bash', toolInput: {} }],
+    });
+    const card = items[items.length - 1] as { text: string };
+    expect(card.text).toContain('Engineering Lead');
+    expect(card.text).not.toContain('engineering-lead');
+  });
+
   test('passes the machine name through to the approval card', () => {
     const items = threadItems({
       agentId: 'perrin',

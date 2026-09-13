@@ -579,3 +579,74 @@ obviously not built yet, so they are named rather than hidden.
 no orb has been drawn, no message sent. Every claim above is about code
 that type-checks and passes tests, which is not the same as code that
 looks right.
+
+## Looking at it
+
+The line above — "still nothing rendered" — is no longer true. A harness
+under `desktop/harness/` mounts the real components with fixture data and
+Playwright photographs six screens: sign-in, sign-in with an error, a
+thread, a choice card, the typing state, voice.
+
+The harness mounts the shipped components, not copies of them. The only
+thing faked is the store.
+
+### What the screenshots found that the tests did not
+
+**An approval card said "Allow juno to continue".** `toThreadItems` was
+passing `agentId` where a display name belongs, so an identity key —
+`juno`, `engineering-lead`, a uuid — was being read out to a person as a
+name, on the one card in the app that asks them to trust something.
+`ToThreadOptions` now carries `agentName` separately; without it the card
+says "this agent", which is honest. Two tests now hold the line, one of
+them asserting an id with a hyphen in it never reaches the text.
+
+Forty tests passed over this code and none of them caught it, because
+every one of them passed a name where the app passes an id.
+
+**The computer icon drew as a blank rectangle.** It was `🖵` (U+1F5B5),
+which has no glyph in the fonts macOS or Linux ship. The search
+magnifier, the Apps grid, the account caret, the microphone and the send
+arrow were Unicode too, and the canvas has real SVGs for all of them.
+`design/icons.tsx` now holds those paths verbatim — same geometry, same
+stroke widths, same 24×24 box — stroked in `currentColor`.
+
+**Two shimmering lines at once.** In the typing state the thread showed
+"Running commands" and "Writing" stacked. `typing` in this app is the
+session being busy, which stays true while a tool runs, so the two would
+have shown together for the whole of every tool call. `showsTypingLine`
+now gives the status precedence: it says what is actually happening.
+
+**"typing" in voice mode.** The canvas passes `typing && mode === "text"`
+and we passed `typing`. In voice the orb is already pulsing; the word is
+wrong there anyway.
+
+**A 404 in the console** that turned out to be `/favicon.ico` — harness
+noise. It is named now rather than guessed at: the shoot script prints
+the path of anything the server refuses, because "404 (Not Found)" with
+no URL is one guess away from chasing the wrong file.
+
+### What the screenshots confirmed rather than found
+
+The five sidebar orbs are visibly different colours; the three-bubble
+split reads as texts; the approval card shows the device id, the
+disclosure and three buttons; scroll pinning lands at the newest message.
+
+The composer stays on screen in voice mode. That looked wrong until the
+canvas was checked: it does the same, with the orb above it. Left alone.
+
+Sidebar orbs at 40px fall under `LIVE_MIN_PX = 56` and draw the gradient
+fallback rather than the shader. That is the context budget working as
+designed, and at 40px the difference is not visible — but it is a
+decision, not an accident, and the founder should know it was made.
+
+### Verified
+
+- `vitest run src/renderer/design` — **73 passed**.
+- `eslint --max-warnings 0` clean across `src/renderer/design` and the
+  harness; `tsc --noEmit` clean.
+- Six screenshots taken, no console errors, seven live orbs on the
+  thread screen.
+
+**Still not verified:** none of this has run inside Electron. The harness
+is a browser with the real components in it, which is closer than tests
+and is not the app. `FaiserApp` is still not mounted in `App.tsx`.
