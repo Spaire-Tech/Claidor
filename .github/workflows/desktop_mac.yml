@@ -1,7 +1,10 @@
 name: Desktop app (macOS)
 
-# Builds the Maties desktop app for Apple Silicon Macs and keeps the
-# installer as a downloadable artifact of the run. The build is unsigned
+# Builds the desktop app for Apple Silicon Macs and keeps the installer as
+# a downloadable artifact of the run. At this commit the app is upstream
+# LobsterAI, so the dmg is named LobsterAI-darwin-arm64-*; the artifact is
+# still labelled Maties, which is the name to download rather than the name
+# on the app. The build is unsigned
 # until an Apple developer certificate is added, so the first launch needs
 # a right-click, Open (see desktop/README.md).
 
