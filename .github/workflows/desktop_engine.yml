@@ -20,8 +20,15 @@ name: Desktop engine
 on:
   workflow_dispatch:
   push:
+    # Work branches as well as main. This gate exists to catch a runtime
+    # that cannot load its plugins, and catching that after it has landed
+    # on main is catching it too late — work here is merged straight from
+    # branches, so a `pull_request`-only gate would almost never fire. The
+    # paths filter below keeps it to pushes that can actually change the
+    # runtime, and the job is a cheap Linux one.
     branches:
       - main
+      - "claude/**"
     paths:
       - "desktop/package.json"
       - "desktop/scripts/**"
