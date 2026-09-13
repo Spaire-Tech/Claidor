@@ -113,6 +113,36 @@ describe('pricing catalog model mapping', () => {
 });
 
 describe('authenticated server model mapping', () => {
+  const catalogue = [
+    { modelId: 'claude-sonnet-5', modelName: 'Claude Sonnet 5', provider: 'anthropic',
+      apiFormat: 'anthropic', role: 'fallback' },
+    { modelId: 'gpt-5.6-terra', modelName: 'GPT-5.6 Terra', provider: 'openai',
+      apiFormat: 'openai', role: 'primary' },
+    { modelId: 'gpt-5.6-luna', modelName: 'GPT-5.6 Luna', provider: 'openai',
+      apiFormat: 'openai', role: 'cheap' },
+  ];
+
+  test('offers only the model a person talks to', () => {
+    // The cheap model runs sub-agents, compaction and heartbeats; the
+    // fallback answers when the primary's provider is down. Neither is a
+    // choice worth putting in front of anyone.
+    expect(mapAvailableServerModelsToModels(catalogue).map(m => m.id))
+      .toEqual(['gpt-5.6-terra']);
+  });
+
+  test('keeps rows an older server sends with no role, rather than emptying the picker', () => {
+    const roleless = catalogue.map(({ role: _role, ...rest }) => rest);
+    expect(mapAvailableServerModelsToModels(roleless).map(m => m.id))
+      .toEqual(['claude-sonnet-5', 'gpt-5.6-terra', 'gpt-5.6-luna']);
+  });
+
+  test('ignores a role it does not recognise rather than hiding the model', () => {
+    expect(mapAvailableServerModelsToModels([
+      { modelId: 'future', modelName: 'Future', provider: 'openai',
+        apiFormat: 'openai', role: 'something-new' },
+    ]).map(m => m.id)).toEqual(['future']);
+  });
+
   test('preserves K3 runtime, modality, token, and agentic metadata', () => {
     const [model] = mapAvailableServerModelsToModels([{
       modelId: 'kimi-k3-YoudaoInner',

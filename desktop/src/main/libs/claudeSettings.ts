@@ -1,4 +1,4 @@
-import { type ApiFormat,type ProviderConfig, ProviderName, ProviderRegistry, resolveCodingPlanBaseUrl } from '../../shared/providers';
+import { type ApiFormat, type ModelRole, parseModelRole, type ProviderConfig, ProviderName, ProviderRegistry, resolveCodingPlanBaseUrl } from '../../shared/providers';
 import {
   type LobsterAIRequestCapability,
   parseLobsterAIRequestCapabilities,
@@ -84,6 +84,9 @@ export type ServerModelMetadata = {
   contextWindow?: number;
   maxTokens?: number;
   explicitContextCache?: boolean;
+  /** What the server says this model is for. Absent on a row that
+   *  declares no role, which is how a model stays priced but unused. */
+  role?: ModelRole;
 };
 
 type CachedServerModelMetadata = Omit<ServerModelMetadata, 'modelId'> & {
@@ -91,8 +94,13 @@ type CachedServerModelMetadata = Omit<ServerModelMetadata, 'modelId'> & {
 };
 
 export type ServerModelMetadataInput =
-  Omit<ServerModelMetadata, 'runtimeProfile' | 'thinkingConfig' | 'requestCapabilities'>
-  & { runtimeProfile?: unknown; thinkingConfig?: unknown; requestCapabilities?: unknown };
+  Omit<ServerModelMetadata, 'runtimeProfile' | 'thinkingConfig' | 'requestCapabilities' | 'role'>
+  & {
+    runtimeProfile?: unknown;
+    thinkingConfig?: unknown;
+    requestCapabilities?: unknown;
+    role?: unknown;
+  };
 
 export const ServerModelRunGateReason = {
   MetadataMissing: 'metadata_missing',
@@ -270,6 +278,7 @@ export function updateServerModelMetadata(models: ServerModelMetadataInput[]): b
       contextWindow: runtimeMetadata.contextWindow,
       maxTokens: runtimeMetadata.maxTokens,
       explicitContextCache: model.explicitContextCache,
+      role: parseModelRole(model.role),
     });
   }
   const next = serializeServerModelMetadata(getComparableServerModelMetadata(nextCache));

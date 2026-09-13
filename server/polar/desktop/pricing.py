@@ -35,6 +35,28 @@ from typing import Any
 CREDIT_USD_PER_MILLION_INPUT = 3.00
 
 
+class ModelRole(StrEnum):
+    """What a model is *for*. The app does not choose a model per message
+    — it cannot know how hard a task is before doing it, the extra round
+    trip costs a beat in an app whose whole feel is timing, and a price
+    that moves for reasons a person cannot see makes the usage meter
+    untrustworthy. Instead there is one model they talk to and cheap ones
+    for machinery they never see, and the roles are declared here rather
+    than in the app so the policy can change with a deploy instead of a
+    release.
+
+    `primary`  — every reply the person reads.
+    `cheap`    — sub-agents, compaction, the memory flush, heartbeats,
+                 chat titles, sidebar previews. Never read as "the agent".
+    `fallback` — answers when the primary's provider is down. Never the
+                 default, never shown, never in a menu.
+    """
+
+    primary = "primary"
+    cheap = "cheap"
+    fallback = "fallback"
+
+
 class DesktopProvider(StrEnum):
     """Who serves a model, and therefore which key, which address and
     which price list the proxy uses. The value is also the wire format:
@@ -90,6 +112,11 @@ class DesktopModel:
     #: provider's list uses for everything else. Leave it None and the
     #: provider's weights apply unchanged.
     output_weight: float | None = None
+    #: What this model is for. `None` means the model is priced but not
+    #: part of the current policy, and `offered_models()` leaves it off
+    #: the menu. It stays in `MODELS` so a saved config that still names
+    #: it is priced correctly rather than failing.
+    role: ModelRole | None = None
     #: Whether the provider will take `reasoning_effort` and function
     #: tools in the same request. Read only on the OpenAI wire, so the
     #: Anthropic entries leave it None because the question never comes
@@ -137,6 +164,7 @@ class DesktopModel:
             "supportsThinking": False,
             "supportsToolCalling": True,
             "agenticReady": True,
+            "role": self.role.value if self.role else None,
             "contextWindow": self.context_window,
             "maxTokens": self.max_tokens,
             "explicitContextCache": False,
@@ -152,18 +180,32 @@ class DesktopModel:
         }
 
 
-#: The menu. Claude is the default and stays first; the GPT entries are
-#: offered only where an OpenAI key is configured
+#: The catalogue. Everything priced lives here; what is *offered* is the
+#: subset carrying a `role` whose provider has a key
 #: (`polar.desktop.service.offered_models`). The multipliers are each
 #: model's published input price over $3.00 per million, so the credit
 #: figures of the two providers mean the same money.
+#:
+#: The policy, decided 13 September 2026: OpenAI serves everything the
+#: person sees, on cost. Per million tokens, Terra is $2.00 in / $12.00
+#: out against Sonnet's $3.00 / $15.00, and Luna is $0.20 / $1.20 against
+#: Haiku's $0.60 / $3.00. OpenAI also charges nothing to write its cache
+#: where Anthropic charges 1.25x, which for an agent replaying a system
+#: prompt and its tool definitions every turn is money on every message.
+#: One Claude model stays as the fallback because a sole provider means
+#: one outage is a total outage; it costs nothing until the day it is the
+#: only thing that answers.
 MODELS: tuple[DesktopModel, ...] = (
+    # The fallback, and nothing else. Never the default, never shown.
     DesktopModel(
         "claude-sonnet-5",
         "Claude Sonnet 5",
         "The everyday model: fast, capable, the default.",
         1.0,
+        role=ModelRole.fallback,
     ),
+    # No role: priced, so an old saved config naming it still meters
+    # correctly, but off the menu.
     DesktopModel(
         "claude-opus-5",
         "Claude Opus 5",
@@ -197,8 +239,16 @@ MODELS: tuple[DesktopModel, ...] = (
         2.00 / CREDIT_USD_PER_MILLION_INPUT,
         provider=DesktopProvider.openai,
         context_window=1_050_000,
+        role=ModelRole.primary,
     ),
-    # $10.00 per million input tokens, output 5×.
+    # $10.00 per million input tokens, output 5x.
+    #
+    # Withheld, deliberately: no role, so it is not offered. Every OpenAI
+    # model runs with `reasoning_effort: "none"` whenever tools are
+    # present — see `tool_reasoning` above — and for an agent tools are
+    # always present. Astra costs five times Terra for a capability we
+    # are switching off. It comes back when the proxy speaks
+    # `/v1/responses`, and not before.
     DesktopModel(
         "gpt-6-astra",
         "GPT-6 Astra",
@@ -216,6 +266,7 @@ MODELS: tuple[DesktopModel, ...] = (
         0.20 / CREDIT_USD_PER_MILLION_INPUT,
         provider=DesktopProvider.openai,
         context_window=1_050_000,
+        role=ModelRole.cheap,
     ),
 )
 

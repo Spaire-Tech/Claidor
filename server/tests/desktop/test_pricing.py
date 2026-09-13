@@ -9,6 +9,7 @@ from polar.desktop.pricing import (
     MODELS,
     PROVIDER_TOKEN_WEIGHTS,
     DesktopProvider,
+    ModelRole,
     OpenAIUsageTally,
     Usage,
     UsageTally,
@@ -51,9 +52,46 @@ class TestCatalogue:
         providers = {model.provider for model in MODELS}
         assert providers == {DesktopProvider.anthropic, DesktopProvider.openai}
 
-    def test_claude_comes_first_so_the_default_stays_claude(self) -> None:
-        assert MODELS[0].model_id == "claude-sonnet-5"
-        assert MODELS[0].provider is DesktopProvider.anthropic
+    def test_exactly_one_model_holds_each_role(self) -> None:
+        # The policy of 13 September 2026: OpenAI serves everything the
+        # person sees, on cost, and one Claude model stands behind it so a
+        # single provider outage is not a total outage. Two models sharing
+        # a role would mean nothing decides which one answers.
+        by_role: dict[ModelRole, list[str]] = {}
+        for model in MODELS:
+            if model.role is not None:
+                by_role.setdefault(model.role, []).append(model.model_id)
+
+        assert by_role[ModelRole.primary] == ["gpt-5.6-terra"]
+        assert by_role[ModelRole.cheap] == ["gpt-5.6-luna"]
+        assert by_role[ModelRole.fallback] == ["claude-sonnet-5"]
+
+    def test_the_fallback_is_the_only_anthropic_model_with_a_role(self) -> None:
+        anthropic_roles = {
+            model.model_id: model.role
+            for model in MODELS
+            if model.provider is DesktopProvider.anthropic
+        }
+        assert anthropic_roles == {
+            "claude-sonnet-5": ModelRole.fallback,
+            "claude-opus-5": None,
+            "claude-haiku-4-5-20251001": None,
+        }
+
+    def test_astra_is_priced_but_withheld(self) -> None:
+        # Withheld because every OpenAI model runs with
+        # reasoning_effort "none" whenever tools are present, and for an
+        # agent tools are always present — so Astra costs five times Terra
+        # for a capability that is switched off. It stays in the catalogue
+        # so a saved config still naming it meters correctly.
+        astra = next(model for model in MODELS if model.model_id == "gpt-6-astra")
+        assert astra.role is None
+        assert astra.available()["role"] is None
+        assert astra.cost_multiplier > 0
+
+    def test_available_carries_the_role(self) -> None:
+        terra = next(model for model in MODELS if model.model_id == "gpt-5.6-terra")
+        assert terra.available()["role"] == "primary"
 
     def test_the_gpt_multipliers_are_the_published_prices_in_credit_units(
         self,

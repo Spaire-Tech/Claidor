@@ -42,6 +42,7 @@ from .pricing import (
     PROVIDER_TOKEN_WEIGHTS,
     DesktopModel,
     DesktopProvider,
+    ModelRole,
     OpenAIUsageTally,
     SSEUsageTally,
     TokenWeights,
@@ -121,11 +122,26 @@ def provider_configured(provider: DesktopProvider) -> bool:
 
 
 def offered_models() -> tuple[DesktopModel, ...]:
-    """The models the app is told about. A provider with no key is not
-    offered at all: a missing key must read as « not available here »
-    when the menu is drawn, never as an error at the moment somebody
-    sends a message."""
-    return tuple(one for one in MODELS if provider_configured(one.provider))
+    """The models the app is told about: the ones carrying a role, whose
+    provider Claidor holds a key for.
+
+    Two filters, for two different reasons. A provider with no key is not
+    offered at all, because a missing key must read as « not available
+    here » when the menu is drawn and never as an error at the moment
+    somebody sends a message. A model with no role is priced but not part
+    of the current policy — Opus, Haiku and Astra — and stays in `MODELS`
+    only so a saved config still naming one is metered correctly.
+
+    Note what this means for the fallback: if no Anthropic key is
+    configured, Claude is not offered, and the app will find no fallback
+    to write. That is the honest outcome — a fallback that cannot answer
+    is worse than none — and it is visible here rather than at the moment
+    OpenAI goes down."""
+    return tuple(
+        one
+        for one in MODELS
+        if one.role is not None and provider_configured(one.provider)
+    )
 
 
 # --- credits --------------------------------------------------------------------
@@ -571,6 +587,7 @@ __all__ = [
     "IncomingMemoryFile",
     "MemoryFileState",
     "MemorySync",
+    "ModelRole",
     "OpenAIUsageTally",
     "SSEUsageTally",
     "TokenWeights",

@@ -20,6 +20,36 @@
 // 1. String Literal Constants
 // ═══════════════════════════════════════════════════════
 
+// ─── Model Role ─────────────────────────────────────────────────────────
+// What a model is *for*, as the server declares it on each row of
+// /api/models/available. The app does not choose a model per message: it
+// cannot know how hard a task is before doing it, a routing round trip
+// costs a beat in an app whose whole feel is timing, and a price that
+// moves for reasons a person cannot see makes the usage meter
+// untrustworthy. So there is one model they talk to and cheap ones for
+// machinery they never see, and the policy lives on the server so it can
+// change with a deploy instead of a release.
+export const ModelRole = {
+  /** Every reply the person reads. */
+  Primary: 'primary',
+  /** Sub-agents, compaction, the memory flush, heartbeats. Never read as "the agent". */
+  Cheap: 'cheap',
+  /** Answers when the primary's provider is down. Never the default, never shown. */
+  Fallback: 'fallback',
+} as const;
+
+export type ModelRole = typeof ModelRole[keyof typeof ModelRole];
+
+const MODEL_ROLE_VALUES: ReadonlySet<string> = new Set(Object.values(ModelRole));
+
+/** A role the server sent, or undefined for anything else — including the
+ *  `null` an older or role-less row carries. */
+export const parseModelRole = (value: unknown): ModelRole | undefined => (
+  typeof value === 'string' && MODEL_ROLE_VALUES.has(value)
+    ? (value as ModelRole)
+    : undefined
+);
+
 // ─── Provider Name ──────────────────────────────────────────────────────
 // providerName identifies the LobsterAI internal provider (config key).
 export const ProviderName = {

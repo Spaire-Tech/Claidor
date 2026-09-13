@@ -10,8 +10,10 @@ import {
 } from '@shared/auth/constants';
 import { EnterpriseAccountMode } from '@shared/enterpriseAccount/constants';
 import {
+  ModelRole,
   type ModelThinkingConfig,
   parseLobsterAIRequestCapabilities,
+  parseModelRole,
   parseModelThinkingConfig,
   ProviderName,
 } from '@shared/providers';
@@ -119,6 +121,8 @@ export interface AvailableServerModelEntry {
   moreModel?: boolean;
   accessible?: boolean;
   restrictionHint?: string;
+  /** What the server says this model is for. See `ModelRole`. */
+  role?: unknown;
 }
 
 const readString = (value: unknown): string => (
@@ -233,10 +237,29 @@ export function mapPricingCatalogToPublicServerModels(
   );
 }
 
+/**
+ * Only the model a person actually talks to belongs in a picker.
+ *
+ * The server sends three kinds of row: the `primary` they talk to, the
+ * `cheap` one that runs sub-agents, compaction and heartbeats, and the
+ * `fallback` that answers when the primary's provider is down. The last
+ * two are machinery — showing either would offer a choice that means
+ * nothing, and the fallback is meant to be invisible even on the day it
+ * is the only thing answering.
+ *
+ * A row with no role at all is kept. That is what an older server sends,
+ * and dropping those would leave the app with an empty picker rather than
+ * a working one.
+ */
+const isSelectableByPerson = (model: AvailableServerModelEntry): boolean => {
+  const role = parseModelRole(model.role);
+  return role === undefined || role === ModelRole.Primary;
+};
+
 export function mapAvailableServerModelsToModels(
   models: AvailableServerModelEntry[],
 ): Model[] {
-  return models.map(model => {
+  return models.filter(isSelectableByPerson).map(model => {
     const thinkingConfig = model.supportsThinking === true
       ? parseModelThinkingConfig(model.thinkingConfig)
       : undefined;

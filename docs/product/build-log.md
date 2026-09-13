@@ -130,3 +130,98 @@ Both now read `productName` from `electron-builder.json`.
 Eleven tests across three files pinned the product name while the code
 derived it. They derive it too now, so the next rename is checked by them
 rather than broken by them.
+
+---
+
+## Stage 1 — Models: one to talk to, cheap ones behind
+
+**Commits:** server and app together.
+
+### The shape of it
+
+The roles live on the **server**, not in the app. `/api/models/available`
+now carries a `role` on every row, so the policy — which model is the
+primary, which is the cheap one, which stands behind them — changes with
+a deploy instead of a release. Nothing in the app names a model.
+
+| Role | Model | What it does |
+|---|---|---|
+| `primary` | GPT-5.6 Terra | every reply the person reads |
+| `cheap` | GPT-5.6 Luna | sub-agents, compaction, the memory flush, heartbeats |
+| `fallback` | Claude Sonnet 5 | answers when OpenAI is down; never default, never shown |
+
+Withheld, priced but roleless so a saved config still meters correctly:
+**GPT-6 Astra**, **Claude Opus 5**, **Claude Haiku 4.5**.
+
+Astra's reason is written into `pricing.py` beside it: every OpenAI model
+runs with `reasoning_effort: "none"` whenever tools are present, and for
+an agent tools are always present, so Astra costs five times Terra for a
+capability that is switched off. It comes back when the proxy speaks
+`/v1/responses` — Stage 2 — and not before.
+
+### Server
+
+- `pricing.py` gains `ModelRole` and `DesktopModel.role`; `available()`
+  carries it.
+- `service.offered_models()` now filters on **two** things: a role, and a
+  configured provider key. The docstring says what that means for the
+  fallback — no Anthropic key means no fallback is offered and the app
+  writes none, which is visible here rather than at the moment OpenAI
+  goes down.
+
+### App
+
+- `ModelRole` and `parseModelRole` in `shared/providers/constants.ts`.
+- `claudeSettings.ts` carries the role through the server-model cache;
+  the wire field is typed `unknown` and parsed, like the other wire
+  fields beside it.
+- `libs/agentModelRoles.ts` is new and pure: it turns roled models into
+  `provider/model` refs and the `agents.defaults` fragments they fill.
+  Every field is omitted when its role has no model, so a partial
+  catalogue degrades to the engine's own defaults rather than to a
+  dangling reference.
+- `openclawConfigSync.ts` spreads those fragments into
+  `agents.defaults` — four slots that already existed in OpenClaw's
+  config and were simply never filled: `model.fallbacks`,
+  `compaction.model`, `compaction.memoryFlush.model`, `heartbeat.model`,
+  plus a `subagents` block.
+- `auth.ts` filters the model picker to the primary. A row with no role
+  is kept, so an older server leaves a working picker rather than an
+  empty one.
+
+### Verified
+
+- The pricing module was **run**, not read: one primary, one cheap, one
+  fallback; Astra, Opus and Haiku roleless; `available()` carrying the
+  role. Prices printed from the real table.
+- `tests/desktop/test_pricing.py` — 20 passed. The stale
+  `test_claude_comes_first_so_the_default_stays_claude` is replaced by
+  four tests of the current policy.
+- `agentModelRoles.test.ts` — 10 tests on the pure helper.
+- `openclawConfigSync.runtime.test.ts` — two new tests that read the
+  **generated config file** and assert every slot, and assert the
+  no-roles case writes nothing.
+- `auth.test.ts` — three tests on the picker filter.
+- `tsc` clean on both projects; `vitest run` 3915 passed across 395
+  files; `ruff check` and `ruff format --check` clean; `eslint
+  --max-warnings 0` clean on every touched file.
+
+**Not verified:** the app has not been opened, and the server change is
+not deployed. Both are the founder's to do.
+
+### What a test caught
+
+My first runtime assertion checked that no roleless model appeared
+anywhere in `agents.defaults`, and it failed. The role slots were all
+correct; what it found was that `agents.defaults.models` — a different
+mechanism — registers per-model params for **everything** the server
+sends. In production that is moot, because `offered_models()` only sends
+roled models, and the roleless ones in the test were seeded by hand to
+prove the resolver skips them. The assertion was wrong, not the code, and
+it is now scoped to the role slots with a comment saying why.
+
+### Left for Stage 3
+
+Retiring the provider and API-key screens. The picker filter means one
+model shows without touching them, and those screens go with the rest of
+the old shell rather than being removed twice.

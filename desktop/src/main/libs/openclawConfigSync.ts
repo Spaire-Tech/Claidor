@@ -49,6 +49,10 @@ import type { DingTalkInstanceConfig, EmailMultiInstanceConfig, FeishuInstanceCo
 import { OpenClawSessionKeepAlive } from '../openclawSessionPolicy/constants';
 import { buildOpenClawSessionConfig } from '../openclawSessionPolicy/store';
 import {
+  buildAgentModelRoleDefaults,
+  resolveAgentModelRoleRefs,
+} from './agentModelRoles';
+import {
   getAllServerModelMetadata,
   listProviderSourceEntries,
   resolveAllEnabledProviderConfigs,
@@ -2051,6 +2055,14 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     const coworkConfig = this.getCoworkConfig();
     const browserWebAccess = normalizeBrowserWebAccessConfig(this.getBrowserWebAccessConfig());
     const serverModels = getAllServerModelMetadata();
+    // One model the person talks to, cheap ones for machinery they never
+    // see, and one fallback behind the lot. The server says which is which
+    // (`role` on each row of /api/models/available) so the policy changes
+    // with a deploy rather than a release; every slot below already exists
+    // in OpenClaw's agent config, so none of it is new machinery.
+    const modelRoleDefaults = buildAgentModelRoleDefaults(
+      resolveAgentModelRoleRefs(serverModels, OpenClawProviderId.LobsteraiServer),
+    );
     const invalidKimiK3Transports = findInvalidKimiK3ServerTransports(serverModels);
     if (invalidKimiK3Transports.length > 0) {
       const invalidRefs = invalidKimiK3Transports
@@ -2446,6 +2458,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           timeoutSeconds: OPENCLAW_AGENT_TIMEOUT_SECONDS,
           model: {
             primary: primaryModel,
+            ...modelRoleDefaults.model,
           },
           sandbox: {
             mode: sandboxMode,
@@ -2455,6 +2468,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           compaction: {
             truncateAfterCompaction: true,
             maxActiveTranscriptBytes: OpenClawTranscriptSafetyLimit.SoftConfigValue,
+            ...modelRoleDefaults.compaction,
           },
           ...(taskWorkingDirectory ? { cwd: path.resolve(taskWorkingDirectory) } : {}),
           memorySearch: {
@@ -2494,7 +2508,11 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             lightContext: true,
             isolatedSession: true,
             skipWhenBusy: true,
+            ...modelRoleDefaults.heartbeat,
           },
+          ...(modelRoleDefaults.subagents
+            ? { subagents: modelRoleDefaults.subagents }
+            : {}),
           ...(Object.keys(agentModelDefaults).length > 0
             ? { models: agentModelDefaults }
             : {}),

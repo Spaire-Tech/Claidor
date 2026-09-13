@@ -37,6 +37,7 @@ const mockRuntimeState = vi.hoisted(() => ({
     contextWindow?: number;
     maxTokens?: number;
     explicitContextCache?: boolean;
+    role?: 'primary' | 'cheap' | 'fallback';
   }>,
   enabledProviders: [] as Array<{
     providerName: string;
@@ -377,6 +378,63 @@ describe('OpenClawConfigSync runtime config output', () => {
       truncateAfterCompaction: true,
       maxActiveTranscriptBytes: '32mb',
     });
+  });
+
+  test('sends every piece of machinery to the cheap model and stands the fallback behind the primary', async () => {
+    // The whole of the model policy, as it reaches the engine. The person
+    // talks to the primary; sub-agents, compaction, the memory flush and
+    // heartbeats run on the cheap model; one fallback stands behind the
+    // primary so a single provider outage is not a total outage.
+    mockRuntimeState.proxyPort = 56646;
+    mockRuntimeState.serverModels = [
+      { modelId: 'claude-sonnet-5', apiFormat: 'anthropic', role: 'fallback' },
+      { modelId: 'claude-opus-5', apiFormat: 'anthropic' },
+      { modelId: 'gpt-5.6-terra', apiFormat: 'openai', role: 'primary' },
+      { modelId: 'gpt-6-astra', apiFormat: 'openai' },
+      { modelId: 'gpt-5.6-luna', apiFormat: 'openai', role: 'cheap' },
+    ];
+
+    const sync = await createSync();
+    expect(sync.sync('model-roles').ok).toBe(true);
+
+    const defaults = JSON.parse(fs.readFileSync(configPath, 'utf8')).agents.defaults;
+    const cheap = 'lobsterai-server/gpt-5.6-luna';
+
+    expect(defaults.subagents).toEqual({ model: cheap });
+    expect(defaults.compaction.model).toBe(cheap);
+    expect(defaults.compaction.memoryFlush).toEqual({ model: cheap });
+    expect(defaults.heartbeat.model).toBe(cheap);
+    expect(defaults.model.fallbacks).toEqual(['lobsterai-server/claude-sonnet-5']);
+
+    // No role slot may name a model the server gave no role to. Note the
+    // scope: `agents.defaults.models` is a different mechanism — it
+    // registers per-model params for everything the server sent, and in
+    // production the server sends only models that carry a role, because
+    // `offered_models()` filters on exactly that. The roleless entries
+    // seeded above exist to prove the role resolver skips them.
+    const roleSlots = JSON.stringify([
+      defaults.model.fallbacks,
+      defaults.compaction.model,
+      defaults.compaction.memoryFlush,
+      defaults.heartbeat.model,
+      defaults.subagents,
+    ]);
+    expect(roleSlots).not.toContain('astra');
+    expect(roleSlots).not.toContain('opus');
+  });
+
+  test('writes no role slots when the server sends no roles', async () => {
+    mockRuntimeState.proxyPort = 56646;
+    mockRuntimeState.serverModels = [{ modelId: 'gpt-5.6-terra', apiFormat: 'openai' }];
+
+    const sync = await createSync();
+    expect(sync.sync('model-roles-absent').ok).toBe(true);
+
+    const defaults = JSON.parse(fs.readFileSync(configPath, 'utf8')).agents.defaults;
+    expect(defaults.subagents).toBeUndefined();
+    expect(defaults.compaction.model).toBeUndefined();
+    expect(defaults.heartbeat.model).toBeUndefined();
+    expect(defaults.model.fallbacks).toBeUndefined();
   });
 
   test('disables optimized OpenClaw heartbeat by default', async () => {
