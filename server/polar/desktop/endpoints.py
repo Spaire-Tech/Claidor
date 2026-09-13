@@ -543,29 +543,50 @@ def _openai_headers(request: Request) -> dict[str, str]:
     }
 
 
-def _anthropic_body(payload: dict[str, Any], raw: bytes) -> bytes:
+def _anthropic_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) -> bytes:
     """Untouched: Anthropic reports usage on every stream without being
     asked."""
     return raw
 
 
-def _openai_body(payload: dict[str, Any], raw: bytes) -> bytes:
-    """Untouched, except that a stream is made to report its usage.
+def _openai_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) -> bytes:
+    """Untouched, but for two things OpenAI will not do without being
+    told, both of which are silent failures otherwise.
 
-    OpenAI sends no usage on a stream unless the request carried
+    **Usage on a stream.** OpenAI sends none unless the request carried
     `stream_options.include_usage`, and whether the engine asks for it is
     a compatibility flag in its own configuration. A stream that reports
     nothing would cost nothing, which is not a discount — it is metering
     that has quietly stopped working. So the proxy asks, always.
+
+    **Reasoning alongside tools.** Some models refuse the two together on
+    this endpoint and answer 400 rather than dropping one. The agent
+    always carries tools, so such a model cannot answer at all. Where the
+    catalogue records that refusal, the proxy sends the `none` that
+    OpenAI's own error asks for. Setting it beats omitting it: the model's
+    default is a reasoning level, so silence would be refused too.
     """
-    if payload.get("stream") is not True:
+    changes: dict[str, Any] = {}
+
+    if payload.get("stream") is True:
+        options = payload.get("stream_options")
+        options = dict(options) if isinstance(options, dict) else {}
+        if options.get("include_usage") is not True:
+            options["include_usage"] = True
+            changes["stream_options"] = options
+
+    tools = payload.get("tools")
+    if (
+        not model.tool_reasoning
+        and isinstance(tools, list)
+        and tools
+        and payload.get("reasoning_effort") != "none"
+    ):
+        changes["reasoning_effort"] = "none"
+
+    if not changes:
         return raw
-    options = payload.get("stream_options")
-    options = dict(options) if isinstance(options, dict) else {}
-    if options.get("include_usage") is True:
-        return raw
-    options["include_usage"] = True
-    return json.dumps({**payload, "stream_options": options}).encode()
+    return json.dumps({**payload, **changes}).encode()
 
 
 @dataclass(frozen=True)
@@ -575,7 +596,7 @@ class _Wire:
 
     upstream_path: str
     headers: Callable[[Request], dict[str, str]]
-    body: Callable[[dict[str, Any], bytes], bytes]
+    body: Callable[[dict[str, Any], bytes, DesktopModel], bytes]
 
 
 _WIRES: dict[DesktopProvider, _Wire] = {
@@ -841,7 +862,7 @@ async def _proxy(
     stream = payload.get("stream") is True
     url = f"{provider_base_url(model.provider)}{wire.upstream_path}"
     headers = wire.headers(request)
-    body = wire.body(payload, raw)
+    body = wire.body(payload, raw, model)
     user_id, session_id = user.id, desktop_session.id
 
     # The request's own session is committed when the handler returns,

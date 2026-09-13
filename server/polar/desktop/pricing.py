@@ -90,6 +90,10 @@ class DesktopModel:
     #: provider's list uses for everything else. Leave it None and the
     #: provider's weights apply unchanged.
     output_weight: float | None = None
+    #: False where the provider refuses `reasoning_effort` and function
+    #: tools in the same request. Set it only from a refusal we have
+    #: actually seen, never from a guess about what a model supports.
+    tool_reasoning: bool = True
 
     @property
     def api_format(self) -> str:
@@ -180,6 +184,13 @@ MODELS: tuple[DesktopModel, ...] = (
         provider=DesktopProvider.openai,
         context_window=1_050_000,
         output_weight=5.0,
+        # OpenAI, 13 September, verbatim: « Function tools with
+        # reasoning_effort are not supported for gpt-6-astra in
+        # /v1/chat/completions. To use function tools, use /v1/responses
+        # or set reasoning_effort to 'none'. » The agent always carries
+        # tools, so this model could not answer at all until the proxy
+        # stopped asking it to reason.
+        tool_reasoning=False,
     ),
     # $0.20 per million input tokens, output 6×.
     DesktopModel(
