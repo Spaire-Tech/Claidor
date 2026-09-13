@@ -34,21 +34,24 @@ import {
   ClockLineIcon,
   GearLineIcon,
   PencilLineIcon,
+  PuzzleLineIcon,
   SearchLineIcon,
+  SquaresLineIcon,
 } from './design/LineIcons';
 import Pill, { PillTone } from './design/Pill';
 import { formatShortcutGlyphs } from './design/shortcutGlyphs';
+import SidebarMcpIcon from './icons/SidebarMcpIcon';
 import LoginButton, { LoginButtonVariant } from './LoginButton';
 
 interface SidebarProps {
   onShowSettings: () => void;
   onShowLogin?: () => void;
-  activeView: 'cowork' | 'scheduledTasks' | 'library';
-  /** Skills and Apps live in Settings now; the sidebar only opens them. */
+  activeView: 'cowork' | 'skills' | 'scheduledTasks' | 'kits' | 'mcp' | 'library';
   onShowSkills: () => void;
-  onShowApps: () => void;
+  onShowConnectors: () => void;
   onShowCowork: () => void;
   onShowScheduledTasks: () => void;
+  onShowKits: () => void;
   onShowLibrary: () => void;
   onNewChat: () => void;
   isCollapsed: boolean;
@@ -172,19 +175,17 @@ const readSearchShortcut = (): string => (
 
 /**
  * The sidebar (docs/maties/design.md, section 3): the search box with its
- * shortcut pill, the rows, « MY AGENTS », one card per agent with its
+ * shortcut pill, the five rows, « MY AGENTS », one card per agent with its
  * conversations, and the person at the bottom.
- *
- * The founder's rule after walking the built app: the sidebar is where you
- * work; settings is what it can do and who you are. So this is new chat, the
- * chats themselves, scheduled tasks and the library — Kits went entirely,
- * and Skills and Apps moved into Settings.
  */
 const Sidebar: React.FC<SidebarProps> = ({
   onShowSettings,
   activeView,
+  onShowSkills,
+  onShowConnectors,
   onShowCowork,
   onShowScheduledTasks,
+  onShowKits,
   onShowLibrary,
   onNewChat,
   isCollapsed,
@@ -544,6 +545,43 @@ const Sidebar: React.FC<SidebarProps> = ({
         reportSidebarAction('open_scheduled_tasks', { activeView, isCollapsed });
         setIsSearchOpen(false);
         onShowScheduledTasks();
+      },
+    },
+    {
+      key: 'kits',
+      label: i18nService.t('kits'),
+      icon: <SquaresLineIcon />,
+      isActive: activeView === 'kits',
+      onClick: () => {
+        reportSidebarAction('open_kits', { activeView, isCollapsed });
+        setIsSearchOpen(false);
+        onShowKits();
+      },
+    },
+    {
+      key: 'skills',
+      label: i18nService.t('skills'),
+      icon: <PuzzleLineIcon />,
+      isActive: activeView === 'skills',
+      onClick: () => {
+        reportSidebarAction('open_skills', { activeView, isCollapsed });
+        setIsSearchOpen(false);
+        onShowSkills();
+      },
+    },
+    // Connections are their own entry rather than a tab inside Skills. They
+    // were a tab, and the founder could not find them: a headline feature
+    // behind a second click, under a heading naming something else, is a
+    // feature nobody uses.
+    {
+      key: 'connectors',
+      label: i18nService.t('connectors'),
+      icon: <SidebarMcpIcon />,
+      isActive: activeView === 'mcp',
+      onClick: () => {
+        reportSidebarAction('open_connectors', { activeView, isCollapsed });
+        setIsSearchOpen(false);
+        onShowConnectors();
       },
     },
     {

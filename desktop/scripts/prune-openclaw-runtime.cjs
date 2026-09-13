@@ -86,23 +86,6 @@ const BUNDLED_EXTENSIONS_TO_KEEP = new Set([
   'duckduckgo',
   // --- Media / voice (bundled defaults, may be used by agents) ---
   'image-generation-core', 'media-understanding-core', 'speech-core', 'talk-voice',
-  // --- Voice, telephony and iMessage: REMOVED AGAIN, deliberately ---
-  // These three were added to this list on 12 September and taken out the
-  // same day, because keeping them broke the browser and with it every
-  // other plugin.
-  //
-  // Plugin loading is all-or-nothing: `maybeThrowOnPluginLoadError` throws
-  // for the whole registry the moment any single plugin is in an error
-  // state, so one extension that cannot load takes down `browser`,
-  // `memory-core` and the rest with it. `voice-call` declares four
-  // dependencies (ws, commander, typebox, zod) that our packaging has never
-  // installed, because the extension had always been deleted before that
-  // mattered.
-  //
-  // Before any of them comes back: install each one's dependencies in the
-  // packaged runtime, then start the gateway and read the plugin registry
-  // to see it actually loaded. Adding the name here is the last step, not
-  // the first.
   // --- Internal ---
   'acpx', 'thread-ownership', 'memory-lancedb', 'memory-wiki',
 ]);

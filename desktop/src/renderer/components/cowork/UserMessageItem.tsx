@@ -7,12 +7,16 @@ import {
   isBrowserAnnotationTransportImage,
 } from '../../../shared/cowork/imageAttachments';
 import type { CoworkSelectedTextSnippet } from '../../../shared/cowork/selectedText';
+import type { KitReference } from '../../../shared/kit/constants';
 import { copyTextToClipboard } from '../../services/clipboard';
 import { i18nService } from '../../services/i18n';
+import { buildKitReferences } from '../../services/kitCapability';
 import type { CoworkImageAttachment, CoworkMessage, CoworkMessageMetadata } from '../../types/cowork';
+import type { MarketplaceKit } from '../../types/kit';
 import type { Skill } from '../../types/skill';
 import { parseUserMessageForDisplay } from '../../utils/userMessageDisplay';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
+import { SquaresLineIcon } from '../design/LineIcons';
 import EditIcon from '../icons/EditIcon';
 import GoalIcon from '../icons/GoalIcon';
 import MessageCopyIcon from '../icons/MessageCopyIcon';
@@ -137,13 +141,39 @@ const UserMessageSkillBadges: React.FC<{ skills: Skill[] }> = ({ skills }) => {
   );
 };
 
+const UserMessageKitBadges: React.FC<{ kitReferences: KitReference[] }> = ({ kitReferences }) => {
+  if (kitReferences.length === 0) return null;
+
+  return (
+    <>
+      {kitReferences.map(kitReference => {
+        const displayName = kitReference.name?.trim() || `@${kitReference.id}`;
+        return (
+          <div
+            key={kitReference.uri || kitReference.id}
+            className={CAPABILITY_CHIP_CLASS_NAME}
+            title={kitReference.uri}
+          >
+            <SquaresLineIcon size={14} />
+            <span className="min-w-0 truncate">
+              {displayName}
+            </span>
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
 const UserMessageCapabilityBadges: React.FC<{
+  kitReferences: KitReference[];
   skills: Skill[];
-}> = ({ skills }) => {
-  if (skills.length === 0) return null;
+}> = ({ kitReferences, skills }) => {
+  if (kitReferences.length === 0 && skills.length === 0) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-[6px]">
+      <UserMessageKitBadges kitReferences={kitReferences} />
       <UserMessageSkillBadges skills={skills} />
     </div>
   );
@@ -159,13 +189,14 @@ const UserMessageCapabilityBadges: React.FC<{
 const UserMessageItem: React.FC<{
   message: CoworkMessage;
   skills: Skill[];
+  marketplaceKits?: MarketplaceKit[];
   /** Session the message belongs to; used to resolve browser annotation screenshot assets. */
   sessionId?: string;
   onReEdit?: (message: CoworkMessage) => void;
   onLocateSelectedText?: (sourceMessageId: string) => void;
   /** Opens the annotation restore view in the artifact panel. */
   onOpenAnnotation?: (message: CoworkMessage, payload: BrowserAnnotationAttachmentOpenPayload) => void;
-}> = React.memo(({ message, skills, sessionId, onReEdit, onLocateSelectedText, onOpenAnnotation }) => {
+}> = React.memo(({ message, skills, marketplaceKits = [], sessionId, onReEdit, onLocateSelectedText, onOpenAnnotation }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [expandedImage, setExpandedImage] = useState<ImagePreviewSource | null>(null);
   const handleBlur = useCallback((event: React.FocusEvent<HTMLDivElement>) => {
@@ -195,6 +226,11 @@ const UserMessageItem: React.FC<{
   const messageSkills = messageSkillIds
     .map(id => skills.find(s => s.id === id))
     .filter((s): s is NonNullable<typeof s> => s !== undefined);
+  const metadataKitReferences = Array.isArray(metadata?.kitReferences) ? metadata.kitReferences : [];
+  const messageKitIds = Array.isArray(metadata?.kitIds) ? metadata.kitIds : [];
+  const messageKitReferences = metadataKitReferences.length > 0
+    ? metadataKitReferences
+    : buildKitReferences(messageKitIds, marketplaceKits);
 
   const selectedTextSnippets = (metadata?.selectedTextSnippets ?? []) as CoworkSelectedTextSnippet[];
   const browserAnnotations = (metadata?.browserAnnotations ?? []) as CoworkBrowserAnnotationMessageBatch[];
@@ -214,7 +250,7 @@ const UserMessageItem: React.FC<{
   const displayImageAttachments = browserAnnotationCount > 0
     ? allImageAttachments.filter(image => !isBrowserAnnotationTransportImage(image))
     : allImageAttachments;
-  const hasCapabilityBadges = messageSkills.length > 0;
+  const hasCapabilityBadges = messageKitReferences.length > 0 || messageSkills.length > 0;
   const hasText = Boolean(displayContent?.trim());
   const hasAttachmentsAboveText = browserAnnotationCount > 0
     || selectedTextSnippets.length > 0
@@ -296,7 +332,10 @@ const UserMessageItem: React.FC<{
                     />
                   )}
                   {hasCapabilityBadges && (
-                    <UserMessageCapabilityBadges skills={messageSkills} />
+                    <UserMessageCapabilityBadges
+                      kitReferences={messageKitReferences}
+                      skills={messageSkills}
+                    />
                   )}
                   {displayImageAttachments.length > 0 && (
                     <div className="flex flex-wrap gap-2">

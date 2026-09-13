@@ -85,10 +85,6 @@ const AgentAvatar: React.FC<{ agent: AgentSidebarAgentNode }> = ({ agent }) => {
 /**
  * One white card per agent with the resting shadow, and under the open
  * agent its conversations (docs/maties/design.md, section 3, row 4).
- *
- * An agent starts shut. A shut row carries its conversation count in mono, as
- * the connection groups do, so it plainly reads as a container with things
- * inside rather than an agent with nothing to show.
  */
 const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
   agent,
@@ -256,17 +252,14 @@ const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
     onCreateTask(agent);
   };
 
-  // The row is a disclosure and nothing else. It used to open the agent AND
-  // start a new chat in one click, which was harmless while agents opened by
-  // themselves; now that they start shut, clicking to read your conversations
-  // must not also throw a new one on top of them. New chat is the pencil.
-  const handleAgentClick = () => {
+  const handleAgentClick = (event: React.MouseEvent) => {
     onSidebarAction?.('agent_header_click', {
       agentType: isMainAgent ? 'main' : 'custom',
       isExpanded: agent.isExpanded,
       isPinned: agent.pinned,
     });
     onToggleExpanded(agent.id);
+    handleCreateTask(event);
   };
 
   const handleDeleteMenuClick = (event: React.MouseEvent) => {
@@ -305,16 +298,6 @@ const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
           <span className="min-w-0 flex-1 truncate">
             {agentName}
           </span>
-          {!agent.isExpanded && agent.taskCount > 0 && (
-            <span
-              className="maties-mono shrink-0 text-[11.5px] text-[#a2a29c]"
-              aria-label={i18nService
-                .t('myAgentSidebarTaskCount')
-                .replace('{count}', String(agent.taskCount))}
-            >
-              {agent.taskCount}
-            </span>
-          )}
         </button>
 
         <div

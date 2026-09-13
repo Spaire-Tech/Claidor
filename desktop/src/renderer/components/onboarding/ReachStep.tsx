@@ -5,7 +5,7 @@ import ReachList from '../connections/ReachList';
 
 /**
  * Screen 4, « How to reach {name} »: the title, then the reach list the
- * Apps tab shares (the assistant's address, the channels).
+ * Connectors page shares (the assistant's address, the channels).
  */
 export interface ReachStepProps {
   assistantName: string;

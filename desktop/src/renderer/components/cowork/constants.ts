@@ -1,9 +1,3 @@
-/**
- * Draft state is keyed by session id. The home screen has no session yet, so
- * its drafts live under this stand-in key until the first message creates one.
- */
-export const HOME_DRAFT_KEY = '__home__';
-
 export const CoworkUiEvent = {
   OpenShareOptions: 'cowork:open-share-options',
   SelectSubagent: 'cowork:select-subagent',

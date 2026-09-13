@@ -38,7 +38,7 @@ import {
   formatCoworkImageAttachmentLimit,
 } from '../../../shared/cowork/imageAttachments';
 import { isPlanImplementationApproval } from '../../../shared/cowork/planMode';
-import type { CoworkSelectedTextSnippet } from '../../../shared/cowork/selectedText';
+import { type CoworkSelectedTextSnippet, CoworkSelectedTextSource } from '../../../shared/cowork/selectedText';
 import {
   type CoworkPendingSteer,
   CoworkSteerStatus,
@@ -55,6 +55,7 @@ import {
 } from '../../services/coworkPromptPayload';
 import { getPortalPricingUrl } from '../../services/endpoints';
 import { i18nService } from '../../services/i18n';
+import { getInstalledKitSkillIds } from '../../services/kitCapability';
 import {
   LogReporterAction,
   LogReporterEntry,
@@ -62,7 +63,7 @@ import {
 } from '../../services/logReporter';
 import { matyService } from '../../services/maty';
 import { getOnboardingErrorCode, reportOnboardingAction } from '../../services/onboardingAnalytics';
-import { skillService } from '../../services/skill';
+import { resolveLocalizedText, skillService } from '../../services/skill';
 import { RootState } from '../../store';
 import { selectDraftPrompts } from '../../store/selectors/coworkSelectors';
 import {
@@ -73,6 +74,7 @@ import {
 } from '../../store/slices/asrQuotaSlice';
 import {
   addDraftAttachment,
+  addDraftSelectedTextSnippet,
   addPendingSteer,
   clearDraftAttachments,
   clearDraftBrowserAnnotationBatches,
@@ -83,10 +85,10 @@ import {
   removeDraftSelectedTextSnippet,
   removePendingSteer,
   removeRejectedSteer,
-  setDraftAppSlug,
   setDraftAttachments,
   setDraftBrowserAnnotationBatches,
   setDraftCollaborationMode,
+  setDraftKitIds,
   setDraftPrompt,
   setDraftSelectedTextSnippets,
   setDraftSkillIds,
@@ -95,6 +97,7 @@ import {
   updateCurrentSessionModelOverride,
   updateSessionGoal,
 } from '../../store/slices/coworkSlice';
+import { setActiveKitIds, toggleActiveKit } from '../../store/slices/kitSlice';
 import type { Model } from '../../store/slices/modelSlice';
 import { isSameModelIdentity } from '../../store/slices/modelSlice';
 import { setActiveSkillIds, setSkills, toggleActiveSkill } from '../../store/slices/skillSlice';
@@ -118,8 +121,10 @@ import {
   ChevronDownLineIcon,
   EllipsisLineIcon,
   FolderLineIcon,
+  MentionLineIcon,
   PaperclipLineIcon,
   PlusLineIcon,
+  SelectionLineIcon,
 } from '../design/LineIcons';
 import { formatShortcutGlyphs } from '../design/shortcutGlyphs';
 import DefaultAgentIcon from '../icons/DefaultAgentIcon';
@@ -131,6 +136,7 @@ import SkillIcon from '../icons/SkillIcon';
 import TaskPauseIcon from '../icons/TaskPauseIcon';
 import TrashIcon from '../icons/TrashIcon';
 import XMarkIcon from '../icons/XMarkIcon';
+import { ActiveKitBadge, KitsButton } from '../kits';
 import { setMatyWorkPlace } from '../maty/matyPreferences';
 import RunsWhereChip from '../maty/RunsWhereChip';
 import { useMatyState, useMatyWorkPlace } from '../maty/useMatyState';
@@ -142,23 +148,19 @@ import ModelSelector, {
   ModelSelectorGroup,
 } from '../ModelSelector';
 import { ActiveSkillBadge, SkillsPopover } from '../skills';
-import ActiveAppBadge from './ActiveAppBadge';
 import {
   resolveAgentModelSelection,
   resolveEffectiveModel,
   resolveModelThinkingLevel,
   useAgentSelectedModel,
 } from './agentModelSelection';
-import AppPickerButton from './AppPickerButton';
 import AttachmentCard from './AttachmentCard';
 import BrowserAnnotationAttachmentBadge from './BrowserAnnotationAttachmentBadge';
 import ChatLoginExperienceModal from './ChatLoginExperienceModal';
 import { getClipboardAttachmentFiles } from './clipboardAttachments';
-import { findConnectedApp } from './connectedApps';
-import { CoworkUiEvent, HOME_DRAFT_KEY } from './constants';
+import { CoworkUiEvent } from './constants';
 import FolderSelectorPopover from './FolderSelectorPopover';
 import { getCaretPixelPosition } from './getCaretPosition';
-import { resolveHomeDraftAppHandover } from './homeDraftAppHandover';
 import MediaMentionPicker from './MediaMentionPicker';
 import {
   buildMediaMentionSegments,
@@ -170,6 +172,7 @@ import {
 import MediaModelPicker from './MediaModelPicker';
 import {
   getAttachmentAnalyticsParams,
+  getKitAnalyticsParams,
   getModelAnalyticsParams,
   getPromptAnalyticsConversationState,
   getPromptAnalyticsSurface,
@@ -178,11 +181,10 @@ import {
   reportPromptControlAction,
   reportPromptSubmit,
 } from './promptAnalytics';
-import { buildSelectedAppContextPrompt } from './selectedAppContextPrompt';
+import { buildSelectedKitContextPrompt } from './selectedKitContextPrompt';
 import { buildSelectedSkillRoutingPrompt } from './selectedSkillRoutingPrompt';
 import SelectedTextSnippetBadge from './SelectedTextSnippetBadge';
 import { buildPlanModeSystemPrompt } from './skillSystemPrompt';
-import { useConnectedApps } from './useConnectedApps';
 import { usePersistAgentModelSelection } from './usePersistAgentModelSelection';
 import { useCoworkVoiceInput } from './voiceInput/useCoworkVoiceInput';
 import VoiceInputButton from './voiceInput/VoiceInputButton';
@@ -484,6 +486,7 @@ interface CoworkPromptInputProps {
   readOnlyContextTrailingText?: string;
   contextAgentId?: string;
   onManageSkills?: () => void;
+  onManageKits?: () => void;
   sessionId?: string;
   contextUsageControl?: React.ReactNode;
   goal?: CoworkGoal | null;
@@ -521,6 +524,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       readOnlyContextTrailingText,
       contextAgentId,
       onManageSkills,
+      onManageKits,
       sessionId,
       contextUsageControl,
       goal,
@@ -533,7 +537,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       showNewUserWelcomeLoginOverlay = false,
     } = props;
     const dispatch = useDispatch();
-    const draftKey = sessionId || HOME_DRAFT_KEY;
+    const draftKey = sessionId || '__home__';
     const draftPrompt = useSelector((state: RootState) => selectDraftPrompts(state)[draftKey] || '');
     const steerDraft = useSelector((state: RootState) => (
       sessionId ? state.cowork.steerDrafts[sessionId] || '' : ''
@@ -584,6 +588,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     const [textareaScrollTop, setTextareaScrollTop] = useState(0);
     const [showAddMenu, setShowAddMenu] = useState(false);
     const [showMoreMenuOptions, setShowMoreMenuOptions] = useState(false);
+    const [capturedSelectionText, setCapturedSelectionText] = useState('');
     const [showSkillsPopover, setShowSkillsPopover] = useState(false);
     const [goalInputActive, setGoalInputActive] = useState(false);
     const [goalInputMode, setGoalInputMode] = useState<GoalInputMode>('start');
@@ -669,32 +674,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
   const skills = useSelector((state: RootState) => state.skill.skills);
   const hasActiveSkills = activeSkillIds.some(id => skills.some(skill => skill.id === id));
-  // The app picker (docs/maties/design.md, section 4): the apps the person has
-  // connected, and the one this turn should look in first. A hint, not a gate.
-  const connectedApps = useConnectedApps();
-  const draftAppSlug = useSelector((state: RootState) => state.cowork.draftAppSlugs[draftKey]);
-  const homeDraftAppSlug = useSelector(
-    (state: RootState) => state.cowork.draftAppSlugs[HOME_DRAFT_KEY],
-  );
-  // The chosen app has to survive the one moment the draft key changes
-  // underneath it: the first message turning the home screen into a
-  // conversation. See homeDraftAppHandover for which transitions move it.
-  const previousSessionIdRef = useRef(sessionId);
-  useEffect(() => {
-    const previousSessionId = previousSessionIdRef.current;
-    previousSessionIdRef.current = sessionId;
-    const adopted = resolveHomeDraftAppHandover({
-      previousSessionId,
-      nextSessionId: sessionId,
-      homeAppSlug: homeDraftAppSlug,
-      existingAppSlug: draftAppSlug,
-    });
-    if (!adopted || !sessionId) return;
-    dispatch(setDraftAppSlug({ draftKey: sessionId, appSlug: adopted }));
-    dispatch(setDraftAppSlug({ draftKey: HOME_DRAFT_KEY }));
-  }, [sessionId, homeDraftAppSlug, draftAppSlug, dispatch]);
-  const selectedApp = findConnectedApp(connectedApps, draftAppSlug);
-  const selectedAppPrompt = buildSelectedAppContextPrompt(selectedApp);
+  const activeKitIds = useSelector((state: RootState) => state.kit.activeKitIds);
+  const installedKits = useSelector((state: RootState) => state.kit.installedKits);
+  const marketplaceKits = useSelector((state: RootState) => state.kit.marketplaceKits);
+  const hasActiveKits = activeKitIds.length > 0;
+  const draftKitIdsForKey = useSelector((state: RootState) => state.cowork.draftKitIds[draftKey]);
   const draftSkillIdsForKey = useSelector((state: RootState) => state.cowork.draftSkillIds[draftKey]);
   const draftCollaborationMode = useSelector(
     (state: RootState) => state.cowork.draftCollaborationModes[draftKey] || CoworkCollaborationMode.Default
@@ -726,7 +710,7 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const isCompact = size === 'compact';
   const isLarge = size === 'large' || isCompact;
   const useHomeContextLayout = isLarge && showAgentSelector;
-  const hasActiveContext = hasActiveSkills || Boolean(selectedApp) || isPlanMode || goalInputActive || steerInputActive;
+  const hasActiveContext = hasActiveSkills || hasActiveKits || isPlanMode || goalInputActive || steerInputActive;
   const hasAttachments = attachments.length > 0;
   // One line of text (22px) that grows to fit, as the founder drew it.
   const minHeight = isCompact ? 20 : isLarge ? 22 : 24;
@@ -898,13 +882,17 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
 
   const getPromptCapabilityAnalyticsParams = useCallback(() => ({
     ...getSkillAnalyticsParams(activeSkillIds, skills),
+    ...getKitAnalyticsParams(activeKitIds, marketplaceKits, installedKits),
     ...getAttachmentAnalyticsParams(attachments),
     ...getModelAnalyticsParams(effectiveSelectedModel),
     selectedTextSnippetCount: selectedTextSnippets.length,
   }), [
+    activeKitIds,
     activeSkillIds,
     attachments,
     effectiveSelectedModel,
+    installedKits,
+    marketplaceKits,
     selectedTextSnippets.length,
     skills,
   ]);
@@ -1077,6 +1065,8 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
         setValue('');
         dispatch(clearDraftAttachments(draftKey));
         dispatch(clearDraftSelectedTextSnippets(draftKey));
+        dispatch(setDraftKitIds({ draftKey, kitIds: [] }));
+        dispatch(setActiveKitIds([]));
         setImageVisionHint(false);
       }
       requestAnimationFrame(() => {
@@ -1264,11 +1254,17 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     }
   }, [steerInputActive, steerValue, value]);
 
-  // Restore active skill IDs from draft when draftKey changes
+  // Restore active kit/skill IDs from draft when draftKey changes
   useEffect(() => {
+    dispatch(setActiveKitIds(draftKitIdsForKey || []));
     dispatch(setActiveSkillIds(draftSkillIdsForKey || []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftKey]); // intentionally only trigger on session/draft switch
+
+  // Persist active kit IDs to draft store
+  useEffect(() => {
+    dispatch(setDraftKitIds({ draftKey, kitIds: activeKitIds }));
+  }, [activeKitIds, draftKey, dispatch]);
 
   // Persist active skill IDs to draft store
   useEffect(() => {
@@ -1663,12 +1659,21 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
           ? { dataUrl: attachment.dataUrl }
           : {}),
       }));
-      const queuedCapabilities = buildCoworkCapabilitySelection(activeSkillIds, skills);
-      const queuedSkills = activeSkillIds
+      const queuedCapabilities = buildCoworkCapabilitySelection(
+        activeSkillIds,
+        activeKitIds,
+        skills,
+        installedKits,
+        marketplaceKits,
+      );
+      const queuedKitSkillIds = activeKitIds.flatMap(kitId => getInstalledKitSkillIds(installedKits[kitId]));
+      const queuedSkillIds = [...new Set([...activeSkillIds, ...queuedKitSkillIds])];
+      const queuedSkills = queuedSkillIds
         .map(id => skills.find(skill => skill.id === id))
         .filter((skill): skill is Skill => skill !== undefined);
+      const queuedKitPrompt = buildSelectedKitContextPrompt(activeKitIds, marketplaceKits, installedKits);
       const queuedSkillPrompt = [
-        selectedAppPrompt,
+        queuedKitPrompt,
         buildSelectedSkillRoutingPrompt(queuedSkills),
       ].filter(Boolean).join('\n\n') || undefined;
 
@@ -1699,6 +1704,13 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
           : undefined,
         runtimeSkillIds: queuedCapabilities.runtimeSkillIds.length > 0
           ? queuedCapabilities.runtimeSkillIds
+          : undefined,
+        kitIds: activeKitIds.length > 0 ? [...activeKitIds] : undefined,
+        kitReferences: queuedCapabilities.kitReferences.length > 0
+          ? queuedCapabilities.kitReferences
+          : undefined,
+        resolvedKitCapabilities: activeKitIds.length > 0
+          ? queuedCapabilities.resolvedKitCapabilities
           : undefined,
         mediaSelection: queuedMediaSelection?.mode !== 'none' ? queuedMediaSelection : undefined,
         status: CoworkSteerStatus.Pending,
@@ -1902,15 +1914,18 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       return;
     }
 
-    // Get selected skill routing metadata.
+    // Get selected skill routing metadata, including skills from active kits.
     // OpenClaw loads SKILL.md files natively; do not inline full skill bodies here.
-    const activeSkills = activeSkillIds
+    const kitSkillIds = activeKitIds.flatMap(kitId => getInstalledKitSkillIds(installedKits[kitId]));
+    const allSkillIds = [...new Set([...activeSkillIds, ...kitSkillIds])];
+    const activeSkills = allSkillIds
       .map(id => skills.find(s => s.id === id))
       .filter((s): s is Skill => s !== undefined);
+    const kitPrompt = buildSelectedKitContextPrompt(activeKitIds, marketplaceKits, installedKits);
     const skillPrompt = effectivePlanMode
       ? buildPlanModeSystemPrompt()
       : [
-        selectedAppPrompt,
+        kitPrompt,
         buildSelectedSkillRoutingPrompt(activeSkills),
       ].filter(Boolean).join('\n\n') || undefined;
     if (effectivePlanMode) {
@@ -2052,19 +2067,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     dispatch(clearDraftAttachments(draftKey));
     dispatch(clearDraftSelectedTextSnippets(draftKey));
     dispatch(clearDraftBrowserAnnotationBatches(draftKey));
-    // The app stays chosen for the conversation. It used to be cleared here,
-    // on the theory that it was a hint for one turn like the chosen skills.
-    // That was wrong: picking Gmail says what this conversation is about, not
-    // what one sentence is about. Clearing it meant the chip vanished the
-    // moment you pressed send and every message after the first carried no
-    // app at all — a control that looked like it did nothing, because from
-    // the second message on it did nothing. The person clears it with the
-    // picker's own clear action when they are done with it.
     setImageVisionHint(false);
     resetGoalInput(false);
     draftStartedAnalyticsRef.current = false;
     inputSourceOverrideRef.current = null;
-  }, [sendsToCloud, sendPromptToCloud, value, steerInputActive, steerValue, isVoiceRecording, stopVoiceRecordingAndRecognize, goalInputActive, goalInputMode, resetGoalInput, isStreaming, canSteer, remoteManaged, disabled, submitDisabled, isPatchingModel, onSubmit, onGoalCommand, activeSkillIds, skills, selectedAppPrompt, attachments, browserAnnotationBatches, showFolderSelector, workingDirectory, dispatch, draftKey, selectedTextSnippets, pendingSteers.length, resolveSubmitModelAccessPrompt, isLoggedIn, hasAccessibleUserModel, isPlanMode, planConfirmation, reportPromptControl, getPromptCapabilityAnalyticsParams, getPromptContextAnalyticsParams, getPromptInputSource, goal, sessionId, preparePromptPayload, modelSupportsImage, queuedMediaSelection, authOwnerAccountKey, authAccountGeneration, effectiveModelIsAvailable, modelSelectionRefreshPending, effectiveSelectedModel?.id, effectiveSelectedModel?.providerKey]);
+  }, [sendsToCloud, sendPromptToCloud, value, steerInputActive, steerValue, isVoiceRecording, stopVoiceRecordingAndRecognize, goalInputActive, goalInputMode, resetGoalInput, isStreaming, canSteer, remoteManaged, disabled, submitDisabled, isPatchingModel, onSubmit, onGoalCommand, activeSkillIds, skills, activeKitIds, marketplaceKits, installedKits, attachments, browserAnnotationBatches, showFolderSelector, workingDirectory, dispatch, draftKey, selectedTextSnippets, pendingSteers.length, resolveSubmitModelAccessPrompt, isLoggedIn, hasAccessibleUserModel, isPlanMode, planConfirmation, reportPromptControl, getPromptCapabilityAnalyticsParams, getPromptContextAnalyticsParams, getPromptInputSource, goal, sessionId, preparePromptPayload, modelSupportsImage, queuedMediaSelection, authOwnerAccountKey, authAccountGeneration, effectiveModelIsAvailable, modelSelectionRefreshPending, effectiveSelectedModel?.id, effectiveSelectedModel?.providerKey]);
   handleSubmitRef.current = handleSubmit;
 
   const handleSelectSkill = useCallback((skill: Skill) => {
@@ -2089,6 +2096,44 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       onManageSkills();
     }
   }, [activeSkillIds.length, onManageSkills, reportPromptControl]);
+
+  const handleSelectKit = useCallback((kitId: string) => {
+    const willSelect = !activeKitIds.includes(kitId);
+    const marketplaceKit = marketplaceKits.find(kit => kit.id === kitId);
+    const installedKit = installedKits[kitId];
+    reportPromptControl('kit_toggle', {
+      kitId,
+      kitName: marketplaceKit ? resolveLocalizedText(marketplaceKit.name) : installedKit?.id ?? kitId,
+      kitSource: marketplaceKit ? 'maties-kits' : 'installed',
+      targetEnabled: willSelect,
+      isInstalled: !!installedKit,
+      skillCount: installedKit?.skills?.skillIds.length ?? marketplaceKit?.skills?.list.length,
+      mcpServerCount: installedKit?.mcpServers.length ?? marketplaceKit?.mcpServers?.length,
+      connectorCount: installedKit?.connectors.length ?? marketplaceKit?.connectors?.length,
+    });
+    dispatch(toggleActiveKit(kitId));
+    if (willSelect) {
+      void reportYdAnalyzer({
+        action: LogReporterAction.ExpertKitSelected,
+        kitId,
+        kitName: marketplaceKit ? resolveLocalizedText(marketplaceKit.name) : undefined,
+        kitSource: marketplaceKit ? 'maties-kits' : 'installed',
+        isInstalled: !!installedKit,
+        skillCount: installedKit?.skills?.skillIds.length ?? marketplaceKit?.skills?.list.length,
+        mcpServerCount: installedKit?.mcpServers.length ?? marketplaceKit?.mcpServers?.length,
+        connectorCount: installedKit?.connectors.length ?? marketplaceKit?.connectors?.length,
+      });
+    }
+  }, [activeKitIds, dispatch, installedKits, marketplaceKits, reportPromptControl]);
+
+  const handleManageKits = useCallback(() => {
+    reportPromptControl('manage_kits_click', {
+      activeKitCount: activeKitIds.length,
+    });
+    if (onManageKits) {
+      onManageKits();
+    }
+  }, [activeKitIds.length, onManageKits, reportPromptControl]);
 
   const handleSelectAgent = useCallback((agentId: string) => {
     if (!agentId || agentId === currentAgentId) {
@@ -2616,13 +2661,62 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
   const handleOpenAddMenu = useCallback(() => {
     reportPromptControl(showAddMenu ? 'add_menu_close' : 'add_menu_open', {
       activeSkillCount: activeSkillIds.length,
+      activeKitCount: activeKitIds.length,
     });
     if (!showAddMenu) {
+      // « Use my selection » offers whatever the person has selected on the
+      // page when the menu opens; opening the menu itself keeps the selection.
+      setCapturedSelectionText(window.getSelection()?.toString().trim() ?? '');
       setShowMoreMenuOptions(false);
     }
     setShowSkillsPopover(false);
     setShowAddMenu(prev => !prev);
-  }, [activeSkillIds.length, reportPromptControl, showAddMenu]);
+  }, [activeKitIds.length, activeSkillIds.length, reportPromptControl, showAddMenu]);
+
+  // « Mention »: puts an @ at the caret; the picker opens as it does when typed.
+  const handleInsertMention = useCallback(() => {
+    setShowAddMenu(false);
+    const textarea = textareaRef.current;
+    if (!textarea || disabled || voiceInputLocksEditing) return;
+    const start = textarea.selectionStart ?? value.length;
+    const end = textarea.selectionEnd ?? start;
+    const needsSpace = start > 0 && !/\s$/.test(value.slice(0, start));
+    const token = `${needsSpace ? ' ' : ''}@`;
+    const nextValue = `${value.slice(0, start)}${token}${value.slice(end)}`;
+    const nextCaret = start + token.length;
+    setValue(nextValue);
+    dispatch(setDraftPrompt({ sessionId: draftKey, draft: nextValue }));
+    const trigger = mediaLabels.length > 0 ? resolveMediaMentionTrigger(nextValue, nextCaret) : null;
+    if (trigger) {
+      setMentionPickerOpen(true);
+      setMentionFilter(trigger.filter);
+      setMentionCursorPos(nextCaret);
+    }
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(nextCaret, nextCaret);
+    });
+  }, [disabled, dispatch, draftKey, mediaLabels.length, value, voiceInputLocksEditing]);
+
+  // « Use my selection »: the selected text becomes a snippet chip above the text.
+  const handleUseSelection = useCallback(() => {
+    setShowAddMenu(false);
+    const text = capturedSelectionText.trim();
+    if (!text) return;
+    dispatch(addDraftSelectedTextSnippet({
+      draftKey,
+      snippet: {
+        id: `selected-text-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        text,
+        sourceType: CoworkSelectedTextSource.AssistantMessage,
+        createdAt: Date.now(),
+      },
+    }));
+    reportPromptControl('selected_text_added_from_menu', {
+      promptLength: text.length,
+    });
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, [capturedSelectionText, dispatch, draftKey, reportPromptControl]);
 
   const handleOpenSkillsPopover = useCallback(() => {
     if (skillSubmenuCloseTimerRef.current) {
@@ -3079,9 +3173,9 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     </div>
   ) : null;
 
-  // The « + » menu (docs/maties/design.md, section 4): Attach a file. What the
-  // design has no place for (skills, the goal, plan mode) waits behind
-  // « More » rather than being taken away.
+  // The « + » menu (docs/maties/design.md, section 4): Attach a file, Mention,
+  // Use my selection. What the design has no place for (skills, the goal,
+  // plan mode) waits behind « More » rather than being taken away.
   const attachShortcutLabel = formatShortcutGlyphs('CommandOrControl+Shift+A', isMacPlatform);
   const addMenuAction = !remoteManaged ? (
     <div className="relative">
@@ -3118,6 +3212,39 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
             <PaperclipLineIcon className={ADD_MENU_ICON_CLASS_NAME} />
             <span className="min-w-0 flex-1 truncate">{i18nService.t('coworkAttachFile')}</span>
             <span className="shrink-0 text-[13px] text-[#9a9a95]">{attachShortcutLabel}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertMention}
+            onMouseEnter={handleCloseSkillsPopover}
+            onFocus={handleCloseSkillsPopover}
+            disabled={disabled || voiceInputLocksEditing || steerInputActive}
+            className="maties-menu-item"
+            role="menuitem"
+          >
+            <MentionLineIcon className={ADD_MENU_ICON_CLASS_NAME} />
+            <span className="min-w-0 flex-1 truncate">{i18nService.t('coworkMention')}</span>
+            <span className="maties-mono shrink-0 text-[12.5px] text-[#9a9a95]">@</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleUseSelection}
+            onMouseEnter={handleCloseSkillsPopover}
+            onFocus={handleCloseSkillsPopover}
+            disabled={disabled || voiceInputLocksEditing || !capturedSelectionText}
+            className="maties-menu-item"
+            role="menuitem"
+            title={capturedSelectionText ? undefined : i18nService.t('coworkUseSelectionEmpty')}
+          >
+            <SelectionLineIcon className={ADD_MENU_ICON_CLASS_NAME} />
+            <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
+              <span className="truncate">{i18nService.t('coworkUseSelection')}</span>
+              <span className="maties-mono truncate text-[11.5px] text-[#9a9a95]">
+                {capturedSelectionText
+                  ? truncateDisplayText(capturedSelectionText.replace(/\s+/g, ' '), 48)
+                  : i18nService.t('coworkUseSelectionEmpty')}
+              </span>
+            </span>
           </button>
           <div className="maties-menu-divider" aria-hidden="true" />
           <button
@@ -3205,30 +3332,20 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
       )}
     </div>
   ) : null;
-  const appPickerAction = (
-    <AppPickerButton
-      apps={connectedApps}
-      selectedSlug={selectedApp?.slug}
-      onSelect={(slug) => {
-        reportPromptControl('app_hint_toggle', {
-          appSlug: slug,
-          targetEnabled: Boolean(slug),
-          connectedAppCount: connectedApps.length,
-        });
-        dispatch(setDraftAppSlug({ draftKey, appSlug: slug }));
-      }}
-      buttonClassName={COMPOSER_ROUND_BUTTON_CLASS_NAME}
-      onOpenChange={(open) => {
-        reportPromptControl(open ? 'app_menu_open' : 'app_menu_close', {
-          connectedAppCount: connectedApps.length,
-        });
-      }}
-    />
-  );
   const largeInputActions = !remoteManaged ? (
     <div className="flex items-center gap-2">
       {addMenuAction}
-      {appPickerAction}
+      <KitsButton
+        onSelectKit={handleSelectKit}
+        onManageKits={handleManageKits}
+        buttonClassName={COMPOSER_ROUND_BUTTON_CLASS_NAME}
+        iconClassName="h-[18px] w-[18px]"
+        onOpenChange={(open) => {
+          reportPromptControl(open ? 'kit_menu_open' : 'kit_menu_close', {
+            activeKitCount: activeKitIds.length,
+          });
+        }}
+      />
     </div>
   ) : null;
 
@@ -3633,14 +3750,11 @@ const CoworkPromptInput = React.forwardRef<CoworkPromptInputRef, CoworkPromptInp
     </div>
   ) : null;
 
-  // The chosen skill, app or mode sits in the button row beside the « + », as the founder drew the skill chip.
+  // The chosen skill, kit or mode sits in the button row beside the « + », as the founder drew the skill chip.
   const activeSkillContextRow = isLarge && hasActiveContext ? (
     <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
       <ActiveSkillBadge />
-      <ActiveAppBadge
-        app={selectedApp}
-        onClear={() => dispatch(setDraftAppSlug({ draftKey }))}
-      />
+      <ActiveKitBadge />
       {goalModeBadge}
       {planModeBadge}
       {steerModeBadge}

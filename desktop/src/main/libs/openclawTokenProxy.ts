@@ -20,7 +20,6 @@ const PROXY_BIND_HOST = '127.0.0.1';
 
 /** The path the engine's connector MCP servers are pointed at. */
 export const CONNECTORS_PATH_PREFIX = '/connectors';
-export const SPEECH_PATH_PREFIX = '/speech';
 const RECENT_QUOTA_ERROR_TTL_MS = 30_000;
 const MAX_PROXY_SSE_SCAN_BUFFER_CHARS = 1_048_576;
 const GEMINI_FALLBACK_THOUGHT_SIGNATURE = 'skip_thought_signature_validator';
@@ -211,14 +210,6 @@ function writeAuthSessionChanged(res: http.ServerResponse): void {
 export function buildUpstreamPath(requestUrl: string | undefined): string {
   const path = requestUrl || '/';
   if (path === CONNECTORS_PATH_PREFIX || path.startsWith(`${CONNECTORS_PATH_PREFIX}/`)) {
-    return `/api${path}`;
-  }
-  // The voice takes the same door as connections, and for the same
-  // reason: the engine is handed a loopback address instead of a
-  // credential, so it holds no key and nothing of ours expires inside
-  // it. `docs/maties/plan.md` step 1 — voices come from a speech service
-  // behind Claidor's API, never from a key in the app.
-  if (path === SPEECH_PATH_PREFIX || path.startsWith(`${SPEECH_PATH_PREFIX}/`)) {
     return `/api${path}`;
   }
   return `/api/proxy${path}`;

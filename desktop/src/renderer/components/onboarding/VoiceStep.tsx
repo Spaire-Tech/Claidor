@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 
 import type { AssistantVoice } from '../../../shared/onboarding/constants';
 import { i18nService } from '../../services/i18n';
-import { resolveVoiceAssignment, speakAsMaty, stopMatiesVoice } from '../../services/matiesVoice';
-import VoiceOrb, { useGrainUrl, VoicePlayState } from './VoiceOrb';
+import VoiceOrb, { useGrainUrl } from './VoiceOrb';
 import { getVoiceDefinition, speakVoiceSample, stopVoiceSample, VOICES, wrapVoiceIndex } from './voices';
 
 /**
@@ -41,68 +40,16 @@ const VoiceStep: React.FC<VoiceStepProps> = ({ assistantName, voice, onVoiceChan
   const selectedIndex = Math.max(0, VOICES.findIndex((candidate) => candidate.id === voice));
   const selected = getVoiceDefinition(voice);
 
-  const [playState, setPlayState] = useState<VoicePlayState>(VoicePlayState.Idle);
-  // Which press we are answering. A sample that arrives after the person
-  // has pressed stop, or moved to another voice, must not put the button
-  // back to « playing » — the sound was already thrown away.
-  const pressRef = useRef(0);
-
-  // Both have to be stopped: whichever one spoke last is the one still
-  // making a sound.
-  const silence = useCallback(() => {
-    pressRef.current += 1;
-    stopMatiesVoice();
-    stopVoiceSample();
-    setPlayState(VoicePlayState.Idle);
-  }, []);
-
-  useEffect(() => () => silence(), [silence]);
-
-  // Ask for the account's voices as the screen opens rather than on the
-  // first press. The founder's note was that the voices take time to
-  // speak; one of the two round trips is this list, and it can be paid
-  // for while they are still reading the screen.
-  useEffect(() => {
-    void resolveVoiceAssignment();
-  }, []);
+  useEffect(() => () => stopVoiceSample(), []);
 
   const pick = useCallback((index: number) => {
-    silence();
+    stopVoiceSample();
     onVoiceChange(VOICES[index].id);
-  }, [onVoiceChange, silence]);
+  }, [onVoiceChange]);
 
   const play = useCallback(() => {
-    // Pressing it again stops it. A control that only ever starts things
-    // leaves no way out of a sentence you have already heard.
-    if (playState !== VoicePlayState.Idle) {
-      silence();
-      return;
-    }
-    const sentence = i18nService.t(selected.sampleKey);
-    silence();
-    const press = pressRef.current;
-    const stillWanted = () => pressRef.current === press;
-    setPlayState(VoicePlayState.Loading);
-
-    const finish = () => {
-      if (stillWanted()) setPlayState(VoicePlayState.Idle);
-    };
-
-    // Maty's own voice where Claidor can supply one; the computer's
-    // synthesiser where it cannot. The voice is absent for ordinary
-    // reasons — no key on the server yet, no network, credits used up —
-    // and a play button that goes quiet on those days is a worse screen
-    // than one that still says the sentence in a plainer voice.
-    void speakAsMaty(selected.id, sentence, { onEnded: finish }).then(spoken => {
-      if (!stillWanted()) return;
-      if (spoken) {
-        setPlayState(VoicePlayState.Playing);
-        return;
-      }
-      const fellBack = speakVoiceSample(selected, sentence, finish);
-      setPlayState(fellBack ? VoicePlayState.Playing : VoicePlayState.Idle);
-    });
-  }, [playState, selected, silence]);
+    speakVoiceSample(selected, i18nService.t(selected.sampleKey));
+  }, [selected]);
 
   const orbs = ORB_OFFSETS.map((offset) => {
     const index = wrapVoiceIndex(selectedIndex, offset);
@@ -140,9 +87,6 @@ const VoiceStep: React.FC<VoiceStepProps> = ({ assistantName, voice, onVoiceChan
               selected={orb.distance === 0}
               label={i18nService.t(orb.voice.nameKey)}
               playLabel={i18nService.t('matiesOnboardingVoicePlay').replace('{voice}', i18nService.t(orb.voice.nameKey))}
-              stopLabel={i18nService.t('matiesOnboardingVoiceStop')}
-              loadingLabel={i18nService.t('matiesOnboardingVoiceLoading')}
-              playState={orb.distance === 0 ? playState : VoicePlayState.Idle}
               grainUrl={grain}
               onSelect={() => pick(orb.index)}
               onPlay={play}

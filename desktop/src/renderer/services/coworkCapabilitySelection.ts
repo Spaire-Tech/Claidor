@@ -1,13 +1,27 @@
+import type {
+  KitReference,
+  ResolvedKitCapabilities,
+} from '../../shared/kit/constants';
+import type { InstalledKit, MarketplaceKit } from '../types/kit';
 import type { Skill } from '../types/skill';
+import {
+  buildKitReferences,
+  resolveSelectedKitCapabilities,
+} from './kitCapability';
 
 export interface CoworkCapabilitySelection {
   directSkillIds: string[];
   runtimeSkillIds: string[];
+  kitReferences: KitReference[];
+  resolvedKitCapabilities: ResolvedKitCapabilities;
 }
 
 export const buildCoworkCapabilitySelection = (
   skillIds: string[],
+  kitIds: string[],
   skills: Skill[],
+  installedKits: Record<string, InstalledKit>,
+  marketplaceKits: MarketplaceKit[],
 ): CoworkCapabilitySelection => {
   const resolveRoutableSkillIds = (candidateIds: string[]): string[] => {
     const seen = new Set<string>();
@@ -23,9 +37,16 @@ export const buildCoworkCapabilitySelection = (
   };
 
   const directSkillIds = resolveRoutableSkillIds(skillIds);
+  const resolvedKitCapabilities = resolveSelectedKitCapabilities(kitIds, installedKits);
+  const runtimeSkillIds = resolveRoutableSkillIds([
+    ...directSkillIds,
+    ...resolvedKitCapabilities.skillIds,
+  ]);
 
   return {
     directSkillIds,
-    runtimeSkillIds: directSkillIds,
+    runtimeSkillIds,
+    kitReferences: buildKitReferences(kitIds, marketplaceKits),
+    resolvedKitCapabilities,
   };
 };

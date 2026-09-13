@@ -58,11 +58,6 @@ from .repository import (
     DesktopSessionRepository,
     DesktopUsageRepository,
 )
-from .speech import (
-    SPEECH_MODEL_LABEL,
-    SPEECH_PROVIDER_LABEL,
-    credits_for_characters,
-)
 
 #: The app treats these numeric codes, inside a message or a payload,
 #: as « credits exhausted » (desktop/src/common/coworkErrorClassify.ts).
@@ -551,47 +546,6 @@ class DesktopService:
         session.add(row)
         await session.flush()
         return row
-
-    async def record_speech_usage(
-        self,
-        session: AsyncSession,
-        *,
-        user_id: UUID,
-        session_id: UUID | None,
-        characters: int,
-        upstream_status: int,
-    ) -> DesktopUsage:
-        """One spoken passage, against the same monthly allowance.
-
-        Speech burns no tokens, so all four token counts stay zero and
-        the cost is carried by the credits column alone. Writing a
-        character count into a column named `input_tokens` would make the
-        two figures un-addable and the monthly total a lie, which is the
-        one thing the allowance may not be.
-
-        A failed call costs nothing, the same rule the model proxy keeps.
-        """
-        row = DesktopUsage(
-            user_id=user_id,
-            session_id=session_id,
-            model=SPEECH_MODEL_LABEL,
-            provider=SPEECH_PROVIDER_LABEL,
-            credits=(
-                credits_for_characters(characters) if upstream_status == 200 else 0
-            ),
-            stream=False,
-            upstream_status=upstream_status,
-        )
-        session.add(row)
-        await session.flush()
-        return row
-
-
-def speech_configured() -> bool:
-    """Whether a voice can be served at all. Read before the app is told
-    it has one, so a missing key is an absent feature rather than a
-    failure at the moment somebody asks to be read to."""
-    return bool(settings.ELEVENLABS_API_KEY)
 
 
 desktop = DesktopService()

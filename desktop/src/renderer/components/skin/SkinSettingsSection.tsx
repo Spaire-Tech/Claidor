@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 
 import { SkinAssetSlot } from '../../../shared/skin/constants';
 import { useSkin } from '../../providers/SkinProvider';
 import { i18nService } from '../../services/i18n';
 import { buildSkinAssetUrl } from '../../services/skin';
-import { prepareSkinSkillOnboarding } from '../../services/skinSkillOnboarding';
+import { prepareSkinKitOnboarding } from '../../services/skinKitOnboarding';
+import {
+  setInstalledKits,
+  setMarketplaceKits,
+} from '../../store/slices/kitSlice';
 import MagicIcon from '../icons/MagicIcon';
 import TrashIcon from '../icons/TrashIcon';
 import SkinDeleteConfirmDialog from './SkinDeleteConfirmDialog';
@@ -28,10 +33,11 @@ interface PendingSkinDeletion {
 }
 
 interface SkinSettingsSectionProps {
-  onStartAiSkin?: (text: string, skillId: string) => void;
+  onStartAiSkin?: (text: string, kitId: string) => void;
 }
 
 const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin }) => {
+  const dispatch = useDispatch();
   const {
     activeSkin,
     apply,
@@ -83,8 +89,10 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
     setStartError(false);
     setIsStartingAiSkin(true);
     try {
-      const prepared = await prepareSkinSkillOnboarding();
-      onStartAiSkin(prepared.prompt, prepared.skillId);
+      const prepared = await prepareSkinKitOnboarding();
+      dispatch(setMarketplaceKits(prepared.marketplaceKits));
+      dispatch(setInstalledKits(prepared.installedKits));
+      onStartAiSkin(prepared.prompt, prepared.kitId);
     } catch (error) {
       console.error('[Skin] Failed to start AI skin onboarding', error);
       setStartError(true);

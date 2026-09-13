@@ -164,9 +164,9 @@ test('latex math renders through katex in markdown output', () => {
   expect(html).not.toContain('\\[');
 });
 
-test('a kit link is no longer a link the app knows', () => {
-  expect(safeUrlTransform('kit://design@maties-kits')).toBe('');
-  expect(isInternalHref('kit://design@maties-kits')).toBe(false);
+test('kit links are treated as safe internal links', () => {
+  expect(safeUrlTransform('kit://design@maties-kits')).toBe('kit://design@maties-kits');
+  expect(isInternalHref('kit://design@maties-kits')).toBe(true);
 });
 
 test('unsafe markdown protocols are still stripped', () => {

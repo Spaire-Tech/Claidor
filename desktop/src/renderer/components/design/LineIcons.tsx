@@ -53,7 +53,7 @@ export const ClockLineIcon: React.FC<LineIconProps> = (props) => (
   </svg>
 );
 
-/** Apps: the four squares. */
+/** Kits: the four squares. */
 export const SquaresLineIcon: React.FC<LineIconProps> = (props) => (
   <svg {...svgProps(props)}>
     <rect x="4" y="4" width="7" height="7" rx="1.6" />
@@ -63,7 +63,7 @@ export const SquaresLineIcon: React.FC<LineIconProps> = (props) => (
   </svg>
 );
 
-/** Skills: the puzzle piece. */
+/** Skills & Connectors: the puzzle piece. */
 export const PuzzleLineIcon: React.FC<LineIconProps> = (props) => (
   <svg {...svgProps(props)}>
     <path d="M10.5 4.2a2 2 0 0 1 3.9 0v1.6h2.4a1.2 1.2 0 0 1 1.2 1.2v2.6h1.6a2 2 0 0 1 0 3.9h-1.6v3.3a1.2 1.2 0 0 1-1.2 1.2h-3.3v-1.6a2 2 0 0 0-3.9 0v1.6H6.3a1.2 1.2 0 0 1-1.2-1.2V13.5H6.7a2 2 0 0 0 0-3.9H5.1V7a1.2 1.2 0 0 1 1.2-1.2h4.2z" />
@@ -147,6 +147,23 @@ export const FolderLineIcon: React.FC<LineIconProps> = (props) => (
 export const PaperclipLineIcon: React.FC<LineIconProps> = (props) => (
   <svg {...svgProps(props, 1.8)}>
     <path d="M21 11.5 12.5 20a4.6 4.6 0 0 1-6.5-6.5l8-8a3 3 0 0 1 4.3 4.3l-8 8a1.4 1.4 0 0 1-2-2l7.4-7.4" />
+  </svg>
+);
+
+/** Mention: the @. */
+export const MentionLineIcon: React.FC<LineIconProps> = (props) => (
+  <svg {...svgProps(props, 1.8)}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M16 8v5a3 3 0 0 0 5 -2.2A9 9 0 1 0 16.5 19.4" />
+  </svg>
+);
+
+/** Use my selection: the window with a selected cell. */
+export const SelectionLineIcon: React.FC<LineIconProps> = (props) => (
+  <svg {...svgProps(props, 1.7)}>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+    <line x1="3.5" y1="9.5" x2="20.5" y2="9.5" />
+    <line x1="9" y1="9.5" x2="9" y2="19.5" />
   </svg>
 );
 

@@ -27,10 +27,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
 import { buildGoalSettingMessageMetadata } from '../common/goalCommandDisplay';
 import type { OpenClawSessionPatch } from '../common/openclawSession';
-import {
-  buildSessionTitleFromInput,
-  SessionTitleSource,
-} from '../common/sessionTitle';
+import { buildSessionTitleFromInput } from '../common/sessionTitle';
 import { buildScheduledTaskEnginePrompt } from '../scheduledTask/enginePrompt';
 import {
   migrateScheduledTaskRunsToOpenclaw,
@@ -40,6 +37,8 @@ import {
   AgentId,
 } from '../shared/agent/constants';
 import {
+  LogReporterAction,
+  LogReporterSource,
   LogReporterStoreKey,
 } from '../shared/analytics/constants';
 import { AppIpcChannel } from '../shared/app/constants';
@@ -64,8 +63,6 @@ import {
   type AgentBrowserHostRequest,
   type AgentBrowserHostResponse,
   type AgentBrowserHostSetViewRequest,
-  type AgentBrowserOpenPageRequest,
-  type AgentBrowserOpenPageResponse,
   type BrowserDiagnosticResultStep,
   BrowserDiagnosticStatus,
   BrowserDiagnosticStep,
@@ -105,7 +102,6 @@ import {
   CoworkForkMode,
   CoworkIpcChannel,
   CoworkOnboardingMessageKind,
-  type CoworkSessionsChangedPayload,
 } from '../shared/cowork/constants';
 import {
   buildCoworkImageAttachmentPreviews,
@@ -148,6 +144,12 @@ import {
   HtmlShareStatus,
   type HtmlShareStatus as HtmlShareStatusValue,
 } from '../shared/htmlShare/constants';
+import type {
+  InstalledKitRecord,
+  KitReference,
+  ResolvedKitCapabilities,
+} from '../shared/kit/constants';
+import { KitStoreKey } from '../shared/kit/constants';
 import { LibraryChangeReason, LibraryIpc } from '../shared/library/constants';
 import { type LibraryContentConfig, LibraryContentIpc, type LibraryContentStatus } from '../shared/library/contentConstants';
 import {
@@ -204,12 +206,6 @@ import {
 } from '../shared/shareDeployment/constants';
 import type { ShellOpenFailureReason as ShellOpenFailureReasonType } from '../shared/shell/constants';
 import { type ShellGetBrowserAppsInput, ShellIpc, ShellOpenFailureReason } from '../shared/shell/constants';
-import { SkinPackSkillId } from '../shared/skin/kit';
-import {
-  type SpeakResult,
-  SpeechIpc,
-  type SpeechVoicesResult,
-} from '../shared/speech/constants';
 import { AgentManager } from './agentManager';
 import { APP_NAME, APP_USER_MODEL_ID, DB_FILENAME } from './appConstants';
 import { createLocalFileProtocolResponse } from './artifactLocalFileProtocol';
@@ -265,11 +261,13 @@ import { registerConnectorsIpcHandlers } from './ipcHandlers/connectors';
 import { registerCoworkSubagentHandlers } from './ipcHandlers/coworkSubagent';
 import { ensureDshEngineReady, registerDshHandlers } from './ipcHandlers/dsh/handlers';
 import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccount';
+import { registerKitHandlers } from './ipcHandlers/kits';
 import { registerMatyIpcHandlers } from './ipcHandlers/maty';
 import { registerMcpHandlers } from './ipcHandlers/mcp';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
 import { readOnboardingProfile, registerOnboardingHandlers } from './ipcHandlers/onboarding';
 import { registerPermissionIpcHandlers } from './ipcHandlers/permissions/handlers';
+import { registerPluginHandlers } from './ipcHandlers/plugins';
 import {
   getCronJobService,
   initCronJobServiceManager,
@@ -370,6 +368,7 @@ import {
 import { DesktopNotificationManager } from './libs/desktopNotificationManager';
 import {
   getHtmlSharePublicBaseUrl,
+  getKitStoreUrl,
   getPortalTasksUrl,
   getServerApiBaseUrl,
   getSkillStoreUrl,
@@ -424,6 +423,7 @@ import {
   resolveLobsterBrowserMcpStdioLaunch,
 } from './libs/lobsterBrowserMcpServer';
 import { exportLogsZip } from './libs/logExport';
+import { MainLogReporter } from './libs/mainLogReporter';
 import { MatyService } from './libs/maty/matyService';
 import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
 import { createMemorySyncService, logMemorySyncResult } from './libs/memorySync/memorySyncService';
@@ -492,8 +492,7 @@ import {
 } from './libs/openclawTokenProxy';
 import { migrateMainAgentWorkspace } from './libs/openclawWorkspaceMigration';
 import { ensurePythonRuntimeReady } from './libs/pythonRuntime';
-import { sanitizeUrlForLog, serializeForLog } from './libs/sanitizeForLog';
-import { createSessionNamingService } from './libs/sessionNaming';
+import { isAnalyticsEndpointUrl, sanitizeUrlForLog, serializeForLog } from './libs/sanitizeForLog';
 import { packageNodeServiceDeployment } from './libs/shareDeployment/nodeServiceDeploymentPackager';
 import {
   analyzeNodeServiceProjectDirectory,
@@ -515,7 +514,6 @@ import {
   ShareDeploymentAccessSyncOperation,
   ShareDeploymentOperationCoordinator,
 } from './libs/shareDeployment/shareDeploymentOperationCoordinator';
-import { SpeechClient } from './libs/speech/speechClient';
 import { SqliteBackupTrigger } from './libs/sqliteBackup/constants';
 import { SqliteBackupManager } from './libs/sqliteBackup/sqliteBackupManager';
 import {
@@ -2132,6 +2130,7 @@ let coworkRuntimeForwarderBound = false;
 let memoryMigrationDone = false;
 let preventSleepBlockerId: number | null = null;
 let appUpdateCoordinator: AppUpdateCoordinator | null = null;
+let mainLogReporter: MainLogReporter | null = null;
 let libraryIndexService: LibraryIndexService | null = null;
 let libraryContentIndexer: LibraryContentIndexer | null = null;
 // Connections to accounts (docs/maties/connectors.md). Held here so the
@@ -2223,14 +2222,6 @@ const getBrowserCredentialApprovalService = (): BrowserCredentialApprovalService
   return browserCredentialApprovalService;
 };
 
-/**
- * The voice. `fetchWithAuth` is a local of the auth setup below, so the
- * client is built there and kept here for the IPC handlers to reach.
- * It holds no state and no key — only Claidor's address and the app's
- * own authenticated-request path.
- */
-let speechClient: SpeechClient | null = null;
-
 const getAgentBrowserHost = (): AgentBrowserHost => {
   if (!agentBrowserHost) {
     agentBrowserHost = new AgentBrowserHost({
@@ -2280,6 +2271,22 @@ const getAppUpdateCoordinator = (): AppUpdateCoordinator => {
     appUpdateCoordinator = new AppUpdateCoordinator(getStore());
   }
   return appUpdateCoordinator;
+};
+
+const getMainLogReporter = (): MainLogReporter => {
+  if (!mainLogReporter) {
+    mainLogReporter = new MainLogReporter({
+      appVersion: app.getVersion(),
+      fetch: async (url, signal) => {
+        const response = await session.defaultSession.fetch(url, { method: 'GET', signal });
+        const result = { ok: response.ok, status: response.status };
+        await response.body?.cancel();
+        return result;
+      },
+      store: getStore(),
+    });
+  }
+  return mainLogReporter;
 };
 
 const forwardOpenClawStatus = (status: OpenClawEngineStatus): void => {
@@ -2397,12 +2404,6 @@ let waitForPendingTokenRefresh: () => Promise<void> = async () => {};
 // account's token, so it only exists once the auth session manager does.
 // Fire-and-forget — a failure is logged and retried on the next occasion.
 let requestMemorySync: (reason: MemorySyncReason) => void = () => {};
-
-// Naming a chat by what it is about needs the account's token too, and is
-// injected the same way. Fire-and-forget by construction: the reply is
-// already on screen when this runs, and a failure leaves the chat with the
-// truncation it already had.
-let requestSessionName: (sessionId: string) => void = () => {};
 
 const ensureOpenClawRunningForCowork = async () => {
   const configApplyStatus = await waitForOpenClawConfigApply('cowork engine startup');
@@ -3473,11 +3474,6 @@ const bindCoworkRuntimeForwarder = (): void => {
     // The engine writes its memory files as a run ends, so this is the moment
     // the shared copy is worth refreshing.
     requestMemorySync(MemorySyncReason.ConversationFinished);
-    // The exchange has settled and the reply is already on screen: this is
-    // the moment to name the chat by what it is about. The service itself
-    // decides whether there is anything to do — once per chat, and never
-    // over a name the person typed.
-    requestSessionName(sessionId);
     const windows = BrowserWindow.getAllWindows();
     windows.forEach(win => {
       if (win.isDestroyed()) return;
@@ -3537,6 +3533,13 @@ const getCoworkEngineRouter = () => {
         getOpenClawEngineManager(),
         {
           normalizeModelRef: normalizeOpenClawModelRef,
+          onChannelPromptSubmit: event => {
+            void getMainLogReporter().report({
+              action: LogReporterAction.ImPromptSubmit,
+              source: LogReporterSource.OpenClawChannel,
+              ...event,
+            });
+          },
           onGatewayClientReady: () => {
             getCronJobService().notifyGatewayReady();
             handleGatewaySelfRestartSettled();
@@ -3935,6 +3938,9 @@ function validateCoworkImageAttachmentsForRuntime(
 function buildCoworkUserSelectionMetadata(options: {
   prompt?: string;
   skillIds?: string[];
+  kitIds?: string[];
+  kitReferences?: KitReference[];
+  resolvedKitCapabilities?: ResolvedKitCapabilities;
   selectedTextSnippets?: CoworkSelectedTextSnippet[];
   browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
   imageAttachmentPreviews?: CoworkImageAttachmentPreview[];
@@ -3945,6 +3951,15 @@ function buildCoworkUserSelectionMetadata(options: {
 
   if (options.skillIds?.length) {
     metadata.skillIds = options.skillIds;
+  }
+  if (options.kitIds?.length) {
+    metadata.kitIds = options.kitIds;
+    if (options.kitReferences?.length) {
+      metadata.kitReferences = options.kitReferences;
+    }
+    if (options.resolvedKitCapabilities) {
+      metadata.resolvedKitCapabilities = options.resolvedKitCapabilities;
+    }
   }
   if (options.imageAttachmentPreviews?.length) {
     metadata.imageAttachmentPreviews = options.imageAttachmentPreviews;
@@ -4227,16 +4242,9 @@ const getSkinRuntimeController = (): SkinRuntimeController => {
   if (!skinRuntimeController) {
     skinRuntimeController = new SkinRuntimeController({
       rootDir: path.join(app.getPath('userData'), 'skins'),
-      isSkinSkillEnabled: () => {
-        try {
-          return getSkillManager()
-            .listSkills()
-            .some(skill => skill.id === SkinPackSkillId.BuiltIn && skill.enabled);
-        } catch (error) {
-          console.warn('[SkinWorkflow] could not read the appearance skill state:', error);
-          return false;
-        }
-      },
+      getInstalledKits: () => (
+        getStore().get<Record<string, InstalledKitRecord>>(KitStoreKey.Installed) ?? {}
+      ),
       getParentSessionId: sessionId => (
         getCoworkParentSessionId(getStore().getDatabase(), sessionId)
       ),
@@ -5441,11 +5449,6 @@ if (!gotTheLock) {
   // a short deadline of its own and is dropped when the network is slow.
   const MEMORY_SYNC_QUIT_DEADLINE_MS = 4_000;
 
-  speechClient = new SpeechClient({
-    getServerBaseUrl: getServerApiBaseUrl,
-    fetchWithAuth,
-  });
-
   const memorySyncService = createMemorySyncService({
     getServerBaseUrl: getServerApiBaseUrl,
     fetchWithAuth,
@@ -5476,44 +5479,6 @@ if (!gotTheLock) {
   const memorySyncTimer: ReturnType<typeof setInterval> = setInterval(() => {
     requestMemorySync(MemorySyncReason.Periodic);
   }, MEMORY_SYNC_INTERVAL_MS);
-
-  // ── A name for the chat ──
-  //
-  // See `src/main/libs/sessionNaming.ts`. Bound here because the naming call
-  // rides the same authenticated request path as everything else.
-  const sessionNamingService = createSessionNamingService({
-    getServerBaseUrl: getServerApiBaseUrl,
-    fetchWithAuth,
-    isSignedIn: () => getAuthTokens() !== null,
-    getSession: (sessionId) => {
-      // One message is enough: only the title and its source are read here.
-      const session = getCoworkStore().getSession(sessionId, 1);
-      return session
-        ? { id: session.id, title: session.title, titleSource: session.titleSource }
-        : null;
-    },
-    getFirstMessages: (sessionId, limit) => getCoworkStore()
-      .getPagedSessionMessages(sessionId, limit, 0)
-      .map((message) => ({ type: message.type, content: message.content })),
-    applyTitle: (sessionId, title) => {
-      getCoworkStore().updateSession(
-        sessionId,
-        { title, titleSource: SessionTitleSource.Assistant },
-        { touchUpdatedAt: false },
-      );
-    },
-    notifySessionChanged: (sessionId) => {
-      const payload: CoworkSessionsChangedPayload = { sessionIds: [sessionId] };
-      for (const win of BrowserWindow.getAllWindows()) {
-        if (!win.isDestroyed()) win.webContents.send(CoworkIpcChannel.SessionsChanged, payload);
-      }
-    },
-    buildModelHeaders: () => buildServerModelCapabilityHeaders(app.getVersion()),
-  });
-
-  requestSessionName = (sessionId: string) => {
-    sessionNamingService.nameSession(sessionId);
-  };
 
   type AvailableServerModel = ServerModelMetadataInput & {
     modelId: string;
@@ -8530,6 +8495,14 @@ if (!gotTheLock) {
     getOpenClawRuntimeAdapter: () => openClawRuntimeAdapter,
   });
 
+  // Kits IPC handlers
+  registerKitHandlers({
+    getStore,
+    getKitStoreUrl,
+    getSkillManager,
+    syncOpenClawConfig,
+  });
+
   // Onboarding IPC handlers (docs/maties/onboarding.md): the name, the voice, the time zone
   registerOnboardingHandlers({
     getStore,
@@ -8902,73 +8875,6 @@ if (!gotTheLock) {
     (): Promise<AgentBrowserHostResponse> => runBrowserHostAction(() => getAgentBrowserHost().stop()),
   );
 
-  /**
-   * Open a page in the browser the agent itself works in, so that a sign-in
-   * the person performs there is the one the agent finds next time. In-app,
-   * that is the host's persistent partition; otherwise it is the engine's own
-   * managed browser, which the control gateway opens a tab in.
-   */
-  // --- the voice -----------------------------------------------------------
-  // The app asks Claidor to say something; Claidor holds the ElevenLabs
-  // key. No key ever reaches this process, which is why there is no
-  // API-key screen for it and will not be one (docs/maties/plan.md step 1).
-  // Asked for before sign-in is wired is a real state during startup, and
-  // it is answered rather than thrown: an IPC rejection would reach the
-  // renderer as an unhandled error where « not yet » is the whole truth.
-  const SPEECH_NOT_READY = 'The voice is not ready yet.';
-
-  ipcMain.handle(SpeechIpc.ListVoices, async (): Promise<SpeechVoicesResult> => (
-    speechClient
-      ? speechClient.listVoices()
-      : { ok: false, voices: [], error: SPEECH_NOT_READY }
-  ));
-
-  ipcMain.handle(
-    SpeechIpc.Speak,
-    async (_event, request?: { voiceId?: string; text?: string }): Promise<SpeakResult> => (
-      speechClient
-        ? speechClient.speak(request?.voiceId ?? '', request?.text ?? '')
-        : { ok: false, error: SPEECH_NOT_READY }
-    ),
-  );
-
-  ipcMain.handle(
-    BrowserIpc.OpenAgentPage,
-    async (_event, request?: AgentBrowserOpenPageRequest): Promise<AgentBrowserOpenPageResponse> => {
-      const url = request?.url?.trim();
-      if (!url) {
-        return { success: false, error: 'A page address is required.' };
-      }
-      const displayMode = normalizeBrowserWebAccessConfig(
-        getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
-      ).displayMode;
-      try {
-        if (displayMode === BrowserDisplayMode.InApp) {
-          await getAgentBrowserHost().navigate(url, request?.sessionId);
-        } else {
-          await fetchBrowserControlJson<Record<string, unknown>>('/start', {
-            method: 'POST',
-            timeoutMs: 20000,
-          });
-          await fetchBrowserControlJson<Record<string, unknown>>('/tabs/open', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url }),
-            timeoutMs: 20000,
-          });
-        }
-        return { success: true, displayMode };
-      } catch (error) {
-        console.error('[AgentBrowser] Failed to open a page in the agent browser:', error);
-        return {
-          success: false,
-          displayMode,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
-    },
-  );
-
   ipcMain.handle(
     BrowserIpc.SelectHostPage,
     (_event, request?: AgentBrowserHostPageRequest): Promise<AgentBrowserHostResponse> =>
@@ -9184,6 +9090,9 @@ if (!gotTheLock) {
         title?: string;
         activeSkillIds?: string[];
         runtimeSkillIds?: string[];
+        kitIds?: string[];
+        kitReferences?: KitReference[];
+        resolvedKitCapabilities?: ResolvedKitCapabilities;
         imageAttachments?: CoworkImageAttachmentMain[];
         agentId?: string;
         modelOverride?: string;
@@ -9290,16 +9199,7 @@ if (!gotTheLock) {
           runtimeSkillIds || [],
           options.agentId || 'main',
           options.modelOverride || '',
-          {
-            thinkingLevel: thinkingLevel || '',
-            // A title the caller supplied is a deliberate name (a scheduled
-            // task, a seeded chat) and is never replaced. Only the
-            // truncation of what the person typed is a placeholder, and
-            // only that is open to being named by what the chat is about.
-            titleSource: options.title?.trim()
-              ? SessionTitleSource.Person
-              : SessionTitleSource.Fallback,
-          },
+          { thinkingLevel: thinkingLevel || '' },
         );
 
         if (options.modelOverride) {
@@ -9312,7 +9212,7 @@ if (!gotTheLock) {
 
         const skinTurn = getSkinRuntimeController().prepareTurn({
           sessionId: session.id,
-          skillIds: options.activeSkillIds,
+          kitIds: options.kitIds,
           mediaSelection: normalizeMediaSelectionState(options.mediaSelection),
           mediaGenerationEntitled: cachedMediaGenerationEntitled,
         });
@@ -9355,6 +9255,9 @@ if (!gotTheLock) {
         const messageMetadata = buildCoworkUserSelectionMetadata({
           prompt,
           skillIds: options.activeSkillIds,
+          kitIds: options.kitIds,
+          kitReferences: options.kitReferences,
+          resolvedKitCapabilities: options.resolvedKitCapabilities,
           selectedTextSnippets,
           browserAnnotations,
           imageAttachmentPreviews,
@@ -9379,6 +9282,9 @@ if (!gotTheLock) {
             systemPrompt,
             skillIds: runtimeSkillIds,
             messageSkillIds: options.activeSkillIds,
+            kitIds: options.kitIds,
+            kitReferences: options.kitReferences,
+            resolvedKitCapabilities: options.resolvedKitCapabilities,
             workspaceRoot: taskWorkingDirectory,
             confirmationMode: 'modal',
             imageAttachments: options.imageAttachments,
@@ -9435,6 +9341,9 @@ if (!gotTheLock) {
         systemPrompt?: string;
         activeSkillIds?: string[];
         runtimeSkillIds?: string[];
+        kitIds?: string[];
+        kitReferences?: KitReference[];
+        resolvedKitCapabilities?: ResolvedKitCapabilities;
         imageAttachments?: CoworkImageAttachmentMain[];
         mediaSelection?: {
           mode: 'auto' | 'image' | 'video' | 'none';
@@ -9512,7 +9421,7 @@ if (!gotTheLock) {
 
         const skinTurn = getSkinRuntimeController().prepareTurn({
           sessionId: options.sessionId,
-          skillIds: options.activeSkillIds,
+          kitIds: options.kitIds,
           mediaSelection: normalizeMediaSelectionState(options.mediaSelection),
           mediaGenerationEntitled: cachedMediaGenerationEntitled,
         });
@@ -9563,6 +9472,9 @@ if (!gotTheLock) {
             systemPrompt: continuationSystemPrompt,
             skillIds: options.runtimeSkillIds ?? options.activeSkillIds,
             messageSkillIds: options.activeSkillIds,
+            kitIds: options.kitIds,
+            kitReferences: options.kitReferences,
+            resolvedKitCapabilities: options.resolvedKitCapabilities,
             imageAttachments: options.imageAttachments,
             mediaSelection: normalizedMediaSelection,
             workflowKind,
@@ -10124,13 +10036,7 @@ if (!gotTheLock) {
           return { success: false, error: 'Title is required' };
         }
         const coworkStoreInstance = getCoworkStore();
-        // A name the person typed wins for ever after: recording who wrote
-        // it is what stops the app renaming it later.
-        coworkStoreInstance.updateSession(
-          options.sessionId,
-          { title, titleSource: SessionTitleSource.Person },
-          { touchUpdatedAt: false },
-        );
+        coworkStoreInstance.updateSession(options.sessionId, { title }, { touchUpdatedAt: false });
         return { success: true };
       } catch (error) {
         return {
@@ -10271,7 +10177,7 @@ if (!gotTheLock) {
             `[CoworkIPC] searched sessions; query length ${searchQuery.length}, returned ${sessions.length} of ${total} from offset ${offset} in ${Date.now() - startedAt}ms.`,
           );
         }
-        return { success: true, sessions, total, hasMore: offset + sessions.length < total };
+        return { success: true, sessions, hasMore: offset + sessions.length < total };
       } catch (error) {
         console.error('[CoworkIPC] failed to list sessions:', error);
         return {
@@ -11201,6 +11107,7 @@ if (!gotTheLock) {
 
   // ==================== Plugin Management IPC Handlers ====================
 
+  registerPluginHandlers({ getCoworkStore, syncOpenClawConfig });
 
   // ==================== Scheduled Task IPC Handlers (OpenClaw) ====================
 
@@ -13401,9 +13308,9 @@ if (!gotTheLock) {
       },
     ) => {
       const sanitizedUrl = sanitizeUrlForLog(options.url);
-      // Nothing is exempt from this trace any more: the app used to skip
-      // logging its own analytics beacons, and it no longer sends any.
-      const logTraffic = true;
+      // Analytics beacons are traced by the reporter itself ([LogReporter]
+      // lines); logging them here again would only add noise.
+      const logTraffic = !isAnalyticsEndpointUrl(options.url);
       if (logTraffic) {
         console.log(
           `[api:fetch] ${options.method} ${sanitizedUrl}, headers: ${serializeForLog(options.headers)}, body: ${options.body}`,

@@ -75,13 +75,8 @@ from .service import (
     provider_api_key,
     provider_base_url,
     provider_configured,
-    speech_configured,
     tally_for,
     usage_from_answer,
-)
-from .speech import (
-    is_valid_voice_id,
-    read_speech_request,
 )
 
 log = structlog.get_logger()
@@ -629,127 +624,6 @@ def _error(kind: str, message: str, status: int) -> JSONResponse:
     )
 
 
-# --- the voice --------------------------------------------------------------
-#
-# The plan of record: "voices come from a speech service behind Claidor's
-# API, never from a key in the app" (docs/maties/plan.md, step 1). So the
-# app asks Claidor to say something and Claidor asks ElevenLabs, with the
-# key never leaving this side. The price and the limits are in
-# polar.desktop.speech, which has no I/O in it and is tested on its own.
-
-
-def _elevenlabs_headers(accept: str) -> dict[str, str]:
-    return {
-        "xi-api-key": settings.ELEVENLABS_API_KEY,
-        "content-type": "application/json",
-        "accept": accept,
-    }
-
-
-@router.get("/api/speech/v1/voices", name="desktop:speech_voices", response_model=None)
-async def speech_voices(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-) -> JSONResponse:
-    """The voices that may be chosen, as ElevenLabs lists them.
-
-    Nothing is metered: a person opening the voice picker has not asked
-    to be read to yet.
-    """
-    if not speech_configured():
-        return _error("api_error", "The speech service is not configured.", 503)
-    url = f"{settings.DESKTOP_ELEVENLABS_BASE_URL}/v1/voices"
-    try:
-        async with httpx.AsyncClient(timeout=_timeout()) as client:
-            answer = await client.get(
-                url, headers=_elevenlabs_headers("application/json")
-            )
-    except httpx.HTTPError:
-        log.exception("desktop.speech.voices_unreachable")
-        return _error("api_error", "The speech service could not be reached.", 502)
-    return JSONResponse(answer.json(), status_code=answer.status_code)
-
-
-@router.post(
-    "/api/speech/v1/text-to-speech/{voice_id}",
-    name="desktop:speech_text_to_speech",
-    response_model=None,
-)
-async def speech_text_to_speech(
-    voice_id: str,
-    request: Request,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-    session: AsyncSession = Depends(get_db_session),
-) -> JSONResponse | Response:
-    """Say something, in one of the voices, against the same monthly
-    allowance the models are charged to.
-
-    The audio comes back whole rather than streamed. A briefing is a few
-    seconds of speech and the cap in `polar.desktop.speech` keeps it that
-    way; streaming would buy responsiveness at the cost of not knowing
-    whether the call succeeded before writing the charge, and a charge
-    for audio that never arrived is worse than a moment's wait.
-    """
-    if not speech_configured():
-        return _error("api_error", "The speech service is not configured.", 503)
-    if not is_valid_voice_id(voice_id):
-        return _error("invalid_request_error", "That is not a voice id.", 400)
-    try:
-        payload = json.loads(await request.body() or b"{}")
-    except ValueError:
-        return _error("invalid_request_error", "The body is not JSON.", 400)
-    spoken = read_speech_request(payload)
-    if isinstance(spoken, str):
-        return _error("invalid_request_error", spoken, 400)
-
-    user = desktop_session.user
-    if await desktop.exhausted(session, user):
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "quota_exhausted",
-                    "code": QUOTA_EXHAUSTED_CODE,
-                    "message": (
-                        f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "
-                        "The allowance resets at the start of next month."
-                    ),
-                }
-            },
-            status_code=402,
-        )
-
-    url = (
-        f"{settings.DESKTOP_ELEVENLABS_BASE_URL}"
-        f"/v1/text-to-speech/{quote(voice_id, safe='')}"
-    )
-    try:
-        async with httpx.AsyncClient(timeout=_timeout()) as client:
-            answer = await client.post(
-                url,
-                headers=_elevenlabs_headers("audio/mpeg"),
-                content=json.dumps(payload).encode(),
-            )
-    except httpx.HTTPError:
-        log.exception("desktop.speech.upstream_unreachable")
-        return _error("api_error", "The speech service could not be reached.", 502)
-
-    await desktop.record_speech_usage(
-        session,
-        user_id=user.id,
-        session_id=desktop_session.id,
-        characters=spoken.characters,
-        upstream_status=answer.status_code,
-    )
-    if answer.status_code != 200:
-        # ElevenLabs' own error body is JSON even when audio was asked
-        # for. Passed through so the app can say what was actually wrong.
-        return Response(
-            content=answer.content,
-            status_code=answer.status_code,
-            media_type=answer.headers.get("content-type", "application/json"),
-        )
-    return Response(content=answer.content, media_type="audio/mpeg")
-
-
 @router.post("/api/proxy/v1/messages", name="desktop:messages", response_model=None)
 async def proxy_messages(
     request: Request,
@@ -797,7 +671,7 @@ def _log_upstream_refusal(
     person is « 400 terminated » — a status and a word, with the sentence
     that says what is actually wrong nowhere at all. That was the state on
     13 September, when GPT models failed and nothing anywhere recorded
-    OpenAI's own explanation.
+    OpenAI's own explanation. One line here ended two hours of guessing.
 
     The body is the provider's error text. It carries no key: the key goes
     up in a header, and a provider does not echo it back.

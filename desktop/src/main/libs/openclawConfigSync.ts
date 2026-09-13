@@ -350,107 +350,6 @@ const DUCKDUCKGO_PLUGIN_ID = 'duckduckgo';
 
 const hasDuckDuckGoPlugin = (): boolean =>
   hasRuntimeBundledOpenClawExtension(DUCKDUCKGO_PLUGIN_ID);
-
-/**
- * The wiki: what the assistant knows about the person, as pages rather
- * than as a pile of notes (`docs/maties/plan.md`, step 6).
- *
- * It ships in our build and was dead twice over — absent from the strict
- * `plugins.allow` list below, so the engine never loaded it, and hidden
- * from the plugins screen, so nobody could switch it on. It was found by
- * the engine audit of September 11 (`docs/maties/engine-audit.md`,
- * section 1.1) and is permitted here.
- *
- * It keeps *claims*, not prose: each carries its confidence, where it came
- * from, and what contradicts it, with contradictions and open questions
- * surfaced rather than buried. That is the shape the founder asked for —
- * « like Wikipedia, structured, not a robotic text » — and it is the
- * reason to use this rather than write one.
- *
- * **`isolated`, pinned, never `unsafe-local`.** The plugin offers three
- * vault modes. `isolated` keeps the wiki to its own vault and reads
- * nothing else. `bridge` additionally imports what the memory system
- * exports, which our audit could not confirm produces anything on our
- * setup. `unsafe-local` reads anywhere on the person's disk and is marked
- * experimental by its own authors: it is the one mode this product must
- * never enable, and naming the mode here is what stops it arriving later
- * by default.
- *
- * The mode goes under `config`, which is where the engine hands a plugin
- * its own settings. The entry itself is validated by a strict schema that
- * knows only `enabled`, `hooks`, `subagent`, `llm` and `config`, and that
- * schema sits inside the strict schema for the whole config file — so a
- * stray key here does not fail the wiki, it fails the config.
- */
-const MEMORY_WIKI_PLUGIN_ID = 'memory-wiki';
-/**
- * Off since 12 September. It was switched on without anyone watching a
- * gateway load it, in the same afternoon as the un-pruning that broke the
- * browser, and both share one failure mode: plugin loading is
- * all-or-nothing, so a plugin that cannot activate takes every other
- * plugin down with it.
- *
- * Turn this back on only after starting the gateway with the wiki enabled
- * and reading the plugin registry to see it loaded rather than errored.
- */
-const MEMORY_WIKI_ENABLED = false;
-const MEMORY_WIKI_VAULT_MODE = 'isolated';
-
-const hasMemoryWikiPlugin = (): boolean =>
-  hasRuntimeBundledOpenClawExtension(MEMORY_WIKI_PLUGIN_ID);
-
-/**
- * The voice.
- *
- * `docs/maties/plan.md`, step 1: « voices come from a speech service
- * behind Claidor's API, never from a key in the app ». So the engine is
- * given a loopback address where ElevenLabs' own address would go, and
- * the token proxy puts the person's session token on the request and
- * forwards it to Claidor, which holds the real key. The engine carries
- * no credential, and nothing of ours expires inside it — the same
- * arrangement the model proxy and the connections already use.
- *
- * `apiKey` is required by the provider before it will register itself,
- * and what goes there travels no further than our own loopback port,
- * where it is ignored. It is named for what it is rather than made to
- * look like a key, so nobody later mistakes it for one worth protecting.
- *
- * Without a proxy port there is no address to give, so no `talk` block is
- * written at all and the provider is not offered. That is deliberate:
- * this file has one bug of exactly that shape already — the in-app
- * browser, which asked for a bridge that was not up yet, quietly took
- * the other path, and told nobody for the rest of the session. A voice
- * that is absent is recoverable; a voice that claims to work and does
- * not is the failure worth avoiding.
- */
-const ELEVENLABS_PLUGIN_ID = 'elevenlabs';
-const ELEVENLABS_TALK_PROVIDER_ID = 'elevenlabs';
-const ELEVENLABS_MANAGED_KEY_PLACEHOLDER = 'managed-by-claidor';
-const SPEECH_PROXY_PATH_PREFIX = '/speech';
-
-const hasElevenLabsPlugin = (): boolean =>
-  hasRuntimeBundledOpenClawExtension(ELEVENLABS_PLUGIN_ID);
-
-/**
- * The `talk` block, or null when the voice cannot be offered. Exported
- * for its own test: the address is the whole of the arrangement, and a
- * wrong one fails by speaking to ElevenLabs directly with a placeholder
- * key, which looks like a broken account rather than a wiring mistake.
- */
-export const buildManagedTalkConfig = (
-  proxyPort: number | null,
-): Record<string, unknown> | null => {
-  if (!proxyPort) return null;
-  return {
-    provider: ELEVENLABS_TALK_PROVIDER_ID,
-    providers: {
-      [ELEVENLABS_TALK_PROVIDER_ID]: {
-        apiKey: ELEVENLABS_MANAGED_KEY_PLACEHOLDER,
-        baseUrl: `http://127.0.0.1:${proxyPort}${SPEECH_PROXY_PATH_PREFIX}`,
-      },
-    },
-  };
-};
 // knownPollNoProgress is off: polling a live background process that stays
 // quiet (builds, installs, downloads) legitimately repeats identical calls
 // with identical output, and the detector killed such runs after 10 polls
@@ -460,24 +359,11 @@ export const buildManagedTalkConfig = (
 // historySize must stay comfortably above globalCircuitBreakerThreshold or
 // interleaved tool calls push streak entries out of the window and the
 // breaker becomes unreachable.
-// The warning thresholds are 3, not 6. The founder watched Maties fumble the
-// same browser click three times in a row, and at 6 nothing fired: the
-// settings were tuned to stop a runaway, not to nudge a pivot. Three
-// identical calls is already the moment to try something else.
-//
-// Only the warning moved. A warning is a line of guidance in the
-// conversation; it never interrupts work, so a false positive on a
-// legitimate poll costs a sentence. criticalThreshold does interrupt, and a
-// poll of a live background process (a build, an install, a download)
-// genuinely repeats an identical call many times — knownPollNoProgress is
-// already off for exactly that reason, and genericRepeat still counts those
-// calls. Interrupting such a run is worse than the noise we set out to
-// remove, so 10 stands, and the global circuit breaker at 30 stands with it.
 const MANAGED_TOOL_LOOP_DETECTION = {
   enabled: true,
   historySize: 48,
-  warningThreshold: 3,
-  unknownToolThreshold: 3,
+  warningThreshold: 6,
+  unknownToolThreshold: 6,
   criticalThreshold: 10,
   globalCircuitBreakerThreshold: 30,
   detectors: {
@@ -589,50 +475,6 @@ const MANAGED_BROWSER_POLICY_PROMPT = [
   '- The `lobster-in-app` profile is Maties\'s own browser bridge. If it is unavailable, report an internal Maties browser startup failure; never tell the user to enable Chrome remote debugging or launch Chrome with debugging flags.',
   `- When a page requires a password and \`${BrowserCredentialMcpServer.ModelToolName}\` is available, call it before asking the user to sign in manually. The tool can use an encrypted saved login without revealing its password to you.`,
   '- If no saved login is available, ask the user to sign in directly in the visible Maties browser. Never ask the user to send a password in chat, and never search files, memory, or logs for passwords.',
-].join('\n');
-
-/**
- * Replace an approach that failed; do not repeat it.
- *
- * The founder watched Maties try the same browser click three times in a
- * row. Asked about it afterwards, the assistant believed it already had this
- * guidance. It did not: nothing in the managed sections said anything about
- * what to do after a step fails. This says it.
- *
- * The app now collapses a run of identical failures into one step card
- * (`toolStepPresentation.tsx`) and OpenClaw's loop detection warns at three,
- * but both of those are downstream of the mistake. This is upstream of it.
- */
-const MANAGED_CHANGED_APPROACH_PROMPT = [
-  '## When A Step Fails',
-  '',
-  '- An approach that has failed is replaced, not repeated. Do not run the same tool call with the same arguments again hoping for a different answer.',
-  '- One retry is reasonable when the failure was plainly transient (a timeout, a network blip, a page that had not finished loading). Beyond that, change something real: a different selector, a different tool, a different route to the same end — or ask the user.',
-  '- If you have tried two or three times and are out of approaches, say so plainly and say what you tried. That is a better answer than a fourth attempt.',
-  '- Never report a step as done when it did not do what it set out to do.',
-].join('\n');
-
-/**
- * Seeing an app the person has connected.
- *
- * The founder connected Gmail, asked to see their email, and got Google's
- * sign-in page plus a paragraph about API access versus browser login flows
- * — and the word "Done" over a sign-in form, having achieved nothing. Two
- * faults: the lecture, and the false success. A false success is the worse
- * of the two because it cannot be seen.
- *
- * The engine keeps its own browser profile, so a sign-in done there once
- * holds. That makes the honest answer a short offer, not an explanation.
- */
-const MANAGED_CONNECTED_APP_VISIBILITY_PROMPT = [
-  '## Seeing A Connected App',
-  '',
-  'When the user asks to see something in an app — their inbox, their calendar, a document, a page of a service — and the browser lands on a sign-in page:',
-  '',
-  '- Stop there. Do not report the step as done, and do not summarise an empty page as though you had read it. You saw a sign-in form; say so.',
-  '- Say it in one sentence and offer the sign-in: that the app needs them to sign in once in the Maties browser window, and that you will carry on as soon as they have. The browser keeps the session afterwards, so it is asked for once and not again.',
-  '- Do not explain the difference between API access and browser login flows, and do not use the words "API", "OAuth", "authentication flow" or "browser login flow" with the user. They asked to see their email. The answer is either their email or one sentence about what is in the way.',
-  '- If a connected tool can answer the same question without the browser, use it and say what you found. Prefer that over the browser whenever it gets the user their answer.',
 ].join('\n');
 
 const MANAGED_EXEC_SAFETY_PROMPT = [
@@ -2647,19 +2489,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     // whose packaging dropped it must not carry a stale entry, and
     // OpenClaw rejects a config naming a plugin it cannot find.
     const hasSearchPlugin = hasDuckDuckGoPlugin();
-    // Held back on 12 September, with the un-pruning that broke the
-    // browser. Enabling a plugin is not free: plugin loading is
-    // all-or-nothing — `maybeThrowOnPluginLoadError` throws for the whole
-    // registry the moment one plugin is in an error state — so a wiki that
-    // cannot activate takes `browser` and `memory-core` down with it. It
-    // was switched on here without ever watching a gateway load it.
-    //
-    // To bring it back: start the gateway with it enabled, read the plugin
-    // registry, see it listed as loaded rather than errored, and only then
-    // make this true again.
-    const hasWikiPlugin = MEMORY_WIKI_ENABLED && hasMemoryWikiPlugin();
-    const talkConfig = buildManagedTalkConfig(getOpenClawTokenProxyPort());
-    const hasVoice = hasElevenLabsPlugin() && talkConfig !== null;
     const qwenPortalAuthPluginId = resolveOpenClawExtensionPluginId('qwen-portal-auth');
 
     // Detect if any provider uses Qwen/Aliyun DashScope URLs — OpenClaw auto-injects
@@ -2823,10 +2652,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       },
       tools: this.buildWebToolsConfig(browserWebAccess),
       browser: this.buildBrowserConfig(browserWebAccess),
-      // Omitted entirely rather than written empty when the voice cannot
-      // be offered: `talk.provider` must name a key in `talk.providers`
-      // or the whole config fails validation.
-      ...(hasVoice && talkConfig ? { talk: talkConfig } : {}),
       skills: {
         entries: {
           ...this.buildSkillEntries(),
@@ -2928,18 +2753,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           ...(hasQwenProvider && qwenPortalAuthPluginId ? { [qwenPortalAuthPluginId]: { enabled: true } } : {}),
           ...(hasXaiPlugin ? { xai: { enabled: true } } : {}),
           ...(hasSearchPlugin ? { [DUCKDUCKGO_PLUGIN_ID]: { enabled: true } } : {}),
-          ...(hasVoice ? { [ELEVENLABS_PLUGIN_ID]: { enabled: true } } : {}),
-          // The vault mode is named rather than left to the plugin's own
-          // default: the default is not ours to inherit, and `unsafe-local`
-          // must never arrive by one.
-          ...(hasWikiPlugin
-            ? {
-              [MEMORY_WIKI_PLUGIN_ID]: {
-                enabled: true,
-                config: { vaultMode: MEMORY_WIKI_VAULT_MODE },
-              },
-            }
-            : {}),
           // User-installed plugins: merge enabled state and config from user_plugins table
           ...Object.fromEntries(
             userPlugins.map(p => [p.pluginId, {
@@ -2967,8 +2780,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           // load — entries.enabled alone is not enough.
           ...(hasXaiPlugin ? ['xai'] : []),
           ...(hasSearchPlugin ? [DUCKDUCKGO_PLUGIN_ID] : []),
-          ...(hasWikiPlugin ? [MEMORY_WIKI_PLUGIN_ID] : []),
-          ...(hasVoice ? [ELEVENLABS_PLUGIN_ID] : []),
           ...(hasModelCompatConfig
             ? [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]
             : []),
@@ -3625,16 +3436,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     })();
 
     let changedTopLevelKeys: string[] = [];
-    // The gateway binds its browser profile once, at startup, and never
-    // re-reads it on a hot config update. That made the in-app browser
-    // unreachable on every launch: the first sync runs before the MCP bridge
-    // has a port, so `buildBrowserConfig` cannot offer the in-app profile and
-    // writes the external one; the gateway starts on that. A later sync, with
-    // the bridge up, corrects the file — but `browser` was not a key that
-    // asked for a restart, so the running gateway kept driving its own
-    // Chromium. The config on disk said in-app, the engine did the opposite,
-    // and both were telling the truth about different things.
-    let browserProfileChanged = false;
     if (configChanged) {
       // Diagnostic: diff gateway and plugins sections to identify what triggers OpenClaw restart
       try {
@@ -3667,21 +3468,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
           return JSON.stringify(currentObj[k]) !== JSON.stringify(nextObj[k]);
         });
         console.log(`${gwDiagTs()} top-level changed keys:`, changedTopLevelKeys.join(',') || '(none)');
-        // Only the profile, not every browser setting: the rest of that
-        // section does hot-apply, and turning each of them into a hard
-        // restart would be a worse bug than the one being fixed.
-        const currentBrowserProfile = (currentObj.browser as { defaultProfile?: unknown } | undefined)
-          ?.defaultProfile ?? null;
-        const nextBrowserProfile = (nextObj.browser as { defaultProfile?: unknown } | undefined)
-          ?.defaultProfile ?? null;
-        browserProfileChanged = currentBrowserProfile !== nextBrowserProfile;
-        if (browserProfileChanged) {
-          console.log(
-            `${gwDiagTs()} browser profile changed:`,
-            `${String(currentBrowserProfile)} -> ${String(nextBrowserProfile)}`,
-            '(requires gateway restart)',
-          );
-        }
       } catch { /* ignore parse errors in diag */ }
       try {
         ensureDir(path.dirname(configPath));
@@ -3724,7 +3510,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       configPath,
       ...(bindingsChanged ? { bindingsChanged } : {}),
       ...(changedTopLevelKeys.length > 0 ? { changedTopLevelKeys } : {}),
-      ...(changedTopLevelKeys.includes('mcp') || browserProfileChanged || modelCompatRestartRequired
+      ...(changedTopLevelKeys.includes('mcp') || modelCompatRestartRequired
         ? { restartImpact: OpenClawConfigImpact.Restart }
         : {}),
       ...(agentsMdWarning ? { agentsMdWarning } : {}),
@@ -4192,8 +3978,6 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       sections.push(buildManagedWebSearchPolicyPrompt(hasDuckDuckGoPlugin()));
       sections.push(MANAGED_LIBRARY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
-      sections.push(MANAGED_CONNECTED_APP_VISIBILITY_PROMPT);
-      sections.push(MANAGED_CHANGED_APPROACH_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
       sections.push(MANAGED_DELIVERABLE_LINKS_PROMPT);
       sections.push(MANAGED_MATH_FORMAT_PROMPT);

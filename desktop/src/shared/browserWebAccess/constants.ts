@@ -82,7 +82,6 @@ export const BrowserIpc = {
   GoForwardHost: 'openclaw:browser:goForwardHost',
   ReloadHost: 'openclaw:browser:reloadHost',
   StopHost: 'openclaw:browser:stopHost',
-  OpenAgentPage: 'openclaw:browser:openAgentPage',
   SelectHostPage: 'openclaw:browser:selectHostPage',
   CloseHostPage: 'openclaw:browser:closeHostPage',
   ResolveCredentialSavePrompt: 'openclaw:browser:resolveCredentialSavePrompt',
@@ -218,23 +217,6 @@ export interface AgentBrowserCredentialSavePromptRequest extends AgentBrowserHos
 export interface AgentBrowserHostResponse {
   success: boolean;
   state?: AgentBrowserHostState;
-  error?: string;
-}
-
-/**
- * Open a page in whichever browser the agent itself uses, so that the sign-in
- * it performs is the one the agent finds afterwards. Which browser that is
- * depends on the display mode, and only the main process knows: in-app is the
- * host's own persistent partition, external is the engine's managed browser.
- */
-export interface AgentBrowserOpenPageRequest extends AgentBrowserHostRequest {
-  url: string;
-}
-
-export interface AgentBrowserOpenPageResponse {
-  success: boolean;
-  /** Where the page was opened, so the caller can make room for it. */
-  displayMode?: BrowserDisplayMode;
   error?: string;
 }
 

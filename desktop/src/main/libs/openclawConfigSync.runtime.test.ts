@@ -117,8 +117,6 @@ vi.mock('./openclawLocalExtensions', () => ({
   ),
   hasRuntimeBundledOpenClawExtension: (id: string) => (
     id === 'xai'
-    || id === 'elevenlabs'
-    || id === 'memory-wiki'
     || (id === 'duckduckgo' && mockRuntimeState.searchPluginAvailable)
   ),
   resolveOpenClawExtensionPluginId: (id: string) => {
@@ -1854,84 +1852,6 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('Built-in `web_search` is not available in this build');
   });
 
-  // --- The voice (docs/maties/plan.md, step 1) ---
-
-  test('gives the voice a loopback address and no key', async () => {
-    mockRuntimeState.proxyPort = 45123;
-    const sync = await createSync();
-    expect(sync.sync('voice-on')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // The address is the whole arrangement. Point it anywhere else and
-    // the engine talks to ElevenLabs directly with a placeholder key,
-    // which reads as a broken account rather than a wiring mistake.
-    expect(config.talk.provider).toBe('elevenlabs');
-    expect(config.talk.providers.elevenlabs.baseUrl)
-      .toBe('http://127.0.0.1:45123/speech');
-    // Permitted, or the strict allowlist drops it and nothing says so.
-    expect(config.plugins.allow).toContain('elevenlabs');
-    expect(config.plugins.entries.elevenlabs).toEqual({ enabled: true });
-  });
-
-  test('offers no voice at all when there is no proxy to reach it through', async () => {
-    mockRuntimeState.proxyPort = null;
-    const sync = await createSync();
-    expect(sync.sync('voice-off')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // Absent, not empty: `talk.provider` must name a key in
-    // `talk.providers` or the whole config fails to validate. And a
-    // voice that is missing is recoverable, where one that claims to
-    // work and does not is the failure this file already has once.
-    expect(config.talk).toBeUndefined();
-    expect(config.plugins.allow).not.toContain('elevenlabs');
-  });
-
-  // --- The wiki (docs/maties/library.md) ---
-
-  test('leaves the wiki switched off until a gateway has been seen to load it', async () => {
-    // Held back on 12 September. It had been switched on without anyone
-    // watching a gateway load it, alongside an un-pruning that broke the
-    // browser; plugin loading is all-or-nothing, so a plugin that cannot
-    // activate takes every other plugin down with it.
-    const sync = await createSync();
-    expect(sync.sync('wiki-off')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.plugins.entries).not.toHaveProperty('memory-wiki');
-    expect(config.plugins.allow).not.toContain('memory-wiki');
-    // The rule that outlives the switch: whenever it does come back, it
-    // comes back in the mode that cannot read the person's disk.
-    expect(JSON.stringify(config)).not.toContain('unsafe-local');
-  });
-
-  test.skip('permits the wiki, pinned to the vault mode that reads nothing else', async () => {
-    const sync = await createSync();
-    expect(sync.sync('wiki-on')).toMatchObject({ ok: true });
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // Both lines are required. The plugin ships in the build and was dead
-    // twice over: no entry, and absent from the strict allowlist, so the
-    // engine never loaded it and nothing said so.
-    //
-    // The exact shape matters as much as the values. A plugin entry is
-    // validated by a strict schema knowing only enabled/hooks/subagent/
-    // llm/config, nested inside the strict schema for the whole config
-    // file — so settings belong under `config`, and a stray key at the top
-    // does not fail the wiki, it fails the config.
-    expect(config.plugins.entries['memory-wiki']).toEqual({
-      enabled: true,
-      config: { vaultMode: 'isolated' },
-    });
-    expect(config.plugins.allow).toContain('memory-wiki');
-
-    // The one mode this product must never enable: it reads anywhere on
-    // the person's disk and its own authors mark it experimental. Naming
-    // the mode above is what stops it arriving later as somebody's
-    // default, and this assertion is what keeps it named.
-    expect(JSON.stringify(config)).not.toContain('unsafe-local');
-  });
-
   test('declares and allowlists the bundled xai plugin so its compat hooks load', async () => {
     const sync = await createSync();
 
@@ -2839,32 +2759,6 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.plugins.entries['search-library']).toEqual({ enabled: true });
   });
 
-  test('tells the assistant to replace an approach that failed, not repeat it', async () => {
-    const sync = await createSync();
-    expect(sync.sync('changed-approach-prompt').ok).toBe(true);
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## When A Step Fails');
-    expect(agentsMd).toContain('An approach that has failed is replaced, not repeated.');
-    expect(agentsMd).toContain('Never report a step as done when it did not do what it set out to do.');
-  });
-
-  test('offers the sign-in instead of a lecture when a connected app is asked for visually', async () => {
-    const sync = await createSync();
-    expect(sync.sync('connected-app-prompt').ok).toBe(true);
-
-    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## Seeing A Connected App');
-    // The false success is the worse of the two faults, because it cannot
-    // be seen: the sign-in page is never reported as a finished step.
-    expect(agentsMd).toContain('Do not report the step as done');
-    expect(agentsMd).toContain('sign in once in the Maties browser window');
-    // And no lecture: the words the founder was given are named and banned.
-    expect(agentsMd).toContain('do not use the words "API", "OAuth", "authentication flow" or "browser login flow"');
-    // It follows the browser policy it qualifies.
-    expect(agentsMd.indexOf('## Seeing A Connected App')).toBeGreaterThan(agentsMd.indexOf('## Browser Policy'));
-  });
-
   test('enables managed OpenClaw tool loop detection', async () => {
     const sync = await createSync();
 
@@ -2875,8 +2769,8 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.loopDetection).toEqual({
       enabled: true,
       historySize: 48,
-      warningThreshold: 3,
-      unknownToolThreshold: 3,
+      warningThreshold: 6,
+      unknownToolThreshold: 6,
       criticalThreshold: 10,
       globalCircuitBreakerThreshold: 30,
       detectors: {
@@ -3163,42 +3057,6 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(leaveInAppResult.ok).toBe(true);
     const leaveInAppConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(leaveInAppConfig.mcp).toBeUndefined();
-  });
-
-  // The founder's Mac, 12 September: Settings read "Built-in browser", the
-  // generated config read the in-app profile, and the engine drove its own
-  // Chromium anyway. This is that sequence.
-  test('asks for a restart when the browser profile changes, or the in-app browser never arrives', async () => {
-    const { OpenClawConfigImpact } = await import('./openclawConfigImpact');
-    const { BrowserDisplayMode, BrowserRuntimeProfile } = await import(
-      '../../shared/browserWebAccess/constants'
-    );
-    // The bridge has no port yet, which is the real state of the app for the
-    // first seconds after launch.
-    let browserCallbackUrl: string | null = null;
-    const sync = await createSync({
-      getBrowserWebAccessConfig: () => ({ displayMode: BrowserDisplayMode.InApp }),
-      getBrowserCallbackUrl: () => browserCallbackUrl,
-      getLobsterBrowserMcpCommand: () => '/tmp/lobster-browser-mcp',
-    });
-
-    const beforeBridge = sync.sync('browser-bridge-not-ready');
-    expect(beforeBridge.ok).toBe(true);
-    const externalConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // In-app was asked for and could not be given: the engine gets the
-    // external browser, and this is the state the gateway starts on.
-    expect(externalConfig.browser.defaultProfile).not.toBe(BrowserRuntimeProfile.InApp);
-
-    // The bridge comes up a second or two later and the next sync corrects
-    // the file. Correcting the file is not enough on its own.
-    browserCallbackUrl = 'http://127.0.0.1:58260/browser/tool';
-    const afterBridge = sync.sync('browser-bridge-ready');
-    expect(afterBridge.ok).toBe(true);
-    const inAppConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(inAppConfig.browser.defaultProfile).toBe(BrowserRuntimeProfile.InApp);
-    // Without this the gateway keeps the profile it booted with, and the
-    // built-in browser panel never receives a page.
-    expect(afterBridge.restartImpact).toBe(OpenClawConfigImpact.Restart);
   });
 
   test('marks MCP server config changes as restart impact', async () => {

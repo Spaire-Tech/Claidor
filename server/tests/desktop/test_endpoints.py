@@ -717,37 +717,6 @@ class TestTwoProviders:
         rows = (await session.execute(DesktopUsage.__table__.select())).all()
         assert rows == []
 
-    async def test_a_model_that_refuses_reasoning_with_tools_is_sent_none(
-        self,
-        client: httpx.AsyncClient,
-        session: AsyncSession,
-        user: User,
-        mocker: MockerFixture,
-    ) -> None:
-        """OpenAI, 13 September: « Function tools with reasoning_effort
-        are not supported for gpt-6-astra in /v1/chat/completions … or
-        set reasoning_effort to 'none'. » The agent always carries tools,
-        so without this the model cannot answer at all.
-        """
-        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
-        access, _ = await _signed_in(client, session, user)
-        tools = [{"type": "function", "function": {"name": "browse"}}]
-        with respx.mock(assert_all_called=True) as mock:
-            route = mock.post(
-                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions"
-            ).mock(return_value=httpx.Response(200, json=OPENAI_ANSWER))
-            await client.post(
-                "/desktop/api/proxy/v1/chat/completions",
-                headers={"Authorization": f"Bearer {access}"},
-                json={
-                    "model": "gpt-6-astra",
-                    "messages": [],
-                    "tools": tools,
-                    "reasoning_effort": "high",
-                },
-            )
-        assert json.loads(route.calls[0].request.content)["reasoning_effort"] == "none"
-
     @pytest.mark.parametrize(
         "model_id", ["gpt-6-astra", "gpt-5.6-terra", "gpt-5.6-luna"]
     )
@@ -759,9 +728,12 @@ class TestTwoProviders:
         mocker: MockerFixture,
         model_id: str,
     ) -> None:
-        """Astra and Terra both refused, word for word with the name
-        swapped, so this is the endpoint's rule and not one model's.
-        Scoping it to Astra alone left Terra broken for an hour."""
+        """OpenAI, 13 September, on Astra and then word for word again on
+        Terra: « Function tools with reasoning_effort are not supported
+        for <model> in /v1/chat/completions … or set reasoning_effort to
+        'none'. » The agent always carries tools, so without this the
+        model cannot answer at all. Scoping it to Astra alone left Terra
+        broken for an hour, which is why this is parametrised."""
         mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
         access, _ = await _signed_in(client, session, user)
         with respx.mock(assert_all_called=True) as mock:
@@ -827,23 +799,13 @@ class TestTwoProviders:
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        """The reason must survive on our side.
-
-        It does not survive on the app's: the body is handed back, the
-        engine reduces it to a failure kind, and the person is shown
-        « 400 terminated » — a status and a word. On 13 September GPT
-        models were failing and nothing anywhere had recorded OpenAI's
-        own sentence saying why.
-        """
+        """The reason must survive on our side. It does not survive on the
+        app's: the body is handed back, the engine reduces it to a failure
+        kind, and the person is shown « 400 terminated »."""
         mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
         warn = mocker.patch.object(endpoints_module.log, "warning")
         access, _ = await _signed_in(client, session, user)
-        refusal = {
-            "error": {
-                "message": "Unsupported value: 'temperature' is not supported.",
-                "type": "invalid_request_error",
-            }
-        }
+        refusal = {"error": {"message": "Unsupported value: 'temperature'."}}
         with respx.mock(assert_all_called=True) as mock:
             mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions").mock(
                 return_value=httpx.Response(400, json=refusal)
@@ -857,7 +819,7 @@ class TestTwoProviders:
         assert response.status_code == 400
         assert response.json() == refusal
 
-        logged = [call for call in warn.call_args_list if call.args[0] == UPSTREAM_REFUSED]
+        logged = [c for c in warn.call_args_list if c.args[0] == UPSTREAM_REFUSED]
         assert len(logged) == 1
         fields = logged[0].kwargs
         assert fields["provider"] == "openai"
@@ -890,7 +852,7 @@ class TestTwoProviders:
             )
         assert response.status_code == 400
 
-        logged = [call for call in warn.call_args_list if call.args[0] == UPSTREAM_REFUSED]
+        logged = [c for c in warn.call_args_list if c.args[0] == UPSTREAM_REFUSED]
         assert len(logged) == 1
         assert "tools[0].function" in logged[0].kwargs["body"]
 

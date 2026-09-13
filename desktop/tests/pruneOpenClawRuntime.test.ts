@@ -26,19 +26,6 @@ test('pruneOpenClawRuntime removes the search providers that need a key', () => 
   expect(shouldKeepBundledExtension('perplexity')).toBe(false);
 });
 
-test('pruneOpenClawRuntime still removes voice-call, imessage and elevenlabs', () => {
-  // These were kept for a few hours on 12 September and it broke the
-  // browser for the founder — plugin loading is all-or-nothing, so one
-  // extension that cannot load takes the whole registry with it, and
-  // voice-call declares dependencies our packaging never installs.
-  //
-  // This test is the guard, not a preference: bringing one back means
-  // installing its dependencies and watching the gateway load it first.
-  expect(shouldKeepBundledExtension('voice-call')).toBe(false);
-  expect(shouldKeepBundledExtension('imessage')).toBe(false);
-  expect(shouldKeepBundledExtension('elevenlabs')).toBe(false);
-});
-
 test('pruneOpenClawRuntime removes explicitly unwanted bundled extensions', () => {
   expect(shouldKeepBundledExtension('amazon-bedrock')).toBe(false);
   expect(shouldKeepBundledExtension('amazon-bedrock-mantle')).toBe(false);

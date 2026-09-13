@@ -7,10 +7,6 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
-import {
-  normalizeSessionTitleSource,
-  SessionTitleSource,
-} from '../common/sessionTitle';
 import { AgentId, normalizeAgentAvatarIcon } from '../shared/agent';
 import {
   COWORK_MESSAGE_PAGE_SIZE,
@@ -42,6 +38,10 @@ import {
   type CoworkSelectedTextSnippet,
   CoworkSelectedTextSource,
 } from '../shared/cowork/selectedText';
+import type {
+  KitReference,
+  ResolvedKitCapabilities,
+} from '../shared/kit/constants';
 import {
   type Platform,
   PlatformRegistry,
@@ -508,6 +508,9 @@ export interface CoworkMessageMetadata {
   isStreaming?: boolean;
   isFinal?: boolean;
   skillIds?: string[];
+  kitIds?: string[];
+  kitReferences?: KitReference[];
+  resolvedKitCapabilities?: ResolvedKitCapabilities;
   usage?: {
     inputTokens?: number;
     outputTokens?: number;
@@ -551,11 +554,6 @@ export interface CoworkMessageReplacementEntry {
 export interface CoworkSession {
   id: string;
   title: string;
-  /**
-   * Where the title came from, and therefore whether the app may name this
-   * chat: see `SessionTitleSource` in `src/common/sessionTitle.ts`.
-   */
-  titleSource: SessionTitleSource;
   claudeSessionId: string | null;
   scheduledTaskId: string | null;
   status: CoworkSessionStatus;
@@ -825,15 +823,6 @@ interface CoworkSessionSearchOptions {
 export interface CreateCoworkSessionOptions {
   scheduledTaskId?: string | null;
   thinkingLevel?: ModelThinkingLevel | '';
-  /**
-   * Where this session's title came from. It defaults to the person's,
-   * because almost every caller here passes a deliberate name — a scheduled
-   * task's, an IM conversation's, a channel's — and a deliberate name is
-   * never replaced. Only the app's own new chat, whose title is the
-   * truncation of the first message, passes `Fallback` and is open to
-   * being named by what it is about.
-   */
-  titleSource?: SessionTitleSource;
 }
 
 export class CoworkStore {
@@ -986,19 +975,17 @@ export class CoworkStore {
     const now = Date.now();
     const scheduledTaskId = options.scheduledTaskId?.trim() || null;
     const thinkingLevel = options.thinkingLevel ?? '';
-    const titleSource = options.titleSource ?? SessionTitleSource.Person;
 
     this.db
       .prepare(
         `
-      INSERT INTO cowork_sessions (id, title, title_source, claude_session_id, scheduled_task_id, status, cwd, system_prompt, model_override, thinking_level, execution_mode, active_skill_ids, agent_id, pinned, created_at, updated_at)
-      VALUES (?, ?, ?, NULL, ?, 'idle', ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+      INSERT INTO cowork_sessions (id, title, claude_session_id, scheduled_task_id, status, cwd, system_prompt, model_override, thinking_level, execution_mode, active_skill_ids, agent_id, pinned, created_at, updated_at)
+      VALUES (?, ?, NULL, ?, 'idle', ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
     `,
       )
       .run(
         id,
         title,
-        titleSource,
         scheduledTaskId,
         cwd,
         systemPrompt,
@@ -1014,7 +1001,6 @@ export class CoworkStore {
     return {
       id,
       title,
-      titleSource,
       claudeSessionId: null,
       scheduledTaskId,
       status: 'idle',
@@ -1046,7 +1032,6 @@ export class CoworkStore {
     interface SessionRow {
       id: string;
       title: string;
-      title_source?: string | null;
       claude_session_id: string | null;
       scheduled_task_id: string | null;
       status: string;
@@ -1066,7 +1051,7 @@ export class CoworkStore {
 
     const row = this.getOne<SessionRow>(
       `
-      SELECT id, title, title_source, claude_session_id, scheduled_task_id, status, pinned, pin_order, cwd, system_prompt, model_override, thinking_level, execution_mode, active_skill_ids, agent_id, goal_json, created_at, updated_at
+      SELECT id, title, claude_session_id, scheduled_task_id, status, pinned, pin_order, cwd, system_prompt, model_override, thinking_level, execution_mode, active_skill_ids, agent_id, goal_json, created_at, updated_at
       FROM cowork_sessions
       WHERE id = ?
     `,
@@ -1095,7 +1080,6 @@ export class CoworkStore {
     return {
       id: row.id,
       title: row.title,
-      titleSource: normalizeSessionTitleSource(row.title_source),
       claudeSessionId: row.claude_session_id,
       scheduledTaskId: row.scheduled_task_id?.trim() || null,
       status: row.status as CoworkSessionStatus,
@@ -1509,7 +1493,7 @@ export class CoworkStore {
     updates: Partial<
       Pick<
         CoworkSession,
-        'title' | 'titleSource' | 'claudeSessionId' | 'status' | 'cwd' | 'systemPrompt' | 'modelOverride' | 'thinkingLevel' | 'executionMode' | 'goal'
+        'title' | 'claudeSessionId' | 'status' | 'cwd' | 'systemPrompt' | 'modelOverride' | 'thinkingLevel' | 'executionMode' | 'goal'
       >
     >,
     options: { touchUpdatedAt?: boolean } = {},
@@ -1536,10 +1520,6 @@ export class CoworkStore {
     if (updates.title !== undefined) {
       setClauses.push('title = ?');
       values.push(updates.title);
-    }
-    if (updates.titleSource !== undefined) {
-      setClauses.push('title_source = ?');
-      values.push(updates.titleSource);
     }
     if (updates.claudeSessionId !== undefined) {
       setClauses.push('claude_session_id = ?');

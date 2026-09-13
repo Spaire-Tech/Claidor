@@ -21,7 +21,6 @@ vi.mock('electron', () => ({
 import BetterSqlite3 from 'better-sqlite3';
 
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
-import { SessionTitleSource } from '../common/sessionTitle';
 import { AgentAvatarSvg, DefaultAgentAvatarIcon, encodeAgentAvatarIcon } from '../shared/agent/avatar';
 import {
   COWORK_SEARCH_HISTORY_MAX_MESSAGE_CONTENT_CODE_UNITS,
@@ -47,7 +46,6 @@ function setupDb(): void {
     CREATE TABLE IF NOT EXISTS cowork_sessions (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
-      title_source TEXT NOT NULL DEFAULT 'person',
       claude_session_id TEXT,
       scheduled_task_id TEXT,
       status TEXT NOT NULL DEFAULT 'idle',
@@ -951,44 +949,6 @@ test('create and update session persist the selected thinking level', () => {
 
   store.updateSession(session.id, { thinkingLevel: 'max' }, { touchUpdatedAt: false });
   expect(store.getSession(session.id)?.thinkingLevel).toBe('max');
-});
-
-test('a deliberate name is never a placeholder, and a placeholder says so', () => {
-  // Almost every caller passes a real name — a scheduled task's, an IM
-  // conversation's — and those are never replaced.
-  const named = store.createSession('Weekly invoice run', '/tmp');
-  expect(store.getSession(named.id)?.titleSource).toBe(SessionTitleSource.Person);
-
-  // Only the app's own new chat, whose title is the truncation of the first
-  // message, is open to being named by what the chat is about.
-  const placeholder = store.createSession(
-    'please help me find last quarter',
-    '/tmp',
-    '',
-    'local',
-    [],
-    'main',
-    '',
-    { titleSource: SessionTitleSource.Fallback },
-  );
-  expect(store.getSession(placeholder.id)?.titleSource).toBe(SessionTitleSource.Fallback);
-
-  store.updateSession(
-    placeholder.id,
-    { title: 'Finding last quarter invoices', titleSource: SessionTitleSource.Assistant },
-    { touchUpdatedAt: false },
-  );
-  const renamed = store.getSession(placeholder.id);
-  expect(renamed?.title).toBe('Finding last quarter invoices');
-  expect(renamed?.titleSource).toBe(SessionTitleSource.Assistant);
-});
-
-test('a session that predates naming keeps the name it has', () => {
-  // Rows written before title_source existed carry the column default, and
-  // must never be read as a placeholder to overwrite.
-  const sid = 'sess-legacy-title';
-  insertSession(sid, 'main', 'An old conversation');
-  expect(store.getSession(sid)?.titleSource).toBe(SessionTitleSource.Person);
 });
 
 test('updateSession can rename without refreshing the session updated time', () => {

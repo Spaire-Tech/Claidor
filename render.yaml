@@ -239,14 +239,6 @@ envVarGroups:
       - key: CLAIDOR_OPENAI_API_KEY
         sync: false
 
-      # --- the voice ---
-      # Same rule as the model keys, for the same reason: the plan of
-      # record says voices come from a speech service behind Claidor's
-      # API and never from a key in the app. Empty is not an outage —
-      # the speech routes answer 503 and the app offers no voice.
-      - key: CLAIDOR_ELEVENLABS_API_KEY
-        sync: false
-
       # --- sign-in ---
       - key: CLAIDOR_GOOGLE_CLIENT_ID
         sync: false
