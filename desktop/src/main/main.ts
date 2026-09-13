@@ -37,8 +37,6 @@ import {
   AgentId,
 } from '../shared/agent/constants';
 import {
-  LogReporterAction,
-  LogReporterSource,
   LogReporterStoreKey,
 } from '../shared/analytics/constants';
 import { AppIpcChannel } from '../shared/app/constants';
@@ -409,7 +407,6 @@ import {
   resolveLobsterBrowserMcpStdioLaunch,
 } from './libs/lobsterBrowserMcpServer';
 import { exportLogsZip } from './libs/logExport';
-import { MainLogReporter } from './libs/mainLogReporter';
 import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
 import {
   migrateAgentModelRefs,
@@ -476,7 +473,7 @@ import {
 } from './libs/openclawTokenProxy';
 import { migrateMainAgentWorkspace } from './libs/openclawWorkspaceMigration';
 import { ensurePythonRuntimeReady } from './libs/pythonRuntime';
-import { isAnalyticsEndpointUrl, sanitizeUrlForLog, serializeForLog } from './libs/sanitizeForLog';
+import { sanitizeUrlForLog, serializeForLog } from './libs/sanitizeForLog';
 import { packageNodeServiceDeployment } from './libs/shareDeployment/nodeServiceDeploymentPackager';
 import {
   analyzeNodeServiceProjectDirectory,
@@ -2114,7 +2111,6 @@ let coworkRuntimeForwarderBound = false;
 let memoryMigrationDone = false;
 let preventSleepBlockerId: number | null = null;
 let appUpdateCoordinator: AppUpdateCoordinator | null = null;
-let mainLogReporter: MainLogReporter | null = null;
 let libraryIndexService: LibraryIndexService | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
@@ -2236,22 +2232,6 @@ const getAppUpdateCoordinator = (): AppUpdateCoordinator => {
     appUpdateCoordinator = new AppUpdateCoordinator(getStore());
   }
   return appUpdateCoordinator;
-};
-
-const getMainLogReporter = (): MainLogReporter => {
-  if (!mainLogReporter) {
-    mainLogReporter = new MainLogReporter({
-      appVersion: app.getVersion(),
-      fetch: async (url, signal) => {
-        const response = await session.defaultSession.fetch(url, { method: 'GET', signal });
-        const result = { ok: response.ok, status: response.status };
-        await response.body?.cancel();
-        return result;
-      },
-      store: getStore(),
-    });
-  }
-  return mainLogReporter;
 };
 
 const forwardOpenClawStatus = (status: OpenClawEngineStatus): void => {
@@ -3481,13 +3461,6 @@ const getCoworkEngineRouter = () => {
         getOpenClawEngineManager(),
         {
           normalizeModelRef: normalizeOpenClawModelRef,
-          onChannelPromptSubmit: event => {
-            void getMainLogReporter().report({
-              action: LogReporterAction.ImPromptSubmit,
-              source: LogReporterSource.OpenClawChannel,
-              ...event,
-            });
-          },
           onGatewayClientReady: () => {
             getCronJobService().notifyGatewayReady();
             handleGatewaySelfRestartSettled();
@@ -13146,9 +13119,9 @@ if (!gotTheLock) {
       },
     ) => {
       const sanitizedUrl = sanitizeUrlForLog(options.url);
-      // Analytics beacons are traced by the reporter itself ([LogReporter]
-      // lines); logging them here again would only add noise.
-      const logTraffic = !isAnalyticsEndpointUrl(options.url);
+      // Nothing is exempt from this trace any more: the app used to skip
+      // logging its own analytics beacons, and it no longer sends any.
+      const logTraffic = true;
       if (logTraffic) {
         console.log(
           `[api:fetch] ${options.method} ${sanitizedUrl}, headers: ${serializeForLog(options.headers)}, body: ${options.body}`,

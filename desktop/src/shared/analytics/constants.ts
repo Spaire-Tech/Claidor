@@ -1,13 +1,11 @@
-// Usage beacons go to Claidor and nowhere else. Upstream sent them to
-// NetEase's rlog collector; an app of ours must not report its people's
-// behaviour to a third party. Claidor's endpoint acknowledges the beacon
-// and discards it — we keep no desktop usage analytics — so this is the
-// address that stops the reporting rather than a new place it is stored.
-// It is a constant and not derived from `getServerApiBaseUrl()` because
-// the renderer builds these URLs too and has no access to that.
-export const LogReporterEndpoint = {
-  Claidor: 'https://api.claidor.com/desktop/api/analytics/events',
-} as const;
+// There is deliberately no endpoint here. Maties collects no usage
+// analytics, so there is nowhere for an event to be sent — not NetEase's
+// collector, which is where upstream sent them, and not Claidor either.
+// The action names below are kept: they are the app's own list of moments
+// worth noticing, and they cost nothing while nothing is reported.
+//
+// If usage analytics is ever wanted, it gets designed and consented to
+// then. Adding an address back here is not that design.
 
 export const LogReporterProduct = {
   LobsterAI: 'wisdom',
