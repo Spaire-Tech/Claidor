@@ -90,10 +90,20 @@ class DesktopModel:
     #: provider's list uses for everything else. Leave it None and the
     #: provider's weights apply unchanged.
     output_weight: float | None = None
-    #: False where the provider refuses `reasoning_effort` and function
-    #: tools in the same request. Set it only from a refusal we have
-    #: actually seen, never from a guess about what a model supports.
-    tool_reasoning: bool = True
+    #: Whether the provider will take `reasoning_effort` and function
+    #: tools in the same request. Read only on the OpenAI wire, so the
+    #: Anthropic entries leave it None because the question never comes
+    #: up for them, not because they are thought to refuse.
+    #:
+    #: None means not established, and the proxy then assumes it will
+    #: not. That is the safe way round and it is not a guess: OpenAI
+    #: refuses the combination on `/v1/chat/completions` for every model
+    #: of ours tried so far, and the two outcomes are not comparable —
+    #: assuming wrongly that a model refuses costs it its reasoning,
+    #: assuming wrongly that it accepts costs every answer.
+    #:
+    #: Set True only for a model seen to accept both together.
+    tool_reasoning: bool | None = None
 
     @property
     def api_format(self) -> str:
@@ -166,6 +176,19 @@ MODELS: tuple[DesktopModel, ...] = (
         "The quickest and cheapest model, for simple steps.",
         0.2,
     ),
+    # None of the OpenAI entries below sets `tool_reasoning`, so all three
+    # are treated as refusing reasoning alongside function tools. OpenAI,
+    # 13 September, on Astra and then word for word again on Terra:
+    #
+    #   Function tools with reasoning_effort are not supported for
+    #   <model> in /v1/chat/completions. To use function tools, use
+    #   /v1/responses or set reasoning_effort to 'none'.
+    #
+    # Two of two, in the same sentence with the name swapped, which reads
+    # as the endpoint's rule rather than a quirk of one model. Luna is
+    # assumed to share it: untested, same family, and being wrong about
+    # it costs reasoning rather than every answer.
+    #
     # $2.00 per million input tokens, output 6×.
     DesktopModel(
         "gpt-5.6-terra",
@@ -184,13 +207,6 @@ MODELS: tuple[DesktopModel, ...] = (
         provider=DesktopProvider.openai,
         context_window=1_050_000,
         output_weight=5.0,
-        # OpenAI, 13 September, verbatim: « Function tools with
-        # reasoning_effort are not supported for gpt-6-astra in
-        # /v1/chat/completions. To use function tools, use /v1/responses
-        # or set reasoning_effort to 'none'. » The agent always carries
-        # tools, so this model could not answer at all until the proxy
-        # stopped asking it to reason.
-        tool_reasoning=False,
     ),
     # $0.20 per million input tokens, output 6×.
     DesktopModel(

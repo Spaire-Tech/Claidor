@@ -576,8 +576,11 @@ def _openai_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) -> by
             changes["stream_options"] = options
 
     tools = payload.get("tools")
+    # `is not True` and not `not …`: the flag is three-valued, and an
+    # unestablished model is treated as refusing. See the note on
+    # DesktopModel.tool_reasoning for why that is the safe way round.
     if (
-        not model.tool_reasoning
+        model.tool_reasoning is not True
         and isinstance(tools, list)
         and tools
         and payload.get("reasoning_effort") != "none"

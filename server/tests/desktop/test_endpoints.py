@@ -748,42 +748,72 @@ class TestTwoProviders:
             )
         assert json.loads(route.calls[0].request.content)["reasoning_effort"] == "none"
 
-    async def test_reasoning_is_left_alone_where_it_is_not_the_problem(
+    @pytest.mark.parametrize(
+        "model_id", ["gpt-6-astra", "gpt-5.6-terra", "gpt-5.6-luna"]
+    )
+    async def test_every_gpt_model_is_sent_none_when_it_holds_tools(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+        model_id: str,
+    ) -> None:
+        """Astra and Terra both refused, word for word with the name
+        swapped, so this is the endpoint's rule and not one model's.
+        Scoping it to Astra alone left Terra broken for an hour."""
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions"
+            ).mock(return_value=httpx.Response(200, json=OPENAI_ANSWER))
+            await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={
+                    "model": model_id,
+                    "messages": [],
+                    "tools": [{"type": "function", "function": {"name": "browse"}}],
+                    "reasoning_effort": "high",
+                },
+            )
+        assert json.loads(route.calls[0].request.content)["reasoning_effort"] == "none"
+
+    async def test_reasoning_is_left_alone_when_there_are_no_tools(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        """Scoped to the model that refused and to requests that carry
-        tools. Anything wider would quietly turn reasoning off where it
-        works, which is a capability lost for no reason."""
+        """The refusal is about the combination. Without tools there is
+        nothing to conflict with, and turning reasoning off there would
+        lose the model's strength for no reason at all."""
         mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
-        tools = [{"type": "function", "function": {"name": "browse"}}]
         with respx.mock(assert_all_called=True) as mock:
             route = mock.post(
                 f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions"
             ).mock(return_value=httpx.Response(200, json=OPENAI_ANSWER))
-            # Another model, tools and all.
-            await client.post(
-                "/desktop/api/proxy/v1/chat/completions",
-                headers=headers,
-                json={
-                    "model": "gpt-5.6-terra",
-                    "messages": [],
-                    "tools": tools,
-                    "reasoning_effort": "high",
-                },
-            )
-            # The refusing model, with no tools to conflict with.
             await client.post(
                 "/desktop/api/proxy/v1/chat/completions",
                 headers=headers,
                 json={
                     "model": "gpt-6-astra",
                     "messages": [],
+                    "reasoning_effort": "high",
+                },
+            )
+            # An empty list is not holding tools either.
+            await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "gpt-6-astra",
+                    "messages": [],
+                    "tools": [],
                     "reasoning_effort": "high",
                 },
             )
