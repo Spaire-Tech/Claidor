@@ -650,3 +650,81 @@ decision, not an accident, and the founder should know it was made.
 **Still not verified:** none of this has run inside Electron. The harness
 is a browser with the real components in it, which is closer than tests
 and is not the app. `FaiserApp` is still not mounted in `App.tsx`.
+
+## Mounted, and run
+
+`FaiserApp` is mounted in `App.tsx` and the app has been started under
+Electron. The sign-in screen and the signed-in shell have both been
+photographed from the running renderer, not from a harness.
+
+### Where the mount had to go, and why
+
+Not at the top of `App`. Every init pass runs in that component's
+effects — the privacy and enterprise gates, `configService`, theme, i18n,
+`authService.init`, scheduled tasks — and an early return skips all of
+them. The first thing you would notice is that sign-in never restores.
+So the switch sits after `isInitialized` and after the error page, where
+it replaces only the old shell's own render.
+
+`VITE_FAISER_SHELL=0` brings the old shell back. That matters more than
+it sounds: the old shell is still the only route to Settings, providers
+and onboarding, none of which the new one has.
+
+### Two gaps the mount exposed
+
+**Nothing was loading the lists.** The old shell filled `agent.agents`
+from the screens that showed them and `cowork.sessions` from its sidebar
+tree. The new shell has neither, so it now asks for both itself.
+
+`loadSessions()` is called with no agent id deliberately. Passing one
+dispatches `setAgentSessions`, which *replaces* the list with that
+agent's sessions — so scoping the call per agent would blank the preview
+and timestamp on every other row the moment you clicked one.
+
+**Selecting a row did almost nothing.** `onSelect` loaded that agent's
+sessions and stopped: it never made the agent current and never opened a
+conversation, so the header, thread and composer stayed on the previous
+agent. It now sets `currentAgentId`, opens the newest session for that
+agent by id, clears `currentSession` when there is no history, and drops
+the approval notes — which otherwise followed you into the next
+conversation.
+
+The app also opens on a conversation rather than on nothing, once, under
+a guard, so a session-list refresh cannot yank anyone back to `main`.
+
+### What the running app showed
+
+**The composer had no `+`.** `Composer` hides the button when `onPlus`
+is absent, and `FaiserApp` never passed it — so the omission did not
+leave a dead control, it left no control at all. Stubbed now, like the
+others.
+
+**The first thread is a white void.** One agent, no history, and nothing
+on screen but the grid. The founder's note says "never an empty state"
+and also "have not designed that yet, but i will. so for now nothing",
+so nothing is what is there. It is the most visible unfinished thing in
+the app and it is the founder's to design.
+
+**The one agent is called "LobsterAI".** That is upstream's default
+`main` agent, created in local SQLite before any of our code runs, and
+it is what the sidebar row and the header say. Not renamed here: what it
+should be called is a product decision.
+
+### Verified
+
+- `npm run compile:electron`, then Vite on 5175 and Electron under Xvfb.
+- Renderer reached `shell ready`; the OpenClaw gateway came up on
+  loopback:18789 and answered `sessions.list` and `cron.list`.
+- The orb draws with its real WebGL shader in Electron.
+- `tsc --noEmit` clean, `eslint --max-warnings 0` clean,
+  `vitest run src/renderer/design` 73 passed.
+
+**Not verified:** signing in. This container cannot complete the OAuth
+round trip — TLS to the account host fails with
+`ERR_CERT_AUTHORITY_INVALID`, which also broke the pricing catalogue and
+the update check. The signed-in screenshot was taken by forcing the
+`signedIn` gate to `true` for one shot and reverting it; everything below
+that boolean is the shipped code against the real store and real IPC.
+Nothing has been sent to a model, because no provider is configured on
+this profile — the log says so: "No enabled provider found for model:
+deepseek-reasoner".

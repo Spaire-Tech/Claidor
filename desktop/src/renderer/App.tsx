@@ -61,6 +61,7 @@ import AppUpdateModal from './components/update/AppUpdateModal';
 import { shouldShowAppUpdateNotice } from './components/update/appUpdateNoticeState';
 import WindowsAppTitleBar from './components/window/WindowsAppTitleBar';
 import { defaultConfig, getProviderDisplayName, ShortcutAction } from './config';
+import { FaiserApp } from './design/shell/FaiserApp';
 import { selectIsEnterpriseAccount } from './features/enterpriseAccount/selectors';
 import { SkinProvider } from './providers/SkinProvider';
 import type { ApiConfig } from './services/api';
@@ -213,6 +214,12 @@ const logAppUpdateRendererLifecycle = (
     // Best-effort diagnostic only.
   }
 };
+
+// Which shell to render. The new one by default; `VITE_FAISER_SHELL=0`
+// keeps the old one, which is still the only route to Settings, providers
+// and onboarding. Read once at module scope because it never changes while
+// the app is running.
+const useFaiserShell = import.meta.env.VITE_FAISER_SHELL !== '0';
 
 const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
@@ -2058,6 +2065,23 @@ const App: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // The new shell. It replaces everything below — sidebar, views, tabs —
+  // with a conversation list and a conversation.
+  //
+  // It mounts *here*, after the init passes, and not at the top of this
+  // component, because every one of them runs in this component's effects:
+  // the privacy and enterprise gates, configService, theme, i18n,
+  // authService.init and the scheduled tasks. An early return would skip
+  // the lot, and the first thing you would notice is that sign-in never
+  // restores.
+  //
+  // `VITE_FAISER_SHELL=0` brings the old shell back. It is still the only
+  // way to reach Settings, providers and onboarding, none of which the new
+  // shell has yet.
+  if (useFaiserShell) {
+    return <FaiserApp />;
   }
 
   return (

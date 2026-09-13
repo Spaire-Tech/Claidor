@@ -1,8 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
+import { agentService } from '../../services/agent';
 import { coworkService } from '../../services/cowork';
-import type { RootState } from '../../store';
+import type { AppDispatch, RootState } from '../../store';
+import { setCurrentAgentId } from '../../store/slices/agentSlice';
+import { setCurrentSession } from '../../store/slices/coworkSlice';
 import type { EngineMessage } from '../thread/fromEngine';
 import { decisionNote } from '../thread/fromEngine';
 import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
@@ -45,6 +48,7 @@ export interface MessagesShellState {
 }
 
 export function useMessagesShell(): MessagesShellState {
+  const dispatch = useDispatch<AppDispatch>();
   const agents = useSelector((state: RootState) => state.agent.agents);
   const activeId = useSelector((state: RootState) => state.agent.currentAgentId);
   const currentSession = useSelector((state: RootState) => state.cowork.currentSession);
@@ -52,6 +56,20 @@ export function useMessagesShell(): MessagesShellState {
   const pendingPermissions = useSelector((state: RootState) => state.cowork.pendingPermissions);
 
   const [mode, setMode] = useState<ThreadMode>(ThreadMode.Text);
+
+  // Nothing else loads these. The old shell filled the agent list from the
+  // screens that showed it and the session list from its sidebar tree;
+  // this shell has neither, so it asks for both itself.
+  //
+  // `loadSessions()` is called with no agent id on purpose. Passing one
+  // replaces the whole list with that agent's sessions (`setAgentSessions`),
+  // which would blank the preview and timestamp on every other row the
+  // moment you clicked one. The sidebar wants the global list; a single
+  // conversation is opened from it by id.
+  useEffect(() => {
+    void agentService.loadAgents();
+    void coworkService.loadSessions();
+  }, []);
   // An answered approval leaves a line behind. It is local because it is
   // a presentation fact: the engine's record is the decision itself.
   const [notes, setNotes] = useState<EngineMessage[]>([]);
@@ -109,9 +127,38 @@ export function useMessagesShell(): MessagesShellState {
 
   const typing = currentSession?.status === 'running';
 
+  // Open on a conversation rather than on nothing, the way Messages does.
+  // Once only, and never over an open one: the guard is what stops this
+  // from yanking somebody back to `main` every time the session list
+  // refreshes.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || currentSession) return;
+    const newest = sessionsByAgent[activeId];
+    if (!newest) return;
+    opened.current = true;
+    void coworkService.loadSession(newest.id);
+  }, [activeId, currentSession, sessionsByAgent]);
+
+  // Selecting a row is the app's only navigation, so it has to do the whole
+  // job: make that agent current, and open its newest conversation. Loading
+  // the sessions and stopping there — which is what this did first — left
+  // the header, the thread and the composer on the previous agent, so a
+  // click looked like nothing happening.
   const onSelect = useCallback((agentId: string) => {
-    void coworkService.loadSessions(agentId);
-  }, []);
+    dispatch(setCurrentAgentId(agentId));
+    // The notes belong to the conversation that produced them. Left alone
+    // they would follow you into the next one — "Mira can run commands
+    // from now on" appearing in Juno's thread.
+    setNotes([]);
+    const newest = sessionsByAgent[agentId];
+    if (!newest) {
+      // No history with this agent. An empty thread, not the last one's.
+      dispatch(setCurrentSession(null));
+      return;
+    }
+    void coworkService.loadSession(newest.id);
+  }, [dispatch, sessionsByAgent]);
 
   const onSend = useCallback((message: string) => {
     const sessionId = currentSession?.id;

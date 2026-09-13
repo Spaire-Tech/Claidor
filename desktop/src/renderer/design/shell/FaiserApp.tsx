@@ -76,11 +76,18 @@ export function FaiserApp(): JSX.Element {
       onSend={shell.onSend}
       onMode={shell.onMode}
       // Not yet built. Each is a modal over this, and each is its own
-      // stage: compose and Apps in Stage 7, the panel in Stage 5.
+      // stage: compose and Apps in Stage 7, the panel in Stage 5, the
+      // `+` menu — attach a file, teach a task — in Stage 10.
+      //
+      // `onPlus` has to be passed even as a stub: `Composer` hides the
+      // button entirely when it is absent, so leaving it out did not
+      // leave a dead control, it left no control at all, and the composer
+      // ran without the `+` the canvas puts there.
       onCompose={() => {}}
       onApps={() => {}}
       onAccount={() => {}}
       onOpenPanel={() => {}}
+      onPlus={() => {}}
     />
   );
 }
