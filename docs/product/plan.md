@@ -420,13 +420,56 @@ lands, so nothing is deleted speculatively:
 
 ---
 
+## Stage 10 — Routines that fire with the Mac shut
+
+The stage the first pass was missing, and the one the founder settled by
+answering yes.
+
+**What already exists, and is deployed:** `claidor-maty-runner` in
+`render.yaml`, a worker whose loop is in `runner/README.md` — ask
+Claidor for a job; get one back with a token scoped to that person and
+to that job's lease; make an empty directory; fetch that person's memory
+and write it in as the engine's workspace; write the config, start the
+engine, send the one instruction; report the answer; write back whatever
+the run added to memory; delete the directory whether it worked or not.
+On the server, `polar/maty/` serves `/claim` and the heartbeat, complete
+and fail routes.
+
+**What is missing is the join.** The app's scheduled tasks run through
+OpenClaw's cron, locally (`src/scheduledTask/`, `CronJobService`). A
+routine set in the app does not become a job in the queue. That is the
+work: when a routine is created, register it with Claidor; when it comes
+due, Claidor hands it to the runner; the answer comes back into the
+thread it belongs to.
+
+**What must stay true while building it** — `direction.md` §10:
+
+- nothing of the person's is copied to the runner. Memory in, memory
+  out, directory deleted. No files, ever.
+- the runner is never named in the app. No update surface, no reset, no
+  "which computer".
+- a routine's answer arrives as an ordinary message in its agent's
+  thread, the same as any other.
+
+The moment a routine needs a file of theirs, it waits for the Mac. That
+is the boundary, and it is the differentiator: **a process may run
+elsewhere; a file is only ever opened where it lives.**
+
+**Done when:** a routine set on Monday reports into its thread on
+Tuesday morning with the laptop shut all night.
+
+**Size:** medium. Both ends exist; it is the join and the round trip
+back into the thread.
+
+---
+
 ## The audit: what the first pass missed
 
 Re-run against the code, not against the plan. Twelve things, each with
 a file or a question. Three of them need the founder before they can be
 planned at all, and they are marked.
 
-### 1. Routines and "no cloud computer" contradict each other — **decide**
+### 1. Routines and "no cloud computer" — **settled: routines fire**
 
 `render.yaml` deploys a worker called `claidor-maty-runner`. Its own
 README: *"This is the service that does a person's work when they are
@@ -451,10 +494,10 @@ The distinction that may resolve it, but only the founder can say:
   jobs with your memory* while your Mac is asleep. It holds no files and
   the person never sees it.
 
-**The question: does a routine fire when the Mac is closed, or only when
-the app is open?** If only when open, the runner is dead weight and
-should be torn down. If it should fire regardless, the runner lives and
-this plan is missing a stage for it.
+**Settled: routines fire when the Mac is closed.** The runner lives, and
+Stage 10 below is the stage this plan was missing. `direction.md` §10
+draws the line: no cloud computer the person works on, but a headless
+runner that holds no files and is never shown in the app.
 
 ### 2. There is no sign-in screen, and no first run — **decide**
 
@@ -586,6 +629,9 @@ Stage 7  connectors           ─┐  content-heavy, parallelisable,
 Stage 8  voice                 │  and none of them blocks the others
 Stage 9  routines, teach, group─┘
 
+Stage 10 routines fire with the Mac shut ── needs Stage 9's routines and
+         the account of Stage 0; both ends already deployed
+
 alongside, started early for its lead time: the Apple certificate
 ```
 
@@ -595,11 +641,10 @@ after is how a design stops matching its spec. 3 next because everything
 visible sits on it. 4–6 are short once 3 exists. 7–9 are mostly content
 and can be worked in any order.
 
-Two answers are still needed, and they are in the audit above: **does a
-routine fire when the Mac is closed** (§1 — the deployed runner costs
-money either way), and **what happens before the first thread** (§2 —
-the founder is designing it, to land by the end of Stage 1). The third,
-the name, is settled: Faiser (§3).
+One answer is still needed: **what happens before the first thread**
+(§2) — the founder is designing it, to land by the end of Stage 1. The
+other two are settled: routines fire with the Mac shut, so the runner
+lives (§1, Stage 10), and the name is Faiser (§3, applied).
 
 ## What I expect to get wrong
 

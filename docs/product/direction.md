@@ -245,6 +245,36 @@ up in spreadsheet formulas, links between workbooks, folder structure,
 and privacy. Anything that reintroduces a machine the agent owns takes
 that sentence away from us.
 
+### The line, drawn exactly
+
+The audit found a deployed worker, `claidor-maty-runner`, whose own
+README says it *"does a person's work when they are not at their
+computer"*. Put to the founder as a question — does a routine fire when
+the Mac is closed? — the answer was **yes, it fires**.
+
+So the runner lives, and the line is not "no cloud" but this:
+
+| Struck | Kept |
+|---|---|
+| a cloud computer the person **works on** | a headless runner that **fires routines** |
+| their files living on it | no files on it; memory in, memory out, directory deleted |
+| apps and packages installed on it | nothing installed, nothing to install |
+| an update and a reset surface for it | never mentioned in the app at all |
+| an egress tunnel to reach it | — |
+
+The differentiator survives because it was never about where a process
+runs. It is about **where the file is when it is worked on**. A routine
+that reads your calendar at 08:00 while the laptop is shut touches no
+file of yours on any disk. The moment the agent copies your workbook to
+a machine it owns, we lose the sentence — and that is the thing to
+guard, not the runner.
+
+What this means in the app: Routines is one of the five agent tabs, and
+a routine set there keeps running when the Mac sleeps. The person is
+never asked which computer, never shown the runner, and never told their
+work happens elsewhere, because as far as their files are concerned it
+does not.
+
 ---
 
 ## What is decided, in one list
@@ -259,7 +289,9 @@ that sentence away from us.
 8. Fifteen orb palettes, assigned at random per agent.
 9. Role agents are kits; the kit store endpoint already exists and is empty.
 10. The computer icon opens LobsterAI's artifact and browser panel, whole.
-11. One computer: this one. No second machine, no cloud machine.
+11. One computer for files: this one. No second machine, and no cloud
+    machine the person works on — but routines do fire with the Mac
+    shut, on a headless runner that holds no files.
 12. Connectors carry context from `cursor/plugins`; sign-in method open,
     with a Pipedream integration already written and mounted.
 
