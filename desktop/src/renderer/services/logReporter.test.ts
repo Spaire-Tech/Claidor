@@ -66,7 +66,7 @@ test('builds a Youdao Analyzer URL with common action parameters', () => {
     },
   ));
 
-  expect(result.origin + result.pathname).toBe(LogReporterEndpoint.YoudaoAnalyzer);
+  expect(result.origin + result.pathname).toBe(LogReporterEndpoint.Claidor);
   expect(result.searchParams.get('_npid')).toBe(LogReporterProduct.LobsterAI);
   expect(result.searchParams.get('_ncat')).toBe(LogReporterCategory.Actions);
   expect(result.searchParams.get('app_version')).toBe('2026.6.18');

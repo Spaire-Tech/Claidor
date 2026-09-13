@@ -269,19 +269,15 @@ describe('login diagnostics', () => {
     const fromRenderer = vi.fn();
     const loginResult = {
       success: true,
-      redirectUrl: 'https://lobsterai.youdao.com/portal#/login?source=electron',
+      redirectUrl: 'https://api.claidor.com/desktop/login?source=electron',
     };
     const login = vi.fn().mockResolvedValue(loginResult);
+    const fetch = vi.fn();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'debug').mockImplementation(() => {});
     vi.stubGlobal('window', {
       electron: {
-        api: {
-          fetch: vi.fn().mockResolvedValue({
-            ok: true,
-            data: { data: { value: 'https://lobsterai.youdao.com/portal#/login' } },
-          }),
-        },
+        api: { fetch },
         auth: { login },
         log: { fromRenderer },
       },
@@ -289,7 +285,12 @@ describe('login diagnostics', () => {
 
     await expect(authService.login()).resolves.toEqual(loginResult);
 
-    expect(login).toHaveBeenCalledWith('https://lobsterai.youdao.com/portal#/login');
+    // No address is passed and none is fetched: the main process builds
+    // the sign-in URL from the one base URL that knows which Claidor API
+    // answers. Upstream asked a remote config service for it first, which
+    // put the decision in the renderer and outside that base URL.
+    expect(login).toHaveBeenCalledWith();
+    expect(fetch).not.toHaveBeenCalled();
     expect(fromRenderer).toHaveBeenCalledWith(
       'info',
       'AuthService',

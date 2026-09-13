@@ -69,7 +69,7 @@ export const buildMainLogUrl = (
   params: MainLogEventParams,
   context: MainLogUrlContext,
 ): string => {
-  const url = new URL(LogReporterEndpoint.YoudaoAnalyzer);
+  const url = new URL(LogReporterEndpoint.Claidor);
   const logParams: Record<string, LogParamValue> = {
     ...params,
     ...logCommons,

@@ -1,5 +1,12 @@
+// Usage beacons go to Claidor and nowhere else. Upstream sent them to
+// NetEase's rlog collector; an app of ours must not report its people's
+// behaviour to a third party. Claidor's endpoint acknowledges the beacon
+// and discards it — we keep no desktop usage analytics — so this is the
+// address that stops the reporting rather than a new place it is stored.
+// It is a constant and not derived from `getServerApiBaseUrl()` because
+// the renderer builds these URLs too and has no access to that.
 export const LogReporterEndpoint = {
-  YoudaoAnalyzer: 'https://rlogs.youdao.com/rlog.php',
+  Claidor: 'https://api.claidor.com/desktop/api/analytics/events',
 } as const;
 
 export const LogReporterProduct = {

@@ -33,10 +33,9 @@ export const getKitStoreUrl = () => isTestModeEnabled()
   ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/kit-store'
   : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/kit-store';
 
-// 登录地址
-export const getLoginOvermindUrl = () => isTestModeEnabled()
-  ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/login-url'
-  : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/login-url';
+// Sign-in has no address here on purpose. The main process builds it from
+// `getServerApiBaseUrl()` in src/main/libs/endpoints.ts, so there is one
+// place that decides which Claidor API the app talks to.
 
 // Portal 页面
 const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';
@@ -56,7 +55,6 @@ export interface PortalPricingUrlOptions {
   traceId?: string;
 }
 
-export const getPortalLoginUrl = () => `${getPortalBase()}/login`;
 export const getPortalPricingUrl = (
   keyfrom?: PortalPricingKeyfrom,
   options: PortalPricingUrlOptions = {},

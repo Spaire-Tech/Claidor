@@ -25,67 +25,70 @@ export const isTestModeEnabled = (): boolean => {
 };
 
 /**
+ * Claidor's API and web app. The app talks to these two hosts and to no
+ * other first-party server: the API serves the desktop account protocol
+ * under `/desktop` (`server/polar/desktop`), the web app is where people
+ * sign in and where the browser lands afterwards.
+ */
+const CLAIDOR_API_BASE_URL = 'https://api.claidor.com';
+const CLAIDOR_APP_BASE_URL = 'https://app.claidor.com';
+const CLAIDOR_DEV_API_BASE_URL = 'http://127.0.0.1:8000';
+const CLAIDOR_DEV_APP_BASE_URL = 'http://127.0.0.1:3000';
+
+const getClaidorApiBaseUrl = (): string => (
+  isTestModeEnabled() ? CLAIDOR_DEV_API_BASE_URL : CLAIDOR_API_BASE_URL
+);
+
+const getClaidorAppBaseUrl = (): string => (
+  isTestModeEnabled() ? CLAIDOR_DEV_APP_BASE_URL : CLAIDOR_APP_BASE_URL
+);
+
+/**
  * Server API base URL — switches based on testMode.
  * Used for auth exchange/refresh, models, proxy, etc.
  */
 export const getServerApiBaseUrl = (): string => {
-  const defaultBaseUrl = isTestModeEnabled()
-    ? 'https://lobsterai-server.inner.youdao.com'
-    : 'https://lobsterai-server.youdao.com';
-  const serverBaseUrl = resolveDevelopmentServerBaseUrl({
-    defaultBaseUrl,
-    developmentOverride: process.env.LOBSTER_SERVER_BASE_URL,
+  // The override is a bare origin; the account protocol always lives
+  // under /desktop on whichever Claidor API answers.
+  const defaultOrigin = getClaidorApiBaseUrl();
+  const origin = resolveDevelopmentServerBaseUrl({
+    defaultBaseUrl: defaultOrigin,
+    developmentOverride: process.env.CLAIDOR_SERVER_BASE_URL,
     isDev: process.env.NODE_ENV === 'development',
     isPackaged: app.isPackaged,
   });
-  if (serverBaseUrl !== defaultBaseUrl
-      && loggedDevelopmentServerBaseUrl !== serverBaseUrl) {
+  if (origin !== defaultOrigin && loggedDevelopmentServerBaseUrl !== origin) {
     console.warn(
-      `[Endpoints] routing all Lobster server traffic to development origin ${serverBaseUrl}`,
+      `[Endpoints] routing all Claidor server traffic to development origin ${origin}`,
     );
-    loggedDevelopmentServerBaseUrl = serverBaseUrl;
+    loggedDevelopmentServerBaseUrl = origin;
   }
-  return serverBaseUrl;
+  return `${origin}/desktop`;
 };
 
 export const getHtmlSharePublicBaseUrl = (): string => {
   return `${getServerApiBaseUrl()}${HtmlSharePublicRoute.Root}`;
 };
 
-export const getUpdateCheckUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update'
-);
+// Updates, the skill store and the kit store are answered by Claidor's
+// own API under the same /desktop namespace (`server/polar/desktop`).
+// They are repointed rather than left alone because leaving them means
+// this app calls NetEase's servers on every launch. Until Claidor
+// publishes releases and catalogues they answer « nothing new » and
+// « empty », never an error.
+export const getUpdateCheckUrl = (): string => `${getServerApiBaseUrl()}/api/updates/check`;
 
 export const getManualUpdateCheckUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/update-manual'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/update-manual'
+  `${getServerApiBaseUrl()}/api/updates/check-manual`
 );
 
-export const getFallbackDownloadUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://lobsterai.inner.youdao.com/#/download-list'
-    : 'https://lobsterai.youdao.com/#/download-list'
-);
+export const getFallbackDownloadUrl = (): string => `${getClaidorAppBaseUrl()}/desktop`;
 
-export const getSkillStoreUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/skill-store'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/skill-store'
-);
+export const getSkillStoreUrl = (): string => `${getServerApiBaseUrl()}/api/skill-store`;
 
-// Portal 页面
-const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';
-const PORTAL_BASE_PROD = 'https://lobsterai.youdao.com/portal#';
+// The web app's home for the signed-in person.
+export const getPortalTasksUrl = (): string => `${getClaidorAppBaseUrl()}/`;
 
-const getPortalBase = (): string => isTestModeEnabled() ? PORTAL_BASE_TEST : PORTAL_BASE_PROD;
+export const getKitStoreUrl = (): string => `${getServerApiBaseUrl()}/api/kit-store`;
 
-export const getPortalTasksUrl = (): string => `${getPortalBase()}/profile/detail?tab=tasks`;
-
-export const getKitStoreUrl = (): string => (
-  isTestModeEnabled()
-    ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/kit-store'
-    : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/kit-store'
-);
+export const getMcpMarketplaceUrl = (): string => `${getServerApiBaseUrl()}/api/mcp-marketplace`;

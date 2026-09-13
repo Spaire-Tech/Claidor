@@ -193,7 +193,7 @@ export const buildLogUrl = (
   params: LogEventParams,
   options: BuildLogUrlOptions = {},
 ): string => {
-  const url = new URL(LogReporterEndpoint.YoudaoAnalyzer);
+  const url = new URL(LogReporterEndpoint.Claidor);
   const config = configService.getConfig();
   const identity = getAnalyticsIdentitySnapshot();
   const userId = options.userId ?? identity.userId;

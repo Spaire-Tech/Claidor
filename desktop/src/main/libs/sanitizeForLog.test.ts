@@ -161,9 +161,9 @@ describe('sanitizeUrlForLog', () => {
 // ---------------------------------------------------------------------------
 describe('isAnalyticsEndpointUrl', () => {
   test('matches the analyzer endpoint regardless of query or fragment', () => {
-    expect(isAnalyticsEndpointUrl(LogReporterEndpoint.YoudaoAnalyzer)).toBe(true);
-    expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.YoudaoAnalyzer}?_npid=wisdom&action=lobsterai_app_started&uts=1`)).toBe(true);
-    expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.YoudaoAnalyzer}#x`)).toBe(true);
+    expect(isAnalyticsEndpointUrl(LogReporterEndpoint.Claidor)).toBe(true);
+    expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.Claidor}?_npid=wisdom&action=lobsterai_app_started&uts=1`)).toBe(true);
+    expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.Claidor}#x`)).toBe(true);
   });
 
   test('does not match other hosts, paths, or schemes', () => {

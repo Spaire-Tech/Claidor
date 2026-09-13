@@ -106,6 +106,20 @@ conversation. Going from home into a chat unmounts one and mounts the
 other. Any state that must survive that moment cannot live in a ref
 inside the composer.
 
+**Sign-in did not go through the server base URL.** Upstream's renderer
+fetched the login address from a remote config service and passed it
+into the main process, so `getServerApiBaseUrl()` was never consulted
+for the one request that matters. Changing the base URL alone left
+sign-in pointing at NetEase, and every test still passed. Fixed on 13
+September by passing no address at all and letting main build it. The
+shape of the trap is what to remember: a value with two sources, one of
+them remote, where only the local one looks authoritative.
+
+**There are two endpoints files.** `src/main/libs/endpoints.ts` is the
+real one; `src/renderer/services/endpoints.ts` has its own copies of the
+update, skill-store and kit-store addresses and **nothing calls them**.
+Change the main one. Check the renderer one has not come back to life.
+
 **Server tests need Python 3.14 final**, not a release candidate. Pure
 modules still run with `pytest --noconftest`.
 
@@ -120,6 +134,14 @@ cannot open the database.
 is the full inventory as of 11 September: 97 add-ons reach our build and
 our list keeps 25. Read it before building any capability that sounds
 like something an agent framework would already have.
+
+**Claidor's server already speaks this app's protocol.** `server/polar/
+desktop` does not invent an API — it answers the shapes upstream's app
+already asks for (`{code, data}`, `data.value`, `authCode`, a loopback
+`/auth/callback` allowlist, the `41602` « not an enterprise member »
+code). That is why connecting the app is a base-URL change and not a
+rewrite. Before writing a client for anything Claidor-side, check
+whether an endpoint of that shape is already served there.
 
 Specifically present and easy to miss:
 
