@@ -50,6 +50,36 @@ export const parseModelRole = (value: unknown): ModelRole | undefined => (
     : undefined
 );
 
+// ─── Transport API ──────────────────────────────────────────────────────
+// The exact wire the engine writes, spelled as OpenClaw's own transport
+// names spell it. The server sends this per model on
+// /api/models/available; `apiFormat` beside it is only the provider's
+// dialect family and cannot tell OpenAI's two wires apart.
+export type OpenClawTransportApi =
+  | 'anthropic-messages'
+  | 'openai-completions'
+  | 'openai-responses'
+  | 'openai-chatgpt-responses'
+  | 'google-generative-ai';
+
+/** The subset the server may name for one of its own models. The other
+ *  two transports exist for providers a person configures themselves. */
+const SERVER_TRANSPORT_APIS: ReadonlySet<string> = new Set([
+  'anthropic-messages',
+  'openai-completions',
+  'openai-responses',
+]);
+
+/** A transport the engine understands, or undefined for anything else —
+ *  including the field being absent, which is what an older server sends. */
+export const parseOpenClawTransportApi = (
+  value: unknown,
+): OpenClawTransportApi | undefined => (
+  typeof value === 'string' && SERVER_TRANSPORT_APIS.has(value)
+    ? (value as OpenClawTransportApi)
+    : undefined
+);
+
 // ─── Provider Name ──────────────────────────────────────────────────────
 // providerName identifies the LobsterAI internal provider (config key).
 export const ProviderName = {

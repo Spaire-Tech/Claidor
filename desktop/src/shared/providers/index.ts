@@ -1,5 +1,5 @@
 export { resolveCodingPlanBaseUrl } from './codingPlan';
-export type { ProviderDef } from './constants';
+export type { OpenClawTransportApi, ProviderDef } from './constants';
 export {
   ApiFormat,
   AuthType,
@@ -7,6 +7,7 @@ export {
   OpenClawApi,
   OpenClawProviderId,
   parseModelRole,
+  parseOpenClawTransportApi,
   ProviderAuthType,
   ProviderName,
   ProviderRegistry,

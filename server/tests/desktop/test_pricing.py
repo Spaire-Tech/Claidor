@@ -10,7 +10,9 @@ from polar.desktop.pricing import (
     PROVIDER_TOKEN_WEIGHTS,
     DesktopProvider,
     ModelRole,
+    OpenAIResponsesUsageTally,
     OpenAIUsageTally,
+    SpokenApi,
     Usage,
     UsageTally,
     credits_for,
@@ -36,6 +38,24 @@ OPENAI_STREAM = b"".join(
         b'"completion_tokens":57,"total_tokens":1177,'
         b'"prompt_tokens_details":{"cached_tokens":1000}}}\n\n',
         b"data: [DONE]\n\n",
+    ]
+)
+
+# The Responses wire: usage rides on the terminal event, inside the whole
+# response object rather than beside it, and arrives without having been
+# asked for. Field names read off the engine's own handler
+# (`openai-transport-stream.ts`, `response.completed`), not remembered.
+RESPONSES_STREAM = b"".join(
+    [
+        b'event: response.created\ndata: {"type":"response.created",'
+        b'"response":{"id":"resp_1","status":"in_progress"}}\n\n',
+        b"event: response.output_text.delta\n"
+        b'data: {"type":"response.output_text.delta","delta":"Hi"}\n\n',
+        b'event: response.completed\ndata: {"type":"response.completed",'
+        b'"response":{"id":"resp_1","status":"completed","usage":'
+        b'{"input_tokens":1120,"output_tokens":57,"total_tokens":1177,'
+        b'"input_tokens_details":{"cached_tokens":1000},'
+        b'"output_tokens_details":{"reasoning_tokens":31}}}}\n\n',
     ]
 )
 
@@ -178,27 +198,57 @@ class TestUsageShapes:
         assert Usage.from_openai_payload(None) == Usage()
         assert Usage.from_payload("not a dict") == Usage()
 
-    def test_an_answer_is_read_in_its_own_provider_s_shape(self) -> None:
+    def test_the_responses_input_total_is_split_into_fresh_and_cached(self) -> None:
+        # Same accounting as Chat Completions under different names. The
+        # reasoning count is inside output_tokens already and must not be
+        # added again.
+        usage = Usage.from_openai_responses_payload(
+            {
+                "input_tokens": 1120,
+                "output_tokens": 57,
+                "input_tokens_details": {"cached_tokens": 1000},
+                "output_tokens_details": {"reasoning_tokens": 31},
+            }
+        )
+        assert usage == Usage(
+            input_tokens=120, output_tokens=57, cache_read_tokens=1000
+        )
+
+    def test_an_answer_is_read_in_the_shape_it_was_written_in(self) -> None:
         anthropic_answer = {"usage": {"input_tokens": 10, "output_tokens": 2}}
-        openai_answer = {"usage": {"prompt_tokens": 10, "completion_tokens": 2}}
-        assert usage_from_answer(DesktopProvider.anthropic, anthropic_answer) == Usage(
+        completions_answer = {"usage": {"prompt_tokens": 10, "completion_tokens": 2}}
+        responses_answer = {"usage": {"input_tokens": 10, "output_tokens": 2}}
+
+        assert usage_from_answer(
+            SpokenApi.anthropic_messages, anthropic_answer
+        ) == Usage(input_tokens=10, output_tokens=2)
+        assert usage_from_answer(
+            SpokenApi.openai_completions, completions_answer
+        ) == Usage(input_tokens=10, output_tokens=2)
+        assert usage_from_answer(SpokenApi.openai_responses, responses_answer) == Usage(
             input_tokens=10, output_tokens=2
         )
-        assert usage_from_answer(DesktopProvider.openai, openai_answer) == Usage(
-            input_tokens=10, output_tokens=2
-        )
-        # Each one reads nothing from the other's shape, which is the
+
+        # Each reads nothing from a shape it does not speak, which is the
         # point of not building a converter.
-        assert usage_from_answer(DesktopProvider.anthropic, openai_answer) == Usage()
+        assert usage_from_answer(SpokenApi.anthropic_messages, completions_answer) == (
+            Usage()
+        )
+        assert usage_from_answer(SpokenApi.openai_completions, responses_answer) == (
+            Usage()
+        )
 
 
 class TestTallies:
-    def test_the_right_tally_is_chosen_for_each_provider(self) -> None:
-        assert isinstance(tally_for(DesktopProvider.anthropic), UsageTally)
-        assert isinstance(tally_for(DesktopProvider.openai), OpenAIUsageTally)
+    def test_the_right_tally_is_chosen_for_each_language(self) -> None:
+        assert isinstance(tally_for(SpokenApi.anthropic_messages), UsageTally)
+        assert isinstance(tally_for(SpokenApi.openai_completions), OpenAIUsageTally)
+        assert isinstance(
+            tally_for(SpokenApi.openai_responses), OpenAIResponsesUsageTally
+        )
 
     def test_anthropic_events_are_read_across_chunk_boundaries(self) -> None:
-        tally = tally_for(DesktopProvider.anthropic)
+        tally = tally_for(SpokenApi.anthropic_messages)
         for index in range(0, len(ANTHROPIC_STREAM), 7):
             tally.feed(ANTHROPIC_STREAM[index : index + 7])
         assert tally.finish() == Usage(
@@ -209,15 +259,41 @@ class TestTallies:
         )
 
     def test_openai_events_are_read_across_chunk_boundaries(self) -> None:
-        tally = tally_for(DesktopProvider.openai)
+        tally = tally_for(SpokenApi.openai_completions)
         for index in range(0, len(OPENAI_STREAM), 7):
             tally.feed(OPENAI_STREAM[index : index + 7])
         assert tally.finish() == Usage(
             input_tokens=120, output_tokens=57, cache_read_tokens=1000
         )
 
+    def test_responses_events_are_read_across_chunk_boundaries(self) -> None:
+        tally = tally_for(SpokenApi.openai_responses)
+        for index in range(0, len(RESPONSES_STREAM), 7):
+            tally.feed(RESPONSES_STREAM[index : index + 7])
+        assert tally.finish() == Usage(
+            input_tokens=120, output_tokens=57, cache_read_tokens=1000
+        )
+
+    def test_a_run_that_stops_early_is_still_metered_for_what_it_burned(self) -> None:
+        # Tokens were spent whether or not the answer finished, so the two
+        # ways a run can stop early carry usage too and are read the same.
+        for kind in ("response.incomplete", "response.failed"):
+            tally = tally_for(SpokenApi.openai_responses)
+            tally.feed(
+                b'data: {"type":"'
+                + kind.encode()
+                + b'","response":{"usage":{"input_tokens":90,"output_tokens":4}}}\n\n'
+            )
+            assert tally.finish() == Usage(input_tokens=90, output_tokens=4), kind
+
+    def test_a_responses_stream_with_no_terminal_event_tallies_nothing(self) -> None:
+        tally = tally_for(SpokenApi.openai_responses)
+        tally.feed(b'data: {"type":"response.output_text.delta","delta":"x"}\n\n')
+        tally.feed(b'data: {"type":"response.created","response":{"id":"r"}}\n\n')
+        assert tally.finish() == Usage()
+
     def test_a_stream_that_reports_nothing_tallies_nothing(self) -> None:
-        tally = tally_for(DesktopProvider.openai)
+        tally = tally_for(SpokenApi.openai_completions)
         tally.feed(b'data: {"choices":[{"delta":{"content":"x"}}],"usage":null}\n\n')
         tally.feed(b"data: [DONE]\n\n")
         assert tally.finish() == Usage()

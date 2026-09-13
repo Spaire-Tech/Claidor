@@ -38,6 +38,7 @@ const mockRuntimeState = vi.hoisted(() => ({
     maxTokens?: number;
     explicitContextCache?: boolean;
     role?: 'primary' | 'cheap' | 'fallback';
+    transportApi?: string;
   }>,
   enabledProviders: [] as Array<{
     providerName: string;
@@ -421,6 +422,49 @@ describe('OpenClawConfigSync runtime config output', () => {
     ]);
     expect(roleSlots).not.toContain('astra');
     expect(roleSlots).not.toContain('opus');
+  });
+
+  test('writes the exact wire the server named for each model', async () => {
+    // OpenAI has two wires and apiFormat cannot tell them apart. Chat
+    // Completions refuses reasoning alongside function tools and an agent
+    // always carries tools, so every OpenAI model of ours must be reached
+    // on Responses — and the server says so per model rather than the app
+    // guessing from a base url.
+    mockRuntimeState.proxyPort = 56646;
+    mockRuntimeState.serverModels = [
+      { modelId: 'gpt-5.6-terra', apiFormat: 'openai', transportApi: 'openai-responses' },
+      { modelId: 'gpt-5.6-luna', apiFormat: 'openai', transportApi: 'openai-responses' },
+      { modelId: 'claude-sonnet-5', apiFormat: 'anthropic', transportApi: 'anthropic-messages' },
+    ];
+
+    const sync = await createSync();
+    expect(sync.sync('transport-api').ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const models = config.models.providers['lobsterai-server'].models;
+    const apiById = Object.fromEntries(
+      models.map((m: { id: string; api: string }) => [m.id, m.api]),
+    );
+
+    expect(apiById['gpt-5.6-terra']).toBe('openai-responses');
+    expect(apiById['gpt-5.6-luna']).toBe('openai-responses');
+    expect(apiById['claude-sonnet-5']).toBe('anthropic-messages');
+  });
+
+  test('falls back to the dialect family when the server names no wire', async () => {
+    // What a server that predates the field sends. Guessing Responses
+    // would break a provider that only speaks Chat Completions, so the
+    // old behaviour stands.
+    mockRuntimeState.proxyPort = 56646;
+    mockRuntimeState.serverModels = [{ modelId: 'gpt-5.6-terra', apiFormat: 'openai' }];
+
+    const sync = await createSync();
+    expect(sync.sync('transport-api-absent').ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const models = config.models.providers['lobsterai-server'].models;
+    expect(models.find((m: { id: string }) => m.id === 'gpt-5.6-terra').api)
+      .toBe('openai-completions');
   });
 
   test('writes no role slots when the server sends no roles', async () => {

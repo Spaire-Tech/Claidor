@@ -1,4 +1,4 @@
-import { type ApiFormat, type ModelRole, parseModelRole, type ProviderConfig, ProviderName, ProviderRegistry, resolveCodingPlanBaseUrl } from '../../shared/providers';
+import { type ApiFormat, type ModelRole, type OpenClawTransportApi, parseModelRole, parseOpenClawTransportApi, type ProviderConfig, ProviderName, ProviderRegistry, resolveCodingPlanBaseUrl } from '../../shared/providers';
 import {
   type LobsterAIRequestCapability,
   parseLobsterAIRequestCapabilities,
@@ -87,6 +87,10 @@ export type ServerModelMetadata = {
   /** What the server says this model is for. Absent on a row that
    *  declares no role, which is how a model stays priced but unused. */
   role?: ModelRole;
+  /** The exact wire the engine must write to reach this model. Absent on
+   *  a row from a server that predates the field, and then `apiFormat`
+   *  decides as it always did. */
+  transportApi?: OpenClawTransportApi;
 };
 
 type CachedServerModelMetadata = Omit<ServerModelMetadata, 'modelId'> & {
@@ -94,12 +98,13 @@ type CachedServerModelMetadata = Omit<ServerModelMetadata, 'modelId'> & {
 };
 
 export type ServerModelMetadataInput =
-  Omit<ServerModelMetadata, 'runtimeProfile' | 'thinkingConfig' | 'requestCapabilities' | 'role'>
+  Omit<ServerModelMetadata, 'runtimeProfile' | 'thinkingConfig' | 'requestCapabilities' | 'role' | 'transportApi'>
   & {
     runtimeProfile?: unknown;
     thinkingConfig?: unknown;
     requestCapabilities?: unknown;
     role?: unknown;
+    transportApi?: unknown;
   };
 
 export const ServerModelRunGateReason = {
@@ -279,6 +284,7 @@ export function updateServerModelMetadata(models: ServerModelMetadataInput[]): b
       maxTokens: runtimeMetadata.maxTokens,
       explicitContextCache: model.explicitContextCache,
       role: parseModelRole(model.role),
+      transportApi: parseOpenClawTransportApi(model.transportApi),
     });
   }
   const next = serializeServerModelMetadata(getComparableServerModelMetadata(nextCache));

@@ -277,26 +277,6 @@ does not.
 
 ---
 
-## What is decided, in one list
-
-1. No product name anywhere; one placeholder constant.
-2. Messages shape; five surfaces; four settings tabs.
-3. Five message kinds, closed list; approval card with the real command.
-4. Ask before every action on the computer.
-5. Text arrives as texts; only speech streams.
-6. The voice brief above, verbatim.
-7. Speech from OpenAI. Build it; there is no speech route today.
-8. Fifteen orb palettes, assigned at random per agent.
-9. Role agents are kits; the kit store endpoint already exists and is empty.
-10. The computer icon opens LobsterAI's artifact and browser panel, whole.
-11. One computer for files: this one. No second machine, and no cloud
-    machine the person works on — but routines do fire with the Mac
-    shut, on a headless runner that holds no files.
-12. Connectors carry context from `cursor/plugins`; sign-in method open,
-    with a Pipedream integration already written and mounted.
-
----
-
 ## 11. Models: OpenAI throughout, Claude as the fallback
 
 OpenAI powers everything. The founder's reason is cost, and our own
@@ -343,3 +323,67 @@ said in the thread as a `system` line, so the meter stays explicable.
 outage. Claude stays configured as the per-agent fallback — never the
 default, never in the UI, never in the model list. It costs nothing until
 the day it is the only thing that answers.
+
+---
+
+## 12. Before the first thread
+
+The founder, 13 September: *"i have not designed the onboarding yet so
+you're going to have to just have a simple sign in here… be smart on how
+the ai greet for the first time. never an empty state. have not design
+that yet, but i will. so for now nothing."*
+
+So three things are settled and one is deliberately not built.
+
+**Sign-in is one screen.** Not a flow, not a tour, not a six-step
+onboarding. An account is mandatory because the proxy meters against it,
+so something has to come before the first thread — and that something is
+as close to nothing as it can be while still being a door.
+
+**Never an empty state.** This is the rule, and it outlives the screen it
+was said about. A person who has just signed in does not meet a blank
+list and a placeholder telling them to start typing. The agent has
+already said something. The same rule applies to every surface that can
+be empty — a thread with no messages, an Apps list with nothing
+installed, a Routines tab with no routines. The canvas already does this
+where it drew it: a new agent opens with *"Hey Bass — good to meet you"*
+and a question card, not a cursor.
+
+**The first greeting is the agent's, not the product's.** Not a welcome
+banner, not a feature tour. It is a message in a thread, in the voice
+brief of §4, and it should do what the canvas's does: say hello, then ask
+one real question whose answer shapes the agent. That is onboarding
+disguised as a conversation, and it costs no screens.
+
+**And the design of it is the founder's, not mine.** They said it is
+coming. So nothing is built for it beyond the sign-in door — no invented
+welcome screens, no placeholder illustrations, no copy standing in for
+copy they will write. When their design lands it should meet an app that
+has left the space for it, not one that has filled it with my guesses.
+
+---
+
+## What is decided, in one list
+
+1. The name is Faiser, applied; `appConstants.ts` is the one site.
+2. Messages shape; five surfaces; four settings tabs.
+3. Five message kinds, closed list; approval card with the real command.
+4. Ask before every action on the computer.
+5. Text arrives as texts; only speech streams.
+6. The voice brief above, verbatim.
+7. Speech from OpenAI. Build it; there is no speech route today.
+8. Fifteen orb palettes, assigned at random per agent.
+9. Role agents are kits; the kit store endpoint already exists and is empty.
+10. The computer icon opens LobsterAI's artifact and browser panel, whole.
+11. One computer for files: this one. No second machine, and no cloud
+    machine the person works on — but routines do fire with the Mac
+    shut, on a headless runner that holds no files.
+12. Connectors carry context from `cursor/plugins`; sign-in method open,
+    with a Pipedream integration already written and mounted.
+13. OpenAI throughout, on cost. One model the person talks to, cheap ones
+    for machinery they never see, Claude as a fallback nobody sees. The
+    agent never picks its own model.
+14. One sign-in screen, no onboarding flow. Never an empty state: the
+    agent greets first, in its own voice, and asks one real question.
+    The design of that is the founder's and is not yet built.
+

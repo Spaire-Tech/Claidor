@@ -68,6 +68,7 @@ from .service import (
     DesktopProvider,
     DesktopUnauthenticated,
     IncomingMemoryFile,
+    SpokenApi,
     Usage,
     desktop,
     model_by_id,
@@ -506,13 +507,21 @@ async def activity_action(activity_code: str, action_id: str) -> JSONResponse:
 
 # --- the model proxy --------------------------------------------------------
 #
-# Two providers serve the catalogue, and each one talks its own language
-# end to end: the engine speaks Anthropic's `/v1/messages` to an
-# Anthropic model and OpenAI's `/v1/chat/completions` to an OpenAI one.
-# Nothing here converts between the two shapes. The path says which
-# language is being spoken; the model says who serves it, and from that
-# come the address, the key and the price list. One branch, in one
-# place: `_WIRES`.
+# Three languages, and nothing here translates between any of them. The
+# engine speaks Anthropic's `/v1/messages` to an Anthropic model, and one
+# of OpenAI's two to an OpenAI one: `/v1/responses`, which is what we use,
+# or the older `/v1/chat/completions`, kept because it costs nothing to
+# keep and a client that has not moved still works.
+#
+# The path says which language is being spoken; the model says who serves
+# it; the two must agree. From the model come the address, the key and
+# the price list. One branch, in one place: `_WIRES`.
+#
+# Why Responses is the one we use: OpenAI will not take `reasoning_effort`
+# and function tools together on Chat Completions — it answers 400 and
+# names `/v1/responses` in its own error. An agent always carries tools,
+# so on that wire every OpenAI model of ours ran with reasoning switched
+# off. On this one it does not have to.
 
 
 def _anthropic_headers(request: Request) -> dict[str, str]:
@@ -538,6 +547,24 @@ def _openai_headers(request: Request) -> dict[str, str]:
     }
 
 
+def _openai_responses_body(
+    payload: dict[str, Any], raw: bytes, model: DesktopModel
+) -> bytes:
+    """Untouched.
+
+    Neither of the two things the Chat Completions wire has to be told is
+    needed here. Usage arrives on the terminal event without
+    `stream_options` being set, and reasoning and tools travel together,
+    which is the whole reason for this wire — so `tool_reasoning` is read
+    only on the other one, and nothing is forced to `none`.
+
+    Left deliberately as a function rather than reusing
+    `_anthropic_body`: the two are identical today for different reasons,
+    and a shared body would hide the day one of them stops being.
+    """
+    return raw
+
+
 def _anthropic_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) -> bytes:
     """Untouched: Anthropic reports usage on every stream without being
     asked."""
@@ -545,8 +572,8 @@ def _anthropic_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) ->
 
 
 def _openai_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) -> bytes:
-    """Untouched, but for two things OpenAI will not do without being
-    told, both of which are silent failures otherwise.
+    """The older wire. Untouched, but for two things OpenAI will not do
+    without being told, both of which are silent failures otherwise.
 
     **Usage on a stream.** OpenAI sends none unless the request carried
     `stream_options.include_usage`, and whether the engine asks for it is
@@ -597,13 +624,18 @@ class _Wire:
     body: Callable[[dict[str, Any], bytes, DesktopModel], bytes]
 
 
-_WIRES: dict[DesktopProvider, _Wire] = {
-    DesktopProvider.anthropic: _Wire(
+_WIRES: dict[SpokenApi, _Wire] = {
+    SpokenApi.anthropic_messages: _Wire(
         upstream_path="/v1/messages",
         headers=_anthropic_headers,
         body=_anthropic_body,
     ),
-    DesktopProvider.openai: _Wire(
+    SpokenApi.openai_responses: _Wire(
+        upstream_path="/v1/responses",
+        headers=_openai_headers,
+        body=_openai_responses_body,
+    ),
+    SpokenApi.openai_completions: _Wire(
         upstream_path="/v1/chat/completions",
         headers=_openai_headers,
         body=_openai_body,
@@ -633,7 +665,7 @@ async def proxy_messages(
     """Anthropic's Messages API, behind Claidor's key and the person's
     monthly allowance. The body goes through untouched; the usage
     Anthropic reports comes back as credits."""
-    return await _proxy(request, desktop_session, session, DesktopProvider.anthropic)
+    return await _proxy(request, desktop_session, session, SpokenApi.anthropic_messages)
 
 
 @router.post(
@@ -646,11 +678,35 @@ async def proxy_chat_completions(
     desktop_session: DesktopSession = Depends(get_desktop_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
-    """OpenAI's Chat Completions API, behind Claidor's key and the same
-    allowance. The app's loopback proxy already forwards this path, so
-    the engine reaches it by speaking OpenAI to an OpenAI model — no
-    translation anywhere."""
-    return await _proxy(request, desktop_session, session, DesktopProvider.openai)
+    """OpenAI's older Chat Completions API, behind Claidor's key and the
+    same allowance.
+
+    Kept, but not what the engine is pointed at: this wire refuses
+    reasoning alongside function tools, and an agent always carries tools.
+    See `/api/proxy/v1/responses`.
+    """
+    return await _proxy(request, desktop_session, session, SpokenApi.openai_completions)
+
+
+@router.post(
+    "/api/proxy/v1/responses",
+    name="desktop:responses",
+    response_model=None,
+)
+async def proxy_responses(
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse | StreamingResponse:
+    """OpenAI's Responses API, behind Claidor's key and the person's
+    monthly allowance.
+
+    The wire the engine speaks to every OpenAI model of ours, because it
+    is the only one that will take reasoning and function tools in the
+    same request. The engine implements it natively
+    (`openai-transport-stream.ts`); nothing here translates anything.
+    """
+    return await _proxy(request, desktop_session, session, SpokenApi.openai_responses)
 
 
 #: How much of a refusal to keep. Provider errors say what is wrong in
@@ -661,9 +717,7 @@ _REFUSAL_LOG_LIMIT = 1000
 UPSTREAM_REFUSED = "desktop.proxy.upstream_refused"
 
 
-def _log_upstream_refusal(
-    model: DesktopModel, status: int, body: bytes | None
-) -> None:
+def _log_upstream_refusal(model: DesktopModel, status: int, body: bytes | None) -> None:
     """Write down why the model service refused, in full, once.
 
     Without this the reason is lost: the body is handed back to the app,
@@ -691,7 +745,7 @@ async def _proxy(
     request: Request,
     desktop_session: DesktopSession,
     session: AsyncSession,
-    spoken: DesktopProvider,
+    spoken: SpokenApi,
 ) -> JSONResponse | StreamingResponse:
     raw = await request.body()
     try:
@@ -707,7 +761,7 @@ async def _proxy(
             "This model is not offered by the desktop app.",
             400,
         )
-    if model.provider is not spoken:
+    if model.provider is not spoken.provider:
         # The path is one provider's language and the model is served by
         # another. Nothing here translates between the two, so this is a
         # mistake in the caller, not something to paper over.
@@ -735,7 +789,7 @@ async def _proxy(
             status_code=402,
         )
 
-    wire = _WIRES[model.provider]
+    wire = _WIRES[spoken]
     stream = payload.get("stream") is True
     url = f"{provider_base_url(model.provider)}{wire.upstream_path}"
     headers = wire.headers(request)
@@ -780,7 +834,7 @@ async def _proxy(
         usage = Usage()
         try:
             answer = upstream.json()
-            usage = usage_from_answer(model.provider, answer)
+            usage = usage_from_answer(spoken, answer)
         except ValueError:
             answer = None
         if upstream.status_code >= 400:
@@ -827,7 +881,7 @@ async def _proxy(
             )
 
     async def relay() -> AsyncIterator[bytes]:
-        tally = tally_for(model.provider)
+        tally = tally_for(spoken)
         try:
             async for chunk in upstream.aiter_bytes():
                 tally.feed(chunk)

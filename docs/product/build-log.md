@@ -225,3 +225,103 @@ it is now scoped to the role slots with a comment saying why.
 Retiring the provider and API-key screens. The picker filter means one
 model shows without touching them, and those screens go with the rest of
 the old shell rather than being removed twice.
+
+---
+
+## Stage 2 — `/v1/responses`
+
+**The stage turned out to be a fifth of the size it was planned at**, and
+the reason is worth writing down: the plan said "a third wire in the
+proxy: different request shape, different response shape, different
+streaming — nobody has built it". Somebody had. **OpenClaw implements the
+Responses API natively.** `src/agents/openai-transport-stream.ts` is
+4,586 lines built on the OpenAI SDK's own `responses` types, handling
+`response.created`, `response.output_text.delta`,
+`response.function_call_arguments.delta`, reasoning items, tool calls and
+`response.completed`.
+
+So there was no translation layer to write. There was a wire to open and
+a switch to flip. Checking before building saved the largest item on the
+plan.
+
+### What changed
+
+**The proxy speaks three languages now, not two.** `_WIRES` was keyed by
+provider, which worked while provider and wire were the same question.
+They are not: Anthropic has one wire and OpenAI has two. It is now keyed
+by `SpokenApi` — `anthropic-messages`, `openai-responses`,
+`openai-completions` — and each knows its provider. The model/provider
+check became model/`spoken.provider`.
+
+`POST /api/proxy/v1/responses` is the new route and the one the engine is
+pointed at. Chat Completions is kept and still works; nothing of ours
+uses it.
+
+**Metering follows the wire, not the provider.** `tally_for` and
+`usage_from_answer` now take the spoken language. `Usage.
+from_openai_responses_payload` reads `input_tokens` minus
+`input_tokens_details.cached_tokens` — the same accounting as Chat
+Completions under different names. `OpenAIResponsesUsageTally` reads the
+usage off the terminal event, where it rides inside the whole response
+object rather than beside it.
+
+Three events end a run — `response.completed`, `response.incomplete`,
+`response.failed` — and all three are read, so a run that stops on a
+token limit or fails halfway is still metered for what it burned. The
+tokens were spent either way.
+
+**The field names were read, not remembered.** Every one came out of the
+engine's own `response.completed` handler rather than from memory, which
+matters because these models postdate what I can recall. The engine does
+the identical `max(0, input - cached)` subtraction on its side.
+
+**The server names the wire per model.** `available()` gains
+`transportApi` — `openai-responses` for OpenAI, `anthropic-messages` for
+Anthropic. A **new** field rather than a changed one: `apiFormat` keeps
+meaning the provider's dialect family, so an app that predates this
+picks the same wire it always did instead of a wrong one.
+
+**The app honours it.** `buildProviderSelection` takes an optional
+`transportApi` that wins over the provider descriptor, threaded through
+both the provider config and the per-model loop. Everything else leaves
+it unset and the descriptor decides as before — the app already had
+`shouldUseOpenAIResponsesApi`, but it only fires for a direct
+`api.openai.com` base URL, and ours is a loopback proxy.
+
+**No change was needed to the loopback proxy.** It builds
+`` `/api/proxy${req.url}` `` — path-agnostic, so `/v1/responses` reaches
+the new route on its own.
+
+### Two things that follow
+
+`tool_reasoning` and the `reasoning_effort: "none"` it forces are now
+read on the Chat Completions wire only. Nothing of ours is pointed there,
+so in practice nothing is forced any more — which was the whole point.
+
+**Astra's reason for being withheld is gone, and it stays withheld.** On
+this wire it would actually reason. What is missing now is a reason to
+offer it: a role is a job and every job is filled, and a second
+`primary` would mean nothing decides which model answers. Astra belongs
+to escalation — the person asks, a step has failed twice, the agent asks
+— and that is not built. It returns the day it is, as a decision rather
+than a leftover.
+
+### Verified
+
+- `test_pricing.py` — 24 passed, including the Responses usage split, a
+  Responses stream read seven bytes at a time, both early-stop events
+  metered, and a stream with no terminal event tallying nothing.
+- Two new runtime tests read the **generated config file** and assert
+  `api` is `openai-responses` per OpenAI model and `anthropic-messages`
+  for Claude — plus one asserting an older server with no `transportApi`
+  still gets `openai-completions`.
+- `vitest run` 3917 passed across 395 files; `tsc` clean on both
+  projects; `ruff check`, `ruff format --check` and `mypy` clean on the
+  desktop module (mypy's 27 errors are pre-existing, in unrelated
+  modules); `eslint --max-warnings 0` clean on every touched file.
+
+**Not verified:** no request has been made to OpenAI's Responses endpoint
+from this code. The shapes come from the engine's implementation rather
+than from a live call, the server is not deployed, and the app has not
+been opened. The first real call is the proof, and
+`desktop.proxy.upstream_refused` is where to look if it is not.

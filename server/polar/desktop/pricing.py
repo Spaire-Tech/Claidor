@@ -67,6 +67,34 @@ class DesktopProvider(StrEnum):
     openai = "openai"
 
 
+class SpokenApi(StrEnum):
+    """The language one request is written in.
+
+    Not the same question as who serves the model. Anthropic has one wire
+    and OpenAI has two: the older `/v1/chat/completions`, and
+    `/v1/responses`, which is the only one that will take reasoning and
+    function tools in the same request. Each is a different request shape,
+    a different stream, and — the part that matters here — a different
+    place to find the usage.
+
+    The path the engine calls says which of these is being spoken; the
+    model says who serves it. They must agree, and `polar.desktop.
+    endpoints` refuses the request when they do not.
+    """
+
+    anthropic_messages = "anthropic-messages"
+    openai_completions = "openai-completions"
+    openai_responses = "openai-responses"
+
+    @property
+    def provider(self) -> DesktopProvider:
+        return (
+            DesktopProvider.anthropic
+            if self is SpokenApi.anthropic_messages
+            else DesktopProvider.openai
+        )
+
+
 @dataclass(frozen=True)
 class TokenWeights:
     """What a token of each kind costs on one price list, relative to one
@@ -118,9 +146,14 @@ class DesktopModel:
     #: it is priced correctly rather than failing.
     role: ModelRole | None = None
     #: Whether the provider will take `reasoning_effort` and function
-    #: tools in the same request. Read only on the OpenAI wire, so the
-    #: Anthropic entries leave it None because the question never comes
-    #: up for them, not because they are thought to refuse.
+    #: tools in the same request.
+    #:
+    #: Read on one wire only: OpenAI's Chat Completions. It is the wire
+    #: that refuses the combination, and since 13 September nothing of
+    #: ours is pointed at it — every OpenAI model is reached on
+    #: `/v1/responses`, where reasoning and tools travel together. The
+    #: flag and the `none` it forces are kept for that older wire, which
+    #: is still served.
     #:
     #: None means not established, and the proxy then assumes it will
     #: not. That is the safe way round and it is not a guess: OpenAI
@@ -134,10 +167,24 @@ class DesktopModel:
 
     @property
     def api_format(self) -> str:
-        """The wire format the engine must speak to reach this model. It
-        happens to be spelled like the provider, and is asked for
-        separately because it is a different question."""
+        """The provider's dialect family, kept as it has always been
+        spelled so an app that has not been updated still picks the right
+        one. `transport_api` is the precise answer."""
         return self.provider.value
+
+    @property
+    def spoken(self) -> SpokenApi:
+        """The language the engine must write to reach this model.
+
+        Every OpenAI model of ours is reached on `/v1/responses`, because
+        Chat Completions refuses reasoning alongside function tools and an
+        agent always carries tools. Anthropic has one wire and this is it.
+        """
+        return (
+            SpokenApi.anthropic_messages
+            if self.provider is DesktopProvider.anthropic
+            else SpokenApi.openai_responses
+        )
 
     @property
     def weights(self) -> TokenWeights:
@@ -165,6 +212,11 @@ class DesktopModel:
             "supportsToolCalling": True,
             "agenticReady": True,
             "role": self.role.value if self.role else None,
+            # `apiFormat` stays the dialect family; this is the exact wire,
+            # spelled as the engine's own transport names spell it. A new
+            # field rather than a changed one, so an app that predates it
+            # keeps working off the family.
+            "transportApi": self.spoken.value,
             "contextWindow": self.context_window,
             "maxTokens": self.max_tokens,
             "explicitContextCache": False,
@@ -243,12 +295,16 @@ MODELS: tuple[DesktopModel, ...] = (
     ),
     # $10.00 per million input tokens, output 5x.
     #
-    # Withheld, deliberately: no role, so it is not offered. Every OpenAI
-    # model runs with `reasoning_effort: "none"` whenever tools are
-    # present — see `tool_reasoning` above — and for an agent tools are
-    # always present. Astra costs five times Terra for a capability we
-    # are switching off. It comes back when the proxy speaks
-    # `/v1/responses`, and not before.
+    # Withheld: no role, so it is not offered.
+    #
+    # The reason it was withheld is gone — the proxy speaks
+    # `/v1/responses` now, and on that wire reasoning and tools travel
+    # together, so Astra would actually reason. What is missing is a
+    # reason to offer it. A role is a job, and every job is filled: a
+    # second `primary` would mean nothing decides which model answers.
+    # Astra belongs to escalation — the person asks, a step has failed
+    # twice, or the agent asks — and that is not built. It comes back the
+    # day it is, as a decision rather than a leftover.
     DesktopModel(
         "gpt-6-astra",
         "GPT-6 Astra",
@@ -323,6 +379,33 @@ class Usage:
         return cls(
             input_tokens=max(0, prompt - cached),
             output_tokens=_number(usage, "completion_tokens"),
+            cache_read_tokens=cached,
+        )
+
+    @classmethod
+    def from_openai_responses_payload(cls, usage: Any) -> Usage:
+        """OpenAI's `usage` object on `/v1/responses`.
+
+        Same accounting as Chat Completions under different names:
+        `input_tokens` is the whole prompt with the cached part inside it,
+        and `input_tokens_details.cached_tokens` says how much. The engine
+        does the identical subtraction on its side
+        (`openai-transport-stream.ts`, `response.completed`), which is
+        where these field names were read from rather than remembered.
+
+        `output_tokens` already includes `output_tokens_details.
+        reasoning_tokens`; reasoning is billed as output and must not be
+        added again.
+        """
+        if not isinstance(usage, dict):
+            return cls()
+
+        details = usage.get("input_tokens_details")
+        cached = _number(details, "cached_tokens") if isinstance(details, dict) else 0
+        prompt = _number(usage, "input_tokens")
+        return cls(
+            input_tokens=max(0, prompt - cached),
+            output_tokens=_number(usage, "output_tokens"),
             cache_read_tokens=cached,
         )
 
@@ -427,18 +510,54 @@ class OpenAIUsageTally(SSEUsageTally):
             self.usage = reported
 
 
-def tally_for(provider: DesktopProvider) -> SSEUsageTally:
-    if provider is DesktopProvider.openai:
+@dataclass
+class OpenAIResponsesUsageTally(SSEUsageTally):
+    """OpenAI's Responses stream: the usage rides on the terminal event,
+    inside the whole response object rather than beside it.
+
+    Three events can end a run — `response.completed`, and the two ways it
+    can stop early — and all three carry the response. Taking whichever
+    arrives means a run that stops on a token limit or fails halfway is
+    still metered for what it burned, which is the honest outcome: the
+    tokens were spent either way.
+
+    No `stream_options` is needed here. This wire reports usage without
+    being asked, unlike Chat Completions.
+    """
+
+    #: The events that carry a finished `response` object.
+    TERMINAL = frozenset(
+        {"response.completed", "response.incomplete", "response.failed"}
+    )
+
+    def _event(self, event: dict[str, Any]) -> None:
+        if event.get("type") not in self.TERMINAL:
+            return
+        response = event.get("response")
+        if not isinstance(response, dict):
+            return
+        reported = Usage.from_openai_responses_payload(response.get("usage"))
+        if reported != Usage():
+            self.usage = reported
+
+
+def tally_for(spoken: SpokenApi) -> SSEUsageTally:
+    """A reader for the stream this language produces."""
+    if spoken is SpokenApi.openai_responses:
+        return OpenAIResponsesUsageTally()
+    if spoken is SpokenApi.openai_completions:
         return OpenAIUsageTally()
     return UsageTally()
 
 
-def usage_from_answer(provider: DesktopProvider, answer: Any) -> Usage:
-    """The usage of one non-streaming answer, read in the provider's own
-    shape."""
+def usage_from_answer(spoken: SpokenApi, answer: Any) -> Usage:
+    """The usage of one non-streaming answer, read in the shape the
+    language it was written in reports."""
     if not isinstance(answer, dict):
         return Usage()
-    if provider is DesktopProvider.openai:
+    if spoken is SpokenApi.openai_responses:
+        return Usage.from_openai_responses_payload(answer.get("usage"))
+    if spoken is SpokenApi.openai_completions:
         return Usage.from_openai_payload(answer.get("usage"))
     return Usage.from_payload(answer.get("usage"))
 
@@ -449,8 +568,11 @@ __all__ = [
     "PROVIDER_TOKEN_WEIGHTS",
     "DesktopModel",
     "DesktopProvider",
+    "ModelRole",
+    "OpenAIResponsesUsageTally",
     "OpenAIUsageTally",
     "SSEUsageTally",
+    "SpokenApi",
     "TokenWeights",
     "Usage",
     "UsageTally",

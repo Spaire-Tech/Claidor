@@ -24,6 +24,7 @@ import { OPENCLAW_PLUGIN_INDEX_MANAGED_KEYS } from '../../shared/openclawEngine/
 import { OpenClawTranscriptSafetyLimit } from '../../shared/openclawTranscript/constants';
 import type {
   ModelRuntimeProfile as ModelRuntimeProfileType,
+  OpenClawTransportApi,
 } from '../../shared/providers';
 import {
   AuthType,
@@ -656,13 +657,6 @@ const sessionSnapshotContainsDisabledManagedSkill = (entry: Record<string, unkno
   return DISABLED_MANAGED_SKILL_NAMES.some(name => prompt.includes(`<name>${name}</name>`));
 };
 
-type OpenClawTransportApi =
-  | 'anthropic-messages'
-  | 'openai-completions'
-  | 'openai-responses'
-  | 'openai-chatgpt-responses'
-  | 'google-generative-ai';
-
 type OpenClawProviderApi =
   | OpenClawTransportApi
   | typeof OPENCLAW_MODEL_COMPAT_PLUGIN_ID;
@@ -1150,6 +1144,14 @@ export const buildProviderSelection = (options: {
   baseURL: string;
   modelId: string;
   apiType: 'anthropic' | 'openai' | undefined;
+  /**
+   * The exact wire, when something already knows it. Our own server names
+   * one per model, because `apiType` cannot tell OpenAI's two wires apart
+   * and the engine must write Responses to reach a model that takes
+   * reasoning and tools together. Everything else leaves this unset and
+   * the provider descriptor decides as before.
+   */
+  transportApi?: OpenClawTransportApi;
   providerName?: string;
   authType?: 'apikey' | 'oauth';
   codingPlanEnabled?: boolean;
@@ -1167,7 +1169,7 @@ export const buildProviderSelection = (options: {
 
   let baseUrl =
     descriptor.resolveRuntimeBaseUrl?.() ?? descriptor.normalizeBaseUrl(options.baseURL);
-  const api = descriptor.resolveApi({
+  const api = options.transportApi ?? descriptor.resolveApi({
     apiType: options.apiType,
     baseURL: options.baseURL,
   });
@@ -2231,6 +2233,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
             baseURL: `http://127.0.0.1:${proxyPort}/v1`,
             modelId: firstServerModelId,
             apiType: normalizeServerApiType(serverModels[0]?.apiFormat),
+            transportApi: serverModels[0]?.transportApi,
             providerName: ProviderName.LobsteraiServer,
             supportsImage: serverModels[0]?.supportsImage,
             supportsVideo: serverModels[0]?.supportsVideo,
@@ -2265,6 +2268,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
                 baseURL: `http://127.0.0.1:${proxyPort}/v1`,
                 modelId: sm.modelId,
                 apiType: serverApiType,
+                transportApi: sm.transportApi,
                 providerName: ProviderName.LobsteraiServer,
                 supportsImage: sm.supportsImage,
                 supportsVideo: sm.supportsVideo,
