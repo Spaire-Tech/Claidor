@@ -64,6 +64,7 @@ from .service import (
     QUOTA_EXHAUSTED_CODE,
     REFRESH_INVALID,
     DesktopMemoryRefused,
+    DesktopModel,
     DesktopProvider,
     DesktopUnauthenticated,
     IncomingMemoryFile,
@@ -754,6 +755,40 @@ async def proxy_chat_completions(
     return await _proxy(request, desktop_session, session, DesktopProvider.openai)
 
 
+#: How much of a refusal to keep. Provider errors say what is wrong in
+#: their first sentence; the rest is echoed request.
+_REFUSAL_LOG_LIMIT = 1000
+
+#: The one line to search the logs for when a model call fails.
+UPSTREAM_REFUSED = "desktop.proxy.upstream_refused"
+
+
+def _log_upstream_refusal(
+    model: DesktopModel, status: int, body: bytes | None
+) -> None:
+    """Write down why the model service refused, in full, once.
+
+    Without this the reason is lost: the body is handed back to the app,
+    the app's engine reduces it to a failure kind, and what reaches the
+    person is « 400 terminated » — a status and a word, with the sentence
+    that says what is actually wrong nowhere at all. That was the state on
+    13 September, when GPT models failed and nothing anywhere recorded
+    OpenAI's own explanation.
+
+    The body is the provider's error text. It carries no key: the key goes
+    up in a header, and a provider does not echo it back.
+    """
+    text = (body or b"").decode(errors="replace").strip()
+    log.warning(
+        UPSTREAM_REFUSED,
+        provider=model.provider.value,
+        model=model.model_id,
+        status=status,
+        body=text[:_REFUSAL_LOG_LIMIT] or "(empty)",
+        truncated=len(text) > _REFUSAL_LOG_LIMIT,
+    )
+
+
 async def _proxy(
     request: Request,
     desktop_session: DesktopSession,
@@ -850,6 +885,8 @@ async def _proxy(
             usage = usage_from_answer(model.provider, answer)
         except ValueError:
             answer = None
+        if upstream.status_code >= 400:
+            _log_upstream_refusal(model, upstream.status_code, upstream.content)
         await record(usage, upstream.status_code)
         if answer is None:
             return _error(
@@ -878,6 +915,7 @@ async def _proxy(
         error_body = await upstream.aread()
         await upstream.aclose()
         await client.aclose()
+        _log_upstream_refusal(model, upstream.status_code, error_body)
         await record(Usage(), upstream.status_code)
         try:
             return JSONResponse(

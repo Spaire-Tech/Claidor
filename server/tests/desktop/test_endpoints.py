@@ -11,6 +11,8 @@ import respx
 from pytest_mock import MockerFixture
 
 from polar.config import settings
+from polar.desktop import endpoints as endpoints_module
+from polar.desktop.endpoints import UPSTREAM_REFUSED
 from polar.desktop.service import (
     Usage,
     UsageTally,
@@ -706,6 +708,80 @@ class TestTwoProviders:
         assert response.status_code == 503
         rows = (await session.execute(DesktopUsage.__table__.select())).all()
         assert rows == []
+
+    async def test_a_refusal_is_written_down_with_the_reason_it_gave(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """The reason must survive on our side.
+
+        It does not survive on the app's: the body is handed back, the
+        engine reduces it to a failure kind, and the person is shown
+        « 400 terminated » — a status and a word. On 13 September GPT
+        models were failing and nothing anywhere had recorded OpenAI's
+        own sentence saying why.
+        """
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        warn = mocker.patch.object(endpoints_module.log, "warning")
+        access, _ = await _signed_in(client, session, user)
+        refusal = {
+            "error": {
+                "message": "Unsupported value: 'temperature' is not supported.",
+                "type": "invalid_request_error",
+            }
+        }
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions").mock(
+                return_value=httpx.Response(400, json=refusal)
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "gpt-6-astra", "messages": []},
+            )
+        # Still handed back untouched — the app's behaviour does not change.
+        assert response.status_code == 400
+        assert response.json() == refusal
+
+        logged = [call for call in warn.call_args_list if call.args[0] == UPSTREAM_REFUSED]
+        assert len(logged) == 1
+        fields = logged[0].kwargs
+        assert fields["provider"] == "openai"
+        assert fields["model"] == "gpt-6-astra"
+        assert fields["status"] == 400
+        assert "temperature" in fields["body"]
+
+    async def test_a_refusal_on_a_stream_is_written_down_too(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """The streaming path reads and returns the error separately from
+        the non-streaming one, so it needs its own proof."""
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        warn = mocker.patch.object(endpoints_module.log, "warning")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions").mock(
+                return_value=httpx.Response(
+                    400, json={"error": {"message": "tools[0].function is invalid."}}
+                )
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "gpt-6-astra", "stream": True, "messages": []},
+            )
+        assert response.status_code == 400
+
+        logged = [call for call in warn.call_args_list if call.args[0] == UPSTREAM_REFUSED]
+        assert len(logged) == 1
+        assert "tools[0].function" in logged[0].kwargs["body"]
 
 
 class TestUsageTally:
