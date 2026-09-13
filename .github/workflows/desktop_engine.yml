@@ -1,0 +1,74 @@
+name: Desktop engine
+
+# Builds the OpenClaw runtime exactly as packaging does, then starts the
+# engine and refuses the build if any plugin failed to load.
+#
+# This is the check that was missing on 12 September, when the app lost the
+# internet entirely. Three extension names were added to the keep-list in
+# `prune-openclaw-runtime.cjs` and one of them declares dependencies our
+# packaging never installs. Plugin loading is all-or-nothing in this
+# engine, so that single plugin took `browser` and every other plugin down
+# with it. The unit tests passed, both TypeScript projects compiled, the
+# lint was clean, and none of them could have caught it: they never start
+# the engine. The founder found it by opening the app.
+#
+# It runs on Linux rather than macOS: this is about whether the plugin
+# registry loads from the tree our own scripts produce, which is not
+# platform-specific, and Linux runners are far cheaper and quicker than
+# the macOS ones the installer needs.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "desktop/package.json"
+      - "desktop/scripts/**"
+      - "desktop/openclaw-extensions/**"
+      - ".github/workflows/desktop_engine.yml"
+  pull_request:
+    paths:
+      - "desktop/package.json"
+      - "desktop/scripts/**"
+      - "desktop/openclaw-extensions/**"
+      - ".github/workflows/desktop_engine.yml"
+
+concurrency:
+  group: desktop-engine-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  plugins-load:
+    name: "Every plugin loads"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install pnpm (the engine builds with it)
+        run: npm install -g pnpm@10
+
+      - name: Install dependencies
+        # The upstream project ignores its lockfile (desktop/.gitignore), so
+        # a plain install is the only option until one is committed.
+        run: npm install --no-audit --no-fund
+
+      - name: Build the runtime the way packaging does
+        # The same target the app ships, pruning included — pruning is the
+        # step that decides which extensions exist, and therefore the step
+        # this whole workflow exists to check.
+        run: npm run openclaw:runtime:linux-x64
+
+      - name: Start the engine and read its plugin registry
+        run: node scripts/verify-openclaw-plugins.cjs
