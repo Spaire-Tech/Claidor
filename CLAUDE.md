@@ -27,10 +27,26 @@ defect.
 
 **Nothing in `server/` or `runner/` was removed.** Claidor still serves
 the desktop account protocol under `/desktop` (browser login, tokens, the
-metered model proxy for Anthropic and OpenAI, connections, speech, the
-job queue), the cloud runner is untouched, `render.yaml` and the deployed
-services are unchanged, and the API answers right now. All of it is live
-and, at this commit, nothing in the app calls it.
+metered model proxy for Anthropic and OpenAI, memory sync, the skill,
+kit and MCP catalogues, and — from `polar/connectors/`, mounted there —
+Pipedream Connect sign-in links and per-service MCP targets), the maty
+job queue under `polar/maty/`, and the cloud runner. `render.yaml` and
+the deployed services are unchanged and the API answers right now. All
+of it is live and, at this commit, nothing in the app calls it. **There
+is no speech route** — an earlier version of this file said there was,
+and nothing under `server/polar/` matches `speech`.
+
+## The design direction (13 September 2026)
+
+The founder has redesigned the app and set the direction. It is written
+down in `docs/product/direction.md`, with the founder's own words quoted
+and every code claim tied to a file. Read it before proposing anything
+about the product's shape. Its headlines: the app is Messages, with each
+conversation an agent; five message kinds and no step cards; every
+action on the computer asks first; text arrives as texts and only speech
+streams; one computer, this one; role agents are LobsterAI kits, whose
+store endpoint we already serve empty. **The product has no name yet** —
+not Maties, not Swens — so ship no product name in any string.
 
 **GPT models work.** OpenAI refuses `reasoning_effort` together with
 function tools on `/v1/chat/completions`; the proxy now sends
