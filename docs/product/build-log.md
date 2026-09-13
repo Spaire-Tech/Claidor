@@ -504,3 +504,78 @@ Wiring to the real IPC layer — `services/cowork.ts` and `coworkSlice`
 already carry sessions, messages, streaming and permissions, so this is
 connection rather than construction. Then compose, Apps and Settings,
 which are modals over this.
+
+---
+
+## Stage 4 — Wired
+
+The shell now reads the real store and talks to the real engine.
+
+### The shape of the wiring
+
+Everything that **decides** anything is in `shell/select.ts` and is pure:
+which rows the sidebar shows and in what order, what a row's preview
+says, what "9:12 AM" versus "Friday" means, which approvals belong to
+this conversation. Sixteen tests, no store, no Electron, no render.
+
+`shell/useMessagesShell.ts` reads Redux, calls those, and hands the
+result down. It owns no state the store already owns — sessions,
+messages, streaming and the permission queue stay the app's. So when
+something looks wrong on screen the question is only ever "the selector
+or the hook", and the selector is already covered.
+
+### Decisions taken while wiring
+
+**A row's preview is the last thing actually said**, not the last event.
+A thread whose newest entry is a tool call would otherwise preview blank
+— or worse, as the tool's name. Thinking is skipped here too.
+
+**Only this conversation's approvals reach this thread.** The store keeps
+one permission queue for the whole app. An approval raised in another
+conversation appearing here would ask somebody to agree to something
+they cannot see the context for. A test proves the other conversation's
+`rm -rf` never reaches the wrong thread.
+
+**An agent nobody has spoken to sorts last, never hidden.** A freshly
+installed role agent has to be findable before it has a history.
+
+**Answering an approval leaves one line and removes the card.** The note
+is local state, because the engine's record is the decision itself; the
+line is a presentation fact.
+
+**A choice card is answered by saying the answer.** Picking an option
+sends its text as an ordinary message, so the agent sees a reply rather
+than a protocol — which is also what a person would have typed.
+
+**"Tuesday" three weeks ago is a lie dressed as helpfulness**, so a
+timestamp older than a week is a date.
+
+### Sign-in
+
+`FaiserApp` has two states and no third. There is no loading screen
+between them because there is nothing to wait for: the sidebar arrives
+with the agents it has and fills in as sessions load, which is how a list
+should behave. A failed sign-in is a grey sentence, not a banner.
+
+It is mounted behind a switch while the old shell is still in the tree.
+Nothing here reaches into the old screens and nothing there reaches into
+this, so either can be removed without touching the other.
+
+### Still stubs, deliberately
+
+Compose, Apps, the account menu and the computer icon are wired to
+nothing and say so in the code. Each is a modal over this and each is its
+own stage. A button that silently does nothing is worse than one that is
+obviously not built yet, so they are named rather than hidden.
+
+### Verified
+
+- 16 new selector tests; 40 across the thread and shell together.
+- `vitest run` **3984 passed** across 400 files; `tsc` clean on both
+  projects; `eslint --max-warnings 0` clean on the whole design
+  directory.
+
+**Not verified:** still nothing rendered. The app has not been opened,
+no orb has been drawn, no message sent. Every claim above is about code
+that type-checks and passes tests, which is not the same as code that
+looks right.
