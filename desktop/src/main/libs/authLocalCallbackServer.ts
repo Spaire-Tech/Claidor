@@ -46,13 +46,13 @@ const renderCallbackHtmlWithRedirect = (
     ? `<script>setTimeout(function(){ window.location.replace(${JSON.stringify(redirectUrl)}); }, 900);</script>`
     : '';
   const redirectHint = redirectUrl
-    ? '<p class="hint">页面将自动返回 LobsterAI 登录页。</p>'
+    ? '<p class="hint">Returning you to Maties.</p>'
     : '';
   const redirectAction = redirectUrl
-    ? `<a class="action" href="${escapeHtml(redirectUrl)}">立即返回</a>`
+    ? `<a class="action" href="${escapeHtml(redirectUrl)}">Go back now</a>`
     : '';
   return `<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>LobsterAI 登录</title>
+<html lang="en"><head><meta charset="utf-8"><title>Maties sign-in</title>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f7f7f4; color: #14120b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
   .card { background: #fff; border: 1px solid rgba(20,18,11,.08); border-radius: 10px; padding: 30px 34px; max-width: 420px; box-shadow: 0 18px 50px rgba(20,18,11,.08); }
@@ -61,7 +61,7 @@ const renderCallbackHtmlWithRedirect = (
   .hint { margin-top: 8px; color: #999; }
   .action { display: inline-flex; margin-top: 18px; color: #f26522; font-size: 14px; text-decoration: none; }
 </style></head>
-<body><div class="card"><h1>${success ? '登录成功' : '登录失败'}</h1><p>${escapeHtml(message)}</p>${redirectHint}${redirectAction}</div>${safeRedirectScript}</body></html>`;
+<body><div class="card"><h1>${success ? 'Signed in' : 'Sign-in failed'}</h1><p>${escapeHtml(message)}</p>${redirectHint}${redirectAction}</div>${safeRedirectScript}</body></html>`;
 };
 
 const sendHtml = (
@@ -132,9 +132,11 @@ function resolveSafeReturnTo(value: string | null): string | null {
   try {
     const url = new URL(value);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-    const isYoudaoHost = url.hostname.endsWith('.youdao.com') || url.hostname === 'youdao.com';
+    // Only Claidor's hosts (and the loopback used in development) may be
+    // « returned to » after sign-in.
+    const isClaidorHost = url.hostname.endsWith('.claidor.com') || url.hostname === 'claidor.com';
     const isLoopbackHost = url.hostname === '127.0.0.1' || url.hostname === 'localhost';
-    if (!isYoudaoHost && !isLoopbackHost) return null;
+    if (!isClaidorHost && !isLoopbackHost) return null;
     return url.toString();
   } catch {
     return null;
@@ -179,7 +181,7 @@ async function createAuthLocalCallback(
 
   server.on('request', (req, res) => {
     if (req.method !== 'GET') {
-      sendHtml(res, 405, false, '登录回调请求方法不支持，请返回 LobsterAI 后重试。');
+      sendHtml(res, 405, false, 'This sign-in callback only accepts GET. Go back to Maties and try again.');
       return;
     }
 
@@ -196,14 +198,14 @@ async function createAuthLocalCallback(
 
     if (!code) {
       console.warn('[AuthLocalCallback] callback was rejected because the auth code was missing');
-      sendHtml(res, 400, false, '登录回调缺少授权码，请返回 LobsterAI 后重试。');
+      sendHtml(res, 400, false, 'The sign-in callback carried no code. Go back to Maties and try again.');
       void callback.close();
       return;
     }
 
     if (returnedState !== state) {
       console.warn('[AuthLocalCallback] callback was rejected because the state did not match');
-      sendHtml(res, 400, false, '登录状态校验失败，请返回 LobsterAI 后重试。');
+      sendHtml(res, 400, false, 'The sign-in state did not match. Go back to Maties and try again.');
       void callback.close();
       return;
     }
@@ -215,12 +217,12 @@ async function createAuthLocalCallback(
         res,
         200,
         true,
-        '登录已完成，正在返回 LobsterAI 登录页。',
+        'You are signed in. Returning you to Maties.',
         returnTo,
       );
     } catch (error) {
       console.error('[AuthLocalCallback] failed to deliver auth code:', error);
-      sendHtml(res, 500, false, '登录回调处理失败，请返回 LobsterAI 后重试。');
+      sendHtml(res, 500, false, 'The sign-in callback could not be handled. Go back to Maties and try again.');
     } finally {
       void callback.close();
     }

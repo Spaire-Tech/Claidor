@@ -37,10 +37,13 @@ import {
   type AgentBrowserHostResponse,
   type AgentBrowserHostSetViewRequest,
   type AgentBrowserHostStateEvent,
+  type AgentBrowserOpenPageRequest,
+  type AgentBrowserOpenPageResponse,
   BrowserIpc,
   type BrowserRuntimeProfile,
 } from '../shared/browserWebAccess/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
+import { ConnectorsIpc, type ConnectorsState } from '../shared/connectors/constants';
 import type { CoworkBrowserAnnotationMessageBatch } from '../shared/cowork/browserAnnotations';
 import type {
   CoworkBtwAbortRequest,
@@ -69,12 +72,13 @@ import {
   type HtmlShareSourceType,
   type HtmlShareStatus,
 } from '../shared/htmlShare/constants';
-import type {
-  KitReference,
-  KitSkillMetadata,
-  ResolvedKitCapabilities,
-} from '../shared/kit/constants';
 import { LibraryIpc } from '../shared/library/constants';
+import {
+  type LibraryContentConfig,
+  LibraryContentIpc,
+  type LibraryContentStatus,
+  type LibrarySearchRequest,
+} from '../shared/library/contentConstants';
 import type {
   LibraryArtifactCandidate,
   LibraryBackfillState,
@@ -89,7 +93,12 @@ import {
   type LocalWebService,
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
+import {
+  MatyIpc,
+  type MatyState,
+} from '../shared/maty/constants';
 import { McpIpcChannel } from '../shared/mcp/constants';
+import { OnboardingIpcChannel, type OnboardingProfile } from '../shared/onboarding/constants';
 import { OpenClawEngineIpc } from '../shared/openclawEngine/constants';
 import { PermissionIpcChannel } from '../shared/permissions/constants';
 import type { Platform } from '../shared/platform';
@@ -122,11 +131,16 @@ import type {
   SkinGetActiveResponse,
   SkinListResponse,
 } from '../shared/skin/types';
+import {
+  type SpeakResult,
+  SpeechIpc,
+  type SpeechVoicesResult,
+} from '../shared/speech/constants';
 import { NimQrLoginIpc } from './ipcHandlers/nimQrLogin';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
 
-// 暴露安全的 API 到渲染进程
+// Expose a safe API to the renderer process
 contextBridge.exposeInMainWorld('electron', {
   platform: process.platform,
   arch: process.arch,
@@ -180,28 +194,11 @@ contextBridge.exposeInMainWorld('electron', {
     setEnabledByRegistryId: (options: { registryId: string; enabled: boolean }) =>
       ipcRenderer.invoke(McpIpcChannel.SetEnabledByRegistryId, options),
     retryLaunchResolution: (id: string) => ipcRenderer.invoke(McpIpcChannel.RetryLaunchResolution, id),
-    fetchMarketplace: () => ipcRenderer.invoke(McpIpcChannel.FetchMarketplace),
-    connectQichacha: () => ipcRenderer.invoke(McpIpcChannel.ConnectQichacha),
     onChanged: (callback: () => void) => {
       const handler = () => callback();
       ipcRenderer.on(McpIpcChannel.Changed, handler);
       return () => ipcRenderer.removeListener(McpIpcChannel.Changed, handler);
     },
-  },
-  kits: {
-    fetchStore: () => ipcRenderer.invoke('kits:fetchStore'),
-    install: (params: {
-      kitId: string;
-      bundleUrl: string;
-      version: string;
-      skillListIds: string[];
-      skillList?: KitSkillMetadata[];
-      mcpServers?: unknown[] | null;
-      connectors?: unknown[] | null;
-    }) =>
-      ipcRenderer.invoke('kits:install', params),
-    uninstall: (kitId: string) => ipcRenderer.invoke('kits:uninstall', kitId),
-    listInstalled: () => ipcRenderer.invoke('kits:listInstalled'),
   },
   skin: {
     getActive: (): Promise<SkinGetActiveResponse> => ipcRenderer.invoke(SkinIpc.GetActive),
@@ -238,7 +235,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
   },
   api: {
-    // 普通 API 请求（非流式）
+    // Regular (non-streaming) API request
     fetch: (options: {
       url: string;
       method: string;
@@ -246,7 +243,7 @@ contextBridge.exposeInMainWorld('electron', {
       body?: string;
     }) => ipcRenderer.invoke('api:fetch', options),
 
-    // 流式 API 请求
+    // Streaming API request
     stream: (options: {
       url: string;
       method: string;
@@ -255,31 +252,31 @@ contextBridge.exposeInMainWorld('electron', {
       requestId: string;
     }) => ipcRenderer.invoke('api:stream', options),
 
-    // 取消流式请求
+    // Cancel a streaming request
     cancelStream: (requestId: string) => ipcRenderer.invoke('api:stream:cancel', requestId),
 
-    // 监听流式数据
+    // Listen for streamed data
     onStreamData: (requestId: string, callback: (chunk: string) => void) => {
       const handler = (_event: any, chunk: string) => callback(chunk);
       ipcRenderer.on(`api:stream:${requestId}:data`, handler);
       return () => ipcRenderer.removeListener(`api:stream:${requestId}:data`, handler);
     },
 
-    // 监听流式完成
+    // Listen for stream completion
     onStreamDone: (requestId: string, callback: () => void) => {
       const handler = () => callback();
       ipcRenderer.on(`api:stream:${requestId}:done`, handler);
       return () => ipcRenderer.removeListener(`api:stream:${requestId}:done`, handler);
     },
 
-    // 监听流式错误
+    // Listen for stream errors
     onStreamError: (requestId: string, callback: (error: string) => void) => {
       const handler = (_event: any, error: string) => callback(error);
       ipcRenderer.on(`api:stream:${requestId}:error`, handler);
       return () => ipcRenderer.removeListener(`api:stream:${requestId}:error`, handler);
     },
 
-    // 监听流式取消
+    // Listen for stream cancellation
     onStreamAbort: (requestId: string, callback: () => void) => {
       const handler = () => callback();
       ipcRenderer.on(`api:stream:${requestId}:abort`, handler);
@@ -337,6 +334,13 @@ contextBridge.exposeInMainWorld('electron', {
     openWorkbench: () => ipcRenderer.invoke(DshIpcChannel.OpenWorkbench),
     stop: () => ipcRenderer.invoke(DshIpcChannel.Stop),
   },
+  // The voice: the app asks Claidor to say something. No key is involved
+  // on this side of the wire (docs/maties/plan.md step 1).
+  speech: {
+    listVoices: (): Promise<SpeechVoicesResult> => ipcRenderer.invoke(SpeechIpc.ListVoices),
+    speak: (voiceId: string, text: string): Promise<SpeakResult> =>
+      ipcRenderer.invoke(SpeechIpc.Speak, { voiceId, text }),
+  },
   openclaw: {
     engine: {
       getStatus: () => ipcRenderer.invoke(OpenClawEngineIpc.GetStatus),
@@ -387,6 +391,8 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.invoke(BrowserIpc.ReloadHost, request),
       stopHost: (request?: AgentBrowserHostRequest): Promise<AgentBrowserHostResponse> =>
         ipcRenderer.invoke(BrowserIpc.StopHost, request),
+      openAgentPage: (request: AgentBrowserOpenPageRequest): Promise<AgentBrowserOpenPageResponse> =>
+        ipcRenderer.invoke(BrowserIpc.OpenAgentPage, request),
       selectHostPage: (request: AgentBrowserHostPageRequest): Promise<AgentBrowserHostResponse> =>
         ipcRenderer.invoke(BrowserIpc.SelectHostPage, request),
       closeHostPage: (request: AgentBrowserHostPageRequest): Promise<AgentBrowserHostResponse> =>
@@ -503,9 +509,6 @@ contextBridge.exposeInMainWorld('electron', {
       title?: string;
       activeSkillIds?: string[];
       runtimeSkillIds?: string[];
-      kitIds?: string[];
-      kitReferences?: KitReference[];
-      resolvedKitCapabilities?: ResolvedKitCapabilities;
       selectedTextSnippets?: Array<{ id: string; text: string; sourceMessageId?: string; sourceMessageType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceId?: string; sourceType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceTitle?: string; sourcePath?: string; artifactId?: string; createdAt: number; startOffset?: number; endOffset?: number }>;
       browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
       agentId?: string;
@@ -520,9 +523,6 @@ contextBridge.exposeInMainWorld('electron', {
       systemPrompt?: string;
       activeSkillIds?: string[];
       runtimeSkillIds?: string[];
-      kitIds?: string[];
-      kitReferences?: KitReference[];
-      resolvedKitCapabilities?: ResolvedKitCapabilities;
       selectedTextSnippets?: Array<{ id: string; text: string; sourceMessageId?: string; sourceMessageType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceId?: string; sourceType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceTitle?: string; sourcePath?: string; artifactId?: string; createdAt: number; startOffset?: number; endOffset?: number }>;
       browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
       imageAttachments?: Array<{ name: string; mimeType: string; base64Data: string; sizeBytes?: number; localPath?: string; previewMimeType?: string; previewBase64Data?: string }>;
@@ -938,6 +938,36 @@ contextBridge.exposeInMainWorld('electron', {
     downloadPersistenceArchive: (options: ShareDeploymentDownloadPersistenceInput) =>
       ipcRenderer.invoke(ShareDeploymentIpc.DownloadPersistenceArchive, options),
   },
+  // Connections to accounts (docs/maties/connectors.md): the sign-in window
+  // is opened by the main process; the renderer only asks and is told.
+  connectors: {
+    getState: () => ipcRenderer.invoke(ConnectorsIpc.GetState),
+    connect: (slug: string) => ipcRenderer.invoke(ConnectorsIpc.Connect, slug),
+    disconnect: (accountId: string) => ipcRenderer.invoke(ConnectorsIpc.Disconnect, accountId),
+    onChanged: (callback: (state: ConnectorsState) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, state: ConnectorsState) => {
+        callback(state);
+      };
+      ipcRenderer.on(ConnectorsIpc.Changed, handler);
+      return () => ipcRenderer.removeListener(ConnectorsIpc.Changed, handler);
+    },
+  },
+  // Work sent to the cloud engine (docs/maties/cloud.md): the requests and the
+  // watching belong to the main process; the renderer only asks and is told.
+  maty: {
+    getState: () => ipcRenderer.invoke(MatyIpc.GetState),
+    refresh: () => ipcRenderer.invoke(MatyIpc.Refresh),
+    send: (prompt: string) => ipcRenderer.invoke(MatyIpc.Send, prompt),
+    getJob: (jobId: string) => ipcRenderer.invoke(MatyIpc.GetJob, jobId),
+    cancel: (jobId: string) => ipcRenderer.invoke(MatyIpc.Cancel, jobId),
+    onChanged: (callback: (state: MatyState) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, state: MatyState) => {
+        callback(state);
+      };
+      ipcRenderer.on(MatyIpc.Changed, handler);
+      return () => ipcRenderer.removeListener(MatyIpc.Changed, handler);
+    },
+  },
   sites: {
     list: (options: SiteListOptions = {}) => ipcRenderer.invoke(SiteIpc.List, options),
     get: (shareId: string) => ipcRenderer.invoke(SiteIpc.Get, shareId),
@@ -984,6 +1014,37 @@ contextBridge.exposeInMainWorld('electron', {
       };
       ipcRenderer.on(LibraryIpc.Changed, handler);
       return () => ipcRenderer.removeListener(LibraryIpc.Changed, handler);
+    },
+  },
+  // The personal library: the index of the person's documents (docs/maties/library.md).
+  libraryContent: {
+    getStatus: () => ipcRenderer.invoke(LibraryContentIpc.GetStatus),
+    getConfig: () => ipcRenderer.invoke(LibraryContentIpc.GetConfig),
+    setConfig: (update: Partial<LibraryContentConfig>) =>
+      ipcRenderer.invoke(LibraryContentIpc.SetConfig, update),
+    pickFolder: () => ipcRenderer.invoke(LibraryContentIpc.PickFolder),
+    setPaused: (paused: boolean) => ipcRenderer.invoke(LibraryContentIpc.SetPaused, paused),
+    rebuild: () => ipcRenderer.invoke(LibraryContentIpc.Rebuild),
+    search: (request: LibrarySearchRequest) =>
+      ipcRenderer.invoke(LibraryContentIpc.Search, request),
+    openFile: (filePath: string) => ipcRenderer.invoke(LibraryContentIpc.OpenFile, filePath),
+    revealFile: (filePath: string) => ipcRenderer.invoke(LibraryContentIpc.RevealFile, filePath),
+    onStatusChanged: (callback: (status: LibraryContentStatus) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, status: LibraryContentStatus) => {
+        callback(status);
+      };
+      ipcRenderer.on(LibraryContentIpc.StatusChanged, handler);
+      return () => ipcRenderer.removeListener(LibraryContentIpc.StatusChanged, handler);
+    },
+  },
+  // Onboarding (docs/maties/onboarding.md): the assistant's name, its voice, the time zone.
+  onboarding: {
+    getProfile: (): Promise<OnboardingProfile> => ipcRenderer.invoke(OnboardingIpcChannel.GetProfile),
+    applyProfile: async (profile: OnboardingProfile): Promise<void> => {
+      const result = await ipcRenderer.invoke(OnboardingIpcChannel.ApplyProfile, profile);
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to apply the onboarding profile');
+      }
     },
   },
   asr: {
@@ -1068,35 +1129,6 @@ contextBridge.exposeInMainWorld('electron', {
       const handler = (_event: any, data: any) => callback(data);
       ipcRenderer.on(AppUpdateIpc.StateChanged, handler);
       return () => ipcRenderer.removeListener(AppUpdateIpc.StateChanged, handler);
-    },
-  },
-  plugins: {
-    list: () => ipcRenderer.invoke('plugins:list'),
-    detect: () => ipcRenderer.invoke('plugins:detect'),
-    sync: () => ipcRenderer.invoke('plugins:sync'),
-    install: (params: {
-      source: 'npm' | 'clawhub' | 'git' | 'local';
-      spec: string;
-      registry?: string;
-      version?: string;
-    }) => ipcRenderer.invoke('plugins:install', params),
-    uninstall: (pluginId: string) => ipcRenderer.invoke('plugins:uninstall', pluginId),
-    setEnabled: (pluginId: string, enabled: boolean) =>
-      ipcRenderer.invoke('plugins:set-enabled', pluginId, enabled),
-    getConfigSchema: (pluginId: string) =>
-      ipcRenderer.invoke('plugins:get-config-schema', pluginId),
-    saveConfig: (pluginId: string, config: Record<string, unknown>) =>
-      ipcRenderer.invoke('plugins:save-config', pluginId, config),
-    batchSave: (changes: {
-      toggles?: Array<{ pluginId: string; enabled: boolean }>;
-      configs?: Array<{ pluginId: string; config: Record<string, unknown> }>;
-    }) => ipcRenderer.invoke('plugins:batch-save', changes),
-    checkUpdates: (pluginIds?: string[]) => ipcRenderer.invoke('plugins:check-updates', pluginIds),
-    update: (pluginId: string) => ipcRenderer.invoke('plugins:update', pluginId),
-    onInstallLog: (callback: (line: string) => void) => {
-      const handler = (_event: any, line: string) => callback(line);
-      ipcRenderer.on('plugins:install-log', handler);
-      return () => ipcRenderer.removeListener('plugins:install-log', handler);
     },
   },
   log: {

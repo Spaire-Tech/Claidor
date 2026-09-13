@@ -29,7 +29,7 @@ function createManagedAsset(): {
   contentHash: string;
   content: Buffer;
 } {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-skin-protocol-'));
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-skin-protocol-'));
   tempDirs.push(rootDir);
   const relativePath = 'skin-one/assets/workspace-backdrop.png';
   const filePath = path.join(rootDir, ...relativePath.split('/'));

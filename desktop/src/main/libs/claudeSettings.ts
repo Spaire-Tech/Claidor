@@ -1,8 +1,8 @@
 import { type ApiFormat,type ProviderConfig, ProviderName, ProviderRegistry, resolveCodingPlanBaseUrl } from '../../shared/providers';
 import {
-  type LobsterAIRequestCapability,
-  parseLobsterAIRequestCapabilities,
-} from '../../shared/providers/lobsterAIRequestOptions';
+  type MatiesRequestCapability,
+  parseMatiesRequestCapabilities,
+} from '../../shared/providers/matiesRequestOptions';
 import {
   applyModelRuntimeProfileMetadata,
   ModelRuntimeProfile,
@@ -78,7 +78,7 @@ export type ServerModelMetadata = {
   supportsVideo?: boolean;
   supportsThinking?: boolean;
   thinkingConfig?: ModelThinkingConfig;
-  requestCapabilities?: LobsterAIRequestCapability[];
+  requestCapabilities?: MatiesRequestCapability[];
   supportsToolCalling?: boolean;
   agenticReady?: boolean;
   contextWindow?: number;
@@ -141,7 +141,7 @@ export type ApiConfigResolution = {
     supportsVideo?: boolean;
     supportsThinking?: boolean;
     thinkingConfig?: ModelThinkingConfig;
-    requestCapabilities?: LobsterAIRequestCapability[];
+    requestCapabilities?: MatiesRequestCapability[];
     modelName?: string;
     contextWindow?: number;
     maxTokens?: number;
@@ -250,7 +250,7 @@ export function updateServerModelMetadata(models: ServerModelMetadataInput[]): b
     const thinkingConfig = runtimeMetadata.supportsThinking === true
       ? parseModelThinkingConfig(model.thinkingConfig)
       : undefined;
-    const requestCapabilities = parseLobsterAIRequestCapabilities(model.requestCapabilities);
+    const requestCapabilities = parseMatiesRequestCapabilities(model.requestCapabilities);
 
     nextCache.set(modelId, {
       modelName: model.modelName,
@@ -456,7 +456,7 @@ type MatchedProvider = {
   supportsVideo?: boolean;
   supportsThinking?: boolean;
   thinkingConfig?: ModelThinkingConfig;
-  requestCapabilities?: LobsterAIRequestCapability[];
+  requestCapabilities?: MatiesRequestCapability[];
   modelName?: string;
   contextWindow?: number;
   maxTokens?: number;
@@ -500,7 +500,7 @@ function shouldUseXaiOAuth(providerName: string, providerConfig: LocalProviderCo
   return providerName === ProviderName.Xai && providerConfig.authType === 'oauth';
 }
 
-function tryLobsteraiServerFallback(modelId?: string): MatchedProvider | null {
+function tryMatiesServerFallback(modelId?: string): MatchedProvider | null {
   const tokens = authTokensGetter?.();
   const serverBaseUrl = serverBaseUrlGetter?.();
   if (!tokens?.accessToken || !serverBaseUrl) return null;
@@ -511,7 +511,7 @@ function tryLobsteraiServerFallback(modelId?: string): MatchedProvider | null {
   const effectiveApiFormat = cachedMeta?.apiFormat
     ? normalizeProviderApiFormat(cachedMeta.apiFormat)
     : 'openai';
-  console.debug('[ClaudeSettings] lobsterai-server provider resolved:', {
+  console.debug('[ClaudeSettings] maties-server provider resolved:', {
     baseURL,
     modelId: effectiveModelId,
     apiFormat: effectiveApiFormat,
@@ -520,7 +520,7 @@ function tryLobsteraiServerFallback(modelId?: string): MatchedProvider | null {
     thinkingConfig: cachedMeta?.thinkingConfig,
   });
   return {
-    providerName: ProviderName.LobsteraiServer,
+    providerName: ProviderName.MatiesServer,
     providerConfig: { enabled: true, apiKey: tokens.accessToken, baseUrl: baseURL, apiFormat: effectiveApiFormat, models: buildServerFallbackModels(effectiveModelId) },
     modelId: effectiveModelId,
     apiFormat: effectiveApiFormat,
@@ -567,7 +567,7 @@ function resolveMatchedProvider(appConfig: AppConfig): { matched: MatchedProvide
   if (!modelId) {
     const fallback = resolveFallbackModel();
     if (!fallback) {
-      const serverFallback = tryLobsteraiServerFallback(configuredModelId);
+      const serverFallback = tryMatiesServerFallback(configuredModelId);
       if (serverFallback) return { matched: serverFallback };
       return { matched: null, error: 'No available model configured in enabled providers.' };
     }
@@ -577,9 +577,9 @@ function resolveMatchedProvider(appConfig: AppConfig): { matched: MatchedProvide
   let providerEntry: [string, LocalProviderConfig] | undefined;
   const preferredProviderName = appConfig.model?.defaultModelProvider?.trim();
 
-  // Handle lobsterai-server provider: dynamically construct from auth tokens
-  if (preferredProviderName === ProviderName.LobsteraiServer) {
-    const serverMatch = tryLobsteraiServerFallback(modelId);
+  // Handle maties-server provider: dynamically construct from auth tokens
+  if (preferredProviderName === ProviderName.MatiesServer) {
+    const serverMatch = tryMatiesServerFallback(modelId);
     if (serverMatch) {
       return { matched: serverMatch };
     }
@@ -610,7 +610,7 @@ function resolveMatchedProvider(appConfig: AppConfig): { matched: MatchedProvide
       modelId = fallback.modelId;
       providerEntry = [fallback.providerName, fallback.providerConfig];
     } else {
-      const serverFallback = tryLobsteraiServerFallback(modelId);
+      const serverFallback = tryMatiesServerFallback(modelId);
       if (serverFallback) return { matched: serverFallback };
       return { matched: null, error: `No enabled provider found for model: ${modelId}` };
     }
@@ -625,7 +625,7 @@ function resolveMatchedProvider(appConfig: AppConfig): { matched: MatchedProvide
   // MiniMax OAuth mode guard: if OAuth is selected but login has not been completed
   // (no access token), do not use the stale API key as an OAuth token.
   if (providerName === ProviderName.Minimax && (providerConfig as any).authType === 'oauth' && !(providerConfig as any).oauthAccessToken) {
-    const serverFallback = tryLobsteraiServerFallback(modelId);
+    const serverFallback = tryMatiesServerFallback(modelId);
     if (serverFallback) return { matched: serverFallback };
     return { matched: null, error: 'MiniMax OAuth mode selected but login not completed.' };
   }
@@ -633,7 +633,7 @@ function resolveMatchedProvider(appConfig: AppConfig): { matched: MatchedProvide
   // xAI OAuth mode guard: without a credential in the OpenClaw auth-profiles
   // store the provider cannot serve requests yet.
   if (shouldUseXaiOAuth(providerName, providerConfig) && !hasXaiOAuthCredential()) {
-    const serverFallback = tryLobsteraiServerFallback(modelId);
+    const serverFallback = tryMatiesServerFallback(modelId);
     if (serverFallback) return { matched: serverFallback };
     return { matched: null, error: 'xAI OAuth mode selected but login not completed.' };
   }
@@ -648,7 +648,7 @@ function resolveMatchedProvider(appConfig: AppConfig): { matched: MatchedProvide
   }
 
   if (!baseURL) {
-    const serverFallback = tryLobsteraiServerFallback(modelId);
+    const serverFallback = tryMatiesServerFallback(modelId);
     if (serverFallback) return { matched: serverFallback };
     return { matched: null, error: `Provider ${providerName} is missing base URL.` };
   }
@@ -660,7 +660,7 @@ function resolveMatchedProvider(appConfig: AppConfig): { matched: MatchedProvide
     || shouldUseOpenAICodexOAuth(providerName, providerConfig)
     || (shouldUseXaiOAuth(providerName, providerConfig) && hasXaiOAuthCredential());
   if (apiFormat === 'anthropic' && providerRequiresApiKey(providerName) && !providerConfig.apiKey?.trim() && !hasApiKey && !hasOAuthCreds) {
-    const serverFallback = tryLobsteraiServerFallback(modelId);
+    const serverFallback = tryMatiesServerFallback(modelId);
     if (serverFallback) return { matched: serverFallback };
     return { matched: null, error: `Provider ${providerName} requires API key for Anthropic-compatible mode.` };
   }
@@ -719,7 +719,7 @@ export function resolveCurrentApiConfig(target: OpenAICompatProxyTarget = 'local
   // placeholder so downstream components (OpenClaw gateway, compat proxy)
   // don't reject the request with "No API key found for provider".
   const effectiveApiKey = resolvedApiKey
-    || (!providerRequiresApiKey(matched.providerName) ? 'sk-lobsterai-local' : '');
+    || (!providerRequiresApiKey(matched.providerName) ? 'sk-maties-local' : '');
 
   if (matched.apiFormat === 'anthropic') {
     return {
@@ -770,7 +770,7 @@ export function resolveCurrentApiConfig(target: OpenAICompatProxyTarget = 'local
 
   return {
     config: {
-      apiKey: resolvedApiKey || 'lobsterai-openai-compat',
+      apiKey: resolvedApiKey || 'maties-openai-compat',
       baseURL: proxyBaseURL,
       model: matched.modelId,
       apiType: 'openai',
@@ -852,7 +852,7 @@ export function resolveRawApiConfig(): ApiConfigResolution {
   // leaves the key blank we supply a placeholder so the gateway doesn't reject
   // the request with "No API key found for provider".
   const effectiveApiKey = apiKey
-    || (!providerRequiresApiKey(matched.providerName) ? 'sk-lobsterai-local' : '');
+    || (!providerRequiresApiKey(matched.providerName) ? 'sk-maties-local' : '');
   return {
     config: {
       apiKey: effectiveApiKey,
@@ -887,7 +887,7 @@ export function resolveRawApiConfig(): ApiConfigResolution {
 export function resolveAllProviderApiKeys(): Record<string, string> {
   const result: Record<string, string> = {};
 
-  // lobsterai-server token is now managed by the token proxy
+  // maties-server token is now managed by the token proxy
   // (openclawTokenProxy.ts) — no longer injected as an env var.
   const shouldInjectServerToken = !getOpenClawTokenProxyPort();
   if (shouldInjectServerToken) {
@@ -923,7 +923,7 @@ export function resolveAllProviderApiKeys(): Record<string, string> {
       continue;
     }
     const envName = providerName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-    result[envName] = apiKey || 'sk-lobsterai-local';
+    result[envName] = apiKey || 'sk-maties-local';
   }
 
   const D = gwDiagTs;
@@ -992,7 +992,7 @@ export function resolveAllEnabledProviderConfigs(): ProviderRawConfig[] {
 
   for (const [providerName, providerConfig] of Object.entries(appConfig.providers)) {
     if (!providerConfig?.enabled) continue;
-    if (providerName === ProviderName.LobsteraiServer) continue;
+    if (providerName === ProviderName.MatiesServer) continue;
 
     // When minimax is in OAuth mode, use oauthAccessToken and oauthBaseUrl
     // (independent from the user's manually entered apiKey/baseUrl).
@@ -1073,7 +1073,7 @@ export function resolveAllEnabledProviderConfigs(): ProviderRawConfig[] {
     result.push({
       providerName,
       baseURL: effectiveBaseURL,
-      apiKey: apiKey || 'sk-lobsterai-local',
+      apiKey: apiKey || 'sk-maties-local',
       apiType: effectiveApiFormat === 'anthropic' ? 'anthropic' : 'openai',
       authType: providerConfig.authType,
       codingPlanEnabled: !!providerConfig.codingPlanEnabled,

@@ -23,7 +23,7 @@ describe('buildAgentEntry', () => {
       description: '',
       systemPrompt: '',
       identity: '',
-      model: 'lobsterai-server/deepseek-v3.2',
+      model: 'maties-server/deepseek-v3.2',
       workingDirectory: '',
       icon: '',
       skillIds: [],
@@ -38,7 +38,7 @@ describe('buildAgentEntry', () => {
     expect(result).toMatchObject({
       id: 'main',
       default: true,
-      model: { primary: 'lobsterai-server/deepseek-v3.2' },
+      model: { primary: 'maties-server/deepseek-v3.2' },
     });
   });
 
@@ -78,7 +78,7 @@ describe('buildAgentEntry', () => {
       description: '',
       systemPrompt: '',
       identity: '',
-      model: 'lobsterai-server/kimi-k2.6',
+      model: 'maties-server/kimi-k2.6',
       workingDirectory: '',
       icon: '',
       skillIds: [],
@@ -96,7 +96,7 @@ describe('buildAgentEntry', () => {
 
     expect(result).toMatchObject({
       id: 'main',
-      model: { primary: 'lobsterai-server/kimi-k2.6' },
+      model: { primary: 'maties-server/kimi-k2.6' },
     });
   });
 
@@ -177,7 +177,7 @@ describe('buildAgentEntry', () => {
   test('emits display name both as top-level name and identity name', () => {
     const result = buildAgentEntry({
       id: 'writer',
-      name: '写作助手',
+      name: 'Writing Assistant',
       description: '',
       systemPrompt: '',
       identity: '',
@@ -195,9 +195,9 @@ describe('buildAgentEntry', () => {
 
     expect(result).toMatchObject({
       id: 'writer',
-      name: '写作助手',
+      name: 'Writing Assistant',
       identity: {
-        name: '写作助手',
+        name: 'Writing Assistant',
       },
     });
   });
@@ -374,10 +374,10 @@ describe('buildManagedAgentEntries', () => {
 
 describe('parsePrimaryModelRef', () => {
   test('parses provider-qualified primary model refs', () => {
-    expect(parsePrimaryModelRef('lobsterai-server/deepseek-v3.2')).toEqual({
-      providerId: 'lobsterai-server',
+    expect(parsePrimaryModelRef('maties-server/deepseek-v3.2')).toEqual({
+      providerId: 'maties-server',
       modelId: 'deepseek-v3.2',
-      primaryModel: 'lobsterai-server/deepseek-v3.2',
+      primaryModel: 'maties-server/deepseek-v3.2',
     });
   });
 
@@ -388,26 +388,26 @@ describe('parsePrimaryModelRef', () => {
 
 describe('resolveManagedSessionModelTarget', () => {
   const availableProviders = {
-    'lobsterai-server': { models: [{ id: 'qwen3.5-plus' }, { id: 'deepseek-v3.2' }] },
+    'maties-server': { models: [{ id: 'qwen3.5-plus' }, { id: 'deepseek-v3.2' }] },
     minimax: { models: [{ id: 'MiniMax-M2.7' }] },
   };
 
   test('uses fallback target when agent model is empty', () => {
     expect(resolveManagedSessionModelTarget({
       agentModel: '',
-      fallbackPrimaryModel: 'lobsterai-server/qwen3.5-plus',
+      fallbackPrimaryModel: 'maties-server/qwen3.5-plus',
       availableProviders,
     })).toEqual({
-      providerId: 'lobsterai-server',
+      providerId: 'maties-server',
       modelId: 'qwen3.5-plus',
-      primaryModel: 'lobsterai-server/qwen3.5-plus',
+      primaryModel: 'maties-server/qwen3.5-plus',
     });
   });
 
   test('keeps explicit provider-qualified models', () => {
     expect(resolveManagedSessionModelTarget({
       agentModel: 'minimax/MiniMax-M2.7',
-      fallbackPrimaryModel: 'lobsterai-server/qwen3.5-plus',
+      fallbackPrimaryModel: 'maties-server/qwen3.5-plus',
       availableProviders,
     })).toEqual({
       providerId: 'minimax',
@@ -419,25 +419,25 @@ describe('resolveManagedSessionModelTarget', () => {
   test('resolves bare model ids against available providers', () => {
     expect(resolveManagedSessionModelTarget({
       agentModel: 'deepseek-v3.2',
-      fallbackPrimaryModel: 'lobsterai-server/qwen3.5-plus',
+      fallbackPrimaryModel: 'maties-server/qwen3.5-plus',
       availableProviders,
     })).toEqual({
-      providerId: 'lobsterai-server',
+      providerId: 'maties-server',
       modelId: 'deepseek-v3.2',
-      primaryModel: 'lobsterai-server/deepseek-v3.2',
+      primaryModel: 'maties-server/deepseek-v3.2',
     });
   });
 
   test('falls back to current provider when bare model cannot be resolved uniquely', () => {
     expect(resolveManagedSessionModelTarget({
       agentModel: 'unknown-model',
-      fallbackPrimaryModel: 'lobsterai-server/qwen3.5-plus',
+      fallbackPrimaryModel: 'maties-server/qwen3.5-plus',
       availableProviders,
-      currentProviderId: 'lobsterai-server',
+      currentProviderId: 'maties-server',
     })).toEqual({
-      providerId: 'lobsterai-server',
+      providerId: 'maties-server',
       modelId: 'unknown-model',
-      primaryModel: 'lobsterai-server/unknown-model',
+      primaryModel: 'maties-server/unknown-model',
     });
   });
 });
@@ -447,12 +447,12 @@ describe('resolveQualifiedAgentModelRef', () => {
     expect(resolveQualifiedAgentModelRef({
       agentModel: 'deepseek-v3.2',
       availableProviders: {
-        'lobsterai-server': { models: [{ id: 'deepseek-v3.2' }] },
+        'maties-server': { models: [{ id: 'deepseek-v3.2' }] },
         minimax: { models: [{ id: 'MiniMax-M2.7' }] },
       },
     })).toEqual({
       status: 'qualified',
-      primaryModel: 'lobsterai-server/deepseek-v3.2',
+      primaryModel: 'maties-server/deepseek-v3.2',
     });
   });
 
@@ -461,12 +461,12 @@ describe('resolveQualifiedAgentModelRef', () => {
       agentModel: 'deepseek-v3.2',
       availableProviders: {
         anthropic: { models: [{ id: 'deepseek-v3.2' }] },
-        'lobsterai-server': { models: [{ id: 'deepseek-v3.2' }] },
+        'maties-server': { models: [{ id: 'deepseek-v3.2' }] },
       },
     })).toEqual({
       status: 'ambiguous',
       modelId: 'deepseek-v3.2',
-      providerIds: ['anthropic', 'lobsterai-server'],
+      providerIds: ['anthropic', 'maties-server'],
     });
   });
 
@@ -496,13 +496,13 @@ describe('resolveQualifiedAgentModelRef', () => {
 
   test('keeps explicit server refs when a custom provider has the same model id', () => {
     expect(resolveQualifiedAgentModelRef({
-      agentModel: 'lobsterai-server/kimi-k2.6',
+      agentModel: 'maties-server/kimi-k2.6',
       availableProviders: {
         moonshot: { models: [{ id: 'kimi-k2.6' }] },
       },
     })).toEqual({
       status: 'qualified',
-      primaryModel: 'lobsterai-server/kimi-k2.6',
+      primaryModel: 'maties-server/kimi-k2.6',
     });
   });
 });
@@ -516,7 +516,7 @@ describe('resolveServerModelRefForRun', () => {
       modelRef: 'custom_0/kimi-k3-YoudaoInner',
       availableProviders: {
         custom_0: { models: [{ id: 'kimi-k3-YoudaoInner' }] },
-        'lobsterai-server': { models: [{ id: 'kimi-k3-YoudaoInner' }] },
+        'maties-server': { models: [{ id: 'kimi-k3-YoudaoInner' }] },
       },
       isKnownServerModelCandidate: isKnownPackageKimiK3,
     })).toEqual({
@@ -531,27 +531,27 @@ describe('resolveServerModelRefForRun', () => {
       modelRef: 'kimi-k3-YoudaoInner',
       availableProviders: {
         custom_0: { models: [{ id: 'kimi-k3-YoudaoInner' }] },
-        'lobsterai-server': { models: [{ id: 'kimi-k3-YoudaoInner' }] },
+        'maties-server': { models: [{ id: 'kimi-k3-YoudaoInner' }] },
       },
       isKnownServerModelCandidate: isKnownPackageKimiK3,
     })).toEqual({
       status: ServerModelRefResolutionStatus.Ambiguous,
       modelId: 'kimi-k3-YoudaoInner',
-      providerIds: ['custom_0', 'lobsterai-server'],
+      providerIds: ['custom_0', 'maties-server'],
     });
   });
 
-  test('resolves a bare package-only id to lobsterai-server', () => {
+  test('resolves a bare package-only id to maties-server', () => {
     expect(resolveServerModelRefForRun({
       modelRef: 'kimi-k3-YoudaoInner',
       availableProviders: {
-        'lobsterai-server': { models: [{ id: 'kimi-k3-YoudaoInner' }] },
+        'maties-server': { models: [{ id: 'kimi-k3-YoudaoInner' }] },
       },
       isKnownServerModelCandidate: isKnownPackageKimiK3,
     })).toEqual({
       status: ServerModelRefResolutionStatus.Server,
       modelId: 'kimi-k3-YoudaoInner',
-      primaryModel: 'lobsterai-server/kimi-k3-YoudaoInner',
+      primaryModel: 'maties-server/kimi-k3-YoudaoInner',
     });
   });
 

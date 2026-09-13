@@ -2,7 +2,6 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test, vi } from 'vitest';
 
-import { i18nService } from '../../services/i18n';
 import AgentTaskRow from './AgentTaskRow';
 import { AgentSidebarIndicator } from './constants';
 import type { AgentSidebarTaskNode } from './types';
@@ -13,7 +12,7 @@ const makeTask = (
 ): AgentSidebarTaskNode => ({
   id: isScheduledTask ? 'scheduled-session' : 'regular-session',
   agentId: 'main',
-  title: isScheduledTask ? '[定时] Daily summary' : 'Regular task',
+  title: isScheduledTask ? '[Cron] Daily summary' : 'Regular task',
   isScheduledTask,
   status: 'completed',
   pinned: false,
@@ -43,48 +42,32 @@ const renderTask = (
   }),
 );
 
-test('scheduled task rows show a localized accessible clock marker without marking regular rows', () => {
-  const originalLanguage = i18nService.getLanguage();
-  try {
-    i18nService.setLanguage('zh', { persist: false });
-    const zhScheduledHtml = renderTask(true);
-    expect(zhScheduledHtml).toContain('aria-label="定时任务"');
-    expect(zhScheduledHtml).toContain('title="定时任务"');
-    expect(zhScheduledHtml).toContain('role="img"');
-    expect(zhScheduledHtml).toMatch(/role="img"[^>]*>\s*<svg/);
-    expect(zhScheduledHtml).toContain('Daily summary');
-    expect(zhScheduledHtml).not.toContain('[定时]');
+test('scheduled task rows show an accessible clock marker without marking regular rows', () => {
+  const scheduledHtml = renderTask(true);
+  expect(scheduledHtml).toContain('aria-label="Scheduled task"');
+  expect(scheduledHtml).toContain('title="Scheduled task"');
+  expect(scheduledHtml).toContain('role="img"');
+  expect(scheduledHtml).toMatch(/role="img"[^>]*>\s*<svg/);
+  expect(scheduledHtml).toContain('Daily summary');
+  expect(scheduledHtml).not.toContain('[Cron]');
 
-    i18nService.setLanguage('en', { persist: false });
-    const enScheduledHtml = renderTask(true);
-    expect(enScheduledHtml).toContain('aria-label="Scheduled task"');
-    expect(enScheduledHtml).toContain('title="Scheduled task"');
-    expect(renderTask(false)).not.toContain('aria-label="Scheduled task"');
-  } finally {
-    i18nService.setLanguage(originalLanguage, { persist: false });
-  }
+  expect(renderTask(false)).not.toContain('aria-label="Scheduled task"');
 });
 
 test('task rows and hidden action controls remain keyboard reachable', () => {
   const html = renderTask(false);
   expect(html).toContain('role="treeitem"');
   expect(html).toContain('tabindex="0"');
-  expect(html).toContain('focus-visible:opacity-[0.46]');
+  expect(html).toContain('focus-visible:opacity-100');
 });
 
 test('IM task rows show platform icons and hide matching title prefixes', () => {
-  const originalLanguage = i18nService.getLanguage();
-  try {
-    i18nService.setLanguage('zh', { persist: false });
-    const html = renderTask(false, {
-      title: '[微信] group:o9cq',
-      imPlatform: 'weixin',
-    });
-    expect(html).toContain('src="weixin.png"');
-    expect(html).toContain('aria-label="微信"');
-    expect(html).toContain('group:o9cq');
-    expect(html).not.toContain('[微信]');
-  } finally {
-    i18nService.setLanguage(originalLanguage, { persist: false });
-  }
+  const html = renderTask(false, {
+    title: '[Telegram] group:o9cq',
+    imPlatform: 'telegram',
+  });
+  expect(html).toContain('src="telegram.svg"');
+  expect(html).toContain('aria-label="Telegram"');
+  expect(html).toContain('group:o9cq');
+  expect(html).not.toContain('[Telegram]');
 });

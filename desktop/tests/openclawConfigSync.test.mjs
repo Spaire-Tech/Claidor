@@ -79,7 +79,7 @@ const createOpenAICompatAppConfig = () => ({
 });
 
 const createSessionStore = () => ({
-  'agent:main:lobsterai:current-session': {
+  'agent:main:maties:current-session': {
     sessionId: 'session-current',
     modelProvider: 'lobster',
     model: 'kimi-k2.5',
@@ -88,7 +88,7 @@ const createSessionStore = () => ({
       model: 'kimi-k2.5',
     },
   },
-  'agent:main:lobsterai:old-claude-session': {
+  'agent:main:maties:old-claude-session': {
     sessionId: 'session-old-claude',
     modelProvider: 'lobster',
     model: 'claude-sonnet-4-5-20250929',
@@ -179,16 +179,19 @@ test('sync writes native moonshot provider config and migrates matching managed 
   assert.equal(config.models.providers.moonshot.api, 'openai-completions');
   assert.equal(config.agents.defaults.model.primary, 'moonshot/kimi-k2.5');
   assert.deepEqual(config.commands.ownerAllowFrom, ['gateway-client', '*']);
-  assert.deepEqual(config.tools.deny, ['web_search']);
+  // Nothing is denied outright any more: web_search is served by the
+  // bundled DuckDuckGo provider where packaging kept it. This fixture's
+  // runtime has no search provider, so search stays off here.
+  assert.deepEqual(config.tools.deny, []);
   assert.equal(config.tools.web.search.enabled, false);
   assert.equal(config.browser.enabled, true);
 
   const sessionStore = JSON.parse(fs.readFileSync(path.join(sessionsDir, 'sessions.json'), 'utf8'));
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].modelProvider, 'moonshot');
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].model, 'kimi-k2.5');
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].systemPromptReport.provider, 'moonshot');
-  assert.equal(sessionStore['agent:main:lobsterai:old-claude-session'].modelProvider, 'lobster');
-  assert.equal(sessionStore['agent:main:lobsterai:old-claude-session'].model, 'claude-sonnet-4-5-20250929');
+  assert.equal(sessionStore['agent:main:maties:current-session'].modelProvider, 'moonshot');
+  assert.equal(sessionStore['agent:main:maties:current-session'].model, 'kimi-k2.5');
+  assert.equal(sessionStore['agent:main:maties:current-session'].systemPromptReport.provider, 'moonshot');
+  assert.equal(sessionStore['agent:main:maties:old-claude-session'].modelProvider, 'lobster');
+  assert.equal(sessionStore['agent:main:maties:old-claude-session'].model, 'claude-sonnet-4-5-20250929');
   assert.equal(sessionStore['agent:main:wecom:direct:wangning'].execSecurity, 'deny');
   assert.equal(sessionStore['agent:main:feishu:dm:ou_123'].execSecurity, 'deny');
   assert.equal('skillsSnapshot' in sessionStore['agent:main:wecom:direct:wangning'], false);
@@ -220,10 +223,10 @@ test('sync maps moonshot coding plan sessions to kimi-coding model refs', (t) =>
   assert.deepEqual(config.commands.ownerAllowFrom, ['gateway-client', '*']);
 
   const sessionStore = JSON.parse(fs.readFileSync(path.join(sessionsDir, 'sessions.json'), 'utf8'));
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].modelProvider, 'kimi-coding');
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].model, 'k2p5');
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].systemPromptReport.provider, 'kimi-coding');
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].systemPromptReport.model, 'k2p5');
+  assert.equal(sessionStore['agent:main:maties:current-session'].modelProvider, 'kimi-coding');
+  assert.equal(sessionStore['agent:main:maties:current-session'].model, 'k2p5');
+  assert.equal(sessionStore['agent:main:maties:current-session'].systemPromptReport.provider, 'kimi-coding');
+  assert.equal(sessionStore['agent:main:maties:current-session'].systemPromptReport.model, 'k2p5');
   assert.equal(sessionStore['agent:main:wecom:direct:wangning'].execSecurity, 'deny');
   assert.equal(sessionStore['agent:main:feishu:dm:ou_123'].execSecurity, 'deny');
   assert.equal('skillsSnapshot' in sessionStore['agent:main:wecom:direct:wangning'], false);
@@ -250,8 +253,8 @@ test('sync denies exec for native channel sessions even without provider migrati
   assert.equal(result.changed, true);
 
   const sessionStore = JSON.parse(fs.readFileSync(path.join(sessionsDir, 'sessions.json'), 'utf8'));
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].modelProvider, 'lobster');
-  assert.equal(sessionStore['agent:main:lobsterai:current-session'].model, 'kimi-k2.5');
+  assert.equal(sessionStore['agent:main:maties:current-session'].modelProvider, 'lobster');
+  assert.equal(sessionStore['agent:main:maties:current-session'].model, 'kimi-k2.5');
   assert.equal(sessionStore['agent:main:wecom:direct:wangning'].execSecurity, 'deny');
   assert.equal(sessionStore['agent:main:feishu:dm:ou_123'].execSecurity, 'deny');
   assert.equal('skillsSnapshot' in sessionStore['agent:main:wecom:direct:wangning'], false);
@@ -282,7 +285,7 @@ test('sync writes scheduled-task policy into managed AGENTS.md for native channe
   assert.match(agentsMd, /main session.*read `MEMORY\.md`/is);
   assert.match(agentsMd, /## Scheduled Tasks/);
   assert.match(agentsMd, /## Web Search/);
-  assert.match(agentsMd, /Built-in `web_search` is disabled in this workspace\./);
+  assert.match(agentsMd, /Built-in `web_search` is not available in this build/);
   assert.match(agentsMd, /use `web_fetch`/);
   assert.match(agentsMd, /use the built-in `browser` tool/);
   assert.match(agentsMd, /Native channel sessions may deny `exec`/);
@@ -320,7 +323,7 @@ test('sync preserves existing AGENTS.md content above the Lobster managed marker
 
   const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
   assert.match(agentsMd, /^# Custom Workspace Notes\n\nKeep this line\./);
-  assert.match(agentsMd, /<!-- LobsterAI managed: do not edit below this line -->/);
+  assert.match(agentsMd, /<!-- Maties managed: do not edit below this line -->/);
   assert.doesNotMatch(agentsMd, /^# AGENTS\.md - Your Workspace/m);
 });
 
@@ -334,7 +337,7 @@ test('sync backfills the default OpenClaw AGENTS template when an old workspace 
   fs.writeFileSync(
     path.join(workspaceDir, 'AGENTS.md'),
     [
-      '<!-- LobsterAI managed: do not edit below this line -->',
+      '<!-- Maties managed: do not edit below this line -->',
       '',
       '## System Prompt',
       '',
@@ -354,7 +357,7 @@ test('sync backfills the default OpenClaw AGENTS template when an old workspace 
   const agentsMd = fs.readFileSync(path.join(workspaceDir, 'AGENTS.md'), 'utf8');
   assert.match(agentsMd, /^# AGENTS\.md - Your Workspace/m);
   assert.match(agentsMd, /## Every Session/);
-  assert.match(agentsMd, /<!-- LobsterAI managed: do not edit below this line -->/);
+  assert.match(agentsMd, /<!-- Maties managed: do not edit below this line -->/);
   assert.match(agentsMd, /## Scheduled Tasks/);
   assert.doesNotMatch(agentsMd, /Old managed-only content\./);
 });
@@ -594,5 +597,5 @@ test('sync writes non-empty placeholder apiKey for providers that do not require
   const providerConfig = config.models.providers.lobster;
   assert.ok(providerConfig, 'lobster provider should exist in config');
   assert.ok(providerConfig.apiKey, 'apiKey must be a non-empty string');
-  assert.equal(providerConfig.apiKey, 'sk-lobsterai-local');
+  assert.equal(providerConfig.apiKey, 'sk-maties-local');
 });

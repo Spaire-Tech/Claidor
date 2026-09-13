@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
-import { sanitizeUrlForLog, SENSITIVE_LOG_KEY_PATTERN, serializeForLog } from './sanitizeForLog';
+import { LogReporterEndpoint } from '../../shared/analytics/constants';
+import { isAnalyticsEndpointUrl, sanitizeUrlForLog, SENSITIVE_LOG_KEY_PATTERN, serializeForLog } from './sanitizeForLog';
 
 // ---------------------------------------------------------------------------
 // SENSITIVE_LOG_KEY_PATTERN — make sure every expected key variant matches
@@ -142,12 +143,12 @@ describe('serializeForLog', () => {
 describe('sanitizeUrlForLog', () => {
   test('removes query values and fragments from valid URLs', () => {
     const result = sanitizeUrlForLog(
-      'https://rlogs.youdao.com/rlog.php?action=lobsterai_app_started&log_Usid=user-1#result',
+      'https://api.claidor.com/desktop/api/analytics/events?action=lobsterai_app_started&log_Usid=user-1#result',
     );
 
-    expect(result).toBe('https://rlogs.youdao.com/rlog.php?[redacted]#[redacted]');
+    expect(result).toBe('https://api.claidor.com/desktop/api/analytics/events?[redacted]#[redacted]');
     expect(result).not.toContain('user-1');
-    expect(result).not.toContain('lobsterai_app_started');
+    expect(result).not.toContain('maties_app_started');
   });
 
   test('returns a safe marker for invalid URLs', () => {
@@ -156,3 +157,24 @@ describe('sanitizeUrlForLog', () => {
 });
 
 // ---------------------------------------------------------------------------
+// isAnalyticsEndpointUrl — api:fetch skips its traffic log for these
+// ---------------------------------------------------------------------------
+describe('isAnalyticsEndpointUrl', () => {
+  test('matches the analyzer endpoint regardless of query or fragment', () => {
+    expect(isAnalyticsEndpointUrl(LogReporterEndpoint.Claidor)).toBe(true);
+    expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.Claidor}?_npid=wisdom&action=maties_app_started&uts=1`)).toBe(true);
+    expect(isAnalyticsEndpointUrl(`${LogReporterEndpoint.Claidor}#x`)).toBe(true);
+  });
+
+  test('does not match other hosts, paths, or schemes', () => {
+    expect(isAnalyticsEndpointUrl('https://api.claidor.com/desktop/api/user/profile-summary?uuid=1')).toBe(false);
+    expect(isAnalyticsEndpointUrl('https://api.claidor.com/desktop/api/analytics/other')).toBe(false);
+    expect(isAnalyticsEndpointUrl('http://api.claidor.com/desktop/api/analytics/events')).toBe(false);
+    expect(isAnalyticsEndpointUrl('https://api.claidor.com.evil.example/desktop/api/analytics/events')).toBe(false);
+  });
+
+  test('returns false for unparsable input', () => {
+    expect(isAnalyticsEndpointUrl('not a url')).toBe(false);
+    expect(isAnalyticsEndpointUrl('')).toBe(false);
+  });
+});

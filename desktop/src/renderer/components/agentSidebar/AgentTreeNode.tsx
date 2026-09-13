@@ -5,10 +5,8 @@ import { getAgentDisplayName, isDefaultAgentId, shouldUseDefaultAgentIcon } from
 import AgentAvatarIcon from '../agent/AgentAvatarIcon';
 import AgentConfirmDialog from '../agent/AgentConfirmDialog';
 import { AgentConfirmDialogVariant } from '../agent/constants';
-import ComposeIcon from '../icons/ComposeIcon';
-import DefaultAgentIcon from '../icons/DefaultAgentIcon';
+import { BriefcaseLineIcon, EllipsisLineIcon, PencilLineIcon } from '../design/LineIcons';
 import EditIcon from '../icons/EditIcon';
-import EllipsisHorizontalIcon from '../icons/EllipsisHorizontalIcon';
 import PushPinIcon from '../icons/PushPinIcon';
 import TrashIcon from '../icons/TrashIcon';
 import AgentTaskRow from './AgentTaskRow';
@@ -60,25 +58,38 @@ interface AgentTreeNodeProps {
 
 const ACTION_MENU_VIEWPORT_PADDING = 8;
 const ACTION_MENU_VERTICAL_GAP = 4;
-const ACTION_MENU_HEIGHT = 104;
+// Three rows of 38px inside 6px of padding.
+const ACTION_MENU_HEIGHT = 126;
 const AGENT_TASKS_TRANSITION_MS = 200;
+const MENU_ICON_CLASS_NAME = 'h-[15px] w-[15px] shrink-0 text-[#4a4f57]';
+const CARD_SHADOW = '0 1px 2px rgba(16,22,35,.04), 0 6px 18px rgba(16,22,35,.06), inset 0 1px 0 rgba(255,255,255,.7)';
+const QUIET_ROW_CLASS_NAME = 'flex w-full items-center px-[11px] py-2 text-left text-[13.5px] tracking-[-.006em] text-[#9aa1ab]';
 
+/** The agent's icon at 17px: the founder's briefcase for the default agent, the agent's own otherwise. */
 const AgentAvatar: React.FC<{ agent: AgentSidebarAgentNode }> = ({ agent }) => {
   if (shouldUseDefaultAgentIcon(agent)) {
-    return <DefaultAgentIcon className="h-4 w-4" />;
+    return <BriefcaseLineIcon size={17} className="text-[#6b7280]" />;
   }
 
   return (
     <AgentAvatarIcon
       value={agent.icon}
-      className="h-4 w-4"
-      iconClassName="h-4 w-4"
-      legacyClassName="text-[14px]"
+      className="h-[17px] w-[17px]"
+      iconClassName="h-[17px] w-[17px]"
+      legacyClassName="text-[15px]"
       fallbackText={getAgentDisplayName(agent).trim().slice(0, 1).toUpperCase() || 'A'}
     />
   );
 };
 
+/**
+ * One white card per agent with the resting shadow, and under the open
+ * agent its conversations (docs/maties/design.md, section 3, row 4).
+ *
+ * An agent starts shut. A shut row carries its conversation count in mono, as
+ * the connection groups do, so it plainly reads as a container with things
+ * inside rather than an agent with nothing to show.
+ */
 const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
   agent,
   isBatchMode,
@@ -129,17 +140,8 @@ const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return b.timestamp - a.timestamp;
   });
-  const menuItemClassName =
-    'flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1.5 text-left text-[13px] text-foreground transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]';
-  const dangerMenuItemClassName =
-    'flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1.5 text-left text-[13px] text-red-500 transition-colors hover:bg-red-500/10';
-  const disabledMenuItemClassName =
-    'flex w-full cursor-not-allowed items-center gap-2 whitespace-nowrap px-2.5 py-1.5 text-left text-[13px] text-secondary/40';
   const rowActionButtonClassName =
-    'inline-flex h-5 w-5 items-center justify-center rounded text-foreground opacity-[0.3] transition-opacity hover:opacity-[0.46]';
-  const rowEditActionButtonClassName =
-    'inline-flex h-5 w-5 items-center justify-center rounded text-foreground opacity-[0.3] transition-opacity hover:opacity-[0.46]';
-  const menuIconClassName = 'h-3.5 w-3.5';
+    'inline-flex h-6 w-6 items-center justify-center rounded-[7px] text-[#6b7280] transition-colors hover:bg-[rgba(16,20,28,.06)] hover:text-[#1c1f23]';
 
   const calculateMenuPosition = useCallback(() => {
     const rect = menuButtonRef.current?.getBoundingClientRect();
@@ -254,14 +256,17 @@ const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
     onCreateTask(agent);
   };
 
-  const handleAgentClick = (event: React.MouseEvent) => {
+  // The row is a disclosure and nothing else. It used to open the agent AND
+  // start a new chat in one click, which was harmless while agents opened by
+  // themselves; now that they start shut, clicking to read your conversations
+  // must not also throw a new one on top of them. New chat is the pencil.
+  const handleAgentClick = () => {
     onSidebarAction?.('agent_header_click', {
       agentType: isMainAgent ? 'main' : 'custom',
       isExpanded: agent.isExpanded,
       isPinned: agent.pinned,
     });
     onToggleExpanded(agent.id);
-    handleCreateTask(event);
   };
 
   const handleDeleteMenuClick = (event: React.MouseEvent) => {
@@ -283,26 +288,37 @@ const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
   };
 
   return (
-    <div className="space-y-0.5">
-      <div className={`group sticky top-10 ${isMenuOpen ? 'z-50' : 'z-20'} -ml-[6px] h-7 w-[calc(100%+12px)] bg-surface-raised`}>
+    <div className="mb-[2px]">
+      <div className={`group relative ${isMenuOpen ? 'z-50' : 'z-10'}`}>
         <button
           type="button"
           onClick={handleAgentClick}
-          className="flex h-full w-full items-center gap-2 rounded-md py-0 pl-3.5 pr-12 text-left text-sm font-normal text-foreground transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+          className="flex w-full items-center gap-[11px] rounded-[11px] border border-[rgba(255,255,255,.6)] bg-white py-[10px] pl-[11px] pr-[60px] text-left text-[14.5px] tracking-[-.008em] text-[#1c1f23] transition-shadow hover:shadow-[0_1px_2px_rgba(16,22,35,.05),0_8px_22px_rgba(16,22,35,.08),inset_0_1px_0_rgba(255,255,255,.7)]"
+          style={{ boxShadow: CARD_SHADOW }}
           role="treeitem"
           aria-level={1}
           aria-expanded={agent.isExpanded}
         >
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center leading-none text-foreground">
+          <span className="flex h-[17px] w-[17px] shrink-0 items-center justify-center leading-none">
             <AgentAvatar agent={agent} />
           </span>
           <span className="min-w-0 flex-1 truncate">
             {agentName}
           </span>
+          {!agent.isExpanded && agent.taskCount > 0 && (
+            <span
+              className="maties-mono shrink-0 text-[11.5px] text-[#a2a29c]"
+              aria-label={i18nService
+                .t('myAgentSidebarTaskCount')
+                .replace('{count}', String(agent.taskCount))}
+            >
+              {agent.taskCount}
+            </span>
+          )}
         </button>
 
         <div
-          className={`absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 transition-opacity ${
+          className={`absolute right-[9px] top-1/2 flex -translate-y-1/2 items-center gap-0.5 transition-opacity ${
             isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
           }`}
         >
@@ -328,62 +344,64 @@ const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
             className={rowActionButtonClassName}
             aria-label={i18nService.t('coworkSessionActions')}
           >
-            <EllipsisHorizontalIcon className="h-3.5 w-3.5" />
+            <EllipsisLineIcon size={16} />
           </button>
           <button
             type="button"
             onClick={handleCreateTask}
-            className={rowEditActionButtonClassName}
+            className={rowActionButtonClassName}
             aria-label={i18nService.t('myAgentSidebarNewTask')}
+            title={i18nService.t('myAgentSidebarNewTask')}
           >
-            <ComposeIcon className="h-3.5 w-3.5" />
+            <PencilLineIcon size={15} />
           </button>
         </div>
 
         {menuPosition && (
           <div
             ref={menuRef}
-            className="fixed z-[60] w-max min-w-[104px] max-w-[calc(100vw-16px)] overflow-hidden rounded-lg border border-border bg-surface shadow-lg"
+            className="maties-menu fixed z-[60] w-[180px] max-w-[calc(100vw-16px)]"
             style={{ top: menuPosition.top, right: menuPosition.right }}
             role="menu"
           >
             <button
               type="button"
               onClick={handleEditAgent}
-              className={menuItemClassName}
+              className="maties-menu-item"
               role="menuitem"
             >
-              <EditIcon className={menuIconClassName} />
+              <EditIcon className={MENU_ICON_CLASS_NAME} />
               {i18nService.t('edit')}
             </button>
             <button
               type="button"
               onClick={handleToggleAgentPin}
-              className={menuItemClassName}
+              className="maties-menu-item"
               role="menuitem"
             >
-              <PushPinIcon slashed={agent.pinned} className={menuIconClassName} />
+              <PushPinIcon slashed={agent.pinned} className={MENU_ICON_CLASS_NAME} />
               {agent.pinned ? i18nService.t('agentUnpin') : i18nService.t('agentPin')}
             </button>
             {isMainAgent ? (
               <button
                 type="button"
                 disabled
-                className={disabledMenuItemClassName}
+                className="maties-menu-item"
                 role="menuitem"
                 title={i18nService.t('agentDefaultCannotDelete')}
               >
-                <TrashIcon className={menuIconClassName} />
+                <TrashIcon className={MENU_ICON_CLASS_NAME} />
                 {i18nService.t('delete')}
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleDeleteMenuClick}
-                className={dangerMenuItemClassName}
+                className="maties-menu-item"
+                data-danger="true"
                 role="menuitem"
               >
-                <TrashIcon className={menuIconClassName} />
+                <TrashIcon className="h-[15px] w-[15px] shrink-0" />
                 {i18nService.t('delete')}
               </button>
             )}
@@ -431,25 +449,25 @@ const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
             role="group"
             aria-hidden={!agent.isExpanded}
           >
-            <div className="min-w-0 max-w-full space-y-0.5">
+            <div className="min-w-0 max-w-full space-y-[2px] pt-[6px]">
               {agent.hasLoadError && !hasVisibleTasks && (
                 <button
                   type="button"
                   onClick={() => onRetryLoadTasks(agent.id)}
-                  className="-ml-[6px] flex h-7 w-[calc(100%+12px)] items-center rounded-md pl-[38px] pr-2.5 text-left text-[13px] text-red-500 transition-colors hover:bg-red-500/10"
+                  className={`${QUIET_ROW_CLASS_NAME} rounded-[9px] !text-[#e0322d] transition-colors hover:bg-[rgba(224,50,45,.06)]`}
                 >
                   {i18nService.t('myAgentSidebarLoadFailed')}
                 </button>
               )}
 
               {agent.isLoadingTasks && !hasVisibleTasks && (
-                <div className="-ml-[6px] flex h-7 w-[calc(100%+12px)] items-center pl-[38px] pr-2.5 text-[13px] text-secondary">
+                <div className={QUIET_ROW_CLASS_NAME}>
                   {i18nService.t('loading')}
                 </div>
               )}
 
               {!agent.isLoadingTasks && !agent.hasLoadError && !hasVisibleTasks && (
-                <div className="-ml-[6px] flex h-7 w-[calc(100%+12px)] items-center pl-[38px] pr-2.5 text-[length:var(--lobster-text-sidebarCompact)] text-secondary">
+                <div className={QUIET_ROW_CLASS_NAME}>
                   {i18nService.t('myAgentSidebarNoTasks')}
                 </div>
               )}
@@ -478,7 +496,7 @@ const AgentTreeNode: React.FC<AgentTreeNodeProps> = ({
                 <button
                   type="button"
                   onClick={() => onRetryLoadTasks(agent.id)}
-                  className="-ml-[6px] flex h-7 w-[calc(100%+12px)] items-center rounded-md pl-[38px] pr-2.5 text-left text-[13px] text-red-500 transition-colors hover:bg-red-500/10"
+                  className={`${QUIET_ROW_CLASS_NAME} rounded-[9px] !text-[#e0322d] transition-colors hover:bg-[rgba(224,50,45,.06)]`}
                 >
                   {i18nService.t('myAgentSidebarLoadFailed')}
                 </button>

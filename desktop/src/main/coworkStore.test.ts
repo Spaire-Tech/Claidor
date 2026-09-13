@@ -21,6 +21,7 @@ vi.mock('electron', () => ({
 import BetterSqlite3 from 'better-sqlite3';
 
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
+import { SessionTitleSource } from '../common/sessionTitle';
 import { AgentAvatarSvg, DefaultAgentAvatarIcon, encodeAgentAvatarIcon } from '../shared/agent/avatar';
 import {
   COWORK_SEARCH_HISTORY_MAX_MESSAGE_CONTENT_CODE_UNITS,
@@ -28,7 +29,7 @@ import {
   CoworkForkMode,
 } from '../shared/cowork/constants';
 import { OpenClawCronRunMetadataKey } from '../shared/cowork/openclawCronSessionKey';
-import { CoworkStore } from './coworkStore';
+import { CoworkStore, getDefaultLibraryFolders } from './coworkStore';
 import { ContinuityCapsuleSource } from './libs/agentEngine/coworkContinuityCapsule';
 
 // ---------------------------------------------------------------------------
@@ -46,6 +47,7 @@ function setupDb(): void {
     CREATE TABLE IF NOT EXISTS cowork_sessions (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
+      title_source TEXT NOT NULL DEFAULT 'person',
       claude_session_id TEXT,
       scheduled_task_id TEXT,
       status TEXT NOT NULL DEFAULT 'idle',
@@ -95,7 +97,8 @@ function setupDb(): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS cowork_config (
       key TEXT PRIMARY KEY,
-      value TEXT
+      value TEXT,
+      updated_at INTEGER
     );
   `);
 
@@ -483,8 +486,8 @@ test('scheduled task sessions preserve their task id in session details and list
 });
 
 test('list and search session summaries include IM platform from mappings', () => {
-  insertSession('weixin-session', 'main', '[微信] group:o9cq', 2_000);
-  insertSession('regular-session', 'main', '[微信] user-written title', 1_000);
+  insertSession('telegram-session', 'main', '[Telegram] group:o9cq', 2_000);
+  insertSession('regular-session', 'main', '[Telegram] user-written title', 1_000);
   db.prepare(
     `INSERT INTO im_session_mappings (
       im_conversation_id,
@@ -497,20 +500,20 @@ test('list and search session summaries include IM platform from mappings', () =
     ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     'group:o9cq',
-    'weixin',
-    'weixin-session',
+    'telegram',
+    'telegram-session',
     'main',
-    'agent:main:openclaw-weixin:group:o9cq',
+    'agent:main:telegram:group:o9cq',
     1_000,
     2_000,
   );
 
   const listed = store.listSessions(10, 0);
-  expect(listed.find((session) => session.id === 'weixin-session')?.imPlatform).toBe('weixin');
+  expect(listed.find((session) => session.id === 'telegram-session')?.imPlatform).toBe('telegram');
   expect(listed.find((session) => session.id === 'regular-session')?.imPlatform).toBeNull();
 
   const searched = store.searchSessions({ query: 'group:o9cq', limit: 10, offset: 0 });
-  expect(searched[0]?.imPlatform).toBe('weixin');
+  expect(searched[0]?.imPlatform).toBe('telegram');
 });
 
 test('scheduled task session lookup uses a stable newest-created top-level session', () => {
@@ -923,12 +926,12 @@ test('updateSession can patch model override without refreshing the session upda
 
   store.updateSession(
     sid,
-    { modelOverride: 'lobsterai-server/qwen3.6-plus-YoudaoInner' },
+    { modelOverride: 'maties-server/qwen3.6-plus-YoudaoInner' },
     { touchUpdatedAt: false },
   );
 
   const session = store.getSession(sid);
-  expect(session?.modelOverride).toBe('lobsterai-server/qwen3.6-plus-YoudaoInner');
+  expect(session?.modelOverride).toBe('maties-server/qwen3.6-plus-YoudaoInner');
   expect(session?.updatedAt).toBe(1000);
 });
 
@@ -940,7 +943,7 @@ test('create and update session persist the selected thinking level', () => {
     'local',
     [],
     'main',
-    'lobsterai-server/deepseek-v4-flash',
+    'maties-server/deepseek-v4-flash',
     { thinkingLevel: 'high' },
   );
 
@@ -948,6 +951,44 @@ test('create and update session persist the selected thinking level', () => {
 
   store.updateSession(session.id, { thinkingLevel: 'max' }, { touchUpdatedAt: false });
   expect(store.getSession(session.id)?.thinkingLevel).toBe('max');
+});
+
+test('a deliberate name is never a placeholder, and a placeholder says so', () => {
+  // Almost every caller passes a real name — a scheduled task's, an IM
+  // conversation's — and those are never replaced.
+  const named = store.createSession('Weekly invoice run', '/tmp');
+  expect(store.getSession(named.id)?.titleSource).toBe(SessionTitleSource.Person);
+
+  // Only the app's own new chat, whose title is the truncation of the first
+  // message, is open to being named by what the chat is about.
+  const placeholder = store.createSession(
+    'please help me find last quarter',
+    '/tmp',
+    '',
+    'local',
+    [],
+    'main',
+    '',
+    { titleSource: SessionTitleSource.Fallback },
+  );
+  expect(store.getSession(placeholder.id)?.titleSource).toBe(SessionTitleSource.Fallback);
+
+  store.updateSession(
+    placeholder.id,
+    { title: 'Finding last quarter invoices', titleSource: SessionTitleSource.Assistant },
+    { touchUpdatedAt: false },
+  );
+  const renamed = store.getSession(placeholder.id);
+  expect(renamed?.title).toBe('Finding last quarter invoices');
+  expect(renamed?.titleSource).toBe(SessionTitleSource.Assistant);
+});
+
+test('a session that predates naming keeps the name it has', () => {
+  // Rows written before title_source existed carry the column default, and
+  // must never be read as a placeholder to overwrite.
+  const sid = 'sess-legacy-title';
+  insertSession(sid, 'main', 'An old conversation');
+  expect(store.getSession(sid)?.titleSource).toBe(SessionTitleSource.Person);
 });
 
 test('updateSession can rename without refreshing the session updated time', () => {
@@ -1336,6 +1377,70 @@ test('getConfig defaults OpenClaw heartbeat to disabled when config is missing',
   const config = store.getConfig();
 
   expect(config.openClawHeartbeatEnabled).toBe(false);
+});
+
+test('getConfig defaults the library to on with the default folders when nothing is stored', () => {
+  const config = store.getConfig();
+
+  expect(config.libraryEnabled).toBe(true);
+  expect(config.libraryFolders).toEqual(getDefaultLibraryFolders(config.workingDirectory));
+  expect(config.libraryFolders).toContain(config.workingDirectory);
+  expect(new Set(config.libraryFolders).size).toBe(config.libraryFolders.length);
+  expect(config.libraryExcludedFolders).toEqual([]);
+});
+
+test('getDefaultLibraryFolders lists existing home folders plus the working directory once', () => {
+  const folders = getDefaultLibraryFolders('/tmp/project');
+
+  expect(folders[folders.length - 1]).toBe('/tmp/project');
+  expect(new Set(folders).size).toBe(folders.length);
+  for (const folder of folders) {
+    expect(folder.length).toBeGreaterThan(0);
+  }
+  // The working directory is never repeated, even when it is a default folder.
+  const first = folders[0];
+  expect(getDefaultLibraryFolders(first).filter((folder) => folder === first)).toHaveLength(1);
+});
+
+test('library config round-trips through setConfig and getConfig', () => {
+  store.setConfig({
+    libraryEnabled: false,
+    libraryFolders: ['/home/me/Documents', ' /home/me/Desktop ', '/home/me/Documents', ''],
+    libraryExcludedFolders: ['/home/me/Documents/Archive'],
+  });
+
+  const config = store.getConfig();
+  expect(config.libraryEnabled).toBe(false);
+  expect(config.libraryFolders).toEqual(['/home/me/Documents', '/home/me/Desktop']);
+  expect(config.libraryExcludedFolders).toEqual(['/home/me/Documents/Archive']);
+
+  const stored = db
+    .prepare('SELECT value FROM cowork_config WHERE key = ?')
+    .get('libraryFolders') as { value: string };
+  expect(JSON.parse(stored.value)).toEqual(['/home/me/Documents', '/home/me/Desktop']);
+
+  // An empty list is a choice, not a missing value: the defaults do not come back.
+  store.setConfig({ libraryFolders: [] });
+  expect(store.getConfig().libraryFolders).toEqual([]);
+
+  store.setConfig({ libraryEnabled: true });
+  expect(store.getConfig().libraryEnabled).toBe(true);
+  expect(store.getConfig().libraryExcludedFolders).toEqual(['/home/me/Documents/Archive']);
+});
+
+test('getConfig falls back to the default folders when the stored list is unreadable', () => {
+  const upsert = db.prepare(
+    'INSERT OR REPLACE INTO cowork_config (key, value) VALUES (?, ?)',
+  );
+  upsert.run('libraryFolders', '{not json');
+  upsert.run('libraryExcludedFolders', '"a string, not a list"');
+
+  const config = store.getConfig();
+  expect(config.libraryFolders).toEqual(getDefaultLibraryFolders(config.workingDirectory));
+  expect(config.libraryExcludedFolders).toEqual([]);
+
+  upsert.run('libraryFolders', JSON.stringify([42, null, '/kept', '/kept']));
+  expect(store.getConfig().libraryFolders).toEqual(['/kept']);
 });
 
 test('backfillEmptyAgentModels assigns the current default model to empty agents only', () => {

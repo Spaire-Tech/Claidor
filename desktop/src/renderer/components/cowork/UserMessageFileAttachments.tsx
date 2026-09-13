@@ -1,28 +1,10 @@
-import { FolderOpenIcon } from '@heroicons/react/24/outline';
-import { FolderIcon } from '@heroicons/react/24/solid';
 import React, { useCallback } from 'react';
 
 import { ShellOpenFailureReason } from '../../../shared/shell/constants';
 import { i18nService } from '../../services/i18n';
 import type { UserMessageFileAttachment } from '../../utils/userMessageFileAttachments';
-import FileTypeIcon from '../icons/fileTypes/FileTypeIcon';
-import { getFileTypeInfo } from '../icons/fileTypes/index';
-
-const FILE_TYPE_I18N_KEYS: Record<string, string> = {
-  Word: 'fileAttachmentTypeWord',
-  Excel: 'fileAttachmentTypeSpreadsheet',
-  PPT: 'fileAttachmentTypePresentation',
-  PDF: 'fileAttachmentTypePdf',
-  Archive: 'fileAttachmentTypeArchive',
-  Code: 'fileAttachmentTypeCode',
-  Text: 'fileAttachmentTypeText',
-  SRT: 'fileAttachmentTypeSubtitle',
-  VTT: 'fileAttachmentTypeSubtitle',
-  Audio: 'fileAttachmentTypeAudio',
-  Video: 'fileAttachmentTypeVideo',
-  Image: 'fileAttachmentTypeImage',
-  File: 'fileAttachmentTypeFile',
-};
+import FileIcon from '../design/FileIcon';
+import { FolderLineIcon } from '../design/LineIcons';
 
 const showToast = (message: string): void => {
   window.dispatchEvent(new CustomEvent('app:showToast', { detail: message }));
@@ -35,9 +17,9 @@ interface UserMessageFileAttachmentsProps {
 }
 
 /**
- * Renders submitted file/folder attachments inside a user message bubble as
- * clickable cards. Clicking reveals the original file in the system file
- * manager; missing files surface a toast instead of failing silently.
+ * The files the person sent, as small chips inside the bubble
+ * (docs/maties/design.md, section 4). Clicking reveals the file in the
+ * system file manager; a missing file says so in a toast.
  */
 const UserMessageFileAttachments: React.FC<UserMessageFileAttachmentsProps> = ({
   attachments,
@@ -64,40 +46,24 @@ const UserMessageFileAttachments: React.FC<UserMessageFileAttachmentsProps> = ({
   if (attachments.length === 0) return null;
 
   return (
-    <div className={`flex flex-wrap gap-2 ${className}`}>
-      {attachments.map(attachment => {
-        const fileTypeLabel = getFileTypeInfo(attachment.name).label;
-        const typeLabel = attachment.isDirectory
-          ? i18nService.t('folderAttachmentType')
-          : i18nService.t(FILE_TYPE_I18N_KEYS[fileTypeLabel] ?? 'fileAttachmentTypeFile');
-        return (
-          <button
-            key={attachment.path}
-            type="button"
-            onClick={() => { void handleReveal(attachment); }}
-            className="group flex h-[52px] w-[200px] items-center gap-2.5 rounded-xl border border-border bg-background px-2.5 text-left shadow-subtle transition-colors hover:border-primary dark:bg-surface-raised"
-            title={`${attachment.path}\n${i18nService.t('coworkFileAttachmentRevealHint')}`}
-            aria-label={`${attachment.name} — ${i18nService.t('coworkFileAttachmentRevealHint')}`}
-          >
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-black/[0.04] dark:bg-white/[0.08]">
-              {attachment.isDirectory ? (
-                <FolderIcon className="h-5 w-5 flex-shrink-0 text-amber-500" />
-              ) : (
-                <FileTypeIcon fileName={attachment.name} className="h-5 w-5 flex-shrink-0" />
-              )}
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col justify-center">
-              <span className="truncate text-[13px] font-medium leading-4 text-foreground">
-                {attachment.name}
-              </span>
-              <span className="mt-0.5 truncate text-[11px] leading-4 text-secondary">
-                {typeLabel}
-              </span>
-            </div>
-            <FolderOpenIcon className="h-4 w-4 flex-shrink-0 text-secondary opacity-0 transition-opacity group-hover:opacity-100" />
-          </button>
-        );
-      })}
+    <div className={`flex flex-wrap gap-[6px] ${className}`}>
+      {attachments.map(attachment => (
+        <button
+          key={attachment.path}
+          type="button"
+          onClick={() => { void handleReveal(attachment); }}
+          className="inline-flex h-[30px] max-w-[260px] items-center gap-[7px] rounded-full border border-[rgba(16,22,35,.07)] bg-white pl-[6px] pr-[11px] text-left text-[13px] tracking-[-.006em] text-[#31353b] transition-colors hover:border-[rgba(0,96,208,.35)] hover:text-[#0060d0]"
+          title={`${attachment.path}\n${i18nService.t('coworkFileAttachmentRevealHint')}`}
+          aria-label={`${attachment.name} — ${i18nService.t('coworkFileAttachmentRevealHint')}`}
+        >
+          {attachment.isDirectory ? (
+            <FolderLineIcon size={16} className="text-[#4a4f57]" />
+          ) : (
+            <FileIcon fileName={attachment.name} size={18} />
+          )}
+          <span className="min-w-0 truncate">{attachment.name}</span>
+        </button>
+      ))}
     </div>
   );
 };

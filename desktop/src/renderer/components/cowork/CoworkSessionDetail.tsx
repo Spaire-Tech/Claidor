@@ -3,10 +3,8 @@ import {
   ArrowDownIcon,
   ComputerDesktopIcon,
   DocumentArrowDownIcon,
-  ExclamationTriangleIcon,
   PaperClipIcon,
   PhotoIcon,
-  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -61,7 +59,6 @@ import {
 import { configService, ConfigServiceEvent } from '../../services/config';
 import { coworkService } from '../../services/cowork';
 import { i18nService } from '../../services/i18n';
-import { getInstalledKitSkillIds } from '../../services/kitCapability';
 import { readLocalServiceProjectDirectoryCandidate } from '../../services/localServiceProjectDirectoryCache';
 import { RootState } from '../../store';
 import {
@@ -90,6 +87,7 @@ import {
   selectActivePreviewTab,
   selectIsPanelOpen,
   selectPanelWidth,
+  setPanelWidth,
   togglePanel,
   updateLocalServiceProjectMetadata,
 } from '../../store/slices/artifactSlice';
@@ -106,7 +104,6 @@ import {
   setPlanConfirmationAwaiting,
   setPlanConfirmationHandled,
 } from '../../store/slices/coworkSlice';
-import { setActiveKitIds } from '../../store/slices/kitSlice';
 import { setActiveSkillIds } from '../../store/slices/skillSlice';
 import type { Artifact } from '../../types/artifact';
 import { ArtifactTypeValue, PREVIEWABLE_ARTIFACT_TYPES } from '../../types/artifact';
@@ -140,14 +137,19 @@ import {
   getAutoPreviewOpenTarget,
   selectAutoPreviewArtifact,
 } from '../artifacts/autoPreviewPolicy';
-import ComposeIcon from '../icons/ComposeIcon';
+import IconButton from '../design/IconButton';
+import { PencilLineIcon, SearchLineIcon, ShareLineIcon, SidebarLineIcon } from '../design/LineIcons';
 import FileTypeIcon from '../icons/fileTypes/FileTypeIcon';
-import SidebarSearchIcon from '../icons/SidebarSearchIcon';
-import SidebarToggleIcon from '../icons/SidebarToggleIcon';
+import MessageForkIcon from '../icons/MessageForkIcon';
 import SubagentIcon from '../icons/SubagentIcon';
 import MarkdownContent from '../MarkdownContent';
+import CloudWorkStrip from '../maty/CloudWorkStrip';
 import { type ToastEventDetail } from '../Toast';
 import { resolveAgentModelSelection, useAgentSelectedModel } from './agentModelSelection';
+import {
+  computeArtifactPanelWidthBounds,
+  computeEvenSplitArtifactPanelWidth,
+} from './artifactPanelLayout';
 import AssistantTurnBlock, { ContextCompactionDivider } from './AssistantTurnBlock';
 import type { BrowserAnnotationAttachmentOpenPayload } from './BrowserAnnotationMessageAttachments';
 import { type CoworkOpenShareOptionsEventDetail, CoworkUiEvent } from './constants';
@@ -193,7 +195,6 @@ import {
   type ToolGroupItem,
 } from './messageDisplayUtils';
 import { parseProposedPlanBlock } from './proposedPlanParser';
-import { buildSelectedKitContextPrompt } from './selectedKitContextPrompt';
 import { buildSelectedSkillRoutingPrompt } from './selectedSkillRoutingPrompt';
 import SelectedTextActionToolbar from './SelectedTextActionToolbar';
 import {
@@ -209,7 +210,6 @@ import UserMessageContent from './UserMessageContent';
 import UserMessageItem from './UserMessageItem';
 interface CoworkSessionDetailProps {
   onManageSkills?: () => void;
-  onManageKits?: () => void;
   onContinue: (
     prompt: string,
     skillPrompt?: string,
@@ -221,6 +221,8 @@ interface CoworkSessionDetailProps {
   ) => boolean | void | Promise<boolean | void>;
   onStop: () => void;
   isSidebarCollapsed?: boolean;
+  /** Width the sidebar gives back when it steps aside for the artifact panel. */
+  sidebarWidth?: number;
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
   updateBadge?: React.ReactNode;
@@ -297,6 +299,15 @@ const ARTIFACT_PANEL_TRANSITION_MS = 200;
 const ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH = 4;
 const COWORK_DETAIL_MIN_WIDTH = 480;
 const ARTIFACT_PANEL_MIN_WIDTH_RATIO = 1 / 6;
+
+const buildArtifactPanelWidthInput = (contentRowWidth: number) => ({
+  contentRowWidth,
+  conversationMinWidth: COWORK_DETAIL_MIN_WIDTH,
+  resizeHandleWidth: ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH,
+  minWidthRatio: ARTIFACT_PANEL_MIN_WIDTH_RATIO,
+  hardMinWidth: MIN_PANEL_WIDTH,
+  hardMaxWidth: MAX_PANEL_WIDTH,
+});
 const SUBAGENT_PANEL_POLL_INTERVAL_MS = 5_000;
 const INVALID_FILE_NAME_PATTERN = /[<>:"/\\|?*\u0000-\u001F]/g;
 const SELECTED_TEXT_ACTION_HALF_WIDTH = 150;
@@ -434,7 +445,7 @@ const stripRailLabelMarkdown = (value: string): string => value
   .replace(/\s+/g, ' ')
   .trim()
   .replace(
-    /^(?:#{1,6}\s*)?(?:Summary|Implementation Approach|Key Changes|Validation|Assumptions or Questions)(?:\s*[:：]|\s+|(?=为))\s*/i,
+    /^(?:#{1,6}\s*)?(?:Summary|Implementation Approach|Key Changes|Validation|Assumptions or Questions)(?:\s*:|\s+)\s*/i,
     '',
   )
   .trim();
@@ -492,9 +503,9 @@ const buildRailItems = (
       messageId: primaryMessageId,
       turnIndex: index,
       absoluteIndex: messageOffsetById.get(primaryMessageId) ?? items.length,
-      label: turn.userMessage ? getRailLabel(userContent, `Turn ${index + 1}`) : 'LobsterAI',
+      label: turn.userMessage ? getRailLabel(userContent, `Turn ${index + 1}`) : 'Maties',
       summary: assistantContent
-        ? getRailLabel(assistantContent, 'LobsterAI', COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH)
+        ? getRailLabel(assistantContent, 'Maties', COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH)
         : '',
       contentLen: userContent.length + assistantContent.length,
       isUser: false,
@@ -562,7 +573,7 @@ const buildRailItemsFromIndex = (
       messageId: current.messageId,
       turnIndex: loadedTurnIndex,
       absoluteIndex: current.messageOffset,
-      label: 'LobsterAI',
+      label: 'Maties',
       summary: current.preview,
       contentLen: current.contentLen,
       isUser: false,
@@ -1022,10 +1033,10 @@ const domRectToCaptureRect = (rect: DOMRect): CaptureRect => ({
   height: Math.max(0, Math.round(rect.height)),
 });
 
-/** Format a date as "YYYY年MM月DD日" for the export header. */
+/** Format a date as "YYYY-MM-DD" for the export header. */
 const formatExportDate = (ts: number): string => {
   const d = new Date(ts);
-  return `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
 /** Draw a rounded-rectangle path (for card clipping / filling). */
@@ -1193,11 +1204,11 @@ const composeExportCanvas = async (
 
   ctx.fillStyle = brandColor;
   ctx.font = `600 ${brandFontSize}px ${fontStack}`;
-  ctx.fillText('LobsterAI — 全场景办公助手 Agent', textX, footerCenterY - taglineFontSize / 2 - 2);
+  ctx.fillText('Maties', textX, footerCenterY - taglineFontSize / 2 - 2);
 
   ctx.fillStyle = subtitleColor;
   ctx.font = `400 ${taglineFontSize}px ${fontStack}`;
-  ctx.fillText('国内大厂首个开源桌面级 Agent，网易有道出品', textX, footerCenterY + brandFontSize / 2 + 3);
+  ctx.fillText('Made with Maties', textX, footerCenterY + brandFontSize / 2 + 3);
 
   ctx.restore(); // card clip
 
@@ -1387,10 +1398,10 @@ const EMPTY_PREVIEW_TABS: ArtifactPreviewTab[] = [];
 
 const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   onManageSkills,
-  onManageKits,
   onContinue,
   onStop,
   isSidebarCollapsed,
+  sidebarWidth,
   onToggleSidebar,
   onNewChat,
   updateBadge,
@@ -1409,9 +1420,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   const messagesLength = useSelector(selectCurrentMessagesLength);
   const skills = useSelector((state: RootState) => state.skill.skills);
   const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
-  const activeKitIds = useSelector((state: RootState) => state.kit.activeKitIds);
-  const installedKits = useSelector((state: RootState) => state.kit.installedKits);
-  const marketplaceKits = useSelector((state: RootState) => state.kit.marketplaceKits);
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
   const agents = useSelector((state: RootState) => state.agent.agents);
   const availableModels = useSelector((state: RootState) => state.model.availableModels);
@@ -1580,16 +1588,11 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     [currentSession],
   );
   const confirmExecutionSkillPrompt = useMemo(() => {
-    const kitSkillIds = activeKitIds.flatMap(kitId => getInstalledKitSkillIds(installedKits[kitId]));
-    const allSkillIds = [...new Set([...activeSkillIds, ...kitSkillIds])];
-    const activeSkills = allSkillIds
+    const activeSkills = activeSkillIds
       .map(id => skills.find(skill => skill.id === id))
       .filter((skill): skill is NonNullable<typeof skill> => skill !== undefined);
-    return [
-      buildSelectedKitContextPrompt(activeKitIds, marketplaceKits, installedKits),
-      buildSelectedSkillRoutingPrompt(activeSkills),
-    ].filter(Boolean).join('\n\n') || undefined;
-  }, [activeKitIds, activeSkillIds, installedKits, marketplaceKits, skills]);
+    return buildSelectedSkillRoutingPrompt(activeSkills) || undefined;
+  }, [activeSkillIds, skills]);
   useEffect(() => {
     clearHeightCache();
   }, [sessionId]);
@@ -1854,6 +1857,30 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
       forkedFromMessageId: messageId,
     });
   }, [currentSession?.id, currentSession?.status, isStreaming]);
+
+  // The top bar's fork: the whole conversation, with the same guard as a
+  // fork from a message.
+  const handleForkSession = useCallback(() => {
+    if (!currentSession?.id) return;
+    if (isStreaming || currentSession.status === CoworkSessionStatusValue.Running) {
+      window.dispatchEvent(new CustomEvent('app:showToast', {
+        detail: i18nService.t('coworkForkRunningBlocked'),
+      }));
+      console.warn('[CoworkFork] session fork was rejected because the session is still running');
+      return;
+    }
+    console.log(`[CoworkFork] requesting a fork of session ${currentSession.id} from the top bar`);
+    void coworkService.forkSession({ sessionId: currentSession.id });
+  }, [currentSession?.id, currentSession?.status, isStreaming]);
+
+  // The top bar's share: the same event the sidebar row sends, handled above.
+  const handleOpenShareFromHeader = useCallback(() => {
+    if (!currentSession?.id) return;
+    window.dispatchEvent(new CustomEvent<CoworkOpenShareOptionsEventDetail>(
+      CoworkUiEvent.OpenShareOptions,
+      { detail: { sessionId: currentSession.id } },
+    ));
+  }, [currentSession?.id]);
 
   const handleConfirmPlan = useCallback(async (messageId: string) => {
     if (!currentSession?.id || !latestProposedPlan || latestProposedPlan.messageId !== messageId) return;
@@ -2375,6 +2402,20 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     };
   }, [clearAutoPreviewArtifactSettleTimer]);
 
+  // A panel opens level with the conversation instead of at whatever width it
+  // was last dragged to. The sidebar closes on the same event (see
+  // sidebarAutoCollapseState), so the row is about to grow by the width the
+  // sidebar gives back; splitting the row it will have avoids opening at one
+  // width and jumping to another a moment later.
+  const applyEvenArtifactPanelSplit = useCallback(() => {
+    const contentWidth = contentRowRef.current?.clientWidth ?? 0;
+    if (contentWidth <= 0) return;
+    const reclaimedSidebarWidth = isSidebarCollapsed ? 0 : Math.max(0, sidebarWidth ?? 0);
+    dispatch(setPanelWidth(computeEvenSplitArtifactPanelWidth(
+      buildArtifactPanelWidthInput(contentWidth + reclaimedSidebarWidth),
+    )));
+  }, [dispatch, isSidebarCollapsed, sidebarWidth]);
+
   useEffect(() => {
     let animationFrame: number | undefined;
     let transitionTimeout: number | undefined;
@@ -2387,6 +2428,7 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
     }
 
     if (isPanelOpen) {
+      applyEvenArtifactPanelSplit();
       setShouldRenderArtifactPanel(true);
       setIsArtifactPanelVisible(false);
       setIsArtifactPanelTransitioning(true);
@@ -2415,18 +2457,17 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
         window.clearTimeout(transitionTimeout);
       }
     };
-  }, [isPanelOpen]);
+  }, [applyEvenArtifactPanelSplit, isPanelOpen]);
 
   const updateArtifactPanelMaxWidth = useCallback(() => {
     const contentWidth = contentRowRef.current?.clientWidth ?? 0;
     if (contentWidth <= 0) return;
     setContentRowWidth(contentWidth);
-    const availablePanelWidth = contentWidth - COWORK_DETAIL_MIN_WIDTH - ARTIFACT_PANEL_RESIZE_HANDLE_WIDTH;
-    const nextMaxWidth = Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, availablePanelWidth));
-    const proportionalMinWidth = Math.floor(contentWidth * ARTIFACT_PANEL_MIN_WIDTH_RATIO);
-    const nextMinWidth = Math.min(nextMaxWidth, Math.max(MIN_PANEL_WIDTH, proportionalMinWidth));
-    setArtifactPanelMinWidth(nextMinWidth);
-    setArtifactPanelMaxWidth(nextMaxWidth);
+    const bounds = computeArtifactPanelWidthBounds(
+      buildArtifactPanelWidthInput(contentWidth),
+    );
+    setArtifactPanelMinWidth(bounds.minWidth);
+    setArtifactPanelMaxWidth(bounds.maxWidth);
   }, []);
 
   useLayoutEffect(() => {
@@ -5083,8 +5124,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
       // Restore active skills
       const skillIds = metadata?.skillIds ?? [];
       dispatch(setActiveSkillIds(skillIds));
-      const kitIds = metadata?.kitIds ?? [];
-      dispatch(setActiveKitIds(kitIds));
       // Focus the input
       ref.focus();
     })();
@@ -5978,7 +6017,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
               <UserMessageItem
                 message={turn.userMessage}
                 skills={skills}
-                marketplaceKits={marketplaceKits}
                 sessionId={sessionId}
                 onReEdit={remoteManaged ? undefined : handleReEdit}
                 onLocateSelectedText={handleLocateSelectedText}
@@ -6003,6 +6041,9 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
                 onDeployLocalService={handleDeployLocalServiceArtifact}
                 onOpenHtmlFile={handleOpenHtmlFileInBrowser}
                 onForkMessage={remoteManaged ? undefined : handleForkMessage}
+                onRetryTurn={remoteManaged ? undefined : (retryTurn) => {
+                  if (retryTurn.userMessage) handleReEdit(retryTurn.userMessage);
+                }}
                 renderToolGroupOverride={(group) => {
                   const groupSubagents = getToolGroupSubagents(group);
                   if (groupSubagents.length === 0) return null;
@@ -6041,38 +6082,44 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
   return (
     <ArtifactFileShareProvider sessionId={currentSession.id}>
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-      {/* Header — spans full width */}
+      {/* The top bar (docs/maties/design.md, section 3): 54 px, no background,
+          no border; the sidebar toggle at the left, the title centred, share,
+          search and fork at the right. On Windows the window controls sit in
+          their own bar above; on macOS the traffic lights need room when the
+          sidebar is shut, as in CoworkView. */}
       <div
         data-skin-session-titlebar="true"
-        className={`draggable relative z-30 flex h-12 shrink-0 items-center justify-between overflow-visible border-b border-border bg-background ${
-          isArtifactPanelExpanded ? 'pl-0 pr-4' : 'px-4'
+        className={`draggable relative z-30 flex h-[54px] shrink-0 items-center gap-3 overflow-visible ${
+          isArtifactPanelExpanded ? 'pl-0 pr-[22px]' : 'px-[22px]'
         }`}
       >
-        {/* Left side: Toggle buttons (when collapsed) + Title */}
-        <div className="flex h-full flex-1 items-center gap-2 min-w-0">
-          {isSidebarCollapsed && !isWindows && (
-            <div className={`non-draggable flex items-center gap-1 ${isMac ? 'pl-[68px]' : ''}`}>
-              <button
-                type="button"
-                onClick={onToggleSidebar}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-              >
-                <SidebarToggleIcon className="h-4 w-4" isCollapsed={true} />
-              </button>
-              <button
-                type="button"
-                onClick={onNewChat}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-              >
-                <ComposeIcon className="h-4 w-4" />
-              </button>
-              {updateBadge}
-            </div>
+        <div className={`non-draggable flex shrink-0 items-center gap-1 ${isSidebarCollapsed && isMac ? 'pl-[68px]' : ''}`}>
+          {!isWindows && (
+            <IconButton
+              label={isSidebarCollapsed ? i18nService.t('expand') : i18nService.t('collapse')}
+              onClick={onToggleSidebar}
+              className="text-[#4a4f57]"
+            >
+              <SidebarLineIcon />
+            </IconButton>
           )}
-          <h1 className="text-sm leading-5 font-medium text-foreground truncate max-w-[360px]">
-            {getSessionTitleForDisplay(currentSession.title) || i18nService.t('coworkNewSession')}
-          </h1>
+          {isSidebarCollapsed && !isWindows && onNewChat && (
+            <IconButton
+              label={i18nService.t('coworkNewSession')}
+              onClick={onNewChat}
+              className="text-[#4a4f57]"
+            >
+              <PencilLineIcon />
+            </IconButton>
+          )}
+          {isSidebarCollapsed && updateBadge}
         </div>
+        <h1
+          className="min-w-0 flex-1 truncate text-center text-[14.5px] font-normal leading-5 tracking-[-.008em] text-[#31353b]"
+          title={getSessionTitleForDisplay(currentSession.title) || i18nService.t('coworkNewSession')}
+        >
+          {getSessionTitleForDisplay(currentSession.title) || i18nService.t('coworkNewSession')}
+        </h1>
 
         {isConversationSearchOpen ? (
           <CoworkConversationSearch
@@ -6088,13 +6135,13 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             onClose={closeConversationSearch}
           />
         ) : (
-          /* Right side: Artifact toggle */
+          /* Right side: the panel's tabs, then share, search, fork, the panel toggle */
           <div
           className={`flex h-full shrink-0 items-center gap-1 ${
             isArtifactPanelVisible
               ? isArtifactPanelExpanded
-                ? '-mr-4 pr-4'
-                : '-mr-4 border-l border-border pr-4'
+                ? '-mr-[22px] pr-[22px]'
+                : '-mr-[22px] border-l border-border pr-[22px]'
               : ''
           }`}
           style={artifactHeaderWidth !== undefined ? { width: artifactHeaderWidth } : undefined}
@@ -6410,15 +6457,33 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
               )}
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleOpenConversationSearch}
-            className="non-draggable relative h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-            aria-label={i18nService.t('coworkConversationSearchOpen')}
-            title={i18nService.t('coworkConversationSearchOpen')}
-          >
-            <SidebarSearchIcon className="h-[18px] w-[18px]" />
-          </button>
+          <span className="non-draggable flex items-center gap-1">
+            <IconButton
+              label={i18nService.t('coworkShareSession')}
+              title={currentSession.messages.length === 0 ? i18nService.t('coworkNothingToShareYet') : i18nService.t('coworkShareSession')}
+              disabled={currentSession.messages.length === 0}
+              onClick={handleOpenShareFromHeader}
+              className="text-[#4a4f57]"
+            >
+              <ShareLineIcon />
+            </IconButton>
+            <IconButton
+              label={i18nService.t('coworkConversationSearchOpen')}
+              onClick={handleOpenConversationSearch}
+              className="text-[#4a4f57]"
+            >
+              <SearchLineIcon size={18} />
+            </IconButton>
+            {!remoteManaged && (
+              <IconButton
+                label={i18nService.t('coworkForkSession')}
+                onClick={handleForkSession}
+                className="text-[#4a4f57]"
+              >
+                <MessageForkIcon className="h-[17px] w-[17px]" />
+              </IconButton>
+            )}
+          </span>
           <button
             type="button"
             onClick={handleToggleArtifactPanel}
@@ -6793,79 +6858,55 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             <PromptInputCollapseIcon className="h-3.5 w-3.5" />
           </button>
         )}
+        {/* A card put aside with « Later » waits here, above the composer, as one
+            hairline row (docs/maties/design.md, section 4): the amber dot for an
+            action awaiting a yes, the blue dot for a question, the sentence, and
+            the way back. */}
         {minimizedPermission && (
           <div className={`${COWORK_DETAIL_CONTENT_CLASS} mb-2`}>
-            <div
-              className={`flex min-w-0 items-center gap-1 rounded-xl border p-1 text-sm shadow-subtle ${
-                isMinimizedQuestionPermission
-                  ? 'border-border bg-surface'
-                  : 'border-amber-200 bg-amber-50/95 dark:border-amber-900/70 dark:bg-amber-950/35'
-              }`}
-            >
+            <div className="maties-card-row maties-in flex min-w-0 items-center gap-2" style={{ padding: '6px 6px 6px 14px' }}>
               <button
                 type="button"
                 onClick={onRestorePermission}
                 disabled={!onRestorePermission}
-                className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
-                  isMinimizedQuestionPermission
-                    ? 'enabled:hover:bg-surface-raised'
-                    : 'enabled:hover:bg-amber-100/70 dark:enabled:hover:bg-amber-900/40'
-                }`}
+                className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                style={{ fontSize: 13.5, letterSpacing: '-.008em', color: '#1c1f23' }}
                 title={minimizedPermissionPreview}
               >
-                {isMinimizedQuestionPermission ? (
-                  <QuestionMarkCircleIcon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                ) : (
-                  <ExclamationTriangleIcon className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden="true" />
-                )}
                 <span
-                  className={`shrink-0 font-medium ${
-                    isMinimizedQuestionPermission ? 'text-foreground' : 'text-amber-900 dark:text-amber-100'
-                  }`}
-                >
+                  className="maties-status-dot shrink-0"
+                  style={{ color: isMinimizedQuestionPermission ? '#0060d0' : '#c8790a' }}
+                  aria-hidden="true"
+                />
+                <span className="shrink-0 font-medium">
                   {i18nService.t(
                     isMinimizedQuestionPermission ? 'coworkQuestionAwaitingAnswer' : 'coworkPermissionAwaiting'
                   )}
                 </span>
-                {!isMinimizedQuestionPermission && (
-                  <span className="shrink-0 text-amber-700/80 dark:text-amber-200/75">
-                    {minimizedPermission.toolName}
-                  </span>
-                )}
-                <span
-                  className={`min-w-0 flex-1 truncate ${
-                    isMinimizedQuestionPermission
-                      ? 'text-secondary'
-                      : 'text-amber-800/85 dark:text-amber-100/80'
-                  }`}
-                >
+                <span className="min-w-0 flex-1 truncate" style={{ color: '#8f96a0' }}>
                   {minimizedPermissionPreview}
                 </span>
-                {onRestorePermission && (
-                  <span
-                    className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium ${
-                      isMinimizedQuestionPermission
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-50'
-                    }`}
-                  >
-                    {i18nService.t(
-                      isMinimizedQuestionPermission ? 'coworkQuestionResume' : 'coworkPermissionRestore'
-                    )}
-                  </span>
-                )}
               </button>
               {onRespondToPermission && (
                 <button
                   type="button"
                   onClick={handleDenyMinimizedPermission}
-                  className={`shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                    isMinimizedQuestionPermission
-                      ? 'text-secondary hover:bg-surface-raised hover:text-foreground'
-                      : 'text-amber-800 hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-900/60'
-                  }`}
+                  className="maties-button maties-button-ghost shrink-0"
+                  style={{ height: 28 }}
                 >
-                  {i18nService.t('coworkDeny')}
+                  {i18nService.t('matiesNotNow')}
+                </button>
+              )}
+              {onRestorePermission && (
+                <button
+                  type="button"
+                  onClick={onRestorePermission}
+                  className="maties-button maties-button-outline shrink-0"
+                  style={{ height: 28 }}
+                >
+                  {i18nService.t(
+                    isMinimizedQuestionPermission ? 'coworkQuestionResume' : 'coworkPermissionRestore'
+                  )}
                 </button>
               )}
             </div>
@@ -6990,6 +7031,10 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
               <div ref={setSteerPreviewPortalTarget} />
             </div>
           )}
+          {/* What is in the cloud, above the composer
+              (docs/maties/cloud.md). Nothing is drawn when there is nothing
+              up there. */}
+          <CloudWorkStrip />
           <CoworkPromptInput
             ref={promptInputRef}
             onSubmit={onContinue}
@@ -7002,7 +7047,6 @@ const CoworkSessionDetail: React.FC<CoworkSessionDetailProps> = ({
             size={isArtifactPanelExpanded ? 'compact' : 'large'}
             remoteManaged={remoteManaged}
             onManageSkills={remoteManaged ? undefined : onManageSkills}
-            onManageKits={remoteManaged ? undefined : onManageKits}
             showModelSelector={true}
             showReadOnlyContext={!isArtifactPanelExpanded}
             showNewUserWelcomeLoginOverlay={isNewUserWelcomeSession}

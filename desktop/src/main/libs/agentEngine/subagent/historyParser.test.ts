@@ -57,8 +57,8 @@ describe('subagent history parser', () => {
         toolCallId: 'call-mkdir',
         name: 'exec',
         content: [
-          'mkdir : 具有指定名称 D:\\cus_sk 的项已存在。',
-          '所在位置 行:1 字符: 1',
+          'mkdir : An item with the specified name D:\\cus_sk already exists.',
+          'At line:1 char:1',
           '+ mkdir -p D:\\cus_sk',
           '+ ~~~~~~~~~~~~~~~~~~',
           '(Command exited with code 1)',
@@ -83,8 +83,8 @@ describe('subagent history parser', () => {
         id: 'msg-1',
         type: 'tool_result',
         content: [
-          'mkdir : 具有指定名称 D:\\cus_sk 的项已存在。',
-          '所在位置 行:1 字符: 1',
+          'mkdir : An item with the specified name D:\\cus_sk already exists.',
+          'At line:1 char:1',
           '+ mkdir -p D:\\cus_sk',
           '+ ~~~~~~~~~~~~~~~~~~',
           '(Command exited with code 1)',
@@ -93,8 +93,8 @@ describe('subagent history parser', () => {
         metadata: {
           toolName: 'exec',
           toolResult: [
-            'mkdir : 具有指定名称 D:\\cus_sk 的项已存在。',
-            '所在位置 行:1 字符: 1',
+            'mkdir : An item with the specified name D:\\cus_sk already exists.',
+            'At line:1 char:1',
             '+ mkdir -p D:\\cus_sk',
             '+ ~~~~~~~~~~~~~~~~~~',
             '(Command exited with code 1)',

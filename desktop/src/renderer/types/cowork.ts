@@ -12,10 +12,6 @@ import type {
 } from '../../shared/cowork/imageAttachments';
 import type { CoworkSelectedTextSnippet } from '../../shared/cowork/selectedText';
 import type {
-  KitReference,
-  ResolvedKitCapabilities,
-} from '../../shared/kit/constants';
-import type {
   OpenClawEngineErrorCode,
   OpenClawEnginePhase as SharedOpenClawEnginePhase,
   OpenClawGatewayRepairErrorCode,
@@ -79,9 +75,6 @@ export interface CoworkMessageMetadata {
   isFinal?: boolean;
   isThinking?: boolean;
   skillIds?: string[];
-  kitIds?: string[];
-  kitReferences?: KitReference[];
-  resolvedKitCapabilities?: ResolvedKitCapabilities;
   imageAttachments?: CoworkImageAttachment[];
   imageAttachmentPreviews?: CoworkImageAttachmentPreview[];
   usage?: {
@@ -158,7 +151,6 @@ export interface CoworkSession {
   thinkingLevel?: ModelThinkingLevel | '';
   executionMode: CoworkExecutionMode;
   activeSkillIds: string[];
-  activeKitIds?: string[];
   agentId: string;
   messages: CoworkMessage[];
   /** Offset of the first loaded message in the full message history. 0 means loaded from the beginning. */
@@ -201,6 +193,9 @@ export interface CoworkConfig {
   dreamingFrequency: string;
   dreamingModel: string;
   dreamingTimezone: string;
+  libraryEnabled: boolean;
+  libraryFolders: string[];
+  libraryExcludedFolders: string[];
   openClawSessionPolicy: OpenClawSessionPolicyConfig;
 }
 
@@ -239,6 +234,9 @@ export type CoworkConfigUpdate = Partial<Pick<
   | 'dreamingFrequency'
   | 'dreamingModel'
   | 'dreamingTimezone'
+  | 'libraryEnabled'
+  | 'libraryFolders'
+  | 'libraryExcludedFolders'
 >>;
 
 export interface CoworkApiConfig {
@@ -364,9 +362,6 @@ export interface CoworkStartOptions {
   title?: string;
   activeSkillIds?: string[];
   runtimeSkillIds?: string[];
-  kitIds?: string[];
-  kitReferences?: KitReference[];
-  resolvedKitCapabilities?: ResolvedKitCapabilities;
   agentId?: string;
   modelOverride?: string;
   thinkingLevel?: ModelThinkingLevel;
@@ -384,9 +379,6 @@ export interface CoworkContinueOptions {
   systemPrompt?: string;
   activeSkillIds?: string[];
   runtimeSkillIds?: string[];
-  kitIds?: string[];
-  kitReferences?: KitReference[];
-  resolvedKitCapabilities?: ResolvedKitCapabilities;
   imageAttachments?: CoworkImageAttachment[];
   mediaSelection?: { mode: string; modelId?: string; modelName?: string; imageModelId?: string; videoModelId?: string };
   mediaReferences?: import('./mediaGeneration').MediaAttachmentRef[];
@@ -404,6 +396,8 @@ export interface CoworkSessionResult {
 export interface CoworkSessionListResult {
   success: boolean;
   sessions?: CoworkSessionSummary[];
+  /** How many sessions match in total, not just on this page. */
+  total?: number;
   /** Whether more sessions exist beyond the currently loaded set. */
   hasMore?: boolean;
   error?: string;

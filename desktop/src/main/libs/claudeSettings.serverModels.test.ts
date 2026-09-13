@@ -111,13 +111,13 @@ describe('server model metadata cache', () => {
         ],
         defaultLevel: 'high',
       },
-      requestCapabilities: ['lobsterai-options-v1', 'future-options-v2'],
+      requestCapabilities: ['maties-options-v1', 'future-options-v2'],
     };
 
     expect(updateServerModelMetadata([base])).toBe(true);
     expect(getAllServerModelMetadata()[0].thinkingConfig).toEqual(base.thinkingConfig);
     expect(getAllServerModelMetadata()[0].requestCapabilities).toEqual([
-      'lobsterai-options-v1',
+      'maties-options-v1',
     ]);
     expect(updateServerModelMetadata([base])).toBe(false);
     expect(updateServerModelMetadata([{

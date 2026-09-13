@@ -1,7 +1,7 @@
 import {
-  LOBSTERAI_CLIENT_CAPABILITIES,
-  LOBSTERAI_CLIENT_CAPABILITIES_HEADER,
-  LOBSTERAI_CLIENT_VERSION_HEADER,
+  MATIES_CLIENT_CAPABILITIES,
+  MATIES_CLIENT_CAPABILITIES_HEADER,
+  MATIES_CLIENT_VERSION_HEADER,
 } from '../../shared/providers/modelRuntimeProfiles';
 import { authQuotaGateStateFromQuota, normalizeAuthQuota } from '../authQuota';
 import {
@@ -31,8 +31,8 @@ export const buildServerModelCapabilityHeaders = (
   clientVersion: string,
 ): Record<string, string> => ({
   Accept: 'application/json',
-  [LOBSTERAI_CLIENT_CAPABILITIES_HEADER]: LOBSTERAI_CLIENT_CAPABILITIES,
-  [LOBSTERAI_CLIENT_VERSION_HEADER]: clientVersion,
+  [MATIES_CLIENT_CAPABILITIES_HEADER]: MATIES_CLIENT_CAPABILITIES,
+  [MATIES_CLIENT_VERSION_HEADER]: clientVersion,
 });
 
 /**
@@ -40,7 +40,7 @@ export const buildServerModelCapabilityHeaders = (
  * see real server data instead of empty defaults.
  *
  * Without this, cachedSubscriptionStatus starts as 'free' and serverModelMetadataCache
- * is empty. resolveMatchedProvider then falls back to tryLobsteraiServerFallback
+ * is empty. resolveMatchedProvider then falls back to tryMatiesServerFallback
  * for every call, and the renderer's subsequent auth responses trigger redundant
  * syncOpenClawConfig calls during the gateway startup window.
  */

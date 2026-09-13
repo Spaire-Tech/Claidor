@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const midnight: ThemeDefinition = {
   meta: {
     id: 'midnight',
-    name: '午夜深蓝',
-    description: '深邃冷调的默认暗色主题',
+    name: 'Midnight',
+    description: 'The deep, cool-toned default dark theme',
     appearance: 'dark',
     preview: ['#0f172a', '#3b82f6', '#60a5fa', '#14b8a6'],
   },

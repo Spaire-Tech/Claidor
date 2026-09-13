@@ -62,7 +62,7 @@ describe('normalizeFilePathForDedup', () => {
 
 describe('parseFileLinksFromMessage', () => {
   test('strips leading / from Windows file:// link path', () => {
-    const content = '文件：[hello.pptx](file:///D:/workspace/hello.pptx)';
+    const content = 'File: [hello.pptx](file:///D:/workspace/hello.pptx)';
     const artifacts = parseFileLinksFromMessage(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0].filePath).toBe('D:/workspace/hello.pptx');
@@ -76,10 +76,10 @@ describe('parseFileLinksFromMessage', () => {
   });
 
   test('handles URI-encoded paths', () => {
-    const content = '[文件.pptx](file:///D:/my%20folder/%E6%96%87%E4%BB%B6.pptx)';
+    const content = '[résumé.pptx](file:///D:/my%20folder/r%C3%A9sum%C3%A9.pptx)';
     const artifacts = parseFileLinksFromMessage(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
-    expect(artifacts[0].filePath).toBe('D:/my folder/文件.pptx');
+    expect(artifacts[0].filePath).toBe('D:/my folder/résumé.pptx');
   });
 
   test('creates image artifacts for local file links', () => {
@@ -99,23 +99,23 @@ describe('parseFileLinksFromMessage', () => {
   });
 
   test('accepts plain absolute POSIX path links without file:// scheme', () => {
-    const content = '改好了：[随便写一个 Markdown.md](/Users/admin/project012/随便写一个 Markdown.md)';
+    const content = 'Done: [Quick notes Markdown.md](/Users/admin/project012/Quick notes Markdown.md)';
     const artifacts = parseFileLinksFromMessage(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0].type).toBe('markdown');
-    expect(artifacts[0].filePath).toBe('/Users/admin/project012/随便写一个 Markdown.md');
+    expect(artifacts[0].filePath).toBe('/Users/admin/project012/Quick notes Markdown.md');
   });
 
   test('accepts Windows absolute path links with backslashes', () => {
-    const content = '[周报.docx](D:\\工作文档\\周报.docx)';
+    const content = '[Weekly report.docx](D:\\Work Docs\\Weekly report.docx)';
     const artifacts = parseFileLinksFromMessage(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0].type).toBe('document');
-    expect(artifacts[0].filePath).toBe('D:\\工作文档\\周报.docx');
+    expect(artifacts[0].filePath).toBe('D:\\Work Docs\\Weekly report.docx');
   });
 
   test('accepts relative path links with a separator', () => {
-    const content = '[报告](./output/report.html)';
+    const content = '[Report](./output/report.html)';
     const artifacts = parseFileLinksFromMessage(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0].type).toBe('html');
@@ -124,10 +124,10 @@ describe('parseFileLinksFromMessage', () => {
 
   test('ignores web, mailto, anchor, and localhost links', () => {
     const content = [
-      '[文档](https://example.com/report.pdf)',
-      '[邮件](mailto:user@example.com)',
-      '[章节](#section)',
-      '[预览](http://localhost:3000/index.html)',
+      '[Document](https://example.com/report.pdf)',
+      '[Email](mailto:user@example.com)',
+      '[Section](#section)',
+      '[Preview](http://localhost:3000/index.html)',
     ].join('\n');
     expect(parseFileLinksFromMessage(content, 'msg1', 'sess1')).toHaveLength(0);
   });
@@ -163,7 +163,7 @@ describe('parseFilePathsFromText', () => {
   });
 
   test('detects bare html file paths', () => {
-    const content = '页面已生成 /home/user/project/dist/index.html 完成';
+    const content = 'Page generated at /home/user/project/dist/index.html done';
     const artifacts = parseFilePathsFromText(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0].type).toBe('html');
@@ -171,15 +171,15 @@ describe('parseFilePathsFromText', () => {
   });
 
   test('detects bare Windows backslash paths', () => {
-    const content = '文件已保存到 D:\\工作文档\\月报\\使用Agent.html';
+    const content = 'The file was saved to D:\\WorkDocs\\Monthly\\UsingAgent.html';
     const artifacts = parseFilePathsFromText(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0].type).toBe('html');
-    expect(artifacts[0].filePath).toBe('D:\\工作文档\\月报\\使用Agent.html');
+    expect(artifacts[0].filePath).toBe('D:\\WorkDocs\\Monthly\\UsingAgent.html');
   });
 
   test('does not detect remote https image URLs as local paths', () => {
-    const content = '图片在 https://example.com/assets/generated.png 上';
+    const content = 'The image is at https://example.com/assets/generated.png online';
     expect(parseFilePathsFromText(content, 'msg1', 'sess1')).toHaveLength(0);
   });
 });
@@ -603,7 +603,7 @@ describe('dedupeArtifactsForDisplay', () => {
 
 describe('parseLocalServiceUrlsFromText', () => {
   test('parses localhost service URLs', () => {
-    const content = '服务已启动：http://localhost:4173/login-react.html';
+    const content = 'Service started: http://localhost:4173/login-react.html';
     const artifacts = parseLocalServiceUrlsFromText(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
     expect(artifacts[0].type).toBe('local-service');
@@ -612,10 +612,10 @@ describe('parseLocalServiceUrlsFromText', () => {
   });
 
   test('uses markdown link text as title', () => {
-    const content = '[登录页面](http://localhost:4173/login-react.html)';
+    const content = '[Login page](http://localhost:4173/login-react.html)';
     const artifacts = parseLocalServiceUrlsFromText(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
-    expect(artifacts[0].title).toBe('登录页面');
+    expect(artifacts[0].title).toBe('Login page');
   });
 
   test('deduplicates repeated markdown and bare URLs', () => {
@@ -626,7 +626,7 @@ describe('parseLocalServiceUrlsFromText', () => {
 
   test('does not attach session cwd as project directory when no project is detected', () => {
     const artifacts = parseLocalServiceUrlsFromText(
-      '服务已启动：http://localhost:3000',
+      'Service started: http://localhost:3000',
       'msg1',
       'sess1',
       { projectDirectory: '/Users/admin/project/fanren-vote' },
@@ -640,81 +640,81 @@ describe('parseLocalServiceUrlsFromText', () => {
 
   test('prefers project directory from startup cd command over session cwd', () => {
     const content = [
-      '启动方式',
+      'How to start',
       '```bash',
-      'cd /Users/admin/lobsterai/project/fanren/fanren-vote',
+      'cd /Users/admin/maties/project/fanren/fanren-vote',
       'npm run dev',
       '```',
-      '预览地址：http://localhost:3000',
+      'Preview URL: http://localhost:3000',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/lobsterai/project/fanren' },
+      { projectDirectory: '/Users/admin/maties/project/fanren' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/lobsterai/project/fanren/fanren-vote',
+      '/Users/admin/maties/project/fanren/fanren-vote',
     );
   });
 
   test('prefers labeled project directory over session cwd', () => {
     const content = [
-      '项目目录： `/Users/admin/lobsterai/project/fanren/fanren-vote/`',
-      '预览地址：http://localhost:3000',
+      'Project directory: `/Users/admin/maties/project/fanren/fanren-vote/`',
+      'Preview URL: http://localhost:3000',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/lobsterai/project/fanren' },
+      { projectDirectory: '/Users/admin/maties/project/fanren' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/lobsterai/project/fanren/fanren-vote/',
+      '/Users/admin/maties/project/fanren/fanren-vote/',
     );
   });
 
   test('extracts labeled project directory from markdown file link', () => {
     const content = [
-      '✅ 服务已启动，运行在 http://localhost:3000',
-      '• 项目路径： [`/Users/admin/lobsterai/project/fanren/fanren-vote/`](file:///Users/admin/lobsterai/project/fanren/fanren-vote/)',
-      '• 状态： 正常运行，HTTP 200',
+      '✅ Service started and running at http://localhost:3000',
+      '• Project path: [`/Users/admin/maties/project/fanren/fanren-vote/`](file:///Users/admin/maties/project/fanren/fanren-vote/)',
+      '• Status: running normally, HTTP 200',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/lobsterai/project/fanren' },
+      { projectDirectory: '/Users/admin/maties/project/fanren' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/lobsterai/project/fanren/fanren-vote/',
+      '/Users/admin/maties/project/fanren/fanren-vote/',
     );
   });
 
   test('extracts project directory from project located markdown file link', () => {
     const content = [
-      '网站已全部完成！ 项目位于 [chinese-navy-site](file:///Users/admin/lobsterai/project/chinese-navy-site)，本地服务运行在 `http://localhost:8765`。',
+      'The site is complete! The project is located at [chinese-navy-site](file:///Users/admin/maties/project/chinese-navy-site), and the local server runs at `http://localhost:8765`.',
       '',
-      '**文件结构：**',
-      '- [index.html](file:///Users/admin/lobsterai/project/chinese-navy-site/index.html) — 页面结构',
+      '**File structure:**',
+      '- [index.html](file:///Users/admin/maties/project/chinese-navy-site/index.html) — page structure',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/lobsterai/project' },
+      { projectDirectory: '/Users/admin/maties/project' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/lobsterai/project/chinese-navy-site',
+      '/Users/admin/maties/project/chinese-navy-site',
     );
     expect(artifacts[0].localService?.projectCandidates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          directory: '/Users/admin/lobsterai/project/chinese-navy-site',
+          directory: '/Users/admin/maties/project/chinese-navy-site',
           source: ShareDeploymentCandidateSource.TextLabeledPath,
         }),
       ]),
@@ -723,20 +723,20 @@ describe('parseLocalServiceUrlsFromText', () => {
 
   test('derives project directory from common parent of file links', () => {
     const content = [
-      '本地服务运行在 http://localhost:8765',
-      '- [index.html](file:///Users/admin/lobsterai/project/chinese-navy-site/index.html)',
-      '- [style.css](file:///Users/admin/lobsterai/project/chinese-navy-site/styles/style.css)',
-      '- [app.js](file:///Users/admin/lobsterai/project/chinese-navy-site/scripts/app.js)',
+      'The local service is running at http://localhost:8765',
+      '- [index.html](file:///Users/admin/maties/project/chinese-navy-site/index.html)',
+      '- [style.css](file:///Users/admin/maties/project/chinese-navy-site/styles/style.css)',
+      '- [app.js](file:///Users/admin/maties/project/chinese-navy-site/scripts/app.js)',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(content, 'msg1', 'sess1');
 
     expect(artifacts[0].localService?.projectDirectory).toBe(
-      '/Users/admin/lobsterai/project/chinese-navy-site',
+      '/Users/admin/maties/project/chinese-navy-site',
     );
     expect(artifacts[0].localService?.projectCandidates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          directory: '/Users/admin/lobsterai/project/chinese-navy-site',
+          directory: '/Users/admin/maties/project/chinese-navy-site',
           source: ShareDeploymentCandidateSource.TextCommonParent,
         }),
       ]),
@@ -745,14 +745,14 @@ describe('parseLocalServiceUrlsFromText', () => {
 
   test('ignores malformed labeled project directory markers', () => {
     const content = [
-      '项目路径： [',
-      '预览地址：http://localhost:3000',
+      'Project path: [',
+      'Preview URL: http://localhost:3000',
     ].join('\n');
     const artifacts = parseLocalServiceUrlsFromText(
       content,
       'msg1',
       'sess1',
-      { projectDirectory: '/Users/admin/lobsterai/project/fanren' },
+      { projectDirectory: '/Users/admin/maties/project/fanren' },
     );
 
     expect(artifacts[0].localService?.projectDirectory).toBeUndefined();
@@ -781,10 +781,10 @@ describe('parseMediaTokensFromText', () => {
   });
 
   test('parses macOS path with spaces (Application Support)', () => {
-    const content = 'MEDIA: /Users/test/Library/Application Support/com.lobsterai/images/output.png';
+    const content = 'MEDIA: /Users/test/Library/Application Support/com.maties/images/output.png';
     const artifacts = parseMediaTokensFromText(content, 'msg1', 'sess1');
     expect(artifacts).toHaveLength(1);
-    expect(artifacts[0].filePath).toBe('/Users/test/Library/Application Support/com.lobsterai/images/output.png');
+    expect(artifacts[0].filePath).toBe('/Users/test/Library/Application Support/com.maties/images/output.png');
     expect(artifacts[0].type).toBe('image');
   });
 
@@ -886,13 +886,13 @@ describe('parseToolArtifact', () => {
       metadata: {
         toolName: 'Edit',
         toolUseId: 'tu1',
-        toolInput: { file_path: '/Users/admin/project012/随便写一个 Markdown.md', old_string: 'a', new_string: 'b' },
+        toolInput: { file_path: '/Users/admin/project012/Quick notes Markdown.md', old_string: 'a', new_string: 'b' },
       },
     };
     const artifact = parseToolArtifact(toolUseMsg, undefined, 'sess1');
     expect(artifact).not.toBeNull();
     expect(artifact!.type).toBe('markdown');
-    expect(artifact!.filePath).toBe('/Users/admin/project012/随便写一个 Markdown.md');
+    expect(artifact!.filePath).toBe('/Users/admin/project012/Quick notes Markdown.md');
     expect(artifact!.messageId).toBe('tool1');
   });
 
@@ -1005,7 +1005,7 @@ describe('isIgnoredArtifactPath', () => {
     expect(isIgnoredArtifactPath('/cwd/output/report.md')).toBe(false);
     expect(isIgnoredArtifactPath('./output/report.md')).toBe(false);
     expect(isIgnoredArtifactPath('~/Desktop/report.md')).toBe(false);
-    expect(isIgnoredArtifactPath('D:\\工作文档\\周报.docx')).toBe(false);
+    expect(isIgnoredArtifactPath('D:\\Work Docs\\Weekly report.docx')).toBe(false);
   });
 });
 
@@ -1026,13 +1026,13 @@ describe('shouldParseFilePathsFromToolResult', () => {
     expect(shouldParseFilePathsFromToolResult('image_generate')).toBe(true);
   });
 
-  test('returns true for lobsterai_image_generate tool', () => {
-    expect(shouldParseFilePathsFromToolResult('lobsterai_image_generate')).toBe(true);
+  test('returns true for maties_image_generate tool', () => {
+    expect(shouldParseFilePathsFromToolResult('maties_image_generate')).toBe(true);
   });
 
   test('is case-insensitive', () => {
     expect(shouldParseFilePathsFromToolResult('Image_Generate')).toBe(true);
-    expect(shouldParseFilePathsFromToolResult('LOBSTERAI_IMAGE_GENERATE')).toBe(true);
+    expect(shouldParseFilePathsFromToolResult('MATIES_IMAGE_GENERATE')).toBe(true);
   });
 
   test('returns false for Bash tool (find/ls output should not become artifacts)', () => {
@@ -1064,7 +1064,7 @@ describe('parseFilePathsFromText — find command output scenario', () => {
     const findOutput = [
       './B-01-seedream.png',
       './B-02-chart.png',
-      './subfolder/凡人修仙传女性角色群像全身照.png',
+      './subfolder/character-group-portrait.png',
       './black_huaqiang_bao_shu_reference.png',
     ].join('\n');
 

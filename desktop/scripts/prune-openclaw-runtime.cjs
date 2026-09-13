@@ -69,7 +69,7 @@ const DIRS_TO_DELETE = new Set([
 // pruned unless explicitly added here.
 
 const BUNDLED_EXTENSIONS_TO_KEEP = new Set([
-  // --- Providers (LobsterAI may route to these) ---
+  // --- Providers (Maties may route to these) ---
   'anthropic', 'deepseek', 'google', 'kimi-coding', 'minimax', 'moonshot',
   'ollama', 'openai', 'openrouter', 'qianfan', 'qwen', 'stepfun', 'volcengine',
   'xai', 'xiaomi',
@@ -77,8 +77,32 @@ const BUNDLED_EXTENSIONS_TO_KEEP = new Set([
   'telegram', 'discord', 'feishu', 'qqbot',
   // --- Core features ---
   'browser', 'memory-core', 'lobster', 'llm-task', 'zai',
+  // --- Web search ---
+  // DuckDuckGo needs no key and no account, which is why it is the one
+  // search provider Maties ships (docs/maties/models-and-search.md,
+  // section 3). Deleting it here would leave `web_search` allowed in
+  // openclawConfigSync.ts with no provider behind it, which fails
+  // silently and reads as stupidity.
+  'duckduckgo',
   // --- Media / voice (bundled defaults, may be used by agents) ---
   'image-generation-core', 'media-understanding-core', 'speech-core', 'talk-voice',
+  // --- Voice, telephony and iMessage: REMOVED AGAIN, deliberately ---
+  // These three were added to this list on 12 September and taken out the
+  // same day, because keeping them broke the browser and with it every
+  // other plugin.
+  //
+  // Plugin loading is all-or-nothing: `maybeThrowOnPluginLoadError` throws
+  // for the whole registry the moment any single plugin is in an error
+  // state, so one extension that cannot load takes down `browser`,
+  // `memory-core` and the rest with it. `voice-call` declares four
+  // dependencies (ws, commander, typebox, zod) that our packaging has never
+  // installed, because the extension had always been deleted before that
+  // mattered.
+  //
+  // Before any of them comes back: install each one's dependencies in the
+  // packaged runtime, then start the gateway and read the plugin registry
+  // to see it actually loaded. Adding the name here is the last step, not
+  // the first.
   // --- Internal ---
   'acpx', 'thread-ownership', 'memory-lancedb', 'memory-wiki',
 ]);

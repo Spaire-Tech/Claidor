@@ -1,12 +1,10 @@
 import React from 'react';
 
 import type { LocalizedQuickAction } from '../../types/quickAction';
+import { BarsLineIcon, DocumentLineIcon, GlobeLineIcon, SlidesLineIcon } from '../design/LineIcons';
+import Pill, { PillTone } from '../design/Pill';
 import AcademicCapIcon from '../icons/AcademicCapIcon';
-import ChartBarIcon from '../icons/ChartBarIcon';
 import DevicePhoneMobileIcon from '../icons/DevicePhoneMobileIcon';
-import DocumentTextIcon from '../icons/DocumentTextIcon';
-import GlobeAltIcon from '../icons/GlobeAltIcon';
-import PresentationChartBarIcon from '../icons/PresentationChartBarIcon';
 
 interface QuickActionBarProps {
   actions: LocalizedQuickAction[];
@@ -14,14 +12,18 @@ interface QuickActionBarProps {
   onActionSelect: (actionId: string) => void;
 }
 
-// 图标映射
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  PresentationChartBarIcon,
-  GlobeAltIcon,
-  DevicePhoneMobileIcon,
-  DocumentTextIcon,
-  ChartBarIcon,
-  AcademicCapIcon,
+/**
+ * The four suggestion pills under the composer (docs/maties/design.md,
+ * section 4): each with the founder's line icon in its own colour. The
+ * quick action config names an icon; the founder drew four of them.
+ */
+const founderIcons: Record<string, React.ReactNode> = {
+  PresentationChartBarIcon: <SlidesLineIcon className="text-[#e8a300]" />,
+  ChartBarIcon: <BarsLineIcon className="text-[#2b6cf5]" />,
+  DocumentTextIcon: <DocumentLineIcon className="text-[#1a8547]" />,
+  GlobeAltIcon: <GlobeLineIcon className="text-[#6a45c9]" />,
+  DevicePhoneMobileIcon: <DevicePhoneMobileIcon className="h-[15px] w-[15px] text-[#6a45c9]" />,
+  AcademicCapIcon: <AcademicCapIcon className="h-[15px] w-[15px] text-[#c8790a]" />,
 };
 
 const QuickActionBar: React.FC<QuickActionBarProps> = ({ actions, selectedActionId, onActionSelect }) => {
@@ -30,32 +32,19 @@ const QuickActionBar: React.FC<QuickActionBarProps> = ({ actions, selectedAction
   }
 
   return (
-    <div data-skin-quick-actions="true" className="flex flex-wrap items-center justify-center gap-2">
+    <div data-skin-quick-actions="true" className="flex flex-nowrap items-center gap-[6px]">
       {actions.map((action) => {
-        const IconComponent = iconMap[action.icon];
         const isSelected = action.id === selectedActionId;
-
         return (
-          <button
+          <Pill
             key={action.id}
-            type="button"
+            tone={isSelected ? PillTone.Selected : PillTone.Quiet}
             aria-pressed={isSelected}
             onClick={() => onActionSelect(action.id)}
-            className={`group flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[length:var(--lobster-text-sidebarCompact)] font-normal leading-5 transition-all duration-200 ease-out active:translate-y-0 active:scale-[0.97] ${
-              isSelected
-                ? 'border-[color-mix(in_srgb,var(--lobster-primary)_50%,transparent)] bg-primary-muted text-primary'
-                : 'border-border-subtle bg-surface text-secondary hover:-translate-y-px hover:border-primary/30 hover:bg-surface-raised hover:text-foreground hover:shadow-subtle'
-            }`}
+            icon={founderIcons[action.icon]}
           >
-            {IconComponent && (
-              <IconComponent
-                className={`h-3.5 w-3.5 transition-colors duration-200 ${
-                  isSelected ? 'text-primary' : 'text-secondary group-hover:text-primary'
-                }`}
-              />
-            )}
-            <span>{action.label}</span>
-          </button>
+            {action.label}
+          </Pill>
         );
       })}
     </div>

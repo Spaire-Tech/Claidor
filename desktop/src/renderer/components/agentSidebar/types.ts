@@ -29,6 +29,8 @@ export interface AgentSidebarTaskNode {
 
 export interface AgentSidebarAgentNode extends AgentSidebarAgentSummary {
   isExpanded: boolean;
+  /** Every conversation this agent has, not just the loaded page. */
+  taskCount: number;
   isTaskListExpanded: boolean;
   canExpandTasks: boolean;
   canCollapseTasks: boolean;

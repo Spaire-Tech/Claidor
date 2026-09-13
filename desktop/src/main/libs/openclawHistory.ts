@@ -20,8 +20,8 @@ export interface GatewayHistoryMediaAttachment {
   mimeType?: string;
 }
 
-const HEARTBEAT_ACK_RE = /^[`*_~"'“”‘’()[\]{}<>.,!?;:，。！？；：\s-]{0,8}HEARTBEAT_OK[`*_~"'“”‘’()[\]{}<>.,!?;:，。！？；：\s-]{0,8}$/i;
-const SILENT_REPLY_RE = /^[`*_~"'“”‘’()[\]{}<>.,!?;:，。！？；：\s-]{0,8}NO_REPLY[`*_~"'“”‘’()[\]{}<>.,!?;:，。！？；：\s-]{0,8}$/i;
+const HEARTBEAT_ACK_RE = /^[`*_~"'“”‘’()[\]{}<>.,!?;:\s-]{0,8}HEARTBEAT_OK[`*_~"'“”‘’()[\]{}<>.,!?;:\s-]{0,8}$/i;
+const SILENT_REPLY_RE = /^[`*_~"'“”‘’()[\]{}<>.,!?;:\s-]{0,8}NO_REPLY[`*_~"'“”‘’()[\]{}<>.,!?;:\s-]{0,8}$/i;
 const SILENT_REPLY_TOKEN = 'NO_REPLY';
 const HEARTBEAT_PROMPT_MARKERS = [
   'read heartbeat.md if it exists',

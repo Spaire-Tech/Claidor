@@ -1,79 +1,79 @@
 /**
- * QuickAction 类型定义
- * 用于首页快捷操作功能
+ * QuickAction types
+ * Used by the home-screen quick actions
  */
 
 /**
- * 预制提示词（原始结构，从JSON加载）
+ * Preset prompt (raw structure, loaded from JSON)
  */
 export interface Prompt {
-  /** 唯一标识 */
+  /** Unique id */
   id: string;
 }
 
 /**
- * 本地化后的预制提示词（包含翻译后的文本）
+ * Preset prompt with its display texts
  */
 export interface LocalizedPrompt {
-  /** 唯一标识 */
+  /** Unique id */
   id: string;
-  /** 显示标题 */
+  /** Display title */
   label: string;
-  /** 简短描述 */
+  /** Short description */
   description?: string;
-  /** 完整提示词内容 */
+  /** Full prompt text */
   prompt: string;
 }
 
 /**
- * 快捷操作主项（原始结构，从JSON加载）
+ * Quick action (raw structure, loaded from JSON)
  */
 export interface QuickAction {
-  /** 唯一标识 */
+  /** Unique id */
   id: string;
-  /** 图标名称（Heroicons） */
+  /** Icon name (Heroicons) */
   icon: string;
-  /** 主题色（hex） */
+  /** Accent colour (hex) */
   color: string;
-  /** 映射到 Skill ID */
+  /** Mapped skill id */
   skillMapping: string;
-  /** 预制提示词列表 */
+  /** Preset prompts */
   prompts: Prompt[];
 }
 
 /**
- * 本地化后的快捷操作主项（包含翻译后的文本）
+ * Quick action with its display texts
  */
 export interface LocalizedQuickAction {
-  /** 唯一标识 */
+  /** Unique id */
   id: string;
-  /** 显示标题 */
+  /** Display title */
   label: string;
-  /** 图标名称（Heroicons） */
+  /** Icon name (Heroicons) */
   icon: string;
-  /** 主题色（hex） */
+  /** Accent colour (hex) */
   color: string;
-  /** 映射到 Skill ID */
+  /** Mapped skill id */
   skillMapping: string;
-  /** 预制提示词列表（已本地化） */
+  /** Preset prompts with their texts */
   prompts: LocalizedPrompt[];
 }
 
 /**
- * 快捷操作配置（原始结构）
+ * Quick-action configuration (raw structure)
  */
 export interface QuickActionsConfig {
-  /** 配置版本 */
+  /** Configuration version */
   version: number;
-  /** 快捷操作列表 */
+  /** Quick actions */
   actions: QuickAction[];
 }
 
 /**
- * 国际化配置结构
+ * Quick-action texts. Maties is English-only; `zh` is accepted for old files and ignored.
  */
 export interface QuickActionsI18n {
-  zh: QuickActionsI18nData;
+  zh?: QuickActionsI18nData;
   en: QuickActionsI18nData;
 }
 

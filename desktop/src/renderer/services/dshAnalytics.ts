@@ -1,7 +1,7 @@
-// Event names for the experimental DeepSeek Harness settings card. They go
-// through reportYdAnalyzer like every other settings event, which reports
-// nothing: Maties collects no usage analytics. Kept because the names still
-// describe the moments the card cares about.
+// Usage analytics for the experimental DeepSeek Harness settings card. Events
+// go through reportYdAnalyzer like every other settings event, so they reach
+// the analyzer via `api:fetch` and show up in the main log as
+// `[api:fetch] GET https://rlogs.youdao.com/rlog.php?[redacted]` lines.
 
 import { LogReporterAction, LogReporterSource } from '../../shared/analytics/constants';
 import { type DshEngineErrorCode, DshEnginePhase } from '../../shared/dshEngine/constants';

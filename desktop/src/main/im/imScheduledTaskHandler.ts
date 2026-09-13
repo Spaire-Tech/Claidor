@@ -23,44 +23,44 @@ function extractClockFromIsoWithOffset(value: string): string | null {
 function normalizeReminderBody(value: string): string {
   return value
     .trim()
-    .replace(/^[,，:：\s]+/u, '')
-    .replace(/[。！？!?~～\s]+$/u, '')
-    .replace(/^(?:一下|一声|一下子)\s*/u, '')
+    .replace(/^[,:\s]+/u, '')
+    .replace(/[!?.~\s]+$/u, '')
+    .replace(/^(?:to\s+)/iu, '')
     .trim();
 }
 
 function normalizeReminderName(value: string): string {
   const normalized = value
-    .replace(/[。！？!?]/gu, ' ')
+    .replace(/[!?.]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   if (!normalized) {
-    return '提醒';
+    return 'Reminder';
   }
-  const compact = normalized.length > 20 ? normalized.slice(0, 20).trim() : normalized;
-  return compact.endsWith('提醒') ? compact : `${compact}提醒`;
+  const compact = normalized.length > 40 ? normalized.slice(0, 40).trim() : normalized;
+  return /\breminder$/iu.test(compact) ? compact : `${compact} reminder`;
 }
 
 function buildSystemEventText(body: string): string {
   if (!body) {
-    return '⏰ 提醒';
+    return '⏰ Reminder';
   }
   if (body.startsWith('⏰')) {
     return body;
   }
-  if (/^提醒[:：]?/u.test(body)) {
+  if (/^reminder:?/iu.test(body)) {
     return `⏰ ${body}`;
   }
-  return `⏰ 提醒：${body}`;
+  return `⏰ Reminder: ${body}`;
 }
 
 function formatConfirmationText(delayLabel: string, scheduleAt: string, runAt: Date, body: string): string {
   const clockText = extractClockFromIsoWithOffset(scheduleAt) ?? formatLocalClock(runAt);
-  return `好的，已设置好提醒！${delayLabel}（${clockText}）会提醒你${body}。`;
+  return `Got it, your reminder is set! I'll remind you ${delayLabel} (${clockText}): ${body}.`;
 }
 
 const SCHEDULED_TASK_CANDIDATE_RE =
-  /(?:提醒|定时|闹钟|通知|叫我|叫醒|稍后|之后|到点|分钟后|小时后|秒后|天后|明天|后天|今晚|later|remind|reminder|alarm|timer|schedule|scheduled|tomorrow|tonight|in\s+\d+\s+(?:seconds?|minutes?|hours?|days?|weeks?))/iu;
+  /(?:later|remind|reminder|alarm|timer|schedule|scheduled|notify|wake me|tomorrow|tonight|in\s+\d+\s+(?:seconds?|minutes?|hours?|days?|weeks?))/iu;
 
 const ISO_WITH_TIMEZONE_RE = /(?:[zZ]|[+-]\d{2}:\d{2})$/u;
 
@@ -141,18 +141,18 @@ function formatRelativeDelayLabel(now: Date, runAt: Date): string {
 
   if (diffMs < minuteMs) {
     const seconds = Math.max(1, Math.round(diffMs / 1000));
-    return `${seconds}秒后`;
+    return `in ${seconds} second${seconds === 1 ? '' : 's'}`;
   }
   if (diffMs < hourMs) {
     const minutes = Math.max(1, Math.round(diffMs / minuteMs));
-    return `${minutes}分钟后`;
+    return `in ${minutes} minute${minutes === 1 ? '' : 's'}`;
   }
   if (diffMs < dayMs) {
     const hours = Math.max(1, Math.round(diffMs / hourMs));
-    return `${hours}小时后`;
+    return `in ${hours} hour${hours === 1 ? '' : 's'}`;
   }
   const days = Math.max(1, Math.round(diffMs / dayMs));
-  return `${days}天后`;
+  return `in ${days} day${days === 1 ? '' : 's'}`;
 }
 
 export function looksLikeIMScheduledTaskCandidate(
@@ -212,10 +212,10 @@ export function normalizeDetectedScheduledTaskRequest(
   };
 }
 
-function buildScheduledTaskDetectionPrompt(now: Date): string {
+function buildScheduledTaskDetectionPrompt(now: Date, timezone?: string): string {
   return [
     'You are a structured extractor for one-shot reminder requests in an IM conversation.',
-    buildOpenClawLocalTimeContextPrompt(now),
+    buildOpenClawLocalTimeContextPrompt(now, timezone),
     'Return JSON only. No markdown. No prose.',
     'Decide whether the user is explicitly asking to create a one-time scheduled reminder/task.',
     'If yes, return: {"shouldCreateTask":true,"scheduleAt":"ISO8601 with explicit timezone offset","reminderBody":"short reminder content","taskName":"short task name"}',
@@ -231,6 +231,8 @@ function buildScheduledTaskDetectionPrompt(now: Date): string {
 
 export function createIMScheduledTaskRequestDetector(options: {
   getLLMConfig: () => Promise<LLMConfig | null>;
+  /** The person's chosen time zone (`app.timezone`); the machine's when absent. */
+  getUserTimezone?: () => string | undefined;
 }): IMScheduledTaskRequestDetector {
   return async (message: IMMessage): Promise<ParsedIMScheduledTaskRequest | null> => {
     if (!looksLikeIMScheduledTaskCandidate(message.content, message.attachments)) {
@@ -247,7 +249,7 @@ export function createIMScheduledTaskRequestDetector(options: {
       getLLMConfig: async () => llmConfig,
       imSettings: {
         skillsEnabled: false,
-        systemPrompt: buildScheduledTaskDetectionPrompt(now),
+        systemPrompt: buildScheduledTaskDetectionPrompt(now, options.getUserTimezone?.()),
       },
     });
 

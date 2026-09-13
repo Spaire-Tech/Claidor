@@ -161,19 +161,29 @@ function applyScheduledTaskTemplate(form: FormState, template: ScheduledTaskTemp
     monthDay: template.schedule.monthDay ?? form.monthDay,
     payloadText: i18nService.t(template.promptKey),
     cronExpr: '',
-    cronTz: '',
     cronMode: 'builder',
     cronBuilder: { ...DEFAULT_CRON_BUILDER },
   };
 }
 
+/**
+ * `defaultTimezone` is the person's chosen zone (`app.timezone`,
+ * docs/maties/onboarding.md): a new task is scheduled in it unless the
+ * person types another. An existing task keeps whatever it was saved with.
+ */
 export function createScheduledTaskFormState(
   task: ScheduledTask | undefined,
   fallbackModelRef: string,
   template?: ScheduledTaskTemplate | null,
+  defaultTimezone = '',
 ): FormState {
   if (!task) {
-    const form = { ...DEFAULT_FORM_STATE, ...nowDefaults(), modelId: fallbackModelRef };
+    const form = {
+      ...DEFAULT_FORM_STATE,
+      ...nowDefaults(),
+      modelId: fallbackModelRef,
+      cronTz: defaultTimezone.trim(),
+    };
     return template ? applyScheduledTaskTemplate(form, template) : form;
   }
 
@@ -211,7 +221,19 @@ export function createScheduledTaskFormState(
   };
 }
 
-function buildScheduleInput(form: FormState): ScheduledTaskInput['schedule'] {
+/** A cron schedule in the form's zone when one is set; the engine falls back to the host's zone otherwise. */
+function buildCronSchedule(form: FormState, expr: string): ScheduledTaskInput['schedule'] {
+  const schedule: ScheduledTaskInput['schedule'] & { kind: typeof ScheduleKind.Cron } = {
+    kind: ScheduleKind.Cron,
+    expr,
+  };
+  if (form.cronTz.trim()) {
+    schedule.tz = form.cronTz.trim();
+  }
+  return schedule;
+}
+
+export function buildScheduleInput(form: FormState): ScheduledTaskInput['schedule'] {
   if (form.planType === 'once') {
     const date = new Date(form.year, form.month - 1, form.day, form.hour, form.minute, form.second);
     return { kind: ScheduleKind.At, at: date.toISOString() };
@@ -220,33 +242,26 @@ function buildScheduleInput(form: FormState): ScheduledTaskInput['schedule'] {
   if (form.planType === 'cron') {
     const expr =
       form.cronMode === 'builder' ? cronBuilderToExpr(form.cronBuilder) : form.cronExpr.trim();
-    const schedule: ScheduledTaskInput['schedule'] & { kind: typeof ScheduleKind.Cron } = {
-      kind: ScheduleKind.Cron,
-      expr,
-    };
-    if (form.cronTz.trim()) {
-      schedule.tz = form.cronTz.trim();
-    }
-    return schedule;
+    return buildCronSchedule(form, expr);
   }
 
   const min = String(form.minute);
   const hr = String(form.hour);
 
   if (form.planType === 'hourly') {
-    return { kind: ScheduleKind.Cron, expr: `${min} * * * *` };
+    return buildCronSchedule(form, `${min} * * * *`);
   }
 
   if (form.planType === 'daily') {
-    return { kind: ScheduleKind.Cron, expr: `${min} ${hr} * * *` };
+    return buildCronSchedule(form, `${min} ${hr} * * *`);
   }
 
   if (form.planType === 'weekly') {
     const dowField = [...form.weekdays].sort((a, b) => a - b).join(',');
-    return { kind: ScheduleKind.Cron, expr: `${min} ${hr} * * ${dowField}` };
+    return buildCronSchedule(form, `${min} ${hr} * * ${dowField}`);
   }
 
-  return { kind: ScheduleKind.Cron, expr: `${min} ${hr} ${form.monthDay} * *` };
+  return buildCronSchedule(form, `${min} ${hr} ${form.monthDay} * *`);
 }
 
 const WEEKDAY_KEYS = [
@@ -294,15 +309,33 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const availableModels = useSelector((state: RootState) => state.model.availableModels);
   const defaultSelectedModel = useSelector((state: RootState) => state.model.defaultSelectedModel);
   const fallbackModelRef = defaultSelectedModel ? toOpenClawModelRef(defaultSelectedModel) : '';
+  // The person's chosen zone (`app.timezone`); read once, and only a new task takes it as its default.
+  const [defaultTimezone, setDefaultTimezone] = useState('');
+  useEffect(() => {
+    if (mode !== 'create') return;
+    let cancelled = false;
+    window.electron.onboarding
+      ?.getProfile()
+      .then(profile => {
+        if (!cancelled && profile?.timezone) setDefaultTimezone(profile.timezone);
+      })
+      .catch(() => {
+        // The machine's zone stays the engine's fallback.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
   const [form, setForm] = useState<FormState>(() =>
     createScheduledTaskFormState(
       task,
       fallbackModelRef,
       mode === 'create' ? initialTemplate : null,
+      defaultTimezone,
     )
   );
   const initialFormRef = useRef<string>(
-    JSON.stringify(createScheduledTaskFormState(task, fallbackModelRef)),
+    JSON.stringify(createScheduledTaskFormState(task, fallbackModelRef, null, defaultTimezone)),
   );
   const [channelOptions, setChannelOptions] = useState<ScheduledTaskChannelOption[]>(() => {
     const base: ScheduledTaskChannelOption[] = [];
@@ -356,16 +389,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const isSystemEventTask = task?.payload.kind === PayloadKind.SystemEvent;
 
   useEffect(() => {
-    const cleanForm = createScheduledTaskFormState(task, fallbackModelRef);
+    const cleanForm = createScheduledTaskFormState(task, fallbackModelRef, null, defaultTimezone);
     const nextForm = createScheduledTaskFormState(
       task,
       fallbackModelRef,
       mode === 'create' ? initialTemplate : null,
+      defaultTimezone,
     );
     initialFormRef.current = JSON.stringify(cleanForm);
     setForm(nextForm);
     setAppliedTemplate(mode === 'create' ? initialTemplate : null);
-  }, [task, fallbackModelRef, initialTemplate, mode]);
+  }, [task, fallbackModelRef, initialTemplate, mode, defaultTimezone]);
 
   useEffect(() => {
     reportScheduledTaskAction('form_open', {
@@ -1241,7 +1275,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
   const getChannelDisplayLabel = (channelValue: string): string => {
     if (channelValue === 'none') return i18nService.t('scheduledTasksFormNotifyChannelNone');
-    // Use i18n translation for platform name (e.g. weixin → '微信', feishu → '飞书')
+    // Use i18n translation for platform name (e.g. telegram → 'Telegram', discord → 'Discord')
     const platform = PlatformRegistry.platformOfChannel(channelValue);
     if (platform) {
       return i18nService.t(platform) || PlatformRegistry.get(platform).label;
@@ -1306,7 +1340,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
             </button>
 
             {channelDropdownOpen && (
-              <div className="absolute bottom-full z-50 mb-1 w-full rounded-xl border border-border bg-surface shadow-popover popover-enter overflow-hidden">
+              <div className="maties-menu absolute bottom-full z-50 mb-1 w-full overflow-hidden">
                 <div className="max-h-72 overflow-y-auto py-1">
                   <button
                     type="button"
@@ -1414,7 +1448,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
               </button>
 
               {convDropdownOpen && !conversationsLoading && (
-                <div className="absolute bottom-full z-50 mb-1 w-full rounded-xl border border-border bg-surface shadow-popover popover-enter overflow-hidden">
+                <div className="maties-menu absolute bottom-full z-50 mb-1 w-full overflow-hidden">
                   <div className="max-h-72 overflow-y-auto py-1">
                     {conversations.length === 0 ? (
                       <div className="px-3 py-2 text-[13px] text-secondary">
@@ -1650,7 +1684,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
             type="button"
             onClick={() => void handleSubmit()}
             disabled={submitting}
-            className="px-4 py-1.5 text-[14px] font-normal leading-5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
+            className="maties-pill-sm is-primary"
           >
             {submitting
               ? i18nService.t('saving')
@@ -1687,8 +1721,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
       <Modal
         isOpen
         onClose={() => setPayloadEditorOpen(false)}
-        overlayClassName="fixed inset-0 z-[60] flex items-center justify-center bg-black/10 dark:bg-black/50 p-6"
-        className="flex h-[min(720px,calc(100vh-48px))] w-[min(960px,calc(100vw-48px))] flex-col overflow-hidden rounded-xl border border-surface bg-surface shadow-[0_12px_40px_rgba(0,0,0,0.16)]"
+        overlayClassName="maties-backdrop fixed inset-0 z-[60] flex items-center justify-center p-6"
+        className="maties-card-prose maties-in flex h-[min(720px,calc(100vh-48px))] w-[min(960px,calc(100vw-48px))] flex-col overflow-hidden"
       >
         <div className="flex shrink-0 items-start justify-between gap-3 px-5 py-4">
           <div className="min-w-0">
@@ -1727,7 +1761,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
           <button
             type="button"
             onClick={() => setPayloadEditorOpen(false)}
-            className="px-4 py-1.5 text-[14px] font-normal leading-5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+            className="maties-pill-sm is-primary"
           >
             {i18nService.t('scheduledTasksFormPayloadEditorDone')}
           </button>

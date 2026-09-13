@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
 
 import { SkinAssetSlot } from '../../../shared/skin/constants';
 import { useSkin } from '../../providers/SkinProvider';
 import { i18nService } from '../../services/i18n';
 import { buildSkinAssetUrl } from '../../services/skin';
-import { prepareSkinKitOnboarding } from '../../services/skinKitOnboarding';
-import {
-  setInstalledKits,
-  setMarketplaceKits,
-} from '../../store/slices/kitSlice';
+import { prepareSkinSkillOnboarding } from '../../services/skinSkillOnboarding';
 import MagicIcon from '../icons/MagicIcon';
 import TrashIcon from '../icons/TrashIcon';
 import SkinDeleteConfirmDialog from './SkinDeleteConfirmDialog';
@@ -33,11 +28,10 @@ interface PendingSkinDeletion {
 }
 
 interface SkinSettingsSectionProps {
-  onStartAiSkin?: (text: string, kitId: string) => void;
+  onStartAiSkin?: (text: string, skillId: string) => void;
 }
 
 const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin }) => {
-  const dispatch = useDispatch();
   const {
     activeSkin,
     apply,
@@ -89,10 +83,8 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
     setStartError(false);
     setIsStartingAiSkin(true);
     try {
-      const prepared = await prepareSkinKitOnboarding();
-      dispatch(setMarketplaceKits(prepared.marketplaceKits));
-      dispatch(setInstalledKits(prepared.installedKits));
-      onStartAiSkin(prepared.prompt, prepared.kitId);
+      const prepared = await prepareSkinSkillOnboarding();
+      onStartAiSkin(prepared.prompt, prepared.skillId);
     } catch (error) {
       console.error('[Skin] Failed to start AI skin onboarding', error);
       setStartError(true);
@@ -107,13 +99,13 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
     || isAppearanceChanging;
 
   return (
-    <section className="mt-5 rounded-xl border border-border bg-surface px-4 py-3.5">
+    <section className="maties-card-row mt-7 px-5 py-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h4 className="text-sm font-medium text-foreground">
+          <h4 className="maties-row-title">
             {i18nService.t('aiSkin')}
           </h4>
-          <p className="mt-1 text-xs leading-5 text-secondary">
+          <p className="maties-row-desc">
             {i18nService.t('aiSkinCreationGuide')}
           </p>
         </div>
@@ -122,9 +114,9 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
             type="button"
             onClick={() => void handleStartAiSkin()}
             disabled={isMutating}
-            className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            className="maties-pill-sm shrink-0"
           >
-            <MagicIcon className="mr-1.5 h-3.5 w-3.5" />
+            <MagicIcon className="h-3.5 w-3.5" />
             {isStartingAiSkin
               ? i18nService.t('aiSkinStarting')
               : i18nService.t('aiSkinCreate')}
@@ -132,7 +124,7 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
         )}
       </div>
       {(actionError || startError) && (
-        <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+        <p className="maties-caption maties-status-wrong mt-2">
           {actionError
             ? i18nService.t(SkinActionErrorI18nKey[actionError])
             : i18nService.t('aiSkinStartFailed')}
@@ -222,9 +214,9 @@ const SkinSettingsSection: React.FC<SkinSettingsSectionProps> = ({ onStartAiSkin
           })}
         </div>
       ) : (
-        <div className="mt-3 flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-4 py-4 text-secondary">
+        <div className="maties-raised-2 mt-3 flex items-center justify-center gap-2 rounded-[12px] px-4 py-4 text-[#8f96a0]">
           {!isLoading && <MagicIcon className="h-4 w-4" />}
-          <p className="text-xs">
+          <p className="maties-caption">
             {isLoading ? i18nService.t('loading') : i18nService.t('aiSkinEmpty')}
           </p>
         </div>

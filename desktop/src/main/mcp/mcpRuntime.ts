@@ -13,6 +13,7 @@ import {
   type AskUserResponse,
   type BrowserToolRequest,
   type BrowserToolResponse,
+  type LibrarySearchHandler,
   McpBridgeServer,
   type MediaGenerationRequest,
   type MediaGenerationResponse,
@@ -53,6 +54,7 @@ export class McpRuntime {
   private browserToolHandler:
     | ((request: BrowserToolRequest) => Promise<BrowserToolResponse>)
     | null = null;
+  private librarySearchHandler: LibrarySearchHandler | null = null;
 
   constructor(private readonly deps: McpRuntimeDeps) {}
 
@@ -99,8 +101,18 @@ export class McpRuntime {
     this.bridgeServer?.onBrowserTool(handler);
   }
 
+  /** The library (main process) answers search_library calls through this handler. */
+  setLibrarySearchHandler(handler: LibrarySearchHandler): void {
+    this.librarySearchHandler = handler;
+    this.bridgeServer?.onLibrarySearch(handler);
+  }
+
   getAskUserCallbackUrl(): string | null {
     return this.bridgeServer?.askUserCallbackUrl ?? null;
+  }
+
+  getLibrarySearchCallbackUrl(): string | null {
+    return this.bridgeServer?.librarySearchCallbackUrl ?? null;
   }
 
   getMediaCallbackUrl(): string | null {
@@ -200,6 +212,10 @@ export class McpRuntime {
     if (this.browserToolHandler) {
       this.bridgeServer.onBrowserTool(this.browserToolHandler);
     }
+
+    if (this.librarySearchHandler) {
+      this.bridgeServer.onLibrarySearch(this.librarySearchHandler);
+    }
   }
 
   async askUserInternal(
@@ -242,10 +258,10 @@ export class McpRuntime {
       : '';
     const buildShimEnv = (): Record<string, string> => {
       const shimEnv: Record<string, string> = {
-        LOBSTERAI_ELECTRON_PATH: electronPath,
+        MATIES_ELECTRON_PATH: electronPath,
       };
       if (npmBinDir) {
-        shimEnv.LOBSTERAI_NPM_BIN_DIR = npmBinDir;
+        shimEnv.MATIES_NPM_BIN_DIR = npmBinDir;
       }
       return shimEnv;
     };
@@ -268,10 +284,10 @@ export class McpRuntime {
           if (readyResolution) {
             optimizedCount++;
             const shimEnv: Record<string, string> = {
-              LOBSTERAI_ELECTRON_PATH: electronPath,
+              MATIES_ELECTRON_PATH: electronPath,
             };
             if (npmBinDir) {
-              shimEnv.LOBSTERAI_NPM_BIN_DIR = npmBinDir;
+              shimEnv.MATIES_NPM_BIN_DIR = npmBinDir;
             }
             resolved.push({
               name: server.name,
@@ -336,7 +352,7 @@ export class McpRuntime {
 
     const askUserCallbackUrl = this.getAskUserCallbackUrl();
     const shouldEnableComputerUse = askUserCallbackUrl !== null
-      && isComputerUseKitInstalled(this.deps.getStore());
+      && isComputerUseKitInstalled();
     if (shouldEnableComputerUse) {
       const installResult = await installComputerUseRuntime();
       if (!installResult.success) {

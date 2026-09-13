@@ -28,6 +28,9 @@ resources/PortableGit-*.7z.exe
 resources/python-win/
 resources/python-*.zip
 
+# Library embedding model, fetched at build time (scripts/fetch-embedding-model.cjs)
+resources/embedding-model/
+
 # SKILLs runtime files
 SKILLs/**/.connection
 SKILLs/**/.server.log

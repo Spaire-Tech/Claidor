@@ -19,7 +19,7 @@ const creditItem = (
   overrides: Partial<CreditItem> = {},
 ): CreditItem => ({
   type: 'free',
-  label: '每周免费积分',
+  label: 'Weekly free credits',
   labelEn: 'Weekly free credits',
   creditsRemaining: 100,
   expiresAt: null,
@@ -85,7 +85,7 @@ describe('accountMenuState', () => {
       creditItem(),
       creditItem({
         type: 'subscription',
-        label: '标准',
+        label: 'Standard',
         labelEn: 'Standard',
         creditsRemaining: 0,
         expiresAt: '2026-08-06',
@@ -93,7 +93,7 @@ describe('accountMenuState', () => {
     ], false);
 
     expect(plan).toEqual({
-      label: '标准套餐',
+      label: 'Standard plan',
       expiresAt: '2026-08-06',
       canUpgrade: true,
     });
@@ -103,11 +103,11 @@ describe('accountMenuState', () => {
     expect(getAccountPlanPresentation([
       creditItem({
         type: 'subscription',
-        label: '卓越套餐',
+        label: 'Elite plan',
         labelEn: 'Excellent',
       }),
     ], false)).toMatchObject({
-      label: '卓越套餐',
+      label: 'Elite plan',
       canUpgrade: false,
     });
   });
@@ -116,7 +116,7 @@ describe('accountMenuState', () => {
     expect(getAccountPlanPresentation([
       creditItem({
         type: 'subscription',
-        label: '标准',
+        label: 'Standard plan',
         labelEn: 'Standard',
       }),
     ], true)?.label).toBe('Standard');
@@ -127,7 +127,7 @@ describe('accountMenuState', () => {
     expect(getAccountPlanPresentation([
       creditItem({
         type: 'subscription',
-        label: '专业套餐',
+        label: 'Professional plan',
         labelEn: 'Professional Plan',
       }),
     ], true)?.label).toBe('Professional');
@@ -135,7 +135,7 @@ describe('accountMenuState', () => {
     expect(getAccountPlanPresentation([
       creditItem({
         type: 'subscription',
-        label: '卓越套餐',
+        label: 'Elite plan',
         labelEn: 'Excellent Plan',
       }),
     ], true)).toMatchObject({
@@ -144,21 +144,21 @@ describe('accountMenuState', () => {
     });
   });
 
-  test('does not duplicate the plan suffix for Chinese subscription labels', () => {
+  test('does not duplicate the plan suffix for labels that already end with plan', () => {
     expect(getAccountPlanPresentation([
       creditItem({
         type: 'subscription',
-        label: '进阶套餐',
+        label: 'Advanced plan',
         labelEn: 'Advanced',
       }),
-    ], false)?.label).toBe('进阶套餐');
+    ], false)?.label).toBe('Advanced plan');
   });
 
   test('reports basic tier analytics when no subscription plan is present', () => {
     expect(getAccountPlanAnalyticsContext({
       accountMode: 'personal',
       creditItems: [creditItem()],
-      planName: '免费',
+      planName: 'Free',
       subscriptionStatus: AuthSubscriptionStatus.Free,
     })).toEqual({
       accountMode: 'personal',
@@ -175,11 +175,11 @@ describe('accountMenuState', () => {
       creditItems: [
         creditItem({
           type: 'subscription',
-          label: '进阶套餐',
+          label: 'Advanced plan',
           labelEn: 'Advanced',
         }),
       ],
-      planName: '进阶',
+      planName: 'Advanced',
       subscriptionStatus: AuthSubscriptionStatus.Active,
     })).toEqual({
       accountMode: 'personal',
@@ -196,7 +196,7 @@ describe('accountMenuState', () => {
       creditItems: [
         creditItem({
           type: 'subscription',
-          label: '卓越套餐',
+          label: 'Elite plan',
           labelEn: 'Excellent',
         }),
       ],
@@ -215,7 +215,7 @@ describe('accountMenuState', () => {
       creditItems: [
         creditItem({
           type: 'subscription',
-          label: '内部套餐',
+          label: 'Internal plan',
           labelEn: 'Internal',
         }),
       ],

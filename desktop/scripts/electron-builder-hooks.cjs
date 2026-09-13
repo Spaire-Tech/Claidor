@@ -9,6 +9,7 @@ const { syncLocalOpenClawExtensions } = require('./sync-local-openclaw-extension
 const { packMultipleSources } = require('./pack-openclaw-tar.cjs');
 const { DIST_DIFFS_EXTENSION_DIR, DIST_EXTENSIONS_DIR, summarizeGatewayAsarEntries } = require('./openclaw-runtime-packaging.cjs');
 const { collectHostPeerLeftovers, measureDirectorySize } = require('./openclaw-plugin-host-peer-leftovers.cjs');
+const { MODEL_ROOT: EMBEDDING_MODEL_ROOT, verifyEmbeddingModelDir } = require('./fetch-embedding-model.cjs');
 
 function isWindowsTarget(context) {
   return context?.electronPlatformName === 'win32';
@@ -109,25 +110,9 @@ function verifyPreinstalledPlugins(runtimeRoot, buildHint) {
   for (const plugin of plugins) {
     if (!plugin.id) continue;
     const pluginDir = path.join(extensionsDir, plugin.id);
-    if (existsSync(pluginDir)) continue;
-
-    // `optional` is the installer's own contract: ensure-openclaw-plugins
-    // logs a warning and carries on when an optional plugin will not
-    // install, so demanding it here fails the build over something the
-    // step before it deliberately let go. moltbot-popo is the live case —
-    // NetEase's POPO chat, published only on their internal registry,
-    // which no runner outside NetEase can reach. Said out loud rather
-    // than skipped quietly, so a plugin that should be here going missing
-    // is still visible in the build log.
-    if (plugin.optional) {
-      console.warn(
-        `[electron-builder-hooks] Optional OpenClaw plugin ${plugin.id} is not in the `
-        + 'runtime; packaging without it.',
-      );
-      continue;
+    if (!existsSync(pluginDir)) {
+      missing.push(plugin.id);
     }
-
-    missing.push(plugin.id);
   }
 
   if (missing.length > 0) {
@@ -218,7 +203,7 @@ function precompileLocalExtensions(runtimeRoot, buildHint) {
 }
 
 function ensureBundledLocalExtensions(runtimeRoot, buildHint) {
-  const requiredLocalExtensions = ['mcp-bridge', 'ask-user-question', 'lobster-media-generation'];
+  const requiredLocalExtensions = ['mcp-bridge', 'ask-user-question', 'search-library', 'maties-model-compat'];
   const missingCompiledExtensions = requiredLocalExtensions.filter(
     (extensionId) => !hasCompiledLocalExtension(runtimeRoot, extensionId),
   );
@@ -683,8 +668,25 @@ function writeWindowsPayloadSizeFragment(context) {
   );
 }
 
+/**
+ * The library's embedding model ships as an extraResource; an installer
+ * without it would have a personal library that never starts.
+ */
+async function ensureEmbeddingModel() {
+  const problems = await verifyEmbeddingModelDir(EMBEDDING_MODEL_ROOT);
+  if (problems.length > 0) {
+    throw new Error(
+      '[electron-builder-hooks] The library embedding model is missing or wrong under '
+      + `${EMBEDDING_MODEL_ROOT}: ${problems.join('; ')}. `
+      + 'Run `npm run setup:embedding-model` before packaging.',
+    );
+  }
+  console.log('[electron-builder-hooks] Verified the library embedding model files.');
+}
+
 async function beforePack(context) {
   ensureBundledOpenClawRuntime(context);
+  await ensureEmbeddingModel();
   // Install skill dependencies first (for all platforms)
   installSkillDependencies();
 

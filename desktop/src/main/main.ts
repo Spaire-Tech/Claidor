@@ -27,7 +27,10 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
 import { buildGoalSettingMessageMetadata } from '../common/goalCommandDisplay';
 import type { OpenClawSessionPatch } from '../common/openclawSession';
-import { buildSessionTitleFromInput } from '../common/sessionTitle';
+import {
+  buildSessionTitleFromInput,
+  SessionTitleSource,
+} from '../common/sessionTitle';
 import { buildScheduledTaskEnginePrompt } from '../scheduledTask/enginePrompt';
 import {
   migrateScheduledTaskRunsToOpenclaw,
@@ -37,6 +40,8 @@ import {
   AgentId,
 } from '../shared/agent/constants';
 import {
+  LogReporterAction,
+  LogReporterSource,
   LogReporterStoreKey,
 } from '../shared/analytics/constants';
 import { AppIpcChannel } from '../shared/app/constants';
@@ -61,6 +66,8 @@ import {
   type AgentBrowserHostRequest,
   type AgentBrowserHostResponse,
   type AgentBrowserHostSetViewRequest,
+  type AgentBrowserOpenPageRequest,
+  type AgentBrowserOpenPageResponse,
   type BrowserDiagnosticResultStep,
   BrowserDiagnosticStatus,
   BrowserDiagnosticStep,
@@ -72,6 +79,7 @@ import {
   normalizeBrowserWebAccessConfig,
 } from '../shared/browserWebAccess/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
+import { ConnectorsIpc } from '../shared/connectors/constants';
 import {
   type CoworkBrowserAnnotationMessageBatch,
   normalizeBrowserAnnotationBatches,
@@ -99,6 +107,7 @@ import {
   CoworkForkMode,
   CoworkIpcChannel,
   CoworkOnboardingMessageKind,
+  type CoworkSessionsChangedPayload,
 } from '../shared/cowork/constants';
 import {
   buildCoworkImageAttachmentPreviews,
@@ -141,13 +150,8 @@ import {
   HtmlShareStatus,
   type HtmlShareStatus as HtmlShareStatusValue,
 } from '../shared/htmlShare/constants';
-import type {
-  InstalledKitRecord,
-  KitReference,
-  ResolvedKitCapabilities,
-} from '../shared/kit/constants';
-import { KitStoreKey } from '../shared/kit/constants';
 import { LibraryChangeReason, LibraryIpc } from '../shared/library/constants';
+import { type LibraryContentConfig, LibraryContentIpc, type LibraryContentStatus } from '../shared/library/contentConstants';
 import {
   getLibraryThumbnailFailureDetails,
   isLibraryThumbnailFailureRetryable,
@@ -162,13 +166,16 @@ import {
   type LocalWebService,
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
+import { MatyIpc } from '../shared/maty/constants';
 import { canonicalizeMediaModelId, HAPPYHORSE_1_1_MODEL_ID, mediaModelDisplayName } from '../shared/mediaModelAliases';
+import { MemorySyncReason } from '../shared/memorySync/constants';
 import {
   normalizeNotificationSettings,
   type NotificationSettings,
   TaskCompletionNotificationMode,
   WaitingNotificationKind,
 } from '../shared/notifications/constants';
+import { OnboardingStoreKey } from '../shared/onboarding/constants';
 import {
   OpenClawEngineIpc,
   OpenClawGatewayRepairErrorCode,
@@ -199,6 +206,12 @@ import {
 } from '../shared/shareDeployment/constants';
 import type { ShellOpenFailureReason as ShellOpenFailureReasonType } from '../shared/shell/constants';
 import { type ShellGetBrowserAppsInput, ShellIpc, ShellOpenFailureReason } from '../shared/shell/constants';
+import { SkinPackSkillId } from '../shared/skin/kit';
+import {
+  type SpeakResult,
+  SpeechIpc,
+  type SpeechVoicesResult,
+} from '../shared/speech/constants';
 import { AgentManager } from './agentManager';
 import { APP_NAME, APP_USER_MODEL_ID, DB_FILENAME } from './appConstants';
 import { createLocalFileProtocolResponse } from './artifactLocalFileProtocol';
@@ -250,14 +263,15 @@ import { registerActivityIpcHandlers } from './ipcHandlers/activity';
 import { registerAgentHandlers } from './ipcHandlers/agents';
 import { registerAsrIpcHandlers } from './ipcHandlers/asr';
 import { registerBrowserCredentialHandlers } from './ipcHandlers/browserCredentials/handlers';
+import { registerConnectorsIpcHandlers } from './ipcHandlers/connectors';
 import { registerCoworkSubagentHandlers } from './ipcHandlers/coworkSubagent';
 import { ensureDshEngineReady, registerDshHandlers } from './ipcHandlers/dsh/handlers';
 import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccount';
-import { registerKitHandlers } from './ipcHandlers/kits';
+import { registerMatyIpcHandlers } from './ipcHandlers/maty';
 import { registerMcpHandlers } from './ipcHandlers/mcp';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
+import { readOnboardingProfile, registerOnboardingHandlers } from './ipcHandlers/onboarding';
 import { registerPermissionIpcHandlers } from './ipcHandlers/permissions/handlers';
-import { registerPluginHandlers } from './ipcHandlers/plugins';
 import {
   getCronJobService,
   initCronJobServiceManager,
@@ -268,6 +282,11 @@ import {
 import { registerSessionDiagnosticsHandlers } from './ipcHandlers/sessionDiagnostics';
 import { registerSiteIpcHandlers } from './ipcHandlers/site';
 import { registerSkillHandlers } from './ipcHandlers/skills';
+import { LibraryDocumentWorkerClient } from './library/content/documentWorkerClient';
+import { LibraryContentIndexer } from './library/content/libraryContentIndexer';
+import { normalizeLibrarySearchRequest, registerLibraryContentIpcHandlers } from './library/content/libraryContentIpc';
+import { LibraryContentStore } from './library/content/libraryContentStore';
+import { resolveLibraryModelDir, resolveLibraryWorkerEntryPath } from './library/content/modelPath';
 import { LibraryIndexService } from './library/libraryIndexService';
 import { registerLibraryIpcHandlers } from './library/libraryIpc';
 import { LibraryLocalStore } from './library/libraryLocalStore';
@@ -315,6 +334,7 @@ import {
   updateServerModelMetadata,
 } from './libs/claudeSettings';
 import { appendClientBannerVersion } from './libs/clientBannerRequest';
+import { ConnectorsService } from './libs/connectors/connectorsService';
 import {
   clearCopilotTokenState,
   initCopilotTokenManager,
@@ -352,7 +372,6 @@ import {
 import { DesktopNotificationManager } from './libs/desktopNotificationManager';
 import {
   getHtmlSharePublicBaseUrl,
-  getKitStoreUrl,
   getPortalTasksUrl,
   getServerApiBaseUrl,
   getSkillStoreUrl,
@@ -407,7 +426,10 @@ import {
   resolveLobsterBrowserMcpStdioLaunch,
 } from './libs/lobsterBrowserMcpServer';
 import { exportLogsZip } from './libs/logExport';
+import { MainLogReporter } from './libs/mainLogReporter';
+import { MatyService } from './libs/maty/matyService';
 import { inferImageMimeTypeFromDataUrl, type PersistedGeneratedImageAsset, persistGeneratedImageAssets, type PersistGeneratedImageAssetsResult, persistGeneratedVideoAssets, type RemoteGeneratedMediaAsset } from './libs/mediaAssetPersistence';
+import { createMemorySyncService, logMemorySyncResult } from './libs/memorySync/memorySyncService';
 import {
   migrateAgentModelRefs,
   parsePrimaryModelRef,
@@ -473,7 +495,8 @@ import {
 } from './libs/openclawTokenProxy';
 import { migrateMainAgentWorkspace } from './libs/openclawWorkspaceMigration';
 import { ensurePythonRuntimeReady } from './libs/pythonRuntime';
-import { sanitizeUrlForLog, serializeForLog } from './libs/sanitizeForLog';
+import { isAnalyticsEndpointUrl, sanitizeUrlForLog, serializeForLog } from './libs/sanitizeForLog';
+import { createSessionNamingService } from './libs/sessionNaming';
 import { packageNodeServiceDeployment } from './libs/shareDeployment/nodeServiceDeploymentPackager';
 import {
   analyzeNodeServiceProjectDirectory,
@@ -495,6 +518,7 @@ import {
   ShareDeploymentAccessSyncOperation,
   ShareDeploymentOperationCoordinator,
 } from './libs/shareDeployment/shareDeploymentOperationCoordinator';
+import { SpeechClient } from './libs/speech/speechClient';
 import { SqliteBackupTrigger } from './libs/sqliteBackup/constants';
 import { SqliteBackupManager } from './libs/sqliteBackup/sqliteBackupManager';
 import {
@@ -1625,14 +1649,14 @@ const buildAvailableOpenClawProviders = (): Record<string, { models: Array<{ id:
     .map(model => model.modelId.trim())
     .filter(Boolean);
   if (serverModelIds.length > 0) {
-    const serverProvider = providerMap[OpenClawProviderId.LobsteraiServer]
+    const serverProvider = providerMap[OpenClawProviderId.MatiesServer]
       ?? { models: [] };
     for (const modelId of serverModelIds) {
       if (!serverProvider.models.some(model => model.id === modelId)) {
         serverProvider.models.push({ id: modelId });
       }
     }
-    providerMap[OpenClawProviderId.LobsteraiServer] = serverProvider;
+    providerMap[OpenClawProviderId.MatiesServer] = serverProvider;
   }
 
   return providerMap;
@@ -1649,7 +1673,7 @@ const openClawConfigHasServerModels = (modelIds: string[]): boolean => {
         providers?: Record<string, { models?: Array<{ id?: string }> }>;
       };
     };
-    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.LobsteraiServer]?.models;
+    const serverProviderModels = parsed.models?.providers?.[OpenClawProviderId.MatiesServer]?.models;
     if (!Array.isArray(serverProviderModels)) return false;
 
     const configuredModelIds = new Set(
@@ -1704,7 +1728,7 @@ const resolveInlineAttachmentDir = (cwd?: string): string => {
       return path.join(resolved, COWORK_TEMP_DIR_NAME, COWORK_TEMP_ATTACHMENTS_DIR_NAME, 'manual');
     }
   }
-  return path.join(app.getPath('temp'), 'lobsterai', 'attachments');
+  return path.join(app.getPath('temp'), 'maties', 'attachments');
 };
 
 const ensurePngFileName = (value: string): string => {
@@ -1721,7 +1745,7 @@ const buildLogExportFileName = (): string => {
   const now = new Date();
   const datePart = `${now.getFullYear()}${padTwoDigits(now.getMonth() + 1)}${padTwoDigits(now.getDate())}`;
   const timePart = `${padTwoDigits(now.getHours())}${padTwoDigits(now.getMinutes())}${padTwoDigits(now.getSeconds())}`;
-  return `lobsterai-logs-${datePart}-${timePart}.zip`;
+  return `maties-logs-${datePart}-${timePart}.zip`;
 };
 
 const OPENCLAW_DAILY_LOG_RETENTION_DAYS = 7;
@@ -1909,7 +1933,7 @@ const savePngWithDialog = async (
   const defaultName = getDefaultExportImageName(defaultFileName);
   // Automation hook: end-to-end tests cannot drive the native save dialog, so
   // an explicit directory override saves the PNG directly.
-  const autosaveDir = process.env.LOBSTERAI_EXPORT_IMAGE_AUTOSAVE_DIR;
+  const autosaveDir = process.env.MATIES_EXPORT_IMAGE_AUTOSAVE_DIR;
   if (autosaveDir) {
     const outputPath = ensurePngFileName(path.join(autosaveDir, defaultName));
     await fs.promises.mkdir(autosaveDir, { recursive: true });
@@ -1970,8 +1994,8 @@ const DEV_SERVER_URL = process.env.ELECTRON_START_URL || 'http://localhost:5175'
 const enableVerboseLogging =
   process.env.ELECTRON_ENABLE_LOGGING === '1' || process.env.ELECTRON_ENABLE_LOGGING === 'true';
 const disableGpu =
-  process.env.LOBSTERAI_DISABLE_GPU === '1' ||
-  process.env.LOBSTERAI_DISABLE_GPU === 'true' ||
+  process.env.MATIES_DISABLE_GPU === '1' ||
+  process.env.MATIES_DISABLE_GPU === 'true' ||
   process.env.ELECTRON_DISABLE_GPU === '1' ||
   process.env.ELECTRON_DISABLE_GPU === 'true';
 const reloadOnChildProcessGone =
@@ -2025,9 +2049,9 @@ const normalizeWindowsShellPath = (inputPath: string): string => {
   return normalized;
 };
 
-// 配置应用
-// Linux/Windows 禁用 Chromium 沙箱：桌面应用渲染自有代码，风险可控；
-// Windows 下以管理员运行时沙箱无法降权会导致 GPU 进程启动失败 (error_code=18)
+// App configuration
+// Disable the Chromium sandbox on Linux/Windows: the desktop app renders its own code, so the risk is contained;
+// on Windows, when running as administrator the sandbox cannot drop privileges and the GPU process fails to start (error_code=18)
 if (isLinux || isWindows) {
   app.commandLine.appendSwitch('no-sandbox');
 }
@@ -2037,7 +2061,7 @@ if (isLinux) {
 if (disableGpu) {
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-software-rasterizer');
-  // 禁用硬件加速
+  // Disable hardware acceleration
   app.disableHardwareAcceleration();
 }
 if (enableVerboseLogging) {
@@ -2045,16 +2069,16 @@ if (enableVerboseLogging) {
   app.commandLine.appendSwitch('v', '1');
 }
 
-// 配置网络服务
+// Network service configuration
 app.on('ready', () => {
-  // 配置网络服务重启策略
+  // Configure the host resolver
   app.configureHostResolver({
     enableBuiltInResolver: true,
     secureDnsMode: 'off',
   });
 });
 
-// 添加错误处理
+// Error handling
 app.on('render-process-gone', (_event, webContents, details) => {
   console.error('Render process gone:', details);
   const shouldReload =
@@ -2075,7 +2099,7 @@ app.on('child-process-gone', (_event, details) => {
   }
 });
 
-// 处理未捕获的异常
+// Handle uncaught exceptions
 process.on('uncaughtException', error => {
   console.error('Uncaught Exception:', error);
 });
@@ -2111,7 +2135,16 @@ let coworkRuntimeForwarderBound = false;
 let memoryMigrationDone = false;
 let preventSleepBlockerId: number | null = null;
 let appUpdateCoordinator: AppUpdateCoordinator | null = null;
+let mainLogReporter: MainLogReporter | null = null;
 let libraryIndexService: LibraryIndexService | null = null;
+let libraryContentIndexer: LibraryContentIndexer | null = null;
+// Connections to accounts (docs/maties/connectors.md). Held here so the
+// engine's config sync can read what is connected without reaching into the
+// IPC scope that owns the authenticated request path.
+let connectorsService: ConnectorsService | null = null;
+// Work sent to the cloud engine (docs/maties/cloud.md). Held here so that
+// signing out and quitting can reach it, as they do the connections.
+let matyService: MatyService | null = null;
 
 function setPreventSleepBlockerEnabled(enabled: boolean): void {
   if (enabled) {
@@ -2152,6 +2185,17 @@ const getStore = (): SqliteStore => {
   return store;
 };
 
+/** The signed-in person's display name, for the engine's user file; empty when signed out. */
+const getSignedInPersonName = (): string => {
+  try {
+    const user = getStore().get<Record<string, unknown>>(LogReporterStoreKey.AuthUser);
+    const nickname = user?.nickname;
+    return typeof nickname === 'string' ? nickname.trim() : '';
+  } catch {
+    return '';
+  }
+};
+
 const getOpenClawEngineManager = (): OpenClawEngineManager => {
   if (!openClawEngineManager) {
     openClawEngineManager = new OpenClawEngineManager();
@@ -2182,6 +2226,14 @@ const getBrowserCredentialApprovalService = (): BrowserCredentialApprovalService
   }
   return browserCredentialApprovalService;
 };
+
+/**
+ * The voice. `fetchWithAuth` is a local of the auth setup below, so the
+ * client is built there and kept here for the IPC handlers to reach.
+ * It holds no state and no key — only Claidor's address and the app's
+ * own authenticated-request path.
+ */
+let speechClient: SpeechClient | null = null;
 
 const getAgentBrowserHost = (): AgentBrowserHost => {
   if (!agentBrowserHost) {
@@ -2232,6 +2284,22 @@ const getAppUpdateCoordinator = (): AppUpdateCoordinator => {
     appUpdateCoordinator = new AppUpdateCoordinator(getStore());
   }
   return appUpdateCoordinator;
+};
+
+const getMainLogReporter = (): MainLogReporter => {
+  if (!mainLogReporter) {
+    mainLogReporter = new MainLogReporter({
+      appVersion: app.getVersion(),
+      fetch: async (url, signal) => {
+        const response = await session.defaultSession.fetch(url, { method: 'GET', signal });
+        const result = { ok: response.ok, status: response.status };
+        await response.body?.cancel();
+        return result;
+      },
+      store: getStore(),
+    });
+  }
+  return mainLogReporter;
 };
 
 const forwardOpenClawStatus = (status: OpenClawEngineStatus): void => {
@@ -2324,6 +2392,7 @@ const bootstrapOpenClawEngine = async (
       }
       const result = await manager.startGateway(`bootstrap:${reason}`);
       console.log(`[OpenClaw] bootstrap completed (${elapsed()}), phase=${result.phase}`);
+      requestMemorySync(MemorySyncReason.EngineStarted);
       return result;
     } catch (error) {
       console.error(`[OpenClaw] bootstrap failed (${reason}, ${elapsed()}):`, error);
@@ -2343,6 +2412,17 @@ const bootstrapOpenClawEngine = async (
 // Injected after the auth session manager is created. This keeps gateway startup
 // able to await an in-flight refresh without exposing refresh internals globally.
 let waitForPendingTokenRefresh: () => Promise<void> = async () => {};
+
+// Injected the same way: the shared-memory round trip needs the signed-in
+// account's token, so it only exists once the auth session manager does.
+// Fire-and-forget — a failure is logged and retried on the next occasion.
+let requestMemorySync: (reason: MemorySyncReason) => void = () => {};
+
+// Naming a chat by what it is about needs the account's token too, and is
+// injected the same way. Fire-and-forget by construction: the reply is
+// already on screen when this runs, and a failure leaves the chat with the
+// truncation it already had.
+let requestSessionName: (sessionId: string) => void = () => {};
 
 const ensureOpenClawRunningForCowork = async () => {
   const configApplyStatus = await waitForOpenClawConfigApply('cowork engine startup');
@@ -2421,13 +2501,13 @@ const resolveSessionWorkingDirectory = (options: { cwd?: string; agentId?: strin
 const NEW_USER_WELCOME_SESSION_ID_STORE_KEY = 'new_user_welcome_session_id';
 const NEW_USER_WELCOME_CONTENT_MAX_LENGTH = 4000;
 
-const isLobsteraiServerModelRef = (modelRef: string): boolean => {
+const isMatiesServerModelRef = (modelRef: string): boolean => {
   const normalized = modelRef.trim();
   if (!normalized) return false;
 
   const parsed = parsePrimaryModelRef(normalized);
   if (parsed) {
-    return parsed.providerId === ProviderName.LobsteraiServer;
+    return parsed.providerId === ProviderName.MatiesServer;
   }
 
   return getAllServerModelMetadata().some(model => model.modelId === normalized);
@@ -2437,18 +2517,18 @@ const shouldRefreshServerQuotaForSession = (sessionId: string): boolean => {
   const session = getCoworkStore().getSession(sessionId);
   const sessionModelRef = session?.modelOverride?.trim();
   if (sessionModelRef) {
-    return isLobsteraiServerModelRef(sessionModelRef);
+    return isMatiesServerModelRef(sessionModelRef);
   }
 
   const agentModelRef = session?.agentId
     ? getAgentManager().getAgent(session.agentId)?.model?.trim()
     : '';
   if (agentModelRef) {
-    return isLobsteraiServerModelRef(agentModelRef);
+    return isMatiesServerModelRef(agentModelRef);
   }
 
   const apiConfig = resolveCurrentApiConfig();
-  return apiConfig.providerMetadata?.providerName === ProviderName.LobsteraiServer;
+  return apiConfig.providerMetadata?.providerName === ProviderName.MatiesServer;
 };
 
 const resolveCoworkAgentEngine = (): CoworkAgentEngine => {
@@ -2463,6 +2543,9 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       getBrowserWebAccessConfig: () => getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
+      getOnboardingProfile: () => readOnboardingProfile(getStore()),
+      isOnboardingCompleted: () => getStore().get(OnboardingStoreKey.Completed) === true,
+      getPersonName: getSignedInPersonName,
       getSkillsList: () =>
         getSkillManager()
           .listSkills()
@@ -2556,7 +2639,12 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         // The async resolution happens during syncOpenClawConfig via McpRuntime.
         return getMcpRuntime().getResolvedServersCache();
       },
+      // Connections to accounts (docs/maties/connectors.md): the engine gets
+      // one MCP entry per connected service, pointing at Claidor's proxy, and
+      // carries only the person's own session token.
+      getConnectedConnectorSlugs: () => connectorsService?.getConnectedSlugs() ?? [],
       getAskUserCallbackUrl: () => getMcpRuntime().getAskUserCallbackUrl(),
+      getLibrarySearchCallbackUrl: () => getMcpRuntime().getLibrarySearchCallbackUrl(),
       getMediaCallbackUrl: () => getMcpRuntime().getMediaCallbackUrl(),
       getBrowserCallbackUrl: () => getMcpRuntime().getBrowserCallbackUrl(),
       getLobsterBrowserMcpCommand: () => {
@@ -3402,6 +3490,14 @@ const bindCoworkRuntimeForwarder = (): void => {
     skinRuntimeController?.handleRuntimeComplete(sessionId);
     mediaReferencesBySession.delete(sessionId);
     getDesktopNotificationManager().handleComplete(sessionId);
+    // The engine writes its memory files as a run ends, so this is the moment
+    // the shared copy is worth refreshing.
+    requestMemorySync(MemorySyncReason.ConversationFinished);
+    // The exchange has settled and the reply is already on screen: this is
+    // the moment to name the chat by what it is about. The service itself
+    // decides whether there is anything to do — once per chat, and never
+    // over a name the person typed.
+    requestSessionName(sessionId);
     const windows = BrowserWindow.getAllWindows();
     windows.forEach(win => {
       if (win.isDestroyed()) return;
@@ -3461,10 +3557,18 @@ const getCoworkEngineRouter = () => {
         getOpenClawEngineManager(),
         {
           normalizeModelRef: normalizeOpenClawModelRef,
+          onChannelPromptSubmit: event => {
+            void getMainLogReporter().report({
+              action: LogReporterAction.ImPromptSubmit,
+              source: LogReporterSource.OpenClawChannel,
+              ...event,
+            });
+          },
           onGatewayClientReady: () => {
             getCronJobService().notifyGatewayReady();
             handleGatewaySelfRestartSettled();
           },
+          getUserTimezone: () => readOnboardingProfile(getStore()).timezone,
           onBrowserToolEvent: event => {
             const displayMode = normalizeBrowserWebAccessConfig(
               getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
@@ -3751,6 +3855,7 @@ const getIMGatewayManager = () => {
       getSkillsPrompt: async () => {
         return getSkillManager().buildAutoRoutingPrompt();
       },
+      getUserTimezone: () => readOnboardingProfile(getStore()).timezone,
     });
 
     // Forward IM events to renderer
@@ -3857,9 +3962,6 @@ function validateCoworkImageAttachmentsForRuntime(
 function buildCoworkUserSelectionMetadata(options: {
   prompt?: string;
   skillIds?: string[];
-  kitIds?: string[];
-  kitReferences?: KitReference[];
-  resolvedKitCapabilities?: ResolvedKitCapabilities;
   selectedTextSnippets?: CoworkSelectedTextSnippet[];
   browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
   imageAttachmentPreviews?: CoworkImageAttachmentPreview[];
@@ -3870,15 +3972,6 @@ function buildCoworkUserSelectionMetadata(options: {
 
   if (options.skillIds?.length) {
     metadata.skillIds = options.skillIds;
-  }
-  if (options.kitIds?.length) {
-    metadata.kitIds = options.kitIds;
-    if (options.kitReferences?.length) {
-      metadata.kitReferences = options.kitReferences;
-    }
-    if (options.resolvedKitCapabilities) {
-      metadata.resolvedKitCapabilities = options.resolvedKitCapabilities;
-    }
   }
   if (options.imageAttachmentPreviews?.length) {
     metadata.imageAttachmentPreviews = options.imageAttachmentPreviews;
@@ -3901,7 +3994,7 @@ function normalizeSelectedTextSnippetsForIpc(value: unknown): CoworkSelectedText
   return result.snippets;
 }
 
-// 获取正确的预加载脚本路径
+// Resolve the correct preload script path
 const PRELOAD_PATH = app.isPackaged
   ? path.join(__dirname, 'preload.js')
   : path.join(__dirname, '../dist-electron/preload.js');
@@ -3910,7 +4003,7 @@ const BROWSER_ANNOTATION_PRELOAD_PATH = app.isPackaged
   ? path.join(__dirname, 'browserAnnotationPreload.js')
   : path.join(__dirname, '../dist-electron/browserAnnotationPreload.js');
 
-// 获取应用图标路径（Windows 使用 .ico，其他平台使用 .png）
+// Resolve the app icon path (.ico on Windows, .png elsewhere)
 const getAppIconPath = (): string | undefined => {
   if (process.platform !== 'win32' && process.platform !== 'linux') return undefined;
   const basePath = app.isPackaged
@@ -3934,7 +4027,7 @@ const getNotificationIconPath = (): string | null => {
   return candidates.find(candidate => fs.existsSync(candidate)) ?? null;
 };
 
-// 保存对主窗口的引用
+// Keep a reference to the main window
 let mainWindow: BrowserWindow | null = null;
 let dataMigrationRestoreWindow: BrowserWindow | null = null;
 let desktopNotificationManager: DesktopNotificationManager | null = null;
@@ -4023,7 +4116,7 @@ const hideMainWindowForClose = (win: BrowserWindow): void => {
   }
 };
 
-// 存储活跃的流式请求控制器
+// Active streaming request controllers
 const activeStreamControllers = new Map<string, AbortController>();
 
 // Media generation selection and authenticated owner per session turn.
@@ -4161,9 +4254,16 @@ const getSkinRuntimeController = (): SkinRuntimeController => {
   if (!skinRuntimeController) {
     skinRuntimeController = new SkinRuntimeController({
       rootDir: path.join(app.getPath('userData'), 'skins'),
-      getInstalledKits: () => (
-        getStore().get<Record<string, InstalledKitRecord>>(KitStoreKey.Installed) ?? {}
-      ),
+      isSkinSkillEnabled: () => {
+        try {
+          return getSkillManager()
+            .listSkills()
+            .some(skill => skill.id === SkinPackSkillId.BuiltIn && skill.enabled);
+        } catch (error) {
+          console.warn('[SkinWorkflow] could not read the appearance skill state:', error);
+          return false;
+        }
+      },
       getParentSessionId: sessionId => (
         getCoworkParentSessionId(getStore().getDatabase(), sessionId)
       ),
@@ -4265,7 +4365,7 @@ const resolveHappyHorse11Selection = (
     return {
       type: 't2v',
       upstreamModel: 'happyhorse-1.1-t2v',
-      reason: '未检测到输入图片，使用文生视频子模型 happyhorse-1.1-t2v',
+      reason: 'No input image detected; using the text-to-video sub-model happyhorse-1.1-t2v',
       imageCount,
     };
   }
@@ -4273,14 +4373,14 @@ const resolveHappyHorse11Selection = (
     return {
       type: 'i2v',
       upstreamModel: 'happyhorse-1.1-i2v',
-      reason: '检测到 1 张输入图片，使用图生视频子模型 happyhorse-1.1-i2v',
+      reason: '1 input image detected; using the image-to-video sub-model happyhorse-1.1-i2v',
       imageCount,
     };
   }
   return {
     type: 'r2v',
     upstreamModel: 'happyhorse-1.1-r2v',
-    reason: `检测到 ${imageCount} 张输入图片，使用参考生视频子模型 happyhorse-1.1-r2v`,
+    reason: `${imageCount} input images detected; using the reference-to-video sub-model happyhorse-1.1-r2v`,
     imageCount,
   };
 };
@@ -4579,7 +4679,7 @@ const scheduleReload = (reason: string, webContents?: WebContents) => {
   target.reloadIgnoringCache();
 };
 
-// 确保应用程序只有一个实例
+// Ensure only one instance of the app runs
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -4589,11 +4689,11 @@ if (!gotTheLock) {
   if (!app.isPackaged) {
     // In dev mode, setAsDefaultProtocolClient needs the electron exe path
     // and the app entry point as extra args so the OS can relaunch correctly
-    app.setAsDefaultProtocolClient('lobsterai', process.execPath, [
+    app.setAsDefaultProtocolClient('maties', process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   } else {
-    app.setAsDefaultProtocolClient('lobsterai');
+    app.setAsDefaultProtocolClient('maties');
   }
 
   const authCallbackRouter = new AuthCallbackRouter({
@@ -4607,7 +4707,7 @@ if (!gotTheLock) {
   });
 
   /**
-   * Parse a lobsterai:// deep link and send (or buffer) the auth code.
+   * Parse a maties:// deep link and send (or buffer) the auth code.
    */
   const handleDeepLink = (url: string) => {
     authCallbackRouter.handleDeepLink(url);
@@ -4686,7 +4786,7 @@ if (!gotTheLock) {
     }
 
     // Check for deep link in command line args (Windows/Linux)
-    const deepLink = commandLine.find(arg => arg.startsWith('lobsterai://'));
+    const deepLink = commandLine.find(arg => arg.startsWith('maties://'));
     if (deepLink) {
       handleDeepLink(deepLink);
     }
@@ -4694,7 +4794,7 @@ if (!gotTheLock) {
     focusMainWindow('second instance activation');
   });
 
-  // IPC 处理程序
+  // IPC handlers
   // One-shot arrival log: renderer startup has stalled on this invoke in the
   // field, and this line tells whether the request reached the main process.
   let firstStoreGetLogged = false;
@@ -4847,7 +4947,7 @@ if (!gotTheLock) {
             ? [
                 {
                   archiveName: 'install-timing.log',
-                  filePath: path.join(app.getPath('appData'), 'LobsterAI', 'install-timing.log'),
+                  filePath: path.join(app.getPath('appData'), 'Maties', 'install-timing.log'),
                 },
               ]
             : []),
@@ -5356,6 +5456,90 @@ if (!gotTheLock) {
       }
     }
     return response;
+  };
+
+  // ── Shared memory ──
+  //
+  // The engine keeps its memory as text files in the main agent's workspace;
+  // Claidor keeps the shared copy. The round trip rides the same authenticated
+  // request path as everything else, so there is one place that holds the token.
+  const MEMORY_SYNC_INTERVAL_MS = 15 * 60_000;
+  // The quit cleanup watchdog force-exits at ten seconds, so the last sync gets
+  // a short deadline of its own and is dropped when the network is slow.
+  const MEMORY_SYNC_QUIT_DEADLINE_MS = 4_000;
+
+  speechClient = new SpeechClient({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+  });
+
+  const memorySyncService = createMemorySyncService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    getVersionStore: () => getStore(),
+    getWorkspaceDir: () => {
+      try {
+        return getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir());
+      } catch (error) {
+        console.debug('[MemorySync] main agent workspace is not resolvable yet:', error);
+        return null;
+      }
+    },
+  });
+
+  const runMemorySync = async (reason: MemorySyncReason): Promise<void> => {
+    try {
+      logMemorySyncResult(reason, await memorySyncService.sync(reason));
+    } catch (error) {
+      console.warn(`[MemorySync] sync failed (reason=${reason}):`, error);
+    }
+  };
+
+  requestMemorySync = (reason: MemorySyncReason) => {
+    void runMemorySync(reason);
+  };
+
+  const memorySyncTimer: ReturnType<typeof setInterval> = setInterval(() => {
+    requestMemorySync(MemorySyncReason.Periodic);
+  }, MEMORY_SYNC_INTERVAL_MS);
+
+  // ── A name for the chat ──
+  //
+  // See `src/main/libs/sessionNaming.ts`. Bound here because the naming call
+  // rides the same authenticated request path as everything else.
+  const sessionNamingService = createSessionNamingService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    getSession: (sessionId) => {
+      // One message is enough: only the title and its source are read here.
+      const session = getCoworkStore().getSession(sessionId, 1);
+      return session
+        ? { id: session.id, title: session.title, titleSource: session.titleSource }
+        : null;
+    },
+    getFirstMessages: (sessionId, limit) => getCoworkStore()
+      .getPagedSessionMessages(sessionId, limit, 0)
+      .map((message) => ({ type: message.type, content: message.content })),
+    applyTitle: (sessionId, title) => {
+      getCoworkStore().updateSession(
+        sessionId,
+        { title, titleSource: SessionTitleSource.Assistant },
+        { touchUpdatedAt: false },
+      );
+    },
+    notifySessionChanged: (sessionId) => {
+      const payload: CoworkSessionsChangedPayload = { sessionIds: [sessionId] };
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed()) win.webContents.send(CoworkIpcChannel.SessionsChanged, payload);
+      }
+    },
+    buildModelHeaders: () => buildServerModelCapabilityHeaders(app.getVersion()),
+  });
+
+  requestSessionName = (sessionId: string) => {
+    sessionNamingService.nameSession(sessionId);
   };
 
   type AvailableServerModel = ServerModelMetadataInput & {
@@ -6029,23 +6213,23 @@ if (!gotTheLock) {
         const costPoints = durationSec ? durationSec * 100 : null;
         const portalTasksUrl = getPortalTasksUrl();
         const subtitle = costPoints
-          ? `本次生成大约预计消耗 **${costPoints}** 积分`
-          : '费用约为 **100** 积分/秒';
+          ? `This generation is expected to use about **${costPoints}** credits`
+          : 'The cost is about **100** credits per second';
         const questionText = [
-          '请确认当前描述无误，提交后将无法取消。',
-          '视频生成任务耗时较长，请耐心等待。',
+          'Please confirm the description is correct; the task cannot be cancelled once submitted.',
+          'Video generation takes a while, so please be patient.',
           '',
-          `生成后请妥善保存视频，若误删可在[「个人主页-用量详情-生成任务」](${portalTasksUrl})中下载`,
-          '~~（链接有时效性，请尽快下载）~~',
+          `Save the video once it is generated. If it is deleted by mistake, it can be downloaded again from [Profile > Usage > Generation tasks](${portalTasksUrl})`,
+          '~~(The link expires, so download it soon)~~',
         ].join('\n');
         const confirmResponse = await getMcpRuntime().askUserInternal(
           [{
             question: questionText,
-            title: '确认生成视频？',
+            title: 'Generate this video?',
             subtitle,
             options: [
-              { label: '确认生成', description: '开始视频生成任务' },
-              { label: '取消', description: '暂不生成' },
+              { label: 'Generate', description: 'Start the video generation task' },
+              { label: 'Cancel', description: 'Do not generate for now' },
             ],
           }],
           undefined,
@@ -6053,7 +6237,7 @@ if (!gotTheLock) {
         );
 
         const userCancelled = confirmResponse?.behavior === 'deny'
-          || confirmResponse?.answers?.[questionText] === '取消';
+          || confirmResponse?.answers?.[questionText] === 'Cancel';
 
         if (!isRequestAccountCurrent()) return staleAccountResult();
         if (userCancelled) {
@@ -6873,6 +7057,12 @@ if (!gotTheLock) {
     }
     clearAuthTokens();
     clearAuthUser();
+    // The connected accounts belong to the person who signed in, so the shelf
+    // and the engine's connector entries empty with them.
+    connectorsService?.reset();
+    // Cloud work belongs to the person who signed in, so the list empties
+    // with them; nothing is cancelled on Claidor.
+    matyService?.reset();
     clearEnterpriseAccountContext(getStore());
     clearServerModelMetadata();
     resetAuthQuotaGateState();
@@ -8367,12 +8557,13 @@ if (!gotTheLock) {
     getOpenClawRuntimeAdapter: () => openClawRuntimeAdapter,
   });
 
-  // Kits IPC handlers
-  registerKitHandlers({
+  // Onboarding IPC handlers (docs/maties/onboarding.md): the name, the voice, the time zone
+  registerOnboardingHandlers({
     getStore,
-    getKitStoreUrl,
-    getSkillManager,
+    getAgentManager,
     syncOpenClawConfig,
+    getMainWorkspacePath: () => getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir()),
+    getPersonName: getSignedInPersonName,
   });
 
   ipcMain.handle(OpenClawEngineIpc.GetStatus, async () => {
@@ -8528,7 +8719,7 @@ if (!gotTheLock) {
       console.error('[DataMigration] backup failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to back up LobsterAI data',
+        error: error instanceof Error ? error.message : 'Failed to back up Maties data',
       };
     }
   });
@@ -8587,11 +8778,11 @@ if (!gotTheLock) {
         success,
         scheduledRestart: rendererReleased,
         rollbackPath: restoreResult?.rollbackPath,
-        error: success ? undefined : restoreResult?.error || 'Failed to import LobsterAI data backup',
+        error: success ? undefined : restoreResult?.error || 'Failed to import Maties data backup',
       };
     } catch (error) {
       isCleanupInProgress = false;
-      const message = error instanceof Error ? error.message : 'Failed to import LobsterAI data backup';
+      const message = error instanceof Error ? error.message : 'Failed to import Maties data backup';
       console.error('[DataMigration] restore scheduling failed:', error);
       if (rendererReleased) {
         dialog.showErrorBox(t('dataMigrationRestoreDialogTitle'), message);
@@ -8681,7 +8872,7 @@ if (!gotTheLock) {
     try {
       return { success: true, state: await action() };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'LobsterAI in-app browser action failed.';
+      const message = error instanceof Error ? error.message : 'Maties in-app browser action failed.';
       return {
         success: false,
         state: {
@@ -8736,6 +8927,73 @@ if (!gotTheLock) {
   ipcMain.handle(
     BrowserIpc.StopHost,
     (): Promise<AgentBrowserHostResponse> => runBrowserHostAction(() => getAgentBrowserHost().stop()),
+  );
+
+  /**
+   * Open a page in the browser the agent itself works in, so that a sign-in
+   * the person performs there is the one the agent finds next time. In-app,
+   * that is the host's persistent partition; otherwise it is the engine's own
+   * managed browser, which the control gateway opens a tab in.
+   */
+  // --- the voice -----------------------------------------------------------
+  // The app asks Claidor to say something; Claidor holds the ElevenLabs
+  // key. No key ever reaches this process, which is why there is no
+  // API-key screen for it and will not be one (docs/maties/plan.md step 1).
+  // Asked for before sign-in is wired is a real state during startup, and
+  // it is answered rather than thrown: an IPC rejection would reach the
+  // renderer as an unhandled error where « not yet » is the whole truth.
+  const SPEECH_NOT_READY = 'The voice is not ready yet.';
+
+  ipcMain.handle(SpeechIpc.ListVoices, async (): Promise<SpeechVoicesResult> => (
+    speechClient
+      ? speechClient.listVoices()
+      : { ok: false, voices: [], error: SPEECH_NOT_READY }
+  ));
+
+  ipcMain.handle(
+    SpeechIpc.Speak,
+    async (_event, request?: { voiceId?: string; text?: string }): Promise<SpeakResult> => (
+      speechClient
+        ? speechClient.speak(request?.voiceId ?? '', request?.text ?? '')
+        : { ok: false, error: SPEECH_NOT_READY }
+    ),
+  );
+
+  ipcMain.handle(
+    BrowserIpc.OpenAgentPage,
+    async (_event, request?: AgentBrowserOpenPageRequest): Promise<AgentBrowserOpenPageResponse> => {
+      const url = request?.url?.trim();
+      if (!url) {
+        return { success: false, error: 'A page address is required.' };
+      }
+      const displayMode = normalizeBrowserWebAccessConfig(
+        getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
+      ).displayMode;
+      try {
+        if (displayMode === BrowserDisplayMode.InApp) {
+          await getAgentBrowserHost().navigate(url, request?.sessionId);
+        } else {
+          await fetchBrowserControlJson<Record<string, unknown>>('/start', {
+            method: 'POST',
+            timeoutMs: 20000,
+          });
+          await fetchBrowserControlJson<Record<string, unknown>>('/tabs/open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+            timeoutMs: 20000,
+          });
+        }
+        return { success: true, displayMode };
+      } catch (error) {
+        console.error('[AgentBrowser] Failed to open a page in the agent browser:', error);
+        return {
+          success: false,
+          displayMode,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
   );
 
   ipcMain.handle(
@@ -8904,7 +9162,7 @@ if (!gotTheLock) {
       const providers = { ...(appConfig?.providers ?? {}) };
       // The billed built-in provider authenticates through the token proxy;
       // syncing its raw key/baseUrl into dsh would produce a dead route.
-      delete providers[ProviderName.LobsteraiServer];
+      delete providers[ProviderName.MatiesServer];
       return providers;
     },
     getPlanProvider: () => {
@@ -8953,9 +9211,6 @@ if (!gotTheLock) {
         title?: string;
         activeSkillIds?: string[];
         runtimeSkillIds?: string[];
-        kitIds?: string[];
-        kitReferences?: KitReference[];
-        resolvedKitCapabilities?: ResolvedKitCapabilities;
         imageAttachments?: CoworkImageAttachmentMain[];
         agentId?: string;
         modelOverride?: string;
@@ -9062,7 +9317,16 @@ if (!gotTheLock) {
           runtimeSkillIds || [],
           options.agentId || 'main',
           options.modelOverride || '',
-          { thinkingLevel: thinkingLevel || '' },
+          {
+            thinkingLevel: thinkingLevel || '',
+            // A title the caller supplied is a deliberate name (a scheduled
+            // task, a seeded chat) and is never replaced. Only the
+            // truncation of what the person typed is a placeholder, and
+            // only that is open to being named by what the chat is about.
+            titleSource: options.title?.trim()
+              ? SessionTitleSource.Person
+              : SessionTitleSource.Fallback,
+          },
         );
 
         if (options.modelOverride) {
@@ -9075,7 +9339,7 @@ if (!gotTheLock) {
 
         const skinTurn = getSkinRuntimeController().prepareTurn({
           sessionId: session.id,
-          kitIds: options.kitIds,
+          skillIds: options.activeSkillIds,
           mediaSelection: normalizeMediaSelectionState(options.mediaSelection),
           mediaGenerationEntitled: cachedMediaGenerationEntitled,
         });
@@ -9118,9 +9382,6 @@ if (!gotTheLock) {
         const messageMetadata = buildCoworkUserSelectionMetadata({
           prompt,
           skillIds: options.activeSkillIds,
-          kitIds: options.kitIds,
-          kitReferences: options.kitReferences,
-          resolvedKitCapabilities: options.resolvedKitCapabilities,
           selectedTextSnippets,
           browserAnnotations,
           imageAttachmentPreviews,
@@ -9145,9 +9406,6 @@ if (!gotTheLock) {
             systemPrompt,
             skillIds: runtimeSkillIds,
             messageSkillIds: options.activeSkillIds,
-            kitIds: options.kitIds,
-            kitReferences: options.kitReferences,
-            resolvedKitCapabilities: options.resolvedKitCapabilities,
             workspaceRoot: taskWorkingDirectory,
             confirmationMode: 'modal',
             imageAttachments: options.imageAttachments,
@@ -9204,9 +9462,6 @@ if (!gotTheLock) {
         systemPrompt?: string;
         activeSkillIds?: string[];
         runtimeSkillIds?: string[];
-        kitIds?: string[];
-        kitReferences?: KitReference[];
-        resolvedKitCapabilities?: ResolvedKitCapabilities;
         imageAttachments?: CoworkImageAttachmentMain[];
         mediaSelection?: {
           mode: 'auto' | 'image' | 'video' | 'none';
@@ -9284,7 +9539,7 @@ if (!gotTheLock) {
 
         const skinTurn = getSkinRuntimeController().prepareTurn({
           sessionId: options.sessionId,
-          kitIds: options.kitIds,
+          skillIds: options.activeSkillIds,
           mediaSelection: normalizeMediaSelectionState(options.mediaSelection),
           mediaGenerationEntitled: cachedMediaGenerationEntitled,
         });
@@ -9335,9 +9590,6 @@ if (!gotTheLock) {
             systemPrompt: continuationSystemPrompt,
             skillIds: options.runtimeSkillIds ?? options.activeSkillIds,
             messageSkillIds: options.activeSkillIds,
-            kitIds: options.kitIds,
-            kitReferences: options.kitReferences,
-            resolvedKitCapabilities: options.resolvedKitCapabilities,
             imageAttachments: options.imageAttachments,
             mediaSelection: normalizedMediaSelection,
             workflowKind,
@@ -9899,7 +10151,13 @@ if (!gotTheLock) {
           return { success: false, error: 'Title is required' };
         }
         const coworkStoreInstance = getCoworkStore();
-        coworkStoreInstance.updateSession(options.sessionId, { title }, { touchUpdatedAt: false });
+        // A name the person typed wins for ever after: recording who wrote
+        // it is what stops the app renaming it later.
+        coworkStoreInstance.updateSession(
+          options.sessionId,
+          { title, titleSource: SessionTitleSource.Person },
+          { touchUpdatedAt: false },
+        );
         return { success: true };
       } catch (error) {
         return {
@@ -10040,7 +10298,7 @@ if (!gotTheLock) {
             `[CoworkIPC] searched sessions; query length ${searchQuery.length}, returned ${sessions.length} of ${total} from offset ${offset} in ${Date.now() - startedAt}ms.`,
           );
         }
-        return { success: true, sessions, hasMore: offset + sessions.length < total };
+        return { success: true, sessions, total, hasMore: offset + sessions.length < total };
       } catch (error) {
         console.error('[CoworkIPC] failed to list sessions:', error);
         return {
@@ -10970,7 +11228,6 @@ if (!gotTheLock) {
 
   // ==================== Plugin Management IPC Handlers ====================
 
-  registerPluginHandlers({ getCoworkStore, syncOpenClawConfig });
 
   // ==================== Scheduled Task IPC Handlers (OpenClaw) ====================
 
@@ -12020,7 +12277,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().startFeishuInstallQrcode(isLark);
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : '获取二维码失败');
+      throw new Error(error instanceof Error ? error.message : 'Failed to get the QR code');
     }
   });
 
@@ -12028,7 +12285,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().pollFeishuInstall(deviceCode);
     } catch (error) {
-      return { done: false, error: error instanceof Error ? error.message : '轮询失败' };
+      return { done: false, error: error instanceof Error ? error.message : 'Polling failed' };
     }
   });
 
@@ -12038,7 +12295,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().verifyFeishuCredentials(appId, appSecret);
       } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : '验证失败' };
+        return { success: false, error: error instanceof Error ? error.message : 'Verification failed' };
       }
     },
   );
@@ -12048,7 +12305,7 @@ if (!gotTheLock) {
     try {
       return await getIMGatewayManager().startDingTalkInstallQrcode();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : '获取二维码失败');
+      throw new Error(error instanceof Error ? error.message : 'Failed to get the QR code');
     }
   });
 
@@ -12058,7 +12315,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().pollDingTalkInstall(deviceCode);
       } catch (error) {
-        return { done: false, error: error instanceof Error ? error.message : '轮询失败' };
+        return { done: false, error: error instanceof Error ? error.message : 'Polling failed' };
       }
     },
   );
@@ -12069,7 +12326,7 @@ if (!gotTheLock) {
       try {
         return await getIMGatewayManager().verifyDingTalkCredentials(clientId, clientSecret);
       } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : '验证失败' };
+        return { success: false, error: error instanceof Error ? error.message : 'Verification failed' };
       }
     },
   );
@@ -12734,7 +12991,7 @@ if (!gotTheLock) {
     }
   };
 
-  // Shell handlers - 打开文件/文件夹
+  // Shell handlers - open files/folders
   ipcMain.handle(ShellIpc.OpenPath, async (_event, filePath: string) => {
     try {
       const normalizedPath = normalizeWindowsShellPath(filePath);
@@ -12789,7 +13046,7 @@ if (!gotTheLock) {
 
   ipcMain.handle(ShellIpc.OpenHtmlInBrowser, async (_event, htmlContent: string) => {
     try {
-      const tmpDir = path.join(os.tmpdir(), 'lobsterai-preview');
+      const tmpDir = path.join(os.tmpdir(), 'maties-preview');
       fs.mkdirSync(tmpDir, { recursive: true });
       const tmpFile = path.join(tmpDir, `preview-${Date.now()}.html`);
       fs.writeFileSync(tmpFile, htmlContent, 'utf-8');
@@ -12907,6 +13164,58 @@ if (!gotTheLock) {
       return scopedFetch(url, options);
     },
     getServerApiBaseUrl,
+  });
+
+  // ---- connections to accounts (docs/maties/connectors.md) ----
+  //
+  // The app asks Claidor for a sign-in URL, opens it, and asks Claidor again
+  // what is connected. It never holds a credential of the connector service,
+  // and the engine's config gains one entry per connected service.
+  connectorsService = new ConnectorsService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    onStateChanged: (state) => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        if (!window.isDestroyed()) window.webContents.send(ConnectorsIpc.Changed, state);
+      }
+    },
+    onConnectionsChanged: () => {
+      void syncOpenClawConfig({
+        reason: 'connectors-changed',
+        expectedImpact: OpenClawConfigImpact.Restart,
+      }).catch((error: unknown) => {
+        console.warn('[Connectors] the engine config could not be updated:', error);
+      });
+    },
+  });
+  registerConnectorsIpcHandlers({
+    getService: () => {
+      if (!connectorsService) throw new Error('Connections are not ready yet.');
+      return connectorsService;
+    },
+  });
+
+  // ---- work sent to the cloud engine (docs/maties/cloud.md) ----
+  //
+  // The app posts a piece of work to Claidor and watches it for a while. It
+  // holds no credential of the runner's: every request is signed with the
+  // person's own Claidor session, exactly as connections and memory sync are.
+  matyService = new MatyService({
+    getServerBaseUrl: getServerApiBaseUrl,
+    fetchWithAuth,
+    isSignedIn: () => getAuthTokens() !== null,
+    onStateChanged: (state) => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        if (!window.isDestroyed()) window.webContents.send(MatyIpc.Changed, state);
+      }
+    },
+  });
+  registerMatyIpcHandlers({
+    getService: () => {
+      if (!matyService) throw new Error('Cloud work is not ready yet.');
+      return matyService;
+    },
   });
 
   // ---- artifact file watching ----
@@ -13106,7 +13415,7 @@ if (!gotTheLock) {
     }
   };
 
-  // API 代理处理程序 - 解决 CORS 问题
+  // API proxy handlers - work around CORS
   ipcMain.handle(
     'api:fetch',
     async (
@@ -13119,9 +13428,9 @@ if (!gotTheLock) {
       },
     ) => {
       const sanitizedUrl = sanitizeUrlForLog(options.url);
-      // Nothing is exempt from this trace any more: the app used to skip
-      // logging its own analytics beacons, and it no longer sends any.
-      const logTraffic = true;
+      // Analytics beacons are traced by the reporter itself ([LogReporter]
+      // lines); logging them here again would only add noise.
+      const logTraffic = !isAnalyticsEndpointUrl(options.url);
       if (logTraffic) {
         console.log(
           `[api:fetch] ${options.method} ${sanitizedUrl}, headers: ${serializeForLog(options.headers)}, body: ${options.body}`,
@@ -13197,7 +13506,7 @@ if (!gotTheLock) {
     },
   );
 
-  // SSE 流式 API 代理
+  // SSE streaming API proxy
   ipcMain.handle(
     'api:stream',
     async (
@@ -13212,7 +13521,7 @@ if (!gotTheLock) {
     ) => {
       const controller = new AbortController();
 
-      // 存储 controller 以便后续取消
+      // Keep the controller so the request can be cancelled later
       activeStreamControllers.set(options.requestId, controller);
 
       try {
@@ -13263,7 +13572,7 @@ if (!gotTheLock) {
           };
         }
 
-        // 读取流式响应并通过 IPC 发送
+        // Read the streamed response and forward it over IPC
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
@@ -13292,7 +13601,7 @@ if (!gotTheLock) {
           }
         };
 
-        // 异步读取流，立即返回成功状态
+        // Read the stream asynchronously and return success immediately
         readStream();
 
         return {
@@ -13312,7 +13621,7 @@ if (!gotTheLock) {
     },
   );
 
-  // 取消流式请求
+  // Cancel a streaming request
   ipcMain.handle('api:stream:cancel', (_event, requestId: string) => {
     const controller = activeStreamControllers.get(requestId);
     if (controller) {
@@ -13325,7 +13634,7 @@ if (!gotTheLock) {
 
   // ─── end OAuth ───
 
-  // 企微 SDK 授权弹窗白名单域名
+  // Allowed domains for the WeCom SDK authorization popup
   const WECOM_AUTH_HOSTNAMES = new Set([
     'work.weixin.qq.com',
     'open.work.weixin.qq.com',
@@ -13355,7 +13664,7 @@ if (!gotTheLock) {
     }
   };
 
-  // 设置 Content Security Policy
+  // Set the Content Security Policy
   const sanitizeResponseHeaders = (
     headers: Record<string, string[]> | undefined
   ): Record<string, string[]> => {
@@ -13377,19 +13686,19 @@ if (!gotTheLock) {
 
   const setContentSecurityPolicy = () => {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      // 跳过企微授权页面，让其使用自身的 CSP（否则外部脚本被阻止导致空白页）
+      // Skip the WeCom authorization page so it uses its own CSP (otherwise external scripts are blocked and the page is blank)
       if (isWecomAuthUrl(details.url)) {
         callback({ responseHeaders: sanitizeResponseHeaders(details.responseHeaders) });
         return;
       }
 
-      // 跳过 artifact 沙箱及其 vendor 脚本的 CSP（iframe sandbox="allow-scripts" 隔离）
+      // Skip the CSP for the artifact sandbox and its vendor scripts (isolated by iframe sandbox="allow-scripts")
       if (isArtifactSandboxUrl(details.url)) {
         callback({ responseHeaders: sanitizeResponseHeaders(details.responseHeaders) });
         return;
       }
 
-      // 跳过 HTML 预览服务器的 CSP（本地 HTTP Server 提供文件类 HTML 预览）
+      // Skip the CSP for the HTML preview server (a local HTTP server serves file-based HTML previews)
       if (isPreviewServerUrl(details.url)) {
         callback({ responseHeaders: details.responseHeaders });
         return;
@@ -13403,7 +13712,7 @@ if (!gotTheLock) {
           : "script-src 'self'",
         "style-src 'self' 'unsafe-inline' https:",
         `img-src 'self' data: blob: https: http: ${ArtifactPreviewProtocol.LocalFile}: ${SKIN_PRIVILEGED_SCHEME.scheme}:`,
-        // 允许连接到所有域名，不做限制
+        // Allow connections to any domain, no restriction
         'connect-src *',
         "font-src 'self' data: blob: https:",
         `media-src 'self' data: blob: file: https: http: ${ArtifactPreviewProtocol.LocalFile}:`,
@@ -13420,9 +13729,9 @@ if (!gotTheLock) {
     });
   };
 
-  // 创建主窗口
+  // Create the main window
   const createWindow = () => {
-    // 如果窗口已经存在，就不再创建新窗口
+    // If the window already exists, do not create another one
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       if (!mainWindow.isVisible()) mainWindow.show();
@@ -13481,7 +13790,7 @@ if (!gotTheLock) {
       enableLargerThanScreen: false,
     });
 
-    // 设置 macOS Dock 图标（开发模式下 Electron 默认图标不是应用 Logo）
+    // Set the macOS Dock icon (in dev mode Electron's default icon is not the app logo)
     if (isMac && isDev) {
       const iconPath = getNotificationIconPath();
       if (iconPath) {
@@ -13489,11 +13798,11 @@ if (!gotTheLock) {
       }
     }
 
-    // 禁用窗口菜单
+    // Disable the window menu
     mainWindow.setMenu(null);
     installEditContextMenu(mainWindow.webContents);
 
-    // 处理 window.open 请求（企微 SDK 授权弹窗等）
+    // Handle window.open requests (WeCom SDK authorization popup, etc.)
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       if (isWecomAuthUrl(url)) {
         return {
@@ -13501,7 +13810,7 @@ if (!gotTheLock) {
           overrideBrowserWindowOptions: {
             width: 950,
             height: 640,
-            title: '企业微信授权',
+            title: 'WeCom Authorization',
             autoHideMenuBar: true,
             webPreferences: {
               nodeIntegration: false,
@@ -13536,9 +13845,9 @@ if (!gotTheLock) {
       }
     });
 
-    // 监听子窗口创建事件（企微授权弹窗安全限制）
+    // Listen for child window creation (security restrictions for the WeCom authorization popup)
     mainWindow.webContents.on('did-create-window', childWindow => {
-      // 限制子窗口只能导航到企微域名，防止被劫持到其他站点
+      // Restrict child windows to WeCom domains so they cannot be hijacked to other sites
       childWindow.webContents.on('will-navigate', (event, navUrl) => {
         if (!isWecomAuthUrl(navUrl)) {
           event.preventDefault();
@@ -13546,7 +13855,7 @@ if (!gotTheLock) {
       });
     });
 
-    // 设置窗口的最小尺寸
+    // Set the window's minimum size
     mainWindow.setMinimumSize(MIN_APP_WINDOW_WIDTH, MIN_APP_WINDOW_HEIGHT);
     if (shouldRestoreMaximized) {
       mainWindow.maximize();
@@ -13560,9 +13869,11 @@ if (!gotTheLock) {
       }
     };
 
-    // 窗口加载看门狗。一次性 30s 超时救不回被杀软扫描拖慢的首启动(现场案例:
-    // 首次加载超 30s,唯一一次 reload 后再无人接管,窗口永久空白),改为按退避
-    // 重试,封顶后停手保留现场。
+    // Window load watchdog. A single 30s timeout could not rescue a first launch
+    // slowed down by antivirus scanning (field case: first load took over 30s, the
+    // one and only reload fired and nothing took over afterwards, leaving the window
+    // blank forever). Retry with backoff instead, and stop after the cap so the
+    // state stays inspectable.
     const LOAD_WATCHDOG_DELAYS_MS = [30_000, 45_000, 60_000, 90_000];
     let loadRecoveryAttempts = 0;
     let loadWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
@@ -13599,8 +13910,9 @@ if (!gotTheLock) {
     };
     scheduleLoadWatchdog();
 
-    // 兜底显示:首帧迟迟不来时,宁可让用户看到纯背景色的窗口,也不能看起来
-    // "应用没打开"。开机自启保持仅托盘,不弹窗。
+    // Fallback display: if the first frame is slow to arrive, better to show the user
+    // a plain background-colored window than to look like "the app did not open".
+    // On auto-launch stay tray-only and do not pop up a window.
     const SHOW_FALLBACK_DELAY_MS = 10_000;
     const showFallbackTimer = setTimeout(() => {
       if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -13626,7 +13938,7 @@ if (!gotTheLock) {
       }
     });
 
-    // 处理窗口关闭
+    // Handle window close
     mainWindow.on('close', (e) => {
       windowStatePersist.cleanup();
       windowStatePersist.persist();
@@ -13648,7 +13960,7 @@ if (!gotTheLock) {
     mainWindow.on('hide', () => agentBrowserHost?.setWindowVisible(false));
     mainWindow.on('minimize', () => agentBrowserHost?.setWindowVisible(false));
 
-    // 处理渲染进程崩溃或退出
+    // Handle renderer process crash or exit
     mainWindow.webContents.on('render-process-gone', (_event, details) => {
       authCallbackRouter.markRendererUnavailable();
       console.error('Window render process gone:', details);
@@ -13656,7 +13968,7 @@ if (!gotTheLock) {
     });
 
     if (isDev) {
-      // 开发环境
+      // Development environment
       const maxRetries = 3;
       let retryCount = 0;
 
@@ -13679,20 +13991,20 @@ if (!gotTheLock) {
 
       tryLoadURL();
 
-      // 打开开发者工具
+      // Open the developer tools
       mainWindow.webContents.openDevTools();
     } else {
-      // 生产环境
+      // Production environment
       mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
     }
 
-    // 添加错误处理
+    // Error handling
     mainWindow.webContents.on(
       'did-fail-load',
       (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
         if (!isMainFrame) return;
         console.error('Page failed to load:', errorCode, errorDescription);
-        // 如果加载失败，尝试重新加载
+        // If loading failed, try to reload
         if (isDev) {
           setTimeout(() => {
             scheduleReload('did-fail-load');
@@ -13716,7 +14028,7 @@ if (!gotTheLock) {
       authCallbackRouter.handleNavigationStarted({ isMainFrame, isInPlace });
     });
 
-    // 当窗口关闭时，清除引用
+    // Clear the reference when the window is closed
     mainWindow.on('closed', () => {
       clearLoadWatchdog();
       clearTimeout(showFallbackTimer);
@@ -13729,10 +14041,10 @@ if (!gotTheLock) {
 
     windowStatePersist.bindWindowEvents(initialWindowBounds, shouldRestoreMaximized);
 
-    // 等待内容加载完成后再显示窗口
+    // Wait for the content to finish loading before showing the window
     mainWindow.once('ready-to-show', () => {
       clearTimeout(showFallbackTimer);
-      // 开机自启时不显示窗口，仅显示托盘图标
+      // On auto-launch do not show the window, only the tray icon
       if (!isAutoLaunched()) {
         mainWindow?.show();
       }
@@ -13740,7 +14052,7 @@ if (!gotTheLock) {
       // Initialize main-process i18n from stored language before creating UI elements.
       const initLang = getStore().get<{ language?: string }>('app_config')?.language;
       setLanguage(initLang === 'en' ? 'en' : 'zh');
-      // 窗口就绪后创建系统托盘
+      // Create the system tray once the window is ready
       createTray(() => mainWindow);
 
       // Start cron polling after the window is ready.
@@ -13956,6 +14268,18 @@ if (!gotTheLock) {
   const runAppCleanup = async (reason = 'quit'): Promise<void> => {
     const cleanupStartedAt = Date.now();
     console.log(`[Main] App cleanup started for ${reason}`);
+
+    // Push what this computer learned before the engine stops, so the next
+    // machine to open the app starts from the same memory.
+    currentAppCleanupStep = 'memory-sync';
+    clearInterval(memorySyncTimer);
+    await Promise.race([
+      runMemorySync(MemorySyncReason.Quit),
+      new Promise<void>(resolve => {
+        setTimeout(resolve, MEMORY_SYNC_QUIT_DEADLINE_MS);
+      }),
+    ]);
+
     currentAppCleanupStep = 'sync-teardown';
     skillManager?.stopWatching();
     stopMediaPollTimer();
@@ -14029,7 +14353,10 @@ if (!gotTheLock) {
 
     sqliteBackupManager?.stopPeriodicBackupLoop();
     libraryIndexService?.stop();
+    libraryContentIndexer?.stop();
     libraryThumbnailRenderer.dispose();
+    connectorsService?.dispose();
+    matyService?.dispose();
 
     // Close the SQLite database to flush the WAL and release the file lock.
     try {
@@ -14139,7 +14466,7 @@ if (!gotTheLock) {
   process.once('SIGINT', () => handleTerminationSignal('SIGINT'));
   process.once('SIGTERM', () => handleTerminationSignal('SIGTERM'));
 
-  // 初始化应用
+  // Initialize the app
   const initApp = async () => {
     const profiler = new StartupProfiler();
 
@@ -14153,14 +14480,14 @@ if (!gotTheLock) {
     // We don't trigger permission dialogs at startup to avoid annoying users
 
     // Ensure default working directory exists
-    const defaultProjectDir = path.join(os.homedir(), 'lobsterai', 'project');
+    const defaultProjectDir = path.join(os.homedir(), 'maties', 'project');
     if (!fs.existsSync(defaultProjectDir)) {
       fs.mkdirSync(defaultProjectDir, { recursive: true });
       console.log('Created default project directory:', defaultProjectDir);
     }
     console.log('[Main] initApp: default project dir ensured');
 
-    // 注册 localfile:// 自定义协议，用于安全加载本地媒体文件。
+    // Register the custom localfile:// protocol for safely loading local media files.
     protocol.handle(ArtifactPreviewProtocol.LocalFile, createLocalFileProtocolResponse);
     registerSkinElectronIntegration(getSkinRuntimeController().store);
 
@@ -14193,10 +14520,62 @@ if (!gotTheLock) {
     });
     libraryIndexService.start();
 
+    // The personal library: an index of the person's documents, built on
+    // this machine (docs/maties/library.md). The agent reaches it through the
+    // search_library tool over the loopback bridge.
+    const libraryContentStore = new LibraryContentStore(store.getDatabase());
+    const readLibraryContentConfig = (): LibraryContentConfig => {
+      const config = getCoworkStore().getConfig();
+      return {
+        enabled: config.libraryEnabled,
+        folders: config.libraryFolders,
+        excludedFolders: config.libraryExcludedFolders,
+      };
+    };
+    libraryContentIndexer = new LibraryContentIndexer({
+      store: libraryContentStore,
+      getConfig: readLibraryContentConfig,
+      createWorker: onExit => new LibraryDocumentWorkerClient({
+        modelDir: resolveLibraryModelDir(),
+        workerEntryPath: resolveLibraryWorkerEntryPath(),
+        onExit,
+      }),
+      onStatus: (status: LibraryContentStatus) => {
+        for (const window of BrowserWindow.getAllWindows()) {
+          if (!window.isDestroyed()) window.webContents.send(LibraryContentIpc.StatusChanged, status);
+        }
+      },
+      getMetadata: key => store?.get(key),
+      setMetadata: (key, value) => store?.set(key, value),
+      excludedRoots: [app.getPath('userData')],
+    });
+    const libraryContentIndexerInstance = libraryContentIndexer;
+    registerLibraryContentIpcHandlers({
+      indexer: libraryContentIndexerInstance,
+      store: libraryContentStore,
+      getConfig: readLibraryContentConfig,
+      setConfig: update => {
+        getCoworkStore().setConfig({
+          ...(update.enabled !== undefined ? { libraryEnabled: update.enabled } : {}),
+          ...(update.folders !== undefined ? { libraryFolders: update.folders } : {}),
+          ...(update.excludedFolders !== undefined ? { libraryExcludedFolders: update.excludedFolders } : {}),
+        });
+        return readLibraryContentConfig();
+      },
+      pickFolder: async () => {
+        const result = await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] });
+        return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
+      },
+    });
+    getMcpRuntime().setLibrarySearchHandler(request => (
+      libraryContentIndexerInstance.search(normalizeLibrarySearchRequest(request))
+    ));
+    libraryContentIndexer.start();
+
     // Dev/E2E convenience: boot the dsh engine once the app is ready and the
     // store can answer provider queries, so app-level checks can assert
     // readiness from logs without driving the settings UI.
-    if (process.env.LOBSTERAI_DSH_AUTOSTART === '1') {
+    if (process.env.MATIES_DSH_AUTOSTART === '1') {
       ensureDshEngineReady()
         .then(url => console.log(`[DSH] Autostart ready at ${url}`))
         .catch(error => console.error('[DSH] Autostart failed', error));
@@ -14230,7 +14609,7 @@ if (!gotTheLock) {
     }
     // Inject store getter into claudeSettings
     setStoreGetter(() => store);
-    // Inject auth getters for lobsterai-server provider routing
+    // Inject auth getters for maties-server provider routing
     // The getter proactively triggers a background token refresh when the
     // accessToken is within 5 minutes of expiry, so that the SDK always
     // gets a fresh token without blocking.
@@ -14275,7 +14654,7 @@ if (!gotTheLock) {
         });
     }
 
-    registerProxyTokenRefresher(ProviderName.LobsteraiServer, async rejectedToken => {
+    registerProxyTokenRefresher(ProviderName.MatiesServer, async rejectedToken => {
       const latestAccessToken = getAuthTokens()?.accessToken;
       if (latestAccessToken && rejectedToken && latestAccessToken !== rejectedToken) {
         return {
@@ -14301,7 +14680,7 @@ if (!gotTheLock) {
     });
 
     // Start the lightweight token proxy before OpenClaw config sync so that
-    // lobsterai-server provider can use the proxy URL in its config.
+    // maties-server provider can use the proxy URL in its config.
     profiler.mark('openClawTokenProxy');
     try {
       await startOpenClawTokenProxy({
@@ -14458,7 +14837,7 @@ if (!gotTheLock) {
     }
 
     // Agent model migration — runs after cache warmup so resolveMatchedProvider
-    // can match lobsterai-server models without falling back.
+    // can match maties-server models without falling back.
     const defaultAgentModelRef = resolveDefaultAgentModelRef();
     const backfilledAgentModels = getCoworkStore().backfillEmptyAgentModels(defaultAgentModelRef);
     const qualifiedAgentModels = migrateAgentModelRefs({
@@ -14620,7 +14999,7 @@ if (!gotTheLock) {
 
     // Windows/Linux cold start: parse deep link from process.argv.
     // The router buffers it because the renderer is not ready yet after createWindow().
-    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('lobsterai://'));
+    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('maties://'));
     if (coldStartDeepLink) {
       handleDeepLink(coldStartDeepLink);
     }
@@ -14650,7 +15029,7 @@ if (!gotTheLock) {
       });
     }
 
-    // 首次启动时默认开启开机自启动，并以系统登录项的实际状态回写本地标记。
+    // Enable launch at login by default on first start, and write the actual system login-item state back to the local flag.
     if (!getStore().get('auto_launch_initialized')) {
       getStore().set('auto_launch_initialized', true);
       try {
@@ -14687,7 +15066,7 @@ if (!gotTheLock) {
     );
     getStore().onDidChange<AppConfigSettings>('app_config', (newConfig, oldConfig) => {
       updateTitleBarOverlay();
-      // 仅在语言变更时刷新托盘菜单文本
+      // Only refresh the tray menu text when the language changes
       const currentLanguage = newConfig?.language;
       if (currentLanguage !== lastLanguage) {
         lastLanguage = currentLanguage;
@@ -14734,7 +15113,7 @@ if (!gotTheLock) {
       lastSqliteAutoBackupEnabled = currentSqliteAutoBackupEnabled;
     });
 
-    // 在 macOS 上，当点击 dock 图标时显示已有窗口或重新创建
+    // On macOS, show the existing window or recreate it when the dock icon is clicked
     app.on('activate', () => {
       if (isDataMigrationRestoreInProgress) {
         return;
@@ -14750,10 +15129,10 @@ if (!gotTheLock) {
     });
   };
 
-  // 启动应用
+  // Start the app
   initApp().catch(console.error);
 
-  // 当所有窗口关闭时退出应用
+  // Quit the app when all windows are closed
   app.on('window-all-closed', () => {
     if (isDataMigrationRestoreInProgress) {
       return;

@@ -106,7 +106,6 @@ const PopoInstanceSettings: React.FC<PopoInstanceSettingsProps> = ({
   onTestConnectivity,
   testingPlatform,
   connectivityResults,
-  language,
   headerLeading,
 }) => {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -204,7 +203,7 @@ const PopoInstanceSettings: React.FC<PopoInstanceSettingsProps> = ({
             <span
               className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors truncate border-b border-dashed border-gray-400 dark:border-secondary/50 hover:border-primary pb-px"
               onClick={() => setEditingName(true)}
-              title={language === 'zh' ? '点击重命名' : 'Click to rename'}
+              title={'Click to rename'}
             >
               {instance.instanceName}
             </span>
@@ -339,7 +338,7 @@ const PopoInstanceSettings: React.FC<PopoInstanceSettingsProps> = ({
         </div>
         {instance.aesKey && instance.aesKey.length !== 32 && (
           <p className="text-xs text-amber-500">
-            AES Key {language === 'zh' ? '需要为 32 个字符' : 'must be 32 characters'}（{language === 'zh' ? '当前' : 'current'} {instance.aesKey.length}）
+            AES Key must be 32 characters (current {instance.aesKey.length})
           </p>
         )}
       </div>
@@ -503,7 +502,7 @@ const PopoInstanceSettings: React.FC<PopoInstanceSettingsProps> = ({
             </div>
             {instance.aesKey && instance.aesKey.length !== 32 && (
               <p className="text-xs text-amber-500">
-                AES Key {language === 'zh' ? '需要为 32 个字符' : 'must be 32 characters'}（{language === 'zh' ? '当前' : 'current'} {instance.aesKey.length}）
+                AES Key must be 32 characters (current {instance.aesKey.length})
               </p>
             )}
           </div>
@@ -605,7 +604,7 @@ const PopoInstanceSettings: React.FC<PopoInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || '添加'}
+                {i18nService.t('add') || 'Add'}
               </button>
             </div>
             {instance.allowFrom.length > 0 && (
@@ -682,7 +681,7 @@ const PopoInstanceSettings: React.FC<PopoInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || '添加'}
+                {i18nService.t('add') || 'Add'}
               </button>
             </div>
             {instance.groupAllowFrom.length > 0 && (

@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
-import { parseThinkingProfileMap } from '../../../openclaw-extensions/lobsterai-model-compat/thinkingProfileMapping';
+import { parseThinkingProfileMap } from '../../../openclaw-extensions/maties-model-compat/thinkingProfileMapping';
 
 describe('parseThinkingProfileMap', () => {
   test('keeps valid model profiles and drops malformed entries', () => {
     expect(parseThinkingProfileMap({
-      'lobsterai-server/deepseek-v4-flash': {
+      'maties-server/deepseek-v4-flash': {
         options: [
           { level: 'off', openclawLevel: 'off' },
           { level: 'high', openclawLevel: 'high' },
@@ -18,7 +18,7 @@ describe('parseThinkingProfileMap', () => {
         options: [{ level: 'high', openclawLevel: 'high' }],
         defaultLevel: 'high',
       },
-      'lobsterai-server/invalid': {
+      'maties-server/invalid': {
         options: [
           { level: 'off', openclawLevel: 'off' },
           { level: 'future', openclawLevel: 'xhigh' },
@@ -26,7 +26,7 @@ describe('parseThinkingProfileMap', () => {
         defaultLevel: 'future',
       },
     })).toEqual({
-      'lobsterai-server/deepseek-v4-flash': {
+      'maties-server/deepseek-v4-flash': {
         options: [
           { level: 'off', openclawLevel: 'off' },
           { level: 'high', openclawLevel: 'high' },

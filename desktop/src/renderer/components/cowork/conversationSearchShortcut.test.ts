@@ -33,6 +33,15 @@ describe('conversation search shortcut routing', () => {
     })).toBe(ConversationSearchShortcutTarget.None);
   });
 
+  test('opens history search from the prompt on the home screen', () => {
+    expect(resolveConversationSearchShortcutTarget({
+      isCoworkView: true,
+      hasCurrentSession: false,
+      isTextEditing: true,
+      isCoworkSearchEligibleEditor: true,
+    })).toBe(ConversationSearchShortcutTarget.History);
+  });
+
   test('keeps history search outside an open Cowork session', () => {
     expect(resolveConversationSearchShortcutTarget({
       isCoworkView: false,

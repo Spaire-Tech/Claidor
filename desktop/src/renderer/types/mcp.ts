@@ -63,11 +63,11 @@ export interface McpServerFormData {
 // Built-in MCP registry entry (pure frontend definition)
 export interface McpRegistryEntry {
   id: string;                    // unique identifier, e.g. 'filesystem'
-  name: string;                  // display name, English; also the zh fallback
-  name_zh?: string;              // Chinese display name (remote data)
+  name: string;                  // display name, English
+  name_zh?: string;              // accepted from remote data, never shown (Maties is English-only)
   icon?: string;                 // icon URL (remote data); falls back to the default glyph
   descriptionKey: string;        // i18n translation key for description
-  description_zh?: string;       // Chinese description (remote data)
+  description_zh?: string;       // accepted from remote data, never shown (Maties is English-only)
   description_en?: string;       // English description (remote data)
   category: McpCategory;         // category tag
   categoryKey: string;           // i18n translation key for category
@@ -102,7 +102,7 @@ export interface McpMarketplaceServer {
 // Dynamic marketplace category from remote
 export interface McpMarketplaceCategoryInfo {
   id: string;
-  name_zh: string;
+  name_zh?: string;
   name_en: string;
 }
 

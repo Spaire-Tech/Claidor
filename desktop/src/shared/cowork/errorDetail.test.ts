@@ -11,7 +11,7 @@ describe('buildCoworkErrorDetail', () => {
   test('keeps redacted provider metadata for a rate-limit error', () => {
     const detail = buildCoworkErrorDetail({
       rawErrorMessage: 'LLM request failed.',
-      displayMessage: '请求过于频繁，请稍后再试。',
+      displayMessage: 'Too many requests. Please try again later.',
       metadata: {
         provider: 'anthropic',
         model: 'claude-sonnet-5',
@@ -40,7 +40,7 @@ describe('buildCoworkErrorDetail', () => {
   test('keeps the raw message when i18n normalization rewrote the display copy', () => {
     const detail = buildCoworkErrorDetail({
       rawErrorMessage: '401 authentication_error: invalid x-api-key',
-      displayMessage: 'API 密钥无效或已过期，请在设置中检查并更新您的 API 密钥。',
+      displayMessage: 'Invalid or expired API key. Please check and update your API key in settings.',
     });
 
     expect(detail).toEqual({
@@ -79,12 +79,12 @@ describe('buildCoworkErrorDetail', () => {
       rawErrorMessage: 'LLM request failed.',
       displayMessage: 'LLM request failed.',
       modelSource: CoworkErrorModelSource.CustomProvider,
-      providerDisplayName: '我的中转',
+      providerDisplayName: 'My relay',
     });
 
     expect(detail).toEqual({
       modelSource: 'custom-provider',
-      providerDisplayName: '我的中转',
+      providerDisplayName: 'My relay',
     });
   });
 

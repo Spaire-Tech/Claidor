@@ -3,7 +3,7 @@ import React, { useEffect,useState } from 'react';
 import { McpUrlValidationError, normalizeMcpServerUrlInput } from '../../../shared/mcp/url';
 import { i18nService } from '../../services/i18n';
 import { McpJsonImportErrorCode, McpJsonImportResult, parseMcpServersJson } from '../../services/mcpJsonImport';
-import { McpRegistryEntry,McpServerConfig, McpServerFormData } from '../../types/mcp';
+import { McpServerConfig, McpServerFormData } from '../../types/mcp';
 import Modal from '../common/Modal';
 
 const TRANSPORT_OPTIONS: { value: 'stdio' | 'sse' | 'http'; label: string; descKey: string }[] = [
@@ -41,7 +41,6 @@ const MCP_JSON_EXAMPLE = `{
 interface McpServerFormModalProps {
   isOpen: boolean;
   server?: McpServerConfig | null; // null = create mode, defined = edit mode
-  registryEntry?: McpRegistryEntry | null; // install from registry mode
   existingNames: string[];
   onClose: () => void;
   onSave: (data: McpServerFormData) => void;
@@ -51,16 +50,14 @@ interface McpServerFormModalProps {
 const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
   isOpen,
   server,
-  registryEntry,
   existingNames,
   onClose,
   onSave,
   onImportJson,
 }) => {
   const isEdit = !!server;
-  const isRegistry = !!registryEntry && !isEdit;
   // JSON paste mode is only offered when creating from scratch.
-  const supportsJsonMode = !isEdit && !isRegistry && !!onImportJson;
+  const supportsJsonMode = !isEdit && !!onImportJson;
 
   const [inputMode, setInputMode] = useState<McpFormInputMode>(McpFormInputMode.Form);
   const [jsonText, setJsonText] = useState('');
@@ -85,14 +82,9 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
       setTransportType(server.transportType);
       setCommand(server.command || '');
       setArgsText((server.args || []).join('\n'));
-      const requiredKeys = new Set(registryEntry?.requiredEnvKeys ?? []);
       setEnvRows(
         server.env
-          ? Object.entries(server.env).map(([key, value]) => ({
-              key,
-              value,
-              required: requiredKeys.has(key) || undefined,
-            }))
+          ? Object.entries(server.env).map(([key, value]) => ({ key, value }))
           : []
       );
       setUrl(server.url || '');
@@ -101,36 +93,6 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
           ? Object.entries(server.headers).map(([key, value]) => ({ key, value }))
           : []
       );
-    } else if (registryEntry) {
-      // Registry install mode — pre-fill from template
-      setName(registryEntry.name);
-      const registryDescription =
-        (i18nService.getLanguage() === 'zh' ? registryEntry.description_zh : registryEntry.description_en)
-        || (registryEntry.descriptionKey ? i18nService.t(registryEntry.descriptionKey) : '');
-      setDescription(registryDescription);
-      setTransportType(registryEntry.transportType);
-      setCommand(registryEntry.command);
-      // defaultArgs + argPlaceholders
-      const allArgs = [...registryEntry.defaultArgs];
-      if (registryEntry.argPlaceholders) {
-        allArgs.push(...registryEntry.argPlaceholders);
-      }
-      setArgsText(allArgs.join('\n'));
-      // Pre-fill required env keys
-      const envEntries: { key: string; value: string; required?: boolean }[] = [];
-      if (registryEntry.requiredEnvKeys) {
-        for (const k of registryEntry.requiredEnvKeys) {
-          envEntries.push({ key: k, value: '', required: true });
-        }
-      }
-      if (registryEntry.optionalEnvKeys) {
-        for (const k of registryEntry.optionalEnvKeys) {
-          envEntries.push({ key: k, value: '', required: false });
-        }
-      }
-      setEnvRows(envEntries);
-      setUrl('');
-      setHeaderRows([]);
     } else {
       // Create mode
       setName('');
@@ -147,7 +109,7 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
     setIsImporting(false);
     setError('');
     setEnvErrors({});
-  }, [isOpen, server, registryEntry]);
+  }, [isOpen, server]);
 
   const handleSave = () => {
     const trimmedName = name.trim();
@@ -232,12 +194,6 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
     } else {
       data.url = normalizedUrl;
       data.headers = headers;
-    }
-
-    // Attach registry metadata if installing from registry
-    if (isRegistry && registryEntry) {
-      data.isBuiltIn = true;
-      data.registryId = registryEntry.id;
     }
 
     onSave(data);
@@ -332,24 +288,18 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
   if (!isOpen) return null;
 
   const inputClass = 'w-full px-3 py-2 text-sm rounded-lg bg-background text-foreground placeholder-secondary border border-border focus:outline-none focus:ring-2 focus:ring-primary';
-  const readOnlyInputClass = inputClass + ' opacity-60 cursor-not-allowed';
   const labelClass = 'text-xs font-semibold tracking-wide text-secondary';
   const kvInputClass = 'flex-1 px-2 py-1.5 text-sm rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary';
 
   // Title
   const modalTitle = isEdit
     ? i18nService.t('editMcpServer')
-    : isRegistry
-      ? `${i18nService.t('mcpInstall')} ${registryEntry!.name}`
-      : i18nService.t('addMcpServer');
+    : i18nService.t('addMcpServer');
 
-  // Save button text
-  const saveText = isRegistry && !isEdit
-    ? i18nService.t('mcpInstall')
-    : i18nService.t('saveMcpServer');
+  const saveText = i18nService.t('saveMcpServer');
 
   return (
-    <Modal onClose={onClose} overlayClassName="fixed inset-0 z-50 flex items-center justify-center modal-backdrop px-4" className="modal-content flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-modal">
+    <Modal onClose={onClose} overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center px-4" className="maties-card-prose maties-in flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
           <h2 className="text-base font-semibold text-foreground">
             {modalTitle}
@@ -403,9 +353,8 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={i18nService.t('mcpServerNamePlaceholder')}
-              className={isRegistry ? readOnlyInputClass : inputClass}
-              readOnly={isRegistry}
-              autoFocus={!isRegistry}
+              className={inputClass}
+              autoFocus
             />
           </div>
 
@@ -424,18 +373,17 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
           {/* Transport Type */}
           <div className="space-y-1.5">
             <label className={labelClass}>{i18nService.t('mcpTransportType')}</label>
-            <div className={`grid grid-cols-3 gap-1 rounded-lg bg-surface-raised p-1 ${isRegistry ? 'opacity-60' : ''}`}>
+            <div className="grid grid-cols-3 gap-1 rounded-lg bg-surface-raised p-1">
               {TRANSPORT_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   type="button"
-                  disabled={isRegistry}
                   onClick={() => setTransportType(opt.value)}
                   className={`rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
                     transportType === opt.value
                       ? 'bg-surface text-foreground shadow-subtle'
                       : 'text-secondary hover:text-foreground'
-                  } ${isRegistry ? 'cursor-not-allowed' : ''}`}
+                  }`}
                 >
                   {opt.label}
                 </button>
@@ -456,8 +404,7 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   placeholder={i18nService.t('mcpCommandPlaceholder')}
-                  className={isRegistry ? readOnlyInputClass : inputClass}
-                  readOnly={isRegistry}
+                  className={inputClass}
                 />
               </div>
 
@@ -469,7 +416,6 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
                   placeholder={i18nService.t('mcpArgsPlaceholder')}
                   rows={3}
                   className={inputClass + ' resize-none'}
-                  autoFocus={isRegistry}
                 />
               </div>
 
@@ -477,7 +423,7 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
                 <div className="flex items-center justify-between">
                   <label className={labelClass}>
                     {i18nService.t('mcpEnvVars')}
-                    {isRegistry && envRows.some(r => r.required) && (
+                    {envRows.some(r => r.required) && (
                       <span className="ml-2 text-[10px] text-red-400 font-normal">
                         * {i18nService.t('mcpRequiredConfig')}
                       </span>
@@ -512,7 +458,6 @@ const McpServerFormModal: React.FC<McpServerFormModalProps> = ({
                             ? kvInputClass + ' border-red-500 focus:ring-red-500'
                             : kvInputClass
                         }
-                        autoFocus={isRegistry && index === 0 && !!row.required}
                       />
                       {!row.required && (
                         <button

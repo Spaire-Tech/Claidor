@@ -279,8 +279,8 @@ const LibraryPreviewModalContent: React.FC<LibraryPreviewModalProps> = ({
     <Modal
       onClose={onClose}
       onEscape={handleEscape}
-      overlayClassName="fixed inset-0 z-40 flex h-[100dvh] items-center justify-center bg-black/45 px-4 py-12 backdrop-blur-[2px] lg:px-8"
-      className="non-draggable flex h-full max-h-[820px] min-h-0 w-full max-w-[1320px] min-w-0 overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
+      overlayClassName="maties-backdrop fixed inset-0 z-40 flex h-[100dvh] items-center justify-center px-4 py-12 lg:px-8"
+      className="maties-sheet maties-in non-draggable flex h-full max-h-[820px] min-h-0 w-full max-w-[1320px] min-w-0 overflow-hidden"
     >
       <section
         role="dialog"

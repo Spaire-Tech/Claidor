@@ -117,13 +117,13 @@ describe('resolveModelRuntimeProfile', () => {
   test('accepts only controlled server profiles on the package provider', () => {
     expect(resolve({
       source: ModelRuntimeProfileSource.Server,
-      providerId: OpenClawProviderId.LobsteraiServer,
+      providerId: OpenClawProviderId.MatiesServer,
       modelId: 'kimi-k3-YoudaoInner',
       serverRuntimeProfile: ModelRuntimeProfile.MoonshotKimiK3,
     })).toBe(ModelRuntimeProfile.MoonshotKimiK3);
     expect(resolve({
       source: ModelRuntimeProfileSource.Server,
-      providerId: OpenClawProviderId.LobsteraiServer,
+      providerId: OpenClawProviderId.MatiesServer,
       modelId: 'kimi-k3-YoudaoInner',
       serverRuntimeProfile: 'unknown-profile',
     })).toBeUndefined();

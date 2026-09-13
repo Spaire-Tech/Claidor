@@ -24,8 +24,8 @@ describe('prettifySkillName', () => {
   });
 
   test('leaves non-ASCII names untouched', () => {
-    expect(prettifySkillName('股票分析')).toBe('股票分析');
-    expect(prettifySkillName('画布-设计')).toBe('画布-设计');
+    expect(prettifySkillName('análisis-bursátil')).toBe('análisis-bursátil');
+    expect(prettifySkillName('Ünïcode-design')).toBe('Ünïcode-design');
   });
 
   test('collapses repeated separators instead of emitting blanks', () => {

@@ -31,14 +31,14 @@ function createSync() {
 }
 
 test('parseManagedSessionKey handles raw local session keys', () => {
-  assert.deepEqual(parseManagedSessionKey('lobsterai:abc-123'), {
+  assert.deepEqual(parseManagedSessionKey('maties:abc-123'), {
     agentId: null,
     sessionId: 'abc-123',
   });
 });
 
 test('parseManagedSessionKey handles canonical local session keys', () => {
-  assert.deepEqual(parseManagedSessionKey('agent:main:lobsterai:abc-123'), {
+  assert.deepEqual(parseManagedSessionKey('agent:main:maties:abc-123'), {
     agentId: 'main',
     sessionId: 'abc-123',
   });
@@ -47,26 +47,26 @@ test('parseManagedSessionKey handles canonical local session keys', () => {
 test('buildManagedSessionKey emits canonical local session keys', () => {
   assert.equal(
     buildManagedSessionKey('abc-123'),
-    `agent:${DEFAULT_MANAGED_AGENT_ID}:lobsterai:abc-123`,
+    `agent:${DEFAULT_MANAGED_AGENT_ID}:maties:abc-123`,
   );
   assert.equal(
     buildManagedSessionKey('abc-123', 'secondary'),
-    'agent:secondary:lobsterai:abc-123',
+    'agent:secondary:maties:abc-123',
   );
 });
 
 test('parseChannelSessionKey ignores managed local session keys', () => {
-  assert.equal(parseChannelSessionKey('lobsterai:abc-123'), null);
-  assert.equal(parseChannelSessionKey('agent:main:lobsterai:abc-123'), null);
+  assert.equal(parseChannelSessionKey('maties:abc-123'), null);
+  assert.equal(parseChannelSessionKey('agent:main:maties:abc-123'), null);
 });
 
 test('channel sync does not treat managed local session keys as channel sessions', () => {
   const sync = createSync();
 
-  assert.equal(isManagedSessionKey('agent:main:lobsterai:abc-123'), true);
-  assert.equal(sync.isChannelSessionKey('agent:main:lobsterai:abc-123'), false);
-  assert.equal(sync.resolveOrCreateSession('agent:main:lobsterai:abc-123'), null);
-  assert.equal(sync.resolveOrCreateMainAgentSession('agent:main:lobsterai:abc-123'), null);
+  assert.equal(isManagedSessionKey('agent:main:maties:abc-123'), true);
+  assert.equal(sync.isChannelSessionKey('agent:main:maties:abc-123'), false);
+  assert.equal(sync.resolveOrCreateSession('agent:main:maties:abc-123'), null);
+  assert.equal(sync.resolveOrCreateMainAgentSession('agent:main:maties:abc-123'), null);
 });
 
 test('channel sync still recognizes real channel session keys', () => {

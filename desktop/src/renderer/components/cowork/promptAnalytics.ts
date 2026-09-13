@@ -5,9 +5,7 @@ import {
   PromptAnalyticsSurface as SharedPromptAnalyticsSurface,
 } from '../../../shared/analytics/constants';
 import { LogReporterAction, reportYdAnalyzer } from '../../services/logReporter';
-import { resolveLocalizedText } from '../../services/skill';
 import type { Model } from '../../store/slices/modelSlice';
-import type { InstalledKit, MarketplaceKit } from '../../types/kit';
 import type { Skill } from '../../types/skill';
 
 type PromptAnalyticsValue = string | number | boolean | null | undefined;
@@ -108,13 +106,13 @@ export const getPromptTextAnalyticsParams = (
     promptLengthBucket: bucketPromptLength(trimmed.length),
     promptLineCountBucket: bucketPromptLineCount(promptLineCount),
     inputLanguageType: getPromptLanguageType(trimmed),
-    hasQuestionMark: /[?？]/.test(trimmed),
+    hasQuestionMark: /[?]/.test(trimmed),
     hasCodeFence: /```/.test(trimmed),
     hasInlineCode: /`[^`\n]+`/.test(trimmed),
     hasUrl: /https?:\/\/|www\./i.test(trimmed),
     hasPathLikeText: /(^|\s)(~\/|\.{1,2}\/|[A-Za-z]:\\|\/[\w.-]+\/|[\w.-]+\\[\w.-]+)/.test(trimmed),
     hasCommandLikeText: /(^|\n)\s*(npm|pnpm|yarn|node|python|pip|git|curl|docker|kubectl|npx|brew)\s+/.test(trimmed),
-    hasAtMediaMention: /@(图片|视频|音频)\d+/.test(trimmed),
+    hasAtMediaMention: /@(image|video|audio)\d+/.test(trimmed),
   };
 };
 
@@ -153,23 +151,6 @@ export const getSkillAnalyticsParams = (
     activeSkillCount: activeSkills.length,
     activeSkillIds: joinValues(activeSkills.map(skill => skill.id)),
     activeSkillNames: joinValues(activeSkills.map(skill => skill.name)),
-  };
-};
-
-export const getKitAnalyticsParams = (
-  activeKitIds: string[],
-  marketplaceKits: MarketplaceKit[],
-  installedKits: Record<string, InstalledKit>,
-): Record<string, PromptAnalyticsValue> => {
-  const kitNames = activeKitIds.map((kitId) => {
-    const marketplaceKit = marketplaceKits.find(kit => kit.id === kitId);
-    if (marketplaceKit) return resolveLocalizedText(marketplaceKit.name);
-    return installedKits[kitId]?.id ?? kitId;
-  });
-  return {
-    activeKitCount: activeKitIds.length,
-    activeKitIds: joinValues(activeKitIds),
-    activeKitNames: joinValues(kitNames),
   };
 };
 

@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const sunset: ThemeDefinition = {
   meta: {
     id: 'sunset',
-    name: '落日橙黑',
-    description: '绚烂夺目的日落橙暗色主题',
+    name: 'Sunset',
+    description: 'A vivid sunset-orange dark theme',
     appearance: 'dark',
     preview: ['#1a0e0a', '#f97316', '#fb923c', '#fb7185'],
   },

@@ -1,0 +1,302 @@
+/*
+ * The screens that are not the chat (docs/maties/design.md, sections 5 and
+ * 6): Settings, the pages, sign-in, the overlays. Surfaces, type roles and
+ * controls as classes, so a 4,000-line screen moves by swapping class names.
+ * The keyframes and the menu live in design.css.
+ */
+
+/* Surfaces (section 1, Shape and Depth). Two shadows only; corners grow
+   with the thing. Hairlines are the ink at 5-7 %, drawn as a half-pixel
+   ring so they never read as a grey border. */
+.maties-card {
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(16,22,35,.04), 0 6px 18px rgba(16,22,35,.06);
+}
+.maties-card-row {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 0 0 .5px rgba(16,22,35,.07);
+}
+.maties-card-prose {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.maties-sheet {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.maties-lifted {
+  box-shadow: 0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.maties-resting {
+  box-shadow: 0 1px 2px rgba(16,22,35,.04), 0 6px 18px rgba(16,22,35,.06);
+}
+.maties-card-interactive { transition: box-shadow .15s ease, transform .15s ease; }
+.maties-card-interactive:hover {
+  box-shadow: 0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.maties-backdrop {
+  background: rgba(16,20,28,.28);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.maties-hairline { box-shadow: 0 0 0 .5px rgba(16,22,35,.07); }
+.maties-hairline-top { border-top: .5px solid rgba(16,22,35,.07); }
+.maties-hairline-bottom { border-bottom: .5px solid rgba(16,22,35,.07); }
+.maties-hairline-right { border-right: .5px solid #f0eff1; }
+.maties-divide > * + * { border-top: .5px solid rgba(16,22,35,.06); }
+.maties-raised { background: #f4f5f7; }
+.maties-raised-2 { background: #f6f7f9; }
+.maties-hover:hover { background: rgba(16,20,28,.05); }
+
+/* Type roles (section 1, Type). */
+.maties-page-title {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -.012em;
+  color: #1c1f23;
+}
+.maties-headline {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -.012em;
+  color: #1c1f23;
+}
+.maties-subtitle { font-size: 14px; line-height: 1.5; color: #86868b; }
+.maties-caption { font-size: 12.5px; line-height: 1.45; color: #8f96a0; }
+.maties-label { font-size: 13.5px; line-height: 1.4; color: #4a4f57; }
+.maties-body { font-size: 14.5px; line-height: 1.5; color: #1c1f23; }
+.maties-row-title { font-size: 14.5px; line-height: 1.35; font-weight: 500; color: #1c1f23; }
+.maties-row-desc { margin-top: 3px; font-size: 13px; line-height: 1.45; color: #6b7280; }
+.maties-mono-box {
+  background: #f6f7f9;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0;
+  line-height: 1.5;
+  color: #1c1f23;
+  overflow: auto;
+}
+
+/* Controls. Small pills for the actions inside a card; the search box and
+   inputs at radius 11; the ghost icon button. */
+.maties-pill-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 0 .5px rgba(16,22,35,.10);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -.004em;
+  color: #31353b;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .12s ease, color .12s ease, opacity .12s ease;
+}
+.maties-pill-sm:hover { background: rgba(16,20,28,.05); }
+.maties-pill-sm:disabled { opacity: .5; cursor: not-allowed; }
+.maties-pill-sm:disabled:hover { background: #ffffff; }
+.maties-pill-sm.is-primary { background: #0060d0; color: #ffffff; box-shadow: none; }
+.maties-pill-sm.is-primary:hover { background: #0055ba; }
+.maties-pill-sm.is-primary:disabled:hover { background: #0060d0; }
+.maties-pill-sm.is-selected { background: #f0f0f2; color: #1c1f23; box-shadow: 0 0 0 .5px rgba(16,22,35,.06); }
+.maties-pill-sm.is-ghost { background: transparent; box-shadow: none; color: #4a4f57; }
+.maties-pill-sm.is-ghost:hover { background: rgba(16,20,28,.05); }
+.maties-pill-sm.is-danger { color: #e0322d; }
+.maties-pill-sm.is-link { background: transparent; box-shadow: none; color: #0060d0; }
+.maties-pill-sm.is-link:hover { background: rgba(0,96,208,.06); }
+.maties-input {
+  width: 100%;
+  height: 36px;
+  border-radius: 11px;
+  background: #f6f7f9;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #1c1f23;
+  outline: none;
+  box-shadow: 0 0 0 .5px rgba(16,22,35,0);
+  transition: box-shadow .12s ease, background-color .12s ease;
+}
+.maties-input::placeholder { color: #8f96a0; }
+.maties-input:focus { background: #ffffff; box-shadow: 0 0 0 .5px rgba(16,22,35,.12), 0 0 0 3px rgba(0,96,208,.10); }
+.maties-input-icon { padding-left: 36px; }
+.maties-input-icon-glyph {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aa1ab;
+  pointer-events: none;
+}
+.maties-textarea { height: auto; padding: 10px 12px; line-height: 1.5; resize: vertical; }
+select.maties-input {
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa1ab' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='5,9 12,16 19,9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.maties-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: #6b7280;
+  transition: background-color .12s ease, color .12s ease;
+}
+.maties-icon-button:hover { background: rgba(16,20,28,.05); color: #1c1f23; }
+.maties-icon-button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* The switch, in the one blue. */
+.maties-switch {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: #d9dbe0;
+  transition: background-color .16s ease;
+  cursor: pointer;
+}
+.maties-switch[aria-checked="true"] { background: #0060d0; }
+.maties-switch:disabled { opacity: .5; cursor: not-allowed; }
+.maties-switch > span {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16,22,35,.18), 0 0 0 .5px rgba(16,22,35,.04);
+  transition: transform .16s ease;
+}
+.maties-switch[aria-checked="true"] > span { transform: translateX(16px); }
+.maties-switch-sm { width: 32px; height: 19px; }
+.maties-switch-sm > span { width: 15px; height: 15px; }
+.maties-switch-sm[aria-checked="true"] > span { transform: translateX(13px); }
+
+/* The tab list of the settings sheet (section 5). */
+.maties-tab-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border-radius: 9px;
+  padding: 9px 10px;
+  font-size: 14.5px;
+  line-height: 1.2;
+  color: #31353b;
+  text-align: left;
+  transition: background-color .12s ease;
+}
+.maties-tab-row:hover { background: rgba(16,20,28,.05); }
+.maties-tab-row[data-active="true"] { background: #f0f0f2; color: #1c1f23; }
+.maties-tab-row > span:first-child { display: inline-flex; color: #6b7280; }
+
+/* Toasts: bottom centre, one line. */
+.maties-toast {
+  background: rgba(255,255,255,.96);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  border-radius: 13px;
+  box-shadow: 0 0 0 .5px rgba(16,22,35,.07), 0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09);
+  font-size: 13.5px;
+  color: #1c1f23;
+}
+
+/* Status colour is information (section 1, Ink). */
+.maties-status-done { color: #1f8a4c; }
+.maties-status-attention { color: #c8790a; }
+.maties-status-wrong { color: #e0322d; }
+.maties-status-going { color: #0060d0; }
+.maties-status-quiet { color: #8f96a0; }
+.maties-status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.maties-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #f4f5f7;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* The initials circle from the sidebar's bottom row (section 3). */
+.maties-initials {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #e8effa;
+  color: #0060d0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+/* The « Saved » that fades on tabs that save on change (section 5). */
+@keyframes maties-saved {
+  0% { opacity: 0; transform: translateY(2px); }
+  12%, 70% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: none; }
+}
+.maties-saved { animation: maties-saved 2.4s ease both; }
+
+/* The sphere breathing while the engine starts (section 6). */
+@keyframes maties-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.maties-breathe { animation: maties-breathe 3.2s ease-in-out infinite; }
+
+/* Dark (section 7): the same tokens inverted with care. Only the surfaces
+   and ink move; the sphere and the blue's role do not. */
+.dark .maties-card, .dark .maties-card-row, .dark .maties-card-prose, .dark .maties-sheet { background: #1c1e23; }
+.dark .maties-card-row, .dark .maties-hairline { box-shadow: 0 0 0 .5px rgba(255,255,255,.07); }
+.dark .maties-toast { background: rgba(28,30,35,.96); color: #f2f3f5; }
+.dark .maties-backdrop { background: rgba(0,0,0,.45); }
+.dark .maties-hairline-top, .dark .maties-hairline-bottom, .dark .maties-hairline-right { border-color: rgba(255,255,255,.07); }
+.dark .maties-divide > * + * { border-top-color: rgba(255,255,255,.07); }
+.dark .maties-raised, .dark .maties-raised-2, .dark .maties-tab-row[data-active="true"], .dark .maties-status-pill, .dark .maties-pill-sm.is-selected { background: #22252b; }
+.dark .maties-hover:hover, .dark .maties-tab-row:hover, .dark .maties-pill-sm:hover, .dark .maties-icon-button:hover { background: rgba(255,255,255,.07); }
+.dark .maties-page-title, .dark .maties-headline, .dark .maties-body, .dark .maties-row-title, .dark .maties-tab-row, .dark .maties-tab-row[data-active="true"], .dark .maties-icon-button:hover, .dark .maties-mono-box, .dark .maties-pill-sm.is-selected { color: #f2f3f5; }
+.dark .maties-pill-sm { background: #22252b; color: #f2f3f5; box-shadow: 0 0 0 .5px rgba(255,255,255,.08); }
+.dark .maties-pill-sm:disabled:hover { background: #22252b; }
+.dark .maties-pill-sm.is-primary, .dark .maties-pill-sm.is-primary:disabled:hover { background: #3b82f6; color: #ffffff; box-shadow: none; }
+.dark .maties-pill-sm.is-primary:hover { background: #2f6fd6; }
+.dark .maties-pill-sm.is-ghost, .dark .maties-pill-sm.is-link { background: transparent; box-shadow: none; }
+.dark .maties-pill-sm.is-link { color: #3b82f6; }
+.dark .maties-input, .dark .maties-mono-box { background: #22252b; color: #f2f3f5; }
+.dark .maties-input:focus { background: #1c1e23; box-shadow: 0 0 0 .5px rgba(255,255,255,.14), 0 0 0 3px rgba(59,130,246,.18); }
+.dark .maties-switch { background: #3a3f48; }
+.dark .maties-switch[aria-checked="true"] { background: #3b82f6; }
+.dark .maties-initials { background: rgba(59,130,246,.18); color: #8ab4f8; }
+.dark .maties-label { color: #c9ccd2; }
+.dark .maties-status-going { color: #3b82f6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .maties-saved { animation: none; opacity: 1; }
+  .maties-breathe { animation: none; }
+}

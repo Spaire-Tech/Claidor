@@ -92,7 +92,7 @@ describe('library local query state', () => {
 
   test('uses the same category, favorite, filename, and extension filters as the list', () => {
     const favoriteSheet = makeItem('budget', 1, {
-      title: '年度预算.XLSX',
+      title: 'Annual Budget.XLSX',
       category: LibraryCategory.Spreadsheet,
       extension: '.xlsx',
       isFavorite: true,
@@ -100,7 +100,7 @@ describe('library local query state', () => {
 
     expect(matchesLibraryLocalQuery(favoriteSheet, {
       category: LibraryCategory.Spreadsheet,
-      keyword: '预算',
+      keyword: 'Budget',
       favoritesOnly: true,
     })).toBe(true);
     expect(matchesLibraryLocalQuery(favoriteSheet, {

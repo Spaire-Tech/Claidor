@@ -20,7 +20,7 @@ const user: UserProfile = {
 };
 
 const quota: UserQuota = {
-  planName: '团队版',
+  planName: 'Team',
   subscriptionStatus: 'enterprise',
   creditsLimit: 5_000,
   creditsUsed: 0,

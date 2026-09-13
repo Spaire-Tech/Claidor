@@ -23,7 +23,7 @@ describe('getClipboardAttachmentFiles', () => {
   test('does not infer attachments from path-shaped text or file URIs', () => {
     const clipboardData = createClipboardData({
       plainText: [
-        'D:\\securepass\\app\\src\\ProtectionOverlayActivity.java:50: 错误',
+        'D:\\securepass\\app\\src\\ProtectionOverlayActivity.java:50: error',
         '    @Override',
         '    ^',
       ].join('\r\n'),

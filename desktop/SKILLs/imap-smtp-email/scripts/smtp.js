@@ -2,7 +2,7 @@
 
 /**
  * SMTP Email CLI
- * Send email via SMTP protocol. Works with Gmail, Outlook, 163.com, and any standard SMTP server.
+ * Send email via SMTP protocol. Works with Gmail, Outlook, and any standard SMTP server.
  * Supports attachments, HTML content, and multiple recipients.
  */
 

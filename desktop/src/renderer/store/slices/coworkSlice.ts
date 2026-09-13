@@ -77,10 +77,10 @@ interface CoworkState {
   draftSelectedTextSnippets: Record<string, CoworkSelectedTextSnippet[]>;
   /** Keyed by draftKey; screenshots are referenced by assetId and live in main. */
   draftBrowserAnnotationBatches: Record<string, CoworkBrowserAnnotationBatch[]>;
-  /** Keyed by draftKey, stores active kit IDs per draft so they survive view switches */
-  draftKitIds: Record<string, string[]>;
   /** Keyed by draftKey, stores active skill IDs per draft so they survive view switches */
   draftSkillIds: Record<string, string[]>;
+  /** Keyed by draftKey: the connected app this turn should look in first, if any. */
+  draftAppSlugs: Record<string, string>;
   /** Keyed by draftKey, stores the active collaboration mode for the draft/session. */
   draftCollaborationModes: Record<string, CoworkCollaborationModeType>;
   /** Keyed by sessionId, stores the latest proposed plan confirmation UI state. */
@@ -129,8 +129,8 @@ const initialState: CoworkState = {
   draftAttachments: {},
   draftSelectedTextSnippets: {},
   draftBrowserAnnotationBatches: {},
-  draftKitIds: {},
   draftSkillIds: {},
+  draftAppSlugs: {},
   draftCollaborationModes: {},
   planConfirmations: {},
   btwThreadsBySessionId: {},
@@ -173,6 +173,9 @@ const initialState: CoworkState = {
     dreamingFrequency: '0 3 * * *',
     dreamingModel: '',
     dreamingTimezone: '',
+    libraryEnabled: true,
+    libraryFolders: [],
+    libraryExcludedFolders: [],
     openClawSessionPolicy: {
       keepAlive: '30d',
     },
@@ -231,7 +234,7 @@ const buildRailIndexItemFromMessage = (
     timestamp: message.timestamp,
     preview: getCoworkRailPreview(
       message.content,
-      message.type === 'user' ? `Turn ${fallbackLabelIndex + 1}` : 'LobsterAI',
+      message.type === 'user' ? `Turn ${fallbackLabelIndex + 1}` : 'Maties',
       COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH,
     ),
     contentLen: message.content.length,
@@ -324,8 +327,8 @@ const removeLoadedDetachedTailMessages = (
 };
 
 const MediaGenerationToolName = {
-  Image: 'lobsterai_image_generate',
-  Video: 'lobsterai_video_generate',
+  Image: 'maties_image_generate',
+  Video: 'maties_video_generate',
 } as const;
 
 const MediaGenerationActionName = {
@@ -1452,12 +1455,12 @@ const coworkSlice = createSlice({
       delete state.draftBrowserAnnotationBatches[action.payload];
     },
 
-    setDraftKitIds(state, action: PayloadAction<{ draftKey: string; kitIds: string[] }>) {
-      const { draftKey, kitIds } = action.payload;
-      if (kitIds.length === 0) {
-        delete state.draftKitIds[draftKey];
+    setDraftAppSlug(state, action: PayloadAction<{ draftKey: string; appSlug?: string }>) {
+      const { draftKey, appSlug } = action.payload;
+      if (!appSlug) {
+        delete state.draftAppSlugs[draftKey];
       } else {
-        state.draftKitIds[draftKey] = kitIds;
+        state.draftAppSlugs[draftKey] = appSlug;
       }
     },
 
@@ -1578,7 +1581,7 @@ export const {
   setPlanConfirmationAwaiting,
   setPlanConfirmationHandled,
   clearPlanConfirmation,
-  setDraftKitIds,
+  setDraftAppSlug,
   setDraftSkillIds,
   setDraftCollaborationMode,
   clearMediaAccountState,

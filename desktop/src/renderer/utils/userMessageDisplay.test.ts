@@ -4,8 +4,8 @@ import { parseUserMessageForDisplay } from './userMessageDisplay';
 
 // ─── Helpers ────────────────────────────────────────────────
 
-const WIN_INBOUND = String.raw`C:\Users\zhangsan\AppData\Roaming\LobsterAI\openclaw\state\media\inbound`;
-const MAC_INBOUND = '/Users/zhangsan/Library/Application Support/LobsterAI/openclaw/state/media/inbound';
+const WIN_INBOUND = String.raw`C:\Users\zhangsan\AppData\Roaming\Maties\openclaw\state\media\inbound`;
+const MAC_INBOUND = '/Users/zhangsan/Library/Application Support/Maties/openclaw/state/media/inbound';
 
 const fileImg = (dir: string, name: string) => `${dir}${dir.includes('\\') ? '\\' : '/'}${name}`;
 
@@ -30,7 +30,7 @@ describe('passthrough (no transformation)', () => {
   });
 
   test('plain text message unchanged', () => {
-    expect(parseUserMessageForDisplay('你好，今天天气不错')).toBe('你好，今天天气不错');
+    expect(parseUserMessageForDisplay('Hello, nice weather today')).toBe('Hello, nice weather today');
   });
 
   test('message with markdown unchanged', () => {
@@ -44,24 +44,24 @@ describe('passthrough (no transformation)', () => {
   });
 });
 
-// ─── LobsterAI goal mode ────────────────────────────────────
+// ─── Maties goal mode ────────────────────────────────────
 
-describe('LobsterAI goal mode command display', () => {
+describe('Maties goal mode command display', () => {
   test('strips /goal start prefix from displayed user text', () => {
-    const input = '/goal start 帮我做一个烘焙工作室的展示网页';
-    expect(parseUserMessageForDisplay(input)).toBe('帮我做一个烘焙工作室的展示网页');
+    const input = '/goal start Build a showcase page for a bakery studio';
+    expect(parseUserMessageForDisplay(input)).toBe('Build a showcase page for a bakery studio');
   });
 
   test('strips /goal set and preserves following attachment lines', () => {
     const input = [
       '/goal set Ship the landing page',
       '',
-      '文件: /Users/admin/Desktop/brief.md',
+      'File: /Users/admin/Desktop/brief.md',
     ].join('\n');
     expect(parseUserMessageForDisplay(input)).toBe([
       'Ship the landing page',
       '',
-      '文件: /Users/admin/Desktop/brief.md',
+      'File: /Users/admin/Desktop/brief.md',
     ].join('\n'));
   });
 
@@ -73,91 +73,91 @@ describe('LobsterAI goal mode command display', () => {
 // ─── Pattern A: NIM/DingTalk ────────────────────────────────
 
 describe('Pattern A: NIM/DingTalk', () => {
-  test('[图片] with URL and [附件信息] → strip metadata, preserve URL as text', () => {
+  test('[Photo] with URL and [Attachment Info] → strip metadata, preserve URL as text', () => {
     const imgPath = fileImg(WIN_INBOUND, 'abc123.jpg');
     const input = [
-      '[图片] https://nos.netease.com/xxx.jpg',
+      '[Photo] https://nos.netease.com/xxx.jpg',
       '',
-      '[附件信息]',
-      `- 类型: image, 路径: ${imgPath}, MIME: image/jpeg, 尺寸: 1920x1080`,
+      '[Attachment Info]',
+      `- Type: image, Path: ${imgPath}, MIME: image/jpeg, Size: 1920x1080`,
     ].join('\n');
 
     const result = parseUserMessageForDisplay(input);
     expect(result).toBe('https://nos.netease.com/xxx.jpg');
-    expect(result).not.toContain('[图片]');
-    expect(result).not.toContain('[附件信息]');
+    expect(result).not.toContain('[Photo]');
+    expect(result).not.toContain('[Attachment Info]');
   });
 
-  test('[图片] without URL → strip placeholder', () => {
+  test('[Photo] without URL → strip placeholder', () => {
     const input = [
-      '[图片]',
+      '[Photo]',
       '',
-      '[附件信息]',
-      `- 类型: image, 路径: ${fileImg(WIN_INBOUND, 'abc123.jpg')}, MIME: image/jpeg`,
+      '[Attachment Info]',
+      `- Type: image, Path: ${fileImg(WIN_INBOUND, 'abc123.jpg')}, MIME: image/jpeg`,
     ].join('\n');
 
     const result = parseUserMessageForDisplay(input);
     expect(result).toBe('');
   });
 
-  test('user text + [图片] → preserve user text and URL', () => {
+  test('user text + [Photo] → preserve user text and URL', () => {
     const input = [
-      '看看这张图',
-      '[图片] https://nos.netease.com/xxx.jpg',
+      'Take a look at this picture',
+      '[Photo] https://nos.netease.com/xxx.jpg',
       '',
-      '[附件信息]',
-      `- 类型: image, 路径: ${fileImg(WIN_INBOUND, 'abc123.jpg')}, MIME: image/jpeg`,
+      '[Attachment Info]',
+      `- Type: image, Path: ${fileImg(WIN_INBOUND, 'abc123.jpg')}, MIME: image/jpeg`,
     ].join('\n');
 
     const result = parseUserMessageForDisplay(input);
-    expect(result).toContain('看看这张图');
+    expect(result).toContain('Take a look at this picture');
     expect(result).toContain('https://nos.netease.com/xxx.jpg');
-    expect(result).not.toContain('[图片]');
+    expect(result).not.toContain('[Photo]');
   });
 
-  test('[语音消息] placeholder stripped', () => {
+  test('[Voice Message] placeholder stripped', () => {
     const input = [
-      '[语音消息]',
+      '[Voice Message]',
       '',
-      '[附件信息]',
-      `- 类型: audio, 路径: ${WIN_INBOUND}\\voice.mp3, MIME: audio/mp3`,
+      '[Attachment Info]',
+      `- Type: audio, Path: ${WIN_INBOUND}\\voice.mp3, MIME: audio/mp3`,
     ].join('\n');
 
     const result = parseUserMessageForDisplay(input);
-    expect(result).not.toContain('[语音消息]');
-    expect(result).not.toContain('[附件信息]');
+    expect(result).not.toContain('[Voice Message]');
+    expect(result).not.toContain('[Attachment Info]');
   });
 
-  test('[文件] with URL → preserve URL', () => {
-    const input = '[文件] https://nos.netease.com/file.pdf';
+  test('[File] with URL → preserve URL', () => {
+    const input = '[File] https://nos.netease.com/file.pdf';
     const result = parseUserMessageForDisplay(input);
     expect(result).toBe('https://nos.netease.com/file.pdf');
   });
 
-  test('[文件] without URL → strip', () => {
-    const input = '[文件]';
+  test('[File] without URL → strip', () => {
+    const input = '[File]';
     const result = parseUserMessageForDisplay(input);
     expect(result).toBe('');
   });
 
-  test('multiple images in [附件信息] → strip block', () => {
+  test('multiple images in [Attachment Info] → strip block', () => {
     const input = [
-      '[图片]',
+      '[Photo]',
       '',
-      '[附件信息]',
-      `- 类型: image, 路径: ${fileImg(WIN_INBOUND, 'img1.jpg')}, MIME: image/jpeg`,
-      `- 类型: image, 路径: ${fileImg(WIN_INBOUND, 'img2.png')}, MIME: image/png`,
+      '[Attachment Info]',
+      `- Type: image, Path: ${fileImg(WIN_INBOUND, 'img1.jpg')}, MIME: image/jpeg`,
+      `- Type: image, Path: ${fileImg(WIN_INBOUND, 'img2.png')}, MIME: image/png`,
     ].join('\n');
 
     const result = parseUserMessageForDisplay(input);
-    expect(result).not.toContain('[附件信息]');
-    expect(result).not.toContain('[图片]');
+    expect(result).not.toContain('[Attachment Info]');
+    expect(result).not.toContain('[Photo]');
   });
 });
 
 // ─── Pattern B: OpenClaw gateway ────────────────────────────
 
-describe('Pattern B: 企微 (WeCom)', () => {
+describe('Pattern B: WeCom', () => {
   test('full format with pipe → strip all, render image', () => {
     const imgPath = fileImg(WIN_INBOUND, 'b02db622.jpg');
     const input = [
@@ -175,7 +175,7 @@ describe('Pattern B: 企微 (WeCom)', () => {
   });
 });
 
-describe('Pattern B: 微信 (WeChat)', () => {
+describe('Pattern B: WeChat', () => {
   test('format without pipe → strip all, render image', () => {
     const imgPath = fileImg(WIN_INBOUND, '154ba6cf.jpg');
     const input = [
@@ -227,7 +227,7 @@ describe('Pattern B: 微信 (WeChat)', () => {
   });
 });
 
-describe('Pattern B: 飞书 (Feishu) — full content', () => {
+describe('Pattern B: Feishu — full content', () => {
   test('full format with System: line and bare path → strip all, render image', () => {
     const imgPath = fileImg(WIN_INBOUND, '0f209ea9.jpg');
     const input = [
@@ -245,7 +245,7 @@ describe('Pattern B: 飞书 (Feishu) — full content', () => {
   });
 });
 
-describe('Pattern B: 飞书 — after server-side stripFeishuSystemHeader', () => {
+describe('Pattern B: Feishu — after server-side stripFeishuSystemHeader', () => {
   test('bare inbound path only (post-strip) → render image', () => {
     const imgPath = fileImg(WIN_INBOUND, '58c6a4bb.jpg');
     // After stripFeishuSystemHeader, only the bare path remains
@@ -322,23 +322,23 @@ describe('Mac compatibility', () => {
 
 describe('false positive safety', () => {
   test('user discussing a file path (not inbound) is NOT stripped', () => {
-    const msg = String.raw`文件在 C:\Users\test\Documents\photo.jpg`;
+    const msg = String.raw`The file is at C:\Users\test\Documents\photo.jpg`;
     expect(parseUserMessageForDisplay(msg)).toBe(msg);
   });
 
   test('user typing "media:video" in a sentence is NOT stripped', () => {
-    const msg = '格式是 media:video 这样的';
+    const msg = 'The format looks like media:video';
     expect(parseUserMessageForDisplay(msg)).toBe(msg);
   });
 
   test('user mentioning "To send an image back" without [media attached:] is NOT stripped', () => {
-    const msg = 'To send an image back, prefer the message tool — 这是说明文档的内容';
+    const msg = 'To send an image back, prefer the message tool — quoted from the documentation';
     expect(parseUserMessageForDisplay(msg)).toBe(msg);
   });
 
-  test('user typing [图片] in a sentence is NOT stripped (not on its own line)', () => {
-    const msg = '他发了一个[图片]标记在消息里';
-    // [图片] is not on its own line, NIM_PLACEHOLDER_RE requires ^...$
+  test('user typing [Photo] in a sentence is NOT stripped (not on its own line)', () => {
+    const msg = 'He put a [Photo] marker inside the message';
+    // [Photo] is not on its own line, NIM_PLACEHOLDER_RE requires ^...$
     expect(parseUserMessageForDisplay(msg)).toBe(msg);
   });
 });
@@ -346,7 +346,7 @@ describe('false positive safety', () => {
 // ─── \\r\\n handling ─────────────────────────────────────────
 
 describe('\\r\\n handling', () => {
-  test('企微 format with \\r\\n line endings', () => {
+  test('WeCom format with \\r\\n line endings', () => {
     const imgPath = fileImg(WIN_INBOUND, 'b02db622.jpg');
     const input = [
       `[media attached: ${imgPath} (image/jpeg) | ${imgPath}]`,
@@ -361,10 +361,10 @@ describe('\\r\\n handling', () => {
 
   test('NIM format with \\r\\n line endings', () => {
     const input = [
-      '[图片] https://nos.netease.com/xxx.jpg',
+      '[Photo] https://nos.netease.com/xxx.jpg',
       '',
-      '[附件信息]',
-      `- 类型: image, 路径: ${fileImg(WIN_INBOUND, 'abc123.jpg')}, MIME: image/jpeg`,
+      '[Attachment Info]',
+      `- Type: image, Path: ${fileImg(WIN_INBOUND, 'abc123.jpg')}, MIME: image/jpeg`,
     ].join('\r\n');
 
     const result = parseUserMessageForDisplay(input);

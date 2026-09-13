@@ -9,7 +9,7 @@ import {
 describe('appendLoginParams', () => {
   test('appends params inside hash route query for portal URLs', () => {
     const result = appendLoginParams(
-      'https://lobsterai.youdao.com/portal#/login',
+      'https://app.claidor.com/login',
       {
         source: 'electron',
         redirect_uri: 'http://127.0.0.1:43210/auth/callback',
@@ -18,18 +18,18 @@ describe('appendLoginParams', () => {
     );
 
     expect(result).toBe(
-      'https://lobsterai.youdao.com/portal#/login?source=electron&redirect_uri=http%3A%2F%2F127.0.0.1%3A43210%2Fauth%2Fcallback&state=test-state',
+      'https://app.claidor.com/login?source=electron&redirect_uri=http%3A%2F%2F127.0.0.1%3A43210%2Fauth%2Fcallback&state=test-state',
     );
   });
 
   test('preserves existing hash route params', () => {
     const result = appendLoginParams(
-      'https://lobsterai.youdao.com/portal#/login?invitationCode=ABC123',
+      'https://app.claidor.com/login?invitationCode=ABC123',
       { source: 'electron' },
     );
 
     expect(result).toBe(
-      'https://lobsterai.youdao.com/portal#/login?invitationCode=ABC123&source=electron',
+      'https://app.claidor.com/login?invitationCode=ABC123&source=electron',
     );
   });
 
@@ -46,11 +46,11 @@ describe('appendCallbackReturnTo', () => {
   test('adds portal return URL to the local callback redirect URI', () => {
     const result = appendCallbackReturnTo(
       'http://127.0.0.1:43210/auth/callback',
-      'https://lobsterai.youdao.com/portal#/login?source=electron&electronLogin=success',
+      'https://app.claidor.com/login?source=electron&electronLogin=success',
     );
 
     expect(result).toBe(
-      'http://127.0.0.1:43210/auth/callback?return_to=https%3A%2F%2Flobsterai.youdao.com%2Fportal%23%2Flogin%3Fsource%3Delectron%26electronLogin%3Dsuccess',
+      'http://127.0.0.1:43210/auth/callback?return_to=https%3A%2F%2Fapp.claidor.com%2Flogin%3Fsource%3Delectron%26electronLogin%3Dsuccess',
     );
   });
 });
@@ -110,14 +110,14 @@ describe('startAuthLocalCallback', () => {
     const body = await response.text();
 
     expect(response.status).toBe(200);
-    expect(body).toContain('登录成功');
+    expect(body).toContain('Signed in');
     expect(codes).toEqual(['abc123']);
   });
 
   test('returns a success page that redirects back to the portal when return_to is safe', async () => {
     const callback = await startAuthLocalCallback({ onCode: () => {} });
     const returnTo = encodeURIComponent(
-      'https://lobsterai.youdao.com/portal#/login?source=electron&electronLogin=success',
+      'https://app.claidor.com/login?source=electron&electronLogin=success',
     );
 
     const response = await fetch(
@@ -172,7 +172,7 @@ describe('startAuthLocalCallback', () => {
     const body = await response.text();
 
     expect(response.status).toBe(400);
-    expect(body).toContain('登录失败');
+    expect(body).toContain('Sign-in failed');
     expect(codes).toEqual([]);
   });
 

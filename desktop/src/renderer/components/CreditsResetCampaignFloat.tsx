@@ -29,12 +29,10 @@ const formatExpiry = (expiresAt?: string): string => {
   if (!datePart) return expiresAt;
   const [year, month, day] = datePart.split('-');
   if (!year || !month || !day) return datePart;
-  return i18nService.getLanguage() === 'en'
-    ? `${year}-${month}-${day}`
-    : `${Number(month)}月${Number(day)}日`;
+  return `${year}-${month}-${day}`;
 };
 
-const CreditsResetCampaignFloat: React.FC = () => {
+export const RetiredCreditsResetCampaignFloat: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const profileSummary = useSelector((state: RootState) => state.auth.profileSummary);
   const [, forceLanguageRefresh] = useState(0);
@@ -133,5 +131,9 @@ const CreditsResetCampaignFloat: React.FC = () => {
     </div>
   );
 };
+
+// The design (docs/maties/design.md) has no place for credit campaigns: the
+// float is retired and the mount in CoworkView renders nothing.
+const CreditsResetCampaignFloat: React.FC = () => null;
 
 export default CreditsResetCampaignFloat;

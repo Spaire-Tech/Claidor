@@ -1,7 +1,7 @@
 import { net } from 'electron';
 import http from 'http';
 
-import { isLobsterAIQuotaExhaustedError } from '../../common/coworkErrorClassify';
+import { isMatiesQuotaExhaustedError } from '../../common/coworkErrorClassify';
 import {
   AuthRefreshOutcome,
   AuthRefreshReason,
@@ -10,13 +10,17 @@ import {
 } from '../../shared/auth/constants';
 import { EnterpriseApiErrorCode } from '../../shared/enterpriseAccount/constants';
 import {
-  LOBSTERAI_CLIENT_CAPABILITIES,
-  LOBSTERAI_CLIENT_CAPABILITIES_HEADER,
-  LOBSTERAI_CLIENT_VERSION_HEADER,
+  MATIES_CLIENT_CAPABILITIES,
+  MATIES_CLIENT_CAPABILITIES_HEADER,
+  MATIES_CLIENT_VERSION_HEADER,
 } from '../../shared/providers/modelRuntimeProfiles';
 import type { EnterpriseAuthSessionSnapshot } from '../enterpriseAccount/membershipRevocation';
 
 const PROXY_BIND_HOST = '127.0.0.1';
+
+/** The path the engine's connector MCP servers are pointed at. */
+export const CONNECTORS_PATH_PREFIX = '/connectors';
+export const SPEECH_PATH_PREFIX = '/speech';
 const RECENT_QUOTA_ERROR_TTL_MS = 30_000;
 const MAX_PROXY_SSE_SCAN_BUFFER_CHARS = 1_048_576;
 const GEMINI_FALLBACK_THOUGHT_SIGNATURE = 'skip_thought_signature_validator';
@@ -150,7 +154,7 @@ function collectRequestBody(req: http.IncomingMessage): Promise<Buffer> {
   });
 }
 
-function shouldRefreshLobsterAIToken(status: number): boolean {
+function shouldRefreshMatiesToken(status: number): boolean {
   return status === 401;
 }
 
@@ -190,6 +194,36 @@ function writeAuthSessionChanged(res: http.ServerResponse): void {
   }));
 }
 
+/**
+ * Where a request the engine made goes on Claidor.
+ *
+ * Two kinds of traffic come through this one proxy, for the same reason:
+ * the person's Claidor session token lives an hour, and the gateway's
+ * environment is fixed when it is spawned. Anything that put the token in
+ * the engine's config would stop working within the hour and could only be
+ * repaired by a hard gateway restart. Here the live token is attached per
+ * request, and refreshed on a 401 by the machinery below.
+ *
+ * - `/connectors/...` is a connected service's MCP conversation
+ *   (docs/maties/connectors.md, section 4) and goes to `/api/connectors/...`.
+ * - everything else is a model call and goes to `/api/proxy/...`.
+ */
+export function buildUpstreamPath(requestUrl: string | undefined): string {
+  const path = requestUrl || '/';
+  if (path === CONNECTORS_PATH_PREFIX || path.startsWith(`${CONNECTORS_PATH_PREFIX}/`)) {
+    return `/api${path}`;
+  }
+  // The voice takes the same door as connections, and for the same
+  // reason: the engine is handed a loopback address instead of a
+  // credential, so it holds no key and nothing of ours expires inside
+  // it. `docs/maties/plan.md` step 1 — voices come from a speech service
+  // behind Claidor's API, never from a key in the app.
+  if (path === SPEECH_PATH_PREFIX || path.startsWith(`${SPEECH_PATH_PREFIX}/`)) {
+    return `/api${path}`;
+  }
+  return `/api/proxy${path}`;
+}
+
 async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   try {
     const tokens = tokenGetter?.();
@@ -216,8 +250,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // Build upstream URL: serverBaseUrl + request path
     // OpenClaw sends to /v1/chat/completions, upstream is /api/proxy/v1/chat/completions
-    const upstreamPath = `/api/proxy${req.url || '/'}`;
-    const upstreamUrl = `${serverBaseUrl}${upstreamPath}`;
+    const upstreamUrl = `${serverBaseUrl}${buildUpstreamPath(req.url)}`;
 
     const clientVersion = clientVersionGetter?.() ?? '';
     let result = await forwardRequest(
@@ -234,7 +267,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return;
     }
 
-    if (shouldRefreshLobsterAIToken(result.status) && tokenRefresher) {
+    if (shouldRefreshMatiesToken(result.status) && tokenRefresher) {
       const latestAccessToken = tokenGetter?.()?.accessToken;
       if (latestAccessToken && latestAccessToken !== tokens.accessToken) {
         result = await forwardRequest(
@@ -665,9 +698,9 @@ function extractQuotaErrorFromProxyErrorPayload(
   const proxyError = extractStructuredProxyError(payload, event);
   if (proxyError) {
     const searchable = `${proxyError.message} ${proxyError.code ?? ''} ${payload}`;
-    return isLobsterAIQuotaExhaustedError(searchable) ? proxyError : null;
+    return isMatiesQuotaExhaustedError(searchable) ? proxyError : null;
   }
-  return event === 'error' && isLobsterAIQuotaExhaustedError(payload)
+  return event === 'error' && isMatiesQuotaExhaustedError(payload)
     ? { message: payload }
     : null;
 }
@@ -867,8 +900,8 @@ function buildUpstreamRequestHeaders(
     ...accountContextHeaders,
     'Authorization': `Bearer ${accessToken}`,
     'Content-Type': incomingHeaders['content-type'] || 'application/json',
-    [LOBSTERAI_CLIENT_CAPABILITIES_HEADER]: LOBSTERAI_CLIENT_CAPABILITIES,
-    [LOBSTERAI_CLIENT_VERSION_HEADER]: clientVersion,
+    [MATIES_CLIENT_CAPABILITIES_HEADER]: MATIES_CLIENT_CAPABILITIES,
+    [MATIES_CLIENT_VERSION_HEADER]: clientVersion,
   };
 
   // Forward accept header for SSE streaming
@@ -1164,5 +1197,5 @@ export const __openClawTokenProxyTestUtils = {
   pipeStreamingResponseWithQuotaScan,
   isTemporaryAuthRefreshFailure,
   isProxySessionKeyCurrent,
-  shouldRefreshLobsterAIToken,
+  shouldRefreshMatiesToken,
 };

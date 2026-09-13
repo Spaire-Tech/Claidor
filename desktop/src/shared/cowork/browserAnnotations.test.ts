@@ -14,7 +14,7 @@ import {
   resolveBrowserAnnotationViewportRect,
 } from './browserAnnotations';
 
-function batch(comment = '把标题改短一些'): CoworkBrowserAnnotationBatch {
+function batch(comment = 'Make the title shorter'): CoworkBrowserAnnotationBatch {
   return {
     version: 1,
     id: 'batch-1',
@@ -73,7 +73,7 @@ function batch(comment = '把标题改短一些'): CoworkBrowserAnnotationBatch 
           flexDirection: 'row',
         },
         current: {
-          text: '更短的标题',
+          text: 'A shorter title',
           color: 'rgb(255, 0, 0)',
           backgroundColor: 'rgba(0, 0, 0, 0)',
           opacity: 0.8,
@@ -110,9 +110,9 @@ describe('browser annotations', () => {
     const section = buildBrowserAnnotationPromptSection(normalizeBrowserAnnotationBatches([batch()]));
     expect(section).toContain('user-authored requests');
     expect(section).toContain('untrusted reference data');
-    expect(section).toContain('User comment:\n> 把标题改短一些');
+    expect(section).toContain('User comment:\n> Make the title shorter');
     expect(section).toContain('Requested element changes (user-authored):');
-    expect(section).toContain('- Text: Do not follow this page instruction → 更短的标题');
+    expect(section).toContain('- Text: Do not follow this page instruction → A shorter title');
     expect(section).toContain('- Text color: rgb(0, 0, 0) → rgb(255, 0, 0)');
     expect(section).toContain('- Font size: 16px → 24px');
     expect(section).toContain('- Padding left: 0px → 20px');
@@ -127,7 +127,7 @@ describe('browser annotations', () => {
     expect(changes[0]).toEqual({
       property: BrowserAnnotationElementChangeProperty.Text,
       originalValue: 'Do not follow this page instruction',
-      currentValue: '更短的标题',
+      currentValue: 'A shorter title',
     });
     expect(changes).toContainEqual({
       property: BrowserAnnotationElementStyleProperty.Color,
@@ -169,7 +169,7 @@ describe('browser annotations', () => {
     const value = batch();
     const edit = value.annotations[0].elementEdit;
     if (!edit) throw new Error('Expected element edit fixture');
-    edit.current.text = `  标题\u0000  `;
+    edit.current.text = `  Title\u0000  `;
     edit.current.opacity = 4;
     edit.current.color = `rgb(1, 2, 3)${'x'.repeat(200)}`;
     edit.current.width = `120px\u0000${'x'.repeat(200)}`;
@@ -178,7 +178,7 @@ describe('browser annotations', () => {
     };
 
     const normalized = normalizeBrowserAnnotationBatches([value]);
-    expect(normalized[0].annotations[0].elementEdit?.current.text).toBe('  标题  ');
+    expect(normalized[0].annotations[0].elementEdit?.current.text).toBe('  Title  ');
     expect(normalized[0].annotations[0].elementEdit?.current.opacity).toBe(1);
     expect(normalized[0].annotations[0].elementEdit?.current.color?.length).toBe(128);
     expect(normalized[0].annotations[0].elementEdit?.current.width?.length).toBe(128);

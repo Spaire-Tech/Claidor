@@ -7,17 +7,13 @@ import { buildGoalSettingMessageMetadata } from '../../../common/goalCommandDisp
 import { buildSessionTitleFromInput } from '../../../common/sessionTitle';
 import { buildCoworkImageAttachmentPreviews } from '../../../shared/cowork/imageAttachments';
 import type { CoworkSelectedTextSnippet } from '../../../shared/cowork/selectedText';
-import startupCreditEntryGiftUrl from '../../assets/startup-credit-entry-gift.svg';
 import { EnterpriseQuotaPrompt } from '../../features/enterpriseAccount/components/EnterpriseQuotaPrompt';
 import { refreshEnterpriseAccountContext } from '../../features/enterpriseAccount/context';
 import {
   resolveBlockingEnterpriseQuotaReason,
-  usesLobsterAIServerQuota,
+  usesMatiesServerQuota,
 } from '../../features/enterpriseAccount/modelQuotaGate';
-import {
-  selectEnterpriseAccountContext,
-  selectIsEnterpriseAccount,
-} from '../../features/enterpriseAccount/selectors';
+import { selectEnterpriseAccountContext } from '../../features/enterpriseAccount/selectors';
 import { agentService } from '../../services/agent';
 import { coworkService } from '../../services/cowork';
 import { buildCoworkCapabilitySelection } from '../../services/coworkCapabilitySelection';
@@ -30,8 +26,7 @@ import {
   selectIsStreaming,
   selectSessionNavigationTargetId,
 } from '../../store/selectors/coworkSelectors';
-import { addMessage, setCurrentSession, setDraftCollaborationMode, setDraftKitIds, setDraftSkillIds, setStreaming, updateSessionGoal, updateSessionStatus } from '../../store/slices/coworkSlice';
-import { clearActiveKits } from '../../store/slices/kitSlice';
+import { addMessage, setCurrentSession, setDraftCollaborationMode, setDraftSkillIds, setStreaming, updateSessionGoal, updateSessionStatus } from '../../store/slices/coworkSlice';
 import { clearSelection, selectAction, setActions } from '../../store/slices/quickActionSlice';
 import { clearActiveSkills, setActiveSkillIds } from '../../store/slices/skillSlice';
 import {
@@ -46,20 +41,14 @@ import {
 import type { MediaAttachmentRef } from '../../types/mediaGeneration';
 import { applyOptimisticGoalCommand } from '../../utils/goalCommand';
 import { toOpenClawModelRef } from '../../utils/openclawModelRef';
-import CreditsResetCampaignFloat from '../CreditsResetCampaignFloat';
-import { DailyCheckInHeaderEntry } from '../DailyCheckInActivity';
-import ComposeIcon from '../icons/ComposeIcon';
-import SidebarToggleIcon from '../icons/SidebarToggleIcon';
+import IconButton from '../design/IconButton';
+import { ShareLineIcon, SidebarLineIcon } from '../design/LineIcons';
+import Sphere from '../design/Sphere';
+import CloudWorkStrip from '../maty/CloudWorkStrip';
 import { ModelAccessPromptKind, ModelAccessPromptModal } from '../ModelSelector';
 import { PromptPanel, QuickActionBar } from '../quick-actions';
-import type { SettingsOpenOptions } from '../Settings';
-import HomeSkinEmblem from '../skin/HomeSkinEmblem';
 import SkinAmbientEffects from '../skin/SkinAmbientEffects';
 import SkinBackdrop, { SkinBackdropVariant } from '../skin/SkinBackdrop';
-import {
-  openStartupCreditCampaign,
-  useStartupCreditCampaignEntry,
-} from '../startupCreditCampaignBridge';
 import { resolveModelThinkingLevel, useAgentSelectedModel } from './agentModelSelection';
 import { CoworkUiEvent } from './constants';
 import CoworkPromptInput, { type CoworkPromptInputRef } from './CoworkPromptInput';
@@ -67,15 +56,8 @@ import CoworkSessionDetail from './CoworkSessionDetail';
 import { reportPromptTemplateAction } from './promptAnalytics';
 import { buildCoworkContinuationSystemPrompt, buildCoworkSystemPrompt } from './skillSystemPrompt';
 
-// Time-aware hero greeting: the brand mark stays as the logo, so the heading
-// can greet the user instead of repeating the product name on every visit.
-const resolveHomeGreetingKey = (date: Date = new Date()): string => {
-  const hour = date.getHours();
-  if (hour >= 5 && hour < 12) return 'coworkGreetingMorning';
-  if (hour >= 12 && hour < 18) return 'coworkGreetingAfternoon';
-  if (hour >= 18 && hour < 23) return 'coworkGreetingEvening';
-  return 'coworkGreetingLateNight';
-};
+/** The bird at the bottom right of the empty chat (docs/maties/design.md, section 2). */
+const HOME_AVATAR_SOURCE = './avatars/parrot.png';
 
 const logCoworkViewModel = (message: string): void => {
   console.debug(`[CoworkView] ${message}`);
@@ -87,10 +69,10 @@ const logCoworkViewModel = (message: string): void => {
 };
 
 export interface CoworkViewProps {
-  onRequestAppSettings?: (options?: SettingsOpenOptions) => void;
   onShowSkills?: () => void;
-  onShowKits?: () => void;
   isSidebarCollapsed?: boolean;
+  /** Width the sidebar gives back when it steps aside for the artifact panel. */
+  sidebarWidth?: number;
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
   updateBadge?: React.ReactNode;
@@ -100,10 +82,9 @@ export interface CoworkViewProps {
 }
 
 const CoworkView: React.FC<CoworkViewProps> = ({
-  onRequestAppSettings,
   onShowSkills,
-  onShowKits,
   isSidebarCollapsed,
+  sidebarWidth,
   onToggleSidebar,
   onNewChat,
   updateBadge,
@@ -139,7 +120,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
   const isStreaming = useSelector(selectIsStreaming);
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const enterpriseAccountContext = useSelector(selectEnterpriseAccountContext);
-  const isEnterpriseAccount = useSelector(selectIsEnterpriseAccount);
   const enterpriseAccountId = enterpriseAccountContext?.enterpriseId;
   const hasEnterpriseAccount = enterpriseAccountContext !== null;
   const homeQuotaReason = enterpriseAccountContext?.quotaStatus.available === false
@@ -159,13 +139,9 @@ const CoworkView: React.FC<CoworkViewProps> = ({
 
   const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
   const skills = useSelector((state: RootState) => state.skill.skills);
-  const activeKitIds = useSelector((state: RootState) => state.kit.activeKitIds);
-  const installedKits = useSelector((state: RootState) => state.kit.installedKits);
-  const marketplaceKits = useSelector((state: RootState) => state.kit.marketplaceKits);
   const quickActions = useSelector((state: RootState) => state.quickAction.actions);
   const selectedActionId = useSelector((state: RootState) => state.quickAction.selectedActionId);
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
-  const startupCreditEntry = useStartupCreditCampaignEntry();
   const agents = useSelector((state: RootState) => state.agent.agents);
   const currentAgent = agents.find((agent) => agent.id === currentAgentId);
   const shouldPresentConversation = Boolean(currentSession || sessionNavigationTargetId);
@@ -174,7 +150,7 @@ const CoworkView: React.FC<CoworkViewProps> = ({
   const currentAgentSelectedModelRef = currentAgentSelectedModel
     ? toOpenClawModelRef(currentAgentSelectedModel)
     : '';
-  const homeModelUsesServerQuota = usesLobsterAIServerQuota(currentAgentSelectedModel);
+  const homeModelUsesServerQuota = usesMatiesServerQuota(currentAgentSelectedModel);
   const blockingHomeQuotaReason = resolveBlockingEnterpriseQuotaReason(
     homeQuotaReason,
     currentAgentSelectedModel,
@@ -217,15 +193,9 @@ const CoworkView: React.FC<CoworkViewProps> = ({
     isHomeView,
   ]);
 
-  const buildCapabilitySelection = useCallback((skillIds: string[], kitIds: string[]) => {
-    return buildCoworkCapabilitySelection(
-      skillIds,
-      kitIds,
-      skills,
-      installedKits,
-      marketplaceKits,
-    );
-  }, [installedKits, marketplaceKits, skills]);
+  const buildCapabilitySelection = useCallback((skillIds: string[]) => {
+    return buildCoworkCapabilitySelection(skillIds, skills);
+  }, [skills]);
 
   const resolveEngineStatusText = (status: OpenClawEngineStatus): string => {
     switch (status.phase) {
@@ -389,22 +359,18 @@ const CoworkView: React.FC<CoworkViewProps> = ({
       const now = Date.now();
       const optimisticGoal = applyOptimisticGoalCommand(prompt, null, tempSessionId, now);
 
-      // Capture active skill IDs and kit IDs before clearing them
+      // Capture active skill IDs before clearing them
       const sessionSkillIds = [...activeSkillIds];
-      const sessionKitIds = [...activeKitIds];
 
       const {
         directSkillIds,
         runtimeSkillIds,
-        kitReferences,
-        resolvedKitCapabilities,
-      } = buildCapabilitySelection(sessionSkillIds, sessionKitIds);
+      } = buildCapabilitySelection(sessionSkillIds);
       const isPlanMode = collaborationMode === CoworkCollaborationMode.Plan;
       const goalSettingMetadata = buildGoalSettingMessageMetadata(prompt);
       const displayDirectSkillIds = directSkillIds;
-      const displayKitIds = sessionKitIds;
       const effectiveRuntimeSkillIds = isPlanMode ? [] : runtimeSkillIds;
-      if (isPlanMode && (directSkillIds.length > 0 || runtimeSkillIds.length > 0 || sessionKitIds.length > 0)) {
+      if (isPlanMode && (directSkillIds.length > 0 || runtimeSkillIds.length > 0)) {
         logCoworkViewModel('suppressed selected capabilities for a plan-mode start turn');
       }
       const imageAttachmentPreviews = buildCoworkImageAttachmentPreviews(imageAttachments);
@@ -424,7 +390,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
         thinkingLevel: currentAgentThinkingLevel ?? '',
         executionMode: config.executionMode || 'local',
         activeSkillIds: effectiveRuntimeSkillIds,
-        activeKitIds: displayKitIds.length > 0 ? displayKitIds : undefined,
         agentId: currentAgentId,
         ...(optimisticGoal !== undefined ? { goal: optimisticGoal } : {}),
         messages: [
@@ -433,15 +398,10 @@ const CoworkView: React.FC<CoworkViewProps> = ({
             type: 'user',
             content: prompt,
             timestamp: now,
-            metadata: (displayDirectSkillIds.length > 0 || displayKitIds.length > 0 || imageAttachmentPreviews?.length || (selectedTextSnippets && selectedTextSnippets.length > 0) || (browserAnnotations && browserAnnotations.length > 0) || goalSettingMetadata)
+            metadata: (displayDirectSkillIds.length > 0 || imageAttachmentPreviews?.length || (selectedTextSnippets && selectedTextSnippets.length > 0) || (browserAnnotations && browserAnnotations.length > 0) || goalSettingMetadata)
               ? {
                 ...goalSettingMetadata,
                 ...(displayDirectSkillIds.length > 0 ? { skillIds: displayDirectSkillIds } : {}),
-                ...(displayKitIds.length > 0 ? {
-                  kitIds: displayKitIds,
-                  kitReferences,
-                  resolvedKitCapabilities,
-                } : {}),
                 ...(selectedTextSnippets && selectedTextSnippets.length > 0 ? { selectedTextSnippets } : {}),
                 ...(browserAnnotations && browserAnnotations.length > 0 ? { browserAnnotations } : {}),
                 ...(imageAttachmentPreviews?.length ? { imageAttachmentPreviews } : {}),
@@ -464,11 +424,9 @@ const CoworkView: React.FC<CoworkViewProps> = ({
       }
       dispatch(setStreaming(true));
 
-      // Clear active skills, kits and quick action selection after starting session
+      // Clear active skills and quick action selection after starting session
       // so they don't persist to next session
       dispatch(clearActiveSkills());
-      dispatch(clearActiveKits());
-      dispatch(setDraftKitIds({ draftKey: '__home__', kitIds: [] }));
       dispatch(setDraftSkillIds({ draftKey: '__home__', skillIds: [] }));
       dispatch(clearSelection());
 
@@ -491,9 +449,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
         systemPrompt: combinedSystemPrompt,
         activeSkillIds: displayDirectSkillIds.length > 0 ? displayDirectSkillIds : undefined,
         runtimeSkillIds: isPlanMode ? [] : (effectiveRuntimeSkillIds.length > 0 ? effectiveRuntimeSkillIds : undefined),
-        kitIds: displayKitIds.length > 0 ? displayKitIds : undefined,
-        kitReferences: displayKitIds.length > 0 ? kitReferences : undefined,
-        resolvedKitCapabilities: displayKitIds.length > 0 ? resolvedKitCapabilities : undefined,
         agentId: currentAgentId,
         modelOverride: sessionModelOverride,
         thinkingLevel: currentAgentThinkingLevel,
@@ -592,21 +547,17 @@ const CoworkView: React.FC<CoworkViewProps> = ({
         imageAttachmentsBase64Lengths: imageAttachments?.map(a => a.base64Data.length),
       });
 
-      // Capture active skill IDs and kit IDs before clearing
+      // Capture active skill IDs before clearing
       const sessionSkillIds = [...activeSkillIds];
-      const sessionKitIds = [...activeKitIds];
 
       const {
         directSkillIds,
         runtimeSkillIds,
-        kitReferences,
-        resolvedKitCapabilities,
-      } = buildCapabilitySelection(sessionSkillIds, sessionKitIds);
+      } = buildCapabilitySelection(sessionSkillIds);
       const isPlanMode = collaborationMode === CoworkCollaborationMode.Plan;
       const displayDirectSkillIds = directSkillIds;
-      const displayKitIds = sessionKitIds;
       const effectiveRuntimeSkillIds = isPlanMode ? [] : runtimeSkillIds;
-      if (isPlanMode && (directSkillIds.length > 0 || runtimeSkillIds.length > 0 || sessionKitIds.length > 0)) {
+      if (isPlanMode && (directSkillIds.length > 0 || runtimeSkillIds.length > 0)) {
         logCoworkViewModel('suppressed selected capabilities for a plan-mode continue turn');
       }
 
@@ -620,19 +571,14 @@ const CoworkView: React.FC<CoworkViewProps> = ({
         systemPrompt: combinedSystemPrompt,
         activeSkillIds: displayDirectSkillIds.length > 0 ? displayDirectSkillIds : undefined,
         runtimeSkillIds: isPlanMode ? [] : (effectiveRuntimeSkillIds.length > 0 ? effectiveRuntimeSkillIds : undefined),
-        kitIds: displayKitIds.length > 0 ? displayKitIds : undefined,
-        kitReferences: displayKitIds.length > 0 ? kitReferences : undefined,
-        resolvedKitCapabilities: displayKitIds.length > 0 ? resolvedKitCapabilities : undefined,
         imageAttachments,
         mediaSelection: mediaSelection && mediaSelection.mode !== 'none' ? mediaSelection : undefined,
         mediaReferences,
         selectedTextSnippets,
         browserAnnotations,
       });
-      if (sent && (sessionSkillIds.length > 0 || sessionKitIds.length > 0)) {
+      if (sent && sessionSkillIds.length > 0) {
         dispatch(clearActiveSkills());
-        dispatch(clearActiveKits());
-        dispatch(setDraftKitIds({ draftKey: currentSession.id, kitIds: [] }));
         dispatch(setDraftSkillIds({ draftKey: currentSession.id, skillIds: [] }));
       }
       return sent;
@@ -802,52 +748,34 @@ const CoworkView: React.FC<CoworkViewProps> = ({
   const isEngineError = openClawStatus?.phase === 'error';
   const isEngineReady = isOpenClawReadyForSession(openClawStatus);
 
+  // The top bar (docs/maties/design.md, section 3): 54px, no background, the
+  // sidebar toggle at the left, nothing in the middle on the empty chat, the
+  // share icon at the right. On Windows the window controls sit in their own
+  // bar above; on macOS the traffic lights need room when the sidebar is shut.
   const homeHeader = (
-    <div className="draggable relative z-10 flex h-12 items-center justify-between px-4 shrink-0">
-      <div className="non-draggable h-8 flex items-center">
-        {isSidebarCollapsed && !isWindows && (
-          <div className={`flex items-center gap-1 mr-2 ${isMac ? 'pl-[68px]' : ''}`}>
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-            >
-              <SidebarToggleIcon className="h-4 w-4" isCollapsed={true} />
-            </button>
-            <button
-              type="button"
-              onClick={onNewChat}
-              className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-            >
-              <ComposeIcon className="h-4 w-4" />
-            </button>
-            {updateBadge}
-          </div>
-        )}
-      </div>
-      <div className="non-draggable flex items-center">
-        {!isEnterpriseAccount && startupCreditEntry.available && (
-          <button
-            type="button"
-            onClick={() => openStartupCreditCampaign()}
-            className="mr-2 inline-flex h-8 max-w-[240px] items-center gap-2 rounded-full border border-[#F0B58E] bg-[#FFF7F0] px-3 text-xs font-medium text-[#7C351C] shadow-[0_3px_12px_rgba(235,94,40,0.16)] transition-colors hover:border-[#E89C6C] hover:bg-[#FFEBDD] dark:border-[#704530] dark:bg-[#352A25] dark:text-[#F5C4A5] dark:shadow-[0_3px_14px_rgba(0,0,0,0.32)] dark:hover:bg-[#403029]"
+    <div className="draggable relative z-20 flex h-[54px] shrink-0 items-center gap-3 px-[22px]">
+      <div className={`non-draggable flex items-center gap-1 ${isSidebarCollapsed && isMac ? 'pl-[68px]' : ''}`}>
+        {!isWindows && (
+          <IconButton
+            label={isSidebarCollapsed ? i18nService.t('expand') : i18nService.t('collapse')}
+            onClick={onToggleSidebar}
+            className="text-[#4a4f57]"
           >
-            <img
-              src={startupCreditEntryGiftUrl}
-              alt=""
-              aria-hidden="true"
-              className="startup-credit-entry-gift h-5 w-5 shrink-0"
-            />
-            <span className="truncate">
-              {startupCreditEntry.label || i18nService.t('startupCreditMenuEntry')}
-            </span>
-          </button>
+            <SidebarLineIcon />
+          </IconButton>
         )}
-        <DailyCheckInHeaderEntry
-          enabled={!isEnterpriseAccount}
-          suppressed={!startupCreditEntry.resolved
-            || startupCreditEntry.available}
-        />
+        {isSidebarCollapsed && updateBadge}
+      </div>
+      <span className="min-w-0 flex-1" />
+      <div className="non-draggable flex items-center gap-1">
+        <IconButton
+          label={i18nService.t('coworkShareSession')}
+          title={i18nService.t('coworkNothingToShareYet')}
+          disabled
+          className="text-[#4a4f57]"
+        >
+          <ShareLineIcon />
+        </IconButton>
       </div>
     </div>
   );
@@ -873,14 +801,7 @@ const CoworkView: React.FC<CoworkViewProps> = ({
             </div>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => onRequestAppSettings?.({ initialTab: 'coworkAgentEngine' })}
-            className="text-xs text-secondary underline-offset-2 transition-colors hover:text-foreground hover:underline"
-          >
-            {i18nService.t('coworkOpenClawGoToSettingsInstall')}
-          </button>
+        <div className="mt-3 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={handleRestartGateway}
@@ -911,10 +832,10 @@ const CoworkView: React.FC<CoworkViewProps> = ({
           {engineStatusBanner}
           <CoworkSessionDetail
             onManageSkills={() => onShowSkills?.()}
-            onManageKits={() => onShowKits?.()}
             onContinue={handleContinueSession}
             onStop={handleStopSession}
             isSidebarCollapsed={isSidebarCollapsed}
+            sidebarWidth={sidebarWidth}
             onToggleSidebar={onToggleSidebar}
             onNewChat={onNewChat}
             updateBadge={updateBadge}
@@ -931,37 +852,53 @@ const CoworkView: React.FC<CoworkViewProps> = ({
           {/* Header */}
           {homeHeader}
 
-          {/* Main content */}
-          <div className="relative z-10 flex-1 overflow-y-auto min-h-0">
-            <div className="relative flex min-h-full w-full min-w-[320px] flex-col items-center px-4 py-8">
-              {/* Flexible spacers (2:3) keep the welcome block at the optical
-                  center on tall windows; min-h preserves breathing room before
-                  the page starts scrolling on short windows. */}
-              <div aria-hidden="true" className="w-full min-h-[56px] flex-[2_0_0px]" />
-              {/* Welcome Section - staggered entrance animation */}
-              <div data-skin-home-copy="true" className="w-full max-w-3xl text-center">
-                <HomeSkinEmblem
-                  className="mx-auto h-12 w-12 animate-fade-in-up"
+          {/* The empty chat (docs/maties/design.md, section 4): a centred
+              column, the sphere, the headline, the composer, the four
+              suggestion pills, and the bird at the bottom right behind
+              everything. Only this column scrolls when the window is short. */}
+          <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+            <img
+              src={HOME_AVATAR_SOURCE}
+              alt=""
+              draggable={false}
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-0 z-0 h-auto select-none"
+              style={{ right: 'clamp(4px, 2vw, 34px)', width: 'clamp(120px, 15vw, 196px)' }}
+            />
+            <div
+              data-composer="1"
+              className="relative z-[1] flex min-h-full w-full min-w-[320px] flex-col items-center justify-center gap-[10px] pb-[18px] pt-[14px]"
+              style={{ paddingLeft: 'clamp(18px, 5vw, 40px)', paddingRight: 'clamp(18px, 5vw, 40px)' }}
+            >
+              <div
+                data-skin-home-copy="true"
+                className="maties-in flex shrink-0 flex-col items-center"
+                style={{ paddingBottom: 'clamp(10px, 2.4vh, 28px)' }}
+              >
+                <Sphere
+                  size={48}
+                  title="Maties"
+                  className="mb-[clamp(18px,3vh,30px)]"
                 />
-                <h2
-                  className="mt-4 text-2xl font-semibold leading-[var(--lobster-leading-2xl)] tracking-normal text-foreground animate-fade-in-up"
-                  style={{ animationDelay: '70ms', animationFillMode: 'both' }}
+                <h1
+                  className="m-0 text-center font-normal text-[#1c1f23]"
+                  style={{
+                    fontFamily: "'Newsreader', Georgia, serif",
+                    fontSize: 'clamp(28px, 4.4vw, 42px)',
+                    lineHeight: 1.15,
+                    letterSpacing: '-.012em',
+                    textWrap: 'pretty',
+                  }}
                 >
-                  {i18nService.t(resolveHomeGreetingKey())}
-                </h2>
-                <p
-                  className="mt-2 text-[length:var(--lobster-text-promptLarge)] font-normal leading-[var(--lobster-leading-promptLarge)] text-secondary animate-fade-in-up"
-                  style={{ animationDelay: '120ms', animationFillMode: 'both' }}
-                >
-                  {i18nService.t('coworkHomeTagline')}
-                </p>
+                  {i18nService.t('coworkHomeHeadline')}
+                </h1>
               </div>
 
-              {/* Prompt Input Area - Large version with folder selector */}
-              <div
-                className="relative z-30 mt-9 w-full max-w-3xl animate-fade-in-up"
-                style={{ animationDelay: '180ms', animationFillMode: 'both' }}
-              >
+              <div className="relative z-30 w-full max-w-[800px]">
+                {/* What is in the cloud, above the composer
+                    (docs/maties/cloud.md). Nothing is drawn when there is
+                    nothing up there. */}
+                <CloudWorkStrip />
                 <CoworkPromptInput
                   ref={promptInputRef}
                   onSubmit={handleStartSession}
@@ -979,7 +916,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({
                   showModelSelector={true}
                   showAgentSelector={true}
                   onManageSkills={() => onShowSkills?.()}
-                  onManageKits={() => onShowKits?.()}
                   onGoalCommand={handleStartGoalSession}
                 />
                 <EnterpriseQuotaPrompt
@@ -988,10 +924,10 @@ const CoworkView: React.FC<CoworkViewProps> = ({
                 />
               </div>
 
-              {/* Quick Actions */}
               <div
-                className="relative z-0 mt-8 flex w-full max-w-3xl flex-col items-center animate-fade-in-up"
-                style={{ animationDelay: '260ms', animationFillMode: 'both' }}
+                className="scrollbar-hidden relative z-[1] flex w-full max-w-[800px] shrink-0 flex-col items-center overflow-x-auto"
+                style={{ paddingTop: 'clamp(14px, 2.4vh, 24px)' }}
+                aria-label={i18nService.t('coworkSuggestions')}
               >
                 <QuickActionBar
                   actions={quickActions}
@@ -1007,10 +943,7 @@ const CoworkView: React.FC<CoworkViewProps> = ({
                     />
                   </div>
                 )}
-                <CreditsResetCampaignFloat />
               </div>
-
-              <div aria-hidden="true" className="w-full min-h-[24px] flex-[3_0_0px]" />
             </div>
           </div>
         </>

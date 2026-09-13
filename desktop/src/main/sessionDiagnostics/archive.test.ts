@@ -84,21 +84,21 @@ describe('sessionDiagnosticsArchive', () => {
     });
 
     expect(fileName).toBe(
-      'lobsterai-diagnostics-LOFTER content safety review Prompt-session--20260703-010203.zip',
+      'maties-diagnostics-LOFTER content safety review Prompt-session--20260703-010203.zip',
     );
   });
 
   test('normalizes unusual characters and bounds the file name length', () => {
     const fileName = buildSessionDiagnosticsDefaultFileName({
-      title: `CON.\u0000\u200B😀<>:"/\\|?* ${'会'.repeat(100)}`,
-      sessionId: '../../会话?session-id',
+      title: `CON.\u0000\u200B😀<>:"/\\|?* ${'é'.repeat(100)}`,
+      sessionId: '../../?session-id',
       now: new Date(2026, 6, 3, 1, 2, 3),
     });
 
     expect(fileName).toBe(
-      `lobsterai-diagnostics-CON ${'会'.repeat(36)}-session--20260703-010203.zip`,
+      `maties-diagnostics-CON ${'é'.repeat(36)}-session--20260703-010203.zip`,
     );
-    expect(Array.from(fileName)).toHaveLength(91);
+    expect(Array.from(fileName)).toHaveLength(88);
     expect(fileName).not.toMatch(/[<>:"/\\|?*\u0000-\u001F\u200B]/);
   });
 

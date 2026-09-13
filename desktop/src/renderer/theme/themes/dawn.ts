@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const dawn: ThemeDefinition = {
   meta: {
     id: 'dawn',
-    name: '晨光蓝白',
-    description: '明亮通透的蓝白色默认主题，清爽舒适',
+    name: 'Dawn',
+    description: 'The bright, airy blue-and-white default theme, fresh and comfortable',
     appearance: 'light',
     preview: ['#f8fafc', '#3b82f6', '#60a5fa', '#14b8a6'],
   },

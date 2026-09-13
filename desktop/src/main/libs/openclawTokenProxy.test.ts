@@ -20,10 +20,10 @@ beforeEach(() => {
   consumeRecentOpenClawTokenProxyQuotaError();
 });
 
-test('refreshes LobsterAI credentials for 401 but not 403', () => {
-  expect(testUtils.shouldRefreshLobsterAIToken(401)).toBe(true);
-  expect(testUtils.shouldRefreshLobsterAIToken(200)).toBe(false);
-  expect(testUtils.shouldRefreshLobsterAIToken(403)).toBe(false);
+test('refreshes Maties credentials for 401 but not 403', () => {
+  expect(testUtils.shouldRefreshMatiesToken(401)).toBe(true);
+  expect(testUtils.shouldRefreshMatiesToken(200)).toBe(false);
+  expect(testUtils.shouldRefreshMatiesToken(403)).toBe(false);
 });
 
 test('turns only transient refresh failures into temporary service errors', () => {
@@ -87,28 +87,28 @@ function flushStreamEvents(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
 }
 
-test('extracts LobsterAI monthly quota error from proxy SSE packet', () => {
+test('extracts Maties monthly quota error from proxy SSE packet', () => {
   const packet = [
     'event: error',
-    'data: {"type":"error","error":{"type":"proxy_error","message":"本月积分已用完","code":40202}}',
+    'data: {"type":"error","error":{"type":"proxy_error","message":"Monthly credits have been used up","code":40202}}',
   ].join('\n');
 
   expect(testUtils.extractQuotaErrorFromProxySSEPacket(packet)).toEqual({
-    message: '本月积分已用完',
+    message: 'Monthly credits have been used up',
     code: 40202,
   });
 });
 
 test('extracts enterprise quota error from unified non-stream response', () => {
   expect(testUtils.extractQuotaErrorFromProxyErrorPayload(
-    JSON.stringify({ code: 41607, message: '团队积分池已用完', data: null }),
+    JSON.stringify({ code: 41607, message: 'The team credit pool has been used up', data: null }),
   )).toEqual({
-    message: '团队积分池已用完',
+    message: 'The team credit pool has been used up',
     code: 41607,
   });
 });
 
-test('ignores generic HTTP 402 without LobsterAI quota code or message', () => {
+test('ignores generic HTTP 402 without Maties quota code or message', () => {
   const packet = [
     'event: error',
     'data: {"error":{"message":"Request failed with status 402"}}',
@@ -120,18 +120,18 @@ test('ignores generic HTTP 402 without LobsterAI quota code or message', () => {
 test('scans split SSE chunks and stores a recent quota error', () => {
   const now = 1_000;
   let buffer = testUtils.scanProxySSEBufferForQuotaError(
-    'event: error\ndata: {"type":"error","error":{"message":"本月',
+    'event: error\ndata: {"type":"error","error":{"message":"Monthly credits',
     now,
   );
 
   buffer = testUtils.scanProxySSEBufferForQuotaError(
-    `${buffer}积分已用完","code":40202}}\n\n`,
+    `${buffer} have been used up","code":40202}}\n\n`,
     now + 1,
   );
 
   expect(buffer).toBe('');
   expect(consumeRecentOpenClawTokenProxyQuotaError(now + 2)).toEqual({
-    message: '本月积分已用完',
+    message: 'Monthly credits have been used up',
     code: 40202,
     capturedAt: now + 1,
   });
@@ -214,7 +214,7 @@ test('does not revoke enterprise membership for non-error events, malformed JSON
 });
 
 test('expires stale remembered quota errors', () => {
-  testUtils.rememberQuotaError({ message: '本月积分已用完', code: 40202 }, 1_000);
+  testUtils.rememberQuotaError({ message: 'Monthly credits have been used up', code: 40202 }, 1_000);
 
   expect(consumeRecentOpenClawTokenProxyQuotaError(32_000)).toBeNull();
 });
@@ -231,7 +231,7 @@ test('hydrates missing Gemini package model tool call thought signatures', () =>
             type: 'function',
             function: {
               name: 'memory_search',
-              arguments: '{"query":"福利公告"}',
+              arguments: '{"query":"benefits notice"}',
             },
           },
         ],
@@ -382,22 +382,22 @@ test('adds fixed capability, client version, and enterprise context headers with
     {
       accept: 'text/event-stream',
       'content-type': 'application/json',
-      'x-lobsterai-client-capabilities': 'attacker-controlled',
-      'x-lobsterai-client-version': '0.0.0',
+      'x-maties-client-capabilities': 'attacker-controlled',
+      'x-maties-client-version': '0.0.0',
     },
     '2026.7.23',
     {
-      'X-LobsterAI-Account-Mode': 'enterprise',
-      'X-LobsterAI-Enterprise-Id': '1001',
+      'X-Maties-Account-Mode': 'enterprise',
+      'X-Maties-Enterprise-Id': '1001',
     },
   )).toEqual({
     Authorization: 'Bearer access-token',
     Accept: 'text/event-stream',
     'Content-Type': 'application/json',
-    'X-LobsterAI-Client-Capabilities': 'kimi-k3-agentic-v1,thinking-level-control-v1',
-    'X-LobsterAI-Client-Version': '2026.7.23',
-    'X-LobsterAI-Account-Mode': 'enterprise',
-    'X-LobsterAI-Enterprise-Id': '1001',
+    'X-Maties-Client-Capabilities': 'kimi-k3-agentic-v1,thinking-level-control-v1',
+    'X-Maties-Client-Version': '2026.7.23',
+    'X-Maties-Account-Mode': 'enterprise',
+    'X-Maties-Enterprise-Id': '1001',
   });
 });
 
@@ -539,14 +539,14 @@ test('node stream: upstream SSE error payload still passes through and ends clea
   const res = createMockProxyResponse();
 
   testUtils.pipeStreamingResponseWithQuotaScan(upstream, asServerResponse(res));
-  upstream.write('event: error\ndata: {"type":"error","error":{"type":"proxy_error","message":"本月积分已用完","code":40202}}\n\n');
+  upstream.write('event: error\ndata: {"type":"error","error":{"type":"proxy_error","message":"Monthly credits have been used up","code":40202}}\n\n');
   upstream.end();
   await flushStreamEvents();
 
   expect(res.end).toHaveBeenCalledTimes(1);
   expect(res.destroy).not.toHaveBeenCalled();
   expect(consumeRecentOpenClawTokenProxyQuotaError()).toMatchObject({
-    message: '本月积分已用完',
+    message: 'Monthly credits have been used up',
     code: 40202,
   });
 });

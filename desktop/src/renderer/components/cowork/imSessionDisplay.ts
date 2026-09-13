@@ -12,17 +12,17 @@ interface IMDisplayTitleResult {
 const DEFAULT_ICON_CLASS_NAME = 'h-4 w-4 rounded-sm object-contain';
 
 const IM_TITLE_PREFIXES: Record<Platform, readonly string[]> = {
-  weixin: ['[微信]', '[WeChat]'],
-  dingtalk: ['[钉钉]', '[DingTalk]'],
-  feishu: ['[飞书]', '[Feishu]'],
-  wecom: ['[企微]', '[企业微信]', '[WeCom]'],
+  weixin: ['[WeChat]'],
+  dingtalk: ['[DingTalk]'],
+  feishu: ['[Feishu]'],
+  wecom: ['[WeCom]'],
   qq: ['[QQ]'],
-  nim: ['[云信]', '[NIM]', '[NetEase IM]', '云信-', 'NIM-', 'NetEase IM-'],
-  'netease-bee': ['[小蜜蜂]', '[Xiaomifeng]', '[NetEase Bee]', '[Netease Bee]'],
+  nim: ['[NIM]', '[NetEase IM]', 'NIM-', 'NetEase IM-'],
+  'netease-bee': ['[Xiaomifeng]', '[NetEase Bee]', '[Netease Bee]'],
   popo: ['[POPO]'],
   telegram: ['[TG]', '[Telegram]'],
   discord: ['[Discord]'],
-  email: ['[龙虾邮箱]', '[clawEmail]', '[邮件]', '[Email]'],
+  email: ['[clawEmail]', '[Email]'],
 };
 
 const IM_SESSION_ICON_SCALE_CLASS_NAMES: Partial<Record<Platform, string>> = {

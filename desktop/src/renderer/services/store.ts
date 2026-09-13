@@ -1,4 +1,4 @@
-// 删除重复的类型声明，使用全局类型定义
+// Duplicate type declarations removed; the global type definitions are used instead
 export interface LocalStore {
   getItem<T>(key: string): Promise<T | null>;
   getItemStrict<T>(key: string): Promise<T | null>;

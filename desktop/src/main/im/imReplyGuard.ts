@@ -1,8 +1,8 @@
 import type { CoworkMessage } from '../coworkStore';
 
-export const DEFAULT_IM_EMPTY_REPLY = '处理完成，但没有生成回复。';
-export const UNSCHEDULED_REMINDER_FAILURE_REPLY = '这次没有真正创建定时任务，所以不会自动提醒。请重试。';
-export const FAILED_REMINDER_FAILURE_REPLY = '定时任务创建失败，所以不会自动提醒。请重试。';
+export const DEFAULT_IM_EMPTY_REPLY = 'Done, but no reply was generated.';
+export const UNSCHEDULED_REMINDER_FAILURE_REPLY = 'The scheduled task was not actually created this time, so there will be no automatic reminder. Please try again.';
+export const FAILED_REMINDER_FAILURE_REPLY = 'The scheduled task could not be created, so there will be no automatic reminder. Please try again.';
 
 const REFERENCE_UNSCHEDULED_REMINDER_NOTE =
   'Note: I did not schedule a reminder in this turn, so this will not trigger automatically.';
@@ -10,17 +10,18 @@ const REFERENCE_UNSCHEDULED_REMINDER_NOTE =
 const REMINDER_COMMITMENT_PATTERNS = [
   /\b(?:i\s*['’]?ll|i will)\s+(?:make sure to\s+)?(?:remember|remind|ping|follow up|follow-up|check back|circle back)\b/i,
   /\b(?:i\s*['’]?ll|i will)\s+(?:set|create|schedule)\s+(?:a\s+)?reminder\b/i,
-  /(?:我会|我来|稍后|到时间后我会|届时我会|之后我会).{0,24}(?:提醒你|提醒您|通知你|通知您|叫你|叫您)/u,
-  /(?:\d+\s*(?:秒|秒钟|分钟|小时|天)后|明天|后天|今晚|稍后).{0,16}(?:会)?(?:提醒你|提醒您|通知你|通知您|叫你|叫您)/u,
-  /(?:已|已经).{0,12}(?:为你|帮你|替你)?(?:设置|创建|添加|安排|做好).{0,18}(?:提醒|定时任务|闹钟)/u,
-  /定时任务创建成功/u,
-  /到时间后我会(?:自动)?提醒(?:你|您)/u,
+  /\b(?:in\s+\d+\s*(?:seconds?|minutes?|hours?|days?)|tomorrow|tonight|later)\b.{0,16}\b(?:i\s*['’]?ll|i will)\s+(?:remind|notify|ping)\s+you\b/i,
+  /\b(?:i\s*['’]?ve|i have|i)\s+(?:already\s+)?(?:set|created|added|scheduled)\s+(?:a\s+|the\s+|your\s+)?(?:reminder|scheduled task|alarm)\b/i,
+  /\b(?:reminder|scheduled task)\s+(?:has been\s+|was\s+|is\s+)?(?:set|created|scheduled)\b/i,
+  /\bscheduled task created successfully\b/i,
+  /\bwhen the time comes,?\s+i\s*['’]?ll\s+(?:automatically\s+)?remind you\b/i,
 ];
 
 const REMINDER_NEGATION_PATTERNS = [
-  /(?:无法|不能|没法|未能|没有|并未).{0,12}(?:设置|创建|添加|安排).{0,18}(?:提醒|定时任务|闹钟)/u,
-  /(?:这次|当前|本次).{0,12}(?:没有真正创建|未真正创建).{0,18}(?:提醒|定时任务)/u,
-  /不会自动提醒/u,
+  /\b(?:can(?:'|’)?t|cannot|could not|couldn(?:'|’)?t|unable to|did not|didn(?:'|’)?t|have not|haven(?:'|’)?t)\b.{0,12}\b(?:set|create|add|schedule)\b.{0,18}\b(?:reminder|scheduled task|alarm)\b/i,
+  /\b(?:was not|wasn(?:'|’)?t)\s+(?:actually\s+)?(?:created|scheduled|set)\b/i,
+  /\bno automatic reminder\b/i,
+  /\bwill not (?:be\s+)?remind(?:ed)?\b/i,
   /did not schedule a reminder/i,
   /failed to schedule/i,
 ];
@@ -138,7 +139,7 @@ export function analyzeIMReply(messages: CoworkMessage[]): IMReplyAnalysis {
   if (guardApplied) {
     text = lastCronAddError ? FAILED_REMINDER_FAILURE_REPLY : UNSCHEDULED_REMINDER_FAILURE_REPLY;
   } else if (assistantText === DEFAULT_IM_EMPTY_REPLY && successfulCronAdds > 0) {
-    text = '已创建定时任务。';
+    text = 'Scheduled task created.';
   }
 
   return {

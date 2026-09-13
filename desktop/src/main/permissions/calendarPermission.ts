@@ -20,7 +20,7 @@ export async function checkCalendarPermission(): Promise<SystemPermissionStatusV
           : '';
 
       if (
-        stderr.includes('不能获取对象') ||
+        stderr.includes("Can't get object") ||
         stderr.includes('not authorized') ||
         stderr.includes('Permission denied')
       ) {

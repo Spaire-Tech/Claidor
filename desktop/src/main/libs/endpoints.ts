@@ -25,10 +25,9 @@ export const isTestModeEnabled = (): boolean => {
 };
 
 /**
- * Claidor's API and web app. The app talks to these two hosts and to no
- * other first-party server: the API serves the desktop account protocol
- * under `/desktop` (`server/polar/desktop`), the web app is where people
- * sign in and where the browser lands afterwards.
+ * Claidor's web app and API. Maties lives on these two hosts and nowhere else:
+ * the API serves the account protocol under `/desktop`
+ * (`server/polar/desktop`), the web app is where people sign in.
  */
 const CLAIDOR_API_BASE_URL = 'https://api.claidor.com';
 const CLAIDOR_APP_BASE_URL = 'https://app.claidor.com';
@@ -48,18 +47,18 @@ const getClaidorAppBaseUrl = (): string => (
  * Used for auth exchange/refresh, models, proxy, etc.
  */
 export const getServerApiBaseUrl = (): string => {
-  // The override is a bare origin; the account protocol always lives
-  // under /desktop on whichever Claidor API answers.
+  // The override is a bare loopback origin; the account protocol always
+  // lives under /desktop on whichever Claidor API answers.
   const defaultOrigin = getClaidorApiBaseUrl();
   const origin = resolveDevelopmentServerBaseUrl({
     defaultBaseUrl: defaultOrigin,
-    developmentOverride: process.env.CLAIDOR_SERVER_BASE_URL,
+    developmentOverride: process.env.MATIES_SERVER_BASE_URL,
     isDev: process.env.NODE_ENV === 'development',
     isPackaged: app.isPackaged,
   });
   if (origin !== defaultOrigin && loggedDevelopmentServerBaseUrl !== origin) {
     console.warn(
-      `[Endpoints] routing all Claidor server traffic to development origin ${origin}`,
+      `[Endpoints] routing all Maties server traffic to development origin ${origin}`,
     );
     loggedDevelopmentServerBaseUrl = origin;
   }
@@ -70,17 +69,12 @@ export const getHtmlSharePublicBaseUrl = (): string => {
   return `${getServerApiBaseUrl()}${HtmlSharePublicRoute.Root}`;
 };
 
-// Updates, the skill store and the kit store are answered by Claidor's
-// own API under the same /desktop namespace (`server/polar/desktop`).
-// They are repointed rather than left alone because leaving them means
-// this app calls NetEase's servers on every launch. Until Claidor
-// publishes releases and catalogues they answer « nothing new » and
-// « empty », never an error.
+// Updates and the skill store are answered by Claidor's API
+// under the same /desktop namespace. Until Claidor publishes releases and
+// catalogues they answer « nothing new » and « empty », never an error.
 export const getUpdateCheckUrl = (): string => `${getServerApiBaseUrl()}/api/updates/check`;
 
-export const getManualUpdateCheckUrl = (): string => (
-  `${getServerApiBaseUrl()}/api/updates/check-manual`
-);
+export const getManualUpdateCheckUrl = (): string => `${getServerApiBaseUrl()}/api/updates/check-manual`;
 
 export const getFallbackDownloadUrl = (): string => `${getClaidorAppBaseUrl()}/desktop`;
 
@@ -89,6 +83,3 @@ export const getSkillStoreUrl = (): string => `${getServerApiBaseUrl()}/api/skil
 // The web app's home for the signed-in person.
 export const getPortalTasksUrl = (): string => `${getClaidorAppBaseUrl()}/`;
 
-export const getKitStoreUrl = (): string => `${getServerApiBaseUrl()}/api/kit-store`;
-
-export const getMcpMarketplaceUrl = (): string => `${getServerApiBaseUrl()}/api/mcp-marketplace`;

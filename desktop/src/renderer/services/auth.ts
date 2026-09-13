@@ -11,7 +11,7 @@ import {
 import { EnterpriseAccountMode } from '@shared/enterpriseAccount/constants';
 import {
   type ModelThinkingConfig,
-  parseLobsterAIRequestCapabilities,
+  parseMatiesRequestCapabilities,
   parseModelThinkingConfig,
   ProviderName,
 } from '@shared/providers';
@@ -200,7 +200,7 @@ export function mapPricingCatalogTextModelsToServerModels(
     const modelName = readString(model.modelName) || modelId;
     const provider = readString(model.providerLabel)
       || readString(model.provider)
-      || 'LobsterAI';
+      || 'Maties';
     const contextWindow = readPositiveNumber(model.contextWindow);
     const costMultiplier = readPositiveNumber(model.costMultiplier);
     const thinkingConfig = model.supportsThinking === true
@@ -211,7 +211,7 @@ export function mapPricingCatalogTextModelsToServerModels(
       id: modelId,
       name: modelName,
       provider,
-      providerKey: ProviderName.LobsteraiServer,
+      providerKey: ProviderName.MatiesServer,
       isServerModel: true,
       supportsImage: model.supportsImage === true,
       supportsThinking: model.supportsThinking === true,
@@ -240,12 +240,12 @@ export function mapAvailableServerModelsToModels(
     const thinkingConfig = model.supportsThinking === true
       ? parseModelThinkingConfig(model.thinkingConfig)
       : undefined;
-    const requestCapabilities = parseLobsterAIRequestCapabilities(model.requestCapabilities);
+    const requestCapabilities = parseMatiesRequestCapabilities(model.requestCapabilities);
     return {
       id: model.modelId,
       name: model.modelName,
       provider: model.provider,
-      providerKey: ProviderName.LobsteraiServer,
+      providerKey: ProviderName.MatiesServer,
       isServerModel: true,
       serverApiFormat: model.apiFormat,
       runtimeProfile: model.runtimeProfile,
@@ -458,11 +458,7 @@ class AuthService {
     writeAuthRendererLog('info', `login attempt ${attemptId} started`);
 
     try {
-      // No login URL is passed: the main process builds it from
-      // `getServerApiBaseUrl()`, which is the one place that knows which
-      // Claidor API answers. Upstream fetched the address from a remote
-      // config service instead, which meant the renderer, not the base
-      // URL, decided where sign-in went.
+      // The main process opens `${Claidor API}/desktop/login`; no lookup is needed.
       const result = await window.electron.auth.login();
       if (result.success) {
         writeAuthRendererLog('info', `login attempt ${attemptId} handed off to the system browser`);
@@ -818,7 +814,7 @@ class AuthService {
     const cleanup = this.applyLoggedOutState(true);
     const toastKey = event.reason === AuthSessionChangeReason.EnterpriseMembershipRevoked
       ? 'coworkErrorEnterpriseMembershipRevoked'
-      : 'coworkErrorLobsterAILoginExpired';
+      : 'coworkErrorMatiesLoginExpired';
     window.dispatchEvent(new CustomEvent('app:showToast', {
       detail: i18nService.t(toastKey),
     }));

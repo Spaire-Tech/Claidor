@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const sakura: ThemeDefinition = {
   meta: {
     id: 'sakura',
-    name: '樱花粉白',
-    description: '柔和粉色主题，优雅浪漫',
+    name: 'Sakura',
+    description: 'A soft pink theme, elegant and romantic',
     appearance: 'light',
     preview: ['#fdf2f8', '#ec4899', '#f472b6', '#a855f7'],
   },

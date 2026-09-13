@@ -106,7 +106,7 @@ function runResponsesSequence(sequence) {
 test('A: added -> delta* -> done emits exactly one final arguments payload', () => {
   const responseId = 'resp_a';
   const model = 'gpt-5.2';
-  const finalArguments = '{"questions":[{"header":"安全确认","question":"继续?","options":[{"label":"允许","description":"ok"},{"label":"拒绝","description":"no"}]}],"answers":{}}';
+  const finalArguments = '{"questions":[{"header":"Security check","question":"Continue?","options":[{"label":"Allow","description":"ok"},{"label":"Deny","description":"no"}]}],"answers":{}}';
 
   const result = runResponsesSequence([
     {
@@ -130,7 +130,7 @@ test('A: added -> delta* -> done emits exactly one final arguments payload', () 
         model,
         output_index: 0,
         call_id: 'call_a',
-        delta: '{"questions":[{"header":"安全确认",',
+        delta: '{"questions":[{"header":"Security check",',
       },
     },
     {
@@ -140,7 +140,7 @@ test('A: added -> delta* -> done emits exactly one final arguments payload', () 
         model,
         output_index: 0,
         call_id: 'call_a',
-        delta: '"question":"继续?"}]}',
+        delta: '"question":"Continue?"}]}',
       },
     },
     {

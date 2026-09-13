@@ -15,7 +15,7 @@ describe('resolveChannelSessionNextStatus', () => {
 
   test('stale subagent "running" status cannot pin the session while no run is active', () => {
     // Regression: cron delivery mirrors into an IM conversation whose gateway
-    // row still carried status="running"; the local record stuck at 执行中.
+    // row still carried status="running"; the local record stuck at "running".
     expect(
       resolveChannelSessionNextStatus({
         hasActiveRun: false,

@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * BrainIcon - 记忆图标，灯泡与闪电组合（Memory icon）
+ * BrainIcon - memory icon, a light bulb combined with a lightning bolt
  */
 const BrainIcon: React.FC<{ className?: string }> = ({ className }) => {
   return (

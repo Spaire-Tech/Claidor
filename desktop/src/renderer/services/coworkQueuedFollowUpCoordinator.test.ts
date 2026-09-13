@@ -240,8 +240,7 @@ describe('CoworkQueuedFollowUpCoordinator', () => {
       ...makeSteer('steer-1'),
       skillPrompt: 'selected skill routing',
       activeSkillIds: ['skill-a'],
-      runtimeSkillIds: ['skill-a', 'skill-from-kit'],
-      kitIds: ['kit-a'],
+      runtimeSkillIds: ['skill-a', 'skill-b'],
       mediaSelection: { mode: 'image', modelId: 'image-model' },
     });
 
@@ -252,8 +251,7 @@ describe('CoworkQueuedFollowUpCoordinator', () => {
       sessionId: 'session-a',
       systemPrompt: expect.stringContaining('selected skill routing'),
       activeSkillIds: ['skill-a'],
-      runtimeSkillIds: ['skill-a', 'skill-from-kit'],
-      kitIds: ['kit-a'],
+      runtimeSkillIds: ['skill-a', 'skill-b'],
       mediaSelection: { mode: 'image', modelId: 'image-model' },
     }));
   });

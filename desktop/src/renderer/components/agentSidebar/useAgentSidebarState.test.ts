@@ -188,7 +188,7 @@ test('toAgentSidebarTaskNode marks sessions linked to scheduled tasks', () => {
 
   const legacyZhSession = {
     ...makeSession('legacy-zh-session', 100),
-    title: '[定时] 科技早报',
+    title: '[cron] Tech briefing',
   };
   const legacyEnSession = {
     ...makeSession('legacy-en-session', 100),

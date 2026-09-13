@@ -4,6 +4,8 @@ import { describe, expect, test } from 'vitest';
 
 import VoiceInputRecordingStatus from './VoiceInputRecordingStatus';
 
+const LISTENING_HINT = 'Supports mixed Chinese and English. Recognizing...';
+
 describe('VoiceInputRecordingStatus', () => {
   test('shows the listening hint when requested', () => {
     const html = renderToStaticMarkup(
@@ -13,7 +15,7 @@ describe('VoiceInputRecordingStatus', () => {
       }),
     );
 
-    expect(html).toContain('支持中英混合，正在识别中...');
+    expect(html).toContain(LISTENING_HINT);
     expect(html).toContain('0:01');
   });
 
@@ -37,7 +39,7 @@ describe('VoiceInputRecordingStatus', () => {
       }),
     );
 
-    expect(html).not.toContain('支持中英混合，正在识别中...');
+    expect(html).not.toContain(LISTENING_HINT);
     expect(html).toContain('62:03');
   });
 

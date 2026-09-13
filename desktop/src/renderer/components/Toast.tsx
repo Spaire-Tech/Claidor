@@ -1,4 +1,3 @@
-import { InformationCircleIcon } from '@heroicons/react/20/solid';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 
@@ -21,42 +20,43 @@ interface ToastProps {
   onClose?: () => void;
 }
 
+/**
+ * A toast (docs/maties/design.md, section 6): bottom centre, radius 13,
+ * blurred white, 13.5px, one line, one action at most.
+ */
 const Toast: React.FC<ToastProps> = ({ message, closeLabel, actionLabel, onAction, onClose }) => {
   return (
-    <div className="pointer-events-none fixed left-1/2 top-1/2 z-[10000] w-max max-w-full -translate-x-1/2 -translate-y-1/2 px-4">
+    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[10000] flex justify-center px-4">
       <div
-        className="pointer-events-auto w-fit max-w-[min(28rem,calc(100vw-2rem))] rounded-xl border border-border-subtle bg-surface px-3.5 py-2.5 text-foreground shadow-elevated animate-scale-in"
+        className="maties-toast maties-in pointer-events-auto flex w-fit max-w-[min(30rem,calc(100vw-2rem))] items-center gap-3 py-2 pl-4 pr-2"
         role="status"
         aria-live="polite"
       >
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div className="shrink-0 rounded-full bg-primary-muted p-1.5">
-            <InformationCircleIcon className="h-4 w-4 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1 text-sm font-medium leading-snug [overflow-wrap:anywhere]">
-            {message}
-          </div>
-          {actionLabel && onAction && (
-            <button
-              onClick={() => {
-                onAction();
-                onClose?.();
-              }}
-              className="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1 text-sm font-medium text-primary transition-colors hover:bg-primary-muted"
-            >
-              {actionLabel}
-            </button>
-          )}
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="shrink-0 text-secondary hover:text-foreground rounded-full p-1 hover:bg-surface-raised transition-colors"
-              aria-label={closeLabel}
-            >
-              <XMarkIcon className="h-4 w-4" />
-            </button>
-          )}
+        <div className="min-w-0 flex-1 truncate leading-snug">
+          {message}
         </div>
+        {actionLabel && onAction && (
+          <button
+            type="button"
+            onClick={() => {
+              onAction();
+              onClose?.();
+            }}
+            className="maties-pill-sm is-link -my-0.5 shrink-0"
+          >
+            {actionLabel}
+          </button>
+        )}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="maties-icon-button h-7 w-7 shrink-0"
+            aria-label={closeLabel}
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );

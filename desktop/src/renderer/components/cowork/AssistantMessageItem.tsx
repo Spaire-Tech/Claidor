@@ -1,3 +1,5 @@
+import '../design/conversation.css';
+
 import React, { useCallback, useEffect, useState } from 'react';
 
 import {
@@ -6,75 +8,87 @@ import {
 } from '../../../shared/cowork/goal';
 import { i18nService } from '../../services/i18n';
 import type { CoworkMessage, CoworkMessageMetadata } from '../../types/cowork';
-import { formatMessageDateTime } from '../../utils/tokenFormat';
+import { formatTokenCount } from '../../utils/tokenFormat';
 import GoalIcon from '../icons/GoalIcon';
 import MessageForkIcon from '../icons/MessageForkIcon';
-import MarkdownContent from '../MarkdownContent';
+import MarkdownContent, { MarkdownVariant } from '../MarkdownContent';
 import { reportConversationMessageAction } from './conversationAnalytics';
 import ImagePreviewModal, { type ImagePreviewSource } from './ImagePreviewModal';
-import { MessageCopyButton } from './MessageActionButton';
-import {
-  getMessageModelLabel,
-  MEDIA_TOKEN_DISPLAY_RE,
-  messageMetaClassName,
-} from './messageDisplayUtils';
+import { MessageActionButton, MessageCopyButton } from './MessageActionButton';
+import { MEDIA_TOKEN_DISPLAY_RE } from './messageDisplayUtils';
 import ProposedPlanBlock from './ProposedPlanBlock';
 import { parseProposedPlanBlock } from './proposedPlanParser';
 
 export { MessageCopyButton as CopyButton } from './MessageActionButton';
 
-const ForkButton: React.FC<{
-  message: CoworkMessage;
-  visible: boolean;
-  onFork: () => void;
-}> = ({ message, visible, onFork }) => (
-  <button
-    type="button"
-    onClick={(event) => {
-      event.stopPropagation();
-      reportConversationMessageAction({
-        actionType: 'fork_from_assistant_message',
-        message,
-      });
-      onFork();
-    }}
-    className={`p-1.5 rounded-md hover:bg-surface-raised transition-all duration-200 ${
-      visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-    }`}
-    tabIndex={visible ? 0 : -1}
-    title={i18nService.t('coworkForkFromMessage')}
-    aria-label={i18nService.t('coworkForkFromMessage')}
+const RetryIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.9}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
   >
-    <MessageForkIcon className="h-4 w-4 text-secondary" />
-  </button>
+    <path d="M20 12a8 8 0 1 1-2.6-5.9" />
+    <polyline points="20,4 20,9.5 14.5,9.5" />
+  </svg>
 );
+
+/** The token figures the app already computes for a turn, in plain words. */
+export const formatTurnTokens = (metadata?: CoworkMessageMetadata | null): string | null => {
+  const usage = metadata?.usage;
+  if (!usage) return null;
+  const input = typeof usage.inputTokens === 'number' ? usage.inputTokens : null;
+  const output = typeof usage.outputTokens === 'number' ? usage.outputTokens : null;
+  if (input == null && output == null) return null;
+  return i18nService.t('matiesTurnTokens')
+    .replace('{input}', formatTokenCount(input ?? 0))
+    .replace('{output}', formatTokenCount(output ?? 0));
+};
 
 // ── AssistantMessageItem ─────────────────────────────────────────────────────
 
+/**
+ * The answer (docs/maties/design.md, section 4): Newsreader prose with the
+ * markdown the app renders, the stream while it arrives, and under it, on
+ * hover, copy, fork, retry and the token figures in 12.5 px muted.
+ */
 const AssistantMessageItem: React.FC<{
   message: CoworkMessage;
   resolveLocalFilePath?: (href: string, text: string) => string | null;
   mapDisplayText?: (value: string) => string;
+  /** Draw the hover row under the answer (the last answer of a turn). */
   showCopyButton?: boolean;
   onFork?: (messageId: string) => void;
+  onRetry?: () => void;
   turnMetadata?: CoworkMessageMetadata | null;
   completedGoal?: CoworkGoal | null;
   planConfirmationMessageId?: string | null;
   onConfirmPlan?: (messageId: string) => void;
   onAdjustPlan?: (messageId: string) => void;
   forceSearchExpanded?: boolean;
+  /** True while this message is still arriving. */
+  streaming?: boolean;
+  /** Files the turn touched, for the chips in the prose. */
+  knownFiles?: string[];
 }> = ({
   message,
   resolveLocalFilePath,
   mapDisplayText,
   showCopyButton = false,
   onFork,
+  onRetry,
   turnMetadata,
   completedGoal,
   planConfirmationMessageId,
   onConfirmPlan,
   onAdjustPlan,
   forceSearchExpanded = false,
+  streaming = false,
+  knownFiles,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [expandedImage, setExpandedImage] = useState<ImagePreviewSource | null>(null);
@@ -85,7 +99,7 @@ const AssistantMessageItem: React.FC<{
     displayContent,
     proposedPlan.planText,
   ].filter((part): part is string => Boolean(part)).join('\n\n');
-  const modelLabel = getMessageModelLabel(turnMetadata);
+  const tokensLabel = formatTurnTokens(turnMetadata);
   const goalCompletionDuration = completedGoal
     ? formatCoworkGoalCompletionDuration(completedGoal)
     : null;
@@ -132,6 +146,62 @@ const AssistantMessageItem: React.FC<{
     setIsHovered(false);
   }, []);
 
+  const metaRow = showCopyButton && (
+    <div
+      className={`maties-meta mt-2 flex min-h-[28px] items-center gap-1 select-none transition-opacity duration-200 ${
+        metaVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
+      aria-hidden={!metaVisible}
+      data-cowork-search-exclude="true"
+    >
+      <MessageCopyButton
+        content={copyContent}
+        onCopy={(result) => reportConversationMessageAction({
+          actionType: 'copy_message',
+          message,
+          params: {
+            result,
+            copySource: 'assistant_message',
+            copiedLength: copyContent.length,
+          },
+        })}
+        visible={isHovered}
+      />
+      {onFork && (
+        <MessageActionButton
+          label={i18nService.t('matiesTurnFork')}
+          visible={isHovered}
+          onClick={(event) => {
+            event.stopPropagation();
+            reportConversationMessageAction({ actionType: 'fork_from_assistant_message', message });
+            onFork(message.id);
+          }}
+        >
+          <MessageForkIcon className="h-4 w-4" />
+        </MessageActionButton>
+      )}
+      {onRetry && (
+        <MessageActionButton
+          label={i18nService.t('matiesTurnRetry')}
+          visible={isHovered}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRetry();
+          }}
+        >
+          <RetryIcon className="h-4 w-4" />
+        </MessageActionButton>
+      )}
+      {tokensLabel && <span className="ml-1.5 tabular-nums">{tokensLabel}</span>}
+      {goalCompletionLabel && (
+        <span className="ml-1.5 inline-flex items-center gap-1" style={{ color: '#1f8a4c' }}>
+          <GoalIcon className="h-3.5 w-3.5" />
+          <span>{goalCompletionLabel}</span>
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <div
       className="relative focus:outline-none"
@@ -143,53 +213,18 @@ const AssistantMessageItem: React.FC<{
       onFocus={() => setIsHovered(true)}
       onBlur={handleBlur}
     >
-      <div className="text-foreground">
+      <div>
         {displayContent && (
-          <div>
-            <MarkdownContent
-              content={displayContent}
-              className="prose dark:prose-invert max-w-none"
-              resolveLocalFilePath={resolveLocalFilePath}
-              forceExpanded={forceSearchExpanded}
-              onImageClick={handleImageClick}
-            />
-            {showCopyButton && (
-              <div
-                className={messageMetaClassName(metaVisible)}
-                aria-hidden={!metaVisible}
-                data-cowork-search-exclude="true"
-              >
-                {goalCompletionLabel && (
-                  <span className="inline-flex items-center gap-1 text-secondary">
-                    <GoalIcon className="h-3.5 w-3.5" />
-                    <span>{goalCompletionLabel}</span>
-                  </span>
-                )}
-                <span>{formatMessageDateTime(message.timestamp)}</span>
-                {modelLabel && <span>{modelLabel}</span>}
-                {onFork && (
-                  <ForkButton
-                    message={message}
-                    visible={isHovered}
-                    onFork={() => onFork(message.id)}
-                  />
-                )}
-                <MessageCopyButton
-                  content={copyContent}
-                  onCopy={(result) => reportConversationMessageAction({
-                    actionType: 'copy_message',
-                    message,
-                    params: {
-                      result,
-                      copySource: 'assistant_message',
-                      copiedLength: copyContent.length,
-                    },
-                  })}
-                  visible={isHovered}
-                />
-              </div>
-            )}
-          </div>
+          <MarkdownContent
+            content={displayContent}
+            variant={MarkdownVariant.Answer}
+            className="max-w-none"
+            resolveLocalFilePath={resolveLocalFilePath}
+            forceExpanded={forceSearchExpanded}
+            onImageClick={handleImageClick}
+            streaming={streaming}
+            knownFiles={knownFiles}
+          />
         )}
         {proposedPlan.planText && (
           <div className={displayContent ? 'mt-4' : undefined}>
@@ -204,43 +239,8 @@ const AssistantMessageItem: React.FC<{
             />
           </div>
         )}
+        {metaRow}
       </div>
-      {showCopyButton && !displayContent && (
-        <div
-          className={messageMetaClassName(metaVisible)}
-          aria-hidden={!metaVisible}
-          data-cowork-search-exclude="true"
-        >
-          {goalCompletionLabel && (
-            <span className="inline-flex items-center gap-1 text-secondary">
-              <GoalIcon className="h-3.5 w-3.5" />
-              <span>{goalCompletionLabel}</span>
-            </span>
-          )}
-          <span>{formatMessageDateTime(message.timestamp)}</span>
-          {modelLabel && <span>{modelLabel}</span>}
-          {onFork && (
-            <ForkButton
-              message={message}
-              visible={isHovered}
-              onFork={() => onFork(message.id)}
-            />
-          )}
-          <MessageCopyButton
-            content={copyContent}
-            onCopy={(result) => reportConversationMessageAction({
-              actionType: 'copy_message',
-              message,
-              params: {
-                result,
-                copySource: 'assistant_message',
-                copiedLength: copyContent.length,
-              },
-            })}
-            visible={isHovered}
-          />
-        </div>
-      )}
       <ImagePreviewModal image={expandedImage} onClose={() => setExpandedImage(null)} />
     </div>
   );

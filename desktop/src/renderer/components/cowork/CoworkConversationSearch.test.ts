@@ -23,8 +23,8 @@ test('hides result navigation before a query is entered', () => {
   }));
 
   expect(html).not.toContain('border-t');
-  expect(html).not.toMatch(/(?:上一个结果|Previous result)/);
-  expect(html).not.toMatch(/(?:下一个结果|Next result)/);
+  expect(html).not.toContain('Previous result');
+  expect(html).not.toContain('Next result');
 });
 
 test('shows loading status without navigation before a query is entered', () => {
@@ -41,9 +41,9 @@ test('shows loading status without navigation before a query is entered', () => 
   }));
 
   expect(html).toContain('border-t');
-  expect(html).toMatch(/(?:正在搜索|Searching)/);
-  expect(html).not.toMatch(/(?:上一个结果|Previous result)/);
-  expect(html).not.toMatch(/(?:下一个结果|Next result)/);
+  expect(html).toContain('Searching');
+  expect(html).not.toContain('Previous result');
+  expect(html).not.toContain('Next result');
 });
 
 test('shows a specific message when the conversation exceeds the safe search budget', () => {
@@ -60,10 +60,10 @@ test('shows a specific message when the conversation exceeds the safe search bud
     onClose: () => undefined,
   }));
 
-  expect(html).toMatch(/(?:对话过大，无法完整搜索|too large to search completely)/i);
-  expect(html).not.toMatch(/(?:无法搜索当前对话|Unable to search this conversation)/);
-  expect(html).not.toMatch(/(?:上一个结果|Previous result)/);
-  expect(html).not.toMatch(/(?:下一个结果|Next result)/);
+  expect(html).toContain('too large to search completely');
+  expect(html).not.toContain('Unable to search this conversation');
+  expect(html).not.toContain('Previous result');
+  expect(html).not.toContain('Next result');
 });
 
 test('renders the Codex-style two-row search surface and result count', () => {
@@ -82,7 +82,7 @@ test('renders the Codex-style two-row search surface and result count', () => {
   expect(html).toContain('data-cowork-conversation-search="true"');
   expect(html).toContain('viewBox="0 0 34 34"');
   expect(html).toContain('value="needle"');
-  expect(html).toMatch(/2 \/ 7 (?:个结果|results)/);
+  expect(html).toContain('2 / 7 results');
   expect(html).toContain('border-t');
   expect(html).toContain('bg-surface-overlay');
   expect(html).toContain('rounded-3xl');
@@ -123,7 +123,7 @@ test('disables navigation buttons when the query has no results', () => {
   }));
 
   expect(html.match(/disabled=""/g)).toHaveLength(2);
-  expect(html).toMatch(/0 \/ 0 (?:个结果|results)/);
+  expect(html).toContain('0 / 0 results');
 });
 
 test('marks a capped result count', () => {
@@ -139,7 +139,5 @@ test('marks a capped result count', () => {
     onClose: () => undefined,
   }));
 
-  expect(html).toMatch(new RegExp(
-    `1 / ${CONVERSATION_SEARCH_MATCH_LIMIT}\\+ (?:个结果|results)`,
-  ));
+  expect(html).toContain(`1 / ${CONVERSATION_SEARCH_MATCH_LIMIT}+ results`);
 });
