@@ -472,16 +472,16 @@ sign-in followed by making your first agent — which the design already
 has a form and a voice picker for, and which would double as onboarding
 without drawing anything new.
 
-### 3. The name decides where the data lives — **decide, before release**
+### 3. The name decides where the data lives — **settled: Faiser**
 
-`src/main/appConstants.ts` exports `APP_NAME` and `DB_FILENAME`, and
-`APP_NAME` is what Electron's `app.getPath('userData')` resolves
-against. Change it after anyone has installed, and their conversations,
-memory, logins and engine state are orphaned in the old directory.
+`src/main/appConstants.ts` is the one definition site, and `APP_NAME` is
+what `configureUserDataPath()` joins onto `appData` — so it decides where
+a person's conversations, memory, logins and engine state live. Renaming
+after an install orphans all of it.
 
-So the name is not only branding. **Pick it before the first build goes
-to anyone outside**, or accept writing a migration that moves the
-directory on upgrade.
+Settled and applied on 13 September, before anything shipped, so no
+migration is owed. See `direction.md` §0 for what deliberately keeps the
+old name and why.
 
 ### 4. The design has no error state anywhere
 
@@ -595,11 +595,11 @@ after is how a design stops matching its spec. 3 next because everything
 visible sits on it. 4–6 are short once 3 exists. 7–9 are mostly content
 and can be worked in any order.
 
-Three answers are needed before the plan is complete, and they are in
-the audit above: **does a routine fire when the Mac is closed** (audit
-§1, and the deployed runner costs money either way), **what happens
-before the first thread** (§2), and **the name** (§3, because it decides
-where a person's data lives and cannot be changed for free later).
+Two answers are still needed, and they are in the audit above: **does a
+routine fire when the Mac is closed** (§1 — the deployed runner costs
+money either way), and **what happens before the first thread** (§2 —
+the founder is designing it, to land by the end of Stage 1). The third,
+the name, is settled: Faiser (§3).
 
 ## What I expect to get wrong
 

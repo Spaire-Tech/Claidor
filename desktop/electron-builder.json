@@ -1,7 +1,7 @@
 {
-  "appId": "com.lobsterai.app",
-  "productName": "LobsterAI",
-  "executableName": "LobsterAI",
+  "appId": "com.faiser.app",
+  "productName": "Faiser",
+  "executableName": "Faiser",
   "directories": {
     "output": "release"
   },
@@ -65,8 +65,8 @@
   ],
   "protocols": [
     {
-      "name": "LobsterAI",
-      "schemes": ["lobsterai"]
+      "name": "Faiser",
+      "schemes": ["faiser"]
     }
   ],
   "mac": {

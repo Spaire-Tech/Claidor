@@ -50,6 +50,7 @@ import {
   type ModelThinkingLevel,
   parseModelThinkingLevel,
 } from '../shared/providers/modelThinking';
+import { APP_HOME_DIR_NAME } from './appConstants';
 import {
   ContinuityCapsuleSource,
   type CoworkContinuityCapsule,
@@ -58,10 +59,10 @@ import {
 
 // Default working directory for new users
 const getDefaultWorkingDirectory = (): string => {
-  return path.join(os.homedir(), 'lobsterai', 'project');
+  return path.join(os.homedir(), APP_HOME_DIR_NAME, 'project');
 };
 
-const TASK_WORKSPACE_CONTAINER_DIR = '.lobsterai-tasks';
+const TASK_WORKSPACE_CONTAINER_DIR = `.${APP_HOME_DIR_NAME}-tasks`;
 
 const normalizeRecentWorkspacePath = (cwd: string): string => {
   const resolved = path.resolve(cwd);

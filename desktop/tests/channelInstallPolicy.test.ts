@@ -1,6 +1,14 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 
 import { describe, expect, test } from 'vitest';
+
+// Installer names and the web package url are both built from the product
+// name, so read it from the same file electron-builder does rather than
+// pinning it here — otherwise a rename breaks these tests instead of being
+// checked by them.
+const PRODUCT_NAME: string =
+  JSON.parse(fs.readFileSync('electron-builder.json', 'utf8')).productName;
 
 const runChannelDryRun = (args: string[], env: NodeJS.ProcessEnv = {}) => (
   spawnSync(process.execPath, ['scripts/dist-win-channel.cjs', ...args, '--dry-run'], {
@@ -39,7 +47,7 @@ const readWebArtifactName = (silentOnDoubleClick: boolean) => (
         LOBSTERAI_CHANNEL_BUILD: '1',
         LOBSTERAI_SILENT_ON_DOUBLE_CLICK: silentOnDoubleClick ? '1' : '0',
         LOBSTERAI_WEB_INSTALLER: '1',
-        LOBSTERAI_WEB_PKG_URL: 'https://cdn.example.test/LobsterAI.nsis.7z',
+        LOBSTERAI_WEB_PKG_URL: `https://cdn.example.test/${PRODUCT_NAME}.nsis.7z`,
       },
       encoding: 'utf8',
     },
@@ -121,7 +129,7 @@ describe('web installer build flags', () => {
       'npm run dist:win:web -- --keyfrom dictbind --silent --pkg-url <uploaded-url>',
     );
     expect(silent.stdout).toMatch(
-      /next: upload release[\\/]nsis-web[\\/]lobsterai-[^\s]+-x64\.nsis\.7z/,
+      new RegExp(`next: upload release[\\\\/]nsis-web[\\\\/]${PRODUCT_NAME.toLowerCase()}-[^\\s]+-x64\\.nsis\\.7z`),
     );
   });
 
@@ -131,7 +139,7 @@ describe('web installer build flags', () => {
       'dictbind',
       '--silent',
       '--pkg-url',
-      'https://cdn.example.test/lobsterai.nsis.7z',
+      `https://cdn.example.test/${PRODUCT_NAME.toLowerCase()}.nsis.7z`,
     ]);
 
     expect(stubOnly.status).toBe(0);
@@ -169,11 +177,11 @@ describe('web installer build flags', () => {
 
     expect(plain.status).toBe(0);
     expect(plain.stdout).toContain(
-      'artifact=LobsterAI-WebSetup-${arch}-${version}-dictbind.${ext}',
+      `artifact=${PRODUCT_NAME}-WebSetup-\${arch}-\${version}-dictbind.\${ext}`,
     );
     expect(silent.status).toBe(0);
     expect(silent.stdout).toContain(
-      'artifact=LobsterAI-WebSetup-${arch}-${version}-dictbind-silent.${ext}',
+      `artifact=${PRODUCT_NAME}-WebSetup-\${arch}-\${version}-dictbind-silent.\${ext}`,
     );
   });
 
@@ -182,7 +190,7 @@ describe('web installer build flags', () => {
 
     expect(probe.status).toBe(0);
     expect(probe.stdout).toMatch(
-      /packageUrl=https:\/\/cdn\.example\.test\/releases\/dictbind\/lobsterai-[^/\s]+-x64\.nsis\.7z/,
+      new RegExp(`packageUrl=https://cdn\\.example\\.test/releases/dictbind/${PRODUCT_NAME.toLowerCase()}-[^/\\s]+-x64\\.nsis\\.7z`),
     );
   });
 });

@@ -9,14 +9,14 @@ import {
   type DataMigrationLastRestoreResult,
   DataMigrationRestoreStatus,
 } from '../../../shared/dataMigration/constants';
-import { APP_NAME, DB_FILENAME } from '../../appConstants';
+import { APP_ID, APP_NAME, DB_FILENAME } from '../../appConstants';
 import { SQLITE_BACKUP_DIR_NAME } from '../sqliteBackup/constants';
 
 const CURRENT_ARCHIVE_ROOT = APP_NAME;
-const MANIFEST_FILE_NAME = '.lobsterai-migration.json';
-const PENDING_RESTORE_FILE_NAME = '.lobsterai-data-migration-restore-pending.json';
-const LAST_RESTORE_RESULT_FILE_NAME = '.lobsterai-data-migration-restore-result.json';
-const ARCHIVE_FORMAT = 'lobsterai-data-migration';
+const MANIFEST_FILE_NAME = `.${APP_ID}-migration.json`;
+const PENDING_RESTORE_FILE_NAME = `.${APP_ID}-data-migration-restore-pending.json`;
+const LAST_RESTORE_RESULT_FILE_NAME = `.${APP_ID}-data-migration-restore-result.json`;
+const ARCHIVE_FORMAT = `${APP_ID}-data-migration`;
 const ARCHIVE_FORMAT_VERSION = 1;
 const SQLITE_BACKUP_TOP_LEVEL_DIR_NAME = SQLITE_BACKUP_DIR_NAME.split('/')[0] || 'backups';
 const SQLITE_RESTORE_FILE_NAMES = [
@@ -274,10 +274,10 @@ export const formatDataMigrationTimestamp = (date = new Date()): string => (
 );
 
 export const buildDataMigrationBackupFileName = (date = new Date()): string =>
-  `lobsterai-backup-${formatDataMigrationTimestamp(date)}.tar.gz`;
+  `${APP_ID}-backup-${formatDataMigrationTimestamp(date)}.tar.gz`;
 
 export const buildDataMigrationRollbackFileName = (date = new Date()): string =>
-  `lobsterai-rollback-${formatDataMigrationTimestamp(date)}.tar.gz`;
+  `${APP_ID}-rollback-${formatDataMigrationTimestamp(date)}.tar.gz`;
 
 export const ensureTarGzFileName = (filePath: string): string => {
   const trimmed = filePath.trim();
@@ -1140,7 +1140,7 @@ export const createMigrationArchiveSync = (
   const userDataPath = resolvePath(input.userDataPath);
   const outputPath = resolvePath(input.outputPath);
   const archiveKind = input.archiveKind ?? 'backup';
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-data-migration-'));
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${APP_ID}-data-migration-`));
   const stageParent = path.join(tempRoot, 'stage');
   const stageUserDataRoot = path.join(stageParent, CURRENT_ARCHIVE_ROOT);
 

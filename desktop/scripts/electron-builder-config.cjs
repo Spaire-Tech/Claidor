@@ -56,7 +56,7 @@ function resolveWebPackageUrl(keyfrom) {
   if (!raw) {
     throw new Error(
       `[WebInstaller] either ${WEB_PKG_URL_ENV} (exact package URL from object storage) or ` +
-        `${WEB_PKG_BASE_URL_ENV} (CDN base directory, e.g. https://cdn.example.com/lobsterai/win) ` +
+        `${WEB_PKG_BASE_URL_ENV} (CDN base directory, e.g. https://cdn.example.com/app/win) ` +
         `is required when ${WEB_INSTALLER_ENV}=1.`,
     );
   }
@@ -102,7 +102,7 @@ for (const platformName of ['mac', 'win', 'linux']) {
   mergeExtraResources(platformName);
 }
 
-// Sign every Windows binary electron-builder produces (LobsterAI.exe, the
+// Sign every Windows binary electron-builder produces (the app exe, the
 // uninstaller, the installer) through the internal Youdao signing service,
 // not just the final Setup.exe: the unsigned inner exe is what security
 // software freezes on first execution. The hook skips with a warning when
@@ -116,12 +116,12 @@ delete config.extraResources;
 
 config.dmg = {
   ...(config.dmg || {}),
-  artifactName: `LobsterAI-darwin-\${arch}-\${version}-${keyfrom}.\${ext}`,
+  artifactName: `${config.productName}-darwin-\${arch}-\${version}-${keyfrom}.\${ext}`,
 };
 
 config.nsis = {
   ...(config.nsis || {}),
-  artifactName: `LobsterAI-Setup-\${arch}-\${version}-${keyfrom}${silentOnDoubleClick ? '-silent' : ''}.\${ext}`,
+  artifactName: `${config.productName}-Setup-\${arch}-\${version}-${keyfrom}${silentOnDoubleClick ? '-silent' : ''}.\${ext}`,
 };
 
 if (isWebInstallerEnabled()) {
@@ -134,7 +134,7 @@ if (isWebInstallerEnabled()) {
   };
   config.nsisWeb = {
     appPackageUrl: resolveWebPackageUrl(keyfrom),
-    artifactName: `LobsterAI-WebSetup-\${arch}-\${version}-${keyfrom}${silentOnDoubleClick ? '-silent' : ''}.\${ext}`,
+    artifactName: `${config.productName}-WebSetup-\${arch}-\${version}-${keyfrom}${silentOnDoubleClick ? '-silent' : ''}.\${ext}`,
   };
   console.log(`[WebInstaller] nsis-web target enabled, app package url: ${config.nsisWeb.appPackageUrl}`);
 }

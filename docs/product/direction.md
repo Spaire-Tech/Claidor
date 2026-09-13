@@ -10,14 +10,37 @@ this file is the source of truth for the decisions around it.
 
 ---
 
-## 0. The name is undecided
+## 0. The name is Faiser
 
-Not Maties. Not Swens. The founder is brainstorming it.
+Decided 13 September 2026, after Maties and Swens were both rejected.
 
-**So nothing ships with a product name in it.** No strings, no
-identifiers, no directory names, no copy. Where a name is unavoidable,
-leave a single constant with a placeholder and one definition site, so
-the real name is a one-line change later.
+It is applied. `desktop/src/main/appConstants.ts` is the one definition
+site, and it carries `APP_NAME`, `APP_ID`, `APP_USER_MODEL_ID`,
+`DB_FILENAME`, `APP_PROTOCOL` (the `faiser://` sign-in deep link),
+`APP_HOME_DIR_NAME` and `APP_TEMP_DIR_NAME`. `electron-builder.json` and
+`package.json` carry the packaging identity.
+
+The reason it had to be decided before any build left the building:
+`main.ts` calls `app.setName(APP_NAME)` and `configureUserDataPath()`
+joins that name onto `appData`, so this constant decides where a
+person's conversations, memory, logins and engine state live. Changing
+it after anyone installs orphans all of it.
+
+**Three things deliberately keep the old name**, and renaming any of
+them would be damage rather than tidiness:
+
+- the OpenClaw extension and provider id `lobster` — upstream's, and the
+  runtime breaks without it;
+- the `agent:<id>:lobsterai:<session>` session-key format in
+  `openclawChannelSessionSync.ts` — an internal format nobody sees,
+  where a rewrite risks session routing for no gain;
+- `EXPORT_FORMAT_TYPE` in `renderer/constants/app.ts` — the provider
+  export format, which goes away with the provider screens.
+
+Everything else that named the old product and is *visible* now follows
+the constant: the installer filenames, the web package, the backup and
+rollback archives a person saves, the default working directory under
+home, and the quit dialog's title.
 
 ---
 
