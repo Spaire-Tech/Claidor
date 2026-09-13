@@ -679,8 +679,19 @@ export class SqliteStore {
           )
           .run(AgentId.Main, DefaultAgentProfile.Name, existingSystemPrompt, DefaultAgentAvatarIcon, now, now);
       } else {
-        const normalizedName = mainAgent.name.trim();
-        const shouldUpgradeName = !normalizedName || normalizedName.toLowerCase() === LegacyAgentName.Main;
+        const normalizedName = mainAgent.name.trim().toLowerCase();
+        // Names nobody chose: a blank, the literal id `main`, and
+        // upstream's `LobsterAI`, which every profile made before the
+        // rename has on disk. Anything else is left alone.
+        //
+        // The one case this gets wrong is somebody who deliberately named
+        // their agent LobsterAI — they are renamed too, because the row
+        // does not record who wrote it. Renaming one person's choice is
+        // the cheaper mistake than leaving every existing install showing
+        // another company's product name.
+        const shouldUpgradeName = !normalizedName
+          || normalizedName === LegacyAgentName.Main
+          || normalizedName === LegacyAgentName.Upstream;
         if (shouldUpgradeName) {
           this.db
             .prepare('UPDATE agents SET name = ?, updated_at = ? WHERE id = ?')

@@ -106,7 +106,22 @@ READVER
 PATCHES_DIR="$ELECTRON_ROOT/scripts/patches/$DESIRED_VERSION"
 PATCH_HASH=""
 if [[ -d "$PATCHES_DIR" ]]; then
-  PATCH_HASH=$(cat "$PATCHES_DIR"/*.patch 2>/dev/null | sha256sum | cut -d' ' -f1)
+  # Hashed with node, not sha256sum. macOS has no sha256sum — it ships
+  # `shasum` — and under `set -e` the missing command kills the whole build
+  # with exit 127 before anything is compiled. That has broken the mac
+  # runner three times now: fixed in 6314023f, lost to a revert, fixed again
+  # in 0d2403df, lost to the reset to upstream in 065460aa.
+  #
+  # A `command -v` branch is what was there the last two times and it did not
+  # survive either. node is already a hard requirement of this script — it is
+  # used to read package.json twenty lines up — so hashing with it removes the
+  # platform question rather than answering it, and there is nothing left here
+  # for a reset to get wrong.
+  PATCH_HASH=$(cat "$PATCHES_DIR"/*.patch 2>/dev/null | node -e '
+    const h = require("crypto").createHash("sha256");
+    process.stdin.on("data", c => h.update(c));
+    process.stdin.on("end", () => console.log(h.digest("hex")));
+  ')
 fi
 
 if [[ -n "$DESIRED_VERSION" && "${OPENCLAW_FORCE_BUILD:-}" != "1" ]]; then

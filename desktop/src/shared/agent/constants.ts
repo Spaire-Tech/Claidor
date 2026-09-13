@@ -54,8 +54,15 @@ export type AgentLegacyIdentityCleanupResult =
 
 export const LegacyAgentName = {
   Main: 'main',
+  /**
+   * Upstream's name for the default agent. Every profile created before the
+   * rename has this in its `agents` row, so the migration has to recognise
+   * it — the row is real data on disk and changing the constant alone would
+   * leave existing installs saying "LobsterAI" forever.
+   */
+  Upstream: 'lobsterai',
 } as const;
 
 export const DefaultAgentProfile = {
-  Name: 'LobsterAI',
+  Name: 'Faiser',
 } as const;
