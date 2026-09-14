@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import { ProviderName } from '../../../shared/providers';
-import { ExecPolicy } from '../../../shared/settings/constants';
+import { ProviderName } from '../providers';
+import { ExecPolicy } from './constants';
 import { ACCOUNT_MODELS } from './models';
 import {
   EXEC_POLICY_OPTIONS,

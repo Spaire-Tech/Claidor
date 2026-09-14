@@ -1,4 +1,4 @@
-import { ExecPolicy } from '../../../shared/settings/constants';
+import { ExecPolicy } from './constants';
 import { ACCOUNT_MODELS, apiKeyUrlFor, modelChoices, providerLabel } from './models';
 
 /**

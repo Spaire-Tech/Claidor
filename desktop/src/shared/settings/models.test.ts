@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { ProviderName } from '../../../shared/providers';
+import { ProviderName } from '../providers';
 import {
   ACCOUNT_MODELS,
   apiKeyUrlFor,

@@ -7,6 +7,14 @@ import {
   DEFAULT_EXEC_POLICY,
   type ExecPolicy,
 } from '../../../shared/settings/constants';
+import {
+  ACCOUNT_MODELS,
+  currentChoice,
+  defaultModelIdFor,
+  providersFor,
+  storedKey,
+} from '../../../shared/settings/models';
+import type { SettingsInput } from '../../../shared/settings/rows';
 import { authService } from '../../services/auth';
 import { configService, ConfigServiceEvent } from '../../services/config';
 import { coworkService } from '../../services/cowork';
@@ -15,14 +23,6 @@ import { type RootState, store } from '../../store';
 import { setAvailableModels, setDefaultSelectedModel } from '../../store/slices/modelSlice';
 import { showToast } from '../../utils/localFileActions';
 import { usageLine } from '../shell/account';
-import {
-  ACCOUNT_MODELS,
-  currentChoice,
-  defaultModelIdFor,
-  providersFor,
-  storedKey,
-} from './models';
-import type { SettingsInput } from './rows';
 
 /**
  * Settings, connected.

@@ -982,3 +982,93 @@ without once opening the app. A harness cannot show a missing stream
 listener, and a passing test cannot show an undeployed server. Both are
 exactly the kind of failure the founder's own rule — *run it, or say you
 did not* — exists to catch, and I said neither.
+
+---
+
+## 26. The agent had no idea what app it was in, and no rule about how to speak — `fixed`
+
+Not from the founder's list. From the four documents they handed over on
+15 September (`docs/product/sources/`), which between them name the two
+things every one of our own faults has in common.
+
+### What was actually wrong
+
+`openclawConfigSync.ts` assembles the managed half of `AGENTS.md`. It
+had seven sections — web search, browser, exec safety, deliverable
+links, math format, memory, heartbeat — and **every one of them is a
+rule about a tool.** Not one was about the conversation.
+
+So there was no rule saying: answer before you go quiet for two minutes;
+an "on it" does not discharge the result; do not narrate every command;
+say "your computer", never "the sandbox"; and when you do not know, say
+so.
+
+And there was no map. Asked where a control is, the agent had nothing to
+answer from but its own guess — which is exactly item 22: three
+confident, wrong explanations for the browser in one night, every one of
+them delivered to the founder by their own agent.
+
+### The two halves, which only work together
+
+**`MANAGED_CONVERSATION_PROMPT`** — a new first section, before the tool
+policies, because a model that reads the tool rules first answers like a
+tool. Answer before you work. An acknowledgement is not the answer. Say
+something when something happens and nothing when nothing has — a
+scheduled job told to stay quiet ends with *no message*, not "no
+change". How it should read. The words that never reach a person: tool
+names, internal state, and the machinery — *"I am still on the
+spreadsheet"*, never *"the subagent is running"*. And: say you do not
+know.
+
+Two deliberate departures from the source. Grok Bot routes every visible
+word through a `SendToUser` tool and we do not — assistant text *is* the
+message — so our rules are about *when to write*, not which tool to
+call. And Grok Bot says *"my computer"* because its agent owns one.
+Ours does not (`direction.md` §10), so the words are **your computer**
+and **your files**, and that difference is the product.
+
+**`reference/app-ui.md`** — the map, written into every agent workspace
+on every config sync, and named in a new `## The App You Are In`
+section. Grok Bot ships theirs as hand-written prose, which is why it
+has to hedge that a row may not exist on your build. Ours is **generated
+from `settingsFor()`** — the same function that draws Settings — so a
+row added, renamed or removed changes both at once, and a row that is
+conditional in the app is conditional in the map for the same reason.
+
+That required moving `rows.ts` and `models.ts` from
+`renderer/design/settings/` to `shared/settings/`, beside the exec
+policy that was already there. Main never imports renderer code in this
+tree and this was not the place to start; the point of generating the
+map is that there is one source, and a source both processes read
+belongs in `shared/`.
+
+### Proved by running it
+
+`openclawConfigSync.runtime.test.ts` builds a real workspace on disk,
+runs the real sync, and reads the files back: the conversation section
+is present and sits before `## Browser Policy`; `reference/app-ui.md`
+exists and contains the real row ids; and a map hand-edited to `# stale`
+is overwritten on the next sync, so a Settings change cannot leave an
+old screen behind for the agent to read out.
+
+`appUiMap.test.ts` holds the map to the app in both directions — every
+row the app can draw is on the page, and every row the page names
+exists.
+
+### One fault found by reading the output, not the code
+
+The first generated map said **"Version 0"** and **"OpenAI API key"**.
+Both are artefacts of the sample person the generator has to feed
+`settingsFor()` to make the conditional rows appear, and an agent
+reading either back would have been stating a fact about the app that is
+not true — the precise failure the map exists to stop. Those rows are
+now described rather than quoted, and a test asserts no sample value
+reaches the page.
+
+**Not verified:** nobody has watched the agent answer a "where is that
+setting" question from the map in the built app. The file is written,
+the prompt names it, and both are proved by a real sync on disk; whether
+the model obeys it is a run.
+
+**Where:** `shared/settings/appUiMap.ts`, `shared/settings/rows.ts`,
+`shared/settings/models.ts`, `main/libs/openclawConfigSync.ts`.

@@ -2930,6 +2930,74 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('Never pass `profile: "user"`.');
   });
 
+  test('the conversation policy is there, and it is first', async () => {
+    // Every other managed section is a rule about a tool. This one is
+    // about the conversation, which is what the founder has actually
+    // complained about: silence, narration, "on it" with no follow-up,
+    // and confident invention.
+    const sync = await createSync();
+    expect(sync.sync('conversation-policy').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+
+    expect(agentsMd).toContain('## Talking to the Person');
+    expect(agentsMd).toContain('### Answer before you work');
+    expect(agentsMd).toContain('### An acknowledgement is not the answer');
+    expect(agentsMd).toContain('Never end a turn having only promised.');
+    expect(agentsMd).toContain('Do not narrate commands.');
+    expect(agentsMd).toContain('end the turn with no message at all');
+    expect(agentsMd).toContain('Say you do not know.');
+
+    // Never the machinery, and never somebody else's word for this
+    // computer. `direction.md` section 10: there is one computer and it
+    // is the person's own.
+    expect(agentsMd).toContain('never "the subagent is running"');
+    expect(agentsMd).toContain('never a sandbox, a host, a node, a container or a gateway');
+    expect(agentsMd).toContain('nothing is copied to a machine of yours');
+
+    // Before the tool policies. A model that reads the tool rules first
+    // tends to answer like a tool.
+    expect(agentsMd.indexOf('## Talking to the Person'))
+      .toBeLessThan(agentsMd.indexOf('## Browser Policy'));
+  });
+
+  test('the app UI map is written, and the prompt points at it', async () => {
+    // The ban on inventing a click-path is not actionable on its own.
+    // This is the half that makes it possible to obey.
+    const sync = await createSync();
+    expect(sync.sync('app-ui-map').ok).toBe(true);
+
+    const workspace = path.join(stateDir, 'workspace-main');
+    const agentsMd = fs.readFileSync(path.join(workspace, 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## The App You Are In');
+    expect(agentsMd).toContain('`reference/app-ui.md`');
+    expect(agentsMd).toContain('it is not in this app');
+
+    const map = fs.readFileSync(path.join(workspace, 'reference', 'app-ui.md'), 'utf8');
+    expect(map).toContain('as it actually is');
+    // Generated from settingsFor(), so the real row ids are in it.
+    expect(map).toContain('`exec-policy`');
+    expect(map).toContain('`model-choice`');
+    expect(map).toContain('account button at the bottom of the sidebar');
+  });
+
+  test('a Settings change cannot leave a stale map behind', async () => {
+    // Written on every sync rather than once, so the agent never reads
+    // out a screen that no longer exists.
+    const sync = await createSync();
+    const mapPath = path.join(stateDir, 'workspace-main', 'reference', 'app-ui.md');
+
+    expect(sync.sync('first').ok).toBe(true);
+    fs.writeFileSync(mapPath, '# stale\n', 'utf8');
+
+    expect(sync.sync('second').ok).toBe(true);
+    expect(fs.readFileSync(mapPath, 'utf8')).not.toContain('# stale');
+    expect(fs.readFileSync(mapPath, 'utf8')).toContain('`exec-policy`');
+  });
+
   test('enables managed OpenClaw tool loop detection', async () => {
     const sync = await createSync();
 

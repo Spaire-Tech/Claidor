@@ -1,5 +1,5 @@
-import type { ProviderConfig } from '../../../shared/providers';
-import { ProviderName, ProviderRegistry } from '../../../shared/providers';
+import type { ProviderConfig } from '../providers';
+import { ProviderName, ProviderRegistry } from '../providers';
 
 /**
  * Which models the agent runs on: the account's allowance, or your own key.

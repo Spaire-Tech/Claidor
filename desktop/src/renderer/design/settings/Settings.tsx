@@ -1,7 +1,5 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 
-import { CloseIcon, ComputerIcon, GearIcon, UsageIcon } from '../icons';
-import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import {
   type SelectOption,
   SETTINGS_TABS,
@@ -11,7 +9,9 @@ import {
   type SettingsRow,
   SettingsRowKind,
   SettingsTab,
-} from './rows';
+} from '../../../shared/settings/rows';
+import { CloseIcon, ComputerIcon, GearIcon, UsageIcon } from '../icons';
+import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 
 /**
  * Settings.

@@ -4,8 +4,8 @@ vi.mock('electron', () => ({
   net: { fetch: vi.fn() },
 }));
 
-import { ACCOUNT_MODELS, defaultModelIdFor, providersFor } from '../../renderer/design/settings/models';
 import { ProviderName } from '../../shared/providers';
+import { ACCOUNT_MODELS, defaultModelIdFor, providersFor } from '../../shared/settings/models';
 import type { SqliteStore } from '../sqliteStore';
 import {
   resolveRawApiConfig,

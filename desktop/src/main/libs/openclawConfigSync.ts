@@ -44,7 +44,9 @@ import {
   supportsLobsterAIRequestOptionsV1,
 } from '../../shared/providers/lobsterAIRequestOptions';
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
+import { APP_UI_MAP_PATH, buildAppUiMap } from '../../shared/settings/appUiMap';
 import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
+import { APP_NAME } from '../appConstants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
 import type { DingTalkInstanceConfig, EmailMultiInstanceConfig, FeishuInstanceConfig, NeteaseBeeChanConfig, NimInstanceConfig, PopoInstanceConfig, QQInstanceConfig, WecomInstanceConfig, WeixinOpenClawConfig } from '../im/types';
@@ -433,6 +435,82 @@ const MANAGED_BROWSER_POLICY_PROMPT = [
   '- If the user asks why a page opened somewhere other than the app\'s panel, say you do not know rather than inventing a policy. The answer is in the app\'s logs, not in this prompt.',
   `- When a page requires a password and \`${BrowserCredentialMcpServer.ModelToolName}\` is available, call it before asking the user to sign in manually. The tool can use an encrypted saved login without revealing its password to you.`,
   '- If no saved login is available, ask the user to sign in directly in the visible LobsterAI browser. Never ask the user to send a password in chat, and never search files, memory, or logs for passwords.',
+].join('\n');
+
+/**
+ * How the agent talks to the person.
+ *
+ * Every other managed section is a rule about a *tool*. None of them is
+ * about the conversation, and the conversation is what the founder has
+ * objected to: an agent that goes quiet for minutes, that narrates every
+ * command it runs, that says "on it" and never comes back, that calls
+ * this machine a sandbox, and that — when it does not know — invents an
+ * answer and states it with confidence.
+ *
+ * Drawn from `docs/product/sources/grok-bot-chat.md` Part I and
+ * `grok-bot-agent-reference.md` §§2–3, translated into this product's
+ * own terms. Two differences from the source, both deliberate:
+ *
+ *  - Grok Bot routes every visible word through a `SendToUser` tool. We
+ *    do not; assistant text *is* the message. So the rules here are
+ *    about when to write, not which tool to call.
+ *  - Grok Bot says *"my computer"* because the agent owns one. Ours does
+ *    not own one — `direction.md` §10 — so the words are "your computer"
+ *    and "your files", and that difference is the product.
+ */
+const MANAGED_CONVERSATION_PROMPT = [
+  '## Talking to the Person',
+  '',
+  '### Answer before you work',
+  '- On a turn the person opened, write something to them before any long run of tool calls. If the answer is short, just answer. If the job is long, say what you are starting with, in one line.',
+  '- Silence reads as broken. Nobody watching a still screen assumes work is happening.',
+  '',
+  '### An acknowledgement is not the answer',
+  '- "On it" does not finish the job. If they are waiting on something, come back with the thing itself before you stop.',
+  '- Never end a turn having only promised.',
+  '',
+  '### Say something when something happens',
+  '- Write at real moments: a result, a decision, a blocker, a change of plan, something that turned out differently than expected.',
+  '- Do not narrate commands. They can see the work in the panel if they want it; what they cannot see is what you have concluded.',
+  '- A long job with nothing to report yet is still worth one line saying it is still going.',
+  '',
+  '### And nothing when nothing has',
+  '- If a background piece of work finishes and nobody is waiting on it, say nothing.',
+  '- If a scheduled job was told to stay quiet unless something changed, and nothing changed, end the turn with no message at all. Not "no change" — nothing.',
+  '',
+  '### How it should read',
+  '- Like a sharp colleague, not a support desk. Contractions. No "Certainly", "Of course", "I would be happy to".',
+  '- Lead with the result, then the detail if it is needed. One or two sentences is usually right; match their length.',
+  '- Two or three short messages beat one long one. Prose beats bullets unless the content is genuinely a list.',
+  '- Paths, commands, identifiers and snippets go in `code` spans.',
+  '- Emoji are rare, mirror theirs, and go at the end if at all.',
+  '- Do not describe having feelings and do not claim to be a person.',
+  '',
+  '### Words that never reach them',
+  '- Tool names, message ids, system reminders, hidden turns, internal state, and any reasoning about whether to send a message.',
+  '- The machinery you delegate to. You did the work — say "I am still on the spreadsheet", never "the subagent is running" or "my executor".',
+  '- Infrastructure words for this machine: it is **their computer**, never a sandbox, a host, a node, a container or a gateway. Their files are worked on where they live; nothing is copied to a machine of yours, because you do not have one.',
+  '',
+  '### When you do not know',
+  '- Say you do not know. An invented answer given confidently costs them more than an honest one, and it is much harder to catch.',
+  '- Never invent a menu, a click-path, a setting, a number, a quotation or a source. If you have not read it this turn, do not state it as fact.',
+  '- If something failed and you cannot tell why, say that, and say where you would look next.',
+].join('\n');
+
+/**
+ * Where the agent finds out what this app actually looks like.
+ *
+ * The rule above — never invent a click-path — is not actionable on its
+ * own. This names the file that makes it possible, generated from
+ * `settingsFor()` on every config sync so it cannot describe a screen
+ * that no longer exists.
+ */
+const buildManagedAppUiPrompt = (mapPath: string): string => [
+  '## The App You Are In',
+  '',
+  `- \`${mapPath}\`, in this folder, is the map of this app's screens and settings. It is generated from the code that draws them, so it is right for this build.`,
+  '- Read it before you tell somebody where a control is, what a tab contains, or how to change a setting. Read it again rather than remembering it.',
+  '- If a control is not on that page, it is not in this app. Say so, rather than guessing at a path that sounds plausible.',
 ].join('\n');
 
 const MANAGED_EXEC_SAFETY_PROMPT = [
@@ -3894,6 +3972,8 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       ensureDir(workspaceDir);
       const agentsMdPath = path.join(workspaceDir, 'AGENTS.md');
 
+      this.syncAppUiMap(workspaceDir);
+
       // Build the managed section
       const sections: string[] = [];
 
@@ -3906,6 +3986,11 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       // Skills are now loaded by OpenClaw natively via skills.load.extraDirs
       // in openclaw.json, so we no longer embed the skills routing prompt here.
 
+      // First, because it is about every message rather than one tool,
+      // and because a model that reads the tool policies first tends to
+      // answer like a tool.
+      sections.push(MANAGED_CONVERSATION_PROMPT);
+      sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH));
       sections.push(MANAGED_WEB_SEARCH_POLICY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
@@ -4178,6 +4263,30 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
   }
 
   /** Write a file only if its content has changed. */
+  /**
+   * Write the app's own map into the workspace, beside AGENTS.md.
+   *
+   * Regenerated on every sync rather than written once, so a build that
+   * adds or removes a Settings row cannot leave an old map behind for
+   * the agent to read out to somebody.
+   *
+   * A failure here is not worth failing the sync over: the managed
+   * prompt tells the agent to say it does not know when the map is not
+   * there, which is the right answer anyway.
+   */
+  private syncAppUiMap(workspaceDir: string): void {
+    try {
+      const mapPath = path.join(workspaceDir, ...APP_UI_MAP_PATH.split('/'));
+      ensureDir(path.dirname(mapPath));
+      this.syncFileIfChanged(mapPath, `${buildAppUiMap(APP_NAME).trimEnd()}\n`);
+    } catch (error) {
+      console.warn(
+        '[OpenClawConfigSync] Failed to write the app UI map:',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
   private syncFileIfChanged(filePath: string, content: string): void {
     try {
       const existing = fs.readFileSync(filePath, 'utf8');
