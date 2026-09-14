@@ -311,6 +311,15 @@ export class McpStore {
       isBuiltIn: data.isBuiltIn !== undefined ? data.isBuiltIn : existing.isBuiltIn,
       githubUrl: data.githubUrl !== undefined ? data.githubUrl : existing.githubUrl,
       registryId: data.registryId !== undefined ? data.registryId : existing.registryId,
+      // These two were missing from this list, and the list is the whole
+      // of what survives an update: everything not named here is dropped
+      // on the next write. So a connection updated rather than created —
+      // which is what happens on every re-connect — lost its `auth`, the
+      // config sync then rendered it without one, and the engine refused
+      // the login with `MCP server "x" is not configured with auth:
+      // "oauth"`. Connecting worked once and never again.
+      auth: data.auth !== undefined ? data.auth : existing.auth,
+      oauthScope: data.oauthScope !== undefined ? data.oauthScope : existing.oauthScope,
     });
 
     const configJson = this.serializeConfig(merged);

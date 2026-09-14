@@ -49,6 +49,41 @@ describe('McpStore', () => {
     db = undefined;
   });
 
+  test('an update keeps the OAuth fields it was not asked to change', () => {
+    // This is review item 23. `updateServer` rebuilds the record from an
+    // explicit field list, and `auth` and `oauthScope` were not on it —
+    // so every re-connect wrote the server back without its auth, the
+    // config sync rendered it without one, and `openclaw mcp login`
+    // refused with `not configured with auth: "oauth"`. Connecting
+    // worked once and never again.
+    const server = store.createServer({
+      name: 'connection-todoist',
+      description: '',
+      transportType: 'http',
+      url: 'https://ai.todoist.net/mcp',
+      auth: 'oauth',
+      oauthScope: 'data:read_write',
+    });
+    expect(server.auth).toBe('oauth');
+
+    const updated = store.updateServer(server.id, { url: 'https://ai.todoist.net/mcp' });
+    expect(updated?.auth).toBe('oauth');
+    expect(updated?.oauthScope).toBe('data:read_write');
+  });
+
+  test('and an update can still change them on purpose', () => {
+    const server = store.createServer({
+      name: 'connection-x',
+      description: '',
+      transportType: 'http',
+      url: 'https://example.com/mcp',
+      auth: 'oauth',
+      oauthScope: 'read',
+    });
+    const updated = store.updateServer(server.id, { oauthScope: 'read write' });
+    expect(updated?.oauthScope).toBe('read write');
+  });
+
   test('clears remote headers when update passes an empty headers object', () => {
     const server = store.createServer({
       name: 'remote',

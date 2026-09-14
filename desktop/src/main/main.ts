@@ -10268,6 +10268,9 @@ if (!gotTheLock) {
         });
         return;
       }
+      // No cast here. There was one, and it was hiding that `auth` and
+      // `oauthScope` are real fields on this type — which is how nobody
+      // noticed `updateServer` silently dropping both.
       store.createServer({
         name,
         description: '',
@@ -10275,7 +10278,7 @@ if (!gotTheLock) {
         url,
         auth: 'oauth',
         ...(scope ? { oauthScope: scope } : {}),
-      } as Parameters<typeof store.createServer>[0]);
+      });
     },
     removeServer: async (name: string) => {
       const store = getMcpRuntime().getStore();

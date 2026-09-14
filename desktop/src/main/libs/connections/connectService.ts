@@ -53,6 +53,23 @@ export interface ConnectDeps {
   runCli: (args: readonly string[]) => Promise<CliResult>;
 }
 
+/**
+ * What the engine said, in the log, at every step.
+ *
+ * This is the `desktop.proxy.upstream_refused` lesson applied here. Two
+ * hours of guessing at the GPT bug were ended by one log line carrying
+ * the provider's own sentence. A sign-in that fails on somebody else's
+ * machine is unreachable without the same thing: the step it reached,
+ * and what the engine printed.
+ *
+ * The output is the engine's own words to a person — a URL, a refusal, a
+ * "credentials saved". It carries no token: the engine keeps those under
+ * its state dir and never prints them.
+ */
+const say = (step: string, detail = ''): void => {
+  console.log(`[Connections] ${step}${detail ? `: ${detail.trim()}` : ''}`);
+};
+
 export async function connectService(
   item: ConnectionItem,
   deps: ConnectDeps,
@@ -68,6 +85,7 @@ export async function connectService(
   const { url, scope } = item.connect;
 
   // 1. The config first, because the login reads it.
+  say(`${name} — writing the server and syncing the config`);
   await deps.writeServer({ name, url, ...(scope ? { scope } : {}) });
 
   let listener: CallbackListener;
@@ -76,7 +94,9 @@ export async function connectService(
     // the person can be through the provider in under a second, and a
     // redirect that arrives before anything is listening is lost.
     listener = await deps.listen();
+    say(`${name} — listening on ${listener.port} for the redirect`);
   } catch (error) {
+    say(`${name} — could not listen`, error instanceof Error ? error.message : String(error));
     await deps.removeServer(name);
     return {
       outcome: ConnectOutcome.Failed,
@@ -87,6 +107,7 @@ export async function connectService(
   try {
     // 3. Ask the engine to begin.
     const started = await deps.runCli(['mcp', 'login', name]);
+    say(`${name} — mcp login exited ${started.code}`, started.output);
     if (saysAuthorized(started.output)) {
       // Already had usable tokens. Nothing to approve.
       await deps.runCli(['mcp', 'reload']);
@@ -95,6 +116,7 @@ export async function connectService(
 
     const authorizationUrl = findAuthorizationUrl(started.output);
     if (!authorizationUrl) {
+      say(`${name} — no authorization URL in that output`);
       await deps.removeServer(name);
       return {
         outcome: ConnectOutcome.Failed,
@@ -106,6 +128,7 @@ export async function connectService(
     await deps.openExternal(authorizationUrl);
     const callback = await listener.result;
     if (!callback.code) {
+      say(`${name} — the redirect brought back no code`, callback.error ?? '');
       await deps.removeServer(name);
       return {
         outcome: ConnectOutcome.Refused,
@@ -115,6 +138,7 @@ export async function connectService(
 
     // 5. The second half of the same login.
     const finished = await deps.runCli(['mcp', 'login', name, '--code', callback.code]);
+    say(`${name} — mcp login --code exited ${finished.code}`, finished.output);
     if (!saysAuthorized(finished.output)) {
       await deps.removeServer(name);
       return {
@@ -126,6 +150,7 @@ export async function connectService(
     // Without this the cached runtime keeps the connection it opened
     // before there were tokens, and the agent says it has no tools.
     await deps.runCli(['mcp', 'reload']);
+    say(`${name} — connected`);
     return { outcome: ConnectOutcome.Connected };
   } finally {
     listener.close();

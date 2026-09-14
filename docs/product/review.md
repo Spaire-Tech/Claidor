@@ -644,9 +644,68 @@ shipped default in `browserWebAccess/constants.ts`, so the engine drives
 its own Chromium instead of the in-app panel. I flagged it as a founder
 decision in Stage 5 and left it, which meant shipping the wrong one.
 
-### 23. Connectors do not work — `open`
+### 23. Connectors do not work — `one real fault found and fixed; the rest verified by running it`
 
-Founder is not chasing this yet. Recorded so it is not lost.
+Founder was not chasing this, so it was recorded and left. Picked up on
+15 September and taken apart step by step, against the real engine rather
+than by reading.
+
+**What I ran.** The engine's own CLI, from the runtime in this tree,
+against a real service:
+
+```
+$ openclaw mcp login connection-todoist
+Open this URL to authorize "connection-todoist":
+https://todoist.com/oauth/authorize?response_type=code&client_id=tdd_…
+  &code_challenge_method=S256
+  &redirect_uri=http%3A%2F%2F127.0.0.1%3A8989%2Foauth%2Fcallback&…
+After approval, run openclaw mcp login connection-todoist --code <code>.
+```
+
+It works. The contract the app is built on is real: `mcp login <name>`,
+`mcp login <name> --code`, `mcp logout`, `mcp reload`; the verifier and
+the state are persisted to a file under the state dir, so the two halves
+can be two processes; the redirect the engine registers is
+`127.0.0.1:8989/oauth/callback`, which is exactly the port and path our
+listener binds. I also probed six of the catalogue's endpoints — Gmail,
+Calendar, Drive, Todoist, Notion, Linear — and all six answer, the
+OAuth ones with 401, which is correct.
+
+**The fault.** `McpStore.updateServer` rebuilds a record from an explicit
+list of fields, and `auth` and `oauthScope` were not on that list. So:
+
+- **first** connect creates the server, with `auth: "oauth"` — works;
+- **any** later write updates it, and silently drops the auth;
+- the config sync then renders the server without `auth`;
+- and `mcp login` refuses it: *"MCP server "x" is not configured with
+  auth: "oauth"."*
+
+Connecting worked once and never again. A cast in `main.ts` —
+`as Parameters<typeof store.createServer>[0]`, mine — was hiding the
+type mismatch that would have said so. Both fixed, with two tests.
+
+**And it is diagnosable now.** Every step logs under `[Connections]`
+with the engine's own output: which step it reached, what the engine
+said, why it stopped. This is the `desktop.proxy.upstream_refused`
+lesson — two hours of guessing at the GPT bug were ended by one log line
+carrying the provider's own sentence. The output carries no tokens; the
+engine keeps those under its state dir and never prints them.
+
+**A trap for whoever tests this next.** The engine's CLI prints nothing
+when `VITEST=true` is in its environment. I lost twenty minutes to an
+end-to-end test that captured an empty string and looked like a bug in
+our code. The app never sets it, so this is a harness artefact — but it
+means a live test of the CLI has to run outside vitest. The durable part
+of that run is in `authUrl.test.ts`: the engine's **real** output,
+captured verbatim, with the parser and the listener's port checked
+against it.
+
+**What I could not do from here:** click "Allow" on a provider's page.
+Everything up to and after that point is verified.
+
+**Where:** `main/mcp/mcpStore.ts`, `main/main.ts`,
+`main/libs/connections/connectService.ts`,
+`main/libs/connections/authUrl.test.ts`.
 
 ---
 
