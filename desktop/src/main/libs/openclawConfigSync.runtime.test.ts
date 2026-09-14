@@ -2984,6 +2984,24 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(map).toContain('account button at the bottom of the sidebar');
   });
 
+  test('the agent is told how to hand over a control instead of describing a route', async () => {
+    // A pill only works if the agent knows the syntax and knows the ids
+    // come from the map rather than from memory. Otherwise it is dead
+    // code that nothing ever emits.
+    const sync = await createSync();
+    expect(sync.sync('deep-links').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('### Pointing at a setting');
+    expect(agentsMd).toContain('faiser://settings/exec-policy');
+    expect(agentsMd).toContain('quietly turns back into plain words');
+    expect(agentsMd).toContain('### Pointing at something said earlier');
+    expect(agentsMd).toContain('faiser://message/<id>');
+  });
+
   test('the failure reference is written, with this machine’s real log path', async () => {
     // Three invented explanations for the browser in one night, and the
     // line that would have settled it was in a log file the agent had

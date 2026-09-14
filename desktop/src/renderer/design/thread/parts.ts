@@ -40,6 +40,8 @@
  * too, which is the only way a produced document is reachable at all.
  */
 
+import { type AppLink, AppLinkKind, isSettingsAnchor, parseAppLink } from '../../../shared/thread/links';
+
 export const PartKind = {
   /** Prose. */
   Text: 'text',
@@ -49,6 +51,15 @@ export const PartKind = {
   Link: 'link',
   /** An inline code span. The same chip, because it is the same idea. */
   Code: 'code',
+  /**
+   * A pill that opens a row in Settings.
+   *
+   * Only produced when the row actually exists in this build. A pill that
+   * goes nowhere is the fabrication problem wearing better clothes.
+   */
+  Setting: 'setting',
+  /** A chip that jumps back to an earlier message in this conversation. */
+  Ref: 'ref',
 } as const;
 export type PartKind = typeof PartKind[keyof typeof PartKind];
 
@@ -60,6 +71,8 @@ export interface MessagePart {
   target?: string;
   /** `Text` parts only. */
   strong?: boolean;
+  /** `Setting` and `Ref` parts: which row, or which message. */
+  app?: AppLink;
 }
 
 /** A file this conversation has actually produced or touched. */
@@ -161,7 +174,21 @@ function markerParts(source: string, files: readonly KnownFile[]): MessagePart[]
     } else if (groups.href !== undefined) {
       const href = groups.href;
       const label = (groups.label ?? '').trim();
-      if (targetIsFile(href)) {
+      const app = parseAppLink(href);
+      if (app) {
+        // A pill to a row this build does not have is worse than no pill:
+        // somebody clicks it, nothing happens, and they stop trusting the
+        // next one. So it degrades to the label, as prose.
+        if (app.kind === AppLinkKind.Settings && !isSettingsAnchor(app.id)) {
+          plain(label || app.id);
+        } else {
+          parts.push({
+            kind: app.kind === AppLinkKind.Settings ? PartKind.Setting : PartKind.Ref,
+            text: label || app.id,
+            app,
+          });
+        }
+      } else if (targetIsFile(href)) {
         const path = filePathFromTarget(href);
         parts.push(file(label || basename(path), path));
       } else {

@@ -23,6 +23,10 @@ export interface PartHandlers {
   onOpenFile?: (path: string) => void;
   /** Open a link, in whatever the person uses for links. */
   onOpenLink?: (href: string) => void;
+  /** Open Settings at a row the agent named. */
+  onOpenSetting?: (rowId: string) => void;
+  /** Scroll back to an earlier message in this conversation. */
+  onOpenMessage?: (messageId: string) => void;
   /** The files this conversation has produced, so a chip can find one. */
   files?: readonly KnownFile[];
 }
@@ -105,7 +109,52 @@ function Part(
     );
   }
 
+  // A pill and a back-reference. Not the file chip: those are monospace
+  // because a path is a machine thing, and these are neither paths nor
+  // code — they are the name of a control and the gist of a sentence, and
+  // they read as words with a soft edge round them.
+  if (part.kind === PartKind.Setting || part.kind === PartKind.Ref) {
+    const isSetting = part.kind === PartKind.Setting;
+    const open = isSetting
+      ? (handlers.onOpenSetting && part.app ? () => handlers.onOpenSetting?.(part.app!.id) : undefined)
+      : (handlers.onOpenMessage && part.app ? () => handlers.onOpenMessage?.(part.app!.id) : undefined);
+    const pill: CSSProperties = {
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '1px 8px', margin: '0 1px',
+      borderRadius: radius.pill, verticalAlign: 'baseline',
+      font: 'inherit', fontSize: text.label,
+      background: mine ? 'rgba(255,255,255,.16)' : line.hairline,
+      color: 'inherit',
+    };
+    if (!open) return <span style={pill}>{part.text}</span>;
+    return (
+      <button type="button" onClick={open} style={{ ...pill, border: 'none', cursor: 'pointer' }}>
+        {isSetting ? <GearGlyph /> : <ReplyGlyph />}
+        {part.text}
+      </button>
+    );
+  }
+
   return part.strong ? <strong style={{ fontWeight: 600 }}>{part.text}</strong> : <>{part.text}</>;
+}
+
+/** Small enough to read as punctuation rather than an icon. */
+function GearGlyph(): JSX.Element {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" style={{ opacity: 0.6, flex: '0 0 auto' }}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+    </svg>
+  );
+}
+
+function ReplyGlyph(): JSX.Element {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" style={{ opacity: 0.6, flex: '0 0 auto' }}>
+      <path d="M9 14L4 9l5-5" />
+      <path d="M4 9h10a6 6 0 016 6v5" />
+    </svg>
+  );
 }
 
 /**
