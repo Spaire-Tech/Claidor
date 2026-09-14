@@ -4,6 +4,7 @@ import { Thread } from '../thread/Thread';
 import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
 import type { ThreadItem } from '../thread/types';
 import { color, line, radius, shadow, text, tracking } from '../tokens';
+import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
 import { Sidebar, type SidebarAgent } from './Sidebar';
 
@@ -27,6 +28,11 @@ export interface MessagesShellProps {
   onSelect: (agentId: string) => void;
   onSend: (message: string) => void;
   onCompose: () => void;
+  /** Compose has taken over the conversation pane. */
+  composing?: boolean;
+  onCloseCompose?: () => void;
+  onPickAgent?: (agentId: string) => void;
+  onCreateAgent?: (draft: AgentDraftSubmit) => void;
   onApps: () => void;
   onAccount: () => void;
   onMode: (mode: ThreadMode) => void;
@@ -50,6 +56,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
     choice, auth, onSelect, onSend, onCompose, onApps, onAccount, onMode,
     onOpenPanel, onPlus,
+    composing, onCloseCompose, onPickAgent, onCreateAgent,
   } = props;
 
   // "typing" is a text-mode word, and in voice the orb is already
@@ -107,6 +114,14 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
           onAccount={onAccount}
         />
 
+        {composing && onCloseCompose && onPickAgent && onCreateAgent ? (
+          <Compose
+            agents={agents}
+            onPick={onPickAgent}
+            onCreate={onCreateAgent}
+            onClose={onCloseCompose}
+          />
+        ) : (
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
           <div
             style={{
@@ -184,6 +199,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             onPlus={onPlus}
           />
         </div>
+        )}
       </div>
     </div>
   );

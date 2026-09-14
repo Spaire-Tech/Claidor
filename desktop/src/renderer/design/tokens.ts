@@ -36,6 +36,12 @@ export const color = {
   fillStrong: '#e3e8ef',
   /** Links, and the label of a selected tab. */
   accent: '#2b6cf5',
+  /**
+   * A primary button that cannot be pressed yet — Create agent before the
+   * name is typed. Greyed rather than hidden, because the button is what
+   * tells you the form has an end.
+   */
+  disabled: '#aab3c0',
   /** The darker half of the shimmer that runs through a status line. */
   shimmerInk: '#1c1f23',
   /** The lighter half of it. */

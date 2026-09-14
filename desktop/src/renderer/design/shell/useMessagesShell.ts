@@ -6,10 +6,12 @@ import { coworkService } from '../../services/cowork';
 import type { AppDispatch, RootState } from '../../store';
 import { setCurrentAgentId } from '../../store/slices/agentSlice';
 import { setCurrentSession } from '../../store/slices/coworkSlice';
+import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
 import { decisionNote } from '../thread/fromEngine';
 import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
 import { AuthDecision } from '../thread/types';
+import type { AgentDraftSubmit } from './Compose';
 import { ThreadMode } from './MessagesShell';
 import {
   dayStamp as dayStampOf,
@@ -45,6 +47,12 @@ export interface MessagesShellState {
   onSelect: (agentId: string) => void;
   onSend: (message: string) => void;
   onMode: (mode: ThreadMode) => void;
+  /** True while the compose pane has taken over the conversation. */
+  composing: boolean;
+  onCompose: () => void;
+  onCloseCompose: () => void;
+  onPickAgent: (agentId: string) => void;
+  onCreateAgent: (draft: AgentDraftSubmit) => void;
 }
 
 export function useMessagesShell(): MessagesShellState {
@@ -191,6 +199,37 @@ export function useMessagesShell(): MessagesShellState {
     },
   }), [active]);
 
+  // Composing: who to message, or a new agent.
+  const [composing, setComposing] = useState(false);
+
+  const onCompose = useCallback(() => setComposing(true), []);
+  const onCloseCompose = useCallback(() => setComposing(false), []);
+
+  const onPickAgent = useCallback((agentId: string) => {
+    setComposing(false);
+    onSelect(agentId);
+  }, [onSelect]);
+
+  const onCreateAgent = useCallback(async (draft: AgentDraftSubmit) => {
+    const name = draft.name.trim();
+    if (!name) return;
+    // The voice and the brief go into the agent's own instructions, which
+    // is where `direction.md` §4 says they belong — not into a wrapper
+    // this shell adds at send time, where a second client would lose them.
+    const agent = await agentService.createAgent({
+      name,
+      description: draft.description.trim(),
+      systemPrompt: systemPromptFor({
+        name,
+        label: draft.label,
+        description: draft.description,
+        voiceId: draft.voiceId,
+      }),
+    });
+    setComposing(false);
+    if (agent) onSelect(agent.id);
+  }, [onSelect]);
+
   const choice = useMemo<ChoiceHandlers>(() => ({
     // A choice card is answered by saying the answer, which is what a
     // person would do anyway — so the agent sees a normal reply rather
@@ -212,5 +251,10 @@ export function useMessagesShell(): MessagesShellState {
     onSelect,
     onSend,
     onMode: setMode,
+    composing,
+    onCompose,
+    onCloseCompose,
+    onPickAgent,
+    onCreateAgent: (draft: AgentDraftSubmit) => { void onCreateAgent(draft); },
   };
 }

@@ -95,6 +95,7 @@ function Screens(): JSX.Element {
   if (screen === 'signin-error') {
     return <SignIn onSignIn={noop} error="That did not go through. Try again?" />;
   }
+  const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
   const items = toThreadItems(CONVERSATION, {
@@ -119,7 +120,11 @@ function Screens(): JSX.Element {
       auth={{ onDecide: noop }}
       onSelect={noop}
       onSend={noop}
+      composing={composing}
       onCompose={noop}
+      onCloseCompose={noop}
+      onPickAgent={noop}
+      onCreateAgent={noop}
       onApps={noop}
       onAccount={noop}
       onMode={noop}
