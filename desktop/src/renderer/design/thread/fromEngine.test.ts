@@ -419,3 +419,58 @@ describe('a reply that is only a file', () => {
     expect(items[0]).toMatchObject({ image: true });
   });
 });
+
+describe('a long reply with its working behind it', () => {
+  test('the prose stays and the fence collapses', () => {
+    const items = toThreadItems([msg({
+      type: 'assistant',
+      content: 'Sixteen invoices, all small except two.\n\n```details\nINV-1201 Acme\nINV-1202 Bartok\n```',
+    })], {});
+    expect(items[0].kind).toBe(ThreadItemKind.Text);
+    expect(items[0]).toMatchObject({
+      text: 'Sixteen invoices, all small except two.',
+      details: 'INV-1201 Acme\nINV-1202 Bartok',
+    });
+  });
+
+  test('never while the reply is still arriving', () => {
+    // The closing fence has not landed yet, so a split now would be made
+    // on half a reply and then re-made.
+    const items = toThreadItems([msg({
+      type: 'assistant',
+      content: 'Sixteen invoices.\n\n```details\nINV-1201 Acme',
+      metadata: { isStreaming: true },
+    })], {});
+    expect(items[0]).not.toHaveProperty('details');
+  });
+
+  test('an ordinary reply carries no detail', () => {
+    const items = toThreadItems([msg({ type: 'assistant', content: 'Done.' })], {});
+    expect(items[0]).not.toHaveProperty('details');
+  });
+});
+
+describe('the detail and the three-bubble split, together', () => {
+  test('a multi-bubble reply keeps its detail under the last bubble', () => {
+    // Found by a failing test: splitIntoBubbles breaks on blank lines, so
+    // running it before the detail split tore the fence in half and left
+    // a bubble that was nothing but a `details` block.
+    const items = toThreadItems([msg({
+      type: 'assistant',
+      content: 'First.\n\nSecond.\n\n```details\nrow one\nrow two\n```',
+    })], {});
+
+    expect(items).toHaveLength(2);
+    expect(items[0]).not.toHaveProperty('details');
+    expect(items[1]).toMatchObject({ text: 'Second.', details: 'row one\nrow two' });
+  });
+
+  test('the fence never becomes a bubble of its own', () => {
+    const items = toThreadItems([msg({
+      type: 'assistant',
+      content: 'Here.\n\n```details\nrow\n```',
+    })], {});
+    expect(items.some(one => one.kind === ThreadItemKind.Text && one.text.includes('```')))
+      .toBe(false);
+  });
+});

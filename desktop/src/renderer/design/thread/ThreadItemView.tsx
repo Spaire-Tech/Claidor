@@ -6,6 +6,7 @@ import { Orb, OrbMood } from '../orb/Orb';
 import { paletteForAgent } from '../orb/palette';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { readableSize } from './attachment';
+import { detailsLabel } from './details';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
 import {
   type AttachmentItem,
@@ -212,11 +213,52 @@ function TextBubble(
 ) {
   const mine = item.from === Speaker.Person;
   const parts = splitMessageParts(item.text, handlers.files);
+  const [open, setOpen] = useState(false);
   const bubble = (
     <div style={mine ? mineBubble : theirBubble}>
       {parts.map((part, index) => (
         <Part key={index} part={part} mine={mine} handlers={handlers} />
       ))}
+      {item.details && (
+        <>
+          <button
+            type="button"
+            onClick={() => setOpen(one => !one)}
+            aria-expanded={open}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, marginTop: 10,
+              padding: 0, border: 'none', background: 'transparent', cursor: 'pointer',
+              font: 'inherit', fontSize: text.label, color: color.muted,
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-flex', transition: 'transform .16s',
+                transform: open ? 'rotate(90deg)' : 'none',
+              }}
+            >
+              <ChevronRightIcon size={12} />
+            </span>
+            {open ? 'Hide the detail' : detailsLabel(item.details)}
+          </button>
+          {open && (
+            <div
+              style={{
+                marginTop: 9, paddingLeft: 11,
+                borderLeft: `2px solid ${line.hairline}`,
+                fontFamily: font.mono, fontSize: text.label,
+                lineHeight: 1.5, color: color.muted,
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                // The bulk is usually a list of rows. Its own scroller, so
+                // a hundred invoices do not push the composer off screen.
+                maxHeight: 280, overflowY: 'auto',
+              }}
+            >
+              {item.details}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 

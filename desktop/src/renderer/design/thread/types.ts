@@ -65,6 +65,15 @@ export interface TextItem {
   agentName?: string;
   /** True while the text is still arriving, so voice mode can stream it. */
   streaming?: boolean;
+  /**
+   * The bulk behind this answer, collapsed under it.
+   *
+   * A long digest, a list of rows, the noisy middle of a job. The bubble
+   * carries the point; this is what it is based on, one click away. Never
+   * the answer itself — `details.ts` refuses to collapse a reply that has
+   * no summary in front of it.
+   */
+  details?: string;
   at: number;
 }
 

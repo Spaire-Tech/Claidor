@@ -3067,6 +3067,23 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.mcp?.servers?.['faiser-ask-input']).toBeUndefined();
   });
 
+  test('the agent is told how to put the bulk out of the way', async () => {
+    // The fence is dead syntax unless the prompt teaches it, and the
+    // warning matters more than the syntax: a reply that is only a
+    // details block has hidden itself behind a disclosure.
+    const sync = await createSync();
+    expect(sync.sync('details-fence').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('### Putting the bulk out of the way');
+    expect(agentsMd).toContain('```details');
+    expect(agentsMd).toContain('**Never put the answer in there**');
+    expect(agentsMd).toContain('Three lines do not need a disclosure.');
+  });
+
   test('the escalation order is written down', async () => {
     // Every step existed and no statement of which to try first, so the
     // choice was the model's mood.

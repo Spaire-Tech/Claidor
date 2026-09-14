@@ -1,5 +1,6 @@
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { attachmentFor } from './attachment';
+import { splitReply } from './details';
 import type { KnownFile } from './parts';
 import { verbForTool } from './toolVerbs';
 import {
@@ -327,11 +328,23 @@ export function toThreadItems(
         }
         if (isBlank(message.content)) break;
 
+        // The bulk comes off first, before anything is split into
+        // bubbles. `splitIntoBubbles` breaks on blank lines, so running
+        // it first would tear the fence in half and leave a bubble that
+        // is nothing but a `details` block — which, having no summary in
+        // front of it, is then quite correctly refused and shown raw.
+        //
+        // Not while streaming: the closing fence has not arrived, so the
+        // split would be made on half a reply and then re-made.
+        const { summary, details } = meta.isStreaming
+          ? { summary: message.content, details: undefined }
+          : splitReply(message.content);
+
         // A streaming reply stays whole: splitting a half-arrived answer
         // would make bubbles appear and then re-split as more lands.
         const parts = meta.isStreaming
-          ? [message.content.trim()]
-          : splitIntoBubbles(message.content);
+          ? [summary.trim()]
+          : splitIntoBubbles(summary);
 
         parts.forEach((text, index) => {
           const id = parts.length > 1 ? `${message.id}:${index}` : message.id;
@@ -358,6 +371,9 @@ export function toThreadItems(
             from: Speaker.Agent,
             text,
             ...sender,
+            // Under the last bubble of the reply, which is where the
+            // person's eye already is when they finish reading it.
+            ...(details && index === parts.length - 1 ? { details } : {}),
             ...(meta.isStreaming ? { streaming: true } : {}),
             at,
           } satisfies TextItem);
