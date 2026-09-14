@@ -11,6 +11,12 @@ import {
   SettingsTab,
 } from '../../../shared/settings/rows';
 import { CloseIcon, ComputerIcon, GearIcon, UsageIcon } from '../icons';
+import {
+  CONFIRM_WINDOW_MS,
+  confirmLabel,
+  ConfirmState,
+  pressConfirm,
+} from '../shell/confirm';
 import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 
 /**
@@ -207,26 +213,7 @@ function Control({ row }: { row: SettingsRow }): JSX.Element | null {
     case SettingsRowKind.Toggle:
       return <Toggle on={row.on} onToggle={row.onToggle} label={row.label} />;
     case SettingsRowKind.Button:
-      return (
-        <button
-          type="button"
-          onClick={row.onPress}
-          disabled={row.busy}
-          style={{
-            flex: '0 0 auto', height: 38, padding: '0 18px', borderRadius: radius.field,
-            cursor: row.busy ? 'default' : 'pointer', font: 'inherit', fontSize: text.body,
-            fontWeight: row.tone ? 500 : 400, whiteSpace: 'nowrap',
-            opacity: row.busy ? 0.6 : 1,
-            ...(row.tone === 'primary'
-              ? { background: color.ink, color: color.paper, border: 'none' }
-              : row.tone === 'danger'
-                ? { background: color.danger, color: color.paper, border: 'none' }
-                : { background: color.fill, color: color.ink, border: `1px solid ${line.field}` }),
-          }}
-        >
-          {row.action}
-        </button>
-      );
+      return <ActionButton row={row} />;
     case SettingsRowKind.Field:
       return <Field row={row} />;
     case SettingsRowKind.Meter:
@@ -250,6 +237,72 @@ function Control({ row }: { row: SettingsRow }): JSX.Element | null {
       // Five kinds and no sixth. A new one is a decision, made here.
       return null;
   }
+}
+
+
+/**
+ * A row's button, and the second press a destructive one asks for.
+ *
+ * A dangerous control does not open a dialog. It changes what it says and
+ * waits — `grok-bot-app-ui.md`'s "Click Again to Confirm", and the same
+ * behaviour as deleting a conversation in the sidebar, so there is one
+ * way this works in the app rather than two.
+ *
+ * Only `danger` rows ask. Making every button confirm would train people
+ * to press twice without reading, which is exactly the habit that makes
+ * the confirmation worthless on the one row that needed it.
+ */
+function ActionButton({ row }: { row: Extract<SettingsRow, { kind: 'button' }> }): JSX.Element {
+  const [armedAt, setArmedAt] = useState<number | undefined>();
+  const asking = armedAt !== undefined;
+
+  useEffect(() => {
+    if (!asking) return undefined;
+    const timer = window.setTimeout(() => setArmedAt(undefined), CONFIRM_WINDOW_MS);
+    return () => window.clearTimeout(timer);
+  }, [asking, armedAt]);
+
+  const press = (): void => {
+    if (row.tone !== 'danger') {
+      row.onPress();
+      return;
+    }
+    const step = pressConfirm(
+      asking ? ConfirmState.Armed : ConfirmState.Ready,
+      armedAt,
+      Date.now(),
+    );
+    if (step.act) {
+      setArmedAt(undefined);
+      row.onPress();
+      return;
+    }
+    setArmedAt(Date.now());
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={press}
+      disabled={row.busy}
+      style={{
+        flex: '0 0 auto', height: 38, padding: '0 18px', borderRadius: radius.field,
+        cursor: row.busy ? 'default' : 'pointer', font: 'inherit', fontSize: text.body,
+        fontWeight: row.tone ? 500 : 400, whiteSpace: 'nowrap',
+        opacity: row.busy ? 0.6 : 1,
+        ...(row.tone === 'primary'
+          ? { background: color.ink, color: color.paper, border: 'none' }
+          : row.tone === 'danger'
+            ? { background: color.danger, color: color.paper, border: 'none' }
+            : { background: color.fill, color: color.ink, border: `1px solid ${line.field}` }),
+      }}
+    >
+      {row.tone === 'danger' ? confirmLabel(
+        asking ? ConfirmState.Armed : ConfirmState.Ready,
+        row.action,
+      ) : row.action}
+    </button>
+  );
 }
 
 function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.Element {

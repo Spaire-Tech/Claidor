@@ -1424,3 +1424,18 @@ test('a room with unreadable members is empty rather than fatal', () => {
   expect(store.getRoom(room.id)?.memberIds).toEqual([]);
   expect(store.listRooms()).toHaveLength(1);
 });
+
+test('deleting an agent empties its seat in every room', () => {
+  // The store method existed and nothing called it, so a deleted agent
+  // stayed in the member list and the room silently had one fewer voice.
+  db.prepare(
+    `INSERT INTO agents (id, name, description, system_prompt, identity, model,
+      thinking_level, working_directory, icon, skill_ids, subagent_allow_agent_ids,
+      enabled, pinned, is_default, source, preset_id, created_at, updated_at)
+     VALUES (?, ?, '', '', '', '', '', '', '', '[]', '[]', 1, 0, 0, 'custom', '', ?, ?)`,
+  ).run('design', 'Design Lead', Date.now(), Date.now());
+
+  const room = store.createRoom('Launch', ['eng', 'design']);
+  expect(store.deleteAgent('design')).toBe(true);
+  expect(store.getRoom(room.id)?.memberIds).toEqual(['eng']);
+});

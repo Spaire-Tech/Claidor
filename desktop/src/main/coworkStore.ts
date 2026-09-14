@@ -3533,6 +3533,11 @@ export class CoworkStore {
       }
 
       this.deleteSessionsForAgent(agentId);
+      // Inside the transaction: a room left holding a member that no
+      // longer exists shows one fewer voice than its member list claims,
+      // which reads as the agent ignoring the room rather than being
+      // gone.
+      this.removeAgentFromRooms(agentId);
       return true;
     });
 

@@ -109,6 +109,7 @@ export function FaiserApp(): JSX.Element {
       parts={shell.parts}
       secret={askInput.handlers}
       onSelect={shell.onSelect}
+      onDelete={shell.onDelete}
       onSend={shell.onSend}
       onMode={shell.onMode}
       onTeach={shell.onTeach}

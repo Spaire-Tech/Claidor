@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { type Room } from '../../../shared/rooms/constants';
+import { AgentId } from '../../../shared/agent';
+import { isRoomId, type Room } from '../../../shared/rooms/constants';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { coworkService } from '../../services/cowork';
@@ -60,6 +61,8 @@ export interface MessagesShellState {
   /** What a file or a link named in a message can do. */
   parts: PartHandlers;
   onSelect: (agentId: string) => void;
+  /** Delete a conversation, permanently. Rooms and agents both. */
+  onDelete: (id: string) => void;
   onSend: (message: string) => void;
   onMode: (mode: ThreadMode) => void;
   /** "Teach a task", from the composer's `+` menu. */
@@ -388,6 +391,37 @@ export function useMessagesShell(): MessagesShellState {
     void coworkService.loadSession(newest.id);
   }, [dispatch, sessionsByAgent]);
 
+  /**
+   * Delete a conversation, permanently.
+   *
+   * A room and an agent are both rows in the same list and both delete
+   * from the same gesture, but they are not the same act: deleting a room
+   * puts nothing away, because its members are agents that go on
+   * existing. Deleting an agent takes its transcript with it.
+   *
+   * The main agent has no delete. It is the one conversation that always
+   * exists, and offering to remove it would mean an app with no way in.
+   */
+  const onDelete = useCallback((id: string) => {
+    if (isRoomId(id)) {
+      void window.electron?.rooms?.remove?.(id).then(reloadRooms).catch(() => {
+        showToast('That could not be deleted.');
+      });
+      if (activeId === id) dispatch(setCurrentAgentId(AgentId.Main));
+      return;
+    }
+    if (id === AgentId.Main) return;
+    void agentService.deleteAgent(id).then(deleted => {
+      if (!deleted) {
+        showToast('That could not be deleted.');
+        return;
+      }
+      // A room it sat in has lost a member, so the list is stale.
+      reloadRooms();
+      if (activeId === id) dispatch(setCurrentAgentId(AgentId.Main));
+    });
+  }, [activeId, dispatch, reloadRooms]);
+
   const onSend = useCallback((message: string) => {
     // A room has no session of its own. The message goes to each member's
     // conversation, which is what makes every reply a real reply the
@@ -632,6 +666,7 @@ export function useMessagesShell(): MessagesShellState {
     auth,
     parts,
     onSelect,
+    onDelete,
     onSend,
     onMode: setMode,
     onTeach,
