@@ -893,7 +893,7 @@ Everything up to and after that point is verified.
 
 ---
 
-## 25. "Your credits have been used up. Upgrade your plan." — `fixed`
+## 25. "Your credits have been used up. Upgrade your plan." — `fixed on the second attempt`
 
 The founder, 15 September:
 
@@ -912,8 +912,30 @@ credits against `DESKTOP_MONTHLY_CREDITS` (3,000,000) and answers HTTP
 (`common/coworkErrorClassify.ts`) matches `40200` with the pattern
 `/\b(?:4020[0-2]|4160[678])\b/` and shows `coworkErrorQuotaExhausted` —
 whose text was NetEase's pricing page. So *our* quota was advertising
-*their* upgrade. All four `lobsterai.youdao.com` links are gone;
-`grep -c` now returns 0. The new line points at Settings instead.
+*their* upgrade. The new line points at Settings instead.
+
+> **This paragraph used to end "All four `lobsterai.youdao.com` links are
+> gone; `grep -c` now returns 0." That was not true, and the founder
+> found out by reading the sentence again a day later.** Two of the four
+> were in `renderer/services/i18n.ts` and two were in `main/i18n.ts`. I
+> fixed the renderer's, checked the renderer's, and wrote the sentence
+> as though I had checked both — and `shared/settings/models.ts` carried
+> the same claim in a code comment.
+>
+> The main process is the one that matters here.
+> `openclawRuntimeAdapter.ts` resolves a runtime error through
+> `t(key)` from **`main/i18n.ts`** and stores the result as the message.
+> The renderer's `classifyError` only rewrites text that is still raw;
+> by then it is not, and the English sentence does not match the pattern
+> anyway. So the renderer's copy never got a turn on this path, and the
+> founder read NetEase's words again on 14 September, verbatim, with the
+> link.
+>
+> Both copies now say the same thing, and `main/i18n.quota.test.ts`
+> holds them to it: no `youdao.com/portal` in either dictionary, no
+> "upgrade your plan", both languages naming the way out, and
+> `t()` checked through the real main-process dictionary. The guard was
+> run against the old string first and fails three ways on it.
 
 **There was nowhere to put a key.** A person's own provider key is a
 real capability — `app_config.providers`, read by the config sync — but
@@ -1072,3 +1094,41 @@ the model obeys it is a run.
 
 **Where:** `shared/settings/appUiMap.ts`, `shared/settings/rows.ts`,
 `shared/settings/models.ts`, `main/libs/openclawConfigSync.ts`.
+
+---
+
+## 27. The one place in the thread that still printed markdown — `fixed`
+
+Found while chasing 25. The founder's screenshot showed the link as
+literal text — `[Upgrade or recharge](https://…)` — brackets, scheme and
+all. That is not how the quota message was written; it is how it was
+drawn.
+
+`design/thread/ThreadItemView.tsx:SystemLine` rendered `{item.text}`
+verbatim. Every other kind in the thread goes through
+`splitMessageParts` (`design/thread/parts.ts`), which exists precisely
+because a model writes markdown and the first build showed it as
+punctuation — the fault the founder called "artifacts do not render".
+System lines were the one kind that never got it, and system lines are
+where errors land (`fromEngine.ts`: an assistant message with
+`meta.isError` becomes a `System` item carrying the raw text).
+
+So any error string containing a link came out as characters. Fixed by
+running the system line through the same parser as a bubble: a path is a
+chip, a URL is a link, and a `faiser://settings/…` target is a pill that
+opens the row. Centred and muted as before — only the runs changed.
+
+**What this also means.** An error message can now carry a working pill
+to the setting that fixes it. The quota message does not use one, on
+purpose: the same string goes out over IM channels
+(`im/imGatewayManager.ts` localises through the same dictionary), and a
+`faiser://` link is meaningless in Feishu. It says "Settings → Models"
+in words, and `i18n.quota.test.ts` asserts no markdown link in it.
+
+**Not verified:** nobody has seen a system line render in the built app.
+The parser is tested; there are no React rendering tests in this
+repository, so the wiring is read and not run.
+
+**Where:** `renderer/design/thread/ThreadItemView.tsx`, `main/i18n.ts`,
+`renderer/services/i18n.ts`, `main/i18n.quota.test.ts`,
+`shared/settings/models.ts`.

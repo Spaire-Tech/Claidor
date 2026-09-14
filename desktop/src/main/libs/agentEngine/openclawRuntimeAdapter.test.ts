@@ -657,13 +657,13 @@ test('resolveOpenClawRuntimeErrorMessage restores recent quota error hidden by O
   });
 
   expect(resolveOpenClawRuntimeErrorMessage('LLM request failed.')).toContain(
-    '积分额度已用完',
+    '本月额度已用完',
   );
   expect(consumeRecentOpenClawTokenProxyQuotaError()).toBeNull();
 });
 
 test('resolveOpenClawRuntimeErrorMessage classifies raw LobsterAI quota errors', () => {
-  expect(resolveOpenClawRuntimeErrorMessage('本月积分已用完')).toContain('积分额度已用完');
+  expect(resolveOpenClawRuntimeErrorMessage('本月积分已用完')).toContain('本月额度已用完');
 });
 
 test('resolveOpenClawRuntimeError keeps structured enterprise quota reason', () => {
@@ -5221,8 +5221,12 @@ test('chat error can consume quota signal after lifecycle error schedules fallba
 
     const persistedError = session.messages.find((message) => message.type === 'system');
     expect(session.status).toBe('error');
-    expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('积分额度已用完'));
-    expect(persistedError?.content).toContain('立即升级/充值');
+    expect(errorSpy).toHaveBeenCalledWith(session.id, expect.stringContaining('本月额度已用完'));
+    // The message our own 402 produces, and where it sends somebody. It used
+    // to send them to NetEase's pricing page over our quota; the way out of
+    // our limit is their own key, in our own Settings.
+    expect(persistedError?.content).toContain('设置 → 模型');
+    expect(persistedError?.content).not.toContain('youdao.com');
     expect(abortRequest).not.toHaveBeenCalled();
     expect(consumeRecentOpenClawTokenProxyQuotaError()).toBeNull();
   } finally {

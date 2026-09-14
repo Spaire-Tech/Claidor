@@ -11,7 +11,14 @@ import { ProviderName, ProviderRegistry } from '../providers';
  * credits against `DESKTOP_MONTHLY_CREDITS` and answers 402 with code
  * 40200 (`polar/desktop/service.py`), and 40200 is inside the pattern
  * upstream's classifier matches to "upgrade your plan", so our own quota
- * was sending them to LobsterAI's pricing page. That string is fixed.
+ * was sending them to LobsterAI's pricing page.
+ *
+ * That string lives in **two** dictionaries, and the first pass only fixed
+ * one. `openclawRuntimeAdapter.ts` localises a runtime error through
+ * `main/i18n.ts` and stores the result, so the renderer's copy in
+ * `renderer/services/i18n.ts` never sees raw text and never gets a turn —
+ * and the founder read NetEase's sentence again. Both are fixed now, and
+ * `main/i18n.quota.test.ts` is what keeps them fixed.
  *
  * And the escape hatch was gone. A person's own provider key is a real
  * capability — `app_config.providers`, read by the config sync and handed
