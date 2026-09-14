@@ -1,26 +1,25 @@
 import { useEffect, useRef } from 'react';
 
-import { Orb, OrbMood } from '../orb/Orb';
-import { color, motion, text } from '../tokens';
-import { showsTypingLine } from './fromEngine';
+import { color, text } from '../tokens';
+import { startsTurn } from './leading';
 import {
   type AuthHandlers,
   type ChoiceHandlers,
+  type PartHandlers,
   ThreadItemView,
 } from './ThreadItemView';
 import type { ThreadItem } from './types';
-import { useStaggered } from './useStaggered';
 
 export interface ThreadProps {
+  /** Already staggered: the shell holds that, because the header's
+   *  "typing" has to stay on while bubbles are still landing. */
   items: readonly ThreadItem[];
-  /** The agent whose orb appears beside a status or a typing line. */
-  agentId: string;
   /** "Today", "Friday" — the canvas puts one stamp at the top. */
   dayStamp?: string;
-  /** True between sending and the first word arriving. */
-  typing?: boolean;
   choice: ChoiceHandlers;
   auth: AuthHandlers;
+  /** What a file or a link named in a message can do. */
+  parts?: PartHandlers;
 }
 
 /**
@@ -34,13 +33,8 @@ export interface ThreadProps {
  * scrolling; this does the same for the same reason.
  */
 export function Thread({
-  items, agentId, dayStamp, typing, choice, auth,
+  items, dayStamp, choice, auth, parts,
 }: ThreadProps): JSX.Element {
-  // "The text come like texts. not ai." A reply's later bubbles arrive
-  // 420ms apart rather than all in one frame. History is never replayed —
-  // see `stagger.ts`.
-  const shown = useStaggered(items);
-
   const ref = useRef<HTMLDivElement>(null);
   // Whether the person is still at the bottom. Starts true so a freshly
   // opened thread lands at the newest message.
@@ -94,28 +88,22 @@ export function Thread({
         </div>
       )}
 
-      {shown.map(item => (
-        <ThreadItemView key={item.id} item={item} choice={choice} auth={auth} />
+      {/*
+        No "Writing" line here. The first build shimmered one under the
+        thread; the canvas does not have it. Its typing indicator is the
+        word "typing" beside the agent's name in the header, and one app
+        saying the same thing in two places is one place too many.
+      */}
+      {items.map((item, index) => (
+        <ThreadItemView
+          key={item.id}
+          item={item}
+          choice={choice}
+          auth={auth}
+          {...(parts ? { parts } : {})}
+          leading={startsTurn(items[index - 1], item)}
+        />
       ))}
-
-      {showsTypingLine(shown, typing || shown.length < items.length) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 8 }}>
-          <Orb agentId={agentId} size={26} mood={OrbMood.Still} />
-          <span
-            style={{
-              fontSize: text.message,
-              background: `linear-gradient(90deg, ${color.shimmerInk} 0%, ${color.shimmerInk} 30%, ${color.shimmerPale} 55%, ${color.shimmerInk} 80%)`,
-              backgroundSize: '220% 100%',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: `fsr-shimmer ${motion.shimmer.duration} ${motion.shimmer.easing} infinite`,
-            }}
-          >
-            Writing
-          </span>
-        </div>
-      )}
     </div>
   );
 }

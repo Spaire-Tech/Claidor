@@ -73,6 +73,7 @@
   /* Radii */
   --fsr-radius-pill: 999px;
   --fsr-radius-key: 6px;
+  --fsr-radius-file-chip: 7px;
   --fsr-radius-chip: 8px;
   --fsr-radius-small: 11px;
   --fsr-radius-field: 12px;
@@ -80,6 +81,7 @@
   --fsr-radius-input: 14px;
   --fsr-radius-row: 16px;
   --fsr-radius-card: 18px;
+  --fsr-radius-bubble: 20px;
   --fsr-radius-menu: 20px;
   --fsr-radius-panel: 22px;
   --fsr-radius-modal: 24px;

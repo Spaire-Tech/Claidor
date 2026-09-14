@@ -1,3 +1,4 @@
+import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
@@ -180,11 +181,22 @@ export function toThreadItems(
     switch (message.type) {
       case 'user': {
         if (isBlank(message.content)) break;
+        // A person's attachments arrive appended to their own prompt as
+        // machine-written lines — `Input Files: /abs/path` — which is the
+        // app's convention and predates this shell. Rendered as written
+        // they are a label and a path in the middle of somebody's own
+        // sentence, so they come out and go back in as the canvas's
+        // marker, where the bubble draws them as chips.
+        const { text: said, attachments } = extractUserMessageFileAttachments(message.content);
+        const text = [said.trim(), ...attachments.map(one => `[[${one.name}]]`)]
+          .filter(Boolean)
+          .join('\n');
+        if (!text) break;
         items.push({
           kind: ThreadItemKind.Text,
           id: message.id,
           from: Speaker.Person,
-          text: message.content.trim(),
+          text,
           at,
         } satisfies TextItem);
         break;
@@ -215,6 +227,7 @@ export function toThreadItems(
             from: Speaker.Agent,
             text,
             ...(group && agentId ? { agentId } : {}),
+            ...(group && agentId && options.agentName ? { agentName: options.agentName } : {}),
             ...(meta.isStreaming ? { streaming: true } : {}),
             at,
           } satisfies TextItem);
@@ -269,23 +282,6 @@ export function toThreadItems(
   }
 
   return items;
-}
-
-/**
- * Whether the generic "Writing" line should show under the thread.
- *
- * One shimmering line at a time. In this app "typing" is the session
- * being busy, and it stays busy while a tool runs — so a live status
- * ("Running commands") and "Writing" would shimmer at each other, two
- * lines saying the same thing, one of them less precisely. The status
- * wins, because it says what is actually happening.
- */
-export function showsTypingLine(
-  items: readonly ThreadItem[],
-  typing: boolean | undefined,
-): boolean {
-  if (!typing) return false;
-  return items[items.length - 1]?.kind !== ThreadItemKind.Status;
 }
 
 /**

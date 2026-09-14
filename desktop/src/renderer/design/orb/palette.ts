@@ -48,16 +48,18 @@ export function paletteById(paletteId: string): OrbPalette | undefined {
 }
 
 /**
- * The seed that decides the shape of one agent's clouds, as distinct from
- * their colour. Two agents sharing a palette still differ, which is what
- * keeps fifteen palettes enough for more than fifteen agents.
+ * The seed that decides the shape of one agent's clouds.
  *
- * Spread over a wide range because the shader feeds it into `sin()`: seeds
- * a fraction apart produce visibly similar noise.
+ * It comes from the palette, because the canvas pairs the two: moss is
+ * seed 11, harbour 22, iris 33, fuchsia 44. The same five colours at a
+ * different seed is a different orb, so deriving the seed separately —
+ * which is what this used to do, by hashing the id — produced an orb the
+ * founder had never seen.
  */
 export function seedForAgent(agentId: string): number {
-  return hashAgentId(`${agentId}:seed`) % 9973;
+  return paletteForAgent(agentId).seed;
 }
+
 
 export interface OrbIdentity {
   readonly colors: string;

@@ -419,6 +419,32 @@ settings on top of one OpenAI voice.
 
 **Size:** medium.
 
+> **Correction, 14 September.** "This is a build" was right about the
+> server and wrong about everything else. The engine already has a whole
+> TTS subsystem — `openclaw/src/tts/`, a gateway method (`tts.convert`,
+> `tts.status`, `tts.personas`), a tts tool, and an OpenAI speech
+> provider in `extensions/openai/` which our packaging **already keeps**
+> (`prune-openclaw-runtime.cjs`, `BUNDLED_EXTENSIONS_TO_KEEP`). The app
+> also already has voice *input*: `services/voiceInput/` has a realtime
+> ASR client, an audio recorder and a WAV encoder.
+>
+> The provider posts to `${baseUrl}/audio/speech` in OpenAI's own shape,
+> so the whole server half is one route and a base URL. And OpenClaw's
+> `TtsPersonaConfig` carries `prompt.style`, `pacing` and `constraints`
+> — which is exactly "a manner, not a speaker". The seven voices are
+> personas, not seven voices.
+>
+> So what is left is: the route (**done**), config sync writing `tts`
+> and the seven personas, and the Voice tab calling `tts.convert` and
+> playing what comes back.
+>
+> **Two things for the founder.** Speech is priced per character, and at
+> $15 per million that is **5 credits a character** — a thousand
+> characters spoken costs the same as five thousand input tokens read.
+> Voice is not cheap. And that rate is the one number in `pricing.py`
+> nobody has checked against a price page; it is a single constant with a
+> test around it, and it must be confirmed before anyone is charged.
+
 ---
 
 ## Stage 10 — The rest of the agent's five tabs

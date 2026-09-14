@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import type { PresetAgent } from '../../types/agent';
-import { installedPresetIds, matchingRoles } from './apps';
+import { AGENT_TABS, agentBody, installedPresetIds, matchingRoles, roleMeta } from './roles';
 
 const role = (over: Partial<PresetAgent> & { id: string }): PresetAgent => ({
   name: over.id, nameEn: over.id, icon: '', description: '', descriptionEn: '',
@@ -76,5 +76,70 @@ describe('which roles are already here', () => {
 
   test('no agents at all means none of them', () => {
     expect(installedPresetIds([]).size).toBe(0);
+  });
+});
+
+describe('the role page', () => {
+  const role = (over: Partial<PresetAgent> = {}): PresetAgent => ({
+    id: 'engineering-lead',
+    name: '工程主管',
+    nameEn: 'Engineering Lead',
+    icon: '',
+    description: '',
+    descriptionEn: 'Standups, code review, incidents.',
+    identity: '',
+    identityEn: '',
+    systemPrompt: '',
+    systemPromptEn: '',
+    skillIds: ['Standups', 'Code review'],
+    ...over,
+  });
+
+  test('the five tabs are the canvas\'s, with the canvas\'s notes', () => {
+    // I once wrote in the review that these do not appear in the canvas.
+    // They do, exactly, and the notes are half of what makes the rail
+    // readable rather than a list of nouns.
+    expect(AGENT_TABS.map(t => [t.id, t.note])).toEqual([
+      ['Instructions', 'How this agent works'],
+      ['Memories', 'Facts it already knows'],
+      ['Skills', 'Playbooks it can run'],
+      ['Routines', 'Jobs that run on their own'],
+      ['Integrations', 'Connectors it can use'],
+    ]);
+  });
+
+  test('the meta line counts the skills and says where it came from', () => {
+    expect(roleMeta(role())).toBe('2 skills · Official');
+  });
+
+  test('one skill is not "1 skills"', () => {
+    expect(roleMeta(role({ skillIds: ['Standups'] }))).toBe('1 skill · Official');
+  });
+
+  test('a role with no skills says nothing about them', () => {
+    expect(roleMeta(role({ skillIds: [] }))).toBe('Official');
+  });
+
+  test('the meta line ships no product name', () => {
+    // The canvas reads "… · by Swens". The product has no name yet, and
+    // shipping a placeholder in a string is how one becomes a brand.
+    expect(roleMeta(role())).not.toMatch(/by /);
+  });
+
+  test('Instructions is the role\'s own description', () => {
+    expect(agentBody(role(), 'Instructions')).toBe('Standups, code review, incidents.');
+  });
+
+  test('every other tab says something, in the agent\'s name', () => {
+    for (const tab of ['Memories', 'Skills', 'Routines', 'Integrations'] as const) {
+      const body = agentBody(role(), tab);
+      expect(body.length, tab).toBeGreaterThan(40);
+      expect(body, tab).toContain('Engineering Lead');
+    }
+  });
+
+  test('the Skills tab counts playbooks, singular when there is one', () => {
+    expect(agentBody(role({ skillIds: ['Standups'] }), 'Skills')).toContain('1 playbook');
+    expect(agentBody(role(), 'Skills')).toContain('2 playbooks');
   });
 });

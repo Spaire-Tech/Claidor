@@ -321,6 +321,14 @@ export interface CoworkPermissionResponse {
 export interface CoworkSessionSummary {
   id: string;
   title: string;
+  /**
+   * The last thing said in this conversation, for the sidebar preview.
+   *
+   * On the summary because the sidebar shows every row and only one
+   * session has its messages loaded — without this, every row but the
+   * open one previewed as blank.
+   */
+  lastMessage?: string;
   scheduledTaskId: string | null;
   status: CoworkSessionStatus;
   pinned: boolean;

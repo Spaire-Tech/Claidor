@@ -28,13 +28,11 @@ describe('paletteForAgent', () => {
   });
 
   test('spreads similar ids apart rather than clustering them', () => {
-    // Agent ids are generated as `agent` + a timestamp in base 36, so
-    // consecutive agents differ in one trailing character. Index-based or
-    // weakly-hashed assignment would give a sidebar of near-identical
-    // orbs, which is the whole thing fifteen palettes exist to prevent.
-    const ids = Array.from({ length: 15 }, (_, i) => `agent${(1_000_000 + i).toString(36)}`);
+    // Four palettes and a hash: neighbouring ids must not land on the
+    // same disc, or a sidebar of agents reads as one colour.
+    const ids = ['agent-1', 'agent-2', 'agent-3', 'agent-4'];
     const chosen = new Set(ids.map(id => paletteForAgent(id).id));
-    expect(chosen.size).toBeGreaterThanOrEqual(9);
+    expect(chosen.size).toBeGreaterThan(1);
   });
 
   test('uses the whole set given enough agents', () => {
@@ -70,22 +68,25 @@ describe('seedForAgent', () => {
     expect(seedForAgent('mira')).not.toBe(hashAgentId('mira'));
   });
 
-  test('separates two agents that happen to share a palette', () => {
-    const sharing: string[] = [];
-    for (let i = 0; sharing.length < 2 && i < 500; i += 1) {
-      const id = `agent-${i}`;
-      if (paletteForAgent(id).id === paletteForAgent('agent-0').id) sharing.push(id);
+  test('two agents on the same palette get the same orb, as the canvas does', () => {
+    // With four palettes this is common, and it is what the design says:
+    // an orb is a palette, and the palette carries its seed. Making them
+    // differ would mean inventing a seed the founder never chose.
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const pairs = new Map<string, number>();
+    for (const id of ids) pairs.set(paletteForAgent(id).id, seedForAgent(id));
+    for (const [paletteId, seed] of pairs) {
+      expect(seed).toBe(paletteById(paletteId)?.seed);
     }
-    expect(sharing).toHaveLength(2);
-    expect(seedForAgent(sharing[0])).not.toBe(seedForAgent(sharing[1]));
   });
 
-  test('is spread wide, because the shader feeds it to sin()', () => {
-    // Seeds a fraction apart make visibly similar noise, so a narrow
-    // range would undo the point of having a seed at all.
-    const seeds = Array.from({ length: 200 }, (_, i) => seedForAgent(`agent-${i}`));
-    expect(Math.max(...seeds) - Math.min(...seeds)).toBeGreaterThan(5000);
-    expect(new Set(seeds).size).toBeGreaterThan(180);
+  test('is one of the canvas\'s four, not a number we made up', () => {
+    // It used to be `hash(id) % 9973`, which gave every agent a shape
+    // nobody had seen. Now it can only be 11, 22, 33 or 44.
+    const allowed = new Set(ORB_PALETTES.map(one => one.seed));
+    for (const id of ['juno', 'mira', 'perrin', 'sable', 'main', '']) {
+      expect(allowed.has(seedForAgent(id)), id).toBe(true);
+    }
   });
 });
 
@@ -98,9 +99,9 @@ describe('orbIdentity', () => {
   });
 
   test('an explicit palette wins over the derived one', () => {
-    const identity = orbIdentity('perrin', 'jade');
-    expect(identity.paletteId).toBe('jade');
-    expect(identity.colors).toBe(paletteById('jade')?.colors.join(','));
+    const identity = orbIdentity('perrin', 'fuchsia');
+    expect(identity.paletteId).toBe('fuchsia');
+    expect(identity.colors).toBe(paletteById('fuchsia')?.colors.join(','));
     // The seed still comes from the agent, so two agents both set to
     // jade do not become identical.
     expect(identity.seed).toBe(seedForAgent('perrin'));

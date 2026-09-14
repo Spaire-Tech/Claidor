@@ -2,25 +2,33 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { agentService } from '../../services/agent';
+import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { coworkService } from '../../services/cowork';
 import type { AppDispatch, RootState } from '../../store';
 import { setCurrentAgentId } from '../../store/slices/agentSlice';
+import { addArtifact } from '../../store/slices/artifactSlice';
 import { setCurrentSession } from '../../store/slices/coworkSlice';
 import type { PresetAgent } from '../../types/agent';
+import { ArtifactTypeValue } from '../../types/artifact';
+import type { CoworkMessage } from '../../types/cowork';
+import { openLocalPathWithToast, showToast } from '../../utils/localFileActions';
+import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
 import { decisionNote } from '../thread/fromEngine';
-import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
+import { basename, type KnownFile } from '../thread/parts';
+import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
 import { AuthDecision } from '../thread/types';
-import { installedPresetIds } from './apps';
 import type { AgentDraftSubmit } from './Compose';
 import { ThreadMode } from './MessagesShell';
+import { installedPresetIds } from './roles';
 import {
   dayStamp as dayStampOf,
   sidebarAgents,
   type StoreSession,
   threadItems,
 } from './select';
+import { agentTemplate, templateBase64, templateFileName } from './template';
 
 /**
  * The shell, connected.
@@ -46,9 +54,15 @@ export interface MessagesShellState {
   mode: ThreadMode;
   choice: ChoiceHandlers;
   auth: AuthHandlers;
+  /** What a file or a link named in a message can do. */
+  parts: PartHandlers;
   onSelect: (agentId: string) => void;
   onSend: (message: string) => void;
   onMode: (mode: ThreadMode) => void;
+  /** "Teach a task", from the composer's `+` menu. */
+  onTeach: () => void;
+  /** "Share as template", from the share button in the header. */
+  onShareTemplate: () => void;
   /** True while the compose pane has taken over the conversation. */
   composing: boolean;
   onCompose: () => void;
@@ -84,18 +98,27 @@ export function useMessagesShell(): MessagesShellState {
 
   const [mode, setMode] = useState<ThreadMode>(ThreadMode.Text);
 
-  // Nothing else loads these. The old shell filled the agent list from the
-  // screens that showed it and the session list from its sidebar tree;
-  // this shell has neither, so it asks for both itself.
+  // `init()` is the whole of the app's live wiring and it is not optional.
   //
-  // `loadSessions()` is called with no agent id on purpose. Passing one
-  // replaces the whole list with that agent's sessions (`setAgentSessions`),
-  // which would blank the preview and timestamp on every other row the
-  // moment you clicked one. The sidebar wants the global list; a single
-  // conversation is opened from it by id.
+  // It registers `onStreamMessage`, `onStreamMessageUpdate`,
+  // `onStreamSessionStatus` and `onStreamPermission`
+  // (`services/cowork.ts`, `setupStreamListeners`). Without it nothing
+  // reaches Redux while a turn is running: a person's own message never
+  // appears, the reply never appears, and an approval request never
+  // becomes a card — the store's `pendingPermissions` has exactly one
+  // producer and it lives in there.
+  //
+  // This shell shipped without the call for six stages. The app looked
+  // like it had lost its messages; they were in SQLite the whole time,
+  // which is why leaving a conversation and returning showed them —
+  // that path reads the database instead of listening.
+  //
+  // It is idempotent (`if (this.initialized) return`) and loads the
+  // config, the sessions and the engine status itself, so it replaces
+  // the bare `loadSessions()` that used to be here.
   useEffect(() => {
     void agentService.loadAgents();
-    void coworkService.loadSessions();
+    void coworkService.init();
   }, []);
   // An answered approval leaves a line behind. It is local because it is
   // a presentation fact: the engine's record is the decision itself.
@@ -119,12 +142,18 @@ export function useMessagesShell(): MessagesShellState {
       if (!agentId) continue;
       const at = summary.updatedAt ?? 0;
       if ((newest[agentId]?.updatedAt ?? -1) >= at) continue;
-      newest[agentId] = { id: summary.id, agentId, updatedAt: at };
+      newest[agentId] = {
+        id: summary.id,
+        agentId,
+        updatedAt: at,
+        ...(summary.lastMessage ? { lastMessage: summary.lastMessage } : {}),
+      };
     }
     // The open conversation is the one with messages loaded; the rest are
     // summaries, which is all a sidebar row needs.
     if (currentSession?.agentId) {
       newest[currentSession.agentId] = {
+        ...newest[currentSession.agentId],
         id: currentSession.id,
         agentId: currentSession.agentId,
         updatedAt: currentSession.updatedAt ?? Date.now(),
@@ -165,6 +194,87 @@ export function useMessagesShell(): MessagesShellState {
   );
 
   const typing = currentSession?.status === 'running';
+
+  // The files this conversation has actually produced or touched.
+  //
+  // `collectSessionArtifacts` is the app's existing detector — tool inputs,
+  // markdown file links, media tokens, bare paths inside the working
+  // directory — and it has been here all along. Nothing in this shell ever
+  // called it, which had two consequences the founder saw as one: a
+  // document the agent had just written arrived as a percent-escaped
+  // `file:///` URL in the middle of a sentence, and the Files tab of the
+  // computer panel was permanently empty, because the store it reads has
+  // no other producer.
+  const detected = useMemo(() => {
+    if (!currentSession?.id || !currentSession.messages?.length) return [];
+    try {
+      return collectSessionArtifacts(
+        currentSession.messages as CoworkMessage[],
+        currentSession.id,
+        currentSession.cwd,
+      );
+    } catch (error) {
+      console.error('[Faiser] artifact detection failed:', error);
+      return [];
+    }
+  }, [currentSession]);
+
+  // Named, deduplicated, for the chips inside a bubble.
+  const files = useMemo<readonly KnownFile[]>(() => {
+    const byName = new Map<string, KnownFile>();
+    const add = (path: string | undefined): void => {
+      if (!path) return;
+      const name = basename(path);
+      if (!name || byName.has(name.toLowerCase())) return;
+      byName.set(name.toLowerCase(), { name, path });
+    };
+    for (const artifact of detected) add(artifact.filePath);
+    // And what the person attached themselves. The detector only reads
+    // the agent's messages, so without this a file you handed over is a
+    // chip with nowhere to go.
+    for (const message of messages) {
+      if (message.type !== 'user') continue;
+      for (const one of extractUserMessageFileAttachments(message.content).attachments) {
+        add(one.path);
+      }
+    }
+    return [...byName.values()];
+  }, [detected, messages]);
+
+  // And into the artifact store, which is what fills the computer panel's
+  // Files tab. The same three steps the old shell takes: local services go
+  // straight in, files are read off disk first, and an id is remembered
+  // either way so a file that is not there is not retried forever.
+  const loadedArtifactIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const sessionId = currentSession?.id;
+    if (!sessionId || typing) return;
+    const cwd = currentSession?.cwd;
+
+    for (const artifact of detected) {
+      if (artifact.type === ArtifactTypeValue.LocalService) {
+        dispatch(addArtifact({ sessionId, artifact, ...(cwd ? { defaultProjectDirectory: cwd } : {}) }));
+      }
+    }
+
+    const toLoad = detected.filter(a => a.filePath && !loadedArtifactIds.current.has(a.id));
+    if (!toLoad.length) return;
+
+    void (async () => {
+      for (const artifact of toLoad) {
+        loadedArtifactIds.current.add(artifact.id);
+        const loaded = await loadDetectedFileArtifact(artifact, cwd);
+        if (loaded) dispatch(addArtifact({ sessionId, artifact: loaded }));
+      }
+    })();
+  }, [detected, currentSession, typing, dispatch]);
+
+  const parts = useMemo<PartHandlers>(() => ({
+    files,
+    onOpenFile: (path: string) => { void openLocalPathWithToast(path); },
+    // A link belongs in the person's own browser, not inside a bubble.
+    onOpenLink: (href: string) => { window.open(href, '_blank', 'noopener,noreferrer'); },
+  }), [files]);
 
   // Open on a conversation rather than on nothing, the way Messages does.
   // Once only, and never over an open one: the guard is what stops this
@@ -207,6 +317,60 @@ export function useMessagesShell(): MessagesShellState {
     }
     void coworkService.startSession({ prompt: message, agentId: activeId });
   }, [currentSession, activeId]);
+
+  /**
+   * "Teach a task", from the composer's `+` menu.
+   *
+   * The canvas draws a record dot beside it and the app has no recorder,
+   * so this does the thing the founder's own copy describes: *"walk
+   * through it once… I watch the flow, ask only if something's
+   * ambiguous, then save it so I can run it again."* It opens that
+   * conversation rather than pretending to film one.
+   */
+  const onTeach = useCallback(() => {
+    onSend(
+      "I want to teach you a task. I'll walk you through it once, step by step. "
+      + 'Ask me only where something is genuinely ambiguous, and when we are done, '
+      + 'write it up as a recipe you can follow next time: what to look at, which '
+      + 'steps to take, and what finished looks like.',
+    );
+  }, [onSend]);
+
+  /**
+   * "Share as template", from the share button in the header.
+   *
+   * Written to a temporary file and then handed to the system's Save
+   * dialog, because the app's only inline writer puts files in its own
+   * attachment directory — which is the wrong place for something a
+   * person means to send to somebody.
+   */
+  const onShareTemplate = useCallback(async () => {
+    if (!active) return;
+    // The store's agent is a summary and carries no instructions, which
+    // are the most useful half of a template. They come from the same
+    // place the agent's own screen reads them.
+    const full = await window.electron?.agents?.get?.(active.id);
+    const opening = messages.find(one => one.type === 'user')?.content;
+    const template = agentTemplate({
+      name: active.name,
+      description: active.description,
+      instructions: full?.systemPrompt ?? '',
+      skillIds: active.skillIds,
+      ...(opening ? { opening } : {}),
+    });
+    const fileName = templateFileName(active.name);
+
+    const written = await window.electron?.dialog?.saveInlineFile?.({
+      dataBase64: templateBase64(template),
+      fileName,
+      mimeType: 'application/json',
+    });
+    if (!written?.success || !written.path) {
+      showToast('That template could not be written.');
+      return;
+    }
+    await window.electron?.dialog?.saveFileCopy?.(written.path);
+  }, [active, messages]);
 
   const auth = useMemo<AuthHandlers>(() => ({
     onDecide: (itemId, decision) => {
@@ -322,9 +486,12 @@ export function useMessagesShell(): MessagesShellState {
     mode,
     choice,
     auth,
+    parts,
     onSelect,
     onSend,
     onMode: setMode,
+    onTeach,
+    onShareTemplate: () => { void onShareTemplate(); },
     composing,
     onCompose,
     onCloseCompose,

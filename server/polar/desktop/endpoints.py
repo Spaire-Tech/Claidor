@@ -57,6 +57,12 @@ from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
 from .auth import bearer_token, get_desktop_session
+
+# Straight from the price list rather than through `service`, which
+# re-exports only what it uses itself — a name it merely passed through
+# is one `ruff --fix` away from disappearing, and the failure would be an
+# ImportError at boot.
+from .pricing import SPEECH_MAX_CHARACTERS, SPEECH_MODEL, SPEECH_VOICE
 from .service import (
     AUTH_CODE_INVALID,
     MEMORY_FILE_LIMIT,
@@ -930,6 +936,156 @@ async def _proxy(
         relay(),
         status_code=200,
         media_type=upstream.headers.get("content-type", "text/event-stream"),
+        headers={"cache-control": "no-store"},
+    )
+
+
+# --- speech -----------------------------------------------------------------
+
+
+@router.post(
+    "/api/proxy/v1/audio/speech",
+    name="desktop:speech",
+    response_model=None,
+    include_in_schema=False,
+)
+async def proxy_speech(
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """Turn a reply into a voice.
+
+    The engine already knows how to do this: OpenClaw ships a speech
+    provider that posts OpenAI's own `/v1/audio/speech` shape at whatever
+    base URL it is given (`openclaw/src/tts/`), and we keep that extension
+    in the packaged runtime. So the app does not call this; the engine
+    does, with its base URL pointed here, and this is the piece that was
+    missing — a door that meters.
+
+    Unlike the model proxy there is nothing to read back: the answer is
+    audio bytes and carries no usage object. The characters we were asked
+    to say are the only honest measure, so they are counted here, before
+    the call, and recorded whether or not the call succeeds — a refusal
+    after OpenAI has done the work still costs money.
+    """
+    raw = await request.body()
+    try:
+        payload = json.loads(raw or b"{}")
+    except ValueError:
+        return _error("invalid_request_error", "The body is not JSON.", 400)
+    if not isinstance(payload, dict):
+        return _error("invalid_request_error", "The body must be an object.", 400)
+
+    text = payload.get("input")
+    if not isinstance(text, str) or not text.strip():
+        return _error("invalid_request_error", "There is nothing to say.", 400)
+    if len(text) > SPEECH_MAX_CHARACTERS:
+        # Refused rather than truncated. Cutting a sentence in half and
+        # charging for it is worse than saying no.
+        return _error(
+            "invalid_request_error",
+            f"That is longer than {SPEECH_MAX_CHARACTERS} characters.",
+            400,
+        )
+
+    if not provider_configured(DesktopProvider.openai):
+        return _error("api_error", "The speech service is not configured.", 503)
+
+    user = desktop_session.user
+    if await desktop.exhausted(session, user):
+        return JSONResponse(
+            {
+                "error": {
+                    "type": "quota_exhausted",
+                    "code": QUOTA_EXHAUSTED_CODE,
+                    "message": (
+                        f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "
+                        "The allowance resets at the start of next month."
+                    ),
+                }
+            },
+            status_code=402,
+        )
+
+    # The voice is ours, not the caller's. All seven of the app's voices
+    # name a manner and ride on one OpenAI voice (`direction.md` §4), and
+    # the manner is already in the agent's instructions — so a request
+    # asking for a different speaker is answered with ours.
+    body = {
+        "model": SPEECH_MODEL.model_id,
+        "voice": SPEECH_VOICE,
+        "input": text,
+        "response_format": payload.get("response_format") or "mp3",
+    }
+    instructions = payload.get("instructions")
+    if isinstance(instructions, str) and instructions.strip():
+        body["instructions"] = instructions
+
+    user_id, session_id = user.id, desktop_session.id
+    sessionmaker: AsyncSessionMaker | None = getattr(
+        request.state, "async_sessionmaker", None
+    )
+
+    async def record(status: int) -> None:
+        usage = Usage(input_tokens=len(text))
+        if sessionmaker is None:
+            await desktop.record_usage(
+                session,
+                user_id=user_id,
+                session_id=session_id,
+                model=SPEECH_MODEL,
+                usage=usage,
+                stream=False,
+                upstream_status=status,
+            )
+            return
+        async with sessionmaker() as fresh:
+            await desktop.record_usage(
+                fresh,
+                user_id=user_id,
+                session_id=session_id,
+                model=SPEECH_MODEL,
+                usage=usage,
+                stream=False,
+                upstream_status=status,
+            )
+            await fresh.commit()
+
+    url = f"{provider_base_url(DesktopProvider.openai)}/audio/speech"
+    headers = {
+        "authorization": f"Bearer {provider_api_key(DesktopProvider.openai)}",
+        "content-type": "application/json",
+    }
+    async with httpx.AsyncClient(timeout=_timeout()) as client:
+        try:
+            upstream = await client.post(url, headers=headers, json=body)
+        except httpx.HTTPError as error:
+            log.warning("desktop.speech.upstream_unreachable", error=str(error))
+            return _error("api_error", "The speech service could not be reached.", 502)
+
+    try:
+        await record(upstream.status_code)
+    except Exception:  # a lost usage row must not swallow the audio
+        log.exception("desktop.speech.usage_not_recorded")
+
+    if upstream.status_code != 200:
+        _log_upstream_refusal(SPEECH_MODEL, upstream.status_code, upstream.content)
+        try:
+            return JSONResponse(
+                json.loads(upstream.content), status_code=upstream.status_code
+            )
+        except ValueError:
+            return _error(
+                "api_error",
+                upstream.content.decode(errors="replace")[:500],
+                upstream.status_code,
+            )
+
+    return Response(
+        content=upstream.content,
+        status_code=200,
+        media_type=upstream.headers.get("content-type", "audio/mpeg"),
         headers={"cache-control": "no-store"},
     )
 

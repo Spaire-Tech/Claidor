@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
+from math import ceil
 from typing import Any
 
 #: One credit is one input token on the middle model, Claude Sonnet 5,
@@ -413,6 +414,76 @@ class Usage:
 def _number(payload: dict[str, Any], key: str) -> int:
     value = payload.get(key)
     return int(value) if isinstance(value, int | float) else 0
+
+
+# --- speech -----------------------------------------------------------------
+
+#: What OpenAI charges to turn text into speech, per million characters
+#: of input.
+#:
+#: ⚠️ **This is the one number in this file that has not been checked
+#: against a price page.** Every model multiplier above was read off the
+#: provider's list; this was not, and nobody should be charged against it
+#: until somebody has looked. It is a single constant precisely so that
+#: looking, and correcting it, is a one-line change with a test behind
+#: it.
+#:
+#: Characters and not tokens because characters are what we can count.
+#: `/v1/audio/speech` answers with audio bytes and no usage object, so
+#: unlike the model proxy there is nothing to read back — the only honest
+#: measure is the text we sent.
+SPEECH_USD_PER_MILLION_CHARACTERS = 15.00
+
+#: The model the speech route asks for, and the single OpenAI voice
+#: underneath all seven of ours. The seven name a manner, not a speaker
+#: (`direction.md` §4), so they are prompt settings on one voice rather
+#: than seven voices.
+SPEECH_MODEL_ID = "gpt-4o-mini-tts"
+SPEECH_VOICE = "alloy"
+
+#: Long enough for a paragraph an agent would actually say aloud, short
+#: enough that a runaway reply cannot quietly spend a month of credits in
+#: one call.
+SPEECH_MAX_CHARACTERS = 4_000
+
+
+#: Speech as a catalogue entry, so a spoken reply is metered by the same
+#: code and lands in the same table as everything else.
+#:
+#: Its input unit is **characters, not tokens** — `/v1/audio/speech`
+#: returns audio and no usage object, so the text we sent is the only
+#: thing there is to count. That is unambiguous given the model on the
+#: row: a usage row naming this model counts characters. `credits_for`
+#: then arrives at the same figure as `credits_for_speech`, and a test
+#: holds the two together so neither can drift.
+#:
+#: No role: it is never in the model menu. It is priced so its usage
+#: rows mean something, which is the same reason the withheld models
+#: are here.
+SPEECH_MODEL = DesktopModel(
+    SPEECH_MODEL_ID,
+    "OpenAI speech",
+    "Turns a reply into a voice.",
+    SPEECH_USD_PER_MILLION_CHARACTERS / CREDIT_USD_PER_MILLION_INPUT,
+    provider=DesktopProvider.openai,
+)
+
+
+def credits_for_speech(characters: int) -> int:
+    """Credits for one piece of speech, in the same unit as everything
+    else: a credit is one input token on the middle model, which is
+    $3.00 per million. So this is the money the characters cost, divided
+    by the money a credit costs.
+
+    Rounded up, never to zero for text that was actually spoken — a
+    hundred short sentences are not free, and a meter that reads zero
+    while money leaves is the one kind of wrong that matters here.
+    """
+    if characters <= 0:
+        return 0
+    usd = characters * SPEECH_USD_PER_MILLION_CHARACTERS / 1_000_000
+    credits = usd / (CREDIT_USD_PER_MILLION_INPUT / 1_000_000)
+    return max(1, ceil(credits))
 
 
 def credits_for(model: DesktopModel, usage: Usage) -> int:

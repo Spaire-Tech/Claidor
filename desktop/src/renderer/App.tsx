@@ -2005,9 +2005,14 @@ const App: React.FC = () => {
   ) : null;
 
   if (!isInitialized) {
-    // index.html's static splash shows the same startup page until React
-    // mounts; rendering EngineStartupOverlay from the first frame keeps the
-    // whole startup on one continuous screen with no visual handoff.
+    // Nothing until it is ready — the founder, 14 September. The engine
+    // splash that used to be here named the machinery to the person,
+    // carried upstream's logo and its tip carousel, and appears nowhere
+    // in the design. `index.html` holds the same empty ground before
+    // React mounts, so the two frames are indistinguishable.
+    if (useFaiserShell) {
+      return <div style={{ height: '100vh', background: '#fbfbfc' }} />;
+    }
     return (
       <div className="h-screen overflow-hidden flex flex-col">
         {windowsStandaloneTitleBar}

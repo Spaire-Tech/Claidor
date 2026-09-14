@@ -14,7 +14,7 @@ import {
   connectedIds,
   shelfCount,
   shelfGroups,
-} from './connections';
+} from './shelf';
 
 const item = (over: Partial<ConnectionItem> & { id: string }): ConnectionItem => ({
   name: over.id, group: ConnectionGroupId.Productivity,

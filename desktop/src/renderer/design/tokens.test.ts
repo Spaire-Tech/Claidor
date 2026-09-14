@@ -35,14 +35,19 @@ describe('tokens.css', () => {
 });
 
 describe('orb palettes', () => {
-  test('there are fifteen, as the founder asked', () => {
-    expect(ORB_PALETTES).toHaveLength(15);
+  test('there are four, and they are the canvas\'s', () => {
+    // There were fifteen: the canvas's four and eleven I wrote. Every
+    // agent wore one of mine, chosen by a hash. The founder: "I want
+    // exactly what I designed. Exactly."
+    expect(ORB_PALETTES).toHaveLength(4);
   });
 
-  test('the four from the canvas come first and are unchanged', () => {
-    // These are the ones that have been seen and approved. If a palette
-    // is ever reordered, these must stay put and stay exact.
-    expect(ORB_PALETTES.slice(0, 4).map(p => p.colors.join(','))).toEqual([
+  test('each carries the seed the canvas pairs with it', () => {
+    expect(ORB_PALETTES.map(p => p.seed)).toEqual([11, 22, 33, 44]);
+  });
+
+  test('the four are the canvas\'s, exactly', () => {
+    expect(ORB_PALETTES.map(p => p.colors.join(','))).toEqual([
       '#4f9a2e,#2a7fa8,#c9b755,#e8f0d8,#4f9c7a',
       '#2f6ab8,#3f93ad,#6a56b0,#dbe6f5,#4a7fc4',
       '#6d4bb8,#3f66b8,#a85fa0,#e2d8f2,#7d5cc4',

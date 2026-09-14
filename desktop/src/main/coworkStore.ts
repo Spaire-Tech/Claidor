@@ -556,6 +556,11 @@ export interface UpsertSubagentChildSessionOptions {
 export interface CoworkSessionSummary {
   id: string;
   title: string;
+  /**
+   * The last thing said in this conversation, for the sidebar preview.
+   * Absent when nothing readable has been said yet.
+   */
+  lastMessage?: string;
   scheduledTaskId: string | null;
   status: CoworkSessionStatus;
   pinned: boolean;
@@ -752,6 +757,7 @@ interface CoworkUserMemoryRow {
 interface CoworkSessionSummaryRow {
   id: string;
   title: string;
+  last_message?: string | null;
   scheduled_task_id: string | null;
   status: string;
   pinned: number | null;
@@ -854,7 +860,26 @@ export class CoworkStore {
         ) AS im_platform`
       : 'NULL AS im_platform';
 
+    // The last thing said in this conversation, for the sidebar's preview
+    // line. A correlated subquery like `im_platform` above rather than a
+    // second round trip: the list is one page and this is one indexed
+    // lookup per row.
+    //
+    // Only what a person would read. A tool call or its result previews
+    // as machinery, and an empty content column previews as nothing —
+    // both of which are how the sidebar came to show blank rows.
+    const lastMessageColumn = `(
+          SELECT m.content
+          FROM cowork_messages m
+          WHERE m.session_id = ${sessionAlias}.id
+            AND m.type IN ('user', 'assistant')
+            AND TRIM(COALESCE(m.content, '')) != ''
+          ORDER BY COALESCE(m.sequence, m.created_at) DESC, m.created_at DESC
+          LIMIT 1
+        ) AS last_message`;
+
     return `${sessionAlias}.id, ${sessionAlias}.title, ${sessionAlias}.scheduled_task_id,
+      ${lastMessageColumn},
       ${sessionAlias}.status, ${sessionAlias}.pinned, ${sessionAlias}.pin_order,
       ${sessionAlias}.agent_id, ${imPlatformColumn},
       ${sessionAlias}.parent_session_id, ${sessionAlias}.forked_at, ${sessionAlias}.fork_mode,
@@ -887,6 +912,7 @@ export class CoworkStore {
     return {
       id: row.id,
       title: row.title,
+      lastMessage: row.last_message?.trim() || undefined,
       scheduledTaskId: row.scheduled_task_id?.trim() || null,
       status: row.status as CoworkSessionStatus,
       pinned: Boolean(row.pinned),

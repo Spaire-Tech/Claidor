@@ -236,7 +236,12 @@ export interface BrowserDiagnosticResult {
 export const defaultBrowserWebAccessConfig: BrowserWebAccessConfig = {
   browserEnabled: true,
   profileMode: BrowserProfileMode.Managed,
-  displayMode: BrowserDisplayMode.External,
+  // In the app, not a second Chromium on the Desktop. The founder
+  // designed the panel the agent browses in, and upstream shipped
+  // `External` — so the app opened a separate browser window and the
+  // designed screen was never reached. Flagged in Stage 5 as "a founder
+  // decision" and left alone, which meant shipping upstream's choice.
+  displayMode: BrowserDisplayMode.InApp,
   networkMode: BrowserNetworkMode.ProxyCompatible,
   followGlobalProxy: true,
   allowedHostnames: [],

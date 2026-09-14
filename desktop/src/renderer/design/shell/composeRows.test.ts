@@ -8,7 +8,7 @@ import {
   composeRows,
   MAX_SHORTCUTS,
   rowForShortcut,
-} from './compose';
+} from './composeRows';
 import type { SidebarAgent } from './Sidebar';
 
 const agent = (id: string, name = id): SidebarAgent => ({
