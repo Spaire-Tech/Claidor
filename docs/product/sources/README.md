@@ -7,6 +7,7 @@ verbatim. Nothing in this folder is mine.
 |---|---|---|
 | `grok-bot.md` | Grok Bot's full product contract, builder-facing | 15 Sep 2026 |
 | `grok-bot-chat.md` | How the bot is built (prompt stack, guardrails) and how chat is configured | 15 Sep 2026 |
+| `grok-bot-app-ui.md` | The verified UI map the agent is given so it never invents a click-path | 15 Sep 2026 |
 
 The founder's instruction with the first one: *"keep it in our repo as a
 source of truth. we building exactly that."*
@@ -215,3 +216,87 @@ Confirmed by file, not memory.
 Other than the three lines above, which are the box again. On
 everything else the two documents agree, including the parts the
 founder wrote before seeing this one.
+
+---
+
+## grok-bot-app-ui.md — read against our tree
+
+The shortest of the three and the one with the clearest instruction to
+copy. It is not a feature list: it is **a reference document handed to
+the agent**, and the sentence at the top is the whole point —
+
+> Use only what's listed here; for anything else, follow "Never fabricate
+> data" and say you're unsure rather than inventing a path.
+
+`grok-bot-chat.md` §3.7 names it: *"If unsure of a UI path, say so
+(app-ui.md is the verified map)."* So the fabrication ban is not just a
+rule in the prompt. It comes with the facts that make obeying it
+possible.
+
+### We have nothing like it
+
+Our managed prompt (`openclawConfigSync.ts`) tells the agent about the
+browser, the web, and commands. It says nothing at all about the app the
+person is looking at. Asked "where do I turn that off", our agent has
+no choice but to guess — and it does, confidently, which is the fault
+recorded in `review.md` §22: three invented explanations for the
+browser, none true.
+
+### The version we should build is better than theirs, and cheaper
+
+Theirs is hand-written prose, which is why it has to hedge: *"Some rows
+exist only on some accounts, builds, or states; if the user cannot find
+a row, say so."* That hedge exists because the document can drift from
+the app.
+
+Ours cannot drift, because our Settings is already data.
+`design/settings/rows.ts` exports `settingsFor(tab, input)`, and every
+row already carries the anchor id their document lists by hand:
+
+| Tab | Our row ids |
+|---|---|
+| General | `sign-out`, `add-account`, `model-choice`, `model-api-key`, `memory` |
+| Computer | `computer-name`, `exec-policy`, `working-directory` |
+| Usage & Billing | `usage`, `refresh-usage` |
+| Updates | `version` |
+
+So the UI map is **generated from the same function that draws the
+screen**, and a test asserts the two agree. A row that is conditional in
+the app is conditional in the map, for the same reason, automatically.
+That is a real advantage and it costs less than writing the prose.
+
+### What carries over as-is
+
+- **How settings open**: the account button bottom-left. Already ours
+  (`design/shell/AccountMenu.tsx`), and already matching. Their "there's
+  no gear icon" is our rule too.
+- **Deleting an agent is permanent, from the sidebar, with a confirm, and
+  is not in Settings.** No archive, no hide. A decision we have not made
+  and should copy.
+- **Two-click confirm** on a destructive row — "Click Again to Confirm"
+  rather than a modal. Good pattern, no modal, fits the design.
+- **Say so when the row is not there.** The honest failure mode.
+
+### What does not carry over
+
+- Everything in their Computer tab: registered machines, Update and
+  Reset the box. Struck with the box.
+- `update-computer` and `reset-computer` under Updates, same reason.
+  Ours keeps Update Track and Check for Updates, which are about the app.
+- "Sign In with Cursor" — ours is the Claidor account.
+- Rows we have no feature behind: accent, microphone,
+  hardware-acceleration, network-debugger, notification-sound, security
+  keys, auto-review-rules. `rows.ts` already documents why they are
+  absent; that decision stands and the map must describe the app we
+  ship, not the app they ship.
+
+### The action
+
+1. Generate `docs/product/app-ui.md` from `settingsFor()`.
+2. Inject it into the managed prompt as a fourth section, beside the
+   browser and exec policies.
+3. Test that the generated map and the rendered rows cannot disagree.
+
+Do it after the Part I prompt sections from `grok-bot-chat.md`, not
+before: the fabrication ban is the rule, and this is the evidence the
+rule needs. Both belong in the same pass.
