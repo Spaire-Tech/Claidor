@@ -477,3 +477,64 @@ registry, `CopyToBox`/`CopyFromBox`, `request_box_help`, cloud-agent
 cards, `[Sent from machine <id>]`, and the Update/Reset computer rows.
 Settled by the founder on 15 September — *"no box. keep direction.md's
 line."*
+
+---
+
+## Event triggers: what was built, and the half that was not — 15 September
+
+`grok-bot.md` §8 lists event listeners beside cron: Slack, GitHub,
+Origin, Teams, Linear, Sentry, PagerDuty, webhooks, *"prefer event
+listeners over polling when the event shape exists"*.
+
+### The engine already had all of it
+
+`openclaw/src/gateway/server/hooks-request-handler.ts` is a complete
+inbound endpoint: token auth, rate limiting on failed auth, per-agent
+targeting, session-key policy, payload mapping, idempotency so a retried
+delivery does not run twice, and — the part that matters most — it marks
+the body as **external content**, so a webhook payload is data the agent
+reads rather than instructions it follows.
+
+Writing that would have been weeks. It needed a config key, and it now
+has one: `hooks.enabled` with a generated token, confined to `hook:`
+session keys so an inbound event can never steer itself into the
+conversation the person is having.
+
+### What that reaches, and what it does not
+
+The gateway binds to **loopback** — `--bind loopback`,
+`openclawEngineManager.ts:769` — and `direction.md` §10 struck the
+egress tunnel that would have changed that.
+
+So this is live for anything already on the machine: a Shortcuts
+automation, a Folder Action, a `launchd` job, a git hook, a script.
+*"Run this whenever that folder changes"* works today.
+
+**GitHub, Linear, Sentry and PagerDuty cannot reach it.** They are on
+the internet and it is not. That is the half that is not built, and the
+managed prompt says so in as many words, because an agent that cheerfully
+offers to set up a GitHub webhook sends somebody off to configure
+something that will never fire.
+
+### What the remote half would take, and the decision in it
+
+Checked, not assumed: there is no webhook receiver in `server/polar/`
+and no poll loop in the desktop. So all of this is new:
+
+1. A receiver on `api.claidor.com`, with per-person, per-source secrets.
+2. **Signature verification per provider** — GitHub, Linear, Sentry and
+   PagerDuty each sign differently, and a receiver that skips this is an
+   open door to anybody who learns the URL.
+3. A way to deliver to a machine behind NAT. The desktop polls, or holds
+   a connection. Poll is simpler and survives sleep badly; a held
+   connection is lower latency and more moving parts.
+4. **The decision the founder has to make:** what happens when the Mac is
+   shut. `direction.md` §10 already keeps *"a headless runner that fires
+   routines"*, so the cloud runner could take the event — but it has no
+   access to their files, so it can answer "did the build break" and
+   cannot answer "put the new invoice in the folder". Splitting by
+   capability is a product choice, not an implementation detail.
+
+None of this is started. It is one item, it is the largest remaining
+piece in these four documents, and it is not pretended to anywhere in the
+code.

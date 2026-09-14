@@ -7,6 +7,7 @@ import net from 'net';
 import os from 'os';
 import path from 'path';
 
+import { EVENT_TRIGGER_TOKEN_FILE } from '../../shared/eventTriggers/constants';
 import {
   OpenClawEngineErrorCode,
   type OpenClawEnginePhase,
@@ -220,6 +221,7 @@ export class OpenClawEngineManager extends EventEmitter {
   private readonly logsDir: string;
   private readonly stateDir: string;
   private readonly gatewayTokenPath: string;
+  private readonly hookTokenPath: string;
   private readonly gatewayPortPath: string;
   private readonly configPath: string;
 
@@ -251,6 +253,7 @@ export class OpenClawEngineManager extends EventEmitter {
     this.stateDir = path.join(this.baseDir, 'state');
 
     this.gatewayTokenPath = path.join(this.stateDir, 'gateway-token');
+    this.hookTokenPath = path.join(this.stateDir, EVENT_TRIGGER_TOKEN_FILE);
     this.gatewayPortPath = path.join(this.stateDir, 'gateway-port.json');
     this.configPath = path.join(this.stateDir, 'openclaw.json');
 
@@ -1462,6 +1465,32 @@ export class OpenClawEngineManager extends EventEmitter {
 
   getGatewayToken(): string | null {
     return this.readGatewayToken();
+  }
+
+  /**
+   * The token a local automation presents to wake an agent.
+   *
+   * Separate from the gateway token on purpose. The gateway token can
+   * drive the whole engine; this one can only post an event. Something
+   * that needs to trigger a routine should not be handed the keys to
+   * everything, and a script somebody pastes a token into is exactly the
+   * place that distinction earns its keep.
+   *
+   * Generated once and kept. Rotating it on every start would break
+   * every automation somebody had set up, silently, at the worst moment.
+   */
+  ensureHookToken(): string {
+    try {
+      const existing = fs.readFileSync(this.hookTokenPath, 'utf8').trim();
+      if (existing) return existing;
+    } catch {
+      // Not written yet.
+    }
+
+    const token = crypto.randomBytes(24).toString('hex');
+    ensureDir(path.dirname(this.hookTokenPath));
+    fs.writeFileSync(this.hookTokenPath, token, { encoding: 'utf8', mode: 0o600 });
+    return token;
   }
 
   private readGatewayToken(): string | null {
