@@ -9,6 +9,8 @@ import { AgentDetail } from '../agent/AgentDetail';
 import { useAgentDetail } from '../agent/useAgentDetail';
 import { useConnections } from '../connections/useConnections';
 import { ComputerPanel } from '../panel/ComputerPanel';
+import { Settings } from '../settings/Settings';
+import { useSettings } from '../settings/useSettings';
 import { supportMailto } from './account';
 import { AccountMenu } from './AccountMenu';
 import { Apps } from './Apps';
@@ -29,17 +31,7 @@ import { useMessagesShell } from './useMessagesShell';
  * tree. Nothing here reaches into the old screens and nothing there
  * reaches into this, so either can be removed without touching the other.
  */
-export interface FaiserAppProps {
-  /**
-   * Opens the app's existing Settings. It lives in `App.tsx` with all of
-   * its state, so this shell asks for it rather than mounting a second
-   * copy — and that is what stops `VITE_FAISER_SHELL=0` being the only
-   * way to reach providers and onboarding.
-   */
-  onOpenSettings?: () => void;
-}
-
-export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element {
+export function FaiserApp(): JSX.Element {
   const signedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const quota = useSelector((state: RootState) => state.auth.quota);
   const [signInError, setSignInError] = useState<string | undefined>();
@@ -55,6 +47,11 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
     return () => { current = false; };
   }, []);
   const [agentOpen, setAgentOpen] = useState(false);
+  // Settings is ours now. The account menu used to open NetEase's
+  // thirteen tabs — providers, API keys, skins, IM platforms, a growth
+  // tour — which is the app this one was carved out of, not this one.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settings = useSettings(settingsOpen);
   const shell = useMessagesShell();
   const detail = useAgentDetail(shell.activeId, agentOpen);
   const connections = useConnections(shell.appsOpen);
@@ -130,7 +127,7 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
       accountMenu={accountOpen && (
         <AccountMenu
           quota={quota}
-          onSettings={() => { setAccountOpen(false); onOpenSettings?.(); }}
+          onSettings={() => { setAccountOpen(false); setSettingsOpen(true); }}
           onSupport={() => {
             setAccountOpen(false);
             void window.electron?.shell?.openExternal?.(supportMailto({
@@ -154,6 +151,9 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
           agentName={shell.activeName}
           onClose={() => setAgentOpen(false)}
         />
+      )}
+      settings={settingsOpen && (
+        <Settings {...settings} onClose={() => setSettingsOpen(false)} />
       )}
       onOpenPanel={shell.onOpenPanel}
       panel={shell.panelOpen && shell.sessionId ? (

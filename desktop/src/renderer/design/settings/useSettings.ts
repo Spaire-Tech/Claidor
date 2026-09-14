@@ -1,0 +1,143 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
+
+import {
+  asExecPolicy,
+  DEFAULT_EXEC_POLICY,
+  type ExecPolicy,
+} from '../../../shared/settings/constants';
+import { authService } from '../../services/auth';
+import { coworkService } from '../../services/cowork';
+import type { RootState } from '../../store';
+import { showToast } from '../../utils/localFileActions';
+import { usageLine } from '../shell/account';
+import type { SettingsInput } from './rows';
+
+/**
+ * Settings, connected.
+ *
+ * Every value here comes from somewhere real — the account, the app's own
+ * config, the updater, the engine's approval policy — and every handler
+ * writes somewhere real. Nothing on this screen is decoration, which is
+ * the whole reason it has four tabs instead of the canvas's full set:
+ * rows with nothing behind them are left out rather than mocked.
+ */
+export function useSettings(open: boolean): Omit<SettingsInput, never> {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const quota = useSelector((state: RootState) => state.auth.quota);
+
+  // The app's own config is already in the store — `coworkService.init()`
+  // loads it at startup — so this reads it rather than asking again.
+  const config = useSelector((state: RootState) => state.cowork.config);
+
+  const [execPolicy, setExecPolicy] = useState<ExecPolicy>(DEFAULT_EXEC_POLICY);
+  const [computerName, setComputerName] = useState<string>();
+  const [version, setVersion] = useState<string>();
+  const [updateNote, setUpdateNote] = useState<string>();
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  // Read once each time the screen opens rather than on a timer: these
+  // are settings, and a settings screen that changes under somebody's
+  // hand is worse than one that is a few seconds stale.
+  useEffect(() => {
+    if (!open) return undefined;
+    let current = true;
+
+    void window.electron?.settings?.getExecPolicy?.()
+      .then(value => { if (current) setExecPolicy(asExecPolicy(value)); })
+      .catch(() => { /* the default is the safe one */ });
+
+    void window.electron?.appInfo?.getComputerName?.()
+      .then(name => { if (current && name) setComputerName(name); })
+      .catch(() => { /* the row is left out */ });
+
+    void window.electron?.appInfo?.getVersion?.()
+      .then(value => { if (current && value) setVersion(value); })
+      .catch(() => { /* the row says "Version" */ });
+
+    return () => { current = false; };
+  }, [open]);
+
+  const onExecPolicy = useCallback((policy: ExecPolicy) => {
+    // Optimistic, then corrected: the write re-runs the engine config
+    // sync, which is the slow part, and a select that lags behind the
+    // click reads as broken.
+    setExecPolicy(policy);
+    void window.electron?.settings?.setExecPolicy?.(policy)
+      .then(result => {
+        if (result?.success) return;
+        setExecPolicy(asExecPolicy(result?.policy));
+        showToast('That could not be saved. The engine still has the previous setting.');
+      })
+      .catch(() => {
+        showToast('That could not be saved. The engine still has the previous setting.');
+      });
+  }, []);
+
+  const onMemory = useCallback((enabled: boolean) => {
+    void coworkService.updateConfig({ memoryEnabled: enabled }).then(ok => {
+      if (!ok) showToast('That could not be saved.');
+    });
+  }, []);
+
+  const onWorkingDirectory = useCallback(() => {
+    void (async () => {
+      const picked = await window.electron?.dialog?.selectDirectory?.();
+      if (!picked?.success || !picked.path) return;
+      const ok = await coworkService.updateConfig({ workingDirectory: picked.path });
+      if (!ok) showToast('That folder could not be saved.');
+    })();
+  }, []);
+
+  const onRefreshUsage = useCallback(() => {
+    void authService.refreshQuota();
+  }, []);
+
+  const onCheckUpdates = useCallback(() => {
+    setCheckingUpdate(true);
+    void window.electron?.appUpdate?.checkNow?.({ manual: true })
+      .then(result => {
+        setUpdateNote(
+          !result?.success
+            ? (result?.error || 'That check did not go through.')
+            : result.updateFound
+              ? 'An update is ready to install.'
+              : "You're up to date.",
+        );
+      })
+      .catch(() => setUpdateNote('That check did not go through.'))
+      .finally(() => setCheckingUpdate(false));
+  }, []);
+
+  const usage = useMemo(() => {
+    const line = usageLine(quota);
+    if (line.fraction === undefined) return undefined;
+    return {
+      fraction: line.fraction,
+      value: line.value,
+      desc: line.title,
+    };
+  }, [quota]);
+
+  return {
+    accountName: user?.nickname?.trim() || 'Account',
+    // No address: the profile the server returns carries a nickname and
+    // identifiers and no email (`authSlice.ts`). The canvas shows one; an
+    // empty second line under somebody's name would be worse than none.
+    ...(computerName ? { computerName } : {}),
+    ...(config.workingDirectory ? { workingDirectory: config.workingDirectory } : {}),
+    execPolicy,
+    memoryEnabled: config.memoryEnabled,
+    ...(usage ? { usage } : {}),
+    ...(version ? { version } : {}),
+    ...(updateNote ? { updateNote } : {}),
+    checkingUpdate,
+    onSignOut: () => { void authService.logout(); },
+    onAddAccount: () => { void authService.login(); },
+    onExecPolicy,
+    onMemory,
+    onWorkingDirectory,
+    onRefreshUsage,
+    onCheckUpdates,
+  };
+}

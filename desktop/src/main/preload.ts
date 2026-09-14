@@ -94,6 +94,7 @@ import { McpIpcChannel } from '../shared/mcp/constants';
 import { OpenClawEngineIpc } from '../shared/openclawEngine/constants';
 import { PermissionIpcChannel } from '../shared/permissions/constants';
 import type { Platform } from '../shared/platform';
+import { type ExecPolicy, SettingsChannel } from '../shared/settings/constants';
 import {
   type ShareDeploymentAnalyzeProjectInput,
   type ShareDeploymentCreateNodeInput,
@@ -834,6 +835,11 @@ contextBridge.exposeInMainWorld('electron', {
       type?: 'none' | 'info' | 'error' | 'question' | 'warning';
       title?: string;
     }) => ipcRenderer.invoke('dialog:showMessageBox', options),
+  },
+  settings: {
+    getExecPolicy: () => ipcRenderer.invoke(SettingsChannel.GetExecPolicy),
+    setExecPolicy: (policy: ExecPolicy) =>
+      ipcRenderer.invoke(SettingsChannel.SetExecPolicy, policy),
   },
   shell: {
     openPath: (filePath: string) => ipcRenderer.invoke(ShellIpc.OpenPath, filePath),
