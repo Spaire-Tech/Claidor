@@ -3156,6 +3156,22 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.hooks).toBeUndefined();
   });
 
+  test('the agent is told a card does not exist outside this app', async () => {
+    // Live today: our IM channels cannot draw one. An agent that says
+    // "press Allow" on Telegram has told somebody to press something
+    // that is not on their screen.
+    const sync = await createSync();
+    expect(sync.sync('render-matrix').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('### Not every surface can draw a card');
+    expect(agentsMd).toContain('there is nothing on their screen to choose with');
+    expect(agentsMd).toContain('Files still work on those platforms.');
+  });
+
   test('the escalation order is written down', async () => {
     // Every step existed and no statement of which to try first, so the
     // choice was the model's mood.

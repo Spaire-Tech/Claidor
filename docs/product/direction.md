@@ -193,6 +193,15 @@ Operations Manager, Product Manager, Head of People, Marketing Lead,
 Financial Controller, Account Executive, Data Analyst, Support
 Specialist, In-house Counsel, Research Scientist.
 
+**And a thirteenth, added 15 September 2026: Chief of Staff.** It is not
+a thirteenth role — it does no work of its own. It knows which of the
+twelve should, hands the job over whole, brings the answer back, and
+comes to the person for a decision rather than for progress. From
+`docs/product/sources/grok-bot.md` §3.2, where it is the agent that
+manages the fleet. Added rather than replacing anything, so the twelve
+above are untouched; `presetAgents.test.ts` counts them separately so a
+future change cannot quietly turn twelve into eleven.
+
 ## 7. The computer icon is the panel — do not lose this
 
 The founder: *"the computer icon in the top message is the panel built
