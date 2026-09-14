@@ -538,3 +538,35 @@ and no poll loop in the desktop. So all of this is new:
 None of this is started. It is one item, it is the largest remaining
 piece in these four documents, and it is not pretended to anywhere in the
 code.
+
+### The decision, made — 15 September
+
+Put to the founder, who answered: *"decides for whats best."* So:
+
+**Events queue on our server; the desktop drains the queue when it is
+awake. The runner takes an event only when the routine it fires needs
+nothing on the person's disk. The default is that it does, so the
+default is to wait.**
+
+Why that way round:
+
+- The sentence we are protecting is *we open the file where it lives*. A
+  runner that picks up "file the new invoice" has to copy the file to
+  itself to do it, and the moment it does, we are Grok Bot with fewer
+  features.
+- Waiting is honest and explainable. *"That came in at 3am; I did it when
+  you opened the Mac"* is a sentence a person accepts. *"I did it on a
+  machine you have never seen, and here is your file back"* is not.
+- The runner still earns its keep on everything that touches only
+  services: a build that broke, a ticket assigned, a calendar that moved.
+  Those are the events people most want at 3am and none of them need a
+  local file.
+
+And **poll, not a held connection.** A held socket is lower latency and
+more moving parts, and it is the part most likely to be quietly broken
+after a sleep/wake cycle. Thirty seconds is not the difference between a
+useful invoice notice and a useless one. If latency ever matters, a
+stream is an optimisation on top of a queue that already works, and the
+queue is the durable half either way.
+
+Still not built. This is the shape it should take when it is.
