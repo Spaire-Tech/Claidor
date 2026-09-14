@@ -216,7 +216,11 @@ at what the app does before my code runs.
 
 **Agreed:** it should not be there.
 
-**Open question for the founder, not to be decided by me:** the engine
-does take real seconds to start. What should the person see in those
-seconds — the conversation, greyed and unusable; the conversation with
-the composer disabled; or nothing at all until it is ready?
+**Answered, 14 September:** *"nothing until its ready for now."* So the
+window shows nothing at all while the engine starts — no splash, no
+progress, no tip, no greyed shell. The first thing drawn is the app,
+once it can be used.
+
+"For now" is noted: this is the answer today, not a ruling for ever. If
+the wait turns out to be long enough to feel broken, it comes back to
+the founder rather than getting a spinner added quietly.
