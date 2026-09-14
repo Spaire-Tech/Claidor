@@ -177,13 +177,13 @@ test('getSkillScriptRuntimeCandidates delegates to shared node runtime resolutio
 
 test('getSkillScriptRuntimeCandidates preserves Electron-as-node fallback env', () => {
   nodeRuntimeMocks.resolveNodeRuntimeForSpawn.mockReturnValue({
-    command: 'C:\\Maties\\Maties.exe',
+    command: 'C:\\LobsterAI\\LobsterAI.exe',
     args: [],
     env: { ELECTRON_RUN_AS_NODE: '1' },
   });
 
   expect(getSkillScriptRuntimeCandidates({ PATH: 'ignored' })).toEqual([{
-    command: 'C:\\Maties\\Maties.exe',
+    command: 'C:\\LobsterAI\\LobsterAI.exe',
     args: [],
     extraEnv: { ELECTRON_RUN_AS_NODE: '1' },
   }]);

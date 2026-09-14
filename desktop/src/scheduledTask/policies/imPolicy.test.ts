@@ -1,10 +1,9 @@
-import { expect,test } from 'vitest';
-
-import {
-BindingKind, DeliveryMode,   OriginKind, SessionTarget,
-} from '../constants';
+import { test, expect } from 'vitest';
 import { makeModel } from '../fixtures';
 import { IMTaskPolicy } from './imPolicy';
+import {
+  OriginKind, BindingKind, DeliveryMode, SessionTarget,
+} from '../constants';
 
 test('IMPolicy.getCreateDefaults: with im origin -> delivery defaults to announce + platform', () => {
   const policy = new IMTaskPolicy();
@@ -118,7 +117,7 @@ test('IMPolicy.toWireBinding: im_session with sessionId -> managed sessionKey', 
     sessionId: 'sess-1',
   });
   expect(result.sessionTarget).toBe(SessionTarget.Main);
-  expect(result.sessionKey).toBe('agent:main:maties:sess-1');
+  expect(result.sessionKey).toBe('agent:main:lobsterai:sess-1');
 });
 
 test('IMPolicy.toWireBinding: im_session without sessionId -> sessionKey null', () => {

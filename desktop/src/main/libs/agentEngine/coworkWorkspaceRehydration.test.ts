@@ -17,7 +17,7 @@ const makeCapsule = (overrides: Partial<CoworkContinuityCapsule> = {}): CoworkCo
   lastSource: ContinuityCapsuleSource.PostCompaction,
   lastCompactedAt: 100,
   currentObjective: 'Improve context continuity.',
-  recentUserRequests: ['Keep improving the post-compaction code context'],
+  recentUserRequests: ['继续优化压缩后的代码现场'],
   userConstraints: [],
   decisions: [],
   recentActions: [],
@@ -63,7 +63,7 @@ test('workspace rehydration bridge includes bounded capsule and git state', asyn
     commandRunner,
   });
 
-  expect(bridge).toContain('[Maties workspace state after context compaction]');
+  expect(bridge).toContain('[LobsterAI workspace state after context compaction]');
   expect(bridge).toContain('Recently touched files:');
   expect(bridge).toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.ts');
   expect(bridge).toContain('Git status:');

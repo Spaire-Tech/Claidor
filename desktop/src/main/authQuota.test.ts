@@ -70,7 +70,7 @@ describe('normalizeAuthQuota', () => {
 
   test('normalizes enterprise member quota without enabling out-of-scope media models', () => {
     const quota = normalizeAuthQuota({
-      planName: 'Team',
+      planName: '团队版',
       subscriptionStatus: 'enterprise',
       creditsLimit: 8000,
       creditsUsed: 4480,
@@ -80,7 +80,7 @@ describe('normalizeAuthQuota', () => {
     }, labels);
 
     expect(quota).toEqual(expect.objectContaining({
-      planName: 'Team',
+      planName: '团队版',
       subscriptionStatus: 'enterprise',
       creditsLimit: 8000,
       creditsUsed: 4480,
@@ -102,7 +102,7 @@ describe('normalizeAuthQuota', () => {
 
   test('honors explicit enterprise media entitlement without a personal subscription', () => {
     const quota = normalizeAuthQuota({
-      planName: 'Team',
+      planName: '团队版',
       subscriptionStatus: 'enterprise',
       creditsLimit: 8000,
       creditsUsed: 4480,
@@ -120,7 +120,7 @@ describe('normalizeAuthQuota', () => {
 
   test('does not infer enterprise media entitlement from paid credits alone', () => {
     const quota = normalizeAuthQuota({
-      planName: 'Team',
+      planName: '团队版',
       subscriptionStatus: AuthSubscriptionStatus.Enterprise,
       creditsLimit: 8000,
       creditsUsed: 0,
@@ -133,7 +133,7 @@ describe('normalizeAuthQuota', () => {
 
   test('lets an explicit false entitlement override paid-credit compatibility', () => {
     const quota = normalizeAuthQuota({
-      planName: 'Team',
+      planName: '团队版',
       subscriptionStatus: 'enterprise',
       creditsLimit: 8000,
       creditsUsed: 0,

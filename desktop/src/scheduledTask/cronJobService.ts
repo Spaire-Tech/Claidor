@@ -437,7 +437,7 @@ export function mapGatewayJob(job: GatewayJob): ScheduledTask {
 
   // mode='none' means no notification. The gateway patch-merges delivery on
   // cron.update and cannot clear a previously-set channel/to, so a job that was
-  // switched to "no notification" still carries the stale target on subsequent reads.
+  // switched to "不通知" still carries the stale target on subsequent reads.
   // Strip any residual channel/to/accountId here so update/list/get/refresh
   // all surface a clean { mode: 'none' } to the UI. This is the single
   // chokepoint for gateway→UI job mapping, so it covers every read path.
@@ -534,7 +534,7 @@ export class CronJobService {
   private jobNameCache: Map<string, string> = new Map();
   /** Synchronous jobId → delivery routing cache, populated during polling.
    *  Used by channel session sync to decide whether a cron run needs a local
-   *  "[Scheduled]" session or delivers into an IM conversation instead. */
+   *  "[定时]" session or delivers into an IM conversation instead. */
   private jobDeliveryCache: Map<string, ScheduledTaskJobDelivery> = new Map();
   /** Job IDs currently running (non-null `runningAtMs`), updated during polling. */
   private runningJobIds: Set<string> = new Set();

@@ -24,8 +24,9 @@ describe('BUNDLED_SKILL_DISPLAY_NAMES', () => {
     expect(stale).toEqual([]);
   });
 
-  test('provides an English name for every entry', () => {
+  test('provides both languages for every entry', () => {
     for (const [id, name] of Object.entries(BUNDLED_SKILL_DISPLAY_NAMES)) {
+      expect(name.zh, `${id} is missing a zh name`).toBeTruthy();
       expect(name.en, `${id} is missing an en name`).toBeTruthy();
     }
   });

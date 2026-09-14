@@ -35,8 +35,6 @@ import {
   type CoworkSwitchAgentEventDetail,
   CoworkUiEvent,
 } from '../cowork/constants';
-import Eyebrow from '../design/Eyebrow';
-import Pill, { PillTone } from '../design/Pill';
 import UserGroupIcon from '../icons/UserGroupIcon';
 import AgentSidebarActivityView from './AgentSidebarActivityView';
 import AgentTaskRow from './AgentTaskRow';
@@ -615,10 +613,12 @@ const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
       ) : (
         <div role="tree" aria-label={i18nService.t('myAgents')}>
           {hasPinnedAgents && (
-            <div>
-              <Eyebrow className="pb-2 pl-[11px] pt-[26px]">
-                {i18nService.t('myAgentSidebarPinned')}
-              </Eyebrow>
+            <div className="space-y-0.5">
+              <div className="sticky top-0 z-30 -ml-[6px] flex h-10 w-[calc(100%+12px)] items-center bg-surface-raised pl-3 pr-1">
+                <h2 className="min-w-0 truncate text-sm font-normal text-secondary">
+                  {i18nService.t('myAgentSidebarPinned')}
+                </h2>
+              </div>
               {renderSortableAgentGroup(pinnedAgentNodes)}
             </div>
           )}
@@ -631,22 +631,23 @@ const MyAgentSidebarTree: React.FC<MyAgentSidebarTreeProps> = ({
           />
 
           {agentNodes.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 px-3 py-6 text-center">
-              <p className="text-[13.5px] tracking-[-.006em] text-[#9aa1ab]">
+            <div className="px-3 py-6 text-center">
+              <p className="text-xs font-medium text-secondary">
                 {i18nService.t('myAgentSidebarNoAgents')}
               </p>
-              <Pill
-                tone={PillTone.Primary}
+              <button
+                type="button"
                 onClick={() => {
                   setCreateAgentSource('home_agent_sidebar_empty');
                   setIsCreateOpen(true);
                 }}
+                className="mt-3 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-hover"
               >
                 {i18nService.t('createNewAgent')}
-              </Pill>
+              </button>
             </div>
           ) : projectAgentNodes.length > 0 ? (
-            <div>
+            <div className="space-y-0.5 px-0">
               {renderSortableAgentGroup(projectAgentNodes)}
             </div>
           ) : null}

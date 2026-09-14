@@ -9,7 +9,10 @@ from polar.desktop.pricing import (
     MODELS,
     PROVIDER_TOKEN_WEIGHTS,
     DesktopProvider,
+    ModelRole,
+    OpenAIResponsesUsageTally,
     OpenAIUsageTally,
+    SpokenApi,
     Usage,
     UsageTally,
     credits_for,
@@ -38,6 +41,24 @@ OPENAI_STREAM = b"".join(
     ]
 )
 
+# The Responses wire: usage rides on the terminal event, inside the whole
+# response object rather than beside it, and arrives without having been
+# asked for. Field names read off the engine's own handler
+# (`openai-transport-stream.ts`, `response.completed`), not remembered.
+RESPONSES_STREAM = b"".join(
+    [
+        b'event: response.created\ndata: {"type":"response.created",'
+        b'"response":{"id":"resp_1","status":"in_progress"}}\n\n',
+        b"event: response.output_text.delta\n"
+        b'data: {"type":"response.output_text.delta","delta":"Hi"}\n\n',
+        b'event: response.completed\ndata: {"type":"response.completed",'
+        b'"response":{"id":"resp_1","status":"completed","usage":'
+        b'{"input_tokens":1120,"output_tokens":57,"total_tokens":1177,'
+        b'"input_tokens_details":{"cached_tokens":1000},'
+        b'"output_tokens_details":{"reasoning_tokens":31}}}}\n\n',
+    ]
+)
+
 
 class TestCatalogue:
     def test_every_entry_says_who_serves_it_and_in_which_language(self) -> None:
@@ -51,9 +72,46 @@ class TestCatalogue:
         providers = {model.provider for model in MODELS}
         assert providers == {DesktopProvider.anthropic, DesktopProvider.openai}
 
-    def test_claude_comes_first_so_the_default_stays_claude(self) -> None:
-        assert MODELS[0].model_id == "claude-sonnet-5"
-        assert MODELS[0].provider is DesktopProvider.anthropic
+    def test_exactly_one_model_holds_each_role(self) -> None:
+        # The policy of 13 September 2026: OpenAI serves everything the
+        # person sees, on cost, and one Claude model stands behind it so a
+        # single provider outage is not a total outage. Two models sharing
+        # a role would mean nothing decides which one answers.
+        by_role: dict[ModelRole, list[str]] = {}
+        for model in MODELS:
+            if model.role is not None:
+                by_role.setdefault(model.role, []).append(model.model_id)
+
+        assert by_role[ModelRole.primary] == ["gpt-5.6-terra"]
+        assert by_role[ModelRole.cheap] == ["gpt-5.6-luna"]
+        assert by_role[ModelRole.fallback] == ["claude-sonnet-5"]
+
+    def test_the_fallback_is_the_only_anthropic_model_with_a_role(self) -> None:
+        anthropic_roles = {
+            model.model_id: model.role
+            for model in MODELS
+            if model.provider is DesktopProvider.anthropic
+        }
+        assert anthropic_roles == {
+            "claude-sonnet-5": ModelRole.fallback,
+            "claude-opus-5": None,
+            "claude-haiku-4-5-20251001": None,
+        }
+
+    def test_astra_is_priced_but_withheld(self) -> None:
+        # Withheld because every OpenAI model runs with
+        # reasoning_effort "none" whenever tools are present, and for an
+        # agent tools are always present — so Astra costs five times Terra
+        # for a capability that is switched off. It stays in the catalogue
+        # so a saved config still naming it meters correctly.
+        astra = next(model for model in MODELS if model.model_id == "gpt-6-astra")
+        assert astra.role is None
+        assert astra.available()["role"] is None
+        assert astra.cost_multiplier > 0
+
+    def test_available_carries_the_role(self) -> None:
+        terra = next(model for model in MODELS if model.model_id == "gpt-5.6-terra")
+        assert terra.available()["role"] == "primary"
 
     def test_the_gpt_multipliers_are_the_published_prices_in_credit_units(
         self,
@@ -140,27 +198,57 @@ class TestUsageShapes:
         assert Usage.from_openai_payload(None) == Usage()
         assert Usage.from_payload("not a dict") == Usage()
 
-    def test_an_answer_is_read_in_its_own_provider_s_shape(self) -> None:
+    def test_the_responses_input_total_is_split_into_fresh_and_cached(self) -> None:
+        # Same accounting as Chat Completions under different names. The
+        # reasoning count is inside output_tokens already and must not be
+        # added again.
+        usage = Usage.from_openai_responses_payload(
+            {
+                "input_tokens": 1120,
+                "output_tokens": 57,
+                "input_tokens_details": {"cached_tokens": 1000},
+                "output_tokens_details": {"reasoning_tokens": 31},
+            }
+        )
+        assert usage == Usage(
+            input_tokens=120, output_tokens=57, cache_read_tokens=1000
+        )
+
+    def test_an_answer_is_read_in_the_shape_it_was_written_in(self) -> None:
         anthropic_answer = {"usage": {"input_tokens": 10, "output_tokens": 2}}
-        openai_answer = {"usage": {"prompt_tokens": 10, "completion_tokens": 2}}
-        assert usage_from_answer(DesktopProvider.anthropic, anthropic_answer) == Usage(
+        completions_answer = {"usage": {"prompt_tokens": 10, "completion_tokens": 2}}
+        responses_answer = {"usage": {"input_tokens": 10, "output_tokens": 2}}
+
+        assert usage_from_answer(
+            SpokenApi.anthropic_messages, anthropic_answer
+        ) == Usage(input_tokens=10, output_tokens=2)
+        assert usage_from_answer(
+            SpokenApi.openai_completions, completions_answer
+        ) == Usage(input_tokens=10, output_tokens=2)
+        assert usage_from_answer(SpokenApi.openai_responses, responses_answer) == Usage(
             input_tokens=10, output_tokens=2
         )
-        assert usage_from_answer(DesktopProvider.openai, openai_answer) == Usage(
-            input_tokens=10, output_tokens=2
-        )
-        # Each one reads nothing from the other's shape, which is the
+
+        # Each reads nothing from a shape it does not speak, which is the
         # point of not building a converter.
-        assert usage_from_answer(DesktopProvider.anthropic, openai_answer) == Usage()
+        assert usage_from_answer(SpokenApi.anthropic_messages, completions_answer) == (
+            Usage()
+        )
+        assert usage_from_answer(SpokenApi.openai_completions, responses_answer) == (
+            Usage()
+        )
 
 
 class TestTallies:
-    def test_the_right_tally_is_chosen_for_each_provider(self) -> None:
-        assert isinstance(tally_for(DesktopProvider.anthropic), UsageTally)
-        assert isinstance(tally_for(DesktopProvider.openai), OpenAIUsageTally)
+    def test_the_right_tally_is_chosen_for_each_language(self) -> None:
+        assert isinstance(tally_for(SpokenApi.anthropic_messages), UsageTally)
+        assert isinstance(tally_for(SpokenApi.openai_completions), OpenAIUsageTally)
+        assert isinstance(
+            tally_for(SpokenApi.openai_responses), OpenAIResponsesUsageTally
+        )
 
     def test_anthropic_events_are_read_across_chunk_boundaries(self) -> None:
-        tally = tally_for(DesktopProvider.anthropic)
+        tally = tally_for(SpokenApi.anthropic_messages)
         for index in range(0, len(ANTHROPIC_STREAM), 7):
             tally.feed(ANTHROPIC_STREAM[index : index + 7])
         assert tally.finish() == Usage(
@@ -171,15 +259,41 @@ class TestTallies:
         )
 
     def test_openai_events_are_read_across_chunk_boundaries(self) -> None:
-        tally = tally_for(DesktopProvider.openai)
+        tally = tally_for(SpokenApi.openai_completions)
         for index in range(0, len(OPENAI_STREAM), 7):
             tally.feed(OPENAI_STREAM[index : index + 7])
         assert tally.finish() == Usage(
             input_tokens=120, output_tokens=57, cache_read_tokens=1000
         )
 
+    def test_responses_events_are_read_across_chunk_boundaries(self) -> None:
+        tally = tally_for(SpokenApi.openai_responses)
+        for index in range(0, len(RESPONSES_STREAM), 7):
+            tally.feed(RESPONSES_STREAM[index : index + 7])
+        assert tally.finish() == Usage(
+            input_tokens=120, output_tokens=57, cache_read_tokens=1000
+        )
+
+    def test_a_run_that_stops_early_is_still_metered_for_what_it_burned(self) -> None:
+        # Tokens were spent whether or not the answer finished, so the two
+        # ways a run can stop early carry usage too and are read the same.
+        for kind in ("response.incomplete", "response.failed"):
+            tally = tally_for(SpokenApi.openai_responses)
+            tally.feed(
+                b'data: {"type":"'
+                + kind.encode()
+                + b'","response":{"usage":{"input_tokens":90,"output_tokens":4}}}\n\n'
+            )
+            assert tally.finish() == Usage(input_tokens=90, output_tokens=4), kind
+
+    def test_a_responses_stream_with_no_terminal_event_tallies_nothing(self) -> None:
+        tally = tally_for(SpokenApi.openai_responses)
+        tally.feed(b'data: {"type":"response.output_text.delta","delta":"x"}\n\n')
+        tally.feed(b'data: {"type":"response.created","response":{"id":"r"}}\n\n')
+        assert tally.finish() == Usage()
+
     def test_a_stream_that_reports_nothing_tallies_nothing(self) -> None:
-        tally = tally_for(DesktopProvider.openai)
+        tally = tally_for(SpokenApi.openai_completions)
         tally.feed(b'data: {"choices":[{"delta":{"content":"x"}}],"usage":null}\n\n')
         tally.feed(b"data: [DONE]\n\n")
         assert tally.finish() == Usage()

@@ -26,11 +26,7 @@ export function resolveConversationSearchShortcutTarget({
   ) {
     return ConversationSearchShortcutTarget.Conversation;
   }
-  // The prompt is focused whenever the home screen opens, and the sidebar
-  // promises « Search chats » for this key: from the prompt it opens the
-  // chat search. Other editors keep the key for themselves.
-  if (isTextEditing && !isCoworkSearchEligibleEditor) {
-    return ConversationSearchShortcutTarget.None;
-  }
-  return ConversationSearchShortcutTarget.History;
+  return isTextEditing
+    ? ConversationSearchShortcutTarget.None
+    : ConversationSearchShortcutTarget.History;
 }

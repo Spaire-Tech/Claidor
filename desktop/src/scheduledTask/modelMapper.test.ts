@@ -1,13 +1,12 @@
-import { expect,test } from 'vitest';
-
-import {
-BindingKind, DeliveryChannel,   DeliveryMode,   OriginKind, PayloadKind,
-ScheduleKind, SessionTarget, WakeMode,
-} from './constants';
-import { makeModel,makeTask } from './fixtures';
+import { test, expect } from 'vitest';
+import { makeTask, makeModel } from './fixtures';
 import { TaskModelMapper } from './modelMapper';
-import { CoworkTaskPolicy } from './policies/coworkPolicy';
 import { ManualTaskPolicy } from './policies/manualPolicy';
+import { CoworkTaskPolicy } from './policies/coworkPolicy';
+import {
+  OriginKind, BindingKind, ScheduleKind, PayloadKind,
+  DeliveryMode, DeliveryChannel, SessionTarget, WakeMode,
+} from './constants';
 
 const mapper = new TaskModelMapper();
 const manualPolicy = new ManualTaskPolicy();
@@ -27,7 +26,7 @@ test('mapper.fromWire: with explicit meta, uses meta directly', () => {
 });
 
 test('mapper.fromWire: without meta, falls back to infer', () => {
-  const wire = makeTask({ sessionKey: 'agent:main:maties:sess-1' });
+  const wire = makeTask({ sessionKey: 'agent:main:lobsterai:sess-1' });
   const model = mapper.fromWire(wire);
   expect(model.origin.kind).toBe(OriginKind.Cowork);
   expect(model.binding.kind).toBe(BindingKind.UISession);
@@ -66,7 +65,7 @@ test('mapper.toWireInput: ui_session binding -> managed sessionKey', () => {
     binding: { kind: BindingKind.UISession, sessionId: 'sess-x' },
   });
   const wire = mapper.toWireInput(model, coworkPolicy);
-  expect(wire.sessionKey).toBe('agent:main:maties:sess-x');
+  expect(wire.sessionKey).toBe('agent:main:lobsterai:sess-x');
   expect(wire.sessionTarget).toBe(SessionTarget.Main);
 });
 

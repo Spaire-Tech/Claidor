@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
+import type { InstalledKitRecord } from '../../shared/kit/constants';
 import {
   SkinAssetExtension,
   SkinAssetFormat,
@@ -9,7 +10,7 @@ import {
   SkinToolAction,
   SkinWorkflowKind,
 } from '../../shared/skin/constants';
-import { SkinPackSkillId } from '../../shared/skin/kit';
+import { SkinPackKitId } from '../../shared/skin/kit';
 import { MediaSelectionMode } from '../mediaGenerationPolicy';
 import { SkinMediaBridge } from './skinMediaBridge';
 import type { SkinAssetRecord, SkinRecord, SkinStore } from './skinStore';
@@ -17,8 +18,18 @@ import { SkinWorkflowRegistry } from './skinWorkflowRegistry';
 
 const timestamp = '2026-07-16T10:00:00.000Z';
 const sessionId = 'session-one';
-const sessionKey = 'agent:main:maties:session-one';
+const sessionKey = 'agent:main:lobsterai:session-one';
 const context = { sessionKey, toolCallId: 'tool-call-one' };
+
+const installedKit: InstalledKitRecord = {
+  id: SkinPackKitId.BuiltIn,
+  version: '0.1.0',
+  installedAt: 1,
+  workflowKind: SkinWorkflowKind.SkinPack,
+  skills: null,
+  mcpServers: [],
+  connectors: [],
+};
 
 const createAsset = (slot: SkinAssetSlot): SkinAssetRecord => ({
   slot,
@@ -60,13 +71,13 @@ const createHarness = () => {
     deactivate: vi.fn(async () => undefined),
   } as unknown as SkinStore;
   const workflowRegistry = new SkinWorkflowRegistry({
-    isSkinSkillEnabled: () => true,
+    getInstalledKits: () => ({ [SkinPackKitId.BuiltIn]: installedKit }),
     getParentSessionId: () => null,
   });
   const selection = { mode: MediaSelectionMode.Image };
   workflowRegistry.prepareTurn({
     sessionId,
-    skillIds: [SkinPackSkillId.BuiltIn],
+    kitIds: [SkinPackKitId.BuiltIn],
     mediaGenerationEntitled: true,
     mediaSelection: selection,
   });

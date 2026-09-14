@@ -1,12 +1,9 @@
-import './index.css';
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
-
-import App from './App';
-import PreviewGate from './components/design/preview/PreviewGate';
 import { store } from './store';
+import App from './App';
+import './index.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -18,7 +15,6 @@ try {
     <React.StrictMode>
       <Provider store={store}>
         <App />
-        <PreviewGate />
       </Provider>
     </React.StrictMode>
   );

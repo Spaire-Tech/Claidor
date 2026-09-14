@@ -101,10 +101,6 @@ export class SqliteStore {
       CREATE TABLE IF NOT EXISTS cowork_sessions (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
-        -- A session that predates naming keeps the name it has: an
-        -- unmarked row reads as the person's, never as a placeholder to
-        -- be replaced.
-        title_source TEXT NOT NULL DEFAULT 'person',
         claude_session_id TEXT,
         scheduled_task_id TEXT,
         status TEXT NOT NULL DEFAULT 'idle',
@@ -373,22 +369,6 @@ export class SqliteStore {
       }
     } catch (error) {
       console.error('[SqliteStore] failed to add cowork_sessions.thinking_level:', error);
-      throw error;
-    }
-
-    // `title_source` says where a session's name came from, and therefore
-    // whether the app may name it: only a placeholder is open to a model
-    // call, and a name the person typed is closed for ever. It is selected
-    // by every Cowork session read, so it gets the same required treatment.
-    try {
-      const sessionCols = this.db.pragma('table_info(cowork_sessions)') as Array<{ name: string }>;
-      if (!sessionCols.some(column => column.name.toLowerCase() === 'title_source')) {
-        this.db.exec("ALTER TABLE cowork_sessions ADD COLUMN title_source TEXT NOT NULL DEFAULT 'person';");
-        this.didRunMigration = true;
-        console.log('[SqliteStore] added required cowork_sessions.title_source column');
-      }
-    } catch (error) {
-      console.error('[SqliteStore] failed to add cowork_sessions.title_source:', error);
       throw error;
     }
 
@@ -699,8 +679,19 @@ export class SqliteStore {
           )
           .run(AgentId.Main, DefaultAgentProfile.Name, existingSystemPrompt, DefaultAgentAvatarIcon, now, now);
       } else {
-        const normalizedName = mainAgent.name.trim();
-        const shouldUpgradeName = !normalizedName || normalizedName.toLowerCase() === LegacyAgentName.Main;
+        const normalizedName = mainAgent.name.trim().toLowerCase();
+        // Names nobody chose: a blank, the literal id `main`, and
+        // upstream's `LobsterAI`, which every profile made before the
+        // rename has on disk. Anything else is left alone.
+        //
+        // The one case this gets wrong is somebody who deliberately named
+        // their agent LobsterAI — they are renamed too, because the row
+        // does not record who wrote it. Renaming one person's choice is
+        // the cheaper mistake than leaving every existing install showing
+        // another company's product name.
+        const shouldUpgradeName = !normalizedName
+          || normalizedName === LegacyAgentName.Main
+          || normalizedName === LegacyAgentName.Upstream;
         if (shouldUpgradeName) {
           this.db
             .prepare('UPDATE agents SET name = ?, updated_at = ? WHERE id = ?')

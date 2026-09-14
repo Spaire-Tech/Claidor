@@ -54,8 +54,8 @@ const McpDetailModal: React.FC<McpDetailModalProps> = ({
   <Modal
     onClose={onClose}
     onEscape={onClose}
-    overlayClassName="maties-backdrop fixed inset-0 z-50 flex items-center justify-center"
-    className="maties-card-prose maties-in mx-4 flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden"
+    overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+    className="mx-4 flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-border bg-surface shadow-2xl"
   >
     <div className="relative flex-shrink-0 px-6 pb-4 pt-6">
       <button

@@ -25,7 +25,8 @@ HERE = Path(__file__).parent
 _CHAIN = HERE.parent / "polar" / "tieout" / "chain"
 
 _spec = importlib.util.spec_from_file_location("extract", _CHAIN / "extract.py")
-assert _spec is not None and _spec.loader is not None
+assert _spec is not None
+assert _spec.loader is not None
 extract = importlib.util.module_from_spec(_spec)
 sys.modules["extract"] = extract
 _spec.loader.exec_module(extract)

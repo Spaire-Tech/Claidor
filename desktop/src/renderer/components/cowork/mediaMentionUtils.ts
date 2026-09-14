@@ -10,9 +10,9 @@ export const MediaMentionType = {
 export type MediaMentionType = typeof MediaMentionType[keyof typeof MediaMentionType];
 
 export const MediaMentionLabelPrefix = {
-  Image: 'image',
-  Video: 'video',
-  Audio: 'audio',
+  Image: '图片',
+  Video: '视频',
+  Audio: '音频',
 } as const;
 
 export type MediaMentionLabelPrefix =
@@ -172,7 +172,7 @@ export function extractMediaReferencesFromPrompt(
 
   const labelLookup = new Map(mediaLabels.map(item => [item.label, item]));
   const referencesByLabel = new Map<string, MediaAttachmentRef>();
-  const mediaTokenPattern = /@(image|video|audio)(\d+)/g;
+  const mediaTokenPattern = /@(图片|视频|音频)(\d+)/g;
   let match: RegExpExecArray | null;
 
   while ((match = mediaTokenPattern.exec(prompt)) !== null) {
@@ -207,7 +207,7 @@ export function buildMediaMentionSegments(
 
   const labelLookup = new Set(mediaLabels.map(item => item.label));
   const segments: MediaMentionSegment[] = [];
-  const mediaTokenPattern = /@(image|video|audio)(\d+)/g;
+  const mediaTokenPattern = /@(图片|视频|音频)(\d+)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 

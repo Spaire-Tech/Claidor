@@ -197,9 +197,6 @@ test('setConfig preserves loaded OpenClaw session policy', () => {
     dreamingFrequency: '0 3 * * *',
     dreamingModel: '',
     dreamingTimezone: '',
-    libraryEnabled: true,
-    libraryFolders: [],
-    libraryExcludedFolders: [],
     openClawSessionPolicy: {
       keepAlive: '365d',
     },
@@ -216,11 +213,11 @@ test('updateCurrentSessionModelOverride only patches the active session', () => 
     coworkReducer(undefined, addSession(session)),
     updateCurrentSessionModelOverride({
       sessionId: 'session-1',
-      modelOverride: 'maties-server/qwen3.6-plus-YoudaoInner',
+      modelOverride: 'lobsterai-server/qwen3.6-plus-YoudaoInner',
     }),
   );
 
-  expect(activeState.currentSession?.modelOverride).toBe('maties-server/qwen3.6-plus-YoudaoInner');
+  expect(activeState.currentSession?.modelOverride).toBe('lobsterai-server/qwen3.6-plus-YoudaoInner');
   expect(activeState.currentSession?.updatedAt).toBe(1);
 
   const ignoredState = coworkReducer(
@@ -231,7 +228,7 @@ test('updateCurrentSessionModelOverride only patches the active session', () => 
     }),
   );
 
-  expect(ignoredState.currentSession?.modelOverride).toBe('maties-server/qwen3.6-plus-YoudaoInner');
+  expect(ignoredState.currentSession?.modelOverride).toBe('lobsterai-server/qwen3.6-plus-YoudaoInner');
 });
 
 test('updateSessionTitle preserves the session updated time', () => {
@@ -1013,10 +1010,10 @@ test('updateToolUseMediaStatus preserves the highest media poll count', () => {
     messages: [{
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: maties_video_generate',
+      content: 'Using tool: lobsterai_video_generate',
       timestamp: 1,
       metadata: {
-        toolName: 'maties_video_generate',
+        toolName: 'lobsterai_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -1046,10 +1043,10 @@ test('updateToolUseMediaStatus drops single media poll counts', () => {
     messages: [{
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: maties_video_generate',
+      content: 'Using tool: lobsterai_video_generate',
       timestamp: 1,
       metadata: {
-        toolName: 'maties_video_generate',
+        toolName: 'lobsterai_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -1143,10 +1140,10 @@ test('pending media status updates are applied when the tool use arrives', () =>
     message: {
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: maties_video_generate',
+      content: 'Using tool: lobsterai_video_generate',
       timestamp: 2,
       metadata: {
-        toolName: 'maties_video_generate',
+        toolName: 'lobsterai_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -1175,10 +1172,10 @@ test('inactive media status updates are applied when returning to the session', 
     messages: [{
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: maties_video_generate',
+      content: 'Using tool: lobsterai_video_generate',
       timestamp: 2,
       metadata: {
-        toolName: 'maties_video_generate',
+        toolName: 'lobsterai_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -1197,10 +1194,10 @@ test('retained media poll counts survive switching away and back', () => {
     messages: [{
       id: 'tool-1',
       type: 'tool_use',
-      content: 'Using tool: maties_video_generate',
+      content: 'Using tool: lobsterai_video_generate',
       timestamp: 1,
       metadata: {
-        toolName: 'maties_video_generate',
+        toolName: 'lobsterai_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },
@@ -1221,10 +1218,10 @@ test('retained media poll counts survive switching away and back', () => {
     messages: [{
       id: 'tool-1-reloaded',
       type: 'tool_use',
-      content: 'Using tool: maties_video_generate',
+      content: 'Using tool: lobsterai_video_generate',
       timestamp: 3,
       metadata: {
-        toolName: 'maties_video_generate',
+        toolName: 'lobsterai_video_generate',
         toolUseId: 'call-1',
         toolInput: { action: 'status', taskId: 'task-1' },
       },

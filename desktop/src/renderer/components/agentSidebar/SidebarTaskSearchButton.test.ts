@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest';
 import SidebarTaskSearchButton from './SidebarTaskSearchButton';
 
 describe('SidebarTaskSearchButton', () => {
-  test.each(['Search tasks', 'Find tasks'])(
+  test.each(['Search tasks', '搜索任务'])(
     'renders an accessible icon-only action for label %s with a stable hit target',
     (label) => {
       const html = renderToStaticMarkup(React.createElement(SidebarTaskSearchButton, {

@@ -64,9 +64,11 @@ from .service import (
     QUOTA_EXHAUSTED_CODE,
     REFRESH_INVALID,
     DesktopMemoryRefused,
+    DesktopModel,
     DesktopProvider,
     DesktopUnauthenticated,
     IncomingMemoryFile,
+    SpokenApi,
     Usage,
     desktop,
     model_by_id,
@@ -74,13 +76,8 @@ from .service import (
     provider_api_key,
     provider_base_url,
     provider_configured,
-    speech_configured,
     tally_for,
     usage_from_answer,
-)
-from .speech import (
-    is_valid_voice_id,
-    read_speech_request,
 )
 
 log = structlog.get_logger()
@@ -434,20 +431,52 @@ async def updates_check() -> JSONResponse:
 
 @router.get("/api/skill-store", name="desktop:skill_store")
 async def skill_store() -> JSONResponse:
-    """The skill marketplace. Empty until Claidor curates one.
+    """The skill marketplace. Empty, and the two halves are empty for different
+    reasons.
 
     The app reads ``data.value.marketplace`` (skills to install),
     ``data.value.localSkill`` (names and descriptions for the bundled skills)
     and ``data.value.marketTags``.
+
+    ``marketplace`` is for skills to download, and every skill we have is
+    already bundled with the app — see the note on ``kit_store`` below, which
+    is the same story.
+
+    ``localSkill`` would only add titles and descriptions for skills that are
+    already installed, and the app covers both without us: names come from
+    ``BUNDLED_SKILL_DISPLAY_NAMES``, which a test holds against
+    ``skills.config.json`` in both languages, and descriptions fall back to the
+    skill's own ``SKILL.md``. Sending them from here would be a second copy to
+    keep in step.
     """
     return _ok({"value": {"marketplace": [], "localSkill": [], "marketTags": []}})
 
 
 @router.get("/api/kit-store", name="desktop:kit_store")
 async def kit_store() -> JSONResponse:
-    """The kit store. Empty until Claidor curates one.
+    """The kit store, and it is empty for a structural reason, not for want of
+    curation.
 
     The app reads ``data.value.kits`` and appends its own built-in kits.
+
+    Three facts settle what can honestly go here, all of them in the desktop
+    app rather than in this file:
+
+    1. Installing a kit always downloads a zip from the kit's ``bundleUrl``,
+       extracts it, and looks for directories containing ``SKILL.md``
+       (``desktop/src/main/ipcHandlers/kits/handlers.ts``). There is no
+       install-from-what-you-already-have path; even the one "built-in" kit,
+       Computer Use, is a hosted zip.
+    2. Every skill we have is already bundled with the app and enabled by
+       ``desktop/SKILLs/skills.config.json``.
+    3. Kit installs and bundled skills share one directory, and the installer
+       suffixes on collision. Shipping a kit of skills the app already has
+       would write ``pdf-1`` next to ``pdf``.
+
+    So a curated catalogue today would deliver duplicates of what is already
+    installed. A real kit needs a skill the app does not bundle, which means
+    authoring one and hosting its bundle — writing, and a place to put files,
+    not a change to this endpoint.
     """
     return _ok({"value": {"kits": []}})
 
@@ -510,13 +539,21 @@ async def activity_action(activity_code: str, action_id: str) -> JSONResponse:
 
 # --- the model proxy --------------------------------------------------------
 #
-# Two providers serve the catalogue, and each one talks its own language
-# end to end: the engine speaks Anthropic's `/v1/messages` to an
-# Anthropic model and OpenAI's `/v1/chat/completions` to an OpenAI one.
-# Nothing here converts between the two shapes. The path says which
-# language is being spoken; the model says who serves it, and from that
-# come the address, the key and the price list. One branch, in one
-# place: `_WIRES`.
+# Three languages, and nothing here translates between any of them. The
+# engine speaks Anthropic's `/v1/messages` to an Anthropic model, and one
+# of OpenAI's two to an OpenAI one: `/v1/responses`, which is what we use,
+# or the older `/v1/chat/completions`, kept because it costs nothing to
+# keep and a client that has not moved still works.
+#
+# The path says which language is being spoken; the model says who serves
+# it; the two must agree. From the model come the address, the key and
+# the price list. One branch, in one place: `_WIRES`.
+#
+# Why Responses is the one we use: OpenAI will not take `reasoning_effort`
+# and function tools together on Chat Completions — it answers 400 and
+# names `/v1/responses` in its own error. An agent always carries tools,
+# so on that wire every OpenAI model of ours ran with reasoning switched
+# off. On this one it does not have to.
 
 
 def _anthropic_headers(request: Request) -> dict[str, str]:
@@ -542,29 +579,71 @@ def _openai_headers(request: Request) -> dict[str, str]:
     }
 
 
-def _anthropic_body(payload: dict[str, Any], raw: bytes) -> bytes:
+def _openai_responses_body(
+    payload: dict[str, Any], raw: bytes, model: DesktopModel
+) -> bytes:
+    """Untouched.
+
+    Neither of the two things the Chat Completions wire has to be told is
+    needed here. Usage arrives on the terminal event without
+    `stream_options` being set, and reasoning and tools travel together,
+    which is the whole reason for this wire — so `tool_reasoning` is read
+    only on the other one, and nothing is forced to `none`.
+
+    Left deliberately as a function rather than reusing
+    `_anthropic_body`: the two are identical today for different reasons,
+    and a shared body would hide the day one of them stops being.
+    """
+    return raw
+
+
+def _anthropic_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) -> bytes:
     """Untouched: Anthropic reports usage on every stream without being
     asked."""
     return raw
 
 
-def _openai_body(payload: dict[str, Any], raw: bytes) -> bytes:
-    """Untouched, except that a stream is made to report its usage.
+def _openai_body(payload: dict[str, Any], raw: bytes, model: DesktopModel) -> bytes:
+    """The older wire. Untouched, but for two things OpenAI will not do
+    without being told, both of which are silent failures otherwise.
 
-    OpenAI sends no usage on a stream unless the request carried
+    **Usage on a stream.** OpenAI sends none unless the request carried
     `stream_options.include_usage`, and whether the engine asks for it is
     a compatibility flag in its own configuration. A stream that reports
     nothing would cost nothing, which is not a discount — it is metering
     that has quietly stopped working. So the proxy asks, always.
+
+    **Reasoning alongside tools.** Some models refuse the two together on
+    this endpoint and answer 400 rather than dropping one. The agent
+    always carries tools, so such a model cannot answer at all. Where the
+    catalogue records that refusal, the proxy sends the `none` that
+    OpenAI's own error asks for. Setting it beats omitting it: the model's
+    default is a reasoning level, so silence would be refused too.
     """
-    if payload.get("stream") is not True:
+    changes: dict[str, Any] = {}
+
+    if payload.get("stream") is True:
+        options = payload.get("stream_options")
+        options = dict(options) if isinstance(options, dict) else {}
+        if options.get("include_usage") is not True:
+            options["include_usage"] = True
+            changes["stream_options"] = options
+
+    tools = payload.get("tools")
+    # `is not True` and not `not …`: the flag is three-valued, and an
+    # unestablished model is treated as refusing. See the note on
+    # DesktopModel.tool_reasoning for why that is the safe way round.
+    if (
+        model.tool_reasoning is not True
+        and isinstance(tools, list)
+        and tools
+        and payload.get("reasoning_effort") != "none"
+    ):
+        changes["reasoning_effort"] = "none"
+
+    if not changes:
         return raw
-    options = payload.get("stream_options")
-    options = dict(options) if isinstance(options, dict) else {}
-    if options.get("include_usage") is True:
-        return raw
-    options["include_usage"] = True
-    return json.dumps({**payload, "stream_options": options}).encode()
+    return json.dumps({**payload, **changes}).encode()
 
 
 @dataclass(frozen=True)
@@ -574,16 +653,21 @@ class _Wire:
 
     upstream_path: str
     headers: Callable[[Request], dict[str, str]]
-    body: Callable[[dict[str, Any], bytes], bytes]
+    body: Callable[[dict[str, Any], bytes, DesktopModel], bytes]
 
 
-_WIRES: dict[DesktopProvider, _Wire] = {
-    DesktopProvider.anthropic: _Wire(
+_WIRES: dict[SpokenApi, _Wire] = {
+    SpokenApi.anthropic_messages: _Wire(
         upstream_path="/v1/messages",
         headers=_anthropic_headers,
         body=_anthropic_body,
     ),
-    DesktopProvider.openai: _Wire(
+    SpokenApi.openai_responses: _Wire(
+        upstream_path="/v1/responses",
+        headers=_openai_headers,
+        body=_openai_responses_body,
+    ),
+    SpokenApi.openai_completions: _Wire(
         upstream_path="/v1/chat/completions",
         headers=_openai_headers,
         body=_openai_body,
@@ -604,127 +688,6 @@ def _error(kind: str, message: str, status: int) -> JSONResponse:
     )
 
 
-# --- the voice --------------------------------------------------------------
-#
-# The plan of record: "voices come from a speech service behind Claidor's
-# API, never from a key in the app" (docs/maties/plan.md, step 1). So the
-# app asks Claidor to say something and Claidor asks ElevenLabs, with the
-# key never leaving this side. The price and the limits are in
-# polar.desktop.speech, which has no I/O in it and is tested on its own.
-
-
-def _elevenlabs_headers(accept: str) -> dict[str, str]:
-    return {
-        "xi-api-key": settings.ELEVENLABS_API_KEY,
-        "content-type": "application/json",
-        "accept": accept,
-    }
-
-
-@router.get("/api/speech/v1/voices", name="desktop:speech_voices", response_model=None)
-async def speech_voices(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-) -> JSONResponse:
-    """The voices that may be chosen, as ElevenLabs lists them.
-
-    Nothing is metered: a person opening the voice picker has not asked
-    to be read to yet.
-    """
-    if not speech_configured():
-        return _error("api_error", "The speech service is not configured.", 503)
-    url = f"{settings.DESKTOP_ELEVENLABS_BASE_URL}/v1/voices"
-    try:
-        async with httpx.AsyncClient(timeout=_timeout()) as client:
-            answer = await client.get(
-                url, headers=_elevenlabs_headers("application/json")
-            )
-    except httpx.HTTPError:
-        log.exception("desktop.speech.voices_unreachable")
-        return _error("api_error", "The speech service could not be reached.", 502)
-    return JSONResponse(answer.json(), status_code=answer.status_code)
-
-
-@router.post(
-    "/api/speech/v1/text-to-speech/{voice_id}",
-    name="desktop:speech_text_to_speech",
-    response_model=None,
-)
-async def speech_text_to_speech(
-    voice_id: str,
-    request: Request,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
-    session: AsyncSession = Depends(get_db_session),
-) -> JSONResponse | Response:
-    """Say something, in one of the voices, against the same monthly
-    allowance the models are charged to.
-
-    The audio comes back whole rather than streamed. A briefing is a few
-    seconds of speech and the cap in `polar.desktop.speech` keeps it that
-    way; streaming would buy responsiveness at the cost of not knowing
-    whether the call succeeded before writing the charge, and a charge
-    for audio that never arrived is worse than a moment's wait.
-    """
-    if not speech_configured():
-        return _error("api_error", "The speech service is not configured.", 503)
-    if not is_valid_voice_id(voice_id):
-        return _error("invalid_request_error", "That is not a voice id.", 400)
-    try:
-        payload = json.loads(await request.body() or b"{}")
-    except ValueError:
-        return _error("invalid_request_error", "The body is not JSON.", 400)
-    spoken = read_speech_request(payload)
-    if isinstance(spoken, str):
-        return _error("invalid_request_error", spoken, 400)
-
-    user = desktop_session.user
-    if await desktop.exhausted(session, user):
-        return JSONResponse(
-            {
-                "error": {
-                    "type": "quota_exhausted",
-                    "code": QUOTA_EXHAUSTED_CODE,
-                    "message": (
-                        f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "
-                        "The allowance resets at the start of next month."
-                    ),
-                }
-            },
-            status_code=402,
-        )
-
-    url = (
-        f"{settings.DESKTOP_ELEVENLABS_BASE_URL}"
-        f"/v1/text-to-speech/{quote(voice_id, safe='')}"
-    )
-    try:
-        async with httpx.AsyncClient(timeout=_timeout()) as client:
-            answer = await client.post(
-                url,
-                headers=_elevenlabs_headers("audio/mpeg"),
-                content=json.dumps(payload).encode(),
-            )
-    except httpx.HTTPError:
-        log.exception("desktop.speech.upstream_unreachable")
-        return _error("api_error", "The speech service could not be reached.", 502)
-
-    await desktop.record_speech_usage(
-        session,
-        user_id=user.id,
-        session_id=desktop_session.id,
-        characters=spoken.characters,
-        upstream_status=answer.status_code,
-    )
-    if answer.status_code != 200:
-        # ElevenLabs' own error body is JSON even when audio was asked
-        # for. Passed through so the app can say what was actually wrong.
-        return Response(
-            content=answer.content,
-            status_code=answer.status_code,
-            media_type=answer.headers.get("content-type", "application/json"),
-        )
-    return Response(content=answer.content, media_type="audio/mpeg")
-
-
 @router.post("/api/proxy/v1/messages", name="desktop:messages", response_model=None)
 async def proxy_messages(
     request: Request,
@@ -734,7 +697,7 @@ async def proxy_messages(
     """Anthropic's Messages API, behind Claidor's key and the person's
     monthly allowance. The body goes through untouched; the usage
     Anthropic reports comes back as credits."""
-    return await _proxy(request, desktop_session, session, DesktopProvider.anthropic)
+    return await _proxy(request, desktop_session, session, SpokenApi.anthropic_messages)
 
 
 @router.post(
@@ -747,18 +710,74 @@ async def proxy_chat_completions(
     desktop_session: DesktopSession = Depends(get_desktop_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse | StreamingResponse:
-    """OpenAI's Chat Completions API, behind Claidor's key and the same
-    allowance. The app's loopback proxy already forwards this path, so
-    the engine reaches it by speaking OpenAI to an OpenAI model — no
-    translation anywhere."""
-    return await _proxy(request, desktop_session, session, DesktopProvider.openai)
+    """OpenAI's older Chat Completions API, behind Claidor's key and the
+    same allowance.
+
+    Kept, but not what the engine is pointed at: this wire refuses
+    reasoning alongside function tools, and an agent always carries tools.
+    See `/api/proxy/v1/responses`.
+    """
+    return await _proxy(request, desktop_session, session, SpokenApi.openai_completions)
+
+
+@router.post(
+    "/api/proxy/v1/responses",
+    name="desktop:responses",
+    response_model=None,
+)
+async def proxy_responses(
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse | StreamingResponse:
+    """OpenAI's Responses API, behind Claidor's key and the person's
+    monthly allowance.
+
+    The wire the engine speaks to every OpenAI model of ours, because it
+    is the only one that will take reasoning and function tools in the
+    same request. The engine implements it natively
+    (`openai-transport-stream.ts`); nothing here translates anything.
+    """
+    return await _proxy(request, desktop_session, session, SpokenApi.openai_responses)
+
+
+#: How much of a refusal to keep. Provider errors say what is wrong in
+#: their first sentence; the rest is echoed request.
+_REFUSAL_LOG_LIMIT = 1000
+
+#: The one line to search the logs for when a model call fails.
+UPSTREAM_REFUSED = "desktop.proxy.upstream_refused"
+
+
+def _log_upstream_refusal(model: DesktopModel, status: int, body: bytes | None) -> None:
+    """Write down why the model service refused, in full, once.
+
+    Without this the reason is lost: the body is handed back to the app,
+    the app's engine reduces it to a failure kind, and what reaches the
+    person is « 400 terminated » — a status and a word, with the sentence
+    that says what is actually wrong nowhere at all. That was the state on
+    13 September, when GPT models failed and nothing anywhere recorded
+    OpenAI's own explanation. One line here ended two hours of guessing.
+
+    The body is the provider's error text. It carries no key: the key goes
+    up in a header, and a provider does not echo it back.
+    """
+    text = (body or b"").decode(errors="replace").strip()
+    log.warning(
+        UPSTREAM_REFUSED,
+        provider=model.provider.value,
+        model=model.model_id,
+        status=status,
+        body=text[:_REFUSAL_LOG_LIMIT] or "(empty)",
+        truncated=len(text) > _REFUSAL_LOG_LIMIT,
+    )
 
 
 async def _proxy(
     request: Request,
     desktop_session: DesktopSession,
     session: AsyncSession,
-    spoken: DesktopProvider,
+    spoken: SpokenApi,
 ) -> JSONResponse | StreamingResponse:
     raw = await request.body()
     try:
@@ -774,7 +793,7 @@ async def _proxy(
             "This model is not offered by the desktop app.",
             400,
         )
-    if model.provider is not spoken:
+    if model.provider is not spoken.provider:
         # The path is one provider's language and the model is served by
         # another. Nothing here translates between the two, so this is a
         # mistake in the caller, not something to paper over.
@@ -802,11 +821,11 @@ async def _proxy(
             status_code=402,
         )
 
-    wire = _WIRES[model.provider]
+    wire = _WIRES[spoken]
     stream = payload.get("stream") is True
     url = f"{provider_base_url(model.provider)}{wire.upstream_path}"
     headers = wire.headers(request)
-    body = wire.body(payload, raw)
+    body = wire.body(payload, raw, model)
     user_id, session_id = user.id, desktop_session.id
 
     # The request's own session is committed when the handler returns,
@@ -847,9 +866,11 @@ async def _proxy(
         usage = Usage()
         try:
             answer = upstream.json()
-            usage = usage_from_answer(model.provider, answer)
+            usage = usage_from_answer(spoken, answer)
         except ValueError:
             answer = None
+        if upstream.status_code >= 400:
+            _log_upstream_refusal(model, upstream.status_code, upstream.content)
         await record(usage, upstream.status_code)
         if answer is None:
             return _error(
@@ -878,6 +899,7 @@ async def _proxy(
         error_body = await upstream.aread()
         await upstream.aclose()
         await client.aclose()
+        _log_upstream_refusal(model, upstream.status_code, error_body)
         await record(Usage(), upstream.status_code)
         try:
             return JSONResponse(
@@ -891,7 +913,7 @@ async def _proxy(
             )
 
     async def relay() -> AsyncIterator[bytes]:
-        tally = tally_for(model.provider)
+        tally = tally_for(spoken)
         try:
             async for chunk in upstream.aiter_bytes():
                 tally.feed(chunk)

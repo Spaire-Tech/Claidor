@@ -1,23 +1,20 @@
 name: Desktop app (macOS)
 
-# Builds the Maties desktop app for Apple Silicon Macs and keeps the
+# Builds the Faiser desktop app for Apple Silicon Macs and keeps the
 # installer as a downloadable artifact of the run. The build is unsigned
 # until an Apple developer certificate is added, so the first launch needs
 # a right-click, Open (see desktop/README.md).
 
+# By hand only, on purpose. GitHub bills macOS runners at ten times the
+# minute rate, so the 2,000 free minutes a month are really about 200
+# macOS minutes and this build takes twenty. On a push trigger every
+# commit touching desktop/ spent some of that, which is how the bill got
+# where it did.
+#
+# The same build runs on a Mac for nothing: `npm run mac:build` in
+# desktop/, or see desktop/README.md.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      # `main` first and permanently: without it, merging changed the app
-      # and produced no app, and the only way to a build was to know that
-      # the trigger named a working branch instead. Every future branch
-      # would have had to edit this file to get an installer.
-      - main
-      - claude/pierce-phase-6-writing-mjkaj6
-    paths:
-      - "desktop/**"
-      - ".github/workflows/desktop_mac.yml"
 
 concurrency:
   group: desktop-mac-${{ github.ref }}
@@ -60,7 +57,7 @@ jobs:
       - name: Keep the installer
         uses: actions/upload-artifact@v4
         with:
-          name: Maties-macOS-arm64
+          name: Faiser-macOS-arm64
           path: |
             desktop/release/*.dmg
             desktop/release/*.zip

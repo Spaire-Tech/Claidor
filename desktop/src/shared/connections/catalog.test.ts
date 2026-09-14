@@ -1,149 +1,176 @@
-import fs from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { PlatformRegistry } from '../platform/constants';
 import {
   APP_LOGO_DIRECTORY,
   CONNECTION_GROUPS,
   CONNECTION_ITEMS,
-  connectionAppSlug,
-  ConnectionGroupId,
   ConnectionKind,
   connectionMonogram,
-  countConnections,
-  countConnectionsByKind,
+  connectMethod,
+  ConnectVia,
   findConnection,
-  getConnectionAppSlugs,
   getConnectionGroups,
-  REACH_ENTRIES,
-  reachAddressFor,
-  ReachKind,
+  mcpServerName,
+  OAuthRegistration,
   searchConnections,
 } from './catalog';
 
-const DESKTOP_ROOT = path.resolve(__dirname, '../../..');
-const LOGO_DIR = path.resolve(DESKTOP_ROOT, 'public', APP_LOGO_DIRECTORY);
+const LOGO_DIR = path.resolve(__dirname, '../../../public', APP_LOGO_DIRECTORY);
 
-/**
- * The services no connector carries today (docs/maties/connectors.md,
- * section 9: named, not quietly dropped).
- */
-const WITHOUT_A_CONNECTOR = ['Otter', 'Adobe Express', 'Xero'];
+const accounts = CONNECTION_ITEMS.filter(item => item.kind === ConnectionKind.Account);
 
-describe('connections catalogue', () => {
-  test('lists the sixty-five connections the founder drew, in eleven groups', () => {
-    expect(CONNECTION_ITEMS).toHaveLength(65);
-    expect(countConnections()).toBe(65);
-    expect(CONNECTION_GROUPS).toHaveLength(11);
-    expect(getConnectionGroups()).toHaveLength(11);
-    expect(getConnectionGroups().map((group) => group.items.length)).toEqual([4, 6, 11, 7, 4, 6, 4, 6, 5, 6, 6]);
+describe('the catalogue holds together', () => {
+  test('every id is distinct', () => {
+    expect(new Set(CONNECTION_ITEMS.map(one => one.id)).size).toBe(CONNECTION_ITEMS.length);
   });
 
-  test('gives every item and every reach card a unique id', () => {
-    const ids = [...CONNECTION_ITEMS.map((item) => item.id), ...REACH_ENTRIES.map((entry) => entry.id)];
-    expect(new Set(ids).size).toBe(ids.length);
+  test('every item is in a group the catalogue knows', () => {
+    const known = new Set(CONNECTION_GROUPS.map(one => one.id));
+    const strays = CONNECTION_ITEMS.filter(one => !known.has(one.group)).map(one => one.id);
+    // The bug this guards actually happened: the Finance group was
+    // dropped from the order while two groups were being added, and six
+    // services disappeared from the catalogue without a word.
+    expect(strays).toEqual([]);
   });
 
-  test('keeps the founder\'s order and words', () => {
-    const groups = getConnectionGroups();
-    expect(groups[0].items.map((item) => item.name)).toEqual(['Gmail', 'Outlook', 'Google Calendar', 'Apple Calendar']);
-    expect(groups[9].items.map((item) => item.name)).toEqual(['Amazon', 'Google Flights', 'Airbnb', 'Booking', 'OpenTable', 'DoorDash']);
-    expect(groups[9].items.every((item) => item.tag === 'through-your-browser')).toBe(true);
-    expect(REACH_ENTRIES.map((entry) => entry.name)).toEqual(['Gmail', 'Slack Bot', 'iMessage', 'WhatsApp', 'Telegram', 'iOS']);
-  });
-
-  test('gives every account card a service name, and only account cards', () => {
-    for (const item of CONNECTION_ITEMS) {
-      if (item.kind === ConnectionKind.Account) {
-        expect(item.appSlug, item.id).toMatch(/^[a-z0-9][a-z0-9_]*$/);
-        expect(connectionAppSlug(item)).toBe(item.appSlug);
-      } else {
-        expect(connectionAppSlug(item), item.id).toBeUndefined();
-      }
+  test('no group is listed with nothing in it', () => {
+    for (const group of getConnectionGroups()) {
+      expect(group.items.length, `${group.id} is empty`).toBeGreaterThan(0);
     }
   });
 
-  test('names every service once, however many cards point at it', () => {
-    const slugs = getConnectionAppSlugs();
-    expect(new Set(slugs).size).toBe(slugs.length);
-    // Notion is filed under Files and under Tasks; it is one account.
-    expect(CONNECTION_ITEMS.filter((item) => connectionAppSlug(item) === 'notion')).toHaveLength(2);
-    expect(slugs.filter((slug) => slug === 'notion')).toHaveLength(1);
-    expect(slugs).toHaveLength(37);
-  });
-
-  test('leaves a card « soon » only when no connector carries the service', () => {
-    const soon = CONNECTION_ITEMS.filter((item) => item.kind === ConnectionKind.Soon);
-    expect(soon.map((item) => item.name)).toEqual(WITHOUT_A_CONNECTOR);
-  });
-
-  test('names only logo files that ship with the app', () => {
-    const logos = [...CONNECTION_ITEMS, ...REACH_ENTRIES].flatMap((entry) => (entry.logo ? [entry.logo] : []));
-    for (const logo of logos) {
-      expect(fs.existsSync(path.join(LOGO_DIR, logo)), logo).toBe(true);
-    }
-    expect(logos.length).toBeGreaterThan(50);
-  });
-
-  test('offers channels only through platforms the app lists', () => {
-    const offered = new Set<string>(PlatformRegistry.platforms);
-    for (const item of CONNECTION_ITEMS) {
-      if (item.kind === ConnectionKind.Channel && item.platformId) {
-        expect(offered.has(item.platformId), item.id).toBe(true);
-      }
-    }
-    for (const entry of REACH_ENTRIES) {
-      if (entry.kind === ReachKind.Channel) {
-        expect(offered.has(entry.platformId), entry.id).toBe(true);
-      }
-    }
-  });
-
-  test('knows what each kind of card is', () => {
-    const counts = countConnectionsByKind();
-    expect(counts[ConnectionKind.Account]).toBe(38);
-    expect(counts[ConnectionKind.Local]).toBe(6);
-    expect(counts[ConnectionKind.Browser]).toBe(14);
-    expect(counts[ConnectionKind.Channel]).toBe(4);
-    expect(counts[ConnectionKind.Soon]).toBe(3);
-    expect(Object.values(counts).reduce((sum, count) => sum + count, 0)).toBe(65);
-    expect(findConnection('apple-notes')?.kind).toBe(ConnectionKind.Local);
-    expect(findConnection('telegram')).toMatchObject({ kind: ConnectionKind.Channel, platformId: 'telegram' });
-    expect(findConnection('gmail')).toMatchObject({ kind: ConnectionKind.Account, appSlug: 'gmail' });
-    expect(findConnection('nothing')).toBeUndefined();
-  });
-
-  test('builds the reach address from the contract', () => {
-    expect(reachAddressFor('Juno')).toBe('juno@maties.ai');
-    expect(connectionMonogram('iMessage')).toBe('I');
-    expect(connectionMonogram('X')).toBe('X');
+  test('every logo it names is a file that exists', () => {
+    const missing = CONNECTION_ITEMS
+      .filter(one => one.logo && !existsSync(path.join(LOGO_DIR, one.logo)))
+      .map(one => `${one.id} → ${one.logo}`);
+    expect(missing).toEqual([]);
   });
 });
 
-describe('searchConnections', () => {
-  test('returns everything for an empty query', () => {
-    expect(searchConnections('')).toHaveLength(65);
-    expect(searchConnections('   ')).toHaveLength(65);
+describe('no card offers something it cannot do', () => {
+  test('every account says how it connects', () => {
+    // An account with no connect clause is the dead button the design
+    // forbids: it looks connectable and does nothing.
+    for (const item of accounts) {
+      expect(connectMethod(item), `${item.id} has no connect`).toBeTruthy();
+    }
   });
 
-  test('matches names regardless of case and spacing', () => {
-    expect(searchConnections('google').map((item) => item.name)).toEqual([
-      'Google Calendar', 'Google Drive', 'Google Docs', 'Google Sheets', 'Google Slides', 'Google Tasks', 'Google Meet', 'Google Flights',
-    ]);
-    expect(searchConnections('  NOTION ').map((item) => item.id)).toEqual(['notion', 'notion-tasks']);
+  test('only accounts carry a connect', () => {
+    for (const item of CONNECTION_ITEMS) {
+      if (item.kind !== ConnectionKind.Account) {
+        expect(connectMethod(item)).toBeUndefined();
+      }
+    }
   });
 
-  test('matches a group title when a resolver is given', () => {
-    const titles: Record<string, string> = { [ConnectionGroupId.Meetings]: 'Meetings' };
-    const byTitle = searchConnections('meet', (id) => titles[id] ?? '');
-    expect(byTitle.map((item) => item.name)).toEqual(['Zoom', 'Google Meet', 'Fathom', 'Otter']);
-    expect(searchConnections('meet').map((item) => item.name)).toEqual(['Google Meet']);
+  test('every endpoint is the vendor, over https, and not a placeholder', () => {
+    for (const item of accounts) {
+      const method = connectMethod(item)!;
+      if (method.via !== ConnectVia.Mcp && method.via !== ConnectVia.Token) continue;
+      expect(method.url.startsWith('https://'), `${item.id} is not https`).toBe(true);
+      // A ${VAR} left in a manifest is not an address, and Cursor's own
+      // proxy is somebody else's middleman — which is the thing route C
+      // exists to avoid.
+      expect(method.url, `${item.id} carries a placeholder`).not.toContain('${');
+      expect(new URL(method.url).host, `${item.id} points at Cursor`).not.toBe('api.cursor.com');
+    }
   });
 
-  test('returns nothing when nothing matches', () => {
-    expect(searchConnections('zzzz')).toEqual([]);
-    expect(getConnectionGroups(searchConnections('zzzz'))).toEqual([]);
+  test('a local server names a command and a token one names its variable', () => {
+    for (const item of accounts) {
+      const method = connectMethod(item)!;
+      if (method.via === ConnectVia.Local) expect(method.command).toBeTruthy();
+      if (method.via === ConnectVia.Token) expect(method.tokenEnv).toMatch(/^[A-Z0-9_]+$/);
+    }
+  });
+});
+
+describe('the route each service takes', () => {
+  test('most of them go direct, which is the point of route C', () => {
+    const direct = accounts.filter(one => connectMethod(one)!.via === ConnectVia.Mcp);
+    expect(direct.length).toBeGreaterThan(accounts.length / 2);
+  });
+
+  test('the ones that need a pre-registered client are marked, not hidden', () => {
+    // Our config cannot pass a client id, so these depend on the provider
+    // also accepting dynamic registration and that is unproven. The flag
+    // is what lets a card be honest about it.
+    const marked = accounts.filter(one => {
+      const method = connectMethod(one)!;
+      return method.via === ConnectVia.Mcp
+        && method.registration === OAuthRegistration.Preregistered;
+    });
+    expect(marked.length).toBeGreaterThan(0);
+    for (const one of marked) expect(connectMethod(one)!.via).toBe(ConnectVia.Mcp);
+  });
+
+  test('Pipedream is still there for what the vendors do not carry', () => {
+    const viaUs = accounts.filter(one => connectMethod(one)!.via === ConnectVia.Pipedream);
+    expect(viaUs.length).toBeGreaterThan(0);
+    for (const one of viaUs) {
+      const method = connectMethod(one)!;
+      if (method.via !== ConnectVia.Pipedream) continue;
+      expect(method.appSlug).toBeTruthy();
+    }
+  });
+
+  test('the Microsoft services fell back rather than going through Cursor', () => {
+    // Their manifests point at api.cursor.com. The catalogue must not.
+    for (const id of ['outlook', 'onedrive', 'microsoft-teams']) {
+      const item = findConnection(id);
+      expect(item, `${id} is missing`).toBeTruthy();
+      expect(connectMethod(item!)!.via).toBe(ConnectVia.Pipedream);
+    }
+  });
+});
+
+describe('the engine names', () => {
+  test('a service is prefixed, so it cannot replace a server somebody added', () => {
+    expect(mcpServerName('gmail')).toBe('connection-gmail');
+  });
+
+  test('two services never collide', () => {
+    const names = accounts.map(one => mcpServerName(one.id));
+    expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+describe('finding a service', () => {
+  test('an empty search is everything, not nothing', () => {
+    expect(searchConnections('  ')).toHaveLength(CONNECTION_ITEMS.length);
+  });
+
+  test('it matches the name', () => {
+    expect(searchConnections('gmail').map(one => one.id)).toContain('gmail');
+  });
+
+  test('it matches what the service does', () => {
+    // "who reads my email" is how somebody actually looks for this.
+    const found = searchConnections('transcripts').map(one => one.id);
+    expect(found.length).toBeGreaterThan(0);
+  });
+
+  test('it matches the group name', () => {
+    const found = searchConnections('hiring').map(one => one.id);
+    expect(found).toContain('ashby');
+  });
+
+  test('nothing matching is empty, not everything', () => {
+    expect(searchConnections('zzzznotathing')).toEqual([]);
+  });
+});
+
+describe('a card with no logo', () => {
+  test('falls back to one letter', () => {
+    expect(connectionMonogram('Notion')).toBe('N');
+    expect(connectionMonogram('1Password')).toBe('P');
+  });
+
+  test('and to a question mark rather than an empty tile', () => {
+    expect(connectionMonogram('123')).toBe('?');
   });
 });

@@ -92,7 +92,7 @@ export function serializeForLog(value: unknown, maxChars = LOG_PREVIEW_MAX_CHARS
 // Usage-analytics beacons are fire-and-forget and arrive dozens to hundreds of
 // times a day; the reporter already writes its own one-line trace per event,
 // so the generic request/response logging would only duplicate it.
-const ANALYTICS_ENDPOINT = new URL(LogReporterEndpoint.Claidor);
+const ANALYTICS_ENDPOINT = new URL(LogReporterEndpoint.YoudaoAnalyzer);
 
 export function isAnalyticsEndpointUrl(value: string): boolean {
   try {

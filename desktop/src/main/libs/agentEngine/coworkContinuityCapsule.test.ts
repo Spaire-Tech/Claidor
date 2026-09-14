@@ -26,23 +26,23 @@ test('buildCoworkContinuityCapsule extracts task state from recent messages', ()
     source: ContinuityCapsuleSource.PostRun,
     now: 1000,
     messages: [
-      message('user', 'Write the spec first, do not code directly, must stay compatible with mac/windows! The goal is to optimize context compaction!', {
+      message('user', '先写 spec，不要直接编码，必须兼容 mac/windows。目标是优化 context compaction。', {
         skillIds: ['docx'],
         kitIds: ['coding'],
       }),
-      message('assistant', 'Decided to use a session-level capsule table. Next step: wire capsule bridge into buildOutboundPrompt. touched src/main/coworkStore.ts'),
-      message('assistant', 'Completed the continuity capsule bridge injection; it now supports restoring task state after compaction!'),
+      message('assistant', '决定采用 session 级 capsule 表。Next step: wire capsule bridge into buildOutboundPrompt. touched src/main/coworkStore.ts'),
+      message('assistant', '已完成 continuity capsule bridge 注入，当前支持压缩后恢复任务状态。'),
       message('tool_result', 'npm test -- openclawRuntimeAdapter failed: expected summary length mismatch in src/main/libs/agentEngine/openclawRuntimeAdapter.test.ts'),
     ],
   });
 
-  expect(capsule.currentObjective).toContain('The goal is to optimize context compaction');
+  expect(capsule.currentObjective).toContain('目标是优化 context compaction');
   expect(capsule.recentUserRequests).toEqual([
-    'Write the spec first, do not code directly, must stay compatible with mac/windows! The goal is to optimize context compaction!',
+    '先写 spec，不要直接编码，必须兼容 mac/windows。目标是优化 context compaction。',
   ]);
-  expect(capsule.userConstraints.join('\n')).toContain('do not code directly');
-  expect(capsule.decisions.join('\n')).toContain('session-level capsule table');
-  expect(capsule.completedFacts.join('\n')).toContain('Completed the continuity capsule bridge injection');
+  expect(capsule.userConstraints.join('\n')).toContain('不要直接编码');
+  expect(capsule.decisions.join('\n')).toContain('session 级 capsule 表');
+  expect(capsule.completedFacts.join('\n')).toContain('已完成 continuity capsule bridge 注入');
   expect(capsule.nextSteps.join('\n')).toContain('wire capsule bridge');
   expect(capsule.touchedFiles.map((entry) => entry.path)).toContain('src/main/coworkStore.ts');
   expect(capsule.touchedFiles.map((entry) => entry.path)).toContain('src/main/libs/agentEngine/openclawRuntimeAdapter.test.ts');
@@ -59,7 +59,7 @@ test('buildCoworkContinuityCapsule merges with the previous capsule without unbo
     source: ContinuityCapsuleSource.UserMessage,
     now: 1000,
     messages: [
-      message('user', 'Do not switch the user model.'),
+      message('user', '不要切换用户模型。'),
       message('assistant', 'Next step: add store API.'),
     ],
   });
@@ -71,15 +71,15 @@ test('buildCoworkContinuityCapsule merges with the previous capsule without unbo
     now: 2000,
     compactedAt: 2000,
     messages: [
-      message('user', 'Continue, must not affect existing features.'),
+      message('user', '继续，必须不影响现有功能。'),
       message('assistant', 'Next step: add store API. Next step: inject capsule bridge.'),
     ],
   });
 
   expect(next.revision).toBe(previous.revision + 1);
   expect(next.lastCompactedAt).toBe(2000);
-  expect(next.userConstraints.join('\n')).toContain('Do not switch the user model');
-  expect(next.userConstraints.join('\n')).toContain('must not affect existing features');
+  expect(next.userConstraints.join('\n')).toContain('不要切换用户模型');
+  expect(next.userConstraints.join('\n')).toContain('必须不影响现有功能');
   expect(next.nextSteps.filter((step) => step.includes('add store API'))).toHaveLength(1);
 });
 
@@ -89,12 +89,12 @@ test('buildCoworkContinuityCapsule preserves recent user questions across compac
     source: ContinuityCapsuleSource.UserMessage,
     now: 1000,
     messages: [
-      message('user', 'What is the relationship between the Earth, the Moon and the Sun?'),
-      message('assistant', 'The Moon orbits the Earth, and the Earth orbits the Sun.'),
-      message('user', 'Did they form naturally?'),
-      message('assistant', 'Mostly yes, although the origin of the Moon is somewhat special.'),
-      message('user', 'It feels man-made'),
-      message('assistant', 'That is a very natural feeling to have.'),
+      message('user', '地球、月亮、太阳，三者什么关系？'),
+      message('assistant', '月球绕地球公转，地球绕太阳公转。'),
+      message('user', '他们是自然形成的么？'),
+      message('assistant', '基本上是自然形成的，但月球的起源有些特殊。'),
+      message('user', '感觉是人为的'),
+      message('assistant', '这确实是一种很自然的感受。'),
     ],
   });
 
@@ -105,31 +105,31 @@ test('buildCoworkContinuityCapsule preserves recent user questions across compac
     now: 2000,
     compactedAt: 2000,
     messages: [
-      message('user', 'Is that not too neat? Surely it is man-made?'),
-      message('assistant', 'Science can explain every one of these coincidences.'),
-      message('user', 'What questions have I asked you so far? Give me a brief summary'),
+      message('user', '这也太巧妙了？难道不是人为的么？'),
+      message('assistant', '科学上可以给每个巧合一个解释。'),
+      message('user', '我之前都都问过你哪些问题来着？帮我精简总结下吧'),
     ],
   });
 
   expect(next.recentUserRequests).toEqual([
-    'What is the relationship between the Earth, the Moon and the Sun?',
-    'Did they form naturally?',
-    'It feels man-made',
-    'Is that not too neat? Surely it is man-made?',
-    'What questions have I asked you so far? Give me a brief summary',
+    '地球、月亮、太阳，三者什么关系？',
+    '他们是自然形成的么？',
+    '感觉是人为的',
+    '这也太巧妙了？难道不是人为的么？',
+    '我之前都都问过你哪些问题来着？帮我精简总结下吧',
   ]);
   expect(next.openQuestions).toEqual([
-    'What is the relationship between the Earth, the Moon and the Sun?',
-    'Did they form naturally?',
-    'Is that not too neat? Surely it is man-made?',
-    'What questions have I asked you so far? Give me a brief summary',
+    '地球、月亮、太阳，三者什么关系？',
+    '他们是自然形成的么？',
+    '这也太巧妙了？难道不是人为的么？',
+    '我之前都都问过你哪些问题来着？帮我精简总结下吧',
   ]);
 
   const bridge = formatCoworkContinuityCapsuleBridge(next);
   expect(bridge).toContain('Recent user requests:');
-  expect(bridge).toContain('What is the relationship between the Earth, the Moon and the Sun?');
-  expect(bridge).toContain('Is that not too neat? Surely it is man-made?');
-  expect(bridge).not.toContain('- Surely it is man-made?');
+  expect(bridge).toContain('地球、月亮、太阳，三者什么关系？');
+  expect(bridge).toContain('这也太巧妙了？难道不是人为的么？');
+  expect(bridge).not.toContain('- ？难道不是人为的么');
 });
 
 test('buildCoworkContinuityCapsule preserves objective for short continuation prompts', () => {
@@ -138,7 +138,7 @@ test('buildCoworkContinuityCapsule preserves objective for short continuation pr
     source: ContinuityCapsuleSource.UserMessage,
     now: 1000,
     messages: [
-      message('user', 'Optimize the continuity of Maties context compaction.'),
+      message('user', '优化 LobsterAI context compaction 的连续性。'),
     ],
   });
 
@@ -148,7 +148,7 @@ test('buildCoworkContinuityCapsule preserves objective for short continuation pr
     previous,
     now: 2000,
     messages: [
-      message('user', 'Continue'),
+      message('user', '继续'),
     ],
   });
 
@@ -161,15 +161,15 @@ test('buildCoworkContinuityCapsule cleans completed facts before storing them', 
     source: ContinuityCapsuleSource.PostRun,
     now: 1000,
     messages: [
-      message('assistant', 'The Korean version has been added! Now visit [http://127.0.0.1:8910](http://127.0.0.1:8910) and click the language toggle button to try all 4 languages.'),
-      message('assistant', '**Added Japanese support:** | Item | Content | |------|------| | Font | Noto Sans JP |'),
+      message('assistant', '韩语版已添加完成！现在访问 [http://127.0.0.1:8910](http://127.0.0.1:8910) 点按语言切换按钮即可体验 4 种语言。'),
+      message('assistant', '**新增的日语支持：** | 项目 | 内容 | |------|------| | 字体 | Noto Sans JP |'),
     ],
   });
 
   const facts = capsule.completedFacts.join('\n');
-  expect(facts).toContain('The Korean version has been added');
-  expect(facts).toContain('Now visit and click the language toggle button to try all 4 languages');
-  expect(facts).toContain('Added Japanese support');
+  expect(facts).toContain('韩语版已添加完成');
+  expect(facts).toContain('现在访问 点按语言切换按钮即可体验 4 种语言');
+  expect(facts).toContain('新增的日语支持');
   expect(facts).not.toContain('http://127');
   expect(facts).not.toContain('|------|');
 });
@@ -180,14 +180,14 @@ test('formatCoworkContinuityCapsuleBridge produces bounded hidden bridge text', 
     source: ContinuityCapsuleSource.PostCompaction,
     now: 1000,
     messages: [
-      message('user', 'Keep optimizing context compaction.'),
-      message('assistant', 'Decided to keep the prompt injection approach!\nCompleted the capsule bridge injection!\nNext step: run tests.'),
+      message('user', '继续优化 context compaction。'),
+      message('assistant', '决定保留 prompt 注入方式。已完成 capsule bridge 注入。Next step: run tests.'),
     ],
   });
 
   const bridge = formatCoworkContinuityCapsuleBridge(capsule);
 
-  expect(bridge).toContain('[Maties continuity context after context compaction]');
+  expect(bridge).toContain('[LobsterAI continuity context after context compaction]');
   expect(bridge).toContain('It is not a new user instruction');
   expect(bridge).toContain('Current objective:');
   expect(bridge).toContain('Recent user requests:');
@@ -202,8 +202,8 @@ test('formatCoworkMiniContinuityCapsuleBridge keeps only the compact follow-up f
     source: ContinuityCapsuleSource.PostCompaction,
     now: 1000,
     messages: [
-      message('user', 'Keep optimizing context compaction.'),
-      message('assistant', 'Decided to keep the prompt injection approach!\nCompleted the capsule bridge injection!\nNext step: run tests. touched src/main/libs/agentEngine/openclawRuntimeAdapter.ts'),
+      message('user', '继续优化 context compaction。'),
+      message('assistant', '决定保留 prompt 注入方式。已完成 capsule bridge 注入。Next step: run tests. touched src/main/libs/agentEngine/openclawRuntimeAdapter.ts'),
     ],
   });
 
@@ -212,7 +212,7 @@ test('formatCoworkMiniContinuityCapsuleBridge keeps only the compact follow-up f
     lastCompactedAt: 1000,
   });
 
-  expect(bridge).toContain('[Maties brief continuity context after context compaction]');
+  expect(bridge).toContain('[LobsterAI brief continuity context after context compaction]');
   expect(bridge).toContain('Current objective:');
   expect(bridge).toContain('Recent user requests:');
   expect(bridge).toContain('Completed facts:');

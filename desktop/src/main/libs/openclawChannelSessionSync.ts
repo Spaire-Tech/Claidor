@@ -2,7 +2,7 @@
  * OpenClaw Channel Session Sync
  *
  * Discovers and maps sessions created by OpenClaw channel extensions (e.g. Telegram)
- * to local Cowork sessions so that conversations are visible in the Maties UI.
+ * to local Cowork sessions so that conversations are visible in the LobsterAI UI.
  */
 
 import { DeliveryMode as ScheduledTaskDeliveryMode } from '../../scheduledTask/constants';
@@ -17,7 +17,7 @@ import { t } from '../i18n';
 import type { IMStore } from '../im/imStore';
 import type { Platform } from '../im/types';
 
-const MATIES_SESSION_PREFIX = 'maties:';
+const LOBSTERAI_SESSION_PREFIX = 'lobsterai:';
 const FEISHU_GROUP_CHAT_ID_RE = /^oc_/i;
 export const DEFAULT_MANAGED_AGENT_ID = 'main';
 
@@ -32,7 +32,7 @@ export function buildManagedSessionKey(
 ): string {
   const normalizedSessionId = sessionId.trim();
   const normalizedAgentId = agentId.trim() || DEFAULT_MANAGED_AGENT_ID;
-  return `agent:${normalizedAgentId}:maties:${normalizedSessionId}`;
+  return `agent:${normalizedAgentId}:lobsterai:${normalizedSessionId}`;
 }
 
 export function parseManagedSessionKey(
@@ -41,8 +41,8 @@ export function parseManagedSessionKey(
   const raw = (sessionKey ?? '').trim();
   if (!raw) return null;
 
-  if (raw.startsWith(MATIES_SESSION_PREFIX)) {
-    const sessionId = raw.slice(MATIES_SESSION_PREFIX.length).trim();
+  if (raw.startsWith(LOBSTERAI_SESSION_PREFIX)) {
+    const sessionId = raw.slice(LOBSTERAI_SESSION_PREFIX.length).trim();
     return sessionId ? { agentId: null, sessionId } : null;
   }
 
@@ -51,7 +51,7 @@ export function parseManagedSessionKey(
   }
 
   const parts = raw.split(':');
-  if (parts.length < 4 || parts[0] !== 'agent' || parts[2] !== 'maties') {
+  if (parts.length < 4 || parts[0] !== 'agent' || parts[2] !== 'lobsterai') {
     return null;
   }
 
@@ -437,9 +437,9 @@ export class OpenClawChannelSessionSync {
    * Returns the local sessionId if the sessionKey belongs to a channel, or null if not.
    */
   resolveOrCreateSession(sessionKey: string): string | null {
-    // 1. Skip Maties-originated sessions
+    // 1. Skip LobsterAI-originated sessions
     if (isManagedSessionKey(sessionKey)) {
-      console.log('[ChannelSessionSync] skipped: Maties-originated session');
+      console.log('[ChannelSessionSync] skipped: LobsterAI-originated session');
       return null;
     }
 
@@ -802,7 +802,7 @@ export class OpenClawChannelSessionSync {
     if (!cronKey) return null;
 
     // Jobs that announce their result into an IM conversation don't get a
-    // local "[Scheduled]" session: the delivered message lands in the IM
+    // local "[定时]" session: the delivered message lands in the IM
     // conversation record, and a per-job session here would duplicate it.
     // Run transcripts stay accessible from the scheduled-task run history.
     const delivery = this.resolveJobDelivery?.(cronKey.scheduledTaskId) ?? null;

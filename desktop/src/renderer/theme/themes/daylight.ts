@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const daylight: ThemeDefinition = {
   meta: {
     id: 'daylight',
-    name: 'Daylight',
-    description: 'A warm, soft off-white theme, relaxed and natural',
+    name: '日光暖白',
+    description: '温暖柔和的暖白色主题，轻松自然',
     appearance: 'light',
     preview: ['#fffbeb', '#f59e0b', '#fbbf24', '#f97316'],
   },

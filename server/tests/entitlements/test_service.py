@@ -118,7 +118,7 @@ class TestGetTier:
         assert tier == TierKey.inactive
 
     @pytest.mark.parametrize(
-        "tier_label,expected,monthly_cents",
+        ("tier_label", "expected", "monthly_cents"),
         [
             ("pro", TierKey.starter, 4900),
             ("studio", TierKey.studio, 12900),

@@ -9,6 +9,10 @@ import type { CoworkGoal } from '../../../shared/cowork/goal';
 import type { CoworkImageAttachmentPayload } from '../../../shared/cowork/imageAttachments';
 import type { CoworkSelectedTextSnippet } from '../../../shared/cowork/selectedText';
 import type { CoworkSteerResponse } from '../../../shared/cowork/steer';
+import type {
+  KitReference,
+  ResolvedKitCapabilities,
+} from '../../../shared/kit/constants';
 import type { SkinWorkflowKind } from '../../../shared/skin/constants';
 import type { CoworkMessage, CoworkSessionStatus } from '../../coworkStore';
 
@@ -17,6 +21,12 @@ export type CoworkAgentEngine = 'openclaw';
 export type PermissionResult =
   | {
       behavior: 'allow';
+      /**
+       * Which button the person pressed. Without this, "Always allow" and
+       * "Allow once" were the same press: the decision was taken from a
+       * server-side flag and the person's choice was discarded.
+       */
+      scope?: 'always' | 'once';
       updatedInput?: Record<string, unknown>;
       updatedPermissions?: Record<string, unknown>[];
       toolUseID?: string;
@@ -105,6 +115,9 @@ export type CoworkStartOptions = {
   skipInitialUserMessage?: boolean;
   skillIds?: string[];
   messageSkillIds?: string[];
+  kitIds?: string[];
+  kitReferences?: KitReference[];
+  resolvedKitCapabilities?: ResolvedKitCapabilities;
   systemPrompt?: string;
   autoApprove?: boolean;
   workspaceRoot?: string;
@@ -123,6 +136,9 @@ export type CoworkContinueOptions = {
   systemPrompt?: string;
   skillIds?: string[];
   messageSkillIds?: string[];
+  kitIds?: string[];
+  kitReferences?: KitReference[];
+  resolvedKitCapabilities?: ResolvedKitCapabilities;
   imageAttachments?: CoworkImageAttachment[];
   mediaSelection?: CoworkMediaSelection;
   workflowKind?: SkinWorkflowKind;

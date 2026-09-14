@@ -1,30 +1,40 @@
 /**
- * Web addresses the renderer opens in the browser.
- *
- * Maties lives on Claidor's two hosts and nowhere else: the API
- * (api.claidor.com, account protocol under /desktop) and the web app
- * (app.claidor.com, where people sign in and manage their account). The
- * main process holds the API addresses (src/main/libs/endpoints.ts); this
- * file only holds the pages the app opens for the person.
+ * 集中管理所有业务 API 端点。
+ * 后续新增的业务接口也应在此文件中配置。
  */
 
+import { SERVER_API_BASE_URL } from '../../shared/server/constants';
 import { configService } from './config';
 
 export const isTestModeEnabled = () => {
   return configService.getConfig().app?.testMode === true;
 };
 
-const CLAIDOR_APP_BASE_URL = 'https://app.claidor.com';
-const CLAIDOR_DEV_APP_BASE_URL = 'http://127.0.0.1:3000';
+// The update, skill-store and kit-store calls are all made from the main
+// process (`src/main/libs/endpoints.ts`), which now builds them off our own
+// server. The copies that used to sit here were never imported by the
+// renderer and pointed at NetEase, so they are gone.
 
-const getPortalBase = () => (isTestModeEnabled() ? CLAIDOR_DEV_APP_BASE_URL : CLAIDOR_APP_BASE_URL);
+/**
+ * The browser sign-in page. The main process appends `redirect_uri`, `state`
+ * and `source` before opening it. Upstream asked NetEase for this url over a
+ * round trip that could fail; ours is a fixed route on our own server, so it
+ * is built here and the round trip is gone.
+ */
+export const getLoginUrl = () => `${SERVER_API_BASE_URL}/login`;
 
-/** Where a person can download Maties. */
-export const getFallbackDownloadUrl = () => `${getPortalBase()}/desktop`;
+// The portal is NetEase's web front end and we have none of our own yet.
+// Every url below is handed to `shell.openExternal`, so nothing is fetched
+// unless a person clicks a growth surface — the ad slot, the credits float,
+// the upgrade and pricing links — and those screens go with the Messages
+// shell. They are left pointing where they point rather than at a page that
+// does not exist; when our site exists, this is the one place to change.
+const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';
+const PORTAL_BASE_PROD = 'https://lobsterai.youdao.com/portal#';
+
+const getPortalBase = () => isTestModeEnabled() ? PORTAL_BASE_TEST : PORTAL_BASE_PROD;
 
 export const PortalPricingKeyfrom = {
-  /** The price card of a connection (docs/maties/connectors.md, section 1). */
-  Connectors: 'connectors',
   HtmlShare: 'html_share',
   SiteDeployment: 'site_deployment',
 } as const;
@@ -36,12 +46,7 @@ export interface PortalPricingUrlOptions {
   traceId?: string;
 }
 
-// Claidor's web app has one account area today. Every account link below
-// opens it; the query parameters are kept so the web app can route later.
 export const getPortalLoginUrl = () => `${getPortalBase()}/login`;
-/** The terms and the privacy policy, linked from the welcome screen and the onboarding footer. */
-export const getPortalTermsUrl = () => `${getPortalBase()}/terms`;
-export const getPortalPrivacyUrl = () => `${getPortalBase()}/privacy`;
 export const getPortalPricingUrl = (
   keyfrom?: PortalPricingKeyfrom,
   options: PortalPricingUrlOptions = {},
@@ -51,22 +56,36 @@ export const getPortalPricingUrl = (
   if (options.traceId) query.set('trace_id', options.traceId);
   const queryString = query.toString();
   const suffix = queryString ? `?${queryString}` : '';
-  return `${getPortalBase()}/${suffix}`;
+  return `${getPortalBase()}/pricing${suffix}`;
 };
-export const getPortalProfileUrl = () => `${getPortalBase()}/`;
-export const getPortalCreditsDetailUrl = () => `${getPortalBase()}/`;
+export const getPortalProfileUrl = () => `${getPortalBase()}/profile`;
+export const getPortalCreditsDetailUrl = () => `${getPortalBase()}/profile/detail`;
 export const getPortalRechargeUrl = () => `${getPortalBase()}/`;
-export const getPortalInvitationUrl = () => `${getPortalBase()}/`;
+export const getPortalInvitationUrl = () => `${getPortalBase()}/invitation`;
 export const getPortalCreditsResetActivityUrl = (campaignCode?: string) => (
-  `${getPortalBase()}/${campaignCode ? `?campaignCode=${encodeURIComponent(campaignCode)}` : ''}`
+  `${getPortalBase()}/profile?activity=credits_reset${campaignCode ? `&campaignCode=${encodeURIComponent(campaignCode)}` : ''}`
 );
 
-export const getEnterpriseMemberProfileUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
+export const getEnterpriseMemberProfileUrl = (enterpriseId: number) => (
+  `${getPortalBase()}/enterprise/profile/${encodeURIComponent(String(enterpriseId))}`
+);
 
-export const getEnterpriseOverviewUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
+const getEnterpriseConsoleBaseUrl = (enterpriseId: number) => (
+  `${getPortalBase()}/enterprise/console/${encodeURIComponent(String(enterpriseId))}`
+);
 
-export const getEnterpriseUsageUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
+export const getEnterpriseOverviewUrl = (enterpriseId: number) => (
+  `${getEnterpriseConsoleBaseUrl(enterpriseId)}/overview`
+);
 
-export const getEnterpriseBillingUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
+export const getEnterpriseUsageUrl = (enterpriseId: number) => (
+  `${getEnterpriseConsoleBaseUrl(enterpriseId)}/usage`
+);
 
-export const getEnterpriseRechargeUrl = (_enterpriseId: number) => `${getPortalBase()}/`;
+export const getEnterpriseBillingUrl = (enterpriseId: number) => (
+  `${getEnterpriseConsoleBaseUrl(enterpriseId)}/billing`
+);
+
+export const getEnterpriseRechargeUrl = (enterpriseId: number) => (
+  `${getEnterpriseConsoleBaseUrl(enterpriseId)}/recharge`
+);

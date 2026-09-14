@@ -1,6 +1,7 @@
 import { app } from 'electron';
 
 import { HtmlSharePublicRoute } from '../../shared/htmlShare/constants';
+import { SERVER_API_BASE_URL } from '../../shared/server/constants';
 import type { SqliteStore } from '../sqliteStore';
 import { resolveDevelopmentServerBaseUrl } from './developmentServerBaseUrl';
 
@@ -25,61 +26,64 @@ export const isTestModeEnabled = (): boolean => {
 };
 
 /**
- * Claidor's web app and API. Maties lives on these two hosts and nowhere else:
- * the API serves the account protocol under `/desktop`
- * (`server/polar/desktop`), the web app is where people sign in.
- */
-const CLAIDOR_API_BASE_URL = 'https://api.claidor.com';
-const CLAIDOR_APP_BASE_URL = 'https://app.claidor.com';
-const CLAIDOR_DEV_API_BASE_URL = 'http://127.0.0.1:8000';
-const CLAIDOR_DEV_APP_BASE_URL = 'http://127.0.0.1:3000';
-
-const getClaidorApiBaseUrl = (): string => (
-  isTestModeEnabled() ? CLAIDOR_DEV_API_BASE_URL : CLAIDOR_API_BASE_URL
-);
-
-const getClaidorAppBaseUrl = (): string => (
-  isTestModeEnabled() ? CLAIDOR_DEV_APP_BASE_URL : CLAIDOR_APP_BASE_URL
-);
-
-/**
- * Server API base URL — switches based on testMode.
- * Used for auth exchange/refresh, models, proxy, etc.
+ * The server base, with a development override. There is no separate test
+ * host yet, so testMode does not change it. See `shared/server/constants.ts`
+ * for what hangs off it.
  */
 export const getServerApiBaseUrl = (): string => {
-  // The override is a bare loopback origin; the account protocol always
-  // lives under /desktop on whichever Claidor API answers.
-  const defaultOrigin = getClaidorApiBaseUrl();
-  const origin = resolveDevelopmentServerBaseUrl({
-    defaultBaseUrl: defaultOrigin,
-    developmentOverride: process.env.MATIES_SERVER_BASE_URL,
+  const defaultBaseUrl = SERVER_API_BASE_URL;
+  const serverBaseUrl = resolveDevelopmentServerBaseUrl({
+    defaultBaseUrl,
+    developmentOverride: process.env.FAISER_SERVER_BASE_URL,
     isDev: process.env.NODE_ENV === 'development',
     isPackaged: app.isPackaged,
   });
-  if (origin !== defaultOrigin && loggedDevelopmentServerBaseUrl !== origin) {
+  if (serverBaseUrl !== defaultBaseUrl
+      && loggedDevelopmentServerBaseUrl !== serverBaseUrl) {
     console.warn(
-      `[Endpoints] routing all Maties server traffic to development origin ${origin}`,
+      `[Endpoints] routing all server traffic to development origin ${serverBaseUrl}`,
     );
-    loggedDevelopmentServerBaseUrl = origin;
+    loggedDevelopmentServerBaseUrl = serverBaseUrl;
   }
-  return `${origin}/desktop`;
+  return serverBaseUrl;
 };
 
 export const getHtmlSharePublicBaseUrl = (): string => {
   return `${getServerApiBaseUrl()}${HtmlSharePublicRoute.Root}`;
 };
 
-// Updates and the skill store are answered by Claidor's API
-// under the same /desktop namespace. Until Claidor publishes releases and
-// catalogues they answer « nothing new » and « empty », never an error.
-export const getUpdateCheckUrl = (): string => `${getServerApiBaseUrl()}/api/updates/check`;
+export const getUpdateCheckUrl = (): string => (
+  `${getServerApiBaseUrl()}/api/updates/check`
+);
 
-export const getManualUpdateCheckUrl = (): string => `${getServerApiBaseUrl()}/api/updates/check-manual`;
+export const getManualUpdateCheckUrl = (): string => (
+  `${getServerApiBaseUrl()}/api/updates/check-manual`
+);
 
-export const getFallbackDownloadUrl = (): string => `${getClaidorAppBaseUrl()}/desktop`;
+// The web pages below are NetEase's and we have none of our own yet. They are
+// only ever handed to `shell.openExternal`, so nothing reaches them unless a
+// person clicks a growth surface — the ad slot, the credits float, the upgrade
+// and pricing links — and those screens go when the Messages shell lands. They
+// are left here rather than pointed at a page that does not exist; when the
+// site exists, this block is the one place to change.
+export const getFallbackDownloadUrl = (): string => (
+  isTestModeEnabled()
+    ? 'https://lobsterai.inner.youdao.com/#/download-list'
+    : 'https://lobsterai.youdao.com/#/download-list'
+);
 
-export const getSkillStoreUrl = (): string => `${getServerApiBaseUrl()}/api/skill-store`;
+export const getSkillStoreUrl = (): string => (
+  `${getServerApiBaseUrl()}/api/skill-store`
+);
 
-// The web app's home for the signed-in person.
-export const getPortalTasksUrl = (): string => `${getClaidorAppBaseUrl()}/`;
+// Portal 页面
+const PORTAL_BASE_TEST = 'https://lobsterai.inner.youdao.com/portal#';
+const PORTAL_BASE_PROD = 'https://lobsterai.youdao.com/portal#';
 
+const getPortalBase = (): string => isTestModeEnabled() ? PORTAL_BASE_TEST : PORTAL_BASE_PROD;
+
+export const getPortalTasksUrl = (): string => `${getPortalBase()}/profile/detail?tab=tasks`;
+
+export const getKitStoreUrl = (): string => (
+  `${getServerApiBaseUrl()}/api/kit-store`
+);

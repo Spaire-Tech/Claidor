@@ -11,6 +11,8 @@ import respx
 from pytest_mock import MockerFixture
 
 from polar.config import settings
+from polar.desktop import endpoints as endpoints_module
+from polar.desktop.endpoints import UPSTREAM_REFUSED
 from polar.desktop.service import (
     Usage,
     UsageTally,
@@ -503,6 +505,14 @@ class TestProxy:
         assert response.status_code == 404
 
 
+#: A plain OpenAI answer, for tests that care about what was sent rather
+#: than what came back.
+OPENAI_ANSWER = {
+    "id": "chatcmpl-1",
+    "choices": [{"message": {"content": "Hello"}}],
+    "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+}
+
 OPENAI_STREAM = b"".join(
     [
         b'data: {"id":"c1","choices":[{"delta":{"content":"Hel"}}],"usage":null}\n\n',
@@ -706,6 +716,145 @@ class TestTwoProviders:
         assert response.status_code == 503
         rows = (await session.execute(DesktopUsage.__table__.select())).all()
         assert rows == []
+
+    @pytest.mark.parametrize(
+        "model_id", ["gpt-6-astra", "gpt-5.6-terra", "gpt-5.6-luna"]
+    )
+    async def test_every_gpt_model_is_sent_none_when_it_holds_tools(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+        model_id: str,
+    ) -> None:
+        """OpenAI, 13 September, on Astra and then word for word again on
+        Terra: « Function tools with reasoning_effort are not supported
+        for <model> in /v1/chat/completions … or set reasoning_effort to
+        'none'. » The agent always carries tools, so without this the
+        model cannot answer at all. Scoping it to Astra alone left Terra
+        broken for an hour, which is why this is parametrised."""
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions"
+            ).mock(return_value=httpx.Response(200, json=OPENAI_ANSWER))
+            await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={
+                    "model": model_id,
+                    "messages": [],
+                    "tools": [{"type": "function", "function": {"name": "browse"}}],
+                    "reasoning_effort": "high",
+                },
+            )
+        assert json.loads(route.calls[0].request.content)["reasoning_effort"] == "none"
+
+    async def test_reasoning_is_left_alone_when_there_are_no_tools(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """The refusal is about the combination. Without tools there is
+        nothing to conflict with, and turning reasoning off there would
+        lose the model's strength for no reason at all."""
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions"
+            ).mock(return_value=httpx.Response(200, json=OPENAI_ANSWER))
+            await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "gpt-6-astra",
+                    "messages": [],
+                    "reasoning_effort": "high",
+                },
+            )
+            # An empty list is not holding tools either.
+            await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "gpt-6-astra",
+                    "messages": [],
+                    "tools": [],
+                    "reasoning_effort": "high",
+                },
+            )
+        for call in route.calls:
+            assert json.loads(call.request.content)["reasoning_effort"] == "high"
+
+    async def test_a_refusal_is_written_down_with_the_reason_it_gave(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """The reason must survive on our side. It does not survive on the
+        app's: the body is handed back, the engine reduces it to a failure
+        kind, and the person is shown « 400 terminated »."""
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        warn = mocker.patch.object(endpoints_module.log, "warning")
+        access, _ = await _signed_in(client, session, user)
+        refusal = {"error": {"message": "Unsupported value: 'temperature'."}}
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions").mock(
+                return_value=httpx.Response(400, json=refusal)
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "gpt-6-astra", "messages": []},
+            )
+        # Still handed back untouched — the app's behaviour does not change.
+        assert response.status_code == 400
+        assert response.json() == refusal
+
+        logged = [c for c in warn.call_args_list if c.args[0] == UPSTREAM_REFUSED]
+        assert len(logged) == 1
+        fields = logged[0].kwargs
+        assert fields["provider"] == "openai"
+        assert fields["model"] == "gpt-6-astra"
+        assert fields["status"] == 400
+        assert "temperature" in fields["body"]
+
+    async def test_a_refusal_on_a_stream_is_written_down_too(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """The streaming path reads and returns the error separately from
+        the non-streaming one, so it needs its own proof."""
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        warn = mocker.patch.object(endpoints_module.log, "warning")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/chat/completions").mock(
+                return_value=httpx.Response(
+                    400, json={"error": {"message": "tools[0].function is invalid."}}
+                )
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/chat/completions",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"model": "gpt-6-astra", "stream": True, "messages": []},
+            )
+        assert response.status_code == 400
+
+        logged = [c for c in warn.call_args_list if c.args[0] == UPSTREAM_REFUSED]
+        assert len(logged) == 1
+        assert "tools[0].function" in logged[0].kwargs["body"]
 
 
 class TestUsageTally:

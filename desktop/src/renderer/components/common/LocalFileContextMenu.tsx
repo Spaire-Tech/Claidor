@@ -21,9 +21,8 @@ import { getFileTypeInfo } from '../icons/fileTypes/index';
 
 const t = (key: string) => i18nService.t(key);
 
-// The menu style (docs/maties/design.md, section 1, Depth).
-const MENU_CONTAINER_CLASS = 'maties-menu pointer-events-auto fixed overflow-y-auto';
-const MENU_ITEM_CLASS = 'maties-menu-item h-9 flex-shrink-0 text-[13.5px]';
+const MENU_CONTAINER_CLASS = 'pointer-events-auto fixed overflow-y-auto rounded-2xl border border-border bg-surface-raised p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.5),0_2px_8px_rgba(0,0,0,0.4)] animate-in fade-in zoom-in-95 duration-100';
+const MENU_ITEM_CLASS = 'flex h-9 w-full flex-shrink-0 items-center gap-2.5 rounded-lg px-2.5 text-[13px] text-foreground hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors text-left';
 const MENU_ICON_CLASS = 'h-[18px] w-[18px] flex-shrink-0';
 const SUBMENU_ESTIMATED_WIDTH = 224;
 const VIEWPORT_MARGIN = 8;

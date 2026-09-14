@@ -55,8 +55,8 @@ test('billing: Qwen Arrearage', () => {
   assert.equal(classifyError('Arrearage'), 'coworkErrorInsufficientBalance');
 });
 
-test('billing: insufficient funds wording', () => {
-  assert.equal(classifyError('Insufficient funds in your account, please top up and try again'), 'coworkErrorInsufficientBalance');
+test('billing: StepFun 余额不足', () => {
+  assert.equal(classifyError('账户余额不足，请充值后重试'), 'coworkErrorInsufficientBalance');
 });
 
 test('billing: HTTP 402', () => {
@@ -137,8 +137,8 @@ test('content: content filter', () => {
   assert.equal(classifyError('content filter triggered'), 'coworkErrorContentFiltered');
 });
 
-test('content: moderation failed wording', () => {
-  assert.equal(classifyError('Moderation failed'), 'coworkErrorContentFiltered');
+test('content: 审核未通过', () => {
+  assert.equal(classifyError('审核未通过'), 'coworkErrorContentFiltered');
 });
 
 test('content: StepFun HTTP 451', () => {

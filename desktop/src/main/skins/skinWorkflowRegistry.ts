@@ -1,8 +1,9 @@
+import type { InstalledKitRecord } from '../../shared/kit/constants';
 import {
   SkinWorkflowKind,
   type SkinWorkflowKind as SkinWorkflowKindValue,
 } from '../../shared/skin/constants';
-import { SkinPackSkillId } from '../../shared/skin/kit';
+import { SkinPackKitId } from '../../shared/skin/kit';
 import {
   MediaSelectionMode,
   type MediaSelectionState,
@@ -20,8 +21,7 @@ export interface ResolvedSkinWorkflowState {
 
 export interface PrepareSkinWorkflowTurnInput {
   sessionId: string;
-  /** The skills the person chose for this turn. */
-  skillIds?: string[];
+  kitIds?: string[];
   mediaSelection?: MediaSelectionState;
   mediaGenerationEntitled: boolean;
 }
@@ -32,8 +32,7 @@ export interface PreparedSkinWorkflowTurn {
 }
 
 export interface SkinWorkflowRegistryOptions {
-  /** Whether the bundled appearance-designer skill is installed and switched on. */
-  isSkinSkillEnabled: () => boolean;
+  getInstalledKits: () => Record<string, InstalledKitRecord>;
   getParentSessionId: (sessionId: string) => string | null;
 }
 
@@ -45,7 +44,7 @@ export class SkinWorkflowRegistry {
   constructor(private readonly options: SkinWorkflowRegistryOptions) {}
 
   prepareTurn(input: PrepareSkinWorkflowTurnInput): PreparedSkinWorkflowTurn {
-    const requestedWorkflowKind = this.resolveTrustedWorkflowKind(input.skillIds);
+    const requestedWorkflowKind = this.resolveTrustedWorkflowKind(input.kitIds);
     const workflowKind = requestedWorkflowKind
       ?? this.resolve(input.sessionId)?.state.workflowKind;
     if (!workflowKind) {
@@ -119,7 +118,7 @@ export class SkinWorkflowRegistry {
   handleRuntimeComplete(_sessionId: string): void {
     // Native image_generate finishes through a background wake after the
     // runtime emits complete. Keep the transaction until apply/deactivate,
-    // an error, or session deletion. Follow-up turns may omit the skill after
+    // an error, or session deletion. Follow-up turns may omit the Kit after
     // the renderer clears its one-turn capability selection.
   }
 
@@ -131,16 +130,12 @@ export class SkinWorkflowRegistry {
     this.states.delete(sessionId);
   }
 
-  /**
-   * The workflow starts only when the person chose the bundled appearance
-   * skill for this turn and that skill is really installed and enabled — the
-   * renderer's selection alone is not trusted.
-   */
   private resolveTrustedWorkflowKind(
-    skillIds: string[] | undefined,
+    kitIds: string[] | undefined,
   ): SkinWorkflowKindValue | undefined {
-    if (!skillIds?.includes(SkinPackSkillId.BuiltIn)) return undefined;
-    return this.options.isSkinSkillEnabled()
+    if (!kitIds?.includes(SkinPackKitId.BuiltIn)) return undefined;
+    const installedKit = this.options.getInstalledKits()[SkinPackKitId.BuiltIn];
+    return installedKit?.workflowKind === SkinWorkflowKind.SkinPack
       ? SkinWorkflowKind.SkinPack
       : undefined;
   }

@@ -89,7 +89,7 @@ node -e 'const [a,b,c]=process.versions.node.split(".").map(Number);const ok=a>2
 # ---------------------------------------------------------------------------
 # Build cache: skip if the runtime was already built for the pinned version.
 # On Windows (Git Bash / MSYS2), paths like $ELECTRON_ROOT are Unix-style
-# (e.g. /d/github/Maties) which Node.js cannot resolve via require().
+# (e.g. /d/github/LobsterAI) which Node.js cannot resolve via require().
 # Use "node -" with process.argv so MSYS2 auto-converts the paths.
 # ---------------------------------------------------------------------------
 DESIRED_VERSION=""
@@ -106,12 +106,22 @@ READVER
 PATCHES_DIR="$ELECTRON_ROOT/scripts/patches/$DESIRED_VERSION"
 PATCH_HASH=""
 if [[ -d "$PATCHES_DIR" ]]; then
-  # macOS ships shasum, Linux ships sha256sum; use whichever exists.
-  if command -v sha256sum >/dev/null 2>&1; then
-    PATCH_HASH=$(cat "$PATCHES_DIR"/*.patch 2>/dev/null | sha256sum | cut -d' ' -f1)
-  else
-    PATCH_HASH=$(cat "$PATCHES_DIR"/*.patch 2>/dev/null | shasum -a 256 | cut -d' ' -f1)
-  fi
+  # Hashed with node, not sha256sum. macOS has no sha256sum — it ships
+  # `shasum` — and under `set -e` the missing command kills the whole build
+  # with exit 127 before anything is compiled. That has broken the mac
+  # runner three times now: fixed in 6314023f, lost to a revert, fixed again
+  # in 0d2403df, lost to the reset to upstream in 065460aa.
+  #
+  # A `command -v` branch is what was there the last two times and it did not
+  # survive either. node is already a hard requirement of this script — it is
+  # used to read package.json twenty lines up — so hashing with it removes the
+  # platform question rather than answering it, and there is nothing left here
+  # for a reset to get wrong.
+  PATCH_HASH=$(cat "$PATCHES_DIR"/*.patch 2>/dev/null | node -e '
+    const h = require("crypto").createHash("sha256");
+    process.stdin.on("data", c => h.update(c));
+    process.stdin.on("end", () => console.log(h.digest("hex")));
+  ')
 fi
 
 if [[ -n "$DESIRED_VERSION" && "${OPENCLAW_FORCE_BUILD:-}" != "1" ]]; then
@@ -152,7 +162,7 @@ corepack enable >/dev/null 2>&1 || true
 pnpm install --frozen-lockfile
 pnpm build
 # Skip release:check — it validates the openclaw npm package for publishing and
-# is not relevant for Maties embedded runtime builds.  On Windows it also
+# is not relevant for LobsterAI embedded runtime builds.  On Windows it also
 # fails due to spawnSync/execFileSync not finding npm without shell:true, and
 # npm pack producing truncated tarballs.
 echo "[openclaw-runtime] Skipping release:check (not needed for embedded builds)"

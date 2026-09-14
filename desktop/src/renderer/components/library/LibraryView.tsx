@@ -3,6 +3,7 @@ import {
   ArrowTopRightOnSquareIcon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentIcon,
+  DocumentIcon,
   FolderIcon,
   GlobeAltIcon,
   ListBulletIcon,
@@ -64,10 +65,9 @@ import CardOverflowMenu, { type CardOverflowMenuItem } from '../common/CardOverf
 import {
   MANAGEMENT_BODY_TEXT,
   MANAGEMENT_META_TEXT,
+  MANAGEMENT_PAGE_TITLE_TEXT,
+  MANAGEMENT_TITLE_TEXT,
 } from '../common/managementTypography';
-import EmptyState from '../design/EmptyState';
-import PageTitle from '../design/PageTitle';
-import Pill from '../design/Pill';
 import FileTypeIcon from '../icons/fileTypes/FileTypeIcon';
 import ShareUploadIcon from '../icons/ShareUploadIcon';
 import SidebarToggleIcon from '../icons/SidebarToggleIcon';
@@ -241,7 +241,9 @@ const SourceTab: React.FC<{
     role="tab"
     aria-selected={active}
     onClick={onClick}
-    className={`non-draggable maties-pill-sm ${active ? 'is-selected' : ''}`}
+    className={`non-draggable inline-flex h-8 items-center gap-1.5 rounded-lg px-3 ${MANAGEMENT_PAGE_TITLE_TEXT} font-semibold transition-colors ${
+      active ? 'bg-surface-raised text-foreground' : 'text-secondary hover:text-foreground'
+    }`}
   >
     {i18nService.t(`librarySource_${source}`)}
     <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
@@ -258,7 +260,7 @@ const SourceTab: React.FC<{
 const LibraryListItemIcon: React.FC<{ item: LibraryItem }> = ({ item }) => {
   const isWebsite = isLibraryWebsiteItem(item);
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f4f5f7] dark:bg-[#22252b]">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-raised">
       {isWebsite ? (
         <GlobeAltIcon className="h-[18px] w-[18px] text-primary" aria-hidden="true" />
       ) : (
@@ -313,9 +315,9 @@ const LibraryItemCard: React.FC<{
       onKeyDown={event => {
         if (event.key === 'Enter' && event.currentTarget === event.target) onOpen();
       }}
-      className="maties-card maties-card-interactive group relative overflow-hidden p-2.5 focus:outline-none focus:ring-2 focus:ring-[#0060d0]/30"
+      className="group relative overflow-hidden rounded-xl border border-border bg-surface p-2.5 transition-colors hover:border-primary/35 hover:bg-surface-raised focus:outline-none focus:ring-2 focus:ring-primary/30"
     >
-      <div className="maties-hairline aspect-video w-full shrink-0 overflow-hidden rounded-[12px]">
+      <div className="aspect-video w-full shrink-0 overflow-hidden rounded-lg border border-border">
         <LibraryThumbnail item={item} />
       </div>
       <div className="min-w-0 pt-2 pr-10">
@@ -1558,15 +1560,31 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
       data-skin-management-page="true"
       className="relative z-10 flex h-full min-h-0 flex-col bg-background text-foreground"
     >
-      <div className="draggable flex h-[54px] shrink-0 items-center px-4">
+      <div className="draggable flex h-12 shrink-0 items-center border-b border-border px-4">
         {isSidebarCollapsed && !isWindows && (
           <div className={`non-draggable mr-2 flex items-center gap-1 ${isMac ? 'pl-[68px]' : ''}`}>
-            <button type="button" onClick={onToggleSidebar} aria-label={i18nService.t('expand')} className="maties-icon-button">
+            <button type="button" onClick={onToggleSidebar} aria-label={i18nService.t('expand')} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-secondary hover:bg-surface-raised">
               <SidebarToggleIcon className="h-4 w-4" isCollapsed />
             </button>
             {updateBadge}
           </div>
         )}
+        <div
+          role="tablist"
+          aria-label={i18nService.t('libraryTitle')}
+          className="non-draggable flex items-center gap-1"
+        >
+          {SOURCE_FILTERS.map(value => (
+            <SourceTab
+              key={value}
+              source={value}
+              active={source === value}
+              loading={source === value && loadingFeedback.showSourceActivity}
+              announceLoading={loadingFeedback.showLongWaitLabel}
+              onClick={() => handleSourceChange(value)}
+            />
+          ))}
+        </div>
       </div>
 
       <main
@@ -1574,30 +1592,6 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
         aria-busy={loadingFeedback.ariaBusy}
         className="min-h-0 flex-1 overflow-auto [scrollbar-gutter:stable]"
       >
-          <div className="mx-auto w-full max-w-[1120px]">
-            <PageTitle
-              title={i18nService.t('libraryTitle')}
-              description={i18nService.t('librarySubtitle')}
-              action={(
-                <div
-                  role="tablist"
-                  aria-label={i18nService.t('libraryTitle')}
-                  className="non-draggable flex items-center gap-1.5"
-                >
-                  {SOURCE_FILTERS.map(value => (
-                    <SourceTab
-                      key={value}
-                      source={value}
-                      active={source === value}
-                      loading={source === value && loadingFeedback.showSourceActivity}
-                      announceLoading={loadingFeedback.showLongWaitLabel}
-                      onClick={() => handleSourceChange(value)}
-                    />
-                  ))}
-                </div>
-              )}
-            />
-          </div>
           {wantsCloud ? (
             <LibraryCloudView
               analyticsPageViewId={analyticsPageViewId}
@@ -1633,10 +1627,10 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
               sitesReadOnly={sitesReadOnly}
             />
           ) : (
-        <div className="mx-auto w-full max-w-[1120px] px-9 pb-8 pt-6">
+        <div className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:px-8">
           <div
             data-skin-management-toolbar="true"
-            className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-background pb-3 pt-1"
+            className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b border-border bg-background pb-3 pt-1"
           >
             <LibraryCategoryDropdown
               value={category}
@@ -1661,7 +1655,7 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
                   value={keywordInput}
                   onChange={event => setKeywordInput(event.target.value)}
                   placeholder={i18nService.t('librarySearchPlaceholder')}
-                  className="maties-input maties-input-icon pr-9 text-[13px]"
+                  className="h-9 w-full rounded-xl border border-border bg-surface pl-9 pr-9 text-xs text-foreground outline-none placeholder:text-tertiary focus:ring-2 focus:ring-primary/30"
                 />
                 {keywordInput.length > 0 && (
                   <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
@@ -1691,17 +1685,17 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
                 position={TooltipPosition.Bottom}
                 delay={250}
               >
-                <button type="button" onClick={handleFavoritesOnlyToggle} aria-pressed={favoritesOnly} aria-label={i18nService.t('libraryFavorites')} className={`maties-icon-button h-9 w-9 ${favoritesOnly ? 'maties-status-attention bg-[#f4f5f7]' : ''}`}>
+                <button type="button" onClick={handleFavoritesOnlyToggle} aria-pressed={favoritesOnly} aria-label={i18nService.t('libraryFavorites')} className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border ${favoritesOnly ? 'bg-amber-500/10 text-amber-500' : 'text-secondary hover:bg-surface-raised'}`}>
                   {favoritesOnly ? <StarSolidIcon className="h-4 w-4" /> : <StarIcon className="h-4 w-4" />}
                 </button>
               </Tooltip>
-              <div className="maties-raised-2 inline-flex rounded-full p-0.5">
+              <div className="inline-flex rounded-lg border border-border bg-surface p-0.5">
                 <Tooltip
                   content={i18nService.t('libraryGridView')}
                   position={TooltipPosition.Bottom}
                   delay={250}
                 >
-                  <button type="button" onClick={() => handleViewModeChange(LibraryViewMode.Grid)} aria-label={i18nService.t('libraryGridView')} className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${viewMode === LibraryViewMode.Grid ? 'bg-white text-[#1c1f23] shadow-[0_1px_2px_rgba(16,22,35,.08)] dark:bg-[#1c1e23] dark:text-[#f2f3f5]' : 'text-[#8f96a0] hover:text-[#1c1f23]'}`}><Squares2X2Icon className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => handleViewModeChange(LibraryViewMode.Grid)} aria-label={i18nService.t('libraryGridView')} className={`inline-flex h-8 w-8 items-center justify-center rounded-md ${viewMode === LibraryViewMode.Grid ? 'bg-surface-raised text-foreground' : 'text-secondary'}`}><Squares2X2Icon className="h-4 w-4" /></button>
                 </Tooltip>
                 <Tooltip
                   content={i18nService.t('libraryListView')}
@@ -1709,7 +1703,7 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
                   align={TooltipAlign.End}
                   delay={250}
                 >
-                  <button type="button" onClick={() => handleViewModeChange(LibraryViewMode.List)} aria-label={i18nService.t('libraryListView')} className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${viewMode === LibraryViewMode.List ? 'bg-white text-[#1c1f23] shadow-[0_1px_2px_rgba(16,22,35,.08)] dark:bg-[#1c1e23] dark:text-[#f2f3f5]' : 'text-[#8f96a0] hover:text-[#1c1f23]'}`}><ListBulletIcon className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => handleViewModeChange(LibraryViewMode.List)} aria-label={i18nService.t('libraryListView')} className={`inline-flex h-8 w-8 items-center justify-center rounded-md ${viewMode === LibraryViewMode.List ? 'bg-surface-raised text-foreground' : 'text-secondary'}`}><ListBulletIcon className="h-4 w-4" /></button>
                 </Tooltip>
               </div>
             </div>
@@ -1725,8 +1719,8 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
           )}
 
           {!isAuthenticated && wantsCloud && (
-            <div className="maties-card-row mt-4 px-4 py-3">
-              <span className="maties-caption">{i18nService.t('libraryLoginForCloud')}</span>
+            <div className="mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-xs">
+              <span className="text-secondary">{i18nService.t('libraryLoginForCloud')}</span>
             </div>
           )}
 
@@ -1740,7 +1734,7 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
                   {Array.from({ length: 6 }, (_, index) => (
                     <div key={index} className={viewMode === LibraryViewMode.List
                       ? 'h-14 bg-surface-raised/40 motion-safe:animate-pulse'
-                      : 'maties-card maties-skeleton p-2.5'}>
+                      : 'rounded-xl border border-border bg-surface p-2.5 motion-safe:animate-pulse'}>
                       {viewMode === LibraryViewMode.Grid && (
                         <>
                           <div className="aspect-video rounded-lg bg-surface-raised" />
@@ -1757,17 +1751,19 @@ const LibraryViewContent: React.FC<LibraryViewProps> = ({
             ) : error && !localResolvedQueryKey ? (
               <div aria-hidden="true" className="mt-6 min-h-64" />
             ) : dateGroups.length === 0 ? (
-              <EmptyState
-                className="mt-6"
-                sentence={i18nService.t(hasActiveLocalFilter
-                  ? 'libraryFilteredEmptySentence'
-                  : 'libraryEmptySentence')}
-                action={hasActiveLocalFilter ? (
-                  <Pill compact onClick={clearKeyword}>
-                    {i18nService.t('libraryClearSearch')}
-                  </Pill>
-                ) : undefined}
-              />
+              <div className="mt-12 rounded-2xl border border-dashed border-border py-16 text-center">
+                <DocumentIcon className="mx-auto h-8 w-8 text-tertiary" />
+                <h2 className={`${MANAGEMENT_TITLE_TEXT} mt-3 font-semibold text-foreground`}>
+                  {i18nService.t(hasActiveLocalFilter
+                    ? 'libraryEmptyTitle'
+                    : 'libraryLocalEmptyTitle')}
+                </h2>
+                <p className={`${MANAGEMENT_BODY_TEXT} mt-1 leading-[var(--lobster-leading-sm)] text-secondary`}>
+                  {i18nService.t(hasActiveLocalFilter
+                    ? 'libraryEmptyDescription'
+                    : 'libraryLocalEmptyDescription')}
+                </p>
+              </div>
             ) : (
               <LibraryVirtualizedGroups
                 dateGroups={dateGroups}

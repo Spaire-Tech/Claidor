@@ -1,5 +1,4 @@
-import '../design/conversation.css';
-
+import { CheckIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 import { useSelector } from 'react-redux';
 
@@ -9,13 +8,11 @@ import { getSubagentDisplayInitial, getSubagentDisplayName } from '@/utils/subag
 
 import { i18nService } from '../../services/i18n';
 import AgentAvatarIcon from '../agent/AgentAvatarIcon';
-import { StepMark, StepState } from './ToolCallGroup';
-import { ToolStepIcon, ToolStepKind } from './toolStepPresentation';
 
 /**
- * A subagent (docs/maties/design.md, « Subagents »): a step whose result
- * card names the agent and opens its own conversation in the right panel.
- * The title, the sub-line with the ring, then one card per agent.
+ * Card for spawned subagents: icon, agent name, live status, and the task
+ * one-liner. The whole row is a link into the subagent's session detail.
+ * Replaces the old tool-row-plus-pill rendering.
  */
 const SubagentSpawnCard: React.FC<{
   subagents: SubagentSessionSummary[];
@@ -25,95 +22,66 @@ const SubagentSpawnCard: React.FC<{
 
   if (subagents.length === 0) return null;
 
-  const anyRunning = subagents.some((subagent) => subagent.status === 'running');
-  const anyFailed = subagents.some((subagent) => subagent.status === 'error');
-  const state: StepState = anyRunning ? StepState.Running : anyFailed ? StepState.Failed : StepState.Done;
-  const first = subagents[0];
-  const subline = subagents.length === 1
-    ? (first.task ?? getSubagentDisplayName(first, agents))
-    : subagents.map((subagent) => getSubagentDisplayName(subagent, agents)).join(', ');
-
   return (
-    <div className="flex flex-col gap-4" data-maties-step="subagents">
-      <div className="maties-in-slow flex items-center gap-[13px]">
-        <span style={{ color: '#6b7280', display: 'inline-flex' }}>
-          <ToolStepIcon kind={ToolStepKind.AgentStart} size={18} />
-        </span>
-        <span className="maties-step-title">
-          {i18nService.t(anyRunning ? 'matiesStepAgentWait' : 'matiesStepAgentStart')}
-        </span>
-      </div>
-      <div className="maties-in-slow flex items-center gap-3">
-        <StepMark state={state} />
-        <span className="maties-step-sub min-w-0 truncate" style={anyFailed && !anyRunning ? { color: '#e0322d' } : undefined}>
-          {anyFailed && !anyRunning ? i18nService.t('matiesStepFailedAgent') : subline}
-        </span>
-      </div>
-      <div className="flex flex-col gap-2">
-        {subagents.map((subagent) => {
-          const displayName = getSubagentDisplayName(subagent, agents);
-          const agentIcon = subagent.agentId
-            ? agents.find((agent) => agent.id === subagent.agentId)?.icon?.trim()
-            : undefined;
-          return (
-            <button
-              key={subagent.id}
-              type="button"
-              onClick={() => onSelectSubagent(subagent)}
-              className="maties-card maties-in-slow group flex items-center gap-3 text-left"
-              style={{ alignSelf: 'flex-start', minWidth: 'min(380px, 100%)', maxWidth: '100%' }}
-              aria-label={`${displayName} — ${i18nService.t('matiesStepOpenAgent')}`}
-            >
-              {agentIcon ? (
-                <AgentAvatarIcon
-                  value={agentIcon}
-                  className="h-6 w-6"
-                  iconClassName="h-3.5 w-3.5"
-                  legacyClassName="text-sm"
-                  useDefaultWhenEmpty={false}
-                />
-              ) : (
-                <span
-                  className="flex flex-shrink-0 items-center justify-center rounded-full"
-                  style={{ width: 22, height: 22, background: '#e8effa', color: '#0060d0', fontSize: 11, fontWeight: 600 }}
-                >
-                  {getSubagentDisplayInitial(subagent, agents)}
+    <div className="w-full overflow-hidden rounded-lg border border-border divide-y divide-border">
+      {subagents.map((subagent) => {
+        const displayName = getSubagentDisplayName(subagent, agents);
+        const agentIcon = subagent.agentId
+          ? agents.find((agent) => agent.id === subagent.agentId)?.icon?.trim()
+          : undefined;
+        return (
+          <button
+            key={subagent.id}
+            type="button"
+            onClick={() => onSelectSubagent(subagent)}
+            className="group w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-raised/40"
+            aria-label={displayName}
+          >
+            {agentIcon ? (
+              <AgentAvatarIcon
+                value={agentIcon}
+                className="h-8 w-8 bg-primary/10"
+                iconClassName="h-4 w-4"
+                legacyClassName="text-base"
+                useDefaultWhenEmpty={false}
+              />
+            ) : (
+              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                {getSubagentDisplayInitial(subagent, agents)}
+              </span>
+            )}
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2">
+                <span className="truncate text-sm font-medium text-foreground">
+                  {displayName}
                 </span>
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2">
-                  <span className="truncate" style={{ fontSize: 14.5, letterSpacing: '-.01em', color: '#31353b' }}>
-                    {displayName}
+                {subagent.status === 'running' && (
+                  <span className="shimmer-text flex-shrink-0 text-xs text-secondary">
+                    {i18nService.t('subagentRunning')}
                   </span>
-                  {subagent.status === 'running' && (
-                    <span className="maties-shimmer flex-shrink-0" style={{ fontSize: 12.5 }}>
-                      {i18nService.t('subagentRunning')}
-                    </span>
-                  )}
-                  {subagent.status === 'error' && (
-                    <span className="flex-shrink-0" style={{ fontSize: 12.5, color: '#e0322d' }}>
-                      {i18nService.t('subagentFailed')}
-                    </span>
-                  )}
-                  {subagent.status === 'done' && (
-                    <span className="flex-shrink-0" style={{ fontSize: 12.5, color: '#1f8a4c' }}>
-                      {i18nService.t('subagentCompleted')}
-                    </span>
-                  )}
-                </span>
-                {subagent.task && subagents.length > 1 && (
-                  <span className="maties-meta mt-0.5 block truncate">
-                    {subagent.task}
+                )}
+                {subagent.status === 'error' && (
+                  <span className="flex-shrink-0 text-xs text-red-500">
+                    {i18nService.t('subagentFailed')}
+                  </span>
+                )}
+                {subagent.status === 'done' && (
+                  <span className="flex flex-shrink-0 items-center gap-1 text-xs text-muted">
+                    <CheckIcon className="h-3 w-3 text-green-500" />
+                    {i18nService.t('subagentCompleted')}
                   </span>
                 )}
               </span>
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#c4c8ce" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <polyline points="9,5 16,12 9,19" />
-              </svg>
-            </button>
-          );
-        })}
-      </div>
+              {subagent.task && (
+                <span className="mt-0.5 block truncate text-xs text-muted">
+                  {subagent.task}
+                </span>
+              )}
+            </span>
+            <ChevronRightIcon className="h-3.5 w-3.5 flex-shrink-0 text-muted transition-colors group-hover:text-secondary" />
+          </button>
+        );
+      })}
     </div>
   );
 };

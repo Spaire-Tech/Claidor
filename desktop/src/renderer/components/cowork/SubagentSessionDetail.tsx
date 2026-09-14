@@ -85,7 +85,7 @@ const SubagentSessionDetail: React.FC<SubagentSessionDetailProps> = ({ subagent,
   }, [agents, subagent]);
 
   // When messages are empty but task exists, synthesize a user message so
-  // the view shows the initial prompt instead of "No conversation yet"
+  // the view shows the initial prompt instead of "暂无对话记录"
   const effectiveMessages = useMemo(() => {
     if (messages.length > 0) return messages;
     if (!subagent.task) return messages;

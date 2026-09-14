@@ -8,9 +8,11 @@ import { buildCoworkContinuationSystemPrompt } from '../components/cowork/skillS
 import type { AppDispatch, RootState } from '../store';
 import {
   removePendingSteer,
+  setDraftKitIds,
   setDraftSkillIds,
   updateSteerStatus,
 } from '../store/slices/coworkSlice';
+import { clearActiveKits } from '../store/slices/kitSlice';
 import { clearActiveSkills } from '../store/slices/skillSlice';
 import type { CoworkContinueOptions, CoworkSessionStatus } from '../types/cowork';
 import { CoworkSessionStatusValue } from '../types/cowork';
@@ -317,6 +319,9 @@ export class CoworkQueuedFollowUpCoordinator {
         ),
         activeSkillIds: queuedSteer.activeSkillIds,
         runtimeSkillIds: queuedSteer.runtimeSkillIds,
+        kitIds: queuedSteer.kitIds,
+        kitReferences: queuedSteer.kitReferences,
+        resolvedKitCapabilities: queuedSteer.resolvedKitCapabilities,
         imageAttachments: prepared.payload.imageAttachments,
         mediaSelection: queuedSteer.mediaSelection,
         mediaReferences: prepared.payload.mediaReferences,
@@ -343,10 +348,12 @@ export class CoworkQueuedFollowUpCoordinator {
       }
 
       this.dependencies.dispatch(removePendingSteer({ sessionId, steerId: queuedSteer.id }));
-      if ((queuedSteer.selectedSkillIds?.length ?? 0) > 0) {
+      if ((queuedSteer.selectedSkillIds?.length ?? 0) > 0 || (queuedSteer.kitIds?.length ?? 0) > 0) {
         this.dependencies.dispatch(setDraftSkillIds({ draftKey: sessionId, skillIds: [] }));
+        this.dependencies.dispatch(setDraftKitIds({ draftKey: sessionId, kitIds: [] }));
         if (this.dependencies.getState().cowork.currentSession?.id === sessionId) {
           this.dependencies.dispatch(clearActiveSkills());
+          this.dependencies.dispatch(clearActiveKits());
         }
       }
       this.dependencies.log(

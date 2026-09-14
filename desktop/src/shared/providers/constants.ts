@@ -20,8 +20,68 @@
 // 1. String Literal Constants
 // ═══════════════════════════════════════════════════════
 
+// ─── Model Role ─────────────────────────────────────────────────────────
+// What a model is *for*, as the server declares it on each row of
+// /api/models/available. The app does not choose a model per message: it
+// cannot know how hard a task is before doing it, a routing round trip
+// costs a beat in an app whose whole feel is timing, and a price that
+// moves for reasons a person cannot see makes the usage meter
+// untrustworthy. So there is one model they talk to and cheap ones for
+// machinery they never see, and the policy lives on the server so it can
+// change with a deploy instead of a release.
+export const ModelRole = {
+  /** Every reply the person reads. */
+  Primary: 'primary',
+  /** Sub-agents, compaction, the memory flush, heartbeats. Never read as "the agent". */
+  Cheap: 'cheap',
+  /** Answers when the primary's provider is down. Never the default, never shown. */
+  Fallback: 'fallback',
+} as const;
+
+export type ModelRole = typeof ModelRole[keyof typeof ModelRole];
+
+const MODEL_ROLE_VALUES: ReadonlySet<string> = new Set(Object.values(ModelRole));
+
+/** A role the server sent, or undefined for anything else — including the
+ *  `null` an older or role-less row carries. */
+export const parseModelRole = (value: unknown): ModelRole | undefined => (
+  typeof value === 'string' && MODEL_ROLE_VALUES.has(value)
+    ? (value as ModelRole)
+    : undefined
+);
+
+// ─── Transport API ──────────────────────────────────────────────────────
+// The exact wire the engine writes, spelled as OpenClaw's own transport
+// names spell it. The server sends this per model on
+// /api/models/available; `apiFormat` beside it is only the provider's
+// dialect family and cannot tell OpenAI's two wires apart.
+export type OpenClawTransportApi =
+  | 'anthropic-messages'
+  | 'openai-completions'
+  | 'openai-responses'
+  | 'openai-chatgpt-responses'
+  | 'google-generative-ai';
+
+/** The subset the server may name for one of its own models. The other
+ *  two transports exist for providers a person configures themselves. */
+const SERVER_TRANSPORT_APIS: ReadonlySet<string> = new Set([
+  'anthropic-messages',
+  'openai-completions',
+  'openai-responses',
+]);
+
+/** A transport the engine understands, or undefined for anything else —
+ *  including the field being absent, which is what an older server sends. */
+export const parseOpenClawTransportApi = (
+  value: unknown,
+): OpenClawTransportApi | undefined => (
+  typeof value === 'string' && SERVER_TRANSPORT_APIS.has(value)
+    ? (value as OpenClawTransportApi)
+    : undefined
+);
+
 // ─── Provider Name ──────────────────────────────────────────────────────
-// providerName identifies the Maties internal provider (config key).
+// providerName identifies the LobsterAI internal provider (config key).
 export const ProviderName = {
   OpenAI: 'openai',
   Gemini: 'gemini',
@@ -41,7 +101,7 @@ export const ProviderName = {
   Ollama: 'ollama',
   LmStudio: 'lm-studio',
   Custom: 'custom',
-  MatiesServer: 'maties-server',
+  LobsteraiServer: 'lobsterai-server',
   Copilot: 'github-copilot',
 } as const;
 export type ProviderName = typeof ProviderName[keyof typeof ProviderName];
@@ -49,7 +109,7 @@ export type ProviderName = typeof ProviderName[keyof typeof ProviderName];
 // ─── OpenClaw Provider ID ───────────────────────────────────────────────
 // OpenClaw gateway provider identifiers. May differ from ProviderName.
 export const OpenClawProviderId = {
-  MatiesServer: 'maties-server',
+  LobsteraiServer: 'lobsterai-server',
   Moonshot: 'moonshot',
   Google: 'google',
   Xai: 'xai',
@@ -68,7 +128,7 @@ export const OpenClawProviderId = {
   Xiaomi: 'xiaomi',
   OpenRouter: 'openrouter',
   Copilot: 'github-copilot',
-  MatiesCopilot: 'maties-copilot',
+  LobsteraiCopilot: 'lobsterai-copilot',
   Ollama: 'ollama',
   LmStudio: 'lm-studio',
   Lobster: 'lobster',
@@ -467,7 +527,7 @@ const PROVIDER_DEFINITIONS = [
   {
     id: ProviderName.Copilot,
     label: 'GitHub Copilot',
-    openClawProviderId: OpenClawProviderId.MatiesCopilot,
+    openClawProviderId: OpenClawProviderId.LobsteraiCopilot,
     defaultBaseUrl: 'https://api.individual.githubcopilot.com',
     defaultApiFormat: ApiFormat.OpenAI,
     codingPlanSupported: false,

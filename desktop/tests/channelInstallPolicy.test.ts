@@ -1,6 +1,14 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 
 import { describe, expect, test } from 'vitest';
+
+// Installer names and the web package url are both built from the product
+// name, so read it from the same file electron-builder does rather than
+// pinning it here — otherwise a rename breaks these tests instead of being
+// checked by them.
+const PRODUCT_NAME: string =
+  JSON.parse(fs.readFileSync('electron-builder.json', 'utf8')).productName;
 
 const runChannelDryRun = (args: string[], env: NodeJS.ProcessEnv = {}) => (
   spawnSync(process.execPath, ['scripts/dist-win-channel.cjs', ...args, '--dry-run'], {
@@ -36,10 +44,10 @@ const readWebArtifactName = (silentOnDoubleClick: boolean) => (
       env: {
         ...process.env,
         KEYFROM: 'dictbind',
-        MATIES_CHANNEL_BUILD: '1',
-        MATIES_SILENT_ON_DOUBLE_CLICK: silentOnDoubleClick ? '1' : '0',
-        MATIES_WEB_INSTALLER: '1',
-        MATIES_WEB_PKG_URL: 'https://cdn.example.test/Maties.nsis.7z',
+        LOBSTERAI_CHANNEL_BUILD: '1',
+        LOBSTERAI_SILENT_ON_DOUBLE_CLICK: silentOnDoubleClick ? '1' : '0',
+        LOBSTERAI_WEB_INSTALLER: '1',
+        LOBSTERAI_WEB_PKG_URL: `https://cdn.example.test/${PRODUCT_NAME}.nsis.7z`,
       },
       encoding: 'utf8',
     },
@@ -58,11 +66,11 @@ const readWebBasePackageUrl = () => (
       env: {
         ...process.env,
         KEYFROM: 'dictbind',
-        MATIES_CHANNEL_BUILD: '1',
-        MATIES_SILENT_ON_DOUBLE_CLICK: '1',
-        MATIES_WEB_INSTALLER: '1',
-        MATIES_WEB_PKG_URL: '',
-        MATIES_WEB_PKG_BASE_URL: 'https://cdn.example.test/releases',
+        LOBSTERAI_CHANNEL_BUILD: '1',
+        LOBSTERAI_SILENT_ON_DOUBLE_CLICK: '1',
+        LOBSTERAI_WEB_INSTALLER: '1',
+        LOBSTERAI_WEB_PKG_URL: '',
+        LOBSTERAI_WEB_PKG_BASE_URL: 'https://cdn.example.test/releases',
       },
       encoding: 'utf8',
     },
@@ -88,13 +96,13 @@ describe('channel installer build flags', () => {
 
   test('does not leak inherited build env into a channel dry-run', () => {
     const inherited = runChannelDryRun(['--keyfrom', 'ci_plain_channel'], {
-      MATIES_CHANNEL_BUILD: '1',
-      MATIES_SILENT_ON_DOUBLE_CLICK: '1',
+      LOBSTERAI_CHANNEL_BUILD: '1',
+      LOBSTERAI_SILENT_ON_DOUBLE_CLICK: '1',
     });
     expect(inherited.status).toBe(0);
     expect(inherited.stdout).toContain('silentOnDoubleClick=false source=default');
-    expect(inherited.stderr).toContain('ignoring inherited MATIES_CHANNEL_BUILD=1');
-    expect(inherited.stderr).toContain('ignoring inherited MATIES_SILENT_ON_DOUBLE_CLICK=1');
+    expect(inherited.stderr).toContain('ignoring inherited LOBSTERAI_CHANNEL_BUILD=1');
+    expect(inherited.stderr).toContain('ignoring inherited LOBSTERAI_SILENT_ON_DOUBLE_CLICK=1');
   });
 });
 
@@ -121,7 +129,7 @@ describe('web installer build flags', () => {
       'npm run dist:win:web -- --keyfrom dictbind --silent --pkg-url <uploaded-url>',
     );
     expect(silent.stdout).toMatch(
-      /next: upload release[\\/]nsis-web[\\/]maties-[^\s]+-x64\.nsis\.7z/,
+      new RegExp(`next: upload release[\\\\/]nsis-web[\\\\/]${PRODUCT_NAME.toLowerCase()}-[^\\s]+-x64\\.nsis\\.7z`),
     );
   });
 
@@ -131,7 +139,7 @@ describe('web installer build flags', () => {
       'dictbind',
       '--silent',
       '--pkg-url',
-      'https://cdn.example.test/maties.nsis.7z',
+      `https://cdn.example.test/${PRODUCT_NAME.toLowerCase()}.nsis.7z`,
     ]);
 
     expect(stubOnly.status).toBe(0);
@@ -150,16 +158,16 @@ describe('web installer build flags', () => {
         'https://cdn.example.test/releases',
       ],
       {
-        MATIES_CHANNEL_BUILD: '1',
-        MATIES_SILENT_ON_DOUBLE_CLICK: '1',
+        LOBSTERAI_CHANNEL_BUILD: '1',
+        LOBSTERAI_SILENT_ON_DOUBLE_CLICK: '1',
       },
     );
 
     expect(inherited.status).toBe(0);
     expect(inherited.stdout).toContain('silentOnDoubleClick=false source=default');
-    expect(inherited.stderr).toContain('ignoring inherited MATIES_CHANNEL_BUILD=1');
+    expect(inherited.stderr).toContain('ignoring inherited LOBSTERAI_CHANNEL_BUILD=1');
     expect(inherited.stderr).toContain(
-      'ignoring inherited MATIES_SILENT_ON_DOUBLE_CLICK=1',
+      'ignoring inherited LOBSTERAI_SILENT_ON_DOUBLE_CLICK=1',
     );
   });
 
@@ -169,11 +177,11 @@ describe('web installer build flags', () => {
 
     expect(plain.status).toBe(0);
     expect(plain.stdout).toContain(
-      'artifact=Maties-WebSetup-${arch}-${version}-dictbind.${ext}',
+      `artifact=${PRODUCT_NAME}-WebSetup-\${arch}-\${version}-dictbind.\${ext}`,
     );
     expect(silent.status).toBe(0);
     expect(silent.stdout).toContain(
-      'artifact=Maties-WebSetup-${arch}-${version}-dictbind-silent.${ext}',
+      `artifact=${PRODUCT_NAME}-WebSetup-\${arch}-\${version}-dictbind-silent.\${ext}`,
     );
   });
 
@@ -182,7 +190,7 @@ describe('web installer build flags', () => {
 
     expect(probe.status).toBe(0);
     expect(probe.stdout).toMatch(
-      /packageUrl=https:\/\/cdn\.example\.test\/releases\/dictbind\/maties-[^/\s]+-x64\.nsis\.7z/,
+      new RegExp(`packageUrl=https://cdn\\.example\\.test/releases/dictbind/${PRODUCT_NAME.toLowerCase()}-[^/\\s]+-x64\\.nsis\\.7z`),
     );
   });
 });

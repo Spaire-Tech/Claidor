@@ -18,10 +18,10 @@ export const PublishingSubscriptionObservationConfidence = {
 } as const;
 
 const PUBLISHING_CONVERSION_ATTRIBUTION_STORAGE_KEY =
-  'maties_publishing_conversion_attribution_v3';
+  'lobsterai_publishing_conversion_attribution_v3';
 const LEGACY_PUBLISHING_CONVERSION_ATTRIBUTION_STORAGE_KEYS = [
-  'maties_publishing_conversion_attribution_v1',
-  'maties_publishing_conversion_attribution_v2',
+  'lobsterai_publishing_conversion_attribution_v1',
+  'lobsterai_publishing_conversion_attribution_v2',
 ] as const;
 const PUBLISHING_CONVERSION_ATTRIBUTION_WINDOW_MS = 7 * 24 * 60 * 60 * 1_000;
 

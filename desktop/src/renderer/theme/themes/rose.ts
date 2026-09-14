@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const rose: ThemeDefinition = {
   meta: {
     id: 'rose',
-    name: 'Rose',
-    description: 'A warm, deep rose-red dark theme',
+    name: '玫瑰暗红',
+    description: '温暖深沉的玫瑰红暗色主题',
     appearance: 'dark',
     preview: ['#1a0a10', '#f43f5e', '#fb7185', '#f0abfc'],
   },

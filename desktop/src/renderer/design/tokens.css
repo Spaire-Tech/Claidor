@@ -1,0 +1,153 @@
+/*
+ * Faiser design tokens.
+ *
+ * GENERATED from src/renderer/design/tokens.ts by generateTokensCss().
+ * Do not edit: tokens.test.ts compares this file against the generator
+ * and fails when they disagree. Change tokens.ts and run the test.
+ */
+
+:root {
+  /* Colour */
+  --fsr-ink: #1e3358;
+  --fsr-ink-hover: #2c4674;
+  --fsr-muted: #55606f;
+  --fsr-faint: #7d8797;
+  --fsr-paper: #fbfbfc;
+  --fsr-fill: #e9edf2;
+  --fsr-fill-raised: #eef1f5;
+  --fsr-fill-strong: #e3e8ef;
+  --fsr-accent: #2b6cf5;
+  --fsr-disabled: #aab3c0;
+  --fsr-shimmer-ink: #1c1f23;
+  --fsr-shimmer-pale: #b6bcc6;
+  --fsr-success: #1a8547;
+  --fsr-success-fill: #e7f6ec;
+  --fsr-warning: #e8a300;
+  --fsr-danger: #e0322d;
+
+  /* Lines */
+  --fsr-line-hairline: rgba(16,22,35,.11);
+  --fsr-line-field: rgba(16,22,35,.13);
+  --fsr-line-button: rgba(16,22,35,.17);
+  --fsr-line-grid: rgba(16,22,35,.018);
+  --fsr-line-hover: rgba(16,22,35,.06);
+
+  /* Shadows */
+  --fsr-shadow-flat: 0 1px 2px rgba(16,22,35,.04);
+  --fsr-shadow-raised: 0 1px 2px rgba(16,22,35,.04), 0 6px 18px rgba(16,22,35,.11);
+  --fsr-shadow-popover: 0 1px 2px rgba(16,22,35,.04), 0 18px 44px rgba(16,22,35,.18);
+  --fsr-shadow-modal: 0 1px 2px rgba(16,22,35,.04), 0 24px 60px rgba(16,22,35,.18);
+  --fsr-shadow-glass-inset: inset 0 1px 0 rgba(255,255,255,.8);
+  --fsr-shadow-orb: 0 1px 2px rgba(16,22,35,.11), 0 4px 10px rgba(16,22,35,.10);
+  --fsr-shadow-orb-large: 0 2px 6px rgba(16,22,35,.11), 0 20px 48px rgba(16,22,35,.14);
+
+  /* Glass */
+  --fsr-glass-background: rgba(255,255,255,.94);
+  --fsr-glass-background-soft: rgba(255,255,255,.88);
+  --fsr-glass-blur: blur(20px);
+  --fsr-glass-border: rgba(255,255,255,.7);
+  --fsr-glass-scrim: rgba(195,203,214,.42);
+  --fsr-glass-scrim-blur: blur(10px);
+
+  /* Type */
+  --fsr-text-caption: 13px;
+  --fsr-text-label: 13.5px;
+  --fsr-text-small: 14px;
+  --fsr-text-body: 14.5px;
+  --fsr-text-message: 15px;
+  --fsr-text-emphasis: 15.5px;
+  --fsr-text-base: 16px;
+  --fsr-text-agent-name: 16.5px;
+  --fsr-text-section: 17px;
+  --fsr-text-sidebar-title: 19px;
+  --fsr-text-dialog-title: 21px;
+  --fsr-text-screen-title: 22px;
+  --fsr-text-detail-title: 27px;
+
+  /* Tracking */
+  --fsr-tracking-body: -.005em;
+  --fsr-tracking-title: -.01em;
+  --fsr-tracking-screen-title: -.015em;
+  --fsr-tracking-detail-title: -.02em;
+
+  /* Radii */
+  --fsr-radius-pill: 999px;
+  --fsr-radius-key: 6px;
+  --fsr-radius-chip: 8px;
+  --fsr-radius-small: 11px;
+  --fsr-radius-field: 12px;
+  --fsr-radius-control: 13px;
+  --fsr-radius-input: 14px;
+  --fsr-radius-row: 16px;
+  --fsr-radius-card: 18px;
+  --fsr-radius-menu: 20px;
+  --fsr-radius-panel: 22px;
+  --fsr-radius-modal: 24px;
+
+  /* Grid */
+  --fsr-grid-size: 34px;
+
+  /* Type faces */
+  --fsr-font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  --fsr-font-mono: 'SF Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Motion */
+  --fsr-motion-message-in-duration: .16s;
+  --fsr-motion-message-in-duration-longer: .22s;
+  --fsr-motion-message-in-easing: ease-out;
+  --fsr-motion-orb-in-duration: .52s;
+  --fsr-motion-orb-in-easing: cubic-bezier(.22,.68,.36,1);
+  --fsr-motion-orb-idle-duration: 7.5s;
+  --fsr-motion-orb-idle-easing: ease-in-out;
+  --fsr-motion-orb-speak-duration: 2.4s;
+  --fsr-motion-orb-speak-easing: ease-in-out;
+  --fsr-motion-shimmer-duration: 1.9s;
+  --fsr-motion-shimmer-easing: linear;
+  --fsr-motion-hover-duration: .15s;
+  --fsr-motion-hover-easing: ease;
+}
+
+/*
+ * Keyframes. Not generated — CSS has no way to say these as values, and
+ * `tokens.ts` holds their durations and easings so a component can name
+ * them without repeating the numbers.
+ *
+ * `fsr-orb-idle` is what makes a small orb look alive when the context
+ * budget has denied it a shader. That is the point of it living here
+ * rather than on the canvas.
+ */
+
+@keyframes fsr-orb-idle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+@keyframes fsr-orb-speak {
+  0% { transform: scale(1); }
+  18% { transform: scale(1.09); }
+  36% { transform: scale(1.02); }
+  54% { transform: scale(1.12); }
+  74% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fsr-orb-in {
+  from { opacity: 0; transform: translateY(14px) scale(.72); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fsr-message-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fsr-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -40% 0; }
+}
+
+/* An orb that cannot breathe should still not jump. */
+@media (prefers-reduced-motion: reduce) {
+  [style*="fsr-orb-idle"],
+  [style*="fsr-orb-speak"] { animation: none !important; }
+}

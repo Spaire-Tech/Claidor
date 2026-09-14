@@ -1,10 +1,9 @@
-import { expect,test } from 'vitest';
-
-import {
-BindingKind, DeliveryChannel, DeliveryMode,   OriginKind, SessionTarget,
-} from '../constants';
+import { test, expect } from 'vitest';
 import { makeModel } from '../fixtures';
 import { ManualTaskPolicy } from './manualPolicy';
+import {
+  OriginKind, BindingKind, DeliveryMode, DeliveryChannel, SessionTarget,
+} from '../constants';
 
 test('ManualPolicy.normalizeDraft: IM announce + non-im binding -> auto-links to im_session', () => {
   const policy = new ManualTaskPolicy();
@@ -110,7 +109,7 @@ test('ManualPolicy.toWireBinding: ui_session with sessionId -> main + managed ke
   const policy = new ManualTaskPolicy();
   const result = policy.toWireBinding({ kind: BindingKind.UISession, sessionId: 'sess-x' });
   expect(result.sessionTarget).toBe(SessionTarget.Main);
-  expect(result.sessionKey).toBe('agent:main:maties:sess-x');
+  expect(result.sessionKey).toBe('agent:main:lobsterai:sess-x');
 });
 
 test('ManualPolicy.toWireBinding: im_session with sessionId -> main + managed key', () => {
@@ -122,7 +121,7 @@ test('ManualPolicy.toWireBinding: im_session with sessionId -> main + managed ke
     sessionId: 'sess-y',
   });
   expect(result.sessionTarget).toBe(SessionTarget.Main);
-  expect(result.sessionKey).toBe('agent:main:maties:sess-y');
+  expect(result.sessionKey).toBe('agent:main:lobsterai:sess-y');
 });
 
 test('ManualPolicy.toWireBinding: im_session without sessionId -> main + null', () => {

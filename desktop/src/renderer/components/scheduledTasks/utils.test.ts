@@ -9,6 +9,7 @@ import {
   formatDateTimeMinute,
   formatDeliveryLabel,
   formatElapsedDuration,
+  formatScheduleLabel,
   getTaskDisplayStatus,
   stripCronMetadataPrefix,
   TaskDisplayStatus,
@@ -91,85 +92,85 @@ describe('formatElapsedDuration', () => {
 });
 
 describe('conversationOptionMatchesValue', () => {
-  const conversationId = 'telegram-bot-1:direct:user_johndoe';
+  const conversationId = 'weixin-bot-1:direct:wxid_zhangsan@im.wechat';
 
   test('matches the saved bare peer id regardless of casing', () => {
     // Saved targets carry the channel-native casing while conversation ids
     // derive from lowercased OpenClaw session keys.
     expect(
       conversationOptionMatchesValue(
-        'telegram',
+        'openclaw-weixin',
         conversationId,
-        'User_JohnDoe',
+        'WxId_ZhangSan@im.wechat',
       ),
     ).toBe(true);
   });
 
   test('matches full conversation ids and trailing segments', () => {
-    expect(conversationOptionMatchesValue('telegram', conversationId, conversationId)).toBe(
+    expect(conversationOptionMatchesValue('openclaw-weixin', conversationId, conversationId)).toBe(
       true,
     );
     expect(
       conversationOptionMatchesValue(
-        'telegram',
+        'openclaw-weixin',
         conversationId,
-        'direct:user_johndoe',
+        'direct:wxid_zhangsan@im.wechat',
       ),
     ).toBe(true);
   });
 
   test('rejects different peers and empty values', () => {
     expect(
-      conversationOptionMatchesValue('telegram', conversationId, 'someone-else'),
+      conversationOptionMatchesValue('openclaw-weixin', conversationId, 'someone-else@im.wechat'),
     ).toBe(false);
-    expect(conversationOptionMatchesValue('telegram', conversationId, '')).toBe(false);
+    expect(conversationOptionMatchesValue('openclaw-weixin', conversationId, '')).toBe(false);
   });
 });
 
 describe('channelOptionMatchesSelection', () => {
   test('single-instance options match regardless of the saved accountId', () => {
-    const option = { value: 'telegram', label: 'Telegram' };
-    expect(channelOptionMatchesSelection(option, 'telegram', undefined)).toBe(true);
-    expect(channelOptionMatchesSelection(option, 'telegram', 'telegram-bot-1')).toBe(
+    const option = { value: 'openclaw-weixin', label: 'WeChat' };
+    expect(channelOptionMatchesSelection(option, 'openclaw-weixin', undefined)).toBe(true);
+    expect(channelOptionMatchesSelection(option, 'openclaw-weixin', 'weixin-bot-1')).toBe(
       true,
     );
-    expect(channelOptionMatchesSelection(option, 'discord', undefined)).toBe(false);
+    expect(channelOptionMatchesSelection(option, 'telegram', undefined)).toBe(false);
   });
 
   test('multi-instance options require the exact accountId', () => {
-    const option = { value: 'discord', label: 'Production instance', accountId: '5ba0851a' };
-    expect(channelOptionMatchesSelection(option, 'discord', '5ba0851a')).toBe(true);
-    expect(channelOptionMatchesSelection(option, 'discord', 'other')).toBe(false);
-    expect(channelOptionMatchesSelection(option, 'discord', undefined)).toBe(false);
+    const option = { value: 'feishu', label: '生产实例', accountId: '5ba0851a' };
+    expect(channelOptionMatchesSelection(option, 'feishu', '5ba0851a')).toBe(true);
+    expect(channelOptionMatchesSelection(option, 'feishu', 'other')).toBe(false);
+    expect(channelOptionMatchesSelection(option, 'feishu', undefined)).toBe(false);
   });
 });
 
 describe('formatDeliveryLabel', () => {
   const conversation: ScheduledTaskConversationOption = {
-    conversationId: 'telegram-bot-1:direct:user_johndoe',
-    platform: 'telegram',
+    conversationId: 'weixin-bot-1:direct:wxid_zhangsan@im.wechat',
+    platform: 'weixin',
     coworkSessionId: 'session-1',
     lastActiveAt: 1,
     peerKind: 'direct',
-    displayName: 'John Doe',
+    displayName: '张三',
   };
 
   test('resolves the saved target to the friendly conversation name', () => {
     const label = formatDeliveryLabel(
       {
         mode: DeliveryMode.Announce,
-        channel: 'telegram',
-        to: 'User_JohnDoe',
+        channel: 'openclaw-weixin',
+        to: 'WxId_ZhangSan@im.wechat',
       },
       { conversations: [conversation] },
     );
-    expect(label).toContain('John Doe');
-    expect(label).not.toContain('User_JohnDoe');
+    expect(label).toContain('张三');
+    expect(label).not.toContain('WxId_ZhangSan');
   });
 
   test('falls back to the parsed target when no conversation matches', () => {
     const label = formatDeliveryLabel(
-      { mode: DeliveryMode.Announce, channel: 'telegram', to: 'someone-else' },
+      { mode: DeliveryMode.Announce, channel: 'openclaw-weixin', to: 'someone-else@im.wechat' },
       { conversations: [conversation] },
     );
     expect(label).toContain('someone-else');
@@ -177,14 +178,14 @@ describe('formatDeliveryLabel', () => {
 
   test('shows the channel instance name the form picker uses, without mode jargon', () => {
     const channels = [
-      { value: 'discord', label: 'Instance 1', accountId: 'acc-1' },
-      { value: 'discord', label: 'Instance 2', accountId: 'acc-2' },
+      { value: 'feishu', label: '1 号', accountId: 'acc-1' },
+      { value: 'feishu', label: '2 号', accountId: 'acc-2' },
     ];
     const label = formatDeliveryLabel(
-      { mode: DeliveryMode.Announce, channel: 'discord', accountId: 'acc-2', to: 'wangning' },
+      { mode: DeliveryMode.Announce, channel: 'feishu', accountId: 'acc-2', to: 'wangning' },
       { channels },
     );
-    expect(label).toContain('Instance 2');
+    expect(label).toContain('2 号');
     expect(label).toContain('wangning');
     expect(label).not.toContain(i18nService.t('scheduledTasksFormDeliveryModeAnnounce'));
   });
@@ -201,17 +202,47 @@ describe('formatDateTimeMinute', () => {
 describe('stripCronMetadataPrefix', () => {
   test('removes the cron routing tag from the prompt', () => {
     expect(
-      stripCronMetadataPrefix('[cron:e49b2a3b-0030 Tech briefing] Collect and summarize the news'),
-    ).toBe('Collect and summarize the news');
+      stripCronMetadataPrefix('[cron:e49b2a3b-0030 科技早报] 请收集并总结新闻'),
+    ).toBe('请收集并总结新闻');
   });
 
   test('keeps text without a cron tag unchanged', () => {
-    expect(stripCronMetadataPrefix('Regular message [cron:not-a-prefix]')).toBe(
-      'Regular message [cron:not-a-prefix]',
+    expect(stripCronMetadataPrefix('普通消息 [cron:not-a-prefix]')).toBe(
+      '普通消息 [cron:not-a-prefix]',
     );
   });
 
   test('only strips the leading tag, not later brackets', () => {
     expect(stripCronMetadataPrefix('[cron:id name] keep [this]')).toBe('keep [this]');
+  });
+});
+
+describe('formatScheduleLabel, on an interval', () => {
+  // Compared against the keys rather than the English, so the test stays
+  // true in either language.
+  test('one of something uses the singular phrase, not "Every 1 days"', () => {
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 86_400_000 }))
+      .toBe(i18nService.t('scheduledTasksCronEveryDay'));
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 3_600_000 }))
+      .toBe(i18nService.t('scheduledTasksCronEveryHour'));
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 60_000 }))
+      .toBe(i18nService.t('scheduledTasksCronEveryMinute'));
+  });
+
+  test('more than one still counts', () => {
+    const every = i18nService.t('scheduledTasksScheduleEvery');
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 7 * 86_400_000 }))
+      .toBe(`${every} 7 ${i18nService.t('scheduledTasksFormIntervalDays')}`);
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 4 * 3_600_000 }))
+      .toBe(`${every} 4 ${i18nService.t('scheduledTasksFormIntervalHours')}`);
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 30 * 60_000 }))
+      .toBe(`${every} 30 ${i18nService.t('scheduledTasksFormIntervalMinutes')}`);
+  });
+
+  test('an interval under a minute rounds up to one, and reads as one', () => {
+    // Math.max(1, ...) already floored it at one; before this it printed
+    // "Every 1 minutes".
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 5_000 }))
+      .toBe(i18nService.t('scheduledTasksCronEveryMinute'));
   });
 });

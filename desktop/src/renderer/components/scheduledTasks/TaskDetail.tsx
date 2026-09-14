@@ -77,7 +77,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRequestDelete }) => {
   }, [task.id]);
 
   // Resolve the delivery channel/target to the same friendly names the form
-  // pickers show ("Telegram · #2 · DM · John") instead of raw ids.
+  // pickers show ("企业微信 · 2 号 · 私聊 · 张三") instead of raw ids.
   const { mode: deliveryMode, channel: deliveryChannel, accountId: deliveryAccountId, to: deliveryTo } = task.delivery;
   const [deliveryChannels, setDeliveryChannels] = useState<ScheduledTaskChannelOption[]>([]);
   const [deliveryConversations, setDeliveryConversations] = useState<
@@ -202,7 +202,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRequestDelete }) => {
   const showErrorBanner = Boolean(task.state.lastError && lastStatus === TaskStatus.Error);
   const showConsecutiveWarning = task.state.consecutiveErrors >= 2;
 
-  const sectionClass = 'maties-card-row p-5';
+  const sectionClass = 'rounded-xl border border-border bg-surface p-4';
   const sectionTitleClass = 'text-sm font-semibold text-foreground mb-3';
   const labelClass = 'text-xs text-secondary mb-0.5';
   const valueClass = 'text-sm text-foreground';

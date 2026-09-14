@@ -8,6 +8,7 @@ import asrQuotaReducer from './slices/asrQuotaSlice';
 import authReducer from './slices/authSlice';
 import coworkReducer from './slices/coworkSlice';
 import imReducer from './slices/imSlice';
+import kitReducer from './slices/kitSlice';
 import mcpReducer from './slices/mcpSlice';
 import modelReducer from './slices/modelSlice';
 import quickActionReducer from './slices/quickActionSlice';
@@ -28,6 +29,7 @@ export const store = configureStore({
     auth: authReducer,
     enterpriseAccount: enterpriseAccountReducer,
     artifact: artifactReducer,
+    kit: kitReducer,
   },
   middleware: getDefaultMiddleware => (
     getDefaultMiddleware().prepend(libraryArtifactListener.middleware)

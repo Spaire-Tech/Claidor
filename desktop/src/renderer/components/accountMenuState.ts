@@ -33,7 +33,7 @@ export interface AccountPlanAnalyticsContext {
   canUpgrade: boolean;
 }
 
-const EXCELLENT_PLAN_LABEL_PATTERN = /(?:excellent|elite)/i;
+const EXCELLENT_PLAN_LABEL_PATTERN = /(?:卓越|excellent|elite)/i;
 const MAINLAND_CHINA_MOBILE_PATTERN = /^1[3-9]\d{9}$/;
 const ENGLISH_PLAN_DISPLAY_LABELS: Partial<Record<AccountPlanAnalyticsTier, string>> = {
   [AccountPlanAnalyticsTier.Basic]: 'Free',
@@ -46,11 +46,11 @@ const PLAN_TIER_PATTERNS: Array<{
   pattern: RegExp;
   tier: AccountPlanAnalyticsTier;
 }> = [
-  { pattern: /(?:excellent|elite)/i, tier: AccountPlanAnalyticsTier.Excellent },
-  { pattern: /(?:professional|\bpro\b)/i, tier: AccountPlanAnalyticsTier.Professional },
-  { pattern: /(?:advanced)/i, tier: AccountPlanAnalyticsTier.Advanced },
-  { pattern: /(?:standard)/i, tier: AccountPlanAnalyticsTier.Standard },
-  { pattern: /(?:basic|free)/i, tier: AccountPlanAnalyticsTier.Basic },
+  { pattern: /(?:卓越|excellent|elite)/i, tier: AccountPlanAnalyticsTier.Excellent },
+  { pattern: /(?:专业|professional|\bpro\b)/i, tier: AccountPlanAnalyticsTier.Professional },
+  { pattern: /(?:进阶|advanced)/i, tier: AccountPlanAnalyticsTier.Advanced },
+  { pattern: /(?:标准|standard)/i, tier: AccountPlanAnalyticsTier.Standard },
+  { pattern: /(?:基础|免费|basic|free)/i, tier: AccountPlanAnalyticsTier.Basic },
 ];
 
 const getPlanTierFromLabel = (labelSource: string): AccountPlanAnalyticsTier | null => (
@@ -70,8 +70,8 @@ const formatPlanLabel = (
     const tier = getPlanTierFromLabel(labelSource);
     return tier ? ENGLISH_PLAN_DISPLAY_LABELS[tier] ?? trimmedLabel : trimmedLabel;
   }
-  if (/\bplan$/i.test(trimmedLabel)) return trimmedLabel;
-  return `${trimmedLabel} plan`;
+  if (trimmedLabel.endsWith('套餐')) return trimmedLabel;
+  return `${trimmedLabel}套餐`;
 };
 
 const normalizePotentialPhoneNumber = (value: string): string => (

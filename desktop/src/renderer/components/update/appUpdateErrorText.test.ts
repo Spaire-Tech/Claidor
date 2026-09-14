@@ -1,22 +1,37 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test } from 'vitest';
 
 import {
   APP_UPDATE_ELEVATION_DECLINED_ERROR,
   APP_UPDATE_FILE_INVALID_ERROR,
   APP_UPDATE_URL_UNTRUSTED_ERROR,
 } from '../../../shared/appUpdate/constants';
+import { i18nService } from '../../services/i18n';
 import { formatAppUpdateError } from './appUpdateErrorText';
 
 describe('formatAppUpdateError', () => {
-  test('localizes stable Windows update errors', () => {
+  afterEach(() => {
+    i18nService.setLanguage('zh', { persist: false });
+  });
+
+  test('localizes stable Windows update errors in Chinese', () => {
+    i18nService.setLanguage('zh', { persist: false });
+
     expect(formatAppUpdateError(APP_UPDATE_ELEVATION_DECLINED_ERROR)).toContain(
-      'system authorization',
+      '系统授权',
     );
     expect(formatAppUpdateError(APP_UPDATE_URL_UNTRUSTED_ERROR)).toContain(
-      'HTTPS safety requirements',
+      'HTTPS 安全要求',
     );
     expect(formatAppUpdateError(APP_UPDATE_FILE_INVALID_ERROR)).toContain(
-      'failed validation',
+      '文件校验失败',
+    );
+  });
+
+  test('localizes an unsafe update URL in English', () => {
+    i18nService.setLanguage('en', { persist: false });
+
+    expect(formatAppUpdateError(APP_UPDATE_URL_UNTRUSTED_ERROR)).toContain(
+      'HTTPS safety requirements',
     );
   });
 

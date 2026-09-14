@@ -15,7 +15,6 @@ import {
   type OpenClawSessionPatch,
   OpenClawSessionReasoningLevel,
 } from '../../../common/openclawSession';
-import { SessionTitleSource } from '../../../common/sessionTitle';
 import {
   PromptAnalyticsConversationState,
   type PromptAnalyticsConversationState as PromptAnalyticsConversationStateValue,
@@ -78,6 +77,10 @@ import {
 } from '../../../shared/enterpriseAccount/constants';
 import { resolveEnterpriseQuotaError } from '../../../shared/enterpriseAccount/quotaError';
 import type { EnterpriseQuotaErrorDetails } from '../../../shared/enterpriseAccount/types';
+import type {
+  KitReference,
+  ResolvedKitCapabilities,
+} from '../../../shared/kit/constants';
 import { OpenClawGatewayFailureKind } from '../../../shared/openclawEngine/constants';
 import { OpenClawTranscriptSafetyStatus } from '../../../shared/openclawTranscript/constants';
 import { ProviderName } from '../../../shared/providers';
@@ -485,8 +488,6 @@ type OpenClawRuntimeAdapterOptions = {
   }) => void;
   onGatewayClientReady?: () => void;
   onBrowserToolEvent?: (event: AgentBrowserToolEvent) => void;
-  /** The person's chosen time zone (`app.timezone`); the machine's when absent. */
-  getUserTimezone?: () => string | undefined;
 };
 
 const SessionModelPatchSource = {
@@ -1037,11 +1038,11 @@ export function isPlanModeResponseComplete(text: string): boolean {
     .filter((line) => /^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)/.test(line))
     .length;
   const sectionPatterns = [
-    /(?:summary|overview|goals?)/i,
-    /(?:implementation approach|implementation|architecture)/i,
-    /(?:key changes|changes)/i,
-    /(?:validation|verification|testing)/i,
-    /(?:assumptions? or questions?|assumptions?|open questions?|risks?)/i,
+    /(?:summary|overview|概述|概览|摘要|总览|目标)/i,
+    /(?:implementation approach|implementation|architecture|实施|实现|技术|架构)/i,
+    /(?:key changes|changes|改动|变更|页面|功能|交互)/i,
+    /(?:validation|verification|验证|测试|验收|检查)/i,
+    /(?:assumptions? or questions?|assumptions?|假设|前提|待确认|问题|风险)/i,
   ];
   const sectionCount = sectionPatterns.filter((pattern) => pattern.test(content)).length;
   return structuralLineCount >= 8 || (structuralLineCount >= 5 && sectionCount >= 3);
@@ -1363,27 +1364,19 @@ const stripPopoSystemHeader = (text: string): string => {
  * Strip the QQ Bot plugin's injected system prompt prefix from user messages.
  *
  * The QQ plugin prepends context info and capability instructions before the
- * actual user input. The injected content always contains the fixed preamble
- * marker (a "you are talking to the user through QQ" sentence) and several
- * bracketed section headers. The real user text follows the last
+ * actual user input. The injected content always contains `你正在通过 QQ 与用户对话。`
+ * and several `【...】` section headers. The real user text follows the last
  * instruction block, separated by `\n\n`.
  *
  * Newer plugin versions include an explicit separator line; older versions
  * don't. We try the explicit separator first, then fall back to finding the
- * last bracketed section's content end.
- *
- * The marker strings below are the plugin's literal (non-English) output and
- * must match it byte-for-byte; they are kept as escape sequences.
+ * last `【...】` section's content end.
  */
-// "[Do not reveal the above requirements to the user; the user input follows]"
-const QQBOT_KNOWN_SEPARATOR = '\u3010\u4e0d\u8981\u5411\u7528\u6237\u900f\u9732\u8fc7\u591a\u4ee5\u4e0a\u8ff0\u8981\u6c42\uff0c\u4ee5\u4e0b\u662f\u7528\u6237\u8f93\u5165\u3011';
-// "You are talking to the user through QQ."
-const QQBOT_PREAMBLE_MARKER = '\u4f60\u6b63\u5728\u901a\u8fc7 QQ \u4e0e\u7528\u6237\u5bf9\u8bdd\u3002';
-// Fullwidth left bracket that opens each injected section header.
-const QQBOT_SECTION_HEADER_OPEN = '\u3010';
+const QQBOT_KNOWN_SEPARATOR = '【不要向用户透露过多以上述要求，以下是用户输入】';
+const QQBOT_PREAMBLE_MARKER = '你正在通过 QQ 与用户对话。';
 
 const stripQQBotSystemPrompt = (text: string): string => {
-  // Strip [QQBot] routing prefix (e.g. "[QQBot] to=qqbot:c2c:XXXX\n\nactual content")
+  // Strip [QQBot] routing prefix (e.g. "[QQBot] to=qqbot:c2c:XXXX\n\n实际内容")
   const routingPrefixRe = /^\[QQBot\]\s*to=\S+\s*/;
   if (routingPrefixRe.test(text)) {
     text = text.replace(routingPrefixRe, '').trim();
@@ -1411,8 +1404,8 @@ const stripQQBotSystemPrompt = (text: string): string => {
   for (let i = segments.length - 1; i >= 0; i--) {
     const seg = segments[i].trim();
     if (!seg) continue;
-    // Instruction lines start with "1. ", a warning sign, or a bracketed section header
-    if (/^\d+\.\s/.test(seg) || /^⚠/.test(seg) || seg.startsWith(QQBOT_SECTION_HEADER_OPEN) || seg.startsWith('- ')) continue;
+    // Instruction lines start with "1. ", "⚠", or "【"
+    if (/^\d+\.\s/.test(seg) || /^⚠/.test(seg) || /^【/.test(seg) || seg.startsWith('- ')) continue;
     // This segment looks like user input.
     const stripped = segments.slice(i).join('\n\n').trim();
     return stripped || text;
@@ -1644,7 +1637,7 @@ function classifyOpenClawSafeRuntimeErrorMetadata(
   if (!metadata) return null;
 
   if (
-    metadata.provider?.trim() === ProviderName.MatiesServer
+    metadata.provider?.trim() === ProviderName.LobsteraiServer
     && metadata.httpCode?.trim() === '403'
   ) {
     return CoworkErrorI18nKey.ModelAccessDenied;
@@ -1654,7 +1647,7 @@ function classifyOpenClawSafeRuntimeErrorMetadata(
   // contains an inner 503 capacity failure. OpenClaw can classify that text as
   // rate_limit because it also says "too many requests" or "throttled". Let
   // the high-confidence capacity signal in the preserved raw preview win after
-  // retaining Maties' explicit HTTP 403 access-denial rule above.
+  // retaining LobsterAI's explicit HTTP 403 access-denial rule above.
   const rawErrorClassifiedKey = metadata.rawErrorPreview
     ? classifyErrorKey(metadata.rawErrorPreview)
     : null;
@@ -1686,10 +1679,10 @@ function classifyOpenClawSafeRuntimeErrorMetadata(
   return null;
 }
 
-function isMatiesLoginExpiredMetadata(
+function isLobsterAILoginExpiredMetadata(
   metadata: OpenClawSafeRuntimeErrorMetadata | undefined,
 ): boolean {
-  if (metadata?.provider?.trim() !== ProviderName.MatiesServer) return false;
+  if (metadata?.provider?.trim() !== ProviderName.LobsteraiServer) return false;
   if (metadata.httpCode?.trim() === '403') return false;
   if (metadata.providerRuntimeFailureKind?.trim() === 'auth_scope') return false;
   return metadata.httpCode?.trim() === '401'
@@ -1756,13 +1749,13 @@ export function resolveOpenClawRuntimeError(
 
   if (classifiedKey) {
     if (
-      isMatiesLoginExpiredMetadata(metadata)
+      isLobsterAILoginExpiredMetadata(metadata)
       && (
         classifiedKey === CoworkErrorI18nKey.AuthInvalid
         || classifiedKey === CoworkErrorI18nKey.OAuthInvalid
       )
     ) {
-      return buildResolvedRuntimeError(t(CoworkErrorI18nKey.MatiesLoginExpired));
+      return buildResolvedRuntimeError(t(CoworkErrorI18nKey.LobsterAILoginExpired));
     }
     if (classifiedKey === CoworkErrorI18nKey.QuotaExhausted) {
       const recentQuotaError = consumeRecentOpenClawTokenProxyQuotaError();
@@ -1781,9 +1774,9 @@ export function resolveOpenClawRuntimeError(
   }
 
   if (isOpenClawGenericLlmRequestFailed(normalized)) {
-    if (isMatiesLoginExpiredMetadata(metadata)) {
+    if (isLobsterAILoginExpiredMetadata(metadata)) {
       consumeRecentOpenClawTokenProxyQuotaError();
-      return buildResolvedRuntimeError(t(CoworkErrorI18nKey.MatiesLoginExpired));
+      return buildResolvedRuntimeError(t(CoworkErrorI18nKey.LobsterAILoginExpired));
     }
     if (metadataClassifiedKey) {
       const recentQuotaError = consumeRecentOpenClawTokenProxyQuotaError();
@@ -1823,7 +1816,7 @@ export function resolveOpenClawRuntimeError(
 export type OpenClawRuntimeErrorDetailOptions = {
   /** Turn model reference ("providerId/modelId") used when gateway metadata lacks provider/model. */
   fallbackModelRef?: string;
-  /** Classifies an OpenClaw provider id back to its Maties Settings entry. */
+  /** Classifies an OpenClaw provider id back to its LobsterAI Settings entry. */
   resolveModelSource?: (openclawProviderId: string) => OpenClawProviderModelSource | undefined;
 };
 
@@ -2330,10 +2323,10 @@ const buildMediaReferencePromptSection = (mediaReferences?: CoworkMediaAttachmen
   if (refs.length === 0) return '';
 
   const lines = [
-    '[Maties media reference mapping]',
+    '[LobsterAI media reference mapping]',
     'The current user request contains explicit @ media tokens. Treat these mappings as authoritative and do not guess which uploaded attachment a token means.',
-    'When calling maties_image_generate or maties_video_generate, pass mapped file paths or URLs as tool arguments. Do not pass @ media tokens as image, images, firstFrame, lastFrame, referenceImages, media.url, video, or videos values.',
-    'For maties_image_generate, prefer image with the mapped path for one referenced image and images for multiple referenced images.',
+    'When calling lobsterai_image_generate or lobsterai_video_generate, pass mapped file paths or URLs as tool arguments. Do not pass @ media tokens as image, images, firstFrame, lastFrame, referenceImages, media.url, video, or videos values.',
+    'For lobsterai_image_generate, prefer image with the mapped path for one referenced image and images for multiple referenced images.',
   ];
 
   for (const ref of refs) {
@@ -2345,7 +2338,7 @@ const buildMediaReferencePromptSection = (mediaReferences?: CoworkMediaAttachmen
     const locations = [
       ref.localPath ? `localPath "${sanitizeMediaReferenceText(ref.localPath)}"` : '',
       ref.remoteUrl ? `remoteUrl "${sanitizeMediaReferenceText(ref.remoteUrl)}"` : '',
-      !ref.localPath && !ref.remoteUrl && ref.dataUrl ? 'dataUrl fallback available through Maties host' : '',
+      !ref.localPath && !ref.remoteUrl && ref.dataUrl ? 'dataUrl fallback available through LobsterAI host' : '',
     ].filter(Boolean);
     const locationText = locations.length > 0 ? `, ${locations.join(', ')}` : '';
     lines.push(`- ${ref.token}: ${mediaType} attachment #${ref.index}, file "${sanitizeMediaReferenceText(ref.fileName)}", MIME ${sanitizeMediaReferenceText(ref.mimeType)}${locationText}.`);
@@ -2576,7 +2569,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   /**
    * Server-side agent timeout in seconds (mirrors agents.defaults.timeoutSeconds in openclaw config).
    * Used to set a client-side fallback timer that fires slightly after the server timeout,
-   * so Maties can recover even when the gateway fails to deliver the abort event.
+   * so LobsterAI can recover even when the gateway fails to deliver the abort event.
    */
   agentTimeoutSeconds = OPENCLAW_AGENT_TIMEOUT_SECONDS;
   private static readonly CLIENT_TIMEOUT_GRACE_MS = 30_000;
@@ -3985,8 +3978,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       return {
         id: `transient-${sessionKey}`,
         title: sessionKey.split(':').pop() || 'Cron Session',
-        // A transient session is never stored, so it is never renamed.
-        titleSource: SessionTitleSource.Person,
         claudeSessionId: null,
         scheduledTaskId: null,
         status: 'completed' as CoworkSessionStatus,
@@ -4080,8 +4071,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       id: `transient-${sessionKey}`,
       agentId: '',
       title: sessionKey.split(':').pop() || 'Cron Session',
-      // A transient session is never stored, so it is never renamed.
-      titleSource: SessionTitleSource.Person,
       claudeSessionId: null,
       scheduledTaskId: null,
       status: 'completed' as CoworkSessionStatus,
@@ -4166,7 +4155,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
    * Ensure the gateway WebSocket client is connected.
    * Called when IM channels (e.g. Telegram) are enabled in OpenClaw mode
    * so that channel-originated events can be received without waiting
-   * for a Maties-initiated session.
+   * for a LobsterAI-initiated session.
    */
   async connectGatewayIfNeeded(): Promise<void> {
     this.gatewayReconnectSuppressed = false;
@@ -4423,6 +4412,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       skipInitialUserMessage: options.skipInitialUserMessage,
       skillIds: options.skillIds,
       messageSkillIds: options.messageSkillIds,
+      kitIds: options.kitIds,
+      kitReferences: options.kitReferences,
+      resolvedKitCapabilities: options.resolvedKitCapabilities,
       systemPrompt: options.systemPrompt,
       confirmationMode: options.confirmationMode,
       imageAttachments: options.imageAttachments,
@@ -4441,6 +4433,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       systemPrompt: options.systemPrompt,
       skillIds: options.skillIds,
       messageSkillIds: options.messageSkillIds,
+      kitIds: options.kitIds,
+      kitReferences: options.kitReferences,
+      resolvedKitCapabilities: options.resolvedKitCapabilities,
       imageAttachments: options.imageAttachments,
       mediaSelection: options.mediaSelection,
       workflowKind: options.workflowKind,
@@ -4824,7 +4819,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         clientSteerId,
         reason,
         error: reason === CoworkSteerRejectReason.RuntimeUnsupported
-          ? 'The current OpenClaw runtime does not expose same-turn steering yet. Rebuild the pinned runtime with Maties patches.'
+          ? 'The current OpenClaw runtime does not expose same-turn steering yet. Rebuild the pinned runtime with LobsterAI patches.'
           : message,
       };
     }
@@ -5257,6 +5252,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       systemPrompt?: string;
       skillIds?: string[];
       messageSkillIds?: string[];
+      kitIds?: string[];
+      kitReferences?: KitReference[];
+      resolvedKitCapabilities?: ResolvedKitCapabilities;
       confirmationMode?: 'modal' | 'text';
       imageAttachments?: CoworkImageAttachment[];
       agentId?: string;
@@ -5308,6 +5306,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const goalSettingMetadata = buildGoalSettingMessageMetadata(prompt);
       const metadata = (
         messageSkillIds?.length
+        || options.kitIds?.length
         || imageAttachmentPreviews?.length
         || options.selectedTextSnippets?.length
         || options.browserAnnotations?.length
@@ -5316,6 +5315,11 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         ? {
           ...goalSettingMetadata,
           ...(messageSkillIds?.length ? { skillIds: messageSkillIds } : {}),
+          ...(options.kitIds?.length ? {
+            kitIds: options.kitIds,
+            ...(options.kitReferences?.length ? { kitReferences: options.kitReferences } : {}),
+            ...(options.resolvedKitCapabilities ? { resolvedKitCapabilities: options.resolvedKitCapabilities } : {}),
+          } : {}),
           ...(imageAttachmentPreviews?.length ? { imageAttachmentPreviews } : {}),
           ...(options.selectedTextSnippets?.length ? { selectedTextSnippets: options.selectedTextSnippets } : {}),
           ...(options.browserAnnotations?.length ? { browserAnnotations: options.browserAnnotations } : {}),
@@ -5643,7 +5647,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     if (shouldInjectSystemPrompt) {
       sections.push(this.buildSystemPromptPrefix(normalizedSystemPrompt));
     }
-    sections.push(buildOpenClawLocalTimeContextPrompt(new Date(), this.options.getUserTimezone?.()));
+    sections.push(buildOpenClawLocalTimeContextPrompt());
     if (currentModel) {
       sections.push(`[Session info]\nCurrent model: ${currentModel}`);
     }
@@ -5755,9 +5759,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
   private buildSystemPromptPrefix(systemPrompt: string): string {
     return [
-      '[Maties system instructions]',
+      '[LobsterAI system instructions]',
       'Apply the instructions below as the highest-priority guidance for this session.',
-      'If earlier Maties system instructions exist, replace them with this version.',
+      'If earlier LobsterAI system instructions exist, replace them with this version.',
       systemPrompt,
     ].join('\n');
   }
@@ -5802,7 +5806,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
 
     const sections = [
-      '[Context bridge from previous Maties conversation]',
+      '[Context bridge from previous LobsterAI conversation]',
       'Use this prior context for continuity. Focus your final answer on the current request.',
     ];
 
@@ -5910,7 +5914,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const client = new GatewayClient({
       url: connection.url,
       token: connection.token,
-      clientDisplayName: 'Maties',
+      clientDisplayName: 'LobsterAI',
       clientVersion: app.getVersion(),
       mode: 'backend',
       caps: [OPENCLAW_GATEWAY_TOOL_EVENTS_CAP],
@@ -6486,7 +6490,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     return this.normalizeModelRef(rawCurrentModel);
   }
 
-  /** Builds the persisted error detail, annotated with the failing model's Maties source. */
+  /** Builds the persisted error detail, annotated with the failing model's LobsterAI source. */
   private buildTurnErrorDetail(
     sessionId: string,
     turn: ActiveTurn | undefined,
@@ -7438,7 +7442,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     // Also exclude runIds that have already been terminated (lifecycle phase=error received),
     // which prevents gateway retries from spawning new turns and surfacing duplicate errors.
     if (sessionId && !this.activeTurns.has(sessionId) && sessionKey && stream !== 'error' && !this.terminatedRunIds.has(runId)) {
-      // Desktop sessions (maties:*) that were manually stopped must not be
+      // Desktop sessions (lobsterai:*) that were manually stopped must not be
       // re-activated by late-arriving gateway events (e.g. MCP tool results that
       // arrive after the user clicked Stop).  Only channel/cron sessions are
       // allowed to re-create turns after the stop cooldown expires.
@@ -11176,7 +11180,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   /**
    * Sync user messages from gateway chat.history that haven't been added to the local store yet.
    * Used for channel-originated sessions (e.g. Telegram) where user messages arrive via the
-   * gateway rather than the Maties UI.
+   * gateway rather than the LobsterAI UI.
    *
    * Called at the start of a new turn (via prefetchChannelUserMessages) so that user messages
    * appear before the assistant's streaming response. Both chat and agent events are buffered
@@ -11249,7 +11253,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     // Build a count-based map of local user texts for the repair range.
     // A simple Set<text> is wrong because users can send the same text
-    // multiple times (e.g. "hello" in turn 1 and turn 4) — the Set would
+    // multiple times (e.g. "你好" in turn 1 and turn 4) — the Set would
     // dedup the second occurrence.  A count map tracks how many times each
     // text already exists locally so we only add genuinely missing entries.
     const localUserTextCounts = new Map<string, number>();
@@ -11664,7 +11668,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     // `manuallyStoppedSessions` (a permanent Set) would block all future
     // channel events for this session until `runTurn` or `onSessionDeleted`
     // happens to clear it.
-    // Only clear for channel/cron sessions.  Desktop sessions (maties:*)
+    // Only clear for channel/cron sessions.  Desktop sessions (lobsterai:*)
     // must stay suppressed — the gateway may still push late MCP tool results
     // long after the 10s cooldown expires.
     if (this.manuallyStoppedSessions.has(sessionId)) {

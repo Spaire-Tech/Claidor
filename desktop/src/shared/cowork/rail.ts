@@ -14,7 +14,7 @@ export const COWORK_RAIL_TOOLTIP_PREVIEW_MAX_LENGTH = 180;
 const COWORK_RAIL_PROPOSED_PLAN_TAG_PATTERN = /<\/?proposed_?plan\b[^>]*>/gi;
 const COWORK_RAIL_INCOMPLETE_PROPOSED_PLAN_TAG_PATTERN = /<\/?proposed_?plan\b\s*/gi;
 const COWORK_RAIL_LEADING_PLAN_SECTION_LABEL_PATTERN =
-  /^(?:#{1,6}\s*)?(?:Summary|Implementation Approach|Key Changes|Validation|Assumptions or Questions)(?:\s*:|\s+)\s*/i;
+  /^(?:#{1,6}\s*)?(?:Summary|Implementation Approach|Key Changes|Validation|Assumptions or Questions)(?:\s*[:：]|\s+|(?=为))\s*/i;
 
 export const stripCoworkRailPreviewMarkdown = (value: string): string => value
   .replace(COWORK_RAIL_PROPOSED_PLAN_TAG_PATTERN, ' ')

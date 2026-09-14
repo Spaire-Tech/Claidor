@@ -257,7 +257,7 @@ describe('resolveActiveEnterpriseQuotaSignal', () => {
     reason: EnterpriseQuotaReason.MemberMonthlyQuotaExhausted,
   };
   const serverModel = {
-    providerKey: ProviderName.MatiesServer,
+    providerKey: ProviderName.LobsteraiServer,
     isServerModel: true,
   };
 

@@ -4,8 +4,8 @@ import type { ThemeDefinition } from './types';
 export const emerald: ThemeDefinition = {
   meta: {
     id: 'emerald',
-    name: 'Emerald',
-    description: 'A lively natural emerald-green dark theme',
+    name: '翡翠暗绿',
+    description: '自然灵动的翡翠绿暗色主题',
     appearance: 'dark',
     preview: ['#0a1a14', '#10b981', '#34d399', '#67e8f9'],
   },

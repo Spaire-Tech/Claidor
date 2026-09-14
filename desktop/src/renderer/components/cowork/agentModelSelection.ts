@@ -1,4 +1,4 @@
-import { supportsMatiesRequestOptionsV1 } from '@shared/providers/matiesRequestOptions';
+import { supportsLobsterAIRequestOptionsV1 } from '@shared/providers/lobsterAIRequestOptions';
 import {
   getModelThinkingLevels,
   type ModelThinkingLevel,
@@ -30,7 +30,7 @@ export function resolveModelThinkingLevel(
   persistedLevel: ModelThinkingLevel | '' | null | undefined,
 ): ModelThinkingLevel | undefined {
   const config = model?.thinkingConfig;
-  if (!config || !supportsMatiesRequestOptionsV1(model.requestCapabilities)) return undefined;
+  if (!config || !supportsLobsterAIRequestOptionsV1(model.requestCapabilities)) return undefined;
   if (persistedLevel && getModelThinkingLevels(config).includes(persistedLevel)) {
     return persistedLevel;
   }

@@ -14,10 +14,12 @@ export const isDefaultAgentId = (agentId?: string | null): boolean => {
 
 export const isDefaultAgentProfileName = (agent: Pick<AgentDisplaySource, 'id' | 'name'>): boolean => {
   if (!isDefaultAgentId(agent.id)) return false;
-  const normalizedName = agent.name?.trim() ?? '';
+  const normalizedName = agent.name?.trim().toLowerCase() ?? '';
   return !normalizedName
-    || normalizedName.toLowerCase() === LegacyAgentName.Main
-    || normalizedName === DefaultAgentProfile.Name;
+    || normalizedName === LegacyAgentName.Main
+    // Upstream's name, for a row the startup migration has not reached yet.
+    || normalizedName === LegacyAgentName.Upstream
+    || normalizedName === DefaultAgentProfile.Name.toLowerCase();
 };
 
 export const getAgentDisplayName = (agent: Pick<AgentDisplaySource, 'id' | 'name'>): string => {

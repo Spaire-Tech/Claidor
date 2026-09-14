@@ -1,4 +1,4 @@
-import type { LocalizedQuickAction, Prompt, QuickAction, QuickActionsConfig, QuickActionsI18n } from '../types/quickAction';
+import type { QuickActionsConfig, QuickAction, Prompt, LocalizedQuickAction, QuickActionsI18n } from '../types/quickAction';
 import { i18nService } from './i18n';
 
 const CONFIG_PATH = './quick-actions.json';
@@ -10,7 +10,7 @@ class QuickActionService {
   private listeners = new Set<() => void>();
 
   /**
-   * Load the quick-action configuration
+   * 加载快捷操作配置
    */
   async loadConfig(): Promise<QuickActionsConfig> {
     if (this.config) {
@@ -27,13 +27,13 @@ class QuickActionService {
       return this.config;
     } catch (error) {
       console.error('Failed to load quick actions config:', error);
-      // Fall back to an empty configuration
+      // 返回空配置作为降级
       return { version: 1, actions: [] };
     }
   }
 
   /**
-   * Load the quick-action texts
+   * 加载国际化数据
    */
   async loadI18n(): Promise<QuickActionsI18n> {
     if (this.i18nData) {
@@ -50,13 +50,13 @@ class QuickActionService {
       return this.i18nData;
     } catch (error) {
       console.error('Failed to load quick actions i18n:', error);
-      // Fall back to empty texts
-      return { en: {} };
+      // 返回空数据作为降级
+      return { zh: {}, en: {} };
     }
   }
 
   /**
-   * All quick actions, with their texts
+   * 获取所有快捷操作（已本地化）
    */
   async getLocalizedActions(): Promise<LocalizedQuickAction[]> {
     const config = await this.loadConfig();
@@ -84,7 +84,7 @@ class QuickActionService {
   }
 
   /**
-   * All quick actions (raw data)
+   * 获取所有快捷操作（原始数据）
    */
   async getActions(): Promise<QuickAction[]> {
     const config = await this.loadConfig();
@@ -92,7 +92,7 @@ class QuickActionService {
   }
 
   /**
-   * A quick action by id, with its texts
+   * 根据 ID 获取快捷操作（已本地化）
    */
   async getLocalizedActionById(id: string): Promise<LocalizedQuickAction | undefined> {
     const actions = await this.getLocalizedActions();
@@ -100,7 +100,7 @@ class QuickActionService {
   }
 
   /**
-   * A quick action by id (raw data)
+   * 根据 ID 获取快捷操作（原始数据）
    */
   async getActionById(id: string): Promise<QuickAction | undefined> {
     const actions = await this.getActions();
@@ -108,7 +108,7 @@ class QuickActionService {
   }
 
   /**
-   * A prompt by actionId and promptId (raw data)
+   * 根据 actionId 和 promptId 获取提示词（原始数据）
    */
   async getPrompt(actionId: string, promptId: string): Promise<Prompt | undefined> {
     const action = await this.getActionById(actionId);
@@ -117,7 +117,7 @@ class QuickActionService {
   }
 
   /**
-   * The quick action mapped to a skill, with its texts
+   * 根据 skillMapping 获取对应的快捷操作（已本地化）
    */
   async getLocalizedActionBySkillMapping(skillMapping: string): Promise<LocalizedQuickAction | undefined> {
     const actions = await this.getLocalizedActions();
@@ -125,7 +125,7 @@ class QuickActionService {
   }
 
   /**
-   * The quick action mapped to a skill (raw data)
+   * 根据 skillMapping 获取对应的快捷操作（原始数据）
    */
   async getActionBySkillMapping(skillMapping: string): Promise<QuickAction | undefined> {
     const actions = await this.getActions();
@@ -133,7 +133,7 @@ class QuickActionService {
   }
 
   /**
-   * Subscribe to reloads
+   * 订阅语言变化事件
    */
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
@@ -143,14 +143,14 @@ class QuickActionService {
   }
 
   /**
-   * Notify every subscriber
+   * 通知所有订阅者
    */
   private notifyListeners(): void {
     this.listeners.forEach(listener => listener());
   }
 
   /**
-   * Clear the cache (forces a reload)
+   * 清除缓存（用于重新加载）
    */
   clearCache(): void {
     this.config = null;
@@ -159,10 +159,10 @@ class QuickActionService {
   }
 
   /**
-   * Initialise the service (reload when the i18n service changes)
+   * 初始化服务（订阅语言变化）
    */
   initialize(): void {
-    // Reload when the i18n service signals a change
+    // 订阅 i18n 服务的语言变化事件
     i18nService.subscribe(() => {
       this.clearCache();
     });

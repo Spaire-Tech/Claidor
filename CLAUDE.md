@@ -6,13 +6,91 @@ Legal research platform for OHADA law (see README.md). Monorepo with Python/Fast
 
 This repository carried the Swens build (a model review platform for finance). It is archived, switched off and kept as a record: the engine under `server/polar/tieout` (routes no longer mounted; tests not collected), the screens under `clients/apps/web/src/components/Workspace` (no longer rendered), the scripts under `server/scripts`, and the documents of record under `docs/pierce` (`swens.md`, `swens-plan.md`, `notes.md`). The last working state is the git tag `swens-final`. Do not extend it; answer questions about it from those documents, never from memory.
 
-## desktop/ — Maties, the desktop app
+## desktop/ — untouched LobsterAI (13 September 2026)
 
-`desktop/` is Maties, Claidor's desktop assistant for office workers: the LobsterAI desktop app (NetEase Youdao, MIT) on top of the OpenClaw agent engine, vendored with `git subtree` (squashed; upstream commit named in the vendoring commit) and then reshaped: English only, Maties branding (`com.claidor.maties`, deep link `maties://`), Telegram/Discord/email channels only (the Chinese messengers are retired in `desktop/src/shared/platform/constants.ts`), no provider or API-key screens, no media generation, no Chinese services. It builds on its own with its own `package.json` (Node 24); it is not part of the `clients/` pnpm workspace. Keep the MIT notices. Never add Chinese text there. See `desktop/CLAIDOR-NOTES.md` for what was retired and what is still pending.
+`desktop/` is the LobsterAI desktop app (NetEase Youdao, MIT), vendored
+with `git subtree` (squashed; upstream commit named in the vendoring
+commit) and, as of 13 September, **exactly as upstream ships it** —
+commit `b1ef0e3e`, to the byte. Keep the MIT notices.
 
-Its sign-in is wired to this API: `server/polar/desktop` serves the account protocol under `/desktop` (browser login through the web app, auth code, token exchange and refresh, profile, quota, the model list, a metered proxy to Anthropic on Claidor's key, and empty stubs for updates, skill store, kit store and client activities). The app talks only to `api.claidor.com` and `app.claidor.com` (`desktop/src/main/libs/endpoints.ts`, `desktop/src/renderer/services/endpoints.ts`). Settings: `DESKTOP_*` in `server/polar/config.py`.
+Everything built on top of it between 9 and 13 September was removed at
+the founder's word, after four days in which every real fault was found
+by them opening the app and none by any test. That work is not lost — it
+is this branch's history, and `3e1224d5` is its last state — but it is
+not here, and it is not the starting point.
 
-The plan of record for Maties (business, the four sentences we may say, the two-engine account, the library, pricing, order of work) is `docs/maties/plan.md`. Change it before changing direction. The personal library (an index of the person's documents built on the machine, step 2 of the plan) is designed in `docs/maties/library.md` and lives under `desktop/src/main/library/content`, `desktop/openclaw-extensions/search-library` and `desktop/src/renderer/components/library`. The look of the app is the founder's chat screen, its rules written in `docs/maties/design.md` (the sphere is the logo; serif for the assistant, sans for the app; the stream). The macOS installer builds on GitHub Actions (`.github/workflows/desktop_mac.yml`), unsigned until an Apple certificate exists.
+So the app at this commit has what upstream ships: Chinese services and
+Chinese text, provider and API-key screens, NetEase's growth surfaces (a
+sidebar ad slot, credit campaigns, a first-run tour), thirteen settings
+tabs, and no connection to Claidor at all. That is expected here, not a
+defect.
+
+**Nothing in `server/` or `runner/` was removed.** Claidor still serves
+the desktop account protocol under `/desktop` (browser login, tokens, the
+metered model proxy for Anthropic and OpenAI, memory sync, the skill,
+kit and MCP catalogues, and — from `polar/connectors/`, mounted there —
+Pipedream Connect sign-in links and per-service MCP targets), the maty
+job queue under `polar/maty/`, and the cloud runner. `render.yaml` and
+the deployed services are unchanged and the API answers right now. All
+of it is live and, at this commit, nothing in the app calls it. **There
+is no speech route** — an earlier version of this file said there was,
+and nothing under `server/polar/` matches `speech`.
+
+## The design direction (13 September 2026)
+
+The founder has redesigned the app and set the direction. It is written
+down in `docs/product/direction.md`, with the founder's own words quoted
+and every code claim tied to a file. Read it before proposing anything
+about the product's shape. Its headlines: the app is Messages, with each
+conversation an agent; five message kinds and no step cards; every
+action on the computer asks first; text arrives as texts and only speech
+streams; one computer, this one; role agents are LobsterAI kits, whose
+store endpoint we already serve empty. **The product has no name yet** —
+not Maties, not Swens — so ship no product name in any string.
+
+**GPT models work.** OpenAI refuses `reasoning_effort` together with
+function tools on `/v1/chat/completions`; the proxy now sends
+`reasoning_effort: "none"` whenever an OpenAI model is holding tools, and
+that is deployed and confirmed working by the founder. The cost is that
+those models run without reasoning whenever tools are in play, which for
+an agent is always; the proper fix is OpenAI's `/v1/responses`, and that
+is a translation layer nobody has built.
+
+That bug was found by one log line and not by reasoning about it. The
+proxy records every provider refusal as `desktop.proxy.upstream_refused`
+with the provider's own sentence in it. Two hours of my guessing —
+including two confident wrong answers — were ended by reading it. When
+something fails through the proxy, read that first.
+
+**The browser: unverified, not broken.** It was the browser failing and
+not GPT; I had the two the wrong way round until the founder corrected
+me, and I gave three explanations for it, all wrong. Of the two faults
+that were ever established, both were ours and both went with the reset:
+plugin loading is all-or-nothing, so one extension that cannot load kills
+the browser and every other plugin (12 September, self-inflicted by
+un-pruning three extensions), and a startup-order change of ours. One
+observation survives because it is upstream's: `browser` is in neither
+`COWORK_SYNC_FIELDS` nor `COWORK_RESTART_FIELDS` in
+`openclawConfigImpact.ts`, so a change of browser mode does not ask the
+gateway to restart and the config file can say in-app while the running
+engine drives its own Chromium. That was never proven to be the fault the
+founder saw. Nobody has run the browser in this tree. Do not call it
+broken and do not call it fixed — run it, and if it fails get the gateway
+log before touching code.
+
+**Why there is no machine registry, and what actually differs.** Grok Bot
+needs registered computers because it lives in the cloud and has to reach
+in. Maties runs on the machine, so there is no "which computer", only
+this computer. Two laptops is a v2 problem, and by then we will know
+whether anyone asks. The real difference is in how a file gets worked on:
+Grok Bot copies it to its own machine and copies it back — its words, "my
+computer ≠ your disk … we copy when needed". Maties opens the file where
+it lives. That shows up in spreadsheet formulas, links between workbooks,
+folder structure, and privacy.
+
+The macOS installer builds on GitHub Actions
+(`.github/workflows/desktop_mac.yml`), unsigned until an Apple
+certificate exists.
 
 ## Quick Start
 

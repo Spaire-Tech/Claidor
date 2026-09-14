@@ -1,5 +1,3 @@
-import '../design/conversation.css';
-
 import {
   ArrowDownTrayIcon,
   CheckIcon,
@@ -63,7 +61,7 @@ const ProposedPlanBlock: React.FC<ProposedPlanBlockProps> = ({
       objectUrl = URL.createObjectURL(blob);
       anchor = document.createElement('a');
       anchor.href = objectUrl;
-      anchor.download = `maties-plan-${new Date().toISOString().slice(0, 10)}.md`;
+      anchor.download = `lobsterai-plan-${new Date().toISOString().slice(0, 10)}.md`;
       document.body.appendChild(anchor);
       anchor.click();
       setIsDownloaded(true);
@@ -148,15 +146,15 @@ const ProposedPlanBlock: React.FC<ProposedPlanBlockProps> = ({
 
   return (
     <section
-      className="maties-card-prose overflow-hidden"
-      aria-label={i18nService.t('matiesPlanTitle')}
+      className="overflow-hidden rounded-lg border border-primary/20 bg-primary/5"
+      aria-label={i18nService.t('coworkProposedPlanTitle')}
     >
       <header
-        className="flex min-h-12 items-center justify-between gap-3 px-5 pt-3.5 pb-1"
+        className="flex min-h-12 items-center justify-between gap-3 border-b border-primary/10 px-4 py-2"
         data-cowork-search-exclude="true"
       >
-        <div className="maties-caption min-w-0" style={{ color: '#6b7280', fontWeight: 500 }}>
-          {i18nService.t('matiesPlanTitle')}
+        <div className="min-w-0 text-sm font-medium text-primary">
+          {i18nService.t('coworkProposedPlanTitle')}
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
           <MessageActionButton
@@ -197,10 +195,10 @@ const ProposedPlanBlock: React.FC<ProposedPlanBlockProps> = ({
         </div>
       </header>
       {contentExpanded && (
-        <div className="maties-plan px-5 pb-4 pt-1">
+        <div className="px-4 py-3 sm:px-5 sm:py-4">
           <MarkdownContent
             content={content}
-            className="max-w-none"
+            className="prose dark:prose-invert max-w-none"
             resolveLocalFilePath={resolveLocalFilePath}
             forceExpanded={forceExpanded}
             onImageClick={onImageClick}
@@ -209,28 +207,26 @@ const ProposedPlanBlock: React.FC<ProposedPlanBlockProps> = ({
       )}
       {showConfirmationActions && (
         <div
-          className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
-          style={{ borderTop: '.5px solid rgba(16,22,35,.07)' }}
+          className="flex flex-wrap items-center justify-between gap-3 border-t border-primary/10 px-4 py-3 sm:px-5"
           data-cowork-search-exclude="true"
         >
-          <div style={{ fontSize: 13.5, color: '#4a4f57' }}>
-            {i18nService.t('matiesPlanReady')}
+          <div className="text-sm font-medium text-secondary">
+            {i18nService.t('coworkPlanConfirmationReady')}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={handleAdjustPlan}
-              className="maties-button maties-button-ghost"
+              onClick={handleConfirmExecution}
+              className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-white transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
-              {i18nService.t('matiesAdjust')}
+              {i18nService.t('coworkPlanConfirmExecute')}
             </button>
             <button
               type="button"
-              onClick={handleConfirmExecution}
-              onKeyDown={(event) => { if (event.key === 'Enter') event.preventDefault(); }}
-              className="maties-button maties-button-primary"
+              onClick={handleAdjustPlan}
+              className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-background px-3 text-sm font-medium text-secondary transition-colors hover:bg-surface-raised hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
-              {i18nService.t('matiesStart')}
+              {i18nService.t('coworkPlanAdjust')}
             </button>
           </div>
         </div>

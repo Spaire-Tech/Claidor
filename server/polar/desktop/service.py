@@ -42,7 +42,9 @@ from .pricing import (
     PROVIDER_TOKEN_WEIGHTS,
     DesktopModel,
     DesktopProvider,
+    ModelRole,
     OpenAIUsageTally,
+    SpokenApi,
     SSEUsageTally,
     TokenWeights,
     Usage,
@@ -57,11 +59,6 @@ from .repository import (
     DesktopMemoryFileRepository,
     DesktopSessionRepository,
     DesktopUsageRepository,
-)
-from .speech import (
-    SPEECH_MODEL_LABEL,
-    SPEECH_PROVIDER_LABEL,
-    credits_for_characters,
 )
 
 #: The app treats these numeric codes, inside a message or a payload,
@@ -126,11 +123,26 @@ def provider_configured(provider: DesktopProvider) -> bool:
 
 
 def offered_models() -> tuple[DesktopModel, ...]:
-    """The models the app is told about. A provider with no key is not
-    offered at all: a missing key must read as « not available here »
-    when the menu is drawn, never as an error at the moment somebody
-    sends a message."""
-    return tuple(one for one in MODELS if provider_configured(one.provider))
+    """The models the app is told about: the ones carrying a role, whose
+    provider Claidor holds a key for.
+
+    Two filters, for two different reasons. A provider with no key is not
+    offered at all, because a missing key must read as « not available
+    here » when the menu is drawn and never as an error at the moment
+    somebody sends a message. A model with no role is priced but not part
+    of the current policy — Opus, Haiku and Astra — and stays in `MODELS`
+    only so a saved config still naming one is metered correctly.
+
+    Note what this means for the fallback: if no Anthropic key is
+    configured, Claude is not offered, and the app will find no fallback
+    to write. That is the honest outcome — a fallback that cannot answer
+    is worse than none — and it is visible here rather than at the moment
+    OpenAI goes down."""
+    return tuple(
+        one
+        for one in MODELS
+        if one.role is not None and provider_configured(one.provider)
+    )
 
 
 # --- credits --------------------------------------------------------------------
@@ -552,47 +564,6 @@ class DesktopService:
         await session.flush()
         return row
 
-    async def record_speech_usage(
-        self,
-        session: AsyncSession,
-        *,
-        user_id: UUID,
-        session_id: UUID | None,
-        characters: int,
-        upstream_status: int,
-    ) -> DesktopUsage:
-        """One spoken passage, against the same monthly allowance.
-
-        Speech burns no tokens, so all four token counts stay zero and
-        the cost is carried by the credits column alone. Writing a
-        character count into a column named `input_tokens` would make the
-        two figures un-addable and the monthly total a lie, which is the
-        one thing the allowance may not be.
-
-        A failed call costs nothing, the same rule the model proxy keeps.
-        """
-        row = DesktopUsage(
-            user_id=user_id,
-            session_id=session_id,
-            model=SPEECH_MODEL_LABEL,
-            provider=SPEECH_PROVIDER_LABEL,
-            credits=(
-                credits_for_characters(characters) if upstream_status == 200 else 0
-            ),
-            stream=False,
-            upstream_status=upstream_status,
-        )
-        session.add(row)
-        await session.flush()
-        return row
-
-
-def speech_configured() -> bool:
-    """Whether a voice can be served at all. Read before the app is told
-    it has one, so a missing key is an absent feature rather than a
-    failure at the moment somebody asks to be read to."""
-    return bool(settings.ELEVENLABS_API_KEY)
-
 
 desktop = DesktopService()
 
@@ -617,8 +588,10 @@ __all__ = [
     "IncomingMemoryFile",
     "MemoryFileState",
     "MemorySync",
+    "ModelRole",
     "OpenAIUsageTally",
     "SSEUsageTally",
+    "SpokenApi",
     "TokenWeights",
     "Usage",
     "UsageTally",

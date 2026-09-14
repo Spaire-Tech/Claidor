@@ -11,7 +11,7 @@ import {
   resolveGatewayLockPathForConfig,
 } from './openclawGatewayLock';
 
-const CONFIG_PATH = path.join(os.tmpdir(), 'maties-lock-test-state', 'openclaw.json');
+const CONFIG_PATH = path.join(os.tmpdir(), 'lobsterai-lock-test-state', 'openclaw.json');
 
 const expectedHash = (configPath: string): string =>
   crypto.createHash('sha256').update(path.resolve(configPath.trim())).digest('hex').slice(0, 8);

@@ -169,7 +169,8 @@ class TestWhatIsWrittenDown:
 
         assert task.stopped == Stopped.failed
         assert task.answer == ""
-        assert task.error is not None and "provider is down" in task.error
+        assert task.error is not None
+        assert "provider is down" in task.error
 
     async def test_a_truncated_run_records_that_it_was_truncated(
         self, session: AsyncSession, save_fixture: SaveFixture, user: User

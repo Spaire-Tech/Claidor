@@ -12,22 +12,22 @@ import { __openAICompatProxyTestUtils, isAllowedProxyHost } from './coworkOpenAI
 
 const testUtils = __openAICompatProxyTestUtils;
 
-test('refreshes Maties credentials only for HTTP 401', () => {
-  expect(testUtils.shouldRefreshProxyToken(401, ProviderName.MatiesServer)).toBe(true);
-  expect(testUtils.shouldRefreshProxyToken(403, ProviderName.MatiesServer)).toBe(false);
+test('refreshes LobsterAI credentials only for HTTP 401', () => {
+  expect(testUtils.shouldRefreshProxyToken(401, ProviderName.LobsteraiServer)).toBe(true);
+  expect(testUtils.shouldRefreshProxyToken(403, ProviderName.LobsteraiServer)).toBe(false);
   expect(testUtils.shouldRefreshProxyToken(403, ProviderName.Copilot)).toBe(true);
 });
 
-test('maps only transient Maties refresh failures to temporary service errors', () => {
-  expect(testUtils.isTemporaryMatiesAuthRefreshFailure(
-    ProviderName.MatiesServer,
+test('maps only transient LobsterAI refresh failures to temporary service errors', () => {
+  expect(testUtils.isTemporaryLobsterAIAuthRefreshFailure(
+    ProviderName.LobsteraiServer,
     { outcome: AuthRefreshOutcome.TransientFailure },
   )).toBe(true);
-  expect(testUtils.isTemporaryMatiesAuthRefreshFailure(
-    ProviderName.MatiesServer,
+  expect(testUtils.isTemporaryLobsterAIAuthRefreshFailure(
+    ProviderName.LobsteraiServer,
     { outcome: AuthRefreshOutcome.TerminalFailure },
   )).toBe(false);
-  expect(testUtils.isTemporaryMatiesAuthRefreshFailure(
+  expect(testUtils.isTemporaryLobsterAIAuthRefreshFailure(
     ProviderName.Copilot,
     { outcome: AuthRefreshOutcome.TransientFailure },
   )).toBe(false);
@@ -138,8 +138,8 @@ function runResponsesSequence(sequence: Array<{ event: string; payload: unknown 
 
 test('extractErrorMessage keeps nested upstream error message', () => {
   expect(testUtils.extractErrorMessage(
-    '{"type":"error","error":{"type":"proxy_error","message":"Monthly credits have been used up","code":40202}}',
-  )).toBe('Monthly credits have been used up');
+    '{"type":"error","error":{"type":"proxy_error","message":"本月积分已用完","code":40202}}',
+  )).toBe('本月积分已用完');
 });
 
 test('extractErrorMessage falls back to upstream error code', () => {
@@ -151,8 +151,8 @@ test('extractErrorMessage falls back to upstream error code', () => {
 test('extractStreamErrorMessage keeps SSE event error payload message', () => {
   expect(testUtils.extractStreamErrorMessage(
     'error',
-    '{"type":"error","error":{"type":"proxy_error","message":"Free quota has been used up. Please upgrade your plan","code":40201}}',
-  )).toBe('Free quota has been used up. Please upgrade your plan');
+    '{"type":"error","error":{"type":"proxy_error","message":"免费额度已用完，请升级套餐","code":40201}}',
+  )).toBe('免费额度已用完，请升级套餐');
 });
 
 // ==================== OpenAI Chat Completions stream tests ====================
@@ -200,7 +200,7 @@ test('OpenAI stream reasoning_content is emitted as Anthropic thinking deltas', 
 test('A: added -> delta* -> done emits exactly one final arguments payload', () => {
   const responseId = 'resp_a';
   const model = 'gpt-5.2';
-  const finalArguments = '{"questions":[{"header":"Safety check","question":"Continue?","options":[{"label":"Allow","description":"ok"},{"label":"Deny","description":"no"}]}],"answers":{}}';
+  const finalArguments = '{"questions":[{"header":"安全确认","question":"继续?","options":[{"label":"允许","description":"ok"},{"label":"拒绝","description":"no"}]}],"answers":{}}';
 
   const result = runResponsesSequence([
     {
@@ -224,7 +224,7 @@ test('A: added -> delta* -> done emits exactly one final arguments payload', () 
         model,
         output_index: 0,
         call_id: 'call_a',
-        delta: '{"questions":[{"header":"Safety check",',
+        delta: '{"questions":[{"header":"安全确认",',
       },
     },
     {
@@ -234,7 +234,7 @@ test('A: added -> delta* -> done emits exactly one final arguments payload', () 
         model,
         output_index: 0,
         call_id: 'call_a',
-        delta: '"question":"Continue?"}]}',
+        delta: '"question":"继续?"}]}',
       },
     },
     {

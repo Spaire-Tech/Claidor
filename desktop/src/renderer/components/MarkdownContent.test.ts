@@ -45,8 +45,8 @@ test('large markdown preview can be disabled for full document renderers', () =>
     enableLargePreview: false,
   }));
 
-  expect(defaultHtml).toContain('Large content');
-  expect(fullHtml).not.toContain('Large content');
+  expect(defaultHtml).toMatch(/内容较大|Large content/);
+  expect(fullHtml).not.toMatch(/内容较大|Large content/);
   expect(fullHtml).toContain('Full file');
 });
 
@@ -57,12 +57,12 @@ test('large markdown preview can be temporarily expanded by a controlled caller'
     forceExpanded: true,
   }));
 
-  expect(html).not.toContain('Large content');
+  expect(html).not.toMatch(/内容较大|Large content/);
   expect(html).toContain('needle');
 });
 
 test('compact spacing reduces list margins for user message rendering', () => {
-  const content = 'Contents include:\n\n1. Project overview and solution\n2. Core features';
+  const content = '内容包含：\n\n1. 项目介绍和解决方案\n2. 核心功能';
   const defaultHtml = renderToStaticMarkup(React.createElement(MarkdownContent, { content }));
   const compactHtml = renderToStaticMarkup(React.createElement(MarkdownContent, {
     content,
@@ -75,29 +75,29 @@ test('compact spacing reduces list margins for user message rendering', () => {
 });
 
 test('latex display delimiters become $$ blocks', () => {
-  const converted = convertLatexMathDelimiters('Derivation:\n\n\\[\n\\log_a x=m,\\qquad \\log_a y=n\n\\]\n\nDone');
+  const converted = convertLatexMathDelimiters('推导：\n\n\\[\n\\log_a x=m,\\qquad \\log_a y=n\n\\]\n\n结束');
   expect(converted).toContain('$$\n\\log_a x=m,\\qquad \\log_a y=n\n$$');
   expect(converted).not.toContain('\\[');
 });
 
 test('latex inline delimiters become single-dollar math', () => {
-  expect(convertLatexMathDelimiters('Because \\(8\\times4=32\\), and \\(\\log_2 32=5\\).'))
-    .toBe('Because $8\\times4=32$, and $\\log_2 32=5$.');
+  expect(convertLatexMathDelimiters('因为 \\(8\\times4=32\\)，而 \\(\\log_2 32=5\\)。'))
+    .toBe('因为 $8\\times4=32$，而 $\\log_2 32=5$。');
 });
 
 test('latex delimiters inside code are preserved', () => {
   const fenced = '```tex\n\\[x=1\\]\n```';
   expect(convertLatexMathDelimiters(fenced)).toBe(fenced);
 
-  const inlineCode = 'Use `\\(x\\)` for inline math; a plain \\(y\\) is still converted.';
-  expect(convertLatexMathDelimiters(inlineCode)).toBe('Use `\\(x\\)` for inline math; a plain $y$ is still converted.');
+  const inlineCode = '用 `\\(x\\)` 表示行内公式，普通的 \\(y\\) 仍会转换。';
+  expect(convertLatexMathDelimiters(inlineCode)).toBe('用 `\\(x\\)` 表示行内公式，普通的 $y$ 仍会转换。');
 });
 
 test('latex delimiters inside multi-backtick inline code are preserved', () => {
-  const content = 'Use ``literal ` tick \\(x\\)`` for code; a plain \\(y\\) is still converted.';
+  const content = '用 ``literal ` tick \\(x\\)`` 表示代码，普通的 \\(y\\) 仍会转换。';
 
   expect(convertLatexMathDelimiters(content))
-    .toBe('Use ``literal ` tick \\(x\\)`` for code; a plain $y$ is still converted.');
+    .toBe('用 ``literal ` tick \\(x\\)`` 表示代码，普通的 $y$ 仍会转换。');
 });
 
 test('latex delimiters inside longer fenced code are preserved', () => {
@@ -108,7 +108,7 @@ test('latex delimiters inside longer fenced code are preserved', () => {
     '```',
     '\\[y=1\\]',
     '````',
-    'A plain \\(z\\) is still converted.',
+    '普通的 \\(z\\) 仍会转换。',
   ].join('\n');
 
   expect(convertLatexMathDelimiters(content)).toBe([
@@ -118,7 +118,7 @@ test('latex delimiters inside longer fenced code are preserved', () => {
     '```',
     '\\[y=1\\]',
     '````',
-    'A plain $z$ is still converted.',
+    '普通的 $z$ 仍会转换。',
   ].join('\n'));
 });
 
@@ -149,13 +149,13 @@ test('latex line breaks with spacing are not treated as display math', () => {
 
 test('latex math renders through katex in markdown output', () => {
   const content = [
-    'This figure explains the **product rule for logarithms**:',
+    '这张图是在解释**对数的乘法公式**：',
     '',
     '\\[',
     '\\log_a(xy)=\\log_a x+\\log_a y',
     '\\]',
     '',
-    'Note the conditions: \\(a>0\\) and \\(a\\neq1\\).',
+    '注意条件：\\(a>0\\)、\\(a\\neq1\\)。',
   ].join('\n');
   const html = renderToStaticMarkup(React.createElement(MarkdownContent, { content }));
 
@@ -164,9 +164,9 @@ test('latex math renders through katex in markdown output', () => {
   expect(html).not.toContain('\\[');
 });
 
-test('a kit link is no longer a link the app knows', () => {
-  expect(safeUrlTransform('kit://design@maties-kits')).toBe('');
-  expect(isInternalHref('kit://design@maties-kits')).toBe(false);
+test('kit links are treated as safe internal links', () => {
+  expect(safeUrlTransform('kit://design@lobsterai-kits')).toBe('kit://design@lobsterai-kits');
+  expect(isInternalHref('kit://design@lobsterai-kits')).toBe(true);
 });
 
 test('unsafe markdown protocols are still stripped', () => {

@@ -1,5 +1,5 @@
 /**
- * Type scale for the management pages (Skills / Apps).
+ * Type scale for the management pages (Kits / Skills / MCP).
  *
  * Sizes derive from `--lobster-ui-font-size` — the single "UI font size" the
  * user sets under Appearance — so one slider moves the whole page instead of
@@ -13,7 +13,7 @@
  * Compact controls use `text-xs`, which resolves to 13px and already scales.
  */
 
-/** Page header titles in the top bar (Scheduled Tasks, Library). */
+/** Page header titles in the top bar (Kits / Scheduled Tasks / Skills tabs). */
 export const MANAGEMENT_PAGE_TITLE_TEXT =
   'text-[length:calc(var(--lobster-ui-font-size)_+_0.5px)]';
 
@@ -25,6 +25,6 @@ export const MANAGEMENT_TITLE_TEXT =
 export const MANAGEMENT_BODY_TEXT =
   'text-[length:calc(var(--lobster-ui-font-size)_-_1px)]';
 
-/** Badge strips: card meta, counts, pills, stat labels (12.5px, the design's caption). */
+/** Badge strips: card meta, counts, pills, stat labels. */
 export const MANAGEMENT_META_TEXT =
-  'text-[length:calc(var(--lobster-ui-font-size)_-_2.5px)]';
+  'text-[length:calc(var(--lobster-ui-font-size)_-_3px)]';

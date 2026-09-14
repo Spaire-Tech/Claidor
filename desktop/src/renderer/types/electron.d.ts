@@ -35,15 +35,9 @@ import type {
   AgentBrowserHostResponse,
   AgentBrowserHostSetViewRequest,
   AgentBrowserHostStateEvent,
-  AgentBrowserOpenPageRequest,
-  AgentBrowserOpenPageResponse,
   BrowserDiagnosticResult,
   BrowserRuntimeProfile,
 } from '../../shared/browserWebAccess/constants';
-import type {
-  ConnectorActionResult,
-  ConnectorsState,
-} from '../../shared/connectors/constants';
 import type {
   BrowserAnnotationRect,
   BrowserAnnotationScreenshotRef,
@@ -92,11 +86,11 @@ import type {
   HtmlShareStatus,
 } from '../../shared/htmlShare/constants';
 import type {
-  LibraryContentConfig,
-  LibraryContentStatus,
-  LibrarySearchRequest,
-  LibrarySearchResponse,
-} from '../../shared/library/contentConstants';
+  InstalledKitRecord,
+  KitReference,
+  KitSkillMetadata,
+  ResolvedKitCapabilities,
+} from '../../shared/kit/constants';
 import type {
   LibraryAddLocalFilesData,
   LibraryArtifactCandidate,
@@ -118,11 +112,6 @@ import type {
   ListLocalWebServicesOptions,
   LocalWebService,
 } from '../../shared/localWebServices/constants';
-import type {
-  MatyActionResult,
-  MatyState,
-} from '../../shared/maty/constants';
-import type { OnboardingProfile } from '../../shared/onboarding/constants';
 import type {
   OpenClawEngineErrorCode,
   OpenClawEnginePhase as SharedOpenClawEnginePhase,
@@ -175,7 +164,6 @@ import type {
   SkinGetActiveResponse,
   SkinListResponse,
 } from '../../shared/skin/types';
-import type { SpeakResult, SpeechVoicesResult } from '../../shared/speech/constants';
 import type { CoworkTempDirPreview } from './cowork';
 interface ApiResponse {
   ok: boolean;
@@ -349,17 +337,6 @@ interface CoworkMemoryStats {
   implicit: number;
 }
 
-/** What the background tidy-up (formerly « dreaming ») reports. */
-interface DreamingStatusData {
-  enabled: boolean;
-  timezone?: string;
-  shortTermCount: number;
-  groundedSignalCount: number;
-  totalSignalCount: number;
-  promotedToday: number;
-  promotedTotal: number;
-}
-
 interface CoworkPermissionRequest {
   sessionId: string;
   toolName: string;
@@ -466,6 +443,7 @@ interface EmailSkillAccountsConfig {
 type CoworkPermissionResult =
   | {
       behavior: 'allow';
+      scope?: 'always' | 'once';
       updatedInput?: Record<string, unknown>;
       updatedPermissions?: Record<string, unknown>[];
       toolUseID?: string;
@@ -512,6 +490,30 @@ interface McpServerConfigIPC {
   };
   createdAt: number;
   updatedAt: number;
+}
+
+interface McpMarketplaceServer {
+  id: string;
+  name: string;
+  description_zh: string;
+  description_en: string;
+  category: string;
+  transportType: 'stdio' | 'sse' | 'http';
+  command: string;
+  defaultArgs: string[];
+  requiredEnvKeys?: string[];
+  optionalEnvKeys?: string[];
+}
+
+interface McpMarketplaceCategory {
+  id: string;
+  name_zh: string;
+  name_en: string;
+}
+
+interface McpMarketplaceData {
+  categories: McpMarketplaceCategory[];
+  servers: McpMarketplaceServer[];
 }
 
 import type { AgentLegacyIdentityCleanupResult } from '@shared/agent';
@@ -645,11 +647,6 @@ interface IElectronAPI {
     set: (key: string, value: any) => Promise<void>;
     remove: (key: string) => Promise<void>;
   };
-  /** The onboarding profile (docs/maties/onboarding.md): read as stored, or store, rename the main agent and resync the engine. */
-  onboarding: {
-    getProfile: () => Promise<OnboardingProfile>;
-    applyProfile: (profile: OnboardingProfile) => Promise<void>;
-  };
   skills: {
     list: () => Promise<{ success: boolean; skills?: Skill[]; error?: string }>;
     setEnabled: (options: {
@@ -737,7 +734,35 @@ interface IElectronAPI {
     retryLaunchResolution: (
       id: string,
     ) => Promise<{ success: boolean; servers?: McpServerConfigIPC[]; error?: string }>;
+    fetchMarketplace: () => Promise<{
+      success: boolean;
+      data?: McpMarketplaceData;
+      error?: string;
+    }>;
+    connectQichacha: () => Promise<{
+      success: boolean;
+      servers?: McpServerConfigIPC[];
+      error?: string;
+    }>;
     onChanged: (callback: () => void) => () => void;
+  };
+  kits: {
+    fetchStore: () => Promise<{ success: boolean; data?: string; error?: string }>;
+    install: (params: {
+      kitId: string;
+      bundleUrl: string;
+      version: string;
+      skillListIds: string[];
+      skillList?: KitSkillMetadata[];
+      mcpServers?: unknown[] | null;
+      connectors?: unknown[] | null;
+    }) => Promise<{ success: boolean; skillIds?: string[]; error?: string }>;
+    uninstall: (kitId: string) => Promise<{ success: boolean; error?: string }>;
+    listInstalled: () => Promise<{
+      success: boolean;
+      installed?: Record<string, InstalledKitRecord>;
+      error?: string;
+    }>;
   };
   skin: {
     getActive: () => Promise<SkinGetActiveResponse>;
@@ -791,6 +816,17 @@ interface IElectronAPI {
     presetTemplates: () => Promise<PresetAgent[]>;
     addPreset: (presetId: string) => Promise<Agent>;
   };
+  connections: {
+    /**
+     * Sign in to one service. Resolves when the person has finished with
+     * the provider's page, or given up on it — never before.
+     */
+    connect: (id: string) => Promise<{
+      outcome: 'connected' | 'refused' | 'failed' | 'unsupported';
+      message?: string;
+    }>;
+    disconnect: (id: string) => Promise<{ success: boolean; error?: string }>;
+  };
   api: {
     fetch: (options: {
       url: string;
@@ -831,10 +867,6 @@ interface IElectronAPI {
     setEnabled: (enabled: boolean) => Promise<{ enabled: boolean }>;
     openWorkbench: () => Promise<{ url: string }>;
     stop: () => Promise<{ phase: string; port: number | null; version: string | null; errorCode: string | null }>;
-  };
-  speech: {
-    listVoices: () => Promise<SpeechVoicesResult>;
-    speak: (voiceId: string, text: string) => Promise<SpeakResult>;
   };
   openclaw: {
     engine: {
@@ -881,7 +913,6 @@ interface IElectronAPI {
       goForwardHost: (request?: AgentBrowserHostRequest) => Promise<AgentBrowserHostResponse>;
       reloadHost: (request?: AgentBrowserHostRequest) => Promise<AgentBrowserHostResponse>;
       stopHost: (request?: AgentBrowserHostRequest) => Promise<AgentBrowserHostResponse>;
-      openAgentPage: (request: AgentBrowserOpenPageRequest) => Promise<AgentBrowserOpenPageResponse>;
       selectHostPage: (request: AgentBrowserHostPageRequest) => Promise<AgentBrowserHostResponse>;
       closeHostPage: (request: AgentBrowserHostPageRequest) => Promise<AgentBrowserHostResponse>;
       resolveCredentialSavePrompt: (
@@ -921,6 +952,9 @@ interface IElectronAPI {
       title?: string;
       activeSkillIds?: string[];
       runtimeSkillIds?: string[];
+      kitIds?: string[];
+      kitReferences?: KitReference[];
+      resolvedKitCapabilities?: ResolvedKitCapabilities;
       selectedTextSnippets?: Array<{ id: string; text: string; sourceMessageId?: string; sourceMessageType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceId?: string; sourceType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceTitle?: string; sourcePath?: string; artifactId?: string; createdAt: number; startOffset?: number; endOffset?: number }>;
       browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
       agentId?: string;
@@ -942,6 +976,9 @@ interface IElectronAPI {
       systemPrompt?: string;
       activeSkillIds?: string[];
       runtimeSkillIds?: string[];
+      kitIds?: string[];
+      kitReferences?: KitReference[];
+      resolvedKitCapabilities?: ResolvedKitCapabilities;
       selectedTextSnippets?: Array<{ id: string; text: string; sourceMessageId?: string; sourceMessageType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceId?: string; sourceType?: 'assistant' | 'artifact_markdown' | 'artifact_text'; sourceTitle?: string; sourcePath?: string; artifactId?: string; createdAt: number; startOffset?: number; endOffset?: number }>;
       browserAnnotations?: CoworkBrowserAnnotationMessageBatch[];
       imageAttachments?: Array<{ name: string; mimeType: string; base64Data: string; sizeBytes?: number; localPath?: string; previewMimeType?: string; previewBase64Data?: string }>;
@@ -1014,8 +1051,6 @@ interface IElectronAPI {
     listSessions: (options?: { limit?: number; offset?: number; agentId?: string; searchQuery?: string }) => Promise<{
       success: boolean;
       sessions?: CoworkSessionSummary[];
-      /** How many sessions match in total, not just on this page. */
-      total?: number;
       hasMore?: boolean;
       error?: string;
     }>;
@@ -1173,22 +1208,27 @@ interface IElectronAPI {
     onOpenSessionFromNotification: (
       callback: (data: { sessionId: string }) => void,
     ) => () => void;
+    /** `agentId` is optional and means the main agent when absent. */
     listMemoryEntries: (input: {
       query?: string;
       limit?: number;
       offset?: number;
+      agentId?: string;
     }) => Promise<{ success: boolean; entries?: CoworkUserMemoryEntry[]; error?: string }>;
     createMemoryEntry: (input: {
       text: string;
+      agentId?: string;
     }) => Promise<{ success: boolean; entry?: CoworkUserMemoryEntry; error?: string }>;
     updateMemoryEntry: (input: {
       id: string;
       text: string;
+      agentId?: string;
     }) => Promise<{ success: boolean; entry?: CoworkUserMemoryEntry; error?: string }>;
-    deleteMemoryEntry: (input: { id: string }) => Promise<{ success: boolean; error?: string }>;
+    deleteMemoryEntry: (input: {
+      id: string;
+      agentId?: string;
+    }) => Promise<{ success: boolean; error?: string }>;
     getMemoryStats: () => Promise<{ success: boolean; stats?: CoworkMemoryStats; error?: string }>;
-    /** What the background tidy-up has kept; drives the line under Settings → Memory. */
-    getDreamingStatus: () => Promise<{ success: boolean; data?: DreamingStatusData; error?: string }>;
     readMemoryFileRaw: () => Promise<{ success: boolean; content?: string; error?: string }>;
     writeMemoryFileRaw: (input: {
       content: string;
@@ -1454,28 +1494,6 @@ interface IElectronAPI {
       options: ShareDeploymentDownloadPersistenceInput,
     ) => Promise<ShareDeploymentDownloadPersistenceResult>;
   };
-  /** Connections to accounts (docs/maties/connectors.md). */
-  connectors: {
-    /** Asks Claidor afresh: what is connected, and may this person connect at all. */
-    getState: () => Promise<ConnectorsState>;
-    /** Opens the sign-in window and settles when it closes. */
-    connect: (slug: string) => Promise<ConnectorActionResult>;
-    disconnect: (accountId: string) => Promise<ConnectorActionResult>;
-    onChanged: (callback: (state: ConnectorsState) => void) => () => void;
-  };
-  /** Work sent to the cloud engine (docs/maties/cloud.md). */
-  maty: {
-    /** The last thing Claidor said; it never asks by itself. */
-    getState: () => Promise<MatyState>;
-    /** Ask Claidor now, and start watching a live job again. */
-    refresh: () => Promise<MatyState>;
-    /** Send one piece of work up. Only the words travel. */
-    send: (prompt: string) => Promise<MatyActionResult>;
-    getJob: (jobId: string) => Promise<MatyActionResult>;
-    /** Take a job back; Claidor allows it only while it is queued. */
-    cancel: (jobId: string) => Promise<MatyActionResult>;
-    onChanged: (callback: (state: MatyState) => void) => () => void;
-  };
   sites: {
     list: (options?: SiteListOptions) => Promise<SiteResult<SiteListData>>;
     get: (shareId: string) => Promise<SiteResult<SiteDetail>>;
@@ -1524,20 +1542,6 @@ interface IElectronAPI {
       state: LibraryBackfillState,
     ) => Promise<LibraryResult<LibraryBackfillState>>;
     onChanged: (callback: (payload: LibraryChangedPayload) => void) => () => void;
-  };
-  /** The personal library: the index of the person's documents (docs/maties/library.md). */
-  libraryContent: {
-    getStatus: () => Promise<LibraryContentStatus>;
-    getConfig: () => Promise<LibraryContentConfig>;
-    setConfig: (update: Partial<LibraryContentConfig>) => Promise<LibraryContentConfig>;
-    /** The folder the person picked in the system dialog, or null when they cancelled. */
-    pickFolder: () => Promise<string | null>;
-    setPaused: (paused: boolean) => Promise<LibraryContentStatus>;
-    rebuild: () => Promise<LibraryContentStatus>;
-    search: (request: LibrarySearchRequest) => Promise<LibrarySearchResponse>;
-    openFile: (filePath: string) => Promise<void>;
-    revealFile: (filePath: string) => Promise<void>;
-    onStatusChanged: (callback: (status: LibraryContentStatus) => void) => () => void;
   };
   asr: {
     createRealtimeSession: (options: AsrRealtimeSessionRequest) => Promise<AsrRealtimeSessionResult>;
@@ -1594,6 +1598,8 @@ interface IElectronAPI {
   };
   appInfo: {
     getVersion: () => Promise<string>;
+    /** This computer's hostname, shown on approval cards. */
+    getComputerName: () => Promise<string>;
     getSystemLocale: () => Promise<string>;
     getKeyfromAttribution: () => Promise<{
       firstKeyfrom: string;
@@ -1626,6 +1632,71 @@ interface IElectronAPI {
       error?: string;
     }>;
     fromRenderer: (level: string, tag: string, message: string) => void;
+  };
+  plugins: {
+    list: () => Promise<{
+      success: boolean;
+      plugins?: Array<{
+        pluginId: string;
+        version?: string;
+        description?: string;
+        source: 'npm' | 'clawhub' | 'git' | 'local' | 'bundled' | 'openclaw';
+        enabled: boolean;
+        canUninstall: boolean;
+        hasConfig: boolean;
+      }>;
+      error?: string;
+    }>;
+    install: (params: {
+      source: 'npm' | 'clawhub' | 'git' | 'local';
+      spec: string;
+      registry?: string;
+      version?: string;
+    }) => Promise<{ ok: boolean; pluginId?: string; version?: string; error?: string }>;
+    uninstall: (pluginId: string) => Promise<{ ok: boolean; error?: string }>;
+    setEnabled: (pluginId: string, enabled: boolean) => Promise<{ ok: boolean; error?: string }>;
+    getConfigSchema: (pluginId: string) => Promise<{
+      success: boolean;
+      schema?: {
+        configSchema: Record<string, unknown>;
+        uiHints: Record<
+          string,
+          {
+            label?: string;
+            help?: string;
+            sensitive?: boolean;
+            advanced?: boolean;
+            placeholder?: string;
+            order?: number;
+          }
+        >;
+      } | null;
+      config?: Record<string, unknown> | null;
+      error?: string;
+    }>;
+    saveConfig: (
+      pluginId: string,
+      config: Record<string, unknown>,
+    ) => Promise<{ ok: boolean; error?: string }>;
+    batchSave: (changes: {
+      toggles?: Array<{ pluginId: string; enabled: boolean }>;
+      configs?: Array<{ pluginId: string; config: Record<string, unknown> }>;
+    }) => Promise<{ ok: boolean; error?: string }>;
+    detect: () => Promise<{ plugins: string[]; error?: string }>;
+    sync: () => Promise<{ synced: string[]; error?: string }>;
+    checkUpdates: (pluginIds?: string[]) => Promise<{
+      success: boolean;
+      updates?: Array<{
+        pluginId: string;
+        currentVersion: string | null;
+        latestVersion: string | null;
+        hasUpdate: boolean;
+        error?: string;
+      }>;
+      error?: string;
+    }>;
+    update: (pluginId: string) => Promise<{ ok: boolean; version?: string; error?: string }>;
+    onInstallLog: (callback: (line: string) => void) => () => void;
   };
   im: {
     getConfig: () => Promise<{ success: boolean; config?: IMGatewayConfig; error?: string }>;
@@ -1964,7 +2035,7 @@ interface IElectronAPI {
         supportsVideo?: boolean;
         supportsThinking?: boolean;
         thinkingConfig?: import('../../shared/providers/modelThinking').ModelThinkingConfig;
-        requestCapabilities?: import('../../shared/providers/matiesRequestOptions').MatiesRequestCapability[];
+        requestCapabilities?: import('../../shared/providers/lobsterAIRequestOptions').LobsterAIRequestCapability[];
         supportsToolCalling?: boolean;
         agenticReady?: boolean;
         contextWindow?: number;

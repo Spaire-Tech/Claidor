@@ -10,8 +10,10 @@ import {
 } from '@shared/auth/constants';
 import { EnterpriseAccountMode } from '@shared/enterpriseAccount/constants';
 import {
+  ModelRole,
   type ModelThinkingConfig,
-  parseMatiesRequestCapabilities,
+  parseLobsterAIRequestCapabilities,
+  parseModelRole,
   parseModelThinkingConfig,
   ProviderName,
 } from '@shared/providers';
@@ -119,6 +121,8 @@ export interface AvailableServerModelEntry {
   moreModel?: boolean;
   accessible?: boolean;
   restrictionHint?: string;
+  /** What the server says this model is for. See `ModelRole`. */
+  role?: unknown;
 }
 
 const readString = (value: unknown): string => (
@@ -200,7 +204,7 @@ export function mapPricingCatalogTextModelsToServerModels(
     const modelName = readString(model.modelName) || modelId;
     const provider = readString(model.providerLabel)
       || readString(model.provider)
-      || 'Maties';
+      || 'LobsterAI';
     const contextWindow = readPositiveNumber(model.contextWindow);
     const costMultiplier = readPositiveNumber(model.costMultiplier);
     const thinkingConfig = model.supportsThinking === true
@@ -211,7 +215,7 @@ export function mapPricingCatalogTextModelsToServerModels(
       id: modelId,
       name: modelName,
       provider,
-      providerKey: ProviderName.MatiesServer,
+      providerKey: ProviderName.LobsteraiServer,
       isServerModel: true,
       supportsImage: model.supportsImage === true,
       supportsThinking: model.supportsThinking === true,
@@ -233,19 +237,38 @@ export function mapPricingCatalogToPublicServerModels(
   );
 }
 
+/**
+ * Only the model a person actually talks to belongs in a picker.
+ *
+ * The server sends three kinds of row: the `primary` they talk to, the
+ * `cheap` one that runs sub-agents, compaction and heartbeats, and the
+ * `fallback` that answers when the primary's provider is down. The last
+ * two are machinery — showing either would offer a choice that means
+ * nothing, and the fallback is meant to be invisible even on the day it
+ * is the only thing answering.
+ *
+ * A row with no role at all is kept. That is what an older server sends,
+ * and dropping those would leave the app with an empty picker rather than
+ * a working one.
+ */
+const isSelectableByPerson = (model: AvailableServerModelEntry): boolean => {
+  const role = parseModelRole(model.role);
+  return role === undefined || role === ModelRole.Primary;
+};
+
 export function mapAvailableServerModelsToModels(
   models: AvailableServerModelEntry[],
 ): Model[] {
-  return models.map(model => {
+  return models.filter(isSelectableByPerson).map(model => {
     const thinkingConfig = model.supportsThinking === true
       ? parseModelThinkingConfig(model.thinkingConfig)
       : undefined;
-    const requestCapabilities = parseMatiesRequestCapabilities(model.requestCapabilities);
+    const requestCapabilities = parseLobsterAIRequestCapabilities(model.requestCapabilities);
     return {
       id: model.modelId,
       name: model.modelName,
       provider: model.provider,
-      providerKey: ProviderName.MatiesServer,
+      providerKey: ProviderName.LobsteraiServer,
       isServerModel: true,
       serverApiFormat: model.apiFormat,
       runtimeProfile: model.runtimeProfile,
@@ -458,8 +481,8 @@ class AuthService {
     writeAuthRendererLog('info', `login attempt ${attemptId} started`);
 
     try {
-      // The main process opens `${Claidor API}/desktop/login`; no lookup is needed.
-      const result = await window.electron.auth.login();
+      const loginUrl = await this.fetchLoginUrl();
+      const result = await window.electron.auth.login(loginUrl);
       if (result.success) {
         writeAuthRendererLog('info', `login attempt ${attemptId} handed off to the system browser`);
       } else {
@@ -470,6 +493,16 @@ class AuthService {
       writeAuthRendererLog('warn', `login attempt ${attemptId} failed before browser handoff`, error);
       throw error;
     }
+  }
+
+  /**
+   * The browser sign-in page on our own server. Upstream fetched this url
+   * from NetEase and fell back to a portal page when that failed; ours is a
+   * fixed route, so there is nothing to fetch and nothing to fall back to.
+   */
+  private async fetchLoginUrl(): Promise<string> {
+    const { getLoginUrl } = await import('./endpoints');
+    return getLoginUrl();
   }
 
   /**
@@ -814,7 +847,7 @@ class AuthService {
     const cleanup = this.applyLoggedOutState(true);
     const toastKey = event.reason === AuthSessionChangeReason.EnterpriseMembershipRevoked
       ? 'coworkErrorEnterpriseMembershipRevoked'
-      : 'coworkErrorMatiesLoginExpired';
+      : 'coworkErrorLobsterAILoginExpired';
     window.dispatchEvent(new CustomEvent('app:showToast', {
       detail: i18nService.t(toastKey),
     }));

@@ -117,6 +117,13 @@ export class OpenClawApprovalController {
         allowAlways: true,
       });
       this.respondToPermission(requestId, { behavior: 'allow', updatedInput: {} });
+      // Return. Without it the two lines below overwrote the entry just
+      // set — losing `allowAlways`, so the approval resolved as
+      // allow-once and a spurious "approved" prompt was pushed into the
+      // session — and then raised an approval card for a command that had
+      // already been allowed. A card you cannot decline is theatre, and it
+      // teaches people that the real ones are too.
+      return;
     }
 
     this.pendingApprovals.set(requestId, {

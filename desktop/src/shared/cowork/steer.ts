@@ -1,3 +1,4 @@
+import type { KitReference, ResolvedKitCapabilities } from '../kit/constants';
 import type { CoworkBrowserAnnotationMessageBatch } from './browserAnnotations';
 import type { CoworkImageAttachmentPayload } from './imageAttachments';
 import type { CoworkSelectedTextSnippet } from './selectedText';
@@ -50,6 +51,9 @@ export interface CoworkPendingSteer {
   selectedSkillIds?: string[];
   activeSkillIds?: string[];
   runtimeSkillIds?: string[];
+  kitIds?: string[];
+  kitReferences?: KitReference[];
+  resolvedKitCapabilities?: ResolvedKitCapabilities;
   mediaSelection?: CoworkQueuedMediaSelection;
   status: CoworkSteerStatus;
   createdAt: number;

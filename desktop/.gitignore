@@ -28,9 +28,6 @@ resources/PortableGit-*.7z.exe
 resources/python-win/
 resources/python-*.zip
 
-# Library embedding model, fetched at build time (scripts/fetch-embedding-model.cjs)
-resources/embedding-model/
-
 # SKILLs runtime files
 SKILLs/**/.connection
 SKILLs/**/.server.log
@@ -59,3 +56,7 @@ sandbox/
 openspec/
 .superpowers/
 .diagram/
+
+# Screenshots from the design harness. Regenerated in two commands
+# (see harness/README.md); never worth a couple of MB per commit.
+harness/shots/

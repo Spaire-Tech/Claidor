@@ -35,35 +35,35 @@ const toolResult = (toolUseMsg: CoworkMessage, isError = false): CoworkMessage =
 
 describe('collectSessionArtifacts', () => {
   test('edit-only turn without any link in the reply still yields an artifact', () => {
-    const toolUse = editToolUse('tool1', `${CWD}/Quick notes Markdown.md`);
+    const toolUse = editToolUse('tool1', `${CWD}/随便写一个 Markdown.md`);
     const messages = [
       toolUse,
       toolResult(toolUse),
-      assistantMessage('a1', 'Done.'),
+      assistantMessage('a1', '改好了。'),
     ];
 
     const detected = collectSessionArtifacts(messages, 'sess1', CWD);
     expect(detected).toHaveLength(1);
     expect(detected[0].type).toBe('markdown');
     expect(detected[0].messageId).toBe('tool1');
-    expect(detected[0].filePath).toBe(`${CWD}/Quick notes Markdown.md`);
+    expect(detected[0].filePath).toBe(`${CWD}/随便写一个 Markdown.md`);
   });
 
   test('plain-path markdown link in the reply yields an artifact', () => {
     const messages = [
-      assistantMessage('a1', `All checks passed: [UsingAgent.html](${CWD}/UsingAgent.html)`),
+      assistantMessage('a1', `全部检查通过：[使用Agent.html](${CWD}/使用Agent.html)`),
     ];
 
     const detected = collectSessionArtifacts(messages, 'sess1', CWD);
     expect(detected).toHaveLength(1);
     expect(detected[0].type).toBe('html');
     expect(detected[0].messageId).toBe('a1');
-    expect(detected[0].filePath).toBe(`${CWD}/UsingAgent.html`);
+    expect(detected[0].filePath).toBe(`${CWD}/使用Agent.html`);
   });
 
   test('relative markdown link is resolved against the session cwd', () => {
     const messages = [
-      assistantMessage('a1', 'Output: [Report](./output/report.html)'),
+      assistantMessage('a1', '产出：[报告](./output/report.html)'),
     ];
 
     const detected = collectSessionArtifacts(messages, 'sess1', CWD);
@@ -73,7 +73,7 @@ describe('collectSessionArtifacts', () => {
 
   test('linked files under .cowork-temp are suppressed', () => {
     const messages = [
-      assistantMessage('a1', `[Draft](${CWD}/.cowork-temp/draft.md)`),
+      assistantMessage('a1', `[草稿](${CWD}/.cowork-temp/draft.md)`),
     ];
 
     expect(collectSessionArtifacts(messages, 'sess1', CWD)).toHaveLength(0);
@@ -89,8 +89,8 @@ describe('collectSessionArtifacts', () => {
   test('bare paths in prose are kept only inside the session cwd', () => {
     const messages = [
       assistantMessage('a1', [
-        `Generated ${CWD}/dist/index.html`,
-        'Referenced /etc/config/other/sample.md',
+        `已生成 ${CWD}/dist/index.html`,
+        '参考了 /etc/config/other/sample.md',
       ].join('\n')),
     ];
 
@@ -101,17 +101,17 @@ describe('collectSessionArtifacts', () => {
 
   test('linked files outside the cwd (e.g. Desktop) are kept', () => {
     const messages = [
-      assistantMessage('a1', '[Notes.md](/Users/admin/Desktop/Notes.md)'),
+      assistantMessage('a1', '[便笺.md](/Users/admin/Desktop/便笺.md)'),
     ];
 
     const detected = collectSessionArtifacts(messages, 'sess1', CWD);
     expect(detected).toHaveLength(1);
-    expect(detected[0].filePath).toBe('/Users/admin/Desktop/Notes.md');
+    expect(detected[0].filePath).toBe('/Users/admin/Desktop/便笺.md');
   });
 
   test('collects localhost service urls alongside file artifacts', () => {
     const messages = [
-      assistantMessage('a1', `Service started at http://localhost:5173 page [Home](${CWD}/index.html)`),
+      assistantMessage('a1', `服务已启动 http://localhost:5173 页面 [首页](${CWD}/index.html)`),
     ];
 
     const detected = collectSessionArtifacts(messages, 'sess1', CWD);
@@ -131,7 +131,7 @@ describe('collectSessionArtifacts', () => {
           toolInput: { command: `cd ${CWD}/app && npm run dev` },
         },
       },
-      assistantMessage('a1', 'Service started: http://localhost:5173'),
+      assistantMessage('a1', '服务已启动：http://localhost:5173'),
     ] as CoworkMessage[];
 
     const detected = collectSessionArtifacts(messages, 'sess1', CWD);

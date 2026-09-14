@@ -1,16 +1,16 @@
 import { MANAGEMENT_BODY_TEXT, MANAGEMENT_META_TEXT } from './managementTypography';
 
-// One pill per card, its label carrying the state (Install / Use / Upgrade).
+// One capsule per card, its label carrying the state (Install / Use / Upgrade).
 // A grid where every card shouts a filled primary button reads as a wall of ads
-// and stops being browsable, so the pill is the design's quiet white pill with
-// a hairline; the blue is the link's (docs/maties/design.md, section 1).
+// and stops being browsable, so the capsule stays quiet at rest and only fills
+// in under the cursor.
 export const CARD_ACTION_PILL_CLASS =
-  'inline-flex h-[26px] flex-shrink-0 items-center gap-1 rounded-full bg-white px-3 '
-  + `${MANAGEMENT_META_TEXT} font-medium text-[#0060d0] shadow-[0_0_0_.5px_rgba(16,22,35,.10)] transition-colors hover:bg-[rgba(0,96,208,.06)] `
-  + 'disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#22252b]';
+  'inline-flex h-[26px] flex-shrink-0 items-center gap-1 rounded-full bg-surface-raised px-3 '
+  + `${MANAGEMENT_META_TEXT} font-semibold text-primary transition-colors hover:bg-primary hover:text-white `
+  + 'disabled:cursor-not-allowed disabled:opacity-50';
 
-/** The one blue pill of a detail header. */
+/** Same capsule, sized for a detail header where it is the one loud action. */
 export const DETAIL_ACTION_PILL_CLASS =
-  'inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-full bg-[#0060d0] px-4 '
-  + `${MANAGEMENT_BODY_TEXT} font-medium text-white transition-colors hover:bg-[#0055ba] `
+  'inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-full bg-primary px-5 '
+  + `${MANAGEMENT_BODY_TEXT} font-semibold text-white transition-colors hover:bg-primary-hover `
   + 'disabled:cursor-not-allowed disabled:opacity-50';

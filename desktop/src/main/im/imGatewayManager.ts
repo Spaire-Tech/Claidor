@@ -40,9 +40,7 @@ import {
 
 const DINGTALK_OPENCLAW_CHANNEL = 'dingtalk-connector';
 const WEIXIN_OPENCLAW_CHANNEL = 'openclaw-weixin';
-// Literal error text returned by the Weixin plugin ("already connected to this OpenClaw");
-// it must match the plugin's output exactly, so it is kept as escape sequences.
-const WEIXIN_ALREADY_CONNECTED_MESSAGE ='\u5df2\u8fde\u63a5\u8fc7\u6b64 OpenClaw';
+const WEIXIN_ALREADY_CONNECTED_MESSAGE = '已连接过此 OpenClaw';
 
 const CONNECTIVITY_TIMEOUT_MS = 10_000;
 const INBOUND_ACTIVITY_WARN_AFTER_MS = 2 * 60 * 1000;
@@ -142,7 +140,6 @@ export class IMGatewayManager extends EventEmitter {
   private coworkHandler: IMCoworkHandler | null = null;
   private getLLMConfig: (() => Promise<any>) | null = null;
   private getSkillsPrompt: (() => Promise<string | null>) | null = null;
-  private getUserTimezone: (() => string | undefined) | null = null;
   private ensureCoworkReady: (() => Promise<void>) | null = null;
   private syncOpenClawConfig:
     | ((reason?: string, options?: { restartGatewayIfRunning?: boolean }) => Promise<void>)
@@ -238,12 +235,9 @@ export class IMGatewayManager extends EventEmitter {
   initialize(options: {
     getLLMConfig: () => Promise<any>;
     getSkillsPrompt?: () => Promise<string | null>;
-    /** The person's chosen time zone (`app.timezone`) for reminder detection; the machine's when absent. */
-    getUserTimezone?: () => string | undefined;
   }): void {
     this.getLLMConfig = options.getLLMConfig;
     this.getSkillsPrompt = options.getSkillsPrompt ?? null;
-    this.getUserTimezone = options.getUserTimezone ?? null;
 
     // Set up message handlers for gateways
     this.setupMessageHandlers();
@@ -375,7 +369,6 @@ export class IMGatewayManager extends EventEmitter {
       const detectScheduledTaskRequest = this.getLLMConfig && this.createScheduledTask
         ? createIMScheduledTaskRequestDetector({
             getLLMConfig: this.getLLMConfig,
-            getUserTimezone: this.getUserTimezone ?? undefined,
           })
         : undefined;
       this.coworkHandler = new IMCoworkHandler({
@@ -1781,7 +1774,7 @@ export class IMGatewayManager extends EventEmitter {
               console.log('[IMGatewayManager] POPO QR login got credentials');
               // Notify server that setup is complete (best-effort)
               void this.popoQrNotifyComplete(taskToken);
-              return { success: true, appKey, appSecret, aesKey, message: 'POPO bot linked successfully.' };
+              return { success: true, appKey, appSecret, aesKey, message: 'POPO 机器人绑定成功！' };
             }
           }
         }
@@ -1792,7 +1785,7 @@ export class IMGatewayManager extends EventEmitter {
     }
 
     console.warn('[IMGatewayManager] POPO QR login poll timed out');
-    return { success: false, message: 'QR code scan timed out. Please try again.' };
+    return { success: false, message: '扫码超时，请重试。' };
   }
 
   private async popoQrNotifyComplete(taskToken: string): Promise<void> {

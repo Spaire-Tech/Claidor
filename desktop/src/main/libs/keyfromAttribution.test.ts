@@ -29,7 +29,7 @@ describe('keyfrom attribution', () => {
   test('falls back to official for invalid values', () => {
     expect(normalizeKeyfrom('')).toBe(DefaultKeyfrom.Official);
     expect(normalizeKeyfrom('../../bad')).toBe(DefaultKeyfrom.Official);
-    expect(normalizeKeyfrom('ünïcode')).toBe(DefaultKeyfrom.Official);
+    expect(normalizeKeyfrom('中文')).toBe(DefaultKeyfrom.Official);
     expect(normalizeKeyfrom(null)).toBe(DefaultKeyfrom.Official);
   });
 

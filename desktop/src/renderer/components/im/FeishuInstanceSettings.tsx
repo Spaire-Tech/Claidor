@@ -134,6 +134,7 @@ const FeishuInstanceSettings: React.FC<FeishuInstanceSettingsProps> = ({
   onTestConnectivity,
   testingPlatform,
   connectivityResults,
+  language,
   headerLeading,
 }) => {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -213,7 +214,7 @@ const FeishuInstanceSettings: React.FC<FeishuInstanceSettingsProps> = ({
     } catch (err: any) {
       if (!isMountedRef.current) return;
       setQrStatus('error');
-      setQrError(err?.message || 'Failed to fetch the QR code');
+      setQrError(err?.message || '获取二维码失败');
     }
   };
 
@@ -256,7 +257,7 @@ const FeishuInstanceSettings: React.FC<FeishuInstanceSettingsProps> = ({
             <span
               className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors truncate border-b border-dashed border-gray-400 dark:border-secondary/50 hover:border-primary pb-px"
               onClick={() => setEditingName(true)}
-              title={'Click to rename'}
+              title={language === 'zh' ? '点击重命名' : 'Click to rename'}
             >
               {instance.instanceName}
             </span>
@@ -301,7 +302,7 @@ const FeishuInstanceSettings: React.FC<FeishuInstanceSettingsProps> = ({
         {qrStatus === 'loading' && (
           <div className="flex flex-col items-center gap-2 py-2">
             <ArrowPathIcon className="h-7 w-7 text-primary animate-spin" />
-            <span className="text-xs text-secondary">{i18nService.t('feishuBotCreateWizardGenerating') || 'Generating QR code...'}</span>
+            <span className="text-xs text-secondary">{i18nService.t('feishuBotCreateWizardGenerating') || '正在生成二维码…'}</span>
           </div>
         )}
         {qrStatus === 'showing' && qrUrl && (
@@ -331,7 +332,7 @@ const FeishuInstanceSettings: React.FC<FeishuInstanceSettingsProps> = ({
       <div className="relative flex items-center">
         <div className="flex-1 border-t border-border-subtle" />
         <span className="px-3 text-xs text-secondary whitespace-nowrap">
-          {i18nService.t('feishuBotCreateWizardOrManual') || i18nService.t('or') || 'or'}
+          {i18nService.t('feishuBotCreateWizardOrManual') || i18nService.t('or') || '或'}
         </span>
         <div className="flex-1 border-t border-border-subtle" />
       </div>
@@ -501,7 +502,7 @@ const FeishuInstanceSettings: React.FC<FeishuInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || 'Add'}
+                {i18nService.t('add') || '添加'}
               </button>
             </div>
             {instance.allowFrom.length > 0 && (
@@ -587,7 +588,7 @@ const FeishuInstanceSettings: React.FC<FeishuInstanceSettingsProps> = ({
                 }}
                 className="px-3 py-2 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
-                {i18nService.t('add') || 'Add'}
+                {i18nService.t('add') || '添加'}
               </button>
             </div>
             {instance.groupAllowFrom.length > 0 && (

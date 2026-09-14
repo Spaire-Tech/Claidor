@@ -2,8 +2,6 @@ import { ArrowUpIcon } from '@heroicons/react/24/solid';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { i18nService } from '../services/i18n';
-import Pill, { PillTone } from './design/Pill';
-import Sphere from './design/Sphere';
 
 export const NewUserOnboardingStep = {
   NewTask: 'new-task',
@@ -17,7 +15,7 @@ const ONBOARDING_TARGET_SELECTOR_BY_STEP: Record<NewUserOnboardingStep, string> 
   [NewUserOnboardingStep.PromptInput]: '[data-onboarding-target="home-prompt"]',
 };
 const SPOTLIGHT_PADDING = 2;
-const SPOTLIGHT_RADIUS = 12;
+const SPOTLIGHT_RADIUS = 8;
 const POPOVER_GAP = 28;
 const POPOVER_WIDTH = 308;
 const POPOVER_MARGIN = 16;
@@ -31,13 +29,21 @@ const PROMPT_TEXTAREA_PADDING_TOP = 12;
 const SEND_EFFECT_SIZE = 48;
 const TYPEWRITER_INTERVAL_MS = 90;
 const PROMPT_RESULT_POPOVER_DELAY_MS = 600;
-const PROMPT_RESULT_POPOVER_DEFAULT_HEIGHT = 196;
-const PROMPT_RESULT_POPOVER_MIN_HEIGHT = 176;
+const PROMPT_RESULT_POPOVER_DEFAULT_HEIGHT = 246;
+const PROMPT_RESULT_POPOVER_MIN_HEIGHT = 226;
 const PROMPT_RESULT_POPOVER_MIN_WIDTH = 560;
 const PROMPT_RESULT_POPOVER_MAX_WIDTH = 720;
 const PROMPT_RESULT_POPOVER_GAP = 24;
 const PROMPT_RESULT_POPOVER_ARROW_WIDTH = 28;
 const PROMPT_RESULT_POPOVER_ARROW_HEIGHT = 16;
+const PROMPT_LOADING_STEP_DURATION_MS = 1500;
+const PROMPT_LOADING_RESET_PAUSE_MS = 650;
+
+const PROMPT_LOADING_MESSAGE_KEYS = [
+  'newUserOnboardingPromptLoadingUnderstand',
+  'newUserOnboardingPromptLoadingBreakdown',
+  'newUserOnboardingPromptLoadingResult',
+] as const;
 
 interface TargetRect {
   top: number;
@@ -144,6 +150,137 @@ const readTargetRect = (step: NewUserOnboardingStep): TargetRect | null => {
     height: rect.height + SPOTLIGHT_PADDING * 2,
   };
 };
+
+const NewUserOnboardingHeroAnimation: React.FC = () => (
+  <div className="relative h-[116px] overflow-hidden rounded-lg bg-[#eef3ff] dark:bg-surface" aria-hidden="true">
+    <style>
+      {`
+        @keyframes lobster-onboarding-create-frame {
+          0%, 36% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+          45%, 86% { opacity: 0; transform: translate(-50%, -8px) scale(0.96); }
+          96%, 100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+        }
+
+        @keyframes lobster-onboarding-result-frame {
+          0%, 36% { opacity: 0; transform: translateY(10px) scale(0.92); filter: blur(1px); }
+          48%, 84% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+          94%, 100% { opacity: 0; transform: translateY(10px) scale(0.92); filter: blur(1px); }
+        }
+
+        @keyframes lobster-onboarding-cursor {
+          0%, 32% { transform: translate3d(224px, 61px, 0) rotate(-12deg); }
+          48%, 84% { transform: translate3d(248px, 68px, 0) rotate(-10deg); }
+          96%, 100% { transform: translate3d(224px, 61px, 0) rotate(-12deg); }
+        }
+
+        @keyframes lobster-onboarding-card-doc {
+          0%, 39% { transform: translate3d(67px, 44px, 0) rotate(-20deg) scale(0.94); }
+          52%, 84% { transform: translate3d(57px, 37px, 0) rotate(-22deg) scale(1); }
+          96%, 100% { transform: translate3d(67px, 44px, 0) rotate(-20deg) scale(0.94); }
+        }
+
+        @keyframes lobster-onboarding-card-image {
+          0%, 39% { transform: translate3d(119px, 36px, 0) scale(0.94); }
+          52%, 84% { transform: translate3d(116px, 24px, 0) scale(1); }
+          96%, 100% { transform: translate3d(119px, 36px, 0) scale(0.94); }
+        }
+
+        @keyframes lobster-onboarding-card-pdf {
+          0%, 39% { transform: translate3d(168px, 42px, 0) rotate(13deg) scale(0.94); }
+          52%, 84% { transform: translate3d(174px, 34px, 0) rotate(15deg) scale(1); }
+          96%, 100% { transform: translate3d(168px, 42px, 0) rotate(13deg) scale(0.94); }
+        }
+
+        .lobster-onboarding-create-frame {
+          animation: lobster-onboarding-create-frame 4.8s ease-in-out infinite;
+        }
+
+        .lobster-onboarding-result-frame {
+          animation: lobster-onboarding-result-frame 4.8s ease-in-out infinite;
+        }
+
+        .lobster-onboarding-cursor {
+          animation: lobster-onboarding-cursor 4.8s ease-in-out infinite;
+        }
+
+        .lobster-onboarding-card-doc {
+          animation: lobster-onboarding-card-doc 4.8s ease-in-out infinite;
+        }
+
+        .lobster-onboarding-card-image {
+          animation: lobster-onboarding-card-image 4.8s ease-in-out infinite;
+        }
+
+        .lobster-onboarding-card-pdf {
+          animation: lobster-onboarding-card-pdf 4.8s ease-in-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .lobster-onboarding-create-frame {
+            animation: none;
+            opacity: 0;
+          }
+
+          .lobster-onboarding-result-frame,
+          .lobster-onboarding-cursor,
+          .lobster-onboarding-card-doc,
+          .lobster-onboarding-card-image,
+          .lobster-onboarding-card-pdf {
+            animation: none;
+          }
+
+          .lobster-onboarding-result-frame {
+            opacity: 1;
+            transform: none;
+            filter: none;
+          }
+
+          .lobster-onboarding-card-doc {
+            transform: translate3d(57px, 37px, 0) rotate(-22deg) scale(1);
+          }
+
+          .lobster-onboarding-card-image {
+            transform: translate3d(116px, 24px, 0) scale(1);
+          }
+
+          .lobster-onboarding-card-pdf {
+            transform: translate3d(174px, 34px, 0) rotate(15deg) scale(1);
+          }
+
+          .lobster-onboarding-cursor {
+            transform: translate3d(248px, 68px, 0) rotate(-10deg);
+          }
+        }
+      `}
+    </style>
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.78),rgba(238,243,255,0)_58%)] dark:bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.1),rgba(255,255,255,0)_58%)]" />
+    <div className="lobster-onboarding-create-frame absolute left-1/2 top-[35px] flex h-8 w-[198px] items-center justify-center rounded-lg bg-white text-xs font-medium text-foreground shadow-[0_8px_22px_rgba(35,56,109,0.12)] dark:bg-surface-raised dark:shadow-[0_8px_22px_rgba(0,0,0,0.28)]">
+      {i18nService.t('newChat')}
+    </div>
+    <div className="lobster-onboarding-result-frame absolute inset-0">
+      <div className="lobster-onboarding-card-doc absolute h-[62px] w-[54px] rounded-lg border border-white/90 bg-white/90 shadow-[0_10px_24px_rgba(53,83,139,0.14)] dark:border-border dark:bg-surface-raised/90 dark:shadow-[0_10px_24px_rgba(0,0,0,0.26)]">
+        <div className="absolute left-[-9px] top-3 rounded bg-[#6f9cf7] px-1.5 py-0.5 text-[13px] font-semibold leading-4 text-white shadow-sm">
+          DOC
+        </div>
+        <div className="absolute left-5 top-8 h-1.5 w-6 rounded-full bg-[#9dbdf8]" />
+        <div className="absolute left-5 top-[44px] h-1.5 w-4 rounded-full bg-[#c1d3fb]" />
+      </div>
+      <div className="lobster-onboarding-card-image absolute h-[66px] w-[64px] rounded-lg border-[3px] border-white bg-[#dfeaff] shadow-[0_11px_26px_rgba(53,83,139,0.17)] dark:border-border dark:bg-[#223047] dark:shadow-[0_11px_26px_rgba(0,0,0,0.28)]">
+        <div className="absolute left-4 top-4 h-3.5 w-3.5 rounded-full bg-[#ffdf69]" />
+        <div className="absolute bottom-2.5 left-2.5 h-8 w-10 rounded-[9px] bg-[#b7d5f4]" />
+        <div className="absolute bottom-2.5 right-1.5 h-10 w-9 rounded-[10px] bg-[#c7ddf8]" />
+      </div>
+      <div className="lobster-onboarding-card-pdf absolute h-[68px] w-[65px] rounded-lg border border-white/90 bg-white/95 shadow-[0_11px_26px_rgba(53,83,139,0.16)] dark:border-border dark:bg-surface-raised/95 dark:shadow-[0_11px_26px_rgba(0,0,0,0.28)]">
+        <div className="absolute left-2.5 top-[-8px] rounded bg-[#ff7e9f] px-2 py-0.5 text-[15px] font-semibold leading-5 text-white shadow-sm">
+          PDF
+        </div>
+        <div className="absolute left-[17px] top-7 h-8 w-8 rounded-full bg-[#e1dddf]" />
+        <div className="absolute left-[34px] top-7 h-4 w-[17px] rounded-bl-[7px] bg-white/80 dark:bg-surface-raised/85" />
+      </div>
+    </div>
+    <OnboardingCursorIcon className="lobster-onboarding-cursor absolute left-0 top-0 h-7 w-7 drop-shadow-[0_5px_5px_rgba(0,0,0,0.25)]" />
+  </div>
+);
 
 const TypewriterPromptPreview: React.FC<{
   rect: TargetRect;
@@ -358,6 +495,103 @@ const TypewriterPromptPreview: React.FC<{
   );
 };
 
+const PromptLoadingSequence: React.FC = () => {
+  const [visibleItemCount, setVisibleItemCount] = useState(1);
+  const [cycleIndex, setCycleIndex] = useState(0);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (visibleItemCount < PROMPT_LOADING_MESSAGE_KEYS.length) {
+        setVisibleItemCount((current) => current + 1);
+        return;
+      }
+
+      setVisibleItemCount(1);
+      setCycleIndex((current) => current + 1);
+    }, visibleItemCount < PROMPT_LOADING_MESSAGE_KEYS.length
+      ? PROMPT_LOADING_STEP_DURATION_MS
+      : PROMPT_LOADING_STEP_DURATION_MS + PROMPT_LOADING_RESET_PAUSE_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [visibleItemCount]);
+
+  return (
+    <div className="mt-5 h-[110px]" aria-hidden="true">
+      <style>
+        {`
+          @keyframes lobster-onboarding-loading-row {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+
+          @keyframes lobster-onboarding-loading-progress {
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+          }
+
+          @keyframes lobster-onboarding-loading-dot {
+            0%, 100% { transform: scale(0.82); opacity: 0.55; }
+            45% { transform: scale(1); opacity: 1; }
+          }
+
+          .lobster-onboarding-loading-row {
+            animation: lobster-onboarding-loading-row 0.22s ease-out both;
+          }
+
+          .lobster-onboarding-loading-progress {
+            animation: lobster-onboarding-loading-progress ${PROMPT_LOADING_STEP_DURATION_MS}ms linear both;
+            transform-origin: left center;
+          }
+
+          .lobster-onboarding-loading-dot {
+            animation: lobster-onboarding-loading-dot 0.9s ease-in-out infinite;
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .lobster-onboarding-loading-row,
+            .lobster-onboarding-loading-progress,
+            .lobster-onboarding-loading-dot {
+              animation: none;
+            }
+
+            .lobster-onboarding-loading-progress {
+              transform: scaleX(1);
+            }
+          }
+        `}
+      </style>
+      <div className="space-y-4">
+        {PROMPT_LOADING_MESSAGE_KEYS.slice(0, visibleItemCount).map((messageKey, index) => {
+          const isActive = index === visibleItemCount - 1;
+          const progressKey = `${cycleIndex}-${messageKey}-${isActive ? 'active' : 'done'}`;
+
+          return (
+            <div key={`${cycleIndex}-${messageKey}`} className="lobster-onboarding-loading-row flex items-start gap-2">
+              <span className="mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-surface-raised dark:bg-surface">
+                <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'lobster-onboarding-loading-dot bg-secondary' : 'bg-tertiary'}`} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[13px] leading-[18px] text-secondary">
+                  {i18nService.t(messageKey)}
+                </span>
+                <span className="mt-1 block h-1 w-[136px] overflow-hidden rounded-full bg-surface-raised dark:bg-surface">
+                  <span
+                    key={progressKey}
+                    className={`block h-full rounded-full bg-tertiary ${isActive ? 'lobster-onboarding-loading-progress' : ''}`}
+                    style={{ width: '100%' }}
+                  />
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const PromptResultPopover: React.FC<{
   rect: TargetRect;
   viewportWidth: number;
@@ -402,7 +636,7 @@ const PromptResultPopover: React.FC<{
 
   return (
     <section
-      className="maties-card-prose maties-in absolute p-6"
+      className="lobster-onboarding-result-popover absolute rounded-xl bg-background p-6 text-foreground shadow-[0_18px_52px_rgba(0,0,0,0.18)] ring-1 ring-border/0 dark:bg-surface-raised dark:ring-border/70 dark:shadow-[0_18px_52px_rgba(0,0,0,0.44)]"
       style={{
         top: popoverTop,
         left: popoverLeft,
@@ -410,8 +644,29 @@ const PromptResultPopover: React.FC<{
         height: popoverHeight,
       }}
     >
+      <style>
+        {`
+        @keyframes lobster-onboarding-result-popover {
+          0% { opacity: 0; transform: translateY(8px) scale(0.99); }
+          72% { opacity: 1; transform: translateY(-1px) scale(1); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .lobster-onboarding-result-popover {
+          animation: lobster-onboarding-result-popover 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+          transform-origin: top center;
+          will-change: opacity, transform;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .lobster-onboarding-result-popover {
+            animation: none;
+          }
+        }
+      `}
+      </style>
       <TopPopoverArrow
-        className="absolute text-white dark:text-[#1c1e23]"
+        className="absolute text-background dark:text-surface-raised"
         style={{
           top: -PROMPT_RESULT_POPOVER_ARROW_HEIGHT + 1,
           left: arrowLeft,
@@ -419,29 +674,46 @@ const PromptResultPopover: React.FC<{
           height: PROMPT_RESULT_POPOVER_ARROW_HEIGHT,
         }}
       />
-      <div className="relative flex h-full flex-col">
-        <div className="flex items-start gap-4">
-          <Sphere size={40} still />
-          <div className="min-w-0">
-            <h2 className="maties-headline text-[22px]">
-              {i18nService.t('newUserOnboardingPromptResultTitle')}
-            </h2>
-            <p className={`maties-subtitle mt-1.5 ${useCompactActionLayout ? '' : 'whitespace-nowrap'}`}>
-              {i18nService.t('newUserOnboardingPromptResultDescription')}
-            </p>
-          </div>
+      <div className="relative flex h-full flex-col gap-2">
+        <div className="min-w-0">
+          <h2 className="text-[22px] font-semibold leading-7 text-foreground">
+            {i18nService.t('newUserOnboardingPromptResultTitle')}
+          </h2>
+          <p
+            className={
+              `mt-1.5 text-base leading-6 text-secondary ${
+                useCompactActionLayout ? '' : 'whitespace-nowrap'
+              }`
+            }
+          >
+            {i18nService.t('newUserOnboardingPromptResultDescription')}
+          </p>
         </div>
-        <div className="mt-auto flex items-center justify-between gap-3 pt-6">
-          <span className="maties-caption">
-            {i18nService.t('matiesTourStep').replace('{current}', '2').replace('{total}', '2')}
-          </span>
-          <div className="flex items-center gap-2">
-            <Pill tone={PillTone.Ghost} compact onClick={onSkip}>
+        <div
+          className={
+            useCompactActionLayout
+              ? 'flex min-h-0 flex-1 flex-col'
+              : 'grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_172px] gap-6'
+          }
+        >
+          <PromptLoadingSequence />
+          <div className={`flex items-end justify-end gap-7 ${useCompactActionLayout ? 'mt-auto' : 'h-full pb-3'}`}>
+            <button
+              type="button"
+              onClick={onSkip}
+              className="flex h-10 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium text-muted transition-colors hover:bg-surface-raised/40 hover:text-secondary"
+            >
               {i18nService.t('newUserOnboardingSkip')}
-            </Pill>
-            <Pill tone={PillTone.Primary} compact onClick={onStartExperience}>
-              {i18nService.t('newUserOnboardingStartExperience')}
-            </Pill>
+            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={onStartExperience}
+                className="sidebar-login-rainbow chat-login-experience-action relative inline-flex h-9 w-[8.5rem] items-center justify-center whitespace-nowrap rounded-lg px-5 text-base font-medium leading-none transition-[filter,transform]"
+              >
+                {i18nService.t('newUserOnboardingStartExperience')}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -449,7 +721,7 @@ const PromptResultPopover: React.FC<{
   );
 };
 
-export const RetiredNewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayProps> = ({
+const NewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayProps> = ({
   step,
   onNext,
   onSkip,
@@ -588,7 +860,7 @@ export const RetiredNewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayP
           height: rect.height,
           borderRadius: SPOTLIGHT_RADIUS,
           boxShadow:
-            '0 0 0 9999px rgba(16,20,28,0.42), 0 0 0 1px rgba(255,255,255,0.72)',
+            '0 0 0 9999px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.72)',
         }}
       />
       {step === NewUserOnboardingStep.PromptInput && (
@@ -611,11 +883,11 @@ export const RetiredNewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayP
       )}
       {step === NewUserOnboardingStep.NewTask && (
         <section
-          className="maties-card-prose maties-in absolute w-[308px] p-5"
+          className="absolute w-[308px] rounded-xl bg-background p-3 shadow-[0_18px_55px_rgba(0,0,0,0.24)] ring-1 ring-border/0 dark:bg-surface-raised dark:ring-border/70 dark:shadow-[0_18px_55px_rgba(0,0,0,0.44)]"
           style={{ top: popoverTop, left: popoverLeft }}
         >
           <LeftPopoverArrow
-            className="absolute text-white dark:text-[#1c1e23]"
+            className="absolute text-background dark:text-surface-raised"
             style={{
               top: arrowTop,
               left: -POPOVER_ARROW_WIDTH + POPOVER_ARROW_CARD_OVERLAP,
@@ -623,24 +895,29 @@ export const RetiredNewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayP
               height: POPOVER_ARROW_HALF_HEIGHT * 2,
             }}
           />
-          <Sphere size={40} still />
-          <h2 className="maties-headline mt-4 text-[22px]">
-            {i18nService.t('newUserOnboardingNewTaskTitle')}
-          </h2>
-          <p className="maties-subtitle mt-1.5">
-            {i18nService.t('newUserOnboardingNewTaskDescription')}
-          </p>
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <span className="maties-caption">
-              {i18nService.t('matiesTourStep').replace('{current}', '1').replace('{total}', '2')}
-            </span>
-            <div className="flex items-center gap-2">
-              <Pill tone={PillTone.Ghost} compact onClick={onSkip}>
+          <NewUserOnboardingHeroAnimation />
+          <div className="px-0.5 pt-4">
+            <h2 className="text-lg font-semibold leading-6 text-foreground">
+              {i18nService.t('newUserOnboardingNewTaskTitle')}
+            </h2>
+            <p className="mt-2 text-sm leading-5 text-secondary">
+              {i18nService.t('newUserOnboardingNewTaskDescription')}
+            </p>
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={onSkip}
+                className="rounded-md px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-raised/40 hover:text-secondary"
+              >
                 {i18nService.t('newUserOnboardingSkip')}
-              </Pill>
-              <Pill tone={PillTone.Primary} compact onClick={onNext}>
+              </button>
+              <button
+                type="button"
+                onClick={onNext}
+                className="rounded-lg bg-foreground px-4 py-2 text-sm font-semibold text-background shadow-sm transition-colors hover:opacity-90"
+              >
                 {i18nService.t('newUserOnboardingNext')}
-              </Pill>
+              </button>
             </div>
           </div>
         </section>
@@ -648,9 +925,5 @@ export const RetiredNewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayP
     </div>
   );
 };
-
-// The tour cards are retired with the onboarding flow (docs/maties/onboarding.md):
-// the six screens replaced them, and App.tsx no longer mounts this overlay.
-const NewUserOnboardingOverlay: React.FC<NewUserOnboardingOverlayProps> = () => null;
 
 export default NewUserOnboardingOverlay;

@@ -67,7 +67,7 @@ import {
 } from './appUpdateInstaller';
 import { WINDOWS_INSTALLER_URL_POLICY_VERSION } from './appUpdateUrlPolicy';
 
-const INSTALLER_PATH = 'C:\\Users\\test\\AppData\\Roaming\\Maties\\updates\\maties-update-manual-1.exe';
+const INSTALLER_PATH = 'C:\\Users\\test\\AppData\\Roaming\\LobsterAI\\updates\\lobsterai-update-manual-1.exe';
 
 describe('Windows update install', () => {
   const originalPlatform = process.platform;
@@ -119,14 +119,14 @@ describe('Windows update install', () => {
     expect(args).toContain('-NonInteractive');
     const script = args[args.length - 1];
     expect(script).toContain('-FilePath $installer');
-    expect(script).toContain('$env:MATIES_UPDATE_INSTALLER_PATH');
+    expect(script).toContain('$env:LOBSTERAI_UPDATE_INSTALLER_PATH');
     expect(script).not.toContain(INSTALLER_PATH);
     expect(script).toContain(`'--force-run','--updated'`);
     expect(script).not.toContain(`'/S'`);
     const options = cpMocks.execFile.mock.calls[0]?.[2] as {
       env?: NodeJS.ProcessEnv;
     };
-    expect(options.env?.MATIES_UPDATE_INSTALLER_PATH).toBe(INSTALLER_PATH);
+    expect(options.env?.LOBSTERAI_UPDATE_INSTALLER_PATH).toBe(INSTALLER_PATH);
     expect(mocks.quit).toHaveBeenCalledOnce();
     // The wizard path must not run: silent launch succeeded.
     expect(mocks.openPath).not.toHaveBeenCalled();
@@ -235,7 +235,7 @@ describe('Windows update install', () => {
       { env?: NodeJS.ProcessEnv },
     ];
     expect(args.at(-1)).not.toContain(installerPath);
-    expect(options.env?.MATIES_UPDATE_INSTALLER_PATH).toBe(installerPath);
+    expect(options.env?.LOBSTERAI_UPDATE_INSTALLER_PATH).toBe(installerPath);
   });
 });
 
@@ -305,7 +305,7 @@ describe('buildWindowsInstallerLaunchScript', () => {
   test('reads the installer path from an environment variable instead of script text', () => {
     const script = buildWindowsInstallerLaunchScript();
 
-    expect(script).toContain('$env:MATIES_UPDATE_INSTALLER_PATH');
+    expect(script).toContain('$env:LOBSTERAI_UPDATE_INSTALLER_PATH');
     expect(script).toContain('-FilePath $installer');
   });
 
@@ -323,7 +323,7 @@ describe('Windows update download URL enforcement', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'maties-download-policy-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lobsterai-download-policy-'));
     mocks.getPath.mockReset();
     mocks.getPath.mockReturnValue(tmpDir);
     mocks.fetch.mockReset();
@@ -338,7 +338,7 @@ describe('Windows update download URL enforcement', () => {
 
   test('rejects an insecure input before fetching or creating a partial file', async () => {
     await expect(downloadUpdate(
-      'http://downloads.example.com/Maties.exe',
+      'http://downloads.example.com/LobsterAI.exe',
       'manual',
       () => {},
     )).rejects.toThrow('update-url-untrusted');
@@ -366,7 +366,7 @@ describe('Windows update download URL enforcement', () => {
     });
 
     const inputUrl =
-      'https://downloads.example.com/Maties.exe?inputToken=do-not-log';
+      'https://downloads.example.com/LobsterAI.exe?inputToken=do-not-log';
     const result = await downloadUpdate(
       inputUrl,
       'auto',
@@ -393,13 +393,13 @@ describe('Windows update download URL enforcement', () => {
     mocks.fetch.mockRejectedValue(new TypeError('Failed to fetch'));
 
     await expect(downloadUpdate(
-      'https://downloads.example.com/Maties.exe',
+      'https://downloads.example.com/LobsterAI.exe',
       'auto',
       () => {},
     )).rejects.toThrow('Failed to fetch');
 
     expect(mocks.fetch).toHaveBeenCalledWith(
-      'https://downloads.example.com/Maties.exe',
+      'https://downloads.example.com/LobsterAI.exe',
       expect.objectContaining({ redirect: 'error' }),
     );
     expect(fs.existsSync(path.join(tmpDir, 'updates'))).toBe(false);
@@ -428,7 +428,7 @@ describe('Windows update download URL enforcement', () => {
     });
 
     const firstDownload = downloadUpdate(
-      'https://downloads.example.com/Maties.exe',
+      'https://downloads.example.com/LobsterAI.exe',
       'auto',
       () => {},
     );
@@ -436,7 +436,7 @@ describe('Windows update download URL enforcement', () => {
 
     expect(cancelActiveDownload()).toBe(true);
     const replacementDownload = downloadUpdate(
-      'https://downloads.example.com/Maties.exe',
+      'https://downloads.example.com/LobsterAI.exe',
       'manual',
       () => {},
     );
@@ -455,7 +455,7 @@ describe('hdiutil plist parsing', () => {
     const json = JSON.stringify({
       'system-entities': [
         { 'content-hint': 'GUID_partition_scheme', 'dev-entry': '/dev/disk4' },
-        { 'dev-entry': '/dev/disk5s1', 'mount-point': '/Volumes/Maties', 'volume-kind': 'apfs' },
+        { 'dev-entry': '/dev/disk5s1', 'mount-point': '/Volumes/LobsterAI', 'volume-kind': 'apfs' },
         { 'content-hint': 'EF57347C-0000-11AA-AA11-00306543ECAC', 'dev-entry': '/dev/disk5' },
         { 'content-hint': 'Apple_APFS', 'dev-entry': '/dev/disk4s1' },
       ],
@@ -463,7 +463,7 @@ describe('hdiutil plist parsing', () => {
 
     const result = parseHdiutilAttachOutput(json);
 
-    expect(result.mountPoint).toBe('/Volumes/Maties');
+    expect(result.mountPoint).toBe('/Volumes/LobsterAI');
     expect(result.devEntries).toEqual(['/dev/disk4', '/dev/disk5s1', '/dev/disk5', '/dev/disk4s1']);
   });
 
@@ -471,13 +471,13 @@ describe('hdiutil plist parsing', () => {
     const json = JSON.stringify({
       'system-entities': [
         { 'content-hint': 'GUID_partition_scheme', 'dev-entry': '/dev/disk4' },
-        { 'content-hint': 'Apple_HFS', 'dev-entry': '/dev/disk4s1', 'mount-point': '/Volumes/Maties 1' },
+        { 'content-hint': 'Apple_HFS', 'dev-entry': '/dev/disk4s1', 'mount-point': '/Volumes/LobsterAI 1' },
       ],
     });
 
     const result = parseHdiutilAttachOutput(json);
 
-    expect(result.mountPoint).toBe('/Volumes/Maties 1');
+    expect(result.mountPoint).toBe('/Volumes/LobsterAI 1');
   });
 
   test('reports no mount point when the volume failed to mount', () => {
@@ -495,7 +495,7 @@ describe('hdiutil plist parsing', () => {
   });
 
   test('preserves special characters in mount points', () => {
-    const mountPoint = '/Volumes/Écrevisse Test & Vol';
+    const mountPoint = '/Volumes/龙虾 Test & Vol';
     const json = JSON.stringify({
       'system-entities': [{ 'dev-entry': '/dev/disk4s1', 'mount-point': mountPoint }],
     });
@@ -542,12 +542,12 @@ describe('mac swap builders', () => {
   });
 
   test('builds a staged-copy, guarded-backup, rollback and cleanup sequence', () => {
-    const target = '/Applications/Maties.app';
+    const target = '/Applications/LobsterAI.app';
     const swapPaths = buildMacSwapPaths(target, 7);
 
-    const cmd = buildMacSwapInstallCommand('/Volumes/Maties/Maties.app', target, swapPaths);
+    const cmd = buildMacSwapInstallCommand('/Volumes/LobsterAI/LobsterAI.app', target, swapPaths);
 
-    const cpIndex = cmd.indexOf(`cp -R '/Volumes/Maties/Maties.app' '${swapPaths.staging}'`);
+    const cpIndex = cmd.indexOf(`cp -R '/Volumes/LobsterAI/LobsterAI.app' '${swapPaths.staging}'`);
     const backupIndex = cmd.indexOf(`mv '${target}' '${swapPaths.backup}'`);
     const swapIndex = cmd.indexOf(`mv '${swapPaths.staging}' '${target}'`);
     const rollbackIndex = cmd.indexOf(`mv '${swapPaths.backup}' '${target}'`);
@@ -573,9 +573,9 @@ describe('mac swap builders', () => {
 describe('macOS DMG install', () => {
   const originalPlatform = process.platform;
   const originalResourcesPath = (process as { resourcesPath?: string }).resourcesPath;
-  const USER_DATA = '/Users/test/Library/Application Support/Maties';
-  const DMG_PATH = `${USER_DATA}/updates/maties-update-auto-1.dmg`;
-  const TARGET_APP = '/Applications/Maties.app';
+  const USER_DATA = '/Users/test/Library/Application Support/LobsterAI';
+  const DMG_PATH = `${USER_DATA}/updates/lobsterai-update-auto-1.dmg`;
+  const TARGET_APP = '/Applications/LobsterAI.app';
 
   const attachNoMountJson = JSON.stringify({
     'system-entities': [
@@ -604,7 +604,7 @@ describe('macOS DMG install', () => {
   let applicationsEntries: string[];
 
   const respondNoMount = () => attachNoMountJson;
-  const respondMountedAtVolumes = () => attachMountedJson('/Volumes/Maties');
+  const respondMountedAtVolumes = () => attachMountedJson('/Volumes/LobsterAI');
   const respondMountedAtRequestedPoint = (cmd: string) => {
     const match = cmd.match(/-mountpoint '([^']+)'/);
     return attachMountedJson(match ? match[1] : '/Volumes/unexpected');
@@ -672,7 +672,7 @@ describe('macOS DMG install', () => {
     detachCommands = [];
     execCommands = [];
     execOverride = null;
-    applicationsEntries = ['Maties.app'];
+    applicationsEntries = ['LobsterAI.app'];
 
     cpMocks.exec.mockImplementation(
       (
@@ -721,12 +721,12 @@ describe('macOS DMG install', () => {
     vi.spyOn(fs.promises, 'readdir').mockImplementation(((dir: fs.PathLike) => {
       const dirPath = String(dir);
       if (dirPath.endsWith(path.join('Contents', 'MacOS'))) {
-        return Promise.resolve(['Maties']);
+        return Promise.resolve(['LobsterAI']);
       }
       if (dirPath === path.dirname(TARGET_APP)) {
         return Promise.resolve(applicationsEntries);
       }
-      return Promise.resolve(['Maties.app']);
+      return Promise.resolve(['LobsterAI.app']);
     }) as never);
   });
 
@@ -768,7 +768,7 @@ describe('macOS DMG install', () => {
     );
 
     expect(detachCommands).toHaveLength(1);
-    expect(detachCommands[0]).toContain('/Volumes/Maties');
+    expect(detachCommands[0]).toContain('/Volumes/LobsterAI');
     expect(fs.promises.unlink).toHaveBeenCalledWith(DMG_PATH);
     expect(cpMocks.execFile).not.toHaveBeenCalled();
     expect(mocks.relaunch).toHaveBeenCalledOnce();
@@ -863,7 +863,7 @@ describe('macOS DMG install', () => {
     attachResponders = [respondMountedAtVolumes];
     execOverride = (cmd) => (isSwapInCommand(cmd) ? { error: new Error('swap blocked') } : undefined);
     failPrivilegedInstall(
-      `execution error: The command exited with a non-zero status. (${MAC_SWAP_ROLLED_BACK_EXIT_CODE})`,
+      `execution error: 该命令退出时状态为非零。 (${MAC_SWAP_ROLLED_BACK_EXIT_CODE})`,
     );
 
     await expect(installUpdate(DMG_PATH)).rejects.toThrow(/rolled back to current version/);
@@ -907,20 +907,20 @@ describe('macOS DMG install', () => {
   test('cleans up leftover staging and backup directories before installing', async () => {
     attachResponders = [respondMountedAtVolumes];
     applicationsEntries = [
-      `.Maties.app${MAC_SWAP_STAGING_INFIX}1`,
-      `.Maties.app${MAC_SWAP_BACKUP_INFIX}2`,
-      'Maties.app',
+      `.LobsterAI.app${MAC_SWAP_STAGING_INFIX}1`,
+      `.LobsterAI.app${MAC_SWAP_BACKUP_INFIX}2`,
+      'LobsterAI.app',
       'Other.app',
     ];
 
     await installUpdate(DMG_PATH);
 
     expect(fs.promises.rm).toHaveBeenCalledWith(
-      `/Applications/.Maties.app${MAC_SWAP_STAGING_INFIX}1`,
+      `/Applications/.LobsterAI.app${MAC_SWAP_STAGING_INFIX}1`,
       { recursive: true, force: true },
     );
     expect(fs.promises.rm).toHaveBeenCalledWith(
-      `/Applications/.Maties.app${MAC_SWAP_BACKUP_INFIX}2`,
+      `/Applications/.LobsterAI.app${MAC_SWAP_BACKUP_INFIX}2`,
       { recursive: true, force: true },
     );
     expect(fs.promises.rm).not.toHaveBeenCalledWith('/Applications/Other.app', expect.anything());

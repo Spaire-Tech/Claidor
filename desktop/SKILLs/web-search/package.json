@@ -1,5 +1,5 @@
 {
-  "name": "@maties/skill-web-search",
+  "name": "@lobsterai/skill-web-search",
   "version": "1.0.2",
   "description": "Web search skill using Playwright-controlled browser for real-time information retrieval",
   "main": "dist/server/index.js",
@@ -9,13 +9,13 @@
     "dev": "tsc && node dist/server/index.js"
   },
   "keywords": [
-    "maties",
+    "lobsterai",
     "skill",
     "web-search",
     "playwright",
     "cdp"
   ],
-  "author": "Maties",
+  "author": "LobsterAI",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
