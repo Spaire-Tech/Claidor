@@ -17,6 +17,9 @@ export interface McpServerRecord {
   isBuiltIn: boolean;
   githubUrl?: string;
   registryId?: string;
+  /** HTTP OAuth: the engine signs in and keeps the tokens itself. */
+  auth?: 'oauth';
+  oauthScope?: string;
   launchResolution?: McpLaunchResolution;
   createdAt: number;
   updatedAt: number;
@@ -34,6 +37,14 @@ export interface McpServerFormData {
   isBuiltIn?: boolean;
   githubUrl?: string;
   registryId?: string;
+  /**
+   * HTTP OAuth, for a connection the engine signs into itself. Tokens are
+   * never here: OpenClaw keeps them under its state dir, which is the
+   * point — a copy in our database would be a second place to leak from.
+   */
+  auth?: 'oauth';
+  /** The scope string to ask for, when the service names one. */
+  oauthScope?: string;
 }
 
 interface McpServerRow {
@@ -56,6 +67,14 @@ interface McpConfigJson {
   isBuiltIn?: boolean;
   githubUrl?: string;
   registryId?: string;
+  /**
+   * HTTP OAuth, for a connection the engine signs into itself. Tokens are
+   * never here: OpenClaw keeps them under its state dir, which is the
+   * point — a copy in our database would be a second place to leak from.
+   */
+  auth?: 'oauth';
+  /** The scope string to ask for, when the service names one. */
+  oauthScope?: string;
 }
 
 interface McpLaunchResolutionRow {
@@ -200,6 +219,8 @@ export class McpStore {
       isBuiltIn: config.isBuiltIn === true,
       githubUrl: config.githubUrl,
       registryId: config.registryId,
+      auth: config.auth,
+      oauthScope: config.oauthScope,
       launchResolution: this.getLaunchResolution(row.id),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -216,6 +237,8 @@ export class McpStore {
     if (data.isBuiltIn) config.isBuiltIn = true;
     if (data.githubUrl) config.githubUrl = data.githubUrl;
     if (data.registryId) config.registryId = data.registryId;
+    if (data.auth) config.auth = data.auth;
+    if (data.oauthScope) config.oauthScope = data.oauthScope;
     return JSON.stringify(config);
   }
 

@@ -1740,6 +1740,9 @@ export interface ResolvedMcpServer {
   env?: Record<string, string>;
   url?: string;
   headers?: Record<string, string>;
+  /** HTTP OAuth, for a connection the engine signs into itself. */
+  auth?: 'oauth';
+  oauthScope?: string;
 }
 
 // Normalize header keys to lowercase before writing to openclaw.json.
@@ -1805,6 +1808,13 @@ function buildOpenClawMcpServers(
         if (server.headers && Object.keys(server.headers).length > 0)
           entry.headers = lowercaseHeaderKeys(server.headers);
         entry.transport = 'streamable-http';
+        // A connection the engine signs into itself. The tokens live under
+        // its state dir and never come back here — writing `auth` is the
+        // whole of what the config has to say about them.
+        if (server.auth === 'oauth') {
+          entry.auth = 'oauth';
+          if (server.oauthScope) entry.oauth = { scope: server.oauthScope };
+        }
         break;
     }
     result[safeServerKey(server.name)] = entry;

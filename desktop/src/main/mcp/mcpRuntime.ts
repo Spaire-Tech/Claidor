@@ -330,6 +330,8 @@ export class McpRuntime {
           transportType: server.transportType,
           url: server.url,
           headers: server.headers,
+          auth: server.auth,
+          oauthScope: server.oauthScope,
         });
       }
     }

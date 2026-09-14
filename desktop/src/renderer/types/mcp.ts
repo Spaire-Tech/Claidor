@@ -20,7 +20,10 @@ export interface McpServerConfig {
   headers?: Record<string, string>; // sse / http
   isBuiltIn: boolean;            // installed from built-in registry
   githubUrl?: string;            // GitHub repository URL
-  registryId?: string;           // matching registry entry ID
+  registryId?: string;
+  /** HTTP OAuth: the engine signs in and keeps the tokens itself. */
+  auth?: 'oauth';
+  oauthScope?: string;           // matching registry entry ID
   launchResolution?: McpLaunchResolution;
   createdAt: number;
   updatedAt: number;
@@ -58,6 +61,9 @@ export interface McpServerFormData {
   isBuiltIn?: boolean;
   githubUrl?: string;
   registryId?: string;
+  /** HTTP OAuth: the engine signs in and keeps the tokens itself. */
+  auth?: 'oauth';
+  oauthScope?: string;
 }
 
 // Built-in MCP registry entry (pure frontend definition)
