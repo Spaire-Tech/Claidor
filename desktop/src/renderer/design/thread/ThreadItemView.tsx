@@ -4,11 +4,19 @@ import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { paletteForAgent } from '../orb/palette';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { readableSize } from './attachment';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
-import { type AuthDecision, Speaker,type ThreadItem, ThreadItemKind } from './types';
+import {
+  type AttachmentItem,
+  type AuthDecision,
+  type SecretItem,
+  Speaker,
+  type ThreadItem,
+  ThreadItemKind,
+} from './types';
 
 /**
- * The five things a thread may show.
+ * The seven things a thread may show.
  *
  * One component per kind, and a switch. Deliberately not one clever
  * renderer: the kinds have nothing in common but their container, and the
@@ -512,10 +520,199 @@ function AuthCard(
   );
 }
 
+/**
+ * A file as the whole message.
+ *
+ * An image is looked at; anything else is named, sized and openable. The
+ * card takes the agent bubble's own surface rather than inventing a
+ * second one, so a thread of replies and files reads as one column.
+ */
+function AttachmentCard(
+  { item, handlers }: { item: AttachmentItem; handlers: PartHandlers },
+): JSX.Element {
+  const mine = item.from === Speaker.Person;
+  const open = handlers.onOpenFile ? () => handlers.onOpenFile?.(item.path) : undefined;
+  const size = readableSize(item.size);
+
+  const body = item.image ? (
+    <img
+      src={`file://${item.path}`}
+      alt={item.name}
+      style={{
+        display: 'block', maxWidth: '100%', maxHeight: 320,
+        borderRadius: radius.card, background: color.fill,
+      }}
+    />
+  ) : (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+      <PaperclipGlyph />
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <span style={{
+          fontSize: text.body, color: color.ink,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {item.name}
+        </span>
+        {size && <span style={{ fontSize: text.caption, color: color.muted }}>{size}</span>}
+      </span>
+    </span>
+  );
+
+  const shell: CSSProperties = {
+    maxWidth: 'min(70%, 420px)',
+    padding: item.image ? 6 : '13px 16px',
+    borderRadius: radius.bubble,
+    background: color.fillRaised,
+    border: `1px solid ${line.hairline}`,
+    textAlign: 'left',
+  };
+
+  return (
+    <div style={{ display: 'flex', ...(mine ? { justifyContent: 'flex-end' } : {}), animation: enter }}>
+      {open ? (
+        <button type="button" onClick={open} title={item.path} style={{ ...shell, cursor: 'pointer', font: 'inherit' }}>
+          {body}
+        </button>
+      ) : (
+        <div style={shell} title={item.path}>{body}</div>
+      )}
+    </div>
+  );
+}
+
+function PaperclipGlyph(): JSX.Element {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color.muted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" style={{ flex: '0 0 auto' }}>
+      <path d="M21.4 11.1l-8.5 8.5a5 5 0 01-7.1-7.1l8.5-8.5a3.3 3.3 0 014.7 4.7l-8.5 8.5a1.7 1.7 0 01-2.4-2.4l7.8-7.8" />
+    </svg>
+  );
+}
+
+export interface SecretHandlers {
+  /** The value the person typed. Never logged, never put in the thread. */
+  onSubmit?: (id: string, value: string, remember: boolean) => void;
+  /** They declined. The agent is told, and asks for nothing again. */
+  onDecline?: (id: string) => void;
+}
+
+/**
+ * A masked field.
+ *
+ * The rule everywhere in this product is: never ask somebody to paste a
+ * password or a key into chat. That rule needs somewhere for the value to
+ * go instead, and this is it. What is typed here is handed to the tool
+ * that asked and to nothing else — it is not a message, it never enters
+ * the transcript, and it is never sent to the model.
+ *
+ * The card says so, in the card. Somebody being asked for a password by
+ * software has every right to be suspicious, and the answer to that is a
+ * plain sentence rather than a lock icon.
+ */
+function SecretCard(
+  { item, handlers }: { item: SecretItem; handlers: SecretHandlers },
+): JSX.Element {
+  const [value, setValue] = useState('');
+  const [shown, setShown] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const ready = value.trim().length > 0;
+
+  return (
+    <div
+      style={{
+        alignSelf: 'stretch', padding: '18px 20px 16px',
+        borderRadius: radius.card, background: color.fillRaised,
+        border: `1px solid ${line.hairline}`, animation: enter,
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ fontSize: text.emphasis, color: color.ink, lineHeight: 1.35 }}>{item.text}</div>
+        {item.note && (
+          <div style={{ fontSize: text.small, color: color.muted, lineHeight: 1.45 }}>{item.note}</div>
+        )}
+      </div>
+
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <span style={{ fontSize: text.caption, color: color.muted }}>{item.label}</span>
+        <span style={{ display: 'flex', gap: 8 }}>
+          <input
+            value={value}
+            onChange={event => setValue(event.target.value)}
+            onKeyDown={event => { if (event.key === 'Enter' && ready) handlers.onSubmit?.(item.id, value, remember); }}
+            type={shown ? 'text' : 'password'}
+            autoComplete="off"
+            spellCheck={false}
+            style={{
+              flex: '1 1 auto', minWidth: 0, height: 38, padding: '0 12px',
+              borderRadius: radius.small, border: `1px solid ${line.field}`,
+              background: color.paper, outline: 'none', color: color.ink,
+              font: 'inherit', fontFamily: font.mono, fontSize: text.body,
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => setShown(one => !one)}
+            aria-pressed={shown}
+            style={{
+              height: 38, padding: '0 12px', borderRadius: radius.small,
+              border: `1px solid ${line.field}`, background: color.fill,
+              color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
+            }}
+          >
+            {shown ? 'Hide' : 'Show'}
+          </button>
+        </span>
+      </label>
+
+      {item.offerToSave && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: text.small, color: color.muted }}>
+          <input type="checkbox" checked={remember} onChange={event => setRemember(event.target.checked)} />
+          Keep this on this computer, so I do not have to ask again
+        </label>
+      )}
+
+      <div style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.45 }}>
+        This goes straight to the thing that asked for it. It is not added to
+        the conversation and it is never sent to the model.
+      </div>
+
+      <div style={{ display: 'flex', gap: 9 }}>
+        <button
+          type="button"
+          disabled={!ready}
+          onClick={() => handlers.onSubmit?.(item.id, value, remember)}
+          style={{
+            height: 38, padding: '0 18px', borderRadius: radius.field, border: 'none',
+            background: ready ? color.ink : color.fill,
+            color: ready ? color.paper : color.faint,
+            font: 'inherit', fontSize: text.body, fontWeight: 500,
+            cursor: ready ? 'pointer' : 'default',
+          }}
+        >
+          Send
+        </button>
+        <button
+          type="button"
+          onClick={() => handlers.onDecline?.(item.id)}
+          style={{
+            height: 38, padding: '0 16px', borderRadius: radius.field,
+            border: `1px solid ${line.field}`, background: color.fill, color: color.ink,
+            font: 'inherit', fontSize: text.body, cursor: 'pointer',
+          }}
+        >
+          Not now
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export interface ThreadItemViewProps {
   item: ThreadItem;
   choice: ChoiceHandlers;
   auth: AuthHandlers;
+  /** What a secret card can do with what was typed. */
+  secret?: SecretHandlers;
   /** What a file or a link in the text can do. */
   parts?: PartHandlers;
   /**
@@ -528,8 +725,10 @@ export interface ThreadItemViewProps {
 
 const noHandlers: PartHandlers = {};
 
+const noSecret: SecretHandlers = {};
+
 export function ThreadItemView(
-  { item, choice, auth, parts = noHandlers, leading }: ThreadItemViewProps,
+  { item, choice, auth, secret = noSecret, parts = noHandlers, leading }: ThreadItemViewProps,
 ): JSX.Element | null {
   switch (item.kind) {
     case ThreadItemKind.Text:
@@ -542,6 +741,10 @@ export function ThreadItemView(
       return <ChoiceCard item={item} handlers={choice} />;
     case ThreadItemKind.Auth:
       return <AuthCard item={item} handlers={auth} />;
+    case ThreadItemKind.Attachment:
+      return <AttachmentCard item={item} handlers={parts} />;
+    case ThreadItemKind.Secret:
+      return <SecretCard item={item} handlers={secret} />;
     default:
       // The list is closed. A new kind is a product decision, and it
       // should be made here rather than by something silently rendering.

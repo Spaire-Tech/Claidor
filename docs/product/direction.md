@@ -63,7 +63,7 @@ Upstream LobsterAI has thirteen settings tabs. This has four.
 
 ## 2. The message vocabulary
 
-Exactly five kinds of thing may appear in a thread. This is a closed
+Exactly seven kinds of thing may appear in a thread. This is a closed
 list, and it is the discipline that makes the app feel unlike an AI app:
 
 | Kind | What it is |
@@ -73,8 +73,34 @@ list, and it is the discipline that makes the app feel unlike an AI app:
 | `status` | orb plus a shimmering verb, deleted when the work finishes |
 | `choice` | a question card, lettered options with hints, optional free-text |
 | `auth` | the approval card |
+| `attachment` | a file as the whole message — an image shown, anything else named and openable |
+| `secret` | a masked field; what is typed never enters the transcript |
 
 No step cards. No tool logs. No thinking blocks. No raw blobs.
+
+### It was five, until 15 September 2026
+
+The first version of this section fixed **five** kinds and said adding a
+sixth was a product decision rather than a convenience. It was put to the
+founder as exactly that decision, against the four Grok Bot documents in
+`docs/product/sources/`, which carry seven. Their answer:
+
+> *"seven kinds. build both and amend direction.md"*
+
+So:
+
+- **`attachment`.** A produced document was arriving as a lone chip
+  inside an otherwise empty bubble — a `text` item pretending to be
+  something else. A file the agent made is a thing, not a sentence about
+  a thing, and an image it made should be looked at rather than opened.
+- **`secret`.** "Never ask somebody to paste a password or a key into
+  chat" is a rule with nowhere to go. Without a masked field the agent
+  either asks in the open, or gives up on a step it could have finished.
+  What is typed into this card never enters the transcript, the model's
+  context, or any log.
+
+The closed list is still closed. An eighth is the same decision, asked
+the same way.
 
 **The approval card is the heart of it.** Warning triangle, the device
 id, the *literal command* behind a disclosure triangle, then Always

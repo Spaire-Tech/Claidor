@@ -1,4 +1,6 @@
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
+import { attachmentFor } from './attachment';
+import type { KnownFile } from './parts';
 import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
@@ -192,6 +194,13 @@ export interface ToThreadOptions {
    * there waiting to be pressed again.
    */
   answered?: Readonly<Record<string, Readonly<Record<string, string>>>>;
+  /**
+   * The files this conversation has produced.
+   *
+   * Used for two things: resolving a chip to a real path, and deciding
+   * whether a reply is a file rather than a sentence about one.
+   */
+  files?: readonly KnownFile[];
 }
 
 /** At most this many bubbles from one reply. Three is the canvas's number. */
@@ -325,13 +334,30 @@ export function toThreadItems(
           : splitIntoBubbles(message.content);
 
         parts.forEach((text, index) => {
-          items.push({
-            kind: ThreadItemKind.Text,
-            id: parts.length > 1 ? `${message.id}:${index}` : message.id,
-            from: Speaker.Agent,
-            text,
+          const id = parts.length > 1 ? `${message.id}:${index}` : message.id;
+          const sender = {
             ...(group && agentId ? { agentId } : {}),
             ...(group && agentId && options.agentName ? { agentName: options.agentName } : {}),
+          };
+
+          // A reply that is nothing but a file it produced is the file,
+          // not a sentence about the file. Never while streaming: the
+          // link often arrives before the words around it, and a bubble
+          // that turns into a card and back again is worse than either.
+          const attachment = meta.isStreaming
+            ? undefined
+            : attachmentFor(text, { id, from: Speaker.Agent, at, ...sender }, options.files);
+          if (attachment) {
+            items.push(attachment);
+            return;
+          }
+
+          items.push({
+            kind: ThreadItemKind.Text,
+            id,
+            from: Speaker.Agent,
+            text,
+            ...sender,
             ...(meta.isStreaming ? { streaming: true } : {}),
             at,
           } satisfies TextItem);

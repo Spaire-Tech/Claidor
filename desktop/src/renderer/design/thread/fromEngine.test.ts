@@ -373,3 +373,49 @@ describe('choice ids', () => {
     expect(parseChoiceId('msg-1')).toBeUndefined();
   });
 });
+
+describe('a reply that is only a file', () => {
+  test('comes through as an attachment, not a bubble with a lone chip', () => {
+    const items = toThreadItems([
+      msg({ type: 'assistant', content: '[report.docx](file:///Users/bass/Work/report.docx)' }),
+    ], {});
+    expect(items).toHaveLength(1);
+    expect(items[0].kind).toBe(ThreadItemKind.Attachment);
+    expect(items[0]).toMatchObject({
+      name: 'report.docx',
+      path: '/Users/bass/Work/report.docx',
+      from: 'agent',
+    });
+  });
+
+  test('a reply with something to say stays a bubble', () => {
+    const items = toThreadItems([
+      msg({
+        type: 'assistant',
+        content: 'Done — it is in [report.docx](file:///Users/bass/Work/report.docx).',
+      }),
+    ], {});
+    expect(items[0].kind).toBe(ThreadItemKind.Text);
+  });
+
+  test('never while the reply is still arriving', () => {
+    // The link often lands before the sentence around it. A bubble that
+    // turns into a card and back again is worse than either.
+    const items = toThreadItems([
+      msg({
+        type: 'assistant',
+        content: '[report.docx](file:///Users/bass/Work/report.docx)',
+        metadata: { isStreaming: true },
+      }),
+    ], {});
+    expect(items[0].kind).toBe(ThreadItemKind.Text);
+  });
+
+  test('a file the conversation knows by name alone still becomes one', () => {
+    const items = toThreadItems([msg({ type: 'assistant', content: 'chart.png' })], {
+      files: [{ name: 'chart.png', path: '/Users/bass/Work/chart.png' }],
+    });
+    expect(items[0].kind).toBe(ThreadItemKind.Attachment);
+    expect(items[0]).toMatchObject({ image: true });
+  });
+});
