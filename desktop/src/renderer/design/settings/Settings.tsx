@@ -1,7 +1,7 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 
 import { CloseIcon, ComputerIcon, GearIcon, UsageIcon } from '../icons';
-import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import {
   type SelectOption,
   SETTINGS_TABS,
@@ -254,7 +254,16 @@ function Control({ row }: { row: SettingsRow }): JSX.Element | null {
 
 function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.Element {
   const [draft, setDraft] = useState(row.value);
+  const [shown, setShown] = useState(false);
   const dirty = draft !== row.value;
+
+  // The row can keep its id and change its value underneath — the models
+  // key field is one row whose provider changes above it. Without this the
+  // field would still be showing the previous provider's key.
+  useEffect(() => {
+    setDraft(row.value);
+    setShown(false);
+  }, [row.value]);
 
   if (row.readOnly) {
     return (
@@ -277,13 +286,33 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
       <input
         value={draft}
         onChange={event => setDraft(event.target.value)}
+        onKeyDown={event => { if (event.key === 'Enter' && dirty) row.onSave?.(draft); }}
         aria-label={row.label}
+        type={row.secret && !shown ? 'password' : 'text'}
+        {...(row.placeholder ? { placeholder: row.placeholder } : {})}
+        autoComplete="off"
+        spellCheck={false}
         style={{
           width: 220, height: 36, padding: '0 12px', borderRadius: radius.small,
           border: `1px solid ${line.field}`, background: color.paper, outline: 'none',
           font: 'inherit', fontSize: text.body, color: color.ink,
+          ...(row.secret ? { fontFamily: font.mono, letterSpacing: '.02em' } : {}),
         }}
       />
+      {row.secret && (
+        <button
+          type="button"
+          onClick={() => setShown(one => !one)}
+          aria-pressed={shown}
+          style={{
+            height: 36, padding: '0 12px', borderRadius: radius.small,
+            border: `1px solid ${line.field}`, background: color.fill,
+            color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
+          }}
+        >
+          {shown ? 'Hide' : 'Show'}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => row.onSave?.(draft)}

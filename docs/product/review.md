@@ -893,6 +893,78 @@ Everything up to and after that point is verified.
 
 ---
 
+## 25. "Your credits have been used up. Upgrade your plan." — `fixed`
+
+The founder, 15 September:
+
+> Your credits have been used up. Upgrade your plan to continue.
+> [Upgrade or recharge](https://lobsterai.youdao.com/portal#/pricing) —
+> that's bs. i dont use their credits. i use my open api. so lets fix
+> that pls
+
+Three separate faults, stacked. The first is the only one that looks
+like NetEase's.
+
+**The message was theirs. The limit is ours.** Our own server counts
+credits against `DESKTOP_MONTHLY_CREDITS` (3,000,000) and answers HTTP
+402 with code `40200` (`polar/desktop/service.py`,
+`polar/desktop/endpoints.py`). Upstream's classifier
+(`common/coworkErrorClassify.ts`) matches `40200` with the pattern
+`/\b(?:4020[0-2]|4160[678])\b/` and shows `coworkErrorQuotaExhausted` —
+whose text was NetEase's pricing page. So *our* quota was advertising
+*their* upgrade. All four `lobsterai.youdao.com` links are gone;
+`grep -c` now returns 0. The new line points at Settings instead.
+
+**There was nowhere to put a key.** A person's own provider key is a
+real capability — `app_config.providers`, read by the config sync — but
+the only screen that could set one was the thirteen-tab Settings, and I
+cut the route to it when the four-tab Settings replaced it (item 5). So
+the app told them to upgrade and offered no alternative. General now has
+a **Models** group: one select (the account's allowance, or your own
+OpenAI / Anthropic / Gemini / OpenRouter key) and, once a provider is
+chosen, a masked key field with a Show toggle and the provider's own
+page to get a key from.
+
+**And the key alone would have done nothing.** This is the part I would
+have shipped broken. `app_config.providers` only records that a key
+exists. What the engine runs on is resolved in
+`claudeSettings.ts:resolveMatchedProvider`, from
+`app_config.model.defaultModel` and `defaultModelProvider` — and its
+**first branch returns the account's server plan** the moment that field
+still says `lobsterai-server`, without ever looking at which keys are
+enabled. A Settings row that wrote only the providers map would have
+stored the key, synced it, restarted the gateway, and kept billing the
+account.
+
+Proved rather than reasoned: `claudeSettings.providerChoice.test.ts`
+drives the **real** resolver through the row's own decisions. Five
+tests, and one of them is the fault itself — an enabled OpenAI key with
+the model field untouched still resolves to `lobsterai-server`. With the
+model written too, it resolves to OpenAI at `api.openai.com`, with the
+person's key, and not a byte through `claidor.com`.
+
+So the row writes three things: the providers map, the model fields, and
+the redux selection (`App.tsx` writes its selected model back into the
+same config, so leaving those two out of step lets the next thing that
+touches the picker undo it silently). Upstream's own change classifier
+does the rest — a model change syncs the engine config, an API-key
+change restarts the gateway, both already built
+(`openclawConfigImpact.ts`).
+
+One shared function came out of it: `services/providerModels.ts`. The
+mapping from enabled providers to the model list existed twice in
+`App.tsx`, inline, and Settings needed it a third time.
+
+**Not verified:** nobody has typed a real key into the built app and
+watched a turn run on it. The resolver is proved, the sync path is
+upstream's and unchanged, and the last step is a run.
+
+**Where:** `renderer/design/settings/models.ts`, `rows.ts`,
+`useSettings.ts`, `Settings.tsx`, `renderer/services/providerModels.ts`,
+`renderer/services/i18n.ts`, `main/libs/claudeSettings.providerChoice.test.ts`.
+
+---
+
 ## What this list adds up to
 
 Two root causes account for most of what the founder saw:

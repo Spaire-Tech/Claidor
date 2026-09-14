@@ -1,4 +1,5 @@
 import { ExecPolicy } from '../../../shared/settings/constants';
+import { ACCOUNT_MODELS, apiKeyUrlFor, modelChoices, providerLabel } from './models';
 
 /**
  * Settings, as data.
@@ -85,6 +86,9 @@ export interface FieldRow extends RowBase {
   value: string;
   /** A fact rather than a setting — shown, not editable. */
   readOnly?: boolean;
+  /** An API key. Masked until somebody asks to see it. */
+  secret?: boolean;
+  placeholder?: string;
   onSave?: (value: string) => void;
 }
 
@@ -114,6 +118,10 @@ export interface SettingsInput {
   workingDirectory?: string;
   execPolicy: ExecPolicy;
   memoryEnabled: boolean;
+  /** `ACCOUNT_MODELS`, or the provider id whose key is in use. */
+  modelChoice: string;
+  /** The key stored for the chosen provider, if there is one. */
+  modelApiKey: string;
   /** 0–1 and a phrase, from the account's quota. Absent while unknown. */
   usage?: { fraction: number; value: string; desc: string };
   version?: string;
@@ -124,6 +132,8 @@ export interface SettingsInput {
   onAddAccount: () => void;
   onExecPolicy: (policy: ExecPolicy) => void;
   onMemory: (enabled: boolean) => void;
+  onModelChoice: (choice: string) => void;
+  onModelApiKey: (apiKey: string) => void;
   onWorkingDirectory: () => void;
   onRefreshUsage: () => void;
   onCheckUpdates: () => void;
@@ -278,6 +288,36 @@ function build(tab: SettingsTab, input: SettingsInput): SettingsGroup[] {
               action: 'Add',
               onPress: input.onAddAccount,
             } satisfies ButtonRow,
+          ],
+        },
+        {
+          title: 'Models',
+          rows: [
+            {
+              kind: SettingsRowKind.Select,
+              id: 'model-choice',
+              label: 'Which models',
+              desc: "Your account comes with a monthly allowance. Your own key bills you directly and does not touch it.",
+              value: input.modelChoice,
+              options: modelChoices(),
+              onPick: input.onModelChoice,
+            } satisfies SelectRow,
+            // Only once a provider is chosen. A key field above the choice
+            // it belongs to is a question nobody asked yet.
+            ...(input.modelChoice === ACCOUNT_MODELS
+              ? []
+              : [{
+                kind: SettingsRowKind.Field,
+                id: 'model-api-key',
+                label: `${providerLabel(input.modelChoice)} API key`,
+                desc: apiKeyUrlFor(input.modelChoice)
+                  ? `Kept on this computer and sent only to ${providerLabel(input.modelChoice)}. Get one at ${apiKeyUrlFor(input.modelChoice)}`
+                  : `Kept on this computer and sent only to ${providerLabel(input.modelChoice)}.`,
+                value: input.modelApiKey,
+                secret: true,
+                placeholder: 'Paste your key',
+                onSave: input.onModelApiKey,
+              } satisfies FieldRow]),
           ],
         },
         {
