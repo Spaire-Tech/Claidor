@@ -849,3 +849,66 @@ Seven new tests name both regressions. Full suite 4033 passed.
 **Not verified:** a real approval card raised by a real command. That
 needs a signed-in app with a provider configured. The decision logic is
 tested and the wiring type-checks; the round trip is not proven.
+
+## Stage 7 — the twelve roles
+
+**The correction first.** The plan says a role agent is "a kit plus an
+agent record" and that the twelve should come from `/api/kit-store`. A
+kit is `skills.bundle` + `skills.list` + `mcpServers` + `connectors` —
+it carries no name, no identity, no instructions, and upstream ships no
+twelve roles anywhere. What upstream does ship is `PRESET_AGENTS`: six
+Chinese consumer agents with a name, an icon, an identity, a system
+prompt and a skill list, an install flow in `agentManager.ts`, IPC
+handlers, and a config sync that tells OpenClaw about the new agent.
+That is the mechanism the roles wanted, and it already worked.
+
+So the twelve are presets, not kits. `src/main/presetAgents.ts` now
+holds them: Engineering Lead, Design Lead, Operations Manager, Product
+Manager, Head of People, Marketing Lead, Financial Controller, Account
+Executive, Data Analyst, Support Specialist, In-house Counsel, Research
+Scientist. Distinct orb and icon each, names and one-line descriptions
+bilingual, instructions English-only.
+
+**The voice brief moved to `src/shared/agent/voiceBrief.ts`.** It was in
+the renderer, where `systemPromptFor()` uses it for an agent somebody
+creates by hand. The twelve are built in the main process. Two copies of
+the founder's wording is one well-meaning edit away from half the agents
+sounding like a help desk, so there is one copy and both import it.
+
+**Every named skill is a directory that exists under `SKILLs/`**, and a
+test walks the list and checks. Naming a skill that is not on disk gives
+an agent instructions for a tool it does not have, and it would look
+exactly like a working agent until somebody asked it to do the job.
+
+**Apps → Agents** (`shell/Apps.tsx`, `shell/apps.ts`) lists all twelve
+over the app, sidebar included. An installed role stays in the list
+marked "Added" rather than disappearing — a list that empties as you use
+it makes you wonder what you did. Adding one closes the modal and opens
+a conversation with it, because landing back on the list with a new row
+somewhere in the sidebar would make the button look like it had done
+nothing.
+
+`installedIds` comes from the store rather than a second fetch: an
+installed role keeps the preset's own id, so the agents already loaded
+answer the question and a row says "Added" the instant it is added.
+
+Two scrims were hardcoded `rgba(195,203,214,.42)` where `glass.scrim`
+already held that exact value. Both now use the token.
+
+Eight new tests for the list, seven for the twelve. Full suite 4048
+passed, 3 skipped. Screenshots through the harness, which mounts the
+real `PRESET_AGENTS` rather than a fixture.
+
+**Not done, and still Stage 7:**
+
+- The agent detail's five tabs — Instructions, Memories, Skills,
+  Routines, Integrations. Nothing of that is built.
+- `/api/kit-store` still returns `{"kits": []}`. That half is the
+  *skills* half and it is separate from the roles; kits carry no
+  identity, so filling it would not have produced twelve agents.
+
+**Not verified:** the install round trip in a running app. The IPC path
+is real end to end — `PresetTemplates → getAllPresetAgents()`,
+`AddPreset → addPresetAgent → createAgent` plus an OpenClaw config sync
+— and every hop type-checks, but no role has been added by pressing the
+button in the signed-in app.

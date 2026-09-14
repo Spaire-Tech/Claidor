@@ -3,7 +3,13 @@ import '../src/renderer/design/tokens.css';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
+// The real twelve, not a fixture. `presetAgents.ts` is a main-process
+// module but it reaches for nothing Electron gives it — a type-only
+// import of the store, and a plain-JS language helper — so the harness
+// can draw the list the app will actually draw.
+import { PRESET_AGENTS } from '../src/main/presetAgents';
 import { AccountMenu } from '../src/renderer/design/shell/AccountMenu';
+import { Apps } from '../src/renderer/design/shell/Apps';
 import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/MessagesShell';
 import { SignIn } from '../src/renderer/design/shell/SignIn';
 import type { EngineMessage, EnginePermissionRequest } from '../src/renderer/design/thread/fromEngine';
@@ -162,6 +168,17 @@ function Screens(): JSX.Element {
       onPickAgent={noop}
       onCreateAgent={noop}
       onApps={noop}
+      apps={screen === 'apps' || screen === 'apps-adding' ? (
+        <Apps
+          available={PRESET_AGENTS}
+          // One already here, so both states of a row are on screen at
+          // once: the button, and the word that replaces it.
+          installedIds={new Set(['engineering-lead'])}
+          busyId={screen === 'apps-adding' ? 'design-lead' : undefined}
+          onInstall={noop}
+          onClose={noop}
+        />
+      ) : undefined}
       onAccount={noop}
       accountMenu={screen === 'account' || screen === 'account-spent' ? (
         <AccountMenu

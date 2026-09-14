@@ -327,6 +327,18 @@ agent that already knows its work.
 **Size:** medium in the app, and the twelve kits are writing more than
 engineering.
 
+> **Correction, 14 September.** "A role agent is a kit plus an agent
+> record" was wrong about where the twelve come from. A kit carries no
+> identity, and `/api/kit-store` could not have produced them. The
+> mechanism that could — and that already existed, with an install flow,
+> IPC and an OpenClaw config sync — is `PRESET_AGENTS`. The twelve are
+> presets, and they are built: `src/main/presetAgents.ts`, listed by
+> `shell/Apps.tsx`. The "done when" above is met.
+>
+> Still open in this stage: the agent detail's five tabs, and
+> `/api/kit-store`, which is the *skills* half and unrelated to the
+> roles. See `build-log.md` § Stage 7.
+
 ---
 
 ## Stage 8 — Connectors

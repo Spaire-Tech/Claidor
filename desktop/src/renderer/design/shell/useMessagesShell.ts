@@ -6,11 +6,13 @@ import { coworkService } from '../../services/cowork';
 import type { AppDispatch, RootState } from '../../store';
 import { setCurrentAgentId } from '../../store/slices/agentSlice';
 import { setCurrentSession } from '../../store/slices/coworkSlice';
+import type { PresetAgent } from '../../types/agent';
 import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
 import { decisionNote } from '../thread/fromEngine';
 import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
 import { AuthDecision } from '../thread/types';
+import { installedPresetIds } from './apps';
 import type { AgentDraftSubmit } from './Compose';
 import { ThreadMode } from './MessagesShell';
 import {
@@ -53,6 +55,17 @@ export interface MessagesShellState {
   onCloseCompose: () => void;
   onPickAgent: (agentId: string) => void;
   onCreateAgent: (draft: AgentDraftSubmit) => void;
+  /** True while the roles list is over the app. */
+  appsOpen: boolean;
+  onApps: () => void;
+  onCloseApps: () => void;
+  /** The twelve roles, whether or not they are already here. */
+  presets: readonly PresetAgent[];
+  /** Which of them are already agents. */
+  installedIds: ReadonlySet<string>;
+  /** The one being added, while it is being added. */
+  busyPresetId: string | undefined;
+  onInstallPreset: (presetId: string) => void;
   /** The open conversation, for the panel to watch. */
   sessionId: string | undefined;
   workingDirectory: string | undefined;
@@ -257,6 +270,40 @@ export function useMessagesShell(): MessagesShellState {
     if (agent) onSelect(agent.id);
   }, [onSelect]);
 
+  // The roles list. `getPresetTemplates` returns all twelve; `getPresets`
+  // returns only the ones not yet added, which would make the list shrink
+  // as you used it and leave you wondering what you had just done.
+  const [presets, setPresets] = useState<readonly PresetAgent[]>([]);
+  const [appsOpen, setAppsOpen] = useState(false);
+  const [busyPresetId, setBusyPresetId] = useState<string>();
+
+  useEffect(() => {
+    let current = true;
+    void agentService.getPresetTemplates()
+      .then(all => { if (current) setPresets(all); });
+    return () => { current = false; };
+  }, []);
+
+  const installedIds = useMemo(() => installedPresetIds(agents), [agents]);
+
+  const onApps = useCallback(() => setAppsOpen(true), []);
+  const onCloseApps = useCallback(() => setAppsOpen(false), []);
+
+  const onInstallPreset = useCallback(async (presetId: string) => {
+    setBusyPresetId(presetId);
+    try {
+      const agent = await agentService.addPreset(presetId);
+      if (!agent) return;
+      // Adding somebody means going to talk to them. Landing back on the
+      // list with a new row somewhere in the sidebar would make the button
+      // look like it had done nothing.
+      setAppsOpen(false);
+      onSelect(agent.id);
+    } finally {
+      setBusyPresetId(undefined);
+    }
+  }, [onSelect]);
+
   const choice = useMemo<ChoiceHandlers>(() => ({
     // A choice card is answered by saying the answer, which is what a
     // person would do anyway — so the agent sees a normal reply rather
@@ -283,6 +330,13 @@ export function useMessagesShell(): MessagesShellState {
     onCloseCompose,
     onPickAgent,
     onCreateAgent: (draft: AgentDraftSubmit) => { void onCreateAgent(draft); },
+    appsOpen,
+    onApps,
+    onCloseApps,
+    presets,
+    installedIds,
+    busyPresetId,
+    onInstallPreset: (presetId: string) => { void onInstallPreset(presetId); },
     sessionId: currentSession?.id,
     workingDirectory: currentSession?.cwd,
     panelOpen,

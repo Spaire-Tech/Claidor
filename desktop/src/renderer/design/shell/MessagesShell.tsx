@@ -37,6 +37,8 @@ export interface MessagesShellProps {
   onPickAgent?: (agentId: string) => void;
   onCreateAgent?: (draft: AgentDraftSubmit) => void;
   onApps: () => void;
+  /** The roles list, when open. Lies over the whole app, sidebar included. */
+  apps?: React.ReactNode;
   onAccount: () => void;
   /** Rendered inside the sidebar's footer when the account menu is open. */
   accountMenu?: React.ReactNode;
@@ -61,7 +63,7 @@ export interface MessagesShellProps {
 export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
-    choice, auth, onSelect, onSend, onCompose, onApps, onAccount, onMode,
+    choice, auth, onSelect, onSend, onCompose, onApps, apps, onAccount, onMode,
     onOpenPanel, onPlus,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
   } = props;
@@ -248,6 +250,12 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         </div>
         )}
       </div>
+      {/*
+        Outside the grid, over all of it. A modal that covered only the
+        conversation would leave the sidebar live behind it, and clicking
+        an agent through the scrim would change what you came back to.
+      */}
+      {apps}
     </div>
   );
 }

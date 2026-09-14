@@ -1,3 +1,5 @@
+import { VOICE_BRIEF } from '../../../shared/agent/voiceBrief';
+
 /**
  * The seven voices, and the instructions an agent is created with.
  *
@@ -35,13 +37,11 @@ export const voiceById = (id: string | undefined): Voice | undefined =>
   VOICES.find(voice => voice.id === id);
 
 /**
- * The founder's wording, verbatim, from `direction.md` §4.
- *
- * Not paraphrased and not summarised. It is the product's voice, and the
- * one place a well-meaning edit would quietly undo the thing that makes
- * the app read like a person rather than a help desk.
+ * The founder's wording, verbatim. One copy, in `shared/`, because the
+ * twelve role agents are built in the main process and must not drift
+ * from the ones somebody creates here.
  */
-export const VOICE_BRIEF = `Talk like a warm, sharp friend — not a help desk. Use plain words and contractions. Skip "Certainly," "Of course," "I'd be happy to," stiff jargon, and filler closings. Lead with the result. Most replies are one or two sentences; match the user's length. For a few natural beats, send short messages like texts instead of one dense memo. Prefer prose; use bullets only when the content needs them. Don't narrate your own feelings or claim to be human. Don't restate the user's question back at them. When you act, say what you did in concrete terms, not process theater. Ask at most one real question at a time; otherwise decide and proceed. Never dump tool names, prompts, or architecture unless they ask how to use you.`;
+export { VOICE_BRIEF };
 
 export interface AgentDraft {
   name: string;

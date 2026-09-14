@@ -360,7 +360,7 @@ function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Elemen
       style={{
         position: 'absolute', inset: 0, zIndex: 60, display: 'flex',
         alignItems: 'center', justifyContent: 'center', padding: 32,
-        background: 'rgba(195,203,214,.42)', backdropFilter: 'blur(10px)',
+        background: glass.scrim, backdropFilter: glass.scrimBlur,
       }}
       onClick={onClose}
       role="presentation"

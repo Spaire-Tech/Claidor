@@ -7,6 +7,7 @@ import { authService } from '../../services/auth';
 import type { RootState } from '../../store';
 import { ComputerPanel } from '../panel/ComputerPanel';
 import { AccountMenu } from './AccountMenu';
+import { Apps } from './Apps';
 import { MessagesShell } from './MessagesShell';
 import { SignIn } from './SignIn';
 import { useMessagesShell } from './useMessagesShell';
@@ -89,8 +90,8 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
       onSelect={shell.onSelect}
       onSend={shell.onSend}
       onMode={shell.onMode}
-      // Not yet built. Apps is Stage 7, and the `+` menu — attach a file,
-      // teach a task — is Stage 10.
+      // The `+` menu — attach a file, teach a task — is Stage 10 and not
+      // built yet.
       //
       // `onPlus` has to be passed even as a stub: `Composer` hides the
       // button entirely when it is absent, so leaving it out did not
@@ -101,7 +102,16 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
       onCloseCompose={shell.onCloseCompose}
       onPickAgent={shell.onPickAgent}
       onCreateAgent={shell.onCreateAgent}
-      onApps={() => {}}
+      onApps={shell.onApps}
+      apps={shell.appsOpen && (
+        <Apps
+          available={shell.presets}
+          installedIds={shell.installedIds}
+          busyId={shell.busyPresetId}
+          onInstall={shell.onInstallPreset}
+          onClose={shell.onCloseApps}
+        />
+      )}
       onAccount={() => setAccountOpen(open => !open)}
       accountMenu={accountOpen && (
         <AccountMenu
