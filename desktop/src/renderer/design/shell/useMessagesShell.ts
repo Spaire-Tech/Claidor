@@ -11,7 +11,8 @@ import { setCurrentSession } from '../../store/slices/coworkSlice';
 import type { PresetAgent } from '../../types/agent';
 import { ArtifactTypeValue } from '../../types/artifact';
 import type { CoworkMessage } from '../../types/cowork';
-import { openLocalPathWithToast } from '../../utils/localFileActions';
+import { openLocalPathWithToast, showToast } from '../../utils/localFileActions';
+import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
 import { decisionNote } from '../thread/fromEngine';
@@ -27,6 +28,7 @@ import {
   type StoreSession,
   threadItems,
 } from './select';
+import { agentTemplate, templateBase64, templateFileName } from './template';
 
 /**
  * The shell, connected.
@@ -57,6 +59,10 @@ export interface MessagesShellState {
   onSelect: (agentId: string) => void;
   onSend: (message: string) => void;
   onMode: (mode: ThreadMode) => void;
+  /** "Teach a task", from the composer's `+` menu. */
+  onTeach: () => void;
+  /** "Share as template", from the share button in the header. */
+  onShareTemplate: () => void;
   /** True while the compose pane has taken over the conversation. */
   composing: boolean;
   onCompose: () => void;
@@ -216,15 +222,24 @@ export function useMessagesShell(): MessagesShellState {
   // Named, deduplicated, for the chips inside a bubble.
   const files = useMemo<readonly KnownFile[]>(() => {
     const byName = new Map<string, KnownFile>();
-    for (const artifact of detected) {
-      const path = artifact.filePath;
-      if (!path) continue;
+    const add = (path: string | undefined): void => {
+      if (!path) return;
       const name = basename(path);
-      if (!name || byName.has(name.toLowerCase())) continue;
+      if (!name || byName.has(name.toLowerCase())) return;
       byName.set(name.toLowerCase(), { name, path });
+    };
+    for (const artifact of detected) add(artifact.filePath);
+    // And what the person attached themselves. The detector only reads
+    // the agent's messages, so without this a file you handed over is a
+    // chip with nowhere to go.
+    for (const message of messages) {
+      if (message.type !== 'user') continue;
+      for (const one of extractUserMessageFileAttachments(message.content).attachments) {
+        add(one.path);
+      }
     }
     return [...byName.values()];
-  }, [detected]);
+  }, [detected, messages]);
 
   // And into the artifact store, which is what fills the computer panel's
   // Files tab. The same three steps the old shell takes: local services go
@@ -302,6 +317,60 @@ export function useMessagesShell(): MessagesShellState {
     }
     void coworkService.startSession({ prompt: message, agentId: activeId });
   }, [currentSession, activeId]);
+
+  /**
+   * "Teach a task", from the composer's `+` menu.
+   *
+   * The canvas draws a record dot beside it and the app has no recorder,
+   * so this does the thing the founder's own copy describes: *"walk
+   * through it once… I watch the flow, ask only if something's
+   * ambiguous, then save it so I can run it again."* It opens that
+   * conversation rather than pretending to film one.
+   */
+  const onTeach = useCallback(() => {
+    onSend(
+      "I want to teach you a task. I'll walk you through it once, step by step. "
+      + 'Ask me only where something is genuinely ambiguous, and when we are done, '
+      + 'write it up as a recipe you can follow next time: what to look at, which '
+      + 'steps to take, and what finished looks like.',
+    );
+  }, [onSend]);
+
+  /**
+   * "Share as template", from the share button in the header.
+   *
+   * Written to a temporary file and then handed to the system's Save
+   * dialog, because the app's only inline writer puts files in its own
+   * attachment directory — which is the wrong place for something a
+   * person means to send to somebody.
+   */
+  const onShareTemplate = useCallback(async () => {
+    if (!active) return;
+    // The store's agent is a summary and carries no instructions, which
+    // are the most useful half of a template. They come from the same
+    // place the agent's own screen reads them.
+    const full = await window.electron?.agents?.get?.(active.id);
+    const opening = messages.find(one => one.type === 'user')?.content;
+    const template = agentTemplate({
+      name: active.name,
+      description: active.description,
+      instructions: full?.systemPrompt ?? '',
+      skillIds: active.skillIds,
+      ...(opening ? { opening } : {}),
+    });
+    const fileName = templateFileName(active.name);
+
+    const written = await window.electron?.dialog?.saveInlineFile?.({
+      dataBase64: templateBase64(template),
+      fileName,
+      mimeType: 'application/json',
+    });
+    if (!written?.success || !written.path) {
+      showToast('That template could not be written.');
+      return;
+    }
+    await window.electron?.dialog?.saveFileCopy?.(written.path);
+  }, [active, messages]);
 
   const auth = useMemo<AuthHandlers>(() => ({
     onDecide: (itemId, decision) => {
@@ -421,6 +490,8 @@ export function useMessagesShell(): MessagesShellState {
     onSelect,
     onSend,
     onMode: setMode,
+    onTeach,
+    onShareTemplate: () => { void onShareTemplate(); },
     composing,
     onCompose,
     onCloseCompose,

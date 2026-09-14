@@ -174,3 +174,37 @@ export const ChevronRightIcon = (props: IconProps): JSX.Element => svg(
   <path d="M9 5l7 7-7 7" />,
   { weight: 2, ...props },
 );
+
+/** Support — the canvas's bound manual. */
+export const SupportIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <rect x="4" y="3" width="16" height="18" rx="3" />
+    <path d="M9 7h6" />
+  </>,
+  { weight: 1.7, ...props },
+);
+
+/** Add account — a person with a plus beside them. */
+export const AddAccountIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <circle cx="10" cy="8" r="3.4" />
+    <path d="M3.5 20c.6-3.4 3.3-5.4 6.5-5.4M18 13v5M15.5 15.5h5" />
+  </>,
+  { weight: 1.7, ...props },
+);
+
+/** Share — the canvas's tray with an arrow leaving it. */
+export const ShareIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <path d="M12 16V4" />
+    <path d="M7 9l5-5 5 5" />
+    <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+  </>,
+  props,
+);
+
+/** Attach files — the canvas's paperclip, one path. */
+export const AttachIcon = (props: IconProps): JSX.Element => svg(
+  <path d="M20 11.5l-7.8 7.8a4.3 4.3 0 01-6.1-6.1l8-8a2.9 2.9 0 014.1 4.1l-8 8a1.5 1.5 0 01-2.1-2.1l7.2-7.2" />,
+  { weight: 1.7, ...props },
+);

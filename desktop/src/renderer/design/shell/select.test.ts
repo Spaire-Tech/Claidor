@@ -46,6 +46,19 @@ describe('previewOf', () => {
       .toBe('One. Two.');
   });
 
+  test('shows a file by name, without the marker around it', () => {
+    // The canvas does exactly this: `.replace(/\[\[(.+?)\]\]/g, "$1")`.
+    // A chip is a bubble's idea; a row is one line of grey text.
+    expect(previewOf([message({ type: 'assistant', content: 'Found [[Mango 3y IS.xlsx]] there.' })]))
+      .toBe('Found Mango 3y IS.xlsx there.');
+  });
+
+  test('never shows the machine-written attachment lines', () => {
+    expect(previewOf([
+      message({ type: 'user', content: 'have a look\nInput Files: /Users/bass/a.xlsx' }),
+    ])).toBe('have a look');
+  });
+
   test('is empty rather than undefined for a thread with nothing said', () => {
     expect(previewOf([])).toBe('');
     expect(previewOf(undefined)).toBe('');

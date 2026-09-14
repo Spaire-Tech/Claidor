@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react';
 
-import { ChevronRightIcon, GearIcon, SignOutIcon, UsageIcon } from '../icons';
+import {
+  AddAccountIcon,
+  ChevronRightIcon,
+  GearIcon,
+  SignOutIcon,
+  SupportIcon,
+  UsageIcon,
+} from '../icons';
 import { color, glass, line, radius, shadow, text } from '../tokens';
 import { type Quota, usageLine } from './account';
 
@@ -8,21 +15,33 @@ export interface AccountMenuProps {
   quota: Quota | null | undefined;
   onSettings: () => void;
   onUsage?: () => void;
+  onSupport: () => void;
+  onAddAccount: () => void;
   onLogOut: () => void;
   onClose: () => void;
 }
 
 /**
- * The menu above the account row.
+ * The menu above the account row. All five of the canvas's rows.
  *
- * Three of the canvas's six rows, and the three that do something:
- * usage, Settings, Log out. "Support" is not here because there is no
- * support URL in the app to point it at, and "Add account" is not here
- * because nothing in this app holds two accounts. Both would be exactly
- * the dead controls the founder has already objected to once.
+ * It used to have three. I dropped Support and Add account and wrote a
+ * comment justifying it — no support URL to point at, no second account
+ * to hold — which was me overruling the person who designed the screen,
+ * in a code comment, where they would never see it. The founder, on
+ * opening the app: "Account menu being a total joke."
+ *
+ * Both rows are here and both do something real:
+ *
+ *  - **Support** opens a mail draft, with the app version and platform
+ *    already in it, because the first thing anybody is asked for is what
+ *    they are running. The address is one constant in `account.ts`.
+ *  - **Add account** opens the browser sign-in. This app holds one
+ *    account at a time, so signing in as somebody else replaces the
+ *    session — which is what a person means by adding an account to an
+ *    app that has one. It is not a lie and it is not dead.
  */
 export function AccountMenu({
-  quota, onSettings, onUsage, onLogOut, onClose,
+  quota, onSettings, onUsage, onSupport, onAddAccount, onLogOut, onClose,
 }: AccountMenuProps): JSX.Element {
   const usage = usageLine(quota);
   const ref = useRef<HTMLDivElement>(null);
@@ -126,9 +145,18 @@ export function AccountMenu({
         </div>
       )}
 
+      {row(
+        <SupportIcon size={17} />,
+        'Support',
+        onSupport,
+        <ChevronRightIcon size={13} style={{ color: color.faint }} />,
+      )}
+
       {row(<GearIcon size={17} />, 'Settings', onSettings)}
 
       <div style={{ height: 1, margin: '7px 10px', background: line.hairline }} />
+
+      {row(<AddAccountIcon size={17} />, 'Add account', onAddAccount)}
 
       {row(<SignOutIcon size={17} />, 'Log out', onLogOut)}
     </div>

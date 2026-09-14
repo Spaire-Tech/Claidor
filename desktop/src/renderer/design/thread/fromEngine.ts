@@ -1,3 +1,4 @@
+import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
@@ -180,11 +181,22 @@ export function toThreadItems(
     switch (message.type) {
       case 'user': {
         if (isBlank(message.content)) break;
+        // A person's attachments arrive appended to their own prompt as
+        // machine-written lines — `Input Files: /abs/path` — which is the
+        // app's convention and predates this shell. Rendered as written
+        // they are a label and a path in the middle of somebody's own
+        // sentence, so they come out and go back in as the canvas's
+        // marker, where the bubble draws them as chips.
+        const { text: said, attachments } = extractUserMessageFileAttachments(message.content);
+        const text = [said.trim(), ...attachments.map(one => `[[${one.name}]]`)]
+          .filter(Boolean)
+          .join('\n');
+        if (!text) break;
         items.push({
           kind: ThreadItemKind.Text,
           id: message.id,
           from: Speaker.Person,
-          text: message.content.trim(),
+          text,
           at,
         } satisfies TextItem);
         break;

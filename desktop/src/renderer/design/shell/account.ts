@@ -7,6 +7,38 @@
  * never draws because its mock sits at 74%.
  */
 
+/**
+ * Where Support goes.
+ *
+ * One constant, because it is the one thing here nobody has confirmed:
+ * the app's server is `api.claidor.com`, so this is the matching mailbox.
+ * If the address is wrong it is wrong in exactly one place.
+ */
+export const SUPPORT_ADDRESS = 'support@claidor.com';
+
+/**
+ * The mail draft Support opens.
+ *
+ * The version and the platform are in the body already, because they are
+ * the first two things anybody is asked for and the last two a person
+ * thinks to include.
+ */
+export function supportMailto(
+  { version, platform }: { version?: string; platform?: string } = {},
+): string {
+  const lines = [
+    '',
+    '',
+    '---',
+    `Version: ${version || 'unknown'}`,
+    `Platform: ${platform || 'unknown'}`,
+  ];
+  const query = new URLSearchParams({ subject: 'Faiser', body: lines.join('\n') });
+  // URLSearchParams writes spaces as `+`, which a mail client shows
+  // literally in the body. Percent-escapes are what mailto: wants.
+  return `mailto:${SUPPORT_ADDRESS}?${query.toString().replace(/\+/g, '%20')}`;
+}
+
 export interface Quota {
   planName?: string;
   creditsLimit?: number;

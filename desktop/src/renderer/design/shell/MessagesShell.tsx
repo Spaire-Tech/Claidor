@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { CloseIcon, ComputerIcon, SearchIcon } from '../icons';
+import { CloseIcon, ComputerIcon, SearchIcon, ShareIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { findInThread, matchLabel, stepMatch } from '../thread/search';
 import { Thread } from '../thread/Thread';
 import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
 import type { ThreadItem } from '../thread/types';
 import { useStaggered } from '../thread/useStaggered';
-import { color, line, radius, shadow, text, tracking } from '../tokens';
+import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
 import { Sidebar, type SidebarAgent } from './Sidebar';
@@ -54,7 +54,10 @@ export interface MessagesShellProps {
   onOpenPanel: () => void;
   /** The panel itself, when open. Splits the conversation pane. */
   panel?: React.ReactNode;
-  onPlus?: () => void;
+  /** "Teach a task" in the composer's `+` menu. */
+  onTeach?: () => void;
+  /** "Share as template", behind the share button in the header. */
+  onShareTemplate?: () => void;
 }
 
 /**
@@ -71,7 +74,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
     choice, auth, parts, onSelect, onSend, onCompose, onApps, apps, onAccount, onMode,
-    onOpenPanel, onPlus, onOpenAgent, agentDetail,
+    onOpenPanel, onTeach, onShareTemplate, onOpenAgent, agentDetail,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
   } = props;
 
@@ -99,6 +102,27 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   // `typing: s.typing && s.mode === "text"`.
   const saysTyping = (Boolean(typing) || staged.length < shown.length)
     && mode === ThreadMode.Text;
+
+  // The share popover. Escape and a click elsewhere close it, like every
+  // other menu in the app.
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!shareOpen) return undefined;
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setShareOpen(false);
+    };
+    const onDown = (event: MouseEvent): void => {
+      if (!shareRef.current?.contains(event.target as Node)) setShareOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    const timer = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+      window.clearTimeout(timer);
+    };
+  }, [shareOpen]);
 
   const tab = (label: string, value: ThreadMode): JSX.Element => {
     const on = mode === value;
@@ -229,6 +253,57 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               <SearchIcon size={16} />
             </button>
 
+            {/*
+              Share. The canvas puts it between the search and the
+              computer, with one row behind it, and it was simply not
+              built. The row is only offered when something can actually
+              be shared — an empty conversation has no agent worth
+              passing on yet.
+            */}
+            {onShareTemplate && (
+              <span ref={shareRef} style={{ position: 'relative', display: 'flex' }}>
+                {shareOpen && (
+                  <div
+                    role="menu"
+                    style={{
+                      position: 'absolute', right: 0, top: 42, zIndex: 40, padding: 8,
+                      borderRadius: radius.card, background: glass.background,
+                      backdropFilter: glass.blur, border: `1px solid ${glass.border}`,
+                      boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
+                      animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => { setShareOpen(false); onShareTemplate(); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', height: 44, padding: '0 16px',
+                        border: 'none', background: 'transparent', borderRadius: radius.input,
+                        cursor: 'pointer', font: 'inherit', fontSize: text.body,
+                        color: color.ink, whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Share as template
+                    </button>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShareOpen(open => !open)}
+                  aria-label="Share this conversation"
+                  aria-expanded={shareOpen}
+                  style={{
+                    width: 34, height: 34, borderRadius: radius.small,
+                    border: '1px solid transparent', background: 'transparent',
+                    cursor: 'pointer', color: color.muted,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <ShareIcon size={16} />
+                </button>
+              </span>
+            )}
+
             <button
               type="button"
               onClick={onOpenPanel}
@@ -277,7 +352,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
           <Composer
             placeholder={`Message ${activeName}`}
             onSend={onSend}
-            onPlus={onPlus}
+            {...(onTeach ? { onTeach } : {})}
           />
         </div>
         {panel}

@@ -1,3 +1,4 @@
+import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import type { EngineMessage, EnginePermissionRequest } from '../thread/fromEngine';
 import { toThreadItems } from '../thread/fromEngine';
 import type { ThreadItem } from '../thread/types';
@@ -62,14 +63,30 @@ export function whenLabel(at: number | undefined, now: number = Date.now()): str
  * newest entry is a tool call would otherwise preview as blank, or worse,
  * as the tool's name.
  */
+/**
+ * One line of a message, as a list row shows it.
+ *
+ * The canvas strips its own file marker here —
+ * `last.text.replace(/\[\[(.+?)\]\]/g, "$1")` — because a chip is a
+ * bubble's idea and a row is one line of grey text. The attachment lines
+ * the app appends to a person's own prompt come off for the same reason:
+ * "Input Files: /Users/…" is not what anybody said.
+ */
+export function plainPreview(content: string): string {
+  return extractUserMessageFileAttachments(content).text
+    .replace(/\[\[(.+?)\]\]/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function previewOf(messages: readonly EngineMessage[] | undefined): string {
   if (!messages?.length) return '';
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
     if (message.type !== 'user' && message.type !== 'assistant') continue;
     if (message.metadata?.isThinking) continue;
-    const text = message.content.trim();
-    if (text) return text.replace(/\s+/g, ' ');
+    const text = plainPreview(message.content);
+    if (text) return text;
   }
   return '';
 }
@@ -109,7 +126,7 @@ export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
           // than the list — a reply that just arrived is in `messages`
           // before the summary catches up. Every other row falls back to
           // the summary, which is the only thing it has.
-          preview: previewOf(session?.messages) || (session?.lastMessage ?? ''),
+          preview: previewOf(session?.messages) || plainPreview(session?.lastMessage ?? ''),
           when: whenLabel(session?.updatedAt, now),
           unread: unread?.has(agent.id) ?? false,
         } satisfies SidebarAgent,

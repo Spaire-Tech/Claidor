@@ -96,7 +96,7 @@ thirteen-tab settings.
 **Where:** no file. `FaiserApp.tsx` calls `onOpenSettings` which reaches
 the old `Settings` component.
 
-### 6. I removed two rows from the account menu the founder had designed — `open`
+### 6. I removed two rows from the account menu the founder had designed — `fixed, awaiting the founder's eyes`
 
 **Design:** Trial usage with a percentage and a chevron; Support;
 Settings; divider; Add account; Log out.
@@ -107,26 +107,39 @@ I removed Support and Add account deliberately and wrote comments in the
 code justifying it — "no URL", "no second account". That is not drift.
 That is overruling the designer.
 
-**Where:** `src/renderer/design/shell/AccountMenu.tsx`.
+**Fixed.** All five rows, in the canvas's order, and both of the
+restored ones do something:
 
-### 7. The sidebar has no search — `open`
+- **Support** opens a mail draft to `support@claidor.com` with the app
+  version and platform already in the body. *The address is the one
+  thing here nobody has confirmed* — the app's server is
+  `api.claidor.com`, so this is the matching mailbox, and it is a single
+  constant (`SUPPORT_ADDRESS` in `shell/account.ts`) if it is wrong.
+- **Add account** opens the browser sign-in. This app holds one account
+  at a time, so signing in as somebody else replaces the session — which
+  is what a person means by adding an account to an app that has one.
+  Real multi-account is a v2 feature, and the row does not pretend
+  otherwise.
 
-**Design:** a 40px pill on `#e9edf2` under the title, with a magnifier
-and a `Search` placeholder.
+**Where:** `src/renderer/design/shell/AccountMenu.tsx`,
+`shell/account.ts`, `shell/FaiserApp.tsx`.
 
-**Built:** nothing. I built a find-in-conversation bar in the thread
-header instead, which is a different feature.
+### 7. The sidebar has no search — `withdrawn: I was wrong`
 
-**Where:** `src/renderer/design/shell/Sidebar.tsx`.
+I wrote "Built: nothing." `Sidebar.tsx:80–101` has the search box, and
+has had it since `edc76a67`, which is three commits before I wrote this
+list. 40px pill, `color.fill`, hairline border, magnifier, `Search`
+placeholder, filters by name — the canvas's, exactly.
 
-### 8. The sidebar rows are missing their unread dot — `open`
+I did not open the file before writing the item. Left standing as a
+correction rather than deleted, because a list that quietly loses its
+wrong entries is not a record of anything.
 
-**Design:** a 7px circle at the end of each row, coloured per row
-(`bot.dotColor`).
+### 8. The sidebar rows are missing their unread dot — `withdrawn: I was wrong`
 
-**Built:** absent.
-
-**Where:** `Sidebar.tsx`.
+Also already built, in the same file, `Sidebar.tsx:145–151`: 7px circle,
+`color.accent` when unread and `transparent` otherwise, which is the
+canvas's `bot.dotColor` exactly.
 
 ### 9. The voice picker is a carousel, not a grid — `open`
 
@@ -139,16 +152,31 @@ then "Use this voice" and "Cancel".
 
 **Where:** `src/renderer/design/shell/Compose.tsx`, `VoicePicker`.
 
-### 10. The thread header is missing the share button — `open`
+### 10. The thread header is missing the share button — `fixed, awaiting the founder's eyes`
 
 **Design:** three buttons on the right — search, **share**, computer.
 The share button opens a popover with one row: "Share as template".
 
 **Built:** search and computer. No share.
 
-**Where:** `src/renderer/design/shell/MessagesShell.tsx`.
+**Fixed.** The button is between the two, as the canvas has it, with the
+one-row popover behind it: 18px radius, `right:0; top:42px`, Escape and
+click-outside to close.
 
-### 11. The composer's `+` is a dead button — `open`
+**What the template is.** The canvas does not say what comes out. What
+is worth passing on about a conversation is not the transcript — it is
+the agent behind it, so the file is the agent: name, description, its
+own instructions, its skills, and the first thing said in the
+conversation as an example. JSON, indented, small enough to read before
+you trust it, which matters when the whole file is instructions for an
+agent. Written to the app's inline-attachment directory and then handed
+to the system Save dialog, because that directory is the wrong place for
+something a person means to send.
+
+**Where:** `MessagesShell.tsx`, `shell/template.ts` (10 tests),
+`useMessagesShell.ts`.
+
+### 11. The composer's `+` is a dead button — `fixed, awaiting the founder's eyes`
 
 **Design:** it opens a 232px popover with two rows — "Attach files" with
 a paperclip, and "Teach a task" with a red record dot
@@ -157,16 +185,41 @@ a paperclip, and "Teach a task" with a red record dot
 **Built:** `onPlus={() => {}}`. A control that does nothing, which is
 the exact thing the founder has already told me not to ship.
 
-**Where:** `FaiserApp.tsx`, `Composer.tsx`.
+**Fixed.** The popover is the canvas's — 232px, 20px radius, two 44px
+rows, the record dot drawn as a ring rather than an icon.
 
-### 12. The send button should become a microphone when there is nothing to send — `open`
+- **Attach files** opens the system picker. What is attached shows as
+  chips above the pill, and on send goes with the message as the app's
+  own existing convention — `Input Files: /abs/path` appended to the
+  prompt, which `prepareCoworkPromptPayload` has always written and
+  `utils/userMessageFileAttachments.ts` has always read back. A test
+  sends one through both halves so the two cannot drift.
+- **Teach a task** has no recorder behind it, and the canvas's red dot
+  implies one. *Flagged for the founder.* What it does instead is the
+  thing the founder's own copy in the canvas describes — "walk through
+  it once… I watch the flow, ask only if something's ambiguous, then
+  save it so I can run it again" — it opens that conversation. Real, and
+  not a film of your screen.
 
-**Design:** one 40px dark circle. An up-arrow when there is a draft, a
-**microphone** when there is not.
+**And a person's own attachment no longer reads as machine output.** The
+`Input Files:` lines were rendered verbatim inside the person's bubble.
+They now come out and go back in as the canvas's `[[name]]` marker, so
+the bubble shows a chip, and the chip opens the file.
 
-**Built:** two separate controls.
+**Where:** `Composer.tsx`, `shell/attach.ts` (7 tests),
+`thread/fromEngine.ts`, `shell/select.ts`.
 
-**Where:** `src/renderer/design/shell/Composer.tsx`.
+### 12. The send button should become a microphone when there is nothing to send — `withdrawn: I was wrong`
+
+I wrote "Built: two separate controls." `Composer.tsx:99` is
+`{has ? <SendIcon size={17} /> : <MicIcon size={16} />}` — one 40px dark
+circle, two icons, the canvas's sizes. It was already right, and the
+file's own comment already said so.
+
+Three of my thirteen findings — 7, 8 and 12 — were things I had built
+and then reported as missing. I wrote the list from memory instead of
+from the files, which is the same failure as reporting a stage complete
+without opening the app, pointed the other way.
 
 ### 13. Compose has no group chips — `open`
 

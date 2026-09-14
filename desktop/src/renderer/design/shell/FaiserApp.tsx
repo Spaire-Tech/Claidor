@@ -9,6 +9,7 @@ import { AgentDetail } from '../agent/AgentDetail';
 import { useAgentDetail } from '../agent/useAgentDetail';
 import { useConnections } from '../connections/useConnections';
 import { ComputerPanel } from '../panel/ComputerPanel';
+import { supportMailto } from './account';
 import { AccountMenu } from './AccountMenu';
 import { Apps } from './Apps';
 import { MessagesShell } from './MessagesShell';
@@ -43,6 +44,16 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
   const quota = useSelector((state: RootState) => state.auth.quota);
   const [signInError, setSignInError] = useState<string | undefined>();
   const [accountOpen, setAccountOpen] = useState(false);
+  // Asked once, for the Support mail draft. It cannot change underneath
+  // somebody while the app is open.
+  const [appVersion, setAppVersion] = useState<string>();
+  useEffect(() => {
+    let current = true;
+    void window.electron?.appInfo?.getVersion?.()
+      .then(version => { if (current && version) setAppVersion(version); })
+      .catch(() => { /* the draft says "unknown", which is true */ });
+    return () => { current = false; };
+  }, []);
   const [agentOpen, setAgentOpen] = useState(false);
   const shell = useMessagesShell();
   const detail = useAgentDetail(shell.activeId, agentOpen);
@@ -97,13 +108,8 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
       onSelect={shell.onSelect}
       onSend={shell.onSend}
       onMode={shell.onMode}
-      // The `+` menu — attach a file, teach a task — is Stage 10 and not
-      // built yet.
-      //
-      // `onPlus` has to be passed even as a stub: `Composer` hides the
-      // button entirely when it is absent, so leaving it out did not
-      // leave a dead control, it left no control at all, and the composer
-      // ran without the `+` the canvas puts there.
+      onTeach={shell.onTeach}
+      onShareTemplate={shell.onShareTemplate}
       composing={shell.composing}
       onCompose={shell.onCompose}
       onCloseCompose={shell.onCloseCompose}
@@ -125,6 +131,17 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
         <AccountMenu
           quota={quota}
           onSettings={() => { setAccountOpen(false); onOpenSettings?.(); }}
+          onSupport={() => {
+            setAccountOpen(false);
+            void window.electron?.shell?.openExternal?.(supportMailto({
+              version: appVersion,
+              platform: window.electron?.platform,
+            }));
+          }}
+          // One account at a time, so signing in as somebody else is what
+          // adding an account means here. The browser flow is the same one
+          // the sign-in screen uses.
+          onAddAccount={() => { setAccountOpen(false); void authService.login(); }}
           onLogOut={() => { setAccountOpen(false); void authService.logout(); }}
           onClose={() => setAccountOpen(false)}
         />
@@ -146,7 +163,6 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
           onClose={shell.onClosePanel}
         />
       ) : undefined}
-      onPlus={() => {}}
     />
   );
 }

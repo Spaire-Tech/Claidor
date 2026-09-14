@@ -114,7 +114,11 @@ export function Sidebar({
                 font: 'inherit', textAlign: 'left', width: '100%',
                 background: active ? color.paper : 'transparent',
                 border: active ? '1px solid rgba(255,255,255,.6)' : '1px solid transparent',
-                boxShadow: active ? shadow.raised : 'none',
+                // The canvas ends the selected row's shadow with
+                // `inset 0 1px 0 rgba(255,255,255,.7)` — a white line
+                // along its top edge, which is what stops the row
+                // reading as a flat grey patch.
+                boxShadow: active ? `${shadow.raised}, inset 0 1px 0 rgba(255,255,255,.7)` : 'none',
               }}
             >
               <Orb agentId={agent.id} size={40} mood={OrbMood.Idle} />
