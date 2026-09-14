@@ -728,3 +728,124 @@ that boolean is the shipped code against the real store and real IPC.
 Nothing has been sent to a model, because no provider is configured on
 this profile — the log says so: "No enabled provider found for model:
 deepseek-reasoner".
+
+## Stage 4 — the Messages shell
+
+The shell itself landed earlier; these are the pieces that made it an app
+rather than a screenshot.
+
+**Compose.** The `+` takes over the conversation pane — composing is a
+place you are, not a dialog over where you were — with a To: line, a
+filterable picker and ⌘1–⌘9. Shortcuts are numbered *after* filtering, so
+⌘1 is always the first row on screen rather than the first row of a list
+you can no longer see.
+
+Not seeded: the plan's "four seeded agents" is the canvas mock's four
+bots, and Stage 7 replaces them with the twelve role kits. Building
+Perrin and Sable would have been building something to delete. Making
+agents creatable is the same line item and survives.
+
+No group row. Groups are Stage 10.
+
+**Seven voices**, `direction.md` §4's list in its order. The choice is
+made at creation because it changes how the agent writes today and how it
+will sound once speech exists. `systemPromptFor` carries the voice brief
+verbatim every time, including when no voice was picked — it is the house
+style, not a setting.
+
+**The 420ms stagger.** "The text come like texts. not ai." The split into
+three bubbles existed; they all appeared in one frame. The trap this is
+built around is that opening a conversation with two hundred messages
+must show them, not perform them — so the question is never "is this a
+bubble" but "did this bubble just arrive". Measured in a browser:
+
+    bubbles visible over time: 001112222333333333
+    first seen at (ms): {"1":252,"2":626,"3":1118}
+
+Gaps of 374ms and 492ms against 420, both inside one 120ms sample.
+`harness/stagger.mjs` keeps that checkable.
+
+**The account menu.** Three of the canvas's six rows — usage, Settings,
+Log out. "Support" has no URL in the app to point at and "Add account"
+has no second account, so neither is there. Usage is real quota: a
+missing quota is *not knowing*, not nought percent, and it never rounds
+up to 100% while something is left. At zero it says "All used" in the
+menu's only non-grey colour — the plan's audit item 5, undrawn in the
+canvas because its mock sits at 74%.
+
+**Settings has a route at last.** The menu calls App's own
+`handleShowSettings`. Until then `VITE_FAISER_SHELL=0` was the only way
+to reach providers.
+
+**Find in this conversation.** Third search box, third question: the
+sidebar does agent names, upstream's modal does across-sessions, this
+does the conversation you are in. Status lines are not searchable —
+matching "running commands" would be the app finding itself.
+
+**No share button.** `shareEntitled`, `htmlShare` and `shareDeployment`
+are all about artifacts, and artifacts live behind the computer icon, so
+the control belongs in Stage 5's panel.
+
+## Stage 5 — the computer icon
+
+A mount, not a rebuild: `ArtifactPanel` (8,676 lines) and
+`AgentBrowserInAppPanel` are upstream's and used whole. Ours is the frame
+and the tab strip — upstream keeps its tab strip *outside* the panel, in
+a 7,000-line session component, so there was one to write either way.
+
+**The browser is not broken.** That was the stage's open fault. Run
+through the real IPC in Electron:
+
+    navigateHost → { success: true }
+    tabs → [{ title: "LobsterAI", url: "http://127.0.0.1:5175/" }]
+
+An earlier probe against example.com failed with
+ERR_CERT_AUTHORITY_INVALID — this container's proxy, the same TLS failure
+that broke the pricing catalogue, not the browser.
+
+**`External` is the shipped default** (`browserWebAccess/constants.ts:239`),
+so the agent opens pages in its own window. The first version hid the
+Browser tab in that case, which would have hidden the tab behind the icon
+whose whole job is watching, for everybody, until they changed a setting
+they had no reason to look at. It says what is happening instead. Whether
+the default should change is the founder's: in-app is the only mode where
+the panel means anything.
+
+Two tabs, not five. Subagents and attachments are driven by several
+hundred lines of event wiring in that session component, and a tab that
+opens onto the file list because its panel was never passed is worse than
+a tab that is not there.
+
+## Stage 6 — ask before anything touches the computer
+
+The card was built in Stage 3. What was not true is that anything asked.
+Four faults in one path, and the first two are the ones that mattered.
+
+**It auto-approved almost everything.**
+`shouldAutoApprove: parseChannelSessionKey(sessionKey) !== null ||
+!isDeleteCommand(command)` — every command that was not a delete was
+approved by the app without asking. Auto-approval now happens only for IM
+channel sessions, where no card can reach the person and the alternative
+to allowing is hanging.
+
+**It then asked anyway, about what it had already allowed.** No `return`
+after the auto-approve branch, so the lines below overwrote the pending
+entry — losing `allowAlways`, which resolved the approval as allow-once
+and pushed a spurious "approved" prompt into the session — and then
+raised a card for a command that had already run.
+
+**"Always allow" and "Allow once" were the same press.** The decision was
+read from the engine's own flag and the person's choice discarded.
+`PermissionResult` carries `scope` now and the press wins; an
+auto-approved request with no scope still resolves allow-always so the
+allowlist keeps working.
+
+**The card never said which computer.** `threadItems` has taken a
+`deviceName` since Stage 4 and nothing passed one — no hostname was
+exposed to the renderer at all.
+
+Seven new tests name both regressions. Full suite 4033 passed.
+
+**Not verified:** a real approval card raised by a real command. That
+needs a signed-in app with a provider configured. The decision logic is
+tested and the wiring type-checks; the round trip is not proven.
