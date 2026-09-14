@@ -124,6 +124,7 @@ import type {
   PublishingSubscriptionRecoveryMode,
   PublishingTrialPolicy,
 } from '../../shared/publishing/constants';
+import type { Room, RoomError } from '../../shared/rooms/constants';
 import type {
   ShareDeploymentAnalyzeProjectInput,
   ShareDeploymentCreateNodeInput,
@@ -648,6 +649,15 @@ interface IElectronAPI {
    * and it must not be folded into the message plumbing by a later
    * refactor. `respond` is one way — nothing here reads a value back.
    */
+  /** Rooms: a conversation with more than one agent in it. */
+  rooms?: {
+    list: () => Promise<Room[]>;
+    create: (name: string, memberIds: string[]) =>
+      Promise<{ ok: true; room: Room } | { ok: false; problem: RoomError }>;
+    update: (id: string, changes: { name?: string; memberIds?: string[] }) =>
+      Promise<{ ok: true; room: Room | null } | { ok: false; problem: RoomError }>;
+    remove: (id: string) => Promise<void>;
+  };
   askInput?: {
     onRequested: (callback: (request: AskInputRequest) => void) => () => void;
     onDismissed: (callback: (data: { requestId: string }) => void) => () => void;

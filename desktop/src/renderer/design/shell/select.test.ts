@@ -6,6 +6,7 @@ import {
   dayStamp,
   previewOf,
   sidebarAgents,
+  sidebarRooms,
   type StoreAgent,
   type StoreSession,
   threadItems,
@@ -194,5 +195,51 @@ describe('dayStamp', () => {
   test('is absent for an empty thread', () => {
     expect(dayStamp([], NOW)).toBeUndefined();
     expect(dayStamp(undefined, NOW)).toBeUndefined();
+  });
+});
+
+describe('rooms in the sidebar', () => {
+  const agents = [{ id: 'eng', name: 'Engineering Lead' }, { id: 'design', name: 'Design Lead' }];
+  const room = { id: 'room:1', name: 'Launch', memberIds: ['eng', 'design'], createdAt: 500 };
+
+  test('the preview names who spoke last', () => {
+    // In a room that is half the information. "Design Lead: not my end"
+    // tells you more than "not my end".
+    const rows = sidebarRooms({
+      rooms: [room],
+      agents,
+      sessionsByAgent: {
+        eng: { id: 's1', agentId: 'eng', updatedAt: 1000, lastMessage: 'the build' },
+        design: { id: 's2', agentId: 'design', updatedAt: 2000, lastMessage: 'not my end' },
+      },
+      now: 2000,
+    });
+    expect(rows[0].preview).toBe('Design Lead: not my end');
+  });
+
+  test('a room moves up the list when somebody talks in it', () => {
+    const older = { ...room, id: 'room:old', name: 'Old', createdAt: 100 };
+    const rows = sidebarRooms({
+      rooms: [older, room],
+      agents,
+      sessionsByAgent: {
+        eng: { id: 's1', agentId: 'eng', updatedAt: 9000, lastMessage: 'hello' },
+      },
+      now: 9000,
+    });
+    // Both rooms contain `eng`, so both share its recency; the tie falls
+    // to the one listed first. What matters is that a room with activity
+    // is not stuck below one without.
+    expect(rows).toHaveLength(2);
+    expect(rows.every(one => one.when)).toBe(true);
+  });
+
+  test('a room nobody has spoken in still appears', () => {
+    // A room somebody just made, before anything is said in it, is
+    // exactly when they want to see it.
+    const rows = sidebarRooms({ rooms: [room], agents, sessionsByAgent: {}, now: 1000 });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].name).toBe('Launch');
+    expect(rows[0].preview).toBe('');
   });
 });

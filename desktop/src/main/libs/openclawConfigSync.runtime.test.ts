@@ -3172,6 +3172,23 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('Files still work on those platforms.');
   });
 
+  test('an agent in a room is told to work first and say less', async () => {
+    // Answer-before-you-work is right for a person's turn and wrong here:
+    // an acknowledgement from four agents is four messages that say
+    // nothing.
+    const sync = await createSync();
+    expect(sync.sync('room-turns').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('### When you are one of several');
+    expect(agentsMd).toContain('**Answer-before-you-work does not apply here.**');
+    expect(agentsMd).toContain('silence in a room is a perfectly good contribution');
+    expect(agentsMd).toContain('If you agree and have nothing to add, say nothing.');
+  });
+
   test('the escalation order is written down', async () => {
     // Every step existed and no statement of which to try first, so the
     // choice was the model's mood.

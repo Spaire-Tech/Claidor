@@ -99,6 +99,7 @@ import { McpIpcChannel } from '../shared/mcp/constants';
 import { OpenClawEngineIpc } from '../shared/openclawEngine/constants';
 import { PermissionIpcChannel } from '../shared/permissions/constants';
 import type { Platform } from '../shared/platform';
+import { RoomIpc } from '../shared/rooms/constants';
 import { type ExecPolicy, SettingsChannel } from '../shared/settings/constants';
 import {
   type ShareDeploymentAnalyzeProjectInput,
@@ -849,6 +850,15 @@ contextBridge.exposeInMainWorld('electron', {
    * the message plumbing by a later refactor. Nothing here reads a value
    * back — `respond` is one way, renderer to main.
    */
+  /** Rooms: a conversation with more than one agent in it. */
+  rooms: {
+    list: () => ipcRenderer.invoke(RoomIpc.List),
+    create: (name: string, memberIds: string[]) =>
+      ipcRenderer.invoke(RoomIpc.Create, name, memberIds),
+    update: (id: string, changes: { name?: string; memberIds?: string[] }) =>
+      ipcRenderer.invoke(RoomIpc.Update, id, changes),
+    remove: (id: string) => ipcRenderer.invoke(RoomIpc.Delete, id),
+  },
   askInput: {
     onRequested: (callback: (request: AskInputRequest) => void) => {
       const handler = (_event: unknown, request: AskInputRequest) => callback(request);

@@ -1,3 +1,4 @@
+import type { Room } from '../../../shared/rooms/constants';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import type { EngineMessage, EnginePermissionRequest } from '../thread/fromEngine';
 import { toThreadItems } from '../thread/fromEngine';
@@ -139,6 +140,48 @@ export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
       }
       return (b.session?.updatedAt ?? 0) - (a.session?.updatedAt ?? 0);
     })
+    .map(entry => entry.row);
+}
+
+/**
+ * Rooms in the sidebar, alongside the agents.
+ *
+ * A room sorts by the most recent thing any of its members said, so it
+ * moves up the list when somebody talks in it — the same rule every other
+ * row follows. Its preview names who spoke last, because in a room that
+ * is half the information: "Design Lead: not my end" tells you more than
+ * "not my end".
+ */
+export function sidebarRooms(input: {
+  rooms: readonly Room[];
+  agents: readonly { id: string; name: string }[];
+  sessionsByAgent: Record<string, StoreSession | undefined>;
+  now?: number;
+}): SidebarAgent[] {
+  const { rooms, agents, sessionsByAgent, now = Date.now() } = input;
+
+  return rooms.map(room => {
+    const seats = room.memberIds
+      .map(id => ({ id, session: sessionsByAgent[id], name: agents.find(a => a.id === id)?.name }))
+      .filter(seat => seat.session);
+    const newest = seats
+      .slice()
+      .sort((a, b) => (b.session?.updatedAt ?? 0) - (a.session?.updatedAt ?? 0))[0];
+
+    const said = previewOf(newest?.session?.messages)
+      || plainPreview(newest?.session?.lastMessage ?? '');
+
+    return {
+      row: {
+        id: room.id,
+        name: room.name,
+        preview: said && newest?.name ? `${newest.name}: ${said}` : said,
+        when: whenLabel(newest?.session?.updatedAt, now),
+      } satisfies SidebarAgent,
+      at: newest?.session?.updatedAt ?? room.createdAt,
+    };
+  })
+    .sort((a, b) => b.at - a.at)
     .map(entry => entry.row);
 }
 

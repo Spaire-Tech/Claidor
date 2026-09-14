@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { type Room } from '../../../shared/rooms/constants';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { coworkService } from '../../services/cowork';
@@ -22,9 +23,11 @@ import { AuthDecision } from '../thread/types';
 import type { AgentDraftSubmit } from './Compose';
 import { ThreadMode } from './MessagesShell';
 import { installedPresetIds } from './roles';
+import { mergeRoomThread, roomTyping } from './room';
 import {
   dayStamp as dayStampOf,
   sidebarAgents,
+  sidebarRooms,
   type StoreSession,
   threadItems,
 } from './select';
@@ -98,6 +101,24 @@ export function useMessagesShell(): MessagesShellState {
 
   const [mode, setMode] = useState<ThreadMode>(ThreadMode.Text);
 
+  // The rooms this person has made.
+  //
+  // Loaded once and kept, because a room is a handful of rows that only
+  // changes when somebody changes it. Re-reading on every render would
+  // be an IPC call per keystroke for data that is almost always the same.
+  const [rooms, setRooms] = useState<readonly Room[]>([]);
+  const reloadRooms = useCallback(() => {
+    void window.electron?.rooms?.list?.().then(setRooms).catch(() => {
+      // No rooms rather than a broken sidebar.
+    });
+  }, []);
+  useEffect(() => { reloadRooms(); }, [reloadRooms]);
+
+  const room = useMemo(
+    () => rooms.find(one => one.id === activeId),
+    [rooms, activeId],
+  );
+
   // `init()` is the whole of the app's live wiring and it is not optional.
   //
   // It registers `onStreamMessage`, `onStreamMessageUpdate`,
@@ -164,8 +185,11 @@ export function useMessagesShell(): MessagesShellState {
   }, [sessions, currentSession]);
 
   const rows = useMemo(
-    () => sidebarAgents({ agents, sessionsByAgent }),
-    [agents, sessionsByAgent],
+    () => [
+      ...sidebarRooms({ rooms, agents, sessionsByAgent }),
+      ...sidebarAgents({ agents, sessionsByAgent }),
+    ],
+    [rooms, agents, sessionsByAgent],
   );
 
   const active = useMemo(
@@ -194,8 +218,39 @@ export function useMessagesShell(): MessagesShellState {
    */
   const [answers, setAnswers] = useState<Record<string, Record<string, string>>>({});
 
+  /**
+   * A room's thread: every member's session, merged.
+   *
+   * Built from the same `threadItems` each one-to-one conversation uses,
+   * so nothing here is special-cased into existence — a bubble in a room
+   * is the same bubble that agent's own conversation shows.
+   */
+  const roomItems = useMemo(() => {
+    if (!room) return undefined;
+    return mergeRoomThread(room.memberIds.flatMap(memberId => {
+      const memberAgent = agents.find(one => one.id === memberId);
+      // A member that no longer exists is left out rather than shown as
+      // a blank voice. `removeAgentFromRooms` normally prevents this; the
+      // guard is for the window between an agent going and a reload.
+      if (!memberAgent) return [];
+      const memberSession = sessionsByAgent[memberId];
+      return [{
+        agentId: memberId,
+        agentName: memberAgent.name,
+        items: threadItems({
+          agentId: memberId,
+          agentName: memberAgent.name,
+          ...(computerName ? { deviceName: computerName } : {}),
+          session: memberSession,
+          pendingPermissions,
+          answered: answers,
+        }),
+      }];
+    }));
+  }, [room, agents, sessionsByAgent, computerName, pendingPermissions, answers]);
+
   const items = useMemo(
-    () => threadItems({
+    () => roomItems ?? threadItems({
       agentId: activeId,
       // The id identifies, the name is what a person reads. Passing the
       // id for both put "Allow juno to continue" on an approval card.
@@ -205,10 +260,19 @@ export function useMessagesShell(): MessagesShellState {
       pendingPermissions,
       answered: answers,
     }),
-    [activeId, active, session, messages, pendingPermissions, computerName, answers],
+    [roomItems, activeId, active, session, messages, pendingPermissions, computerName, answers],
   );
 
-  const typing = currentSession?.status === 'running';
+  // A room is working while any member is. The person is waiting for the
+  // room, not for one of its members.
+  const typing = room
+    // `sessionsByAgent` is a view for the sidebar and carries no status,
+    // so this reads the store's own list. A member with no session yet is
+    // not running, which is right: it has not been asked anything.
+    ? roomTyping(room.memberIds.map(
+      id => sessions.some(one => one.agentId === id && one.status === 'running'),
+    ))
+    : currentSession?.status === 'running';
 
   // The files this conversation has actually produced or touched.
   //
@@ -325,13 +389,28 @@ export function useMessagesShell(): MessagesShellState {
   }, [dispatch, sessionsByAgent]);
 
   const onSend = useCallback((message: string) => {
+    // A room has no session of its own. The message goes to each member's
+    // conversation, which is what makes every reply a real reply the
+    // person can go and read on its own.
+    if (room) {
+      for (const memberId of room.memberIds) {
+        const memberSession = sessionsByAgent[memberId];
+        if (memberSession?.id) {
+          void coworkService.continueSession({ sessionId: memberSession.id, prompt: message });
+        } else {
+          void coworkService.startSession({ prompt: message, agentId: memberId });
+        }
+      }
+      return;
+    }
+
     const sessionId = currentSession?.id;
     if (sessionId) {
       void coworkService.continueSession({ sessionId, prompt: message });
       return;
     }
     void coworkService.startSession({ prompt: message, agentId: activeId });
-  }, [currentSession, activeId]);
+  }, [room, sessionsByAgent, currentSession, activeId]);
 
   /**
    * "Teach a task", from the composer's `+` menu.
@@ -544,7 +623,7 @@ export function useMessagesShell(): MessagesShellState {
   return {
     agents: rows,
     activeId,
-    activeName: active?.name ?? '',
+    activeName: room?.name ?? active?.name ?? '',
     items,
     dayStamp: dayStampOf(messages),
     typing,

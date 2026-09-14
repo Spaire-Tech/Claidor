@@ -234,6 +234,23 @@ export class SqliteStore {
       );
     `);
 
+    // Rooms: a conversation with more than one agent in it.
+    //
+    // Members are a JSON array of agent ids rather than a join table.
+    // A room has at most six, they are read together every time and never
+    // queried across, and the ordering is the seating order — which a
+    // join table would lose unless it carried a position column, at which
+    // point it is a JSON array with extra steps.
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS rooms (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        member_ids TEXT NOT NULL DEFAULT '[]',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `);
+
     // Create MCP servers table
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS mcp_servers (

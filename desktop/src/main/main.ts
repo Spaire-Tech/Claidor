@@ -184,6 +184,7 @@ import {
   parseModelThinkingLevel,
   ProviderName,
 } from '../shared/providers';
+import { RoomError, RoomIpc, roomProblem } from '../shared/rooms/constants';
 import {
   asExecPolicy,
   EXEC_POLICY_KEY,
@@ -12882,6 +12883,45 @@ if (!gotTheLock) {
       return status;
     }
   };
+
+  // Rooms: a conversation with more than one agent in it.
+  //
+  // Read-write CRUD and nothing else. A room has no session of its own —
+  // the shell opens one per member and merges them — so there is no
+  // "start a room" here to go wrong.
+  ipcMain.handle(RoomIpc.List, () => getCoworkStore().listRooms());
+
+  ipcMain.handle(RoomIpc.Create, (_event, name: string, memberIds: string[]) => {
+    const problem = roomProblem(
+      { name, memberIds },
+      getCoworkStore().listAgents().map(agent => agent.id),
+    );
+    // Checked here as well as in the screen. The screen stops somebody
+    // making a bad room; this stops a bad room existing.
+    if (problem) return { ok: false as const, problem };
+    return { ok: true as const, room: getCoworkStore().createRoom(name, memberIds) };
+  });
+
+  ipcMain.handle(
+    RoomIpc.Update,
+    (_event, id: string, changes: { name?: string; memberIds?: string[] }) => {
+      const existing = getCoworkStore().getRoom(id);
+      if (!existing) return { ok: false as const, problem: RoomError.Unknown };
+      const problem = roomProblem(
+        {
+          name: changes.name ?? existing.name,
+          memberIds: changes.memberIds ?? existing.memberIds,
+        },
+        getCoworkStore().listAgents().map(agent => agent.id),
+      );
+      if (problem) return { ok: false as const, problem };
+      return { ok: true as const, room: getCoworkStore().updateRoom(id, changes) };
+    },
+  );
+
+  ipcMain.handle(RoomIpc.Delete, (_event, id: string) => {
+    getCoworkStore().deleteRoom(id);
+  });
 
   // What the person typed into an ask-input card, on its way back to the
   // tool that asked.

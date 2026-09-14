@@ -175,6 +175,16 @@ function setupDb(): void {
     );
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS rooms (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      member_ids TEXT NOT NULL DEFAULT '[]',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+  `);
+
   // CoworkStore only needs (db)
   store = new CoworkStore(db);
 }
@@ -1356,4 +1366,61 @@ test('backfillEmptyAgentModels assigns the current default model to empty agents
     ['stockexpert', 'qwen3.5-plus'],
     ['writer', 'deepseek-v3.2'],
   ]);
+});
+
+// ---------------------------------------------------------------------------
+// Rooms
+// ---------------------------------------------------------------------------
+
+test('a room survives being written and read back', () => {
+  // Rooms are stored rather than derived because a room outlives its
+  // sessions: somebody makes one on Monday and expects it on Friday
+  // whether or not anything was said in it.
+  const room = store.createRoom('  Launch  ', ['eng', 'design']);
+  expect(room.id.startsWith('room:')).toBe(true);
+  expect(room.name).toBe('Launch');
+
+  const read = store.getRoom(room.id);
+  expect(read?.name).toBe('Launch');
+  expect(read?.memberIds).toEqual(['eng', 'design']);
+});
+
+test('seating order is kept', () => {
+  // The order members were added in is the order they are listed and
+  // asked. A join table would lose it without a position column.
+  const room = store.createRoom('Launch', ['c', 'a', 'b']);
+  expect(store.getRoom(room.id)?.memberIds).toEqual(['c', 'a', 'b']);
+});
+
+test('a room can be renamed and re-seated without losing the other half', () => {
+  const room = store.createRoom('Launch', ['a', 'b']);
+  expect(store.updateRoom(room.id, { name: 'Ship it' })?.memberIds).toEqual(['a', 'b']);
+  expect(store.updateRoom(room.id, { memberIds: ['a', 'c'] })?.name).toBe('Ship it');
+  expect(store.getRoom(room.id)).toMatchObject({ name: 'Ship it', memberIds: ['a', 'c'] });
+});
+
+test('updating a room that is gone says so rather than creating one', () => {
+  expect(store.updateRoom('room:missing', { name: 'x' })).toBeNull();
+});
+
+test('deleting an agent takes it out of every room it sat in', () => {
+  // Otherwise a room keeps a member id that resolves to nothing, and the
+  // thread has one fewer voice than the member list claims — which reads
+  // as the agent ignoring the room rather than the agent being gone.
+  const one = store.createRoom('One', ['eng', 'design']);
+  const two = store.createRoom('Two', ['design', 'ops']);
+
+  store.removeAgentFromRooms('design');
+
+  expect(store.getRoom(one.id)?.memberIds).toEqual(['eng']);
+  expect(store.getRoom(two.id)?.memberIds).toEqual(['ops']);
+});
+
+test('a room with unreadable members is empty rather than fatal', () => {
+  // A room showing no members is a visible, fixable problem. An exception
+  // here would take the whole sidebar down with it.
+  const room = store.createRoom('Broken', ['a', 'b']);
+  db.prepare('UPDATE rooms SET member_ids = ? WHERE id = ?').run('{not json', room.id);
+  expect(store.getRoom(room.id)?.memberIds).toEqual([]);
+  expect(store.listRooms()).toHaveLength(1);
 });

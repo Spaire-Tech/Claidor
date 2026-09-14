@@ -50,6 +50,7 @@ import {
   type ModelThinkingLevel,
   parseModelThinkingLevel,
 } from '../shared/providers/modelThinking';
+import { type Room, roomId } from '../shared/rooms/constants';
 import { APP_HOME_DIR_NAME } from './appConstants';
 import {
   ContinuityCapsuleSource,
@@ -784,6 +785,24 @@ export interface CreateCoworkSessionOptions {
   thinkingLevel?: ModelThinkingLevel | '';
 }
 
+
+/**
+ * A room's members, out of the column they are stored in.
+ *
+ * Corrupt JSON gives an empty room rather than throwing. A room that
+ * shows no members is a visible, fixable problem; an exception here would
+ * take the whole sidebar down with it.
+ */
+function parseMemberIds(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((one): one is string => typeof one === 'string') : [];
+  } catch {
+    console.warn('[CoworkStore] a room has unreadable members; treating it as empty');
+    return [];
+  }
+}
+
 export class CoworkStore {
   private db: Database.Database;
   private readonly knownIMPlatforms = new Set<string>(PlatformRegistry.platforms);
@@ -814,6 +833,10 @@ export class CoworkStore {
 
   private getAll<T>(sql: string, params: (string | number | null)[] = []): T[] {
     return this.db.prepare(sql).all(...params) as T[];
+  }
+
+  private run(sql: string, params: (string | number | null)[] = []): void {
+    this.db.prepare(sql).run(...params);
   }
 
   private mapConversationMessageRows(sessionId: string, rows: CoworkMessageRow[]): CoworkMessage[] {
@@ -3192,6 +3215,82 @@ export class CoworkStore {
       human: this.getLatestMessageByType(row.id, 'user'),
       assistant: this.getLatestMessageByType(row.id, 'assistant'),
     }));
+  }
+
+  // ========== Rooms ==========
+
+  /**
+   * A conversation with more than one agent in it.
+   *
+   * Rooms are stored here rather than derived, because a room outlives
+   * its sessions: somebody makes one, uses it on Monday, and expects it
+   * in the sidebar on Friday whether or not anything was said.
+   */
+  listRooms(): Room[] {
+    const rows = this.getAll<{
+      id: string; name: string; member_ids: string; created_at: number;
+    }>('SELECT id, name, member_ids, created_at FROM rooms ORDER BY created_at ASC');
+    return rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      memberIds: parseMemberIds(row.member_ids),
+      createdAt: row.created_at,
+    }));
+  }
+
+  getRoom(id: string): Room | null {
+    return this.listRooms().find(room => room.id === id) ?? null;
+  }
+
+  createRoom(name: string, memberIds: readonly string[]): Room {
+    const now = Date.now();
+    const room: Room = {
+      id: roomId(crypto.randomUUID()),
+      name: name.trim(),
+      memberIds: [...memberIds],
+      createdAt: now,
+    };
+    this.run(
+      'INSERT INTO rooms (id, name, member_ids, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [room.id, room.name, JSON.stringify(room.memberIds), now, now],
+    );
+    return room;
+  }
+
+  updateRoom(id: string, changes: { name?: string; memberIds?: readonly string[] }): Room | null {
+    const existing = this.getRoom(id);
+    if (!existing) return null;
+    const next: Room = {
+      ...existing,
+      ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
+      ...(changes.memberIds !== undefined ? { memberIds: [...changes.memberIds] } : {}),
+    };
+    this.run(
+      'UPDATE rooms SET name = ?, member_ids = ?, updated_at = ? WHERE id = ?',
+      [next.name, JSON.stringify(next.memberIds), Date.now(), id],
+    );
+    return next;
+  }
+
+  deleteRoom(id: string): void {
+    this.run('DELETE FROM rooms WHERE id = ?', [id]);
+  }
+
+  /**
+   * Take an agent out of every room it sits in.
+   *
+   * Called when an agent is deleted. Without it a room keeps a member id
+   * that resolves to nothing, and the thread quietly has one fewer voice
+   * than the member list claims — which looks like the agent ignoring
+   * the room rather than the agent being gone.
+   */
+  removeAgentFromRooms(agentId: string): void {
+    for (const room of this.listRooms()) {
+      if (!room.memberIds.includes(agentId)) continue;
+      this.updateRoom(room.id, {
+        memberIds: room.memberIds.filter(one => one !== agentId),
+      });
+    }
   }
 
   // ========== Agent CRUD ==========
