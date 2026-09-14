@@ -679,9 +679,40 @@ the fallback branch of `buildBrowserConfig`.
    Chromium says which half of the bridge was missing instead of five
    words naming neither.
 
+**And then a fourth cause, which the founder found by asking the agent.**
+After the rebuild it still used their own browser, and when asked why,
+it said:
+
+> *"Because the workspace's browser policy specifically instructed me to
+> set `target="host"` on every browser action and not use the sandbox."*
+> … *"I can't access a sandboxed built-in browser in this workspace —
+> the available browser policy only permits the host browser."*
+
+**It was quoting our own system prompt, and the prompt is wrong.** These
+are two different parameters in the engine's browser tool
+(`extensions/browser/src/browser-tool.schema.ts`):
+
+- `target` ∈ `sandbox | host | node` — **where** the browser runs: a
+  container, this machine, or another machine.
+- `profile` — **which** browser: `lobster-in-app`, `openclaw`, `user`.
+
+Our prompt explained only the first, and only as "always set
+`target="host"`". An agent reads the word *host* and concludes it has
+been ordered to drive the user's own browser — and then says so, with
+confidence, to the person who built it. `target="host"` is correct and
+necessary; it has nothing to do with which browser.
+
+The prompt now says the agent has its own browser, that `target` is
+where and not which, that `profile` should be left unset because the
+default *is* the built-in one, that `profile: "user"` is the person's
+own browser and is never to be passed — and that if asked why a page
+opened somewhere unexpected, it should say it does not know rather than
+invent a policy. Four assertions in
+`openclawConfigSync.runtime.test.ts` hold it.
+
 **What is still not verified:** whether the panel renders the agent's
-page once the engine is on the in-app profile. The engine side and the
-config side are fixed and tested; nobody has yet watched it draw.
+page once the engine is on the in-app profile. The config side and the
+prompt side are fixed and tested; nobody has yet watched it draw.
 `[OpenClawConfigSync] browser profile=lobster-in-app` in the log is the
 line that says the first half worked.
 
