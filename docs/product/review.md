@@ -504,16 +504,41 @@ was false when I said it; I had found one cause and stopped looking,
 which for a thing the founder had reported as completely absent was not
 enough.
 
-### 19. The extra questions the founder designed are not there — `agreed`
+### 19. The extra questions the founder designed are not there — `fixed, awaiting the founder's eyes`
 
-**Founder:** *"I've also designed the extra questions he asks if he's got
-not a lot of context. I see none of that."*
+**The cards were never missing. They were wearing the wrong face.**
 
-The choice card exists in the canvas and in my code
-(`ThreadItemKind.Choice`), but nothing produces one: it would arrive as
-a message from the agent, through the stream that is not running (17),
-and nothing in the agent's instructions asks it to offer choices rather
-than plain questions. Both halves are missing.
+The engine has a real tool for this — `AskUserQuestion`, a plugin of ours
+in `desktop/openclaw-extensions/ask-user-question`, reaching the app over
+the loopback bridge in `main/libs/mcpBridgeServer.ts`. It carries exactly
+what the canvas draws: a question, options with a label and a
+description, and `multiSelect`.
+
+It arrives as a **permission request**. And this shell turned every
+pending permission into the approval card. So a question with three
+options was drawn as *"Allow Perrin to continue — run commands on your
+computer?"*, with the question itself hidden behind "Show the command"
+as pretty-printed JSON.
+
+**Fixed.** `fromEngine.ts` now reads the questions out of an
+`AskUserQuestion` request and emits one choice card per question — the
+canvas's card, options lettered from A, a hint under each label, and
+"Type your own answer" underneath. Answers collect in the shell and go
+back as one reply when the last question is answered, because the engine
+is holding one tool call open for all of them; an answered card leaves
+the thread rather than sitting there waiting to be pressed again.
+
+**And the prompt that decided how often this happens.** The engine's
+managed prompt offered the tool for *"selecting a framework, choosing a
+file, picking a configuration"*, which a model reads as "rarely". It now
+says the card is how you ask the user anything with a small set of
+answers, to ask before doing the work rather than after, and not to use
+it for confirming commands — the app asks about those itself, in its own
+card.
+
+**Where:** `design/thread/fromEngine.ts` (15 tests),
+`design/shell/useMessagesShell.ts`, `design/thread/ThreadItemView.tsx`,
+`main/libs/openclawConfigSync.ts`.
 
 ### 20. The answers are not intelligent — `agreed, verified, and this is the important one`
 

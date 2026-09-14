@@ -1,10 +1,15 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  ASK_USER_TOOL,
+  askUserQuestions,
   authQuestion,
+  choiceId,
   commandFromToolInput,
   decisionNote,
   type EngineMessage,
+  type EnginePermissionRequest,
+  parseChoiceId,
   splitIntoBubbles,
   toThreadItems,
 } from './fromEngine';
@@ -235,5 +240,136 @@ describe('verbs', () => {
       expect(verb, verb).not.toMatch(/[_{}[\]]/);
       expect(verb.length, verb).toBeLessThan(40);
     }
+  });
+});
+
+describe('the agent asking a question', () => {
+  const ask = (questions: unknown, requestId = 'r1'): EnginePermissionRequest => ({
+    requestId,
+    toolName: ASK_USER_TOOL,
+    toolInput: { questions },
+  });
+
+  const one = {
+    question: 'How do you want me to get at it?',
+    header: 'Two ways in',
+    options: [
+      { label: 'Try again on this Mac', description: "I'll approve the next request" },
+      { label: 'Different file' },
+    ],
+  };
+
+  test('becomes a choice card, not an approval prompt', () => {
+    // This is the whole of review item 19. AskUserQuestion arrives as a
+    // permission request, and every permission request was drawn as the
+    // approval card — so a question with three options appeared as
+    // "Allow X to continue", with the question hidden behind a
+    // disclosure triangle.
+    const [item] = toThreadItems([], { pending: [ask([one])] });
+    expect(item.kind).toBe(ThreadItemKind.Choice);
+    if (item.kind !== ThreadItemKind.Choice) throw new Error('not a choice');
+    expect(item.text).toBe('How do you want me to get at it?');
+    expect(item.note).toBe('Two ways in');
+  });
+
+  test('options are lettered from A, as the canvas letters them', () => {
+    const [item] = toThreadItems([], { pending: [ask([one])] });
+    if (item.kind !== ThreadItemKind.Choice) throw new Error('not a choice');
+    expect(item.options.map(o => o.key)).toEqual(['A', 'B']);
+    expect(item.options[0].label).toBe('Try again on this Mac');
+    expect(item.options[0].hint).toBe("I'll approve the next request");
+    expect(item.options[1]).not.toHaveProperty('hint');
+  });
+
+  test('every card offers a free answer', () => {
+    const [item] = toThreadItems([], { pending: [ask([one])] });
+    if (item.kind !== ThreadItemKind.Choice) throw new Error('not a choice');
+    expect(item.freeform).toBe(true);
+  });
+
+  test('several questions are several cards, in order', () => {
+    const two = { ...one, question: 'And after that?' };
+    const items = toThreadItems([], { pending: [ask([one, two])] });
+    expect(items).toHaveLength(2);
+    expect(items.map(i => i.id)).toEqual(['choice:r1:0', 'choice:r1:1']);
+  });
+
+  test('an answered question leaves, and the rest stay', () => {
+    // The request is open until all of them are answered. Without this,
+    // a card you have already pressed sits there waiting to be pressed
+    // again — the dead control, one more time.
+    const two = { ...one, question: 'And after that?' };
+    const items = toThreadItems([], {
+      pending: [ask([one, two])],
+      answered: { r1: { [one.question]: 'Try again on this Mac' } },
+    });
+    expect(items).toHaveLength(1);
+    expect(items[0].id).toBe('choice:r1:1');
+  });
+
+  test('anything else is still the approval card', () => {
+    const [item] = toThreadItems([], {
+      pending: [{ requestId: 'r2', toolName: 'Bash', toolInput: { command: 'ls' } }],
+    });
+    expect(item.kind).toBe(ThreadItemKind.Auth);
+  });
+});
+
+describe('askUserQuestions', () => {
+  const ask = (questions: unknown): EnginePermissionRequest => ({
+    requestId: 'r1',
+    toolName: ASK_USER_TOOL,
+    toolInput: { questions },
+  });
+
+  test('is empty for any other tool', () => {
+    expect(askUserQuestions({ requestId: 'r', toolName: 'Bash', toolInput: {} })).toEqual([]);
+  });
+
+  test('survives a model writing nonsense', () => {
+    // The input is a tool call written by a model, so its shape is a
+    // claim rather than a guarantee.
+    expect(askUserQuestions(ask(undefined))).toEqual([]);
+    expect(askUserQuestions(ask('questions'))).toEqual([]);
+    expect(askUserQuestions(ask([null, 42, 'x']))).toEqual([]);
+  });
+
+  test('drops a question with no text, and one with no options', () => {
+    expect(askUserQuestions(ask([
+      { question: '  ', options: [{ label: 'A' }] },
+      { question: 'Real?', options: [] },
+      { question: 'Real?', options: [{ label: '   ' }] },
+    ]))).toEqual([]);
+  });
+
+  test('keeps a good one out of a bad list', () => {
+    const kept = askUserQuestions(ask([
+      null,
+      { question: 'Which?', options: [{ label: 'This' }, { label: '' }] },
+    ]));
+    expect(kept).toHaveLength(1);
+    expect(kept[0].options).toEqual([{ label: 'This' }]);
+  });
+
+  test('carries multiSelect only when it is really set', () => {
+    const [q] = askUserQuestions(ask([{ question: 'Which?', options: [{ label: 'A' }], multiSelect: true }]));
+    expect(q.multiSelect).toBe(true);
+    const [plain] = askUserQuestions(ask([{ question: 'Which?', options: [{ label: 'A' }] }]));
+    expect(plain).not.toHaveProperty('multiSelect');
+  });
+});
+
+describe('choice ids', () => {
+  test('go there and back', () => {
+    expect(parseChoiceId(choiceId('abc-123', 2))).toEqual({ requestId: 'abc-123', index: 2 });
+  });
+
+  test('survive a request id with colons in it', () => {
+    expect(parseChoiceId(choiceId('a:b:c', 0))).toEqual({ requestId: 'a:b:c', index: 0 });
+  });
+
+  test('are undefined for anything else', () => {
+    expect(parseChoiceId('auth:abc')).toBeUndefined();
+    expect(parseChoiceId('msg-1')).toBeUndefined();
   });
 });

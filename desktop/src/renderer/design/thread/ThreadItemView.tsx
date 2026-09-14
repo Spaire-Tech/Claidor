@@ -261,6 +261,9 @@ function ChoiceCard(
         display: 'flex',
         flexDirection: 'column',
         gap: 14,
+        // The canvas gives a question the same 8px above it as a change
+        // of speaker, because that is what it is.
+        marginTop: 8,
         animation: enter,
       }}
     >
@@ -306,9 +309,10 @@ function ChoiceCard(
             type="button"
             onClick={() => handlers.onPick(item.id, option.key)}
             style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 15px',
+              display: 'flex', alignItems: 'flex-start', gap: 14, padding: '16px 18px',
               border: 'none', background: 'transparent', cursor: 'pointer',
-              font: 'inherit', textAlign: 'left',
+              font: 'inherit', textAlign: 'left', width: '100%',
+              ...(item.options[0] === option ? {} : { borderTop: `1px solid ${line.hairline}` }),
             }}
           >
             <span

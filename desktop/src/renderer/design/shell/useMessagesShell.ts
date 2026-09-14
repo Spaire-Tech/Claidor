@@ -15,7 +15,7 @@ import { openLocalPathWithToast, showToast } from '../../utils/localFileActions'
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
-import { decisionNote } from '../thread/fromEngine';
+import { askUserQuestions, decisionNote, parseChoiceId } from '../thread/fromEngine';
 import { basename, type KnownFile } from '../thread/parts';
 import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
 import { AuthDecision } from '../thread/types';
@@ -180,6 +180,20 @@ export function useMessagesShell(): MessagesShellState {
     [session, notes],
   );
 
+  /**
+   * Answering the agent's questions.
+   *
+   * A choice card is one question out of an `AskUserQuestion` call, and
+   * that call is only finished when every question in it has an answer —
+   * the engine is holding a tool call open, waiting for one reply. So the
+   * answers collect here, the answered cards leave the thread, and the
+   * reply goes back once the last one lands.
+   *
+   * `answers` is keyed by request and then by the question's own text,
+   * because that is the key the tool's `answers` object uses.
+   */
+  const [answers, setAnswers] = useState<Record<string, Record<string, string>>>({});
+
   const items = useMemo(
     () => threadItems({
       agentId: activeId,
@@ -189,8 +203,9 @@ export function useMessagesShell(): MessagesShellState {
       ...(computerName ? { deviceName: computerName } : {}),
       session: session ? { ...session, messages } : undefined,
       pendingPermissions,
+      answered: answers,
     }),
-    [activeId, active, session, messages, pendingPermissions, computerName],
+    [activeId, active, session, messages, pendingPermissions, computerName, answers],
   );
 
   const typing = currentSession?.status === 'running';
@@ -468,13 +483,63 @@ export function useMessagesShell(): MessagesShellState {
     }
   }, [onSelect]);
 
+  const answer = useCallback((itemId: string, value: string) => {
+    const parsed = parseChoiceId(itemId);
+    if (!parsed) return;
+    const request = pendingPermissions.find(one => one.requestId === parsed.requestId);
+    if (!request) return;
+    const questions = askUserQuestions(request);
+    const question = questions[parsed.index];
+    if (!question) return;
+
+    setAnswers(previous => {
+      const forRequest = { ...(previous[parsed.requestId] ?? {}), [question.question]: value };
+      const done = questions.every(one => forRequest[one.question] !== undefined);
+      if (done) {
+        void coworkService.respondToPermission(parsed.requestId, {
+          behavior: 'allow',
+          // The tool's own input, with the answers added. This is the
+          // shape the old shell's wizard sends and the shape the plugin
+          // reads back; inventing a second one would work until it did
+          // not.
+          updatedInput: { ...request.toolInput, answers: forRequest },
+        });
+        const { [parsed.requestId]: _done, ...rest } = previous;
+        return rest;
+      }
+      return { ...previous, [parsed.requestId]: forRequest };
+    });
+  }, [pendingPermissions]);
+
   const choice = useMemo<ChoiceHandlers>(() => ({
-    // A choice card is answered by saying the answer, which is what a
-    // person would do anyway — so the agent sees a normal reply rather
-    // than a protocol.
-    onPick: (_itemId, optionKey) => onSend(optionKey),
-    onFreeAnswer: (_itemId, answer) => onSend(answer),
-  }), [onSend]);
+    onPick: (itemId, optionKey) => {
+      const parsed = parseChoiceId(itemId);
+      const request = parsed
+        ? pendingPermissions.find(one => one.requestId === parsed.requestId)
+        : undefined;
+      const question = request && parsed
+        ? askUserQuestions(request)[parsed.index]
+        : undefined;
+      // The key is the letter on the cap; the engine wants the label.
+      const picked = question?.options[optionKey.charCodeAt(0) - 65];
+      if (picked) answer(itemId, picked.label);
+    },
+    onFreeAnswer: (itemId, free) => answer(itemId, free),
+    onDismiss: itemId => {
+      const parsed = parseChoiceId(itemId);
+      if (!parsed) return;
+      // Dismissing one card answers nothing, so it declines the whole
+      // question. Leaving the tool call open would hang the turn.
+      void coworkService.respondToPermission(parsed.requestId, {
+        behavior: 'deny',
+        message: 'Dismissed.',
+      });
+      setAnswers(previous => {
+        const { [parsed.requestId]: _gone, ...rest } = previous;
+        return rest;
+      });
+    },
+  }), [answer, pendingPermissions]);
 
   return {
     agents: rows,

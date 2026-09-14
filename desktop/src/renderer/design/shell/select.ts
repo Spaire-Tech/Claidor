@@ -150,6 +150,8 @@ export interface ThreadInput {
   /** Everything the engine is waiting on, across all sessions. */
   pendingPermissions: readonly (EnginePermissionRequest & { sessionId: string })[];
   deviceName?: string;
+  /** Questions already answered, by request id and then question text. */
+  answered?: Readonly<Record<string, Readonly<Record<string, string>>>>;
 }
 
 /**
@@ -161,7 +163,7 @@ export interface ThreadInput {
  * context for.
  */
 export function threadItems(input: ThreadInput): ThreadItem[] {
-  const { agentId, agentName, session, pendingPermissions, deviceName } = input;
+  const { agentId, agentName, session, pendingPermissions, deviceName, answered } = input;
   const mine = session
     ? pendingPermissions.filter(request => request.sessionId === session.id)
     : [];
@@ -170,6 +172,7 @@ export function threadItems(input: ThreadInput): ThreadItem[] {
     ...(agentName ? { agentName } : {}),
     pending: mine,
     ...(deviceName ? { deviceId: deviceName } : {}),
+    ...(answered ? { answered } : {}),
   });
 }
 
