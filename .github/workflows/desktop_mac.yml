@@ -5,14 +5,16 @@ name: Desktop app (macOS)
 # until an Apple developer certificate is added, so the first launch needs
 # a right-click, Open (see desktop/README.md).
 
+# By hand only, on purpose. GitHub bills macOS runners at ten times the
+# minute rate, so the 2,000 free minutes a month are really about 200
+# macOS minutes and this build takes twenty. On a push trigger every
+# commit touching desktop/ spent some of that, which is how the bill got
+# where it did.
+#
+# The same build runs on a Mac for nothing: `npm run mac:build` in
+# desktop/, or see desktop/README.md.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - claude/pierce-phase-6-writing-mjkaj6
-    paths:
-      - "desktop/**"
-      - ".github/workflows/desktop_mac.yml"
 
 concurrency:
   group: desktop-mac-${{ github.ref }}

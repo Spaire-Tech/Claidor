@@ -247,13 +247,47 @@ Build machine prerequisites:
 
 Clean build:
 
+### On a Mac, in one command
+
 ```bash
-# 1. Install dependencies exactly as pinned in package-lock.json.
-#    npm ci removes node_modules itself, so do not delete it by hand and do not
-#    run npm install first: that installs everything twice and may rewrite the
-#    lock file. postinstall applies patches/ and rebuilds native modules
-#    against Electron.
-npm ci
+cd desktop
+npm run mac:build
+```
+
+It checks you are on a Mac with Node 24, installs pnpm if it is missing,
+picks Apple Silicon or Intel by itself, and leaves the installer in
+`release/`. About twenty minutes, most of it the engine.
+
+There is no GitHub in that. The macOS workflow does the same five steps
+on a rented Mac, and GitHub bills macOS runners at **ten times** the
+minute rate — which is why it now only runs when you ask for it
+(`workflow_dispatch`), never on a push.
+
+**To just run the app**, which is faster and has no signing problem at
+all:
+
+```bash
+npm run electron:dev:openclaw   # first time — builds the engine too
+npm run electron:dev            # after that
+```
+
+**"The app is damaged"** on first launch of a built installer is
+Gatekeeper's quarantine flag, not the app: there is no Apple certificate
+yet, so nothing is signed. Right-click the app and choose Open, or:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/<the app>.app
+```
+
+### By hand
+
+```bash
+# 1. Install dependencies.
+#    Not `npm ci`: upstream gitignores package-lock.json (.gitignore line 37)
+#    and it is not committed, so on a fresh clone `npm ci` fails outright with
+#    "can only install with an existing package-lock.json". postinstall applies
+#    patches/ and rebuilds native modules against Electron either way.
+npm install --no-audit --no-fund
 
 # 2. Remove stale build output. dist-electron is compiled by tsc, which keeps
 #    files whose sources were deleted.
