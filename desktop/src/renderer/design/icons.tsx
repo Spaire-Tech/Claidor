@@ -151,6 +151,24 @@ export const SignOutIcon = (props: IconProps): JSX.Element => svg(
   { weight: 1.7, ...props },
 );
 
+/** The agent's live browser tab. */
+export const GlobeIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3.5 12h17" />
+    <path d="M12 3a15 15 0 010 18a15 15 0 010-18z" />
+  </>,
+  { weight: 1.7, ...props },
+);
+
+/** The files it made. */
+export const FilesIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <path d="M4 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+  </>,
+  { weight: 1.7, ...props },
+);
+
 /** Rotated in place to open a disclosure, as the canvas does it. */
 export const ChevronRightIcon = (props: IconProps): JSX.Element => svg(
   <path d="M9 5l7 7-7 7" />,

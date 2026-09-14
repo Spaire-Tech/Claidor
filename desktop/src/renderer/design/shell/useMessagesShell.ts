@@ -53,6 +53,12 @@ export interface MessagesShellState {
   onCloseCompose: () => void;
   onPickAgent: (agentId: string) => void;
   onCreateAgent: (draft: AgentDraftSubmit) => void;
+  /** The open conversation, for the panel to watch. */
+  sessionId: string | undefined;
+  workingDirectory: string | undefined;
+  panelOpen: boolean;
+  onOpenPanel: () => void;
+  onClosePanel: () => void;
 }
 
 export function useMessagesShell(): MessagesShellState {
@@ -202,6 +208,11 @@ export function useMessagesShell(): MessagesShellState {
   // Composing: who to message, or a new agent.
   const [composing, setComposing] = useState(false);
 
+  // The computer panel. Local to the shell: upstream keeps an open flag
+  // per session in the artifact slice, but that slice is the old shell's
+  // and toggling it from here would move a panel it also draws.
+  const [panelOpen, setPanelOpen] = useState(false);
+
   const onCompose = useCallback(() => setComposing(true), []);
   const onCloseCompose = useCallback(() => setComposing(false), []);
 
@@ -256,5 +267,10 @@ export function useMessagesShell(): MessagesShellState {
     onCloseCompose,
     onPickAgent,
     onCreateAgent: (draft: AgentDraftSubmit) => { void onCreateAgent(draft); },
+    sessionId: currentSession?.id,
+    workingDirectory: currentSession?.cwd,
+    panelOpen,
+    onOpenPanel: () => setPanelOpen(open => !open),
+    onClosePanel: () => setPanelOpen(false),
   };
 }

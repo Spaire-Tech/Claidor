@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 
 import { authService } from '../../services/auth';
 import type { RootState } from '../../store';
+import { ComputerPanel } from '../panel/ComputerPanel';
 import { AccountMenu } from './AccountMenu';
 import { MessagesShell } from './MessagesShell';
 import { SignIn } from './SignIn';
@@ -88,8 +89,8 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
       onSelect={shell.onSelect}
       onSend={shell.onSend}
       onMode={shell.onMode}
-      // Not yet built. Apps is Stage 7, the panel is Stage 5, and the
-      // `+` menu — attach a file, teach a task — is Stage 10.
+      // Not yet built. Apps is Stage 7, and the `+` menu — attach a file,
+      // teach a task — is Stage 10.
       //
       // `onPlus` has to be passed even as a stub: `Composer` hides the
       // button entirely when it is absent, so leaving it out did not
@@ -110,7 +111,14 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
           onClose={() => setAccountOpen(false)}
         />
       )}
-      onOpenPanel={() => {}}
+      onOpenPanel={shell.onOpenPanel}
+      panel={shell.panelOpen && shell.sessionId ? (
+        <ComputerPanel
+          sessionId={shell.sessionId}
+          workingDirectory={shell.workingDirectory}
+          onClose={shell.onClosePanel}
+        />
+      ) : undefined}
       onPlus={() => {}}
     />
   );

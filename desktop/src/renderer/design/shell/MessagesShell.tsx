@@ -43,6 +43,8 @@ export interface MessagesShellProps {
   onMode: (mode: ThreadMode) => void;
   /** The computer icon: opens the panel where you watch the agent work. */
   onOpenPanel: () => void;
+  /** The panel itself, when open. Splits the conversation pane. */
+  panel?: React.ReactNode;
   onPlus?: () => void;
 }
 
@@ -61,7 +63,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
     choice, auth, onSelect, onSend, onCompose, onApps, onAccount, onMode,
     onOpenPanel, onPlus,
-    composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu,
+    composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
   } = props;
 
   // "typing" is a text-mode word, and in voice the orb is already
@@ -140,6 +142,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             onClose={onCloseCompose}
           />
         ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: panel ? 'minmax(0,1fr) minmax(360px, 44%)' : 'minmax(0,1fr)', minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
           <div
             style={{
@@ -240,6 +243,8 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             onSend={onSend}
             onPlus={onPlus}
           />
+        </div>
+        {panel}
         </div>
         )}
       </div>
