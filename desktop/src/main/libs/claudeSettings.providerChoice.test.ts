@@ -24,7 +24,7 @@ import {
  * providers map" is not the fix on its own, and this is where that is
  * proved rather than assumed.
  *
- * The row's own decisions (`design/settings/models.ts`) are the input here
+ * The row's own decisions (`shared/settings/models.ts`) are the input here
  * on purpose: the two halves are only correct together.
  */
 

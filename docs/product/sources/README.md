@@ -387,3 +387,93 @@ model-level policy in a product prompt.
 
 §8 in full, `request_box_help` in §6, the cloud-agent row in §15, and
 §19 with its `debugging-the-box.md`.
+
+---
+
+## What is still not built — 15 September
+
+Two things were taken from these four documents: the conversation
+section of the managed prompt, and the generated `reference/app-ui.md`
+(`docs/product/review.md` §26). **That is two items out of roughly
+twenty.** This is the rest, so that "we building exactly that" has a
+list behind it rather than a feeling.
+
+### Missing from the voice work I just did
+
+Four rules from the same documents did not make it into
+`MANAGED_CONVERSATION_PROMPT`, and three of them should:
+
+- **Autonomy — "decide and proceed."** `grok-bot-chat.md` §2.3 and
+  `grok-bot-agent-reference.md` §4: ask only for consequential or
+  destructive actions, irreducible ambiguity, or a fact only the person
+  knows; otherwise state the assumption and carry on. Our exec-safety
+  section says *when* to draw a question card; nothing says when **not**
+  to. An agent with a reply-first rule and no autonomy rule asks more,
+  not less.
+- **First run depends on the description** (`agent-reference.md` §1). A
+  role agent whose description is a concrete assignment should start the
+  assignment, not interview the person. Kits carry the role and the agent
+  record carries the description; nothing joins them.
+- **Never narrate a wake cue** (§2.5, §16). A routine firing, an inbound
+  channel message, a teammate's message — the agent should act on these
+  without telling the person a cue arrived. Our cron fires today and
+  nothing says this.
+- **Room turns invert reply-first** (§3, §6). Answer-before-you-work is
+  right for a person's turn and wrong for a room. We have channels in the
+  engine, so the rule that is now in the prompt is unqualified where it
+  should not be. *This one is a defect in what shipped, not an omission.*
+
+### Not started, from `grok-bot.md`
+
+- **Chief of Staff** — an agent that manages the fleet and escalates.
+- **Group rooms** with seated members and room turn rules.
+- **Projects** as a memory and collaboration scope.
+- **Memory precedence** — a role agent's note against shared user memory
+  (`agent-reference.md` §13).
+- **Event-listener routine triggers** — Slack, GitHub, Linear, Sentry,
+  PagerDuty, webhooks. Ours are cron only, and the source says to prefer
+  events over polling.
+- **The escalation order**, written down: context → connector → web →
+  signed-in browser → desktop → ask. Every step exists; the order does
+  not, which is probably why the agent picks wrong.
+
+### Not started, from `grok-bot-chat.md`
+
+- **In-chat forms** (`request_user_form`) — the fillable card for a typed
+  login, address or OTP, secrets write-only. The one piece of chat UI
+  here with no engine equivalent, and the thing that unblocks every "sign
+  in to continue" dead end.
+- **`type: attachment`** as a message in its own right, and
+  **`type: secret-request`** as a card. The engine has secrets; the
+  thread has no card for them.
+- **Threading** — `reply_to` for bulk under a TLDR.
+- **Reference chips** — jump back to an earlier message.
+- **Deep-link pills** into settings rows. Cheap now: every row already
+  has the anchor id the map prints.
+- **"N new messages" jump control**, which multi-bubble turns make
+  necessary.
+- **The render matrix** (§11.5) — widgets and cards do not exist in group
+  rooms or external channels; text degrades terser.
+
+### Not started, from `grok-bot-app-ui.md`
+
+- **Deleting an agent** — permanent, from the sidebar, right-click, with
+  a confirm, and not in Settings. No archive, no hide. We have not made
+  this decision.
+- **Two-click confirm** on a destructive row — "Click Again to Confirm"
+  in place rather than a modal.
+
+### A reference file we should have and do not
+
+`agent-reference.md` §19 names `debugging-the-box.md`. We must not have a
+box — but the *shape* is the thing. A `reference/when-things-fail.md`
+naming the log directory and what to read in it would have ended review
+§22 in one turn instead of three nights and three invented explanations.
+
+### Deliberately not building
+
+Everything in `direction.md` §10's struck column: the box, machine
+registry, `CopyToBox`/`CopyFromBox`, `request_box_help`, cloud-agent
+cards, `[Sent from machine <id>]`, and the Update/Reset computer rows.
+Settled by the founder on 15 September — *"no box. keep direction.md's
+line."*
