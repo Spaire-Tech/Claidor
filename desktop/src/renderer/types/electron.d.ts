@@ -1334,6 +1334,16 @@ interface IElectronAPI {
       title?: string;
     }) => Promise<{ response: number }>;
   };
+  settings: {
+    getExecPolicy: () => Promise<import('../../shared/settings/constants').ExecPolicy>;
+    setExecPolicy: (
+      policy: import('../../shared/settings/constants').ExecPolicy,
+    ) => Promise<{
+      success: boolean;
+      policy: import('../../shared/settings/constants').ExecPolicy;
+      error?: string;
+    }>;
+  };
   shell: {
     openPath: (filePath: string) => Promise<ShellActionResponse>;
     showItemInFolder: (filePath: string) => Promise<ShellActionResponse>;

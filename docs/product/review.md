@@ -132,7 +132,7 @@ fidelity. **Flagged for the founder to kill if they want it gone.**
 `src/renderer/design/agent/AgentDetail.tsx`, `useAgentDetail.ts`,
 `detail.ts` with the `onOpenAgent` prop on `MessagesShell.tsx` (mine).
 
-### 5. Settings is designed and I never built it — `open`
+### 5. Settings is designed and I never built it — `fixed, awaiting the founder's eyes`
 
 **Design:** a 236px tab rail on the left with four tabs — General,
 Computer, Usage, Updates, each with its own icon — and a content column
@@ -141,10 +141,44 @@ with a Save, and a meter with a fill bar. Groups are 18px-radius blocks
 on `#eef1f5`.
 
 **Built:** nothing. The account menu opens NetEase's original
-thirteen-tab settings.
+thirteen-tab settings — providers, API keys, skins, IM platforms, a
+growth tour, Chinese first.
 
-**Where:** no file. `FaiserApp.tsx` calls `onOpenSettings` which reaches
-the old `Settings` component.
+**Fixed.** `design/settings/`: the sheet at the canvas's measurements,
+the 236px rail, its four tabs with their icons, and the five row kinds —
+select, toggle, button, field, meter — drawn to the canvas's numbers.
+Which rows exist is data (`rows.ts`, 16 tests) rather than markup, so the
+interesting half is testable without rendering.
+
+The old Settings is no longer reachable from this shell. It is still
+there behind `VITE_FAISER_SHELL=0`.
+
+**What is deliberately not on it, and why.** The canvas draws rows this
+product has nothing behind. Rather than ship controls that look like the
+others and do nothing — the thing the founder has objected to twice —
+they are left out and listed here:
+
+| Canvas row | Why not |
+|---|---|
+| A second computer, and its execution setting | One computer, this one (`direction.md`). Two laptops is a v2 problem. |
+| Route egress through this desktop | There is no egress tunnel in this product. |
+| Theme, Language | This shell is one look and English only. The rows would change the *old* shell. |
+| Microphone, hardware acceleration, network debugger | No handles for any of them on this side. |
+| Auto-review rules in plain words, "It should …" | A rules engine nobody has built. The three-way choice is what exists. |
+| Hardware security keys | Not in this product. |
+| Upgrade to Pro, Link account, Cancel trial | No billing URL anybody has confirmed. |
+| Update track (Stable / other) | The updater has one channel. |
+| Update / Reset "the Swens computer" | A shared cloud computer this product does not have. |
+| The account's email address | The server's profile carries a nickname and identifiers, no email (`authSlice.ts`). |
+
+**And one row that is not in the canvas and had to exist:** *Running
+things on this computer*, which is item 18 — the setting that decides
+whether the app asks before touching your machine at all. It defaults to
+asking.
+
+**Where:** `src/renderer/design/settings/` (`rows.ts`, `Settings.tsx`,
+`useSettings.ts`), `src/shared/settings/constants.ts`,
+`main/libs/openclawConfigSync.ts`, `main/main.ts`.
 
 ### 6. I removed two rows from the account menu the founder had designed — `fixed, awaiting the founder's eyes`
 
@@ -427,19 +461,48 @@ which is why leaving and returning shows them: that path calls
 only caller), and `design/shell/FaiserApp.tsx` / `useMessagesShell.ts`
 (where the call should be).
 
-### 18. The app never asks to run anything — `fixed, awaiting the founder's eyes`
+### 18. The app never asks to run anything — `fixed properly now` — my first fix was only half of it
 
 **Founder:** *"the chat NEVER asks me for allow access. Yet I've designed
 it… It never asks me access. It's my Mac that does."*
 
-**Verified, and it is the same missing `init()`.** The approval card is
-drawn from `state.cowork.pendingPermissions`. The only thing that ever
-fills that is `onStreamPermission` inside `setupStreamListeners`
-(`services/cowork.ts:425`). No listeners, no permission requests, no
-card — ever. Stage 6's work is real and it has never once been reached.
+**First answer, and it was true but incomplete.** The approval card is
+drawn from `state.cowork.pendingPermissions`, which only
+`onStreamPermission` inside `setupStreamListeners` ever fills
+(`services/cowork.ts:425`). My shell never called `init()`, so there
+were no listeners. I fixed that and marked this item fixed.
 
-What the founder saw instead was macOS's own file-access prompt, which
-is the operating system, not us.
+**It would still never have asked.** Found while building Settings, by
+reading the config sync instead of the renderer:
+
+```ts
+// Ensure exec-approvals.json has security=full + ask=off so the gateway
+// never triggers approval-pending for any command.
+this.ensureExecApprovalDefaults();
+```
+
+That ran on **every** config sync, and rewrote the file if anything had
+changed it. The engine reads exactly that pair as a full bypass —
+`bash-tools.exec.ts`: `params.security === "full" && params.ask === "off"`
+— so the gateway was told, every time it started, never to ask about
+anything. Restoring the listener gave us something to listen with. There
+was still nothing to hear.
+
+This is upstream's decision, not a bug they left: LobsterAI wanted the
+agent to run commands without interrupting, and put the delete-command
+protection in the system prompt instead. It is the opposite of what
+`direction.md` says this product is.
+
+**Fixed.** `syncExecApprovalPolicy` now writes whatever the person chose
+in Settings → Computer, and that defaults to **asking**. The three
+choices are the engine's own exec modes under plainer names
+(`shared/settings/constants.ts`, 7 tests), and changing one re-runs the
+sync immediately rather than at the next restart.
+
+**I marked this item fixed once already and it was not.** Nothing I said
+was false when I said it; I had found one cause and stopped looking,
+which for a thing the founder had reported as completely absent was not
+enough.
 
 ### 19. The extra questions the founder designed are not there — `agreed`
 

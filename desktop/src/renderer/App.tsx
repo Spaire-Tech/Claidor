@@ -2082,29 +2082,15 @@ const App: React.FC = () => {
   // the lot, and the first thing you would notice is that sign-in never
   // restores.
   //
-  // `VITE_FAISER_SHELL=0` brings the old shell back. It is still the only
-  // way to reach Settings, providers and onboarding, none of which the new
-  // shell has yet.
+  // `VITE_FAISER_SHELL=0` brings the old shell back, and with it
+  // onboarding, providers and the thirteen-tab Settings this one replaced.
+  //
+  // The new shell used to render that Settings over itself, because it had
+  // none of its own. It has one now — four tabs, `design/settings/` — so
+  // the old one is no longer reachable from here, which is the point: it
+  // is NetEase's settings for NetEase's app.
   if (useFaiserShell) {
-    // Settings is rendered here rather than inside the new shell: it is
-    // App's component with App's state, and the account menu simply asks
-    // for it. Without this the new shell has no route to providers.
-    return (
-      <>
-        <FaiserApp onOpenSettings={handleShowSettings} />
-        {showSettings && (
-          <Settings
-            onClose={handleCloseSettings}
-            onStartAiSkin={handleStartAiSkinFromSettings}
-            initialTab={settingsOptions.initialTab}
-            initialTabRequestId={settingsOptions.requestId}
-            notice={settingsOptions.notice}
-            onUpdateFound={handleUpdateFound}
-            enterpriseConfig={enterpriseConfig}
-          />
-        )}
-      </>
-    );
+    return <FaiserApp />;
   }
 
   return (

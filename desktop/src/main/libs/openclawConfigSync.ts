@@ -44,6 +44,7 @@ import {
   supportsLobsterAIRequestOptionsV1,
 } from '../../shared/providers/lobsterAIRequestOptions';
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
+import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
 import type { DingTalkInstanceConfig, EmailMultiInstanceConfig, FeishuInstanceConfig, NeteaseBeeChanConfig, NimInstanceConfig, PopoInstanceConfig, QQInstanceConfig, WecomInstanceConfig, WeixinOpenClawConfig } from '../im/types';
@@ -1881,6 +1882,13 @@ type OpenClawConfigSyncDeps = {
   getAgents?: () => Agent[];
   getUserPlugins?: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   canUseMediaGeneration?: () => boolean;
+  /**
+   * How much the agent may do on this computer without asking.
+   *
+   * Absent, it asks. See `shared/settings/constants.ts` for why that
+   * default is not a detail.
+   */
+  getExecPolicy?: () => ExecPolicy;
 };
 
 export class OpenClawConfigSync {
@@ -1912,12 +1920,14 @@ export class OpenClawConfigSync {
   private readonly getAgents?: () => Agent[];
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
+  private readonly getExecPolicy: () => ExecPolicy;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
 
   constructor(deps: OpenClawConfigSyncDeps) {
     this.engineManager = deps.engineManager;
     this.getCoworkConfig = deps.getCoworkConfig;
+    this.getExecPolicy = deps.getExecPolicy ?? (() => DEFAULT_EXEC_POLICY);
     this.getBrowserWebAccessConfig = deps.getBrowserWebAccessConfig ?? (() => null);
     this.isEnterprise = deps.isEnterprise;
     this.getOpenClawSessionPolicy = deps.getOpenClawSessionPolicy;
@@ -3360,9 +3370,10 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       ? this.syncManagedSessionStore(providerSelection, allProvidersMap)
       : false;
 
-    // Ensure exec-approvals.json has security=full + ask=off so the gateway
-    // never triggers approval-pending for any command.
-    this.ensureExecApprovalDefaults();
+    // Write the person's own answer to "how much may it do without
+    // asking" into exec-approvals.json. This used to be pinned to the
+    // most permissive value on every sync; see `syncExecApprovalPolicy`.
+    this.syncExecApprovalPolicy();
 
     // Sync AGENTS.md with skills routing prompt to the OpenClaw workspace directory.
     // This runs on every sync regardless of openclaw.json changes, because skills
@@ -3549,16 +3560,27 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
   }
 
   /**
-   * Ensures exec-approvals.json under the LobsterAI-managed openclaw home has
-   * security=full + ask=off so the gateway never triggers approval-pending
-   * for any command. The path must match the OPENCLAW_HOME env var passed to
-   * the gateway process so both sides read/write the same file.
-   * Delete-command protection is handled via the system prompt instead.
+   * Writes the exec policy into exec-approvals.json under the managed
+   * openclaw home. The path must match the OPENCLAW_HOME env var passed to
+   * the gateway process so both sides read and write the same file.
+   *
+   * **This used to force `security: "full"`, `ask: "off"` on every sync**,
+   * with a comment saying the gateway should "never trigger
+   * approval-pending for any command". The engine reads exactly that pair
+   * as a full bypass (`bash-tools.exec.ts`), so the approval card the whole
+   * design is built around could not fire — not because nothing was
+   * listening, which was a separate bug, but because the engine had been
+   * told never to ask.
+   *
+   * `direction.md`: every action on the computer asks first. So it now
+   * writes whatever the person chose in Settings, and that defaults to
+   * asking. Delete-command protection stays in the system prompt either
+   * way.
    */
-  private ensureExecApprovalDefaults(): void {
+  private syncExecApprovalPolicy(): void {
     const filePath = path.join(this.engineManager.getBaseDir(), '.openclaw', 'exec-approvals.json');
 
-    type AgentEntry = { security?: string; ask?: string; [key: string]: unknown };
+    type AgentEntry = { security?: string; ask?: string; autoReview?: boolean; [key: string]: unknown };
     type ApprovalsFile = {
       version: number;
       agents?: Record<string, AgentEntry>;
@@ -3581,10 +3603,19 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     if (!file.agents.main) file.agents.main = {};
     const agent = file.agents.main;
 
-    if (agent.security === 'full' && agent.ask === 'off') return;
+    const policy = this.getExecPolicy();
+    const wanted = enginePolicyFor(policy);
+    if (
+      agent.security === wanted.security
+      && agent.ask === wanted.ask
+      && agent.autoReview === wanted.autoReview
+    ) {
+      return;
+    }
 
-    agent.security = 'full';
-    agent.ask = 'off';
+    agent.security = wanted.security;
+    agent.ask = wanted.ask;
+    agent.autoReview = wanted.autoReview;
 
     try {
       const dir = path.dirname(filePath);
@@ -3592,7 +3623,10 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         fs.mkdirSync(dir, { recursive: true });
       }
       this.atomicWriteFile(filePath, `${JSON.stringify(file, null, 2)}\n`);
-      console.log('[OpenClawConfigSync] set exec-approvals security=full ask=off');
+      console.log(
+        `[OpenClawConfigSync] set exec-approvals policy=${policy} `
+        + `security=${wanted.security} ask=${wanted.ask} autoReview=${wanted.autoReview}`,
+      );
     } catch (error) {
       console.warn('[OpenClawConfigSync] failed to write exec-approvals.json:', error);
     }

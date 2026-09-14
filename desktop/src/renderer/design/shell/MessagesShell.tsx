@@ -46,6 +46,8 @@ export interface MessagesShellProps {
   onOpenAgent?: () => void;
   /** The agent's five tabs, when open. Over everything, like `apps`. */
   agentDetail?: React.ReactNode;
+  /** Settings, when open. Over everything, like `apps`. */
+  settings?: React.ReactNode;
   onAccount: () => void;
   /** Rendered inside the sidebar's footer when the account menu is open. */
   accountMenu?: React.ReactNode;
@@ -74,7 +76,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
     choice, auth, parts, onSelect, onSend, onCompose, onApps, apps, onAccount, onMode,
-    onOpenPanel, onTeach, onShareTemplate, onOpenAgent, agentDetail,
+    onOpenPanel, onTeach, onShareTemplate, onOpenAgent, agentDetail, settings,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
   } = props;
 
@@ -366,6 +368,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
       */}
       {apps}
       {agentDetail}
+      {settings}
     </div>
   );
 }

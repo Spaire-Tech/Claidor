@@ -184,6 +184,12 @@ import {
   ProviderName,
 } from '../shared/providers';
 import {
+  asExecPolicy,
+  EXEC_POLICY_KEY,
+  type ExecPolicy,
+  SettingsChannel,
+} from '../shared/settings/constants';
+import {
   ShareDeploymentCandidateSource,
   type ShareDeploymentCreateNodeInput,
   type ShareDeploymentDetectCandidatesInput,
@@ -2488,6 +2494,9 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
     openClawConfigSync = new OpenClawConfigSync({
       engineManager: getOpenClawEngineManager(),
       getCoworkConfig: () => getCoworkStore().getConfig(),
+      // How much the agent may do on this computer without asking. This
+      // used to be pinned open; see shared/settings/constants.ts.
+      getExecPolicy: () => asExecPolicy(getStore().get(EXEC_POLICY_KEY)),
       getBrowserWebAccessConfig: () => getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
@@ -12836,6 +12845,34 @@ if (!gotTheLock) {
       return status;
     }
   };
+
+  // How much the agent may do on this computer without asking.
+  //
+  // Writing it re-runs the config sync straight away, because the value
+  // only matters once it has reached exec-approvals.json — a setting that
+  // takes effect on the next restart is a setting somebody will believe
+  // and be wrong about.
+  ipcMain.handle(SettingsChannel.GetExecPolicy, () =>
+    asExecPolicy(getStore().get(EXEC_POLICY_KEY)));
+
+  ipcMain.handle(SettingsChannel.SetExecPolicy, async (_event, value: ExecPolicy) => {
+    const policy = asExecPolicy(value);
+    getStore().set(EXEC_POLICY_KEY, policy);
+    try {
+      await syncOpenClawConfig({
+        reason: 'settings:execPolicy',
+        restartGatewayIfRunning: false,
+      });
+      return { success: true, policy } as const;
+    } catch (error) {
+      console.error('[Settings] failed to apply the exec policy:', error);
+      return {
+        success: false,
+        policy,
+        error: error instanceof Error ? error.message : String(error),
+      } as const;
+    }
+  });
 
   // Shell handlers - 打开文件/文件夹
   ipcMain.handle(ShellIpc.OpenPath, async (_event, filePath: string) => {
