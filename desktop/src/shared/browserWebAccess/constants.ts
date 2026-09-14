@@ -473,11 +473,18 @@ export const normalizeBrowserWebAccessConfig = (
   const profileMode = Object.values(BrowserProfileMode).includes(value?.profileMode as BrowserProfileMode)
     ? value?.profileMode as BrowserProfileMode
     : defaultBrowserWebAccessConfig.profileMode;
+  // No `headless === false → External` inference here any more.
+  //
+  // Upstream inferred it, as back-compat for a settings screen that
+  // offered "show the browser window". This product does not offer that
+  // choice — the founder designed the panel the agent browses in — and
+  // the inference meant a `headless: false` left in the store by that
+  // screen silently overrode the default and sent the agent off to a
+  // second Chromium on the Desktop, forever. Changing the default could
+  // never fix it, because a default only applies when nothing is stored.
   const displayMode = Object.values(BrowserDisplayMode).includes(value?.displayMode as BrowserDisplayMode)
     ? value?.displayMode as BrowserDisplayMode
-    : value?.headless === false
-      ? BrowserDisplayMode.External
-      : defaultBrowserWebAccessConfig.displayMode;
+    : defaultBrowserWebAccessConfig.displayMode;
   const networkMode = Object.values(BrowserNetworkMode).includes(value?.networkMode as BrowserNetworkMode)
     ? value?.networkMode as BrowserNetworkMode
     : defaultBrowserWebAccessConfig.networkMode;

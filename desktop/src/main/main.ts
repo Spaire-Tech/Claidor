@@ -313,6 +313,7 @@ import {
 } from './libs/authSessionManager';
 import type { BrowserAnnotationAssetIdentity, SaveBrowserAnnotationAssetInput } from './libs/browserAnnotationAssetStore';
 import { BrowserAnnotationAssetStore } from './libs/browserAnnotationAssetStore';
+import { repairBrowserDisplayMode } from './libs/browserDisplayRepair';
 import {
   clearServerModelMetadata,
   evaluateServerModelRunGate,
@@ -2330,6 +2331,24 @@ const bootstrapOpenClawEngine = async (
         ensureDefaultIdentity(getMainAgentWorkspacePath(manager.getStateDir()));
       } catch (err) {
         console.warn('[OpenClaw] bootstrap: ensureDefaultIdentity failed (non-fatal):', err);
+      }
+
+      // Put the agent's browser back in the app, before the sync below
+      // decides which profile the gateway starts with. Changing the
+      // default was not enough: a default only applies when nothing is
+      // stored, and an install that ever opened the old settings screen
+      // already had an answer. See `browserDisplayRepair.ts`.
+      try {
+        const appConfig = getStore().get<AppConfigSettings>('app_config');
+        const repair = repairBrowserDisplayMode(appConfig?.browserWebAccess);
+        if (repair.changed) {
+          getStore().set('app_config', { ...appConfig, browserWebAccess: repair.next });
+          console.log(
+            `[OpenClaw] bootstrap: moved the agent's browser back into the app (was ${repair.reason})`,
+          );
+        }
+      } catch (err) {
+        console.warn('[OpenClaw] bootstrap: browser display repair failed (non-fatal):', err);
       }
 
       const syncResult = await syncOpenClawConfig({

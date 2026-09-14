@@ -634,15 +634,56 @@ line under the thread. The canvas's typing indicator is the word
 `typing` beside the agent's name in the header — which this app already
 draws. Two places saying the same thing; the invented one is gone.
 
-### 22. The browser opens a separate browser — `fixed, awaiting the founder's eyes`
+### 22. The browser opens a separate browser — `fixed properly now` — my first fix could never have worked
 
 **Founder:** *"it opens a new browser. It has no notion of its own
 built-in browser. And I specifically designed that screen for that."*
+And after my fix: *"the built in browser dont work. the thing STILL
+opens it from my laptop."*
 
-Already recorded in `CLAUDE.md` and never acted on: `External` is the
-shipped default in `browserWebAccess/constants.ts`, so the engine drives
-its own Chromium instead of the in-app panel. I flagged it as a founder
-decision in Stage 5 and left it, which meant shipping the wrong one.
+**What I did the first time.** Changed
+`defaultBrowserWebAccessConfig.displayMode` from `External` to `InApp`.
+
+**Why that could never have worked.** A default only applies when
+nothing is stored. This install had opened the old thirteen-tab settings
+screen, so `app_config.browserWebAccess` already held an answer — and
+upstream's normaliser has a second route to the same place:
+
+```ts
+displayMode = isValid(value?.displayMode) ? value.displayMode
+  : value?.headless === false ? External      // ← this
+  : default;
+```
+
+`headless: false` is what that screen writes for "show the browser
+window". So a stored `external`, **or** a stored `headless: false`, beat
+the default every time. The sync kept writing
+`defaultProfile: "openclaw"`, the engine kept launching its own
+Chromium, and the panel kept saying the agent was using its own window.
+The founder's agent confirmed it in its own words: *"a separate
+OpenClaw-managed Chrome instance (profile: openclaw)"* — that string is
+the fallback branch of `buildBrowserConfig`.
+
+**Fixed, three ways, because one was not enough last time:**
+
+1. **The inference is gone.** `headless` no longer decides where the
+   browser appears. It is back-compat for a screen this product does not
+   ship.
+2. **What is already stored is repaired**, once, at startup and before
+   the config sync that decides which profile the gateway starts with
+   (`libs/browserDisplayRepair.ts`, 8 tests). This product has no screen
+   offering the choice, so a stored `external` is a leftover, not a
+   preference.
+3. **The fallback is no longer silent.** Every sync now logs which
+   profile it chose, and the one place that decides to drive a second
+   Chromium says which half of the bridge was missing instead of five
+   words naming neither.
+
+**What is still not verified:** whether the panel renders the agent's
+page once the engine is on the in-app profile. The engine side and the
+config side are fixed and tested; nobody has yet watched it draw.
+`[OpenClawConfigSync] browser profile=lobster-in-app` in the log is the
+line that says the first half worked.
 
 ### 23. Connectors do not work — `one real fault found and fixed; the rest verified by running it`
 

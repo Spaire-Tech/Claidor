@@ -2028,6 +2028,9 @@ export class OpenClawConfigSync {
       const callbackUrl = this.getBrowserCallbackUrl?.();
       const mcpCommand = this.getLobsterBrowserMcpCommand?.();
       if (callbackUrl && mcpCommand) {
+        console.log(
+          `[OpenClawConfigSync] browser profile=${BrowserRuntimeProfile.InApp} (the app's own panel)`,
+        );
         return {
           ...commonConfig,
           defaultProfile: BrowserRuntimeProfile.InApp,
@@ -2042,9 +2045,21 @@ export class OpenClawConfigSync {
           },
         };
       }
-      console.warn('[OpenClawConfigSync] In-app browser bridge is unavailable; falling back to external browser.');
+      // Which half was missing matters: this is the one place the app
+      // decides to drive a second Chromium instead of the panel the
+      // founder designed, and until now it said so in five words that
+      // named neither piece.
+      console.warn(
+        '[OpenClawConfigSync] in-app browser bridge unavailable, falling back to a separate browser window'
+        + ` — callbackUrl=${callbackUrl ? 'ready' : 'null'}`
+        + ` mcpCommand=${mcpCommand ? 'ready' : 'null'}`,
+      );
     }
 
+    console.log(
+      `[OpenClawConfigSync] browser profile=${BrowserRuntimeProfile.Managed}`
+      + ` (a separate window), displayMode=${browserWebAccess.displayMode}`,
+    );
     return {
       ...commonConfig,
       defaultProfile: BrowserRuntimeProfile.Managed,
