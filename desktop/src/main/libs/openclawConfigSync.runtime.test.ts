@@ -2877,7 +2877,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.channels['openclaw-weixin']).not.toHaveProperty('accountId');
   });
 
-  test('writes managed browser policy forcing host target', async () => {
+  test('the browser policy says target is where, and profile is which', async () => {
     const { OpenClawConfigSync } = await import('./openclawConfigSync');
 
     const sync = new OpenClawConfigSync({
@@ -2913,9 +2913,21 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const agentsMdPath = path.join(stateDir, 'workspace-main', 'AGENTS.md');
     const agentsMd = fs.readFileSync(agentsMdPath, 'utf8');
-    expect(agentsMd).toContain('LobsterAI does not support sandbox browser execution in this version.');
-    expect(agentsMd).toContain('For every `browser` tool call, set `target="host"` explicitly.');
+    // The agent still has to pass target="host": there is no sandbox.
+    expect(agentsMd).toContain('Always set `target="host"`.');
     expect(agentsMd).toContain('never tell the user to enable Chrome remote debugging');
+
+    // And it has to be told what that does NOT mean. The prompt used to
+    // say only "always set target=host", and an agent reading it told the
+    // founder, with confidence, that the workspace policy forbade it from
+    // using the built-in browser and only permitted "the host browser".
+    // It then drove the browser on their machine. `target` is where the
+    // browser runs — this machine rather than a container — and `profile`
+    // is which browser. These four lines are the difference.
+    expect(agentsMd).toContain('You have your own browser.');
+    expect(agentsMd).toContain('does NOT mean the user\'s own browser');
+    expect(agentsMd).toContain('Leave `profile` unset.');
+    expect(agentsMd).toContain('Never pass `profile: "user"`.');
   });
 
   test('enables managed OpenClaw tool loop detection', async () => {
