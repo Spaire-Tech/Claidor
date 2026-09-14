@@ -9,6 +9,7 @@ import {
   ThreadItemView,
 } from './ThreadItemView';
 import type { ThreadItem } from './types';
+import { useStaggered } from './useStaggered';
 
 export interface ThreadProps {
   items: readonly ThreadItem[];
@@ -35,6 +36,11 @@ export interface ThreadProps {
 export function Thread({
   items, agentId, dayStamp, typing, choice, auth,
 }: ThreadProps): JSX.Element {
+  // "The text come like texts. not ai." A reply's later bubbles arrive
+  // 420ms apart rather than all in one frame. History is never replayed —
+  // see `stagger.ts`.
+  const shown = useStaggered(items);
+
   const ref = useRef<HTMLDivElement>(null);
   // Whether the person is still at the bottom. Starts true so a freshly
   // opened thread lands at the newest message.
@@ -88,11 +94,11 @@ export function Thread({
         </div>
       )}
 
-      {items.map(item => (
+      {shown.map(item => (
         <ThreadItemView key={item.id} item={item} choice={choice} auth={auth} />
       ))}
 
-      {showsTypingLine(items, typing) && (
+      {showsTypingLine(shown, typing || shown.length < items.length) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 8 }}>
           <Orb agentId={agentId} size={26} mood={OrbMood.Still} />
           <span

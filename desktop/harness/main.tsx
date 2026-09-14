@@ -1,5 +1,6 @@
 import '../src/renderer/design/tokens.css';
 
+import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/MessagesShell';
@@ -86,6 +87,39 @@ const AGENTS = [
 
 const noop = (): void => undefined;
 
+/** A three-bubble reply, delivered a moment after mount. */
+const LATER_REPLY = message({
+  id: 'arrived',
+  type: 'assistant',
+  content: 'Found it.\n\nIt is the March forecast, last touched on Tuesday.\n\nWant me to open it?',
+}, 8);
+
+/**
+ * Proves the stagger, which a still screenshot cannot. Mounts the thread,
+ * then appends a reply after a beat so the bubbles arrive rather than
+ * being there from the start.
+ */
+function Arriving(): JSX.Element {
+  const [extra, setExtra] = useState<EngineMessage[]>([]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setExtra([LATER_REPLY]), 600);
+    return () => window.clearTimeout(timer);
+  }, []);
+  const items = toThreadItems([...CONVERSATION.slice(0, 8), ...extra], {
+    agentId: 'juno', agentName: 'Juno',
+  });
+  return (
+    <MessagesShell
+      agents={AGENTS} activeId="juno" activeName="Juno" items={items}
+      dayStamp="Today" mode={ThreadMode.Text} accountName="Bass Fall"
+      choice={{ onPick: noop, onFreeAnswer: noop, onDismiss: noop }}
+      auth={{ onDecide: noop }}
+      onSelect={noop} onSend={noop} onCompose={noop} onApps={noop}
+      onAccount={noop} onMode={noop} onOpenPanel={noop} onPlus={noop}
+    />
+  );
+}
+
 function Screens(): JSX.Element {
   const screen = new URLSearchParams(location.search).get('screen') ?? 'thread';
 
@@ -95,6 +129,7 @@ function Screens(): JSX.Element {
   if (screen === 'signin-error') {
     return <SignIn onSignIn={noop} error="That did not go through. Try again?" />;
   }
+  if (screen === 'arriving') return <Arriving />;
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
