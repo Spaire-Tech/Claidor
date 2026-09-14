@@ -46,6 +46,7 @@ import {
   type Platform,
   PlatformRegistry,
 } from '../shared/platform';
+import { type Project, projectId, slugify } from '../shared/projects/constants';
 import {
   type ModelThinkingLevel,
   parseModelThinkingLevel,
@@ -3293,6 +3294,99 @@ export class CoworkStore {
     }
   }
 
+  // ========== Projects ==========
+
+  listProjects(): Project[] {
+    const rows = this.getAll<{
+      id: string; slug: string; name: string; folder: string;
+      member_ids: string; created_at: number;
+    }>('SELECT id, slug, name, folder, member_ids, created_at FROM projects ORDER BY created_at ASC');
+    return rows.map(row => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      ...(row.folder ? { folder: row.folder } : {}),
+      memberIds: parseMemberIds(row.member_ids),
+      createdAt: row.created_at,
+    }));
+  }
+
+  getProject(id: string): Project | null {
+    return this.listProjects().find(project => project.id === id) ?? null;
+  }
+
+  /** Every project a given agent works in. */
+  projectsForAgent(agentId: string): Project[] {
+    return this.listProjects().filter(project => project.memberIds.includes(agentId));
+  }
+
+  createProject(name: string, memberIds: readonly string[], folder?: string): Project {
+    const now = Date.now();
+    const project: Project = {
+      id: projectId(crypto.randomUUID()),
+      slug: slugify(name),
+      name: name.trim(),
+      ...(folder ? { folder } : {}),
+      memberIds: [...memberIds],
+      createdAt: now,
+    };
+    this.run(
+      `INSERT INTO projects (id, slug, name, folder, member_ids, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        project.id, project.slug, project.name, project.folder ?? '',
+        JSON.stringify(project.memberIds), now, now,
+      ],
+    );
+    return project;
+  }
+
+  /**
+   * Rename, re-seat or re-point a project.
+   *
+   * The slug does not move when the name does. It is a directory that
+   * already has a memory file in it, and renaming a project should not
+   * orphan what the agents wrote there.
+   */
+  updateProject(
+    id: string,
+    changes: { name?: string; memberIds?: readonly string[]; folder?: string },
+  ): Project | null {
+    const existing = this.getProject(id);
+    if (!existing) return null;
+    const next: Project = {
+      ...existing,
+      ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
+      ...(changes.memberIds !== undefined ? { memberIds: [...changes.memberIds] } : {}),
+      ...(changes.folder !== undefined ? { folder: changes.folder } : {}),
+    };
+    this.run(
+      'UPDATE projects SET name = ?, folder = ?, member_ids = ?, updated_at = ? WHERE id = ?',
+      [next.name, next.folder ?? '', JSON.stringify(next.memberIds), Date.now(), id],
+    );
+    return next;
+  }
+
+  /**
+   * Forget a project.
+   *
+   * The row goes; the directory and its memory file do not. Deleting
+   * somebody's notes because they tidied a list is not a thing software
+   * should do quietly, and the folder is theirs.
+   */
+  deleteProject(id: string): void {
+    this.run('DELETE FROM projects WHERE id = ?', [id]);
+  }
+
+  removeAgentFromProjects(agentId: string): void {
+    for (const project of this.listProjects()) {
+      if (!project.memberIds.includes(agentId)) continue;
+      this.updateProject(project.id, {
+        memberIds: project.memberIds.filter(one => one !== agentId),
+      });
+    }
+  }
+
   // ========== Agent CRUD ==========
 
   listAgents(): Agent[] {
@@ -3538,6 +3632,7 @@ export class CoworkStore {
       // which reads as the agent ignoring the room rather than being
       // gone.
       this.removeAgentFromRooms(agentId);
+      this.removeAgentFromProjects(agentId);
       return true;
     });
 

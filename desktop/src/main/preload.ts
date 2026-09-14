@@ -99,6 +99,7 @@ import { McpIpcChannel } from '../shared/mcp/constants';
 import { OpenClawEngineIpc } from '../shared/openclawEngine/constants';
 import { PermissionIpcChannel } from '../shared/permissions/constants';
 import type { Platform } from '../shared/platform';
+import { ProjectIpc } from '../shared/projects/constants';
 import { RoomIpc } from '../shared/rooms/constants';
 import { type ExecPolicy, SettingsChannel } from '../shared/settings/constants';
 import {
@@ -850,6 +851,15 @@ contextBridge.exposeInMainWorld('electron', {
    * the message plumbing by a later refactor. Nothing here reads a value
    * back — `respond` is one way, renderer to main.
    */
+  /** Projects: a folder, the agents in it, and what they share. */
+  projects: {
+    list: () => ipcRenderer.invoke(ProjectIpc.List),
+    create: (name: string, memberIds: string[], folder?: string) =>
+      ipcRenderer.invoke(ProjectIpc.Create, name, memberIds, folder),
+    update: (id: string, changes: { name?: string; memberIds?: string[]; folder?: string }) =>
+      ipcRenderer.invoke(ProjectIpc.Update, id, changes),
+    remove: (id: string) => ipcRenderer.invoke(ProjectIpc.Delete, id),
+  },
   /** Rooms: a conversation with more than one agent in it. */
   rooms: {
     list: () => ipcRenderer.invoke(RoomIpc.List),

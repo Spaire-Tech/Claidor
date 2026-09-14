@@ -251,6 +251,23 @@ export class SqliteStore {
       );
     `);
 
+    // Projects: a folder, the agents working in it, and what they know
+    // about it between them.
+    //
+    // The slug is unique because it becomes a directory name, and two
+    // projects resolving to one folder would silently share memory.
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id TEXT PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        folder TEXT NOT NULL DEFAULT '',
+        member_ids TEXT NOT NULL DEFAULT '[]',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `);
+
     // Create MCP servers table
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS mcp_servers (

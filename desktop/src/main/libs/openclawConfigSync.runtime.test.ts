@@ -3189,6 +3189,104 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('If you agree and have nothing to add, say nothing.');
   });
 
+  test('an agent is told about its own projects, and only its own', async () => {
+    // A list of everything the person has ever set up would be noise to
+    // eleven agents out of twelve.
+    const sync = await createSync({
+      getProjects: () => [
+        {
+          id: 'project:1', slug: 'q4-deck', name: 'Q4 Deck',
+          folder: '/Users/bass/Work/Q4', memberIds: ['main'], createdAt: 1,
+        },
+        {
+          id: 'project:2', slug: 'elsewhere', name: 'Elsewhere',
+          memberIds: ['someone-else'], createdAt: 2,
+        },
+      ],
+    });
+    expect(sync.sync('projects').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('## The Work You Share');
+    expect(agentsMd).toContain('**Q4 Deck**');
+    expect(agentsMd).toContain('/Users/bass/Work/Q4');
+    expect(agentsMd).not.toContain('Elsewhere');
+  });
+
+  test('the shared file exists before an agent is told to read it', async () => {
+    // An agent told to open a file that is not there reads the
+    // instruction as broken. An empty file is a true statement: nobody
+    // has written anything down about this project yet.
+    const sync = await createSync({
+      getProjects: () => [{
+        id: 'project:1', slug: 'q4-deck', name: 'Q4 Deck',
+        memberIds: ['main'], createdAt: 1,
+      }],
+    });
+    expect(sync.sync('project-memory').ok).toBe(true);
+
+    const memoryPath = path.join(stateDir, 'projects', 'q4-deck', 'PROJECT.md');
+    expect(fs.existsSync(memoryPath)).toBe(true);
+    expect(fs.readFileSync(memoryPath, 'utf8')).toContain('# Q4 Deck');
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain(memoryPath);
+  });
+
+  test('an existing shared file is never overwritten by a sync', async () => {
+    // The config sync runs constantly. Clobbering what several agents
+    // wrote, every time a setting changes, would be the worst bug in the
+    // product.
+    const memoryPath = path.join(stateDir, 'projects', 'q4-deck', 'PROJECT.md');
+    fs.mkdirSync(path.dirname(memoryPath), { recursive: true });
+    fs.writeFileSync(memoryPath, 'Invoices go in Finance/2026.\n', 'utf8');
+
+    const sync = await createSync({
+      getProjects: () => [{
+        id: 'project:1', slug: 'q4-deck', name: 'Q4 Deck',
+        memberIds: ['main'], createdAt: 1,
+      }],
+    });
+    expect(sync.sync('once').ok).toBe(true);
+    expect(sync.sync('twice').ok).toBe(true);
+
+    expect(fs.readFileSync(memoryPath, 'utf8')).toBe('Invoices go in Finance/2026.\n');
+  });
+
+  test('an agent on no projects is told nothing about them', async () => {
+    const sync = await createSync();
+    expect(sync.sync('no-projects').ok).toBe(true);
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).not.toContain('## The Work You Share');
+  });
+
+  test('the shared file has rules about what must never go in it', async () => {
+    const sync = await createSync({
+      getProjects: () => [{
+        id: 'project:1', slug: 'q4', name: 'Q4', memberIds: ['main'], createdAt: 1,
+      }],
+    });
+    expect(sync.sync('project-rules').ok).toBe(true);
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    // Every agent on the project reads this file.
+    expect(agentsMd).toContain('**Never:** a password, a key, a token');
+    // Several agents write here; a rewrite throws away what you were not
+    // thinking about.
+    expect(agentsMd).toContain('Add a line rather than rewriting the file.');
+  });
+
   test('the escalation order is written down', async () => {
     // Every step existed and no statement of which to try first, so the
     // choice was the model's mood.

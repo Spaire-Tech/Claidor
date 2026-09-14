@@ -185,6 +185,18 @@ function setupDb(): void {
     );
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS projects (
+      id TEXT PRIMARY KEY,
+      slug TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      folder TEXT NOT NULL DEFAULT '',
+      member_ids TEXT NOT NULL DEFAULT '[]',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+  `);
+
   // CoworkStore only needs (db)
   store = new CoworkStore(db);
 }
@@ -1438,4 +1450,58 @@ test('deleting an agent empties its seat in every room', () => {
   const room = store.createRoom('Launch', ['eng', 'design']);
   expect(store.deleteAgent('design')).toBe(true);
   expect(store.getRoom(room.id)?.memberIds).toEqual(['eng']);
+});
+
+// ---------------------------------------------------------------------------
+// Projects
+// ---------------------------------------------------------------------------
+
+test('a project keeps its slug when it is renamed', () => {
+  // The slug is a directory that already holds a memory file. Renaming a
+  // project should not orphan what the agents wrote in it.
+  const project = store.createProject('Q4 Deck', ['eng']);
+  expect(project.slug).toBe('q4-deck');
+
+  store.updateProject(project.id, { name: 'Q4 Board Deck' });
+  const read = store.getProject(project.id);
+  expect(read?.name).toBe('Q4 Board Deck');
+  expect(read?.slug).toBe('q4-deck');
+});
+
+test('an agent can be asked which projects it works in', () => {
+  store.createProject('One', ['eng', 'design']);
+  store.createProject('Two', ['design']);
+  store.createProject('Three', []);
+
+  expect(store.projectsForAgent('design').map(one => one.name)).toEqual(['One', 'Two']);
+  expect(store.projectsForAgent('eng').map(one => one.name)).toEqual(['One']);
+  expect(store.projectsForAgent('nobody')).toEqual([]);
+});
+
+test('a project can exist before anybody is put on it', () => {
+  // Somebody may set one up before deciding who works on it.
+  const project = store.createProject('Later', []);
+  expect(store.getProject(project.id)?.memberIds).toEqual([]);
+});
+
+test('deleting an agent takes it off every project', () => {
+  db.prepare(
+    `INSERT INTO agents (id, name, description, system_prompt, identity, model,
+      thinking_level, working_directory, icon, skill_ids, subagent_allow_agent_ids,
+      enabled, pinned, is_default, source, preset_id, created_at, updated_at)
+     VALUES (?, ?, '', '', '', '', '', '', '', '[]', '[]', 1, 0, 0, 'custom', '', ?, ?)`,
+  ).run('ops', 'Operations', Date.now(), Date.now());
+
+  const project = store.createProject('Launch', ['eng', 'ops']);
+  store.deleteAgent('ops');
+  expect(store.getProject(project.id)?.memberIds).toEqual(['eng']);
+});
+
+test('deleting a project forgets the row and leaves the folder alone', () => {
+  // Deleting somebody's notes because they tidied a list is not a thing
+  // software should do quietly. The folder is theirs.
+  const project = store.createProject('Gone', ['eng']);
+  store.deleteProject(project.id);
+  expect(store.getProject(project.id)).toBeNull();
+  expect(store.listProjects()).toHaveLength(0);
 });

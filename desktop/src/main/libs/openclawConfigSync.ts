@@ -27,6 +27,10 @@ import { eventTriggerConfig } from '../../shared/eventTriggers/constants';
 import { normalizeMcpServerUrlInput } from '../../shared/mcp/url';
 import { OPENCLAW_PLUGIN_INDEX_MANAGED_KEYS } from '../../shared/openclawEngine/constants';
 import { OpenClawTranscriptSafetyLimit } from '../../shared/openclawTranscript/constants';
+import {
+  type Project,
+  PROJECT_MEMORY_FILE,
+} from '../../shared/projects/constants';
 import type {
   ModelRuntimeProfile as ModelRuntimeProfileType,
   OpenClawTransportApi,
@@ -551,6 +555,47 @@ const MANAGED_CONVERSATION_PROMPT = [
   '- Never invent a menu, a click-path, a setting, a number, a quotation or a source. If you have not read it this turn, do not state it as fact.',
   '- If something failed and you cannot tell why, say that, and say where you would look next.',
 ].join('\n');
+
+
+/**
+ * What an agent is told about the projects it works in.
+ *
+ * Per agent, so it names only that agent's own projects — a list of
+ * everything the person has ever set up would be noise to eleven agents
+ * out of twelve.
+ *
+ * The shared file is the whole feature. Every member opens the same path
+ * on the same disk, so there are no versions, no merge and no conflict:
+ * the thing that makes this product different — one computer — is the
+ * thing that makes project memory a file rather than a protocol.
+ */
+const buildManagedProjectsPrompt = (
+  projects: readonly { name: string; memoryPath: string; folder?: string }[],
+): string => {
+  if (projects.length === 0) return '';
+  return [
+    '## The Work You Share',
+    '',
+    'You are one of several agents on these. Each has a file the others read too.',
+    '',
+    ...projects.map(project => [
+      `- **${project.name}**`,
+      project.folder ? `  - The work is in \`${project.folder}\`.` : '',
+      `  - Shared notes: \`${project.memoryPath}\``,
+    ].filter(Boolean).join('\n')),
+    '',
+    '### What goes in the shared file, and what does not',
+    '- **Shared:** things the others would be wrong without. A decision that was made and why, a name for something, where a thing lives, a constraint somebody asked for, something that was tried and did not work.',
+    '- **Not shared:** how you like to work, your own running notes, anything half-finished. Those belong in your own `MEMORY.md`.',
+    '- **Never:** a password, a key, a token, or anything from a masked field. The shared file is read by every agent on the project.',
+    '',
+    '### How to write in it',
+    '- Read it before you start. Somebody may have answered your question last week.',
+    '- Add a line rather than rewriting the file. Several agents work in here and a rewrite throws away what you did not happen to be thinking about.',
+    '- Say what changed and why, not that you were here. "Invoices go in Finance/2026 — Bass asked for the year folders" is worth reading. "Worked on invoices" is not.',
+    '- If you disagree with something in it, add your line beside it rather than deleting theirs. The person can settle it; you cannot.',
+  ].join('\n');
+};
 
 /**
  * Which way to reach for a fact, in order.
@@ -2103,6 +2148,8 @@ type OpenClawConfigSyncDeps = {
   getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
   /** Launches the tool that asks the person to type something. */
   getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
+  /** Every project, so each agent can be told about its own. */
+  getProjects?: () => readonly Project[];
   getMcpBridgeSecret?: () => string;
   getSkillsList?: () => Array<{ id: string; name: string; enabled: boolean }>;
   getAgents?: () => Agent[];
@@ -2160,6 +2207,7 @@ export class OpenClawConfigSync {
   private readonly getLobsterBrowserMcpCommand?: () => string | null;
   private readonly getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
   private readonly getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
+  private readonly getProjects?: () => readonly Project[];
   private readonly getMcpBridgeSecret?: () => string;
   private readonly getSkillsList?: () => Array<{ id: string; name: string; enabled: boolean }>;
   private readonly getAgents?: () => Agent[];
@@ -2195,6 +2243,7 @@ export class OpenClawConfigSync {
     this.getLobsterBrowserMcpCommand = deps.getLobsterBrowserMcpCommand;
     this.getLobsterBrowserMcpStdioLaunch = deps.getLobsterBrowserMcpStdioLaunch;
     this.getAskInputMcpStdioLaunch = deps.getAskInputMcpStdioLaunch;
+    this.getProjects = deps.getProjects;
     this.getMcpBridgeSecret = deps.getMcpBridgeSecret;
     this.getSkillsList = deps.getSkillsList;
     this.getAgents = deps.getAgents;
@@ -4141,7 +4190,11 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
    * native channel connectors (DingTalk, Feishu, etc.) can discover and
    * invoke LobsterAI skills.
    */
-  private syncAgentsMd(workspaceDir: string, coworkConfig: CoworkConfig): string | undefined {
+  private syncAgentsMd(
+    workspaceDir: string,
+    coworkConfig: CoworkConfig,
+    agentId: string = AgentId.Main,
+  ): string | undefined {
     const MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
 
     try {
@@ -4168,6 +4221,11 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       sections.push(MANAGED_CONVERSATION_PROMPT);
       sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH, WHEN_THINGS_FAIL_PATH));
       sections.push(MANAGED_ESCALATION_PROMPT);
+
+      // Only this agent's own projects. A list of everything the person
+      // has ever set up would be noise to eleven agents out of twelve.
+      const projectsPrompt = buildManagedProjectsPrompt(this.projectsFor(agentId));
+      if (projectsPrompt) sections.push(projectsPrompt);
       sections.push(MANAGED_WEB_SEARCH_POLICY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
@@ -4419,7 +4477,7 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         this.syncAgentsMd(agentWorkspace, {
           ...coworkConfig,
           systemPrompt: agent.systemPrompt || '',
-        });
+        }, agent.id);
 
         // Ensure memory directory exists
         const memoryDir = path.join(agentWorkspace, 'memory');
@@ -4451,6 +4509,42 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
    * prompt tells the agent to say it does not know when the map is not
    * there, which is the right answer anyway.
    */
+  /**
+   * The projects one agent works in, with the paths it needs.
+   *
+   * The shared memory file is created here if it is not there yet, so an
+   * agent told to read it never opens nothing. An empty file is a true
+   * statement — nobody has written anything down about this project —
+   * whereas a missing one reads as a broken instruction.
+   */
+  private projectsFor(agentId: string): { name: string; memoryPath: string; folder?: string }[] {
+    const projects = this.getProjects?.().filter(one => one.memberIds.includes(agentId)) ?? [];
+    const projectsDir = path.join(this.engineManager.getStateDir(), 'projects');
+
+    return projects.flatMap(project => {
+      const memoryPath = path.join(projectsDir, project.slug, PROJECT_MEMORY_FILE);
+      try {
+        ensureDir(path.dirname(memoryPath));
+        if (!fs.existsSync(memoryPath)) {
+          fs.writeFileSync(memoryPath, `# ${project.name}\n\n`, 'utf8');
+        }
+      } catch (error) {
+        // A project whose folder cannot be made is left out rather than
+        // named with a path that does not work.
+        console.warn(
+          `[OpenClawConfigSync] Could not prepare the shared notes for "${project.name}":`,
+          error instanceof Error ? error.message : String(error),
+        );
+        return [];
+      }
+      return [{
+        name: project.name,
+        memoryPath,
+        ...(project.folder ? { folder: project.folder } : {}),
+      }];
+    });
+  }
+
   private syncAppUiMap(workspaceDir: string): void {
     try {
       const mapPath = path.join(workspaceDir, ...APP_UI_MAP_PATH.split('/'));

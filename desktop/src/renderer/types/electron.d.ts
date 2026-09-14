@@ -118,6 +118,7 @@ import type {
   OpenClawEnginePhase as SharedOpenClawEnginePhase,
   OpenClawGatewayRepairErrorCode,
 } from '../../shared/openclawEngine/constants';
+import type { Project, ProjectError } from '../../shared/projects/constants';
 import type {
   PublishingQuota,
   PublishingQuotaErrorData,
@@ -649,6 +650,15 @@ interface IElectronAPI {
    * and it must not be folded into the message plumbing by a later
    * refactor. `respond` is one way — nothing here reads a value back.
    */
+  /** Projects: a folder, the agents in it, and what they share. */
+  projects?: {
+    list: () => Promise<Project[]>;
+    create: (name: string, memberIds: string[], folder?: string) =>
+      Promise<{ ok: true; project: Project } | { ok: false; problem: ProjectError }>;
+    update: (id: string, changes: { name?: string; memberIds?: string[]; folder?: string }) =>
+      Promise<{ ok: true; project: Project | null } | { ok: false; problem: ProjectError }>;
+    remove: (id: string) => Promise<void>;
+  };
   /** Rooms: a conversation with more than one agent in it. */
   rooms?: {
     list: () => Promise<Room[]>;

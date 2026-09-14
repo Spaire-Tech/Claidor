@@ -177,6 +177,7 @@ import {
   OpenClawGatewayRepairErrorCode,
 } from '../shared/openclawEngine/constants';
 import { PlatformRegistry } from '../shared/platform';
+import { ProjectError, ProjectIpc, projectProblem } from '../shared/projects/constants';
 import type { ProviderConfig } from '../shared/providers';
 import {
   ModelRuntimeProfile,
@@ -2644,6 +2645,7 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
           },
         );
       },
+      getProjects: () => getCoworkStore().listProjects(),
       getAskInputMcpStdioLaunch: () => {
         const mcpRuntime = getMcpRuntime();
         const bridgeUrl = mcpRuntime.getAskInputCallbackUrl();
@@ -12883,6 +12885,56 @@ if (!gotTheLock) {
       return status;
     }
   };
+
+  // Projects: a folder, the agents working in it, and what they know
+  // about it between them.
+  ipcMain.handle(ProjectIpc.List, () => getCoworkStore().listProjects());
+
+  ipcMain.handle(
+    ProjectIpc.Create,
+    (_event, name: string, memberIds: string[], folder?: string) => {
+      const store = getCoworkStore();
+      const problem = projectProblem(
+        { name, memberIds, ...(folder ? { folder } : {}) },
+        store.listAgents().map(agent => agent.id),
+        store.listProjects().map(project => project.slug),
+      );
+      if (problem) return { ok: false as const, problem };
+      const project = store.createProject(name, memberIds, folder);
+      // The members need their AGENTS.md rewritten before they are asked
+      // anything, or the first turn in a new project does not know it is
+      // in one.
+      void syncOpenClawConfig({ reason: 'project-created' });
+      return { ok: true as const, project };
+    },
+  );
+
+  ipcMain.handle(
+    ProjectIpc.Update,
+    (_event, id: string, changes: { name?: string; memberIds?: string[]; folder?: string }) => {
+      const store = getCoworkStore();
+      const existing = store.getProject(id);
+      if (!existing) return { ok: false as const, problem: ProjectError.Unknown };
+      const problem = projectProblem(
+        {
+          name: changes.name ?? existing.name,
+          memberIds: changes.memberIds ?? existing.memberIds,
+        },
+        store.listAgents().map(agent => agent.id),
+        // Its own slug is not a clash with itself.
+        store.listProjects().filter(one => one.id !== id).map(one => one.slug),
+      );
+      if (problem) return { ok: false as const, problem };
+      const project = store.updateProject(id, changes);
+      void syncOpenClawConfig({ reason: 'project-updated' });
+      return { ok: true as const, project };
+    },
+  );
+
+  ipcMain.handle(ProjectIpc.Delete, (_event, id: string) => {
+    getCoworkStore().deleteProject(id);
+    void syncOpenClawConfig({ reason: 'project-deleted' });
+  });
 
   // Rooms: a conversation with more than one agent in it.
   //
