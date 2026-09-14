@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { findConnection } from '../../../shared/connections/catalog';
 import { mcpService } from '../../services/mcp';
 import type { ConnectionsProps } from './Connections';
-import { connectedIds } from './connections';
+import { connectedIds } from './shelf';
 
 /**
  * The connections shelf, connected.

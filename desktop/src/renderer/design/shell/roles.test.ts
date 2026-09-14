@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import type { PresetAgent } from '../../types/agent';
-import { installedPresetIds, matchingRoles } from './apps';
+import { installedPresetIds, matchingRoles } from './roles';
 
 const role = (over: Partial<PresetAgent> & { id: string }): PresetAgent => ({
   name: over.id, nameEn: over.id, icon: '', description: '', descriptionEn: '',

@@ -1,7 +1,7 @@
 import type { ConnectionItem } from '../../../shared/connections/catalog';
 import { APP_LOGO_DIRECTORY, connectionMonogram } from '../../../shared/connections/catalog';
 import { color, line, radius, shadow, text, tracking } from '../tokens';
-import { actionFor, ConnectAction, type RowAction, shelfGroups } from './connections';
+import { actionFor, ConnectAction, type RowAction, shelfGroups } from './shelf';
 
 export interface ConnectionsProps {
   query: string;

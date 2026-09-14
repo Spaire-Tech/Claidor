@@ -2,11 +2,11 @@ import { useState } from 'react';
 
 import type { PresetAgent } from '../../types/agent';
 import { Connections, type ConnectionsProps } from '../connections/Connections';
-import { shelfCount } from '../connections/connections';
+import { shelfCount } from '../connections/shelf';
 import { CloseIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, glass, line, radius, shadow, text, tracking } from '../tokens';
-import { matchingRoles } from './apps';
+import { matchingRoles } from './roles';
 
 export const AppsTab = {
   /** `direction.md` §4 lists connectors first, and it is the bigger shelf. */

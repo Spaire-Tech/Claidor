@@ -12,9 +12,9 @@ import type { EngineMessage } from '../thread/fromEngine';
 import { decisionNote } from '../thread/fromEngine';
 import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
 import { AuthDecision } from '../thread/types';
-import { installedPresetIds } from './apps';
 import type { AgentDraftSubmit } from './Compose';
 import { ThreadMode } from './MessagesShell';
+import { installedPresetIds } from './roles';
 import {
   dayStamp as dayStampOf,
   sidebarAgents,

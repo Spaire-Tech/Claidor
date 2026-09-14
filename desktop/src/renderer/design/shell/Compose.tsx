@@ -11,7 +11,7 @@ import {
   ComposeRowKind,
   composeRows,
   rowForShortcut,
-} from './compose';
+} from './composeRows';
 import type { SidebarAgent } from './Sidebar';
 
 export interface AgentDraftSubmit {
