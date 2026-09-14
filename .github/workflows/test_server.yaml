@@ -257,7 +257,7 @@ jobs:
           BUCKET_TESTING_NAME: testing-claidor-s3
         run: bash github.sh
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: server/emails/package.json
 
