@@ -374,6 +374,25 @@ browser. Pipedream gives both halves — the card and the tools. Browser
 gives neither until built. Everything above assumes Pipedream; if it
 changes, this stage changes and nothing else does.
 
+> **Read `connectors.md` first (14 September).** Three things it settles
+> that this section got wrong or did not know:
+>
+> - The choice is **three ways, not two**. The engine already does MCP
+>   OAuth (`openclaw/src/agents/mcp-oauth.ts`, wired into
+>   `mcp-transport.ts`), so an agent can talk to a vendor's own MCP
+>   endpoint with no middleman, no fee and no per-service code.
+> - `cursor/plugins` is not a catalogue of ~50 services with context. It
+>   is a plugin repo whose `third_party/` holds 63 services, MIT, each
+>   with a `plugin.json` and an `mcp.json`. It overlaps ours by **seven**
+>   — it brings 54 we lack and misses 31 we have, Slack and Notion among
+>   them. Only 13 of its 63 ship a logo; our 53 are in `3e1224d5`.
+> - The desktop half is **recoverable, not a rebuild**: `catalog.ts`,
+>   `connectorsClient.ts`, `connectorsService.ts`,
+>   `connectorMcpServers.ts` and the logos are all in `3e1224d5`.
+>
+> Roughly the larger half of this stage — recovery, the merged
+> catalogue, the cards — does not depend on which route wins.
+
 **Done when:** you click Connect on Gmail, sign in once in a browser
 window, and the agent can read your mail.
 
