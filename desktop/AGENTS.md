@@ -331,16 +331,24 @@ the OpenClaw agent workspace.
 Main process logging uses `electron-log` via `src/main/logger.ts`, which
 intercepts `console.*`.
 
+**The log directory is the app's name, and the app was renamed to
+Faiser.** `app.setName(APP_NAME)` runs in `main.ts` before
+`initLogger()`, and electron-log joins `electron.app.name` onto the
+platform log root. Every path here said `LobsterAI` long after the
+rename, which sent the founder to a directory that does not exist — so
+three separate faults all looked like "the log shows nothing". The log
+prints its own directory on startup; trust that line, not this file.
+
 Main logs:
-- Windows: `%APPDATA%/LobsterAI/logs/main-YYYY-MM-DD.log`
-- macOS: `~/Library/Logs/LobsterAI/main-YYYY-MM-DD.log`
-- Linux: `~/.config/LobsterAI/logs/main-YYYY-MM-DD.log`
+- macOS: `~/Library/Logs/Faiser/main-YYYY-MM-DD.log`
+- Windows: `%APPDATA%/Faiser/logs/main-YYYY-MM-DD.log`
+- Linux: `~/.config/Faiser/logs/main-YYYY-MM-DD.log`
 
 Main log retention is 7 days. Max file size is 80 MB; overflow rotates to
 `.old.log`.
 
 OpenClaw gateway capture logs:
-- Windows: `%APPDATA%/LobsterAI/openclaw/logs/gateway-YYYY-MM-DD.log`
+- Windows: `%APPDATA%/Faiser/openclaw/logs/gateway-YYYY-MM-DD.log`
 - Retention is 3 days.
 
 OpenClaw's own daily logs may also exist in a temp directory. On Windows,

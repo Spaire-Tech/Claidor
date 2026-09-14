@@ -716,6 +716,118 @@ prompt side are fixed and tested; nobody has yet watched it draw.
 `[OpenClawConfigSync] browser profile=lobster-in-app` in the log is the
 line that says the first half worked.
 
+### 24. Every "check the log" I gave the founder pointed at a directory that does not exist — `fixed`
+
+Found at 3am on 15 September, auditing the browser. It is not a browser
+bug. It is the reason three separate investigations all came back "the
+log dont show anything".
+
+`logger.ts` sets `resolvePathFn` to `vars.libraryDefaultDir`.
+electron-log builds that from `electron.app.name`
+(`NodeExternalApi.getAppLogPath`: `~/Library/Logs/<appName>` on macOS).
+And `main.ts:612` calls `app.setName(APP_NAME)` — **`APP_NAME` is
+`'Faiser'`** — long before `initLogger()` at 1977.
+
+So the logs are, and have been since the rename:
+
+    ~/Library/Logs/Faiser/main-YYYY-MM-DD.log
+
+The header comment in `logger.ts` said `LobsterAI`. So did `AGENTS.md`.
+So did three path comments in `openclawConfigSync.ts`. **So did every
+command I gave the founder**, because I read the comment instead of
+checking `app.setName`. They grepped an empty directory, twice, and
+concluded the app was writing nothing.
+
+Fixed: the comments, the docs, and — the part that matters — the log now
+prints its own directory on the line after the startup banner. Nobody
+has to trust a comment about this again.
+
+**What this costs us: we have no evidence about anything yet.** Every
+check asked for in items 18, 22 and 23 looked in the wrong place. The
+approval policy line, the browser profile line, the `[Connections]`
+lines — all of them may have been there all along.
+
+---
+
+## The browser audit, 15 September
+
+Asked for after the third failed attempt: *"check lobster ai tech for
+god's sake. built in browser. audit it like your life depended on it,
+then audit ours. find this please. dont guess."*
+
+**Proven, by running it rather than reading it.**
+
+*The config we write is correct.* I ran the real `OpenClawConfigSync`
+with in-app dependencies and dumped the generated `openclaw.json`:
+
+```json
+"browser": {
+  "enabled": true,
+  "defaultProfile": "lobster-in-app",
+  "profiles": {
+    "lobster-in-app": {
+      "driver": "existing-session",
+      "attachOnly": true,
+      "mcpCommand": "…/lobster-browser-mcp.sh",
+      "mcpArgs": ["--lobster-bridge-url=http://127.0.0.1:…/browser/tool"]
+    }
+  }
+}
+```
+
+Top-level `browser` key, which is exactly where the engine reads it
+(`resolveBrowserConfig(cfg.browser, cfg)`).
+
+*Upstream supports this shape.* `mcpCommand` and `mcpArgs` are real
+fields on an `existing-session` profile
+(`extensions/browser/src/browser/config.ts:483–498`); the control server
+resolves an omitted profile to `defaultProfile`
+(`server-context.ts:145`); and our MCP shim exposes exactly the tool
+names chrome-mcp calls — `list_pages`, `new_page`, `navigate_page`,
+`take_snapshot`, and the rest. The plumbing is sound.
+
+**Two real faults found upstream. Neither is proven to be *the* cause,
+and I am not going to claim one is.**
+
+**(a) The browser tool's own description tells the model the wrong
+thing.** `extensions/browser/src/browser-tool.ts:468`, hardcoded:
+
+> *"Browser choice: omit profile by default for the isolated
+> OpenClaw-managed browser (`openclaw`)."*
+
+That text does not reflect `defaultProfile`. The *behaviour* uses
+`defaultProfile` — but the model is told in its own tool description
+that omitting the profile gives it `openclaw`. A model asked "why didn't
+you use the built-in browser" has this sentence and our prompt to reason
+from, and both used to point the wrong way. Our half is fixed (item 22);
+this half is upstream's and would need a patch.
+
+**(b) A staleness path in the control server.** `forProfile()` picks the
+profile *name* from `current.resolved.defaultProfile` **before** any
+refresh, and only then calls `resolveBrowserProfileWithHotReload`, which
+re-reads disk to find a profile *by that already-chosen name*
+(`resolved-config-refresh.ts:101–124`). So if the browser server started
+while the default was `openclaw`, every later request with no explicit
+profile still resolves the name `openclaw` — and finds it, because
+`ensureDefaultProfile` always creates that profile. **A changed
+`defaultProfile` is never noticed without a restart.** Our bootstrap
+sync runs with `restartGatewayIfRunning: false`.
+
+**What to check first in the morning**, in the right directory this
+time:
+
+```bash
+grep -E "browser profile|browser back into the app" \
+  ~/Library/Logs/Faiser/main-*.log | tail
+```
+
+- `browser profile=lobster-in-app` → the config is right and the fault
+  is (a), (b), or the panel.
+- `browser profile=openclaw` → the rest of that line names which half of
+  the bridge was missing, and it is ours to fix.
+
+---
+
 ### 23. Connectors do not work — `one real fault found and fixed; the rest verified by running it`
 
 Founder was not chasing this, so it was recorded and left. Picked up on

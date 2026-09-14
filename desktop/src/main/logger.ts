@@ -2,10 +2,19 @@
  * Logger module using electron-log
  * Intercepts console.* methods and writes to file + console simultaneously.
  *
- * Log file locations:
- *   macOS:   ~/Library/Logs/LobsterAI/main-YYYY-MM-DD.log
- *   Windows: %USERPROFILE%\AppData\Roaming\LobsterAI\logs\main-YYYY-MM-DD.log
- *   Linux:   ~/.config/LobsterAI/logs/main-YYYY-MM-DD.log
+ * Log file locations. The directory is the app's name, and the app was
+ * renamed — `app.setName(APP_NAME)` runs in `main.ts` before this, and
+ * electron-log reads `electron.app.name`:
+ *
+ *   macOS:   ~/Library/Logs/Faiser/main-YYYY-MM-DD.log
+ *   Windows: %USERPROFILE%\AppData\Roaming\Faiser\logs\main-YYYY-MM-DD.log
+ *   Linux:   ~/.config/Faiser/logs/main-YYYY-MM-DD.log
+ *
+ * This comment said `LobsterAI` long after the rename, and it cost the
+ * founder an evening: every instruction to "check the log" sent them to a
+ * directory that does not exist, so three separate faults looked like
+ * "the log shows nothing". Hence the startup line below — the log now
+ * says where the log is, and nobody has to trust a comment again.
  *
  * Rotation policy:
  *   - Daily log files (one file per calendar day)
@@ -13,9 +22,11 @@
  *   - Files older than 7 days are pruned on startup
  */
 
-import path from 'path';
-import fs from 'fs';
 import log from 'electron-log/main';
+import fs from 'fs';
+import path from 'path';
+
+import { APP_NAME } from './appConstants';
 
 const LOG_RETENTION_DAYS = 7;
 const LOG_MAX_SIZE = 80 * 1024 * 1024; // 80 MB
@@ -91,7 +102,8 @@ export function initLogger(): void {
 
   // Log startup marker
   log.info('='.repeat(60));
-  log.info(`LobsterAI started (${process.platform} ${process.arch})`);
+  log.info(`${APP_NAME} started (${process.platform} ${process.arch})`);
+  log.info(`Log directory: ${logDir()}`);
   log.info('='.repeat(60));
 }
 
