@@ -165,7 +165,8 @@ class TestExtraction:
         ).encode()
         text, reason = dossier_service.extract_text(payload, "text/plain")
         assert reason == "extracted"
-        assert text is not None and "douze janvier" in text
+        assert text is not None
+        assert "douze janvier" in text
 
     def test_scan_without_text_layer_is_marked_unreadable(self) -> None:
         # A scan yields a handful of stray glyphs at most.

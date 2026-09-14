@@ -187,7 +187,9 @@ class TestRequireFeature:
             monthly_cents=0,
         )
 
-        with pytest.raises(ValueError):
+        # `match` so this asserts the unknown-feature path and not merely
+        # that something raised ValueError somewhere in the call.
+        with pytest.raises(ValueError, match="Unknown feature: telepathic_marketing"):
             await entitlements.require_feature(
                 session, creator.id, "telepathic_marketing"
             )
@@ -326,7 +328,7 @@ class TestRequireUnderLimit:
             monthly_cents=0,
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Unknown limit: horses_per_acre"):
             await entitlements.require_under_limit(
                 session, creator.id, "horses_per_acre", current=2
             )

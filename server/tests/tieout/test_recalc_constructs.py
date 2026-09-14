@@ -288,7 +288,8 @@ class TestTheWholeGateFlow:
         #: IronCalc was asked anyway, matched every stored value, and
         #: is believed. No refusal, and the mark says what the file is
         #: made of.
-        assert engine is not None and engine.startswith("IronCalc")
+        assert engine is not None
+        assert engine.startswith("IronCalc")
         assert fidelity.verdict == "pass"
         assert fidelity.refusals == []
         assert [one["kind"] for one in fidelity.constructs] == [

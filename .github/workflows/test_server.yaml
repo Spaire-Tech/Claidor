@@ -198,9 +198,11 @@ jobs:
       postgres:
         image: postgres:15.1-bullseye
         env:
-          POSTGRES_USER: polar
-          POSTGRES_PASSWORD: polar
-          POSTGRES_DB: polar_test
+          # Must match .env.testing, which CLAIDOR_ENV=testing makes the
+          # app read. These said polar/polar_test, left over from upstream.
+          POSTGRES_USER: claidor
+          POSTGRES_PASSWORD: claidor
+          POSTGRES_DB: claidor_test
           POSTGRES_PORT: 5432
         options: >-
           --health-cmd pg_isready
@@ -216,8 +218,10 @@ jobs:
           - 9000:9000
           - 9001:9001
         env:
-          MINIO_ROOT_USER: polar
-          MINIO_ROOT_PASSWORD: polarpolar
+          # Same reason as postgres above: .env.testing sets
+          # CLAIDOR_MINIO_USER/PWD to these.
+          MINIO_ROOT_USER: claidor
+          MINIO_ROOT_PASSWORD: claidorclaidor
         options: >-
           --health-cmd "curl -I http://127.0.0.1:9000/minio/health/live"
           --health-interval 10s
@@ -242,13 +246,15 @@ jobs:
         working-directory: ./server/.minio
         env:
           MINIO_HOST: 127.0.0.1
-          MINIO_ROOT_USER: polar
-          MINIO_ROOT_PASSWORD: polarpolar
-          ACCESS_KEY: polar-development
-          SECRET_ACCESS_KEY: polar123456789
-          BUCKET_NAME: polar-s3
-          BUCKET_TESTING_NAME: testing-polar-s3
-          POLICY_FILE: policy.json
+          MINIO_ROOT_USER: claidor
+          MINIO_ROOT_PASSWORD: claidorclaidor
+          # The app credentials and buckets .env.testing expects. The public
+          # bucket is not overridden there, so it is config.py's default.
+          ACCESS_KEY: claidor-development
+          SECRET_ACCESS_KEY: claidor123456789
+          BUCKET_NAME: claidor-s3
+          PUBLIC_BUCKET_NAME: claidor-s3-public
+          BUCKET_TESTING_NAME: testing-claidor-s3
         run: bash github.sh
 
       - uses: pnpm/action-setup@v5
