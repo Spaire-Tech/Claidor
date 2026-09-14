@@ -1,6 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import { ExecPolicy } from '../../../shared/settings/constants';
+import { ProviderName } from '../providers';
+import { ExecPolicy } from './constants';
+import { ACCOUNT_MODELS } from './models';
 import {
   EXEC_POLICY_OPTIONS,
   execPolicyLabel,
@@ -17,10 +19,14 @@ const input = (over: Partial<SettingsInput> = {}): SettingsInput => ({
   computerName: 'Bass’s MacBook Pro',
   execPolicy: ExecPolicy.Ask,
   memoryEnabled: true,
+  modelChoice: ACCOUNT_MODELS,
+  modelApiKey: '',
   onSignOut: vi.fn(),
   onAddAccount: vi.fn(),
   onExecPolicy: vi.fn(),
   onMemory: vi.fn(),
+  onModelChoice: vi.fn(),
+  onModelApiKey: vi.fn(),
   onWorkingDirectory: vi.fn(),
   onRefreshUsage: vi.fn(),
   onCheckUpdates: vi.fn(),
@@ -121,6 +127,54 @@ describe('the General tab', () => {
     const row = rowsOf(SettingsTab.General, { accountEmail: undefined })
       .find(one => one.id === 'sign-out');
     expect(row).not.toHaveProperty('desc');
+  });
+
+  test('the models row is there, because the account is not the only way to pay', () => {
+    // The founder, on our own 402 arriving as an upgrade advert: *"that's
+    // bs. i dont use their credits. i use my open api."* Without this row
+    // there is nowhere in the app to say so.
+    const row = rowsOf(SettingsTab.General).find(one => one.id === 'model-choice');
+    if (row?.kind !== SettingsRowKind.Select) throw new Error('not a select');
+    expect(row.value).toBe(ACCOUNT_MODELS);
+    expect(row.options.length).toBeGreaterThan(1);
+  });
+
+  test('the key field appears only once a provider is chosen', () => {
+    expect(rowsOf(SettingsTab.General).some(one => one.id === 'model-api-key')).toBe(false);
+    const row = rowsOf(SettingsTab.General, { modelChoice: ProviderName.OpenAI })
+      .find(one => one.id === 'model-api-key');
+    if (row?.kind !== SettingsRowKind.Field) throw new Error('not a field');
+    expect(row.secret).toBe(true);
+    expect(row.label).toMatch(/API key/);
+  });
+
+  test('the key field says where the key goes, and where to get one', () => {
+    const row = rowsOf(SettingsTab.General, { modelChoice: ProviderName.Anthropic })
+      .find(one => one.id === 'model-api-key');
+    expect(row?.desc).toMatch(/Kept on this computer/);
+    expect(row?.desc).toMatch(/https:\/\//);
+  });
+
+  test('the field shows the key already stored, and saving passes it up', () => {
+    const onModelApiKey = vi.fn();
+    const row = rowsOf(SettingsTab.General, {
+      modelChoice: ProviderName.OpenAI,
+      modelApiKey: 'sk-stored',
+      onModelApiKey,
+    }).find(one => one.id === 'model-api-key');
+    if (row?.kind !== SettingsRowKind.Field) throw new Error('not a field');
+    expect(row.value).toBe('sk-stored');
+    row.onSave?.('sk-new');
+    expect(onModelApiKey).toHaveBeenCalledWith('sk-new');
+  });
+
+  test('picking a provider passes the choice up untouched', () => {
+    const onModelChoice = vi.fn();
+    const row = rowsOf(SettingsTab.General, { onModelChoice })
+      .find(one => one.id === 'model-choice');
+    if (row?.kind !== SettingsRowKind.Select) throw new Error('not a select');
+    row.onPick(ProviderName.Gemini);
+    expect(onModelChoice).toHaveBeenCalledWith(ProviderName.Gemini);
   });
 
   test('the memory toggle sends the opposite of what it shows', () => {

@@ -1996,13 +1996,13 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkErrorOAuthInvalid: 'OAuth 授权已失效或权限不足，请重新授权后重试。',
     coworkErrorModelAccessDenied: '当前账号无权访问该模型，请切换模型或检查服务商账号权限。',
     coworkErrorQuotaExhausted:
-      '积分额度已用完，请升级套餐后继续使用。[立即升级/充值](https://lobsterai.youdao.com/portal#/pricing)',
+      '本月额度已用完，将于下月初重置。你可以在「设置 → 模型」中填入自己的 API Key 继续使用。',
     coworkErrorFreeQuotaExhausted:
-      '积分额度已用完，请升级套餐后继续使用。[立即升级/充值](https://lobsterai.youdao.com/portal#/pricing)',
+      '本月额度已用完，将于下月初重置。你可以在「设置 → 模型」中填入自己的 API Key 继续使用。',
     coworkErrorInsufficientBalance: 'API 余额不足，请充值后重试。',
-    coworkCreditQuotaBannerTitle: '积分已用尽，请及时充值。',
-    coworkCreditQuotaBannerDescription: '已达到使用上限，需购买 token 继续使用。',
-    coworkCreditQuotaBannerAction: '去购买',
+    coworkCreditQuotaBannerTitle: '本月额度已用完。',
+    coworkCreditQuotaBannerDescription: '将于下月初重置。填入自己的 API Key 可继续使用。',
+    coworkCreditQuotaBannerAction: '设置',
     coworkErrorInputTooLong: '输入内容过长，超出模型上下文限制，请缩短对话内容后重试。',
     coworkErrorMessageTooLarge:
       '本次消息过大，请减少附件、压缩图片或拆分提交。（单次整体需小于 30MB）',
@@ -5889,14 +5889,19 @@ const translations: Record<LanguageType, Record<string, string>> = {
       'OAuth authorization is invalid or missing required access. Re-authenticate and try again.',
     coworkErrorModelAccessDenied:
       'This account is not allowed to access the selected model. Switch models or check provider account permissions.',
+    // Not NetEase's upsell, and not their pricing page. This limit is
+    // ours: the server counts credits against DESKTOP_MONTHLY_CREDITS and
+    // answers 402 with code 40200 (`polar/desktop/service.py`). The
+    // classifier matched that code onto upstream's string, so our own
+    // quota was telling the founder to go and buy LobsterAI credits.
     coworkErrorQuotaExhausted:
-      'Your credits have been used up. Upgrade your plan to continue.\n\n[Upgrade or recharge](https://lobsterai.youdao.com/portal#/pricing)',
+      'This month\'s allowance on your account is used up. It resets at the start of next month.\n\nYou can keep working now by using your own provider key — Settings → Models.',
     coworkErrorFreeQuotaExhausted:
-      'Your credits have been used up. Upgrade your plan to continue.\n\n[Upgrade or recharge](https://lobsterai.youdao.com/portal#/pricing)',
+      'This month\'s allowance on your account is used up. It resets at the start of next month.\n\nYou can keep working now by using your own provider key — Settings → Models.',
     coworkErrorInsufficientBalance: 'Insufficient API balance. Please top up and try again.',
-    coworkCreditQuotaBannerTitle: 'Credits used up. Please recharge.',
-    coworkCreditQuotaBannerDescription: 'You have reached the usage limit. Purchase tokens to continue.',
-    coworkCreditQuotaBannerAction: 'Buy',
+    coworkCreditQuotaBannerTitle: 'This month\'s allowance is used up.',
+    coworkCreditQuotaBannerDescription: 'It resets at the start of next month. Your own provider key keeps you working now.',
+    coworkCreditQuotaBannerAction: 'Settings',
     coworkErrorInputTooLong:
       'Input too long, exceeding model context limit. Please shorten the conversation and try again.',
     coworkErrorMessageTooLarge:

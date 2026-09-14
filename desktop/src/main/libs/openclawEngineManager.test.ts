@@ -1,9 +1,17 @@
-import { describe, expect, test, vi } from 'vitest';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+
+// `getPath('userData')` is where the manager puts its state directory.
+// Pointing it at the repo means running this file writes an openclaw/
+// folder into the working tree, which is how it was found.
+const USER_DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'openclaw-userdata-'));
 
 vi.mock('electron', () => ({
   app: {
     getAppPath: () => process.cwd(),
-    getPath: () => process.cwd(),
+    getPath: (name?: string) => (name === 'userData' ? USER_DATA : process.cwd()),
     isPackaged: false,
   },
   utilityProcess: {
@@ -89,5 +97,41 @@ describe('isOpenClawGatewayHeapOutOfMemory', () => {
     expect(isOpenClawGatewayHeapOutOfMemory(
       'gateway websocket closed with code=1006',
     )).toBe(false);
+  });
+});
+
+describe('the token a local automation presents', () => {
+  // Separate from the gateway token on purpose: the gateway token drives
+  // the whole engine, this one can only post an event. A script somebody
+  // pastes a token into is exactly where that distinction earns its keep.
+  const stateDir = path.join(USER_DATA, 'openclaw', 'state');
+  const tokenPath = path.join(stateDir, 'hook-token');
+
+  const manager = async () => {
+    const { OpenClawEngineManager } = await import('./openclawEngineManager');
+    return new OpenClawEngineManager();
+  };
+
+  beforeEach(() => {
+    fs.rmSync(tokenPath, { force: true });
+  });
+
+  test('it is generated once and kept', async () => {
+    // Rotating it on every start would break every automation somebody
+    // had set up, silently, at the worst possible moment.
+    const first = (await manager()).ensureHookToken();
+    expect(first).toMatch(/^[0-9a-f]{48}$/);
+    expect((await manager()).ensureHookToken()).toBe(first);
+  });
+
+  test('it is not the gateway token', async () => {
+    fs.mkdirSync(stateDir, { recursive: true });
+    fs.writeFileSync(path.join(stateDir, 'gateway-token'), 'gateway-value', 'utf8');
+    expect((await manager()).ensureHookToken()).not.toBe('gateway-value');
+  });
+
+  test('it is not readable by anybody else on the machine', async () => {
+    (await manager()).ensureHookToken();
+    expect(fs.statSync(tokenPath).mode & 0o077).toBe(0);
   });
 });

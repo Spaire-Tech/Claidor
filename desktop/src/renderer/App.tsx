@@ -16,7 +16,7 @@ import {
 } from '../shared/library/constants';
 import type { LibrarySessionRef } from '../shared/library/types';
 import { OpenClawEnginePhase } from '../shared/openclawEngine/constants';
-import { ProviderAuthType, ProviderName, ProviderRegistry } from '../shared/providers';
+import { ProviderName } from '../shared/providers';
 import { SIDEBAR_TASK_FILTER_ENABLED } from './components/agentSidebar/SidebarTaskFilterButton';
 import { CoworkView } from './components/cowork';
 import {
@@ -60,7 +60,7 @@ import {
 import AppUpdateModal from './components/update/AppUpdateModal';
 import { shouldShowAppUpdateNotice } from './components/update/appUpdateNoticeState';
 import WindowsAppTitleBar from './components/window/WindowsAppTitleBar';
-import { defaultConfig, getProviderDisplayName, ShortcutAction } from './config';
+import { defaultConfig, ShortcutAction } from './config';
 import { FaiserApp } from './design/shell/FaiserApp';
 import { selectIsEnterpriseAccount } from './features/enterpriseAccount/selectors';
 import { SkinProvider } from './providers/SkinProvider';
@@ -77,6 +77,7 @@ import {
 } from './services/latestAsyncRequest';
 import { LogReporterAction, reportYdAnalyzer } from './services/logReporter';
 import { getOnboardingErrorCode, reportOnboardingAction } from './services/onboardingAnalytics';
+import { providerModelsFromConfig } from './services/providerModels';
 import { scheduledTaskService } from './services/scheduledTask';
 import { isTextEditingSafeShortcut, matchesShortcut } from './services/shortcuts';
 import { themeService } from './services/theme';
@@ -382,27 +383,7 @@ const App: React.FC = () => {
     };
     apiService.setConfig(apiConfig);
 
-    const providerModels: { id: string; name: string; provider?: string; providerKey?: string; openClawProviderId?: string; supportsImage?: boolean }[] = [];
-    if (config.providers) {
-      Object.entries(config.providers).forEach(([providerName, providerConfig]) => {
-        if (providerConfig.enabled && providerConfig.models) {
-          const openClawProviderId = ProviderRegistry.getOpenClawProviderIdForConfig(providerName, providerConfig);
-          if (providerName === ProviderName.Minimax && providerConfig.authType === ProviderAuthType.OAuth) {
-            log?.('MiniMax OAuth provider resolved to OpenClaw minimax-portal');
-          }
-          providerConfig.models.forEach((model: { id: string; name: string; supportsImage?: boolean }) => {
-            providerModels.push({
-              id: model.id,
-              name: model.name,
-              provider: getProviderDisplayName(providerName, providerConfig),
-              providerKey: providerName,
-              openClawProviderId,
-              supportsImage: model.supportsImage ?? false,
-            });
-          });
-        }
-      });
-    }
+    const providerModels = providerModelsFromConfig(config.providers, log);
     dispatch(setAvailableModels(providerModels));
     if (providerModels.length > 0) {
       const allModels = store.getState().model.availableModels;
@@ -1497,23 +1478,7 @@ const App: React.FC = () => {
     });
 
     if (config.providers) {
-      const allModels: { id: string; name: string; provider?: string; providerKey?: string; openClawProviderId?: string; supportsImage?: boolean }[] = [];
-      Object.entries(config.providers).forEach(([providerName, providerConfig]) => {
-        if (providerConfig.enabled && providerConfig.models) {
-          const openClawProviderId = ProviderRegistry.getOpenClawProviderIdForConfig(providerName, providerConfig);
-          providerConfig.models.forEach((model: { id: string; name: string; supportsImage?: boolean }) => {
-            allModels.push({
-              id: model.id,
-              name: model.name,
-              provider: getProviderDisplayName(providerName, providerConfig),
-              providerKey: providerName,
-              openClawProviderId,
-              supportsImage: model.supportsImage ?? false,
-            });
-          });
-        }
-      });
-      dispatch(setAvailableModels(allModels));
+      dispatch(setAvailableModels(providerModelsFromConfig(config.providers)));
     }
   };
 

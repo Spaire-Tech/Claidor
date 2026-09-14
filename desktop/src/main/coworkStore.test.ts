@@ -175,6 +175,28 @@ function setupDb(): void {
     );
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS rooms (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      member_ids TEXT NOT NULL DEFAULT '[]',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS projects (
+      id TEXT PRIMARY KEY,
+      slug TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      folder TEXT NOT NULL DEFAULT '',
+      member_ids TEXT NOT NULL DEFAULT '[]',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+  `);
+
   // CoworkStore only needs (db)
   store = new CoworkStore(db);
 }
@@ -1356,4 +1378,130 @@ test('backfillEmptyAgentModels assigns the current default model to empty agents
     ['stockexpert', 'qwen3.5-plus'],
     ['writer', 'deepseek-v3.2'],
   ]);
+});
+
+// ---------------------------------------------------------------------------
+// Rooms
+// ---------------------------------------------------------------------------
+
+test('a room survives being written and read back', () => {
+  // Rooms are stored rather than derived because a room outlives its
+  // sessions: somebody makes one on Monday and expects it on Friday
+  // whether or not anything was said in it.
+  const room = store.createRoom('  Launch  ', ['eng', 'design']);
+  expect(room.id.startsWith('room:')).toBe(true);
+  expect(room.name).toBe('Launch');
+
+  const read = store.getRoom(room.id);
+  expect(read?.name).toBe('Launch');
+  expect(read?.memberIds).toEqual(['eng', 'design']);
+});
+
+test('seating order is kept', () => {
+  // The order members were added in is the order they are listed and
+  // asked. A join table would lose it without a position column.
+  const room = store.createRoom('Launch', ['c', 'a', 'b']);
+  expect(store.getRoom(room.id)?.memberIds).toEqual(['c', 'a', 'b']);
+});
+
+test('a room can be renamed and re-seated without losing the other half', () => {
+  const room = store.createRoom('Launch', ['a', 'b']);
+  expect(store.updateRoom(room.id, { name: 'Ship it' })?.memberIds).toEqual(['a', 'b']);
+  expect(store.updateRoom(room.id, { memberIds: ['a', 'c'] })?.name).toBe('Ship it');
+  expect(store.getRoom(room.id)).toMatchObject({ name: 'Ship it', memberIds: ['a', 'c'] });
+});
+
+test('updating a room that is gone says so rather than creating one', () => {
+  expect(store.updateRoom('room:missing', { name: 'x' })).toBeNull();
+});
+
+test('deleting an agent takes it out of every room it sat in', () => {
+  // Otherwise a room keeps a member id that resolves to nothing, and the
+  // thread has one fewer voice than the member list claims — which reads
+  // as the agent ignoring the room rather than the agent being gone.
+  const one = store.createRoom('One', ['eng', 'design']);
+  const two = store.createRoom('Two', ['design', 'ops']);
+
+  store.removeAgentFromRooms('design');
+
+  expect(store.getRoom(one.id)?.memberIds).toEqual(['eng']);
+  expect(store.getRoom(two.id)?.memberIds).toEqual(['ops']);
+});
+
+test('a room with unreadable members is empty rather than fatal', () => {
+  // A room showing no members is a visible, fixable problem. An exception
+  // here would take the whole sidebar down with it.
+  const room = store.createRoom('Broken', ['a', 'b']);
+  db.prepare('UPDATE rooms SET member_ids = ? WHERE id = ?').run('{not json', room.id);
+  expect(store.getRoom(room.id)?.memberIds).toEqual([]);
+  expect(store.listRooms()).toHaveLength(1);
+});
+
+test('deleting an agent empties its seat in every room', () => {
+  // The store method existed and nothing called it, so a deleted agent
+  // stayed in the member list and the room silently had one fewer voice.
+  db.prepare(
+    `INSERT INTO agents (id, name, description, system_prompt, identity, model,
+      thinking_level, working_directory, icon, skill_ids, subagent_allow_agent_ids,
+      enabled, pinned, is_default, source, preset_id, created_at, updated_at)
+     VALUES (?, ?, '', '', '', '', '', '', '', '[]', '[]', 1, 0, 0, 'custom', '', ?, ?)`,
+  ).run('design', 'Design Lead', Date.now(), Date.now());
+
+  const room = store.createRoom('Launch', ['eng', 'design']);
+  expect(store.deleteAgent('design')).toBe(true);
+  expect(store.getRoom(room.id)?.memberIds).toEqual(['eng']);
+});
+
+// ---------------------------------------------------------------------------
+// Projects
+// ---------------------------------------------------------------------------
+
+test('a project keeps its slug when it is renamed', () => {
+  // The slug is a directory that already holds a memory file. Renaming a
+  // project should not orphan what the agents wrote in it.
+  const project = store.createProject('Q4 Deck', ['eng']);
+  expect(project.slug).toBe('q4-deck');
+
+  store.updateProject(project.id, { name: 'Q4 Board Deck' });
+  const read = store.getProject(project.id);
+  expect(read?.name).toBe('Q4 Board Deck');
+  expect(read?.slug).toBe('q4-deck');
+});
+
+test('an agent can be asked which projects it works in', () => {
+  store.createProject('One', ['eng', 'design']);
+  store.createProject('Two', ['design']);
+  store.createProject('Three', []);
+
+  expect(store.projectsForAgent('design').map(one => one.name)).toEqual(['One', 'Two']);
+  expect(store.projectsForAgent('eng').map(one => one.name)).toEqual(['One']);
+  expect(store.projectsForAgent('nobody')).toEqual([]);
+});
+
+test('a project can exist before anybody is put on it', () => {
+  // Somebody may set one up before deciding who works on it.
+  const project = store.createProject('Later', []);
+  expect(store.getProject(project.id)?.memberIds).toEqual([]);
+});
+
+test('deleting an agent takes it off every project', () => {
+  db.prepare(
+    `INSERT INTO agents (id, name, description, system_prompt, identity, model,
+      thinking_level, working_directory, icon, skill_ids, subagent_allow_agent_ids,
+      enabled, pinned, is_default, source, preset_id, created_at, updated_at)
+     VALUES (?, ?, '', '', '', '', '', '', '', '[]', '[]', 1, 0, 0, 'custom', '', ?, ?)`,
+  ).run('ops', 'Operations', Date.now(), Date.now());
+
+  const project = store.createProject('Launch', ['eng', 'ops']);
+  store.deleteAgent('ops');
+  expect(store.getProject(project.id)?.memberIds).toEqual(['eng']);
+});
+
+test('deleting a project forgets the row and leaves the folder alone', () => {
+  // Deleting somebody's notes because they tidied a list is not a thing
+  // software should do quietly. The folder is theirs.
+  const project = store.createProject('Gone', ['eng']);
+  store.deleteProject(project.id);
+  expect(store.getProject(project.id)).toBeNull();
+  expect(store.listProjects()).toHaveLength(0);
 });

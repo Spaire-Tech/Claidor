@@ -1,4 +1,7 @@
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
+import { attachmentFor } from './attachment';
+import { splitReply } from './details';
+import type { KnownFile } from './parts';
 import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
@@ -192,6 +195,13 @@ export interface ToThreadOptions {
    * there waiting to be pressed again.
    */
   answered?: Readonly<Record<string, Readonly<Record<string, string>>>>;
+  /**
+   * The files this conversation has produced.
+   *
+   * Used for two things: resolving a chip to a real path, and deciding
+   * whether a reply is a file rather than a sentence about one.
+   */
+  files?: readonly KnownFile[];
 }
 
 /** At most this many bubbles from one reply. Three is the canvas's number. */
@@ -318,20 +328,52 @@ export function toThreadItems(
         }
         if (isBlank(message.content)) break;
 
+        // The bulk comes off first, before anything is split into
+        // bubbles. `splitIntoBubbles` breaks on blank lines, so running
+        // it first would tear the fence in half and leave a bubble that
+        // is nothing but a `details` block — which, having no summary in
+        // front of it, is then quite correctly refused and shown raw.
+        //
+        // Not while streaming: the closing fence has not arrived, so the
+        // split would be made on half a reply and then re-made.
+        const { summary, details } = meta.isStreaming
+          ? { summary: message.content, details: undefined }
+          : splitReply(message.content);
+
         // A streaming reply stays whole: splitting a half-arrived answer
         // would make bubbles appear and then re-split as more lands.
         const parts = meta.isStreaming
-          ? [message.content.trim()]
-          : splitIntoBubbles(message.content);
+          ? [summary.trim()]
+          : splitIntoBubbles(summary);
 
         parts.forEach((text, index) => {
-          items.push({
-            kind: ThreadItemKind.Text,
-            id: parts.length > 1 ? `${message.id}:${index}` : message.id,
-            from: Speaker.Agent,
-            text,
+          const id = parts.length > 1 ? `${message.id}:${index}` : message.id;
+          const sender = {
             ...(group && agentId ? { agentId } : {}),
             ...(group && agentId && options.agentName ? { agentName: options.agentName } : {}),
+          };
+
+          // A reply that is nothing but a file it produced is the file,
+          // not a sentence about the file. Never while streaming: the
+          // link often arrives before the words around it, and a bubble
+          // that turns into a card and back again is worse than either.
+          const attachment = meta.isStreaming
+            ? undefined
+            : attachmentFor(text, { id, from: Speaker.Agent, at, ...sender }, options.files);
+          if (attachment) {
+            items.push(attachment);
+            return;
+          }
+
+          items.push({
+            kind: ThreadItemKind.Text,
+            id,
+            from: Speaker.Agent,
+            text,
+            ...sender,
+            // Under the last bubble of the reply, which is where the
+            // person's eye already is when they finish reading it.
+            ...(details && index === parts.length - 1 ? { details } : {}),
             ...(meta.isStreaming ? { streaming: true } : {}),
             at,
           } satisfies TextItem);

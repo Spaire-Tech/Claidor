@@ -716,6 +716,118 @@ prompt side are fixed and tested; nobody has yet watched it draw.
 `[OpenClawConfigSync] browser profile=lobster-in-app` in the log is the
 line that says the first half worked.
 
+### 24. Every "check the log" I gave the founder pointed at a directory that does not exist — `fixed`
+
+Found at 3am on 15 September, auditing the browser. It is not a browser
+bug. It is the reason three separate investigations all came back "the
+log dont show anything".
+
+`logger.ts` sets `resolvePathFn` to `vars.libraryDefaultDir`.
+electron-log builds that from `electron.app.name`
+(`NodeExternalApi.getAppLogPath`: `~/Library/Logs/<appName>` on macOS).
+And `main.ts:612` calls `app.setName(APP_NAME)` — **`APP_NAME` is
+`'Faiser'`** — long before `initLogger()` at 1977.
+
+So the logs are, and have been since the rename:
+
+    ~/Library/Logs/Faiser/main-YYYY-MM-DD.log
+
+The header comment in `logger.ts` said `LobsterAI`. So did `AGENTS.md`.
+So did three path comments in `openclawConfigSync.ts`. **So did every
+command I gave the founder**, because I read the comment instead of
+checking `app.setName`. They grepped an empty directory, twice, and
+concluded the app was writing nothing.
+
+Fixed: the comments, the docs, and — the part that matters — the log now
+prints its own directory on the line after the startup banner. Nobody
+has to trust a comment about this again.
+
+**What this costs us: we have no evidence about anything yet.** Every
+check asked for in items 18, 22 and 23 looked in the wrong place. The
+approval policy line, the browser profile line, the `[Connections]`
+lines — all of them may have been there all along.
+
+---
+
+## The browser audit, 15 September
+
+Asked for after the third failed attempt: *"check lobster ai tech for
+god's sake. built in browser. audit it like your life depended on it,
+then audit ours. find this please. dont guess."*
+
+**Proven, by running it rather than reading it.**
+
+*The config we write is correct.* I ran the real `OpenClawConfigSync`
+with in-app dependencies and dumped the generated `openclaw.json`:
+
+```json
+"browser": {
+  "enabled": true,
+  "defaultProfile": "lobster-in-app",
+  "profiles": {
+    "lobster-in-app": {
+      "driver": "existing-session",
+      "attachOnly": true,
+      "mcpCommand": "…/lobster-browser-mcp.sh",
+      "mcpArgs": ["--lobster-bridge-url=http://127.0.0.1:…/browser/tool"]
+    }
+  }
+}
+```
+
+Top-level `browser` key, which is exactly where the engine reads it
+(`resolveBrowserConfig(cfg.browser, cfg)`).
+
+*Upstream supports this shape.* `mcpCommand` and `mcpArgs` are real
+fields on an `existing-session` profile
+(`extensions/browser/src/browser/config.ts:483–498`); the control server
+resolves an omitted profile to `defaultProfile`
+(`server-context.ts:145`); and our MCP shim exposes exactly the tool
+names chrome-mcp calls — `list_pages`, `new_page`, `navigate_page`,
+`take_snapshot`, and the rest. The plumbing is sound.
+
+**Two real faults found upstream. Neither is proven to be *the* cause,
+and I am not going to claim one is.**
+
+**(a) The browser tool's own description tells the model the wrong
+thing.** `extensions/browser/src/browser-tool.ts:468`, hardcoded:
+
+> *"Browser choice: omit profile by default for the isolated
+> OpenClaw-managed browser (`openclaw`)."*
+
+That text does not reflect `defaultProfile`. The *behaviour* uses
+`defaultProfile` — but the model is told in its own tool description
+that omitting the profile gives it `openclaw`. A model asked "why didn't
+you use the built-in browser" has this sentence and our prompt to reason
+from, and both used to point the wrong way. Our half is fixed (item 22);
+this half is upstream's and would need a patch.
+
+**(b) A staleness path in the control server.** `forProfile()` picks the
+profile *name* from `current.resolved.defaultProfile` **before** any
+refresh, and only then calls `resolveBrowserProfileWithHotReload`, which
+re-reads disk to find a profile *by that already-chosen name*
+(`resolved-config-refresh.ts:101–124`). So if the browser server started
+while the default was `openclaw`, every later request with no explicit
+profile still resolves the name `openclaw` — and finds it, because
+`ensureDefaultProfile` always creates that profile. **A changed
+`defaultProfile` is never noticed without a restart.** Our bootstrap
+sync runs with `restartGatewayIfRunning: false`.
+
+**What to check first in the morning**, in the right directory this
+time:
+
+```bash
+grep -E "browser profile|browser back into the app" \
+  ~/Library/Logs/Faiser/main-*.log | tail
+```
+
+- `browser profile=lobster-in-app` → the config is right and the fault
+  is (a), (b), or the panel.
+- `browser profile=openclaw` → the rest of that line names which half of
+  the bridge was missing, and it is ours to fix.
+
+---
+
 ### 23. Connectors do not work — `one real fault found and fixed; the rest verified by running it`
 
 Founder was not chasing this, so it was recorded and left. Picked up on
@@ -781,6 +893,78 @@ Everything up to and after that point is verified.
 
 ---
 
+## 25. "Your credits have been used up. Upgrade your plan." — `fixed`
+
+The founder, 15 September:
+
+> Your credits have been used up. Upgrade your plan to continue.
+> [Upgrade or recharge](https://lobsterai.youdao.com/portal#/pricing) —
+> that's bs. i dont use their credits. i use my open api. so lets fix
+> that pls
+
+Three separate faults, stacked. The first is the only one that looks
+like NetEase's.
+
+**The message was theirs. The limit is ours.** Our own server counts
+credits against `DESKTOP_MONTHLY_CREDITS` (3,000,000) and answers HTTP
+402 with code `40200` (`polar/desktop/service.py`,
+`polar/desktop/endpoints.py`). Upstream's classifier
+(`common/coworkErrorClassify.ts`) matches `40200` with the pattern
+`/\b(?:4020[0-2]|4160[678])\b/` and shows `coworkErrorQuotaExhausted` —
+whose text was NetEase's pricing page. So *our* quota was advertising
+*their* upgrade. All four `lobsterai.youdao.com` links are gone;
+`grep -c` now returns 0. The new line points at Settings instead.
+
+**There was nowhere to put a key.** A person's own provider key is a
+real capability — `app_config.providers`, read by the config sync — but
+the only screen that could set one was the thirteen-tab Settings, and I
+cut the route to it when the four-tab Settings replaced it (item 5). So
+the app told them to upgrade and offered no alternative. General now has
+a **Models** group: one select (the account's allowance, or your own
+OpenAI / Anthropic / Gemini / OpenRouter key) and, once a provider is
+chosen, a masked key field with a Show toggle and the provider's own
+page to get a key from.
+
+**And the key alone would have done nothing.** This is the part I would
+have shipped broken. `app_config.providers` only records that a key
+exists. What the engine runs on is resolved in
+`claudeSettings.ts:resolveMatchedProvider`, from
+`app_config.model.defaultModel` and `defaultModelProvider` — and its
+**first branch returns the account's server plan** the moment that field
+still says `lobsterai-server`, without ever looking at which keys are
+enabled. A Settings row that wrote only the providers map would have
+stored the key, synced it, restarted the gateway, and kept billing the
+account.
+
+Proved rather than reasoned: `claudeSettings.providerChoice.test.ts`
+drives the **real** resolver through the row's own decisions. Five
+tests, and one of them is the fault itself — an enabled OpenAI key with
+the model field untouched still resolves to `lobsterai-server`. With the
+model written too, it resolves to OpenAI at `api.openai.com`, with the
+person's key, and not a byte through `claidor.com`.
+
+So the row writes three things: the providers map, the model fields, and
+the redux selection (`App.tsx` writes its selected model back into the
+same config, so leaving those two out of step lets the next thing that
+touches the picker undo it silently). Upstream's own change classifier
+does the rest — a model change syncs the engine config, an API-key
+change restarts the gateway, both already built
+(`openclawConfigImpact.ts`).
+
+One shared function came out of it: `services/providerModels.ts`. The
+mapping from enabled providers to the model list existed twice in
+`App.tsx`, inline, and Settings needed it a third time.
+
+**Not verified:** nobody has typed a real key into the built app and
+watched a turn run on it. The resolver is proved, the sync path is
+upstream's and unchanged, and the last step is a run.
+
+**Where:** `renderer/design/settings/models.ts`, `rows.ts`,
+`useSettings.ts`, `Settings.tsx`, `renderer/services/providerModels.ts`,
+`renderer/services/i18n.ts`, `main/libs/claudeSettings.providerChoice.test.ts`.
+
+---
+
 ## What this list adds up to
 
 Two root causes account for most of what the founder saw:
@@ -798,3 +982,93 @@ without once opening the app. A harness cannot show a missing stream
 listener, and a passing test cannot show an undeployed server. Both are
 exactly the kind of failure the founder's own rule — *run it, or say you
 did not* — exists to catch, and I said neither.
+
+---
+
+## 26. The agent had no idea what app it was in, and no rule about how to speak — `fixed`
+
+Not from the founder's list. From the four documents they handed over on
+15 September (`docs/product/sources/`), which between them name the two
+things every one of our own faults has in common.
+
+### What was actually wrong
+
+`openclawConfigSync.ts` assembles the managed half of `AGENTS.md`. It
+had seven sections — web search, browser, exec safety, deliverable
+links, math format, memory, heartbeat — and **every one of them is a
+rule about a tool.** Not one was about the conversation.
+
+So there was no rule saying: answer before you go quiet for two minutes;
+an "on it" does not discharge the result; do not narrate every command;
+say "your computer", never "the sandbox"; and when you do not know, say
+so.
+
+And there was no map. Asked where a control is, the agent had nothing to
+answer from but its own guess — which is exactly item 22: three
+confident, wrong explanations for the browser in one night, every one of
+them delivered to the founder by their own agent.
+
+### The two halves, which only work together
+
+**`MANAGED_CONVERSATION_PROMPT`** — a new first section, before the tool
+policies, because a model that reads the tool rules first answers like a
+tool. Answer before you work. An acknowledgement is not the answer. Say
+something when something happens and nothing when nothing has — a
+scheduled job told to stay quiet ends with *no message*, not "no
+change". How it should read. The words that never reach a person: tool
+names, internal state, and the machinery — *"I am still on the
+spreadsheet"*, never *"the subagent is running"*. And: say you do not
+know.
+
+Two deliberate departures from the source. Grok Bot routes every visible
+word through a `SendToUser` tool and we do not — assistant text *is* the
+message — so our rules are about *when to write*, not which tool to
+call. And Grok Bot says *"my computer"* because its agent owns one.
+Ours does not (`direction.md` §10), so the words are **your computer**
+and **your files**, and that difference is the product.
+
+**`reference/app-ui.md`** — the map, written into every agent workspace
+on every config sync, and named in a new `## The App You Are In`
+section. Grok Bot ships theirs as hand-written prose, which is why it
+has to hedge that a row may not exist on your build. Ours is **generated
+from `settingsFor()`** — the same function that draws Settings — so a
+row added, renamed or removed changes both at once, and a row that is
+conditional in the app is conditional in the map for the same reason.
+
+That required moving `rows.ts` and `models.ts` from
+`renderer/design/settings/` to `shared/settings/`, beside the exec
+policy that was already there. Main never imports renderer code in this
+tree and this was not the place to start; the point of generating the
+map is that there is one source, and a source both processes read
+belongs in `shared/`.
+
+### Proved by running it
+
+`openclawConfigSync.runtime.test.ts` builds a real workspace on disk,
+runs the real sync, and reads the files back: the conversation section
+is present and sits before `## Browser Policy`; `reference/app-ui.md`
+exists and contains the real row ids; and a map hand-edited to `# stale`
+is overwritten on the next sync, so a Settings change cannot leave an
+old screen behind for the agent to read out.
+
+`appUiMap.test.ts` holds the map to the app in both directions — every
+row the app can draw is on the page, and every row the page names
+exists.
+
+### One fault found by reading the output, not the code
+
+The first generated map said **"Version 0"** and **"OpenAI API key"**.
+Both are artefacts of the sample person the generator has to feed
+`settingsFor()` to make the conditional rows appear, and an agent
+reading either back would have been stating a fact about the app that is
+not true — the precise failure the map exists to stop. Those rows are
+now described rather than quoted, and a test asserts no sample value
+reaches the page.
+
+**Not verified:** nobody has watched the agent answer a "where is that
+setting" question from the map in the built app. The file is written,
+the prompt names it, and both are proved by a real sync on disk; whether
+the model obeys it is a run.
+
+**Where:** `shared/settings/appUiMap.ts`, `shared/settings/rows.ts`,
+`shared/settings/models.ts`, `main/libs/openclawConfigSync.ts`.

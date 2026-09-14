@@ -11,6 +11,7 @@ import { useConnections } from '../connections/useConnections';
 import { ComputerPanel } from '../panel/ComputerPanel';
 import { Settings } from '../settings/Settings';
 import { useSettings } from '../settings/useSettings';
+import { useAskInput } from '../thread/useAskInput';
 import { supportMailto } from './account';
 import { AccountMenu } from './AccountMenu';
 import { Apps } from './Apps';
@@ -53,6 +54,10 @@ export function FaiserApp(): JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settings = useSettings(settingsOpen);
   const shell = useMessagesShell();
+  // The cards asking for something typed. Kept beside the messages rather
+  // than inside them: a password prompt is not a message, and it must not
+  // scroll back into view a week later with an empty box.
+  const askInput = useAskInput();
   const detail = useAgentDetail(shell.activeId, agentOpen);
   const connections = useConnections(shell.appsOpen);
 
@@ -94,7 +99,7 @@ export function FaiserApp(): JSX.Element {
       agents={shell.agents}
       activeId={shell.activeId}
       activeName={shell.activeName}
-      items={shell.items}
+      items={[...shell.items, ...askInput.items]}
       dayStamp={shell.dayStamp}
       typing={shell.typing}
       mode={shell.mode}
@@ -102,7 +107,9 @@ export function FaiserApp(): JSX.Element {
       choice={shell.choice}
       auth={shell.auth}
       parts={shell.parts}
+      secret={askInput.handlers}
       onSelect={shell.onSelect}
+      onDelete={shell.onDelete}
       onSend={shell.onSend}
       onMode={shell.onMode}
       onTeach={shell.onTeach}

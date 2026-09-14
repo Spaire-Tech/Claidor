@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { AppsIcon, ChevronUpIcon, SearchIcon } from '../icons';
+import { AppsIcon, ChevronUpIcon, CloseIcon, SearchIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, line, radius, shadow, text, tracking } from '../tokens';
+import { CONFIRM_WINDOW_MS, ConfirmState, pressConfirm } from './confirm';
 
 export interface SidebarAgent {
   id: string;
@@ -18,6 +19,15 @@ export interface SidebarProps {
   agents: readonly SidebarAgent[];
   activeId: string;
   onSelect: (agentId: string) => void;
+  /**
+   * Delete this conversation and everything in it.
+   *
+   * Permanent, and there is no archive: `grok-bot-app-ui.md` is explicit
+   * that the only option is a permanent delete with a confirm, and a
+   * half-measure here would be a second concept for people to wonder
+   * about. Absent for rows that cannot be deleted — the main agent.
+   */
+  onDelete?: (id: string) => void;
   onCompose: () => void;
   onApps: () => void;
   /** The signed-in person, for the row at the bottom. */
@@ -37,10 +47,24 @@ export interface SidebarProps {
  * becomes untrustworthy.
  */
 export function Sidebar({
-  agents, activeId, onSelect, onCompose, onApps, accountName, onAccount,
+  agents, activeId, onSelect, onDelete, onCompose, onApps, accountName, onAccount,
   accountMenu,
 }: SidebarProps): JSX.Element {
   const [query, setQuery] = useState('');
+
+  // Which row is being asked about, and since when.
+  //
+  // One at a time: arming a second row disarms the first, so there is
+  // never more than one control on screen waiting for a second press.
+  const [armed, setArmed] = useState<{ id: string; at: number } | undefined>();
+
+  useEffect(() => {
+    if (!armed) return undefined;
+    // Goes quiet on its own. A row left asking is a question nobody
+    // answered, and it should stop asking rather than wait indefinitely.
+    const timer = window.setTimeout(() => setArmed(undefined), CONFIRM_WINDOW_MS);
+    return () => window.clearTimeout(timer);
+  }, [armed]);
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -103,11 +127,35 @@ export function Sidebar({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 10px', overflowY: 'auto', flex: '1 1 auto' }}>
         {shown.map(agent => {
           const active = agent.id === activeId;
+          const asking = armed?.id === agent.id;
+          const deletable = Boolean(onDelete);
+
+          const press = (): void => {
+            const step = pressConfirm(
+              asking ? ConfirmState.Armed : ConfirmState.Ready,
+              armed?.at,
+              Date.now(),
+            );
+            if (step.act) {
+              setArmed(undefined);
+              onDelete?.(agent.id);
+              return;
+            }
+            setArmed({ id: agent.id, at: Date.now() });
+          };
+
           return (
+            <div key={agent.id} style={{ position: 'relative', display: 'flex' }}>
             <button
-              key={agent.id}
               type="button"
-              onClick={() => onSelect(agent.id)}
+              onClick={() => (asking ? setArmed(undefined) : onSelect(agent.id))}
+              onContextMenu={deletable ? (event => {
+                // Right-click is where people look for this, and it is the
+                // only route: `grok-bot-app-ui.md` is explicit that delete
+                // is not in Settings.
+                event.preventDefault();
+                setArmed({ id: agent.id, at: Date.now() });
+              }) : undefined}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12, height: 64,
                 padding: '0 12px', borderRadius: radius.row, cursor: 'pointer',
@@ -154,6 +202,54 @@ export function Sidebar({
                 }}
               />
             </button>
+
+            {asking && (
+              // Over the row it belongs to, rather than a dialog in the
+              // middle of the screen. The answer stays where the question
+              // was asked.
+              <div
+                style={{
+                  position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+                  gap: 8, padding: '0 12px', borderRadius: radius.row,
+                  background: color.paper, border: `1px solid ${line.field}`,
+                  boxShadow: shadow.raised,
+                }}
+              >
+                <span
+                  style={{
+                    flex: '1 1 auto', minWidth: 0, fontSize: text.label, color: color.ink,
+                    lineHeight: 1.35, textWrap: 'pretty',
+                  }}
+                >
+                  Delete {agent.name} and everything in it? This cannot be undone.
+                </span>
+                <button
+                  type="button"
+                  onClick={press}
+                  style={{
+                    flex: '0 0 auto', height: 30, padding: '0 12px', border: 'none',
+                    borderRadius: radius.field, background: color.danger, color: color.paper,
+                    font: 'inherit', fontSize: text.label, fontWeight: 500, cursor: 'pointer',
+                  }}
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setArmed(undefined)}
+                  aria-label="Keep it"
+                  style={{
+                    flex: '0 0 auto', width: 28, height: 28, border: 'none',
+                    background: 'transparent', borderRadius: '50%', cursor: 'pointer',
+                    color: color.muted, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <CloseIcon size={12} />
+                </button>
+              </div>
+            )}
+            </div>
           );
         })}
       </div>

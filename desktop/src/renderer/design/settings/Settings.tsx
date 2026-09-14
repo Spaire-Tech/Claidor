@@ -1,7 +1,5 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 
-import { CloseIcon, ComputerIcon, GearIcon, UsageIcon } from '../icons';
-import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import {
   type SelectOption,
   SETTINGS_TABS,
@@ -11,7 +9,15 @@ import {
   type SettingsRow,
   SettingsRowKind,
   SettingsTab,
-} from './rows';
+} from '../../../shared/settings/rows';
+import { CloseIcon, ComputerIcon, GearIcon, UsageIcon } from '../icons';
+import {
+  CONFIRM_WINDOW_MS,
+  confirmLabel,
+  ConfirmState,
+  pressConfirm,
+} from '../shell/confirm';
+import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 
 /**
  * Settings.
@@ -207,26 +213,7 @@ function Control({ row }: { row: SettingsRow }): JSX.Element | null {
     case SettingsRowKind.Toggle:
       return <Toggle on={row.on} onToggle={row.onToggle} label={row.label} />;
     case SettingsRowKind.Button:
-      return (
-        <button
-          type="button"
-          onClick={row.onPress}
-          disabled={row.busy}
-          style={{
-            flex: '0 0 auto', height: 38, padding: '0 18px', borderRadius: radius.field,
-            cursor: row.busy ? 'default' : 'pointer', font: 'inherit', fontSize: text.body,
-            fontWeight: row.tone ? 500 : 400, whiteSpace: 'nowrap',
-            opacity: row.busy ? 0.6 : 1,
-            ...(row.tone === 'primary'
-              ? { background: color.ink, color: color.paper, border: 'none' }
-              : row.tone === 'danger'
-                ? { background: color.danger, color: color.paper, border: 'none' }
-                : { background: color.fill, color: color.ink, border: `1px solid ${line.field}` }),
-          }}
-        >
-          {row.action}
-        </button>
-      );
+      return <ActionButton row={row} />;
     case SettingsRowKind.Field:
       return <Field row={row} />;
     case SettingsRowKind.Meter:
@@ -252,9 +239,84 @@ function Control({ row }: { row: SettingsRow }): JSX.Element | null {
   }
 }
 
+
+/**
+ * A row's button, and the second press a destructive one asks for.
+ *
+ * A dangerous control does not open a dialog. It changes what it says and
+ * waits — `grok-bot-app-ui.md`'s "Click Again to Confirm", and the same
+ * behaviour as deleting a conversation in the sidebar, so there is one
+ * way this works in the app rather than two.
+ *
+ * Only `danger` rows ask. Making every button confirm would train people
+ * to press twice without reading, which is exactly the habit that makes
+ * the confirmation worthless on the one row that needed it.
+ */
+function ActionButton({ row }: { row: Extract<SettingsRow, { kind: 'button' }> }): JSX.Element {
+  const [armedAt, setArmedAt] = useState<number | undefined>();
+  const asking = armedAt !== undefined;
+
+  useEffect(() => {
+    if (!asking) return undefined;
+    const timer = window.setTimeout(() => setArmedAt(undefined), CONFIRM_WINDOW_MS);
+    return () => window.clearTimeout(timer);
+  }, [asking, armedAt]);
+
+  const press = (): void => {
+    if (row.tone !== 'danger') {
+      row.onPress();
+      return;
+    }
+    const step = pressConfirm(
+      asking ? ConfirmState.Armed : ConfirmState.Ready,
+      armedAt,
+      Date.now(),
+    );
+    if (step.act) {
+      setArmedAt(undefined);
+      row.onPress();
+      return;
+    }
+    setArmedAt(Date.now());
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={press}
+      disabled={row.busy}
+      style={{
+        flex: '0 0 auto', height: 38, padding: '0 18px', borderRadius: radius.field,
+        cursor: row.busy ? 'default' : 'pointer', font: 'inherit', fontSize: text.body,
+        fontWeight: row.tone ? 500 : 400, whiteSpace: 'nowrap',
+        opacity: row.busy ? 0.6 : 1,
+        ...(row.tone === 'primary'
+          ? { background: color.ink, color: color.paper, border: 'none' }
+          : row.tone === 'danger'
+            ? { background: color.danger, color: color.paper, border: 'none' }
+            : { background: color.fill, color: color.ink, border: `1px solid ${line.field}` }),
+      }}
+    >
+      {row.tone === 'danger' ? confirmLabel(
+        asking ? ConfirmState.Armed : ConfirmState.Ready,
+        row.action,
+      ) : row.action}
+    </button>
+  );
+}
+
 function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.Element {
   const [draft, setDraft] = useState(row.value);
+  const [shown, setShown] = useState(false);
   const dirty = draft !== row.value;
+
+  // The row can keep its id and change its value underneath — the models
+  // key field is one row whose provider changes above it. Without this the
+  // field would still be showing the previous provider's key.
+  useEffect(() => {
+    setDraft(row.value);
+    setShown(false);
+  }, [row.value]);
 
   if (row.readOnly) {
     return (
@@ -277,13 +339,33 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
       <input
         value={draft}
         onChange={event => setDraft(event.target.value)}
+        onKeyDown={event => { if (event.key === 'Enter' && dirty) row.onSave?.(draft); }}
         aria-label={row.label}
+        type={row.secret && !shown ? 'password' : 'text'}
+        {...(row.placeholder ? { placeholder: row.placeholder } : {})}
+        autoComplete="off"
+        spellCheck={false}
         style={{
           width: 220, height: 36, padding: '0 12px', borderRadius: radius.small,
           border: `1px solid ${line.field}`, background: color.paper, outline: 'none',
           font: 'inherit', fontSize: text.body, color: color.ink,
+          ...(row.secret ? { fontFamily: font.mono, letterSpacing: '.02em' } : {}),
         }}
       />
+      {row.secret && (
+        <button
+          type="button"
+          onClick={() => setShown(one => !one)}
+          aria-pressed={shown}
+          style={{
+            height: 36, padding: '0 12px', borderRadius: radius.small,
+            border: `1px solid ${line.field}`, background: color.fill,
+            color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
+          }}
+        >
+          {shown ? 'Hide' : 'Show'}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => row.onSave?.(draft)}

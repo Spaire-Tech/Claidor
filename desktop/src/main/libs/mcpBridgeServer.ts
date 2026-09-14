@@ -23,6 +23,15 @@ const log = (level: string, msg: string) => {
   }
 };
 
+import {
+  ASK_INPUT_ROUTE,
+  ASK_INPUT_TIMEOUT_MS,
+  AskInputBehavior,
+  type AskInputRequest,
+  type AskInputResponse,
+  describeResponse,
+} from '../../shared/askInput/constants';
+
 export type AskUserRequest = {
   requestId: string;
   sessionKey?: string;
@@ -44,6 +53,12 @@ export type AskUserResponse = {
 type PendingAskUser = {
   requestId: string;
   resolve: (response: AskUserResponse) => void;
+  timer: ReturnType<typeof setTimeout>;
+};
+
+type PendingAskInput = {
+  requestId: string;
+  resolve: (response: AskInputResponse) => void;
   timer: ReturnType<typeof setTimeout>;
 };
 
@@ -79,6 +94,9 @@ export class McpBridgeServer {
   private readonly secret: string;
   private readonly pendingAskUser = new Map<string, PendingAskUser>();
   private onAskUserCallback: ((request: AskUserRequest) => void) | null = null;
+  private onAskInputCallback: ((request: AskInputRequest) => void) | null = null;
+  private onAskInputDismissCallback: ((requestId: string) => void) | null = null;
+  private readonly pendingAskInput = new Map<string, PendingAskInput>();
   private onAskUserDismissCallback: ((requestId: string) => void) | null = null;
   private onMediaGenerationCallback: ((request: MediaGenerationRequest) => Promise<MediaGenerationResponse>) | null = null;
   private onBrowserToolCallback: ((request: BrowserToolRequest) => Promise<BrowserToolResponse>) | null = null;
@@ -118,6 +136,39 @@ export class McpBridgeServer {
    */
   onAskUserDismiss(callback: (requestId: string) => void): void {
     this.onAskUserDismissCallback = callback;
+  }
+
+  get askInputCallbackUrl(): string | null {
+    return this._port ? `http://127.0.0.1:${this._port}${ASK_INPUT_ROUTE}` : null;
+  }
+
+  /**
+   * Register a callback that fires when the agent asks the person to type
+   * something — a password, a code, the fields of a login form.
+   */
+  onAskInput(callback: (request: AskInputRequest) => void): void {
+    this.onAskInputCallback = callback;
+  }
+
+  /** Fires when a card should come off the screen: timed out, or answered. */
+  onAskInputDismiss(callback: (requestId: string) => void): void {
+    this.onAskInputDismissCallback = callback;
+  }
+
+  /**
+   * Hand a waiting tool what the person typed.
+   *
+   * The values go from here straight back over the loopback socket to the
+   * tool that asked. They are never logged: `describeResponse` is what
+   * goes in the log line, and it counts fields rather than naming values.
+   */
+  resolveAskInput(requestId: string, response: AskInputResponse): void {
+    const pending = this.pendingAskInput.get(requestId);
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    this.pendingAskInput.delete(requestId);
+    log('INFO', `AskInput resolved, requestId=${requestId} ${describeResponse(response)}`);
+    pending.resolve(response);
   }
 
   /**
@@ -256,6 +307,11 @@ export class McpBridgeServer {
       return;
     }
 
+    if (req.url?.startsWith(ASK_INPUT_ROUTE)) {
+      await this.handleAskInput(req, res);
+      return;
+    }
+
     if (req.url?.startsWith('/media-generation/tool')) {
       await this.handleMediaGeneration(req, res);
       return;
@@ -324,6 +380,71 @@ export class McpBridgeServer {
       log('ERROR', `AskUser request error: ${errMsg}`);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ behavior: 'deny' }));
+    }
+  }
+
+  /**
+   * A card asking the person to type something.
+   *
+   * Nothing about the request is logged beyond how many fields it has and
+   * which of them are masked. The prompt may name a service; the values
+   * never appear here at all.
+   */
+  private async handleAskInput(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    try {
+      const body = await this.readBody(req);
+      const input = JSON.parse(body) as Partial<AskInputRequest>;
+      const fields = Array.isArray(input.fields) ? input.fields : [];
+      const prompt = typeof input.prompt === 'string' ? input.prompt.trim() : '';
+
+      if (!prompt || fields.length === 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'A prompt and at least one field are required' }));
+        return;
+      }
+
+      const requestId = crypto.randomUUID();
+      const masked = fields.filter(field => field.kind === 'secret').length;
+      log('INFO', `AskInput request, requestId=${requestId} fields=${fields.length} masked=${masked}`);
+
+      const answer = await new Promise<AskInputResponse>((resolve) => {
+        const timer = setTimeout(() => {
+          log('INFO', `AskInput timeout, requestId=${requestId}`);
+          this.pendingAskInput.delete(requestId);
+          this.onAskInputDismissCallback?.(requestId);
+          resolve({ behavior: AskInputBehavior.Decline });
+        }, ASK_INPUT_TIMEOUT_MS);
+
+        this.pendingAskInput.set(requestId, { requestId, resolve, timer });
+
+        if (this.onAskInputCallback) {
+          this.onAskInputCallback({
+            requestId,
+            prompt,
+            fields,
+            ...(typeof input.note === 'string' && input.note.trim() ? { note: input.note.trim() } : {}),
+            ...(input.offerToSave ? { offerToSave: true } : {}),
+            ...(typeof input.sessionKey === 'string' && input.sessionKey.trim()
+              ? { sessionKey: input.sessionKey.trim() }
+              : {}),
+          });
+        } else {
+          // No window to draw the card in. Declining is the only honest
+          // answer; pretending otherwise would hang the agent's turn.
+          log('WARN', 'AskInput callback not registered, declining');
+          clearTimeout(timer);
+          this.pendingAskInput.delete(requestId);
+          resolve({ behavior: AskInputBehavior.Decline });
+        }
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(answer));
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      log('ERROR', `AskInput request error: ${errMsg}`);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ behavior: AskInputBehavior.Decline }));
     }
   }
 

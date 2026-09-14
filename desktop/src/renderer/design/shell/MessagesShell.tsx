@@ -4,7 +4,12 @@ import { CloseIcon, ComputerIcon, SearchIcon, ShareIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { findInThread, matchLabel, stepMatch } from '../thread/search';
 import { Thread } from '../thread/Thread';
-import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
+import type {
+  AuthHandlers,
+  ChoiceHandlers,
+  PartHandlers,
+  SecretHandlers,
+} from '../thread/ThreadItemView';
 import type { ThreadItem } from '../thread/types';
 import { useStaggered } from '../thread/useStaggered';
 import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
@@ -23,6 +28,8 @@ export interface MessagesShellProps {
   activeId: string;
   activeName: string;
   items: readonly ThreadItem[];
+  /** What a card asking for something typed can do with the answer. */
+  secret?: SecretHandlers;
   dayStamp?: string;
   typing?: boolean;
   mode: ThreadMode;
@@ -32,6 +39,8 @@ export interface MessagesShellProps {
   /** What a file or a link named in a message can do. */
   parts?: PartHandlers;
   onSelect: (agentId: string) => void;
+  /** Delete a conversation, permanently. */
+  onDelete?: (id: string) => void;
   onSend: (message: string) => void;
   onCompose: () => void;
   /** Compose has taken over the conversation pane. */
@@ -75,7 +84,7 @@ export interface MessagesShellProps {
 export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
-    choice, auth, parts, onSelect, onSend, onCompose, onApps, apps, onAccount, onMode,
+    choice, auth, parts, secret, onSelect, onDelete, onSend, onCompose, onApps, apps, onAccount, onMode,
     onOpenPanel, onTeach, onShareTemplate, onOpenAgent, agentDetail, settings,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
   } = props;
@@ -170,6 +179,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
           agents={agents}
           activeId={activeId}
           onSelect={onSelect}
+          {...(onDelete ? { onDelete } : {})}
           onCompose={onCompose}
           onApps={onApps}
           accountName={accountName}
@@ -336,6 +346,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             dayStamp={dayStamp}
             choice={choice}
             auth={auth}
+            {...(secret ? { secret } : {})}
             {...(parts ? { parts } : {})}
           />
 

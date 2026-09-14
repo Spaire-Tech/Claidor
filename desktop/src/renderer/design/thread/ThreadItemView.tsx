@@ -1,14 +1,24 @@
 import { type CSSProperties, useState } from 'react';
 
+import { AskInputFieldKind } from '../../../shared/askInput/constants';
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { paletteForAgent } from '../orb/palette';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { readableSize } from './attachment';
+import { detailsLabel } from './details';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
-import { type AuthDecision, Speaker,type ThreadItem, ThreadItemKind } from './types';
+import {
+  type AttachmentItem,
+  type AuthDecision,
+  type SecretItem,
+  Speaker,
+  type ThreadItem,
+  ThreadItemKind,
+} from './types';
 
 /**
- * The five things a thread may show.
+ * The seven things a thread may show.
  *
  * One component per kind, and a switch. Deliberately not one clever
  * renderer: the kinds have nothing in common but their container, and the
@@ -23,6 +33,10 @@ export interface PartHandlers {
   onOpenFile?: (path: string) => void;
   /** Open a link, in whatever the person uses for links. */
   onOpenLink?: (href: string) => void;
+  /** Open Settings at a row the agent named. */
+  onOpenSetting?: (rowId: string) => void;
+  /** Scroll back to an earlier message in this conversation. */
+  onOpenMessage?: (messageId: string) => void;
   /** The files this conversation has produced, so a chip can find one. */
   files?: readonly KnownFile[];
 }
@@ -105,7 +119,52 @@ function Part(
     );
   }
 
+  // A pill and a back-reference. Not the file chip: those are monospace
+  // because a path is a machine thing, and these are neither paths nor
+  // code — they are the name of a control and the gist of a sentence, and
+  // they read as words with a soft edge round them.
+  if (part.kind === PartKind.Setting || part.kind === PartKind.Ref) {
+    const isSetting = part.kind === PartKind.Setting;
+    const open = isSetting
+      ? (handlers.onOpenSetting && part.app ? () => handlers.onOpenSetting?.(part.app!.id) : undefined)
+      : (handlers.onOpenMessage && part.app ? () => handlers.onOpenMessage?.(part.app!.id) : undefined);
+    const pill: CSSProperties = {
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '1px 8px', margin: '0 1px',
+      borderRadius: radius.pill, verticalAlign: 'baseline',
+      font: 'inherit', fontSize: text.label,
+      background: mine ? 'rgba(255,255,255,.16)' : line.hairline,
+      color: 'inherit',
+    };
+    if (!open) return <span style={pill}>{part.text}</span>;
+    return (
+      <button type="button" onClick={open} style={{ ...pill, border: 'none', cursor: 'pointer' }}>
+        {isSetting ? <GearGlyph /> : <ReplyGlyph />}
+        {part.text}
+      </button>
+    );
+  }
+
   return part.strong ? <strong style={{ fontWeight: 600 }}>{part.text}</strong> : <>{part.text}</>;
+}
+
+/** Small enough to read as punctuation rather than an icon. */
+function GearGlyph(): JSX.Element {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" style={{ opacity: 0.6, flex: '0 0 auto' }}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+    </svg>
+  );
+}
+
+function ReplyGlyph(): JSX.Element {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" style={{ opacity: 0.6, flex: '0 0 auto' }}>
+      <path d="M9 14L4 9l5-5" />
+      <path d="M4 9h10a6 6 0 016 6v5" />
+    </svg>
+  );
 }
 
 /**
@@ -154,11 +213,52 @@ function TextBubble(
 ) {
   const mine = item.from === Speaker.Person;
   const parts = splitMessageParts(item.text, handlers.files);
+  const [open, setOpen] = useState(false);
   const bubble = (
     <div style={mine ? mineBubble : theirBubble}>
       {parts.map((part, index) => (
         <Part key={index} part={part} mine={mine} handlers={handlers} />
       ))}
+      {item.details && (
+        <>
+          <button
+            type="button"
+            onClick={() => setOpen(one => !one)}
+            aria-expanded={open}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, marginTop: 10,
+              padding: 0, border: 'none', background: 'transparent', cursor: 'pointer',
+              font: 'inherit', fontSize: text.label, color: color.muted,
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-flex', transition: 'transform .16s',
+                transform: open ? 'rotate(90deg)' : 'none',
+              }}
+            >
+              <ChevronRightIcon size={12} />
+            </span>
+            {open ? 'Hide the detail' : detailsLabel(item.details)}
+          </button>
+          {open && (
+            <div
+              style={{
+                marginTop: 9, paddingLeft: 11,
+                borderLeft: `2px solid ${line.hairline}`,
+                fontFamily: font.mono, fontSize: text.label,
+                lineHeight: 1.5, color: color.muted,
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                // The bulk is usually a list of rows. Its own scroller, so
+                // a hundred invoices do not push the composer off screen.
+                maxHeight: 280, overflowY: 'auto',
+              }}
+            >
+              {item.details}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 
@@ -463,10 +563,241 @@ function AuthCard(
   );
 }
 
+/**
+ * A file as the whole message.
+ *
+ * An image is looked at; anything else is named, sized and openable. The
+ * card takes the agent bubble's own surface rather than inventing a
+ * second one, so a thread of replies and files reads as one column.
+ */
+function AttachmentCard(
+  { item, handlers }: { item: AttachmentItem; handlers: PartHandlers },
+): JSX.Element {
+  const mine = item.from === Speaker.Person;
+  const open = handlers.onOpenFile ? () => handlers.onOpenFile?.(item.path) : undefined;
+  const size = readableSize(item.size);
+
+  const body = item.image ? (
+    <img
+      src={`file://${item.path}`}
+      alt={item.name}
+      style={{
+        display: 'block', maxWidth: '100%', maxHeight: 320,
+        borderRadius: radius.card, background: color.fill,
+      }}
+    />
+  ) : (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+      <PaperclipGlyph />
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <span style={{
+          fontSize: text.body, color: color.ink,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {item.name}
+        </span>
+        {size && <span style={{ fontSize: text.caption, color: color.muted }}>{size}</span>}
+      </span>
+    </span>
+  );
+
+  const shell: CSSProperties = {
+    maxWidth: 'min(70%, 420px)',
+    padding: item.image ? 6 : '13px 16px',
+    borderRadius: radius.bubble,
+    background: color.fillRaised,
+    border: `1px solid ${line.hairline}`,
+    textAlign: 'left',
+  };
+
+  return (
+    <div style={{ display: 'flex', ...(mine ? { justifyContent: 'flex-end' } : {}), animation: enter }}>
+      {open ? (
+        <button type="button" onClick={open} title={item.path} style={{ ...shell, cursor: 'pointer', font: 'inherit' }}>
+          {body}
+        </button>
+      ) : (
+        <div style={shell} title={item.path}>{body}</div>
+      )}
+    </div>
+  );
+}
+
+function PaperclipGlyph(): JSX.Element {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color.muted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" style={{ flex: '0 0 auto' }}>
+      <path d="M21.4 11.1l-8.5 8.5a5 5 0 01-7.1-7.1l8.5-8.5a3.3 3.3 0 014.7 4.7l-8.5 8.5a1.7 1.7 0 01-2.4-2.4l7.8-7.8" />
+    </svg>
+  );
+}
+
+export interface SecretHandlers {
+  /**
+   * What the person typed, by field name.
+   *
+   * Handed straight to the tool that asked. Never logged, never added to
+   * the conversation, never sent to the model.
+   */
+  onSubmit?: (id: string, values: Record<string, string>, remember: boolean) => void;
+  /** They declined. The agent is told, and does not ask again. */
+  onDecline?: (id: string) => void;
+}
+
+/**
+ * The card that asks somebody to type something the model must not see.
+ *
+ * One field or several. A lone password box and a sign-in form are the
+ * same card — splitting them would be our plumbing showing through, and
+ * the person cannot tell the difference anyway.
+ *
+ * The sentence at the bottom is not decoration. Somebody being asked for
+ * a password by software has every right to be suspicious, and the answer
+ * to that is a plain statement of where the value goes, not a lock icon.
+ */
+function SecretCard(
+  { item, handlers }: { item: SecretItem; handlers: SecretHandlers },
+): JSX.Element {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [shown, setShown] = useState<Record<string, boolean>>({});
+  const [remember, setRemember] = useState(false);
+
+  const hasSecret = item.fields.some(one => one.kind === AskInputFieldKind.Secret);
+  const ready = item.fields.every(
+    one => one.optional || (values[one.name] ?? '').trim().length > 0,
+  );
+  const send = (): void => {
+    if (ready) handlers.onSubmit?.(item.id, values, remember);
+  };
+
+  return (
+    <div
+      style={{
+        alignSelf: 'stretch', padding: '18px 20px 16px',
+        borderRadius: radius.card, background: color.fillRaised,
+        border: `1px solid ${line.hairline}`, animation: enter,
+        display: 'flex', flexDirection: 'column', gap: 14,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ fontSize: text.emphasis, color: color.ink, lineHeight: 1.35 }}>{item.text}</div>
+        {item.note && (
+          <div style={{ fontSize: text.small, color: color.muted, lineHeight: 1.45 }}>{item.note}</div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+        {item.fields.map(field => {
+          const secret = field.kind === AskInputFieldKind.Secret;
+          const value = values[field.name] ?? '';
+          const set = (next: string): void =>
+            setValues(current => ({ ...current, [field.name]: next }));
+          const boxStyle: CSSProperties = {
+            flex: '1 1 auto', minWidth: 0, padding: '9px 12px',
+            borderRadius: radius.small, border: `1px solid ${line.field}`,
+            background: color.paper, outline: 'none', color: color.ink,
+            font: 'inherit', fontSize: text.body,
+            ...(secret ? { fontFamily: font.mono } : {}),
+          };
+
+          return (
+            <label key={field.name} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={{ fontSize: text.caption, color: color.muted }}>
+                {field.label}
+                {field.optional && <span style={{ opacity: 0.7 }}> — optional</span>}
+              </span>
+              <span style={{ display: 'flex', gap: 8 }}>
+                {field.kind === AskInputFieldKind.Block ? (
+                  <textarea
+                    value={value}
+                    onChange={event => set(event.target.value)}
+                    rows={3}
+                    {...(field.placeholder ? { placeholder: field.placeholder } : {})}
+                    style={{ ...boxStyle, resize: 'vertical', lineHeight: 1.45 }}
+                  />
+                ) : (
+                  <input
+                    value={value}
+                    onChange={event => set(event.target.value)}
+                    onKeyDown={event => { if (event.key === 'Enter') send(); }}
+                    type={secret && !shown[field.name] ? 'password' : 'text'}
+                    {...(field.placeholder ? { placeholder: field.placeholder } : {})}
+                    autoComplete="off"
+                    spellCheck={false}
+                    style={{ ...boxStyle, height: 38, padding: '0 12px' }}
+                  />
+                )}
+                {secret && (
+                  <button
+                    type="button"
+                    onClick={() => setShown(one => ({ ...one, [field.name]: !one[field.name] }))}
+                    aria-pressed={!!shown[field.name]}
+                    style={{
+                      height: 38, padding: '0 12px', borderRadius: radius.small,
+                      border: `1px solid ${line.field}`, background: color.fill,
+                      color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
+                      flex: '0 0 auto',
+                    }}
+                  >
+                    {shown[field.name] ? 'Hide' : 'Show'}
+                  </button>
+                )}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+
+      {item.offerToSave && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: text.small, color: color.muted }}>
+          <input type="checkbox" checked={remember} onChange={event => setRemember(event.target.checked)} />
+          Keep this on this computer, so I do not have to ask again
+        </label>
+      )}
+
+      {hasSecret && (
+        <div style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.45 }}>
+          What you type here goes straight to the thing that asked for it. It is
+          not added to the conversation and it is never sent to the model.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 9 }}>
+        <button
+          type="button"
+          disabled={!ready}
+          onClick={send}
+          style={{
+            height: 38, padding: '0 18px', borderRadius: radius.field, border: 'none',
+            background: ready ? color.ink : color.fill,
+            color: ready ? color.paper : color.faint,
+            font: 'inherit', fontSize: text.body, fontWeight: 500,
+            cursor: ready ? 'pointer' : 'default',
+          }}
+        >
+          Send
+        </button>
+        <button
+          type="button"
+          onClick={() => handlers.onDecline?.(item.id)}
+          style={{
+            height: 38, padding: '0 16px', borderRadius: radius.field,
+            border: `1px solid ${line.field}`, background: color.fill, color: color.ink,
+            font: 'inherit', fontSize: text.body, cursor: 'pointer',
+          }}
+        >
+          Not now
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export interface ThreadItemViewProps {
   item: ThreadItem;
   choice: ChoiceHandlers;
   auth: AuthHandlers;
+  /** What a secret card can do with what was typed. */
+  secret?: SecretHandlers;
   /** What a file or a link in the text can do. */
   parts?: PartHandlers;
   /**
@@ -479,8 +810,10 @@ export interface ThreadItemViewProps {
 
 const noHandlers: PartHandlers = {};
 
+const noSecret: SecretHandlers = {};
+
 export function ThreadItemView(
-  { item, choice, auth, parts = noHandlers, leading }: ThreadItemViewProps,
+  { item, choice, auth, secret = noSecret, parts = noHandlers, leading }: ThreadItemViewProps,
 ): JSX.Element | null {
   switch (item.kind) {
     case ThreadItemKind.Text:
@@ -493,6 +826,10 @@ export function ThreadItemView(
       return <ChoiceCard item={item} handlers={choice} />;
     case ThreadItemKind.Auth:
       return <AuthCard item={item} handlers={auth} />;
+    case ThreadItemKind.Attachment:
+      return <AttachmentCard item={item} handlers={parts} />;
+    case ThreadItemKind.Secret:
+      return <SecretCard item={item} handlers={secret} />;
     default:
       // The list is closed. A new kind is a product decision, and it
       // should be made here rather than by something silently rendering.

@@ -9,6 +9,7 @@ import type {
   ActivitySlotResponse,
 } from '../../shared/activity/constants';
 import type { AppUpdateActiveWorkloads, AppUpdateCheckResult, AppUpdateRuntimeState } from '../../shared/appUpdate/constants';
+import type { AskInputRequest, AskInputResponse } from '../../shared/askInput/constants';
 import type {
   AsrRealtimeSessionRequest,
   AsrRealtimeSessionResult,
@@ -117,12 +118,14 @@ import type {
   OpenClawEnginePhase as SharedOpenClawEnginePhase,
   OpenClawGatewayRepairErrorCode,
 } from '../../shared/openclawEngine/constants';
+import type { Project, ProjectError } from '../../shared/projects/constants';
 import type {
   PublishingQuota,
   PublishingQuotaErrorData,
   PublishingSubscriptionRecoveryMode,
   PublishingTrialPolicy,
 } from '../../shared/publishing/constants';
+import type { Room, RoomError } from '../../shared/rooms/constants';
 import type {
   ShareDeploymentAnalyzeProjectInput,
   ShareDeploymentCreateNodeInput,
@@ -640,6 +643,36 @@ interface HtmlShareResult {
 }
 
 interface IElectronAPI {
+  /**
+   * The card that asks the person to type something.
+   *
+   * Its own surface on purpose: what crosses it is a password or a code,
+   * and it must not be folded into the message plumbing by a later
+   * refactor. `respond` is one way — nothing here reads a value back.
+   */
+  /** Projects: a folder, the agents in it, and what they share. */
+  projects?: {
+    list: () => Promise<Project[]>;
+    create: (name: string, memberIds: string[], folder?: string) =>
+      Promise<{ ok: true; project: Project } | { ok: false; problem: ProjectError }>;
+    update: (id: string, changes: { name?: string; memberIds?: string[]; folder?: string }) =>
+      Promise<{ ok: true; project: Project | null } | { ok: false; problem: ProjectError }>;
+    remove: (id: string) => Promise<void>;
+  };
+  /** Rooms: a conversation with more than one agent in it. */
+  rooms?: {
+    list: () => Promise<Room[]>;
+    create: (name: string, memberIds: string[]) =>
+      Promise<{ ok: true; room: Room } | { ok: false; problem: RoomError }>;
+    update: (id: string, changes: { name?: string; memberIds?: string[] }) =>
+      Promise<{ ok: true; room: Room | null } | { ok: false; problem: RoomError }>;
+    remove: (id: string) => Promise<void>;
+  };
+  askInput?: {
+    onRequested: (callback: (request: AskInputRequest) => void) => () => void;
+    onDismissed: (callback: (data: { requestId: string }) => void) => () => void;
+    respond: (requestId: string, response: AskInputResponse) => Promise<void>;
+  };
   platform: string;
   arch: string;
   store: {
