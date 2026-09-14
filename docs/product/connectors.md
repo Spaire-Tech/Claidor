@@ -144,10 +144,51 @@ decision:
 Only *where the sign-in window points* and *what URL the MCP entry holds*
 differ by route, and both are one field in the catalogue.
 
-## 7. What this note does not decide
+## 7. The decision, and how C actually works
 
-- **The route**, which is the founder's. A is built and costs money; C is
-  free and depends on vendors; B is neither built nor verified.
+**14 September: the founder chose C.** Direct to the vendor's own MCP
+endpoint, the engine doing OAuth. Pipedream stays built and is the
+fallback for services with no MCP of their own.
+
+What that means in code, all of it established by reading the engine:
+
+**The config we write** (`openclaw/src/config/types.mcp.ts`, lines 36–58)
+— tokens are stored in OpenClaw state, never in config:
+
+```jsonc
+{ "url": "https://…/mcp", "transport": "streamable-http",
+  "auth": "oauth", "oauth": { "scope": "…" } }
+```
+
+**The flow.** `mcp-transport.ts` builds an OAuth client provider whenever
+`auth === "oauth"`, so the tools work once there are tokens. Getting the
+tokens is a two-step the CLI drives (`openclaw/src/cli/mcp-cli.ts`,
+`mcp login`):
+
+1. `runMcpOAuthLogin({ serverName, serverUrl, onAuthorizationUrl })`
+   returns `"redirect"` and hands back an authorization URL.
+2. The person approves; the provider redirects with a code.
+3. The same call again with `authorizationCode` returns `"authorized"`,
+   and the tokens are written under the state dir.
+4. `mcp reload` disposes cached runtimes so the next turn uses them.
+
+**The gap, and it is ours to fill.** Nothing but the CLI calls those
+functions — there is no gateway route for them — and the CLI's own flow
+is manual: it prints the URL and tells you to re-run with `--code`. So
+the app has to hold the middle: listen for the redirect, catch the code,
+and make the second call. Two things we already have make this a
+LobsterAI-side job with no engine patch:
+
+- `src/main/libs/authLocalCallbackServer.ts` already does exactly this
+  shape for the Claidor browser login.
+- `openclawEngineManager` resolves the runtime entry and spawns it with
+  `OPENCLAW_STATE_DIR` set, so the same entry runs `mcp login` against
+  the same token store.
+
+The SDK's default redirect is `http://127.0.0.1:8989/oauth/callback`,
+and `oauth.redirectUrl` can override it per server.
+
+## 8. What this note does not decide
 - **Gmail.** Under A it works from day one because Pipedream's audit
   covers it. Under C it is Google's own MCP endpoint and their consent
   screen, which may want a verified client of ours.
