@@ -108,6 +108,16 @@ function verifyPreinstalledPlugins(runtimeRoot, buildHint) {
 
   for (const plugin of plugins) {
     if (!plugin.id) continue;
+    // `optional` means optional. The installer already treats it that way —
+    // it logs "Skipping <id> — cache not available (optional plugin)" and
+    // carries on — so demanding the directory here made packaging fail on a
+    // plugin the install step was explicitly allowed to skip.
+    //
+    // The one that bites is `moltbot-popo`, which declares
+    // registry https://npm.nie.netease.com: NetEase's internal registry,
+    // for their internal POPO messenger. No runner outside NetEase can
+    // reach it, so the mac build could never have packaged.
+    if (plugin.optional) continue;
     const pluginDir = path.join(extensionsDir, plugin.id);
     if (!existsSync(pluginDir)) {
       missing.push(plugin.id);

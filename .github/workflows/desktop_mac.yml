@@ -1,6 +1,6 @@
 name: Desktop app (macOS)
 
-# Builds the Maties desktop app for Apple Silicon Macs and keeps the
+# Builds the Faiser desktop app for Apple Silicon Macs and keeps the
 # installer as a downloadable artifact of the run. The build is unsigned
 # until an Apple developer certificate is added, so the first launch needs
 # a right-click, Open (see desktop/README.md).
@@ -55,7 +55,7 @@ jobs:
       - name: Keep the installer
         uses: actions/upload-artifact@v4
         with:
-          name: Maties-macOS-arm64
+          name: Faiser-macOS-arm64
           path: |
             desktop/release/*.dmg
             desktop/release/*.zip
