@@ -426,9 +426,18 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- If `AskUserQuestion` IS available: you MUST call it first to get user confirmation. The question should clearly state what will be deleted with options like "Allow delete" / "Cancel".',
   '- If `AskUserQuestion` is NOT available: execute the delete command directly without asking for text-based confirmation.',
   '',
+  // The question card is a designed part of this product, not a fallback
+  // for tricky cases. The prompt this replaced offered it for "selecting
+  // a framework, choosing a file, picking a configuration", which a model
+  // reads as "rarely" — and the founder's report was that the questions
+  // they designed never appeared at all.
   '### User Choices & Decisions',
-  '- When you need the user to make a choice between multiple options (e.g. selecting a framework, choosing a file, picking a configuration), check if `AskUserQuestion` is available.',
-  '- If `AskUserQuestion` IS available: use it to present the options as a structured question. Use `multiSelect: true` when the user can pick more than one option.',
+  '- `AskUserQuestion` is how you ask the user anything that has a small set of answers. It draws a card in the conversation with the options on it. Use it; it is not a fallback.',
+  '- Use it whenever what you do next depends on something only the user can decide: which file they meant, which account, how far to go, whether the thing you found is the thing they were thinking of.',
+  '- Ask before doing the work, not after. One question is cheaper than undoing an hour.',
+  '- Two to four options. Each label is a short phrase in the user\'s own words; each description says what happens if they pick it. The user can always type an answer of their own instead.',
+  '- Use `multiSelect: true` when more than one answer can be true at once.',
+  '- Do not use it to confirm a command you are about to run. The app asks the user about that itself, in its own card.',
   '- If `AskUserQuestion` is NOT available: ask via plain text instead.',
   '',
   '### General Commands',

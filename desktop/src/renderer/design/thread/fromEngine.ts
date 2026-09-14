@@ -2,6 +2,7 @@ import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAt
 import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
+  type ChoiceItem,
   Speaker,
   type StatusItem,
   type TextItem,
@@ -57,6 +58,101 @@ export interface EngineMessage {
   };
 }
 
+/**
+ * The engine's tool for asking a person a question with options.
+ *
+ * It is a real tool with a real plugin behind it
+ * (`desktop/openclaw-extensions/ask-user-question`, reaching the app over
+ * the loopback bridge in `main/libs/mcpBridgeServer.ts`), and the engine's
+ * system prompt tells the agent to use it "when you need the user to make
+ * a choice between multiple options".
+ *
+ * It arrives as a *permission request*, which is why the founder never saw
+ * one: this shell turned every pending permission into the approval card,
+ * so a question with three options was drawn as "Allow Perrin to continue
+ * — run commands on your computer?" with the question hidden behind
+ * "Show the command". The cards were not missing. They were wearing the
+ * wrong face.
+ */
+export const ASK_USER_TOOL = 'AskUserQuestion';
+
+export interface AskUserOption {
+  label: string;
+  description?: string;
+}
+
+export interface AskUserQuestion {
+  question: string;
+  header?: string;
+  options: readonly AskUserOption[];
+  multiSelect?: boolean;
+}
+
+/** `choice:<requestId>:<index>` — the card, and what it answers. */
+export function choiceId(requestId: string, index: number): string {
+  return `choice:${requestId}:${index}`;
+}
+
+/** The other way round. Undefined for anything that is not one of ours. */
+export function parseChoiceId(
+  id: string,
+): { requestId: string; index: number } | undefined {
+  const match = /^choice:(.+):(\d+)$/.exec(id);
+  if (!match) return undefined;
+  return { requestId: match[1], index: Number(match[2]) };
+}
+
+/**
+ * The questions in a pending request, or none.
+ *
+ * Defensive on purpose: this is a tool call written by a model, so the
+ * shape is a claim rather than a guarantee. A question with no text or no
+ * options is dropped rather than drawn as an empty card.
+ */
+export function askUserQuestions(
+  request: EnginePermissionRequest,
+): readonly AskUserQuestion[] {
+  if (request.toolName !== ASK_USER_TOOL) return [];
+  const raw = request.toolInput?.questions;
+  if (!Array.isArray(raw)) return [];
+
+  const questions: AskUserQuestion[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const one = entry as Record<string, unknown>;
+    const question = typeof one.question === 'string' ? one.question.trim() : '';
+    if (!question) continue;
+
+    const options: AskUserOption[] = [];
+    if (Array.isArray(one.options)) {
+      for (const option of one.options) {
+        if (!option || typeof option !== 'object') continue;
+        const label = typeof (option as Record<string, unknown>).label === 'string'
+          ? ((option as Record<string, unknown>).label as string).trim()
+          : '';
+        if (!label) continue;
+        const description = (option as Record<string, unknown>).description;
+        options.push({
+          label,
+          ...(typeof description === 'string' && description.trim()
+            ? { description: description.trim() }
+            : {}),
+        });
+      }
+    }
+    if (!options.length) continue;
+
+    const header = typeof one.header === 'string' ? one.header.trim() : '';
+    questions.push({
+      question,
+      ...(header ? { header } : {}),
+      options,
+      ...(one.multiSelect === true ? { multiSelect: true } : {}),
+    });
+  }
+  return questions;
+}
+
 /** A permission the engine is waiting on. */
 export interface EnginePermissionRequest {
   requestId: string;
@@ -88,6 +184,14 @@ export interface ToThreadOptions {
   deviceId?: string;
   /** True in a group thread, where every bubble needs a sender. */
   group?: boolean;
+  /**
+   * Questions already answered, by request id and then question text.
+   *
+   * A request with several questions stays open until all of them are
+   * answered, so without this the cards you have already pressed would sit
+   * there waiting to be pressed again.
+   */
+  answered?: Readonly<Record<string, Readonly<Record<string, string>>>>;
 }
 
 /** At most this many bubbles from one reply. Three is the canvas's number. */
@@ -266,9 +370,36 @@ export function toThreadItems(
     }
   }
 
-  // Approvals last: the thread is waiting on them, so they belong at the
-  // bottom where the person is looking.
+  // Approvals and questions last: the thread is waiting on them, so they
+  // belong at the bottom where the person is looking.
   for (const request of pending) {
+    const questions = askUserQuestions(request);
+    if (questions.length) {
+      const already = options.answered?.[request.requestId] ?? {};
+      questions.forEach((question, index) => {
+        // An answered question leaves. The request stays open until every
+        // one of them has been answered, and a card you have already
+        // pressed sitting there is a dead control.
+        if (already[question.question] !== undefined) return;
+        items.push({
+          kind: ThreadItemKind.Choice,
+          id: choiceId(request.requestId, index),
+          text: question.question,
+          ...(question.header ? { note: question.header } : {}),
+          options: question.options.map((option, k) => ({
+            key: String.fromCharCode(65 + k),
+            label: option.label,
+            ...(option.description ? { hint: option.description } : {}),
+          })),
+          // The canvas's "Type your own answer". The engine's own tool
+          // offers "Other" for the same reason.
+          freeform: true,
+          at: Date.now(),
+        } satisfies ChoiceItem);
+      });
+      continue;
+    }
+
     items.push({
       kind: ThreadItemKind.Auth,
       id: `auth:${request.requestId}`,
