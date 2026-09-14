@@ -8,6 +8,7 @@ verbatim. Nothing in this folder is mine.
 | `grok-bot.md` | Grok Bot's full product contract, builder-facing | 15 Sep 2026 |
 | `grok-bot-chat.md` | How the bot is built (prompt stack, guardrails) and how chat is configured | 15 Sep 2026 |
 | `grok-bot-app-ui.md` | The verified UI map the agent is given so it never invents a click-path | 15 Sep 2026 |
+| `grok-bot-agent-reference.md` | The whole agent contract in one page: identity, voice, autonomy, safety, surfaces | 15 Sep 2026 |
 
 The founder's instruction with the first one: *"keep it in our repo as a
 source of truth. we building exactly that."*
@@ -132,14 +133,32 @@ And §2.2 — *"prefer multiple short bubbles over one dense memo"* — is
 the founder's *"the text come like texts. not ai"* (`direction.md` §3),
 which we ship as at most three parts, 420 ms apart.
 
-### The real find: our managed prompt is a third of this
+### The real find: our managed prompt has the rules and none of the voice
 
-`desktop/src/main/libs/openclawConfigSync.ts` is where we tell the agent
-how to behave. It currently has three sections and no more:
+**Correction, written the same day.** I first recorded that our managed
+prompt had "three sections and no more". That was wrong — I grepped for
+the three I had edited rather than for the constant. It has **seven**,
+plus a workspace preamble, all in
+`desktop/src/main/libs/openclawConfigSync.ts`:
 
-- `MANAGED_WEB_SEARCH_POLICY_PROMPT`
-- `MANAGED_BROWSER_POLICY_PROMPT`
-- `MANAGED_EXEC_SAFETY_PROMPT` (delete ops, question cards, commands)
+| Section | Covers |
+|---|---|
+| `MANAGED_WEB_SEARCH_POLICY_PROMPT` | which tool to reach for; never claim to have searched |
+| `MANAGED_BROWSER_POLICY_PROMPT` | `target` vs `profile`, the built-in browser |
+| `MANAGED_EXEC_SAFETY_PROMPT` | delete ops, question cards, commands |
+| `MANAGED_DELIVERABLE_LINKS_PROMPT` | link every output file by absolute path; keep scratch out |
+| `MANAGED_MATH_FORMAT_PROMPT` | TeX in app chat, plain text on IM channels |
+| `MANAGED_MEMORY_POLICY_PROMPT` | write the file *before* saying you will remember |
+| `MANAGED_HEARTBEAT_POLICY_PROMPT` | `HEARTBEAT_OK` and nothing else when there is nothing |
+| `FALLBACK_OPENCLAW_AGENTS_TEMPLATE` | the AGENTS.md workspace preamble |
+
+So the gap is not size. It is **kind**. Every section we have is a rule
+about a *tool*. Not one of them is about how the agent *talks* — and
+that is the entire complaint.
+
+Two of the rules I listed as missing are in fact partly there:
+`HEARTBEAT_OK` is the silence rule for heartbeats (not for cron
+routines), and the memory-write rule is stricter than Grok Bot's.
 
 `grok-bot-chat.md` Part I is, almost section for section, the part we
 never wrote:
@@ -300,3 +319,71 @@ That is a real advantage and it costs less than writing the prose.
 Do it after the Part I prompt sections from `grok-bot-chat.md`, not
 before: the fabrication ban is the rule, and this is the evidence the
 rule needs. Both belong in the same pass.
+
+---
+
+## grok-bot-agent-reference.md — read against our tree
+
+The fourth source, and mostly a consolidation: §§4–16 restate
+`grok-bot-chat.md` in one page. Recorded here is only what is **new in
+this document**. (It skips from §17 to §19; there is no §18 in what was
+given, and none has been invented.)
+
+### New, and worth taking
+
+**§1 — first run depends on the description.** *"If the profile
+description is a concrete assignment, skip getting-started questions and
+begin the assignment."* A role agent arriving with a job should start
+the job, not interview you. We have the pieces — kits carry a role, the
+agent record carries a description — and no rule joining them.
+
+**§2 — the list of what never reaches the person.** Message ids, tool
+names, system reminders, hidden turns, infrastructure state,
+send/no-send reasoning, and *"executor/todo/subagent jargon"*. This is
+the same fault as `review.md` items 15 and 21, stated as a prompt rule
+instead of a rendering fix. Ours is half-solved: the thread drops raw
+blobs, but nothing stops the agent *narrating* them in its own words.
+
+Their §2 also fixes vocabulary — say **my computer**, never *the box*.
+We need the opposite rule for the same reason: never say *the agent's
+sandbox*, *the host*, or *the gateway*. The founder has been shown all
+three.
+
+**§13 — precedence.** *"Agent memory wins over conflicting shared user
+facts when curated for role."* We sync shared memory and have no rule
+for what happens when a role agent's note contradicts it. That is a
+question our memory bundle will hit.
+
+**§20 — reference docs live on disk and are named.** Not prose in the
+system prompt: files (`app-ui.md`, `debugging-the-box.md`) at a known
+path, with a "when to read" column. That is the delivery mechanism for
+the UI map, and it is better than pasting it into every turn.
+
+Ours has a home already: `resolveSkillCreationPath()` in
+`openclawConfigSync.ts` resolves `~/Library/Application
+Support/Faiser/SKILLs`, and the engine reads skills from there. A
+`reference/` sibling, listed in AGENTS.md with the same "when to read"
+table, is the same pattern without inventing anything.
+
+Their second file, `debugging-the-box.md`, has no equivalent for us and
+should not get one — but its *shape* should. When the built-in browser
+fails, the agent invented three explanations (`review.md` §22). A
+`reference/when-things-fail.md` naming the log directory and what to
+read would have ended that in one turn.
+
+### Already ours, and better
+
+**§17 showing work** — attach real paths, never invent them, and
+remember that artifact paths from elsewhere do not render.
+`MANAGED_DELIVERABLE_LINKS_PROMPT` is our version and it is more
+specific: link every output file by absolute path, keep intermediates in
+the session temp directory, and never link a file you merely read.
+
+**§7 refusal and disallow classes** — the engine carries its own safety
+layer (`openclaw/src/security/`), and the app does not need to restate a
+model-level policy in a product prompt.
+
+### Struck with the box
+
+§8 in full, `request_box_help` in §6, the cloud-agent row in §15, and
+§19 with its `debugging-the-box.md`.
