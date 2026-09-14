@@ -141,14 +141,23 @@ Also already built, in the same file, `Sidebar.tsx:145–151`: 7px circle,
 `color.accent` when unread and `transparent` otherwise, which is the
 canvas's `bot.dotColor` exactly.
 
-### 9. The voice picker is a carousel, not a grid — `open`
+### 9. The voice picker is a carousel, not a grid — `fixed, awaiting the founder's eyes`
 
 **Design:** a modal with the heading "Choose a voice." and the line "How
 your agent speaks to you."; a **176px** orb; prev and next arrows either
 side of the voice name (19px) and its description (15px); a row of dots;
 then "Use this voice" and "Cancel".
 
-**Built:** a grid of seven tiles.
+**Built:** a grid of seven tiles — and a comment in the file arguing
+for it: *"a list rather than the canvas's one-at-a-time carousel: seven
+is few enough to see at once."* The same move as the account menu:
+overruling the designer in a code comment.
+
+**Fixed.** The canvas's: 560px sheet, `34px 32px 28px`, a 176px orb, an
+arrow either side of the name (19px) and description (15px), seven dots,
+then "Use this voice" and "Cancel". The arrows wrap, so neither is ever
+dead, and nothing is chosen until the button — the picker was previously
+committing on the first click.
 
 **Where:** `src/renderer/design/shell/Compose.tsx`, `VoicePicker`.
 
@@ -221,15 +230,32 @@ and then reported as missing. I wrote the list from memory instead of
 from the files, which is the same failure as reporting a stage complete
 without opening the app, pointed the other way.
 
-### 13. Compose has no group chips — `open`
+### 13. Compose has no group chips — `open — and it is a feature, not a fidelity fix`
 
 **Design:** the To: bar holds removable chips — a 24px orb, the name,
-and an × — and there is a "start group" button below the picker.
+and an × — and there is a button below the picker reading "Start group
+chat with N agents".
 
 **Built:** single recipient only. I deferred it to Stage 10 on my own
 authority and left no trace of that decision in the design.
 
-**Where:** `Compose.tsx`, `composeRows.ts`.
+**Why it is still open, stated plainly rather than quietly skipped.**
+The chips and the button are half an hour. What is behind them is not:
+a session in this app is one conversation with one agent
+(`cowork_sessions.agent_id`, one row, one engine session key). A group
+thread means several agents in one thread, each answering in its own
+voice, which is a new shape in the store, the engine adapter and the
+stream — not a screen. The thread side of it is already here: a bubble
+knows its sender, wears that agent's orb and carries its name above it
+(`fromEngine.ts`, `group: true`).
+
+Building the chips now would put a button in front of somebody that
+starts a group chat the app cannot hold — which is the dead control the
+founder has already objected to, wearing a bigger coat. **This one needs
+the founder to say whether it is worth the engine work.**
+
+**Where:** `Compose.tsx`, `composeRows.ts`, and
+`main/coworkStore.ts` behind them.
 
 ---
 

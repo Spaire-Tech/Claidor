@@ -3,7 +3,7 @@ import { type KeyboardEvent, useMemo, useRef, useState } from 'react';
 import { DEFAULT_VOICE_ID, voiceById,VOICES } from '../agents/voices';
 import { CloseIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
-import { color, glass, line, radius, shadow, text, tracking } from '../tokens';
+import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import {
   canCreate,
   ComposeAction,
@@ -349,18 +349,55 @@ interface VoicePickerProps {
 }
 
 /**
- * Seven voices, each with its own orb.
+ * One voice at a time, with an arrow either side.
  *
- * A list rather than the canvas's one-at-a-time carousel: seven is few
- * enough to see at once, and comparing them is the whole task.
+ * This was a list of seven tiles, and the file said so in a comment: "a
+ * list rather than the canvas's one-at-a-time carousel: seven is few
+ * enough to see at once". That is an argument, and it is not mine to
+ * make — the canvas shows one 176px orb, the name at 19px, the
+ * description at 15px, a row of dots, and "Use this voice" / "Cancel".
+ *
+ * And the argument was wrong anyway. A voice is not compared by looking
+ * at seven of them; it is compared by hearing one, then the next. The
+ * carousel is the shape of that.
+ *
+ * Nothing is chosen until "Use this voice" — the arrows move the
+ * selection here and the caller only hears about it once.
  */
 function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Element {
+  const start = Math.max(0, VOICES.findIndex(one => one.id === voiceId));
+  const [at, setAt] = useState(start);
+  const voice = VOICES[at] ?? VOICES[0];
+
+  // Wrapping, so neither arrow is ever dead. `+ VOICES.length` because
+  // `-1 % 7` is `-1` in JavaScript and would leave nothing selected.
+  const step = (by: number): void =>
+    setAt(current => (current + by + VOICES.length) % VOICES.length);
+
+  const arrow = (by: number, label: string, path: string): JSX.Element => (
+    <button
+      type="button"
+      onClick={() => step(by)}
+      aria-label={label}
+      style={{
+        width: 36, height: 36, flex: '0 0 auto', border: 'none', borderRadius: '50%',
+        background: 'transparent', cursor: 'pointer', color: color.faint,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+        <path d={path} />
+      </svg>
+    </button>
+  );
+
   return (
     <div
       style={{
         position: 'absolute', inset: 0, zIndex: 60, display: 'flex',
         alignItems: 'center', justifyContent: 'center', padding: 32,
         background: glass.scrim, backdropFilter: glass.scrimBlur,
+        animation: `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`,
       }}
       onClick={onClose}
       role="presentation"
@@ -369,16 +406,16 @@ function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Elemen
         onClick={event => event.stopPropagation()}
         role="presentation"
         style={{
-          width: '100%', maxWidth: 480, maxHeight: '100%', overflowY: 'auto',
-          boxSizing: 'border-box', padding: 24, borderRadius: radius.modal,
+          width: '100%', maxWidth: 560, boxSizing: 'border-box',
+          padding: '34px 32px 28px', borderRadius: radius.modal,
           background: glass.background, backdropFilter: glass.blur,
           border: `1px solid ${glass.border}`,
           boxShadow: `${shadow.modal}, ${shadow.glassInset}`,
-          display: 'flex', flexDirection: 'column', gap: 16,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
         }}
       >
-        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ fontSize: text.dialogTitle, fontWeight: 500, letterSpacing: tracking.screenTitle }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, textAlign: 'center' }}>
+          <div style={{ fontSize: text.dialogTitle, fontWeight: 500, letterSpacing: tracking.screenTitle, color: color.ink }}>
             Choose a voice.
           </div>
           <div style={{ fontSize: text.emphasis, color: color.muted }}>
@@ -386,32 +423,59 @@ function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Elemen
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {VOICES.map(voice => {
-            const on = voice.id === voiceId;
-            return (
-              <button
-                key={voice.id}
-                type="button"
-                onClick={() => onPick(voice.id)}
-                aria-pressed={on}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
-                  borderRadius: radius.row, cursor: 'pointer', font: 'inherit',
-                  textAlign: 'left', width: '100%',
-                  background: on ? color.paper : 'transparent',
-                  border: on ? '1px solid rgba(255,255,255,.6)' : '1px solid transparent',
-                  boxShadow: on ? shadow.raised : 'none',
-                }}
-              >
-                <Orb agentId={voice.id} size={34} mood={OrbMood.Still} />
-                <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontSize: text.emphasis, color: color.ink }}>{voice.name}</span>
-                  <span style={{ fontSize: text.small, color: color.muted }}>{voice.description}</span>
-                </span>
-              </button>
-            );
-          })}
+        <Orb agentId={voice.id} size={176} mood={OrbMood.Idle} elevated />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, width: '100%', justifyContent: 'center' }}>
+          {arrow(-1, 'Previous voice', 'M15 5l-7 7 7 7')}
+          <div style={{ minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, textAlign: 'center' }}>
+            <div style={{ fontSize: text.sidebarTitle, fontWeight: 500, letterSpacing: '-.012em', color: color.ink }}>
+              {voice.name}
+            </div>
+            <div style={{ fontSize: text.message, color: color.muted }}>{voice.description}</div>
+          </div>
+          {arrow(1, 'Next voice', 'M9 5l7 7-7 7')}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          {VOICES.map((one, index) => (
+            <button
+              key={one.id}
+              type="button"
+              onClick={() => setAt(index)}
+              aria-label={one.name}
+              aria-current={index === at}
+              style={{
+                width: 7, height: 7, padding: 0, borderRadius: '50%',
+                border: 'none', cursor: 'pointer',
+                background: index === at ? color.ink : color.fillStrong,
+              }}
+            />
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 2 }}>
+          <button
+            type="button"
+            onClick={() => onPick(voice.id)}
+            style={{
+              height: 42, padding: '0 22px', borderRadius: radius.field, border: 'none',
+              background: color.ink, color: color.paper, font: 'inherit',
+              fontSize: text.body, fontWeight: 500, cursor: 'pointer',
+            }}
+          >
+            Use this voice
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              height: 42, padding: '0 20px', borderRadius: radius.field,
+              border: `1px solid ${line.button}`, background: color.paper,
+              color: color.ink, font: 'inherit', fontSize: text.body, cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>
