@@ -336,6 +336,19 @@ export class OpenClawEngineManager extends EventEmitter {
   }
 
   /** Return the resolved bundled runtime root for pre-gateway CLI migrations. */
+  /**
+   * The entry the gateway is forked from, for a one-off CLI command.
+   *
+   * Public because `mcp login` is the only caller of the engine's OAuth
+   * code and there is no gateway route for it, so the app has to run the
+   * same file the gateway runs — against the same state dir, or it signs
+   * somebody into nothing.
+   */
+  resolveCliEntry(): string | null {
+    const runtimeRoot = this.getRuntimeRoot();
+    return runtimeRoot ? this.resolveOpenClawEntry(runtimeRoot) : null;
+  }
+
   getRuntimeRoot(): string | null {
     return this.resolveRuntimeMetadata().root;
   }

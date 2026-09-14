@@ -262,6 +262,17 @@ function Screens(): JSX.Element {
       onApps={noop}
       apps={screen === 'apps' || screen === 'apps-adding' ? (
         <Apps
+          connections={{
+            // Two connected, one mid-flight and one that just failed, so
+            // every state of a row is on screen at once.
+            connected: new Set(['gmail', 'todoist']),
+            busyId: screen === 'apps-adding' ? 'google-drive' : undefined,
+            failure: screen === 'apps-adding'
+              ? undefined
+              : { id: 'otter', message: 'Otter.ai said no to that account.' },
+            onConnect: noop,
+            onDisconnect: noop,
+          }}
           available={PRESET_AGENTS}
           // One already here, so both states of a row are on screen at
           // once: the button, and the word that replaces it.

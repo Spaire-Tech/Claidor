@@ -259,6 +259,7 @@ import { registerActivityIpcHandlers } from './ipcHandlers/activity';
 import { registerAgentHandlers } from './ipcHandlers/agents';
 import { registerAsrIpcHandlers } from './ipcHandlers/asr';
 import { registerBrowserCredentialHandlers } from './ipcHandlers/browserCredentials/handlers';
+import { registerConnectionHandlers } from './ipcHandlers/connections/handlers';
 import { registerCoworkSubagentHandlers } from './ipcHandlers/coworkSubagent';
 import { ensureDshEngineReady, registerDshHandlers } from './ipcHandlers/dsh/handlers';
 import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccount';
@@ -10231,6 +10232,51 @@ if (!gotTheLock) {
    */
   const resolveAgentMemoryFilePath = (agentId?: string): string =>
     resolveMemoryFilePath(resolveExistingAgentWorkspacePath(agentId));
+
+  registerConnectionHandlers({
+    // Null until the runtime is on disk; the handler says so rather than
+    // spawning nothing and reporting a blank failure.
+    cliEnvironment: () => {
+      const manager = getOpenClawEngineManager();
+      const runtimeRoot = manager.getRuntimeRoot();
+      const entry = manager.resolveCliEntry();
+      if (!runtimeRoot || !entry) return null;
+      return {
+        entry,
+        runtimeRoot,
+        baseDir: manager.getBaseDir(),
+        stateDir: manager.getStateDir(),
+        configPath: manager.getConfigPath(),
+      };
+    },
+    writeServer: async ({ name, url, scope }) => {
+      const store = getMcpRuntime().getStore();
+      const existing = store.listServers().find(one => one.name === name);
+      if (existing) {
+        store.updateServer(existing.id, {
+          url, transportType: 'http', auth: 'oauth',
+          ...(scope ? { oauthScope: scope } : {}),
+        });
+        return;
+      }
+      store.createServer({
+        name,
+        description: '',
+        transportType: 'http',
+        url,
+        auth: 'oauth',
+        ...(scope ? { oauthScope: scope } : {}),
+      } as Parameters<typeof store.createServer>[0]);
+    },
+    removeServer: async (name: string) => {
+      const store = getMcpRuntime().getStore();
+      const existing = store.listServers().find(one => one.name === name);
+      if (existing) store.deleteServer(existing.id);
+    },
+    syncConfig: async (reason: string) => {
+      await syncOpenClawConfig({ reason });
+    },
+  });
 
   registerAgentHandlers({
     getAgentManager,

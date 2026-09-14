@@ -7,6 +7,9 @@ import { defineConfig } from 'vite';
 // looked at and photographed.
 export default defineConfig({
   root: __dirname,
+  // The app's own public directory, so the connections shelf draws the
+  // real logos rather than a hundred monograms.
+  publicDir: path.resolve(__dirname, '../public'),
   plugins: [react()],
   resolve: {
     alias: {

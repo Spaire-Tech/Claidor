@@ -7,6 +7,7 @@ import { authService } from '../../services/auth';
 import type { RootState } from '../../store';
 import { AgentDetail } from '../agent/AgentDetail';
 import { useAgentDetail } from '../agent/useAgentDetail';
+import { useConnections } from '../connections/useConnections';
 import { ComputerPanel } from '../panel/ComputerPanel';
 import { AccountMenu } from './AccountMenu';
 import { Apps } from './Apps';
@@ -45,6 +46,7 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
   const [agentOpen, setAgentOpen] = useState(false);
   const shell = useMessagesShell();
   const detail = useAgentDetail(shell.activeId, agentOpen);
+  const connections = useConnections(shell.appsOpen);
 
   // `nickname` is the only display name the profile carries; everything
   // else on it is an identifier. A signed-in person with no nickname gets
@@ -109,6 +111,7 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
       onApps={shell.onApps}
       apps={shell.appsOpen && (
         <Apps
+          connections={connections}
           available={shell.presets}
           installedIds={shell.installedIds}
           busyId={shell.busyPresetId}

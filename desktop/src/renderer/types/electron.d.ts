@@ -816,6 +816,17 @@ interface IElectronAPI {
     presetTemplates: () => Promise<PresetAgent[]>;
     addPreset: (presetId: string) => Promise<Agent>;
   };
+  connections: {
+    /**
+     * Sign in to one service. Resolves when the person has finished with
+     * the provider's page, or given up on it — never before.
+     */
+    connect: (id: string) => Promise<{
+      outcome: 'connected' | 'refused' | 'failed' | 'unsupported';
+      message?: string;
+    }>;
+    disconnect: (id: string) => Promise<{ success: boolean; error?: string }>;
+  };
   api: {
     fetch: (options: {
       url: string;

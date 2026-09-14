@@ -1,14 +1,28 @@
 import { useState } from 'react';
 
 import type { PresetAgent } from '../../types/agent';
+import { Connections, type ConnectionsProps } from '../connections/Connections';
+import { shelfCount } from '../connections/connections';
 import { CloseIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, glass, line, radius, shadow, text, tracking } from '../tokens';
 import { matchingRoles } from './apps';
 
+export const AppsTab = {
+  /** `direction.md` §4 lists connectors first, and it is the bigger shelf. */
+  Connections: 'connections',
+  Agents: 'agents',
+} as const;
+export type AppsTab = typeof AppsTab[keyof typeof AppsTab];
+
 export interface AppsProps {
   /** The roles not yet installed. */
   available: readonly PresetAgent[];
+  /**
+   * Everything the connections half needs except the search word, which
+   * is this modal's — the box is shared between the two tabs.
+   */
+  connections: Omit<ConnectionsProps, 'query'>;
   /** The ids of roles already added, so they read as done rather than gone. */
   installedIds: ReadonlySet<string>;
   busyId?: string;
@@ -29,9 +43,12 @@ export interface AppsProps {
  * A list that empties as you use it makes you wonder what you did.
  */
 export function Apps({
-  available, installedIds, busyId, onInstall, onClose,
+  available, connections, installedIds, busyId, onInstall, onClose,
 }: AppsProps): JSX.Element {
+  // `direction.md` §4: "Apps (two tabs: connectors, and role agents)".
+  const [tab, setTab] = useState<AppsTab>(AppsTab.Connections);
   const [query, setQuery] = useState('');
+  const onConnections = tab === AppsTab.Connections;
   const shown = matchingRoles(available, query);
 
   return (
@@ -65,10 +82,12 @@ export function Apps({
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
             <div style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div style={{ fontSize: text.dialogTitle, fontWeight: 500, letterSpacing: tracking.screenTitle }}>
-                Agents
+                Apps
               </div>
               <div style={{ fontSize: text.emphasis, color: color.muted }}>
-                Add someone who already knows the job.
+                {onConnections
+                  ? shelfCount(connections.connected)
+                  : 'Add someone who already knows the job.'}
               </div>
             </div>
             <button
@@ -85,11 +104,41 @@ export function Apps({
             </button>
           </div>
 
+          <div role="tablist" style={{ display: 'flex', gap: 2 }}>
+            {([
+              [AppsTab.Connections, 'Connections'],
+              [AppsTab.Agents, 'Agents'],
+            ] as const).map(([id, label]) => {
+              const on = tab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  // The search box is shared, and a word typed on one
+                  // shelf means nothing on the other.
+                  onClick={() => { setTab(id); setQuery(''); }}
+                  style={{
+                    height: 30, padding: '0 14px', borderRadius: radius.pill,
+                    border: '1px solid transparent', cursor: 'pointer', font: 'inherit',
+                    fontSize: text.body, letterSpacing: tracking.body,
+                    background: on ? color.fillStrong : 'transparent',
+                    color: on ? color.ink : color.muted,
+                    fontWeight: on ? 500 : 400,
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
           <input
             value={query}
             onChange={event => setQuery(event.target.value)}
             placeholder="Search"
-            aria-label="Search agents"
+            aria-label={onConnections ? 'Search connections' : 'Search agents'}
             style={{
               height: 40, padding: '0 14px', borderRadius: radius.pill,
               background: color.fill, border: `1px solid ${line.hairline}`,
@@ -104,12 +153,13 @@ export function Apps({
             padding: '0 12px 16px', display: 'flex', flexDirection: 'column', gap: 2,
           }}
         >
-          {shown.length === 0 && (
+          {onConnections && <Connections {...connections} query={query} />}
+          {!onConnections && shown.length === 0 && (
             <div style={{ padding: '18px 12px', fontSize: text.body, color: color.muted }}>
               Nobody by that name.
             </div>
           )}
-          {shown.map(role => {
+          {!onConnections && shown.map(role => {
             const installed = installedIds.has(role.id);
             const busy = busyId === role.id;
             return (

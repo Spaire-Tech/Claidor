@@ -41,6 +41,7 @@ import {
   type BrowserRuntimeProfile,
 } from '../shared/browserWebAccess/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
+import { ConnectionsIpcChannel } from '../shared/connections/constants';
 import type { CoworkBrowserAnnotationMessageBatch } from '../shared/cowork/browserAnnotations';
 import type {
   CoworkBtwAbortRequest,
@@ -493,6 +494,10 @@ contextBridge.exposeInMainWorld('electron', {
       const result = await ipcRenderer.invoke(AgentIpcChannel.AddPreset, presetId);
       return result?.success ? result.agent : null;
     },
+  },
+  connections: {
+    connect: (id: string) => ipcRenderer.invoke(ConnectionsIpcChannel.Connect, id),
+    disconnect: (id: string) => ipcRenderer.invoke(ConnectionsIpcChannel.Disconnect, id),
   },
   cowork: {
     // Session management
