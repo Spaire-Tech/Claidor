@@ -21,6 +21,12 @@ export type CoworkAgentEngine = 'openclaw';
 export type PermissionResult =
   | {
       behavior: 'allow';
+      /**
+       * Which button the person pressed. Without this, "Always allow" and
+       * "Allow once" were the same press: the decision was taken from a
+       * server-side flag and the person's choice was discarded.
+       */
+      scope?: 'always' | 'once';
       updatedInput?: Record<string, unknown>;
       updatedPermissions?: Record<string, unknown>[];
       toolUseID?: string;

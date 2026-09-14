@@ -1,4 +1,4 @@
-import { getCommandDangerLevel, isDeleteCommand } from '../commandSafety';
+import { getCommandDangerLevel } from '../commandSafety';
 import { parseChannelSessionKey } from '../openclawChannelSessionSync';
 import type { PermissionRequest, PermissionResult } from './types';
 
@@ -95,7 +95,16 @@ export const parseExecApprovalRequestedPayload = (payload: unknown): ParsedExecA
     request,
     sessionKey,
     command,
-    shouldAutoApprove: parseChannelSessionKey(sessionKey) !== null || !isDeleteCommand(command),
+    // Auto-approve only where there is nobody to ask. An IM channel
+    // session is a person messaging from Feishu or Discord; no approval
+    // card can reach them, so the alternative to allowing is hanging.
+    //
+    // It used to also auto-approve every command that was not a delete,
+    // which meant that on this computer — where there IS somebody to ask
+    // — almost nothing was ever asked. The direction is the opposite:
+    // "as you can see it always ask if he's allowed to do something in
+    // the computer i want the same."
+    shouldAutoApprove: parseChannelSessionKey(sessionKey) !== null,
   };
 };
 
@@ -176,7 +185,12 @@ export const resolveApprovalDecision = (
 ): ApprovalDecision => {
   if (result.behavior !== 'allow') return 'deny';
   const allowed = pending.allowedDecisions;
-  if (pending.allowAlways && (!allowed || allowed.includes('allow-always'))) {
+  // The person's press wins over the auto-approve flag. `allowAlways` is
+  // set by the engine for sessions nobody can be asked about; `scope` is
+  // set by somebody pressing a button, and only one of the two is a
+  // choice.
+  const wantsAlways = result.scope === 'always' || (result.scope === undefined && pending.allowAlways);
+  if (wantsAlways && (!allowed || allowed.includes('allow-always'))) {
     return 'allow-always';
   }
   if (!allowed || allowed.includes('allow-once')) {

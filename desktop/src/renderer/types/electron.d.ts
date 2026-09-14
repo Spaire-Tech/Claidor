@@ -443,6 +443,7 @@ interface EmailSkillAccountsConfig {
 type CoworkPermissionResult =
   | {
       behavior: 'allow';
+      scope?: 'always' | 'once';
       updatedInput?: Record<string, unknown>;
       updatedPermissions?: Record<string, unknown>[];
       toolUseID?: string;
@@ -1579,6 +1580,8 @@ interface IElectronAPI {
   };
   appInfo: {
     getVersion: () => Promise<string>;
+    /** This computer's hostname, shown on approval cards. */
+    getComputerName: () => Promise<string>;
     getSystemLocale: () => Promise<string>;
     getKeyfromAttribution: () => Promise<{
       firstKeyfrom: string;

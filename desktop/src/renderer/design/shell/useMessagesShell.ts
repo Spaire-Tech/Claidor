@@ -87,6 +87,17 @@ export function useMessagesShell(): MessagesShellState {
   // An answered approval leaves a line behind. It is local because it is
   // a presentation fact: the engine's record is the decision itself.
   const [notes, setNotes] = useState<EngineMessage[]>([]);
+  // The name of this computer, for the approval card. Asked once: it is
+  // the machine the app is running on and it does not change underneath
+  // somebody mid-session.
+  const [computerName, setComputerName] = useState<string>();
+  useEffect(() => {
+    let current = true;
+    void window.electron?.appInfo?.getComputerName?.()
+      .then(name => { if (current && name) setComputerName(name); })
+      .catch(() => { /* the card simply omits the line */ });
+    return () => { current = false; };
+  }, []);
 
   const sessionsByAgent = useMemo(() => {
     const newest: Record<string, StoreSession | undefined> = {};
@@ -133,10 +144,11 @@ export function useMessagesShell(): MessagesShellState {
       // The id identifies, the name is what a person reads. Passing the
       // id for both put "Allow juno to continue" on an approval card.
       ...(active?.name ? { agentName: active.name } : {}),
+      ...(computerName ? { deviceName: computerName } : {}),
       session: session ? { ...session, messages } : undefined,
       pendingPermissions,
     }),
-    [activeId, active, session, messages, pendingPermissions],
+    [activeId, active, session, messages, pendingPermissions, computerName],
   );
 
   const typing = currentSession?.status === 'running';
@@ -191,7 +203,10 @@ export function useMessagesShell(): MessagesShellState {
       void coworkService.respondToPermission(
         requestId,
         allow
-          ? { behavior: 'allow' }
+          // The scope is the difference between the two allow buttons.
+          // Without it they were the same press: the engine decided from
+          // its own flag and the person's choice was thrown away.
+          ? { behavior: 'allow', scope: decision === AuthDecision.Always ? 'always' : 'once' }
           : { behavior: 'deny', message: 'Declined.' },
       );
       // Answering consumes the card: the prompt is replaced by one quiet
@@ -212,6 +227,7 @@ export function useMessagesShell(): MessagesShellState {
   // per session in the artifact slice, but that slice is the old shell's
   // and toggling it from here would move a panel it also draws.
   const [panelOpen, setPanelOpen] = useState(false);
+
 
   const onCompose = useCallback(() => setComposing(true), []);
   const onCloseCompose = useCallback(() => setComposing(false), []);

@@ -298,6 +298,8 @@ export interface CoworkPermissionRequest {
 export type CoworkPermissionResult =
   | {
       behavior: 'allow';
+      /** Which button was pressed: Always allow, or Allow once. */
+      scope?: 'always' | 'once';
       updatedInput?: Record<string, unknown>;
       updatedPermissions?: Record<string, unknown>[];
       toolUseID?: string;

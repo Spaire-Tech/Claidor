@@ -5009,6 +5009,11 @@ if (!gotTheLock) {
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
   ipcMain.handle('app:getSystemLocale', () => app.getLocale());
+  // The name of this computer, for the approval card. There is only ever
+  // one computer — "there is no 'which computer', there is only this
+  // computer" — so this names the machine a command is about to run on
+  // rather than choosing between machines.
+  ipcMain.handle('app:getComputerName', () => os.hostname());
   ipcMain.handle(AppIpcChannel.GetKeyfromAttribution, () => getKeyfromAttribution(getStore()));
 
   ipcMain.handle(AppIpcChannel.OpenSystemNotificationSettings, async () => {
