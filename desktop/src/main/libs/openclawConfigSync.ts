@@ -6,6 +6,10 @@ import path from 'path';
 import { buildScheduledTaskEnginePrompt } from '../../scheduledTask/enginePrompt';
 import { AgentId, DefaultAgentProfile } from '../../shared/agent';
 import {
+  ASK_INPUT_MCP_SERVER,
+  ASK_INPUT_TOOL,
+} from '../../shared/askInput/constants';
+import {
   BrowserCredentialLoginTool,
   BrowserCredentialMcpServer,
 } from '../../shared/browserCredentials/constants';
@@ -57,6 +61,7 @@ import {
   buildAgentModelRoleDefaults,
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
+import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
 import {
   getAllServerModelMetadata,
   listProviderSourceEntries,
@@ -593,6 +598,14 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- Use `multiSelect: true` when more than one answer can be true at once.',
   '- Do not use it to confirm a command you are about to run. The app asks the user about that itself, in its own card.',
   '- If `AskUserQuestion` is NOT available: ask via plain text instead.',
+  '',
+  '### Passwords, Keys And Codes',
+  `- Never ask the person to type a password, an API key, a one-time code or a card number as a chat message. Call \`${ASK_INPUT_TOOL}\` instead. It draws a card with masked boxes, and what they type comes back to you without ever entering the conversation.`,
+  '- Use it for a sign-in, a checkout, a verification code, or any form on a page you are driving. Ask for every field you need in one call: making somebody fill in an email, then wait, then fill in a password is doing the same job twice.',
+  '- Mark a field `secret` when its value would be damaging to leave lying about. Mark the rest `line` or `block`; not everything on a form is a secret and masking an address just makes it hard to check.',
+  '- Set `offerToSave` only for something worth keeping, like a site password. Never for a one-time code.',
+  '- If they decline, that is an answer. Do not ask again, do not ask a different way, and do not fall back to asking in chat. Say what you cannot finish without it and stop.',
+  '- Never repeat a value back, never write one into a file, a note or a memory, and never include one in a summary of what you did.',
   '',
   '### General Commands',
   '- For ALL commands (ls, git, cd, kill, chmod, curl, etc.), execute them directly WITHOUT asking for confirmation.',
@@ -2050,6 +2063,8 @@ type OpenClawConfigSyncDeps = {
   getBrowserCallbackUrl?: () => string | null;
   getLobsterBrowserMcpCommand?: () => string | null;
   getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
+  /** Launches the tool that asks the person to type something. */
+  getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
   getMcpBridgeSecret?: () => string;
   getSkillsList?: () => Array<{ id: string; name: string; enabled: boolean }>;
   getAgents?: () => Agent[];
@@ -2106,6 +2121,7 @@ export class OpenClawConfigSync {
   private readonly getBrowserCallbackUrl?: () => string | null;
   private readonly getLobsterBrowserMcpCommand?: () => string | null;
   private readonly getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
+  private readonly getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
   private readonly getMcpBridgeSecret?: () => string;
   private readonly getSkillsList?: () => Array<{ id: string; name: string; enabled: boolean }>;
   private readonly getAgents?: () => Agent[];
@@ -2140,6 +2156,7 @@ export class OpenClawConfigSync {
     this.getBrowserCallbackUrl = deps.getBrowserCallbackUrl;
     this.getLobsterBrowserMcpCommand = deps.getLobsterBrowserMcpCommand;
     this.getLobsterBrowserMcpStdioLaunch = deps.getLobsterBrowserMcpStdioLaunch;
+    this.getAskInputMcpStdioLaunch = deps.getAskInputMcpStdioLaunch;
     this.getMcpBridgeSecret = deps.getMcpBridgeSecret;
     this.getSkillsList = deps.getSkillsList;
     this.getAgents = deps.getAgents;
@@ -2944,6 +2961,20 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
         };
       }
     }
+    // The tool that asks the person to type something. Not conditional on
+    // the browser, unlike the credential tool above: a password may be
+    // needed for a connector, a shell step or a site, and "never ask for
+    // a secret in chat" has to hold everywhere or it holds nowhere.
+    const askInputLaunch = this.getAskInputMcpStdioLaunch?.();
+    if (askInputLaunch) {
+      nativeMcpServers[ASK_INPUT_MCP_SERVER] = {
+        command: askInputLaunch.command,
+        args: [...askInputLaunch.args],
+        ...(Object.keys(askInputLaunch.env).length > 0 ? { env: askInputLaunch.env } : {}),
+        toolFilter: { include: [ASK_INPUT_TOOL] },
+      };
+    }
+
     const nativeMcpServerCount = Object.keys(nativeMcpServers).length;
     if (nativeMcpServerCount > 0) {
       (managedConfig as Record<string, unknown>).mcp = {

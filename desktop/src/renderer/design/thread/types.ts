@@ -1,3 +1,5 @@
+import type { AskInputField } from '../../../shared/askInput/constants';
+
 /**
  * What may appear in a thread. Seven kinds, and the list is closed.
  *
@@ -143,6 +145,14 @@ export interface AttachmentItem {
   at: number;
 }
 
+/**
+ * A card asking the person to type something the model must not see.
+ *
+ * One field or several — a lone password box and a login form with an
+ * email beside it are the same card, and splitting them would be
+ * plumbing showing through. Every field marked secret is masked, kept out
+ * of the transcript, and never sent to the model.
+ */
 export interface SecretItem {
   kind: typeof ThreadItemKind.Secret;
   id: string;
@@ -150,10 +160,9 @@ export interface SecretItem {
   text: string;
   /** Which service or account it is for, when the agent can say. */
   note?: string;
-  /** The word above the field: "Password", "API key", "One-time code". */
-  label: string;
+  fields: readonly AskInputField[];
   /**
-   * Whether the value may be kept for later.
+   * Whether the values may be kept for later.
    *
    * A one-time code must not be; a password for a site the agent will
    * visit again might reasonably be. The agent asks; the person decides.

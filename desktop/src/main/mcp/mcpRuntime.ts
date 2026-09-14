@@ -2,6 +2,11 @@ import crypto from 'crypto';
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
 
+import {
+  AskInputBehavior,
+  AskInputIpc,
+  type AskInputResponse,
+} from '../../shared/askInput/constants';
 import { ASK_USER_QUESTION_TOOL_NAME, SESSION_AGNOSTIC_PERMISSION_SESSION_ID } from '../../shared/cowork/constants';
 import { McpIpcChannel } from '../../shared/mcp/constants';
 import { isComputerUseKitInstalled } from '../computerUse/computerUseKit';
@@ -111,6 +116,10 @@ export class McpRuntime {
     return this.bridgeServer?.browserCallbackUrl ?? null;
   }
 
+  getAskInputCallbackUrl(): string | null {
+    return this.bridgeServer?.askInputCallbackUrl ?? null;
+  }
+
   getBridgeSecret(): string {
     return this.bridgeSecret;
   }
@@ -187,6 +196,41 @@ export class McpRuntime {
       this.deps.onAskUserDismissed?.(requestId);
     });
 
+    // The card that asks the person to type something. Sent to every
+    // window rather than routed by session: unlike a question card this
+    // is not about a conversation's content, it is a person being asked
+    // for a password, and it must reach whatever window they are looking
+    // at.
+    this.bridgeServer.onAskInput(request => {
+      const windows = BrowserWindow.getAllWindows();
+      if (windows.length === 0) {
+        // Nowhere to draw it. Declining is the only honest answer; the
+        // agent's turn would otherwise sit waiting for five minutes.
+        console.warn('[AskInput] no window open, declining');
+        this.resolveAskInput(request.requestId, { behavior: AskInputBehavior.Decline });
+        return;
+      }
+      windows.forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(AskInputIpc.Requested, request);
+        } catch (error) {
+          console.error('[AskInput] failed to send request to window:', error);
+        }
+      });
+    });
+
+    this.bridgeServer.onAskInputDismiss(requestId => {
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(AskInputIpc.Dismissed, { requestId });
+        } catch {
+          // The window is going away; the card goes with it.
+        }
+      });
+    });
+
     this.bridgeServer.onMediaGeneration(async (request) => {
       if (!this.mediaGenerationHandler) {
         return {
@@ -213,6 +257,11 @@ export class McpRuntime {
 
   resolveAskUser(requestId: string, response: AskUserResponse): void {
     this.bridgeServer?.resolveAskUser(requestId, response);
+  }
+
+  /** Hand a waiting tool what the person typed into the card. */
+  resolveAskInput(requestId: string, response: AskInputResponse): void {
+    this.bridgeServer?.resolveAskInput(requestId, response);
   }
 
   broadcastServersChanged(): void {

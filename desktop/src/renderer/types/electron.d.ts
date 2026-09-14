@@ -9,6 +9,7 @@ import type {
   ActivitySlotResponse,
 } from '../../shared/activity/constants';
 import type { AppUpdateActiveWorkloads, AppUpdateCheckResult, AppUpdateRuntimeState } from '../../shared/appUpdate/constants';
+import type { AskInputRequest, AskInputResponse } from '../../shared/askInput/constants';
 import type {
   AsrRealtimeSessionRequest,
   AsrRealtimeSessionResult,
@@ -640,6 +641,18 @@ interface HtmlShareResult {
 }
 
 interface IElectronAPI {
+  /**
+   * The card that asks the person to type something.
+   *
+   * Its own surface on purpose: what crosses it is a password or a code,
+   * and it must not be folded into the message plumbing by a later
+   * refactor. `respond` is one way — nothing here reads a value back.
+   */
+  askInput?: {
+    onRequested: (callback: (request: AskInputRequest) => void) => () => void;
+    onDismissed: (callback: (data: { requestId: string }) => void) => () => void;
+    respond: (requestId: string, response: AskInputResponse) => Promise<void>;
+  };
   platform: string;
   arch: string;
   store: {

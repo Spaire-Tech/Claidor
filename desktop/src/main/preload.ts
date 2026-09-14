@@ -13,6 +13,11 @@ import { AppSettingsIpc } from '../shared/appSettings/constants';
 import { AppUpdateIpc } from '../shared/appUpdate/constants';
 import { ArtifactPreviewIpc } from '../shared/artifactPreview/constants';
 import {
+  AskInputIpc,
+  type AskInputRequest,
+  type AskInputResponse,
+} from '../shared/askInput/constants';
+import {
   AsrIpcChannel,
   type AsrRealtimeSessionRequest,
 } from '../shared/asr/constants';
@@ -835,6 +840,28 @@ contextBridge.exposeInMainWorld('electron', {
       type?: 'none' | 'info' | 'error' | 'question' | 'warning';
       title?: string;
     }) => ipcRenderer.invoke('dialog:showMessageBox', options),
+  },
+  /**
+   * The card that asks the person to type something.
+   *
+   * Deliberately its own surface rather than part of `cowork`: what goes
+   * through here is a password or a code, and it must not get folded into
+   * the message plumbing by a later refactor. Nothing here reads a value
+   * back — `respond` is one way, renderer to main.
+   */
+  askInput: {
+    onRequested: (callback: (request: AskInputRequest) => void) => {
+      const handler = (_event: unknown, request: AskInputRequest) => callback(request);
+      ipcRenderer.on(AskInputIpc.Requested, handler);
+      return () => ipcRenderer.removeListener(AskInputIpc.Requested, handler);
+    },
+    onDismissed: (callback: (data: { requestId: string }) => void) => {
+      const handler = (_event: unknown, data: { requestId: string }) => callback(data);
+      ipcRenderer.on(AskInputIpc.Dismissed, handler);
+      return () => ipcRenderer.removeListener(AskInputIpc.Dismissed, handler);
+    },
+    respond: (requestId: string, response: AskInputResponse) =>
+      ipcRenderer.invoke(AskInputIpc.Respond, requestId, response),
   },
   settings: {
     getExecPolicy: () => ipcRenderer.invoke(SettingsChannel.GetExecPolicy),

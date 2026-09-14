@@ -6,6 +6,7 @@ import {
   type AuthHandlers,
   type ChoiceHandlers,
   type PartHandlers,
+  type SecretHandlers,
   ThreadItemView,
 } from './ThreadItemView';
 import type { ThreadItem } from './types';
@@ -20,6 +21,8 @@ export interface ThreadProps {
   auth: AuthHandlers;
   /** What a file or a link named in a message can do. */
   parts?: PartHandlers;
+  /** What a card asking for something typed can do with the answer. */
+  secret?: SecretHandlers;
 }
 
 /**
@@ -33,7 +36,7 @@ export interface ThreadProps {
  * scrolling; this does the same for the same reason.
  */
 export function Thread({
-  items, dayStamp, choice, auth, parts,
+  items, dayStamp, choice, auth, parts, secret,
 }: ThreadProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   // Whether the person is still at the bottom. Starts true so a freshly
@@ -100,6 +103,7 @@ export function Thread({
           item={item}
           choice={choice}
           auth={auth}
+          {...(secret ? { secret } : {})}
           {...(parts ? { parts } : {})}
           leading={startsTurn(items[index - 1], item)}
         />

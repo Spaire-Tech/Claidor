@@ -1,5 +1,6 @@
 import { type CSSProperties, useState } from 'react';
 
+import { AskInputFieldKind } from '../../../shared/askInput/constants';
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { paletteForAgent } from '../orb/palette';
@@ -589,32 +590,42 @@ function PaperclipGlyph(): JSX.Element {
 }
 
 export interface SecretHandlers {
-  /** The value the person typed. Never logged, never put in the thread. */
-  onSubmit?: (id: string, value: string, remember: boolean) => void;
-  /** They declined. The agent is told, and asks for nothing again. */
+  /**
+   * What the person typed, by field name.
+   *
+   * Handed straight to the tool that asked. Never logged, never added to
+   * the conversation, never sent to the model.
+   */
+  onSubmit?: (id: string, values: Record<string, string>, remember: boolean) => void;
+  /** They declined. The agent is told, and does not ask again. */
   onDecline?: (id: string) => void;
 }
 
 /**
- * A masked field.
+ * The card that asks somebody to type something the model must not see.
  *
- * The rule everywhere in this product is: never ask somebody to paste a
- * password or a key into chat. That rule needs somewhere for the value to
- * go instead, and this is it. What is typed here is handed to the tool
- * that asked and to nothing else — it is not a message, it never enters
- * the transcript, and it is never sent to the model.
+ * One field or several. A lone password box and a sign-in form are the
+ * same card — splitting them would be our plumbing showing through, and
+ * the person cannot tell the difference anyway.
  *
- * The card says so, in the card. Somebody being asked for a password by
- * software has every right to be suspicious, and the answer to that is a
- * plain sentence rather than a lock icon.
+ * The sentence at the bottom is not decoration. Somebody being asked for
+ * a password by software has every right to be suspicious, and the answer
+ * to that is a plain statement of where the value goes, not a lock icon.
  */
 function SecretCard(
   { item, handlers }: { item: SecretItem; handlers: SecretHandlers },
 ): JSX.Element {
-  const [value, setValue] = useState('');
-  const [shown, setShown] = useState(false);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [shown, setShown] = useState<Record<string, boolean>>({});
   const [remember, setRemember] = useState(false);
-  const ready = value.trim().length > 0;
+
+  const hasSecret = item.fields.some(one => one.kind === AskInputFieldKind.Secret);
+  const ready = item.fields.every(
+    one => one.optional || (values[one.name] ?? '').trim().length > 0,
+  );
+  const send = (): void => {
+    if (ready) handlers.onSubmit?.(item.id, values, remember);
+  };
 
   return (
     <div
@@ -622,7 +633,7 @@ function SecretCard(
         alignSelf: 'stretch', padding: '18px 20px 16px',
         borderRadius: radius.card, background: color.fillRaised,
         border: `1px solid ${line.hairline}`, animation: enter,
-        display: 'flex', flexDirection: 'column', gap: 12,
+        display: 'flex', flexDirection: 'column', gap: 14,
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -632,37 +643,67 @@ function SecretCard(
         )}
       </div>
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ fontSize: text.caption, color: color.muted }}>{item.label}</span>
-        <span style={{ display: 'flex', gap: 8 }}>
-          <input
-            value={value}
-            onChange={event => setValue(event.target.value)}
-            onKeyDown={event => { if (event.key === 'Enter' && ready) handlers.onSubmit?.(item.id, value, remember); }}
-            type={shown ? 'text' : 'password'}
-            autoComplete="off"
-            spellCheck={false}
-            style={{
-              flex: '1 1 auto', minWidth: 0, height: 38, padding: '0 12px',
-              borderRadius: radius.small, border: `1px solid ${line.field}`,
-              background: color.paper, outline: 'none', color: color.ink,
-              font: 'inherit', fontFamily: font.mono, fontSize: text.body,
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => setShown(one => !one)}
-            aria-pressed={shown}
-            style={{
-              height: 38, padding: '0 12px', borderRadius: radius.small,
-              border: `1px solid ${line.field}`, background: color.fill,
-              color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
-            }}
-          >
-            {shown ? 'Hide' : 'Show'}
-          </button>
-        </span>
-      </label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+        {item.fields.map(field => {
+          const secret = field.kind === AskInputFieldKind.Secret;
+          const value = values[field.name] ?? '';
+          const set = (next: string): void =>
+            setValues(current => ({ ...current, [field.name]: next }));
+          const boxStyle: CSSProperties = {
+            flex: '1 1 auto', minWidth: 0, padding: '9px 12px',
+            borderRadius: radius.small, border: `1px solid ${line.field}`,
+            background: color.paper, outline: 'none', color: color.ink,
+            font: 'inherit', fontSize: text.body,
+            ...(secret ? { fontFamily: font.mono } : {}),
+          };
+
+          return (
+            <label key={field.name} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={{ fontSize: text.caption, color: color.muted }}>
+                {field.label}
+                {field.optional && <span style={{ opacity: 0.7 }}> — optional</span>}
+              </span>
+              <span style={{ display: 'flex', gap: 8 }}>
+                {field.kind === AskInputFieldKind.Block ? (
+                  <textarea
+                    value={value}
+                    onChange={event => set(event.target.value)}
+                    rows={3}
+                    {...(field.placeholder ? { placeholder: field.placeholder } : {})}
+                    style={{ ...boxStyle, resize: 'vertical', lineHeight: 1.45 }}
+                  />
+                ) : (
+                  <input
+                    value={value}
+                    onChange={event => set(event.target.value)}
+                    onKeyDown={event => { if (event.key === 'Enter') send(); }}
+                    type={secret && !shown[field.name] ? 'password' : 'text'}
+                    {...(field.placeholder ? { placeholder: field.placeholder } : {})}
+                    autoComplete="off"
+                    spellCheck={false}
+                    style={{ ...boxStyle, height: 38, padding: '0 12px' }}
+                  />
+                )}
+                {secret && (
+                  <button
+                    type="button"
+                    onClick={() => setShown(one => ({ ...one, [field.name]: !one[field.name] }))}
+                    aria-pressed={!!shown[field.name]}
+                    style={{
+                      height: 38, padding: '0 12px', borderRadius: radius.small,
+                      border: `1px solid ${line.field}`, background: color.fill,
+                      color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
+                      flex: '0 0 auto',
+                    }}
+                  >
+                    {shown[field.name] ? 'Hide' : 'Show'}
+                  </button>
+                )}
+              </span>
+            </label>
+          );
+        })}
+      </div>
 
       {item.offerToSave && (
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: text.small, color: color.muted }}>
@@ -671,16 +712,18 @@ function SecretCard(
         </label>
       )}
 
-      <div style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.45 }}>
-        This goes straight to the thing that asked for it. It is not added to
-        the conversation and it is never sent to the model.
-      </div>
+      {hasSecret && (
+        <div style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.45 }}>
+          What you type here goes straight to the thing that asked for it. It is
+          not added to the conversation and it is never sent to the model.
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 9 }}>
         <button
           type="button"
           disabled={!ready}
-          onClick={() => handlers.onSubmit?.(item.id, value, remember)}
+          onClick={send}
           style={{
             height: 38, padding: '0 18px', borderRadius: radius.field, border: 'none',
             background: ready ? color.ink : color.fill,

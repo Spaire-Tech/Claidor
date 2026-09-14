@@ -3028,6 +3028,45 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(guide).toMatch(/- \*\*The app's log\*\* — `\/.+`/);
   });
 
+  test('the ask-input tool is registered, and the prompt forbids asking in chat', async () => {
+    // A rule with nowhere for the value to go is unenforceable. The tool
+    // and the rule ship together or neither works.
+    const sync = await createSync({
+      getAskInputMcpStdioLaunch: () => ({
+        command: '/tmp/ask-input-mcp/ask-input-mcp',
+        args: [],
+        env: { ELECTRON_RUN_AS_NODE: '1' },
+      }),
+    });
+    expect(sync.sync('ask-input').ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const server = config.mcp?.servers?.['faiser-ask-input'];
+    expect(server).toBeTruthy();
+    expect(server.command).toBe('/tmp/ask-input-mcp/ask-input-mcp');
+    // Only the one tool. This server has no business offering anything else.
+    expect(server.toolFilter).toEqual({ include: ['ask_user_input'] });
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('### Passwords, Keys And Codes');
+    expect(agentsMd).toContain('Never ask the person to type a password');
+    expect(agentsMd).toContain('ask_user_input');
+    expect(agentsMd).toContain('Never for a one-time code.');
+    expect(agentsMd).toContain('do not fall back to asking in chat');
+  });
+
+  test('no ask-input server when the bridge is not up', async () => {
+    // Registering a server whose bridge is not listening would give the
+    // agent a tool that fails on every call.
+    const sync = await createSync();
+    expect(sync.sync('no-bridge').ok).toBe(true);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.mcp?.servers?.['faiser-ask-input']).toBeUndefined();
+  });
+
   test('the escalation order is written down', async () => {
     // Every step existed and no statement of which to try first, so the
     // choice was the model's mood.

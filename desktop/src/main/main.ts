@@ -45,6 +45,7 @@ import { AppIpcChannel } from '../shared/app/constants';
 import { AppSettingsAutoLaunchErrorCode, AppSettingsIpc } from '../shared/appSettings/constants';
 import { type AppUpdateActiveWorkloads, AppUpdateIpc } from '../shared/appUpdate/constants';
 import { ArtifactBrowserPartition, ArtifactPreviewIpc, ArtifactPreviewProtocol } from '../shared/artifactPreview/constants';
+import { AskInputIpc, type AskInputResponse } from '../shared/askInput/constants';
 import { createAccountOwnerKey } from '../shared/auth/accountOwner';
 import {
   AuthIpcChannel,
@@ -301,6 +302,7 @@ import {
   showAppQuitConfirmation,
 } from './libs/appQuitConfirmation';
 import { AppUpdateCoordinator, INSTALLATION_UUID_KEY } from './libs/appUpdateCoordinator';
+import { resolveAskInputMcpStdioLaunch } from './libs/askInputMcpServer';
 import { AuthCallbackRouter } from './libs/authCallbackRouter';
 import {
   appendCallbackReturnTo,
@@ -2633,6 +2635,19 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         const bridgeUrl = mcpRuntime.getBrowserCallbackUrl();
         if (!bridgeUrl) return null;
         return resolveLobsterBrowserMcpStdioLaunch(
+          path.join(getOpenClawEngineManager().getStateDir(), 'generated'),
+          {
+            electronNodeRuntimePath: getElectronNodeRuntimePath(),
+            bridgeUrl,
+            bridgeSecret: mcpRuntime.getBridgeSecret(),
+          },
+        );
+      },
+      getAskInputMcpStdioLaunch: () => {
+        const mcpRuntime = getMcpRuntime();
+        const bridgeUrl = mcpRuntime.getAskInputCallbackUrl();
+        if (!bridgeUrl) return null;
+        return resolveAskInputMcpStdioLaunch(
           path.join(getOpenClawEngineManager().getStateDir(), 'generated'),
           {
             electronNodeRuntimePath: getElectronNodeRuntimePath(),
@@ -12867,6 +12882,21 @@ if (!gotTheLock) {
       return status;
     }
   };
+
+  // What the person typed into an ask-input card, on its way back to the
+  // tool that asked.
+  //
+  // This is the only path a password takes through this process, and it
+  // is one hop: renderer to the bridge's pending promise. Nothing is
+  // written to the store, nothing is logged beyond a count of fields, and
+  // nothing is kept after the promise resolves.
+  ipcMain.handle(
+    AskInputIpc.Respond,
+    (_event, requestId: string, response: AskInputResponse) => {
+      if (typeof requestId !== 'string' || !requestId) return;
+      getMcpRuntime().resolveAskInput(requestId, response);
+    },
+  );
 
   // How much the agent may do on this computer without asking.
   //
