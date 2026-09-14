@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 
 import { authService } from '../../services/auth';
 import type { RootState } from '../../store';
+import { AccountMenu } from './AccountMenu';
 import { MessagesShell } from './MessagesShell';
 import { SignIn } from './SignIn';
 import { useMessagesShell } from './useMessagesShell';
@@ -22,9 +23,21 @@ import { useMessagesShell } from './useMessagesShell';
  * tree. Nothing here reaches into the old screens and nothing there
  * reaches into this, so either can be removed without touching the other.
  */
-export function FaiserApp(): JSX.Element {
+export interface FaiserAppProps {
+  /**
+   * Opens the app's existing Settings. It lives in `App.tsx` with all of
+   * its state, so this shell asks for it rather than mounting a second
+   * copy — and that is what stops `VITE_FAISER_SHELL=0` being the only
+   * way to reach providers and onboarding.
+   */
+  onOpenSettings?: () => void;
+}
+
+export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element {
   const signedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+  const quota = useSelector((state: RootState) => state.auth.quota);
   const [signInError, setSignInError] = useState<string | undefined>();
+  const [accountOpen, setAccountOpen] = useState(false);
   const shell = useMessagesShell();
 
   // `nickname` is the only display name the profile carries; everything
@@ -88,7 +101,15 @@ export function FaiserApp(): JSX.Element {
       onPickAgent={shell.onPickAgent}
       onCreateAgent={shell.onCreateAgent}
       onApps={() => {}}
-      onAccount={() => {}}
+      onAccount={() => setAccountOpen(open => !open)}
+      accountMenu={accountOpen && (
+        <AccountMenu
+          quota={quota}
+          onSettings={() => { setAccountOpen(false); onOpenSettings?.(); }}
+          onLogOut={() => { setAccountOpen(false); void authService.logout(); }}
+          onClose={() => setAccountOpen(false)}
+        />
+      )}
       onOpenPanel={() => {}}
       onPlus={() => {}}
     />

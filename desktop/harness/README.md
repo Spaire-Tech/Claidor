@@ -38,6 +38,18 @@ like `001112222333333333` — one, then two, then three — with each new
 bubble first seen roughly 420ms after the last. The sampling interval is
 120ms, so expect the measured gaps to sit within about that of 420.
 
+## Proving find-in-conversation
+
+Also temporal — it needs a click and some typing:
+
+```bash
+node harness/find.mjs
+```
+
+It opens the thread, clicks the magnifier, types `slide`, and checks the
+count reads `1 of 2`, that the matching line survived, that a
+non-matching one is gone, and that a query with no hits says so.
+
 ## What it does and does not prove
 
 It mounts the shipped components — not copies, not mocks. The only thing

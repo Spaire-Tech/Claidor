@@ -3,6 +3,7 @@ import '../src/renderer/design/tokens.css';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { AccountMenu } from '../src/renderer/design/shell/AccountMenu';
 import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/MessagesShell';
 import { SignIn } from '../src/renderer/design/shell/SignIn';
 import type { EngineMessage, EnginePermissionRequest } from '../src/renderer/design/thread/fromEngine';
@@ -162,6 +163,16 @@ function Screens(): JSX.Element {
       onCreateAgent={noop}
       onApps={noop}
       onAccount={noop}
+      accountMenu={screen === 'account' || screen === 'account-spent' ? (
+        <AccountMenu
+          quota={screen === 'account-spent'
+            ? { planName: 'Trial', creditsLimit: 100, creditsUsed: 100 }
+            : { planName: 'Trial', creditsLimit: 100, creditsUsed: 74 }}
+          onSettings={noop}
+          onLogOut={noop}
+          onClose={noop}
+        />
+      ) : undefined}
       onMode={noop}
       onOpenPanel={noop}
       onPlus={noop}

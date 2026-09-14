@@ -23,6 +23,8 @@ export interface SidebarProps {
   /** The signed-in person, for the row at the bottom. */
   accountName: string;
   onAccount: () => void;
+  /** The account menu, when it is open. Anchored to the row below it. */
+  accountMenu?: React.ReactNode;
 }
 
 /**
@@ -36,6 +38,7 @@ export interface SidebarProps {
  */
 export function Sidebar({
   agents, activeId, onSelect, onCompose, onApps, accountName, onAccount,
+  accountMenu,
 }: SidebarProps): JSX.Element {
   const [query, setQuery] = useState('');
 
@@ -156,8 +159,12 @@ export function Sidebar({
           marginTop: 'auto', padding: '14px 10px 16px',
           display: 'flex', flexDirection: 'column', gap: 2,
           borderTop: `1px solid ${line.hairline}`,
+          // The menu is absolute against this, so it opens upward from
+          // the row rather than from the window.
+          position: 'relative',
         }}
       >
+        {accountMenu}
         <button
           type="button"
           onClick={onApps}

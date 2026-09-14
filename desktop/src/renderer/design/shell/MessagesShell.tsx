@@ -1,5 +1,8 @@
-import { ComputerIcon } from '../icons';
+import { useMemo, useState } from 'react';
+
+import { CloseIcon, ComputerIcon, SearchIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
+import { findInThread, matchLabel, stepMatch } from '../thread/search';
 import { Thread } from '../thread/Thread';
 import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
 import type { ThreadItem } from '../thread/types';
@@ -35,6 +38,8 @@ export interface MessagesShellProps {
   onCreateAgent?: (draft: AgentDraftSubmit) => void;
   onApps: () => void;
   onAccount: () => void;
+  /** Rendered inside the sidebar's footer when the account menu is open. */
+  accountMenu?: React.ReactNode;
   onMode: (mode: ThreadMode) => void;
   /** The computer icon: opens the panel where you watch the agent work. */
   onOpenPanel: () => void;
@@ -56,13 +61,25 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
     choice, auth, onSelect, onSend, onCompose, onApps, onAccount, onMode,
     onOpenPanel, onPlus,
-    composing, onCloseCompose, onPickAgent, onCreateAgent,
+    composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu,
   } = props;
 
   // "typing" is a text-mode word, and in voice the orb is already
   // pulsing to say the same thing. The canvas draws the same line:
   // `typing: s.typing && s.mode === "text"`.
   const saysTyping = Boolean(typing) && mode === ThreadMode.Text;
+
+  // Finding something in this conversation. Closed, it costs nothing;
+  // open, the thread shows only what matched, which is the cheapest
+  // honest answer to "where did they say that".
+  const [finding, setFinding] = useState(false);
+  const [query, setQuery] = useState('');
+  const [at, setAt] = useState(0);
+  const found = useMemo(() => findInThread(items, query), [items, query]);
+  const shown = useMemo(
+    () => (finding && query.trim() ? items.filter(item => found.ids.includes(item.id)) : items),
+    [finding, query, items, found],
+  );
 
   const tab = (label: string, value: ThreadMode): JSX.Element => {
     const on = mode === value;
@@ -112,6 +129,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
           onApps={onApps}
           accountName={accountName}
           onAccount={onAccount}
+          accountMenu={accountMenu}
         />
 
         {composing && onCloseCompose && onPickAgent && onCreateAgent ? (
@@ -159,10 +177,24 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             */}
             <button
               type="button"
+              onClick={() => { setFinding(true); }}
+              aria-label="Find in this conversation"
+              style={{
+                marginLeft: 'auto', width: 34, height: 34, borderRadius: radius.small,
+                border: '1px solid transparent', background: 'transparent',
+                cursor: 'pointer', color: color.muted,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <SearchIcon size={16} />
+            </button>
+
+            <button
+              type="button"
               onClick={onOpenPanel}
               aria-label="Watch the agent work"
               style={{
-                marginLeft: 'auto', width: 34, height: 34, borderRadius: radius.small,
+                width: 34, height: 34, borderRadius: radius.small,
                 border: '1px solid transparent', background: 'transparent',
                 cursor: 'pointer', color: color.muted,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -172,8 +204,18 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             </button>
           </div>
 
+          {finding && (
+            <FindBar
+              query={query}
+              label={matchLabel(query, found.count, at)}
+              onQuery={value => { setQuery(value); setAt(0); }}
+              onStep={by => setAt(current => stepMatch(found.count, current, by))}
+              onClose={() => { setFinding(false); setQuery(''); setAt(0); }}
+            />
+          )}
+
           <Thread
-            items={items}
+            items={shown}
             agentId={activeId}
             dayStamp={dayStamp}
             typing={saysTyping}
@@ -201,6 +243,70 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         </div>
         )}
       </div>
+    </div>
+  );
+}
+
+interface FindBarProps {
+  query: string;
+  label: string;
+  onQuery: (value: string) => void;
+  onStep: (by: 1 | -1) => void;
+  onClose: () => void;
+}
+
+/**
+ * The find bar, under the header.
+ *
+ * A strip rather than a floating box, because it belongs to this
+ * conversation and moving it would suggest otherwise. Enter walks
+ * forward, Shift+Enter back, Escape closes — the three keys somebody
+ * already expects from every find bar they have used.
+ */
+function FindBar({ query, label, onQuery, onStep, onClose }: FindBarProps): JSX.Element {
+  return (
+    <div
+      style={{
+        flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 10,
+        padding: '10px 24px', borderBottom: `1px solid ${line.hairline}`,
+        background: color.fill,
+      }}
+    >
+      <SearchIcon size={14} style={{ color: color.muted }} />
+      <input
+        autoFocus
+        value={query}
+        onChange={event => onQuery(event.target.value)}
+        onKeyDown={event => {
+          if (event.key === 'Escape') { onClose(); return; }
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            onStep(event.shiftKey ? -1 : 1);
+          }
+        }}
+        placeholder="Find in this conversation"
+        aria-label="Find in this conversation"
+        style={{
+          flex: '1 1 auto', minWidth: 0, border: 'none', outline: 'none',
+          background: 'transparent', font: 'inherit',
+          fontSize: text.body, color: color.ink,
+        }}
+      />
+      {label && (
+        <span style={{ flex: '0 0 auto', fontSize: text.small, color: color.muted }}>{label}</span>
+      )}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close find"
+        style={{
+          width: 26, height: 26, border: 'none', background: 'transparent',
+          cursor: 'pointer', color: color.muted, borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <CloseIcon size={12} />
+      </button>
     </div>
   );
 }

@@ -2081,7 +2081,25 @@ const App: React.FC = () => {
   // way to reach Settings, providers and onboarding, none of which the new
   // shell has yet.
   if (useFaiserShell) {
-    return <FaiserApp />;
+    // Settings is rendered here rather than inside the new shell: it is
+    // App's component with App's state, and the account menu simply asks
+    // for it. Without this the new shell has no route to providers.
+    return (
+      <>
+        <FaiserApp onOpenSettings={handleShowSettings} />
+        {showSettings && (
+          <Settings
+            onClose={handleCloseSettings}
+            onStartAiSkin={handleStartAiSkinFromSettings}
+            initialTab={settingsOptions.initialTab}
+            initialTabRequestId={settingsOptions.requestId}
+            notice={settingsOptions.notice}
+            onUpdateFound={handleUpdateFound}
+            enterpriseConfig={enterpriseConfig}
+          />
+        )}
+      </>
+    );
   }
 
   return (

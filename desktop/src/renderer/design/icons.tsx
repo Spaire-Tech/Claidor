@@ -123,6 +123,34 @@ export const ChevronUpIcon = (props: IconProps): JSX.Element => svg(
   { weight: 2, ...props },
 );
 
+/** Usage: a clock face, the canvas's mark for credits spent. */
+export const UsageIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 12l4-3" />
+  </>,
+  { weight: 1.7, ...props },
+);
+
+/** Settings. */
+export const GearIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <circle cx="12" cy="12" r="3.2" />
+    <path d="M12 3.5v2.2M12 18.3v2.2M4.6 7.8l1.9 1.1M17.5 15.1l1.9 1.1M4.6 16.2l1.9-1.1M17.5 8.9l1.9-1.1" />
+  </>,
+  { weight: 1.7, ...props },
+);
+
+/** Log out — a door with an arrow leaving it. */
+export const SignOutIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <path d="M10 5H6a2 2 0 00-2 2v10a2 2 0 002 2h4" />
+    <path d="M15 8l-3.5 4 3.5 4" />
+    <path d="M11.5 12H20" />
+  </>,
+  { weight: 1.7, ...props },
+);
+
 /** Rotated in place to open a disclosure, as the canvas does it. */
 export const ChevronRightIcon = (props: IconProps): JSX.Element => svg(
   <path d="M9 5l7 7-7 7" />,
