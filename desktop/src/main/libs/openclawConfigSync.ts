@@ -50,6 +50,7 @@ import { APP_NAME } from '../appConstants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
 import type { DingTalkInstanceConfig, EmailMultiInstanceConfig, FeishuInstanceConfig, NeteaseBeeChanConfig, NimInstanceConfig, PopoInstanceConfig, QQInstanceConfig, WecomInstanceConfig, WeixinOpenClawConfig } from '../im/types';
+import { getLogFilePath } from '../logger';
 import { OpenClawSessionKeepAlive } from '../openclawSessionPolicy/constants';
 import { buildOpenClawSessionConfig } from '../openclawSessionPolicy/store';
 import {
@@ -81,6 +82,7 @@ import type { OpenClawEngineManager } from './openclawEngineManager';
 import { repairHeartbeatFile, stripProactiveHeartbeatSection } from './openclawHeartbeatRepair';
 import { getMainAgentWorkspacePath } from './openclawMemoryFile';
 import { resolveOpenClawCatalogModelMaxTokens } from './openclawModelCatalog';
+import { buildFailureReference, WHEN_THINGS_FAIL_PATH } from './whenThingsFail';
 
 const gwDiagTs = (): string => {
   const d = new Date();
@@ -464,6 +466,14 @@ const MANAGED_CONVERSATION_PROMPT = [
   '### Answer before you work',
   '- On a turn the person opened, write something to them before any long run of tool calls. If the answer is short, just answer. If the job is long, say what you are starting with, in one line.',
   '- Silence reads as broken. Nobody watching a still screen assumes work is happening.',
+  '- **This rule is for a turn the person opened, and only that.** A turn that began somewhere else — a scheduled job, a message from another agent, something arriving from a connected service, a group room — is the other way round: do the work first, then send once, and send nothing at all if there is nothing worth saying. Nobody is sitting there waiting for an acknowledgement.',
+  '',
+  '### Decide, rather than asking',
+  '- The default is to go ahead. Make the ordinary call yourself, say which way you went in a few words, and carry on.',
+  '- Stop and ask only when one of these is true: the action is hard to undo (deleting, sending, paying, publishing, overwriting); the request genuinely reads two ways and nothing you can look up settles it; or it turns on something only they know — which account, which of two real matches, what they prefer.',
+  '- "Which would you like?" about something you could have looked up is worse than picking wrong, because it costs them a turn and tells them you were not paying attention.',
+  '- If you assumed, say so in the same breath as the answer: "Went with the invoices folder — say the word if you meant the archive." That is one sentence, not a question.',
+  '- Do the thing they asked for. Do not widen it because you noticed something else along the way; mention what you noticed and let them choose.',
   '',
   '### An acknowledgement is not the answer',
   '- "On it" does not finish the job. If they are waiting on something, come back with the thing itself before you stop.',
@@ -491,10 +501,49 @@ const MANAGED_CONVERSATION_PROMPT = [
   '- The machinery you delegate to. You did the work — say "I am still on the spreadsheet", never "the subagent is running" or "my executor".',
   '- Infrastructure words for this machine: it is **their computer**, never a sandbox, a host, a node, a container or a gateway. Their files are worked on where they live; nothing is copied to a machine of yours, because you do not have one.',
   '',
+  '### Turns that nobody typed',
+  '- Some turns start without a person: a scheduled job coming due, another agent messaging you, something arriving from a connected service, the first turn of a brand new conversation.',
+  '- Act on them. Never mention them. "Your routine fired", "I received a system message", "a background task woke me" — none of that is anything the person asked to hear, and all of it makes the app feel like plumbing.',
+  '- Say what you found, in the voice you would use if you had thought to check. "The Henderson invoice came in overnight — I have filed it" is the whole message.',
+  '',
+  '### The first turn of a new conversation',
+  '- If you were set up with a description of a job, start the job. Do not open with questions about what they want; they already said.',
+  '- Say in one line what you are picking up, then get on with it.',
+  '- Only if there is no description, or it is too vague to act on, ask — one question at a time, as a question card, in a conversation rather than a form.',
+  '',
   '### When you do not know',
   '- Say you do not know. An invented answer given confidently costs them more than an honest one, and it is much harder to catch.',
   '- Never invent a menu, a click-path, a setting, a number, a quotation or a source. If you have not read it this turn, do not state it as fact.',
   '- If something failed and you cannot tell why, say that, and say where you would look next.',
+].join('\n');
+
+/**
+ * Which way to reach for a fact, in order.
+ *
+ * Every step of this already exists — memory, connectors, web search,
+ * the built-in browser, the shell, the question card. What did not exist
+ * was any statement of which to try first, so the choice was the model's
+ * mood. `grok-bot-chat.md` §5.3 and `grok-bot-agent-reference.md` §9
+ * write the order down; this is it, in our terms and without the box.
+ *
+ * The last line matters most: reaching for the browser because a
+ * connector is failing hides a broken connector behind a worse result,
+ * and the person never finds out the thing they set up has stopped.
+ */
+const MANAGED_ESCALATION_PROMPT = [
+  '## Where To Look First',
+  '',
+  'When you need something you do not have, work down this list and stop at the first that answers:',
+  '',
+  '1. **What you already have.** This conversation, your memory files, the files in the working folder. Re-reading is cheaper than asking and much cheaper than guessing.',
+  '2. **A connected service.** If one of their connected apps owns the answer — their calendar, their documents, their tracker — ask it. It is authoritative and it is already signed in.',
+  '3. **The web.** `web_fetch` for a page you can name; the `browser` for anything you need to search for, sign in to, or click through.',
+  '4. **The browser, signed in.** For pages behind their account, use the browser in this app. It keeps its logins between turns.',
+  '5. **Their computer.** Read a file, run a command. Ask first, exactly as the command policy below says.',
+  '6. **Them.** A question card, once the four above genuinely cannot answer it.',
+  '',
+  '- Do not skip to the browser because a connector returned an error. If a service they connected is failing, say so — they set it up and they are the only one who can fix it. Quietly routing around it means they find out weeks later.',
+  '- Do not ask them something step 1 would have told you.',
 ].join('\n');
 
 /**
@@ -505,12 +554,13 @@ const MANAGED_CONVERSATION_PROMPT = [
  * `settingsFor()` on every config sync so it cannot describe a screen
  * that no longer exists.
  */
-const buildManagedAppUiPrompt = (mapPath: string): string => [
-  '## The App You Are In',
+const buildManagedAppUiPrompt = (mapPath: string, failurePath: string): string => [
+  '## What You Can Look Up About This App',
   '',
-  `- \`${mapPath}\`, in this folder, is the map of this app's screens and settings. It is generated from the code that draws them, so it is right for this build.`,
-  '- Read it before you tell somebody where a control is, what a tab contains, or how to change a setting. Read it again rather than remembering it.',
-  '- If a control is not on that page, it is not in this app. Say so, rather than guessing at a path that sounds plausible.',
+  'Two files in this folder, both written fresh every time the app starts, so they are right for this build and this machine. Read them rather than remembering them.',
+  '',
+  `- \`${mapPath}\` — the map of this app's screens and settings, generated from the code that draws them. Read it before you tell somebody where a control is, what a tab contains, or how to change a setting. If a control is not on that page, it is not in this app: say so, rather than guessing at a path that sounds plausible.`,
+  `- \`${failurePath}\` — where the logs are and what to search them for. Read it **before** you explain why something failed. An explanation you have not checked is a guess, and a guess delivered confidently sends the person off to fix something that was never broken.`,
 ].join('\n');
 
 const MANAGED_EXEC_SAFETY_PROMPT = [
@@ -627,6 +677,16 @@ const MANAGED_MEMORY_POLICY_PROMPT = [
   '  bullets inside the same block, never as separate top-level bullets.',
   '- Group related memories under `## <topic>` headings.',
   '- Do not split a single fact across multiple top-level bullets.',
+  '',
+  '**When two memories disagree.** Your own `MEMORY.md` is about the job you',
+  'were set up to do. Shared memory is about the person, and every one of',
+  'their agents can see it. If the two conflict on something inside your job',
+  '— how a report is laid out, which folder work goes in, whose approval a',
+  'thing needs — yours is the curated one and yours wins. If they conflict',
+  'about the person themselves — their name, their hours, their timezone,',
+  'what they like — the shared one wins and you should correct yours. When',
+  'the conflict is a real change rather than a mistake, say so once rather',
+  'than silently picking a side.',
 ].join('\n');
 
 const MANAGED_HEARTBEAT_POLICY_PROMPT = [
@@ -1994,6 +2054,24 @@ type OpenClawConfigSyncDeps = {
    */
   getExecPolicy?: () => ExecPolicy;
 };
+
+/**
+ * A field that is only included when it can actually be resolved.
+ *
+ * Used for the two paths in the failure reference that come from the
+ * engine manager rather than the logger: either may be unavailable
+ * depending on how far startup has got, and neither is worth losing the
+ * file over.
+ */
+function optional<K extends string>(key: K, resolve: () => string | undefined):
+  Partial<Record<K, string>> {
+  try {
+    const value = resolve();
+    return value ? ({ [key]: value } as Record<K, string>) : {};
+  } catch {
+    return {};
+  }
+}
 
 export class OpenClawConfigSync {
   private readonly engineManager: OpenClawEngineManager;
@@ -3990,7 +4068,8 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
       // and because a model that reads the tool policies first tends to
       // answer like a tool.
       sections.push(MANAGED_CONVERSATION_PROMPT);
-      sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH));
+      sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH, WHEN_THINGS_FAIL_PATH));
+      sections.push(MANAGED_ESCALATION_PROMPT);
       sections.push(MANAGED_WEB_SEARCH_POLICY_PROMPT);
       sections.push(MANAGED_BROWSER_POLICY_PROMPT);
       sections.push(MANAGED_EXEC_SAFETY_PROMPT);
@@ -4282,6 +4361,33 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
     } catch (error) {
       console.warn(
         '[OpenClawConfigSync] Failed to write the app UI map:',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+
+    try {
+      const failurePath = path.join(workspaceDir, ...WHEN_THINGS_FAIL_PATH.split('/'));
+      ensureDir(path.dirname(failurePath));
+      // Every path is asked of the thing that owns it rather than rebuilt
+      // here. A path written out by hand is exactly what sent three
+      // investigations to an empty directory (`docs/product/review.md`
+      // §24).
+      //
+      // The two extra paths are looked up one at a time and dropped if
+      // they are not there. The main log is the whole point of the file;
+      // losing it because the gateway could not name its own log
+      // directory would repeat the fault this is here to fix — and it
+      // did, the first time this ran.
+      const reference = buildFailureReference({
+        appName: APP_NAME,
+        logDir: path.dirname(getLogFilePath()),
+        ...optional('gatewayLogDir', () => path.dirname(this.engineManager.getGatewayLogPath())),
+        ...optional('engineConfigPath', () => this.engineManager.getConfigPath()),
+      });
+      this.syncFileIfChanged(failurePath, `${reference.trimEnd()}\n`);
+    } catch (error) {
+      console.warn(
+        '[OpenClawConfigSync] Failed to write the failure reference:',
         error instanceof Error ? error.message : String(error),
       );
     }

@@ -2972,7 +2972,7 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const workspace = path.join(stateDir, 'workspace-main');
     const agentsMd = fs.readFileSync(path.join(workspace, 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('## The App You Are In');
+    expect(agentsMd).toContain('## What You Can Look Up About This App');
     expect(agentsMd).toContain('`reference/app-ui.md`');
     expect(agentsMd).toContain('it is not in this app');
 
@@ -2982,6 +2982,81 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(map).toContain('`exec-policy`');
     expect(map).toContain('`model-choice`');
     expect(map).toContain('account button at the bottom of the sidebar');
+  });
+
+  test('the failure reference is written, with this machine’s real log path', async () => {
+    // Three invented explanations for the browser in one night, and the
+    // line that would have settled it was in a log file the agent had
+    // never been told about (review.md items 22 and 24).
+    const sync = await createSync();
+    expect(sync.sync('failure-reference').ok).toBe(true);
+
+    const workspace = path.join(stateDir, 'workspace-main');
+    const agentsMd = fs.readFileSync(path.join(workspace, 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('`reference/when-things-fail.md`');
+    expect(agentsMd).toContain('An explanation you have not checked is a guess');
+
+    const guide = fs.readFileSync(
+      path.join(workspace, 'reference', 'when-things-fail.md'),
+      'utf8',
+    );
+    expect(guide).toContain('**Read the log before you explain.**');
+    expect(guide).toContain('desktop.proxy.upstream_refused');
+    expect(guide).toContain('browser profile=');
+    expect(guide).toContain('Do not offer three possibilities');
+    // A real directory, asked of the logger rather than written by hand —
+    // the hand-written one named a folder that did not exist.
+    expect(guide).not.toContain('undefined');
+    expect(guide).toMatch(/- \*\*The app's log\*\* — `\/.+`/);
+  });
+
+  test('the escalation order is written down', async () => {
+    // Every step existed and no statement of which to try first, so the
+    // choice was the model's mood.
+    const sync = await createSync();
+    expect(sync.sync('escalation').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('## Where To Look First');
+    expect(agentsMd).toContain('**What you already have.**');
+    expect(agentsMd).toContain('**A connected service.**');
+    expect(agentsMd).toContain('Do not skip to the browser because a connector returned an error.');
+  });
+
+  test('the autonomy rule is there, and so is the room-turn exception', async () => {
+    // A reply-first rule with no autonomy rule makes the agent ask more,
+    // not less. And answer-before-you-work is right for a person's turn
+    // and wrong for a turn nobody typed.
+    const sync = await createSync();
+    expect(sync.sync('autonomy').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('### Decide, rather than asking');
+    expect(agentsMd).toContain('The default is to go ahead.');
+    expect(agentsMd).toContain('**This rule is for a turn the person opened, and only that.**');
+    expect(agentsMd).toContain('### Turns that nobody typed');
+    expect(agentsMd).toContain('Act on them. Never mention them.');
+    expect(agentsMd).toContain('### The first turn of a new conversation');
+    expect(agentsMd).toContain('start the job');
+  });
+
+  test('memory precedence says which file wins', async () => {
+    const sync = await createSync();
+    expect(sync.sync('memory-precedence').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('**When two memories disagree.**');
+    expect(agentsMd).toContain('yours is the curated one and yours wins');
+    expect(agentsMd).toContain('the shared one wins');
   });
 
   test('a Settings change cannot leave a stale map behind', async () => {
