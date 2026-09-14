@@ -185,7 +185,7 @@ authority and left no trace of that decision in the design.
 Numbering continues. These are the founder's words and findings, taken
 screen by screen from the running app.
 
-### 14. The first screen in the app is upstream's engine splash — `agreed`
+### 14. The first screen in the app is upstream's engine splash — `fixed, awaiting the founder's eyes`
 
 **What happens:** launching the app shows a full-screen white panel with
 the **LobsterAI lobster icon**, the heading "Starting AI engine", the
@@ -225,7 +225,7 @@ once it can be used.
 the wait turns out to be long enough to feel broken, it comes back to
 the founder rather than getting a spinner added quietly.
 
-### 15. The sidebar preview is blank on every row but the open one — `agreed, verified`
+### 15. The sidebar preview is blank on every row but the open one — `fixed, awaiting the founder's eyes`
 
 **Founder:** *"why does the last message preview not appear when I'm not
 clicking on the chat? It disappears."*
@@ -247,7 +247,7 @@ for the row you are looking at.
 **Where:** `design/shell/useMessagesShell.ts` (`sessionsByAgent`),
 `design/shell/select.ts` (`previewOf`).
 
-### 16. The orbs are not the ones the founder designed — `agreed, verified`
+### 16. The orbs are not the ones the founder designed — `fixed, awaiting the founder's eyes`
 
 **Founder:** *"the spheres I designed are COMPLETELY different from what
 you designed. I hate that. I want exactly what I designed. Exactly."*
@@ -273,7 +273,7 @@ four palettes and the named seeds, and the eleven inventions go.
 **Where:** `design/tokens.ts` (`ORB_PALETTES`),
 `design/orb/palette.ts` (`paletteForAgent`).
 
-### 17. Nothing appears until you leave the conversation and come back — `agreed, verified`
+### 17. Nothing appears until you leave the conversation and come back — `fixed, awaiting the founder's eyes`
 
 **Founder:** *"when I send a text to the chat, my message doesn't appear.
 The AI has the 'writing' animation and nothing comes. What I have to do
@@ -298,7 +298,7 @@ which is why leaving and returning shows them: that path calls
 only caller), and `design/shell/FaiserApp.tsx` / `useMessagesShell.ts`
 (where the call should be).
 
-### 18. The app never asks to run anything — `agreed, verified, same cause as 17`
+### 18. The app never asks to run anything — `fixed, awaiting the founder's eyes`
 
 **Founder:** *"the chat NEVER asks me for allow access. Yet I've designed
 it… It never asks me access. It's my Mac that does."*
@@ -373,7 +373,7 @@ rendering.
 against `renderer/services/artifactParser.ts` and
 `renderer/components/artifacts/`.
 
-### 22. The browser opens a separate browser — `agreed`
+### 22. The browser opens a separate browser — `fixed, awaiting the founder's eyes`
 
 **Founder:** *"it opens a new browser. It has no notion of its own
 built-in browser. And I specifically designed that screen for that."*

@@ -187,52 +187,42 @@ export const font = {
 } as const;
 
 /**
- * Orb palettes.
+ * Orb palettes — the founder's four, and only those.
  *
- * Five colours and a seed make one orb. The canvas ships four; the
- * founder asked for fifteen, so that two agents rarely look alike.
- *
- * The four from the canvas are first and unchanged — they are the ones
- * that have been seen and approved. The eleven after them follow the same
- * construction, which is what makes the set read as one family rather
- * than fifteen unrelated discs:
+ * Each is five colours and the seed the canvas pairs with them, copied
+ * from `docs/product/design/canvas.html`:
  *
  *   [0] the deep base, carrying the hue
  *   [1] a neighbouring hue, cooler, for the second cloud
  *   [2] a third hue further round the wheel, for depth
- *   [3] a very pale tint of the family — this is the near-white top of
- *       the vertical ramp, and the reason an orb reads as lit
+ *   [3] a very pale tint — the near-white top of the vertical ramp, and
+ *       the reason an orb reads as lit
  *   [4] a mid tone between base and second, for the linear sweep
  *
- * Ordered so that neighbours in the list are far apart in hue: agents are
- * assigned palettes in order for the seeded set, and two greens side by
- * side in a sidebar is exactly what fifteen palettes are meant to avoid.
+ * There were fifteen. Eleven were mine, written from a line in `plan.md`
+ * saying the founder wanted fifteen, and an agent's orb was chosen by
+ * hashing its id — so every agent wore a colour nobody had picked. The
+ * founder, on seeing it: "the spheres I designed are COMPLETELY
+ * different from what you designed… I want exactly what I designed.
+ * Exactly."
+ *
+ * The seed travels with the palette because the canvas pairs them: the
+ * same five colours at another seed is a different orb.
  */
 export interface OrbPalette {
   /** Stable name, used in tests and when reading a config. */
   readonly id: string;
+  /** The seed the canvas pairs with these colours. */
+  readonly seed: number;
   /** Five hex colours, in the order the shader expects. */
   readonly colors: readonly [string, string, string, string, string];
 }
 
 export const ORB_PALETTES: readonly OrbPalette[] = [
-  // The canvas's four, unchanged.
-  { id: 'moss', colors: ['#4f9a2e', '#2a7fa8', '#c9b755', '#e8f0d8', '#4f9c7a'] },
-  { id: 'harbour', colors: ['#2f6ab8', '#3f93ad', '#6a56b0', '#dbe6f5', '#4a7fc4'] },
-  { id: 'iris', colors: ['#6d4bb8', '#3f66b8', '#a85fa0', '#e2d8f2', '#7d5cc4'] },
-  { id: 'fuchsia', colors: ['#bf4a86', '#c07a28', '#8f5cad', '#f2dae5', '#c45f92'] },
-  // Eleven more, same construction.
-  { id: 'jade', colors: ['#1f8f74', '#2a7fa8', '#a8d8c2', '#e8f4ee', '#3f9c86'] },
-  { id: 'ember', colors: ['#c07a28', '#bf4a86', '#e0a95c', '#f7e6d2', '#c4694a'] },
-  { id: 'cobalt', colors: ['#2f57b8', '#3f93ad', '#a85fa0', '#dbe6f5', '#2f6ab8'] },
-  { id: 'plum', colors: ['#5a2fb8', '#2f6ab8', '#8f5cad', '#e2d8f2', '#6d4bb8'] },
-  { id: 'fern', colors: ['#3f9c86', '#2f6ab8', '#c9b755', '#e8f4ee', '#1f8f74'] },
-  { id: 'slate', colors: ['#55606f', '#2f57b8', '#8f5cad', '#dfe4ec', '#3f66b8'] },
-  { id: 'coral', colors: ['#c4544a', '#c07a28', '#a85fa0', '#f7dedb', '#bf4a86'] },
-  { id: 'lagoon', colors: ['#2a7fa8', '#1f8f74', '#6a56b0', '#dbeef5', '#3f93ad'] },
-  { id: 'mulberry', colors: ['#8f3f7a', '#5a2fb8', '#c07a28', '#f0dcea', '#a85fa0'] },
-  { id: 'olive', colors: ['#7a8f2e', '#4f9a2e', '#c9b755', '#eef0d8', '#5f9c4a'] },
-  { id: 'dusk', colors: ['#3f4f8f', '#6a56b0', '#3f93ad', '#dee2f2', '#4a5fa8'] },
+  { id: 'moss', seed: 11, colors: ['#4f9a2e', '#2a7fa8', '#c9b755', '#e8f0d8', '#4f9c7a'] },
+  { id: 'harbour', seed: 22, colors: ['#2f6ab8', '#3f93ad', '#6a56b0', '#dbe6f5', '#4a7fc4'] },
+  { id: 'iris', seed: 33, colors: ['#6d4bb8', '#3f66b8', '#a85fa0', '#e2d8f2', '#7d5cc4'] },
+  { id: 'fuchsia', seed: 44, colors: ['#bf4a86', '#c07a28', '#8f5cad', '#f2dae5', '#c45f92'] },
 ] as const;
 
 /** The grain the shader adds over the clouds. One value, everywhere. */

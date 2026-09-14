@@ -84,18 +84,27 @@ export function useMessagesShell(): MessagesShellState {
 
   const [mode, setMode] = useState<ThreadMode>(ThreadMode.Text);
 
-  // Nothing else loads these. The old shell filled the agent list from the
-  // screens that showed it and the session list from its sidebar tree;
-  // this shell has neither, so it asks for both itself.
+  // `init()` is the whole of the app's live wiring and it is not optional.
   //
-  // `loadSessions()` is called with no agent id on purpose. Passing one
-  // replaces the whole list with that agent's sessions (`setAgentSessions`),
-  // which would blank the preview and timestamp on every other row the
-  // moment you clicked one. The sidebar wants the global list; a single
-  // conversation is opened from it by id.
+  // It registers `onStreamMessage`, `onStreamMessageUpdate`,
+  // `onStreamSessionStatus` and `onStreamPermission`
+  // (`services/cowork.ts`, `setupStreamListeners`). Without it nothing
+  // reaches Redux while a turn is running: a person's own message never
+  // appears, the reply never appears, and an approval request never
+  // becomes a card — the store's `pendingPermissions` has exactly one
+  // producer and it lives in there.
+  //
+  // This shell shipped without the call for six stages. The app looked
+  // like it had lost its messages; they were in SQLite the whole time,
+  // which is why leaving a conversation and returning showed them —
+  // that path reads the database instead of listening.
+  //
+  // It is idempotent (`if (this.initialized) return`) and loads the
+  // config, the sessions and the engine status itself, so it replaces
+  // the bare `loadSessions()` that used to be here.
   useEffect(() => {
     void agentService.loadAgents();
-    void coworkService.loadSessions();
+    void coworkService.init();
   }, []);
   // An answered approval leaves a line behind. It is local because it is
   // a presentation fact: the engine's record is the decision itself.
@@ -119,12 +128,18 @@ export function useMessagesShell(): MessagesShellState {
       if (!agentId) continue;
       const at = summary.updatedAt ?? 0;
       if ((newest[agentId]?.updatedAt ?? -1) >= at) continue;
-      newest[agentId] = { id: summary.id, agentId, updatedAt: at };
+      newest[agentId] = {
+        id: summary.id,
+        agentId,
+        updatedAt: at,
+        ...(summary.lastMessage ? { lastMessage: summary.lastMessage } : {}),
+      };
     }
     // The open conversation is the one with messages loaded; the rest are
     // summaries, which is all a sidebar row needs.
     if (currentSession?.agentId) {
       newest[currentSession.agentId] = {
+        ...newest[currentSession.agentId],
         id: currentSession.id,
         agentId: currentSession.agentId,
         updatedAt: currentSession.updatedAt ?? Date.now(),

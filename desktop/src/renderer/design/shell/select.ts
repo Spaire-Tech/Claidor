@@ -26,6 +26,14 @@ export interface StoreSession {
   id: string;
   agentId: string;
   updatedAt?: number;
+  /**
+   * The last thing said, from the session list.
+   *
+   * Every row has this. `messages` only ever arrives for the open
+   * conversation, so a preview read from `messages` alone was blank on
+   * every other row in the sidebar — which is what shipped.
+   */
+  lastMessage?: string;
   messages?: readonly EngineMessage[];
 }
 
@@ -97,7 +105,11 @@ export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
         row: {
           id: agent.id,
           name: agent.name,
-          preview: previewOf(session?.messages),
+          // The open conversation has its messages, and they are newer
+          // than the list — a reply that just arrived is in `messages`
+          // before the summary catches up. Every other row falls back to
+          // the summary, which is the only thing it has.
+          preview: previewOf(session?.messages) || (session?.lastMessage ?? ''),
           when: whenLabel(session?.updatedAt, now),
           unread: unread?.has(agent.id) ?? false,
         } satisfies SidebarAgent,

@@ -70,7 +70,9 @@ describe('browser web access constants', () => {
 
     expect(config.browserEnabled).toBe(false);
     expect(config.profileMode).toBe(BrowserProfileMode.User);
-    expect(config.displayMode).toBe(BrowserDisplayMode.External);
+    // In the app. Upstream defaulted this to a second Chromium window,
+    // which is why the panel the founder designed was never reached.
+    expect(config.displayMode).toBe(BrowserDisplayMode.InApp);
     expect(config.networkMode).toBe(BrowserNetworkMode.Strict);
     expect(config.allowedHostnames).toEqual(['https://localhost:8443']);
     expect(config.blockedHostnames).toEqual(['https://tracking.example']);
@@ -84,15 +86,18 @@ describe('browser web access constants', () => {
     });
   });
 
-  test('defaults to external display while preserving explicit display choices', () => {
+  test('defaults to the in-app browser while preserving explicit choices', () => {
     expect(normalizeBrowserWebAccessConfig(undefined).displayMode).toBe(
-      BrowserDisplayMode.External,
+      BrowserDisplayMode.InApp,
     );
     expect(normalizeBrowserWebAccessConfig({ headless: false }).displayMode).toBe(
       BrowserDisplayMode.External,
     );
+    // `headless: false` above says "show me a window", which is the one
+    // case that still means a separate browser. `headless: true` says
+    // nothing about where, so it takes the default — now in-app.
     expect(normalizeBrowserWebAccessConfig({ headless: true }).displayMode).toBe(
-      BrowserDisplayMode.External,
+      BrowserDisplayMode.InApp,
     );
     expect(normalizeBrowserWebAccessConfig({
       displayMode: BrowserDisplayMode.External,
