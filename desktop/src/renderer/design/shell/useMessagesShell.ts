@@ -2,15 +2,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { agentService } from '../../services/agent';
+import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { coworkService } from '../../services/cowork';
 import type { AppDispatch, RootState } from '../../store';
 import { setCurrentAgentId } from '../../store/slices/agentSlice';
+import { addArtifact } from '../../store/slices/artifactSlice';
 import { setCurrentSession } from '../../store/slices/coworkSlice';
 import type { PresetAgent } from '../../types/agent';
+import { ArtifactTypeValue } from '../../types/artifact';
+import type { CoworkMessage } from '../../types/cowork';
+import { openLocalPathWithToast } from '../../utils/localFileActions';
 import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
 import { decisionNote } from '../thread/fromEngine';
-import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
+import { basename, type KnownFile } from '../thread/parts';
+import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
 import { AuthDecision } from '../thread/types';
 import type { AgentDraftSubmit } from './Compose';
 import { ThreadMode } from './MessagesShell';
@@ -46,6 +52,8 @@ export interface MessagesShellState {
   mode: ThreadMode;
   choice: ChoiceHandlers;
   auth: AuthHandlers;
+  /** What a file or a link named in a message can do. */
+  parts: PartHandlers;
   onSelect: (agentId: string) => void;
   onSend: (message: string) => void;
   onMode: (mode: ThreadMode) => void;
@@ -180,6 +188,78 @@ export function useMessagesShell(): MessagesShellState {
   );
 
   const typing = currentSession?.status === 'running';
+
+  // The files this conversation has actually produced or touched.
+  //
+  // `collectSessionArtifacts` is the app's existing detector — tool inputs,
+  // markdown file links, media tokens, bare paths inside the working
+  // directory — and it has been here all along. Nothing in this shell ever
+  // called it, which had two consequences the founder saw as one: a
+  // document the agent had just written arrived as a percent-escaped
+  // `file:///` URL in the middle of a sentence, and the Files tab of the
+  // computer panel was permanently empty, because the store it reads has
+  // no other producer.
+  const detected = useMemo(() => {
+    if (!currentSession?.id || !currentSession.messages?.length) return [];
+    try {
+      return collectSessionArtifacts(
+        currentSession.messages as CoworkMessage[],
+        currentSession.id,
+        currentSession.cwd,
+      );
+    } catch (error) {
+      console.error('[Faiser] artifact detection failed:', error);
+      return [];
+    }
+  }, [currentSession]);
+
+  // Named, deduplicated, for the chips inside a bubble.
+  const files = useMemo<readonly KnownFile[]>(() => {
+    const byName = new Map<string, KnownFile>();
+    for (const artifact of detected) {
+      const path = artifact.filePath;
+      if (!path) continue;
+      const name = basename(path);
+      if (!name || byName.has(name.toLowerCase())) continue;
+      byName.set(name.toLowerCase(), { name, path });
+    }
+    return [...byName.values()];
+  }, [detected]);
+
+  // And into the artifact store, which is what fills the computer panel's
+  // Files tab. The same three steps the old shell takes: local services go
+  // straight in, files are read off disk first, and an id is remembered
+  // either way so a file that is not there is not retried forever.
+  const loadedArtifactIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const sessionId = currentSession?.id;
+    if (!sessionId || typing) return;
+    const cwd = currentSession?.cwd;
+
+    for (const artifact of detected) {
+      if (artifact.type === ArtifactTypeValue.LocalService) {
+        dispatch(addArtifact({ sessionId, artifact, ...(cwd ? { defaultProjectDirectory: cwd } : {}) }));
+      }
+    }
+
+    const toLoad = detected.filter(a => a.filePath && !loadedArtifactIds.current.has(a.id));
+    if (!toLoad.length) return;
+
+    void (async () => {
+      for (const artifact of toLoad) {
+        loadedArtifactIds.current.add(artifact.id);
+        const loaded = await loadDetectedFileArtifact(artifact, cwd);
+        if (loaded) dispatch(addArtifact({ sessionId, artifact: loaded }));
+      }
+    })();
+  }, [detected, currentSession, typing, dispatch]);
+
+  const parts = useMemo<PartHandlers>(() => ({
+    files,
+    onOpenFile: (path: string) => { void openLocalPathWithToast(path); },
+    // A link belongs in the person's own browser, not inside a bubble.
+    onOpenLink: (href: string) => { window.open(href, '_blank', 'noopener,noreferrer'); },
+  }), [files]);
 
   // Open on a conversation rather than on nothing, the way Messages does.
   // Once only, and never over an open one: the guard is what stops this
@@ -337,6 +417,7 @@ export function useMessagesShell(): MessagesShellState {
     mode,
     choice,
     auth,
+    parts,
     onSelect,
     onSend,
     onMode: setMode,

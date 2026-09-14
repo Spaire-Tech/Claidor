@@ -4,8 +4,9 @@ import { CloseIcon, ComputerIcon, SearchIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { findInThread, matchLabel, stepMatch } from '../thread/search';
 import { Thread } from '../thread/Thread';
-import type { AuthHandlers, ChoiceHandlers } from '../thread/ThreadItemView';
+import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
 import type { ThreadItem } from '../thread/types';
+import { useStaggered } from '../thread/useStaggered';
 import { color, line, radius, shadow, text, tracking } from '../tokens';
 import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
@@ -28,6 +29,8 @@ export interface MessagesShellProps {
   accountName: string;
   choice: ChoiceHandlers;
   auth: AuthHandlers;
+  /** What a file or a link named in a message can do. */
+  parts?: PartHandlers;
   onSelect: (agentId: string) => void;
   onSend: (message: string) => void;
   onCompose: () => void;
@@ -67,15 +70,10 @@ export interface MessagesShellProps {
 export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
-    choice, auth, onSelect, onSend, onCompose, onApps, apps, onAccount, onMode,
+    choice, auth, parts, onSelect, onSend, onCompose, onApps, apps, onAccount, onMode,
     onOpenPanel, onPlus, onOpenAgent, agentDetail,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
   } = props;
-
-  // "typing" is a text-mode word, and in voice the orb is already
-  // pulsing to say the same thing. The canvas draws the same line:
-  // `typing: s.typing && s.mode === "text"`.
-  const saysTyping = Boolean(typing) && mode === ThreadMode.Text;
 
   // Finding something in this conversation. Closed, it costs nothing;
   // open, the thread shows only what matched, which is the cheapest
@@ -88,6 +86,19 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     () => (finding && query.trim() ? items.filter(item => found.ids.includes(item.id)) : items),
     [finding, query, items, found],
   );
+
+  // "The text come like texts. not ai." A reply's later bubbles arrive
+  // 420ms apart rather than all in one frame; history is never replayed.
+  // This lives here rather than inside the thread because the header is
+  // what says "typing", and it has to keep saying it while bubbles are
+  // still landing — otherwise the word blinks off mid-reply.
+  const staged = useStaggered(shown);
+
+  // "typing" is a text-mode word, and in voice the orb is already
+  // pulsing to say the same thing. The canvas draws the same line:
+  // `typing: s.typing && s.mode === "text"`.
+  const saysTyping = (Boolean(typing) || staged.length < shown.length)
+    && mode === ThreadMode.Text;
 
   const tab = (label: string, value: ThreadMode): JSX.Element => {
     const on = mode === value;
@@ -244,12 +255,11 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
           )}
 
           <Thread
-            items={shown}
-            agentId={activeId}
+            items={staged}
             dayStamp={dayStamp}
-            typing={saysTyping}
             choice={choice}
             auth={auth}
+            {...(parts ? { parts } : {})}
           />
 
           {mode === ThreadMode.Voice && (

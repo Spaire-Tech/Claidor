@@ -2,7 +2,9 @@ import { type CSSProperties, useState } from 'react';
 
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
+import { paletteForAgent } from '../orb/palette';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
 import { type AuthDecision, Speaker,type ThreadItem, ThreadItemKind } from './types';
 
 /**
@@ -13,54 +15,195 @@ import { type AuthDecision, Speaker,type ThreadItem, ThreadItemKind } from './ty
  * moment they share code the list stops being closed.
  */
 
-const enter = `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`;
+const enter = `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`;
 
+/** What the person may do with something named in a message. */
+export interface PartHandlers {
+  /** Open a file on this computer. */
+  onOpenFile?: (path: string) => void;
+  /** Open a link, in whatever the person uses for links. */
+  onOpenLink?: (href: string) => void;
+  /** The files this conversation has produced, so a chip can find one. */
+  files?: readonly KnownFile[];
+}
+
+/**
+ * The chip. The canvas's, to the character:
+ *
+ *   font-family:'SF Mono', …; font-size:13.5px; padding:2px 7px;
+ *   margin:0 1px; border-radius:7px; background:rgba(16,22,35,.11);
+ *   white-space:nowrap
+ *
+ * `line.hairline` is that rgba. It is a border token being used as a fill,
+ * which reads oddly — but it is one value in the canvas and making a
+ * second token holding the same number would be the drift this design
+ * system exists to prevent.
+ */
+const chipStyle: CSSProperties = {
+  fontFamily: font.mono,
+  fontSize: text.label,
+  padding: '2px 7px',
+  margin: '0 1px',
+  borderRadius: radius.fileChip,
+  background: line.hairline,
+  whiteSpace: 'nowrap',
+};
+
+/**
+ * The same chip inside the person's own bubble, which is near-black.
+ *
+ * The canvas only ever puts a chip in the agent's pale bubble, so it never
+ * had to answer this. An 11%-black fill on `#1e3358` is invisible, so the
+ * chip takes the same idea from the other side.
+ */
+const chipOnDark: CSSProperties = { ...chipStyle, background: 'rgba(255,255,255,.16)' };
+
+function Part(
+  { part, mine, handlers }: { part: MessagePart; mine: boolean; handlers: PartHandlers },
+): JSX.Element {
+  const chip = mine ? chipOnDark : chipStyle;
+
+  if (part.kind === PartKind.Code) return <span style={chip}>{part.text}</span>;
+
+  if (part.kind === PartKind.File) {
+    const path = part.target;
+    if (!path || !handlers.onOpenFile) return <span style={chip}>{part.text}</span>;
+    return (
+      <button
+        type="button"
+        onClick={() => handlers.onOpenFile?.(path)}
+        title={path}
+        style={{
+          ...chip,
+          border: 'none', cursor: 'pointer', color: 'inherit',
+          font: 'inherit', fontFamily: font.mono, fontSize: text.label,
+          verticalAlign: 'baseline',
+        }}
+      >
+        {part.text}
+      </button>
+    );
+  }
+
+  if (part.kind === PartKind.Link) {
+    const href = part.target;
+    if (!href || !handlers.onOpenLink) return <span>{part.text}</span>;
+    return (
+      <button
+        type="button"
+        onClick={() => handlers.onOpenLink?.(href)}
+        title={href}
+        style={{
+          padding: 0, border: 'none', background: 'transparent', cursor: 'pointer',
+          font: 'inherit', color: mine ? color.paper : color.accent,
+          textDecoration: mine ? 'underline' : 'none',
+          verticalAlign: 'baseline',
+        }}
+      >
+        {part.text}
+      </button>
+    );
+  }
+
+  return part.strong ? <strong style={{ fontWeight: 600 }}>{part.text}</strong> : <>{part.text}</>;
+}
+
+/**
+ * The bubble, at the canvas's measurements.
+ *
+ * They are not the same on both sides and that is deliberate: the agent's
+ * is wider and set a half-point larger, because it is the one carrying an
+ * answer, and the person's is narrower because a question is short. The
+ * first build gave both the same box and a border the canvas never had.
+ */
 const bubbleBase: CSSProperties = {
-  maxWidth: 'min(72%, 560px)',
-  padding: '11px 16px',
-  fontSize: text.message,
-  lineHeight: 1.45,
+  borderRadius: radius.bubble,
   textWrap: 'pretty',
+  // The engine's text carries its own newlines; the canvas's fixtures
+  // never did. Collapsing them would run two paragraphs together.
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
 };
 
-function TextBubble({ item, orbSize = 28 }: { item: Extract<ThreadItem, { kind: 'text' }>; orbSize?: number }) {
+const mineBubble: CSSProperties = {
+  ...bubbleBase,
+  maxWidth: 'min(62%, 560px)',
+  padding: '13px 18px',
+  background: color.ink,
+  color: color.paper,
+  fontSize: text.message,
+  lineHeight: 1.45,
+};
+
+const theirBubble: CSSProperties = {
+  ...bubbleBase,
+  maxWidth: 'min(70%, 640px)',
+  padding: '14px 20px',
+  background: color.fill,
+  color: color.ink,
+  fontSize: text.emphasis,
+  lineHeight: 1.4,
+};
+
+function TextBubble(
+  { item, leading, handlers }: {
+    item: Extract<ThreadItem, { kind: 'text' }>;
+    leading?: boolean;
+    handlers: PartHandlers;
+  },
+) {
   const mine = item.from === Speaker.Person;
+  const parts = splitMessageParts(item.text, handlers.files);
+  const bubble = (
+    <div style={mine ? mineBubble : theirBubble}>
+      {parts.map((part, index) => (
+        <Part key={index} part={part} mine={mine} handlers={handlers} />
+      ))}
+    </div>
+  );
+
+  // A sender only in a group thread, which is the only place `agentId` is
+  // set. In a one-to-one thread the header already says who this is, and
+  // an orb beside every bubble would be an app talking about itself.
+  const sender = !mine && item.agentId ? item.agentId : undefined;
+
   return (
     <div
       style={{
         display: 'flex',
-        justifyContent: mine ? 'flex-end' : 'flex-start',
-        alignItems: 'flex-end',
-        gap: 10,
+        ...(mine ? { justifyContent: 'flex-end' } : {}),
+        ...(leading ? { paddingTop: 8 } : {}),
         animation: enter,
       }}
     >
-      {!mine && item.agentId && (
-        <Orb agentId={item.agentId} size={orbSize} mood={OrbMood.Still} />
-      )}
-      <div
-        style={{
-          ...bubbleBase,
-          borderRadius: radius.panel,
-          background: mine ? color.ink : color.fill,
-          color: mine ? color.paper : color.ink,
-          border: mine ? 'none' : `1px solid ${line.hairline}`,
-        }}
-      >
-        {item.text}
-      </div>
+      {sender ? (
+        <>
+          <span style={{ flex: '0 0 auto', margin: '0 10px 2px 0', alignSelf: 'flex-end' }}>
+            <Orb agentId={sender} size={28} mood={OrbMood.Still} />
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+            <span
+              style={{
+                fontSize: text.label, fontWeight: 400, paddingLeft: 4,
+                color: paletteForAgent(sender).colors[0],
+              }}
+            >
+              {item.agentName ?? ''}
+            </span>
+            {bubble}
+          </div>
+        </>
+      ) : bubble}
     </div>
   );
 }
 
 function SystemLine({ item }: { item: Extract<ThreadItem, { kind: 'system' }> }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '2px 0', animation: enter }}>
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 6px', animation: enter }}>
       <span
         style={{
-          fontSize: text.small,
+          fontSize: text.body,
           color: color.muted,
           textAlign: 'center',
           textWrap: 'pretty',
@@ -75,7 +218,7 @@ function SystemLine({ item }: { item: Extract<ThreadItem, { kind: 'system' }> })
 
 function StatusLine({ item }: { item: Extract<ThreadItem, { kind: 'status' }> }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, animation: enter }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 11, paddingTop: 4, animation: enter }}>
       {item.agentId && <Orb agentId={item.agentId} size={26} mood={OrbMood.Still} />}
       <span
         style={{
@@ -320,12 +463,24 @@ export interface ThreadItemViewProps {
   item: ThreadItem;
   choice: ChoiceHandlers;
   auth: AuthHandlers;
+  /** What a file or a link in the text can do. */
+  parts?: PartHandlers;
+  /**
+   * True when this bubble starts a turn — the one before it came from the
+   * other side. The canvas puts 8px above it and nothing between bubbles
+   * from the same speaker, which is what makes a reply read as one thing.
+   */
+  leading?: boolean;
 }
 
-export function ThreadItemView({ item, choice, auth }: ThreadItemViewProps): JSX.Element | null {
+const noHandlers: PartHandlers = {};
+
+export function ThreadItemView(
+  { item, choice, auth, parts = noHandlers, leading }: ThreadItemViewProps,
+): JSX.Element | null {
   switch (item.kind) {
     case ThreadItemKind.Text:
-      return <TextBubble item={item} />;
+      return <TextBubble item={item} leading={leading} handlers={parts} />;
     case ThreadItemKind.System:
       return <SystemLine item={item} />;
     case ThreadItemKind.Status:

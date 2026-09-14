@@ -93,6 +93,7 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
       accountName={accountName}
       choice={shell.choice}
       auth={shell.auth}
+      parts={shell.parts}
       onSelect={shell.onSelect}
       onSend={shell.onSend}
       onMode={shell.onMode}

@@ -353,25 +353,69 @@ the repair sitting unmerged on this branch.
 I marked Stage 2 "done" when the code existed. It was not done. It was
 not deployed, and nothing that mattered had been checked end to end.
 
-### 21. Artifacts do not render — `agreed`
+### 21. Artifacts do not render — `fixed, awaiting the founder's eyes`
 
 **Founder:** *"what happened to the artifacts? What did you do exactly?"*
 The Word file came back as a bare `file:///…docx` link.
 
-Upstream parses artifacts out of a reply
-(`services/artifactParser.ts`) and renders them in
-`components/artifacts/` — html, svg, image, video, mermaid, code,
-markdown, document — with a live preview panel. **My thread renders
-text bubbles and nothing else.** `ThreadItemKind` has Text, Status,
-Choice, Auth and System. There is no artifact kind, so a document is
-just a URL in a sentence.
+Two separate failures, which looked like one.
 
-Nothing was deleted. It is still there, behind the shell I stopped
-rendering.
+**The bubble showed the markdown source.** The engine writes
+`[Gym Routine.docx](file:///Users/…/Gym%20Routine.docx)`; my text bubble
+rendered a plain string, so the brackets, the scheme and the
+percent-escapes all went on screen.
 
-**Where:** `design/thread/fromEngine.ts`, `design/thread/types.ts`,
-against `renderer/services/artifactParser.ts` and
-`renderer/components/artifacts/`.
+The canvas's answer is not a card. There is no attachment card and no
+artifact card in it — five message kinds and no sixth. What it has is
+inline: a file named in a sentence is set in a small monospace chip and
+the sentence carries on around it. Its own line, and its own example:
+
+```js
+String(m.text).split(/\[\[(.+?)\]\]/g)          // the marker
+"A first glance found [[Mango 3y IS.xlsx]] on your Desktop — …"
+```
+
+So `design/thread/parts.ts` takes a message apart into runs and turns
+four things into that one chip: the canvas's `[[name]]`, a markdown link
+whose target is a file, a bare `file:///` URL or absolute path, and a
+name this conversation is known to have produced. A web link becomes a
+blue link; `` `code` `` gets the same chip; `**bold**` stops being
+asterisks. A chip that knows where its file is opens it.
+
+**The Files tab of the computer panel was empty, always.**
+`collectSessionArtifacts` — the app's own detector, tool inputs,
+markdown links, media tokens, bare paths — has exactly two callers, and
+both are the old shell. Nothing under the Faiser shell ever called it,
+so `artifactsBySession` was never written and the panel had nothing to
+draw. `useMessagesShell` now runs the same detection, loads each file and
+dispatches it, exactly as `CoworkSessionDetail` does.
+
+Nothing was deleted. It was there, behind the shell I stopped rendering,
+and behind a function nobody called.
+
+**Where:** `design/thread/parts.ts` (new, 25 tests),
+`design/thread/ThreadItemView.tsx`, `design/shell/useMessagesShell.ts`.
+
+### 21b. While I was in there — the bubble was never the canvas's
+
+Found by reading the canvas's `bubbleStyle` beside my own. Recorded here
+rather than as its own numbered item because it is the same file and the
+same commit, but it is my error, not a request:
+
+| | Canvas | What I shipped |
+|---|---|---|
+| Agent bubble | `min(70%,640px)`, `14px 20px`, 15.5px/1.4, no border | `min(72%,560px)`, `11px 16px`, 15px/1.45, 1px border |
+| Person bubble | `min(62%,560px)`, `13px 18px`, 15px/1.45 | the same box as the agent's |
+| Radius | 20 | 22 |
+| Space between turns | 8px, only when the speaker changes | none |
+| Orb beside a bubble | group threads only, with the sender's name above | every agent bubble |
+| System line | 14.5px, `14px 0 6px` | 14px, `2px 0` |
+| Arrival | `.22s` | `.16s` |
+
+**And a shimmer that is not in the design at all.** I had a "Writing"
+line under the thread. The canvas's typing indicator is the word
+`typing` beside the agent's name in the header — which this app already
+draws. Two places saying the same thing; the invented one is gone.
 
 ### 22. The browser opens a separate browser — `fixed, awaiting the founder's eyes`
 

@@ -43,6 +43,8 @@ export interface TextItem {
    * Undefined in a one-to-one thread, where the header already says.
    */
   agentId?: string;
+  /** What that agent is called, for the small line above its bubble. */
+  agentName?: string;
   /** True while the text is still arriving, so voice mode can stream it. */
   streaming?: boolean;
   at: number;

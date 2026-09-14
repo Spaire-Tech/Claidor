@@ -141,6 +141,8 @@ export const radius = {
   /** Anything with a pill shape: the composer, search, chips, tabs. */
   pill: 999,
   key: 6,
+  /** The inline chip a file or a code span sits in, inside a sentence. */
+  fileChip: 7,
   chip: 8,
   small: 11,
   field: 12,
@@ -148,6 +150,8 @@ export const radius = {
   input: 14,
   row: 16,
   card: 18,
+  /** A message bubble. The canvas says 20, not the panel's 22. */
+  bubble: 20,
   menu: 20,
   panel: 22,
   modal: 24,

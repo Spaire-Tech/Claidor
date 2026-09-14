@@ -215,6 +215,7 @@ export function toThreadItems(
             from: Speaker.Agent,
             text,
             ...(group && agentId ? { agentId } : {}),
+            ...(group && agentId && options.agentName ? { agentName: options.agentName } : {}),
             ...(meta.isStreaming ? { streaming: true } : {}),
             at,
           } satisfies TextItem);
@@ -269,23 +270,6 @@ export function toThreadItems(
   }
 
   return items;
-}
-
-/**
- * Whether the generic "Writing" line should show under the thread.
- *
- * One shimmering line at a time. In this app "typing" is the session
- * being busy, and it stays busy while a tool runs — so a live status
- * ("Running commands") and "Writing" would shimmer at each other, two
- * lines saying the same thing, one of them less precisely. The status
- * wins, because it says what is actually happening.
- */
-export function showsTypingLine(
-  items: readonly ThreadItem[],
-  typing: boolean | undefined,
-): boolean {
-  if (!typing) return false;
-  return items[items.length - 1]?.kind !== ThreadItemKind.Status;
 }
 
 /**

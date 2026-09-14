@@ -5,12 +5,11 @@ import {
   commandFromToolInput,
   decisionNote,
   type EngineMessage,
-  showsTypingLine,
   splitIntoBubbles,
   toThreadItems,
 } from './fromEngine';
 import { allVerbs, GENERIC_VERB, verbForTool } from './toolVerbs';
-import { type ThreadItem, ThreadItemKind } from './types';
+import { ThreadItemKind } from './types';
 
 let clock = 1_700_000_000_000;
 const msg = (m: Partial<EngineMessage> & Pick<EngineMessage, 'type'>): EngineMessage => ({
@@ -188,28 +187,6 @@ describe('the approval card', () => {
       .toBe('Perrin can run commands on your computer from now on.');
     expect(decisionNote('Perrin', 'never'))
       .toBe("Declined. Perrin can't run commands on your computer.");
-  });
-});
-
-describe('the typing line', () => {
-  const items = (...kinds: ThreadItemKind[]): ThreadItem[] =>
-    kinds.map((kind, i) => ({ kind, id: `i${i}`, at: 0 } as ThreadItem));
-
-  test('does not double up with a live status', () => {
-    // The session stays "running" while a tool runs, so without this the
-    // thread shimmers "Running commands" and "Writing" at once.
-    expect(showsTypingLine(items(ThreadItemKind.Text, ThreadItemKind.Status), true))
-      .toBe(false);
-  });
-
-  test('shows while the agent is composing a reply', () => {
-    expect(showsTypingLine(items(ThreadItemKind.Text), true)).toBe(true);
-    expect(showsTypingLine([], true)).toBe(true);
-  });
-
-  test('never shows when the session is idle', () => {
-    expect(showsTypingLine(items(ThreadItemKind.Text), false)).toBe(false);
-    expect(showsTypingLine(items(ThreadItemKind.Status), undefined)).toBe(false);
   });
 });
 
