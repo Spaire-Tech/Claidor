@@ -634,19 +634,119 @@ line under the thread. The canvas's typing indicator is the word
 `typing` beside the agent's name in the header — which this app already
 draws. Two places saying the same thing; the invented one is gone.
 
-### 22. The browser opens a separate browser — `fixed, awaiting the founder's eyes`
+### 22. The browser opens a separate browser — `fixed properly now` — my first fix could never have worked
 
 **Founder:** *"it opens a new browser. It has no notion of its own
 built-in browser. And I specifically designed that screen for that."*
+And after my fix: *"the built in browser dont work. the thing STILL
+opens it from my laptop."*
 
-Already recorded in `CLAUDE.md` and never acted on: `External` is the
-shipped default in `browserWebAccess/constants.ts`, so the engine drives
-its own Chromium instead of the in-app panel. I flagged it as a founder
-decision in Stage 5 and left it, which meant shipping the wrong one.
+**What I did the first time.** Changed
+`defaultBrowserWebAccessConfig.displayMode` from `External` to `InApp`.
 
-### 23. Connectors do not work — `open`
+**Why that could never have worked.** A default only applies when
+nothing is stored. This install had opened the old thirteen-tab settings
+screen, so `app_config.browserWebAccess` already held an answer — and
+upstream's normaliser has a second route to the same place:
 
-Founder is not chasing this yet. Recorded so it is not lost.
+```ts
+displayMode = isValid(value?.displayMode) ? value.displayMode
+  : value?.headless === false ? External      // ← this
+  : default;
+```
+
+`headless: false` is what that screen writes for "show the browser
+window". So a stored `external`, **or** a stored `headless: false`, beat
+the default every time. The sync kept writing
+`defaultProfile: "openclaw"`, the engine kept launching its own
+Chromium, and the panel kept saying the agent was using its own window.
+The founder's agent confirmed it in its own words: *"a separate
+OpenClaw-managed Chrome instance (profile: openclaw)"* — that string is
+the fallback branch of `buildBrowserConfig`.
+
+**Fixed, three ways, because one was not enough last time:**
+
+1. **The inference is gone.** `headless` no longer decides where the
+   browser appears. It is back-compat for a screen this product does not
+   ship.
+2. **What is already stored is repaired**, once, at startup and before
+   the config sync that decides which profile the gateway starts with
+   (`libs/browserDisplayRepair.ts`, 8 tests). This product has no screen
+   offering the choice, so a stored `external` is a leftover, not a
+   preference.
+3. **The fallback is no longer silent.** Every sync now logs which
+   profile it chose, and the one place that decides to drive a second
+   Chromium says which half of the bridge was missing instead of five
+   words naming neither.
+
+**What is still not verified:** whether the panel renders the agent's
+page once the engine is on the in-app profile. The engine side and the
+config side are fixed and tested; nobody has yet watched it draw.
+`[OpenClawConfigSync] browser profile=lobster-in-app` in the log is the
+line that says the first half worked.
+
+### 23. Connectors do not work — `one real fault found and fixed; the rest verified by running it`
+
+Founder was not chasing this, so it was recorded and left. Picked up on
+15 September and taken apart step by step, against the real engine rather
+than by reading.
+
+**What I ran.** The engine's own CLI, from the runtime in this tree,
+against a real service:
+
+```
+$ openclaw mcp login connection-todoist
+Open this URL to authorize "connection-todoist":
+https://todoist.com/oauth/authorize?response_type=code&client_id=tdd_…
+  &code_challenge_method=S256
+  &redirect_uri=http%3A%2F%2F127.0.0.1%3A8989%2Foauth%2Fcallback&…
+After approval, run openclaw mcp login connection-todoist --code <code>.
+```
+
+It works. The contract the app is built on is real: `mcp login <name>`,
+`mcp login <name> --code`, `mcp logout`, `mcp reload`; the verifier and
+the state are persisted to a file under the state dir, so the two halves
+can be two processes; the redirect the engine registers is
+`127.0.0.1:8989/oauth/callback`, which is exactly the port and path our
+listener binds. I also probed six of the catalogue's endpoints — Gmail,
+Calendar, Drive, Todoist, Notion, Linear — and all six answer, the
+OAuth ones with 401, which is correct.
+
+**The fault.** `McpStore.updateServer` rebuilds a record from an explicit
+list of fields, and `auth` and `oauthScope` were not on that list. So:
+
+- **first** connect creates the server, with `auth: "oauth"` — works;
+- **any** later write updates it, and silently drops the auth;
+- the config sync then renders the server without `auth`;
+- and `mcp login` refuses it: *"MCP server "x" is not configured with
+  auth: "oauth"."*
+
+Connecting worked once and never again. A cast in `main.ts` —
+`as Parameters<typeof store.createServer>[0]`, mine — was hiding the
+type mismatch that would have said so. Both fixed, with two tests.
+
+**And it is diagnosable now.** Every step logs under `[Connections]`
+with the engine's own output: which step it reached, what the engine
+said, why it stopped. This is the `desktop.proxy.upstream_refused`
+lesson — two hours of guessing at the GPT bug were ended by one log line
+carrying the provider's own sentence. The output carries no tokens; the
+engine keeps those under its state dir and never prints them.
+
+**A trap for whoever tests this next.** The engine's CLI prints nothing
+when `VITEST=true` is in its environment. I lost twenty minutes to an
+end-to-end test that captured an empty string and looked like a bug in
+our code. The app never sets it, so this is a harness artefact — but it
+means a live test of the CLI has to run outside vitest. The durable part
+of that run is in `authUrl.test.ts`: the engine's **real** output,
+captured verbatim, with the parser and the listener's port checked
+against it.
+
+**What I could not do from here:** click "Allow" on a provider's page.
+Everything up to and after that point is verified.
+
+**Where:** `main/mcp/mcpStore.ts`, `main/main.ts`,
+`main/libs/connections/connectService.ts`,
+`main/libs/connections/authUrl.test.ts`.
 
 ---
 

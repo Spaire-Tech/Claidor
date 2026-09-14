@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vitest';
 
-import { failureLine, findAuthorizationUrl, readCallback, saysAuthorized } from './authUrl';
+import {
+  AUTH_CALLBACK_PATH,
+  failureLine,
+  findAuthorizationUrl,
+  readCallback,
+  saysAuthorized,
+} from './authUrl';
+import { CALLBACK_HOST, CALLBACK_PORT } from './callbackServer';
 
 /** What `openclaw mcp login` actually prints, shape for shape. */
 const LOGIN_OUTPUT = [
@@ -91,5 +98,63 @@ describe('what went wrong', () => {
 
   test('silence invents nothing', () => {
     expect(failureLine('   \n\n  ')).toBe('');
+  });
+});
+
+describe('the engine\'s real output, captured from a real run', () => {
+  /**
+   * Not a paraphrase. This is what
+   * `openclaw mcp login connection-todoist` printed against
+   * `https://ai.todoist.net/mcp`, engine 2026.6.1, on 14 September —
+   * dynamic client registration, PKCE and all. Everything above this
+   * block was written from the CLI's source; this is from the CLI.
+   */
+  const REAL_LOGIN_OUTPUT = [
+    'Open this URL to authorize "connection-todoist":',
+    'https://todoist.com/oauth/authorize?response_type=code'
+      + '&client_id=tdd_35c823423e22499db2d975504df748ce'
+      + '&code_challenge=T3vJaORMmvSOvfJPaClJD5bmx6I42ACyhzB0iNfoDqk'
+      + '&code_challenge_method=S256'
+      + '&redirect_uri=http%3A%2F%2F127.0.0.1%3A8989%2Foauth%2Fcallback'
+      + '&state=6de63284-b8b2-4bca-9e5c-7b2f47ffe3a6'
+      + '&scope=data%3Aread_write'
+      + '&resource=https%3A%2F%2Fai.todoist.net%2Fmcp',
+    'After approval, run openclaw mcp login connection-todoist --code <code>.',
+  ].join('\n');
+
+  test('the URL comes out of it whole', () => {
+    const found = findAuthorizationUrl(REAL_LOGIN_OUTPUT);
+    expect(found).toBeTruthy();
+    expect(new URL(found!).hostname).toBe('todoist.com');
+    expect(new URL(found!).searchParams.get('code_challenge_method')).toBe('S256');
+  });
+
+  test('the redirect it registered is the one we listen on', () => {
+    // If these two ever disagree the browser comes back to nothing and
+    // the sign-in hangs until it times out. The engine picked 8989; this
+    // is the only place that fact is checked against our listener.
+    const found = findAuthorizationUrl(REAL_LOGIN_OUTPUT);
+    expect(new URL(found!).searchParams.get('redirect_uri'))
+      .toBe(`http://${CALLBACK_HOST}:${CALLBACK_PORT}${AUTH_CALLBACK_PATH}`);
+  });
+
+  test('the command on the last line is not mistaken for the URL', () => {
+    expect(findAuthorizationUrl(REAL_LOGIN_OUTPUT)).not.toContain('openclaw');
+  });
+
+  test('printing that is not being authorized', () => {
+    expect(saysAuthorized(REAL_LOGIN_OUTPUT)).toBe(false);
+  });
+
+  test('and the engine\'s real success line is', () => {
+    // `src/cli/mcp-cli.ts`: `MCP OAuth credentials saved for "${name}".`
+    expect(saysAuthorized('MCP OAuth credentials saved for "connection-todoist".')).toBe(true);
+  });
+
+  test('its real refusals are reported in its own words', () => {
+    expect(failureLine('MCP server "connection-x" is not configured with auth: "oauth".'))
+      .toBe('MCP server "connection-x" is not configured with auth: "oauth".');
+    expect(failureLine('No MCP server named "connection-x" in /x/openclaw.json.'))
+      .toBe('No MCP server named "connection-x" in /x/openclaw.json.');
   });
 });

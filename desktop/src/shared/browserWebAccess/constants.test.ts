@@ -86,26 +86,32 @@ describe('browser web access constants', () => {
     });
   });
 
-  test('defaults to the in-app browser while preserving explicit choices', () => {
+  test('defaults to the in-app browser while preserving an explicit choice', () => {
     expect(normalizeBrowserWebAccessConfig(undefined).displayMode).toBe(
-      BrowserDisplayMode.InApp,
-    );
-    expect(normalizeBrowserWebAccessConfig({ headless: false }).displayMode).toBe(
-      BrowserDisplayMode.External,
-    );
-    // `headless: false` above says "show me a window", which is the one
-    // case that still means a separate browser. `headless: true` says
-    // nothing about where, so it takes the default — now in-app.
-    expect(normalizeBrowserWebAccessConfig({ headless: true }).displayMode).toBe(
       BrowserDisplayMode.InApp,
     );
     expect(normalizeBrowserWebAccessConfig({
       displayMode: BrowserDisplayMode.External,
-      headless: true,
     }).displayMode).toBe(BrowserDisplayMode.External);
     expect(normalizeBrowserWebAccessConfig({
       displayMode: BrowserDisplayMode.InApp,
     }).displayMode).toBe(BrowserDisplayMode.InApp);
+  });
+
+  test('`headless` no longer decides where the browser appears', () => {
+    // It used to: `headless === false` meant External. That is upstream's
+    // back-compat for a settings screen offering "show the browser
+    // window", which this product does not offer — and it meant a value
+    // left in the store by that screen silently overrode the default and
+    // sent the agent to a second Chromium on the Desktop. A default
+    // cannot fix that, because a default only applies when nothing is
+    // stored. This is why changing the default did not fix it.
+    expect(normalizeBrowserWebAccessConfig({ headless: false }).displayMode).toBe(
+      BrowserDisplayMode.InApp,
+    );
+    expect(normalizeBrowserWebAccessConfig({ headless: true }).displayMode).toBe(
+      BrowserDisplayMode.InApp,
+    );
   });
 
   test('defaults saved login use to per-use approval and preserves an explicit policy', () => {
