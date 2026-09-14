@@ -29,7 +29,7 @@ not yet the founder's, and the founder's list will be longer. Listed
 first because they were found by reading the design against the code —
 which is what should have happened before any of it was built.
 
-### 1. Apps is the wrong shape entirely — `open`
+### 1. Apps is the wrong shape entirely — `fixed, awaiting the founder's eyes`
 
 **Design:** a full-screen sheet. `max-width: 1080px`,
 `height: calc(100% - 48px)`, `border-radius: 24px`. The tabs sit in the
@@ -37,20 +37,35 @@ header row **beside** the 22px title, and the search box is on the
 **right of that same row**, `width: min(300px, 42%)`.
 
 **Built:** a 620px modal. Tabs stacked under a subtitle, search full
-width below them.
+width below them. A hundred and nine services and twelve agents, in
+something the size of a preferences dialog.
+
+**Fixed.** The sheet is the canvas's, and so is the header row: title,
+the pill tab group beside it, `min(300px, 42%)` of search on the right,
+close at the end.
 
 **Where:** `src/renderer/design/shell/Apps.tsx`.
 
-### 2. The Apps tabs are named wrong — `open`
+### 2. The Apps tabs are named wrong — `fixed, awaiting the founder's eyes`
 
 **Design:** `Plugins` and `Agents`. The Plugins tab then has a section
 heading `Connectors` with a count.
 
 **Built:** `Connections` and `Agents`.
 
+**Fixed.** `Plugins` and `Agents`, with the `Connectors` heading and a
+count under the first — and the tab pills are the canvas's too: white,
+blue label, a hairline of white and a small shadow when selected, rather
+than the grey fill I had.
+
+One deliberate difference, in a comment in the file: the canvas's count
+is the bare total, 109. Sixty-one of those cards are statements rather
+than buttons, so the slot says what can actually be signed into. Same
+place, same size, same grey.
+
 **Where:** `Apps.tsx`, `AppsTab`.
 
-### 3. The Agents tab is a card grid, not a list — `open`
+### 3. The Agents tab is a card grid, not a list — `fixed, awaiting the founder's eyes`
 
 **Design:** `grid-template-columns: repeat(auto-fill, minmax(360px, 1fr))`,
 20px gap. Each card: 24px padding, 20px radius, a 48px orb, the name at
@@ -61,9 +76,14 @@ button on the right, and the description on its own line underneath at
 **Built:** a list of 38px rows with the description squeezed beside the
 name.
 
-**Where:** `Apps.tsx`.
+**Fixed**, to those measurements — and the connectors shelf got the same
+treatment, because it had the same fault: it is now a
+`minmax(320px, 1fr)` grid of 18px cards with 42px logos, in sections
+with their own count, instead of a column of rows.
 
-### 4. The agent detail is somewhere else entirely, and I invented a screen — `open`
+**Where:** `Apps.tsx`, `connections/Connections.tsx`.
+
+### 4. The agent detail is somewhere else entirely — `fixed` — and half of what I wrote here was wrong
 
 **Design:** agent detail lives **inside Apps**. A back arrow, an 88px
 orb, the name at 27px, a meta line, an install button, a description at
@@ -73,14 +93,44 @@ orb, the name at 27px, a meta line, an install button, a description at
 Integrations — opened by tapping the agent's name in the conversation
 header.
 
-**Those five tabs do not appear anywhere in the canvas.** The gesture
-does not either. I took the phrase "the agent detail gets its five tabs"
-from `plan.md`, which is mine, and built it over the founder's design
-instead of against it.
+**I wrote: "Those five tabs do not appear anywhere in the canvas."
+That is false.** They appear exactly, with notes under each label:
 
-**Where:** `src/renderer/design/agent/AgentDetail.tsx`,
-`useAgentDetail.ts`, `detail.ts`, and the `onOpenAgent` prop on
-`MessagesShell.tsx`.
+```js
+detailTabs: [
+  ["Instructions", "How this agent works"],
+  ["Memories",     "Facts it already knows"],
+  ["Skills",       "Playbooks it can run"],
+  ["Routines",     "Jobs that run on their own"],
+  ["Integrations", "Connectors it can use"]
+]
+```
+
+I did not read far enough into the canvas's script before writing the
+item, and then accused myself of inventing the founder's own design.
+That is the same failure as items 7, 8 and 12, in the other direction.
+
+**What was actually wrong.** The page lives *inside Apps* — behind a
+role's card, with a back arrow — and it is a 240px rail beside a panel,
+not a tab strip. It is a catalogue page: an 88px orb, the name at 27px,
+a meta line, an Install button, the description at 16.5px, a divider,
+then the rail, and skill chips as 34px pills on the Skills tab.
+
+**Fixed**, to those measurements, with the canvas's own copy per tab
+(`agentBody` in `roles.ts`, 9 tests). The meta line drops the canvas's
+"· by Swens": the product has no name yet, and shipping a placeholder in
+a string is how one becomes a brand.
+
+**What stays, and is mine.** Tapping the agent's name in the
+conversation header still opens the *live* agent — its real
+instructions, memories, skills, routines and MCP servers. That gesture
+and that screen are not in the canvas. They are also the only way to
+reach any of it, so removing them would lose real function to gain
+fidelity. **Flagged for the founder to kill if they want it gone.**
+
+**Where:** `Apps.tsx` (the catalogue page), `shell/roles.ts`; and
+`src/renderer/design/agent/AgentDetail.tsx`, `useAgentDetail.ts`,
+`detail.ts` with the `onOpenAgent` prop on `MessagesShell.tsx` (mine).
 
 ### 5. Settings is designed and I never built it — `open`
 
