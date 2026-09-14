@@ -5,6 +5,8 @@ import { useSelector } from 'react-redux';
 
 import { authService } from '../../services/auth';
 import type { RootState } from '../../store';
+import { AgentDetail } from '../agent/AgentDetail';
+import { useAgentDetail } from '../agent/useAgentDetail';
 import { ComputerPanel } from '../panel/ComputerPanel';
 import { AccountMenu } from './AccountMenu';
 import { Apps } from './Apps';
@@ -40,7 +42,9 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
   const quota = useSelector((state: RootState) => state.auth.quota);
   const [signInError, setSignInError] = useState<string | undefined>();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [agentOpen, setAgentOpen] = useState(false);
   const shell = useMessagesShell();
+  const detail = useAgentDetail(shell.activeId, agentOpen);
 
   // `nickname` is the only display name the profile carries; everything
   // else on it is an identifier. A signed-in person with no nickname gets
@@ -119,6 +123,15 @@ export function FaiserApp({ onOpenSettings }: FaiserAppProps = {}): JSX.Element 
           onSettings={() => { setAccountOpen(false); onOpenSettings?.(); }}
           onLogOut={() => { setAccountOpen(false); void authService.logout(); }}
           onClose={() => setAccountOpen(false)}
+        />
+      )}
+      onOpenAgent={() => setAgentOpen(true)}
+      agentDetail={agentOpen && (
+        <AgentDetail
+          detail={detail}
+          agentId={shell.activeId}
+          agentName={shell.activeName}
+          onClose={() => setAgentOpen(false)}
         />
       )}
       onOpenPanel={shell.onOpenPanel}

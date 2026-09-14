@@ -339,6 +339,18 @@ engineering.
 > `/api/kit-store`, which is the *skills* half and unrelated to the
 > roles. See `build-log.md` § Stage 7.
 
+> **Stage 7 closed, 14 September.** The five tabs are built and reached
+> by tapping the agent's name at the top of the conversation.
+>
+> `/api/kit-store` stays empty, and that is the answer rather than a
+> gap. Installing a kit always downloads a zip; every skill we have is
+> already bundled with the app; and kit installs share a directory with
+> bundled skills, so a curated catalogue would write `pdf-1` next to
+> `pdf`. A real kit needs a skill the app does not bundle — authoring
+> one, and somewhere to host it. Both store docstrings now carry the
+> reasoning. **The founder's call:** whether to author skills we do not
+> have, so a kit has something to carry.
+
 ---
 
 ## Stage 8 — Connectors

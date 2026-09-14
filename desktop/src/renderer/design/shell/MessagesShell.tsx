@@ -39,6 +39,10 @@ export interface MessagesShellProps {
   onApps: () => void;
   /** The roles list, when open. Lies over the whole app, sidebar included. */
   apps?: React.ReactNode;
+  /** Tapping the name at the top of the conversation. */
+  onOpenAgent?: () => void;
+  /** The agent's five tabs, when open. Over everything, like `apps`. */
+  agentDetail?: React.ReactNode;
   onAccount: () => void;
   /** Rendered inside the sidebar's footer when the account menu is open. */
   accountMenu?: React.ReactNode;
@@ -64,7 +68,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
     choice, auth, onSelect, onSend, onCompose, onApps, apps, onAccount, onMode,
-    onOpenPanel, onPlus,
+    onOpenPanel, onPlus, onOpenAgent, agentDetail,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
   } = props;
 
@@ -153,10 +157,30 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               background: 'rgba(250,251,252,.92)', backdropFilter: 'blur(20px)',
             }}
           >
-            <Orb agentId={activeId} size={28} mood={OrbMood.Idle} />
-            <span style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title }}>
-              {activeName}
-            </span>
+            {/*
+              The name at the top opens the agent, which is the gesture
+              Messages already teaches: the person you are talking to is
+              up here, and tapping them tells you about them. A button
+              rather than a click handler on a span, so it is reachable
+              from the keyboard like everything else in the header.
+            */}
+            <button
+              type="button"
+              onClick={onOpenAgent}
+              disabled={!onOpenAgent}
+              aria-label={onOpenAgent ? `About ${activeName}` : undefined}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 11, padding: '2px 8px 2px 2px',
+                margin: 0, border: '1px solid transparent', borderRadius: radius.pill,
+                background: 'transparent', font: 'inherit', color: 'inherit',
+                cursor: onOpenAgent ? 'pointer' : 'default',
+              }}
+            >
+              <Orb agentId={activeId} size={28} mood={OrbMood.Idle} />
+              <span style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title }}>
+                {activeName}
+              </span>
+            </button>
             {saysTyping && <span style={{ fontSize: text.caption, color: color.muted }}>typing</span>}
 
             <div
@@ -256,6 +280,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         an agent through the scrim would change what you came back to.
       */}
       {apps}
+      {agentDetail}
     </div>
   );
 }

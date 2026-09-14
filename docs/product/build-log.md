@@ -912,3 +912,89 @@ is real end to end — `PresetTemplates → getAllPresetAgents()`,
 `AddPreset → addPresetAgent → createAgent` plus an OpenClaw config sync
 — and every hop type-checks, but no role has been added by pressing the
 button in the signed-in app.
+
+## Stage 7, the rest — the five tabs, and what the kit store cannot be
+
+**The agent, opened.** Tapping the name at the top of the conversation
+opens the agent: orb, name, description, and five tabs. That gesture is
+the one Messages already teaches — the person you are talking to is up
+there, and tapping them tells you about them.
+
+All five read subsystems that already existed, which is what the plan
+said and what turned out to be true:
+
+- **Instructions** — the agent's system prompt, editable, saved through
+  `agents.update`. Save shows what came back rather than what was typed,
+  so a normalised prompt is not silently different from what is on
+  screen. Whitespace alone does not count as a change.
+- **Memories** — the agent's `MEMORY.md`, with add and forget.
+- **Skills** — every installed skill with a switch, writing
+  `agent.skillIds`. A skill the agent names that is **not installed**
+  is listed first with a warning, not filtered away.
+- **Routines** — its scheduled tasks, with the schedule in words, what
+  happened last time, a switch and a delete.
+- **Integrations** — the MCP servers, with a switch, and a line saying
+  they are shared: turning one on here turns it on for every agent.
+
+Twenty-three tests for the decisions those tabs make. Screenshots of all
+five through the harness.
+
+**Memories were the main agent's, under every name.** The four memory
+handlers resolved `getMainAgentWorkspacePath()` whoever was asking, so a
+per-agent Memories tab would have shown main's notes on every agent.
+They now take an optional `agentId` and resolve that agent's workspace;
+absent still means main, which is what the settings screens that called
+them first always meant. The one-time SQLite migration stays pinned to
+main on purpose — those memories were global and predate per-agent
+workspaces, so they belong to main and nobody else.
+
+**"Every 1 days".** The app's own schedule formatter, showing in my new
+Routines rows. The singular phrases it needed — "Every day", "Every
+hour", "Every minute" — already existed in both languages for the cron
+reader; the interval branch just never reached for them. Fixed at the
+source with three tests. The plural unit strings are the form's dropdown
+labels and were left alone.
+
+### The kit store cannot be filled, and not for want of curation
+
+The plan's server half was to fill `/api/kit-store`. Three facts settle
+what can honestly go there, and all three are in the desktop app:
+
+1. **Installing a kit always downloads a zip** from its `bundleUrl`,
+   extracts it and looks for directories containing `SKILL.md`
+   (`ipcHandlers/kits/handlers.ts`). There is no install-from-what-you-
+   have path. Even the one "built-in" kit, Computer Use, is a hosted zip
+   on a NetEase CDN.
+2. **Every skill we have is already bundled** with the app and enabled
+   by `SKILLs/skills.config.json` — all thirty.
+3. **Kit installs and bundled skills share one directory**, and the
+   installer suffixes on collision. A kit containing `pdf` would write
+   `pdf-1` next to the `pdf` already there.
+
+So a curated catalogue today would deliver duplicates of what is already
+installed. A real kit needs a skill the app does not bundle, which means
+authoring one and hosting its bundle — writing, and somewhere to put
+files, not a change to that endpoint. `{"kits": []}` is the correct
+answer, and the docstring now says why instead of "Empty until Claidor
+curates one", which implied curation was the only missing step.
+
+The same check applied to `/api/skill-store`: `marketplace` is downloads
+and has the same story; `localSkill` would only add titles and
+descriptions for skills already installed, and the app covers both
+without us — names from `BUNDLED_SKILL_DISPLAY_NAMES`, which a test
+holds against `skills.config.json` in both languages, and descriptions
+from the skill's own `SKILL.md`. Sending them from the server would be a
+second copy to keep in step. Both docstrings now say this.
+
+**Founder's call:** whether to author skills we do not have, so there is
+something for a kit to carry.
+
+Full suite 4074 passed, 3 skipped.
+
+**Not verified:** the five tabs against a running, signed-in app. Every
+hop type-checks and the decisions are tested, but no instruction has
+been saved, no memory added and no routine toggled through the real IPC.
+The server docstrings were not run either — the venv here cannot import
+the app (pydantic against this interpreter), which `server/CLAUDE.md`
+documents; they are docstrings and change no behaviour, and the existing
+test already asserts `{"kits": []}`.

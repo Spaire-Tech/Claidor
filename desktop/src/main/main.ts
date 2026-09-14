@@ -10218,6 +10218,20 @@ if (!gotTheLock) {
     return resolveAgentWorkspacePath(normalizedAgentId);
   };
 
+  /**
+   * The MEMORY.md of one agent.
+   *
+   * Every agent has its own workspace, and every workspace its own
+   * memory file. These handlers used to read the main agent's file
+   * whoever was asking, so an agent detail showing "what it remembers"
+   * would have shown the main agent's notes under every name.
+   *
+   * No agent named still means main, which is what the old callers —
+   * the settings screens — meant all along.
+   */
+  const resolveAgentMemoryFilePath = (agentId?: string): string =>
+    resolveMemoryFilePath(resolveExistingAgentWorkspacePath(agentId));
+
   registerAgentHandlers({
     getAgentManager,
     getCoworkStore,
@@ -10596,28 +10610,35 @@ if (!gotTheLock) {
         includeDeleted?: boolean;
         limit?: number;
         offset?: number;
+        agentId?: string;
       },
     ) => {
       try {
-        const filePath = resolveMemoryFilePath(
-          getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir()),
-        );
+        const filePath = resolveAgentMemoryFilePath(input?.agentId);
 
-        // Lazy migration: SQLite → MEMORY.md (one-time, cached in memory)
+        // Lazy migration: SQLite → MEMORY.md (one-time, cached in memory).
+        // Pinned to the main agent's file whichever agent is being read:
+        // the old SQLite memories were global and predate per-agent
+        // workspaces, so they belong to main and to nobody else.
         if (!memoryMigrationDone) {
-          migrateSqliteToMemoryMd(filePath, {
-            isMigrationDone: () =>
-              getStore().get<string>('openclawMemory.migration.v1.completed') === '1',
-            markMigrationDone: () => {
-              getStore().set('openclawMemory.migration.v1.completed', '1');
-              memoryMigrationDone = true;
+          migrateSqliteToMemoryMd(
+            resolveMemoryFilePath(
+              getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir()),
+            ),
+            {
+              isMigrationDone: () =>
+                getStore().get<string>('openclawMemory.migration.v1.completed') === '1',
+              markMigrationDone: () => {
+                getStore().set('openclawMemory.migration.v1.completed', '1');
+                memoryMigrationDone = true;
+              },
+              getActiveMemoryTexts: () => {
+                return getCoworkStore()
+                  .listUserMemories({ status: 'all', includeDeleted: false, limit: 200 })
+                  .map(m => m.text);
+              },
             },
-            getActiveMemoryTexts: () => {
-              return getCoworkStore()
-                .listUserMemories({ status: 'all', includeDeleted: false, limit: 200 })
-                .map(m => m.text);
-            },
-          });
+          );
           // Even if migration found nothing, skip future checks this session
           memoryMigrationDone = true;
         }
@@ -10641,12 +10662,11 @@ if (!gotTheLock) {
         text: string;
         confidence?: number;
         isExplicit?: boolean;
+        agentId?: string;
       },
     ) => {
       try {
-        const filePath = resolveMemoryFilePath(
-          getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir()),
-        );
+        const filePath = resolveAgentMemoryFilePath(input?.agentId);
         const entry = addMemoryEntry(filePath, input.text);
         return { success: true, entry };
       } catch (error) {
@@ -10667,12 +10687,11 @@ if (!gotTheLock) {
         confidence?: number;
         status?: 'created' | 'stale' | 'deleted';
         isExplicit?: boolean;
+        agentId?: string;
       },
     ) => {
       try {
-        const filePath = resolveMemoryFilePath(
-          getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir()),
-        );
+        const filePath = resolveAgentMemoryFilePath(input?.agentId);
         if (!input.text) {
           return { success: false, error: 'Memory text is required' };
         }
@@ -10695,12 +10714,11 @@ if (!gotTheLock) {
       _event,
       input: {
         id: string;
+        agentId?: string;
       },
     ) => {
       try {
-        const filePath = resolveMemoryFilePath(
-          getMainAgentWorkspacePath(getOpenClawEngineManager().getStateDir()),
-        );
+        const filePath = resolveAgentMemoryFilePath(input?.agentId);
         const success = deleteMemoryEntry(filePath, input.id);
         return success ? { success: true } : { success: false, error: 'Memory entry not found' };
       } catch (error) {

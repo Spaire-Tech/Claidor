@@ -9,6 +9,7 @@ import {
   formatDateTimeMinute,
   formatDeliveryLabel,
   formatElapsedDuration,
+  formatScheduleLabel,
   getTaskDisplayStatus,
   stripCronMetadataPrefix,
   TaskDisplayStatus,
@@ -213,5 +214,35 @@ describe('stripCronMetadataPrefix', () => {
 
   test('only strips the leading tag, not later brackets', () => {
     expect(stripCronMetadataPrefix('[cron:id name] keep [this]')).toBe('keep [this]');
+  });
+});
+
+describe('formatScheduleLabel, on an interval', () => {
+  // Compared against the keys rather than the English, so the test stays
+  // true in either language.
+  test('one of something uses the singular phrase, not "Every 1 days"', () => {
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 86_400_000 }))
+      .toBe(i18nService.t('scheduledTasksCronEveryDay'));
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 3_600_000 }))
+      .toBe(i18nService.t('scheduledTasksCronEveryHour'));
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 60_000 }))
+      .toBe(i18nService.t('scheduledTasksCronEveryMinute'));
+  });
+
+  test('more than one still counts', () => {
+    const every = i18nService.t('scheduledTasksScheduleEvery');
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 7 * 86_400_000 }))
+      .toBe(`${every} 7 ${i18nService.t('scheduledTasksFormIntervalDays')}`);
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 4 * 3_600_000 }))
+      .toBe(`${every} 4 ${i18nService.t('scheduledTasksFormIntervalHours')}`);
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 30 * 60_000 }))
+      .toBe(`${every} 30 ${i18nService.t('scheduledTasksFormIntervalMinutes')}`);
+  });
+
+  test('an interval under a minute rounds up to one, and reads as one', () => {
+    // Math.max(1, ...) already floored it at one; before this it printed
+    // "Every 1 minutes".
+    expect(formatScheduleLabel({ kind: 'every', everyMs: 5_000 }))
+      .toBe(i18nService.t('scheduledTasksCronEveryMinute'));
   });
 });

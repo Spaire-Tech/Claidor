@@ -654,23 +654,32 @@ contextBridge.exposeInMainWorld('electron', {
     getTempStorageUsage: () => ipcRenderer.invoke(CoworkIpcChannel.TempStorageUsage),
     cleanTempStorage: (options?: { cwds?: string[] }) =>
       ipcRenderer.invoke(CoworkIpcChannel.TempStorageClean, options),
+    // `agentId` is optional and means main when absent: every agent has
+    // its own workspace and its own MEMORY.md, and the settings screens
+    // that called these first only ever meant main.
     listMemoryEntries: (input: {
       query?: string;
       status?: 'created' | 'stale' | 'deleted' | 'all';
       includeDeleted?: boolean;
       limit?: number;
       offset?: number;
+      agentId?: string;
     }) => ipcRenderer.invoke('cowork:memory:listEntries', input),
-    createMemoryEntry: (input: { text: string; confidence?: number; isExplicit?: boolean }) =>
-      ipcRenderer.invoke('cowork:memory:createEntry', input),
+    createMemoryEntry: (input: {
+      text: string;
+      confidence?: number;
+      isExplicit?: boolean;
+      agentId?: string;
+    }) => ipcRenderer.invoke('cowork:memory:createEntry', input),
     updateMemoryEntry: (input: {
       id: string;
       text?: string;
       confidence?: number;
       status?: 'created' | 'stale' | 'deleted';
       isExplicit?: boolean;
+      agentId?: string;
     }) => ipcRenderer.invoke('cowork:memory:updateEntry', input),
-    deleteMemoryEntry: (input: { id: string }) =>
+    deleteMemoryEntry: (input: { id: string; agentId?: string }) =>
       ipcRenderer.invoke('cowork:memory:deleteEntry', input),
     getMemoryStats: () => ipcRenderer.invoke('cowork:memory:getStats'),
     readMemoryFileRaw: () => ipcRenderer.invoke(CoworkIpcChannel.MemoryReadRaw),

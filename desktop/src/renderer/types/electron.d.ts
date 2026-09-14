@@ -1197,19 +1197,26 @@ interface IElectronAPI {
     onOpenSessionFromNotification: (
       callback: (data: { sessionId: string }) => void,
     ) => () => void;
+    /** `agentId` is optional and means the main agent when absent. */
     listMemoryEntries: (input: {
       query?: string;
       limit?: number;
       offset?: number;
+      agentId?: string;
     }) => Promise<{ success: boolean; entries?: CoworkUserMemoryEntry[]; error?: string }>;
     createMemoryEntry: (input: {
       text: string;
+      agentId?: string;
     }) => Promise<{ success: boolean; entry?: CoworkUserMemoryEntry; error?: string }>;
     updateMemoryEntry: (input: {
       id: string;
       text: string;
+      agentId?: string;
     }) => Promise<{ success: boolean; entry?: CoworkUserMemoryEntry; error?: string }>;
-    deleteMemoryEntry: (input: { id: string }) => Promise<{ success: boolean; error?: string }>;
+    deleteMemoryEntry: (input: {
+      id: string;
+      agentId?: string;
+    }) => Promise<{ success: boolean; error?: string }>;
     getMemoryStats: () => Promise<{ success: boolean; stats?: CoworkMemoryStats; error?: string }>;
     readMemoryFileRaw: () => Promise<{ success: boolean; content?: string; error?: string }>;
     writeMemoryFileRaw: (input: {

@@ -8,6 +8,9 @@ import { createRoot } from 'react-dom/client';
 // import of the store, and a plain-JS language helper — so the harness
 // can draw the list the app will actually draw.
 import { PRESET_AGENTS } from '../src/main/presetAgents';
+import { AgentDetail } from '../src/renderer/design/agent/AgentDetail';
+import { AgentTab } from '../src/renderer/design/agent/detail';
+import type { AgentDetailState } from '../src/renderer/design/agent/useAgentDetail';
 import { AccountMenu } from '../src/renderer/design/shell/AccountMenu';
 import { Apps } from '../src/renderer/design/shell/Apps';
 import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/MessagesShell';
@@ -94,6 +97,95 @@ const AGENTS = [
 
 const noop = (): void => undefined;
 
+/**
+ * The agent sheet's five tabs, with something in each.
+ *
+ * Built as the state the hook returns rather than by running the hook:
+ * the hook talks to five IPC surfaces that do not exist in a browser,
+ * and what a screenshot is checking is the drawing.
+ */
+const skillFixture = (id: string, name: string, description: string) => ({
+  id, name, description, enabled: true, isOfficial: true, isBuiltIn: true,
+  updatedAt: 0, prompt: '', skillPath: `/skills/${id}`,
+});
+
+const routineFixture = (
+  id: string, name: string, everyMs: number,
+  state: Partial<AgentDetailState['routines'][number]['state']> = {},
+  enabled = true,
+) => ({
+  id, name, description: '', enabled,
+  schedule: { kind: 'every' as const, everyMs },
+  sessionTarget: 'main', wakeMode: 'always',
+  payload: { kind: 'agentTurn' as const, message: 'go' },
+  delivery: { mode: 'silent' },
+  agentId: 'juno', sessionKey: null,
+  state: {
+    nextRunAtMs: null, lastRunAtMs: null, lastStatus: null, lastError: null,
+    lastDurationMs: null, runningAtMs: null, consecutiveErrors: 0, ...state,
+  },
+  createdAt: '', updatedAt: '',
+});
+
+function agentDetailFixture(tab: AgentTab): AgentDetailState {
+  const instructions =
+    'You are Juno.\n\nYour remit is research. The person you work with '
+    + 'described your job as: reading long documents and telling me what '
+    + 'changed.\n\nYour voice is concise: says only what matters.';
+  return {
+    loading: false,
+    agent: {
+      id: 'juno', name: 'Juno', description: 'Reads the long things',
+      systemPrompt: instructions, skillIds: ['pdf', 'docx', 'stock-analyzer'],
+    },
+    tab,
+    onTab: noop,
+    instructions,
+    savedInstructions: instructions,
+    onInstructions: noop,
+    onSaveInstructions: noop,
+    saving: false,
+    memories: [
+      { id: 'm1', text: 'The board deck lives in Drive under Board / 2026.' },
+      { id: 'm2', text: 'Headcount figures come from the model, never the deck.' },
+      { id: 'm3', text: 'Prefers the summary first and the detail underneath.' },
+    ],
+    onAddMemory: noop,
+    onDeleteMemory: noop,
+    have: [
+      skillFixture('pdf', 'PDF', 'Read and write PDF files'),
+      skillFixture('docx', 'Word', 'Read and write Word documents'),
+    ],
+    // One named skill that is not installed, because that is the case
+    // worth looking at: it is wrong rather than empty.
+    missing: ['stock-analyzer'],
+    allSkills: [
+      skillFixture('pdf', 'PDF', 'Read and write PDF files'),
+      skillFixture('docx', 'Word', 'Read and write Word documents'),
+      skillFixture('xlsx', 'Excel', 'Read and write spreadsheets'),
+      skillFixture('web-search', 'Web search', 'Search the web and read pages'),
+    ],
+    onToggleSkill: noop,
+    routines: [
+      routineFixture('r1', 'Morning read of the inbox', 86_400_000, {
+        lastRunAtMs: Date.now() - 3 * 3_600_000, lastStatus: 'success',
+      }),
+      routineFixture('r2', 'Weekly figures check', 7 * 86_400_000, {
+        lastRunAtMs: Date.now() - 26 * 3_600_000, lastStatus: 'error',
+        lastError: 'The spreadsheet was open in another program.',
+      }, false),
+      routineFixture('r3', 'Watch the filings page', 3_600_000),
+    ],
+    onToggleRoutine: noop,
+    onDeleteRoutine: noop,
+    servers: [
+      { id: 's1', name: 'Google Drive', description: 'Files, folders and shared drives', enabled: true, transportType: 'stdio', isBuiltIn: false },
+      { id: 's2', name: 'Slack', description: 'Channels and direct messages', enabled: false, transportType: 'http', isBuiltIn: false },
+    ],
+    onToggleServer: noop,
+  } as unknown as AgentDetailState;
+}
+
 /** A three-bubble reply, delivered a moment after mount. */
 const LATER_REPLY = message({
   id: 'arrived',
@@ -176,6 +268,15 @@ function Screens(): JSX.Element {
           installedIds={new Set(['engineering-lead'])}
           busyId={screen === 'apps-adding' ? 'design-lead' : undefined}
           onInstall={noop}
+          onClose={noop}
+        />
+      ) : undefined}
+      onOpenAgent={noop}
+      agentDetail={screen.startsWith('agent-') ? (
+        <AgentDetail
+          detail={agentDetailFixture(screen.slice('agent-'.length) as AgentTab)}
+          agentId="juno"
+          agentName="Juno"
           onClose={noop}
         />
       ) : undefined}

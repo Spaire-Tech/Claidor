@@ -431,20 +431,52 @@ async def updates_check() -> JSONResponse:
 
 @router.get("/api/skill-store", name="desktop:skill_store")
 async def skill_store() -> JSONResponse:
-    """The skill marketplace. Empty until Claidor curates one.
+    """The skill marketplace. Empty, and the two halves are empty for different
+    reasons.
 
     The app reads ``data.value.marketplace`` (skills to install),
     ``data.value.localSkill`` (names and descriptions for the bundled skills)
     and ``data.value.marketTags``.
+
+    ``marketplace`` is for skills to download, and every skill we have is
+    already bundled with the app — see the note on ``kit_store`` below, which
+    is the same story.
+
+    ``localSkill`` would only add titles and descriptions for skills that are
+    already installed, and the app covers both without us: names come from
+    ``BUNDLED_SKILL_DISPLAY_NAMES``, which a test holds against
+    ``skills.config.json`` in both languages, and descriptions fall back to the
+    skill's own ``SKILL.md``. Sending them from here would be a second copy to
+    keep in step.
     """
     return _ok({"value": {"marketplace": [], "localSkill": [], "marketTags": []}})
 
 
 @router.get("/api/kit-store", name="desktop:kit_store")
 async def kit_store() -> JSONResponse:
-    """The kit store. Empty until Claidor curates one.
+    """The kit store, and it is empty for a structural reason, not for want of
+    curation.
 
     The app reads ``data.value.kits`` and appends its own built-in kits.
+
+    Three facts settle what can honestly go here, all of them in the desktop
+    app rather than in this file:
+
+    1. Installing a kit always downloads a zip from the kit's ``bundleUrl``,
+       extracts it, and looks for directories containing ``SKILL.md``
+       (``desktop/src/main/ipcHandlers/kits/handlers.ts``). There is no
+       install-from-what-you-already-have path; even the one "built-in" kit,
+       Computer Use, is a hosted zip.
+    2. Every skill we have is already bundled with the app and enabled by
+       ``desktop/SKILLs/skills.config.json``.
+    3. Kit installs and bundled skills share one directory, and the installer
+       suffixes on collision. Shipping a kit of skills the app already has
+       would write ``pdf-1`` next to ``pdf``.
+
+    So a curated catalogue today would deliver duplicates of what is already
+    installed. A real kit needs a skill the app does not bundle, which means
+    authoring one and hosting its bundle — writing, and a place to put files,
+    not a change to this endpoint.
     """
     return _ok({"value": {"kits": []}})
 

@@ -238,13 +238,23 @@ export function formatScheduleLabel(schedule: Schedule): string {
     if (!Number.isFinite(everyMs) || everyMs <= 0) {
       return `${i18nService.t('scheduledTasksScheduleEvery')} -`;
     }
+    // A count of one uses the singular phrase the cron reader already
+    // has — "Every day", not "Every 1 days". The unit strings here are
+    // the form's dropdown labels and are plural by nature, so pluralising
+    // them is not the fix; not reaching for them at n = 1 is.
     if (everyMs % 86_400_000 === 0) {
-      return `${i18nService.t('scheduledTasksScheduleEvery')} ${everyMs / 86_400_000} ${i18nService.t('scheduledTasksFormIntervalDays')}`;
+      const days = everyMs / 86_400_000;
+      if (days === 1) return i18nService.t('scheduledTasksCronEveryDay');
+      return `${i18nService.t('scheduledTasksScheduleEvery')} ${days} ${i18nService.t('scheduledTasksFormIntervalDays')}`;
     }
     if (everyMs % 3_600_000 === 0) {
-      return `${i18nService.t('scheduledTasksScheduleEvery')} ${everyMs / 3_600_000} ${i18nService.t('scheduledTasksFormIntervalHours')}`;
+      const hours = everyMs / 3_600_000;
+      if (hours === 1) return i18nService.t('scheduledTasksCronEveryHour');
+      return `${i18nService.t('scheduledTasksScheduleEvery')} ${hours} ${i18nService.t('scheduledTasksFormIntervalHours')}`;
     }
-    return `${i18nService.t('scheduledTasksScheduleEvery')} ${Math.max(1, Math.round(everyMs / 60_000))} ${i18nService.t('scheduledTasksFormIntervalMinutes')}`;
+    const minutes = Math.max(1, Math.round(everyMs / 60_000));
+    if (minutes === 1) return i18nService.t('scheduledTasksCronEveryMinute');
+    return `${i18nService.t('scheduledTasksScheduleEvery')} ${minutes} ${i18nService.t('scheduledTasksFormIntervalMinutes')}`;
   }
 
   return formatCronExpr(schedule);
