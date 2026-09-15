@@ -1854,6 +1854,27 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.deny).not.toContain('video_generate');
   });
 
+  test('the Claude Code sign-in makes the engine run turns through the Claude CLI', async () => {
+    // The engine's own planner uses exactly this form: a `claude-cli/<model>`
+    // primary model, and the engine spawns the installed Claude Code app.
+    const on = await createSync({ getClaudeCodeLogin: () => ({ enabled: true, model: ' claude-opus-5 ' }) });
+    expect(on.sync('claude-code-on').ok).toBe(true);
+    const onConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(onConfig.agents.defaults.model.primary).toBe('claude-cli/claude-opus-5');
+    const backend = onConfig.agents.defaults.cliBackends?.['claude-cli'];
+    // The command is written only when the binary was found on this
+    // machine; either way the model ref alone selects the backend.
+    if (backend) expect(typeof backend.command).toBe('string');
+
+    const blank = await createSync({ getClaudeCodeLogin: () => ({ enabled: true }) });
+    expect(blank.sync('claude-code-default').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).agents.defaults.model.primary).toBe('claude-cli/claude-sonnet-5');
+
+    const off = await createSync({ getClaudeCodeLogin: () => ({ enabled: false, model: 'claude-opus-5' }) });
+    expect(off.sync('claude-code-off').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).agents.defaults.model.primary).not.toMatch(/^claude-cli\//);
+  });
+
   test('enables the composio plugin only with a key, and never writes the key into the file', async () => {
     const withKey = await createSync({ getComposioApiKey: () => '  ck_live_secret  ' });
     expect(withKey.sync('composio-key').ok).toBe(true);

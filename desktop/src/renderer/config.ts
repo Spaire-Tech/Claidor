@@ -120,6 +120,14 @@ export interface AppConfig {
    */
   composioApiKey?: string;
   /**
+   * Turns run through the Claude Code app installed on this computer,
+   * under its sign-in, instead of a model API. For the person's own
+   * development; see `shared/settings/models.ts`.
+   */
+  claudeCodeLogin?: boolean;
+  /** The model Claude Code is asked for; blank means the default. */
+  claudeCodeModel?: string;
+  /**
    * Catalogue ids signed into through Composio, as of the last time this
    * app did it. A copy, and the one place the connections screen keeps
    * one: the fact lives on Composio's servers and reading it needs the

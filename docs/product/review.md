@@ -2124,3 +2124,56 @@ proves it, and the log line names the driver.
 
 **Where:** `main/libs/agentBrowserPlaywright.ts` (+test),
 `agentBrowserHost.ts`, `main.ts`, `package.json`.
+
+## 51. The Claude Code sign-in as the model, for development — `built, unrun`
+
+*"i want to stop paying for API credits while I develop. Switch the
+app's model provider so my local Claude Code login is used instead of an
+Anthropic API key."* The founder named two engine docs; neither said
+what they said (`provider-repairs.md` does not exist and
+`openclaw-agent-runtime.md` has no Claude CLI provider). The capability
+is real all the same, and it is two different things in the engine:
+
+1. **A CLI backend.** `agents.defaults.model.primary = "claude-cli/<model>"`
+   makes the engine spawn the installed Claude Code app for each turn
+   (`cli-runner/claude-live-session.ts`: `--input-format stream-json`,
+   `--output-format stream-json`, `--permission-prompt-tool stdio`, an
+   MCP config file), and the engine's own planner uses exactly this
+   form. Claude Code then works under whatever sign-in it already has.
+2. **A credential lift.** `auth-profiles/external-cli-sync.ts` can read
+   Claude Code's stored OAuth token out of the keychain and
+   `anthropic-transport-stream.ts` then calls Anthropic's API with it,
+   sending `user-agent: claude-cli/<version>` and `x-app: cli` — that is,
+   pretending to be Claude Code. Anthropic has said in public that using
+   a subscription's token outside Claude Code is against its terms.
+
+This app builds the first and never turns on the second: no auth profile
+is written, no keychain is read by us. What the engine itself does with
+that credential once the CLI backend is selected (its doctor reads it to
+report sign-in state; `external-cli-scope.ts` puts `claude-cli` in the
+sync scope) is the engine's, and the founder should know it is there.
+
+**What it is.** Settings → Models has a last choice, "My Claude Code
+sign-in", with a model field (blank means `claude-sonnet-5`). It is a
+flag, not a provider entry: the stored keys stay as they are and come
+back when it is turned off. The config sync overrides the primary model
+and writes `cliBackends["claude-cli"].command` with the absolute path
+the app found — a macOS app's PATH does not see Homebrew or npm, so
+`claudeCodeCli.ts` looks in the places Claude Code's installers use and
+accepts `CAISRA_CLAUDE_CLI` as an override. A change restarts the engine.
+
+**What is not known until it runs.** Whether the engine needs an auth
+profile to exist before it will select the backend; whether our
+runtime adapter renders the CLI backend's events as cleanly as the
+embedded runtime's; whether the approval card survives
+`--permission-prompt-tool stdio`. The founder runs it and reads
+`[EngineConfigSync] model=claude-cli/…` and the gateway log.
+
+**Proof.** The sync test writes the config with the flag on, blank and
+off; the candidates and the finder are unit-tested; 537 tests across
+settings, links, the design tree, config impact and config sync pass;
+eslint, tsc, `compile:electron` clean.
+
+**Where:** `main/libs/claudeCodeCli.ts` (+test), `openclawConfigSync.ts`,
+`openclawConfigImpact.ts`, `main.ts`, `shared/settings/{models,rows}.ts`,
+`design/settings/useSettings.ts`, `renderer/config.ts`.

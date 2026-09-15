@@ -61,6 +61,7 @@ import {
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
 import { APP_UI_MAP_PATH, buildAppUiMap } from '../../shared/settings/appUiMap';
 import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
+import { CLAUDE_CODE_DEFAULT_MODEL } from '../../shared/settings/models';
 import { APP_NAME } from '../appConstants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
@@ -73,6 +74,7 @@ import {
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
+import { CLAUDE_CLI_PROVIDER, resolveClaudeCli } from './claudeCodeCli';
 import {
   getAllServerModelMetadata,
   listProviderSourceEntries,
@@ -2228,6 +2230,15 @@ type OpenClawConfigSyncDeps = {
    */
   getComposioApiKey?: () => string | undefined;
   /**
+   * The person's Claude Code sign-in as the model, for their own
+   * development. When on, the engine's primary model becomes
+   * `claude-cli/<model>` — the engine runs each turn through the Claude
+   * Code app installed on this computer, the same config the engine's
+   * own planner uses — and the command is the absolute path the app
+   * found, because a macOS app's PATH does not see Homebrew or npm.
+   */
+  getClaudeCodeLogin?: () => { enabled: boolean; model?: string } | undefined;
+  /**
    * How much the agent may do on this computer without asking.
    *
    * Absent, it asks. See `shared/settings/constants.ts` for why that
@@ -2286,6 +2297,7 @@ export class OpenClawConfigSync {
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
   private readonly getComposioApiKey: () => string | undefined;
+  private readonly getClaudeCodeLogin: () => { enabled: boolean; model?: string } | undefined;
   private readonly getExecPolicy: () => ExecPolicy;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
@@ -2323,6 +2335,7 @@ export class OpenClawConfigSync {
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
     this.getComposioApiKey = deps.getComposioApiKey ?? (() => undefined);
+    this.getClaudeCodeLogin = deps.getClaudeCodeLogin ?? (() => undefined);
   }
 
   /** The Composio key, trimmed, or empty. One reading for the file and the env. */
@@ -2755,6 +2768,27 @@ export class OpenClawConfigSync {
     const agentModelDefaults = Object.keys(perModelCustomDefaults).length > 0
       ? buildCompleteAgentModelDefaults(allProvidersMap, perModelCustomDefaults)
       : {};
+
+    // The Claude Code sign-in outranks every provider above: the primary
+    // model becomes the engine's Claude CLI backend, which spawns the
+    // installed Claude Code app for each turn. Nothing else about the
+    // providers changes, so switching back is the flag alone.
+    const claudeCode = this.getClaudeCodeLogin();
+    let cliBackends: Record<string, { command: string }> | undefined;
+    if (claudeCode?.enabled) {
+      const model = claudeCode.model?.trim() || CLAUDE_CODE_DEFAULT_MODEL;
+      primaryModel = `${CLAUDE_CLI_PROVIDER}/${model}`;
+      const command = resolveClaudeCli();
+      if (command) {
+        cliBackends = { [CLAUDE_CLI_PROVIDER]: { command } };
+        console.log(`[EngineConfigSync] model=${primaryModel} through Claude Code at ${command}`);
+      } else {
+        console.warn(
+          `[EngineConfigSync] model=${primaryModel} through Claude Code, but no \`claude\` command was found; `
+          + 'the engine will try a bare `claude` from its own PATH. Set CAISRA_CLAUDE_CLI to the binary if that fails.',
+        );
+      }
+    }
     console.log(
       `[EngineConfigSync] sandbox mode: ${sandboxMode} (executionMode: ${coworkConfig.executionMode || 'local'}, enterprise: ${this.isEnterprise()})`,
     );
@@ -2934,6 +2968,7 @@ export class OpenClawConfigSync {
           ...(modelRoleDefaults.subagents
             ? { subagents: modelRoleDefaults.subagents }
             : {}),
+          ...(cliBackends ? { cliBackends } : {}),
           ...(Object.keys(agentModelDefaults).length > 0
             ? { models: agentModelDefaults }
             : {}),

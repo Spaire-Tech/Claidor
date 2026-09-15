@@ -4,6 +4,7 @@ import { ProviderName } from '../providers';
 import {
   ACCOUNT_MODELS,
   apiKeyUrlFor,
+  CLAUDE_CODE_LOGIN,
   currentChoice,
   defaultModelIdFor,
   modelChoices,
@@ -16,7 +17,16 @@ describe('what the row offers', () => {
   test('the account first, then the keys somebody might already have', () => {
     const choices = modelChoices();
     expect(choices[0].value).toBe(ACCOUNT_MODELS);
-    expect(choices.slice(1).map(one => one.value)).toEqual([...OWN_KEY_PROVIDERS]);
+    expect(choices.slice(1, -1).map(one => one.value)).toEqual([...OWN_KEY_PROVIDERS]);
+    // Last, and only for the person developing on this machine.
+    expect(choices[choices.length - 1].value).toBe(CLAUDE_CODE_LOGIN);
+    expect(choices[choices.length - 1].hint).toMatch(/Claude Code/);
+  });
+
+  test('the Claude Code sign-in outranks a stored key while it is on', () => {
+    const providers = { [ProviderName.OpenAI]: { enabled: true, apiKey: 'sk-1', models: [] } } as never;
+    expect(currentChoice(providers, true)).toBe(CLAUDE_CODE_LOGIN);
+    expect(currentChoice(providers, false)).toBe(ProviderName.OpenAI);
   });
 
   test('every option says who is billed, because that is the whole question', () => {

@@ -2580,6 +2580,10 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       // Composio's key, from Settings; the plugin entry is written off
       // without it (`openclawConfigSync.ts`), never left out.
       getComposioApiKey: () => getStore().get<AppConfigSettings>('app_config')?.composioApiKey,
+      getClaudeCodeLogin: () => {
+        const appConfig = getStore().get<AppConfigSettings>('app_config');
+        return { enabled: appConfig?.claudeCodeLogin === true, ...(appConfig?.claudeCodeModel ? { model: appConfig.claudeCodeModel } : {}) };
+      },
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
       getSkillsList: () =>
@@ -4459,6 +4463,9 @@ type AppConfigSettings = {
   browserWebAccess?: Partial<BrowserWebAccessConfig>;
   /** Settings → Apps: Composio's API key; the sign-in tokens stay on Composio's servers. */
   composioApiKey?: string;
+  /** Settings → Models: run turns through the installed Claude Code app, for development. */
+  claudeCodeLogin?: boolean;
+  claudeCodeModel?: string;
 };
 
 const getUseSystemProxyFromConfig = (config?: { useSystemProxy?: boolean }): boolean => {

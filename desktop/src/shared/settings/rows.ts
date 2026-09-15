@@ -1,5 +1,5 @@
 import { ExecPolicy } from './constants';
-import { ACCOUNT_MODELS, apiKeyUrlFor, modelChoices, providerLabel } from './models';
+import { ACCOUNT_MODELS, apiKeyUrlFor, CLAUDE_CODE_DEFAULT_MODEL, CLAUDE_CODE_LOGIN, modelChoices, providerLabel } from './models';
 
 /**
  * Settings, as data.
@@ -124,6 +124,8 @@ export interface SettingsInput {
   modelApiKey: string;
   /** The Composio key, which is what lets the Apps sheet sign into most cards. */
   composioApiKey: string;
+  /** The model Claude Code is asked for when the choice is the Claude Code sign-in. */
+  claudeCodeModel: string;
   /** 0–1 and a phrase, from the account's quota. Absent while unknown. */
   usage?: { fraction: number; value: string; desc: string };
   version?: string;
@@ -137,6 +139,7 @@ export interface SettingsInput {
   onModelChoice: (choice: string) => void;
   onModelApiKey: (apiKey: string) => void;
   onComposioApiKey: (apiKey: string) => void;
+  onClaudeCodeModel: (model: string) => void;
   onWorkingDirectory: () => void;
   onRefreshUsage: () => void;
   onCheckUpdates: () => void;
@@ -305,9 +308,22 @@ function build(tab: SettingsTab, input: SettingsInput): SettingsGroup[] {
               options: modelChoices(),
               onPick: input.onModelChoice,
             } satisfies SelectRow,
+            // The Claude Code sign-in has no key; it has a model name, and
+            // the sentence that says whose limits it draws on.
+            ...(input.modelChoice === CLAUDE_CODE_LOGIN
+              ? [{
+                kind: SettingsRowKind.Field,
+                id: 'claude-code-model',
+                label: 'Claude Code model',
+                desc: `Runs through the Claude Code app on this computer, under its sign-in. Leave blank for ${CLAUDE_CODE_DEFAULT_MODEL}.`,
+                value: input.claudeCodeModel,
+                placeholder: CLAUDE_CODE_DEFAULT_MODEL,
+                onSave: input.onClaudeCodeModel,
+              } satisfies FieldRow]
+              : []),
             // Only once a provider is chosen. A key field above the choice
             // it belongs to is a question nobody asked yet.
-            ...(input.modelChoice === ACCOUNT_MODELS
+            ...(input.modelChoice === ACCOUNT_MODELS || input.modelChoice === CLAUDE_CODE_LOGIN
               ? []
               : [{
                 kind: SettingsRowKind.Field,
