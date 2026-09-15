@@ -2088,3 +2088,39 @@ is the app's design.
 **Where:** `server/polar/desktop/{skill_store.py,endpoints.py}`,
 `server/polar/desktop/skills/`, `server/pyproject.toml` (the vendored
 scripts excluded from ruff and mypy), `server/tests/desktop/test_endpoints.py`.
+
+## 50. Playwright drives the in-app browser — `built, proven on Chromium, unrun in Electron`
+
+*"I want playwrit."* The app now starts Chromium with
+`--remote-debugging-port=0`; Chromium picks a free loopback port and
+writes it to `DevToolsActivePort` under the app's data directory. The
+browser host connects Playwright to that port and drives its own views
+through it: a click that waits until the element is attached, visible,
+stable and receives events and then sends real pointer events; a
+reference-tagged snapshot (`[ref=e12]`) that is the same tree Microsoft's
+browser MCP hands to models; `fill` that React inputs accept; `wait_for`
+on visible text. The settle-and-resnapshot from item 46 still runs after
+a click, because Playwright waits for a navigation the click starts but
+not for a single-page app's redraw.
+
+**The trade, stated.** The port exposes every page in the app — the app's
+own window included — to any process on this Mac while the app runs.
+The host never hands the agent a page it did not open: a view is looked
+up by its own DevTools target id, read from the view, and a target id
+nobody opened is refused (tested). But another local process is not the
+agent, and nothing here stops it. The founder chose this over the
+hand-written driver. That driver stays as the fallback: no port file,
+and the log says `driver=devtools` and everything works as before.
+
+**Proof.** A live test starts Chromium exactly as Electron now does,
+reads the port file, connects, finds a page by target id, snapshots it
+with refs, clicks and waits and fills through them, and refuses a
+foreign ref and an unknown target. tsc, eslint, `compile:electron`
+clean. `playwright-core` 1.60 is a runtime dependency now (the engine
+pins the same). **Unrun in Electron itself**: that Chromium honours the
+switch and writes the file under `userData` is Chromium's documented
+behaviour, not something this machine can run; the founder's next build
+proves it, and the log line names the driver.
+
+**Where:** `main/libs/agentBrowserPlaywright.ts` (+test),
+`agentBrowserHost.ts`, `main.ts`, `package.json`.

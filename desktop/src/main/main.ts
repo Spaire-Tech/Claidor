@@ -2113,6 +2113,14 @@ if (enableVerboseLogging) {
   app.commandLine.appendSwitch('enable-logging');
   app.commandLine.appendSwitch('v', '1');
 }
+// Playwright drives the agent's built-in browser over the app's own
+// DevTools port (`agentBrowserPlaywright.ts`). Port 0: Chromium picks a
+// free loopback port and writes it to DevToolsActivePort under userData.
+// The port exposes every page in the app to any process on this machine
+// while the app runs; the founder accepted that for Playwright's clicks
+// and snapshots (review.md item 50). The host never hands the agent a
+// page it did not open itself.
+app.commandLine.appendSwitch('remote-debugging-port', '0');
 
 // 配置网络服务
 app.on('ready', () => {
@@ -2256,6 +2264,7 @@ const getBrowserCredentialApprovalService = (): BrowserCredentialApprovalService
 const getAgentBrowserHost = (): AgentBrowserHost => {
   if (!agentBrowserHost) {
     agentBrowserHost = new AgentBrowserHost({
+      userDataDir: app.getPath('userData'),
       getMainWindow: () => mainWindow,
       getBrowserConfig: () => getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
       useSystemProxy: () => {
