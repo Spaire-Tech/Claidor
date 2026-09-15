@@ -64,7 +64,6 @@ export interface TextItem {
   /** What that agent is called, for the small line above its bubble. */
   agentName?: string;
   /** True while the text is still arriving, so voice mode can stream it. */
-  streaming?: boolean;
   /**
    * The bulk behind this answer, collapsed under it.
    *

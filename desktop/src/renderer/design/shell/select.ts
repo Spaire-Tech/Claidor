@@ -280,6 +280,12 @@ export interface ThreadInput {
   deviceName?: string;
   /** Questions already answered, by request id and then question text. */
   answered?: Readonly<Record<string, Readonly<Record<string, string>>>>;
+  /**
+   * Whether the engine is still working here. While it is, a reply that
+   * is still arriving is not drawn — the typing animation is the whole
+   * of what says "working". Absent means running.
+   */
+  running?: boolean;
 }
 
 /**
@@ -291,7 +297,7 @@ export interface ThreadInput {
  * context for.
  */
 export function threadItems(input: ThreadInput): ThreadItem[] {
-  const { agentId, agentName, session, pendingPermissions, deviceName, answered } = input;
+  const { agentId, agentName, session, pendingPermissions, deviceName, answered, running } = input;
   const mine = session
     ? pendingPermissions.filter(request => request.sessionId === session.id)
     : [];
@@ -301,6 +307,7 @@ export function threadItems(input: ThreadInput): ThreadItem[] {
     pending: mine,
     ...(deviceName ? { deviceId: deviceName } : {}),
     ...(answered ? { answered } : {}),
+    ...(running !== undefined ? { running } : {}),
   });
 }
 

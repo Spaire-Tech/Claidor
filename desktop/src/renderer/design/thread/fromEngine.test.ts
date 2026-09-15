@@ -110,14 +110,30 @@ describe('text arrives as texts', () => {
     expect(items).toHaveLength(1);
   });
 
-  test('a streaming reply is not split while it is still arriving', () => {
-    // Splitting a half-arrived answer would make bubbles appear and then
-    // re-split as more lands.
+  test('a reply that is still arriving is not shown at all', () => {
+    // "i want to have it as text. always." A bubble that grows a token at
+    // a time is what the first build drew; now nothing is drawn until the
+    // reply is complete, and the typing animation covers the wait.
     const items = toThreadItems([
       msg({ type: 'assistant', content: 'One.\n\nTwo.', metadata: { isStreaming: true } }),
     ]);
-    expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ streaming: true });
+    expect(items).toHaveLength(0);
+  });
+
+  test('and lands split into bubbles the moment it is complete', () => {
+    const items = toThreadItems([
+      msg({ type: 'assistant', content: 'One.\n\nTwo.', metadata: { isStreaming: false, isFinal: true } }),
+    ]);
+    expect(items).toHaveLength(2);
+  });
+
+  test('an engine that stopped mid-reply still shows what arrived', () => {
+    // Marked streaming, never marked final, session no longer running:
+    // hiding it forever would lose words somebody was waiting for.
+    const items = toThreadItems([
+      msg({ type: 'assistant', content: 'One.\n\nTwo.', metadata: { isStreaming: true } }),
+    ], { running: false });
+    expect(items).toHaveLength(2);
   });
 
   test('split bubbles get distinct ids so a list can key them', () => {
@@ -398,9 +414,10 @@ describe('a reply that is only a file', () => {
     expect(items[0].kind).toBe(ThreadItemKind.Text);
   });
 
-  test('never while the reply is still arriving', () => {
-    // The link often lands before the sentence around it. A bubble that
-    // turns into a card and back again is worse than either.
+  test('nothing is shown while the reply is still arriving', () => {
+    // The link often lands before the sentence around it; the old build
+    // drew a bubble that turned into a card and back. Now neither is
+    // drawn until the reply is complete.
     const items = toThreadItems([
       msg({
         type: 'assistant',
@@ -408,7 +425,7 @@ describe('a reply that is only a file', () => {
         metadata: { isStreaming: true },
       }),
     ], {});
-    expect(items[0].kind).toBe(ThreadItemKind.Text);
+    expect(items).toHaveLength(0);
   });
 
   test('a file the conversation knows by name alone still becomes one', () => {
@@ -433,15 +450,14 @@ describe('a long reply with its working behind it', () => {
     });
   });
 
-  test('never while the reply is still arriving', () => {
-    // The closing fence has not landed yet, so a split now would be made
-    // on half a reply and then re-made.
+  test('nothing is shown while the reply is still arriving', () => {
+    // The closing fence has not landed yet. Nothing is drawn until it has.
     const items = toThreadItems([msg({
       type: 'assistant',
       content: 'Sixteen invoices.\n\n```details\nINV-1201 Acme',
       metadata: { isStreaming: true },
     })], {});
-    expect(items[0]).not.toHaveProperty('details');
+    expect(items).toHaveLength(0);
   });
 
   test('an ordinary reply carries no detail', () => {

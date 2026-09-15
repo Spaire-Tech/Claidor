@@ -1252,3 +1252,28 @@ keyframes, verbatim, in `tokens.css` as `fsr-think-*`.
 
 **Where:** `design/thread/Thread.tsx`, `design/shell/MessagesShell.tsx`,
 `design/tokens.css`.
+
+---
+
+## 31. A reply crawled out a token at a time — `fixed`
+
+The founder: *"it's supposed come as text. but the ai write it in
+streams. which creates lags. i want to have it as text. always."*
+
+`direction.md` §3 had said this since 13 September — "a typed answer
+should never crawl out a token at a time" — and the build did it anyway.
+`fromEngine.ts` drew a streaming reply as one whole bubble that kept
+changing as tokens landed. It had a comment explaining it would not
+*split* while streaming, as if that were the rule; the rule was that it
+should not be there.
+
+**Fixed.** A reply is not drawn until it is complete. While it arrives
+the thread shows the typing animation (item 30) and nothing else; when
+the final lands it is split into bubbles 420ms apart, as before. In every
+mode — there is no speech yet, and when there is, it is the speech that
+streams. One exception: an engine that stops mid-reply without a final
+shows what arrived once the session is no longer running, rather than
+hiding it forever. `direction.md` §3 is amended with the founder's words.
+
+**Where:** `design/thread/fromEngine.ts`, `design/shell/select.ts`,
+`design/shell/useMessagesShell.ts`, `docs/product/direction.md`.

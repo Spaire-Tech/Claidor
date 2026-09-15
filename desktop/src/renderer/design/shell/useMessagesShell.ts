@@ -307,10 +307,11 @@ export function useMessagesShell(): MessagesShellState {
           session: memberSession,
           pendingPermissions,
           answered: answers,
+          running: sessions.some(one => one.id === memberSession?.id && one.status === 'running'),
         }),
       }];
     }));
-  }, [room, agents, sessionsByAgent, computerName, pendingPermissions, answers]);
+  }, [room, agents, sessionsByAgent, sessions, computerName, pendingPermissions, answers]);
 
   const items = useMemo(
     () => roomItems ?? threadItems({
@@ -322,8 +323,9 @@ export function useMessagesShell(): MessagesShellState {
       session: session ? { ...session, messages } : undefined,
       pendingPermissions,
       answered: answers,
+      running: currentSession?.status === 'running',
     }),
-    [roomItems, activeId, active, session, messages, pendingPermissions, computerName, answers],
+    [roomItems, activeId, active, session, messages, pendingPermissions, computerName, answers, currentSession?.status],
   );
 
   // A room is working while any member is. The person is waiting for the

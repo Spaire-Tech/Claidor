@@ -126,6 +126,14 @@ Two different behaviours, and the design already separates them:
 So streaming is a property of speech, not of text. A typed answer should
 never crawl out a token at a time.
 
+**Amended 15 September.** The founder, on seeing the built app: *"it's
+supposed come as text. but the ai write it in streams. which creates
+lags. i want to have it as text. always."* So: a reply is drawn only
+when it is complete, in every mode. While it is arriving, the typing
+animation is the whole of what says "working". There is no speech in
+this product yet; when there is, it is the *speech* that will stream,
+never the bubble.
+
 ## 4. The voice brief
 
 This goes into the agent's description/instructions verbatim. It is the
