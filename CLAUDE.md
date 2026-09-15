@@ -68,15 +68,25 @@ me, and I gave three explanations for it, all wrong. Of the two faults
 that were ever established, both were ours and both went with the reset:
 plugin loading is all-or-nothing, so one extension that cannot load kills
 the browser and every other plugin (12 September, self-inflicted by
-un-pruning three extensions), and a startup-order change of ours. One
-observation survives because it is upstream's: `browser` is in neither
-`COWORK_SYNC_FIELDS` nor `COWORK_RESTART_FIELDS` in
-`openclawConfigImpact.ts`, so a change of browser mode does not ask the
-gateway to restart and the config file can say in-app while the running
-engine drives its own Chromium. That was never proven to be the fault the
-founder saw. Nobody has run the browser in this tree. Do not call it
-broken and do not call it fixed — run it, and if it fails get the gateway
-log before touching code.
+un-pruning three extensions), and a startup-order change of ours.
+
+**A third "observation" here was wrong, and is now deleted.** This file
+used to say that because `browser` is in neither `COWORK_SYNC_FIELDS` nor
+`COWORK_RESTART_FIELDS` (`openclawConfigImpact.ts`), a change of browser
+mode does not restart the gateway, so the config could say in-app while
+the running engine drove its own Chromium. The premise is true and the
+conclusion is false: those two sets govern **cowork** config, and the
+browser lives in `app_config`. `main.ts`'s `store:set` handler computes
+`hasBrowserWebAccessConfigChanged` and passes
+`restartGatewayIfRunning: true` on any change to `browserWebAccess`,
+`displayMode` included. Checked 15 September against
+`main.ts:4395` and `main.ts:4846`.
+
+Nobody has run the browser in this tree. Do not call it broken and do not
+call it fixed — run it, and if it fails get the gateway log before
+touching code. The line that decides it is
+`[OpenClawConfigSync] browser profile=…`, which on a fallback names
+which half was missing.
 
 **Why there is no machine registry, and what actually differs.** Grok Bot
 needs registered computers because it lives in the cloud and has to reach
