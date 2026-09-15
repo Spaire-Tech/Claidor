@@ -6,7 +6,7 @@ appears stale.
 
 ## Instruction Scope
 
-This root `AGENTS.md` is repository-level guidance for LobsterAI. Codex may also
+This root `AGENTS.md` is repository-level guidance for Caisra. Codex may also
 load more specific `AGENTS.md` or `AGENTS.override.md` files from subdirectories
 when the current working directory is inside those subtrees. More specific
 instructions override broader ones.
@@ -17,16 +17,18 @@ historical context and verify against the current source.
 
 ## Project Snapshot
 
-LobsterAI is an Electron + React desktop application. Its core user-facing
+Caisra is an Electron + React desktop application, built on NetEase
+Youdao's LobsterAI (MIT; the upstream name survives only in internal
+identifiers). Its core user-facing
 product is a desktop agent experience that can work with local projects,
 files, browser previews, IM channels, skills, MCP servers, scheduled tasks,
 and rich artifacts.
 
 ### Cowork vs OpenClaw
 
-`Cowork` is LobsterAI's product/session layer. The name is historical: it
+`Cowork` is Caisra's product/session layer. The name is historical: it
 started as a Claude Code-like in-house coding assistant, but in the current
-codebase it means the LobsterAI layer that owns sessions, messages,
+codebase it means the Caisra layer that owns sessions, messages,
 permissions, UI state, local persistence, context usage, artifacts, and IPC
 contracts.
 
@@ -173,15 +175,15 @@ Main integration points:
 
 ### Patch Policy
 
-When changing OpenClaw-related behavior, first look for a LobsterAI-side
+When changing OpenClaw-related behavior, first look for an app-side
 integration point: adapter code, config sync, plugin configuration, runtime
 packaging, UI handling, or local data-layer handling. Prefer changing
-LobsterAI when the behavior is product-specific or can be expressed cleanly at
+the app when the behavior is product-specific or can be expressed cleanly at
 the integration boundary.
 
 Use version-scoped OpenClaw patches only when the required behavior is inside
-OpenClaw and there is no clean LobsterAI-side hook. Do not avoid a patch by
-adding brittle or contorted LobsterAI workarounds.
+OpenClaw and there is no clean app-side hook. Do not avoid a patch by
+adding brittle or contorted app-side workarounds.
 
 Patches live under `scripts/patches/<openclaw.version>/` and are applied by
 `npm run openclaw:patch`. Do not leave manual edits in the sibling OpenClaw
@@ -200,7 +202,7 @@ Key modules:
 - `src/main/libs/openclawEngineManager.ts`: manages the bundled OpenClaw
   gateway process, state directory, config path, ports, tokens, gateway logs,
   restart/repair behavior, and runtime readiness.
-- `src/main/libs/openclawConfigSync.ts`: renders LobsterAI state into
+- `src/main/libs/openclawConfigSync.ts`: renders app state into
   OpenClaw config: providers/models, agents, IM bindings, plugins, MCP servers,
   skills extra dirs, sandbox mode, and managed workspace `AGENTS.md` sections.
 - `src/main/libs/agentEngine/openclawRuntimeAdapter.ts`: translates between
@@ -271,7 +273,7 @@ Useful shared areas:
 
 ## Data Model
 
-SQLite lives in Electron `app.getPath('userData')` as `lobsterai.sqlite`.
+SQLite lives in Electron `app.getPath('userData')` as `caisra.sqlite` (`DB_FILENAME` in `appConstants.ts`).
 
 Important tables:
 - `kv`: app-wide JSON values, including auth/config flags.
@@ -305,10 +307,10 @@ Migrations are mostly ad-hoc `PRAGMA table_info()` checks in
 OpenClaw runtime state is under Electron `userData/openclaw`.
 
 Important paths:
-- `%APPDATA%/LobsterAI/openclaw/state/openclaw.json` on Windows: generated
+- `%APPDATA%/Caisra/openclaw/state/openclaw.json` on Windows: generated
   OpenClaw config.
-- `%APPDATA%/LobsterAI/openclaw/state/workspace-main`: main agent workspace.
-- `%APPDATA%/LobsterAI/openclaw/state/workspace-{agentId}`: non-main agent
+- `%APPDATA%/Caisra/openclaw/state/workspace-main`: main agent workspace.
+- `%APPDATA%/Caisra/openclaw/state/workspace-{agentId}`: non-main agent
   workspaces.
 
 The main workspace path is resolved by `getMainAgentWorkspacePath()`.
@@ -316,7 +318,7 @@ Non-main agent workspaces follow OpenClaw's state-dir fallback and are synced by
 `openclawConfigSync.ts`.
 
 Workspace files include:
-- `AGENTS.md`: OpenClaw workspace instructions with a LobsterAI-managed section.
+- `AGENTS.md`: OpenClaw workspace instructions with a Caisra-managed section (marker `<!-- Caisra managed: do not edit below this line -->`; the old `LobsterAI managed` marker is still recognised and replaced).
 - `MEMORY.md`: durable memory facts.
 - `memory/YYYY-MM-DD.md`: daily notes.
 - `USER.md`: user profile/context.
@@ -332,7 +334,7 @@ Main process logging uses `electron-log` via `src/main/logger.ts`, which
 intercepts `console.*`.
 
 **The log directory is the app's name, and the app was renamed to
-Faiser.** `app.setName(APP_NAME)` runs in `main.ts` before
+Caisra.** `app.setName(APP_NAME)` runs in `main.ts` before
 `initLogger()`, and electron-log joins `electron.app.name` onto the
 platform log root. Every path here said `LobsterAI` long after the
 rename, which sent the founder to a directory that does not exist — so
@@ -340,15 +342,15 @@ three separate faults all looked like "the log shows nothing". The log
 prints its own directory on startup; trust that line, not this file.
 
 Main logs:
-- macOS: `~/Library/Logs/Faiser/main-YYYY-MM-DD.log`
-- Windows: `%APPDATA%/Faiser/logs/main-YYYY-MM-DD.log`
-- Linux: `~/.config/Faiser/logs/main-YYYY-MM-DD.log`
+- macOS: `~/Library/Logs/Caisra/main-YYYY-MM-DD.log`
+- Windows: `%APPDATA%/Caisra/logs/main-YYYY-MM-DD.log`
+- Linux: `~/.config/Caisra/logs/main-YYYY-MM-DD.log`
 
 Main log retention is 7 days. Max file size is 80 MB; overflow rotates to
 `.old.log`.
 
 OpenClaw gateway capture logs:
-- Windows: `%APPDATA%/Faiser/openclaw/logs/gateway-YYYY-MM-DD.log`
+- Windows: `%APPDATA%/Caisra/openclaw/logs/gateway-YYYY-MM-DD.log`
 - Retention is 3 days.
 
 OpenClaw's own daily logs may also exist in a temp directory. On Windows,
@@ -367,7 +369,8 @@ Logging rules:
 - Do not add info-level logs inside polling loops, per-message hot paths, or
   routine function entries.
 - Log messages should be English, concise, and start with a module tag such as
-  `[OpenClaw]`.
+  `[Engine]` (the tags were `[OpenClaw…]` until 15 September 2026; no
+  tag names the engine's product now).
 
 ## Coding Style
 

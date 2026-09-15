@@ -75,7 +75,7 @@ export function SignIn({ onSignIn, error }: SignInProps): JSX.Element {
           so the screen is never a dead form.
         */}
         <span style={{ animation: `fsr-orb-in ${motion.orbIn.duration} ${motion.orbIn.easing} both` }}>
-          <Orb agentId="first-run" size={104} mood={OrbMood.Idle} elevated label="Faiser" />
+          <Orb agentId="first-run" size={104} mood={OrbMood.Idle} elevated label="Caisra" />
         </span>
 
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 7 }}>

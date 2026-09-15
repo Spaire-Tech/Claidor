@@ -34,7 +34,7 @@ export const getServerApiBaseUrl = (): string => {
   const defaultBaseUrl = SERVER_API_BASE_URL;
   const serverBaseUrl = resolveDevelopmentServerBaseUrl({
     defaultBaseUrl,
-    developmentOverride: process.env.FAISER_SERVER_BASE_URL,
+    developmentOverride: process.env.CAISRA_SERVER_BASE_URL,
     isDev: process.env.NODE_ENV === 'development',
     isPackaged: app.isPackaged,
   });

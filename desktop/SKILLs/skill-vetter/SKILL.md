@@ -120,7 +120,7 @@ curl -s "https://raw.githubusercontent.com/OWNER/REPO/main/skills/SKILL_NAME/SKI
 
 ## Trust Hierarchy
 
-1. **Official OpenClaw skills** → Lower scrutiny (still review)
+1. **Official Caisra skills** → Lower scrutiny (still review)
 2. **High-star repos (1000+)** → Moderate scrutiny
 3. **Known authors** → Moderate scrutiny
 4. **New/unknown sources** → Maximum scrutiny

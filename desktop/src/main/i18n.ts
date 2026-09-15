@@ -8,7 +8,7 @@
  * Usage:
  *   import { t, setLanguage } from './i18n';
  *   setLanguage('en');
- *   const label = t('trayShowWindow'); // "Open LobsterAI"
+ *   const label = t('trayShowWindow'); // "Open Caisra"
  *   const msg = t('imMissingCredentials', { fields: 'appId, appSecret' });
  */
 
@@ -21,16 +21,16 @@ const translations: Record<LanguageType, Record<string, string>> = {
     dshPlanProviderName: '套餐',
 
     // Tray menu
-    trayShowWindow: '打开 LobsterAI',
+    trayShowWindow: '打开 Caisra',
     trayNewTask: '新建任务',
     trayViewCompletedTask: '查看完成的任务',
-    trayCompletedTaskTooltip: 'LobsterAI - {count} 个任务已完成',
+    trayCompletedTaskTooltip: 'Caisra - {count} 个任务已完成',
     traySettings: '设置',
     trayQuit: '退出',
 
     // Quit confirmation (native dialog shown on user-initiated quit)
-    appQuitConfirmTitle: '退出 LobsterAI？',
-    appQuitConfirmDetail: 'LobsterAI 关闭期间，定时任务不会运行，也无法回复 IM 消息。',
+    appQuitConfirmTitle: '退出 Caisra？',
+    appQuitConfirmDetail: 'Caisra 关闭期间，定时任务不会运行，也无法回复 IM 消息。',
     appQuitConfirmQuit: '退出',
     appQuitConfirmCancel: '取消',
     taskCompletionNotificationTitle: '任务已完成',
@@ -43,7 +43,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     questionNotificationBody: '需要你回答问题后才能继续',
     browserCredentialApprovalHeader: '保存的登录信息',
     browserCredentialApprovalTitle: '允许 Agent 自动登录',
-    browserCredentialApprovalSubtitle: 'LobsterAI 将在隔离页面中填写，密码不会提供给 Agent。',
+    browserCredentialApprovalSubtitle: 'Caisra 将在隔离页面中填写，密码不会提供给 Agent。',
     browserCredentialApprovalQuestion: '是否允许 Agent 使用账号 {username} 登录 {origin}？',
     browserCredentialApprovalReason: 'Agent 给出的原因：{reason}',
     browserCredentialApprovalAllow: '允许并继续',
@@ -52,7 +52,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     browserCredentialApprovalDenyDescription: '不使用保存的登录信息',
     browserCredentialSelectionQuestion: '选择允许 Agent 用于登录 {origin} 的账号',
     browserCredentialSelectionTitle: '选择登录账号',
-    browserCredentialSelectionSubtitle: '选定后，LobsterAI 将自动完成账号密码填写。',
+    browserCredentialSelectionSubtitle: '选定后，Caisra 将自动完成账号密码填写。',
     browserCredentialSelectionDescription: '使用该账号继续登录',
     contextMenuCut: '剪切',
     contextMenuCopy: '复制',
@@ -105,15 +105,15 @@ const translations: Record<LanguageType, Record<string, string>> = {
       '本次消息过大，请减少附件、压缩图片或拆分提交。（单次整体需小于 30MB）',
     coworkErrorCouldNotProcessPdf: '无法处理 PDF 文件。',
     coworkErrorModelNotFound: '请求的模型不存在或不可用。',
-    coworkGatewaySessionSyncTimeout: 'OpenClaw 引擎响应缓慢，消息尚未发送。请等待 1~2 分钟后重新发送；若频繁出现，请检查系统内存与磁盘占用，并将 LobsterAI 加入杀毒软件白名单。',
+    coworkGatewaySessionSyncTimeout: '引擎响应缓慢，消息尚未发送。请等待 1~2 分钟后重新发送；若频繁出现，请检查系统内存与磁盘占用，并将 Caisra 加入杀毒软件白名单。',
     coworkErrorTranscriptOversized: '该任务的历史记录过大。为保护 AI 引擎，本次消息未发送；请新建任务继续，原任务记录仍会保留。',
     coworkErrorGatewayHeapOutOfMemory: '本地 AI 引擎内存不足并已自动重启。当前任务可能过大，请等待恢复后在新任务中继续。',
     coworkErrorGatewayDisconnected: 'AI 引擎连接中断，请重试。',
     coworkErrorServiceRestart: 'AI 引擎正在重启，请稍后重试。',
     coworkErrorGatewayDraining: 'AI 引擎正在重启中，请稍等片刻后重试。',
-    openClawConfigApplyPending: 'OpenClaw 正在应用配置，请稍后重试。',
+    openClawConfigApplyPending: 'Caisra 正在应用配置，请稍后重试。',
     openClawConfigApplyOverdue:
-      'OpenClaw 正在等待活动任务结束后应用配置。请完成或停止活动任务，然后重试。',
+      'Caisra 正在等待活动任务结束后应用配置。请完成或停止活动任务，然后重试。',
     coworkErrorModelResponseTimeout: '模型响应超时，请稍后重试。',
     coworkErrorNetworkError: '网络连接失败，请检查网络设置。',
     coworkErrorRateLimit: '请求过于频繁，请稍后再试。',
@@ -174,13 +174,13 @@ const translations: Record<LanguageType, Record<string, string>> = {
     enterpriseMediaQuotaUnavailable: '当前团队的媒体生成额度暂不可用。',
 
     // Data migration dialogs
-    dataMigrationBackupDialogTitle: '备份 LobsterAI 数据',
-    dataMigrationRestoreDialogTitle: '导入 LobsterAI 数据备份',
-    dataMigrationBackupArchiveFilter: 'LobsterAI 备份包',
+    dataMigrationBackupDialogTitle: '备份 Caisra 数据',
+    dataMigrationRestoreDialogTitle: '导入 Caisra 数据备份',
+    dataMigrationBackupArchiveFilter: 'Caisra 备份包',
     dataMigrationAllFilesFilter: '所有文件',
     dataMigrationBackupBlockedByActiveWorkloads:
       '当前有正在运行的 Agent 或定时任务，请停止或等待任务完成后再备份。',
-    dataMigrationRestoreProgressTitle: '正在导入 LobsterAI 数据',
+    dataMigrationRestoreProgressTitle: '正在导入 Caisra 数据',
     dataMigrationRestoreProgressDesc: '正在恢复备份并校验数据，完成后应用会自动重启。',
     dataMigrationRestoreProgressWarning: '请不要关闭应用或重启电脑，否则可能中断本次数据迁移。',
 
@@ -211,7 +211,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imUnknownPlatform: '未知平台。',
 
     // QQ
-    imQqOpenClawHint: 'QQ 通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
+    imQqOpenClawHint: 'QQ 由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
     imQqMentionHint: '频道中需 @机器人 触发对话，也支持私信和群聊。',
     imQqAuthPassed: 'QQ 鉴权通过（AccessToken 已获取）。',
     imEmailImapAuthPassed: 'IMAP 邮箱登录验证通过。',
@@ -231,7 +231,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imTelegramCheckToken: '请检查 Bot Token 是否正确。',
     imTelegramCheckTokenNetwork: '请检查 Bot Token 是否正确，且网络通畅。',
     imTelegramOpenClawHint:
-      'Telegram 通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
+      'Telegram 由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
 
     // Discord
     imDiscordMissingBotToken: '缺少必要配置项: botToken',
@@ -240,7 +240,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imDiscordAuthFailed: 'Discord Bot 鉴权失败: {error}',
     imDiscordCheckTokenNetwork: '请检查 Bot Token 是否正确，且网络通畅。',
     imDiscordOpenClawHint:
-      'Discord 通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
+      'Discord 由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
     imDiscordGroupMention: 'Discord 群聊中仅响应 @机器人的消息。',
 
     // Feishu
@@ -249,7 +249,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imFeishuAuthFailed: '飞书鉴权失败: {error}',
     imFeishuCheckAppIdSecret: '请检查 App ID 和 App Secret 是否正确。',
     imFeishuOpenClawHint:
-      '飞书通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
+      '飞书由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
     imFeishuGroupMention: '飞书群聊中仅响应 @机器人的消息。',
     imFeishuGroupMentionSuggestion: '请在群聊中使用 @机器人 + 内容触发对话。',
     imFeishuEventSubscription: '飞书需要开启消息事件订阅（im.message.receive_v1）才能收消息。',
@@ -263,7 +263,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imDingtalkCheckClientIdSecret:
       '请检查 Client ID 和 Client Secret 是否正确，且机器人权限已开通。',
     imDingtalkOpenClawHint:
-      '钉钉通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
+      '钉钉由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
     imDingtalkBotMembership: '钉钉机器人需被加入目标会话并具备发言权限。',
     imDingtalkBotMembershipSuggestion: '请确认机器人在目标会话中，且企业权限配置允许收发消息。',
 
@@ -271,21 +271,21 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imWecomFillBotIdSecret: '请补全 Bot ID 和 Secret 后重新测试连通性。',
     imWecomConfigReady: '企业微信配置已就绪（Bot ID: {botId}）。',
     imWecomOpenClawHint:
-      '企业微信通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
-    imWecomConfigReadyOpenClaw: '企业微信配置已就绪（Bot ID: {botId}），通过 OpenClaw 运行。',
+      '企业微信由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
+    imWecomConfigReadyOpenClaw: '企业微信配置已就绪（Bot ID: {botId}），由 Caisra 引擎运行。',
 
     // Weixin
     imWeixinNotEnabled: '微信渠道当前未启用。',
     imWeixinEnableSuggestion: '请启用微信渠道后重新测试连通性。',
     imWeixinConfigReady: '微信配置已就绪。',
     imWeixinOpenClawHint:
-      '微信通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
-    imWeixinConfigReadyOpenClaw: '微信配置已就绪，通过 OpenClaw 运行。',
+      '微信由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
+    imWeixinConfigReadyOpenClaw: '微信配置已就绪，由 Caisra 引擎运行。',
 
     // NIM
     imNimFillCredentials: '请补全 AppKey、Account 和 Token 后重新测试连通性。',
     imNimConfigReady: '云信配置已就绪（Account: {account}）。',
-    imNimOpenClawHint: '云信通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
+    imNimOpenClawHint: '云信由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
     imNimP2pOnly: '云信 IM 当前仅支持 P2P（私聊）消息。',
     imNimP2pOnlySuggestion: '请通过私聊方式向机器人账号发送消息触发对话。',
 
@@ -296,8 +296,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imPopoFillWebhookCredentials: '请补全 appKey、appSecret、token 和 aesKey 后重新测试连通性。',
     imPopoFillWsCredentials: '请补全 appKey、appSecret 和 aesKey 后重新测试连通性。',
     imPopoConfigReady: 'POPO 配置已就绪。',
-    imPopoOpenClawHint: 'POPO 通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
-    imPopoConfigReadyOpenClaw: 'POPO 配置已就绪，通过 OpenClaw 运行。',
+    imPopoOpenClawHint: 'POPO 由 Caisra 引擎运行，Bot 将在引擎启动后自动连接。',
+    imPopoConfigReadyOpenClaw: 'POPO 配置已就绪，由 Caisra 引擎运行。',
 
     // Email Channel
     emailSettings: '邮件设置',
@@ -355,7 +355,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     emailMissingPassword: '实例「{name}」使用 IMAP 模式但未填写密码',
     emailMissingApiKey: '实例「{name}」使用 WebSocket 模式但未填写 API Key',
     emailInvalidApiKey: '实例「{name}」的 API Key 格式不正确（应以 ck_ 开头）',
-    emailGatewayRestarting: '正在重启 OpenClaw Gateway...',
+    emailGatewayRestarting: '正在重启引擎...',
     emailDeleteConfirm: '确定要删除邮箱账号「{name}」吗？',
     emailEnterValidEmailFirst: '请先填写有效的邮箱地址',
     emailVerifyInBrowserAndPaste: '请在浏览器中完成验证，然后将 API Key 粘贴回来',
@@ -375,16 +375,16 @@ const translations: Record<LanguageType, Record<string, string>> = {
     dshPlanProviderName: 'Plan',
 
     // Tray menu
-    trayShowWindow: 'Open LobsterAI',
+    trayShowWindow: 'Open Caisra',
     trayNewTask: 'New Task',
     trayViewCompletedTask: 'View Completed Task',
-    trayCompletedTaskTooltip: 'LobsterAI - {count} completed task(s)',
+    trayCompletedTaskTooltip: 'Caisra - {count} completed task(s)',
     traySettings: 'Settings',
     trayQuit: 'Quit',
 
     // Quit confirmation (native dialog shown on user-initiated quit)
-    appQuitConfirmTitle: 'Quit LobsterAI?',
-    appQuitConfirmDetail: 'While LobsterAI is closed, scheduled tasks will not run and IM messages will not be answered.',
+    appQuitConfirmTitle: 'Quit Caisra?',
+    appQuitConfirmDetail: 'While Caisra is closed, scheduled tasks will not run and IM messages will not be answered.',
     appQuitConfirmQuit: 'Quit',
     appQuitConfirmCancel: 'Cancel',
     taskCompletionNotificationTitle: 'Task Complete',
@@ -397,7 +397,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     questionNotificationBody: 'Waiting for your answer to continue.',
     browserCredentialApprovalHeader: 'Saved login',
     browserCredentialApprovalTitle: 'Allow Agent sign-in',
-    browserCredentialApprovalSubtitle: 'LobsterAI fills the isolated page without revealing the password to the Agent.',
+    browserCredentialApprovalSubtitle: 'Caisra fills the isolated page without revealing the password to the Agent.',
     browserCredentialApprovalQuestion: 'Allow the Agent to sign in to {origin} as {username}?',
     browserCredentialApprovalReason: 'Reason from the Agent: {reason}',
     browserCredentialApprovalAllow: 'Allow and continue',
@@ -406,7 +406,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     browserCredentialApprovalDenyDescription: 'Do not use the saved login',
     browserCredentialSelectionQuestion: 'Choose an account the Agent may use to sign in to {origin}',
     browserCredentialSelectionTitle: 'Choose a sign-in account',
-    browserCredentialSelectionSubtitle: 'LobsterAI will fill the selected account automatically.',
+    browserCredentialSelectionSubtitle: 'Caisra will fill the selected account automatically.',
     browserCredentialSelectionDescription: 'Continue with this account',
     contextMenuCut: 'Cut',
     contextMenuCopy: 'Copy',
@@ -483,15 +483,15 @@ const translations: Record<LanguageType, Record<string, string>> = {
       'This message is too large. Reduce attachments, compress images, or split it up. (Keep each message under about 30 MB.)',
     coworkErrorCouldNotProcessPdf: 'Unable to process the PDF file.',
     coworkErrorModelNotFound: 'The requested model does not exist or is unavailable.',
-    coworkGatewaySessionSyncTimeout: 'The OpenClaw engine is responding slowly and your message has not been sent. Please wait a minute or two and resend. If this happens frequently, check system memory and disk usage, and add LobsterAI to your antivirus allowlist.',
+    coworkGatewaySessionSyncTimeout: 'The engine is responding slowly and your message has not been sent. Please wait a minute or two and resend. If this happens frequently, check system memory and disk usage, and add Caisra to your antivirus allowlist.',
     coworkErrorTranscriptOversized: 'This task history is too large. The message was not sent to protect the AI engine. Continue in a new task; the original task will be preserved.',
     coworkErrorGatewayHeapOutOfMemory: 'The local AI engine ran out of memory and is restarting automatically. This task may be too large; wait for recovery and continue in a new task.',
     coworkErrorGatewayDisconnected: 'AI engine connection lost. Please retry.',
     coworkErrorServiceRestart: 'AI engine is restarting. Please try again later.',
     coworkErrorGatewayDraining: 'AI engine is restarting. Please wait a moment and try again.',
-    openClawConfigApplyPending: 'OpenClaw is applying configuration. Please try again shortly.',
+    openClawConfigApplyPending: 'Caisra is applying configuration. Please try again shortly.',
     openClawConfigApplyOverdue:
-      'OpenClaw is waiting for active tasks to finish before applying configuration. Complete or stop the active tasks, then try again.',
+      'Caisra is waiting for active tasks to finish before applying configuration. Complete or stop the active tasks, then try again.',
     coworkErrorModelResponseTimeout: 'The model response timed out. Please try again.',
     coworkErrorNetworkError: 'Network connection failed. Please check your network settings.',
     coworkErrorRateLimit: 'Too many requests. Please try again later.',
@@ -560,15 +560,15 @@ const translations: Record<LanguageType, Record<string, string>> = {
     enterpriseMediaQuotaUnavailable: 'Media generation quota is unavailable for this team.',
 
     // Data migration dialogs
-    dataMigrationBackupDialogTitle: 'Back Up LobsterAI Data',
-    dataMigrationRestoreDialogTitle: 'Import LobsterAI Data Backup',
-    dataMigrationBackupArchiveFilter: 'LobsterAI Backup',
+    dataMigrationBackupDialogTitle: 'Back Up Caisra Data',
+    dataMigrationRestoreDialogTitle: 'Import Caisra Data Backup',
+    dataMigrationBackupArchiveFilter: 'Caisra Backup',
     dataMigrationAllFilesFilter: 'All Files',
     dataMigrationBackupBlockedByActiveWorkloads:
       'An agent or scheduled task is still running. Stop it or wait for it to finish before backing up.',
-    dataMigrationRestoreProgressTitle: 'Importing LobsterAI data',
+    dataMigrationRestoreProgressTitle: 'Importing Caisra data',
     dataMigrationRestoreProgressDesc:
-      'Restoring the backup and validating data. LobsterAI will restart automatically when finished.',
+      'Restoring the backup and validating data. Caisra will restart automatically when finished.',
     dataMigrationRestoreProgressWarning:
       'Do not close the app or restart the computer, or the migration may be interrupted.',
 
@@ -608,7 +608,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
 
     // QQ
     imQqOpenClawHint:
-      'QQ runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
+      'QQ runs on the Caisra engine. The bot will connect automatically when the engine starts.',
     imQqMentionHint:
       '@mention the bot in channels to start a conversation. Direct messages and group chats are also supported.',
     imQqAuthPassed: 'QQ authentication passed (AccessToken obtained).',
@@ -631,7 +631,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imTelegramCheckTokenNetwork:
       'Please check that the Bot Token is correct and the network is reachable.',
     imTelegramOpenClawHint:
-      'Telegram runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
+      'Telegram runs on the Caisra engine. The bot will connect automatically when the engine starts.',
 
     // Discord
     imDiscordMissingBotToken: 'Missing required configuration: botToken',
@@ -641,7 +641,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imDiscordCheckTokenNetwork:
       'Please check that the Bot Token is correct and the network is reachable.',
     imDiscordOpenClawHint:
-      'Discord runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
+      'Discord runs on the Caisra engine. The bot will connect automatically when the engine starts.',
     imDiscordGroupMention: 'Discord only responds to @mentioned messages in group chats.',
 
     // Feishu
@@ -651,7 +651,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imFeishuAuthFailed: 'Feishu authentication failed: {error}',
     imFeishuCheckAppIdSecret: 'Please check that the App ID and App Secret are correct.',
     imFeishuOpenClawHint:
-      'Feishu runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
+      'Feishu runs on the Caisra engine. The bot will connect automatically when the engine starts.',
     imFeishuGroupMention: 'Feishu only responds to @mentioned messages in group chats.',
     imFeishuGroupMentionSuggestion:
       'Please @mention the bot in group chats to start a conversation.',
@@ -669,7 +669,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imDingtalkCheckClientIdSecret:
       'Please check that the Client ID and Client Secret are correct and that bot permissions are enabled.',
     imDingtalkOpenClawHint:
-      'DingTalk runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
+      'DingTalk runs on the Caisra engine. The bot will connect automatically when the engine starts.',
     imDingtalkBotMembership:
       'The DingTalk bot must be added to the target conversation with messaging permissions.',
     imDingtalkBotMembershipSuggestion:
@@ -679,30 +679,30 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imWecomFillBotIdSecret: 'Please provide the Bot ID and Secret and test connectivity again.',
     imWecomConfigReady: 'WeCom configuration is ready (Bot ID: {botId}).',
     imWecomOpenClawHint:
-      'WeCom runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
+      'WeCom runs on the Caisra engine. The bot will connect automatically when the engine starts.',
     imWecomConfigReadyOpenClaw:
-      'WeCom configuration is ready (Bot ID: {botId}), running via OpenClaw.',
+      'WeCom configuration is ready (Bot ID: {botId}), running on the Caisra engine.',
 
     // Weixin
     imWeixinNotEnabled: 'WeChat channel is not currently enabled.',
     imWeixinEnableSuggestion: 'Please enable the WeChat channel and test connectivity again.',
     imWeixinConfigReady: 'WeChat configuration is ready.',
     imWeixinOpenClawHint:
-      'WeChat runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
-    imWeixinConfigReadyOpenClaw: 'WeChat configuration is ready, running via OpenClaw.',
+      'WeChat runs on the Caisra engine. The bot will connect automatically when the engine starts.',
+    imWeixinConfigReadyOpenClaw: 'WeChat configuration is ready, running on the Caisra engine.',
 
     // NIM
     imNimFillCredentials:
       'Please provide the AppKey, Account, and Token and test connectivity again.',
     imNimConfigReady: 'NIM configuration is ready (Account: {account}).',
     imNimOpenClawHint:
-      'NIM runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
+      'NIM runs on the Caisra engine. The bot will connect automatically when the engine starts.',
     imNimP2pOnly: 'NIM currently only supports P2P (direct) messages.',
     imNimP2pOnlySuggestion:
       'Please send a direct message to the bot account to start a conversation.',
 
-    // Netease Bee
-    imNeteaseBeeConfigReady: 'Netease Bee configuration is ready (Client ID: {clientId}).',
+    // Xiaomifeng
+    imNeteaseBeeConfigReady: 'Xiaomifeng configuration is ready (Client ID: {clientId}).',
 
     // POPO
     imPopoFillWebhookCredentials:
@@ -711,8 +711,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
       'Please provide the appKey, appSecret, and aesKey and test connectivity again.',
     imPopoConfigReady: 'POPO configuration is ready.',
     imPopoOpenClawHint:
-      'POPO runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
-    imPopoConfigReadyOpenClaw: 'POPO configuration is ready, running via OpenClaw.',
+      'POPO runs on the Caisra engine. The bot will connect automatically when the engine starts.',
+    imPopoConfigReadyOpenClaw: 'POPO configuration is ready, running on the Caisra engine.',
 
     // Email Channel
     emailSettings: 'Email Settings',
@@ -770,7 +770,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
     emailMissingPassword: 'Instance "{name}" uses IMAP mode but password is missing',
     emailMissingApiKey: 'Instance "{name}" uses WebSocket mode but API Key is missing',
     emailInvalidApiKey: 'Instance "{name}" has invalid API Key format (should start with ck_)',
-    emailGatewayRestarting: 'Restarting OpenClaw Gateway...',
+    emailGatewayRestarting: 'Restarting the engine...',
     emailDeleteConfirm: 'Delete email account "{name}"?',
     emailEnterValidEmailFirst: 'Please enter a valid email address first',
     emailVerifyInBrowserAndPaste:

@@ -29,7 +29,7 @@ export function getCronJobService(): CronJobService {
     }
     const adapter = deps.getOpenClawRuntimeAdapter();
     if (!adapter) {
-      throw new Error('OpenClaw runtime adapter not initialized. CronJobService requires OpenClaw.');
+      throw new Error('The engine is not running. Scheduled tasks need the engine.');
     }
     cronJobService = new CronJobService({
       getGatewayClient: () => adapter.getGatewayClient(),

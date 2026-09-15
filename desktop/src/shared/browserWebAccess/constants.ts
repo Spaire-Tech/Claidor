@@ -18,7 +18,7 @@ export type BrowserProfileMode = typeof BrowserProfileMode[keyof typeof BrowserP
 
 export const BrowserRuntimeProfile = {
   Managed: 'openclaw',
-  InApp: 'lobster-in-app',
+  InApp: 'caisra-in-app',
   User: 'user',
 } as const;
 

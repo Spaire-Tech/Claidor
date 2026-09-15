@@ -1,13 +1,9 @@
 <h1 align="center">
-  <img src="public/logo.png" alt="LobsterAI" width="96"><br>
-  LobsterAI
+  <img src="public/logo.png" alt="Caisra" width="96"><br>
+  Caisra
 </h1>
 
 <p align="center">
-  <a href="https://github.com/netease-youdao/LobsterAI/stargazers"><img src="https://badgen.net/github/stars/netease-youdao/LobsterAI?label=%E2%98%85" alt="GitHub stars" /></a>
-  <a href="LICENSE"><img src="https://badgen.net/github/license/netease-youdao/LobsterAI" alt="License" /></a>
-  <a href="https://x.com/LobsterAIYoudao"><img src="https://img.shields.io/badge/-000000?logo=x&logoColor=white" alt="Follow LobsterAI on X" /></a>
-  <a href="https://shared.ydstatic.com/market/souti/fihserChatWeb/online/2.0.7/dist/assets/wechat_group-B34qRm1G.png"><img src="https://img.shields.io/badge/-000000?logo=wechat&logoColor=white" alt="Follow LobsterAI on X" /></a>
   <br>
   <img src="https://img.shields.io/badge/macOS%20%7C%20Windows-4493F8?style=flat-square" alt="Supported platforms: macOS and Windows" />
   <img src="https://img.shields.io/badge/Electron-40-47848F?style=flat-square&logo=electron&logoColor=white" alt="Electron 40" />
@@ -20,7 +16,7 @@
 
 <p align="center">
   <strong>All-scenario office assistant Agent.</strong><br/>
-  The first open-source desktop-grade Agent among major Chinese tech companies, built by NetEase Youdao.
+  An agent that works on this computer, in Messages.
 </p>
 
 <p align="center">
@@ -31,21 +27,20 @@
   <a href="#community--support"><strong>Community</strong></a>
 </p>
 
-<h3 align="center"><a href="https://lobsterai.youdao.com/#/download-list"><ins>Download LobsterAI</ins></a></h3>
 
 <p align="center">
   <img src="docs/res/mainpage_en.png" alt="main page" />
 </p>
 
-LobsterAI is a desktop Agent that can operate in your real working environment: local files, terminal commands, browser workflows, documents, spreadsheets, slides, IM channels, scheduled jobs, and project workspaces.
+Caisra is a desktop Agent that can operate in your real working environment: local files, terminal commands, browser workflows, documents, spreadsheets, slides, IM channels, scheduled jobs, and project workspaces.
 
-Cowork is the LobsterAI product/session layer. OpenClaw is the runtime and gateway underneath it. That split lets LobsterAI keep local persistence, permissions, UI state, artifacts, agents, memory, and IM bindings in the desktop app while using OpenClaw for agent execution.
+Cowork is the Caisra product/session layer. OpenClaw is the runtime and gateway underneath it. That split lets Caisra keep local persistence, permissions, UI state, artifacts, agents, memory, and IM bindings in the desktop app while using OpenClaw for agent execution.
 
 ## Features
 
 ### Desktop Cowork Sessions
 
-Run long-form Agent tasks against local projects and files. LobsterAI streams progress, keeps session history, renders tool output, and asks for approval before sensitive actions such as file operations, terminal commands, or network access.
+Run long-form Agent tasks against local projects and files. Caisra streams progress, keeps session history, renders tool output, and asks for approval before sensitive actions such as file operations, terminal commands, or network access.
 
 ### Multi-Agent Workflows
 
@@ -57,11 +52,11 @@ Install scenario-oriented Expert Kits that package capability selections and ref
 
 ### Skills
 
-LobsterAI ships with 28 built-in skills configured in `SKILLs/skills.config.json`, including web search, Word documents, spreadsheets, PowerPoint, PDF processing, Remotion video generation, browser automation, image/video generation, stock research, content writing, email, weather, and skill creation.
+Caisra ships with 28 built-in skills configured in `SKILLs/skills.config.json`, including web search, Word documents, spreadsheets, PowerPoint, PDF processing, Remotion video generation, browser automation, image/video generation, stock research, content writing, email, weather, and skill creation.
 
 ### MCP Servers
 
-Connect external tools and data sources through Model Context Protocol servers. LobsterAI stores user-configured servers locally and syncs enabled servers into OpenClaw.
+Connect external tools and data sources through Model Context Protocol servers. Caisra stores user-configured servers locally and syncs enabled servers into OpenClaw.
 
 ### Scheduled Tasks
 
@@ -93,18 +88,18 @@ Sessions and app data live locally in SQLite. OpenClaw workspace memory uses fil
 ## How It Works
 
 <p align="center">
-  <img src="docs/res/architecture_v2_en.png" alt="LobsterAI architecture" width="640">
+  <img src="docs/res/architecture_v2_en.png" alt="Caisra architecture" width="640">
 </p>
 
 - **Renderer**: React, Redux Toolkit, Tailwind, artifact renderers, settings, agent/session UI, skills, MCP, scheduled tasks, and IM configuration.
 - **Main process**: Electron lifecycle, IPC, SQLite persistence, auth, logging, OpenClaw startup, runtime repair, skill sync, IM gateways, and artifact services.
-- **OpenClaw integration**: `openclawEngineManager`, `openclawConfigSync`, `openclawRuntimeAdapter`, and `coworkEngineRouter` translate LobsterAI state into OpenClaw runtime behavior.
+- **OpenClaw integration**: `openclawEngineManager`, `openclawConfigSync`, `openclawRuntimeAdapter`, and `coworkEngineRouter` translate Caisra state into OpenClaw runtime behavior.
 
 ## Install
 
 ### Desktop
 
-Download the latest macOS and Windows installers from [Official Website](https://lobsterai.youdao.com/) or [GitHub Releases](https://github.com/netease-youdao/LobsterAI/releases).
+The macOS installer is built by the `desktop_mac.yml` GitHub Actions workflow (see *Packaging* below); there is no public download yet.
 
 ### Run From Source
 
@@ -115,8 +110,8 @@ Requirements:
 - git and pnpm, needed on the first run to build the pinned OpenClaw runtime from the sibling `../openclaw` checkout
 
 ```bash
-git clone https://github.com/netease-youdao/LobsterAI.git
-cd LobsterAI
+git clone <this repository>
+cd Caisra
 npm install
 ```
 
@@ -270,10 +265,10 @@ Three things do:
 
 ```bash
 # 1. Which app is actually running, and where it lives
-ps -eo comm | grep -i faiser | head -3
+ps -eo comm | grep -i caisra | head -3
 
 # 2. Which commit it was built from — the log's first lines say so
-grep -m1 '\[App\] 2026' ~/Library/Logs/Faiser/main-$(date +%F).log
+grep -m1 '\[App\] 2026' ~/Library/Logs/Caisra/main-$(date +%F).log
 
 # 3. What the checkout you build from has
 git log --oneline -1
@@ -287,7 +282,7 @@ Support). A build made before this stamp existed prints no such line;
 the closest you can get for one of those is when its bundle was written:
 
 ```bash
-stat -f '%Sm' /Applications/Faiser.app/Contents/Resources/app.asar
+stat -f '%Sm' /Applications/Caisra.app/Contents/Resources/app.asar
 ```
 
 **To just run the app**, which is faster and has no signing problem at
@@ -365,7 +360,7 @@ Offline or private-source packaging can use:
 | --- | --- |
 | `src/main/main.ts` | Electron lifecycle, IPC registration, auth, logging, runtime startup, and service wiring |
 | `src/main/libs/openclawEngineManager.ts` | OpenClaw gateway process, runtime state, ports, logs, restart, and repair |
-| `src/main/libs/openclawConfigSync.ts` | Renders LobsterAI providers, models, agents, IM bindings, skills, MCP, and workspace instructions into OpenClaw config |
+| `src/main/libs/openclawConfigSync.ts` | Renders Caisra providers, models, agents, IM bindings, skills, MCP, and workspace instructions into OpenClaw config |
 | `src/main/libs/agentEngine/openclawRuntimeAdapter.ts` | Translates OpenClaw gateway events into Cowork stream events |
 | `src/main/coworkStore.ts` | Cowork sessions, messages, config, agents, memory metadata, and SQLite CRUD |
 | `src/renderer/components/cowork/` | Main Cowork UI, prompt input, session detail, permissions, thinking/tool display, media, and voice input |
@@ -374,14 +369,14 @@ Offline or private-source packaging can use:
 | `src/renderer/components/mcp/` | MCP server management UI |
 | `src/renderer/components/scheduledTasks/` | Scheduled task list, form, detail, run history, and templates |
 | `src/renderer/services/i18n.ts` | Renderer i18n dictionary and `t()` helper |
-| `SKILLs/` | Bundled LobsterAI skills |
+| `SKILLs/` | Bundled Caisra skills |
 
 ## Security And Data
 
 - Renderer windows use context isolation, disabled Node integration, and sandboxing.
 - Renderer-to-main access goes through preload IPC APIs.
 - Sensitive tool actions are permission-gated and logged.
-- App data is stored locally in `lobsterai.sqlite` under Electron `userData`.
+- App data is stored locally in `caisra.sqlite` under Electron `userData`.
 - OpenClaw state, workspace memory, generated config, and gateway logs live under `userData/openclaw`.
 
 ## Community & Support
@@ -389,17 +384,12 @@ Offline or private-source packaging can use:
 Join the WeChat group for help, feedback, and release updates:
 
 <p align="center">
-  <img src="https://shared.ydstatic.com/market/souti/fihserChatWeb/online/2.1.5/dist/assets/wechat_group-C529RDAy.png" alt="WeChat Community QR Code" width="200">
 </p>
 
 Please use the repository issue templates for bugs and feature requests. For pull requests, include a short summary, linked issue when relevant, screenshots for UI changes, and notes for Electron-specific behavior such as IPC, storage, runtime, or windowing changes.
-
-## Star History
-
-[![Star History Chart](docs/res/star-history-2026828.png)](https://www.star-history.com/?repos=netease-youdao%2Flobsterai&type=date&legend=bottom-right)
 
 ## License
 
 [MIT License](LICENSE)
 
-Built and maintained by [NetEase Youdao](https://www.youdao.com/).
+Caisra is built on LobsterAI by [NetEase Youdao](https://www.youdao.com/), under the MIT licence; see `LICENSE`.

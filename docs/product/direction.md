@@ -10,13 +10,19 @@ this file is the source of truth for the decisions around it.
 
 ---
 
-## 0. The name is Faiser
+## 0. The name is Caisra
 
-Decided 13 September 2026, after Maties and Swens were both rejected.
+Decided 13 September 2026 as Faiser, after Maties and Swens were both
+rejected; renamed to **Caisra**, the founder's official name, on
+15 September 2026. The rename reached every string a person or the agent
+can read, the deep-link scheme, the data directory and the database name;
+`adoptLegacyUserData()` in `main.ts` moves a Faiser install's directory
+and database to the Caisra names on first start, so the two days of
+builds in between keep their conversations.
 
 It is applied. `desktop/src/main/appConstants.ts` is the one definition
 site, and it carries `APP_NAME`, `APP_ID`, `APP_USER_MODEL_ID`,
-`DB_FILENAME`, `APP_PROTOCOL` (the `faiser://` sign-in deep link),
+`DB_FILENAME`, `APP_PROTOCOL` (the `caisra://` sign-in deep link),
 `APP_HOME_DIR_NAME` and `APP_TEMP_DIR_NAME`. `electron-builder.json` and
 `package.json` carry the packaging identity.
 
@@ -26,8 +32,17 @@ joins that name onto `appData`, so this constant decides where a
 person's conversations, memory, logins and engine state live. Changing
 it after anyone installs orphans all of it.
 
-**Three things deliberately keep the old name**, and renaming any of
-them would be damage rather than tidiness:
+**Internal identifiers deliberately keep the old names**, and renaming
+any of them would be damage rather than tidiness. Nobody reads them: not
+a person, not the agent. They are the engine's environment variables
+(`OPENCLAW_*`), its config file and state directory (`openclaw.json`,
+`userData/openclaw`), file and module names, IPC channel names, the
+`X-LobsterAI-*` request headers the server expects, the `lobsterai_`
+analytics event prefix, the plugin ids `lobsterai-model-compat` and
+`lobster-media-generation`, and `LOBSTERAI_SKILLS_ROOT`, which the app
+still sets beside the new `CAISRA_SKILLS_ROOT` so bundled skill scripts
+keep working. The developer log tags are `[Engine]` and
+`[EngineConfigSync]` since 15 September. Three more, from the 13th:
 
 - the OpenClaw extension and provider id `lobster` — upstream's, and the
   runtime breaks without it;
@@ -412,7 +427,7 @@ has left the space for it, not one that has filled it with my guesses.
 
 ## What is decided, in one list
 
-1. The name is Faiser, applied; `appConstants.ts` is the one site.
+1. The name is Caisra, applied; `appConstants.ts` is the one site.
 2. Messages shape; five surfaces; four settings tabs.
 3. Five message kinds, closed list; approval card with the real command.
 4. Ask before every action on the computer.

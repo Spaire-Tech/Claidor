@@ -387,7 +387,7 @@ function assertOpenClawChatSendPayloadWithinLimit(
   const attachmentCount = attachments?.length ?? 0;
   const attachmentBase64Bytes = sumAttachmentBase64Bytes(attachments);
   console.warn(
-    '[OpenClawRuntime] chat.send payload exceeded safe limit.',
+    '[EngineRuntime] chat.send payload exceeded safe limit.',
     `Session ${sessionId}.`,
     `Estimated ${estimatedFrameBytes} bytes.`,
     `Safe limit ${OPENCLAW_CHAT_SEND_PAYLOAD_SAFE_LIMIT_BYTES} bytes.`,
@@ -2323,10 +2323,10 @@ const buildMediaReferencePromptSection = (mediaReferences?: CoworkMediaAttachmen
   if (refs.length === 0) return '';
 
   const lines = [
-    '[LobsterAI media reference mapping]',
+    '[Caisra media reference mapping]',
     'The current user request contains explicit @ media tokens. Treat these mappings as authoritative and do not guess which uploaded attachment a token means.',
-    'When calling lobsterai_image_generate or lobsterai_video_generate, pass mapped file paths or URLs as tool arguments. Do not pass @ media tokens as image, images, firstFrame, lastFrame, referenceImages, media.url, video, or videos values.',
-    'For lobsterai_image_generate, prefer image with the mapped path for one referenced image and images for multiple referenced images.',
+    'When calling caisra_image_generate or caisra_video_generate, pass mapped file paths or URLs as tool arguments. Do not pass @ media tokens as image, images, firstFrame, lastFrame, referenceImages, media.url, video, or videos values.',
+    'For caisra_image_generate, prefer image with the mapped path for one referenced image and images for multiple referenced images.',
   ];
 
   for (const ref of refs) {
@@ -2338,7 +2338,7 @@ const buildMediaReferencePromptSection = (mediaReferences?: CoworkMediaAttachmen
     const locations = [
       ref.localPath ? `localPath "${sanitizeMediaReferenceText(ref.localPath)}"` : '',
       ref.remoteUrl ? `remoteUrl "${sanitizeMediaReferenceText(ref.remoteUrl)}"` : '',
-      !ref.localPath && !ref.remoteUrl && ref.dataUrl ? 'dataUrl fallback available through LobsterAI host' : '',
+      !ref.localPath && !ref.remoteUrl && ref.dataUrl ? 'dataUrl fallback available through the Caisra host' : '',
     ].filter(Boolean);
     const locationText = locations.length > 0 ? `, ${locations.join(', ')}` : '';
     lines.push(`- ${ref.token}: ${mediaType} attachment #${ref.index}, file "${sanitizeMediaReferenceText(ref.fileName)}", MIME ${sanitizeMediaReferenceText(ref.mimeType)}${locationText}.`);
@@ -2400,7 +2400,7 @@ const waitWithTimeout = async (promise: Promise<void>, timeoutMs: number): Promi
   let timeoutId: NodeJS.Timeout | null = null;
   const timeoutPromise = new Promise<void>((_resolve, reject) => {
     timeoutId = setTimeout(() => {
-      reject(new Error(`OpenClaw gateway client connect timeout after ${timeoutMs}ms.`));
+      reject(new Error(`Engine connection timed out after ${timeoutMs}ms.`));
     }, timeoutMs);
   });
   try {
@@ -2605,7 +2605,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   }
 
   private emitContextMaintenance(sessionId: string, active: boolean): void {
-    console.log(`[OpenClawRuntime] context maintenance ${active ? 'started' : 'ended'} for session ${sessionId}.`);
+    console.log(`[EngineRuntime] context maintenance ${active ? 'started' : 'ended'} for session ${sessionId}.`);
     this.emit('contextMaintenance', sessionId, active);
   }
 
@@ -2775,7 +2775,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     turn.pendingThinkingOnlyHint = false;
     if (wasActive) {
       this.emitContextMaintenance(sessionId, false);
-      console.debug(`[OpenClawRuntime] context maintenance ended because ${reason}.`);
+      console.debug(`[EngineRuntime] context maintenance ended because ${reason}.`);
     }
   }
 
@@ -2962,7 +2962,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   ): void {
     if (this.activeTurns.get(sessionId) !== turn || turn.stopRequested) {
       console.debug(
-        '[OpenClawRuntime] skipped recoverable follow-up wait for stale turn.',
+        '[EngineRuntime] skipped recoverable follow-up wait for stale turn.',
         `sessionId=${sessionId}`,
         `runId=${runId}`,
         `reason=${options.reason}`,
@@ -2988,7 +2988,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       allowLateContinuation: true,
     });
     console.debug(
-      '[OpenClawRuntime] delayed chat.final while waiting for OpenClaw retry.',
+      '[EngineRuntime] delayed chat.final while waiting for OpenClaw retry.',
       `sessionId=${sessionId}`,
       `runId=${runId}`,
       `reason=${options.reason}`,
@@ -3033,7 +3033,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       lastTimeoutMethod: method,
       lastTimeoutAt: now,
     };
-    console.warn(`[OpenClawRuntime] gateway RPC timed out for ${method}; session RPCs are degraded for ${OpenClawRuntimeAdapter.GATEWAY_RPC_DEGRADED_MS}ms:`, error);
+    console.warn(`[EngineRuntime] gateway RPC timed out for ${method}; session RPCs are degraded for ${OpenClawRuntimeAdapter.GATEWAY_RPC_DEGRADED_MS}ms:`, error);
   }
 
   private markGatewayRpcSuccess(): void {
@@ -3069,7 +3069,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const startedAtMs = Date.now();
 
     console.debug(
-      '[OpenClawRuntime] sessions.patch started.',
+      '[EngineRuntime] sessions.patch started.',
       `Session ${sessionId}.`,
       `OpenClaw key ${sessionKey}.`,
       `Reason ${reason}.`,
@@ -3089,7 +3089,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     } catch (error) {
       const elapsedMs = Date.now() - startedAtMs;
       console.warn(
-        `[OpenClawRuntime] sessions.patch failed after ${elapsedMs}ms.`,
+        `[EngineRuntime] sessions.patch failed after ${elapsedMs}ms.`,
         `Session ${sessionId}.`,
         `OpenClaw key ${sessionKey}.`,
         `Reason ${reason}.`,
@@ -3104,8 +3104,8 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     const elapsedMs = Date.now() - startedAtMs;
     const message = elapsedMs >= OpenClawRuntimeAdapter.SESSION_PATCH_SLOW_LOG_MS
-      ? `[OpenClawRuntime] sessions.patch completed slowly in ${elapsedMs}ms.`
-      : `[OpenClawRuntime] sessions.patch completed in ${elapsedMs}ms.`;
+      ? `[EngineRuntime] sessions.patch completed slowly in ${elapsedMs}ms.`
+      : `[EngineRuntime] sessions.patch completed in ${elapsedMs}ms.`;
     const details = [
       `Session ${sessionId}.`,
       `OpenClaw key ${sessionKey}.`,
@@ -3178,7 +3178,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const client = this.gatewayClient;
     if (!client) return [];
     if (this.isGatewayRpcDegraded()) {
-      console.debug('[OpenClawRuntime] skipped context usage session lookup because gateway session RPCs are degraded.');
+      console.debug('[EngineRuntime] skipped context usage session lookup because gateway session RPCs are degraded.');
       return [];
     }
     const params: Record<string, unknown> = {
@@ -3279,10 +3279,10 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     try {
       this.store.updateSession(sessionId, { goal }, { touchUpdatedAt: false });
     } catch (error) {
-      console.warn(`[OpenClawRuntime] failed to persist goal display cache for session ${sessionId}; continuing with streamed update.`, error);
+      console.warn(`[EngineRuntime] failed to persist goal display cache for session ${sessionId}; continuing with streamed update.`, error);
     }
     console.debug(
-      `[OpenClawRuntime] goal update for session ${sessionId}: status=${goal?.status ?? 'none'}, hasGoal=${goal ? 'yes' : 'no'}.`,
+      `[EngineRuntime] goal update for session ${sessionId}: status=${goal?.status ?? 'none'}, hasGoal=${goal ? 'yes' : 'no'}.`,
     );
     this.emit('goalUpdate', sessionId, goal);
   }
@@ -3303,7 +3303,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       sourceMessageId: userMessage.id,
     });
     console.debug(
-      '[OpenClawRuntime] persisted goal setting user message.',
+      '[EngineRuntime] persisted goal setting user message.',
       `Session ${sessionId}.`,
       `Action ${command.action}.`,
     );
@@ -3350,15 +3350,15 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         });
         const row = rows.find(item => item.key === key);
         if (row) {
-          console.log(`[OpenClawRuntime] context usage was resolved by targeted lookup for session ${sessionId} in ${Date.now() - startedAt}ms.`);
+          console.log(`[EngineRuntime] context usage was resolved by targeted lookup for session ${sessionId} in ${Date.now() - startedAt}ms.`);
           return this.buildContextUsageFromSessionRow(sessionId, row);
         }
       } catch (error) {
-        console.warn(`[OpenClawRuntime] context usage lookup failed for session ${sessionId}; returning no usage.`, error);
+        console.warn(`[EngineRuntime] context usage lookup failed for session ${sessionId}; returning no usage.`, error);
         return null;
       }
     }
-    console.debug(`[OpenClawRuntime] context usage was unavailable for session ${sessionId} after ${Date.now() - startedAt}ms.`);
+    console.debug(`[EngineRuntime] context usage was unavailable for session ${sessionId} after ${Date.now() - startedAt}ms.`);
     return null;
   }
 
@@ -3366,10 +3366,10 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const client = this.requireGatewayClient();
     const sessionKey = this.resolveInteractiveSessionKey(sessionId);
     if (!sessionKey) {
-      throw new Error(`Session ${sessionId} has no OpenClaw session key.`);
+      throw new Error(`Session ${sessionId} has no engine session key.`);
     }
 
-    console.log(`[OpenClawRuntime] starting manual context compaction for session ${sessionId}.`);
+    console.log(`[EngineRuntime] starting manual context compaction for session ${sessionId}.`);
     this.refreshContinuityCapsule(sessionId, ContinuityCapsuleSource.PreCompaction);
     const result = await client.request<Record<string, unknown>>('sessions.compact', {
       key: sessionKey,
@@ -3377,7 +3377,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const compacted = result?.compacted === true;
     const reason = typeof result?.reason === 'string' ? result.reason : undefined;
     const usage = await this.getContextUsage(sessionId);
-    console.log(`[OpenClawRuntime] manual context compaction finished for session ${sessionId}, compacted=${compacted}, reason=${reason ?? 'none'}.`);
+    console.log(`[EngineRuntime] manual context compaction finished for session ${sessionId}, compacted=${compacted}, reason=${reason ?? 'none'}.`);
     if (compacted) {
       this.refreshContinuityCapsule(sessionId, ContinuityCapsuleSource.PostCompaction, {
         compactedAt: Date.now(),
@@ -3450,7 +3450,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
   private recordContextCompactionDiagnostic(diagnostic: ContextCompactionDiagnostic): void {
     console.log(
-      `[OpenClawRuntime] recorded safe context compaction diagnostic for session ${diagnostic.sessionId}: `
+      `[EngineRuntime] recorded safe context compaction diagnostic for session ${diagnostic.sessionId}: `
       + `mode ${diagnostic.mode}, compacted ${diagnostic.compacted ?? 'unknown'}, `
       + `reason ${diagnostic.reason ?? 'none'}, checkpoint ${diagnostic.checkpointId ?? 'none'}, `
       + `created at ${diagnostic.checkpointCreatedAt ?? 'unknown'}, `
@@ -3463,7 +3463,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   private async logContextCompactionDiagnostic(input: ContextCompactionDiagnosticInput): Promise<void> {
     const sessionKey = input.sessionKey ?? this.resolveInteractiveSessionKey(input.sessionId);
     if (!sessionKey) {
-      console.warn(`[OpenClawRuntime] skipped context compaction diagnostic for session ${input.sessionId} because no OpenClaw session key was available.`);
+      console.warn(`[EngineRuntime] skipped context compaction diagnostic for session ${input.sessionId} because no OpenClaw session key was available.`);
       return;
     }
 
@@ -3483,7 +3483,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     const client = this.gatewayClient;
     if (!client) {
-      console.debug(`[OpenClawRuntime] skipped context compaction diagnostic for session ${input.sessionId} because the gateway client is unavailable.`);
+      console.debug(`[EngineRuntime] skipped context compaction diagnostic for session ${input.sessionId} because the gateway client is unavailable.`);
       return;
     }
 
@@ -3505,14 +3505,14 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         updatedAt: Date.now(),
       });
     } catch (error) {
-      console.warn(`[OpenClawRuntime] context compaction diagnostic lookup failed for session ${input.sessionId}; continuing without checkpoint metadata.`, error);
+      console.warn(`[EngineRuntime] context compaction diagnostic lookup failed for session ${input.sessionId}; continuing without checkpoint metadata.`, error);
     }
   }
 
   async getForkCompactionSummary(sessionId: string, beforeCreatedAt?: number): Promise<CoworkForkCompactionSummary | null> {
     const client = this.gatewayClient;
     if (!client) {
-      console.debug(`[OpenClawRuntime] skipped fork compaction lookup for session ${sessionId} because the gateway client is unavailable.`);
+      console.debug(`[EngineRuntime] skipped fork compaction lookup for session ${sessionId} because the gateway client is unavailable.`);
       return null;
     }
 
@@ -3532,7 +3532,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }
 
         const truncated = summary.length > FORK_COMPACTION_SUMMARY_MAX_CHARS;
-        console.log(`[OpenClawRuntime] found a compaction checkpoint for forked session ${sessionId}.`);
+        console.log(`[EngineRuntime] found a compaction checkpoint for forked session ${sessionId}.`);
         return {
           summary: truncated ? summary.slice(0, FORK_COMPACTION_SUMMARY_MAX_CHARS) : summary,
           sessionKey,
@@ -3544,12 +3544,12 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           ...(truncated ? { truncated } : {}),
         };
       } catch (error) {
-        console.warn(`[OpenClawRuntime] fork compaction lookup failed for session ${sessionId}; continuing without a summary.`, error);
+        console.warn(`[EngineRuntime] fork compaction lookup failed for session ${sessionId}; continuing without a summary.`, error);
         return null;
       }
     }
 
-    console.debug(`[OpenClawRuntime] no compaction checkpoint was available for forked session ${sessionId}.`);
+    console.debug(`[EngineRuntime] no compaction checkpoint was available for forked session ${sessionId}.`);
     return null;
   }
 
@@ -3593,7 +3593,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const client = this.gatewayClient;
     if (!client) return undefined;
     if (this.isGatewayRpcDegraded()) {
-      console.debug('[OpenClawRuntime] skipped context token refresh because gateway session RPCs are degraded.');
+      console.debug('[EngineRuntime] skipped context token refresh because gateway session RPCs are degraded.');
       return undefined;
     }
     try {
@@ -3614,11 +3614,11 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }
       }
       const resolved = this.sessionContextTokensCache.get(sessionKey);
-      console.debug('[OpenClawRuntime] refreshSessionContextTokens:', sessionKey, resolved ? `contextTokens=${resolved}` : 'not found in sessions.list');
+      console.debug('[EngineRuntime] refreshSessionContextTokens:', sessionKey, resolved ? `contextTokens=${resolved}` : 'not found in sessions.list');
       return resolved;
     } catch (error) {
       this.recordGatewayRpcFailure('sessions.list', error);
-      console.debug('[OpenClawRuntime] refreshSessionContextTokens failed:', sessionKey, error);
+      console.debug('[EngineRuntime] refreshSessionContextTokens failed:', sessionKey, error);
       return undefined;
     }
   }
@@ -3995,7 +3995,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         totalMessages: messages.length,
       };
     } catch (error) {
-      console.error('[OpenClawRuntime] fetchSessionByKey: failed to fetch history:', error);
+      console.error('[EngineRuntime] fetchSessionByKey: failed to fetch history:', error);
       return null;
     }
   }
@@ -4108,14 +4108,14 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       );
 
       if (!fs.existsSync(filePath)) {
-        console.log('[OpenClawRuntime] readFromTranscript: no transcript found for sessionId:', resolvedSessionId);
+        console.log('[EngineRuntime] readFromTranscript: no transcript found for sessionId:', resolvedSessionId);
         return null;
       }
 
-      console.log('[OpenClawRuntime] readFromTranscript: reading transcript:', filePath);
+      console.log('[EngineRuntime] readFromTranscript: reading transcript:', filePath);
       return await this.readTranscriptFile(sessionKey, filePath);
     } catch (error) {
-      console.warn('[OpenClawRuntime] readFromTranscript failed:', error);
+      console.warn('[EngineRuntime] readFromTranscript failed:', error);
       return null;
     }
   }
@@ -4138,15 +4138,15 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const files = await fs.promises.readdir(sessionsDir).catch(() => [] as string[]);
       const deletedFile = files.find(f => f.startsWith(`${resolvedSessionId}.jsonl.deleted.`));
       if (!deletedFile) {
-        console.log('[OpenClawRuntime] readFromDeletedTranscript: no archived transcript found for sessionId:', resolvedSessionId);
+        console.log('[EngineRuntime] readFromDeletedTranscript: no archived transcript found for sessionId:', resolvedSessionId);
         return null;
       }
 
-      console.log('[OpenClawRuntime] readFromDeletedTranscript: reading archived transcript:', deletedFile);
+      console.log('[EngineRuntime] readFromDeletedTranscript: reading archived transcript:', deletedFile);
       const filePath = path.join(sessionsDir, deletedFile);
       return await this.readTranscriptFile(sessionKey, filePath);
     } catch (error) {
-      console.warn('[OpenClawRuntime] readFromDeletedTranscript failed:', error);
+      console.warn('[EngineRuntime] readFromDeletedTranscript failed:', error);
       return null;
     }
   }
@@ -4775,7 +4775,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       );
       if (result?.queued === true) {
         console.debug(
-          '[OpenClawRuntime] steer accepted by active-run queue.',
+          '[EngineRuntime] steer accepted by active-run queue.',
           `Session ${sessionId}.`,
           `Client steer ${clientSteerId}.`,
           `OpenClaw key ${turn.sessionKey}.`,
@@ -4789,7 +4789,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
       const rejectedReason = this.mapOpenClawSteerRejectReason(result?.reason);
       console.warn(
-        '[OpenClawRuntime] steer rejected by active-run queue.',
+        '[EngineRuntime] steer rejected by active-run queue.',
         `Session ${sessionId}.`,
         `Client steer ${clientSteerId}.`,
         `Reason ${result?.reason ?? 'unknown'}.`,
@@ -4799,7 +4799,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         status: CoworkSteerStatus.Rejected,
         clientSteerId,
         reason: rejectedReason,
-        error: result?.errorMessage ?? `Steer was rejected by OpenClaw (${result?.reason ?? 'unknown'}).`,
+        error: result?.errorMessage ?? `Steer was rejected by the engine (${result?.reason ?? 'unknown'}).`,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -4807,7 +4807,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         ? CoworkSteerRejectReason.RuntimeUnsupported
         : CoworkSteerRejectReason.RuntimeRejected;
       console.warn(
-        '[OpenClawRuntime] steer request failed.',
+        '[EngineRuntime] steer request failed.',
         `Session ${sessionId}.`,
         `Client steer ${clientSteerId}.`,
         `Reason ${reason}.`,
@@ -4819,7 +4819,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         clientSteerId,
         reason,
         error: reason === CoworkSteerRejectReason.RuntimeUnsupported
-          ? 'The current OpenClaw runtime does not expose same-turn steering yet. Rebuild the pinned runtime with LobsterAI patches.'
+          ? 'The current engine build does not expose same-turn steering yet. Rebuild the pinned runtime with the Caisra patches.'
           : message,
       };
     }
@@ -4852,12 +4852,12 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
     const sessionKey = this.resolveInteractiveSessionKey(sessionId);
     if (!sessionKey) {
-      throw new Error(`Session ${sessionId} has no OpenClaw session key.`);
+      throw new Error(`Session ${sessionId} has no engine session key.`);
     }
     this.rememberSessionKey(sessionId, sessionKey);
 
     console.debug(
-      '[OpenClawRuntime] running goal command.',
+      '[EngineRuntime] running goal command.',
       `Session ${sessionId}.`,
       `OpenClaw key ${sessionKey}.`,
       `Action ${parsed.action}.`,
@@ -4896,14 +4896,14 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         if (this.activeTurns.has(sessionId)) {
           this.pendingGoalContinuations.set(sessionId, pendingContinuation);
           console.debug(
-            '[OpenClawRuntime] queued goal continuation until active turn completes.',
+            '[EngineRuntime] queued goal continuation until active turn completes.',
             `Session ${sessionId}.`,
             `Action ${parsed.action}.`,
           );
           return goal;
         }
         console.debug(
-          '[OpenClawRuntime] continuing after goal command.',
+          '[EngineRuntime] continuing after goal command.',
           `Session ${sessionId}.`,
           `Action ${parsed.action}.`,
         );
@@ -4913,7 +4913,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         })
           .catch((error) => {
             const message = error instanceof Error ? error.message : String(error);
-            console.error('[OpenClawRuntime] failed to continue after goal command:', error);
+            console.error('[EngineRuntime] failed to continue after goal command:', error);
             this.store.updateSession(sessionId, { status: 'error' });
             this.emit('error', sessionId, message);
           });
@@ -4932,7 +4932,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       requirePersistedChannelKey: true,
     });
     if (!targetSessionKey) {
-      throw new Error(`Session ${sessionId} has no OpenClaw session key.`);
+      throw new Error(`Session ${sessionId} has no engine session key.`);
     }
     this.rememberSessionKey(sessionId, targetSessionKey);
     await this.ensureGatewayClientReady();
@@ -5020,17 +5020,17 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       this.finalizeStoppedStreamingMessages(sessionId, turn);
       const client = this.gatewayClient;
       if (client) {
-        console.log(`[OpenClawRuntime] user requested stop, aborting gateway run ${turn.runId}.`);
+        console.log(`[EngineRuntime] user requested stop, aborting gateway run ${turn.runId}.`);
         void client.request('chat.abort', {
           sessionKey: turn.sessionKey,
           runId: turn.runId,
         }).catch((error) => {
-          console.warn('[OpenClawRuntime] Failed to abort chat run:', error);
+          console.warn('[EngineRuntime] Failed to abort chat run:', error);
         });
       }
     } else {
       console.log(
-        '[OpenClawRuntime] received stop before a gateway run became active.',
+        '[EngineRuntime] received stop before a gateway run became active.',
         `Session ${sessionId}.`,
       );
     }
@@ -5052,7 +5052,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       return false;
     }
     console.log(
-      '[OpenClawRuntime] cancelled turn startup after user stop.',
+      '[EngineRuntime] cancelled turn startup after user stop.',
       `Session ${sessionId}.`,
       `Checkpoint ${checkpoint}.`,
     );
@@ -5118,7 +5118,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const confirmedState = this.getConfirmedSessionModelPatch(sessionId, sessionKey, model, source);
     if (source === SessionModelPatchSource.AgentModel && confirmedState) {
       console.debug(
-        '[OpenClawRuntime] skipped sessions.patch before chat.send because the agent model is already confirmed.',
+        '[EngineRuntime] skipped sessions.patch before chat.send because the agent model is already confirmed.',
         `Session ${sessionId}.`,
         `OpenClaw key ${sessionKey}.`,
         `Model ${model}.`,
@@ -5127,7 +5127,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
     if (confirmedState && this.isGatewayRpcDegraded()) {
       console.warn(
-        '[OpenClawRuntime] skipped redundant sessions.patch before chat.send because gateway session RPCs are degraded.',
+        '[EngineRuntime] skipped redundant sessions.patch before chat.send because gateway session RPCs are degraded.',
         `Session ${sessionId}.`,
         `OpenClaw key ${sessionKey}.`,
         `Model ${model}.`,
@@ -5141,7 +5141,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         const currentConfirmedState = this.getConfirmedSessionModelPatch(sessionId, sessionKey, model, source);
         if (source === SessionModelPatchSource.AgentModel && currentConfirmedState) {
           console.debug(
-            '[OpenClawRuntime] skipped queued sessions.patch before chat.send because the agent model is already confirmed.',
+            '[EngineRuntime] skipped queued sessions.patch before chat.send because the agent model is already confirmed.',
             `Session ${sessionId}.`,
             `OpenClaw key ${sessionKey}.`,
             `Model ${model}.`,
@@ -5150,7 +5150,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }
         if (currentConfirmedState && this.isGatewayRpcDegraded()) {
           console.warn(
-            '[OpenClawRuntime] skipped queued redundant sessions.patch before chat.send because gateway session RPCs are degraded.',
+            '[EngineRuntime] skipped queued redundant sessions.patch before chat.send because gateway session RPCs are degraded.',
             `Session ${sessionId}.`,
             `OpenClaw key ${sessionKey}.`,
             `Model ${model}.`,
@@ -5181,10 +5181,10 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       });
     } catch (error) {
       this.recordGatewayRpcFailure('sessions.patch', error);
-      console.warn('[OpenClawRuntime] failed to patch the session model before chat.send:', error);
+      console.warn('[EngineRuntime] failed to patch the session model before chat.send:', error);
       const confirmedAfterFailure = this.getConfirmedSessionModelPatch(sessionId, sessionKey, model, source);
       if (confirmedAfterFailure && this.isGatewayRequestTimeout(error, 'sessions.patch')) {
-        console.warn(`[OpenClawRuntime] continuing chat.send for session ${sessionId} after a redundant session model patch timed out.`);
+        console.warn(`[EngineRuntime] continuing chat.send for session ${sessionId} after a redundant session model patch timed out.`);
         return;
       }
       this.sessionModelPatchStateBySession.delete(sessionId);
@@ -5201,7 +5201,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   }): Promise<void> {
     if (typeof this.engineManager.getStateDir !== 'function') {
       console.debug(
-        '[OpenClawRuntime] skipped transcript safety inspection because the engine state directory is unavailable.',
+        '[EngineRuntime] skipped transcript safety inspection because the engine state directory is unavailable.',
         `Session ${options.sessionId}.`,
       );
       return;
@@ -5215,7 +5215,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     if (inspection.status === OpenClawTranscriptSafetyStatus.Unknown) {
       console.debug(
-        '[OpenClawRuntime] transcript safety inspection was inconclusive.',
+        '[EngineRuntime] transcript safety inspection was inconclusive.',
         `Session ${options.sessionId}.`,
         `OpenClaw key ${options.sessionKey}.`,
         `Reason ${inspection.reason ?? 'unknown'}.`,
@@ -5225,7 +5225,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     if (inspection.status === OpenClawTranscriptSafetyStatus.CompactionRequired) {
       console.log(
-        '[OpenClawRuntime] active transcript reached the managed compaction threshold.',
+        '[EngineRuntime] active transcript reached the managed compaction threshold.',
         `Session ${options.sessionId}.`,
         `OpenClaw key ${options.sessionKey}.`,
         `Transcript bytes ${inspection.transcriptBytes ?? 'unknown'}.`,
@@ -5235,7 +5235,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     if (inspection.status === OpenClawTranscriptSafetyStatus.Blocked) {
       console.warn(
-        '[OpenClawRuntime] blocked a run before gateway transcript loading because the active transcript is oversized.',
+        '[EngineRuntime] blocked a run before gateway transcript loading because the active transcript is oversized.',
         `Session ${options.sessionId}.`,
         `OpenClaw key ${options.sessionKey}.`,
         `Transcript bytes ${inspection.transcriptBytes ?? 'unknown'}.`,
@@ -5278,7 +5278,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
     const firstResponseTiming: FirstResponseTiming = { turnStartedAtMs: Date.now() };
     console.log(
-      '[OpenClawRuntimeTiming] turn started.',
+      '[EngineRuntimeTiming] turn started.',
       `Session ${sessionId}.`,
       `Prompt length ${prompt.length}.`,
       `Image attachments ${options.imageAttachments?.length ?? 0}.`,
@@ -5327,7 +5327,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         : undefined;
       if (options.selectedTextSnippets?.length) {
         console.log(
-          `[OpenClawRuntime] persisted ${options.selectedTextSnippets.length} selected text excerpts in `
+          `[EngineRuntime] persisted ${options.selectedTextSnippets.length} selected text excerpts in `
           + `local metadata for session ${sessionId}`,
         );
       }
@@ -5371,7 +5371,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
     firstResponseTiming.gatewayReadyEndedAtMs = Date.now();
     console.log(
-      '[OpenClawRuntimeTiming] gateway client ready.',
+      '[EngineRuntimeTiming] gateway client ready.',
       `Session ${sessionId}.`,
       `Elapsed ${formatTimingDuration(firstResponseTiming.gatewayReadyStartedAtMs, firstResponseTiming.gatewayReadyEndedAtMs)}.`,
       `Total ${formatTimingOffset(firstResponseTiming.turnStartedAtMs, firstResponseTiming.gatewayReadyEndedAtMs)}.`,
@@ -5407,7 +5407,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       }
       firstResponseTiming.modelPatchEndedAtMs = Date.now();
       console.log(
-        '[OpenClawRuntimeTiming] session model sync finished.',
+        '[EngineRuntimeTiming] session model sync finished.',
         `Session ${sessionId}.`,
         `Model ${currentModel || 'none'}.`,
         `Elapsed ${formatTimingDuration(firstResponseTiming.modelPatchStartedAtMs, firstResponseTiming.modelPatchEndedAtMs)}.`,
@@ -5424,7 +5424,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     // gateway. stoppedSessions was cleared at turn start, so an entry here
     // means the user stopped the session while we were waiting.
     if (this.stoppedSessions.has(sessionId)) {
-      console.log(`[OpenClawRuntime] turn aborted after model sync because the user stopped session ${sessionId} while waiting.`);
+      console.log(`[EngineRuntime] turn aborted after model sync because the user stopped session ${sessionId} while waiting.`);
       return;
     }
 
@@ -5432,7 +5432,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       try {
         const client = this.requireGatewayClient();
         console.debug(
-          '[OpenClawRuntime] bootstrapping goal before first turn.',
+          '[EngineRuntime] bootstrapping goal before first turn.',
           `Session ${sessionId}.`,
           `OpenClaw key ${sessionKey}.`,
           `Action ${goalBootstrapCommand.action}.`,
@@ -5446,7 +5446,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         this.emitGoalUpdateIfChanged(sessionId, goal);
         effectivePrompt = formatGoalContinuationPrompt(goal?.objective || goalBootstrapCommand.text);
       } catch (error) {
-        console.error('[OpenClawRuntime] failed to bootstrap goal before first turn:', error);
+        console.error('[EngineRuntime] failed to bootstrap goal before first turn:', error);
         this.store.updateSession(sessionId, { status: 'error' });
         const message = error instanceof Error ? error.message : String(error);
         this.emit('error', sessionId, message);
@@ -5471,7 +5471,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const planMode = isPlanModeSystemPrompt(outboundSystemPrompt);
     if (planModeExecutionApproved) {
       console.log(
-        `[OpenClawRuntime] exited plan mode for an approved implementation in session ${sessionId}.`,
+        `[EngineRuntime] exited plan mode for an approved implementation in session ${sessionId}.`,
       );
     }
 
@@ -5493,7 +5493,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
     firstResponseTiming.promptBuildEndedAtMs = Date.now();
     console.log(
-      '[OpenClawRuntimeTiming] outbound prompt built.',
+      '[EngineRuntimeTiming] outbound prompt built.',
       `Session ${sessionId}.`,
       `Message length ${outboundMessage.length}.`,
       `System prompt length ${outboundSystemPrompt.length}.`,
@@ -5550,8 +5550,8 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     const client = this.requireGatewayClient();
     try {
-      console.log('[OpenClawRuntime] chat.send params:', { sessionKey, messageLength: outboundMessage.length, runId });
-      console.log('[OpenClawRuntime] chat.send imageAttachments diagnosis:', {
+      console.log('[EngineRuntime] chat.send params:', { sessionKey, messageLength: outboundMessage.length, runId });
+      console.log('[EngineRuntime] chat.send imageAttachments diagnosis:', {
         hasImageAttachments: !!options.imageAttachments,
         imageAttachmentsCount: options.imageAttachments?.length ?? 0,
         imageAttachmentsDetail: options.imageAttachments?.map(img => ({
@@ -5568,7 +5568,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }))
         : undefined;
       if (attachments) {
-        console.log('[OpenClawRuntime] chat.send with attachments:', attachments.length, 'images,', attachments.map(a => ({ type: a.type, mimeType: a.mimeType, contentLength: a.content?.length ?? 0 })));
+        console.log('[EngineRuntime] chat.send with attachments:', attachments.length, 'images,', attachments.map(a => ({ type: a.type, mimeType: a.mimeType, contentLength: a.content?.length ?? 0 })));
       }
       const chatSendParams = {
         sessionKey,
@@ -5589,14 +5589,14 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const chatSendElapsedMs = Date.now() - chatSendStartMs;
       firstResponseTiming.chatSendAckAtMs = Date.now();
       console.log(
-        '[OpenClawRuntimeTiming] chat.send acknowledged.',
+        '[EngineRuntimeTiming] chat.send acknowledged.',
         `Session ${sessionId}.`,
         `Run ${runId}.`,
         `Elapsed ${chatSendElapsedMs}ms.`,
         `Total ${formatTimingOffset(firstResponseTiming.turnStartedAtMs, firstResponseTiming.chatSendAckAtMs)}.`,
       );
       if (chatSendElapsedMs > 10_000) {
-        console.warn(`[OpenClawRuntime] chat.send took ${chatSendElapsedMs}ms — gateway may still be initializing`);
+        console.warn(`[EngineRuntime] chat.send took ${chatSendElapsedMs}ms — gateway may still be initializing`);
       }
       const returnedRunId = typeof sendResult?.runId === 'string' ? sendResult.runId.trim() : '';
       if (returnedRunId) {
@@ -5659,7 +5659,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const browserAnnotationSection = buildBrowserAnnotationPromptSection(browserAnnotations);
     if (selectedTextSnippets?.length && selectedTextSection) {
       console.log(
-        `[OpenClawRuntime] appended ${selectedTextSnippets.length} selected text excerpts with `
+        `[EngineRuntime] appended ${selectedTextSnippets.length} selected text excerpts with `
         + `${selectedTextSnippets.reduce((total, snippet) => total + snippet.text.length, 0)} characters `
         + `to the outbound message for session ${sessionId}`,
       );
@@ -5709,7 +5709,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       }
       hasHistory = Array.isArray(history?.messages) && history.messages.length > 0;
       console.log(
-        '[OpenClawRuntimeTiming] chat.history probe finished.',
+        '[EngineRuntimeTiming] chat.history probe finished.',
         `Session ${sessionId}.`,
         `Has history ${hasHistory}.`,
         `Elapsed ${formatTimingDuration(firstResponseTiming?.chatHistoryStartedAtMs, firstResponseTiming?.chatHistoryEndedAtMs)}.`,
@@ -5719,7 +5719,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       if (firstResponseTiming) {
         firstResponseTiming.chatHistoryEndedAtMs = Date.now();
       }
-      console.warn('[OpenClawRuntime] chat.history check failed, continuing without history guard:', error);
+      console.warn('[EngineRuntime] chat.history check failed, continuing without history guard:', error);
     }
 
     this.bridgedSessions.add(sessionId);
@@ -5759,9 +5759,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
   private buildSystemPromptPrefix(systemPrompt: string): string {
     return [
-      '[LobsterAI system instructions]',
+      '[Caisra system instructions]',
       'Apply the instructions below as the highest-priority guidance for this session.',
-      'If earlier LobsterAI system instructions exist, replace them with this version.',
+      'If earlier Caisra system instructions exist, replace them with this version.',
       systemPrompt,
     ].join('\n');
   }
@@ -5806,18 +5806,18 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
 
     const sections = [
-      '[Context bridge from previous LobsterAI conversation]',
+      '[Context bridge from previous Caisra conversation]',
       'Use this prior context for continuity. Focus your final answer on the current request.',
     ];
 
     for (const summary of compactionSummaries) {
       sections.push(
-        '[OpenClaw compaction summary from the fork source]',
+        '[Engine compaction summary from the fork source]',
         truncate(summary, FORK_COMPACTION_SUMMARY_MAX_CHARS),
       );
     }
     if (compactionSummaries.length > 0) {
-      console.debug(`[OpenClawRuntime] injected ${compactionSummaries.length} fork compaction summary bridge message(s).`);
+      console.debug(`[EngineRuntime] injected ${compactionSummaries.length} fork compaction summary bridge message(s).`);
     }
 
     const lines = recent.map((entry) => {
@@ -5850,7 +5850,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const engineStatus = await this.engineManager.startGateway('channel-sync-ensure-ready');
     console.log('[ChannelSync] ensureGatewayClientReady: engine phase=', engineStatus.phase, 'message=', engineStatus.message);
     if (engineStatus.phase !== 'running') {
-      const message = engineStatus.message || 'OpenClaw engine is not running.';
+      const message = engineStatus.message || 'The engine is not running.';
       throw new Error(message);
     }
 
@@ -5862,7 +5862,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     if (!connection.version) missing.push('version');
     if (!connection.clientEntryPath) missing.push('clientEntryPath');
     if (missing.length > 0) {
-      throw new Error(`OpenClaw gateway connection info is incomplete (missing: ${missing.join(', ')})`);
+      throw new Error(`Engine connection info is incomplete (missing: ${missing.join(', ')})`);
     }
 
     const needsNewClient = !this.gatewayClient
@@ -5914,7 +5914,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const client = new GatewayClient({
       url: connection.url,
       token: connection.token,
-      clientDisplayName: 'LobsterAI',
+      clientDisplayName: 'Caisra',
       clientVersion: app.getVersion(),
       mode: 'backend',
       caps: [OPENCLAW_GATEWAY_TOOL_EVENTS_CAP],
@@ -5940,7 +5940,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         try {
           this.options.onGatewayClientReady?.();
         } catch (error) {
-          console.warn('[OpenClawRuntime] gateway ready callback failed:', error);
+          console.warn('[EngineRuntime] gateway ready callback failed:', error);
         }
         this.lastTickTimestamp = Date.now();
         this.startTickWatchdog();
@@ -5984,7 +5984,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           return;
         }
 
-        console.warn('[OpenClawRuntime] gateway WS disconnected — code:', _code, 'reason:', reason);
+        console.warn('[EngineRuntime] gateway WS disconnected — code:', _code, 'reason:', reason);
         if (_code === WebSocketCloseCode.ServiceRestart) {
           // The gateway is restarting itself after a config reload. Flag the
           // window so the supervisor doesn't kill the process mid-restart
@@ -5998,11 +5998,11 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           && (connection.generation === undefined || gatewayFailure.generation === connection.generation);
         const disconnectedMessage = failureMatchesConnectionGeneration
           && gatewayFailure.kind === OpenClawGatewayFailureKind.HeapOutOfMemory
-          ? `OpenClaw gateway failed: gatewayFailureKind=${gatewayFailure.kind}; `
+          ? `The engine failed: gatewayFailureKind=${gatewayFailure.kind}; `
             + `generation=${gatewayFailure.generation}; code=${gatewayFailure.exitCode ?? _code}`
           : _code === WebSocketCloseCode.MessageTooBig
             ? (reason || 'gateway closed (1009):')
-            : (reason || 'OpenClaw gateway client disconnected');
+            : (reason || 'The engine connection was lost');
         const disconnectedError = new Error(disconnectedMessage);
         const activeSessionIds = Array.from(this.activeTurns.keys());
         activeSessionIds.forEach((sessionId) => {
@@ -6062,14 +6062,14 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     try {
       clientToStop?.stop();
     } catch (error) {
-      console.warn('[OpenClawRuntime] Failed to stop gateway client:', error);
+      console.warn('[EngineRuntime] Failed to stop gateway client:', error);
     }
     this.gatewayClient = null;
     this.pendingGatewayClient = null;
     this.gatewayClientVersion = null;
     this.gatewayClientEntryPath = null;
     if (this.gatewayReadyReject) {
-      const stoppedBeforeReadyError = new Error('OpenClaw gateway client stopped before handshake completed.');
+      const stoppedBeforeReadyError = new Error('The engine connection stopped before the handshake completed.');
       this.gatewayReadyPromise?.catch(() => {
         // suppress unhandled rejection when no caller is currently awaiting readiness
       });
@@ -6390,7 +6390,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     turn.pendingOpenClawRetry = true;
     turn.reopenedFromClosedRun = true;
     this.bindRunIdToTurn(sessionId, normalizedRunId);
-    console.log(`[OpenClawRuntime] reopened recently closed run ${normalizedRunId} for a same-run retry in session ${sessionId}.`);
+    console.log(`[EngineRuntime] reopened recently closed run ${normalizedRunId} for a same-run retry in session ${sessionId}.`);
     return true;
   }
 
@@ -6572,7 +6572,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       metadata,
     });
     console.debug(
-      `[OpenClawRuntime] finalized stopped streaming message for session ${sessionId}.`,
+      `[EngineRuntime] finalized stopped streaming message for session ${sessionId}.`,
       `Message ${messageId}.`,
       `Model ${metadata.model ?? 'none'}.`,
     );
@@ -6620,7 +6620,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const hasKnownToolUse = turn.toolUseMessageIdByToolCallId.has(msgToolCallId);
       if (!hasKnownToolUse && !existingResultMsgId) {
         console.debug(
-          '[OpenClawRuntime] skipped a tool result from chat history because it is not part of the current turn and was not backfillable.',
+          '[EngineRuntime] skipped a tool result from chat history because it is not part of the current turn and was not backfillable.',
           `sessionId=${sessionId}`,
           `toolCallId=${msgToolCallId}`,
           `toolName=${getHistoryToolName(msg) || 'unknown'}`,
@@ -6661,7 +6661,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       }
 
       console.debug(
-        '[OpenClawRuntime] backfilled a tool result from chat history.',
+        '[EngineRuntime] backfilled a tool result from chat history.',
         `sessionId=${sessionId}`,
         `toolCallId=${msgToolCallId}`,
         `len=${text.length}`,
@@ -6769,7 +6769,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     if (materializedToolUses > 0 || materializedToolResults > 0 || trackerUpdates > 0) {
       console.log(
-        '[OpenClawRuntime] synced backfillable tools from chat.history',
+        '[EngineRuntime] synced backfillable tools from chat.history',
         `sessionId=${sessionId}`,
         `entries=${entries.length}`,
         `toolUses=${materializedToolUses}`,
@@ -6840,7 +6840,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       this.emit('messageUpdate', sessionId, resultMessageId, text);
       this.subagentTracker.onBackfillResult(toolCallId, text);
       console.log(
-        '[OpenClawRuntime] incremental backfill from chat.history',
+        '[EngineRuntime] incremental backfill from chat.history',
         `toolCallId=${toolCallId}`,
         `len=${text.length}`,
         `prevLen=${previousText.length}`,
@@ -6973,7 +6973,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     const exportKeysPreview = Object.keys(loaded).slice(0, 20).join(', ');
     throw new Error(
-      `Invalid OpenClaw gateway client module: ${clientEntryPath} (exports: ${exportKeysPreview || 'none'})`,
+      `Invalid engine client module: ${clientEntryPath} (exports: ${exportKeysPreview || 'none'})`,
     );
   }
 
@@ -7208,7 +7208,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
 
     if (event.event === 'cron') {
-      console.debug('[OpenClawRuntime] received cron event:', JSON.stringify(event));
+      console.debug('[EngineRuntime] received cron event:', JSON.stringify(event));
       this.scheduleImConversationSyncAfterCronDelivery(event.payload);
     }
   }
@@ -7385,19 +7385,19 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     if (runId && this.isRecentlyClosedRunId(runId)) {
       if (stream !== 'lifecycle' || lifecyclePhase !== AgentLifecyclePhase.Start || !sessionKey) {
-        console.debug('[OpenClawRuntime] dropped late agent event for a closed run.');
+        console.debug('[EngineRuntime] dropped late agent event for a closed run.');
         return;
       }
       const retrySessionId = this.resolveSessionIdBySessionKey(sessionKey);
       if (!retrySessionId || !this.reopenRecentlyClosedRunForRetry(retrySessionId, sessionKey, runId)) {
-        console.debug('[OpenClawRuntime] dropped closed run lifecycle start because it was not a valid retry.');
+        console.debug('[EngineRuntime] dropped closed run lifecycle start because it was not a valid retry.');
         return;
       }
       reopenedSessionId = retrySessionId;
     }
 
     if (lifecyclePhase === AgentLifecyclePhase.Fallback) {
-      console.debug('[OpenClawRuntime] ignored agent lifecycle fallback event.');
+      console.debug('[EngineRuntime] ignored agent lifecycle fallback event.');
       return;
     }
 
@@ -7406,7 +7406,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const sessionIdByRunIdForLog = runId ? this.sessionIdByRunId.get(runId) : undefined;
       const sessionIdBySessionKeyForLog = sessionKey ? this.resolveSessionIdBySessionKey(sessionKey) ?? undefined : undefined;
       console.log(
-        '[OpenClawRuntime] terminal agent lifecycle received:',
+        '[EngineRuntime] terminal agent lifecycle received:',
         `phase=${lifecyclePhase}`,
         `runId=${runId || 'unknown'}`,
         `sessionKey=${sessionKey || 'unknown'}`,
@@ -7476,7 +7476,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       if (stream === 'lifecycle'
         && (lifecyclePhase === AgentLifecyclePhase.End || lifecyclePhase === AgentLifecyclePhase.Error)) {
         console.warn(
-          '[OpenClawRuntime] dropping terminal agent lifecycle event because no sessionId resolved',
+          '[EngineRuntime] dropping terminal agent lifecycle event because no sessionId resolved',
           `phase=${lifecyclePhase}`,
           `runId=${runId || 'unknown'}`,
           `sessionKey=${sessionKey || 'unknown'}`,
@@ -7498,7 +7498,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       if (stream === 'lifecycle'
         && (lifecyclePhase === AgentLifecyclePhase.End || lifecyclePhase === AgentLifecyclePhase.Error)) {
         console.warn(
-          '[OpenClawRuntime] dropping terminal agent lifecycle event because no active turn exists',
+          '[EngineRuntime] dropping terminal agent lifecycle event because no active turn exists',
           `phase=${lifecyclePhase}`,
           `sessionId=${sessionId}`,
           `runId=${runId || 'unknown'}`,
@@ -7603,7 +7603,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const runId = typeof agentPayload.runId === 'string' && agentPayload.runId.trim()
         ? agentPayload.runId.trim()
         : 'unknown';
-      console.log(`[OpenClawRuntime] received a compaction stream event for session ${sessionId}, run ${runId}, phase ${phase}.`);
+      console.log(`[EngineRuntime] received a compaction stream event for session ${sessionId}, run ${runId}, phase ${phase}.`);
       this.handleAgentCompactionEvent(sessionId, agentPayload.data);
       return;
     }
@@ -7701,7 +7701,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       return persistedChannelSessionKey;
     }
     if (options.requirePersistedChannelKey && persistedChannelSession?.isChannelSession) {
-      throw new Error('Cannot patch IM channel session because the OpenClaw session key is missing.');
+      throw new Error('Cannot patch IM channel session because the engine session key is missing.');
     }
 
     return managedSessionKey;
@@ -7788,7 +7788,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const session = this.store.getSession(candidateSessionId);
     if (!session) {
       console.debug(
-        '[OpenClawRuntime] ignored gateway session key with unknown local session id',
+        '[EngineRuntime] ignored gateway session key with unknown local session id',
         `sessionKey=${sessionKey}`,
         `agentId=${agentId}`,
         `source=${source}`,
@@ -7800,7 +7800,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       : 'main';
     if (agentId !== localAgentId) {
       console.debug(
-        '[OpenClawRuntime] ignored gateway session key with mismatched local agent id',
+        '[EngineRuntime] ignored gateway session key with mismatched local agent id',
         `sessionId=${candidateSessionId}`,
         `sessionKeyAgentId=${agentId}`,
         `localAgentId=${localAgentId}`,
@@ -7812,7 +7812,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     this.rememberSessionKey(session.id, sessionKey);
     this.rememberSessionKey(session.id, this.toSessionKey(session.id, session.agentId));
     console.warn(
-      '[OpenClawRuntime] resolved non-managed gateway session key to local session by id fallback',
+      '[EngineRuntime] resolved non-managed gateway session key to local session by id fallback',
       `sessionId=${session.id}`,
       `agentId=${agentId}`,
       `source=${source}`,
@@ -7852,7 +7852,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     timing.firstVisibleAssistantAtMs = now;
     timing.firstVisibleAssistantSource = source;
     console.log(
-      '[OpenClawRuntimeTiming] first visible assistant content received.',
+      '[EngineRuntimeTiming] first visible assistant content received.',
       `Session ${sessionId}.`,
       `Run ${turn.runId}.`,
       `Source ${source}.`,
@@ -7927,7 +7927,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
 
     console.debug(
-      '[OpenClawRuntime] removing redundant assistant prefix segment before final.',
+      '[EngineRuntime] removing redundant assistant prefix segment before final.',
       `sessionId=${sessionId}`,
       `messageId=${redundantMessageId}`,
       `finalMessageId=${finalMessageId ?? 'pending'}`,
@@ -7973,7 +7973,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }
         timing.lifecycleStartedAtMs = Date.now();
         console.log(
-          '[OpenClawRuntimeTiming] agent lifecycle started.',
+          '[EngineRuntimeTiming] agent lifecycle started.',
           `Session ${sessionId}.`,
           `Run ${eventRunId ?? startingTurn.runId}.`,
           `Total ${formatTimingOffset(timing.turnStartedAtMs, timing.lifecycleStartedAtMs)}.`,
@@ -8051,7 +8051,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       // event may not arrive reliably — similar to the phase=end / chat final gap.
       // Wait for the gateway chat error or retry/compaction path to settle first;
       // if the turn is still active after that, surface the error ourselves.
-      const rawErrorMessage = typeof data.error === 'string' ? data.error.trim() : 'OpenClaw run failed';
+      const rawErrorMessage = typeof data.error === 'string' ? data.error.trim() : 'The run failed';
       const errorMetadata = normalizeOpenClawSafeRuntimeErrorMetadata(data);
       const errorTurn = this.activeTurns.get(sessionId);
       const errorRunId = eventRunId
@@ -8066,17 +8066,17 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         const resolvedError = resolved.resolvedError;
         const errorMessage = resolvedError.message;
         const errorDetail = this.buildTurnErrorDetail(sessionId, turn, resolved.detailRawErrorMessage, errorMessage, errorMetadata);
-        console.log(`[OpenClawRuntime] lifecycle error fallback surfaced an error after waiting for the gateway chat error event in session ${sessionId}: ${errorMessage}`);
+        console.log(`[EngineRuntime] lifecycle error fallback surfaced an error after waiting for the gateway chat error event in session ${sessionId}: ${errorMessage}`);
         // Abort the retrying run on the gateway so the session is freed for new messages.
         // Without this, the gateway continues retrying indefinitely and rejects subsequent chat.send requests.
         const client = this.gatewayClient;
         if (client) {
-          console.log(`[OpenClawRuntime] lifecycle error fallback is aborting gateway run ${turn.runId} after the retry grace window for ${turn.sessionKey}.`);
+          console.log(`[EngineRuntime] lifecycle error fallback is aborting gateway run ${turn.runId} after the retry grace window for ${turn.sessionKey}.`);
           void client.request('chat.abort', {
             sessionKey: turn.sessionKey,
             runId: turn.runId,
           }).catch((err) => {
-            console.warn('[OpenClawRuntime] lifecycle error fallback: chat.abort failed:', err);
+            console.warn('[EngineRuntime] lifecycle error fallback: chat.abort failed:', err);
           });
         }
         const erroredSessionKey = turn.sessionKey;
@@ -8183,7 +8183,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
   private handleAgentCompactionEvent(sessionId: string, data: unknown): void {
     if (!isRecord(data)) {
-      console.warn(`[OpenClawRuntime] ignored a context compaction event for session ${sessionId} because the payload was invalid.`);
+      console.warn(`[EngineRuntime] ignored a context compaction event for session ${sessionId} because the payload was invalid.`);
       return;
     }
     const phase = typeof data.phase === 'string' ? data.phase.trim() : '';
@@ -8197,11 +8197,11 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       this.emitSessionStatus(sessionId, 'running');
       this.emitContextMaintenance(sessionId, true);
       this.refreshContinuityCapsule(sessionId, ContinuityCapsuleSource.PreCompaction);
-      console.log(`[OpenClawRuntime] context compaction started for session ${sessionId}.`);
+      console.log(`[EngineRuntime] context compaction started for session ${sessionId}.`);
       return;
     }
     if (phase !== 'end') {
-      console.debug(`[OpenClawRuntime] ignored a context compaction event for session ${sessionId} because phase ${phase || 'unknown'} is unsupported.`);
+      console.debug(`[EngineRuntime] ignored a context compaction event for session ${sessionId} because phase ${phase || 'unknown'} is unsupported.`);
       return;
     }
 
@@ -8229,7 +8229,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     } else {
       this.emitContextMaintenance(sessionId, false);
     }
-    console.log(`[OpenClawRuntime] context compaction ended for session ${sessionId}, completed=${completed}, willRetry=${willRetry}.`);
+    console.log(`[EngineRuntime] context compaction ended for session ${sessionId}, completed=${completed}, willRetry=${willRetry}.`);
     if (completed) {
       this.refreshContinuityCapsule(sessionId, ContinuityCapsuleSource.PostCompaction, {
         compactedAt: Date.now(),
@@ -8252,7 +8252,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         this.emit('contextUsageUpdate', sessionId, usage);
       }
     }).catch((error) => {
-      console.warn('[OpenClawRuntime] context usage refresh after compaction failed:', error);
+      console.warn('[EngineRuntime] context usage refresh after compaction failed:', error);
     });
   }
 
@@ -8273,13 +8273,13 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       currentTurn.lifecycleEndFallbackTimer = undefined;
       if (endingRunId && !currentTurn.knownRunIds.has(endingRunId)) return;
       if (this.isWaitingForRecoverableFollowup(currentTurn) || currentTurn.finalCompletionTimer) {
-        console.debug('[OpenClawRuntime] lifecycle end fallback stayed open while waiting for retry follow-up.');
+        console.debug('[EngineRuntime] lifecycle end fallback stayed open while waiting for retry follow-up.');
         return;
       }
-      console.log('[OpenClawRuntime] agent lifecycle end fallback completed a turn that missed chat final.');
+      console.log('[EngineRuntime] agent lifecycle end fallback completed a turn that missed chat final.');
       void this.completeChannelTurnFallback(sessionId, currentTurn);
     }, delayMs);
-    console.debug('[OpenClawRuntime] scheduled lifecycle end fallback for missing chat.final.');
+    console.debug('[EngineRuntime] scheduled lifecycle end fallback for missing chat.final.');
   }
 
   private cancelLifecycleEndFallback(sessionId: string, turn: ActiveTurn, reason: string): void {
@@ -8288,7 +8288,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     turn.lifecycleEndFallbackTimer = undefined;
     this.store.updateSession(sessionId, { status: 'running' });
     this.emitSessionStatus(sessionId, 'running');
-    console.debug(`[OpenClawRuntime] canceled lifecycle end fallback because ${reason}.`);
+    console.debug(`[EngineRuntime] canceled lifecycle end fallback because ${reason}.`);
   }
 
   /**
@@ -8306,7 +8306,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         await this.syncSessionHistoryFromGateway(sessionId, turn.sessionKey);
       }
     } catch (error) {
-      console.warn('[OpenClawRuntime] fallback final sync failed:', error);
+      console.warn('[EngineRuntime] fallback final sync failed:', error);
     }
 
     // Re-check after async final sync — handleChatFinal may have run in the meantime
@@ -8322,7 +8322,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         pendingVisibleFinalContinuation: fallbackContinuation.pendingVisibleFinalContinuation,
       });
       console.debug(
-        '[OpenClawRuntime] lifecycle fallback stayed open after history sync because a retry may follow.',
+        '[EngineRuntime] lifecycle fallback stayed open after history sync because a retry may follow.',
         `sessionId=${sessionId}`,
         `runId=${turn.runId}`,
         `reason=${fallbackContinuation.reason}`,
@@ -8394,12 +8394,12 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const blockedReason = getPlanModeBlockedToolReason(toolNameRaw, data.args);
       if (blockedReason) {
         console.warn(
-          `[OpenClawRuntime] blocked ${toolName} in plan mode for session ${sessionId}: ${blockedReason}.`,
+          `[EngineRuntime] blocked ${toolName} in plan mode for session ${sessionId}: ${blockedReason}.`,
         );
         (turn.planModeSuppressedToolCallIds ??= new Set()).add(toolCallId);
         if (turn.planModeRecoveryAttempted || turn.planModeSafetyRecoveryPending) {
           console.warn(
-            `[OpenClawRuntime] stopped plan mode session ${sessionId} after a repeated blocked tool call.`,
+            `[EngineRuntime] stopped plan mode session ${sessionId} after a repeated blocked tool call.`,
           );
           this.stopSession(sessionId);
           return;
@@ -8414,7 +8414,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           if (this.activeTurns.get(sessionId) !== turn || !turn.planModeSafetyRecoveryPending) return;
           turn.planModeSafetyRecoveryPending = false;
           console.error(
-            `[OpenClawRuntime] failed to abort a blocked plan mode tool for session ${sessionId}:`,
+            `[EngineRuntime] failed to abort a blocked plan mode tool for session ${sessionId}:`,
             error,
           );
           this.stopSession(sessionId);
@@ -8424,7 +8424,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       if (shouldSuppressPlanModeToolEvent(toolNameRaw, data.args)) {
         (turn.planModeSuppressedToolCallIds ??= new Set()).add(toolCallId);
         console.debug(
-          `[OpenClawRuntime] suppressed a read-only ${toolName} event from the plan mode transcript for session ${sessionId}.`,
+          `[EngineRuntime] suppressed a read-only ${toolName} event from the plan mode transcript for session ${sessionId}.`,
         );
         return;
       }
@@ -8453,9 +8453,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           ...(phase === AgentBrowserToolPhase.Result ? { isError } : {}),
         });
       } catch (error) {
-        console.warn('[OpenClawRuntime] Browser observation callback failed.', error);
+        console.warn('[EngineRuntime] Browser observation callback failed.', error);
       }
-      const browserEventSummary = `[OpenClawRuntime] browser tool event: phase=${phase}`
+      const browserEventSummary = `[EngineRuntime] browser tool event: phase=${phase}`
         + ` action=${browserAction ?? 'unknown'} toolCallId=${toolCallId}`
         + (browserTargetId ? ` targetId=${browserTargetId}` : '');
       if (phase === AgentBrowserToolPhase.Result && isError) {
@@ -8620,7 +8620,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       summarizeThinkingMessageForDiagnostics(chatPayload.message),
     );
     console.debug(
-      '[OpenClawRuntime] handleChatEvent:',
+      '[EngineRuntime] handleChatEvent:',
       `state=${state}`,
       `runId=${typeof chatPayload.runId === 'string' ? chatPayload.runId : ''}`,
       `sessionKey=${typeof chatPayload.sessionKey === 'string' ? chatPayload.sessionKey : ''}`,
@@ -8628,7 +8628,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     );
 
     if (runId && this.isRecentlyClosedRunId(runId)) {
-      console.debug('[OpenClawRuntime] dropped late chat event for a closed run.');
+      console.debug('[EngineRuntime] dropped late chat event for a closed run.');
       return;
     }
 
@@ -8636,7 +8636,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const sessionId = this.resolveSessionIdFromChatPayload(chatPayload);
     if (state === 'final' || state === 'aborted' || state === 'error') {
       console.log(
-        '[OpenClawRuntime] terminal chat received:',
+        '[EngineRuntime] terminal chat received:',
         `state=${state}`,
         `runId=${runId || 'unknown'}`,
         `sessionKey=${sessionKey || 'unknown'}`,
@@ -8661,14 +8661,14 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       }
       if (state === 'final' || state === 'aborted' || state === 'error') {
         console.warn(
-          '[OpenClawRuntime] dropping terminal chat event because no sessionId resolved',
+          '[EngineRuntime] dropping terminal chat event because no sessionId resolved',
           `state=${state}`,
           `runId=${runId || 'unknown'}`,
           `sessionKey=${typeof chatPayload.sessionKey === 'string' ? chatPayload.sessionKey : 'unknown'}`,
           `message=${summarizeGatewayMessageShape(chatPayload.message)}`,
         );
       }
-      console.debug('[OpenClawRuntime] handleChatEvent — no sessionId resolved, dropping event');
+      console.debug('[EngineRuntime] handleChatEvent — no sessionId resolved, dropping event');
       return;
     }
 
@@ -8698,13 +8698,13 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         );
         return;
       }
-      console.debug('[OpenClawRuntime] handleChatEvent — no active turn for sessionId:', sessionId);
+      console.debug('[EngineRuntime] handleChatEvent — no active turn for sessionId:', sessionId);
       return;
     }
 
     // Buffer chat events while user messages are being prefetched for channel sessions
     if (turn.pendingUserSync) {
-      console.debug('[OpenClawRuntime] handleChatEvent — buffering (pendingUserSync), sessionId:', sessionId);
+      console.debug('[EngineRuntime] handleChatEvent — buffering (pendingUserSync), sessionId:', sessionId);
       turn.bufferedChatPayloads.push({ payload, seq, bufferedAt: Date.now() });
       return;
     }
@@ -8898,7 +8898,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const runId = typeof p.runId === 'string' ? p.runId.trim() : '';
     const sessionKey = typeof p.sessionKey === 'string' ? p.sessionKey.trim() : '';
     if (runId && this.isRecentlyClosedRunId(runId)) {
-      console.debug('[OpenClawRuntime] dropped late assistant text for a closed run.');
+      console.debug('[EngineRuntime] dropped late assistant text for a closed run.');
       return;
     }
     let sessionId = runId ? this.sessionIdByRunId.get(runId) : undefined;
@@ -9129,7 +9129,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         turn.currentAssistantSegmentText = segmentText;
       } else if (!turn.chatDeltaOverwriteSkipLogged) {
         turn.chatDeltaOverwriteSkipLogged = true;
-        console.debug('[OpenClawRuntime] skipping further chat.delta segment overwrite; agent stream owns this assistant segment until split');
+        console.debug('[EngineRuntime] skipping further chat.delta segment overwrite; agent stream owns this assistant segment until split');
       }
     }
   }
@@ -9154,7 +9154,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       ? ensurePlanModeProposedPlanBlock(rawVisibleFinalText)
       : rawVisibleFinalText;
     console.debug(
-      '[OpenClawRuntime] handleChatFinal:',
+      '[EngineRuntime] handleChatFinal:',
       `sessionId=${sessionId}`,
       `runId=${payload.runId ?? turn.runId}`,
       `message=${summarizeGatewayMessageShape(payload.message)}`,
@@ -9205,7 +9205,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       return;
     }
     if (finalTextIsOpenClawFailure) {
-      const rawErrorMessage = finalText.trim() || 'OpenClaw run failed';
+      const rawErrorMessage = finalText.trim() || 'The run failed';
       const errorMetadata = normalizeOpenClawSafeRuntimeErrorMetadata(payload);
       const resolved = this.resolveTurnErrorMessageWithToolLoopContext(turn, rawErrorMessage, errorMetadata);
       const resolvedError = resolved.resolvedError;
@@ -9263,7 +9263,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           );
         }
       } catch (err) {
-        console.warn('[OpenClawRuntime] chat history tool result backfill failed:', err);
+        console.warn('[EngineRuntime] chat history tool result backfill failed:', err);
       }
     }
 
@@ -9283,7 +9283,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           isFinal: true,
         };
         console.debug(
-          '[OpenClawRuntime] persisting assistant segment at chat.final',
+          '[EngineRuntime] persisting assistant segment at chat.final',
           `sessionId=${sessionId}`,
           `messageId=${turn.assistantMessageId}`,
           `reason=${persistPickReason}`,
@@ -9333,7 +9333,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         || turn.stopRequested
       ) {
         console.debug(
-          '[OpenClawRuntime] ignored length final after the turn was stopped or superseded.',
+          '[EngineRuntime] ignored length final after the turn was stopped or superseded.',
           `sessionId=${sessionId}`,
         );
         return;
@@ -9386,7 +9386,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       this.emit('message', sessionId, systemMessage);
       this.emit('error', sessionId, incompleteMessage);
       console.warn(
-        '[OpenClawRuntime] preserved a partial response after the model reached its output limit.',
+        '[EngineRuntime] preserved a partial response after the model reached its output limit.',
         `sessionId=${sessionId}`,
         `runId=${payload.runId ?? turn.runId}`,
       );
@@ -9397,7 +9397,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
     if (!stoppedByError && !finalText.trim()) {
       console.debug(
-        '[OpenClawRuntime] handleChatFinal: final payload had no text, falling back to chat.history sync',
+        '[EngineRuntime] handleChatFinal: final payload had no text, falling back to chat.history sync',
         `sessionId=${sessionId}`,
         `runId=${payload.runId ?? turn.runId}`
       );
@@ -9437,7 +9437,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       this.store.updateSession(sessionId, { status: 'running' });
       this.emitSessionStatus(sessionId, 'running');
       console.debug(
-        '[OpenClawRuntime] kept session running after tool-use chat.final.',
+        '[EngineRuntime] kept session running after tool-use chat.final.',
         `sessionId=${sessionId}`,
         `runId=${payload.runId ?? turn.runId}`,
       );
@@ -9447,7 +9447,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     if (stoppedByError) {
       const rawErrorMessage = payload.errorMessage?.trim()
         || errorMessageFromMessage?.trim()
-        || 'OpenClaw run failed';
+        || 'The run failed';
       const errorMetadata = normalizeOpenClawSafeRuntimeErrorMetadata(payload);
       const resolved = this.resolveTurnErrorMessageWithToolLoopContext(
         turn,
@@ -9511,7 +9511,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         pendingVisibleFinalContinuation: Boolean(reconciledPlanText.trim()),
       });
       console.warn(
-        `[OpenClawRuntime] kept plan mode recovery open for an automatic continuation in session ${sessionId}.`,
+        `[EngineRuntime] kept plan mode recovery open for an automatic continuation in session ${sessionId}.`,
       );
       return;
     }
@@ -9529,7 +9529,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     if (sessionAfterReconcile) {
       const hadToolCall = this.hasTurnToolWork(sessionId, turn);
       const lastApiResponseHadNoText = !turn.currentText.trim();
-      console.debug('[OpenClawRuntime] run end diagnostics, sessionId:', sessionId,
+      console.debug('[EngineRuntime] run end diagnostics, sessionId:', sessionId,
         'turn.currentText:', JSON.stringify(turn.currentText?.slice(0, 100)),
         'turn.committedAssistantText:', JSON.stringify(turn.committedAssistantText?.slice(0, 100)),
         'hadToolCall:', hadToolCall,
@@ -9540,7 +9540,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           graceMs: OpenClawRuntimeAdapter.SILENT_MAINTENANCE_FOLLOWUP_GRACE_MS,
           pendingThinkingOnlyHint: true,
         });
-        console.debug(`[OpenClawRuntime] delayed empty tool final while waiting for a recoverable follow-up in session ${sessionId}.`);
+        console.debug(`[EngineRuntime] delayed empty tool final while waiting for a recoverable follow-up in session ${sessionId}.`);
         return;
       }
     }
@@ -9605,7 +9605,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         pendingVisibleFinalContinuation: true,
       });
       console.debug(
-        '[OpenClawRuntime] delayed visible tool final while waiting for a recoverable continuation.',
+        '[EngineRuntime] delayed visible tool final while waiting for a recoverable continuation.',
         `sessionId=${sessionId}`,
         `runId=${payload.runId ?? turn.runId}`,
         `reason=${visibleFinalContinuation.reason}`,
@@ -9677,7 +9677,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     this.store.updateSession(sessionId, { status: 'running' });
     this.emitSessionStatus(sessionId, 'running');
     console.warn(
-      `[OpenClawRuntime] requested one plan mode recovery for incomplete output in session ${sessionId}.`,
+      `[EngineRuntime] requested one plan mode recovery for incomplete output in session ${sessionId}.`,
     );
 
     try {
@@ -9709,7 +9709,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       turn.thinking.currentText = previousState.currentThinkingText;
       this.clearContextMaintenanceState(sessionId, turn, 'plan mode recovery request failed');
       console.warn(
-        `[OpenClawRuntime] plan mode recovery request failed for session ${sessionId}; using the original response.`,
+        `[EngineRuntime] plan mode recovery request failed for session ${sessionId}; using the original response.`,
         error,
       );
       return false;
@@ -9729,12 +9729,12 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     this.emitSessionStatus(sessionId, 'running');
     if (isSilentMaintenanceWait) {
       this.clearContextMaintenanceState(sessionId, turn, reason);
-      console.debug(`[OpenClawRuntime] canceled silent maintenance completion because ${reason}.`);
+      console.debug(`[EngineRuntime] canceled silent maintenance completion because ${reason}.`);
       return;
     }
     this.clearContextMaintenanceState(sessionId, turn, reason);
     this.deferChatFinalCompletion(sessionId, turn, runId);
-    console.debug(`[OpenClawRuntime] postponed deferred chat.final completion because ${reason}.`);
+    console.debug(`[EngineRuntime] postponed deferred chat.final completion because ${reason}.`);
   }
 
   private cancelChatFinalCompletion(sessionId: string, turn: ActiveTurn, reason: string): void {
@@ -9747,7 +9747,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     this.store.updateSession(sessionId, { status: 'running' });
     this.emitSessionStatus(sessionId, 'running');
     this.clearContextMaintenanceState(sessionId, turn, reason);
-    console.debug(`[OpenClawRuntime] canceled deferred chat.final completion because ${reason}.`);
+    console.debug(`[EngineRuntime] canceled deferred chat.final completion because ${reason}.`);
   }
 
   private deferChatFinalCompletion(
@@ -9769,7 +9769,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       if (!currentTurn || currentTurn.turnToken !== turnToken) return;
       void this.completeDeferredChatFinalNow(sessionId, currentTurn, runId);
     }, graceMs);
-    console.debug('[OpenClawRuntime] deferred chat.final completion to allow retry or compaction follow-up.');
+    console.debug('[EngineRuntime] deferred chat.final completion to allow retry or compaction follow-up.');
   }
 
   private async completeDeferredChatFinalNow(sessionId: string, turn: ActiveTurn, runId: string): Promise<void> {
@@ -9784,7 +9784,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         return;
       }
       console.debug(
-        `[OpenClawRuntime] synchronized plan mode recovery from history before completing session ${sessionId}.`,
+        `[EngineRuntime] synchronized plan mode recovery from history before completing session ${sessionId}.`,
       );
     }
     if (turn.pendingThinkingOnlyHint && !turn.currentText.trim()) {
@@ -9798,7 +9798,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           content: t('taskThinkingOnly'),
         });
         this.emit('message', sessionId, hintMessage);
-        console.warn(`[OpenClawRuntime] thinking-only response detected after waiting for follow-up in session ${sessionId}.`);
+        console.warn(`[EngineRuntime] thinking-only response detected after waiting for follow-up in session ${sessionId}.`);
       }
     }
     if (turn.finalCompletionAllowLateContinuation) {
@@ -9869,13 +9869,13 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const returnedRunId = typeof sendResult?.runId === 'string' ? sendResult.runId.trim() : '';
       if (returnedRunId) this.bindRunIdToTurn(sessionId, returnedRunId);
       console.warn(
-        `[OpenClawRuntime] resumed plan generation without tools after a safety abort in session ${sessionId}.`,
+        `[EngineRuntime] resumed plan generation without tools after a safety abort in session ${sessionId}.`,
       );
     } catch (error) {
       this.sessionIdByRunId.delete(recoveryRunId);
       turn.knownRunIds.delete(recoveryRunId);
       console.error(
-        `[OpenClawRuntime] failed to resume plan generation after a safety abort in session ${sessionId}:`,
+        `[EngineRuntime] failed to resume plan generation after a safety abort in session ${sessionId}:`,
         error,
       );
       this.store.updateSession(sessionId, { status: 'idle' });
@@ -9903,14 +9903,14 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       void this.recoverPlanModeAfterSafetyAbort(sessionId, currentTurn);
     }, delayMs);
     console.debug(
-      `[OpenClawRuntime] scheduled plan mode safety recovery after ${delayMs}ms because ${reason} for session ${sessionId}.`,
+      `[EngineRuntime] scheduled plan mode safety recovery after ${delayMs}ms because ${reason} for session ${sessionId}.`,
     );
   }
 
   private handleChatAborted(sessionId: string, turn: ActiveTurn): void {
     if (turn.planMode && turn.planModeSafetyRecoveryPending) {
       console.warn(
-        `[OpenClawRuntime] received the expected safety abort for plan mode session ${sessionId}.`,
+        `[EngineRuntime] received the expected safety abort for plan mode session ${sessionId}.`,
       );
       this.schedulePlanModeSafetyRecovery(
         sessionId,
@@ -10039,7 +10039,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         metadata: usageMetadata as CoworkMessageMetadata,
       });
 
-      console.debug('[OpenClawRuntime] syncUsageMetadata success:', sessionId, model ?? 'unknown-model', `in=${inputTokens ?? '-'} out=${outputTokens ?? '-'} ctx=${contextPercent ?? '-'}% cacheRead=${cacheReadTokens ?? '-'} agent=${agentName ?? '-'}`);
+      console.debug('[EngineRuntime] syncUsageMetadata success:', sessionId, model ?? 'unknown-model', `in=${inputTokens ?? '-'} out=${outputTokens ?? '-'} ctx=${contextPercent ?? '-'}% cacheRead=${cacheReadTokens ?? '-'} agent=${agentName ?? '-'}`);
 
       // Notify renderer to re-render the message with usage data
       const session = this.store.getSession(sessionId);
@@ -10050,7 +10050,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }
       }
     } catch (error) {
-      console.debug('[OpenClawRuntime] syncUsageMetadata failed:', error);
+      console.debug('[EngineRuntime] syncUsageMetadata failed:', error);
     }
   }
 
@@ -10102,7 +10102,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       metadata: usageMetadata as CoworkMessageMetadata,
     });
 
-    console.debug('[OpenClawRuntime] applyUsageMetadataFromFinal:', sessionId, model ?? 'unknown-model', `in=${inputTokens ?? '-'} out=${outputTokens ?? '-'} ctx=${contextPercent ?? '-'}% cacheRead=${cacheReadTokens ?? '-'} agent=${agentName ?? '-'}`);
+    console.debug('[EngineRuntime] applyUsageMetadataFromFinal:', sessionId, model ?? 'unknown-model', `in=${inputTokens ?? '-'} out=${outputTokens ?? '-'} ctx=${contextPercent ?? '-'}% cacheRead=${cacheReadTokens ?? '-'} agent=${agentName ?? '-'}`);
 
     const session = this.store.getSession(sessionId);
     if (session) {
@@ -10144,7 +10144,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       || extractGatewayMessageText(payload.message).trim();
     if (this.isProviderRuntimeFailureChatError(payload, staleErrorText)) {
       console.warn(
-        '[OpenClawRuntime] surfacing a provider runtime failure that arrived as a late chat error despite a pending deferred final.',
+        '[EngineRuntime] surfacing a provider runtime failure that arrived as a late chat error despite a pending deferred final.',
         `Session ${sessionId}.`,
         `Run ${errorRunId || turn.finalCompletionRunId || turn.runId}.`,
         `Error ${staleErrorText.slice(0, 200) || 'unknown'}.`,
@@ -10152,7 +10152,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       return false;
     }
     console.warn(
-      '[OpenClawRuntime] ignored a stale chat error after a successful final; completing the deferred final instead.',
+      '[EngineRuntime] ignored a stale chat error after a successful final; completing the deferred final instead.',
       `Session ${sessionId}.`,
       `Run ${errorRunId || turn.finalCompletionRunId || turn.runId}.`,
       `Error ${staleErrorText.slice(0, 200) || 'unknown'}.`,
@@ -10189,8 +10189,8 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   }
 
   private handleChatError(sessionId: string, turn: ActiveTurn, payload: ChatEventPayload): void {
-    console.log('[OpenClawRuntime] handleChatError payload:', JSON.stringify(payload).slice(0, 1000));
-    const rawErrorMessage = payload.errorMessage?.trim() || 'OpenClaw run failed';
+    console.log('[EngineRuntime] handleChatError payload:', JSON.stringify(payload).slice(0, 1000));
+    const rawErrorMessage = payload.errorMessage?.trim() || 'The run failed';
     const errorMetadata = normalizeOpenClawSafeRuntimeErrorMetadata(payload);
     const resolved = this.resolveTurnErrorMessageWithToolLoopContext(turn, rawErrorMessage, errorMetadata);
     const resolvedError = resolved.resolvedError;
@@ -10814,10 +10814,10 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       suppressPlanModeWrapping?: boolean;
     } = {},
   ): Promise<void> {
-    console.debug('[OpenClawRuntime] syncFinalAssistant — sessionId:', sessionId);
+    console.debug('[EngineRuntime] syncFinalAssistant — sessionId:', sessionId);
     const client = this.gatewayClient;
     if (!client) {
-      console.debug('[OpenClawRuntime] syncFinalAssistant — no gateway client, skipping');
+      console.debug('[EngineRuntime] syncFinalAssistant — no gateway client, skipping');
       return;
     }
 
@@ -10835,7 +10835,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
             || turn.stopRequested
           )
         ) {
-          console.debug('[OpenClawRuntime] syncFinalAssistant — inactive turn, skipping');
+          console.debug('[EngineRuntime] syncFinalAssistant — inactive turn, skipping');
           return;
         }
         if (delayMs > 0) {
@@ -10853,11 +10853,11 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
             || turn.stopRequested
           )
         ) {
-          console.debug('[OpenClawRuntime] syncFinalAssistant — turn stopped during history request');
+          console.debug('[EngineRuntime] syncFinalAssistant — turn stopped during history request');
           return;
         }
         const msgCount = Array.isArray(history?.messages) ? history.messages.length : 0;
-        console.debug('[OpenClawRuntime] syncFinalAssistant — chat.history returned', msgCount, 'messages');
+        console.debug('[EngineRuntime] syncFinalAssistant — chat.history returned', msgCount, 'messages');
         if (!Array.isArray(history?.messages) || history.messages.length === 0) {
           this.gatewayHistoryCountBySession.set(sessionId, 0);
           continue;
@@ -10889,7 +10889,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }
 
         if (!this.isCurrentTurnToken(sessionId, turn.turnToken)) {
-          console.debug('[OpenClawRuntime] syncFinalAssistant — stale turn token, skipping');
+          console.debug('[EngineRuntime] syncFinalAssistant — stale turn token, skipping');
           return;
         }
 
@@ -10905,7 +10905,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
         if (!canonicalText && historyTailLooksLikeContextMaintenance(history.messages)) {
           turn.hasContextMaintenanceTool = true;
-          console.debug('[OpenClawRuntime] detected context maintenance from final history tail.');
+          console.debug('[EngineRuntime] detected context maintenance from final history tail.');
           break;
         }
 
@@ -10922,7 +10922,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       }
 
       if (!historyMessages || !canonicalText) {
-        console.debug('[OpenClawRuntime] syncFinalAssistant — no canonical text found');
+        console.debug('[EngineRuntime] syncFinalAssistant — no canonical text found');
         return;
       }
 
@@ -10930,7 +10930,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       if (isChannel) {
         const sentFilePaths = extractSentFilePathsFromHistory(historyMessages);
         if (sentFilePaths.length > 0) {
-          console.debug('[OpenClawRuntime] syncFinalAssistant — found sent file paths:', sentFilePaths);
+          console.debug('[EngineRuntime] syncFinalAssistant — found sent file paths:', sentFilePaths);
           const fileLinks = sentFilePaths
             .map((fp) => `[${path.basename(fp)}](${fp})`)
             .join('\n');
@@ -10942,7 +10942,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         canonicalText = ensurePlanModeProposedPlanBlock(canonicalText);
       }
 
-      console.debug('[OpenClawRuntime] syncFinalAssistant — canonicalText.length:', canonicalText.length);
+      console.debug('[EngineRuntime] syncFinalAssistant — canonicalText.length:', canonicalText.length);
 
       // For managed sessions: extract the last assistant segment directly from history
       // instead of using committedAssistantText for prefix slicing.
@@ -11018,7 +11018,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       });
       this.emit('messageUpdate', sessionId, turn.assistantMessageId, canonicalSegmentText, finalMetadata);
     } catch (error) {
-      console.warn('[OpenClawRuntime] chat.history sync after final failed:', error);
+      console.warn('[EngineRuntime] chat.history sync after final failed:', error);
     }
   }
 
@@ -11419,7 +11419,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       if (compactionMessage?.metadata?.status === ContextCompactionStatus.Running) {
         this.updateContextCompactionMessage(sessionId, turn, ContextCompactionStatus.Failed, Date.now());
         console.warn(
-          `[OpenClawRuntime] finalized a running context compaction message as failed during turn cleanup for session ${sessionId}.`,
+          `[EngineRuntime] finalized a running context compaction message as failed during turn cleanup for session ${sessionId}.`,
         );
       }
       // Cancel any pending throttled messageUpdate timer for this turn
@@ -11479,7 +11479,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       return;
     }
     console.debug(
-      '[OpenClawRuntime] starting queued goal continuation after active turn completed.',
+      '[EngineRuntime] starting queued goal continuation after active turn completed.',
       `Session ${sessionId}.`,
       `Action ${pending.action}.`,
     );
@@ -11488,7 +11488,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       systemPrompt: pending.systemPrompt ?? session.systemPrompt,
     }).catch((error) => {
       const message = error instanceof Error ? error.message : String(error);
-      console.error('[OpenClawRuntime] failed to start queued goal continuation:', error);
+      console.error('[EngineRuntime] failed to start queued goal continuation:', error);
       this.store.updateSession(sessionId, { status: 'error' });
       this.emit('error', sessionId, message);
     });
@@ -11617,7 +11617,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   private async deleteGatewaySessionTranscripts(sessionKeys: string[]): Promise<void> {
     const client = this.gatewayClient;
     if (!client) {
-      console.warn('[OpenClawRuntime] could not delete gateway session transcripts because the gateway client is unavailable');
+      console.warn('[EngineRuntime] could not delete gateway session transcripts because the gateway client is unavailable');
       return;
     }
 
@@ -11628,9 +11628,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
           key: sessionKey,
           deleteTranscript: true,
         }, { timeoutMs: OpenClawRuntimeAdapter.GATEWAY_SESSION_DELETE_TIMEOUT_MS });
-        console.log(`[OpenClawRuntime] deleted gateway session transcript for ${sessionKey}`);
+        console.log(`[EngineRuntime] deleted gateway session transcript for ${sessionKey}`);
       } catch (error) {
-        console.warn(`[OpenClawRuntime] failed to delete gateway session transcript for ${sessionKey}:`, error);
+        console.warn(`[EngineRuntime] failed to delete gateway session transcript for ${sessionKey}:`, error);
       }
     }
   }
@@ -11653,7 +11653,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   private ensureActiveTurn(sessionId: string, sessionKey: string, runId: string): void {
     if (this.activeTurns.has(sessionId)) return;
     if (runId && this.isRecentlyClosedRunId(runId)) {
-      console.debug('[OpenClawRuntime] suppressed active turn creation for a closed run.');
+      console.debug('[EngineRuntime] suppressed active turn creation for a closed run.');
       return;
     }
     // Suppress automatic turn re-creation for sessions that are still within
@@ -11801,7 +11801,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         ? error.name.trim()
         : 'UnknownError';
       console.warn(
-        `[OpenClawRuntime] failed to report IM prompt submission analytics (${errorName})`,
+        `[EngineRuntime] failed to report IM prompt submission analytics (${errorName})`,
       );
     }
   }
@@ -11862,7 +11862,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }
         break;
       } catch (error) {
-        console.warn('[OpenClawRuntime] prefetchChannelUserMessages attempt', attempt, 'failed:', error);
+        console.warn('[EngineRuntime] prefetchChannelUserMessages attempt', attempt, 'failed:', error);
         if (attempt < MAX_ATTEMPTS - 1) {
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
@@ -11920,7 +11920,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const normalizedRunId = runId.trim();
     if (!normalizedRunId) return;
     if (this.isRecentlyClosedRunId(normalizedRunId)) {
-      console.debug('[OpenClawRuntime] suppressed run binding for a closed run.');
+      console.debug('[EngineRuntime] suppressed run binding for a closed run.');
       return;
     }
     const turn = this.activeTurns.get(sessionId);
@@ -11950,7 +11950,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
   private requireGatewayClient(): GatewayClientLike {
     if (!this.gatewayClient) {
-      throw new Error('OpenClaw gateway client is unavailable.');
+      throw new Error('The engine is not running.');
     }
     return this.gatewayClient;
   }
@@ -11972,7 +11972,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     try {
       await this.ensureGatewayClientReady();
     } catch (error) {
-      console.warn('[OpenClawRuntime] ensureGatewayRpcClient failed:', error);
+      console.warn('[EngineRuntime] ensureGatewayRpcClient failed:', error);
       return null;
     }
     return this.gatewayClient;

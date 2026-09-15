@@ -526,7 +526,7 @@ Grok's `debugging-the-box.md`. Its digest:
 
 1. Find the moment — the timestamp from the person.
 2. Search, do not read: `desktop.proxy.upstream_refused`,
-   `browser profile=`, `[OpenClawConfigSync]`, `[OpenClaw]`, `[MCP]`,
+   `browser profile=`, `[EngineConfigSync]`, `[Engine]`, `[MCP]`,
    `[Cron]`.
 3. Quote the line.
 4. If the log says nothing, say the log says nothing.
@@ -1037,7 +1037,7 @@ the founder decides.
 ### 23.4 Nobody has run it
 
 `CLAUDE.md`: *unverified, not broken*. The line that decides it is
-`[OpenClawConfigSync] browser profile=…` in the log.
+`[EngineConfigSync] browser profile=…` in the log.
 
 ---
 

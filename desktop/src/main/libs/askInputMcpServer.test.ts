@@ -18,7 +18,7 @@ afterEach(() => {
 
 const launch = (over: Record<string, unknown> = {}) =>
   resolveAskInputMcpStdioLaunch(baseDir, {
-    electronNodeRuntimePath: '/Applications/Faiser.app/Contents/MacOS/Faiser',
+    electronNodeRuntimePath: '/Applications/Caisra.app/Contents/MacOS/Caisra',
     bridgeUrl: 'http://127.0.0.1:51515/ask-input',
     bridgeSecret: 'bridge-secret',
     platform: 'darwin',

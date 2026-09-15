@@ -123,7 +123,7 @@ describe('resolveComputerUseRuntimePaths', () => {
     expect(server?.env?.[ComputerUseMcpEnv.LogDir]).toBe(path.join(TEST_USER_DATA, 'computer-use', 'logs'));
     expect(server?.env?.[ComputerUseMcpEnv.LogLevel]).toBe('info');
     expect(server?.env?.[ComputerUseMcpEnv.LogRetentionDays]).toBe('7');
-    expect(config.strings?.usingComputer).toBe('LobsterAI正在使用你的电脑');
+    expect(config.strings?.usingComputer).toBe('Caisra 正在使用你的电脑');
     expect(config.strings?.escToCancel).toBe('按 Esc 取消');
   });
 

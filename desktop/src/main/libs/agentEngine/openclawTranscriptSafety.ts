@@ -179,7 +179,7 @@ export function buildOpenClawTranscriptOversizedError(
   const transcriptBytes = inspection.transcriptBytes ?? OpenClawTranscriptSafetyLimit.HardBytes;
   return new Error(
     `${OpenClawTranscriptSafetyErrorCode.ActiveTranscriptOversized}: `
-    + `active OpenClaw transcript is ${transcriptBytes} bytes; `
+    + `the active conversation transcript is ${transcriptBytes} bytes; `
     + `safe limit is ${OpenClawTranscriptSafetyLimit.HardBytes} bytes`,
   );
 }

@@ -106,6 +106,7 @@ function balanceSources(articles, maxPerSource = 5) {
 
 function getWebSearchScriptPath() {
   const skillsRoot = process.env.SKILLS_ROOT
+    || process.env.CAISRA_SKILLS_ROOT
     || process.env.LOBSTERAI_SKILLS_ROOT
     || path.resolve(SCRIPT_DIR, '..', '..');
 

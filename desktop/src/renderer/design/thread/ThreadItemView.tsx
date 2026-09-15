@@ -347,7 +347,7 @@ function TextBubble(
  * that was not using it.
  *
  * So the runs are the bubble's runs: a path is a chip, a URL is a link,
- * and a `faiser://settings/…` target is a pill that opens the row. What is
+ * and a `caisra://settings/…` target is a pill that opens the row. What is
  * different is only the setting — centred, muted, no bubble around it.
  */
 function SystemLine(

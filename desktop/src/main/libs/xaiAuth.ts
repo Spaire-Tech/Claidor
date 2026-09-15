@@ -334,7 +334,7 @@ async function withAuthStoreLock<T>(fn: () => T): Promise<T> {
         continue; // lock vanished between openSync and statSync — retry
       }
       if (Date.now() > deadline) {
-        throw new Error('Timed out waiting for the OpenClaw auth store lock');
+        throw new Error('Timed out waiting for the engine auth store lock');
       }
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
@@ -452,7 +452,7 @@ function renderCallbackHtml(success: boolean, message: string): string {
   );
   const color = success ? '#16a34a' : '#dc2626';
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>LobsterAI · xAI Login</title>
+<html lang="en"><head><meta charset="utf-8"><title>Caisra · xAI Login</title>
 <style>
   body { font-family: -apple-system, system-ui, sans-serif; background: #0b0d10; color: #e5e7eb; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
   .card { background: #14171c; padding: 32px 40px; border-radius: 16px; border: 1px solid #262b33; max-width: 420px; }
@@ -567,7 +567,7 @@ function waitForCallback(expectedState: string): Promise<{ code: string }> {
       }
 
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(renderCallbackHtml(true, 'You can now close this tab and return to LobsterAI.'));
+      res.end(renderCallbackHtml(true, 'You can now close this tab and return to Caisra.'));
       finish(undefined, { code });
     });
 
@@ -592,7 +592,7 @@ export class XaiCallbackPortBusyError extends Error {
   constructor() {
     super(
       `Port ${XAI_OAUTH_CALLBACK_PORT} is already in use. `
-      + 'If an OpenClaw CLI login is running, finish or cancel it first.',
+      + 'If another sign-in from this app is running, finish or cancel it first.',
     );
     this.name = 'XaiCallbackPortBusyError';
   }

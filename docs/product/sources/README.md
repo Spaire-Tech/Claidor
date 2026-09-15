@@ -370,7 +370,7 @@ the UI map, and it is better than pasting it into every turn.
 
 Ours has a home already: `resolveSkillCreationPath()` in
 `openclawConfigSync.ts` resolves `~/Library/Application
-Support/Faiser/SKILLs`, and the engine reads skills from there. A
+Support/Caisra/SKILLs`, and the engine reads skills from there. A
 `reference/` sibling, listed in AGENTS.md with the same "when to read"
 table, is the same pattern without inventing anything.
 

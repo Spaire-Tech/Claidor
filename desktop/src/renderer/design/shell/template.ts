@@ -84,5 +84,5 @@ export function templateFileName(name: string): string {
     .replace(/[\\/:*?"<>|]+/g, '-')
     .replace(/\s+/g, ' ')
     .replace(/^[-.\s]+|[-.\s]+$/g, '');
-  return `${safe || 'Agent'}.faiser-agent.json`;
+  return `${safe || 'Agent'}.caisra-agent.json`;
 }

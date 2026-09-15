@@ -26,7 +26,12 @@ import { COWORK_TEMP_DIR_NAME } from '../../shared/cowork/constants';
 import { CoworkErrorModelSource } from '../../shared/cowork/errorDetail';
 import { eventTriggerConfig } from '../../shared/eventTriggers/constants';
 import { normalizeMcpServerUrlInput } from '../../shared/mcp/url';
-import { OPENCLAW_PLUGIN_INDEX_MANAGED_KEYS } from '../../shared/openclawEngine/constants';
+import {
+  AGENTS_MD_MANAGED_MARKER,
+  findAgentsMdManagedMarker,
+  OPENCLAW_PLUGIN_INDEX_MANAGED_KEYS,
+  stripAgentsMdManagedMarkers,
+} from '../../shared/openclawEngine/constants';
 import { OpenClawTranscriptSafetyLimit } from '../../shared/openclawTranscript/constants';
 import {
   type Project,
@@ -413,10 +418,10 @@ const MANAGED_WEB_SEARCH_POLICY_PROMPT = [
   '- Do not use `web_fetch` to fetch Google/Bing search result pages as a search substitute; use `browser` or an available search skill instead.',
   '- If you need search discovery, dynamic pages, or interactive browsing, use the built-in `browser` tool.',
   '- For login-required, JavaScript-heavy, or anti-automation pages, use `browser` instead of `web_fetch`.',
-  '- Only use the LobsterAI `web-search` skill when local command execution is available. Native channel sessions may deny `exec`, so prefer `browser` or `web_fetch` there.',
+  '- Only use the Caisra `web-search` skill when local command execution is available. Native channel sessions may deny `exec`, so prefer `browser` or `web_fetch` there.',
   '- Exception: the `imap-smtp-email` skill must always use `exec` to run its scripts, even in native channel sessions. Do not skip it because of exec restrictions.',
   '',
-  'Do not claim you searched the web unless you actually used `browser`, `web_fetch`, or the LobsterAI `web-search` skill.',
+  'Do not claim you searched the web unless you actually used `browser`, `web_fetch`, or the Caisra `web-search` skill.',
   '',
   'When `web_fetch` fails or is blocked, the site may be refusing the fetcher, not the page. Reading the same public page in the `browser` is the normal next step, not a workaround. A blocked fetch is never evidence that a page does not exist; do not tell the person it does not.',
 ].join('\n');
@@ -446,10 +451,10 @@ const MANAGED_BROWSER_POLICY_PROMPT = [
   '### `profile` — which browser',
   '- Leave `profile` unset. The configured default is the app\'s own built-in browser, and unset is how you get it.',
   '- Never pass `profile: "user"`. That is the user\'s personal browser, with their tabs and their session, and nothing here asks you to touch it.',
-  '- The `lobster-in-app` profile is that built-in browser. If it is unavailable, report an internal browser startup failure; never tell the user to enable Chrome remote debugging or launch Chrome with debugging flags.',
+  '- The `caisra-in-app` profile is that built-in browser. If it is unavailable, report an internal browser startup failure; never tell the user to enable Chrome remote debugging or launch Chrome with debugging flags.',
   '- If the user asks why a page opened somewhere other than the app\'s panel, say you do not know rather than inventing a policy. The answer is in the app\'s logs, not in this prompt.',
   `- When a page requires a password and \`${BrowserCredentialMcpServer.ModelToolName}\` is available, call it before asking the user to sign in manually. The tool can use an encrypted saved login without revealing its password to you.`,
-  '- If no saved login is available, ask the user to sign in directly in the visible LobsterAI browser. Never ask the user to send a password in chat, and never search files, memory, or logs for passwords.',
+  '- If no saved login is available, ask the user to sign in directly in the visible Caisra browser. Never ask the user to send a password in chat, and never search files, memory, or logs for passwords.',
 ].join('\n');
 
 /**
@@ -669,12 +674,12 @@ const buildManagedAppUiPrompt = (mapPath: string, failurePath: string): string =
   `- \`${failurePath}\` — where the logs are and what to search them for. Read it **before** you explain why something failed. An explanation you have not checked is a guess, and a guess delivered confidently sends the person off to fix something that was never broken.`,
   '',
   '### Pointing at a setting',
-  `- Do not describe a route through the app when you can hand them the control. Write it as a link: \`[Running things on this computer](faiser://settings/exec-policy)\`. It draws as a small pill that opens Settings on that row.`,
-  `- The id after \`faiser://settings/\` is the one in backticks against each row in \`${mapPath}\`. Use those and nothing else — a pill naming a row this build does not have quietly turns back into plain words, and the person is left with a sentence that goes nowhere.`,
+  `- Do not describe a route through the app when you can hand them the control. Write it as a link: \`[Running things on this computer](caisra://settings/exec-policy)\`. It draws as a small pill that opens Settings on that row.`,
+  `- The id after \`caisra://settings/\` is the one in backticks against each row in \`${mapPath}\`. Use those and nothing else — a pill naming a row this build does not have quietly turns back into plain words, and the person is left with a sentence that goes nowhere.`,
   '- One pill where the sentence would otherwise be "open Settings, then General, then look under Models". Not one in every message.',
   '',
   '### Pointing at something said earlier',
-  '- To refer back to an earlier message in this conversation, link its id: `[the folder you named](faiser://message/<id>)`. It draws as a chip that scrolls back to it.',
+  '- To refer back to an earlier message in this conversation, link its id: `[the folder you named](caisra://message/<id>)`. It draws as a chip that scrolls back to it.',
   '- Use it when "as you said earlier" would otherwise make somebody scroll and hunt. Never use it in place of saying the thing.',
 ].join('\n');
 
@@ -749,9 +754,9 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
  * embedding in AGENTS.md so the model knows where to create new skills.
  *
  * Example outputs:
- *   macOS:   ~/Library/Application Support/Faiser/SKILLs
- *   Windows: ~/AppData/Roaming/Faiser/SKILLs
- *   Linux:   ~/.config/Faiser/SKILLs
+ *   macOS:   ~/Library/Application Support/Caisra/SKILLs
+ *   Windows: ~/AppData/Roaming/Caisra/SKILLs
+ *   Linux:   ~/.config/Caisra/SKILLs
  */
 const resolveSkillCreationPath = (): string => {
   const skillsDir = path.join(app.getPath('userData'), 'SKILLs');
@@ -766,7 +771,7 @@ const resolveSkillCreationPath = (): string => {
 const buildManagedSkillCreationPrompt = (skillsDirPath: string): string => [
   '## Skill Creation',
   '',
-  'When the user asks you to create a new skill, you MUST place it under the LobsterAI skills directory:',
+  'When the user asks you to create a new skill, you MUST place it under the Caisra skills directory:',
   '',
   `  ${skillsDirPath}/<skill-name>/SKILL.md`,
   '',
@@ -795,7 +800,7 @@ const MANAGED_DELIVERABLE_LINKS_PROMPT = [
 const MANAGED_MATH_FORMAT_PROMPT = [
   '## Math Formula Formatting',
   '',
-  'The LobsterAI app chat renders TeX formulas with KaTeX.',
+  'The Caisra app chat renders TeX formulas with KaTeX.',
   '',
   '- In app chat sessions, write every mathematical formula or expression in TeX:',
   '  `$...$` inline, and `$$` on its own lines around display blocks.',
@@ -2101,7 +2106,7 @@ function buildOpenClawMcpServers(
     if (server.transportType !== 'stdio') {
       const normalizedUrl = normalizeMcpServerUrlInput(server.url);
       if (!normalizedUrl.ok) {
-        console.warn(`[OpenClawConfigSync] skipped MCP server "${server.name}" because its URL is invalid`);
+        console.warn(`[EngineConfigSync] skipped MCP server "${server.name}" because its URL is invalid`);
         continue;
       }
       normalizedRemoteUrl = normalizedUrl.url;
@@ -2360,7 +2365,7 @@ export class OpenClawConfigSync {
       const mcpCommand = this.getLobsterBrowserMcpCommand?.();
       if (callbackUrl && mcpCommand) {
         console.log(
-          `[OpenClawConfigSync] browser profile=${BrowserRuntimeProfile.InApp} (the app's own panel)`,
+          `[EngineConfigSync] browser profile=${BrowserRuntimeProfile.InApp} (the app's own panel)`,
         );
         return {
           ...commonConfig,
@@ -2381,14 +2386,14 @@ export class OpenClawConfigSync {
       // founder designed, and until now it said so in five words that
       // named neither piece.
       console.warn(
-        '[OpenClawConfigSync] in-app browser bridge unavailable, falling back to a separate browser window'
+        '[EngineConfigSync] in-app browser bridge unavailable, falling back to a separate browser window'
         + ` — callbackUrl=${callbackUrl ? 'ready' : 'null'}`
         + ` mcpCommand=${mcpCommand ? 'ready' : 'null'}`,
       );
     }
 
     console.log(
-      `[OpenClawConfigSync] browser profile=${BrowserRuntimeProfile.Managed}`
+      `[EngineConfigSync] browser profile=${BrowserRuntimeProfile.Managed}`
       + ` (a separate window), displayMode=${browserWebAccess.displayMode}`,
     );
     return {
@@ -2456,7 +2461,7 @@ export class OpenClawConfigSync {
         ok: false,
         changed: false,
         configPath,
-        error: `OpenClaw config sync failed: Kimi K3 package models require apiFormat "openai": ${invalidRefs}.`,
+        error: `Engine config sync failed: Kimi K3 package models require apiFormat "openai": ${invalidRefs}.`,
       };
     }
     const apiResolution = resolveRawApiConfig();
@@ -2468,7 +2473,7 @@ export class OpenClawConfigSync {
       // minimal config would lose sandbox settings, plugins, AGENTS.md, etc.
       if (this.isEnterprise()) {
         console.log(
-          '[OpenClawConfigSync] enterprise mode: no API config resolved, generating full config with empty providers (enterprise merge will supply them)',
+          '[EngineConfigSync] enterprise mode: no API config resolved, generating full config with empty providers (enterprise merge will supply them)',
         );
       } else {
         // No API/model configured yet (fresh install).
@@ -2500,7 +2505,7 @@ export class OpenClawConfigSync {
           ok: false,
           changed: false,
           configPath,
-          error: 'OpenClaw config sync failed: resolved model is empty.',
+          error: 'Engine config sync failed: resolved model is empty.',
         };
       }
 
@@ -2577,7 +2582,7 @@ export class OpenClawConfigSync {
             );
             if (sanitizedParams.removedKeys.length > 0) {
               console.warn(
-                `[OpenClawConfigSync] Ignored reserved Kimi K3 custom parameter keys for ${sel.primaryModel}: ${sanitizedParams.removedKeys.join(', ')}`,
+                `[EngineConfigSync] Ignored reserved Kimi K3 custom parameter keys for ${sel.primaryModel}: ${sanitizedParams.removedKeys.join(', ')}`,
               );
             }
             if (Object.keys(sanitizedParams.customParams).length === 0) {
@@ -2692,7 +2697,7 @@ export class OpenClawConfigSync {
         ok: false,
         changed: false,
         configPath,
-        error: `OpenClaw config sync failed: required ${OPENCLAW_MODEL_COMPAT_PLUGIN_ID} extension is unavailable for ${requiredCompatRefs.join(', ')}.`,
+        error: `Engine config sync failed: required ${OPENCLAW_MODEL_COMPAT_PLUGIN_ID} extension is unavailable for ${requiredCompatRefs.join(', ')}.`,
       };
     }
     const finalizedCompatibility = finalizeModelCompatibilityOwners(
@@ -2704,7 +2709,7 @@ export class OpenClawConfigSync {
         ok: false,
         changed: false,
         configPath,
-        error: `OpenClaw config sync failed: invalid Kimi K3 compatibility ownership for ${finalizedCompatibility.rejectedModelRefs.join(', ')}.`,
+        error: `Engine config sync failed: invalid Kimi K3 compatibility ownership for ${finalizedCompatibility.rejectedModelRefs.join(', ')}.`,
       };
     }
     const finalizedThinkingProfiles = Object.fromEntries(
@@ -2722,7 +2727,7 @@ export class OpenClawConfigSync {
       ? buildCompleteAgentModelDefaults(allProvidersMap, perModelCustomDefaults)
       : {};
     console.log(
-      `[OpenClawConfigSync] sandbox mode: ${sandboxMode} (executionMode: ${coworkConfig.executionMode || 'local'}, enterprise: ${this.isEnterprise()})`,
+      `[EngineConfigSync] sandbox mode: ${sandboxMode} (executionMode: ${coworkConfig.executionMode || 'local'}, enterprise: ${this.isEnterprise()})`,
     );
 
     const mainWorkspacePath = getMainAgentWorkspacePath(this.engineManager.getStateDir());
@@ -3140,7 +3145,7 @@ export class OpenClawConfigSync {
         servers: nativeMcpServers,
       };
     }
-    console.log(`[OpenClawConfigSync] mcp.servers: ${nativeMcpServerCount} server(s)`);
+    console.log(`[EngineConfigSync] mcp.servers: ${nativeMcpServerCount} server(s)`);
 
     // Sync AskUserQuestion plugin config
     const askUserCallbackUrl = this.getAskUserCallbackUrl?.();
@@ -3670,7 +3675,7 @@ export class OpenClawConfigSync {
     // additionalProperties:false reject the extra field and crash.
 
     const nextContent = `${JSON.stringify(managedConfig, null, 2)}\n`;
-    console.log('[OpenClawConfigSync] sync() managedConfig key fields:', {
+    console.log('[EngineConfigSync] sync() managedConfig key fields:', {
       providers: (managedConfig.models as Record<string, unknown>)?.providers,
       primaryModel: (
         (managedConfig.agents as Record<string, unknown>)?.defaults as Record<string, unknown>
@@ -3804,7 +3809,7 @@ export class OpenClawConfigSync {
     // never changes env vars and avoids gateway process restarts.
     const allApiKeys = resolveAllProviderApiKeys();
     for (const [envSuffix, apiKey] of Object.entries(allApiKeys)) {
-      console.info(`[OpenClawConfigSync] set secret env var LOBSTER_APIKEY_${envSuffix} for provider ${envSuffix}`);
+      console.info(`[EngineConfigSync] set secret env var LOBSTER_APIKEY_${envSuffix} for provider ${envSuffix}`);
       env[`LOBSTER_APIKEY_${envSuffix}`] = apiKey;
     }
     // Legacy fallback: keep LOBSTER_PROVIDER_API_KEY set to a stable value so stale
@@ -4020,11 +4025,11 @@ export class OpenClawConfigSync {
       }
       this.atomicWriteFile(filePath, `${JSON.stringify(file, null, 2)}\n`);
       console.log(
-        `[OpenClawConfigSync] set exec-approvals policy=${policy} `
+        `[EngineConfigSync] set exec-approvals policy=${policy} `
         + `security=${wanted.security} ask=${wanted.ask} autoReview=${wanted.autoReview}`,
       );
     } catch (error) {
-      console.warn('[OpenClawConfigSync] failed to write exec-approvals.json:', error);
+      console.warn('[EngineConfigSync] failed to write exec-approvals.json:', error);
     }
   }
 
@@ -4082,7 +4087,7 @@ export class OpenClawConfigSync {
       });
       if (qualification.status === 'ambiguous') {
         console.warn(
-          `[OpenClawConfigSync] Skipped ambiguous managed session model sync for "${agent.id}" because "${qualification.modelId}" matches multiple providers: ${qualification.providerIds.join(', ')}`,
+          `[EngineConfigSync] Skipped ambiguous managed session model sync for "${agent.id}" because "${qualification.modelId}" matches multiple providers: ${qualification.providerIds.join(', ')}`,
         );
       }
 
@@ -4181,7 +4186,7 @@ export class OpenClawConfigSync {
         anyChanged = true;
       } catch (error) {
         console.warn(
-          '[OpenClawConfigSync] Failed to update managed session store:',
+          '[EngineConfigSync] Failed to update managed session store:',
           error instanceof Error ? error.message : String(error),
         );
       }
@@ -4195,9 +4200,9 @@ export class OpenClawConfigSync {
    * `skills.load.extraDirs` configuration.
    *
    * Cross-platform paths (via Electron app.getPath('userData')):
-   *   macOS:   ~/Library/Application Support/Faiser/SKILLs
-   *   Windows: %APPDATA%/Faiser/SKILLs
-   *   Linux:   ~/.config/Faiser/SKILLs
+   *   macOS:   ~/Library/Application Support/Caisra/SKILLs
+   *   Windows: %APPDATA%/Caisra/SKILLs
+   *   Linux:   ~/.config/Caisra/SKILLs
    */
   private resolveSkillsExtraDirs(): string[] {
     const userDataSkillsDir = path.join(app.getPath('userData'), 'SKILLs');
@@ -4213,7 +4218,7 @@ export class OpenClawConfigSync {
         'code' in err &&
         (err as NodeJS.ErrnoException).code !== 'ENOENT'
       ) {
-        console.warn('[OpenClawConfigSync] Failed to stat SKILLs directory:', err);
+        console.warn('[EngineConfigSync] Failed to stat SKILLs directory:', err);
       }
     }
     return [];
@@ -4236,7 +4241,7 @@ export class OpenClawConfigSync {
       const existing = entries[skill.name];
       if (existing && existing.enabled !== skill.enabled) {
         console.warn(
-          `[OpenClawConfigSync] Skills with duplicate name "${skill.name}" disagree on enabled state; last one wins`,
+          `[EngineConfigSync] Skills with duplicate name "${skill.name}" disagree on enabled state; last one wins`,
         );
       }
       entries[skill.name] = { enabled: skill.enabled };
@@ -4248,14 +4253,14 @@ export class OpenClawConfigSync {
    * Sync AGENTS.md to the OpenClaw workspace directory.
    * Embeds the skills routing prompt and system prompt so that OpenClaw's
    * native channel connectors (DingTalk, Feishu, etc.) can discover and
-   * invoke LobsterAI skills.
+   * invoke Caisra skills.
    */
   private syncAgentsMd(
     workspaceDir: string,
     coworkConfig: CoworkConfig,
     agentId: string = AgentId.Main,
   ): string | undefined {
-    const MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
+    const MARKER = AGENTS_MD_MANAGED_MARKER;
 
     try {
       ensureDir(workspaceDir);
@@ -4267,7 +4272,7 @@ export class OpenClawConfigSync {
       const sections: string[] = [];
 
       // Add system prompt if configured — strip MARKER to prevent content corruption
-      const systemPrompt = (coworkConfig.systemPrompt || '').trim().replaceAll(MARKER, '');
+      const systemPrompt = stripAgentsMdManagedMarkers((coworkConfig.systemPrompt || '').trim());
       if (systemPrompt) {
         sections.push(`## System Prompt\n\n${systemPrompt}`);
       }
@@ -4297,7 +4302,7 @@ export class OpenClawConfigSync {
 
       // Keep scheduled-task policy after skills so native channel sessions
       // treat it as the final app-managed override for reminder handling.
-      const scheduledTaskPrompt = buildScheduledTaskEnginePrompt().replaceAll(MARKER, '');
+      const scheduledTaskPrompt = stripAgentsMdManagedMarkers(buildScheduledTaskEnginePrompt());
       if (scheduledTaskPrompt) {
         sections.push(scheduledTaskPrompt);
       }
@@ -4310,8 +4315,10 @@ export class OpenClawConfigSync {
         // File doesn't exist yet.
       }
 
-      // Extract user content (everything before the marker)
-      const markerIdx = existingContent.indexOf(MARKER);
+      // Extract user content (everything before the marker). An install
+      // made before the rename carries the legacy marker; it is found the
+      // same way and replaced by the current one on this write.
+      const markerIdx = findAgentsMdManagedMarker(existingContent)?.index ?? -1;
       const userContent =
         markerIdx >= 0 ? existingContent.slice(0, markerIdx).trimEnd() : existingContent.trimEnd();
       const preservedUserContent = userContent || readBundledOpenClawAgentsTemplate();
@@ -4347,7 +4354,7 @@ export class OpenClawConfigSync {
       this.atomicWriteFile(agentsMdPath, nextContent);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      console.warn('[OpenClawConfigSync] Failed to sync AGENTS.md:', msg);
+      console.warn('[EngineConfigSync] Failed to sync AGENTS.md:', msg);
       return msg;
     }
   }
@@ -4506,11 +4513,11 @@ export class OpenClawConfigSync {
     const stateDir = this.engineManager.getStateDir();
     try {
       if (repairHeartbeatFile(mainWorkspaceDir)) {
-        console.log('[OpenClawConfigSync] Repaired legacy HEARTBEAT.md in main workspace');
+        console.log('[EngineConfigSync] Repaired legacy HEARTBEAT.md in main workspace');
       }
     } catch (error) {
       console.warn(
-        '[OpenClawConfigSync] Failed to repair HEARTBEAT.md in main workspace:',
+        '[EngineConfigSync] Failed to repair HEARTBEAT.md in main workspace:',
         error instanceof Error ? error.message : String(error),
       );
     }
@@ -4523,7 +4530,7 @@ export class OpenClawConfigSync {
         ensureDir(agentWorkspace);
 
         if (repairHeartbeatFile(agentWorkspace)) {
-          console.log(`[OpenClawConfigSync] Repaired legacy HEARTBEAT.md for agent ${agent.id}`);
+          console.log(`[EngineConfigSync] Repaired legacy HEARTBEAT.md for agent ${agent.id}`);
         }
 
         // Sync SOUL.md — agent's system prompt
@@ -4553,7 +4560,7 @@ export class OpenClawConfigSync {
         }
       } catch (error) {
         console.warn(
-          `[OpenClawConfigSync] Failed to sync workspace for agent ${agent.id}:`,
+          `[EngineConfigSync] Failed to sync workspace for agent ${agent.id}:`,
           error instanceof Error ? error.message : String(error),
         );
       }
@@ -4595,7 +4602,7 @@ export class OpenClawConfigSync {
         // A project whose folder cannot be made is left out rather than
         // named with a path that does not work.
         console.warn(
-          `[OpenClawConfigSync] Could not prepare the shared notes for "${project.name}":`,
+          `[EngineConfigSync] Could not prepare the shared notes for "${project.name}":`,
           error instanceof Error ? error.message : String(error),
         );
         return [];
@@ -4615,7 +4622,7 @@ export class OpenClawConfigSync {
       this.syncFileIfChanged(mapPath, `${buildAppUiMap(APP_NAME).trimEnd()}\n`);
     } catch (error) {
       console.warn(
-        '[OpenClawConfigSync] Failed to write the app UI map:',
+        '[EngineConfigSync] Failed to write the app UI map:',
         error instanceof Error ? error.message : String(error),
       );
     }
@@ -4642,7 +4649,7 @@ export class OpenClawConfigSync {
       this.syncFileIfChanged(failurePath, `${reference.trimEnd()}\n`);
     } catch (error) {
       console.warn(
-        '[OpenClawConfigSync] Failed to write the failure reference:',
+        '[EngineConfigSync] Failed to write the failure reference:',
         error instanceof Error ? error.message : String(error),
       );
     }

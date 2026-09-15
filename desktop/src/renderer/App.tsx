@@ -61,7 +61,7 @@ import AppUpdateModal from './components/update/AppUpdateModal';
 import { shouldShowAppUpdateNotice } from './components/update/appUpdateNoticeState';
 import WindowsAppTitleBar from './components/window/WindowsAppTitleBar';
 import { defaultConfig, ShortcutAction } from './config';
-import { FaiserApp } from './design/shell/FaiserApp';
+import { CaisraApp } from './design/shell/CaisraApp';
 import { selectIsEnterpriseAccount } from './features/enterpriseAccount/selectors';
 import { SkinProvider } from './providers/SkinProvider';
 import type { ApiConfig } from './services/api';
@@ -216,11 +216,11 @@ const logAppUpdateRendererLifecycle = (
   }
 };
 
-// Which shell to render. The new one by default; `VITE_FAISER_SHELL=0`
+// Which shell to render. The new one by default; `VITE_CAISRA_SHELL=0`
 // keeps the old one, which is still the only route to Settings, providers
 // and onboarding. Read once at module scope because it never changes while
 // the app is running.
-const useFaiserShell = import.meta.env.VITE_FAISER_SHELL !== '0';
+const useCaisraShell = import.meta.env.VITE_CAISRA_SHELL !== '0';
 
 const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
@@ -1975,7 +1975,7 @@ const App: React.FC = () => {
     // carried upstream's logo and its tip carousel, and appears nowhere
     // in the design. `index.html` holds the same empty ground before
     // React mounts, so the two frames are indistinguishable.
-    if (useFaiserShell) {
+    if (useCaisraShell) {
       return <div style={{ height: '100vh', background: '#fbfbfc' }} />;
     }
     return (
@@ -2047,15 +2047,15 @@ const App: React.FC = () => {
   // the lot, and the first thing you would notice is that sign-in never
   // restores.
   //
-  // `VITE_FAISER_SHELL=0` brings the old shell back, and with it
+  // `VITE_CAISRA_SHELL=0` brings the old shell back, and with it
   // onboarding, providers and the thirteen-tab Settings this one replaced.
   //
   // The new shell used to render that Settings over itself, because it had
   // none of its own. It has one now — four tabs, `design/settings/` — so
   // the old one is no longer reachable from here, which is the point: it
   // is NetEase's settings for NetEase's app.
-  if (useFaiserShell) {
-    return <FaiserApp />;
+  if (useCaisraShell) {
+    return <CaisraApp />;
   }
 
   return (

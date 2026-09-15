@@ -64,5 +64,6 @@ export const LegacyAgentName = {
 } as const;
 
 export const DefaultAgentProfile = {
-  Name: 'Faiser',
+  /** The main agent wears the app's name. Caisra, since 15 September 2026. */
+  Name: 'Caisra',
 } as const;

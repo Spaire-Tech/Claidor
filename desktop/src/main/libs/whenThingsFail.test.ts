@@ -4,10 +4,10 @@ import { buildFailureReference, WHEN_THINGS_FAIL_PATH } from './whenThingsFail';
 
 const ref = (over: Partial<Parameters<typeof buildFailureReference>[0]> = {}): string =>
   buildFailureReference({
-    appName: 'Faiser',
-    logDir: '/Users/bass/Library/Logs/Faiser',
-    gatewayLogDir: '/Users/bass/Library/Application Support/Faiser/openclaw/logs',
-    engineConfigPath: '/Users/bass/Library/Application Support/Faiser/openclaw/state/openclaw.json',
+    appName: 'Caisra',
+    logDir: '/Users/bass/Library/Logs/Caisra',
+    gatewayLogDir: '/Users/bass/Library/Application Support/Caisra/openclaw/logs',
+    engineConfigPath: '/Users/bass/Library/Application Support/Caisra/openclaw/state/openclaw.json',
     ...over,
   });
 
@@ -17,12 +17,12 @@ describe('the paths are this machine’s, not an example', () => {
   // renamed, and three separate investigations grepped an empty folder
   // (review.md §24).
   test('it prints the log directory it was given', () => {
-    expect(ref()).toContain('/Users/bass/Library/Logs/Faiser');
+    expect(ref()).toContain('/Users/bass/Library/Logs/Caisra');
     expect(ref({ logDir: '/somewhere/else' })).toContain('/somewhere/else');
   });
 
   test('it names the app it was given', () => {
-    expect(ref()).toContain('# When something in Faiser does not work');
+    expect(ref()).toContain('# When something in Caisra does not work');
     expect(ref({ appName: 'Other' })).toContain('# When something in Other does not work');
   });
 
@@ -31,7 +31,7 @@ describe('the paths are this machine’s, not an example', () => {
     expect(sparse).not.toContain('undefined');
     expect(sparse).not.toContain('engine\'s own log');
     // The main log is not optional; without it the file has no point.
-    expect(sparse).toContain('/Users/bass/Library/Logs/Faiser');
+    expect(sparse).toContain('/Users/bass/Library/Logs/Caisra');
   });
 });
 

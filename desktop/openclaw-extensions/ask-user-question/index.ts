@@ -4,14 +4,14 @@ import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
 import { isAskUserQuestionCandidateSessionKey } from './sessionKey';
 
 /**
- * AskUserQuestion plugin for OpenClaw.
+ * AskUserQuestion plugin for the agent engine.
  *
  * Registers a structured tool that lets the model ask the user a question
  * with predefined options (single/multi select). The tool pauses execution
- * and waits for the user's response via an HTTP callback to LobsterAI.
+ * and waits for the user's response via an HTTP callback to Caisra.
  *
- * This enables delete-confirmation modals on the LobsterAI desktop app
- * without relying on OpenClaw's exec.approval mechanism.
+ * This enables delete-confirmation modals on the Caisra desktop app
+ * without relying on the engine's exec.approval mechanism.
  */
 
 type PluginConfig = {
@@ -128,7 +128,7 @@ async function askUser(
 const plugin = {
   id: 'ask-user-question',
   name: 'AskUserQuestion',
-  description: 'Structured user confirmation tool for LobsterAI desktop.',
+  description: 'Structured user confirmation tool for Caisra desktop.',
   configSchema: {
     parse(value: unknown): PluginConfig {
       return parsePluginConfig(value);
@@ -141,10 +141,10 @@ const plugin = {
       return;
     }
 
-    // Use a factory so the tool is only available for LobsterAI local-session candidates.
+    // Use a factory so the tool is only available for Caisra local-session candidates.
     // IM channel sessions (qqbot, dingtalk, weixin, feishu, etc.) get null → tool hidden.
     api.registerTool((ctx) => {
-      // Enable for LobsterAI desktop sessions across agents and delegated child sessions.
+      // Enable for Caisra desktop sessions across agents and delegated child sessions.
       // IM channel sessions (dingtalk, qqbot, weixin, feishu, wecom, etc.) should not have this tool
       // so the model executes delete commands directly without confirmation on IM.
       const sessionKey = ctx.sessionKey ?? '';

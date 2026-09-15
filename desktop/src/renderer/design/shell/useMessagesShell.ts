@@ -368,7 +368,7 @@ export function useMessagesShell(): MessagesShellState {
         currentSession.cwd,
       );
     } catch (error) {
-      console.error('[Faiser] artifact detection failed:', error);
+      console.error('[Caisra] artifact detection failed:', error);
       return [];
     }
   }, [currentSession]);

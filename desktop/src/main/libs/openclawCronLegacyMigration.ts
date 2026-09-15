@@ -88,7 +88,7 @@ export function archiveLegacyCronStorage(stateDir: string): string[] {
       fs.renameSync(filePath, archivePath);
       archived.push(archivePath);
     } catch (error) {
-      console.warn(`[OpenClaw] Failed to archive legacy cron file: ${filePath}`, error);
+      console.warn(`[Engine] Failed to archive legacy cron file: ${filePath}`, error);
     }
   }
   return archived;
@@ -150,7 +150,7 @@ export function runProcess(
 
     const timer = setTimeout(() => {
       child.kill();
-      reject(new Error(`OpenClaw legacy cron migration timed out after ${options.timeoutMs}ms`));
+      reject(new Error(`Legacy cron migration timed out after ${options.timeoutMs}ms`));
     }, options.timeoutMs);
 
     child.on('close', (code) => {
@@ -177,7 +177,7 @@ export async function migrateLegacyCronStorageWithDoctor(params: {
 
   const openclawCliPath = path.join(params.runtimeRoot, 'openclaw.mjs');
   if (!fs.existsSync(openclawCliPath)) {
-    console.warn(`[OpenClaw] Legacy cron storage detected but OpenClaw CLI is missing: ${openclawCliPath}`);
+    console.warn(`[Engine] Legacy cron storage detected but OpenClaw CLI is missing: ${openclawCliPath}`);
     return { status: 'skipped', reason: 'missing-openclaw-cli' };
   }
 
@@ -192,7 +192,7 @@ export async function migrateLegacyCronStorageWithDoctor(params: {
   };
   const args = [openclawCliPath, 'doctor', '--non-interactive', '--fix'];
 
-  console.log(`[OpenClaw] Legacy cron storage detected; running official doctor migration: ${JSON.stringify(args.slice(1))}`);
+  console.log(`[Engine] Legacy cron storage detected; running official doctor migration: ${JSON.stringify(args.slice(1))}`);
   try {
     const result = await runner(params.electronNodeRuntimePath, args, {
       cwd: params.runtimeRoot,
@@ -204,18 +204,18 @@ export async function migrateLegacyCronStorageWithDoctor(params: {
       const archived = archiveLegacyCronStorage(params.stateDir);
       if (archived.length > 0) {
         console.log(
-          '[OpenClaw] Legacy cron doctor migration completed; archived: '
+          '[Engine] Legacy cron doctor migration completed; archived: '
           + archived.map((filePath) => path.basename(filePath)).join(', '),
         );
       } else {
-        console.log('[OpenClaw] Legacy cron doctor migration completed.');
+        console.log('[Engine] Legacy cron doctor migration completed.');
       }
       return { status: 'migrated', code: result.code };
     }
 
     console.warn(
       [
-        `[OpenClaw] Legacy cron doctor migration failed with exit code ${result.code}.`,
+        `[Engine] Legacy cron doctor migration failed with exit code ${result.code}.`,
         result.stderr ? `stderr tail:\n${tailLog(result.stderr)}` : '',
         result.stdout ? `stdout tail:\n${tailLog(result.stdout)}` : '',
       ].filter(Boolean).join('\n'),
@@ -223,7 +223,7 @@ export async function migrateLegacyCronStorageWithDoctor(params: {
     return { status: 'failed', code: result.code };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn('[OpenClaw] Legacy cron doctor migration failed before gateway startup:', error);
+    console.warn('[Engine] Legacy cron doctor migration failed before gateway startup:', error);
     return { status: 'failed', code: null, error: message };
   }
 }

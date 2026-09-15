@@ -32,7 +32,7 @@ import { useMessagesShell } from './useMessagesShell';
  * tree. Nothing here reaches into the old screens and nothing there
  * reaches into this, so either can be removed without touching the other.
  */
-export function FaiserApp(): JSX.Element {
+export function CaisraApp(): JSX.Element {
   const signedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const quota = useSelector((state: RootState) => state.auth.quota);
   const [signInError, setSignInError] = useState<string | undefined>();

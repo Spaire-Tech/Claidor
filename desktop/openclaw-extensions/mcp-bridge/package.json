@@ -1,7 +1,7 @@
 {
   "name": "@lobsterai/openclaw-mcp-bridge",
   "version": "0.0.0",
-  "description": "Expose LobsterAI-managed MCP servers as native OpenClaw tools.",
+  "description": "Expose Caisra-managed MCP servers as native engine tools.",
   "type": "module",
   "dependencies": {
     "@sinclair/typebox": "0.34.49"

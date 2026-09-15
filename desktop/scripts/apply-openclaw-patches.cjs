@@ -373,6 +373,28 @@ const strongPatchValidators = {
       snippets: ['keeps prompt projections byte-stable as history grows'],
     },
   ],
+  'zzz-caisra-identity.patch': [
+    {
+      file: 'src/agents/system-prompt.ts',
+      snippets: [
+        'You are a personal assistant running inside Caisra.',
+        '"## Engine Control"',
+      ],
+      forbiddenSnippets: [
+        'running inside OpenClaw',
+        'Docs: https://docs.openclaw.ai',
+        'openclaw gateway status|restart|start|stop',
+      ],
+    },
+    {
+      file: 'src/agents/mcp-oauth.ts',
+      snippets: ['client_name: "Caisra"'],
+    },
+    {
+      file: 'src/auto-reply/heartbeat.ts',
+      snippets: ['LEGACY_HEARTBEAT_TRANSCRIPT_PROMPT'],
+    },
+  ],
   'zz-openclaw-task-cwd-system-prompt.patch': [
     {
       file: 'src/agents/system-prompt.ts',

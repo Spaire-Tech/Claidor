@@ -44,9 +44,13 @@ and every code claim tied to a file. Read it before proposing anything
 about the product's shape. Its headlines: the app is Messages, with each
 conversation an agent; five message kinds and no step cards; every
 action on the computer asks first; text arrives as texts and only speech
-streams; one computer, this one; role agents are LobsterAI kits, whose
-store endpoint we already serve empty. **The product has no name yet** —
-not Maties, not Swens — so ship no product name in any string.
+streams; one computer, this one; role agents are kits in the upstream's format, whose
+store endpoint we already serve empty. **The product is Caisra**, the
+founder's official name, decided 15 September 2026. The agent works for
+Caisra: no string a person or the agent can read says LobsterAI, NetEase,
+Youdao or OpenClaw, and the MCP servers the app registers are Caisra's.
+`docs/product/direction.md` §0 lists what keeps an old name as an
+internal identifier, and why.
 
 **GPT models work.** OpenAI refuses `reasoning_effort` together with
 function tools on `/v1/chat/completions`; the proxy now sends
@@ -85,8 +89,8 @@ browser lives in `app_config`. `main.ts`'s `store:set` handler computes
 Nobody has run the browser in this tree. Do not call it broken and do not
 call it fixed — run it, and if it fails get the gateway log before
 touching code. The line that decides it is
-`[OpenClawConfigSync] browser profile=…`, which on a fallback names
-which half was missing.
+`[EngineConfigSync] browser profile=…` (the tag was `[OpenClawConfigSync]`
+until 15 September), which on a fallback names which half was missing.
 
 **Why there is no machine registry, and what actually differs.** Grok Bot
 needs registered computers because it lives in the cloud and has to reach

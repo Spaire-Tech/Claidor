@@ -67,3 +67,51 @@ export type OpenClawGatewayFailureSnapshot = {
   detectedAt: number;
   exitCode?: number | null;
 };
+
+/**
+ * The line in a workspace AGENTS.md that separates the person's own notes
+ * (above) from the section the app rewrites on every config sync (below).
+ *
+ * The app writes `AGENTS_MD_MANAGED_MARKER`. Installs made before the
+ * rename still carry a legacy marker, so every reader must accept both:
+ * use `findAgentsMdManagedMarker` to locate whichever is present. The next
+ * sync then rewrites the file with the current marker.
+ */
+export const AGENTS_MD_MANAGED_MARKER = '<!-- Caisra managed: do not edit below this line -->';
+
+export const AGENTS_MD_LEGACY_MANAGED_MARKERS = [
+  '<!-- LobsterAI managed: do not edit below this line -->',
+] as const;
+
+export const AGENTS_MD_MANAGED_MARKERS = [
+  AGENTS_MD_MANAGED_MARKER,
+  ...AGENTS_MD_LEGACY_MANAGED_MARKERS,
+] as const;
+
+export type AgentsMdManagedMarkerMatch = {
+  index: number;
+  marker: string;
+};
+
+/**
+ * Find the first managed marker (current or legacy) in an AGENTS.md body.
+ * Returns the earliest occurrence when more than one is present.
+ */
+export function findAgentsMdManagedMarker(content: string): AgentsMdManagedMarkerMatch | null {
+  let best: AgentsMdManagedMarkerMatch | null = null;
+  for (const marker of AGENTS_MD_MANAGED_MARKERS) {
+    const index = content.indexOf(marker);
+    if (index < 0) continue;
+    if (!best || index < best.index) best = { index, marker };
+  }
+  return best;
+}
+
+/** Remove every managed marker (current or legacy) from a piece of text. */
+export function stripAgentsMdManagedMarkers(content: string): string {
+  let result = content;
+  for (const marker of AGENTS_MD_MANAGED_MARKERS) {
+    result = result.split(marker).join('');
+  }
+  return result;
+}

@@ -1,7 +1,7 @@
 {
-  "appId": "com.faiser.app",
-  "productName": "Faiser",
-  "executableName": "Faiser",
+  "appId": "com.caisra.app",
+  "productName": "Caisra",
+  "executableName": "Caisra",
   "directories": {
     "output": "release"
   },
@@ -65,8 +65,8 @@
   ],
   "protocols": [
     {
-      "name": "Faiser",
-      "schemes": ["faiser"]
+      "name": "Caisra",
+      "schemes": ["caisra"]
     }
   ],
   "mac": {

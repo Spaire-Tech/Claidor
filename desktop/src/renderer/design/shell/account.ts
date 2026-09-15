@@ -33,7 +33,7 @@ export function supportMailto(
     `Version: ${version || 'unknown'}`,
     `Platform: ${platform || 'unknown'}`,
   ];
-  const query = new URLSearchParams({ subject: 'Faiser', body: lines.join('\n') });
+  const query = new URLSearchParams({ subject: 'Caisra', body: lines.join('\n') });
   // URLSearchParams writes spaces as `+`, which a mail client shows
   // literally in the body. Percent-escapes are what mailto: wants.
   return `mailto:${SUPPORT_ADDRESS}?${query.toString().replace(/\+/g, '%20')}`;

@@ -8,13 +8,18 @@ import {
   AgentLegacyIdentityCleanupStatus,
 } from '../../shared/agent/constants';
 import {
+  AGENTS_MD_LEGACY_MANAGED_MARKERS,
+  AGENTS_MD_MANAGED_MARKER,
+} from '../../shared/openclawEngine/constants';
+import {
   cleanupLegacyAgentsMdIdentityBlockInWorkspace,
   removeLegacyAgentsMdIdentityBlock,
 } from './openclawAgentsMdIdentityMigration';
 
-const MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
+const MARKER = AGENTS_MD_MANAGED_MARKER;
+const LEGACY_MARKER = AGENTS_MD_LEGACY_MANAGED_MARKERS[0];
 
-const buildLegacyAgentsMd = (legacyBody = '你的名字是"小小翻译家"。'): string => [
+const buildLegacyAgentsMd = (legacyBody = '你的名字是"小小翻译家"。', marker = MARKER): string => [
   '# AGENTS.md - Your Workspace',
   '',
   '## Identity（必须遵守）',
@@ -25,7 +30,7 @@ const buildLegacyAgentsMd = (legacyBody = '你的名字是"小小翻译家"。')
   '',
   'This folder is home. Treat it that way.',
   '',
-  MARKER,
+  marker,
   '',
   '## System Prompt',
   '',
@@ -56,6 +61,16 @@ describe('removeLegacyAgentsMdIdentityBlock', () => {
     expect(result.nextContent).toContain('# AGENTS.md - Your Workspace');
     expect(result.nextContent).toContain('This folder is home. Treat it that way.');
     expect(result.nextContent).toContain(MARKER);
+    expect(result.nextContent).toContain('## System Prompt');
+    expect(result.nextContent).not.toContain('## Identity（必须遵守）');
+    expect(result.nextContent).not.toContain('小小翻译家');
+  });
+
+  test('recognises the legacy managed marker and keeps the managed section intact', () => {
+    const result = removeLegacyAgentsMdIdentityBlock(buildLegacyAgentsMd(undefined, LEGACY_MARKER));
+
+    expect(result.changed).toBe(true);
+    expect(result.nextContent).toContain(LEGACY_MARKER);
     expect(result.nextContent).toContain('## System Prompt');
     expect(result.nextContent).not.toContain('## Identity（必须遵守）');
     expect(result.nextContent).not.toContain('小小翻译家');

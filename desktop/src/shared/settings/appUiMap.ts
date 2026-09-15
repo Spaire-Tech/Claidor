@@ -129,7 +129,7 @@ function rowLine(row: SettingsGroup['rows'][number]): string {
  * The whole map, as markdown.
  *
  * `appName` is the app's own name so the file never says "the app" where
- * a person would say "Faiser", and never hard-codes it either.
+ * a person would say "Caisra", and never hard-codes it either.
  */
 export function buildAppUiMap(appName: string): string {
   const lines: string[] = [

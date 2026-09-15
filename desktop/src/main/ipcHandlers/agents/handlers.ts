@@ -52,18 +52,18 @@ async function cleanupLegacyIdentityBlockForAgent(
 
   const syncResult = await deps.syncOpenClawConfig({ reason: 'agent-identity-cleanup-prereq' });
   if (!syncResult.success) {
-    return buildLegacyIdentityCleanupFailure(syncResult.error || 'OpenClaw config sync failed before cleanup.');
+    return buildLegacyIdentityCleanupFailure(syncResult.error || 'Engine config sync failed before cleanup.');
   }
 
   const workspacePath = deps.resolveAgentWorkspacePath(agentId);
   const result = cleanupLegacyAgentsMdIdentityBlockInWorkspace(workspacePath);
   if (result.status === AgentLegacyIdentityCleanupStatus.Cleaned) {
     console.log(
-      `[OpenClaw] Cleaned legacy AGENTS.md identity block for agent ${agentId}; backup=${result.backupPath}`,
+      `[Engine] Cleaned legacy AGENTS.md identity block for agent ${agentId}; backup=${result.backupPath}`,
     );
   } else if (result.status === AgentLegacyIdentityCleanupStatus.Failed) {
     console.warn(
-      `[OpenClaw] Failed to clean legacy AGENTS.md identity block for agent ${agentId}: ${result.error}`,
+      `[Engine] Failed to clean legacy AGENTS.md identity block for agent ${agentId}: ${result.error}`,
     );
   }
   return result;
@@ -110,7 +110,7 @@ export function registerAgentHandlers(deps: AgentHandlerDeps): void {
       try {
         const agent = getAgentManager().createAgent(request, resolveDefaultAgentModelRef());
         syncOpenClawConfig({ reason: 'agent-created' }).catch(err => {
-          console.error('[OpenClaw] config sync after agent-created failed:', err);
+          console.error('[Engine] config sync after agent-created failed:', err);
         });
         return { success: true, agent };
       } catch (error) {
@@ -145,7 +145,7 @@ export function registerAgentHandlers(deps: AgentHandlerDeps): void {
             reason: workingDirectoryChanged ? 'agent-working-directory-updated' : 'agent-updated',
             restartGatewayIfRunning: workingDirectoryChanged,
           }).catch(err => {
-            console.error('[OpenClaw] config sync after agent update failed:', err);
+            console.error('[Engine] config sync after agent update failed:', err);
           });
         }
         return { success: true, agent };
@@ -176,7 +176,7 @@ export function registerAgentHandlers(deps: AgentHandlerDeps): void {
       return { success: true, result };
     } catch (error) {
       const result = buildLegacyIdentityCleanupFailure(error);
-      console.warn(`[OpenClaw] Failed to clean legacy AGENTS.md identity block for agent ${id}: ${result.error}`);
+      console.warn(`[Engine] Failed to clean legacy AGENTS.md identity block for agent ${id}: ${result.error}`);
       return { success: false, result, error: result.error };
     }
   });
@@ -230,7 +230,7 @@ export function registerAgentHandlers(deps: AgentHandlerDeps): void {
       }
 
       syncOpenClawConfig({ reason: 'agent-deleted' }).catch(err => {
-        console.error('[OpenClaw] config sync after agent-deleted failed:', err);
+        console.error('[Engine] config sync after agent-deleted failed:', err);
       });
       return { success: true, deleted: result, deletedSessionIds: result ? deletedSessionIds : [] };
     } catch (error) {
@@ -269,7 +269,7 @@ export function registerAgentHandlers(deps: AgentHandlerDeps): void {
     try {
       const agent = getAgentManager().addPresetAgent(presetId, resolveDefaultAgentModelRef());
       syncOpenClawConfig({ reason: 'agent-preset-added' }).catch(err => {
-        console.error('[OpenClaw] config sync after agent-preset-added failed:', err);
+        console.error('[Engine] config sync after agent-preset-added failed:', err);
       });
       return { success: true, agent };
     } catch (error) {
