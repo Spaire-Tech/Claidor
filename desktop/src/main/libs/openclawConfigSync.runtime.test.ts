@@ -1854,6 +1854,31 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.deny).not.toContain('video_generate');
   });
 
+  test('enables the composio plugin only with a key, and never writes the key into the file', async () => {
+    const withKey = await createSync({ getComposioApiKey: () => '  ck_live_secret  ' });
+    expect(withKey.sync('composio-key').ok).toBe(true);
+    const enabled = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(enabled.plugins.entries.composio).toEqual({
+      enabled: true,
+      config: { apiKey: '${COMPOSIO_API_KEY}', userId: 'default' },
+    });
+    expect(fs.readFileSync(configPath, 'utf8')).not.toContain('ck_live_secret');
+    expect(withKey.collectSecretEnvVars().COMPOSIO_API_KEY).toBe('ck_live_secret');
+
+    // The key removed: the entry is written off, not left out, so the
+    // stale one above cannot survive the rewrite; the env var still
+    // resolves so the placeholder cannot crash the load.
+    const withoutKey = await createSync({ getComposioApiKey: () => '' });
+    expect(withoutKey.sync('composio-key-removed').ok).toBe(true);
+    const disabled = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(disabled.plugins.entries.composio).toEqual({ enabled: false });
+    expect(withoutKey.collectSecretEnvVars().COMPOSIO_API_KEY).toBe('unconfigured');
+
+    const undeclared = await createSync();
+    expect(undeclared.sync('composio-undeclared').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).plugins.entries.composio).toEqual({ enabled: false });
+  });
+
   test('keeps media generation plugin configured without media entitlement', async () => {
     const sync = await createSync({
       canUseMediaGeneration: () => false,

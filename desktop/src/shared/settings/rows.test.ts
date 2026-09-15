@@ -21,12 +21,14 @@ const input = (over: Partial<SettingsInput> = {}): SettingsInput => ({
   memoryEnabled: true,
   modelChoice: ACCOUNT_MODELS,
   modelApiKey: '',
+  composioApiKey: '',
   onSignOut: vi.fn(),
   onAddAccount: vi.fn(),
   onExecPolicy: vi.fn(),
   onMemory: vi.fn(),
   onModelChoice: vi.fn(),
   onModelApiKey: vi.fn(),
+  onComposioApiKey: vi.fn(),
   onWorkingDirectory: vi.fn(),
   onRefreshUsage: vi.fn(),
   onCheckUpdates: vi.fn(),
@@ -35,6 +37,20 @@ const input = (over: Partial<SettingsInput> = {}): SettingsInput => ({
 
 const rowsOf = (tab: SettingsTab, over: Partial<SettingsInput> = {}) =>
   settingsFor(tab, input(over)).flatMap(group => group.rows);
+
+describe('the Composio key', () => {
+  test('is on General, always, and saves through its handler', () => {
+    // Always, unlike the provider key: nothing has to be chosen first,
+    // and the Apps sheet's "Not yet" cards are explained by this row.
+    const onComposioApiKey = vi.fn();
+    const row = rowsOf(SettingsTab.General, { composioApiKey: 'ck_live', onComposioApiKey })
+      .find(one => one.id === 'composio-api-key');
+    expect(row).toMatchObject({ kind: SettingsRowKind.Field, secret: true, value: 'ck_live' });
+    if (row?.kind !== SettingsRowKind.Field) throw new Error('not a field');
+    row.onSave?.('ck_next');
+    expect(onComposioApiKey).toHaveBeenCalledWith('ck_next');
+  });
+});
 
 describe('the tabs', () => {
   test('are the canvas\'s four, in its order', () => {

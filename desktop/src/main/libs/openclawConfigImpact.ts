@@ -14,6 +14,7 @@ export const OpenClawConfigImpactReason = {
   AppModelConfig: 'app.model',
   AppProviderConfig: 'app.providers.config',
   AppProviderSecret: 'app.providers.secret',
+  AppComposioKey: 'app.composioKey',
   CoworkRuntimeConfig: 'cowork.runtime',
   CoworkOpenClawConfig: 'cowork.openclaw',
   CoworkDreamingConfig: 'cowork.dreaming',
@@ -252,6 +253,13 @@ export const classifyAppConfigChange = (
 
   if (changed(providersWithoutSecrets(previous.providers), providersWithoutSecrets(next.providers))) {
     decisions.push(decision(OpenClawConfigImpact.Sync, OpenClawConfigImpactReason.AppProviderConfig));
+  }
+
+  // The Composio key reaches the gateway as an env var and decides
+  // whether the `composio` plugin loads at all, and plugins load at
+  // startup. A restart, like a provider secret.
+  if (changed(previous.composioApiKey, next.composioApiKey)) {
+    decisions.push(decision(OpenClawConfigImpact.Restart, OpenClawConfigImpactReason.AppComposioKey));
   }
 
   return mergeImpactDecision(...decisions);

@@ -122,6 +122,8 @@ export interface SettingsInput {
   modelChoice: string;
   /** The key stored for the chosen provider, if there is one. */
   modelApiKey: string;
+  /** The Composio key, which is what lets the Apps sheet sign into most cards. */
+  composioApiKey: string;
   /** 0–1 and a phrase, from the account's quota. Absent while unknown. */
   usage?: { fraction: number; value: string; desc: string };
   version?: string;
@@ -134,6 +136,7 @@ export interface SettingsInput {
   onMemory: (enabled: boolean) => void;
   onModelChoice: (choice: string) => void;
   onModelApiKey: (apiKey: string) => void;
+  onComposioApiKey: (apiKey: string) => void;
   onWorkingDirectory: () => void;
   onRefreshUsage: () => void;
   onCheckUpdates: () => void;
@@ -319,6 +322,22 @@ function build(tab: SettingsTab, input: SettingsInput): SettingsGroup[] {
                 onSave: input.onModelApiKey,
               } satisfies FieldRow]),
           ],
+        },
+        {
+          title: 'Apps',
+          rows: [{
+            kind: SettingsRowKind.Field,
+            id: 'composio-api-key',
+            label: 'Composio API key',
+            // Always shown, unlike the provider key: there is no choice
+            // above it to make first, and a person looking for why the
+            // Apps sheet says "Not yet" should find the answer here.
+            desc: 'Gmail, Slack, Notion, GitHub and most of the Apps sheet sign in through Composio, which keeps the sign-ins. Kept on this computer and sent only to Composio. Get one at platform.composio.dev/settings',
+            value: input.composioApiKey,
+            secret: true,
+            placeholder: 'Paste your key',
+            onSave: input.onComposioApiKey,
+          } satisfies FieldRow],
         },
         {
           title: 'Agents',

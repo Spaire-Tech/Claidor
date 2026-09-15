@@ -86,12 +86,30 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
   const [picked, setPicked] = useState<string>();
   useEffect(() => { if (!open) setPicked(undefined); }, [open]);
 
+  // The Composio key lives beside the provider keys and is read the same
+  // way, for the same reason.
+  const [composioApiKey, setComposioApiKey] = useState<string>(
+    () => configService.getConfig().composioApiKey ?? '',
+  );
+
   useEffect(() => {
-    const reread = () => setProviders(configService.getConfig().providers ?? {});
+    const reread = () => {
+      setProviders(configService.getConfig().providers ?? {});
+      setComposioApiKey(configService.getConfig().composioApiKey ?? '');
+    };
     reread();
     window.addEventListener(ConfigServiceEvent.Updated, reread);
     return () => window.removeEventListener(ConfigServiceEvent.Updated, reread);
   }, [open]);
+
+  const onComposioApiKey = useCallback((apiKey: string) => {
+    const next = apiKey.trim();
+    setComposioApiKey(next);
+    void configService.updateConfig({ composioApiKey: next }).catch(() => {
+      setComposioApiKey(configService.getConfig().composioApiKey ?? '');
+      showToast('That could not be saved.');
+    });
+  }, []);
 
   const modelChoice = picked ?? currentChoice(providers);
   const modelApiKey = modelChoice === ACCOUNT_MODELS ? '' : storedKey(providers, modelChoice);
@@ -229,6 +247,7 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
     memoryEnabled: config.memoryEnabled,
     modelChoice,
     modelApiKey,
+    composioApiKey,
     ...(usage ? { usage } : {}),
     ...(version ? { version } : {}),
     ...(updateNote ? { updateNote } : {}),
@@ -239,6 +258,7 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
     onMemory,
     onModelChoice,
     onModelApiKey,
+    onComposioApiKey,
     onWorkingDirectory,
     onRefreshUsage,
     onCheckUpdates,

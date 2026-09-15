@@ -1,0 +1,29 @@
+{
+  "id": "composio",
+  "name": "Composio",
+  "description": "Lets a Caisra agent reach the person's apps — Gmail, Slack, Notion, GitHub and the rest — through Composio, which holds the sign-ins.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "description": "The person's Composio API key. Written as an env placeholder; never the key itself."
+      },
+      "userId": {
+        "type": "string",
+        "description": "The Composio user the sign-ins belong to. One computer, one person: 'default'."
+      },
+      "allowedToolkits": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Only these toolkits, when set."
+      },
+      "blockedToolkits": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Never these toolkits."
+      }
+    }
+  }
+}

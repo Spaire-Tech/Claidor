@@ -2003,3 +2003,47 @@ main-process handler for that route stays registered and harmless.
 `types/electron.d.ts`, `design/shell/{useDictation.ts,Composer.tsx,MessagesShell.tsx,CaisraApp.tsx}`,
 `scripts/build-whisper.sh`, `resources/whisper/README.md`,
 `electron-builder.json`, `.github/workflows/desktop_mac.yml`.
+
+## 48. Composio: the connector layer, on the founder's word — `built, unrun`
+
+*"i want Composio - its okay for now that we use them."* Composio's own
+OpenClaw fork carries a plugin; its code was read, not its README. What
+it does: a Tool Router session per person, six agent tools, and an OAuth
+link handed back as a tool result for the agent to relay. What was
+ported into `openclaw-extensions/composio/` (MIT notice kept): search,
+execute, and manage connections. What was left out, on purpose: the
+remote Jupyter workbench and remote bash (code running on Composio's
+servers is against "one computer, this one"), the fifty-actions-in-one
+call (one approval for fifty actions), the CLI, and the SDK itself —
+the plugin speaks Composio's six REST calls directly, so the runtime
+gains no dependency tree.
+
+**The key.** One Settings row, General → Apps. It never enters
+`openclaw.json`: the sync writes `${COMPOSIO_API_KEY}` and sets the
+variable, the same rule as the bridge secret. With a key the plugin is
+on; without, the entry is written off, never left out. A change of key
+restarts the engine.
+
+**The Apps sheet.** Fifty-six cards now carry a Composio toolkit slug,
+each verified against `composio.dev/toolkits/<slug>` answering 200 (the
+guesses that 404'd were dropped). With a key, those cards say Connect
+whatever their old route said — "Not yet", "Needs a key" — and Connect
+opens Composio's sign-in in the system browser, then polls until the
+toolkit reports active. Without a key nothing changes.
+
+**One departure to know.** There is no new bridge channel: the Composio
+flow rides the existing connect channel and the handler branches by the
+same rule the shelf draws the button. The renderer keeps a copy of which
+ids came back connected in `app_config.composioConnected`, commented as
+the copy it is, until a status read exists.
+
+**Proof.** 874 tests across shared, the design tree, the Composio client,
+config impact and config sync; eslint, tsc, `compile:electron` clean; the
+extension precompiles to a single file with no external imports. **Unrun**
+against Composio itself: that needs a key, which is the founder's.
+
+**Where:** `openclaw-extensions/composio/`, `main/libs/composio/`,
+`ipcHandlers/connections/handlers.ts`, `openclawConfigSync.ts`,
+`openclawConfigImpact.ts`, `main.ts`, `shared/connections/catalog.ts`,
+`design/connections/{shelf.ts,Connections.tsx,useConnections.ts}`,
+`shared/settings/rows.ts`, `design/settings/useSettings.ts`, `renderer/config.ts`.

@@ -5,6 +5,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   APP_LOGO_DIRECTORY,
+  composioToolkit,
   CONNECTION_GROUPS,
   CONNECTION_ITEMS,
   ConnectionKind,
@@ -188,6 +189,52 @@ describe('the route each service takes', () => {
     for (const [id, extension] of Object.entries(extensions)) {
       expect(existsSync(path.join(engine, extension)), `${id} → ${extension}`).toBe(true);
     }
+  });
+});
+
+describe('the Composio route', () => {
+  test('the services the founder named are all carried, under Composio\'s own slugs', () => {
+    // Each checked on 15 September at composio.dev/toolkits/<slug>: the
+    // page exists for these, and does not for the spellings dropped.
+    const named: Record<string, string> = {
+      gmail: 'gmail', 'google-calendar': 'googlecalendar', notion: 'notion',
+      slack: 'slack', github: 'github', hubspot: 'hubspot', linear: 'linear',
+      jira: 'jira', trello: 'trello', asana: 'asana', salesforce: 'salesforce',
+      dropbox: 'dropbox', 'google-drive': 'googledrive', outlook: 'outlook',
+      zoom: 'zoom',
+    };
+    for (const [id, slug] of Object.entries(named)) {
+      expect(composioToolkit(findConnection(id)!), id).toBe(slug);
+    }
+  });
+
+  test('a slug is Composio\'s spelling: lowercase, underscores, nothing else', () => {
+    // `onedrive` and `google_meet` were guesses and 404; `one_drive` and
+    // `googlemeet` are theirs. A slug that is not theirs is a Connect
+    // button that ends on their error page.
+    for (const one of CONNECTION_ITEMS) {
+      const slug = composioToolkit(one);
+      if (slug === undefined) continue;
+      expect(slug, one.id).toMatch(/^[a-z0-9_]+$/);
+    }
+  });
+
+  test('it never sits on a card that is the person\'s own browser or this computer', () => {
+    // Those cards have nothing to sign into; a Connect there would be
+    // the dead button all over again.
+    for (const one of CONNECTION_ITEMS) {
+      if (one.kind === ConnectionKind.Browser || one.kind === ConnectionKind.Local) {
+        expect(composioToolkit(one), one.id).toBeUndefined();
+      }
+    }
+  });
+
+  test('it is a second route, not a replacement: the vendor route stays', () => {
+    // Gmail keeps its own MCP endpoint beside the slug, so the day a
+    // client is registered with Google the card can go direct again.
+    const gmail = findConnection('gmail')!;
+    expect(composioToolkit(gmail)).toBe('gmail');
+    expect(connectMethod(gmail)?.via).toBe(ConnectVia.Mcp);
   });
 });
 

@@ -114,6 +114,19 @@ export interface AppConfig {
   };
   providers?: Record<string, ProviderConfig>;
   providerModelMigrationVersions?: Record<string, number>;
+  /**
+   * The person's Composio API key. Kept here with the provider keys, in
+   * the same store; the engine gets it as an env var, never in its file.
+   */
+  composioApiKey?: string;
+  /**
+   * Catalogue ids signed into through Composio, as of the last time this
+   * app did it. A copy, and the one place the connections screen keeps
+   * one: the fact lives on Composio's servers and reading it needs the
+   * key and a round trip, which the renderer has no bridge for yet. The
+   * main side confirms each entry against Composio before it is written.
+   */
+  composioConnected?: string[];
   // 主题配置
   theme: 'light' | 'dark' | 'system';
   // Optional for configs created before exact default theme persistence was introduced.

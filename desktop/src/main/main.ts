@@ -2568,6 +2568,9 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       // used to be pinned open; see shared/settings/constants.ts.
       getExecPolicy: () => asExecPolicy(getStore().get(EXEC_POLICY_KEY)),
       getBrowserWebAccessConfig: () => getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
+      // Composio's key, from Settings; the plugin entry is written off
+      // without it (`openclawConfigSync.ts`), never left out.
+      getComposioApiKey: () => getStore().get<AppConfigSettings>('app_config')?.composioApiKey,
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
       getSkillsList: () =>
@@ -4445,6 +4448,8 @@ type AppConfigSettings = {
   usageAnalyticsEnabled?: boolean;
   notificationSettings?: Partial<NotificationSettings>;
   browserWebAccess?: Partial<BrowserWebAccessConfig>;
+  /** Settings → Apps: Composio's API key; the sign-in tokens stay on Composio's servers. */
+  composioApiKey?: string;
 };
 
 const getUseSystemProxyFromConfig = (config?: { useSystemProxy?: boolean }): boolean => {
@@ -10340,6 +10345,9 @@ if (!gotTheLock) {
     resolveMemoryFilePath(resolveExistingAgentWorkspacePath(agentId));
 
   registerConnectionHandlers({
+    // The same key the config sync reads: a card that Composio carries
+    // takes Composio's sign-in when it is present, its old route when not.
+    composioApiKey: () => getStore().get<AppConfigSettings>('app_config')?.composioApiKey,
     // Null until the runtime is on disk; the handler says so rather than
     // spawning nothing and reporting a blank failure.
     cliEnvironment: () => {

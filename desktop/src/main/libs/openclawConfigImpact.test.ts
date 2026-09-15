@@ -15,6 +15,26 @@ import {
 } from './openclawConfigImpact';
 
 describe('OpenClaw config impact classification', () => {
+  test('a Composio key typed, changed or removed restarts the gateway; the connected list does not', () => {
+    // The key is an env var the plugin reads at load. The list of what
+    // is connected through it is the renderer's own note and reaches
+    // nothing in the engine.
+    for (const [previous, next] of [
+      [{}, { composioApiKey: 'ck_1' }],
+      [{ composioApiKey: 'ck_1' }, { composioApiKey: 'ck_2' }],
+      [{ composioApiKey: 'ck_1' }, {}],
+    ]) {
+      expect(classifyAppConfigChange(previous, next)).toEqual({
+        impact: OpenClawConfigImpact.Restart,
+        reasons: [OpenClawConfigImpactReason.AppComposioKey],
+      });
+    }
+    expect(classifyAppConfigChange(
+      { composioApiKey: 'ck_1', composioConnected: [] },
+      { composioApiKey: 'ck_1', composioConnected: ['gmail'] },
+    )).toEqual({ impact: OpenClawConfigImpact.None, reasons: [] });
+  });
+
   test('classifies theme, language, and shortcuts changes as none', () => {
     const result = classifyAppConfigChange(
       {

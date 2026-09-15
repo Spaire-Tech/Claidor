@@ -107,6 +107,43 @@ describe('what a card can actually do', () => {
     }
   });
 
+  test('with a Composio key, a card Composio carries is a Connect button whatever its own route says', () => {
+    // Gmail's own server wants a client we have not registered ("Not
+    // yet"); GitHub's wants a pasted token ("Needs a key"). Composio
+    // carries both, and the key in Settings is what turns them on.
+    const gmail = item({ id: 'gmail', composio: 'gmail', connect: { via: ConnectVia.Mcp, url: 'https://x/mcp', registration: OAuthRegistration.Preregistered } });
+    const github = item({ id: 'github', composio: 'github', connect: { via: ConnectVia.Token, url: 'https://x/mcp', header: 'Authorization', tokenEnv: 'T' } });
+    for (const one of [gmail, github]) {
+      expect(actionFor(one, NONE, undefined, true), one.id)
+        .toEqual({ action: ConnectAction.Connect, label: 'Connect', pressable: true });
+      expect(actionFor(one, new Set([one.id]), undefined, true), one.id)
+        .toMatchObject({ action: ConnectAction.Connected, pressable: true });
+      expect(actionFor(one, NONE, one.id, true), one.id)
+        .toMatchObject({ action: ConnectAction.Working, pressable: false });
+    }
+  });
+
+  test('without a Composio key, the same cards say what they said before', () => {
+    // The slug on its own promises nothing. No key, no button.
+    const gmail = item({ id: 'gmail', composio: 'gmail', connect: { via: ConnectVia.Mcp, url: 'https://x/mcp', registration: OAuthRegistration.Preregistered } });
+    expect(actionFor(gmail, NONE)).toMatchObject({ action: ConnectAction.NotYet, pressable: false });
+    expect(actionFor(gmail, NONE, undefined, false)).toMatchObject({ action: ConnectAction.NotYet, pressable: false });
+  });
+
+  test('a Composio key does nothing for a card Composio does not carry', () => {
+    const row = actionFor(
+      item({ id: 'x-ads', connect: { via: ConnectVia.Mcp, url: 'https://x/mcp', registration: OAuthRegistration.Preregistered } }),
+      NONE, undefined, true,
+    );
+    expect(row).toMatchObject({ action: ConnectAction.NotYet, pressable: false });
+  });
+
+  test('a Composio key turns a "no way in yet" card into a way in', () => {
+    // Mailchimp, Gusto, Lever: no vendor MCP, but Composio carries them.
+    const row = actionFor(item({ id: 'mailchimp', kind: ConnectionKind.Soon, composio: 'mailchimp' } as Partial<ConnectionItem> & { id: string }), NONE, undefined, true);
+    expect(row).toEqual({ action: ConnectAction.Connect, label: 'Connect', pressable: true });
+  });
+
   test('every card in the real catalogue gets an action, and says something', () => {
     // No card may be blank on the right-hand side.
     for (const one of CONNECTION_ITEMS) {

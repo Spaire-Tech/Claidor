@@ -172,6 +172,22 @@ interface ConnectionItemBase {
   readonly tag?: ConnectionTag;
   /** File name under `APP_LOGO_DIRECTORY`; none shows the monogram. */
   readonly logo?: string;
+  /**
+   * Composio's toolkit slug, when Composio carries this service.
+   *
+   * The founder's call, 15 September: "i want Composio - its okay for
+   * now that we use them". Composio holds the sign-in on its servers and
+   * the agent reaches the service through the `composio` extension's
+   * tools. It sits beside `connect` rather than replacing it: a card
+   * takes this route only once a Composio key is in Settings, and the
+   * vendor's own route stays for when there is none.
+   *
+   * Every slug here was checked on 15 September against
+   * `composio.dev/toolkits/<slug>` — the page exists (200) for each,
+   * and does not (404) for the spellings that were guessed and dropped
+   * (`onedrive`, `google_meet`, `zapier`).
+   */
+  readonly composio?: string;
 }
 
 export type ConnectionItem = ConnectionItemBase & (
@@ -207,9 +223,9 @@ const viaUs = (appSlug: string): ConnectMethod => ({ via: C.Pipedream, appSlug }
 /** Every service, grouped, in order. */
 export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   // Mail & Calendar
-  { id: 'gmail', name: 'Gmail', group: G.MailCalendar, kind: K.Account, connect: own('https://gmailmcp.googleapis.com/mcp/v1'), line: 'Search, read, draft, and manage email.', logo: 'gmail.webp' },
-  { id: 'outlook', name: 'Outlook', group: G.MailCalendar, kind: K.Account, connect: viaUs('microsoft_outlook'), line: 'Mail and Microsoft 365 calendar.', logo: 'outlook.webp' },
-  { id: 'google-calendar', name: 'Google Calendar', group: G.MailCalendar, kind: K.Account, connect: own('https://calendarmcp.googleapis.com/mcp/v1'), line: 'Search events and schedule meetings.', logo: 'google-calendar.webp' },
+  { id: 'gmail', name: 'Gmail', group: G.MailCalendar, kind: K.Account, connect: own('https://gmailmcp.googleapis.com/mcp/v1'), line: 'Search, read, draft, and manage email.', logo: 'gmail.webp', composio: 'gmail' },
+  { id: 'outlook', name: 'Outlook', group: G.MailCalendar, kind: K.Account, connect: viaUs('microsoft_outlook'), line: 'Mail and Microsoft 365 calendar.', logo: 'outlook.webp', composio: 'outlook' },
+  { id: 'google-calendar', name: 'Google Calendar', group: G.MailCalendar, kind: K.Account, connect: own('https://calendarmcp.googleapis.com/mcp/v1'), line: 'Search events and schedule meetings.', logo: 'google-calendar.webp', composio: 'googlecalendar' },
   { id: 'apple-calendar', name: 'Apple Calendar', group: G.MailCalendar, kind: K.Local, logo: 'apple-calendar-mac.png' },
   // Not a service: any mailbox the person already has, reached over
   // IMAP and SMTP with an app password. Two things use it — the
@@ -218,28 +234,28 @@ export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   // sends from it. It is also the honest way into Gmail and Outlook
   // today, since their own servers want a client we have not registered.
   { id: 'email', name: 'IMAP mailbox', group: G.MailCalendar, kind: K.Channel, platformId: 'email', line: 'Your own mailbox over IMAP and SMTP with an app password: Gmail, Outlook, iCloud, Fastmail, work mail. The agent reads, searches and sends from it, and can be emailed at it.' },
-  { id: 'calendly', name: 'Calendly', group: G.MailCalendar, kind: K.Account, connect: self('https://mcp.calendly.com/'), line: 'Check availability and book, cancel, or reschedule.', logo: 'calendly.svg' },
+  { id: 'calendly', name: 'Calendly', group: G.MailCalendar, kind: K.Account, connect: self('https://mcp.calendly.com/'), line: 'Check availability and book, cancel, or reschedule.', logo: 'calendly.svg', composio: 'calendly' },
   // Messaging
   { id: 'whatsapp', name: 'WhatsApp', group: G.Messaging, kind: K.Channel, logo: 'whatsapp.svg' },
   { id: 'imessage', name: 'iMessage', group: G.Messaging, kind: K.Channel, logo: 'imessage.webp' },
-  { id: 'slack', name: 'Slack', group: G.Messaging, kind: K.Channel, line: 'Reach the agent from Slack; reading a workspace needs a client Slack has not given us.' },
+  { id: 'slack', name: 'Slack', group: G.Messaging, kind: K.Channel, line: 'Reach the agent from Slack; reading a workspace needs a client Slack has not given us.', composio: 'slack' },
   { id: 'microsoft-teams', name: 'Microsoft Teams', group: G.Messaging, kind: K.Channel },
   { id: 'telegram', name: 'Telegram', group: G.Messaging, kind: K.Channel, platformId: 'telegram', logo: 'telegram.svg' },
   { id: 'discord', name: 'Discord', group: G.Messaging, kind: K.Channel, platformId: 'discord', logo: 'discord.svg' },
   { id: 'signal', name: 'Signal', group: G.Messaging, kind: K.Channel, logo: 'signal.svg' },
   { id: 'google-chat', name: 'Google Chat', group: G.Messaging, kind: K.Channel },
   // Files & Docs
-  { id: 'google-drive', name: 'Google Drive', group: G.FilesDocs, kind: K.Account, connect: own('https://drivemcp.googleapis.com/mcp/v1'), line: 'Search, read, create, and share files.', logo: 'google-drive.svg' },
-  { id: 'google-docs', name: 'Google Docs', group: G.FilesDocs, kind: K.Account, connect: own('https://docsmcp.googleapis.com/mcp/v1'), line: 'Read and write documents.', logo: 'google-docs.svg' },
-  { id: 'google-sheets', name: 'Google Sheets', group: G.FilesDocs, kind: K.Account, connect: own('https://sheetsmcp.googleapis.com/mcp/v1'), line: 'Read and write spreadsheets.', logo: 'google-sheets.webp' },
-  { id: 'google-slides', name: 'Google Slides', group: G.FilesDocs, kind: K.Account, connect: own('https://slidesmcp.googleapis.com/mcp/v1'), line: 'Read and build presentations.', logo: 'google-slides.webp' },
-  { id: 'onedrive', name: 'OneDrive', group: G.FilesDocs, kind: K.Account, connect: viaUs('microsoft_onedrive'), logo: 'onedrive.jpg' },
+  { id: 'google-drive', name: 'Google Drive', group: G.FilesDocs, kind: K.Account, connect: own('https://drivemcp.googleapis.com/mcp/v1'), line: 'Search, read, create, and share files.', logo: 'google-drive.svg', composio: 'googledrive' },
+  { id: 'google-docs', name: 'Google Docs', group: G.FilesDocs, kind: K.Account, connect: own('https://docsmcp.googleapis.com/mcp/v1'), line: 'Read and write documents.', logo: 'google-docs.svg', composio: 'googledocs' },
+  { id: 'google-sheets', name: 'Google Sheets', group: G.FilesDocs, kind: K.Account, connect: own('https://sheetsmcp.googleapis.com/mcp/v1'), line: 'Read and write spreadsheets.', logo: 'google-sheets.webp', composio: 'googlesheets' },
+  { id: 'google-slides', name: 'Google Slides', group: G.FilesDocs, kind: K.Account, connect: own('https://slidesmcp.googleapis.com/mcp/v1'), line: 'Read and build presentations.', logo: 'google-slides.webp', composio: 'googleslides' },
+  { id: 'onedrive', name: 'OneDrive', group: G.FilesDocs, kind: K.Account, connect: viaUs('microsoft_onedrive'), logo: 'onedrive.jpg', composio: 'one_drive' },
   { id: 'word', name: 'Word', group: G.FilesDocs, kind: K.Local, logo: 'word.webp' },
   { id: 'excel', name: 'Excel', group: G.FilesDocs, kind: K.Local, logo: 'excel.webp' },
   { id: 'powerpoint', name: 'PowerPoint', group: G.FilesDocs, kind: K.Local, logo: 'powerpoint.webp' },
-  { id: 'dropbox', name: 'Dropbox', group: G.FilesDocs, kind: K.Account, connect: self('https://mcp.dropbox.com/mcp'), line: 'Search, read, and organise files.', logo: 'dropbox.svg' },
-  { id: 'box', name: 'Box', group: G.FilesDocs, kind: K.Account, connect: own('https://mcp.box.com'), line: 'Search and read files and folders.' },
-  { id: 'notion', name: 'Notion', group: G.FilesDocs, kind: K.Account, connect: self('https://mcp.notion.com/mcp'), line: 'Search, read, and write pages and databases.', logo: 'notion.svg' },
+  { id: 'dropbox', name: 'Dropbox', group: G.FilesDocs, kind: K.Account, connect: self('https://mcp.dropbox.com/mcp'), line: 'Search, read, and organise files.', logo: 'dropbox.svg', composio: 'dropbox' },
+  { id: 'box', name: 'Box', group: G.FilesDocs, kind: K.Account, connect: own('https://mcp.box.com'), line: 'Search and read files and folders.', composio: 'box' },
+  { id: 'notion', name: 'Notion', group: G.FilesDocs, kind: K.Account, connect: self('https://mcp.notion.com/mcp'), line: 'Search, read, and write pages and databases.', logo: 'notion.svg', composio: 'notion' },
   { id: 'apple-notes', name: 'Apple Notes', group: G.FilesDocs, kind: K.Local, logo: 'apple-notes.webp' },
   { id: 'coda', name: 'Coda', group: G.FilesDocs, kind: K.Account, connect: self('https://docs.superhuman.com/apis/mcp'), line: 'Search docs, read pages, and update tables.' },
   { id: 'craft', name: 'Craft', group: G.FilesDocs, kind: K.Account, connect: self('https://mcp.craft.do/my/mcp'), line: 'Search, create, and update documents and daily notes.' },
@@ -247,30 +263,30 @@ export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   { id: 'guru', name: 'Guru', group: G.FilesDocs, kind: K.Account, connect: self('https://mcp.api.getguru.com/mcp'), line: 'Search company knowledge and draft verified answers.' },
   { id: 'readwise', name: 'Readwise', group: G.FilesDocs, kind: K.Account, connect: self('https://mcp2.readwise.io/mcp'), line: 'Search highlights and Reader documents, save articles.' },
   // Productivity & Tasks
-  { id: 'todoist', name: 'Todoist', group: G.Productivity, kind: K.Account, connect: self('https://ai.todoist.net/mcp'), line: 'Create, find, and complete tasks and projects.', logo: 'todoist.svg' },
+  { id: 'todoist', name: 'Todoist', group: G.Productivity, kind: K.Account, connect: self('https://ai.todoist.net/mcp'), line: 'Create, find, and complete tasks and projects.', logo: 'todoist.svg', composio: 'todoist' },
   { id: 'apple-reminders', name: 'Apple Reminders', group: G.Productivity, kind: K.Local, logo: 'apple-reminders.png' },
-  { id: 'google-tasks', name: 'Google Tasks', group: G.Productivity, kind: K.Account, connect: viaUs('google_tasks'), logo: 'googletasks.svg' },
-  { id: 'trello', name: 'Trello', group: G.Productivity, kind: K.Account, connect: viaUs('trello'), line: 'Boards, lists, and cards.', logo: 'trello.svg' },
-  { id: 'asana', name: 'Asana', group: G.Productivity, kind: K.Account, connect: self('https://mcp.asana.com/mcp'), line: 'Search and update tasks and projects.', logo: 'asana.svg' },
-  { id: 'monday', name: 'Monday', group: G.Productivity, kind: K.Account, connect: self('https://mcp.monday.com/mcp'), line: 'Read and update boards and items.' },
-  { id: 'clickup', name: 'ClickUp', group: G.Productivity, kind: K.Account, connect: self('https://mcp.clickup.com/mcp'), line: 'Search and update tasks, docs, and lists.' },
-  { id: 'airtable', name: 'Airtable', group: G.Productivity, kind: K.Account, connect: self('https://mcp.airtable.com/mcp'), line: 'Query and update bases, tables, and records.' },
+  { id: 'google-tasks', name: 'Google Tasks', group: G.Productivity, kind: K.Account, connect: viaUs('google_tasks'), logo: 'googletasks.svg', composio: 'googletasks' },
+  { id: 'trello', name: 'Trello', group: G.Productivity, kind: K.Account, connect: viaUs('trello'), line: 'Boards, lists, and cards.', logo: 'trello.svg', composio: 'trello' },
+  { id: 'asana', name: 'Asana', group: G.Productivity, kind: K.Account, connect: self('https://mcp.asana.com/mcp'), line: 'Search and update tasks and projects.', logo: 'asana.svg', composio: 'asana' },
+  { id: 'monday', name: 'Monday', group: G.Productivity, kind: K.Account, connect: self('https://mcp.monday.com/mcp'), line: 'Read and update boards and items.', composio: 'monday' },
+  { id: 'clickup', name: 'ClickUp', group: G.Productivity, kind: K.Account, connect: self('https://mcp.clickup.com/mcp'), line: 'Search and update tasks, docs, and lists.', composio: 'clickup' },
+  { id: 'airtable', name: 'Airtable', group: G.Productivity, kind: K.Account, connect: self('https://mcp.airtable.com/mcp'), line: 'Query and update bases, tables, and records.', composio: 'airtable' },
   { id: 'jotform', name: 'Jotform', group: G.Productivity, kind: K.Account, connect: self('https://mcp.jotform.com'), line: 'Create and edit forms, then read submissions.' },
-  { id: 'typeform', name: 'Typeform', group: G.Productivity, kind: K.Account, connect: self('https://api.typeform.com/mcp'), line: 'Build forms, analyze responses, and manage contacts.' },
+  { id: 'typeform', name: 'Typeform', group: G.Productivity, kind: K.Account, connect: self('https://api.typeform.com/mcp'), line: 'Build forms, analyze responses, and manage contacts.', composio: 'typeform' },
   { id: 'smartsheet', name: 'Smartsheet', group: G.Productivity, kind: K.Account, connect: token('https://mcp.smartsheet.com', 'SMARTSHEET_API_TOKEN'), line: 'Query and update sheets, rows, and workspaces.' },
   { id: 'wrike', name: 'Wrike', group: G.Productivity, kind: K.Account, connect: token('https://mcp.wrike.com/v2', 'WRIKE_ACCESS_TOKEN'), line: 'Search projects, create tasks, and post comments.' },
   // Meetings
-  { id: 'zoom', name: 'Zoom', group: G.Meetings, kind: K.Account, connect: own('https://mcp.zoom.us/mcp/zoom/streamable'), line: 'Search meetings, pull transcripts, and work with Zoom Docs.', logo: 'zoom.webp' },
-  { id: 'google-meet', name: 'Google Meet', group: G.Meetings, kind: K.Account, connect: viaUs('google_meet'), logo: 'google-meet.webp' },
+  { id: 'zoom', name: 'Zoom', group: G.Meetings, kind: K.Account, connect: own('https://mcp.zoom.us/mcp/zoom/streamable'), line: 'Search meetings, pull transcripts, and work with Zoom Docs.', logo: 'zoom.webp', composio: 'zoom' },
+  { id: 'google-meet', name: 'Google Meet', group: G.Meetings, kind: K.Account, connect: viaUs('google_meet'), logo: 'google-meet.webp', composio: 'googlemeet' },
   { id: 'fathom', name: 'Fathom', group: G.Meetings, kind: K.Account, connect: self('https://api.fathom.ai/mcp'), line: 'Search meetings and pull transcripts and summaries.', logo: 'fathom.jpg' },
   { id: 'otter', name: 'Otter', group: G.Meetings, kind: K.Account, connect: self('https://mcp.otter.ai/mcp'), line: 'Search meeting history and pull full transcripts.' },
   { id: 'fireflies', name: 'Fireflies', group: G.Meetings, kind: K.Account, connect: self('https://api.fireflies.ai/mcp'), line: 'Search meeting transcripts, summaries, and action items.' },
   { id: 'circleback', name: 'Circleback', group: G.Meetings, kind: K.Account, connect: self('https://circleback.ai/api/mcp'), line: 'Search meetings, transcripts, action items, and emails.' },
   { id: 'loom', name: 'Loom', group: G.Meetings, kind: K.Soon },
   // Creativity
-  { id: 'canva', name: 'Canva', group: G.Creativity, kind: K.Account, connect: self('https://mcp.canva.com/mcp'), line: 'Create and edit designs.' },
-  { id: 'figma', name: 'Figma', group: G.Creativity, kind: K.Account, connect: self('https://mcp.figma.com/mcp'), line: 'Read files, frames, and design context.', logo: 'figma.svg' },
-  { id: 'miro', name: 'Miro', group: G.Creativity, kind: K.Account, connect: self('https://mcp.miro.com/mcp'), line: 'Read and build boards.' },
+  { id: 'canva', name: 'Canva', group: G.Creativity, kind: K.Account, connect: self('https://mcp.canva.com/mcp'), line: 'Create and edit designs.', composio: 'canva' },
+  { id: 'figma', name: 'Figma', group: G.Creativity, kind: K.Account, connect: self('https://mcp.figma.com/mcp'), line: 'Read files, frames, and design context.', logo: 'figma.svg', composio: 'figma' },
+  { id: 'miro', name: 'Miro', group: G.Creativity, kind: K.Account, connect: self('https://mcp.miro.com/mcp'), line: 'Read and build boards.', composio: 'miro' },
   { id: 'gamma', name: 'Gamma', group: G.Creativity, kind: K.Account, connect: self('https://mcp.gamma.app/mcp'), line: 'Generate presentations, documents, and webpages.' },
   { id: 'webflow', name: 'Webflow', group: G.Creativity, kind: K.Account, connect: self('https://mcp.webflow.com/mcp'), line: 'Manage sites, pages, and CMS content.' },
   { id: 'wix', name: 'Wix', group: G.Creativity, kind: K.Account, connect: self('https://mcp.wix.com/mcp'), line: 'Manage sites, stores, and bookings.' },
@@ -278,49 +294,49 @@ export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   { id: 'adobe-express', name: 'Adobe Express', group: G.Creativity, kind: K.Browser },
   { id: 'youtube-studio', name: 'YouTube Studio', group: G.Creativity, kind: K.Browser, logo: 'youtubestudio.svg' },
   // Finance & Money
-  { id: 'stripe', name: 'Stripe', group: G.Finance, kind: K.Account, connect: self('https://mcp.stripe.com'), line: 'Customers, payments, subscriptions, and invoices.', logo: 'stripe.svg' },
-  { id: 'paypal', name: 'PayPal', group: G.Finance, kind: K.Account, connect: self('https://mcp.paypal.com/mcp'), line: 'Invoices, orders, and transactions.', logo: 'paypal.svg' },
-  { id: 'square', name: 'Square', group: G.Finance, kind: K.Account, connect: self('https://mcp.squareup.com/mcp'), line: 'Payments, orders, catalog, and customers.' },
-  { id: 'quickbooks', name: 'QuickBooks', group: G.Finance, kind: K.Account, connect: viaUs('quickbooks'), logo: 'quickbooks.svg' },
-  { id: 'xero', name: 'Xero', group: G.Finance, kind: K.Account, connect: { via: C.Local, command: 'npx', args: ['-y', '@xeroapi/xero-mcp-server@latest'], env: ['XERO_CLIENT_ID', 'XERO_CLIENT_SECRET'] }, line: 'Read and write invoices, contacts, reports, and payroll.', logo: 'xero.svg' },
+  { id: 'stripe', name: 'Stripe', group: G.Finance, kind: K.Account, connect: self('https://mcp.stripe.com'), line: 'Customers, payments, subscriptions, and invoices.', logo: 'stripe.svg', composio: 'stripe' },
+  { id: 'paypal', name: 'PayPal', group: G.Finance, kind: K.Account, connect: self('https://mcp.paypal.com/mcp'), line: 'Invoices, orders, and transactions.', logo: 'paypal.svg', composio: 'paypal' },
+  { id: 'square', name: 'Square', group: G.Finance, kind: K.Account, connect: self('https://mcp.squareup.com/mcp'), line: 'Payments, orders, catalog, and customers.', composio: 'square' },
+  { id: 'quickbooks', name: 'QuickBooks', group: G.Finance, kind: K.Account, connect: viaUs('quickbooks'), logo: 'quickbooks.svg', composio: 'quickbooks' },
+  { id: 'xero', name: 'Xero', group: G.Finance, kind: K.Account, connect: { via: C.Local, command: 'npx', args: ['-y', '@xeroapi/xero-mcp-server@latest'], env: ['XERO_CLIENT_ID', 'XERO_CLIENT_SECRET'] }, line: 'Read and write invoices, contacts, reports, and payroll.', logo: 'xero.svg', composio: 'xero' },
   { id: 'shopify', name: 'Shopify', group: G.Finance, kind: K.Browser, logo: 'shopify.svg' },
   { id: 'amazon-seller', name: 'Amazon Seller', group: G.Finance, kind: K.Browser },
-  { id: 'brex', name: 'Brex', group: G.Finance, kind: K.Account, connect: self('https://api.brex.com/mcp'), line: 'Query expenses, receipts, bills, cards, and travel.' },
+  { id: 'brex', name: 'Brex', group: G.Finance, kind: K.Account, connect: self('https://api.brex.com/mcp'), line: 'Query expenses, receipts, bills, cards, and travel.', composio: 'brex' },
   { id: 'mercury', name: 'Mercury', group: G.Finance, kind: K.Account, connect: self('https://mcp.mercury.com/mcp'), line: 'Read balances, transactions, statements, and cards.' },
-  { id: 'ramp', name: 'Ramp', group: G.Finance, kind: K.Account, connect: self('https://mcp.ramp.com/mcp'), line: 'Expenses, cards, bills, and reimbursements.' },
+  { id: 'ramp', name: 'Ramp', group: G.Finance, kind: K.Account, connect: self('https://mcp.ramp.com/mcp'), line: 'Expenses, cards, bills, and reimbursements.', composio: 'ramp' },
   { id: 'navan', name: 'Navan', group: G.Finance, kind: K.Account, connect: self('https://mcp.navan.com/mcp'), line: 'Query expenses, travel bookings, policies, and cards.' },
   { id: 'interactive-brokers', name: 'Interactive Brokers', group: G.Finance, kind: K.Account, connect: self('https://api.ibkr.com/v1/api/mcp-public'), line: 'Review positions, balances, P&L, and draft trade instructions.' },
   { id: 'webull', name: 'Webull', group: G.Finance, kind: K.Account, connect: self('https://api.webull.com/mcp'), line: 'View accounts, positions, orders, watchlists, and market data.' },
   { id: 'daloopa', name: 'Daloopa', group: G.Finance, kind: K.Account, connect: self('https://mcp.daloopa.com/server/mcp'), line: 'Pull source-linked fundamentals, KPIs, filings, and prices.' },
   { id: 'sp-global', name: 'S&P Global', group: G.Finance, kind: K.Account, connect: self('https://kfinance.kensho.com/integrations/mcp'), line: 'Query S&P Capital IQ financials, prices, and transcripts.' },
   // Sales & Customers
-  { id: 'hubspot', name: 'HubSpot', group: G.Sales, kind: K.Account, connect: own('https://mcp.hubspot.com'), line: 'Search and update contacts, companies, deals, and tickets.', logo: 'hubspot.svg' },
-  { id: 'salesforce', name: 'Salesforce', group: G.Sales, kind: K.Account, connect: viaUs('salesforce_rest_api') },
-  { id: 'pipedrive', name: 'Pipedrive', group: G.Sales, kind: K.Account, connect: viaUs('pipedrive') },
-  { id: 'intercom', name: 'Intercom', group: G.Sales, kind: K.Account, connect: own('https://mcp.intercom.com/mcp'), line: 'Search conversations, contacts, and Help Center articles.', logo: 'intercom.svg' },
-  { id: 'attio', name: 'Attio', group: G.Sales, kind: K.Account, connect: self('https://mcp.attio.com/mcp'), line: 'Search and update CRM records, lists, notes, and tasks.' },
+  { id: 'hubspot', name: 'HubSpot', group: G.Sales, kind: K.Account, connect: own('https://mcp.hubspot.com'), line: 'Search and update contacts, companies, deals, and tickets.', logo: 'hubspot.svg', composio: 'hubspot' },
+  { id: 'salesforce', name: 'Salesforce', group: G.Sales, kind: K.Account, connect: viaUs('salesforce_rest_api'), composio: 'salesforce' },
+  { id: 'pipedrive', name: 'Pipedrive', group: G.Sales, kind: K.Account, connect: viaUs('pipedrive'), composio: 'pipedrive' },
+  { id: 'intercom', name: 'Intercom', group: G.Sales, kind: K.Account, connect: own('https://mcp.intercom.com/mcp'), line: 'Search conversations, contacts, and Help Center articles.', logo: 'intercom.svg', composio: 'intercom' },
+  { id: 'attio', name: 'Attio', group: G.Sales, kind: K.Account, connect: self('https://mcp.attio.com/mcp'), line: 'Search and update CRM records, lists, notes, and tasks.', composio: 'attio' },
   { id: 'clay', name: 'Clay', group: G.Sales, kind: K.Account, connect: self('https://api.clay.com/v3/mcp'), line: 'Enrich people and companies, run AI research agents.' },
   { id: 'outreach', name: 'Outreach', group: G.Sales, kind: K.Account, connect: self('https://api.outreach.io/mcp'), line: 'Search sequences, prospects, and Kaia meetings.' },
   { id: 'amplemarket', name: 'Amplemarket', group: G.Sales, kind: K.Account, connect: self('https://mcp.amplemarket.com/mcp'), line: 'Search people and companies, enrich leads, run sequences.' },
   { id: 'gong', name: 'Gong', group: G.Sales, kind: K.Account, connect: self('https://mcp.gong.io/mcp'), line: 'Pull account summaries, deal insights, and call briefs.' },
-  { id: 'docusign', name: 'Docusign', group: G.Sales, kind: K.Account, connect: own('https://mcp.docusign.com/mcp'), line: 'Manage envelopes, templates, workflows, and agreements.' },
+  { id: 'docusign', name: 'Docusign', group: G.Sales, kind: K.Account, connect: own('https://mcp.docusign.com/mcp'), line: 'Manage envelopes, templates, workflows, and agreements.', composio: 'docusign' },
   { id: 'upwork', name: 'Upwork', group: G.Sales, kind: K.Account, connect: self('https://mcp.upwork.com/mcp'), line: 'Search talent, post jobs, and manage contracts.' },
   // Developer
-  { id: 'github', name: 'GitHub', group: G.Developer, kind: K.Account, connect: token('https://api.githubcopilot.com/mcp/', 'GITHUB_PERSONAL_ACCESS_TOKEN'), line: 'Manage repos, issues, pull requests, and Actions.', logo: 'github.svg' },
-  { id: 'gitlab', name: 'GitLab', group: G.Developer, kind: K.Account, connect: viaUs('gitlab'), logo: 'gitlab.svg' },
-  { id: 'linear', name: 'Linear', group: G.Developer, kind: K.Account, connect: self('https://mcp.linear.app/mcp'), line: 'Issues, projects, and cycles.', logo: 'linear.svg' },
-  { id: 'jira', name: 'Jira', group: G.Developer, kind: K.Account, connect: self('https://mcp.atlassian.com/v1/mcp'), line: 'Jira and Confluence, through Atlassian.', logo: 'jira.svg' },
-  { id: 'supabase', name: 'Supabase', group: G.Developer, kind: K.Account, connect: self('https://mcp.supabase.com/mcp'), line: 'Projects, tables, and SQL.', logo: 'supabase.svg' },
-  { id: 'vercel', name: 'Vercel', group: G.Developer, kind: K.Account, connect: self('https://mcp.vercel.com'), line: 'Projects, deployments, and logs.', logo: 'vercel.svg' },
-  { id: 'sentry', name: 'Sentry', group: G.Developer, kind: K.Account, connect: self('https://mcp.sentry.dev/mcp'), line: 'Issues, errors, and traces.' },
-  { id: 'cloudflare', name: 'Cloudflare', group: G.Developer, kind: K.Account, connect: self('https://bindings.mcp.cloudflare.com/mcp'), line: 'Workers, KV, R2, and D1.' },
+  { id: 'github', name: 'GitHub', group: G.Developer, kind: K.Account, connect: token('https://api.githubcopilot.com/mcp/', 'GITHUB_PERSONAL_ACCESS_TOKEN'), line: 'Manage repos, issues, pull requests, and Actions.', logo: 'github.svg', composio: 'github' },
+  { id: 'gitlab', name: 'GitLab', group: G.Developer, kind: K.Account, connect: viaUs('gitlab'), logo: 'gitlab.svg', composio: 'gitlab' },
+  { id: 'linear', name: 'Linear', group: G.Developer, kind: K.Account, connect: self('https://mcp.linear.app/mcp'), line: 'Issues, projects, and cycles.', logo: 'linear.svg', composio: 'linear' },
+  { id: 'jira', name: 'Jira', group: G.Developer, kind: K.Account, connect: self('https://mcp.atlassian.com/v1/mcp'), line: 'Jira and Confluence, through Atlassian.', logo: 'jira.svg', composio: 'jira' },
+  { id: 'supabase', name: 'Supabase', group: G.Developer, kind: K.Account, connect: self('https://mcp.supabase.com/mcp'), line: 'Projects, tables, and SQL.', logo: 'supabase.svg', composio: 'supabase' },
+  { id: 'vercel', name: 'Vercel', group: G.Developer, kind: K.Account, connect: self('https://mcp.vercel.com'), line: 'Projects, deployments, and logs.', logo: 'vercel.svg', composio: 'vercel' },
+  { id: 'sentry', name: 'Sentry', group: G.Developer, kind: K.Account, connect: self('https://mcp.sentry.dev/mcp'), line: 'Issues, errors, and traces.', composio: 'sentry' },
+  { id: 'cloudflare', name: 'Cloudflare', group: G.Developer, kind: K.Account, connect: self('https://bindings.mcp.cloudflare.com/mcp'), line: 'Workers, KV, R2, and D1.', composio: 'cloudflare' },
   { id: 'zapier', name: 'Zapier', group: G.Developer, kind: K.Account, connect: self('https://mcp.zapier.com/api/mcp/mcp'), line: 'Run actions across thousands of apps.' },
   { id: 'make', name: 'Make', group: G.Developer, kind: K.Account, connect: self('https://mcp.make.com/mcp'), line: 'Run scenarios and automations.' },
   { id: 'deepl', name: 'DeepL', group: G.Developer, kind: K.Account, connect: self('https://mcp.deepl.com/mcp'), line: 'Translate text and documents.' },
   { id: 'google-cloud-bigquery', name: 'Google Cloud BigQuery', group: G.Developer, kind: K.Account, connect: own('https://bigquery.googleapis.com/mcp'), line: 'Explore datasets and tables and run SQL queries.' },
   { id: 'playwright', name: 'Playwright', group: G.Developer, kind: K.Account, connect: { via: C.Local, command: 'npx', args: ['-y', '@playwright/mcp@latest'] }, line: 'Navigate, click, screenshot, and test in a real browser.' },
   // Marketing & Growth
-  { id: 'klaviyo', name: 'Klaviyo', group: G.Marketing, kind: K.Account, connect: self('https://mcp.klaviyo.com/mcp'), line: 'Manage profiles, segments, campaigns, and flows.' },
+  { id: 'klaviyo', name: 'Klaviyo', group: G.Marketing, kind: K.Account, connect: self('https://mcp.klaviyo.com/mcp'), line: 'Manage profiles, segments, campaigns, and flows.', composio: 'klaviyo' },
   { id: 'customer-io', name: 'Customer.io', group: G.Marketing, kind: K.Account, connect: self('https://mcp.customer.io/mcp'), line: 'Build campaigns, manage segments, and query people.' },
   { id: 'mailerlite', name: 'MailerLite', group: G.Marketing, kind: K.Account, connect: self('https://mcp.mailerlite.com/mcp'), line: 'Manage subscribers, groups, campaigns, and automations.' },
   { id: 'brevo', name: 'Brevo', group: G.Marketing, kind: K.Account, connect: token('https://mcp.brevo.com/v1/brevo/mcp', 'BREVO_MCP_TOKEN'), line: 'Manage contacts, email and SMS campaigns, and CRM deals.' },
@@ -328,22 +344,22 @@ export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   { id: 'profound', name: 'Profound', group: G.Marketing, kind: K.Account, connect: self('https://mcp.tryprofound.com/mcp'), line: 'Track AI visibility, sentiment, and citations.' },
   { id: 'ahrefs', name: 'Ahrefs', group: G.Marketing, kind: K.Account, connect: self('https://api.ahrefs.com/mcp/mcp'), line: 'Research keywords, backlinks, rankings, and site health.' },
   { id: 'semrush', name: 'Semrush', group: G.Marketing, kind: K.Account, connect: self('https://mcp.semrush.com/v2/mcp'), line: 'Research keywords, backlinks, traffic, and competitors.' },
-  { id: 'apollo', name: 'Apollo', group: G.Marketing, kind: K.Account, connect: self('https://mcp.apollo.io/mcp'), line: 'Find and enrich contacts and accounts, run sequences.' },
+  { id: 'apollo', name: 'Apollo', group: G.Marketing, kind: K.Account, connect: self('https://mcp.apollo.io/mcp'), line: 'Find and enrich contacts and accounts, run sequences.', composio: 'apollo' },
   { id: 'similarweb', name: 'Similarweb', group: G.Marketing, kind: K.Account, connect: token('https://mcp.similarweb.com', 'SIMILARWEB_API_KEY', 'api-key', undefined), line: 'Analyze website traffic, audiences, and competitors.' },
   { id: 'hunter', name: 'Hunter', group: G.Marketing, kind: K.Account, connect: token('https://mcp.hunter.io/mcp', 'HUNTER_API_KEY', 'X-API-Key', undefined), line: 'Find and verify emails, discover companies, and save leads.' },
   { id: 'godaddy', name: 'GoDaddy', group: G.Marketing, kind: K.Account, connect: open('https://api.godaddy.com/v1/domains/mcp'), line: 'Brainstorm domain names and check availability.' },
   { id: 'x-ads', name: 'X Ads', group: G.Marketing, kind: K.Account, connect: own('https://ads-api.x.com/mcp', 'ads.read ads.write media.write offline.access'), line: 'Manage ad campaigns, create ads, track conversions, and pull performance stats.' },
-  { id: 'mailchimp', name: 'Mailchimp', group: G.Marketing, kind: K.Soon },
+  { id: 'mailchimp', name: 'Mailchimp', group: G.Marketing, kind: K.Soon, composio: 'mailchimp' },
   // Hiring & People
-  { id: 'ashby', name: 'Ashby', group: G.Hiring, kind: K.Account, connect: self('https://mcp.ashbyhq.com/mcp/v1'), line: 'Search candidates, prep interviews, and manage pipeline tasks.' },
-  { id: 'workable', name: 'Workable', group: G.Hiring, kind: K.Account, connect: self('https://mcp.workable.com/mcp'), line: 'Search candidates, move pipelines, and manage HR records.' },
-  { id: 'greenhouse', name: 'Greenhouse', group: G.Hiring, kind: K.Account, connect: self('https://mcp.greenhouse.io/mcp'), line: 'Jobs, candidates, applications, and scorecards.' },
+  { id: 'ashby', name: 'Ashby', group: G.Hiring, kind: K.Account, connect: self('https://mcp.ashbyhq.com/mcp/v1'), line: 'Search candidates, prep interviews, and manage pipeline tasks.', composio: 'ashby' },
+  { id: 'workable', name: 'Workable', group: G.Hiring, kind: K.Account, connect: self('https://mcp.workable.com/mcp'), line: 'Search candidates, move pipelines, and manage HR records.', composio: 'workable' },
+  { id: 'greenhouse', name: 'Greenhouse', group: G.Hiring, kind: K.Account, connect: self('https://mcp.greenhouse.io/mcp'), line: 'Jobs, candidates, applications, and scorecards.', composio: 'greenhouse' },
   { id: 'juicebox', name: 'Juicebox', group: G.Hiring, kind: K.Account, connect: self('https://mcp.juicebox.ai/v1'), line: 'Query recruiting analytics, shortlists, and sourcing agents.' },
   { id: 'rippling', name: 'Rippling', group: G.Hiring, kind: K.Account, connect: own('https://mcp.rippling.com/mcp'), line: 'People, payroll, and time off.' },
-  { id: 'gusto', name: 'Gusto', group: G.Hiring, kind: K.Soon },
+  { id: 'gusto', name: 'Gusto', group: G.Hiring, kind: K.Soon, composio: 'gusto' },
   { id: 'deel', name: 'Deel', group: G.Hiring, kind: K.Soon },
-  { id: 'bamboohr', name: 'BambooHR', group: G.Hiring, kind: K.Soon },
-  { id: 'lever', name: 'Lever', group: G.Hiring, kind: K.Soon },
+  { id: 'bamboohr', name: 'BambooHR', group: G.Hiring, kind: K.Soon, composio: 'bamboohr' },
+  { id: 'lever', name: 'Lever', group: G.Hiring, kind: K.Soon, composio: 'lever' },
   // Social
   { id: 'x', name: 'X', group: G.Social, kind: K.Account, connect: own('https://api.x.com/mcp'), line: 'Post, read, and search on X.', logo: 'x.svg' },
   { id: 'linkedin', name: 'LinkedIn', group: G.Social, kind: K.Browser },
@@ -407,6 +423,9 @@ export const findConnection = (id: string): ConnectionItem | undefined => (
 export const connectMethod = (item: ConnectionItem): ConnectMethod | undefined => (
   item.kind === ConnectionKind.Account ? item.connect : undefined
 );
+
+/** Composio's slug for a service, or undefined when Composio does not carry it. */
+export const composioToolkit = (item: ConnectionItem): string | undefined => item.composio;
 
 /**
  * Whether a card can be signed into today, with nothing from us: the
