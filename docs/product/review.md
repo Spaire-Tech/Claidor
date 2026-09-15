@@ -1277,3 +1277,52 @@ hiding it forever. `direction.md` §3 is amended with the founder's words.
 
 **Where:** `design/thread/fromEngine.ts`, `design/shell/select.ts`,
 `design/shell/useMessagesShell.ts`, `docs/product/direction.md`.
+
+---
+
+## 32. Deleting the open agent blanked the sidebar — `fixed`
+
+The founder: *"when you delete a chat, the sidebar goes blank again.
+completely."*
+
+`agentService.deleteAgent` switched to the main agent and then asked
+the service for **the main agent's sessions only**. `setAgentSessions`
+replaces the store's whole list with whatever comes back — a partial
+snapshot written for the old per-agent session tree — so every other
+row lost its session, and with it its preview and its time. And the
+thread stayed empty on top of that: the once-only opener had already
+run, the deleted conversation had just been cleared, and nothing opens
+a conversation without a click.
+
+**Fixed.** The full list is reloaded and awaited, and the shell then
+does what a click on the main row does: opens its newest conversation,
+read from the freshly loaded store rather than the closure's stale copy.
+
+**Where:** `services/agent.ts`, `design/shell/useMessagesShell.ts`.
+
+---
+
+## 33. The sidebar announced the reply before the thread drew it — `fixed`
+
+The founder: *"the sidebar left preview comes first and then the chat
+comes. there's a timing issue."*
+
+Item 31 made the thread wait for a reply's final flag. The row under the
+agent's name did not wait: `previewOf` read the last assistant message
+whatever its state, so the partial text showed in the sidebar from the
+first token while the thread showed the typing animation. Two views of
+one message, on two clocks.
+
+**Fixed.** `previewOf` skips a reply that is still streaming, the same
+test the thread applies, so both change on the same final flag.
+
+**Where:** `design/shell/select.ts`, with a test in `select.test.ts`.
+
+**Not fixed here, because it is not established:** *"the chat comes too
+slowly for a simple question like hello."* Nothing in the app sits
+between the engine's final flag and the bubble; what the person waits
+for is the whole reply to be generated, which is what "never a growing
+bubble" costs, plus 420ms per extra bubble. What happens *before* the
+model starts — gateway ready, model patch, prompt build, history probe,
+send ack — is logged on one line per turn, and that line is the
+measurement. See the report for the command.

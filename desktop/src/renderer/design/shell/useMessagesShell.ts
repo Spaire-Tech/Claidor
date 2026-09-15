@@ -7,7 +7,7 @@ import { isRoomId, type Room } from '../../../shared/rooms/constants';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { coworkService } from '../../services/cowork';
-import type { AppDispatch, RootState } from '../../store';
+import { type AppDispatch, type RootState, store } from '../../store';
 import { setCurrentAgentId } from '../../store/slices/agentSlice';
 import { addArtifact } from '../../store/slices/artifactSlice';
 import { setCurrentSession } from '../../store/slices/coworkSlice';
@@ -487,7 +487,20 @@ export function useMessagesShell(): MessagesShellState {
       }
       // A room it sat in has lost a member, so the list is stale.
       reloadRooms();
-      if (activeId === id) dispatch(setCurrentAgentId(AgentId.Main));
+      if (activeId !== id) return;
+      // The service has already made main current and cleared the open
+      // conversation, which is the deleted one. Left there, the thread
+      // stayed empty: the once-only opener above had already run, and
+      // nothing else opens a conversation without a click. So do what a
+      // click does — open main's newest — reading the store directly,
+      // because the `sessionsByAgent` in this closure is from before the
+      // delete and the service has just reloaded the list.
+      dispatch(setCurrentAgentId(AgentId.Main));
+      setNotes([]);
+      const newest = store.getState().cowork.sessions
+        .filter(one => one.agentId === AgentId.Main)
+        .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+      if (newest) void coworkService.loadSession(newest.id);
     });
   }, [activeId, dispatch, reloadRooms]);
 
