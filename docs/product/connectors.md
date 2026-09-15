@@ -195,3 +195,122 @@ and `oauth.redirectUrl` can override it per server.
 - **Whether a service with no MCP anywhere stays "soon"** or gets a
   browser recipe. Twenty-five of the sixty-five were always going to be
   browser or local.
+
+---
+
+## 9. 15 September — read again, and probed
+
+The founder: *"a lot are lies. lets try to understand what connectors
+are. based on the mds, then look at our code."* This section is that
+reading, with every claim tied to a file or to a live probe run today.
+
+### 9.1 What a connector is, in the sources
+
+`grok-bot.md` §6: *"Connectors are integrations (Notion, Slack, Linear,
+GitHub, etc.) packaged as plugins with MCP servers and often skills."*
+The lifecycle is search the catalogue → plugin detail → confirm card →
+install → host connect card for sign-in → authenticate or reconnect as
+status requires. Connected tools become live tool namespaces. The
+system contract §24 names the tools: `SearchPlugins`, `GetPlugin`,
+`InstallPlugin`, `AddMcpServer`, `AuthenticateMcpServer`,
+`GetMcpTools`, `CallMcpTool`. Sign-in is a **host-authored connect
+card**; the agent never pastes an auth link.
+
+So a connector is three things: a catalogue entry, an MCP server the
+host signs the person into, and (sometimes) a skill telling the agent
+how to use it. The sign-in is the host's job. Not the skill's.
+
+### 9.2 What `github.com/cursor/plugins` actually is (cloned today)
+
+64 third-party plugins. Each is `plugin.json` + `mcp.json` + `README`
++ logo. **One of the 64 ships a skill** (`x/skills/x-api-mcp-guide`),
+and it is prose for after the connection: check credits, phrase
+errors. It does not authenticate anything. The other 91 skills in the
+repo belong to Cursor's own developer plugins (`pstack`, `thermos`,
+`cursor-team-kit`, …) and have nothing to do with connectors.
+
+**Grok Bot's twenty managed skills are not in this repo.** `routines`,
+`add-connector`, `no-connector-fallback`, `shopping`, `flights`,
+`send-on-behalf` and the rest live on Grok Bot's box under
+`/home/box/agent-data/managed-skills/` (contract §21.2) and are not
+published. We have their names and one-line descriptions, nothing
+else.
+
+**Answer to the founder's question.** No — a Cursor plugin's skill does
+not authenticate, and was never meant to. Sign-in is done by the MCP
+client: OAuth discovery, dynamic client registration, PKCE, tokens.
+Our engine is that client (`openclaw/src/agents/mcp-oauth.ts`), and it
+is the thing that connects a service "in our stuff".
+
+### 9.3 What our code does, file by file
+
+| Layer | File | True state |
+|---|---|---|
+| Catalogue | `shared/connections/catalog.ts` | 109 cards: 84 accounts (48 direct MCP, 28 Pipedream, 6 token, 2 local), 14 browser, 6 local, 4 channel, 1 soon |
+| Shelf | `design/connections/shelf.ts` | only the 48 direct-MCP cards get a Connect button; the count reads "48 services you can sign in to" |
+| Connect | `main/libs/connections/connectService.ts` | writes the server, listens on 127.0.0.1:8989, runs the engine's `mcp login`, opens the URL, catches the code, runs `mcp login --code`, `mcp reload` |
+| Engine | `openclaw/src/agents/mcp-oauth.ts` | MCP SDK `auth()`: discovery, dynamic registration, PKCE, tokens under the state dir |
+| Server | `server/polar/connectors/` | Pipedream Connect: list, link, disconnect, MCP proxy; gated to a staff allowlist |
+| Desktop → server | — | **nothing.** The Pipedream client the desktop once had (`3e1224d5`) was not recovered. The 28 Pipedream cards say "Not yet", which is true. |
+| Agent tools | — | none. No search, install or authenticate tool. The prompt says: say so once, point at Apps. |
+
+**Nobody has completed a sign-in.** Review item 23 ran `mcp login` for
+Todoist and got the real authorization URL; the "Allow" click on the
+vendor's page has never been made by anyone, so "Connected" has never
+been seen on a card.
+
+### 9.4 The probe: which of the 48 can actually sign in
+
+Every direct-MCP endpoint in the catalogue was asked, today, from this
+container: an unauthenticated `initialize`, then the protected-resource
+metadata, then the authorization server's metadata, looking for a
+`registration_endpoint`. Without one, the engine's dynamic registration
+fails and the card cannot connect.
+
+| | Services |
+|---|---|
+| **Dynamic registration advertised — should connect (37)** | Coda, Craft, Mem, Guru, Readwise, Todoist, Jotform, Typeform, Fathom, Otter, Circleback, Fireflies, Gamma, Brex, Mercury, Navan, Interactive Brokers, Webull, Daloopa, S&P Global, Klaviyo, Customer.io, MailerLite, Meltwater, Profound, Ahrefs, Semrush, Calendly, Attio, Clay, Outreach, Amplemarket, Upwork, Gong, Ashby, Workable, Juicebox |
+| **No dynamic registration — a pre-registered client is required (8)** | Gmail, Google Calendar, Google Drive, BigQuery, Zoom, HubSpot, X Ads, Intercom |
+| **Answered 200 with no sign-in at all (2)** | Excalidraw, GoDaddy — open servers; "Connect" here would run a sign-in that does not exist |
+| **Refused the probe (1)** | Docusign (403) |
+
+The catalogue marks five as `Preregistered`; the probe says eight, and
+it missed Intercom. Google's own page for its Gmail MCP server says it
+plainly: create a Google Cloud project, configure the consent screen,
+create an OAuth client ID and secret, and give them to the MCP client.
+That is the same Google audit the Pipedream note was written to avoid.
+
+**The engine has nowhere to put a client id.** `types.mcp.ts` allows
+`scope`, `redirectUrl` and `clientMetadataUrl` and nothing else. But
+the SDK skips registration whenever the provider already holds
+`clientInformation`, and the provider reads that from a file under our
+state dir. So a pre-registered client is one of two small changes: seed
+that file before `mcp login`, or a patch adding `oauth.clientId` and
+`oauth.clientSecret` to the config. Neither exists today.
+
+### 9.5 What is false in what we say
+
+1. **"48 services you can sign in to"** (`shelf.ts`). Ten of the 48
+   cannot with what is built; a Connect button on Gmail today ends in
+   the engine's sentence "does not support dynamic client
+   registration". Honest number: 37, unproven.
+2. **`agent-contract.md` §24.2** says Pipedream is "on the server for
+   hosted sign-in and a per-service MCP target". The server is. The
+   desktop cannot reach it, so for the person it does not exist.
+3. **`OAuthRegistration.Preregistered`** is on five cards; it belongs
+   on eight, and two cards (Excalidraw, GoDaddy) need no sign-in and
+   are drawn as if they did.
+4. **The prompt** tells the agent the person connects things "in Apps".
+   True only for the 37, and only if the flow that has never been
+   completed completes.
+5. **Nothing says the sign-in has never worked end to end.** It is the
+   most important fact on this page and it was in one review item.
+
+### 9.6 What Grok Bot has that we do not, on this subject
+
+- The agent-side tools (search, detail, install, authenticate) and the
+  `add-connector` conversation. Ours can only point at Apps.
+- The twenty managed skills. Not public; not in the plugin repo.
+- A connect card in the thread. Ours is a button on the Apps shelf.
+- Connector status the agent can see (`needsAuth`, `error`, `loading`).
+  Ours: the engine reports tools or no tools.

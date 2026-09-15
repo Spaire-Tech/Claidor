@@ -1,0 +1,48 @@
+gmail                  init=200   www-auth=n prm=y as-meta=y dyn-reg=n
+google-calendar        init=200   www-auth=n prm=y as-meta=y dyn-reg=n
+google-drive           init=200   www-auth=n prm=y as-meta=y dyn-reg=n
+coda                   init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://id.superhuman.com/tokens/v4/api/oauth2/register
+craft                  init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp.craft.do/my/auth/register
+mem                    init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.mem.ai/oauth2/register
+guru                   init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp.api.getguru.com/oauth/mcp/register
+readwise               init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://readwise.io/o/register/
+todoist                init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://todoist.com/oauth/register
+jotform                init=401   www-auth=n prm=y as-meta=y dyn-reg=y  https://oauth2.jotform.com/register-public-client
+typeform               init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.typeform.com/oauth/register
+zoom                   init=401   www-auth=y prm=y as-meta=y dyn-reg=n
+fathom                 init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.fathom.ai/mcp/oauth/register
+otter                  init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://otter.ai/oauth/register
+circleback             init=401   www-auth=n prm=y as-meta=y dyn-reg=y  https://circleback.ai/api/oauth/register
+fireflies              init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.fireflies.ai/register
+gamma                  init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://auth.gamma.app/oauth/register
+excalidraw             init=200   www-auth=n prm=n as-meta=n dyn-reg=n
+brex                   init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.brex.com/v3/clients
+mercury                init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp.mercury.com/register
+navan                  init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://login.navan.com/oidc/register
+interactive-brokers    init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.ibkr.com/oauth2/register
+webull                 init=401   www-auth=n prm=y as-meta=y dyn-reg=y  https://u1suserauth.webullfintech.com/api/userauth/oauth/client/register
+daloopa                init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp.daloopa.com/register
+sp-global              init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://kfinance.kensho.com/integrations/register
+klaviyo                init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp.klaviyo.com/register
+customer-io            init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp.customer.io/oauth2/register
+mailerlite             init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp.mailerlite.com/register
+meltwater              init=401   www-auth=n prm=y as-meta=y dyn-reg=y  https://app.meltwater.com/oauth/register
+profound               init=401   www-auth=n prm=y as-meta=y dyn-reg=y  https://auth.tryprofound.com/oauth2/register
+ahrefs                 init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.ahrefs.com/mcp/register
+semrush                init=401   www-auth=n prm=y as-meta=y dyn-reg=y  https://api.semrush.com/apis/v4-raw/auth/v1/oauth2/register
+godaddy                init=200   www-auth=n prm=n as-meta=n dyn-reg=n
+x-ads                  init=401   www-auth=y prm=y as-meta=y dyn-reg=n
+hubspot                init=401   www-auth=y prm=y as-meta=y dyn-reg=n
+intercom               init=401   www-auth=y prm=n as-meta=n dyn-reg=n
+calendly               init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://calendly.com/oauth/register
+attio                  init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://app.attio.com/oauth/register
+clay                   init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.clay.com/oauth/register
+outreach               init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://api.outreach.io/mcpOAuth/register
+amplemarket            init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://app.amplemarket.com/oauth/register
+docusign               init=403   www-auth=n prm=y as-meta=y dyn-reg=n
+upwork                 init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://www.upwork.com/register
+gong                   init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://app.gong.io/oauth2/register
+ashby                  init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp-auth.ashbyhq.com/oidc/reg
+workable               init=401   www-auth=y prm=y as-meta=y dyn-reg=y  https://mcp.workable.com/oauth/register
+juicebox               init=401   www-auth=n prm=y as-meta=y dyn-reg=y  https://mcp.juicebox.ai/api/oauth/register
+google-cloud-bigquery  init=200   www-auth=n prm=y as-meta=y dyn-reg=n
