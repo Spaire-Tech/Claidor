@@ -1,5 +1,6 @@
 import type { ConnectionGroup, ConnectionItem } from '../../../shared/connections/catalog';
 import {
+  composioToolkit,
   ConnectionKind,
   ConnectionTag,
   ConnectVia,
@@ -51,7 +52,23 @@ export function actionFor(
   item: ConnectionItem,
   connected: ReadonlySet<string>,
   busyId?: string,
+  /** A Composio key is in Settings, so the cards Composio carries can sign in. */
+  composioReady = false,
 ): RowAction {
+  // Composio first, when there is a key. It carries the cards that were
+  // "Not yet" — Gmail, HubSpot, Outlook, Zoom — and the ones that were
+  // "Needs a key", and the sign-in is one link on their page. `connected`
+  // holds both routes' ids, so a card signed in either way says so.
+  if (composioReady && composioToolkit(item)) {
+    if (connected.has(item.id)) {
+      return { action: ConnectAction.Connected, label: 'Connected', pressable: true };
+    }
+    if (busyId === item.id) {
+      return { action: ConnectAction.Working, label: 'Signing in…', pressable: false };
+    }
+    return { action: ConnectAction.Connect, label: 'Connect', pressable: true };
+  }
+
   if (item.kind === ConnectionKind.Browser) {
     // The founder's own tag line where the canvas has one; the same
     // fact in the same words everywhere else.

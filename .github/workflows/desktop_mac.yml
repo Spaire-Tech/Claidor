@@ -48,6 +48,9 @@ jobs:
         # a plain install is the only option until one is committed.
         run: npm install --no-audit --no-fund
 
+      - name: Build the speech recogniser (whisper.cpp, Metal)
+        run: bash scripts/build-whisper.sh
+
       - name: Build the installer (renderer, main, skills, engine, dmg)
         run: npm run dist:mac:arm64
 

@@ -1,8 +1,12 @@
 """The desktop app's sign-in and proxy, end to end over HTTP
 (`polar/desktop/endpoints.py`)."""
 
+import io
 import json
+import re
+import zipfile
 from datetime import timedelta
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import httpx
@@ -20,6 +24,12 @@ from polar.desktop.service import (
     desktop,
     model_by_id,
 )
+from polar.desktop.skill_store import (
+    NOT_OFFERED,
+    SKILLS_ROOT,
+    skill_md_with_version,
+)
+from polar.desktop.skill_store import catalog as skill_store_catalog
 from polar.kit.utils import utc_now
 from polar.models import DesktopSession, DesktopUsage, User
 from polar.postgres import AsyncSession
@@ -197,7 +207,7 @@ class TestSession:
         ]
         assert snapshot["banners"] == []
 
-    async def test_the_catalogues_are_empty_and_updates_say_nothing_newer(
+    async def test_the_kit_store_is_empty_and_updates_say_nothing_newer(
         self, client: httpx.AsyncClient
     ) -> None:
         for path in ("/desktop/api/updates/check", "/desktop/api/updates/check-manual"):
@@ -205,13 +215,6 @@ class TestSession:
                 "code": 0,
                 "data": {"value": None},
             }
-        skills = (await client.get("/desktop/api/skill-store")).json()
-        assert skills["code"] == 0
-        assert skills["data"]["value"] == {
-            "marketplace": [],
-            "localSkill": [],
-            "marketTags": [],
-        }
         kits = (await client.get("/desktop/api/kit-store")).json()
         assert kits["data"]["value"] == {"kits": []}
 
@@ -919,3 +922,157 @@ class TestMiddleware:
         }
         subject = await get_auth_subject(Request(scope), session)
         assert isinstance(subject.subject, Anonymous)
+
+
+#: What the vendored catalogue must hold, name by name. Held here rather
+#: than read from catalog.json so that a skill silently dropped from the
+#: vendored directory fails a test.
+VENDORED_SKILLS = {
+    "academy-guide",
+    "algorithmic-art",
+    "brand-guidelines",
+    "canvas-design",
+    "claude-api",
+    "discernment-nudge",
+    "frontend-design",
+    "internal-comms",
+    "mcp-builder",
+    "skill-creator",
+    "slack-gif-creator",
+    "theme-factory",
+    "web-artifacts-builder",
+    "webapp-testing",
+}
+
+#: The four the app bundles under Anthropic's own terms, and the one
+#: upstream skill with no licence at all.
+EXCLUDED_SKILLS = {"docx", "pdf", "pptx", "xlsx", "doc-coauthoring"}
+
+
+def _frontmatter(raw: str) -> dict[str, Any]:
+    """The YAML block a SKILL.md opens with, parsed the way the app parses
+    it (js-yaml on the text between the fences)."""
+    # In the lock through other dependencies and used by tests only, so its
+    # stubs are not; mypy is told so here rather than by adding a dependency.
+    import yaml  # type: ignore[import-untyped]
+
+    match = re.match(r"^﻿?---\n(.*?)\n---\n", raw, re.S)
+    assert match is not None, raw[:80]
+    parsed = yaml.safe_load(match.group(1))
+    assert isinstance(parsed, dict)
+    return parsed
+
+
+@pytest.mark.asyncio
+class TestSkillStore:
+    """The marketplace and its archives (`polar/desktop/skill_store.py`)."""
+
+    async def test_the_store_lists_the_vendored_skills_and_none_of_the_excluded(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        body = (await client.get("/desktop/api/skill-store")).json()
+        assert body["code"] == 0
+        value = body["data"]["value"]
+        assert value["localSkill"] == []
+        names = {item["id"] for item in value["marketplace"]}
+        assert names == VENDORED_SKILLS
+        assert names.isdisjoint(EXCLUDED_SKILLS)
+        assert set(NOT_OFFERED) == EXCLUDED_SKILLS
+
+        tag_ids = {tag["id"] for tag in value["marketTags"]}
+        assert all({"id", "en", "zh"} <= set(tag) for tag in value["marketTags"])
+        for item in value["marketplace"]:
+            # The shape of `MarketplaceSkill` in desktop/src/renderer/types/skill.ts.
+            assert item["name"] == item["id"]
+            assert isinstance(item["description"], str)
+            assert item["description"]
+            assert item["tags"]
+            assert set(item["tags"]) <= tag_ids
+            assert item["url"] == settings.generate_external_url(
+                f"/desktop/api/skill-store/{item['id']}.zip"
+            )
+            assert item["url"].endswith(".zip")  # `isRemoteZipUrl` keys on this
+            assert item["source"]["from"] == "GitHub"
+            assert item["source"]["url"].endswith(f"/skills/{item['id']}")
+            assert item["source"]["author"] == "Anthropic"
+
+    async def test_bundled_skills_carry_no_version_and_the_rest_carry_the_snapshot(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        # The app repairs a bundled skill from its own copy at every start
+        # (`syncBundledSkillsToUserData`), so the store must not offer an
+        # update against the bundle: an empty version reads as « installed ».
+        body = (await client.get("/desktop/api/skill-store")).json()
+        by_id = {item["id"]: item for item in body["data"]["value"]["marketplace"]}
+        bundled = {"canvas-design", "frontend-design", "skill-creator"}
+        for name in bundled:
+            assert by_id[name]["version"] == ""
+        for name in VENDORED_SKILLS - bundled:
+            assert by_id[name]["version"] == skill_store_catalog().version
+        assert skill_store_catalog().version == "2026.9.10"
+
+    async def test_the_archive_is_a_zip_of_the_skill_under_its_own_name(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        response = await client.get("/desktop/api/skill-store/mcp-builder.zip")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/zip"
+        archive = zipfile.ZipFile(io.BytesIO(response.content))
+        names = archive.namelist()
+        # One top-level directory, named after the skill: that is what
+        # `downloadZipUrl` unwraps and `normalizeFolderName` installs as.
+        assert {n.split("/", 1)[0] for n in names} == {"mcp-builder"}
+        assert "mcp-builder/SKILL.md" in names
+        assert "mcp-builder/LICENSE.txt" in names
+        assert b"Apache License" in archive.read("mcp-builder/LICENSE.txt")
+
+        served = _frontmatter(archive.read("mcp-builder/SKILL.md").decode("utf-8"))
+        at_rest = _frontmatter(
+            (SKILLS_ROOT / "mcp-builder" / "SKILL.md").read_text(encoding="utf-8")
+        )
+        # The one change on the way out: a version the app can compare.
+        assert served["version"] == skill_store_catalog().version
+        assert "version" not in at_rest
+        assert {k: v for k, v in served.items() if k != "version"} == at_rest
+
+    async def test_an_unknown_skill_is_404(self, client: httpx.AsyncClient) -> None:
+        for name in ("nope", "docx", "doc-coauthoring", "..", "%2e%2e%2fcatalog"):
+            response = await client.get(f"/desktop/api/skill-store/{name}.zip")
+            assert response.status_code == 404, name
+
+
+class TestSkillStoreFiles:
+    """The vendored directory itself: licences, and the catalogue held
+    against the frontmatter it was built from."""
+
+    def test_every_vendored_skill_is_apache_and_the_catalogue_matches_its_frontmatter(
+        self,
+    ) -> None:
+        listing = skill_store_catalog()
+        assert {s.name for s in listing.skills} == VENDORED_SKILLS
+        assert {p.name for p in SKILLS_ROOT.iterdir() if p.is_dir()} == VENDORED_SKILLS
+        for skill in listing.skills:
+            licence = (skill.directory / "LICENSE.txt").read_text(encoding="utf-8")
+            assert "Apache License" in licence, skill.name
+            assert "Version 2.0" in licence, skill.name
+            assert "agreement with Anthropic" not in licence, skill.name
+            frontmatter = _frontmatter(
+                (skill.directory / "SKILL.md").read_text(encoding="utf-8")
+            )
+            assert frontmatter["name"] == skill.name
+            assert frontmatter["description"].strip() == skill.description
+            # `skill_md_with_version` adds a top-level `version`; it must
+            # not be clobbering one, and `metadata.version` is the other
+            # place the app looks.
+            assert "version" not in frontmatter, skill.name
+            assert "metadata" not in frontmatter, skill.name
+        assert (SKILLS_ROOT / "NOTICE").exists()
+        assert (SKILLS_ROOT / "THIRD_PARTY_NOTICES.md").exists()
+
+    def test_a_skill_md_without_a_frontmatter_is_left_alone(self) -> None:
+        assert (
+            skill_md_with_version("# Just a heading\n", "1.0") == "# Just a heading\n"
+        )
+        assert skill_md_with_version("---\nname: x\n---\nbody\n", "2026.9.10") == (
+            '---\nversion: "2026.9.10"\nname: x\n---\nbody\n'
+        )

@@ -61,6 +61,7 @@ import {
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
 import { APP_UI_MAP_PATH, buildAppUiMap } from '../../shared/settings/appUiMap';
 import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
+import { CLAUDE_CODE_DEFAULT_MODEL } from '../../shared/settings/models';
 import { APP_NAME } from '../appConstants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
@@ -73,6 +74,7 @@ import {
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
+import { CLAUDE_CLI_PROVIDER, resolveClaudeCli } from './claudeCodeCli';
 import {
   getAllServerModelMetadata,
   listProviderSourceEntries,
@@ -80,6 +82,7 @@ import {
   resolveAllProviderApiKeys,
   resolveRawApiConfig,
 } from './claudeSettings';
+import { COMPOSIO_USER_ID } from './composio/composioApi';
 import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
@@ -163,6 +166,10 @@ export const OPENCLAW_HEARTBEAT_EVERY_ENABLED = '1h';
 export const OPENCLAW_HEARTBEAT_EVERY_DISABLED = '0m';
 const DINGTALK_OPENCLAW_CHANNEL = 'dingtalk-connector';
 const OPENCLAW_MEMORY_CORE_PLUGIN_ID = 'memory-core';
+/** The local `openclaw-extensions/composio` plugin, by its manifest id. */
+const COMPOSIO_PLUGIN_ID = 'composio';
+/** The env var the plugin's `apiKey` placeholder resolves from. */
+const COMPOSIO_API_KEY_ENV = 'COMPOSIO_API_KEY';
 const OPENCLAW_MODEL_COMPAT_PLUGIN_ID = 'lobsterai-model-compat';
 
 const asConfigRecord = (value: unknown): Record<string, unknown> | undefined => (
@@ -2217,6 +2224,21 @@ type OpenClawConfigSyncDeps = {
   getUserPlugins?: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   canUseMediaGeneration?: () => boolean;
   /**
+   * The person's Composio key (`app_config.composioApiKey`), or nothing.
+   * With one, the bundled `composio` plugin is enabled and gets the key
+   * as an env var; without, it is written disabled.
+   */
+  getComposioApiKey?: () => string | undefined;
+  /**
+   * The person's Claude Code sign-in as the model, for their own
+   * development. When on, the engine's primary model becomes
+   * `claude-cli/<model>` — the engine runs each turn through the Claude
+   * Code app installed on this computer, the same config the engine's
+   * own planner uses — and the command is the absolute path the app
+   * found, because a macOS app's PATH does not see Homebrew or npm.
+   */
+  getClaudeCodeLogin?: () => { enabled: boolean; model?: string } | undefined;
+  /**
    * How much the agent may do on this computer without asking.
    *
    * Absent, it asks. See `shared/settings/constants.ts` for why that
@@ -2274,6 +2296,8 @@ export class OpenClawConfigSync {
   private readonly getAgents?: () => Agent[];
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
+  private readonly getComposioApiKey: () => string | undefined;
+  private readonly getClaudeCodeLogin: () => { enabled: boolean; model?: string } | undefined;
   private readonly getExecPolicy: () => ExecPolicy;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
@@ -2310,6 +2334,13 @@ export class OpenClawConfigSync {
     this.getAgents = deps.getAgents;
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
+    this.getComposioApiKey = deps.getComposioApiKey ?? (() => undefined);
+    this.getClaudeCodeLogin = deps.getClaudeCodeLogin ?? (() => undefined);
+  }
+
+  /** The Composio key, trimmed, or empty. One reading for the file and the env. */
+  private composioApiKey(): string {
+    return this.getComposioApiKey()?.trim() || '';
   }
 
   /**
@@ -2737,6 +2768,27 @@ export class OpenClawConfigSync {
     const agentModelDefaults = Object.keys(perModelCustomDefaults).length > 0
       ? buildCompleteAgentModelDefaults(allProvidersMap, perModelCustomDefaults)
       : {};
+
+    // The Claude Code sign-in outranks every provider above: the primary
+    // model becomes the engine's Claude CLI backend, which spawns the
+    // installed Claude Code app for each turn. Nothing else about the
+    // providers changes, so switching back is the flag alone.
+    const claudeCode = this.getClaudeCodeLogin();
+    let cliBackends: Record<string, { command: string }> | undefined;
+    if (claudeCode?.enabled) {
+      const model = claudeCode.model?.trim() || CLAUDE_CODE_DEFAULT_MODEL;
+      primaryModel = `${CLAUDE_CLI_PROVIDER}/${model}`;
+      const command = resolveClaudeCli();
+      if (command) {
+        cliBackends = { [CLAUDE_CLI_PROVIDER]: { command } };
+        console.log(`[EngineConfigSync] model=${primaryModel} through Claude Code at ${command}`);
+      } else {
+        console.warn(
+          `[EngineConfigSync] model=${primaryModel} through Claude Code, but no \`claude\` command was found; `
+          + 'the engine will try a bare `claude` from its own PATH. Set CAISRA_CLAUDE_CLI to the binary if that fails.',
+        );
+      }
+    }
     console.log(
       `[EngineConfigSync] sandbox mode: ${sandboxMode} (executionMode: ${coworkConfig.executionMode || 'local'}, enterprise: ${this.isEnterprise()})`,
     );
@@ -2756,6 +2808,7 @@ export class OpenClawConfigSync {
     );
     const hasAskUserPlugin = isBundledPluginAvailable('ask-user-question');
     const hasMediaGenPlugin = isBundledPluginAvailable('lobster-media-generation');
+    const hasComposioPlugin = isBundledPluginAvailable(COMPOSIO_PLUGIN_ID);
     // Runtime-bundled xai extension (dist/extensions/xai): provides the Grok
     // model compat hooks (e.g. only grok-4.3 accepts reasoningEffort) plus the
     // OAuth refresh hook for credentials in the auth-profiles store. Declare
@@ -2915,6 +2968,7 @@ export class OpenClawConfigSync {
           ...(modelRoleDefaults.subagents
             ? { subagents: modelRoleDefaults.subagents }
             : {}),
+          ...(cliBackends ? { cliBackends } : {}),
           ...(Object.keys(agentModelDefaults).length > 0
             ? { models: agentModelDefaults }
             : {}),
@@ -3009,6 +3063,24 @@ export class OpenClawConfigSync {
             : {}),
           ...(hasAskUserPlugin ? { 'ask-user-question': { enabled: true } } : {}),
           ...(hasMediaGenPlugin ? { 'lobster-media-generation': { enabled: true } } : {}),
+          // Composio: on with a key, and written off without one rather
+          // than left out, so a stale entry from an earlier run cannot
+          // keep it loading against a key that is gone. The key itself
+          // is an env placeholder, like the bridge secret above — the
+          // file is readable; the environment is the process's own.
+          ...(hasComposioPlugin
+            ? {
+                [COMPOSIO_PLUGIN_ID]: this.composioApiKey()
+                  ? {
+                      enabled: true,
+                      config: {
+                        apiKey: `\${${COMPOSIO_API_KEY_ENV}}`,
+                        userId: COMPOSIO_USER_ID,
+                      },
+                    }
+                  : { enabled: false },
+              }
+            : {}),
           ...(hasModelCompatConfig
             ? {
                 [OPENCLAW_MODEL_COMPAT_PLUGIN_ID]: {
@@ -3836,6 +3908,10 @@ export class OpenClawConfigSync {
     // ${LOBSTER_MCP_BRIDGE_SECRET} placeholder doesn't crash the gateway.
     // Used by the ask-user-question plugin.
     env.LOBSTER_MCP_BRIDGE_SECRET = this.getMcpBridgeSecret?.() || 'unconfigured';
+
+    // Composio — the same rule: always set, so the placeholder in a
+    // disabled entry resolves to something rather than crashing the load.
+    env[COMPOSIO_API_KEY_ENV] = this.composioApiKey() || 'unconfigured';
 
     // Telegram — per-instance secrets (must match sync() indexing: enabled instances only)
     const tgInstances = this.getTelegramInstances();

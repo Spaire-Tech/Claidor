@@ -85,6 +85,9 @@ from .service import (
     tally_for,
     usage_from_answer,
 )
+from .skill_store import archive as skill_archive_bytes
+from .skill_store import archive_path, marketplace_item
+from .skill_store import catalog as skill_store_catalog
 
 log = structlog.get_logger()
 
@@ -437,25 +440,68 @@ async def updates_check() -> JSONResponse:
 
 @router.get("/api/skill-store", name="desktop:skill_store")
 async def skill_store() -> JSONResponse:
-    """The skill marketplace. Empty, and the two halves are empty for different
-    reasons.
+    """The skill marketplace: Anthropic's Apache-licensed skills.
 
     The app reads ``data.value.marketplace`` (skills to install),
     ``data.value.localSkill`` (names and descriptions for the bundled skills)
     and ``data.value.marketTags``.
 
-    ``marketplace`` is for skills to download, and every skill we have is
-    already bundled with the app — see the note on ``kit_store`` below, which
-    is the same story.
+    ``marketplace`` is the catalogue in ``polar/desktop/skill_store.py``:
+    the skills of https://github.com/anthropics/skills that carry the
+    Apache License 2.0, vendored under ``skills/`` next to that module
+    and each downloadable as a zip from the route below. Four of that
+    repository's skills — docx, pdf, pptx, xlsx — are under a different
+    licence (« governed by your agreement with Anthropic ») and are not
+    here; the app bundles them itself. ``doc-coauthoring`` carries no
+    licence at all and is not here either. The full accounting is in
+    ``skills/NOTICE``.
 
-    ``localSkill`` would only add titles and descriptions for skills that are
-    already installed, and the app covers both without us: names come from
-    ``BUNDLED_SKILL_DISPLAY_NAMES``, which a test holds against
-    ``skills.config.json`` in both languages, and descriptions fall back to the
-    skill's own ``SKILL.md``. Sending them from here would be a second copy to
-    keep in step.
+    ``localSkill`` stays empty. It would only add titles and descriptions
+    for skills that are already installed, and the app covers both without
+    us: names come from ``BUNDLED_SKILL_DISPLAY_NAMES``, which a test holds
+    against ``skills.config.json`` in both languages, and descriptions fall
+    back to the skill's own ``SKILL.md``. Sending them from here would be a
+    second copy to keep in step.
+
+    No bearer on either route: the app fetches the catalogue with a plain
+    ``https.get`` and the archive with a fetch that carries only a
+    User-Agent (``ipcHandlers/skills/handlers.ts``, ``downloadZipUrl``).
     """
-    return _ok({"value": {"marketplace": [], "localSkill": [], "marketTags": []}})
+    listing = skill_store_catalog()
+    return _ok(
+        {
+            "value": {
+                "marketplace": [
+                    marketplace_item(
+                        skill,
+                        settings.generate_external_url(archive_path(skill.name)),
+                    )
+                    for skill in listing.skills
+                ],
+                "localSkill": [],
+                "marketTags": list(listing.tags),
+            }
+        }
+    )
+
+
+@router.get(
+    "/api/skill-store/{name}.zip",
+    name="desktop:skill_archive",
+    response_model=None,
+)
+async def skill_archive(name: str) -> Response:
+    """One skill as the archive the app installs from: ``<name>/SKILL.md``
+    and the rest of the skill beside it. A name the catalogue does not
+    offer is 404, which the app reports as a failed download."""
+    content = skill_archive_bytes(name)
+    if content is None:
+        return _fail(404, f"No skill named {name!r} in the store.", status=404)
+    return Response(
+        content=content,
+        media_type="application/zip",
+        headers={"content-disposition": f'attachment; filename="{name}.zip"'},
+    )
 
 
 @router.get("/api/kit-store", name="desktop:kit_store")
@@ -473,16 +519,16 @@ async def kit_store() -> JSONResponse:
        (``desktop/src/main/ipcHandlers/kits/handlers.ts``). There is no
        install-from-what-you-already-have path; even the one "built-in" kit,
        Computer Use, is a hosted zip.
-    2. Every skill we have is already bundled with the app and enabled by
-       ``desktop/SKILLs/skills.config.json``.
+    2. The skills the app bundles are enabled by
+       ``desktop/SKILLs/skills.config.json``; the skill store above serves
+       the rest of Anthropic's Apache-licensed skills one at a time.
     3. Kit installs and bundled skills share one directory, and the installer
        suffixes on collision. Shipping a kit of skills the app already has
        would write ``pdf-1`` next to ``pdf``.
 
-    So a curated catalogue today would deliver duplicates of what is already
-    installed. A real kit needs a skill the app does not bundle, which means
-    authoring one and hosting its bundle — writing, and a place to put files,
-    not a change to this endpoint.
+    So a kit here would have to be a chosen set of the store's unbundled
+    skills, hosted as one zip. Which of them belong together is a product
+    decision nobody has taken; until then the store offers them singly.
     """
     return _ok({"value": {"kits": []}})
 

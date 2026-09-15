@@ -1955,3 +1955,266 @@ test and the shell pass; eslint, tsc, `compile:electron` clean.
 `agentBrowserHost.ts`, `agentBrowserSettle.ts` (+test),
 `agentBrowserSnapshot.ts` (+test), `useMessagesShell.ts`,
 `openclawConfigSync.runtime.test.ts`.
+
+## 47. Voice input, alive, on this computer — `built, proven on a clip, unrun with a microphone`
+
+The app's microphone asked our server for a recognition session that was
+NetEase's, and our server never had one, so speaking did nothing. The
+founder: *"do whisper.cpp first, voice input is dead."*
+
+**What it is now.** whisper.cpp's `whisper-server`, pinned at v1.8.3,
+built by `scripts/build-whisper.sh` (the macOS workflow runs it before
+packaging; a developer runs it once), shipped under
+`resources/whisper/<platform>-<arch>/`. The main process keeps it warm on
+a loopback port and asks it for text over HTTP; nothing leaves the
+computer and there is no quota. The model, `ggml-base.bin` (multilingual,
+148 MB), is not in the installer: the first press of the microphone
+fetches it once into the app's data directory, checks its SHA-1 against
+the value whisper.cpp publishes, and the composer shows the percent in
+place of "Listening" while it comes.
+
+**How it feels.** The composer's mic is the canvas's: empty draft, a
+microphone; press it and it turns the record red and the words appear in
+the draft as they are recognised; press again and the final text lands
+with the caret after it. Nothing is sent for the person. Whisper is not a
+streaming model, so "live" text is a fresh pass over the last twenty
+seconds every second and a half, and the real answer is one pass over
+everything on stop (`Dictation` in `main/speech/dictation.ts`, which also
+refuses to overlap passes and drops a partial that lands after stop).
+Two minutes is the cap; it is dictation, not a meeting recorder.
+
+**Proof.** The recogniser class itself, with the real binary built here
+and the tiny model, transcribed whisper.cpp's JFK sample end to end:
+*"And so my fellow Americans ask not what your country can do for you,
+ask what you can do for your country."* That is
+`whisperServer.live.test.ts`, which runs when the three environment
+variables point at a binary, a model and a clip, and says it skipped
+otherwise. The cadence logic has its own tests with a scripted clock;
+the path and response parsing too. tsc, eslint and `compile:electron`
+clean. **Not yet done with a microphone**: that needs a Mac with the
+binary built, which is the founder's next installer.
+
+**What is left of the old path.** The old shell's `useCoworkVoiceInput`
+still calls the dead route; it is not rendered and was not touched. The
+main-process handler for that route stays registered and harmless.
+
+**Where:** `shared/speech/constants.ts`, `main/speech/{dictation,whisperServer}.ts`
+(+tests), `main/ipcHandlers/speech/handlers.ts`, `main.ts`, `preload.ts`,
+`types/electron.d.ts`, `design/shell/{useDictation.ts,Composer.tsx,MessagesShell.tsx,CaisraApp.tsx}`,
+`scripts/build-whisper.sh`, `resources/whisper/README.md`,
+`electron-builder.json`, `.github/workflows/desktop_mac.yml`.
+
+## 48. Composio: the connector layer, on the founder's word — `built, unrun`
+
+*"i want Composio - its okay for now that we use them."* Composio's own
+OpenClaw fork carries a plugin; its code was read, not its README. What
+it does: a Tool Router session per person, six agent tools, and an OAuth
+link handed back as a tool result for the agent to relay. What was
+ported into `openclaw-extensions/composio/` (MIT notice kept): search,
+execute, and manage connections. What was left out, on purpose: the
+remote Jupyter workbench and remote bash (code running on Composio's
+servers is against "one computer, this one"), the fifty-actions-in-one
+call (one approval for fifty actions), the CLI, and the SDK itself —
+the plugin speaks Composio's six REST calls directly, so the runtime
+gains no dependency tree.
+
+**The key.** One Settings row, General → Apps. It never enters
+`openclaw.json`: the sync writes `${COMPOSIO_API_KEY}` and sets the
+variable, the same rule as the bridge secret. With a key the plugin is
+on; without, the entry is written off, never left out. A change of key
+restarts the engine.
+
+**The Apps sheet.** Fifty-six cards now carry a Composio toolkit slug,
+each verified against `composio.dev/toolkits/<slug>` answering 200 (the
+guesses that 404'd were dropped). With a key, those cards say Connect
+whatever their old route said — "Not yet", "Needs a key" — and Connect
+opens Composio's sign-in in the system browser, then polls until the
+toolkit reports active. Without a key nothing changes.
+
+**One departure to know.** There is no new bridge channel: the Composio
+flow rides the existing connect channel and the handler branches by the
+same rule the shelf draws the button. The renderer keeps a copy of which
+ids came back connected in `app_config.composioConnected`, commented as
+the copy it is, until a status read exists.
+
+**Proof.** 874 tests across shared, the design tree, the Composio client,
+config impact and config sync; eslint, tsc, `compile:electron` clean; the
+extension precompiles to a single file with no external imports. **Unrun**
+against Composio itself: that needs a key, which is the founder's.
+
+**Where:** `openclaw-extensions/composio/`, `main/libs/composio/`,
+`ipcHandlers/connections/handlers.ts`, `openclawConfigSync.ts`,
+`openclawConfigImpact.ts`, `main.ts`, `shared/connections/catalog.ts`,
+`design/connections/{shelf.ts,Connections.tsx,useConnections.ts}`,
+`shared/settings/rows.ts`, `design/settings/useSettings.ts`, `renderer/config.ts`.
+
+## 49. The skill store, filled from anthropics/skills — `built, served, tested`
+
+*"i want the skill repo too."* The store was served empty. It now serves
+fourteen skills vendored from `anthropics/skills` at commit `34040c9c`
+(10 September 2026), every one under Apache-2.0 with its `LICENSE.txt`
+beside it and a `NOTICE` naming the source: academy-guide,
+algorithmic-art, brand-guidelines, canvas-design, claude-api,
+discernment-nudge, frontend-design, internal-comms, mcp-builder,
+skill-creator, slack-gif-creator, theme-factory, web-artifacts-builder,
+webapp-testing. **Excluded:** docx, pdf, pptx, xlsx (their licence is
+"your agreement with Anthropic"; item 44 flagged it and the app bundles
+them anyway) and doc-coauthoring (no licence anywhere, so no terms).
+
+**How it is served.** The app fetches `/api/skill-store` without a bearer
+and installs by downloading a `.zip` whose one top-level directory holds
+a `SKILL.md` — read from `skillManager.ts` with line numbers, not
+assumed. So the server lists the catalogue with a zip URL per skill and
+builds each zip from the vendored directory on request. Upstream's
+SKILL.md files carry no version and the app compares versions to decide
+"update available", so the archive builder writes one `version:` line
+into the frontmatter; the files at rest stay byte-identical to upstream,
+and a test holds that. The three Apache skills the app already bundles
+are served with an empty version, because the app re-copies its bundle
+over any lower-versioned install at every start and a store "update"
+would ping-pong.
+
+**Proof.** 41 skill-store tests in `server/tests/desktop`; the desktop
+suite there reads `137 passed, 2 failed`, and the two are the
+pre-existing model-menu expectations (Opus and Haiku deliberately
+withheld by `offered_models()`), failing identically on `HEAD`. ruff
+clean on the desktop package. Getting real numbers took a Python 3.14.0
+interpreter in the scratchpad, because the repo's `.venv` is the 3.14
+release candidate `server/CLAUDE.md` warns about. Nothing in the app
+changed: the served shape matches the install path as it is. Scripted
+skills will pass through the app's security-scan dialog on install; that
+is the app's design.
+
+**Where:** `server/polar/desktop/{skill_store.py,endpoints.py}`,
+`server/polar/desktop/skills/`, `server/pyproject.toml` (the vendored
+scripts excluded from ruff and mypy), `server/tests/desktop/test_endpoints.py`.
+
+## 50. Playwright drives the in-app browser — `built, proven on Chromium, unrun in Electron`
+
+*"I want playwrit."* The app now starts Chromium with
+`--remote-debugging-port=0`; Chromium picks a free loopback port and
+writes it to `DevToolsActivePort` under the app's data directory. The
+browser host connects Playwright to that port and drives its own views
+through it: a click that waits until the element is attached, visible,
+stable and receives events and then sends real pointer events; a
+reference-tagged snapshot (`[ref=e12]`) that is the same tree Microsoft's
+browser MCP hands to models; `fill` that React inputs accept; `wait_for`
+on visible text. The settle-and-resnapshot from item 46 still runs after
+a click, because Playwright waits for a navigation the click starts but
+not for a single-page app's redraw.
+
+**The trade, stated.** The port exposes every page in the app — the app's
+own window included — to any process on this Mac while the app runs.
+The host never hands the agent a page it did not open: a view is looked
+up by its own DevTools target id, read from the view, and a target id
+nobody opened is refused (tested). But another local process is not the
+agent, and nothing here stops it. The founder chose this over the
+hand-written driver. That driver stays as the fallback: no port file,
+and the log says `driver=devtools` and everything works as before.
+
+**Proof.** A live test starts Chromium exactly as Electron now does,
+reads the port file, connects, finds a page by target id, snapshots it
+with refs, clicks and waits and fills through them, and refuses a
+foreign ref and an unknown target. tsc, eslint, `compile:electron`
+clean. `playwright-core` 1.60 is a runtime dependency now (the engine
+pins the same). **Unrun in Electron itself**: that Chromium honours the
+switch and writes the file under `userData` is Chromium's documented
+behaviour, not something this machine can run; the founder's next build
+proves it, and the log line names the driver.
+
+**Where:** `main/libs/agentBrowserPlaywright.ts` (+test),
+`agentBrowserHost.ts`, `main.ts`, `package.json`.
+
+## 51. The Claude Code sign-in as the model, for development — `built, unrun`
+
+*"i want to stop paying for API credits while I develop. Switch the
+app's model provider so my local Claude Code login is used instead of an
+Anthropic API key."* The founder named two engine docs; neither said
+what they said (`provider-repairs.md` does not exist and
+`openclaw-agent-runtime.md` has no Claude CLI provider). The capability
+is real all the same, and it is two different things in the engine:
+
+1. **A CLI backend.** `agents.defaults.model.primary = "claude-cli/<model>"`
+   makes the engine spawn the installed Claude Code app for each turn
+   (`cli-runner/claude-live-session.ts`: `--input-format stream-json`,
+   `--output-format stream-json`, `--permission-prompt-tool stdio`, an
+   MCP config file), and the engine's own planner uses exactly this
+   form. Claude Code then works under whatever sign-in it already has.
+2. **A credential lift.** `auth-profiles/external-cli-sync.ts` can read
+   Claude Code's stored OAuth token out of the keychain and
+   `anthropic-transport-stream.ts` then calls Anthropic's API with it,
+   sending `user-agent: claude-cli/<version>` and `x-app: cli` — that is,
+   pretending to be Claude Code. Anthropic has said in public that using
+   a subscription's token outside Claude Code is against its terms.
+
+This app builds the first and never turns on the second: no auth profile
+is written, no keychain is read by us. What the engine itself does with
+that credential once the CLI backend is selected (its doctor reads it to
+report sign-in state; `external-cli-scope.ts` puts `claude-cli` in the
+sync scope) is the engine's, and the founder should know it is there.
+
+**What it is.** Settings → Models has a last choice, "My Claude Code
+sign-in", with a model field (blank means `claude-sonnet-5`). It is a
+flag, not a provider entry: the stored keys stay as they are and come
+back when it is turned off. The config sync overrides the primary model
+and writes `cliBackends["claude-cli"].command` with the absolute path
+the app found — a macOS app's PATH does not see Homebrew or npm, so
+`claudeCodeCli.ts` looks in the places Claude Code's installers use and
+accepts `CAISRA_CLAUDE_CLI` as an override. A change restarts the engine.
+
+**What is not known until it runs.** Whether the engine needs an auth
+profile to exist before it will select the backend; whether our
+runtime adapter renders the CLI backend's events as cleanly as the
+embedded runtime's; whether the approval card survives
+`--permission-prompt-tool stdio`. The founder runs it and reads
+`[EngineConfigSync] model=claude-cli/…` and the gateway log.
+
+**Proof.** The sync test writes the config with the flag on, blank and
+off; the candidates and the finder are unit-tested; 537 tests across
+settings, links, the design tree, config impact and config sync pass;
+eslint, tsc, `compile:electron` clean.
+
+**Where:** `main/libs/claudeCodeCli.ts` (+test), `openclawConfigSync.ts`,
+`openclawConfigImpact.ts`, `main.ts`, `shared/settings/{models,rows}.ts`,
+`design/settings/useSettings.ts`, `renderer/config.ts`.
+
+## 52. Sonnet for a question, Opus for a job — `built, unrun`
+
+The founder, on the Max plan: *"maybe we can do sonnet for simple
+questions, then the moment its a job, we use opus?"* Built, with the
+one rule that matters written down: **doubt goes to Opus.** Opus on a
+simple question wastes a little of the limit; Sonnet on a job is another
+DoorDash afternoon.
+
+**The rule** (`thread/routing.ts`, no second model call — under the
+Claude Code sign-in every call spawns Claude Code and a classifier would
+add seconds to every message): fast only when the message is short,
+reads as a question, carries no file, link or path, asks for no action
+(a word list: find, book, order, send, make, open…), the conversation
+is not a room, and the reply before it used no tool. Everything else,
+and every uncertainty, is Opus. "Is Sweetgreen open on Sundays?" goes to
+Opus because "open" is also a verb; the test says so on purpose.
+
+**Where it acts.** Right before send in the shell: the session's model
+override is patched to `claude-cli/claude-sonnet-5` for a fast turn and
+cleared (the engine's primary, now Opus) for a strong one, only when it
+differs; a new conversation starts with the override when its first
+message is a question. A room is always a job. Off the Claude Code
+sign-in nothing runs: the account and a person's own key keep the model
+they chose.
+
+**And the default is Opus now.** Item 51 set Sonnet as the blank
+default to protect limits; the founder chose the product's quality over
+that. `claude-opus-5` is the blank default, Sonnet is the fast lane.
+
+**Proof.** Twelve routing tests, the sync test updated for the new
+default; 526 tests across the design tree, settings and config sync
+pass; eslint, tsc, `compile:electron` clean; the harness live flow mounts
+the shell with the new send path. **Unrun** with a real turn: whether
+the engine honours a `claude-cli/…` override through `sessions.patch`
+the way it honours others is the founder's first message to check, and
+the log line `sessions.patch` beside it.
+
+**Where:** `design/thread/routing.ts` (+test), `design/shell/useMessagesShell.ts`,
+`shared/settings/models.ts`, `main/libs/claudeCodeCli.ts`,
+`openclawConfigSync.runtime.test.ts`.

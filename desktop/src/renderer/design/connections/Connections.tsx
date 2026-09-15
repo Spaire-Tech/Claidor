@@ -13,6 +13,8 @@ export interface ConnectionsProps {
   failure?: { id: string; message: string };
   /** The installed pill pressed: only the Connected group. */
   onlyConnected?: boolean;
+  /** A Composio key is in Settings, so the cards it carries get a Connect. */
+  composioReady?: boolean;
   onConnect: (id: string) => void;
   onDisconnect: (id: string) => void;
 }
@@ -68,7 +70,7 @@ export function Connections(props: ConnectionsProps): JSX.Element {
               <Card
                 key={item.id}
                 item={item}
-                row={actionFor(item, props.connected, props.busyId)}
+                row={actionFor(item, props.connected, props.busyId, props.composioReady)}
                 {...(props.failure?.id === item.id ? { failure: props.failure.message } : {})}
                 onConnect={props.onConnect}
                 onDisconnect={props.onDisconnect}

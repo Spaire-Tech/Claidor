@@ -37,6 +37,7 @@ import {
 import {
   ManualCredentialCaptureService,
 } from '../browserCredentials/manualCredentialCaptureService';
+import { PlaywrightDriver } from './agentBrowserPlaywright';
 import { domQuietScript, settlePage } from './agentBrowserSettle';
 import { type AxNode, buildAccessibilitySnapshot, describeSnapshot } from './agentBrowserSnapshot';
 import type {
@@ -75,6 +76,8 @@ type BrowserPage = {
   view: WebContentsView;
   loading: boolean;
   refs: Map<string, number>;
+  /** The DevTools target id, read once, by which Playwright finds this view. */
+  targetId?: string;
 };
 
 type AgentBrowserHostDeps = {
@@ -86,6 +89,13 @@ type AgentBrowserHostDeps = {
   credentialApprovalService: BrowserCredentialApprovalService;
   resolveSessionKey: (sessionId?: string) => string | undefined;
   manualCredentialPreloadPath?: string;
+  /**
+   * The app's data directory, where Chromium writes `DevToolsActivePort`
+   * when the app starts with `--remote-debugging-port=0`. With it,
+   * Playwright drives the views (`agentBrowserPlaywright.ts`); without
+   * it, the hand-written DevTools driver below does.
+   */
+  userDataDir?: string;
 };
 
 const textResult = (
@@ -220,6 +230,9 @@ export class AgentBrowserHost {
   private activeSessionId: string | undefined;
   private lastError: string | undefined;
   private proxyReady: Promise<void> = Promise.resolve();
+
+  /** undefined: not tried yet; null: tried and not there (the log says why). */
+  private playwright: PlaywrightDriver | null | undefined;
 
   constructor(private readonly deps: AgentBrowserHostDeps) {
     this.windowVisible = Boolean(this.deps.getMainWindow()?.isVisible());
@@ -432,6 +445,8 @@ export class AgentBrowserHost {
 
   async dispose(): Promise<void> {
     this.desiredVisible = false;
+    await this.playwright?.close();
+    this.playwright = undefined;
     await this.credentialLogin.dispose();
     this.manualCredentialCapture.dispose();
     this.detachCredentialLoginView();
@@ -476,36 +491,68 @@ export class AgentBrowserHost {
       }
       case BrowserMcpTool.TakeSnapshot:
         return this.takeSnapshot(this.resolvePage(args.pageId));
+      // The actions below go through Playwright when the app's debugging
+      // port is reachable (`agentBrowserPlaywright.ts`), and through the
+      // hand-written DevTools driver otherwise. Same tools, same answers.
       case BrowserMcpTool.TakeScreenshot:
         return this.takeScreenshot(this.resolvePage(args.pageId), args);
       case BrowserMcpTool.Click: {
         const page = this.resolvePage(args.pageId);
-        await this.click(page, readString(args.uid), args.dblClick === true);
+        const driver = await this.driver();
+        if (driver) await driver.click(await this.playwrightPage(driver, page), readString(args.uid), args.dblClick === true);
+        else await this.click(page, readString(args.uid), args.dblClick === true);
         return this.snapshotAfter(page, 'Element clicked.');
       }
-      case BrowserMcpTool.Fill:
-        await this.fill(this.resolvePage(args.pageId), readString(args.uid), readString(args.value));
+      case BrowserMcpTool.Fill: {
+        const page = this.resolvePage(args.pageId);
+        const driver = await this.driver();
+        if (driver) await driver.fill(await this.playwrightPage(driver, page), readString(args.uid), readString(args.value));
+        else await this.fill(page, readString(args.uid), readString(args.value));
         return textResult('Element filled.');
-      case BrowserMcpTool.FillForm:
-        await this.fillForm(this.resolvePage(args.pageId), args.elements);
+      }
+      case BrowserMcpTool.FillForm: {
+        const page = this.resolvePage(args.pageId);
+        const driver = await this.driver();
+        if (driver) {
+          if (!Array.isArray(args.elements)) throw new Error('Browser form elements are missing.');
+          const target = await this.playwrightPage(driver, page);
+          for (const item of args.elements) {
+            if (!item || typeof item !== 'object') continue;
+            const element = item as Record<string, unknown>;
+            await driver.fill(target, readString(element.uid), readString(element.value));
+          }
+        } else {
+          await this.fillForm(page, args.elements);
+        }
         return textResult('Form filled.');
-      case BrowserMcpTool.Hover:
-        await this.hover(this.resolvePage(args.pageId), readString(args.uid));
+      }
+      case BrowserMcpTool.Hover: {
+        const page = this.resolvePage(args.pageId);
+        const driver = await this.driver();
+        if (driver) await driver.hover(await this.playwrightPage(driver, page), readString(args.uid));
+        else await this.hover(page, readString(args.uid));
         return textResult('Element hovered.');
-      case BrowserMcpTool.Drag:
-        await this.drag(
-          this.resolvePage(args.pageId),
-          readString(args.from_uid),
-          readString(args.to_uid),
-        );
+      }
+      case BrowserMcpTool.Drag: {
+        const page = this.resolvePage(args.pageId);
+        const driver = await this.driver();
+        if (driver) await driver.drag(await this.playwrightPage(driver, page), readString(args.from_uid), readString(args.to_uid));
+        else await this.drag(page, readString(args.from_uid), readString(args.to_uid));
         return textResult('Element dragged.');
-      case BrowserMcpTool.UploadFile:
-        await this.uploadFile(this.resolvePage(args.pageId), readString(args.uid), readString(args.filePath));
+      }
+      case BrowserMcpTool.UploadFile: {
+        const page = this.resolvePage(args.pageId);
+        const driver = await this.driver();
+        if (driver) await driver.uploadFile(await this.playwrightPage(driver, page), readString(args.uid), readString(args.filePath));
+        else await this.uploadFile(page, readString(args.uid), readString(args.filePath));
         return textResult('File uploaded.');
+      }
       case BrowserMcpTool.PressKey: {
         const page = this.resolvePage(args.pageId);
         const key = readString(args.key);
-        this.pressKey(page, key);
+        const driver = await this.driver();
+        if (driver) await driver.press(await this.playwrightPage(driver, page), key);
+        else this.pressKey(page, key);
         // A single character is typing; only a control key (Enter, Tab,
         // Escape, an arrow) can change the page enough to be worth waiting.
         if (key.length === 1) return textResult('Key pressed.');
@@ -518,9 +565,13 @@ export class AgentBrowserHost {
         return textResult('Dialog handled.');
       case BrowserMcpTool.EvaluateScript:
         return this.evaluateScript(this.resolvePage(args.pageId), readString(args.function), args.args);
-      case BrowserMcpTool.WaitFor:
-        await this.waitForText(this.resolvePage(args.pageId), readString(args.text), readTimeout(args.timeout));
+      case BrowserMcpTool.WaitFor: {
+        const page = this.resolvePage(args.pageId);
+        const driver = await this.driver();
+        if (driver) await driver.waitForText(await this.playwrightPage(driver, page), readString(args.text), readTimeout(args.timeout));
+        else await this.waitForText(page, readString(args.text), readTimeout(args.timeout));
         return textResult('Text found.');
+      }
       case BrowserMcpTool.LoginWithSavedCredential: {
         const page = this.resolvePage(args.pageId);
         const result = await this.credentialLogin.login({
@@ -709,6 +760,14 @@ export class AgentBrowserHost {
   }
 
   private async takeSnapshot(page: BrowserPage, prefix?: string): Promise<BrowserToolResponse> {
+    const driver = await this.driver();
+    if (driver) {
+      const snapshot = await driver.snapshot(await this.playwrightPage(driver, page));
+      return textResult(
+        `${prefix ?? 'Accessibility snapshot captured.'} Elements carry refs like [ref=e12]; pass the ref as uid to click, fill and hover.`,
+        { snapshot },
+      );
+    }
     await this.ensureDebugger(page);
     const result = await page.view.webContents.debugger.sendCommand('Accessibility.getFullAXTree') as {
       nodes?: AxNode[];
@@ -940,6 +999,46 @@ export class AgentBrowserHost {
       await new Promise(resolve => { setTimeout(resolve, 100); });
     }
     throw new Error(`Timed out waiting for browser text after ${timeoutMs}ms.`);
+  }
+
+  /**
+   * Playwright, connected once over the app's debugging port, or null.
+   * The log line here is the one to read when a click behaves oddly: it
+   * says which driver the agent is going through.
+   */
+  private async driver(): Promise<PlaywrightDriver | null> {
+    if (this.playwright !== undefined) return this.playwright;
+    const userDataDir = this.deps.userDataDir;
+    if (!userDataDir) {
+      this.playwright = null;
+      console.log('[AgentBrowserHost] driver=devtools (no user data directory given, Playwright not tried)');
+      return null;
+    }
+    try {
+      this.playwright = await PlaywrightDriver.connect(userDataDir);
+      console.log(
+        this.playwright
+          ? `[AgentBrowserHost] driver=playwright endpoint=${this.playwright.endpoint}`
+          : '[AgentBrowserHost] driver=devtools (no DevToolsActivePort under user data; was the app started with --remote-debugging-port=0?)',
+      );
+    } catch (error) {
+      this.playwright = null;
+      console.warn('[AgentBrowserHost] driver=devtools (Playwright could not connect):', error);
+    }
+    return this.playwright;
+  }
+
+  /** The Playwright page for a view, by the view's own target id. */
+  private async playwrightPage(driver: PlaywrightDriver, page: BrowserPage): Promise<import('playwright-core').Page> {
+    if (!page.targetId) {
+      await this.ensureDebugger(page);
+      const info = await page.view.webContents.debugger.sendCommand('Target.getTargetInfo') as {
+        targetInfo?: { targetId?: string };
+      };
+      if (!info.targetInfo?.targetId) throw new Error('The in-app browser page has no DevTools target id.');
+      page.targetId = info.targetInfo.targetId;
+    }
+    return driver.pageFor(page.targetId);
   }
 
   private async ensureDebugger(page: BrowserPage): Promise<void> {

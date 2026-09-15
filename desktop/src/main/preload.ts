@@ -131,6 +131,13 @@ import type {
   SkinGetActiveResponse,
   SkinListResponse,
 } from '../shared/skin/types';
+import {
+  type SpeechEvent,
+  SpeechIpc,
+  type SpeechStartResult,
+  type SpeechStatus,
+  type SpeechStopResult,
+} from '../shared/speech/constants';
 import { NimQrLoginIpc } from './ipcHandlers/nimQrLogin';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
@@ -1056,6 +1063,20 @@ contextBridge.exposeInMainWorld('electron', {
   asr: {
     createRealtimeSession: (options: AsrRealtimeSessionRequest) =>
       ipcRenderer.invoke(AsrIpcChannel.CreateRealtimeSession, options),
+  },
+  speech: {
+    status: (): Promise<SpeechStatus> => ipcRenderer.invoke(SpeechIpc.Status),
+    start: (): Promise<SpeechStartResult> => ipcRenderer.invoke(SpeechIpc.Start),
+    chunk: (sessionId: string, pcm16: Uint8Array): void => {
+      ipcRenderer.send(SpeechIpc.Chunk, sessionId, pcm16);
+    },
+    stop: (sessionId: string): Promise<SpeechStopResult> => ipcRenderer.invoke(SpeechIpc.Stop, sessionId),
+    cancel: (sessionId: string): Promise<void> => ipcRenderer.invoke(SpeechIpc.Cancel, sessionId),
+    onEvent: (callback: (event: SpeechEvent) => void): (() => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, speechEvent: SpeechEvent) => callback(speechEvent);
+      ipcRenderer.on(SpeechIpc.Event, handler);
+      return () => ipcRenderer.removeListener(SpeechIpc.Event, handler);
+    },
   },
   artifact: {
     watchFile: (filePath: string) => ipcRenderer.invoke('artifact:watchFile', filePath),

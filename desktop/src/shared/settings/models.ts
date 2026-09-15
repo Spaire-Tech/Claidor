@@ -36,6 +36,33 @@ import { ProviderName, ProviderRegistry } from '../providers';
 export const ACCOUNT_MODELS = 'account';
 
 /**
+ * The person's own Claude Code sign-in, for their own development.
+ *
+ * The founder: *"i want to stop paying for API credits while I develop."*
+ * The engine can run a turn through the Claude Code app installed on
+ * this computer instead of calling a model API itself, and Claude Code
+ * then draws on the sign-in it already has. This choice writes that
+ * config; nothing here reads or copies Claude Code's credentials — the
+ * engine does have a second, separate mechanism that lifts Claude
+ * Code's stored token and calls Anthropic's API pretending to be Claude
+ * Code, and this app never turns that on.
+ */
+export const CLAUDE_CODE_LOGIN = 'claude-code';
+
+/**
+ * The model Claude Code is asked for unless the person names another.
+ * Opus: Caisra is an agent holding a strict contract, and the founder
+ * wants the product judged on the model that holds it.
+ */
+export const CLAUDE_CODE_DEFAULT_MODEL = 'claude-opus-5';
+
+/** The model a plain question runs on; see `thread/routing.ts`. */
+export const CLAUDE_CODE_FAST_MODEL = 'claude-sonnet-5';
+
+/** The engine's provider id for "run this through the Claude Code CLI". */
+export const CLAUDE_CLI_PROVIDER = 'claude-cli';
+
+/**
  * The providers offered by name.
  *
  * Not all twenty. These are the ones somebody outside China plausibly
@@ -74,6 +101,11 @@ export function modelChoices(): readonly ModelChoice[] {
         hint: `Billed by ${def.label} to you. Nothing goes through your account's allowance.`,
       }];
     }),
+    {
+      value: CLAUDE_CODE_LOGIN,
+      label: 'My Claude Code sign-in',
+      hint: 'Not billed here: turns run through the Claude Code app installed on this computer, under its own sign-in and its limits. For your own development on this machine.',
+    },
   ];
 }
 
@@ -95,7 +127,10 @@ type Providers = Record<string, ProviderConfig>;
  * so a config nobody has touched reads as the account, which is what a
  * new install is.
  */
-export function currentChoice(providers: Providers | undefined): string {
+export function currentChoice(providers: Providers | undefined, claudeCodeLogin = false): string {
+  // The sign-in is a flag, not a key, and it outranks a stored key: the
+  // engine's model is overridden while it is on, whatever else is set.
+  if (claudeCodeLogin) return CLAUDE_CODE_LOGIN;
   if (!providers) return ACCOUNT_MODELS;
   for (const id of OWN_KEY_PROVIDERS) {
     const one = providers[id];
