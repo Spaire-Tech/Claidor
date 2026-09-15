@@ -15,6 +15,7 @@ import { useStaggered } from '../thread/useStaggered';
 import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
+import { PanelMode, shellLayout, titleBarInset, useWindowWidth } from './layout';
 import { Sidebar, type SidebarAgent } from './Sidebar';
 
 export const ThreadMode = {
@@ -88,6 +89,13 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     onOpenPanel, onTeach, onShareTemplate, onOpenAgent, agentDetail, settings,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
   } = props;
+
+  // How the window is divided right now. Re-read on every resize, which
+  // is the piece that was missing: the old columns stretched but never
+  // reconsidered, so leaving full screen changed nothing but the numbers.
+  const width = useWindowWidth();
+  const layout = useMemo(() => shellLayout(width, Boolean(panel)), [width, panel]);
+  const inset = titleBarInset(window.electron?.platform);
 
   // Finding something in this conversation. Closed, it costs nothing;
   // open, the thread shows only what matched, which is the cheapest
@@ -166,7 +174,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     >
       <div
         style={{
-          display: 'grid', gridTemplateColumns: '300px minmax(0,1fr)',
+          display: 'grid', gridTemplateColumns: `${layout.sidebarWidth}px minmax(0,1fr)`,
           height: '100%', minHeight: 0, overflow: 'hidden',
           background: color.paper,
           backgroundImage:
@@ -185,6 +193,8 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
           accountName={accountName}
           onAccount={onAccount}
           accountMenu={accountMenu}
+          mode={layout.sidebar}
+          topInset={inset}
         />
 
         {composing && onCloseCompose && onPickAgent && onCreateAgent ? (
@@ -195,14 +205,31 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             onClose={onCloseCompose}
           />
         ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: panel ? 'minmax(0,1fr) minmax(360px, 44%)' : 'minmax(0,1fr)', minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            display: 'grid',
+            // Two columns only when the panel has earned one. A panel that
+            // cannot have `PANEL_MIN` without taking the thread below
+            // `THREAD_MIN` is drawn over the conversation instead, which is
+            // the difference between a narrow window and a broken one.
+            gridTemplateColumns: layout.panel === PanelMode.Split
+              ? `minmax(0,1fr) ${layout.panelWidth}px`
+              : 'minmax(0,1fr)',
+            position: 'relative',
+            minWidth: 0, minHeight: 0, overflow: 'hidden',
+          }}
+        >
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
           <div
             style={{
               position: 'relative', display: 'flex', alignItems: 'center', gap: 11,
-              padding: '16px 24px', borderBottom: `1px solid ${line.hairline}`,
+              padding: `${16 + inset}px 24px 16px`,
+              borderBottom: `1px solid ${line.hairline}`,
               background: 'rgba(250,251,252,.92)', backdropFilter: 'blur(20px)',
-            }}
+              // The other half of the window you can pick up. Controls
+              // inside set `no-drag` for themselves.
+              WebkitAppRegion: 'drag',
+            } as React.CSSProperties}
           >
             {/*
               The name at the top opens the agent, which is the gesture
@@ -368,7 +395,20 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             {...(onTeach ? { onTeach } : {})}
           />
         </div>
-        {panel}
+        {layout.panel === PanelMode.Split && panel}
+        {layout.panel === PanelMode.Cover && (
+          // Over the conversation, filling it. Not a third column squeezed
+          // to nothing, and not a button that quietly refuses.
+          <div
+            style={{
+              position: 'absolute', inset: 0, zIndex: 40,
+              display: 'flex', flexDirection: 'column',
+              minWidth: 0, minHeight: 0, background: color.paper,
+            }}
+          >
+            {panel}
+          </div>
+        )}
         </div>
         )}
       </div>

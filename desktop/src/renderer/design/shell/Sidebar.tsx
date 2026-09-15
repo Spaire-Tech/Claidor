@@ -4,6 +4,7 @@ import { AppsIcon, ChevronUpIcon, CloseIcon, SearchIcon } from '../icons';
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, line, radius, shadow, text, tracking } from '../tokens';
 import { CONFIRM_WINDOW_MS, ConfirmState, pressConfirm } from './confirm';
+import { SidebarMode } from './layout';
 
 export interface SidebarAgent {
   id: string;
@@ -35,6 +36,21 @@ export interface SidebarProps {
   onAccount: () => void;
   /** The account menu, when it is open. Anchored to the row below it. */
   accountMenu?: React.ReactNode;
+  /**
+   * A list of conversations, or a rail of orbs.
+   *
+   * Decided by the window's width in `layout.ts`, not here — this
+   * component draws the answer rather than working it out.
+   */
+  mode?: SidebarMode;
+  /**
+   * Space above the first row, for the macOS window buttons.
+   *
+   * They are drawn over the top-left of our own canvas, which is exactly
+   * where the design puts "Messages", so the two were on top of each
+   * other. Zero on every other platform.
+   */
+  topInset?: number;
 }
 
 /**
@@ -48,9 +64,10 @@ export interface SidebarProps {
  */
 export function Sidebar({
   agents, activeId, onSelect, onDelete, onCompose, onApps, accountName, onAccount,
-  accountMenu,
+  accountMenu, mode = SidebarMode.List, topInset = 0,
 }: SidebarProps): JSX.Element {
   const [query, setQuery] = useState('');
+  const rail = mode === SidebarMode.Rail;
 
   // Which row is being asked about, and since when.
   //
@@ -75,16 +92,31 @@ export function Sidebar({
   return (
     <div
       style={{
-        display: 'flex', flexDirection: 'column', minHeight: 0,
+        display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0,
+        overflow: 'hidden',
         borderRight: `1px solid ${line.hairline}`,
         background: 'rgba(249,250,252,.86)',
         backdropFilter: 'blur(2px)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 18px 12px' }}>
-        <div style={{ fontSize: text.sidebarTitle, fontWeight: 500, letterSpacing: tracking.title }}>
-          Messages
-        </div>
+      {/*
+        The strip the window's own buttons sit in, and the only part of
+        the sidebar you can pick the window up by. `no-drag` goes back on
+        every control inside it, or the button becomes scenery.
+      */}
+      <div
+        style={{
+          display: 'flex', alignItems: 'center',
+          justifyContent: rail ? 'center' : 'space-between',
+          padding: rail ? `${18 + topInset}px 0 12px` : `${18 + topInset}px 18px 12px`,
+          WebkitAppRegion: 'drag',
+        } as React.CSSProperties}
+      >
+        {!rail && (
+          <div style={{ fontSize: text.sidebarTitle, fontWeight: 500, letterSpacing: tracking.title }}>
+            Messages
+          </div>
+        )}
         <button
           type="button"
           onClick={onCompose}
@@ -94,41 +126,59 @@ export function Sidebar({
             border: `1px solid ${line.hairline}`, background: color.paper,
             color: color.muted, fontSize: 18, lineHeight: 1, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: shadow.flat,
-          }}
+            boxShadow: shadow.flat, WebkitAppRegion: 'no-drag',
+          } as React.CSSProperties}
         >
           +
         </button>
       </div>
 
-      <div style={{ padding: '0 14px 14px' }}>
-        <div
-          style={{
-            display: 'flex', alignItems: 'center', gap: 9, height: 40,
-            padding: '0 14px', borderRadius: radius.pill,
-            background: color.fill, border: `1px solid ${line.hairline}`,
-          }}
-        >
-          <SearchIcon size={14} style={{ color: color.muted }} />
-          <input
-            value={query}
-            onChange={event => setQuery(event.target.value)}
-            placeholder="Search"
-            aria-label="Search agents"
+      {/*
+        No search on the rail. A 76px field is a box you cannot read what
+        you typed into, and the rail exists because there is no room —
+        pretending otherwise spends the room twice.
+      */}
+      {!rail && (
+        <div style={{ padding: '0 14px 14px' }}>
+          <div
             style={{
-              flex: '1 1 auto', minWidth: 0, border: 'none', outline: 'none',
-              background: 'transparent', font: 'inherit',
-              fontSize: text.small, color: color.ink,
+              display: 'flex', alignItems: 'center', gap: 9, height: 40,
+              padding: '0 14px', borderRadius: radius.pill,
+              background: color.fill, border: `1px solid ${line.hairline}`,
             }}
-          />
+          >
+            <SearchIcon size={14} style={{ color: color.muted }} />
+            <input
+              value={query}
+              onChange={event => setQuery(event.target.value)}
+              placeholder="Search"
+              aria-label="Search agents"
+              style={{
+                flex: '1 1 auto', minWidth: 0, border: 'none', outline: 'none',
+                background: 'transparent', font: 'inherit',
+                fontSize: text.small, color: color.ink,
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 10px', overflowY: 'auto', flex: '1 1 auto' }}>
+      <div
+        style={{
+          display: 'flex', flexDirection: 'column', gap: 2,
+          padding: rail ? '0 6px' : '0 10px',
+          overflowY: 'auto', overflowX: 'hidden', flex: '1 1 auto', minWidth: 0,
+        }}
+      >
         {shown.map(agent => {
           const active = agent.id === activeId;
           const asking = armed?.id === agent.id;
-          const deletable = Boolean(onDelete);
+          // Not from the rail. Delete here is permanent and there is no
+          // archive; a rail row is an orb with no name on it, so the
+          // question "delete which one?" has no answer on screen. Widening
+          // the window is a cheaper thing to ask of somebody than losing
+          // the wrong conversation.
+          const deletable = Boolean(onDelete) && !rail;
 
           const press = (): void => {
             const step = pressConfirm(
@@ -149,6 +199,8 @@ export function Sidebar({
             <button
               type="button"
               onClick={() => (asking ? setArmed(undefined) : onSelect(agent.id))}
+              title={rail ? agent.name : undefined}
+              aria-label={rail ? agent.name : undefined}
               onContextMenu={deletable ? (event => {
                 // Right-click is where people look for this, and it is the
                 // only route: `grok-bot-app-ui.md` is explicit that delete
@@ -157,8 +209,10 @@ export function Sidebar({
                 setArmed({ id: agent.id, at: Date.now() });
               }) : undefined}
               style={{
-                display: 'flex', alignItems: 'center', gap: 12, height: 64,
-                padding: '0 12px', borderRadius: radius.row, cursor: 'pointer',
+                display: 'flex', alignItems: 'center',
+                justifyContent: rail ? 'center' : 'flex-start',
+                gap: rail ? 0 : 12, height: 64,
+                padding: rail ? '0' : '0 12px', borderRadius: radius.row, cursor: 'pointer',
                 font: 'inherit', textAlign: 'left', width: '100%',
                 background: active ? color.paper : 'transparent',
                 border: active ? '1px solid rgba(255,255,255,.6)' : '1px solid transparent',
@@ -167,9 +221,26 @@ export function Sidebar({
                 // along its top edge, which is what stops the row
                 // reading as a flat grey patch.
                 boxShadow: active ? `${shadow.raised}, inset 0 1px 0 rgba(255,255,255,.7)` : 'none',
+                position: 'relative',
               }}
             >
               <Orb agentId={agent.id} size={40} mood={OrbMood.Idle} />
+              {/*
+                On the rail the dot moves onto the orb, because there is no
+                row left for it to sit at the end of. Same 7px, same
+                colour — it is the same dot, parked somewhere it fits.
+              */}
+              {rail && agent.unread && (
+                <span
+                  aria-label="Unread"
+                  style={{
+                    position: 'absolute', right: 15, top: 16,
+                    width: 9, height: 9, borderRadius: '50%',
+                    background: color.accent, border: `2px solid ${color.paper}`,
+                  }}
+                />
+              )}
+              {!rail && (
               <span style={{ minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                   <span
@@ -194,13 +265,16 @@ export function Sidebar({
                   {agent.preview}
                 </span>
               </span>
-              <span
-                aria-label={agent.unread ? 'Unread' : undefined}
-                style={{
-                  width: 7, height: 7, flex: '0 0 auto', borderRadius: '50%',
-                  background: agent.unread ? color.accent : 'transparent',
-                }}
-              />
+              )}
+              {!rail && (
+                <span
+                  aria-label={agent.unread ? 'Unread' : undefined}
+                  style={{
+                    width: 7, height: 7, flex: '0 0 auto', borderRadius: '50%',
+                    background: agent.unread ? color.accent : 'transparent',
+                  }}
+                />
+              )}
             </button>
 
             {asking && (
@@ -268,8 +342,12 @@ export function Sidebar({
         <button
           type="button"
           onClick={onApps}
+          title={rail ? 'Apps' : undefined}
+          aria-label={rail ? 'Apps' : undefined}
           style={{
-            display: 'flex', alignItems: 'center', gap: 12, height: 52, padding: '0 12px',
+            display: 'flex', alignItems: 'center',
+            justifyContent: rail ? 'center' : 'flex-start',
+            gap: rail ? 0 : 12, height: 52, padding: rail ? '0' : '0 12px',
             borderRadius: radius.row, cursor: 'pointer', border: 'none',
             background: 'transparent', font: 'inherit', textAlign: 'left',
           }}
@@ -284,14 +362,18 @@ export function Sidebar({
           >
             <AppsIcon size={15} />
           </span>
-          <span style={{ fontSize: text.body }}>Apps</span>
+          {!rail && <span style={{ fontSize: text.body }}>Apps</span>}
         </button>
 
         <button
           type="button"
           onClick={onAccount}
+          title={rail ? accountName : undefined}
+          aria-label={rail ? accountName : undefined}
           style={{
-            display: 'flex', alignItems: 'center', gap: 12, height: 52, padding: '0 12px',
+            display: 'flex', alignItems: 'center',
+            justifyContent: rail ? 'center' : 'flex-start',
+            gap: rail ? 0 : 12, height: 52, padding: rail ? '0' : '0 12px',
             borderRadius: radius.row, cursor: 'pointer', border: 'none',
             background: 'transparent', font: 'inherit', textAlign: 'left',
           }}
@@ -306,8 +388,12 @@ export function Sidebar({
           >
             {(accountName.trim()[0] ?? '?').toUpperCase()}
           </span>
-          <span style={{ flex: '1 1 auto', fontSize: text.body }}>{accountName}</span>
-          <ChevronUpIcon size={13} style={{ color: color.faint }} />
+          {!rail && (
+            <>
+              <span style={{ flex: '1 1 auto', fontSize: text.body }}>{accountName}</span>
+              <ChevronUpIcon size={13} style={{ color: color.faint }} />
+            </>
+          )}
         </button>
       </div>
     </div>

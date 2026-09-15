@@ -73,12 +73,23 @@ test('normalizeAppWindowState rejects invalid stored values', () => {
   expect(normalizeAppWindowState(null)).toBeUndefined();
 });
 
-test('normalizeAppWindowState rounds and keeps minimum-sized values for later fitting', () => {
-  expect(normalizeAppWindowState({ x: 1.4, y: 2.6, width: 799.5, height: 599.5 })).toEqual({
+test('normalizeAppWindowState rounds, and leaves undersized values for later fitting', () => {
+  // This never clamped. It read as though it did only because the old
+  // literal 799.5 rounded to exactly the old minimum of 800, so the
+  // assertion and the constant agreed by coincidence — and the moment the
+  // minimum moved to 560 the coincidence broke and showed what the test
+  // had really been checking all along. Written against the constants
+  // now, and asserting the rounding rather than a clamp that is not here.
+  expect(normalizeAppWindowState({
+    x: 1.4,
+    y: 2.6,
+    width: MIN_APP_WINDOW_WIDTH - 40.5,
+    height: MIN_APP_WINDOW_HEIGHT - 40.5,
+  })).toEqual({
     x: 1,
     y: 3,
-    width: MIN_APP_WINDOW_WIDTH,
-    height: MIN_APP_WINDOW_HEIGHT,
+    width: MIN_APP_WINDOW_WIDTH - 40,
+    height: MIN_APP_WINDOW_HEIGHT - 40,
     isMaximized: false,
   });
 });

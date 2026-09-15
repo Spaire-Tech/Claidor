@@ -153,3 +153,23 @@
   [style*="fsr-orb-idle"],
   [style*="fsr-orb-speak"] { animation: none !important; }
 }
+
+/*
+ * Nothing you can press is a handle for the window.
+ *
+ * The shell marks two strips `-webkit-app-region: drag` — the sidebar
+ * header and the conversation header — because a frameless macOS window
+ * is otherwise impossible to move. Drag is inherited, so without this
+ * every button inside those strips would swallow its own click and move
+ * the window instead. One rule, stated once, rather than `no-drag` copied
+ * onto each control and forgotten on the next one added.
+ */
+button,
+input,
+textarea,
+select,
+a,
+[role='button'],
+[contenteditable='true'] {
+  -webkit-app-region: no-drag;
+}
