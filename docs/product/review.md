@@ -1868,3 +1868,24 @@ product name at all, which is the founder's design, not an omission.
 `openclaw-extensions/*`, `SKILLs/*`, `scripts/patches/v2026.6.1/zzz-caisra-identity.patch`,
 `scripts/apply-openclaw-patches.cjs`, `server/polar/desktop/endpoints.py`,
 `CLAUDE.md`, `desktop/AGENTS.md`, `docs/product/direction.md`, `plan.md`.
+
+## 45. The icon — `built, traced`
+
+The founder sent the official icon: a white rounded tile and six navy
+dots. It arrived twice as a picture pasted into the chat and never as a
+file, and the SVG would not attach, so there was nothing on disk to
+build from. Rather than stop, I traced it: measured each dot's centre,
+radii and tilt from the picture and drew them as a vector
+(`build/icons/caisra-icon.svg`, the dots alone in `caisra-mark.svg`),
+rendered that to 1024 with Chromium, and ran `make-app-icons.mjs` over
+it. **It is a tracing, not the original file.** The founder has the
+render to compare; the moment the real PNG lands, the same command
+replaces all of it.
+
+What it produced: the nine PNGs, `icon.icns`, `icon.ico`, the in-app
+`public/logo.png`, and the tray marks for all three platforms (the dots
+alone, navy, 22/44 for macOS, 48 for Linux, a 16/32/48 `.ico` for
+Windows) — the tray is a colour image upstream too, not a template. The
+old `generate-tray-icons.js` and `regenerate-mac-icon.sh` need
+ImageMagick and `iconutil`; they are left in place but nothing here
+used them.
