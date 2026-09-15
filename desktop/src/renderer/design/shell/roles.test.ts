@@ -4,7 +4,7 @@ import type { PresetAgent } from '../../types/agent';
 import { AGENT_TABS, agentBody, installedPresetIds, matchingRoles, roleMeta } from './roles';
 
 const role = (over: Partial<PresetAgent> & { id: string }): PresetAgent => ({
-  name: over.id, nameEn: over.id, icon: '', description: '', descriptionEn: '',
+  name: over.id, nameEn: over.id, avatar: 0, icon: '', description: '', descriptionEn: '',
   identity: '', identityEn: '', systemPrompt: '', systemPromptEn: '', skillIds: [],
   ...over,
 });
@@ -84,6 +84,7 @@ describe('the role page', () => {
     id: 'engineering-lead',
     name: '工程主管',
     nameEn: 'Engineering Lead',
+    avatar: 4,
     icon: '',
     description: '',
     descriptionEn: 'Standups, code review, incidents.',

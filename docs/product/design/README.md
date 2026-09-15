@@ -70,3 +70,36 @@ What to read alongside: `../direction.md` for the decisions, `../review.md`
 for what was found wrong and fixed. Where a canvas and `direction.md`
 disagree, `direction.md` wins — it records corrections the founder made
 after a canvas was drawn.
+
+## 15 September 2026, later — the file cards
+
+| File | What it is |
+|---|---|
+| `canvas-2026-09-15-files.html` | the canvas exactly as delivered — a self-unpacking bundle, 2.5 MB, opens in a browser |
+| `canvas-2026-09-15-files-template.html` | the same thing unpacked: the markup and the `text/x-dc` script, readable |
+
+The founder: *"i want when the artifact to finish, like when the ai
+finishes its work to render it in this style, and not just wordmock.doc
+… its pdf excel and word. with their own svg."* In the canvas, typing
+`send me the pdf`, `send me the excel model`, `send me the word memo` or
+`send me the whole pack` answers with a `{ kind: "file", files: [...] }`
+message (`maybeSendFiles`), and the file message draws one card per
+file:
+
+- a column, `gap:9px; max-width:min(70%,440px)`;
+- each card `padding:13px 14px; border-radius:18px; background:#fbfbfc;
+  border:1px solid rgba(255,255,255,.6)`, with the raised shadow
+  `0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset
+  0 1px 0 rgba(255,255,255,.7)` and `#f6f7f9` on hover;
+- the file's own icon at 38px — `icons/pdf-doc.webp`,
+  `logos/apps/excel.webp`, `logos/apps/word.webp`,
+  `logos/apps/powerpoint.webp` — then the name at 15px/500, then a
+  34px round button with a down-arrow, `#eef1f5` on hover.
+
+Built as `design/thread/ThreadItemView.tsx` (`AttachmentCard`), fed by
+`design/thread/attachment.ts` (`peelAttachments`): the trailing file links
+of a reply become the cards, in order, under whatever was said. The
+canvas's fake bot matched words in the prompt; the app's cards come from
+the files the agent actually links. The Word, Excel and PowerPoint
+images were already bundled under `design/logos/`; the PDF one is
+`design/thread/pdf-doc.webp`, lifted from this bundle.

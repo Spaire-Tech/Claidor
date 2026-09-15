@@ -10,6 +10,7 @@ import {
   ConnectOutcome,
   connectService,
   disconnectService,
+  type ServerToWrite,
 } from '../../libs/connections/connectService';
 import type { OpenClawCliEnvironment } from '../../libs/connections/openclawCli';
 import { runOpenClawCli } from '../../libs/connections/openclawCli';
@@ -26,7 +27,7 @@ export interface ConnectionHandlerDeps {
   /** Where the engine lives, so its CLI runs against the right state dir. */
   cliEnvironment: () => OpenClawCliEnvironment | null;
   /** Put the server into the store the config sync reads. */
-  writeServer: (input: { name: string; url: string; scope?: string }) => Promise<void>;
+  writeServer: (input: ServerToWrite) => Promise<void>;
   removeServer: (name: string) => Promise<void>;
   /** Push the store into `openclaw.json` and wait — `mcp login` reads it. */
   syncConfig: (reason: string) => Promise<void>;

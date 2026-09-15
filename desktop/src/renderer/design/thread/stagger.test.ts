@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { BUBBLE_GAP_MS, staggerDelays, visibleItems } from './stagger';
+import { BUBBLE_GAP_MS, rowsWhileLanding, staggerDelays, visibleItems } from './stagger';
 import { Speaker, type ThreadItem, ThreadItemKind } from './types';
 
 const bubble = (id: string, from: Speaker = Speaker.Agent): ThreadItem => ({
@@ -80,6 +80,28 @@ describe('staggering a reply', () => {
 
   test('a single-bubble reply waits for nothing', () => {
     expect(staggerDelays([bubble('only')], none).size).toBe(0);
+  });
+});
+
+describe('the row under the name, while a reply lands', () => {
+  const rows = [
+    { id: 'juno', preview: 'Found it. It is the March forecast. Want me to open it?', when: '9:14 AM' },
+    { id: 'mira', preview: 'Cleared the promotions.', when: '2:42 AM' },
+  ];
+  const before = { preview: 'check my most recent excel file', when: '9:13 AM' };
+
+  test('keeps saying what it said before the reply until the last bubble is down', () => {
+    const held = rowsWhileLanding(rows, 'juno', true, before);
+    expect(held[0]).toEqual({ id: 'juno', ...before });
+    expect(held[1]).toBe(rows[1]);
+  });
+
+  test('says the reply once nothing is held', () => {
+    expect(rowsWhileLanding(rows, 'juno', false, before)).toBe(rows);
+  });
+
+  test('with nothing remembered, the rows are as they are', () => {
+    expect(rowsWhileLanding(rows, 'juno', true, undefined)).toBe(rows);
   });
 });
 

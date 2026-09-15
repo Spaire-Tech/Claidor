@@ -42,7 +42,7 @@ page.on('response', r => {
 });
 
 const screens = process.argv.slice(2).length ? process.argv.slice(2)
-  : ['signin', 'thread', 'choice', 'typing', 'voice', 'signin-error'];
+  : ['signin', 'thread', 'files', 'choice', 'typing', 'voice', 'signin-error'];
 
 for (const screen of screens) {
   await page.goto(`http://127.0.0.1:${port}/?screen=${screen}`, { waitUntil: 'networkidle' });

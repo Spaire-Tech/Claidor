@@ -1,0 +1,17 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader','--enable-unsafe-swiftshader','--no-sandbox'] });
+const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+await page.goto('file:///home/user/Claidor/docs/product/design/canvas-2026-09-15-files.html', { waitUntil: 'load' });
+await page.waitForTimeout(2500);
+const apps = page.getByText('Apps', { exact: true }).first();
+await apps.click({ timeout: 10000 }).catch(e => console.log('apps click failed', e.message));
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'harness/shots/canvas-apps-plugins.png' });
+await page.getByRole('button', { name: 'Agents', exact: true }).first().click({ timeout: 5000 }).catch(e => console.log('agents click failed', e.message));
+await page.waitForTimeout(600);
+await page.screenshot({ path: 'harness/shots/canvas-apps-agents.png' });
+const card = page.getByText('Engineering Lead').first();
+await card.click({ timeout: 5000 }).catch(e => console.log('card click failed', e.message));
+await page.waitForTimeout(600);
+await page.screenshot({ path: 'harness/shots/canvas-apps-agent-detail.png' });
+await browser.close();

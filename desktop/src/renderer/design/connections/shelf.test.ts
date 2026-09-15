@@ -5,15 +5,18 @@ import {
   CONNECTION_ITEMS,
   ConnectionGroupId,
   ConnectionKind,
+  ConnectionTag,
   ConnectVia,
+  OAuthRegistration,
 } from '../../../shared/connections/catalog';
 import {
   actionFor,
   ConnectAction,
   CONNECTED_GROUP_ID,
   connectedIds,
-  shelfCount,
+  installedPill,
   shelfGroups,
+  shelfTotal,
 } from './shelf';
 
 const item = (over: Partial<ConnectionItem> & { id: string }): ConnectionItem => ({
@@ -50,6 +53,41 @@ describe('what a card can actually do', () => {
     );
     expect(row.pressable).toBe(false);
     expect(row.label).toBe('Needs a key');
+  });
+
+  test('a vendor that wants a client we have not registered says not yet', () => {
+    // Gmail, Zoom, HubSpot: their servers exist and refuse a client that
+    // registers itself. A Connect button would end on their error page.
+    const row = actionFor(
+      item({ id: 'gmail', connect: { via: ConnectVia.Mcp, url: 'https://x/mcp', registration: OAuthRegistration.Preregistered } }),
+      NONE,
+    );
+    expect(row.pressable).toBe(false);
+    expect(row.label).toBe('Not yet');
+  });
+
+  test('but one the engine already holds a server for is connected, whatever the route says', () => {
+    // The engine's state is the fact. A card saying "Not yet" over a
+    // working connection would be the catalogue contradicting the
+    // person's own computer.
+    const row = actionFor(
+      item({ id: 'gmail', connect: { via: ConnectVia.Mcp, url: 'https://x/mcp', registration: OAuthRegistration.Preregistered } }),
+      new Set(['gmail']),
+    );
+    expect(row).toMatchObject({ action: ConnectAction.Connected, pressable: true });
+  });
+
+  test('an open server is a Connect button like any other', () => {
+    const row = actionFor(
+      item({ id: 'excalidraw', connect: { via: ConnectVia.Mcp, url: 'https://x/mcp', open: true } }),
+      NONE,
+    );
+    expect(row).toEqual({ action: ConnectAction.Connect, label: 'Connect', pressable: true });
+  });
+
+  test('the founder\'s "through your browser" tag is the line on those cards', () => {
+    const row = actionFor(item({ id: 'amazon', kind: ConnectionKind.Browser, tag: ConnectionTag.ThroughYourBrowser } as Partial<ConnectionItem> & { id: string }), NONE);
+    expect(row.label).toBe('Through your browser');
   });
 
   test('a service only reachable through the middleman says not yet', () => {
@@ -127,15 +165,26 @@ describe('the shelf', () => {
 });
 
 describe('the count under the title', () => {
-  test('with none connected it says what can be', () => {
-    // Not "109 services", which is the flattering number and the less
-    // useful one: sixty-one of those cards are statements.
-    const line = shelfCount(NONE);
-    expect(line).toMatch(/^\d+ services you can sign in to$/);
-    expect(line).not.toContain('109');
+  test('is the bare total, as the canvas puts it', () => {
+    // `CATS.reduce((n, c) => n + c[2].length, 0)`: every card counts.
+    expect(shelfTotal()).toBe(CONNECTION_ITEMS.length);
+    expect(shelfTotal([item({ id: 'a' }), item({ id: 'b' })])).toBe(2);
+  });
+});
+
+describe('the installed pill', () => {
+  test('is not there when nothing is connected', () => {
+    expect(installedPill(NONE)).toBeUndefined();
   });
 
-  test('with some connected it counts those', () => {
-    expect(shelfCount(new Set(['gmail', 'todoist']))).toMatch(/^2 connected of \d+$/);
+  test('says how many, and shows the first four', () => {
+    const pill = installedPill(new Set(['gmail', 'todoist', 'notion', 'stripe', 'figma']));
+    expect(pill?.label).toBe('5 installed');
+    expect(pill?.shown).toHaveLength(4);
+  });
+
+  test('pressed, the shelf is only what is connected', () => {
+    const groups = shelfGroups('', new Set(['gmail']), undefined, true);
+    expect(groups.map(group => group.id)).toEqual([CONNECTED_GROUP_ID]);
   });
 });

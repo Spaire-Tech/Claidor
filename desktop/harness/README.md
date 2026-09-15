@@ -20,8 +20,12 @@ The script prints anything the page logged as an error and the path of
 anything the static server refused, because a bare "404 (Not Found)" is
 one guess away from chasing the wrong file.
 
-`?screen=` picks the screen: `signin`, `signin-error`, `thread`,
-`choice`, `typing`, `voice`, `compose`, `arriving`.
+`?screen=` picks the screen: `signin`, `signin-error`, `thread`, `files`,
+`choice`, `typing`, `voice`, `compose`, `arriving`; and the Apps sheet as
+`apps` (Plugins), `apps-adding` (one sign-in running), `apps-agents`
+(the Agents tab) and `apps-agent` (the Engineering Lead's page).
+`node harness/shoot-canvas.mjs` photographs the same three screens of
+the founder's canvas, to put beside them.
 
 ## Proving the stagger
 

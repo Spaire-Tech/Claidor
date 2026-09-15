@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
-import { attachmentFor, isImagePath, readableSize } from './attachment';
-import { Speaker, ThreadItemKind } from './types';
+import { attachmentFor, fileKindOf, isImagePath, peelAttachments, readableSize } from './attachment';
+import { FileKind, Speaker, ThreadItemKind } from './types';
 
 const meta = { id: 'm1', from: Speaker.Agent, at: 0 };
 const files = [{ name: 'report.docx', path: '/Users/bass/Work/report.docx' }];
@@ -65,6 +65,54 @@ describe('when a message is a file rather than a sentence about one', () => {
   test('an ordinary message is not an attachment', () => {
     expect(attachmentFor('Done — anything else?', meta)).toBeUndefined();
     expect(attachmentFor('', meta)).toBeUndefined();
+  });
+});
+
+describe('the files a reply ends with', () => {
+  const pack = [
+    '[Q4 Board Deck.pdf](file:///Users/bass/Board/Q4%20Board%20Deck.pdf)',
+    '[Q4 Model v3.xlsx](file:///Users/bass/Board/Q4%20Model%20v3.xlsx)',
+    '[Q4 Board Memo.docx](file:///Users/bass/Board/Q4%20Board%20Memo.docx)',
+  ];
+
+  test('come off the end as one card each, after what was said', () => {
+    // The founder: "send me the whole pack → all three."
+    const peeled = peelAttachments(`Here it is — deck, model and the memo.\n${pack.join('\n')}`, meta);
+    expect(peeled.text).toBe('Here it is — deck, model and the memo.');
+    expect(peeled.attachments.map(one => one.name)).toEqual(['Q4 Board Deck.pdf', 'Q4 Model v3.xlsx', 'Q4 Board Memo.docx']);
+    expect(peeled.attachments.map(one => one.file)).toEqual([FileKind.Pdf, FileKind.Excel, FileKind.Word]);
+    expect(peeled.attachments.map(one => one.id)).toEqual(['m1:f0', 'm1:f1', 'm1:f2']);
+    expect(peeled.attachments[0].path).toBe('/Users/bass/Board/Q4 Board Deck.pdf');
+  });
+
+  test('a bulleted list of files is the same three cards', () => {
+    const peeled = peelAttachments(`Done.\n\n- ${pack[0]}\n- ${pack[1]}\n3. ${pack[2]}`, meta);
+    expect(peeled.text).toBe('Done.');
+    expect(peeled.attachments).toHaveLength(3);
+  });
+
+  test('a file named in the middle of a sentence is not a card', () => {
+    const peeled = peelAttachments('The summary is in [report.docx](file:///tmp/report.docx), have a look.', meta);
+    expect(peeled.attachments).toHaveLength(0);
+    expect(peeled.text).toBe('The summary is in [report.docx](file:///tmp/report.docx), have a look.');
+  });
+
+  test('a file named but not found stops the peel', () => {
+    const peeled = peelAttachments(`Here.\n[[mystery.docx]]\n${pack[0]}`, meta);
+    expect(peeled.attachments).toHaveLength(1);
+    expect(peeled.text).toBe('Here.\n[[mystery.docx]]');
+  });
+
+  test('a lone file keeps the message id, as it always has', () => {
+    expect(peelAttachments(pack[0], meta).attachments[0].id).toBe('m1');
+  });
+
+  test('knows which icon a file gets', () => {
+    expect(fileKindOf('/a/deck.PDF')).toBe(FileKind.Pdf);
+    expect(fileKindOf('/a/memo.docx')).toBe(FileKind.Word);
+    expect(fileKindOf('/a/model.xlsx')).toBe(FileKind.Excel);
+    expect(fileKindOf('/a/talk.pptx')).toBe(FileKind.Slides);
+    expect(fileKindOf('/a/notes.txt')).toBeUndefined();
   });
 });
 

@@ -1,0 +1,53 @@
+notion                     401   DYNAMIC       https://mcp.notion.com/register
+slack                      401   OAUTH-NO-DCR
+linear                     401   DYNAMIC       https://mcp.linear.app/register
+atlassian-jira-confluence  401   DYNAMIC       https://auth.atlassian.com/VCeDsk8ZHncYF1g234fKtc4lNipbBhu3/dcr/register
+github                     401   OAUTH-NO-DCR
+figma                      401   DYNAMIC       https://api.figma.com/v1/oauth/mcp/register
+canva                      401   DYNAMIC       https://mcp.canva.com/register
+stripe                     401   DYNAMIC       https://access.stripe.com/mcp/oauth2/register
+paypal                     401   DYNAMIC       https://mcp.paypal.com/register
+asana                      401   DYNAMIC       https://mcp.asana.com/register
+monday                     401   DYNAMIC       https://auth.monday.com/oauth_ms/oauth/register
+box                        401   OAUTH-NO-DCR
+vercel                     401   DYNAMIC       https://api.vercel.com/login/oauth/register
+supabase                   401   DYNAMIC       https://api.supabase.com/platform/oauth/apps/register
+sentry                     401   DYNAMIC       https://mcp.sentry.dev/oauth/register
+cloudflare                 401   DYNAMIC       https://bindings.mcp.cloudflare.com/register
+webflow                    401   DYNAMIC       https://mcp.webflow.com/oauth/register
+square                     401   DYNAMIC       https://mcp.squareup.com/register
+airtable                   401   DYNAMIC       https://airtable.com/oauth2/v1/register
+dropbox                    401   DYNAMIC       https://www.dropbox.com/oauth2/register
+hubspot                    401   OAUTH-NO-DCR
+intercom                   401   OAUTH-NO-DCR
+zoom                       401   OAUTH-NO-DCR
+x                          401   OAUTH-NO-DCR
+zapier                     401   DYNAMIC       https://mcp.zapier.com/api/v1/oauth/register
+shopify-dev                404   NO-MCP
+wix                        401   DYNAMIC       https://mcp.wix.com/register
+miro                       401   DYNAMIC       https://mcp.miro.com/register
+loom                       None  NO-MCP
+trello                     403   HTTP-403
+clickup                    401   DYNAMIC       https://mcp.clickup.com/oauth/register
+quickbooks                 502   HTTP-502
+xero                       401   OAUTH-NO-DCR
+salesforce                 None  NO-MCP
+pipedrive                  401   HTTP-401
+mailchimp                  None  NO-MCP
+docusign                   403   OAUTH-NO-DCR
+deepl                      404   DYNAMIC       https://mcp.deepl.com/.idp/register
+perplexity                 None  NO-MCP
+apollo                     401   DYNAMIC       https://mcp.apollo.io/api/v1/oauth/applications/register_oauth_client
+lemlist                    None  NO-MCP
+make                       404   DYNAMIC       https://www.make.com/oauth/v2/register/mcp
+coinbase                   None  NO-MCP
+plaid                      None  NO-MCP
+ramp                       401   DYNAMIC       https://mcp.ramp.com/register
+gusto                      None  NO-MCP
+rippling                   401   OAUTH-NO-DCR
+greenhouse                 401   DYNAMIC       https://auth.greenhouse.io/register
+lever                      404   NO-MCP
+deel                       None  NO-MCP
+bamboohr                   404   NO-MCP
+hackernews                 None  NO-MCP
+wikipedia                  None  NO-MCP

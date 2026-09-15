@@ -7,6 +7,7 @@ import { isRoomId, type Room } from '../../../shared/rooms/constants';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { coworkService } from '../../services/cowork';
+import { normalizeShellFilePath } from '../../services/shellAppsCache';
 import { type AppDispatch, type RootState, store } from '../../store';
 import { setCurrentAgentId } from '../../store/slices/agentSlice';
 import { addArtifact, selectArtifact } from '../../store/slices/artifactSlice';
@@ -126,6 +127,8 @@ export interface MessagesShellState {
   /** The one being added, while it is being added. */
   busyPresetId: string | undefined;
   onInstallPreset: (presetId: string) => void;
+  /** An installed role's "Use": close the sheet and go and talk to it. */
+  onUsePreset: (presetId: string) => void;
   /** The open conversation, for the panel to watch. */
   sessionId: string | undefined;
   workingDirectory: string | undefined;
@@ -479,13 +482,22 @@ export function useMessagesShell(): MessagesShellState {
     void openLocalPathWithToast(path);
   }, [currentSession, detected, dispatch, showInPanel]);
 
+  // The round button on a file card: the same save sheet the artifact
+  // toolbar's "Save a copy…" opens. A cancelled sheet is not a failure.
+  const onSaveCopy = useCallback((path: string) => {
+    void window.electron?.dialog?.saveFileCopy?.(normalizeShellFilePath(path))
+      .then(result => { if (result && !result.success) showToast('That copy could not be saved.'); })
+      .catch(() => { showToast('That copy could not be saved.'); });
+  }, []);
+
   const parts = useMemo<PartHandlers>(() => ({
     files,
     avatars,
     onOpenFile,
+    onSaveCopy,
     // A link belongs in the person's own browser, not inside a bubble.
     onOpenLink: (href: string) => { window.open(href, '_blank', 'noopener,noreferrer'); },
-  }), [files, avatars, onOpenFile]);
+  }), [files, avatars, onOpenFile, onSaveCopy]);
 
   // Open on a conversation rather than on nothing, the way Messages does.
   // Once only, and never over an open one: the guard is what stops this
@@ -792,6 +804,14 @@ export function useMessagesShell(): MessagesShellState {
     }
   }, [onSelect]);
 
+  // An installed role keeps the preset's id as its agent id
+  // (`presetToCreateRequest` passes `id: preset.id`), which is what lets
+  // "Use" go straight to it without a lookup.
+  const onUsePreset = useCallback((presetId: string) => {
+    setAppsOpen(false);
+    onSelect(presetId);
+  }, [onSelect]);
+
   const answer = useCallback((itemId: string, value: string) => {
     const parsed = parseChoiceId(itemId);
     if (!parsed) return;
@@ -897,6 +917,7 @@ export function useMessagesShell(): MessagesShellState {
     installedIds,
     busyPresetId,
     onInstallPreset: (presetId: string) => { void onInstallPreset(presetId); },
+    onUsePreset,
     sessionId: currentSession?.id,
     workingDirectory: currentSession?.cwd,
     panelOpen,

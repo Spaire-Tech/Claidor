@@ -28,10 +28,19 @@ page.on('pageerror', e => errors.push(e.message));
 
 // Count the bubbles of the arriving reply, by its text, over time.
 const NEEDLES = ['Found it.', 'March forecast', 'Want me to open it?'];
+// In the thread only: the sidebar row shows the reply's last line too,
+// and counting that would make a bubble appear before it had.
 const count = () => page.evaluate(ns => {
-  const body = document.body.innerText;
-  return ns.filter(n => body.includes(n)).length;
+  let text = document.body.innerText;
+  for (const row of document.querySelectorAll('[role=button]')) text = text.replace(row.innerText, '');
+  return ns.filter(n => text.includes(n)).length;
 }, NEEDLES);
+// And whether the row under Juno's name has moved on to the reply yet.
+// It must not before the last bubble is down.
+const rowSaysReply = () => page.evaluate(() => {
+  const row = [...document.querySelectorAll('[role=button]')].find(el => el.innerText.includes('Juno'));
+  return Boolean(row && row.innerText.includes('Want me to open it?'));
+});
 
 await page.goto(`http://127.0.0.1:${port}/?screen=arriving`, { waitUntil: 'networkidle' });
 const t0 = Date.now();
@@ -39,7 +48,7 @@ const seen = [];
 // The reply lands 600ms after mount and its bubbles are a second apart,
 // so the third is due at about 2.6s; sample past that.
 for (let i = 0; i < 32; i++) {
-  seen.push({ ms: Date.now() - t0, bubbles: await count() });
+  seen.push({ ms: Date.now() - t0, bubbles: await count(), row: await rowSaysReply() });
   await page.waitForTimeout(120);
 }
 await browser.close(); server.close();
@@ -49,4 +58,7 @@ const firstAt = {};
 for (const s of seen) if (firstAt[s.bubbles] === undefined) firstAt[s.bubbles] = s.ms;
 console.log('bubbles visible over time:', seen.map(s => s.bubbles).join(''));
 console.log('first seen at (ms):', JSON.stringify(firstAt));
+const rowAt = seen.find(s => s.row)?.ms;
+const early = seen.some(s => s.row && s.bubbles < NEEDLES.length);
+console.log(`row shows the reply at (ms): ${rowAt ?? 'never'}; before the last bubble: ${early ? 'YES — wrong' : 'no'}`);
 console.log(errors.length ? 'PAGE ERRORS: ' + errors.join('; ') : 'no page errors');

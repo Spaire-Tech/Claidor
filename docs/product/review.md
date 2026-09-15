@@ -1591,3 +1591,141 @@ founder's call. `harness/stagger.mjs` measures the new gap.
 
 **Where:** `design/thread/stagger.ts`; `docs/product/direction.md`
 amended.
+
+---
+
+## 39. The row waits for the last bubble — `done`
+
+The founder, on item 38's consequence: *"yes make the row wait for the
+last bubble too."*
+
+While a reply's bubbles are still landing in the open conversation, the
+row under that agent's name keeps saying what it said before the reply —
+the person's own message, usually — and takes the reply's last line only
+when the last bubble is down. It remembers the row's text the last time
+nothing was held, and shows that again while something is. Other rows
+are untouched: a reply arriving in a conversation nobody is looking at is
+not staged, so their rows change the moment it is final, as before.
+
+`harness/stagger.mjs` now watches the row as well as the bubbles and
+says when it moved, and whether that was before the last bubble.
+
+**Where:** `design/thread/stagger.ts` (`rowsWhileLanding`, tested),
+`design/shell/MessagesShell.tsx`.
+
+---
+
+## 40. The app could not say which build it was — `fixed`
+
+The founder: *"things are not working. how can i find out what electron
+im running?"*
+
+There was no answer. Every build says version 2026.9.4, the app carried
+no commit and no build time, and the two builds in this conversation —
+one from the 13th, one with today's fixes — were told apart by nothing
+but the modification time of a file inside the bundle. That is how
+"you didn't fix it" and "it works here" were both true for half a day.
+
+**Fixed.** electron-builder writes the commit and the build time into
+the packaged `package.json`; the log's first lines print `[App]
+2026.9.4 (09309433, built 2026-09-15 07:41 UTC)`; the Support draft
+carries the same line; from a checkout it says `dev checkout`. The
+README has the three commands, including the file-time fallback for a
+build made before the stamp existed.
+
+**Where:** `scripts/electron-builder-config.cjs`, `src/shared/buildStamp/
+constants.ts` (tested), `src/main/buildInfo.ts`, `main.ts`,
+`preload.ts`, `design/shell/FaiserApp.tsx`, `README.md`.
+
+---
+
+## 41. The file cards — `built`
+
+The founder, with a new canvas: *"when the ai finishes its work to
+render it in this style, and not just wordmock.doc … its pdf excel and
+word. with their own svg. … `send me the whole pack` → all three."*
+
+The files a reply ends with are now cards, one per file, under whatever
+the reply said: the file's own icon at 38px (PDF, Word, Excel,
+PowerPoint; a paperclip for anything else), its name, and a round button
+that opens the save sheet and writes a copy where the person points. The
+card itself opens the file in the computer panel, as item 34 made every
+file do. Three links at the end of a reply are three cards; a bulleted
+list of them is the same three; a file named in the middle of a sentence
+is still a chip in that sentence. The card is the canvas's to the pixel —
+its paper, its raised shadow, its 440px column — recorded in
+`docs/product/design/`.
+
+**Proof.** `harness/shoot.mjs files` photographs the pack from the
+canvas's own conversation; 335 design tests pass (8 new, for the peel,
+the icons and the mapper); the live run of the Word-file click and the
+agent delete still passes every check; eslint, tsc clean.
+
+**Where:** `design/thread/attachment.ts`, `types.ts`, `fromEngine.ts`,
+`ThreadItemView.tsx`, `pdf-doc.webp`; `design/shell/useMessagesShell.ts`
+(save a copy); `harness/main.tsx` (`?screen=files`).
+
+---
+
+## 42. The connectors, and the Apps sheet as drawn — `built`
+
+The founder: *"build the 63 self-registering ones first. also, look at
+the last design i gave you. the way you designed plugin is 100% different
+from how i designed it. please design it like i did … also not just
+plugins, but "agents" too. you forgot to to put the avatars. its the old
+ones there. pls fix"*
+
+**The catalogue.** Rebuilt on the new list (`connectors-list-2026-09-15.md`):
+134 services in the canvas's nine groups plus four for what the canvas
+never drew. The sixty-three whose vendor registers us itself are the
+ones with a Connect button; a test names every one of them, so the count
+cannot drift. Fifteen want a client we have not registered (Google ×7,
+Zoom, HubSpot, Intercom, Docusign, Box, Rippling, X, X Ads) and say "Not
+yet" — and the main process refuses them too, so a stale renderer cannot
+start a sign-in that ends on their error page. Two are open servers with
+no sign-in (Excalidraw, GoDaddy): written without `auth`, reloaded, done.
+Nine are channels the engine or a plugin actually carries; that test
+caught my own doc calling email an engine extension when it is the
+`@clawemail/email` plugin from `package.json`. The doc is corrected.
+Gong was marked as needing our own client; the probe says it registers
+itself, and it is a button now.
+
+**Plugins, as designed.** A card is the canvas's: 42px tile, name at
+15.5, the tag line under it at 13.5, and a black Connect or green
+Connected on the right. No description line. Cards that cannot sign in
+keep the shape and put the fact in the tag-line slot — "In your browser",
+"On this Mac", "A way to reach you", "Needs a key", "Not yet" — with no
+button, because a button that opens nothing is the one thing worse than
+no button. The header is the bare total and, once anything is connected,
+the canvas's pill: up to four overlapping logos, "N installed", a
+chevron; pressed, it shows only what is connected. The engine's state
+wins over the route: a server that is there is Connected whatever the
+catalogue thinks.
+
+**Agents, as designed.** The cards and the page behind them wear the
+cloud faces — the canvas's own seed per role, so Engineering Lead is
+avatar 4, Design Lead 18, and so on down the twelve; Chief of Staff, not
+on the canvas, takes one nobody else wears. The preset carries the face
+and passes it to the agent it creates, so the shelf and the sidebar agree
+about who this is. Card buttons say Install and then Use (green, and it
+goes to the conversation); the page says Import agent and then
+Installed. "Official" is in ink, as drawn.
+
+**Proof.** 418 design, catalogue, connect-service and preset tests pass
+(21 new); eslint, tsc, `compile:electron` clean; `harness/shoot.mjs
+apps apps-adding apps-agents apps-agent` photographs all four next to
+`harness/shoot-canvas.mjs`'s shots of the founder's canvas.
+
+**Not done.** 83 of the 134 services have no logo file yet and show the
+monogram tile; the list went to the founder, who said they would fetch
+them. Nobody has yet completed one of the sixty-three sign-ins end to
+end on a real machine; the flow is the one the browser audit ran by hand
+(`mcp login connection-todoist`, above) and the log line
+to read when it fails is `[Connections]`.
+
+**Where:** `shared/connections/catalog.ts` (+test);
+`design/connections/shelf.ts`, `Connections.tsx`, `design/shell/Apps.tsx`,
+`useMessagesShell.ts` (Use), `main/presetAgents.ts` (avatars),
+`main/libs/connections/connectService.ts` (open servers, refused
+routes), `main.ts` (no `auth` for an open server); `harness/main.tsx`
+(`?screen=apps-agents`, `apps-agent`), `harness/shoot-canvas.mjs`.
