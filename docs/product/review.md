@@ -2177,3 +2177,44 @@ eslint, tsc, `compile:electron` clean.
 **Where:** `main/libs/claudeCodeCli.ts` (+test), `openclawConfigSync.ts`,
 `openclawConfigImpact.ts`, `main.ts`, `shared/settings/{models,rows}.ts`,
 `design/settings/useSettings.ts`, `renderer/config.ts`.
+
+## 52. Sonnet for a question, Opus for a job — `built, unrun`
+
+The founder, on the Max plan: *"maybe we can do sonnet for simple
+questions, then the moment its a job, we use opus?"* Built, with the
+one rule that matters written down: **doubt goes to Opus.** Opus on a
+simple question wastes a little of the limit; Sonnet on a job is another
+DoorDash afternoon.
+
+**The rule** (`thread/routing.ts`, no second model call — under the
+Claude Code sign-in every call spawns Claude Code and a classifier would
+add seconds to every message): fast only when the message is short,
+reads as a question, carries no file, link or path, asks for no action
+(a word list: find, book, order, send, make, open…), the conversation
+is not a room, and the reply before it used no tool. Everything else,
+and every uncertainty, is Opus. "Is Sweetgreen open on Sundays?" goes to
+Opus because "open" is also a verb; the test says so on purpose.
+
+**Where it acts.** Right before send in the shell: the session's model
+override is patched to `claude-cli/claude-sonnet-5` for a fast turn and
+cleared (the engine's primary, now Opus) for a strong one, only when it
+differs; a new conversation starts with the override when its first
+message is a question. A room is always a job. Off the Claude Code
+sign-in nothing runs: the account and a person's own key keep the model
+they chose.
+
+**And the default is Opus now.** Item 51 set Sonnet as the blank
+default to protect limits; the founder chose the product's quality over
+that. `claude-opus-5` is the blank default, Sonnet is the fast lane.
+
+**Proof.** Twelve routing tests, the sync test updated for the new
+default; 526 tests across the design tree, settings and config sync
+pass; eslint, tsc, `compile:electron` clean; the harness live flow mounts
+the shell with the new send path. **Unrun** with a real turn: whether
+the engine honours a `claude-cli/…` override through `sessions.patch`
+the way it honours others is the founder's first message to check, and
+the log line `sessions.patch` beside it.
+
+**Where:** `design/thread/routing.ts` (+test), `design/shell/useMessagesShell.ts`,
+`shared/settings/models.ts`, `main/libs/claudeCodeCli.ts`,
+`openclawConfigSync.runtime.test.ts`.

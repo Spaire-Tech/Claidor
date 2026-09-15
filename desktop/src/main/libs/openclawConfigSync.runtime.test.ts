@@ -1868,7 +1868,7 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const blank = await createSync({ getClaudeCodeLogin: () => ({ enabled: true }) });
     expect(blank.sync('claude-code-default').ok).toBe(true);
-    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).agents.defaults.model.primary).toBe('claude-cli/claude-sonnet-5');
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).agents.defaults.model.primary).toBe('claude-cli/claude-opus-5');
 
     const off = await createSync({ getClaudeCodeLogin: () => ({ enabled: false, model: 'claude-opus-5' }) });
     expect(off.sync('claude-code-off').ok).toBe(true);

@@ -21,8 +21,7 @@ import path from 'path';
 
 export const CLAUDE_CLI_ENV = 'CAISRA_CLAUDE_CLI';
 
-/** The engine's provider id for "run this through the Claude Code CLI". */
-export const CLAUDE_CLI_PROVIDER = 'claude-cli';
+export { CLAUDE_CLI_PROVIDER } from '../../shared/settings/models';
 
 export function claudeCliCandidates(options: {
   home: string;

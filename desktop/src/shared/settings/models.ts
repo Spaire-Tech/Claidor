@@ -49,8 +49,18 @@ export const ACCOUNT_MODELS = 'account';
  */
 export const CLAUDE_CODE_LOGIN = 'claude-code';
 
-/** The model Claude Code is asked for unless the person names another. */
-export const CLAUDE_CODE_DEFAULT_MODEL = 'claude-sonnet-5';
+/**
+ * The model Claude Code is asked for unless the person names another.
+ * Opus: Caisra is an agent holding a strict contract, and the founder
+ * wants the product judged on the model that holds it.
+ */
+export const CLAUDE_CODE_DEFAULT_MODEL = 'claude-opus-5';
+
+/** The model a plain question runs on; see `thread/routing.ts`. */
+export const CLAUDE_CODE_FAST_MODEL = 'claude-sonnet-5';
+
+/** The engine's provider id for "run this through the Claude Code CLI". */
+export const CLAUDE_CLI_PROVIDER = 'claude-cli';
 
 /**
  * The providers offered by name.
