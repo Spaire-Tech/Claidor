@@ -36,7 +36,9 @@ const count = () => page.evaluate(ns => {
 await page.goto(`http://127.0.0.1:${port}/?screen=arriving`, { waitUntil: 'networkidle' });
 const t0 = Date.now();
 const seen = [];
-for (let i = 0; i < 18; i++) {
+// The reply lands 600ms after mount and its bubbles are a second apart,
+// so the third is due at about 2.6s; sample past that.
+for (let i = 0; i < 32; i++) {
   seen.push({ ms: Date.now() - t0, bubbles: await count() });
   await page.waitForTimeout(120);
 }

@@ -5,8 +5,10 @@ import { Speaker, type ThreadItem, ThreadItemKind } from './types';
  *
  * `toThreadItems` already splits a reply into up to three bubbles. Without
  * this they all appear in the same frame, which reads as a memo that
- * happens to have gaps in it. The canvas pushes them 420 ms apart, and
- * that spacing is most of why the app feels like Messages rather than a
+ * happens to have gaps in it. The canvas pushed them 420 ms apart; the
+ * founder, having watched it: *"i dont want the second to IMMEDIATELY
+ * come. i want a bit of realism. so 1 second might be good between it."*
+ * That spacing is most of why the app feels like Messages rather than a
  * chat box.
  *
  * The trap this exists to avoid: opening a conversation with two hundred
@@ -15,8 +17,8 @@ import { Speaker, type ThreadItem, ThreadItemKind } from './types';
  * function here takes the ids that were already on screen.
  */
 
-/** The canvas's number. */
-export const BUBBLE_GAP_MS = 420;
+/** The founder's number, 15 September. The canvas had 420. */
+export const BUBBLE_GAP_MS = 1000;
 
 const isAgentBubble = (item: ThreadItem): boolean =>
   item.kind === ThreadItemKind.Text && item.from === Speaker.Agent;

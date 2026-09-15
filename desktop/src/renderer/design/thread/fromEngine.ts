@@ -344,7 +344,7 @@ export function toThreadItems(
         // by drawing the partial as one whole bubble that kept changing.
         // Now nothing is drawn until the reply is complete; the typing
         // animation covers the wait, and the finished reply lands as
-        // bubbles 420ms apart like everything else.
+        // bubbles a second apart like everything else.
         //
         // The one exception is an engine that stopped mid-reply and never
         // sent a final: once the session is no longer running, whatever

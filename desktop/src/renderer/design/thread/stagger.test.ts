@@ -17,7 +17,8 @@ const none = new Set<string>();
 const seen = (...ids: string[]): Set<string> => new Set(ids);
 
 describe('staggering a reply', () => {
-  test('the first bubble is immediate and the rest follow 420ms apart', () => {
+  test('the first bubble is immediate and the rest follow one second apart', () => {
+    expect(BUBBLE_GAP_MS).toBe(1000);
     const delays = staggerDelays([bubble('r:0'), bubble('r:1'), bubble('r:2')], none);
     expect(delays.get('r:0')).toBeUndefined();
     expect(delays.get('r:1')).toBe(BUBBLE_GAP_MS);

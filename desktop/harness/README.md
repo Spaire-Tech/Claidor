@@ -25,8 +25,8 @@ one guess away from chasing the wrong file.
 
 ## Proving the stagger
 
-A still photograph cannot show bubbles arriving 420ms apart, so there is
-a second script for the one behaviour that is temporal:
+A still photograph cannot show bubbles arriving a second apart, so there
+is a second script for the one behaviour that is temporal:
 
 ```bash
 node harness/stagger.mjs
@@ -35,8 +35,8 @@ node harness/stagger.mjs
 It opens `?screen=arriving`, which appends a three-bubble reply a beat
 after mount, and counts how many are on screen every 120ms. A pass looks
 like `001112222333333333` — one, then two, then three — with each new
-bubble first seen roughly 420ms after the last. The sampling interval is
-120ms, so expect the measured gaps to sit within about that of 420.
+bubble first seen roughly a second after the last. The sampling interval
+is 120ms, so expect the measured gaps to sit within about that of 1000.
 
 ## Proving find-in-conversation
 

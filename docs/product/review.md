@@ -1572,3 +1572,22 @@ third bubbles arrive 420ms apart (item 31, the canvas's number). The
 row shows the reply's last line at once. For a three-bubble reply the
 row is therefore 840ms ahead of the thread, and that is the one part of
 *"the preview comes first"* that is not a bug. It can be zero.
+
+---
+
+## 38. A second between bubbles — `done`
+
+The founder, on the gap item 37 left as a decision: *"when its 3 bubble,
+after the first come, i dont want the second to IMMEDIATELY come. i want
+a bit of realism. so 1 second might be good between it."*
+
+`BUBBLE_GAP_MS` is 1000. The first bubble is immediate; the second lands
+a second later, the third a second after that. Nothing else changed:
+history is still shown at once (item 37), a single-bubble reply waits for
+nothing, and the row under the agent's name still shows the reply's last
+line the moment it is final — so for a three-bubble reply the sidebar is
+now two seconds ahead of the thread. That is the realism, and it is the
+founder's call. `harness/stagger.mjs` measures the new gap.
+
+**Where:** `design/thread/stagger.ts`; `docs/product/direction.md`
+amended.

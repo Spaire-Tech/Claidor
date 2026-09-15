@@ -133,7 +133,7 @@ async function deleteAgent() {
   check("Mira's conversation still has its history", after.includes('clear my inbox'));
   // Three bubbles, all there the moment the conversation is: history is
   // shown, not performed. Read straight after the first bubble, well
-  // inside the 420ms a staged bubble would wait.
+  // inside the second a staged bubble would wait.
   check("all of Mira's three-bubble reply is on screen at once", after.includes('Two look urgent.'));
   await page.screenshot({ path: 'harness/shots/live-delete.png' });
   const unknown = await page.evaluate(() => [...new Set(window.__UNKNOWN__)]);
