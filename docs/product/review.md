@@ -1591,3 +1591,24 @@ founder's call. `harness/stagger.mjs` measures the new gap.
 
 **Where:** `design/thread/stagger.ts`; `docs/product/direction.md`
 amended.
+
+---
+
+## 39. The row waits for the last bubble — `done`
+
+The founder, on item 38's consequence: *"yes make the row wait for the
+last bubble too."*
+
+While a reply's bubbles are still landing in the open conversation, the
+row under that agent's name keeps saying what it said before the reply —
+the person's own message, usually — and takes the reply's last line only
+when the last bubble is down. It remembers the row's text the last time
+nothing was held, and shows that again while something is. Other rows
+are untouched: a reply arriving in a conversation nobody is looking at is
+not staged, so their rows change the moment it is final, as before.
+
+`harness/stagger.mjs` now watches the row as well as the bubbles and
+says when it moved, and whether that was before the last bubble.
+
+**Where:** `design/thread/stagger.ts` (`rowsWhileLanding`, tested),
+`design/shell/MessagesShell.tsx`.

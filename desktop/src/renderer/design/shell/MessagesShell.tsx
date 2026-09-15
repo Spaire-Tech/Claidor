@@ -4,6 +4,7 @@ import { avatarFallback } from '../../../shared/agent/avatars';
 import { CloseIcon, ComputerIcon, SearchIcon, ShareIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
 import { findInThread, matchLabel, stepMatch } from '../thread/search';
+import { rowsWhileLanding, type RowText } from '../thread/stagger';
 import { Thread } from '../thread/Thread';
 import type {
   AuthHandlers,
@@ -132,8 +133,23 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   // "typing" is a text-mode word, and in voice the orb is already
   // pulsing to say the same thing. The canvas draws the same line:
   // `typing: s.typing && s.mode === "text"`.
-  const saysTyping = (Boolean(typing) || staged.length < shown.length)
-    && mode === ThreadMode.Text;
+  const landing = staged.length < shown.length;
+  const saysTyping = (Boolean(typing) || landing) && mode === ThreadMode.Text;
+
+  // The row under the open agent's name waits for the last bubble too.
+  // What it said the last time nothing was held is remembered here, and
+  // shown again while bubbles are landing; see `rowsWhileLanding`.
+  const settled = useRef<{ id: string } & RowText>();
+  const activeRow = agents.find(agent => agent.id === activeId);
+  if (!landing && activeRow) {
+    settled.current = { id: activeId, preview: activeRow.preview, when: activeRow.when };
+  }
+  const rows = rowsWhileLanding(
+    agents,
+    activeId,
+    landing,
+    settled.current?.id === activeId ? settled.current : undefined,
+  );
 
   // The share popover. Escape and a click elsewhere close it, like every
   // other menu in the app.
@@ -197,7 +213,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         }}
       >
         <Sidebar
-          agents={agents}
+          agents={rows}
           activeId={activeId}
           onSelect={onSelect}
           {...(onAskDelete ? { onAskDelete } : {})}

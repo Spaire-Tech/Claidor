@@ -209,9 +209,15 @@ function Arriving(): JSX.Element {
   const items = toThreadItems([...CONVERSATION.slice(0, 8), ...extra], {
     agentId: 'juno', agentName: 'Juno',
   });
+  // The row follows the conversation, as the app's does: the moment the
+  // reply is final its last line is the preview — and the shell is what
+  // holds that back until the last bubble is down.
+  const agents = AGENTS.map(agent => (agent.id === 'juno' && extra.length
+    ? { ...agent, preview: 'Want me to open it?', when: '9:15 AM' }
+    : agent));
   return (
     <MessagesShell
-      agents={AGENTS} activeId="juno" activeName="Juno" items={items}
+      agents={agents} activeId="juno" activeName="Juno" items={items}
       dayStamp="Today" mode={ThreadMode.Text} accountName="Bass Fall"
       choice={{ onPick: noop, onFreeAnswer: noop, onDismiss: noop }}
       auth={{ onDecide: noop }}

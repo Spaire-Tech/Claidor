@@ -73,6 +73,34 @@ export function visibleItems(
   return items.filter(item => !held.has(item.id));
 }
 
+/** What a sidebar row said last, and when. */
+export interface RowText {
+  preview: string;
+  when: string;
+}
+
+/**
+ * The rows while the open conversation's reply is still landing.
+ *
+ * The row under an agent's name shows the reply's last line the moment
+ * the reply is final; the thread paces the bubbles a second apart. So
+ * for a three-bubble reply the row was two seconds ahead of the thread,
+ * and the founder asked for the row to wait for the last bubble too.
+ * While bubbles are held, the active row keeps saying what it said
+ * before the reply — `settled`, captured by the caller the last time
+ * nothing was held. Other rows are untouched: nobody is watching those
+ * threads, and their replies are not staged.
+ */
+export function rowsWhileLanding<Row extends { id: string } & RowText>(
+  rows: readonly Row[],
+  activeId: string,
+  landing: boolean,
+  settled: RowText | undefined,
+): readonly Row[] {
+  if (!landing || !settled) return rows;
+  return rows.map(row => (row.id === activeId ? { ...row, preview: settled.preview, when: settled.when } : row));
+}
+
 /**
  * Whether to stage at all.
  *
