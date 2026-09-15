@@ -1076,3 +1076,135 @@ class TestSkillStoreFiles:
         assert skill_md_with_version("---\nname: x\n---\nbody\n", "2026.9.10") == (
             '---\nversion: "2026.9.10"\nname: x\n---\nbody\n'
         )
+
+
+@pytest.mark.asyncio
+class TestComposio:
+    """Apps through Composio: the app's calls forwarded with Claidor's key
+    and the account's own Composio user id (`polar/desktop/composio.py`)."""
+
+    async def test_the_session_carries_the_key_and_the_account_not_the_apps_word(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.COMPOSIO_BASE_URL}/api/v3.1/tool_router/session"
+            ).mock(return_value=httpx.Response(200, json={"session_id": "sess_1"}))
+            response = await client.post(
+                "/desktop/api/proxy/composio/api/v3.1/tool_router/session",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"user_id": "default"},
+            )
+        assert response.status_code == 200
+        assert response.json() == {"session_id": "sess_1"}
+        sent = route.calls[0].request
+        assert sent.headers["x-api-key"] == "ck_claidor"
+        assert "authorization" not in sent.headers
+        assert json.loads(sent.content) == {"user_id": f"claidor-{user.id}"}
+
+    async def test_the_other_five_calls_pass_through_as_composio_answered(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        access, _ = await _signed_in(client, session, user)
+        base = f"{settings.COMPOSIO_BASE_URL}/api/v3.1"
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{base}/tool_router/session/sess_1/toolkits").mock(
+                return_value=httpx.Response(200, json={"items": []})
+            )
+            link = mock.post(f"{base}/tool_router/session/sess_1/link").mock(
+                return_value=httpx.Response(
+                    200, json={"redirect_url": "https://connect.composio.dev/x"}
+                )
+            )
+            mock.delete(f"{base}/connected_accounts/ca_1").mock(
+                return_value=httpx.Response(429, json={"error": "slow down"})
+            )
+            headers = {"Authorization": f"Bearer {access}"}
+            toolkits = await client.get(
+                "/desktop/api/proxy/composio/api/v3.1/tool_router/session/sess_1/toolkits",
+                headers=headers,
+            )
+            linked = await client.post(
+                "/desktop/api/proxy/composio/api/v3.1/tool_router/session/sess_1/link",
+                headers=headers,
+                json={"toolkit": "gmail"},
+            )
+            refused = await client.delete(
+                "/desktop/api/proxy/composio/api/v3.1/connected_accounts/ca_1",
+                headers=headers,
+            )
+        assert toolkits.status_code == 200
+        assert toolkits.json() == {"items": []}
+        assert linked.json()["redirect_url"] == "https://connect.composio.dev/x"
+        assert json.loads(link.calls[0].request.content) == {"toolkit": "gmail"}
+        # A refusal comes back as Composio gave it, status and sentence.
+        assert refused.status_code == 429
+        assert refused.json() == {"error": "slow down"}
+
+    async def test_anything_else_is_not_forwarded(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        # The key must not become a general door onto Composio's API.
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        with respx.mock(assert_all_called=False) as mock:
+            anything = mock.route().mock(return_value=httpx.Response(200, json={}))
+            for method, path in [
+                ("GET", "api/v3/toolkits"),
+                ("DELETE", "api/v3.1/tool_router/session/sess_1"),
+                ("POST", "api/v3.1/tool_router/session/sess_1/workbench"),
+                ("GET", "api/v3.1/tool_router/session/../../v3/api_keys"),
+            ]:
+                response = await client.request(
+                    method, f"/desktop/api/proxy/composio/{path}", headers=headers
+                )
+                assert response.status_code == 404, path
+            assert not anything.called
+
+    async def test_without_a_key_the_route_says_so_and_calls_nothing(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "")
+        access, _ = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            anything = mock.route().mock(return_value=httpx.Response(200, json={}))
+            response = await client.post(
+                "/desktop/api/proxy/composio/api/v3.1/tool_router/session",
+                headers={"Authorization": f"Bearer {access}"},
+                json={},
+            )
+            assert not anything.called
+        assert response.status_code == 503
+        assert response.json()["error"]["type"] == "not_configured"
+
+    async def test_signed_out_is_refused_before_anything_is_forwarded(
+        self, client: httpx.AsyncClient, mocker: MockerFixture
+    ) -> None:
+        mocker.patch.object(settings, "COMPOSIO_API_KEY", "ck_claidor")
+        with respx.mock(assert_all_called=False) as mock:
+            anything = mock.route().mock(return_value=httpx.Response(200, json={}))
+            response = await client.post(
+                "/desktop/api/proxy/composio/api/v3.1/tool_router/session", json={}
+            )
+            assert not anything.called
+        assert response.status_code == 401

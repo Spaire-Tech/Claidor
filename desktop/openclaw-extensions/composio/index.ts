@@ -24,7 +24,7 @@
 import { Type } from '@sinclair/typebox';
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
 
-import { ComposioClient, type ComposioClientConfig } from './client';
+import { COMPOSIO_BASE_URL, ComposioClient, type ComposioClientConfig } from './client';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   !!value && typeof value === 'object' && !Array.isArray(value)
@@ -36,12 +36,19 @@ const stringList = (value: unknown): string[] | undefined => (
     : undefined
 );
 
+/**
+ * `baseUrl` is the app's local token proxy and is all the config there
+ * is; the server behind it holds the key. `apiKey` (with Composio's own
+ * address) is the direct route, for a test.
+ */
 const parsePluginConfig = (value: unknown): ComposioClientConfig | null => {
   const raw = isRecord(value) ? value : {};
   const apiKey = typeof raw.apiKey === 'string' ? raw.apiKey.trim() : '';
-  if (!apiKey) return null;
+  const baseUrl = (typeof raw.baseUrl === 'string' && raw.baseUrl.trim()) || (apiKey ? COMPOSIO_BASE_URL : '');
+  if (!baseUrl) return null;
   return {
-    apiKey,
+    baseUrl,
+    ...(apiKey ? { apiKey } : {}),
     userId: (typeof raw.userId === 'string' && raw.userId.trim()) || 'default',
     ...(stringList(raw.allowedToolkits)?.length ? { allowedToolkits: stringList(raw.allowedToolkits) } : {}),
     ...(stringList(raw.blockedToolkits)?.length ? { blockedToolkits: stringList(raw.blockedToolkits) } : {}),
@@ -83,7 +90,8 @@ const plugin = {
       return isRecord(value) ? value : {};
     },
     uiHints: {
-      apiKey: { label: 'API key', sensitive: true },
+      baseUrl: { label: 'Address', advanced: true },
+      apiKey: { label: 'API key (direct route only)', sensitive: true, advanced: true },
       userId: { label: 'User id', advanced: true },
       allowedToolkits: { label: 'Allowed toolkits', advanced: true },
       blockedToolkits: { label: 'Blocked toolkits', advanced: true },
@@ -92,7 +100,7 @@ const plugin = {
   register(api: OpenClawPluginApi) {
     const config = parsePluginConfig(api.pluginConfig);
     if (!config) {
-      api.logger.info('[composio] no API key; nothing registered.');
+      api.logger.info('[composio] no address to reach Composio through; nothing registered.');
       return;
     }
 

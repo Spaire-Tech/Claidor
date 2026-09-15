@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { composioToolkit, findConnection } from '../../../shared/connections/catalog';
-import { configService, ConfigServiceEvent } from '../../services/config';
+import { configService } from '../../services/config';
 import { mcpService } from '../../services/mcp';
 import type { ConnectionsProps } from './Connections';
 import { connectedIds } from './shelf';
@@ -19,7 +19,8 @@ import { connectedIds } from './shelf';
  * Connect call returns, and this hook then keeps the id in the app
  * config (`composioConnected`) so the card still says Connected after a
  * restart. The renderer has no bridge to ask Composio itself. When one
- * exists, that list goes and the read replaces it.
+ * exists, that list goes and the read replaces it. Nothing has to be
+ * typed for any of it: Claidor's key is on the server.
  */
 
 export interface ConnectionsState extends Omit<ConnectionsProps, 'query'> {
@@ -27,24 +28,18 @@ export interface ConnectionsState extends Omit<ConnectionsProps, 'query'> {
   refresh: () => void;
 }
 
-const composioSettings = (): { ready: boolean; connected: readonly string[] } => {
-  const config = configService.getConfig();
-  return {
-    ready: !!config.composioApiKey?.trim(),
-    connected: config.composioConnected ?? [],
-  };
-};
+const composioConnected = (): readonly string[] => configService.getConfig().composioConnected ?? [];
 
 export function useConnections(open: boolean): ConnectionsState {
   const [servers, setServers] = useState<readonly { name: string; enabled: boolean }[]>([]);
-  const [composio, setComposio] = useState(composioSettings);
+  const [viaComposio, setViaComposio] = useState(composioConnected);
   const [busyId, setBusyId] = useState<string>();
   const [failure, setFailure] = useState<{ id: string; message: string }>();
 
   const refresh = useCallback(async () => {
     const loaded = await mcpService.loadServers();
     setServers(loaded.map(one => ({ name: one.name, enabled: one.enabled })));
-    setComposio(composioSettings());
+    setViaComposio(composioConnected());
   }, []);
 
   useEffect(() => {
@@ -52,19 +47,11 @@ export function useConnections(open: boolean): ConnectionsState {
     void refresh();
   }, [open, refresh]);
 
-  // The key is typed in Settings, which is a different screen; the
-  // service's own event is how this one hears about it.
-  useEffect(() => {
-    const reread = () => setComposio(composioSettings());
-    window.addEventListener(ConfigServiceEvent.Updated, reread);
-    return () => window.removeEventListener(ConfigServiceEvent.Updated, reread);
-  }, []);
-
   const connected = useMemo(() => {
     const ids = new Set(connectedIds(servers));
-    if (composio.ready) for (const id of composio.connected) ids.add(id);
+    for (const id of viaComposio) ids.add(id);
     return ids as ReadonlySet<string>;
-  }, [servers, composio]);
+  }, [servers, viaComposio]);
 
   const rememberComposio = useCallback(async (id: string, isConnected: boolean) => {
     const current = new Set(configService.getConfig().composioConnected ?? []);
@@ -84,9 +71,9 @@ export function useConnections(open: boolean): ConnectionsState {
       const result = await window.electron?.connections?.connect?.(id);
       if (result && result.outcome !== 'connected') {
         setFailure({ id, message: result.message || `${item.name} was not connected.` });
-      } else if (result && composio.ready && composioToolkit(item)) {
+      } else if (result && composioToolkit(item)) {
         // Main went through Composio for this card (same rule as
-        // `actionFor`: a key, and a slug) and confirmed the sign-in there.
+        // `actionFor`: a slug) and confirmed the sign-in there.
         await rememberComposio(id, true);
       }
     } catch (error) {
@@ -99,27 +86,26 @@ export function useConnections(open: boolean): ConnectionsState {
       // Whatever happened, the engine's servers are the truth about it.
       await refresh();
     }
-  }, [composio.ready, refresh, rememberComposio]);
+  }, [refresh, rememberComposio]);
 
   const onDisconnect = useCallback(async (id: string) => {
     const item = findConnection(id);
     setBusyId(id);
     try {
       const result = await window.electron?.connections?.disconnect?.(id);
-      if (result?.success && item && composio.ready && composioToolkit(item)) {
+      if (result?.success && item && composioToolkit(item)) {
         await rememberComposio(id, false);
       }
     } finally {
       setBusyId(undefined);
       await refresh();
     }
-  }, [composio.ready, refresh, rememberComposio]);
+  }, [refresh, rememberComposio]);
 
   return {
     connected,
     busyId,
     failure,
-    composioReady: composio.ready,
     onConnect: (id: string) => { void onConnect(id); },
     onDisconnect: (id: string) => { void onDisconnect(id); },
     refresh: () => { void refresh(); },

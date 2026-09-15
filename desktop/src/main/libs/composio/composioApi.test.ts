@@ -25,7 +25,7 @@ function server(options: {
     };
     calls.push(call);
     if (options.refuse) return json(options.refuse, { error: { message: 'nope' } });
-    if (call.method === 'POST' && call.path === '/api/v3.1/tool_router/session') {
+    if (call.method === 'POST' && call.path.endsWith('/api/v3.1/tool_router/session')) {
       return json(200, { session_id: 'sess_1' });
     }
     if (call.method === 'POST' && call.path.endsWith('/link')) {
@@ -39,7 +39,7 @@ function server(options: {
         ],
       });
     }
-    if (call.method === 'DELETE' && call.path.startsWith('/api/v3.1/connected_accounts/')) {
+    if (call.method === 'DELETE' && call.path.includes('/api/v3.1/connected_accounts/')) {
       return json(200, { success: true });
     }
     return json(404, { error: 'no such path' });
@@ -47,27 +47,40 @@ function server(options: {
   return { calls, fetchImpl };
 }
 
+/** The route the app takes: the local token proxy, no key anywhere. */
+const PROXY = 'http://127.0.0.1:4242/composio';
+const DIRECT = 'https://backend.composio.dev';
+
 describe('talking to Composio', () => {
-  test('one session, made once, with the key in the header the SDK uses', async () => {
+  test('through the local proxy: one session, made once, and no key in any header', async () => {
     const wire = server();
-    const api = createComposioApi({ apiKey: 'ck_test', fetch: wire.fetchImpl });
+    const api = createComposioApi({ baseUrl: PROXY, fetch: wire.fetchImpl });
     await api.toolkitState('gmail');
     await api.toolkitState('notion');
-    const sessions = wire.calls.filter(one => one.path === '/api/v3.1/tool_router/session');
+    const sessions = wire.calls.filter(one => one.path === '/composio/api/v3.1/tool_router/session');
     expect(sessions).toHaveLength(1);
-    expect(sessions[0]).toMatchObject({ method: 'POST', body: { user_id: 'default' }, key: 'ck_test' });
+    expect(sessions[0]).toMatchObject({ method: 'POST', body: { user_id: 'default' } });
+    expect(wire.calls.every(one => one.key === undefined)).toBe(true);
+    expect(wire.calls.every(one => one.path.startsWith('/composio/api/v3.1/'))).toBe(true);
+  });
+
+  test('directly, for a test: the key in the header the SDK uses', async () => {
+    const wire = server();
+    const api = createComposioApi({ baseUrl: DIRECT, apiKey: 'ck_test', fetch: wire.fetchImpl });
+    await api.toolkitState('gmail');
+    expect(wire.calls[0]).toMatchObject({ method: 'POST', path: '/api/v3.1/tool_router/session', key: 'ck_test' });
   });
 
   test('a sign-in link is the redirect_url Composio returns, for the lowercase slug', async () => {
     const wire = server({ linkUrl: 'https://connect.composio.dev/link/xyz' });
-    const api = createComposioApi({ apiKey: 'ck_test', fetch: wire.fetchImpl });
+    const api = createComposioApi({ baseUrl: DIRECT, apiKey: 'ck_test', fetch: wire.fetchImpl });
     expect(await api.authorizationUrl('Gmail')).toBe('https://connect.composio.dev/link/xyz');
     const link = wire.calls.find(one => one.path.endsWith('/link'));
     expect(link).toMatchObject({ path: '/api/v3.1/tool_router/session/sess_1/link', body: { toolkit: 'gmail' } });
   });
 
   test('connected means an ACTIVE connected account, whatever case the slug came back in', async () => {
-    const api = createComposioApi({ apiKey: 'ck_test', fetch: server({ status: 'ACTIVE' }).fetchImpl });
+    const api = createComposioApi({ baseUrl: DIRECT, apiKey: 'ck_test', fetch: server({ status: 'ACTIVE' }).fetchImpl });
     expect(await api.toolkitState('gmail')).toEqual({ toolkit: 'gmail', connected: true, connectedAccountId: 'ca_1' });
     expect(await api.toolkitState('notion')).toEqual({ toolkit: 'notion', connected: false });
   });
@@ -76,34 +89,38 @@ describe('talking to Composio', () => {
     // The status arrives INITIATED the moment the link is made and
     // stays there until the person finishes. Counting that as connected
     // would say Connected before anybody signed in.
-    const api = createComposioApi({ apiKey: 'ck_test', fetch: server({ status: 'INITIATED' }).fetchImpl });
+    const api = createComposioApi({ baseUrl: DIRECT, apiKey: 'ck_test', fetch: server({ status: 'INITIATED' }).fetchImpl });
     expect((await api.toolkitState('gmail')).connected).toBe(false);
   });
 
   test('a toolkit Composio has never heard of is simply not connected', async () => {
-    const api = createComposioApi({ apiKey: 'ck_test', fetch: server().fetchImpl });
+    const api = createComposioApi({ baseUrl: DIRECT, apiKey: 'ck_test', fetch: server().fetchImpl });
     expect(await api.toolkitState('nothing')).toEqual({ toolkit: 'nothing', connected: false });
   });
 
   test('disconnecting deletes the connected account, and says when there was none', async () => {
     const wire = server();
-    const api = createComposioApi({ apiKey: 'ck_test', fetch: wire.fetchImpl });
+    const api = createComposioApi({ baseUrl: DIRECT, apiKey: 'ck_test', fetch: wire.fetchImpl });
     expect(await api.disconnect('gmail')).toBe(true);
     expect(wire.calls.at(-1)).toMatchObject({ method: 'DELETE', path: '/api/v3.1/connected_accounts/ca_1' });
     expect(await api.disconnect('notion')).toBe(false);
   });
 
-  test('a refused key is said plainly, and a failed session is not remembered', async () => {
+  test('a 401 is the person signed out, said plainly, and a failed session is not remembered', async () => {
+    // Through the proxy a 401 is Claidor's, not Composio's: the account
+    // token is gone. There is no key to check.
     const wire = server({ refuse: 401 });
-    const api = createComposioApi({ apiKey: 'ck_bad', fetch: wire.fetchImpl });
-    await expect(api.toolkitState('gmail')).rejects.toThrow('Composio refused the API key');
-    await expect(api.toolkitState('gmail')).rejects.toThrow('Composio refused the API key');
+    const api = createComposioApi({ baseUrl: PROXY, fetch: wire.fetchImpl });
+    await expect(api.toolkitState('gmail')).rejects.toThrow('signed out');
+    await expect(api.toolkitState('gmail')).rejects.toThrow('signed out');
     // Two attempts, two session requests: the first failure was not cached.
-    expect(wire.calls.filter(one => one.path === '/api/v3.1/tool_router/session')).toHaveLength(2);
+    expect(wire.calls.filter(one => one.path.endsWith('/api/v3.1/tool_router/session'))).toHaveLength(2);
   });
 
-  test('any other refusal carries Composio\'s own sentence', async () => {
-    const api = createComposioApi({ apiKey: 'ck_test', fetch: server({ refuse: 429 }).fetchImpl });
+  test('a 503 is the server without a key yet; any other refusal carries Composio\'s own sentence', async () => {
+    const off = createComposioApi({ baseUrl: PROXY, fetch: server({ refuse: 503 }).fetchImpl });
+    await expect(off.authorizationUrl('gmail')).rejects.toThrow('not switched on');
+    const api = createComposioApi({ baseUrl: PROXY, fetch: server({ refuse: 429 }).fetchImpl });
     await expect(api.authorizationUrl('gmail')).rejects.toThrow('Composio HTTP 429: nope');
   });
 });

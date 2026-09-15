@@ -1,5 +1,5 @@
 import { ExecPolicy } from './constants';
-import { ACCOUNT_MODELS, apiKeyUrlFor, CLAUDE_CODE_DEFAULT_MODEL, CLAUDE_CODE_LOGIN, modelChoices, providerLabel } from './models';
+import { ACCOUNT_MODELS, apiKeyUrlFor, modelChoices, providerLabel } from './models';
 
 /**
  * Settings, as data.
@@ -122,10 +122,6 @@ export interface SettingsInput {
   modelChoice: string;
   /** The key stored for the chosen provider, if there is one. */
   modelApiKey: string;
-  /** The Composio key, which is what lets the Apps sheet sign into most cards. */
-  composioApiKey: string;
-  /** The model Claude Code is asked for when the choice is the Claude Code sign-in. */
-  claudeCodeModel: string;
   /** 0–1 and a phrase, from the account's quota. Absent while unknown. */
   usage?: { fraction: number; value: string; desc: string };
   version?: string;
@@ -138,8 +134,6 @@ export interface SettingsInput {
   onMemory: (enabled: boolean) => void;
   onModelChoice: (choice: string) => void;
   onModelApiKey: (apiKey: string) => void;
-  onComposioApiKey: (apiKey: string) => void;
-  onClaudeCodeModel: (model: string) => void;
   onWorkingDirectory: () => void;
   onRefreshUsage: () => void;
   onCheckUpdates: () => void;
@@ -308,22 +302,9 @@ function build(tab: SettingsTab, input: SettingsInput): SettingsGroup[] {
               options: modelChoices(),
               onPick: input.onModelChoice,
             } satisfies SelectRow,
-            // The Claude Code sign-in has no key; it has a model name, and
-            // the sentence that says whose limits it draws on.
-            ...(input.modelChoice === CLAUDE_CODE_LOGIN
-              ? [{
-                kind: SettingsRowKind.Field,
-                id: 'claude-code-model',
-                label: 'Claude Code model',
-                desc: `Runs through the Claude Code app on this computer, under its sign-in. Leave blank for ${CLAUDE_CODE_DEFAULT_MODEL}.`,
-                value: input.claudeCodeModel,
-                placeholder: CLAUDE_CODE_DEFAULT_MODEL,
-                onSave: input.onClaudeCodeModel,
-              } satisfies FieldRow]
-              : []),
             // Only once a provider is chosen. A key field above the choice
             // it belongs to is a question nobody asked yet.
-            ...(input.modelChoice === ACCOUNT_MODELS || input.modelChoice === CLAUDE_CODE_LOGIN
+            ...(input.modelChoice === ACCOUNT_MODELS
               ? []
               : [{
                 kind: SettingsRowKind.Field,
@@ -339,22 +320,9 @@ function build(tab: SettingsTab, input: SettingsInput): SettingsGroup[] {
               } satisfies FieldRow]),
           ],
         },
-        {
-          title: 'Apps',
-          rows: [{
-            kind: SettingsRowKind.Field,
-            id: 'composio-api-key',
-            label: 'Composio API key',
-            // Always shown, unlike the provider key: there is no choice
-            // above it to make first, and a person looking for why the
-            // Apps sheet says "Not yet" should find the answer here.
-            desc: 'Gmail, Slack, Notion, GitHub and most of the Apps sheet sign in through Composio, which keeps the sign-ins. Kept on this computer and sent only to Composio. Get one at platform.composio.dev/settings',
-            value: input.composioApiKey,
-            secret: true,
-            placeholder: 'Paste your key',
-            onSave: input.onComposioApiKey,
-          } satisfies FieldRow],
-        },
+        // No "Apps" group with a Composio key. The founder: "my users
+        // should never put a key. everything happens under the hood."
+        // The key is Claidor's and lives on the server (`polar/desktop/composio.py`).
         {
           title: 'Agents',
           rows: [{

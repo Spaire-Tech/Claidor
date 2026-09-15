@@ -324,6 +324,8 @@ import {
 import type { BrowserAnnotationAssetIdentity, SaveBrowserAnnotationAssetInput } from './libs/browserAnnotationAssetStore';
 import { BrowserAnnotationAssetStore } from './libs/browserAnnotationAssetStore';
 import { repairBrowserDisplayMode } from './libs/browserDisplayRepair';
+import { CLAUDE_CODE_FAST_MODEL, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './libs/claudeCodeCli';
+import { claudeCodeMode } from './libs/claudeCodeMode';
 import {
   clearServerModelMetadata,
   evaluateServerModelRunGate,
@@ -342,6 +344,7 @@ import {
   updateServerModelMetadata,
 } from './libs/claudeSettings';
 import { appendClientBannerVersion } from './libs/clientBannerRequest';
+import { composioBaseUrlFor } from './libs/composio/composioApi';
 import {
   clearCopilotTokenState,
   initCopilotTokenManager,
@@ -535,6 +538,7 @@ import {
   restoreOriginalProxyEnv,
   setSystemProxyEnabled,
 } from './libs/systemProxy';
+import { lastTurnUsedTools, routeTurn, TurnRoute } from './libs/turnRouting';
 import { getLogFilePath, getRecentMainLogEntries, initLogger } from './logger';
 import { type AskUserResponse, McpRuntime } from './mcp/mcpRuntime';
 import {
@@ -2577,13 +2581,8 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       // used to be pinned open; see shared/settings/constants.ts.
       getExecPolicy: () => asExecPolicy(getStore().get(EXEC_POLICY_KEY)),
       getBrowserWebAccessConfig: () => getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
-      // Composio's key, from Settings; the plugin entry is written off
-      // without it (`openclawConfigSync.ts`), never left out.
-      getComposioApiKey: () => getStore().get<AppConfigSettings>('app_config')?.composioApiKey,
-      getClaudeCodeLogin: () => {
-        const appConfig = getStore().get<AppConfigSettings>('app_config');
-        return { enabled: appConfig?.claudeCodeLogin === true, ...(appConfig?.claudeCodeModel ? { model: appConfig.claudeCodeModel } : {}) };
-      },
+      // Decided in code, never on a screen: see `claudeCodeMode.ts`.
+      getClaudeCodeMode: () => claudeCodeMode(),
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
       getSkillsList: () =>
@@ -4461,11 +4460,6 @@ type AppConfigSettings = {
   usageAnalyticsEnabled?: boolean;
   notificationSettings?: Partial<NotificationSettings>;
   browserWebAccess?: Partial<BrowserWebAccessConfig>;
-  /** Settings → Apps: Composio's API key; the sign-in tokens stay on Composio's servers. */
-  composioApiKey?: string;
-  /** Settings → Models: run turns through the installed Claude Code app, for development. */
-  claudeCodeLogin?: boolean;
-  claudeCodeModel?: string;
 };
 
 const getUseSystemProxyFromConfig = (config?: { useSystemProxy?: boolean }): boolean => {
@@ -5660,6 +5654,59 @@ if (!gotTheLock) {
       || getAgentManager().getAgent(agentId)?.model?.trim()
       || resolveDefaultAgentModelRef();
     return rawModelRef?.trim() || '';
+  };
+
+  /**
+   * The model this run takes under the Claude Code mechanic, or null
+   * when the mechanic is off and the account, the agent and the person's
+   * own key decide as before.
+   *
+   * This is the whole of "Sonnet for a question, Opus for a job"
+   * (`turnRouting.ts`), and it has to happen here and not in the engine's
+   * config: a run's model is resolved from the session and the agent
+   * first (`resolveCoworkRunModelRef`), both of which hold the account's
+   * server model, and the server-model gate below then blocks the run
+   * ("Package model information is temporarily unavailable") before the
+   * engine's `claude-cli/…` default is ever consulted. So the routed
+   * `claude-cli/…` ref is written onto the session first, and everything
+   * downstream reads that.
+   *
+   * A room is a job: an agent that sits in any room is treated as in a
+   * room whoever is talking to it, which is doubt, and doubt goes strong.
+   */
+  const claudeCodeRunModel = (options: {
+    prompt: string;
+    sessionId?: string;
+    agentId?: string;
+    hasAttachments?: boolean;
+  }): string | null => {
+    if (!claudeCodeMode().enabled) return null;
+    const store = getCoworkStore();
+    const session = options.sessionId ? store.getSession(options.sessionId) : null;
+    const agentId = options.agentId?.trim() || session?.agentId || 'main';
+    const inRoom = store.listRooms().some(room => room.memberIds.includes(agentId));
+    const recent = session
+      ? store.getPagedSessionMessages(session.id, 40, Math.max(0, store.countSessionMessages(session.id) - 40))
+      : [];
+    const route = routeTurn({
+      text: options.prompt,
+      inRoom,
+      lastTurnUsedTools: lastTurnUsedTools(recent),
+      hasAttachments: options.hasAttachments === true,
+    });
+    const model = route === TurnRoute.Fast ? CLAUDE_CODE_FAST_MODEL : CLAUDE_CODE_STRONG_MODEL;
+    console.log(`[ClaudeCode] route=${route} model=${model}${session ? ` session=${session.id}` : ''}`);
+    return claudeCliModelRef(model);
+  };
+
+  /** Put a model on a session: the engine's record and ours. */
+  const applySessionModel = async (sessionId: string, model: string): Promise<void> => {
+    const patchResult = await getCoworkEngineRouter().patchSession(sessionId, { model });
+    getCoworkStore().updateSession(sessionId, {
+      modelOverride: patchResult && typeof patchResult.modelOverride === 'string'
+        ? patchResult.modelOverride
+        : model,
+    }, { touchUpdatedAt: false });
   };
 
   const getServerModelRunGateError = (reason: ServerModelRunGateReason): string => {
@@ -9148,6 +9195,12 @@ if (!gotTheLock) {
           `Image attachments ${options.imageAttachments?.length ?? 0}.`,
           `Agent ${options.agentId || 'main'}.`,
         );
+        const routedModel = claudeCodeRunModel({
+          prompt: options.prompt,
+          agentId: options.agentId,
+          hasAttachments: (options.imageAttachments?.length ?? 0) > 0 || (options.mediaReferences?.length ?? 0) > 0,
+        });
+        if (routedModel) options.modelOverride = routedModel;
         const modelRunGate = await ensureServerModelReadyForRun(
           resolveCoworkRunModelRef({
             modelOverride: options.modelOverride,
@@ -9396,6 +9449,14 @@ if (!gotTheLock) {
           `Prompt length ${options.prompt.length}.`,
           `Image attachments ${options.imageAttachments?.length ?? 0}.`,
         );
+        const routedModel = claudeCodeRunModel({
+          prompt: options.prompt,
+          sessionId: options.sessionId,
+          hasAttachments: (options.imageAttachments?.length ?? 0) > 0 || (options.mediaReferences?.length ?? 0) > 0,
+        });
+        if (routedModel && (getCoworkStore().getSession(options.sessionId)?.modelOverride?.trim() ?? '') !== routedModel) {
+          await applySessionModel(options.sessionId, routedModel);
+        }
         const modelRunGate = await ensureServerModelReadyForRun(
           resolveCoworkRunModelRef({ sessionId: options.sessionId }),
         );
@@ -10361,9 +10422,12 @@ if (!gotTheLock) {
     resolveMemoryFilePath(resolveExistingAgentWorkspacePath(agentId));
 
   registerConnectionHandlers({
-    // The same key the config sync reads: a card that Composio carries
-    // takes Composio's sign-in when it is present, its old route when not.
-    composioApiKey: () => getStore().get<AppConfigSettings>('app_config')?.composioApiKey,
+    // The same address the config sync gives the plugin: the local token
+    // proxy, which carries the account's sign-in to Claidor's server.
+    composioBaseUrl: () => {
+      const port = getOpenClawTokenProxyPort();
+      return port ? composioBaseUrlFor(port) : undefined;
+    },
     // Null until the runtime is on disk; the handler says so rather than
     // spawning nothing and reporting a blank failure.
     cliEnvironment: () => {

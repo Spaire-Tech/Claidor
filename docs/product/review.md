@@ -2004,7 +2004,7 @@ main-process handler for that route stays registered and harmless.
 `scripts/build-whisper.sh`, `resources/whisper/README.md`,
 `electron-builder.json`, `.github/workflows/desktop_mac.yml`.
 
-## 48. Composio: the connector layer, on the founder's word — `built, unrun`
+## 48. Composio: the connector layer, on the founder's word — `built, unrun` — the key row was wrong; see 53
 
 *"i want Composio - its okay for now that we use them."* Composio's own
 OpenClaw fork carries a plugin; its code was read, not its README. What
@@ -2125,7 +2125,7 @@ proves it, and the log line names the driver.
 **Where:** `main/libs/agentBrowserPlaywright.ts` (+test),
 `agentBrowserHost.ts`, `main.ts`, `package.json`.
 
-## 51. The Claude Code sign-in as the model, for development — `built, unrun`
+## 51. The Claude Code sign-in as the model, for development — `built, unrun` — the Settings choice was wrong and it never reached the run; see 53
 
 *"i want to stop paying for API credits while I develop. Switch the
 app's model provider so my local Claude Code login is used instead of an
@@ -2218,3 +2218,127 @@ the log line `sessions.patch` beside it.
 **Where:** `design/thread/routing.ts` (+test), `design/shell/useMessagesShell.ts`,
 `shared/settings/models.ts`, `main/libs/claudeCodeCli.ts`,
 `openclawConfigSync.runtime.test.ts`.
+
+## 53. "i have no idea what on earth you did there" — three faults, 16 September — `fixed; the run itself still unrun`
+
+The founder opened the app and found three things, in one message:
+
+> *"first of all i cant see anything because every dropdown in settings
+> opens inside the box. second claude sign doesnt even work … Package
+> model information is temporarily unavailable … i asked you to use my
+> claude code sign in for me. i never asked you to add anything on
+> settings. i never asked you also to add any keys on settings for
+> composio. my users should never put a key. everything happens under
+> the hood. not a setting."*
+
+All three were mine, from items 48, 51 and 52. Each is taken apart below.
+
+### The dropdown opened inside the box
+
+**Fault.** The Settings screen draws each group as a card with
+`overflow: hidden` (that is what rounds its corners), and the column
+scrolls. The select's menu was `position: absolute` inside the row, so
+the card clipped it: the menu was there, and cut off at the card's edge.
+It was never photographed open — `shoot.mjs` had no Settings screen.
+
+**Fix.** The menu renders through a portal at the document root,
+`position: fixed`, placed from the control's own rectangle when it opens
+and re-measured on resize; it scrolls inside itself if the window is
+short. Escape and click-outside still close it. `Settings.tsx`.
+
+**Proof.** The harness has a `settings` screen now, and
+`harness/settings-open.mjs` opens every select on it in Chromium,
+measures the menu against the card and the window, and photographs it:
+`portaled=true inWindow=true belowTrigger=true escapesCard=true`, menu
+415px tall beside a 184px card. The photograph went to the founder.
+
+### Claude Code "doesn't even work"
+
+**Fault.** The message is `serverModelMetadataUnavailable`, from the
+server-model gate in `main.ts` (`ensureServerModelReadyForRun`). The
+gate runs on the model a run resolves *before* the engine is asked:
+`resolveCoworkRunModelRef` reads the session's override, then the
+agent's stored model, then the account's default — and every one of
+those is the account's server model. My change in 51 set the engine's
+`agents.defaults.model.primary` to `claude-cli/…` and nothing else, and
+the engine config also carries each agent's own stored model, which
+qualifies and wins. So the run resolved the account's model, the gate
+asked for its metadata, and blocked. The engine's `claude-cli` default
+was never consulted. Item 52's routing made it worse: a "strong" route
+wrote no override at all, which is exactly the path that fails.
+
+**Fix, in three parts.** (1) `main.ts` decides the model per run when
+the mechanic is on (`claudeCodeRunModel`): the routed `claude-cli/…` ref
+is set as the new session's override, or patched onto the existing
+session before the gate, so the gate sees a non-server model and passes
+and the engine gets the model on the session. (2) The config sync locks
+every agent to the `claude-cli/…` primary (`lockToDefault`), so the
+engine's own record agrees. (3) The routing (`turnRouting.ts`, moved
+from the renderer) runs in main, with the room membership and the
+session's recent messages read from the store. Log line:
+`[ClaudeCode] route=fast|strong model=…`.
+
+**Proof.** The config test asserts every agent in the written file
+carries `claude-cli/claude-opus-5`; the rule tests are unchanged;
+`compile:electron` and the Vite bundle build. **Unrun:** a real turn
+through Claude Code on the founder's Mac — this fix removes the block
+that was proven, and the next unknown is the engine's CLI backend
+itself.
+
+### "i never asked you to add anything on settings"
+
+**Fault.** Two settings that should not exist: "My Claude Code sign-in"
+as a Models choice, and a Composio API key row under Apps. The founder's
+rule, now in `direction.md`: everything under the hood, never a setting;
+a user never puts a key.
+
+**Claude Code, now.** No setting, no config flag. `claudeCodeMode.ts`
+decides in code, once per launch: a development build (`electron:dev`,
+not packaged) with Claude Code installed runs on Claude Code; a packaged
+build never does, whatever is installed beside it. `CAISRA_CLAUDE_CODE=1`
+or `=0` overrides, for the day either is needed. The decision is logged
+at `[ClaudeCode] on|off: <reason>`. The model constants moved from the
+settings module to `claudeCodeCli.ts`; the Models row offers the account
+and the four keys and nothing else.
+
+**Composio, now.** Claidor's key, on the server: `COMPOSIO_API_KEY` in
+`polar/config.py`, read only by `polar/desktop/composio.py`. The app's
+two Composio clients (the engine plugin and the Connect button's) send
+their six calls to the local token proxy at `/composio`, which forwards
+them to `/desktop/api/proxy/composio/…` under the account's bearer, and
+the server forwards each to Composio with the key. The server also
+replaces `user_id` on the session with `claidor-<user id>`, so one
+account's Gmail is never another's whatever the app says. An allow-list
+of exactly the six paths; anything else is 404 and not forwarded; no
+key configured is 503 and the card says apps are not switched on yet.
+The Settings row, `app_config.composioApiKey`, the env var and the
+restart rule are gone; the Apps cards Composio carries say Connect
+unconditionally. **What the route does not do, said plainly:** it does
+not bind a Composio session id to the account that made it; the ids are
+Composio's, unguessable, and only ever returned to their maker, but a
+person holding another account's session id could act through it. Bind
+them server-side before apps carry more than a first handful of people.
+
+**Proof.** 293 desktop tests across the touched files pass; eslint, tsc
+and `compile:electron` clean; the Vite bundle builds. The server route
+has five tests in `test_endpoints.py::TestComposio`, which need
+Postgres and Minio and **could not be run here** (neither exists on this
+machine); the same six checks were driven through the real router with
+the sign-in and the database stood in for and Composio mocked, and all
+six pass — session gets the key and the forced user id, the other calls
+pass through as answered including a 429, unknown paths 404 and forward
+nothing, no key is 503, signed out is 401. `ruff` and `ruff format`
+clean; mypy reports nothing in the new module. **Unrun:** Composio
+itself — the founder sets `COMPOSIO_API_KEY` on Render and presses
+Connect on one card.
+
+**Where:** `renderer/design/settings/Settings.tsx`, `harness/main.tsx`,
+`harness/settings-open.mjs`; `main/libs/claudeCodeMode.ts` (+test),
+`claudeCodeCli.ts`, `turnRouting.ts` (+test, moved), `openclawConfigSync.ts`,
+`openclawAgentModels.ts`, `main.ts`; `shared/settings/{models,rows,appUiMap}.ts`,
+`design/settings/useSettings.ts`, `renderer/config.ts`,
+`design/shell/useMessagesShell.ts`; `openclaw-extensions/composio/`,
+`main/libs/composio/composioApi.ts`, `ipcHandlers/connections/handlers.ts`,
+`design/connections/{shelf,useConnections,Connections}`;
+`server/polar/config.py`, `polar/desktop/composio.py`, `endpoints.py`,
+`tests/desktop/test_endpoints.py`.

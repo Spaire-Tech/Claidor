@@ -28,8 +28,9 @@ import { runOpenClawCli } from '../../libs/connections/openclawCli';
  *
  * Both routes ride the same two channels. The renderer's bridge exposes
  * `connect` and `disconnect` and nothing else, so the route is decided
- * here, by the same rule the shelf uses to draw the button: a Composio
- * key in Settings, and a slug on the card.
+ * here, by the same rule the shelf uses to draw the button: a slug on
+ * the card means Composio. There is no key to check — the sign-in goes
+ * through the local token proxy to Claidor's server, which holds the key.
  */
 
 export interface ConnectionHandlerDeps {
@@ -41,17 +42,14 @@ export interface ConnectionHandlerDeps {
   /** Push the store into `openclaw.json` and wait — `mcp login` reads it. */
   syncConfig: (reason: string) => Promise<void>;
   /**
-   * The Composio key from Settings (`app_config.composioApiKey`), or
-   * nothing. Absent or empty, no card takes the Composio route.
+   * The local token proxy's Composio address (`composioBaseUrlFor`), or
+   * nothing while the proxy is not up yet.
    */
-  composioApiKey?: () => string | undefined;
+  composioBaseUrl: () => string | undefined;
 }
 
-/** The Composio route applies: a key, and a card Composio carries. */
-export const takesComposioRoute = (
-  item: ConnectionItem,
-  apiKey: string | undefined,
-): apiKey is string => !!apiKey?.trim() && !!composioToolkit(item);
+/** The Composio route applies: a card Composio carries. */
+export const takesComposioRoute = (item: ConnectionItem): boolean => !!composioToolkit(item);
 
 export function registerConnectionHandlers(deps: ConnectionHandlerDeps): void {
   const notReady = (): ConnectResultIPC => ({
@@ -59,11 +57,11 @@ export function registerConnectionHandlers(deps: ConnectionHandlerDeps): void {
     message: 'The engine is not running yet. Try again in a moment.',
   });
 
-  // One client per key: the session it makes is good for as long as
-  // the key is, and a new key is a new person as far as Composio knows.
-  let composio: { apiKey: string; api: ComposioApi } | undefined;
-  const composioFor = (apiKey: string): ComposioApi => {
-    if (composio?.apiKey !== apiKey) composio = { apiKey, api: createComposioApi({ apiKey }) };
+  // One client per proxy address: the session it makes is good for as
+  // long as the proxy is, and the proxy is up for the life of the app.
+  let composio: { baseUrl: string; api: ComposioApi } | undefined;
+  const composioFor = (baseUrl: string): ComposioApi => {
+    if (composio?.baseUrl !== baseUrl) composio = { baseUrl, api: createComposioApi({ baseUrl }) };
     return composio.api;
   };
 
@@ -75,13 +73,14 @@ export function registerConnectionHandlers(deps: ConnectionHandlerDeps): void {
         return { outcome: ConnectOutcome.Unsupported, message: 'No such service.' };
       }
 
-      const composioApiKey = deps.composioApiKey?.();
-      if (takesComposioRoute(item, composioApiKey)) {
+      if (takesComposioRoute(item)) {
         // No engine needed: the sign-in lives on Composio's side and the
-        // agent reaches it through the extension, which reads the key
-        // from the config the sync writes.
+        // agent reaches it through the extension, which talks to the
+        // same proxy.
+        const baseUrl = deps.composioBaseUrl();
+        if (!baseUrl) return notReady();
         return connectThroughComposio(item, {
-          api: composioFor(composioApiKey),
+          api: composioFor(baseUrl),
           openExternal: url => shell.openExternal(url),
         });
       }
@@ -123,10 +122,11 @@ export function registerConnectionHandlers(deps: ConnectionHandlerDeps): void {
       const item = findConnection(id);
       if (!item) return { success: false, error: 'No such service.' };
 
-      const composioApiKey = deps.composioApiKey?.();
-      if (takesComposioRoute(item, composioApiKey)) {
+      if (takesComposioRoute(item)) {
+        const baseUrl = deps.composioBaseUrl();
+        if (!baseUrl) return { success: false, error: notReady().message };
         try {
-          await disconnectThroughComposio(item, composioFor(composioApiKey));
+          await disconnectThroughComposio(item, composioFor(baseUrl));
           return { success: true };
         } catch (error) {
           console.error('[Connections] composio disconnect failed:', error);

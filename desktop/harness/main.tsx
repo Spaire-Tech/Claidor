@@ -11,6 +11,7 @@ import { PRESET_AGENTS } from '../src/main/presetAgents';
 import { AgentDetail } from '../src/renderer/design/agent/AgentDetail';
 import { AgentTab } from '../src/renderer/design/agent/detail';
 import type { AgentDetailState } from '../src/renderer/design/agent/useAgentDetail';
+import { Settings } from '../src/renderer/design/settings/Settings';
 import { AccountMenu } from '../src/renderer/design/shell/AccountMenu';
 import { Apps, AppsTab } from '../src/renderer/design/shell/Apps';
 import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/MessagesShell';
@@ -19,6 +20,7 @@ import type { EngineMessage, EnginePermissionRequest } from '../src/renderer/des
 import { toThreadItems } from '../src/renderer/design/thread/fromEngine';
 import type { ThreadItem } from '../src/renderer/design/thread/types';
 import { ThreadItemKind } from '../src/renderer/design/thread/types';
+import { EVERY_ROW } from '../src/shared/settings/appUiMap';
 
 /**
  * A harness for looking at the design, not part of the app.
@@ -257,6 +259,16 @@ function Screens(): JSX.Element {
     return <SignIn onSignIn={noop} error="That did not go through. Try again?" />;
   }
   if (screen === 'arriving') return <Arriving />;
+  if (screen === 'settings') {
+    // The screen over a blank shell, with every row the app can draw
+    // (`appUiMap.ts`'s fullest input). The select opens in a portal;
+    // `harness/settings-open.mjs` clicks it and photographs the result.
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Settings {...EVERY_ROW} accountName="Bass Fall" onClose={noop} />
+      </div>
+    );
+  }
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';

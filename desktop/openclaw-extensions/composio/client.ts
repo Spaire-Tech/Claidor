@@ -13,7 +13,12 @@
  *   GET    /api/v3.1/tool_router/session/{id}/toolkits   → items[].connected_account
  *   DELETE /api/v3.1/connected_accounts/{id}
  *
- * Authentication is the `x-api-key` header, as the SDK sends it.
+ * **No key in the app.** `baseUrl` is the app's local token proxy
+ * (`http://127.0.0.1:<port>/composio`), which forwards each call to
+ * Claidor's server under the account's sign-in; the server holds
+ * Claidor's Composio key and puts the account's own id on the session.
+ * `apiKey` survives for a test that talks to Composio directly, and is
+ * then the `x-api-key` header as the SDK sends it.
  *
  * A twin of this lives in `src/main/libs/composio/composioApi.ts` for the
  * app's own side (the Connect button). They cannot share a file: an
@@ -24,11 +29,12 @@
 export const COMPOSIO_BASE_URL = 'https://backend.composio.dev';
 
 export interface ComposioClientConfig {
-  apiKey: string;
+  baseUrl: string;
+  /** Only when talking to Composio directly; the proxy route carries none. */
+  apiKey?: string;
   userId: string;
   allowedToolkits?: readonly string[];
   blockedToolkits?: readonly string[];
-  baseUrl?: string;
   fetch?: typeof fetch;
 }
 
@@ -67,10 +73,9 @@ export class ComposioClient {
 
   constructor(private readonly config: ComposioClientConfig) {
     this.fetchImpl = config.fetch ?? fetch;
-    this.baseUrl = (config.baseUrl ?? COMPOSIO_BASE_URL).replace(/\/+$/, '');
+    this.baseUrl = config.baseUrl.replace(/\/+$/, '');
   }
 
-  /** The key stays on the server side of `x-api-key`; it is never returned. */
   private async request<T>(
     method: 'GET' | 'POST' | 'DELETE',
     path: string,
@@ -79,7 +84,7 @@ export class ComposioClient {
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method,
       headers: {
-        'x-api-key': this.config.apiKey,
+        ...(this.config.apiKey ? { 'x-api-key': this.config.apiKey } : {}),
         accept: 'application/json',
         ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
       },
@@ -96,7 +101,10 @@ export class ComposioClient {
     }
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error('Composio refused the API key. Check it in Settings.');
+        throw new Error('The person is signed out of Caisra; apps cannot be reached until they sign in again.');
+      }
+      if (response.status === 503) {
+        throw new Error('Apps are not switched on for this server yet.');
       }
       throw new Error(`Composio ${describeFailure(response.status, payload)}`);
     }

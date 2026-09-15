@@ -4,9 +4,11 @@
  *
  * The founder, on the Max plan: *"maybe we can do sonnet for simple
  * questions, then the moment its a job, we use opus?"* Yes — and the
- * whole feature is this one decision, made before the turn starts, with
- * no second model call (under the Claude Code sign-in every call spawns
- * Claude Code, and a classifier call would add seconds to every message).
+ * whole feature is this one decision, made in the main process right
+ * before the run starts (`main.ts`, under the Claude Code mechanic of
+ * `claudeCodeMode.ts`), with no second model call: every call spawns
+ * Claude Code, and a classifier call would add seconds to every message.
+ * Nothing in the renderer knows a model exists.
  *
  * The two mistakes are not equal. The strong model answering a simple
  * question wastes a little of the limit. The fast model running a job is

@@ -61,7 +61,6 @@ import {
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
 import { APP_UI_MAP_PATH, buildAppUiMap } from '../../shared/settings/appUiMap';
 import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
-import { CLAUDE_CODE_DEFAULT_MODEL } from '../../shared/settings/models';
 import { APP_NAME } from '../appConstants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
@@ -74,7 +73,7 @@ import {
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
-import { CLAUDE_CLI_PROVIDER, resolveClaudeCli } from './claudeCodeCli';
+import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
 import {
   getAllServerModelMetadata,
   listProviderSourceEntries,
@@ -82,7 +81,7 @@ import {
   resolveAllProviderApiKeys,
   resolveRawApiConfig,
 } from './claudeSettings';
-import { COMPOSIO_USER_ID } from './composio/composioApi';
+import { composioBaseUrlFor } from './composio/composioApi';
 import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
@@ -168,8 +167,6 @@ const DINGTALK_OPENCLAW_CHANNEL = 'dingtalk-connector';
 const OPENCLAW_MEMORY_CORE_PLUGIN_ID = 'memory-core';
 /** The local `openclaw-extensions/composio` plugin, by its manifest id. */
 const COMPOSIO_PLUGIN_ID = 'composio';
-/** The env var the plugin's `apiKey` placeholder resolves from. */
-const COMPOSIO_API_KEY_ENV = 'COMPOSIO_API_KEY';
 const OPENCLAW_MODEL_COMPAT_PLUGIN_ID = 'lobsterai-model-compat';
 
 const asConfigRecord = (value: unknown): Record<string, unknown> | undefined => (
@@ -2224,20 +2221,15 @@ type OpenClawConfigSyncDeps = {
   getUserPlugins?: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   canUseMediaGeneration?: () => boolean;
   /**
-   * The person's Composio key (`app_config.composioApiKey`), or nothing.
-   * With one, the bundled `composio` plugin is enabled and gets the key
-   * as an env var; without, it is written disabled.
+   * The Claude Code mechanic (`claudeCodeMode.ts`): a development build
+   * with Claude Code installed. When on, every agent's primary model
+   * becomes `claude-cli/<model>` — the engine runs each turn through the
+   * Claude Code app on this computer, the same config the engine's own
+   * planner uses — and the command is the absolute path the app found,
+   * because a macOS app's PATH does not see Homebrew or npm. Nothing a
+   * person can set: see the founder's word in that file.
    */
-  getComposioApiKey?: () => string | undefined;
-  /**
-   * The person's Claude Code sign-in as the model, for their own
-   * development. When on, the engine's primary model becomes
-   * `claude-cli/<model>` — the engine runs each turn through the Claude
-   * Code app installed on this computer, the same config the engine's
-   * own planner uses — and the command is the absolute path the app
-   * found, because a macOS app's PATH does not see Homebrew or npm.
-   */
-  getClaudeCodeLogin?: () => { enabled: boolean; model?: string } | undefined;
+  getClaudeCodeMode?: () => { enabled: boolean; command: string | null } | undefined;
   /**
    * How much the agent may do on this computer without asking.
    *
@@ -2296,8 +2288,7 @@ export class OpenClawConfigSync {
   private readonly getAgents?: () => Agent[];
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
-  private readonly getComposioApiKey: () => string | undefined;
-  private readonly getClaudeCodeLogin: () => { enabled: boolean; model?: string } | undefined;
+  private readonly getClaudeCodeMode: () => { enabled: boolean; command: string | null } | undefined;
   private readonly getExecPolicy: () => ExecPolicy;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
@@ -2334,13 +2325,7 @@ export class OpenClawConfigSync {
     this.getAgents = deps.getAgents;
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
-    this.getComposioApiKey = deps.getComposioApiKey ?? (() => undefined);
-    this.getClaudeCodeLogin = deps.getClaudeCodeLogin ?? (() => undefined);
-  }
-
-  /** The Composio key, trimmed, or empty. One reading for the file and the env. */
-  private composioApiKey(): string {
-    return this.getComposioApiKey()?.trim() || '';
+    this.getClaudeCodeMode = deps.getClaudeCodeMode ?? (() => undefined);
   }
 
   /**
@@ -2769,19 +2754,20 @@ export class OpenClawConfigSync {
       ? buildCompleteAgentModelDefaults(allProvidersMap, perModelCustomDefaults)
       : {};
 
-    // The Claude Code sign-in outranks every provider above: the primary
+    // The Claude Code mechanic outranks every provider above: the primary
     // model becomes the engine's Claude CLI backend, which spawns the
-    // installed Claude Code app for each turn. Nothing else about the
-    // providers changes, so switching back is the flag alone.
-    const claudeCode = this.getClaudeCodeLogin();
+    // installed Claude Code app for each turn, and every agent is locked
+    // to it (`buildAgentsList`) — an agent's stored model is the account's
+    // and would otherwise win over the default. Nothing else about the
+    // providers changes, so a packaged build is the same file minus this.
+    const claudeCode = this.getClaudeCodeMode();
+    const lockToClaudeCode = claudeCode?.enabled === true;
     let cliBackends: Record<string, { command: string }> | undefined;
     if (claudeCode?.enabled) {
-      const model = claudeCode.model?.trim() || CLAUDE_CODE_DEFAULT_MODEL;
-      primaryModel = `${CLAUDE_CLI_PROVIDER}/${model}`;
-      const command = resolveClaudeCli();
-      if (command) {
-        cliBackends = { [CLAUDE_CLI_PROVIDER]: { command } };
-        console.log(`[EngineConfigSync] model=${primaryModel} through Claude Code at ${command}`);
+      primaryModel = claudeCliModelRef(CLAUDE_CODE_STRONG_MODEL);
+      if (claudeCode.command) {
+        cliBackends = { [CLAUDE_CLI_PROVIDER]: { command: claudeCode.command } };
+        console.log(`[EngineConfigSync] model=${primaryModel} through Claude Code at ${claudeCode.command}`);
       } else {
         console.warn(
           `[EngineConfigSync] model=${primaryModel} through Claude Code, but no \`claude\` command was found; `
@@ -2973,7 +2959,7 @@ export class OpenClawConfigSync {
             ? { models: agentModelDefaults }
             : {}),
         },
-        ...this.buildAgentsList(primaryModel, this.engineManager.getStateDir(), availableProviders, agents),
+        ...this.buildAgentsList(primaryModel, this.engineManager.getStateDir(), availableProviders, agents, lockToClaudeCode),
       },
       ...this.currentBindingsObj,
       session: this.buildSessionConfig(),
@@ -3063,20 +3049,18 @@ export class OpenClawConfigSync {
             : {}),
           ...(hasAskUserPlugin ? { 'ask-user-question': { enabled: true } } : {}),
           ...(hasMediaGenPlugin ? { 'lobster-media-generation': { enabled: true } } : {}),
-          // Composio: on with a key, and written off without one rather
-          // than left out, so a stale entry from an earlier run cannot
-          // keep it loading against a key that is gone. The key itself
-          // is an env placeholder, like the bridge secret above — the
-          // file is readable; the environment is the process's own.
+          // Composio: no key anywhere in the app. The plugin talks to the
+          // local token proxy, which forwards to Claidor's server under
+          // the account's sign-in, and the server holds Claidor's key
+          // (`polar/desktop/composio.py`). On whenever the proxy is up;
+          // written off otherwise rather than left out, so a stale entry
+          // from an earlier run cannot survive the rewrite.
           ...(hasComposioPlugin
             ? {
-                [COMPOSIO_PLUGIN_ID]: this.composioApiKey()
+                [COMPOSIO_PLUGIN_ID]: getOpenClawTokenProxyPort()
                   ? {
                       enabled: true,
-                      config: {
-                        apiKey: `\${${COMPOSIO_API_KEY_ENV}}`,
-                        userId: COMPOSIO_USER_ID,
-                      },
+                      config: { baseUrl: composioBaseUrlFor(getOpenClawTokenProxyPort() as number) },
                     }
                   : { enabled: false },
               }
@@ -3909,10 +3893,6 @@ export class OpenClawConfigSync {
     // Used by the ask-user-question plugin.
     env.LOBSTER_MCP_BRIDGE_SECRET = this.getMcpBridgeSecret?.() || 'unconfigured';
 
-    // Composio — the same rule: always set, so the placeholder in a
-    // disabled entry resolves to something rather than crashing the load.
-    env[COMPOSIO_API_KEY_ENV] = this.composioApiKey() || 'unconfigured';
-
     // Telegram — per-instance secrets (must match sync() indexing: enabled instances only)
     const tgInstances = this.getTelegramInstances();
     const enabledTelegram = tgInstances.filter(i => i.enabled && i.botToken);
@@ -4466,13 +4446,15 @@ export class OpenClawConfigSync {
     stateDir?: string,
     availableProviders?: Record<string, { models: Array<{ id: string }> }>,
     agentsOverride?: Agent[],
+    /** Every agent on the default, whatever its stored model says (the Claude Code mechanic). */
+    lockToDefault = false,
   ): { list?: Array<Record<string, unknown>> } {
     const agents = agentsOverride ?? this.getAgents?.() ?? [];
     const mainAgent = agents.find(agent => agent.id === AgentId.Main);
 
     const list: Array<Record<string, unknown>> = [
       mainAgent
-        ? buildAgentEntry(mainAgent, defaultPrimaryModel, { availableProviders })
+        ? buildAgentEntry(mainAgent, defaultPrimaryModel, { availableProviders, lockToDefault })
         : {
             id: AgentId.Main,
             default: true,
@@ -4488,6 +4470,7 @@ export class OpenClawConfigSync {
         fallbackPrimaryModel: defaultPrimaryModel,
         stateDir,
         availableProviders,
+        lockToDefault,
       }),
     ];
 
