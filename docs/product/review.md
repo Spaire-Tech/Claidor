@@ -1326,3 +1326,78 @@ bubble" costs, plus 420ms per extra bubble. What happens *before* the
 model starts — gateway ready, model patch, prompt build, history probe,
 send ack — is logged on one line per turn, and that line is the
 measurement. See the report for the command.
+
+---
+
+## 34. A file the agent made opens in the panel, with Save a copy — `fixed`
+
+The founder: *"when the ai write an artifact, at the end, when it sends
+it, and the user clicks on it, the ai must always open it in the
+artifact right panel. Always. And there from there the user got the
+option to save it in his computer if not done."*
+
+A click on a file chip or an attachment card handed the path to the
+operating system — Word opened, or Preview, or nothing — and the panel
+behind the computer icon, the richest thing upstream gives us, stayed
+shut. The panel could already preview every one of these files; nothing
+asked it to.
+
+**Fixed.** `openFileTarget` decides what a click is: a file already in
+the panel is selected and the panel opens on Files with its preview; a
+file the detector saw but nobody loaded yet is read now, added, then
+shown; anything else — a file the person attached, a path nothing
+detected — still goes to the operating system. The panel lands on Files
+for that click only, and stays wherever the person put it otherwise.
+And the artifact toolbar has "Save a copy…" for every file artifact: a
+save sheet, a copy where they point, the original untouched. It was
+already in the right-click menu of a file link; now it is a button.
+
+**Where:** `design/shell/openFile.ts` (tested), `design/shell/
+useMessagesShell.ts`, `design/panel/ComputerPanel.tsx`,
+`components/artifacts/ArtifactPanel.tsx`, `services/i18n.ts`.
+
+---
+
+## 35. Does it ask before *anything* on the computer? — `no; a decision`
+
+The founder: *"Does the ai ask specifically in the chat when its about
+to do ANYTHING in the users laptop? I designed the cards for it."*
+
+Checked in the engine, not from memory.
+
+**What asks.** Any shell command, under the default Ask policy
+(`shared/settings/constants.ts` → `exec-approvals.json`): the card with
+the literal command, Always / Once / Never. Two exceptions the engine
+makes: commands the person has already answered Always to, and the
+engine's own list of harmless read-only filters that run without asking
+— `cut`, `uniq`, `head`, `tail`, `tr`, `wc`, reading their input only
+(`openclaw/src/infra/exec-safe-bin-policy-profiles.ts`,
+`DEFAULT_SAFE_BINS`). Deleting files asks first through the question
+card, by prompt rule.
+
+**What does not ask.** The engine's own file tools — `read`, `write`,
+`edit`, `apply_patch`. No approval exists for them anywhere in the
+engine; the only control is `tools.fs.workspaceOnly`
+(`openclaw/src/config/types.tools.ts:364`), which is **off by default:
+"unrestricted, matches legacy behavior"**. So today the agent can write,
+overwrite or edit any file on the disk with no card. Nor does the
+browser ask, nor a connector's tool.
+
+**The options, with the catch in each:**
+
+1. `tools.fs.workspaceOnly: true`. File tools stay inside the agent's
+   own workspace (its memory, its notes); everything on the person's
+   disk then goes through the shell, which asks. Clean for every agent
+   but one: the main agent's workspace **is** the person's working
+   folder (`buildAgentsList`, `agents.defaults.workspace`), so for main
+   that fence covers only what is outside that folder. Making main like
+   the others moves its `MEMORY.md`, which is a migration.
+2. Deny `write`, `edit` and `apply_patch` outright. Everything asks.
+   But the memory policy tells the agent to call `write` for
+   `MEMORY.md`; that breaks, and remembering becomes a shell command
+   with a card on it.
+3. Leave it, and say so in the contract.
+
+Not done here. It is the founder's rule and the founder's trade-off.
+My recommendation is 1, with main's exception stated until its
+workspace is moved.

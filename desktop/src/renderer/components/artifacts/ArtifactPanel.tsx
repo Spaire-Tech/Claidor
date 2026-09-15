@@ -1120,6 +1120,11 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
       selectedArtifact.filePath,
   );
   const showRevealInFolderAction = Boolean(selectedArtifact?.filePath);
+  // A file the agent made lives in the working folder. This is the way
+  // to put a copy somewhere the person chooses — the founder: "from there
+  // the user got the option to save it in his computer". Every file
+  // artifact offers it, in the toolbar, not only behind a right-click.
+  const showSaveCopyAction = Boolean(selectedArtifact?.filePath);
   const showPrimaryOpenWithAppAction = Boolean(!isCompactHtmlToolbar && showOpenWithAppAction);
   const showPrimaryRevealInFolderAction = Boolean(
     !isCompactHtmlToolbar &&
@@ -1139,7 +1144,8 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
       showCopyAction ||
       showOpenBrowserActionInMenu ||
       showOpenWithAppActionInMenu ||
-      showRevealInFolderActionInMenu,
+      showRevealInFolderActionInMenu ||
+      showSaveCopyAction,
   );
   const showArtifactActionsMenu = Boolean(
     isCompactArtifactToolbar &&
@@ -4649,6 +4655,25 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
     }
   }, [reportSelectedArtifactAction, selectedArtifact]);
 
+  const handleSaveCopy = useCallback(async () => {
+    if (!selectedArtifact?.filePath) return;
+    reportSelectedArtifactAction('save_copy', {
+      openTarget: 'save_dialog',
+    });
+    try {
+      // The same dialog the file context menu uses: a save sheet, then a
+      // copy of the file to wherever they pointed. The original stays.
+      const result = await window.electron?.dialog?.saveFileCopy(
+        normalizeShellFilePath(selectedArtifact.filePath),
+      );
+      if (result && !result.success) {
+        window.dispatchEvent(new CustomEvent('app:showToast', { detail: t('fileMenuSaveFailed') }));
+      }
+    } catch {
+      window.dispatchEvent(new CustomEvent('app:showToast', { detail: t('fileMenuSaveFailed') }));
+    }
+  }, [reportSelectedArtifactAction, selectedArtifact]);
+
   const handleRefresh = useCallback(async () => {
     if (!selectedArtifact?.filePath) return;
     if (selectedArtifact.type === 'video') {
@@ -5294,6 +5319,16 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
                           <span>{t('artifactOpenFolder')}</span>
                         </button>
                       )}
+                      {showSaveCopyAction && (
+                        <button
+                          type="button"
+                          onClick={() => runArtifactMenuAction(() => void handleSaveCopy())}
+                          className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-xs transition-colors hover:bg-surface"
+                        >
+                          <SaveCopyIcon />
+                          <span>{t('artifactSaveCopy')}</span>
+                        </button>
+                      )}
                       {officePreviewZoomControls && (
                         <div
                           className={`${hasArtifactActionMenuItems ? 'mt-1 border-t border-border/70 pt-1.5' : ''} px-1 py-1`}
@@ -5341,6 +5376,15 @@ const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
                   title={t('artifactOpenFolder')}
                 >
                   <FolderIcon />
+                </button>
+              )}
+              {showSaveCopyAction && (
+                <button
+                  onClick={() => void handleSaveCopy()}
+                  className="p-1 rounded text-secondary hover:text-foreground hover:bg-surface transition-colors"
+                  title={t('artifactSaveCopy')}
+                >
+                  <SaveCopyIcon />
                 </button>
               )}
               <button
@@ -8394,6 +8438,22 @@ const BrowserTabContent: React.FC<BrowserTabContentProps> = ({
     </div>
   );
 };
+
+const SaveCopyIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M8 2.5v7.5M5 7.5L8 10.5l3-3" />
+    <path d="M2.5 11v1.5A1.5 1.5 0 004 14h8a1.5 1.5 0 001.5-1.5V11" />
+  </svg>
+);
 
 const FolderIcon = () => (
   <svg

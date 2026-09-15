@@ -171,6 +171,7 @@ export function FaiserApp(): JSX.Element {
         <ComputerPanel
           sessionId={shell.sessionId}
           workingDirectory={shell.workingDirectory}
+          filesRequest={shell.filesRequest}
           onClose={shell.onClosePanel}
         />
       ) : undefined}
