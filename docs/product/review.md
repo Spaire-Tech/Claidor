@@ -1277,3 +1277,166 @@ hiding it forever. `direction.md` §3 is amended with the founder's words.
 
 **Where:** `design/thread/fromEngine.ts`, `design/shell/select.ts`,
 `design/shell/useMessagesShell.ts`, `docs/product/direction.md`.
+
+---
+
+## 32. Deleting the open agent blanked the sidebar — `fixed`
+
+The founder: *"when you delete a chat, the sidebar goes blank again.
+completely."*
+
+`agentService.deleteAgent` switched to the main agent and then asked
+the service for **the main agent's sessions only**. `setAgentSessions`
+replaces the store's whole list with whatever comes back — a partial
+snapshot written for the old per-agent session tree — so every other
+row lost its session, and with it its preview and its time. And the
+thread stayed empty on top of that: the once-only opener had already
+run, the deleted conversation had just been cleared, and nothing opens
+a conversation without a click.
+
+**Fixed.** The full list is reloaded and awaited, and the shell then
+does what a click on the main row does: opens its newest conversation,
+read from the freshly loaded store rather than the closure's stale copy.
+
+**Where:** `services/agent.ts`, `design/shell/useMessagesShell.ts`.
+
+---
+
+## 33. The sidebar announced the reply before the thread drew it — `fixed`
+
+The founder: *"the sidebar left preview comes first and then the chat
+comes. there's a timing issue."*
+
+Item 31 made the thread wait for a reply's final flag. The row under the
+agent's name did not wait: `previewOf` read the last assistant message
+whatever its state, so the partial text showed in the sidebar from the
+first token while the thread showed the typing animation. Two views of
+one message, on two clocks.
+
+**Fixed.** `previewOf` skips a reply that is still streaming, the same
+test the thread applies, so both change on the same final flag.
+
+**Where:** `design/shell/select.ts`, with a test in `select.test.ts`.
+
+**Not fixed here, because it is not established:** *"the chat comes too
+slowly for a simple question like hello."* Nothing in the app sits
+between the engine's final flag and the bubble; what the person waits
+for is the whole reply to be generated, which is what "never a growing
+bubble" costs, plus 420ms per extra bubble. What happens *before* the
+model starts — gateway ready, model patch, prompt build, history probe,
+send ack — is logged on one line per turn, and that line is the
+measurement. See the report for the command.
+
+---
+
+## 34. A file the agent made opens in the panel, with Save a copy — `fixed`
+
+The founder: *"when the ai write an artifact, at the end, when it sends
+it, and the user clicks on it, the ai must always open it in the
+artifact right panel. Always. And there from there the user got the
+option to save it in his computer if not done."*
+
+A click on a file chip or an attachment card handed the path to the
+operating system — Word opened, or Preview, or nothing — and the panel
+behind the computer icon, the richest thing upstream gives us, stayed
+shut. The panel could already preview every one of these files; nothing
+asked it to.
+
+**Fixed.** `openFileTarget` decides what a click is: a file already in
+the panel is selected and the panel opens on Files with its preview; a
+file the detector saw but nobody loaded yet is read now, added, then
+shown; anything else — a file the person attached, a path nothing
+detected — still goes to the operating system. The panel lands on Files
+for that click only, and stays wherever the person put it otherwise.
+And the artifact toolbar has "Save a copy…" for every file artifact: a
+save sheet, a copy where they point, the original untouched. It was
+already in the right-click menu of a file link; now it is a button.
+
+**Where:** `design/shell/openFile.ts` (tested), `design/shell/
+useMessagesShell.ts`, `design/panel/ComputerPanel.tsx`,
+`components/artifacts/ArtifactPanel.tsx`, `services/i18n.ts`.
+
+---
+
+## 35. Does it ask before *anything* on the computer? — `no; a decision`
+
+The founder: *"Does the ai ask specifically in the chat when its about
+to do ANYTHING in the users laptop? I designed the cards for it."*
+
+Checked in the engine, not from memory.
+
+**What asks.** Any shell command, under the default Ask policy
+(`shared/settings/constants.ts` → `exec-approvals.json`): the card with
+the literal command, Always / Once / Never. Two exceptions the engine
+makes: commands the person has already answered Always to, and the
+engine's own list of harmless read-only filters that run without asking
+— `cut`, `uniq`, `head`, `tail`, `tr`, `wc`, reading their input only
+(`openclaw/src/infra/exec-safe-bin-policy-profiles.ts`,
+`DEFAULT_SAFE_BINS`). Deleting files asks first through the question
+card, by prompt rule.
+
+**What does not ask.** The engine's own file tools — `read`, `write`,
+`edit`, `apply_patch`. No approval exists for them anywhere in the
+engine; the only control is `tools.fs.workspaceOnly`
+(`openclaw/src/config/types.tools.ts:364`), which is **off by default:
+"unrestricted, matches legacy behavior"**. So today the agent can write,
+overwrite or edit any file on the disk with no card. Nor does the
+browser ask, nor a connector's tool.
+
+**The options, with the catch in each:**
+
+1. `tools.fs.workspaceOnly: true`. File tools stay inside the agent's
+   own workspace (its memory, its notes); everything on the person's
+   disk then goes through the shell, which asks. Clean for every agent
+   but one: the main agent's workspace **is** the person's working
+   folder (`buildAgentsList`, `agents.defaults.workspace`), so for main
+   that fence covers only what is outside that folder. Making main like
+   the others moves its `MEMORY.md`, which is a migration.
+2. Deny `write`, `edit` and `apply_patch` outright. Everything asks.
+   But the memory policy tells the agent to call `write` for
+   `MEMORY.md`; that breaks, and remembering becomes a shell command
+   with a card on it.
+3. Leave it, and say so in the contract.
+
+Not done here. It is the founder's rule and the founder's trade-off.
+My recommendation is 1, with main's exception stated until its
+workspace is moved.
+
+**Correction, same day.** Two things in the options above were wrong,
+and the founder's *"wdym? there is no project"* is what made me check.
+
+- The main agent's workspace is **not** the person's working folder. It
+  is `workspace-main` under the app's hidden state directory, like every
+  other agent's (`openclawMemoryFile.ts`, `getMainAgentWorkspacePath`).
+  A stale comment in `buildAgentsList` said otherwise and I repeated it.
+  The comment is fixed.
+- Option 1 does not do what I said. The engine measures
+  `tools.fs.workspaceOnly` from the **session's working folder** when
+  one is set (`openclaw/src/agents/agent-tools.ts:688`, `runtimeRoot`
+  from `options.cwd`), and our adapter sets it on every run
+  (`openclawRuntimeAdapter.ts:5578`, `cwd: runCwd`). So on, the fence
+  would let the agent write anywhere inside that folder with no card,
+  and cut it off from its own `MEMORY.md`, which lives elsewhere. I had
+  switched it on; it is reverted, and a test now keeps it off with the
+  reason beside it.
+
+The working folder, for the record: every conversation has one, by
+default `~/faiser/project` (`coworkStore.ts:65`), shown in Settings →
+Computer as the `working-directory` row. It is where the agent's files
+land. It is not a "project" in the Projects sense.
+
+**The real options, after that:**
+
+1. **Deny the file tools** (`write`, `edit`, `apply_patch`, and `read`
+   if reading must ask too) in the managed tool deny list. Every touch
+   of a file is then a command, and a command draws the card. Available
+   today, a few lines. Cost: "remember this" becomes a command with a
+   card on it, because memory is a file write; and "Always allow" on a
+   command allows that program from then on, not that file.
+2. **Patch the engine** so the file tools go through the same approval
+   as commands and draw the card with the path in it. The proper fix,
+   under the repo's version-scoped patch policy. A day or two, and a
+   patch to carry across engine upgrades.
+3. Leave it, and say so in the contract.
+
+My recommendation is 2. Decision is the founder's.

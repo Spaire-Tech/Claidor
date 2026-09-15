@@ -95,6 +95,13 @@ export function previewOf(messages: readonly EngineMessage[] | undefined): strin
     const message = messages[i];
     if (message.type !== 'user' && message.type !== 'assistant') continue;
     if (message.metadata?.isThinking) continue;
+    // A reply that is still arriving is not shown in the thread
+    // (`fromEngine.ts`, the `running` gate), and it must not show here
+    // either. It did: the row read the partial text the moment the first
+    // token landed, so the sidebar announced the answer seconds before
+    // the thread drew it — the founder's "the preview comes first and
+    // then the chat comes". Both now wait for the same final flag.
+    if (message.metadata?.isStreaming && !message.metadata.isFinal) continue;
     const text = plainPreview(message.content);
     if (text) return text;
   }

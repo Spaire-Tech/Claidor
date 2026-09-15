@@ -3367,6 +3367,20 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).not.toMatch(/dual.use|child_sex|CSAM|nuclear/i);
   });
 
+  test('the file-tool fence stays off, because it is measured from the wrong folder', async () => {
+    // review.md item 35. `tools.fs.workspaceOnly` reads as the fence
+    // that would make file writes ask, and it is not: the engine
+    // measures it from the session cwd — the person's working folder —
+    // so on, it would allow silent writes anywhere in that folder and
+    // cut the agent off from its own MEMORY.md. Guarded so nobody flips
+    // it for the reason I nearly did.
+    const sync = await createSync();
+    expect(sync.sync('fs-fence').ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.tools.fs).toBeUndefined();
+  });
+
   test('memory precedence says which file wins', async () => {
     const sync = await createSync();
     expect(sync.sync('memory-precedence').ok).toBe(true);

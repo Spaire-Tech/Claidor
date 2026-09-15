@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 
 import { normalizeBrowserWebAccessConfig } from '../../../shared/browserWebAccess/constants';
@@ -14,6 +14,12 @@ import { color, line, radius, text, tracking } from '../tokens';
 export interface ComputerPanelProps {
   sessionId: string;
   workingDirectory?: string;
+  /**
+   * A file in the thread was clicked. Counts up per click, so the panel
+   * lands on Files each time and stays wherever the person put it
+   * otherwise. Zero, or absent, means nobody asked.
+   */
+  filesRequest?: number;
   onClose: () => void;
 }
 
@@ -53,7 +59,7 @@ const PanelTab = {
 type PanelTab = typeof PanelTab[keyof typeof PanelTab];
 
 export function ComputerPanel({
-  sessionId, workingDirectory, onClose,
+  sessionId, workingDirectory, filesRequest = 0, onClose,
 }: ComputerPanelProps): JSX.Element {
   const artifacts = useSelector((state: RootState) => selectSessionArtifacts(state, sessionId));
 
@@ -68,6 +74,13 @@ export function ComputerPanel({
   );
 
   const [tab, setTab] = useState<PanelTab>(inApp ? PanelTab.Browser : PanelTab.Files);
+
+  // A click on a file in the thread lands here, on Files, where the
+  // artifact panel is already showing that file's preview. The Browser
+  // tab is still the default when the panel is opened from the icon.
+  useEffect(() => {
+    if (filesRequest > 0) setTab(PanelTab.Files);
+  }, [filesRequest]);
 
   const tabButton = (value: PanelTab, label: string, icon: JSX.Element): JSX.Element => {
     const on = tab === value;

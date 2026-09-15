@@ -2411,7 +2411,14 @@ export class OpenClawConfigSync {
       deny: [
         ...MANAGED_TOOL_DENY
       ],
-loopDetection: MANAGED_TOOL_LOOP_DETECTION,
+      loopDetection: MANAGED_TOOL_LOOP_DETECTION,
+      // Not `fs: { workspaceOnly: true }`. It looks like the fence for the
+      // engine's file tools, and it is — but measured from the session's
+      // working folder when one is set (`agent-tools.ts`, `codingRoot =
+      // sandboxRoot ?? runtimeRoot`, `runtimeRoot` from `options.cwd`),
+      // which is the person's own folder. On, it would let the agent
+      // write anywhere in that folder with no card and cut it off from
+      // its own MEMORY.md. review.md item 35.
       web: {
         search: {
           enabled: false,
@@ -4342,11 +4349,14 @@ loopDetection: MANAGED_TOOL_LOOP_DETECTION,
   /**
    * Build the `agents.list` config array for openclaw.json.
    *
-   * The main agent uses the user's configured workspace directory (via
-   * `agents.defaults.workspace`).  Non-main agents omit `workspace` so
-   * OpenClaw falls back to its default: `{STATE_DIR}/workspace-{agentId}/`.
-   * This keeps custom agent workspaces under the openclaw state directory
-   * rather than coupling them to the user's working directory.
+   * The main agent's workspace is `{STATE_DIR}/workspace-main`
+   * (`getMainAgentWorkspacePath`, set as `agents.defaults.workspace`).
+   * Non-main agents omit `workspace` so OpenClaw falls back to its
+   * default, `{STATE_DIR}/workspace-{agentId}/`. So every agent's
+   * workspace is under the engine state directory, and none is the
+   * person's working folder — that is only ever the session cwd. This
+   * comment used to say main used "the user's configured workspace
+   * directory", which was false and was repeated to the founder.
    *
    * Per-agent `identity` (name, emoji) is set from the agent database so
    * OpenClaw picks it up natively.

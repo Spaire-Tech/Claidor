@@ -42,6 +42,20 @@ describe('previewOf', () => {
     ])).toBe('Right.');
   });
 
+  test('waits for a reply to finish, exactly as the thread does', () => {
+    // The thread hides a reply until its final flag. The row was reading
+    // the partial text as it streamed, so the sidebar said the answer
+    // before the conversation did. Same flag, same moment.
+    expect(previewOf([
+      message({ type: 'user', content: 'hello' }),
+      message({ type: 'assistant', content: 'Hey — what', metadata: { isStreaming: true, isFinal: false } }),
+    ])).toBe('hello');
+    expect(previewOf([
+      message({ type: 'user', content: 'hello' }),
+      message({ type: 'assistant', content: 'Hey — what can I do?', metadata: { isStreaming: false, isFinal: true } }),
+    ])).toBe('Hey — what can I do?');
+  });
+
   test('collapses newlines so a row stays one line', () => {
     expect(previewOf([message({ type: 'assistant', content: 'One.\n\nTwo.' })]))
       .toBe('One. Two.');

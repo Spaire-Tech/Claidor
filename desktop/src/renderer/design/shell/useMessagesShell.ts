@@ -7,9 +7,9 @@ import { isRoomId, type Room } from '../../../shared/rooms/constants';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { coworkService } from '../../services/cowork';
-import type { AppDispatch, RootState } from '../../store';
+import { type AppDispatch, type RootState, store } from '../../store';
 import { setCurrentAgentId } from '../../store/slices/agentSlice';
-import { addArtifact } from '../../store/slices/artifactSlice';
+import { addArtifact, selectArtifact } from '../../store/slices/artifactSlice';
 import { setCurrentSession } from '../../store/slices/coworkSlice';
 import type { PresetAgent } from '../../types/agent';
 import { ArtifactTypeValue } from '../../types/artifact';
@@ -24,6 +24,7 @@ import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/Threa
 import { AuthDecision } from '../thread/types';
 import type { AgentDraftSubmit } from './Compose';
 import { ThreadMode } from './MessagesShell';
+import { openFileTarget } from './openFile';
 import { installedPresetIds } from './roles';
 import { mergeRoomThread, roomTyping } from './room';
 import {
@@ -129,6 +130,12 @@ export interface MessagesShellState {
   sessionId: string | undefined;
   workingDirectory: string | undefined;
   panelOpen: boolean;
+  /**
+   * Counts up each time a file in the thread asks the panel to show it,
+   * so the panel lands on Files that time and only that time. Reset
+   * when the panel closes.
+   */
+  filesRequest: number;
   onOpenPanel: () => void;
   onClosePanel: () => void;
 }
@@ -419,13 +426,66 @@ export function useMessagesShell(): MessagesShellState {
     [agents],
   );
 
+  // The computer panel. Local to the shell: upstream keeps an open flag
+  // per session in the artifact slice, but that slice is the old shell's
+  // and toggling it from here would move a panel it also draws.
+  const [panelOpen, setPanelOpen] = useState(false);
+  // See `filesRequest` on the state: bumped by a file click, cleared on close.
+  const [filesRequest, setFilesRequest] = useState(0);
+
+  // The agent panel. Two doors, one room: the header name toggles it
+  // and the sidebar's trash opens it with the delete question already
+  // asked. It and the computer panel take the same column, so opening
+  // one closes the other.
+  const [agentPanel, setAgentPanel] = useState<{ open: boolean; asking: boolean }>({ open: false, asking: false });
+
+  /**
+   * A file the agent made, clicked: show it in the panel.
+   *
+   * The founder: *"the user clicks on it, the ai must always open it in
+   * the artifact right panel. Always."* `openFileTarget` decides which of
+   * three things this is; only a file that is not the agent's goes to
+   * the operating system, as every click used to.
+   */
+  const showInPanel = useCallback((artifactId: string) => {
+    dispatch(selectArtifact(artifactId));
+    setAgentPanel({ open: false, asking: false });
+    setPanelOpen(true);
+    setFilesRequest(count => count + 1);
+  }, [dispatch]);
+
+  const onOpenFile = useCallback((path: string) => {
+    const sessionId = currentSession?.id;
+    const loaded = sessionId ? (store.getState().artifact.artifactsBySession[sessionId] ?? []) : [];
+    const target = sessionId ? openFileTarget(path, loaded, detected) : { kind: 'system' as const };
+    if (target.kind === 'show') {
+      showInPanel(target.artifactId);
+      return;
+    }
+    if (target.kind === 'load' && sessionId) {
+      // The loader below runs when the turn ends; a click can beat it.
+      // Same three steps, now, and remembered so it is not read twice.
+      loadedArtifactIds.current.add(target.artifact.id);
+      void loadDetectedFileArtifact(target.artifact, currentSession?.cwd).then(artifact => {
+        if (!artifact) {
+          void openLocalPathWithToast(path);
+          return;
+        }
+        dispatch(addArtifact({ sessionId, artifact }));
+        showInPanel(artifact.id);
+      });
+      return;
+    }
+    void openLocalPathWithToast(path);
+  }, [currentSession, detected, dispatch, showInPanel]);
+
   const parts = useMemo<PartHandlers>(() => ({
     files,
     avatars,
-    onOpenFile: (path: string) => { void openLocalPathWithToast(path); },
+    onOpenFile,
     // A link belongs in the person's own browser, not inside a bubble.
     onOpenLink: (href: string) => { window.open(href, '_blank', 'noopener,noreferrer'); },
-  }), [files, avatars]);
+  }), [files, avatars, onOpenFile]);
 
   // Open on a conversation rather than on nothing, the way Messages does.
   // Once only, and never over an open one: the guard is what stops this
@@ -487,7 +547,20 @@ export function useMessagesShell(): MessagesShellState {
       }
       // A room it sat in has lost a member, so the list is stale.
       reloadRooms();
-      if (activeId === id) dispatch(setCurrentAgentId(AgentId.Main));
+      if (activeId !== id) return;
+      // The service has already made main current and cleared the open
+      // conversation, which is the deleted one. Left there, the thread
+      // stayed empty: the once-only opener above had already run, and
+      // nothing else opens a conversation without a click. So do what a
+      // click does — open main's newest — reading the store directly,
+      // because the `sessionsByAgent` in this closure is from before the
+      // delete and the service has just reloaded the list.
+      dispatch(setCurrentAgentId(AgentId.Main));
+      setNotes([]);
+      const newest = store.getState().cowork.sessions
+        .filter(one => one.agentId === AgentId.Main)
+        .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+      if (newest) void coworkService.loadSession(newest.id);
     });
   }, [activeId, dispatch, reloadRooms]);
 
@@ -597,16 +670,6 @@ export function useMessagesShell(): MessagesShellState {
   // Composing: who to message, or a new agent.
   const [composing, setComposing] = useState(false);
 
-  // The computer panel. Local to the shell: upstream keeps an open flag
-  // per session in the artifact slice, but that slice is the old shell's
-  // and toggling it from here would move a panel it also draws.
-  const [panelOpen, setPanelOpen] = useState(false);
-
-  // The agent panel. Two doors, one room: the header name toggles it
-  // and the sidebar's trash opens it with the delete question already
-  // asked. It and the computer panel take the same column, so opening
-  // one closes the other.
-  const [agentPanel, setAgentPanel] = useState<{ open: boolean; asking: boolean }>({ open: false, asking: false });
   const onToggleAgentPanel = useCallback(() => {
     setAgentPanel(current => (current.open ? { open: false, asking: false } : { open: true, asking: false }));
     setPanelOpen(false);
@@ -834,7 +897,8 @@ export function useMessagesShell(): MessagesShellState {
     sessionId: currentSession?.id,
     workingDirectory: currentSession?.cwd,
     panelOpen,
+    filesRequest,
     onOpenPanel: () => { setPanelOpen(open => !open); setAgentPanel({ open: false, asking: false }); },
-    onClosePanel: () => setPanelOpen(false),
+    onClosePanel: () => { setPanelOpen(false); setFilesRequest(0); },
   };
 }

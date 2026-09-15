@@ -244,7 +244,14 @@ class AgentService {
       if (wasCurrentAgent) {
         this.switchAgent(AgentId.Main);
         const { coworkService } = await import('./cowork');
-        coworkService.loadSessions(AgentId.Main);
+        // The whole list, awaited. This used to ask for the main agent's
+        // sessions only, and `setAgentSessions` replaces the store's list
+        // with whatever comes back — so deleting the open agent left
+        // every other row in the sidebar with no session, no preview and
+        // no time, which is what the founder saw as the sidebar going
+        // blank. Awaited so the caller can open a conversation from the
+        // fresh list rather than from the one that has just been emptied.
+        await coworkService.loadSessions();
       }
       return true;
     } catch (error) {
