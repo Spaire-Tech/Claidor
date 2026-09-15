@@ -37,6 +37,8 @@ import {
 import {
   ManualCredentialCaptureService,
 } from '../browserCredentials/manualCredentialCaptureService';
+import { domQuietScript, settlePage } from './agentBrowserSettle';
+import { type AxNode, buildAccessibilitySnapshot, describeSnapshot } from './agentBrowserSnapshot';
 import type {
   BrowserToolRequest,
   BrowserToolResponse,
@@ -67,32 +69,6 @@ const BrowserMcpTool = {
 const DEFAULT_PAGE_URL = 'about:blank';
 const DEFAULT_OPERATION_TIMEOUT_MS = 30_000;
 const MAX_OPERATION_TIMEOUT_MS = 60_000;
-const MAX_SNAPSHOT_NODES = 2_000;
-
-type AxValue = {
-  value?: unknown;
-};
-
-type AxNode = {
-  nodeId: string;
-  parentId?: string;
-  childIds?: string[];
-  backendDOMNodeId?: number;
-  ignored?: boolean;
-  role?: AxValue;
-  name?: AxValue;
-  value?: AxValue;
-  description?: AxValue;
-};
-
-type SnapshotNode = {
-  id?: string;
-  role?: string;
-  name?: string;
-  value?: string | number | boolean;
-  description?: string;
-  children?: SnapshotNode[];
-};
 
 type BrowserPage = {
   pageId: number;
@@ -177,13 +153,6 @@ const isBlockedHostname = (url: string, config: BrowserWebAccessConfig): boolean
     }
     return hostname === entry;
   });
-};
-
-const toSnapshotScalar = (value: unknown): string | number | boolean | undefined => {
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    return value;
-  }
-  return undefined;
 };
 
 const resolveKeyInput = (rawKey: string): { keyCode: string; modifiers: string[] } => {
@@ -509,9 +478,11 @@ export class AgentBrowserHost {
         return this.takeSnapshot(this.resolvePage(args.pageId));
       case BrowserMcpTool.TakeScreenshot:
         return this.takeScreenshot(this.resolvePage(args.pageId), args);
-      case BrowserMcpTool.Click:
-        await this.click(this.resolvePage(args.pageId), readString(args.uid), args.dblClick === true);
-        return textResult('Element clicked.');
+      case BrowserMcpTool.Click: {
+        const page = this.resolvePage(args.pageId);
+        await this.click(page, readString(args.uid), args.dblClick === true);
+        return this.snapshotAfter(page, 'Element clicked.');
+      }
       case BrowserMcpTool.Fill:
         await this.fill(this.resolvePage(args.pageId), readString(args.uid), readString(args.value));
         return textResult('Element filled.');
@@ -531,9 +502,15 @@ export class AgentBrowserHost {
       case BrowserMcpTool.UploadFile:
         await this.uploadFile(this.resolvePage(args.pageId), readString(args.uid), readString(args.filePath));
         return textResult('File uploaded.');
-      case BrowserMcpTool.PressKey:
-        this.pressKey(this.resolvePage(args.pageId), readString(args.key));
-        return textResult('Key pressed.');
+      case BrowserMcpTool.PressKey: {
+        const page = this.resolvePage(args.pageId);
+        const key = readString(args.key);
+        this.pressKey(page, key);
+        // A single character is typing; only a control key (Enter, Tab,
+        // Escape, an arrow) can change the page enough to be worth waiting.
+        if (key.length === 1) return textResult('Key pressed.');
+        return this.snapshotAfter(page, 'Key pressed.');
+      }
       case BrowserMcpTool.ResizePage:
         return textResult('The in-app browser size is controlled by the Caisra panel.');
       case BrowserMcpTool.HandleDialog:
@@ -731,51 +708,48 @@ export class AgentBrowserHost {
     return textResult(JSON.stringify({ pages }), { pages });
   }
 
-  private async takeSnapshot(page: BrowserPage): Promise<BrowserToolResponse> {
+  private async takeSnapshot(page: BrowserPage, prefix?: string): Promise<BrowserToolResponse> {
     await this.ensureDebugger(page);
     const result = await page.view.webContents.debugger.sendCommand('Accessibility.getFullAXTree') as {
       nodes?: AxNode[];
     };
-    const nodes = (result.nodes ?? [])
-      .filter(node => !node.ignored)
-      .slice(0, MAX_SNAPSHOT_NODES);
-    const nodeById = new Map(nodes.map(node => [node.nodeId, node]));
+    const build = buildAccessibilitySnapshot(result.nodes ?? [], {
+      pageId: page.pageId,
+      title: page.view.webContents.getTitle(),
+    });
     page.refs.clear();
+    for (const [ref, backendNodeId] of build.refs) page.refs.set(ref, backendNodeId);
+    if (build.dropped > 0) {
+      console.debug(`[AgentBrowserHost] snapshot of page ${page.pageId} cut: shown=${build.shown} dropped=${build.dropped}`);
+    }
+    return textResult(describeSnapshot(build, prefix), {
+      snapshot: build.snapshot,
+      ...(build.dropped > 0 ? { truncated: { shown: build.shown, dropped: build.dropped } } : {}),
+    });
+  }
 
-    const buildNode = (node: AxNode, ancestors: Set<string>): SnapshotNode | null => {
-      if (ancestors.has(node.nodeId)) return null;
-      const nextAncestors = new Set(ancestors).add(node.nodeId);
-      const ref = `ax-${page.pageId}-${node.nodeId}`;
-      if (typeof node.backendDOMNodeId === 'number') {
-        page.refs.set(ref, node.backendDOMNodeId);
-      }
-      const children = (node.childIds ?? [])
-        .map(childId => nodeById.get(childId))
-        .filter((child): child is AxNode => Boolean(child))
-        .map(child => buildNode(child, nextAncestors))
-        .filter((child): child is SnapshotNode => Boolean(child));
-      const role = toSnapshotScalar(node.role?.value);
-      const name = toSnapshotScalar(node.name?.value);
-      const value = toSnapshotScalar(node.value?.value);
-      const description = toSnapshotScalar(node.description?.value);
-      return {
-        ...(node.backendDOMNodeId ? { id: ref } : {}),
-        ...(role !== undefined ? { role: String(role) } : {}),
-        ...(name !== undefined ? { name: String(name) } : {}),
-        ...(value !== undefined ? { value } : {}),
-        ...(description !== undefined ? { description: String(description) } : {}),
-        ...(children.length > 0 ? { children } : {}),
-      };
-    };
-
-    const rootNodes = nodes.filter(node => !node.parentId || !nodeById.has(node.parentId));
-    const roots = rootNodes
-      .map(node => buildNode(node, new Set()))
-      .filter((node): node is SnapshotNode => Boolean(node));
-    const snapshot: SnapshotNode = roots.length === 1
-      ? roots[0]
-      : { role: 'RootWebArea', name: page.view.webContents.getTitle(), children: roots };
-    return textResult('Accessibility snapshot captured.', { snapshot });
+  /**
+   * After a click or a key press: wait for the page to arrive, then hand
+   * the agent what it looks like now. Reading straight after the action
+   * shows the page as it was, and an agent that does that concludes the
+   * click did nothing. `agentBrowserSettle.ts` says how the wait works.
+   */
+  private async snapshotAfter(page: BrowserPage, action: string): Promise<BrowserToolResponse> {
+    const report = await settlePage({
+      isLoading: () => page.loading || page.view.webContents.isLoading(),
+      domQuiet: async (quietMs, maxMs) => (
+        await page.view.webContents.executeJavaScript(domQuietScript(quietMs, maxMs), true) as boolean
+      ),
+      sleep: ms => new Promise(resolve => { setTimeout(resolve, ms); }),
+      now: () => Date.now(),
+    });
+    const settled = report.navigated
+      ? (report.loaded ? 'The page navigated and has loaded.' : 'The page navigated but was still loading when the wait ran out.')
+      : (report.quiet ? 'The page has settled.' : 'The page was still changing when the wait ran out.');
+    console.debug(
+      `[AgentBrowserHost] ${action} page=${page.pageId} navigated=${report.navigated} loaded=${report.loaded} quiet=${report.quiet} waited=${report.waitedMs}ms`,
+    );
+    return this.takeSnapshot(page, `${action} ${settled} This is its snapshot now.`);
   }
 
   private async takeScreenshot(

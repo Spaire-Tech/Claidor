@@ -3,9 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { AgentId } from '../../../shared/agent';
 import { avatarFallback } from '../../../shared/agent/avatars';
+import { BrowserDisplayMode, normalizeBrowserWebAccessConfig } from '../../../shared/browserWebAccess/constants';
 import { isRoomId, type Room } from '../../../shared/rooms/constants';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
+import { configService } from '../../services/config';
 import { coworkService } from '../../services/cowork';
 import { normalizeShellFilePath } from '../../services/shellAppsCache';
 import { type AppDispatch, type RootState, store } from '../../store';
@@ -435,6 +437,38 @@ export function useMessagesShell(): MessagesShellState {
   const [panelOpen, setPanelOpen] = useState(false);
   // See `filesRequest` on the state: bumped by a file click, cleared on close.
   const [filesRequest, setFilesRequest] = useState(0);
+
+  // The screen splits by itself when the agent starts browsing. The
+  // founder, after an afternoon of a browser window opening over the chat:
+  // *"instead of the thing opening a new browser and leaving the chat, can
+  // we automatically split the screens like this? left is our chat, the
+  // other is the browser?"* Yes. The built-in browser already lives in the
+  // computer panel; what was missing was the panel opening on its own.
+  //
+  // It opens on the moment the agent's browser goes from no page to a
+  // page, and only then — so a person who closes it keeps it closed for
+  // the rest of that browsing, and the next fresh start opens it again.
+  // Only in in-app mode: in the other mode there is nothing to show.
+  const browserPageCount = useRef(0);
+  useEffect(() => {
+    const browserApi = window.electron?.openclaw?.browser;
+    if (!browserApi) return undefined;
+    const inApp = normalizeBrowserWebAccessConfig(
+      configService.getConfig().browserWebAccess,
+    ).displayMode === BrowserDisplayMode.InApp;
+    if (!inApp) return undefined;
+    const sessionId = currentSession?.id;
+    return browserApi.onHostState(event => {
+      if (event.sessionId && sessionId && event.sessionId !== sessionId) return;
+      const pages = event.state.tabs.filter(tab => tab.url && tab.url !== 'about:blank').length;
+      const before = browserPageCount.current;
+      browserPageCount.current = pages;
+      if (before === 0 && pages > 0) {
+        setAgentPanel({ open: false, asking: false });
+        setPanelOpen(true);
+      }
+    });
+  }, [currentSession?.id]);
 
   // The agent panel. Two doors, one room: the header name toggles it
   // and the sidebar's trash opens it with the delete question already

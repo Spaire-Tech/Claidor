@@ -32,9 +32,15 @@ kit and MCP catalogues, and — from `polar/connectors/`, mounted there —
 Pipedream Connect sign-in links and per-service MCP targets), the maty
 job queue under `polar/maty/`, and the cloud runner. `render.yaml` and
 the deployed services are unchanged and the API answers right now. All
-of it is live and, at this commit, nothing in the app calls it. **There
-is no speech route** — an earlier version of this file said there was,
-and nothing under `server/polar/` matches `speech`.
+of it is live and, at this commit, nothing in the app calls it. **Speech,
+checked 15 September:** the server serves text-to-speech at
+`/api/proxy/v1/audio/speech` (`server/polar/desktop/endpoints.py`, the
+`desktop:speech` route). It serves **no speech recognition**: the app's
+voice input asks `/api/asr/realtime/sessions` (`ipcHandlers/asr/handlers.ts`),
+which was NetEase's, and nothing under `server/polar/` answers it, so
+voice input is dead in our build until a recogniser exists. An earlier
+version of this file said there was no speech route at all; that was
+wrong in the other direction.
 
 ## The design direction (13 September 2026)
 

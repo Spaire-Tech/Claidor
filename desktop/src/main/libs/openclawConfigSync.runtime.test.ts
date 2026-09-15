@@ -2929,6 +2929,9 @@ describe('OpenClawConfigSync runtime config output', () => {
     // browser runs — this machine rather than a container — and `profile`
     // is which browser. These four lines are the difference.
     expect(agentsMd).toContain('You have your own browser.');
+    expect(agentsMd).toContain('### Reading a page that redraws');
+    expect(agentsMd).toContain('`click` and `press_key` wait for the page to settle and return its new snapshot.');
+    expect(agentsMd).toContain('go to that address with `navigate_page` rather than clicking its card in a list');
     expect(agentsMd).toContain('does NOT mean the user\'s own browser');
     expect(agentsMd).toContain('Leave `profile` unset.');
     expect(agentsMd).toContain('Never pass `profile: "user"`.');
@@ -2949,6 +2952,13 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     expect(agentsMd).toContain('## Talking to the Person');
     expect(agentsMd).toContain('### Answer before you work');
+    // The DoorDash afternoon: four turns ended on "doing it now" with no
+    // tool call, and the work died each time. The rule now says how a turn
+    // works, in so many words.
+    expect(agentsMd).toContain('A reply that contains no tool call ends your turn.');
+    expect(agentsMd).toContain('the one line and the first tool call go in the same response, always');
+    expect(agentsMd).toContain('Once they have said go ahead');
+    expect(agentsMd).toContain('do not say you cannot draw a confirmation card');
     expect(agentsMd).toContain('### An acknowledgement is not the answer');
     expect(agentsMd).toContain('Never end a turn having only promised.');
     expect(agentsMd).toContain('Do not narrate commands.');
