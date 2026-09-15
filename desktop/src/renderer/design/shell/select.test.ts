@@ -80,15 +80,15 @@ describe('whenLabel', () => {
 });
 
 describe('sidebarAgents', () => {
-  const sessions: Record<string, StoreSession> = {
-    juno: { id: 's1', agentId: 'juno', updatedAt: NOW - 1000, messages: [message({ type: 'assistant', content: 'Read it.' })] },
-    mira: { id: 's2', agentId: 'mira', updatedAt: NOW - day, messages: [message({ type: 'assistant', content: 'Cleared.' })] },
-  };
+  const sessions: StoreSession[] = [
+    { id: 's1', agentId: 'juno', updatedAt: NOW - 1000, messages: [message({ type: 'assistant', content: 'Read it.' })] },
+    { id: 's2', agentId: 'mira', updatedAt: NOW - day, messages: [message({ type: 'assistant', content: 'Cleared.' })] },
+  ];
 
   test('newest conversation first', () => {
     const rows = sidebarAgents({
       agents: [agent('mira'), agent('juno')],
-      sessionsByAgent: sessions,
+      sessions,
       now: NOW,
     });
     expect(rows.map(r => r.id)).toEqual(['juno', 'mira']);
@@ -97,28 +97,75 @@ describe('sidebarAgents', () => {
   test('pinned agents stay on top, in their own order', () => {
     const rows = sidebarAgents({
       agents: [agent('juno'), agent('mira'), agent('sable', { pinned: true, pinOrder: 0 })],
-      sessionsByAgent: sessions,
+      sessions,
       now: NOW,
     });
     expect(rows[0].id).toBe('sable');
   });
 
-  test('an agent nobody has spoken to is last, never hidden', () => {
-    // A freshly installed role agent has to be findable before it has a
-    // history.
+  test('a new, empty conversation does not blank the preview', () => {
+    // The fault this replaces. Starting a fresh conversation makes an
+    // empty session with a brand-new timestamp; reducing to the newest
+    // session per agent then threw away the one holding every word they
+    // had exchanged, and the row drew a time over nothing.
     const rows = sidebarAgents({
-      agents: [agent('newbie'), agent('juno')],
-      sessionsByAgent: sessions,
+      agents: [agent('juno')],
+      sessions: [
+        { id: 'old', agentId: 'juno', updatedAt: NOW - day, lastMessage: 'Read it.' },
+        { id: 'fresh', agentId: 'juno', updatedAt: NOW },
+      ],
       now: NOW,
     });
-    expect(rows.map(r => r.id)).toEqual(['juno', 'newbie']);
-    expect(rows[1]).toMatchObject({ preview: '', when: '' });
+    expect(rows[0].preview).toBe('Read it.');
+  });
+
+  test('the timestamp belongs to the text beside it', () => {
+    // No text, no time. A row that says "now" over an empty line is the
+    // same blank in a smaller font.
+    const rows = sidebarAgents({
+      agents: [agent('juno')],
+      sessions: [{ id: 'fresh', agentId: 'juno', updatedAt: NOW }],
+      now: NOW,
+    });
+    expect(rows[0]).toMatchObject({ preview: '', when: '' });
+  });
+
+  test('a just-made agent is at the top, not the bottom', () => {
+    // Making an agent is activity. The old rule scored an agent with no
+    // conversation at zero, so the thing you had just made landed in the
+    // last place you would look for it.
+    const rows = sidebarAgents({
+      agents: [agent('juno'), agent('newbie', { createdAt: NOW })],
+      sessions,
+      now: NOW,
+    });
+    expect(rows.map(r => r.id)).toEqual(['newbie', 'juno']);
+    expect(rows[0]).toMatchObject({ preview: '', when: '' });
+  });
+
+  test('an old agent nobody ever spoke to sinks on its own', () => {
+    // The same rule, the other way round — no special case for it.
+    const rows = sidebarAgents({
+      agents: [agent('forgotten', { createdAt: NOW - 30 * day }), agent('juno'), agent('mira')],
+      sessions,
+      now: NOW,
+    });
+    expect(rows.map(r => r.id)).toEqual(['juno', 'mira', 'forgotten']);
+  });
+
+  test('an agent nobody has spoken to is never hidden', () => {
+    const rows = sidebarAgents({
+      agents: [agent('newbie'), agent('juno')],
+      sessions,
+      now: NOW,
+    });
+    expect(rows.map(r => r.id).sort()).toEqual(['juno', 'newbie']);
   });
 
   test('disabled agents are not listed', () => {
     const rows = sidebarAgents({
       agents: [agent('juno'), agent('off', { enabled: false })],
-      sessionsByAgent: sessions,
+      sessions,
       now: NOW,
     });
     expect(rows.map(r => r.id)).toEqual(['juno']);
@@ -127,7 +174,7 @@ describe('sidebarAgents', () => {
   test('carries the unread dot', () => {
     const rows = sidebarAgents({
       agents: [agent('juno')],
-      sessionsByAgent: sessions,
+      sessions,
       unread: new Set(['juno']),
       now: NOW,
     });
@@ -208,13 +255,29 @@ describe('rooms in the sidebar', () => {
     const rows = sidebarRooms({
       rooms: [room],
       agents,
-      sessionsByAgent: {
-        eng: { id: 's1', agentId: 'eng', updatedAt: 1000, lastMessage: 'the build' },
-        design: { id: 's2', agentId: 'design', updatedAt: 2000, lastMessage: 'not my end' },
-      },
+      sessions: [
+        { id: 's1', agentId: 'eng', updatedAt: 1000, lastMessage: 'the build' },
+        { id: 's2', agentId: 'design', updatedAt: 2000, lastMessage: 'not my end' },
+      ],
       now: 2000,
     });
     expect(rows[0].preview).toBe('Design Lead: not my end');
+  });
+
+  test('one member&apos;s empty session cannot silence the room', () => {
+    // Same fault as the agent row: the newest session belonged to a seat
+    // that had said nothing, so the room previewed blank while the thing
+    // it should show sat one session back.
+    const rows = sidebarRooms({
+      rooms: [room],
+      agents,
+      sessions: [
+        { id: 's1', agentId: 'eng', updatedAt: 1000, lastMessage: 'the build' },
+        { id: 's2', agentId: 'design', updatedAt: 5000 },
+      ],
+      now: 5000,
+    });
+    expect(rows[0].preview).toBe('Engineering Lead: the build');
   });
 
   test('a room moves up the list when somebody talks in it', () => {
@@ -222,9 +285,7 @@ describe('rooms in the sidebar', () => {
     const rows = sidebarRooms({
       rooms: [older, room],
       agents,
-      sessionsByAgent: {
-        eng: { id: 's1', agentId: 'eng', updatedAt: 9000, lastMessage: 'hello' },
-      },
+      sessions: [{ id: 's1', agentId: 'eng', updatedAt: 9000, lastMessage: 'hello' }],
       now: 9000,
     });
     // Both rooms contain `eng`, so both share its recency; the tie falls
@@ -237,7 +298,7 @@ describe('rooms in the sidebar', () => {
   test('a room nobody has spoken in still appears', () => {
     // A room somebody just made, before anything is said in it, is
     // exactly when they want to see it.
-    const rows = sidebarRooms({ rooms: [room], agents, sessionsByAgent: {}, now: 1000 });
+    const rows = sidebarRooms({ rooms: [room], agents, sessions: [], now: 1000 });
     expect(rows).toHaveLength(1);
     expect(rows[0].name).toBe('Launch');
     expect(rows[0].preview).toBe('');

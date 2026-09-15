@@ -46,6 +46,7 @@ beforeEach(() => {
 describe('agentService.updateAgent', () => {
   test('refreshes active skills when the current agent is saved', async () => {
     store.dispatch(setAgents([{
+      createdAt: 0,
       id: 'agent-1',
       name: 'Agent 1',
       description: '',
@@ -79,6 +80,7 @@ describe('agentService.updateAgent', () => {
 
   test('persists model and thinking level together without clearing active skills', async () => {
     store.dispatch(setAgents([{
+      createdAt: 0,
       id: 'agent-1',
       name: 'Agent 1',
       description: '',
@@ -121,6 +123,7 @@ describe('agentService.updateAgent', () => {
 
   test('does not replace active skills when another agent is saved', async () => {
     store.dispatch(setAgents([{
+      createdAt: 0,
       id: 'agent-1',
       name: 'Agent 1',
       description: '',

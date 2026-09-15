@@ -21,6 +21,11 @@ export interface StoreAgent {
   pinned?: boolean;
   pinOrder?: number | null;
   sortOrder?: number | null;
+  /**
+   * When it was made. Optional only because older callers predate it;
+   * without it a new agent sorts as though it were ancient.
+   */
+  createdAt?: number;
 }
 
 /** The session shape the store already holds, reduced to what a row needs. */
@@ -92,43 +97,101 @@ export function previewOf(messages: readonly EngineMessage[] | undefined): strin
   return '';
 }
 
+/** Every session an agent has, newest first. */
+function groupByAgent(sessions: readonly StoreSession[]): Map<string, StoreSession[]> {
+  const byAgent = new Map<string, StoreSession[]>();
+  for (const session of sessions) {
+    if (!session.agentId) continue;
+    const list = byAgent.get(session.agentId);
+    if (list) list.push(session);
+    else byAgent.set(session.agentId, [session]);
+  }
+  for (const list of byAgent.values()) {
+    list.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+  }
+  return byAgent;
+}
+
+/** The last thing said with somebody, and when. */
+export interface Standing {
+  text: string;
+  at?: number;
+}
+
+/**
+ * The newest session that actually has something to show.
+ *
+ * **Not the newest session.** That was the bug. A row stands for an
+ * agent, not for a session — the sidebar has one line per agent and the
+ * fact that a conversation is stored as several sessions is an
+ * implementation detail nobody outside this file should meet. Taking the
+ * newest session meant that starting a fresh conversation, which creates
+ * an empty session with a brand-new timestamp, threw away the session
+ * holding every word the two of you had ever exchanged. The row then drew
+ * a time with no text under it: the blank the founder kept seeing.
+ *
+ * Walking back to the newest session that has words in it costs one loop
+ * and is the only thing a person would call correct.
+ *
+ * The time comes back with the text on purpose. A row that shows "now"
+ * over an empty line is the same lie in a smaller font, so when nothing
+ * has been said there is no timestamp either — a new agent is its name
+ * and nothing else until it speaks.
+ */
+export function standingFor(sessions: readonly StoreSession[] | undefined): Standing {
+  for (const session of sessions ?? []) {
+    // The open conversation has its messages loaded, and they are newer
+    // than the list — a reply that just arrived is in `messages` before
+    // the summary catches up. Every other session has only the summary.
+    const text = previewOf(session.messages) || plainPreview(session.lastMessage ?? '');
+    if (text) return { text, at: session.updatedAt };
+  }
+  return { text: '' };
+}
+
 export interface SidebarInput {
   agents: readonly StoreAgent[];
-  /** The newest session per agent, keyed by agent id. */
-  sessionsByAgent: Readonly<Record<string, StoreSession | undefined>>;
+  /** Every session the app knows about, in any order. */
+  sessions: readonly StoreSession[];
   /** Agent ids with something unread. */
   unread?: ReadonlySet<string>;
   now?: number;
 }
 
 /**
- * The sidebar rows, newest conversation first.
+ * The sidebar rows, most recent first.
  *
  * Pinned agents stay at the top — that is what pinning is for — and
- * everything else falls in order of when it last said something. An agent
- * that has never been spoken to sorts last rather than being hidden: a
- * freshly installed role agent has to be findable before it has a
- * history.
+ * everything else falls in order of when it was last *active*.
+ *
+ * **Making an agent counts as activity**, which is the whole of the
+ * second fix. The old rule sorted on "when did it last speak" alone, so
+ * an agent with no conversation scored zero and landed at the bottom of
+ * the list, under every agent spoken to at any point in history. The
+ * comment there said this was to keep it findable. It buried it instead:
+ * you make a thing and it goes to the last place you would look.
+ *
+ * One rule now, `max(last spoke, was made)`, and every case falls out of
+ * it: a new agent is at the top because it was just made, an old agent
+ * you talked to this morning is above it if it spoke more recently, and
+ * a role agent installed months ago and never used sinks on its own.
  */
 export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
-  const { agents, sessionsByAgent, unread, now = Date.now() } = input;
+  const { agents, sessions, unread, now = Date.now() } = input;
+  const byAgent = groupByAgent(sessions);
 
   return agents
     .filter(agent => agent.enabled)
     .map(agent => {
-      const session = sessionsByAgent[agent.id];
+      const standing = standingFor(byAgent.get(agent.id));
       return {
         agent,
-        session,
+        at: Math.max(standing.at ?? 0, agent.createdAt ?? 0),
         row: {
           id: agent.id,
           name: agent.name,
-          // The open conversation has its messages, and they are newer
-          // than the list — a reply that just arrived is in `messages`
-          // before the summary catches up. Every other row falls back to
-          // the summary, which is the only thing it has.
-          preview: previewOf(session?.messages) || plainPreview(session?.lastMessage ?? ''),
-          when: whenLabel(session?.updatedAt, now),
+          preview: standing.text,
+          when: whenLabel(standing.at, now),
           unread: unread?.has(agent.id) ?? false,
         } satisfies SidebarAgent,
       };
@@ -138,7 +201,9 @@ export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
       if (a.agent.pinned && b.agent.pinned) {
         return (a.agent.pinOrder ?? 0) - (b.agent.pinOrder ?? 0);
       }
-      return (b.session?.updatedAt ?? 0) - (a.session?.updatedAt ?? 0);
+      // Sort is stable, so agents that tie — every preset on a fresh
+      // install shares a creation time — keep the order the store gave.
+      return b.at - a.at;
     })
     .map(entry => entry.row);
 }
@@ -155,30 +220,35 @@ export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
 export function sidebarRooms(input: {
   rooms: readonly Room[];
   agents: readonly { id: string; name: string }[];
-  sessionsByAgent: Record<string, StoreSession | undefined>;
+  /** Every session the app knows about, in any order. */
+  sessions: readonly StoreSession[];
   now?: number;
 }): SidebarAgent[] {
-  const { rooms, agents, sessionsByAgent, now = Date.now() } = input;
+  const { rooms, agents, sessions, now = Date.now() } = input;
+  const byAgent = groupByAgent(sessions);
 
   return rooms.map(room => {
-    const seats = room.memberIds
-      .map(id => ({ id, session: sessionsByAgent[id], name: agents.find(a => a.id === id)?.name }))
-      .filter(seat => seat.session);
-    const newest = seats
-      .slice()
-      .sort((a, b) => (b.session?.updatedAt ?? 0) - (a.session?.updatedAt ?? 0))[0];
-
-    const said = previewOf(newest?.session?.messages)
-      || plainPreview(newest?.session?.lastMessage ?? '');
+    // The newest thing any member actually said — same rule as an agent
+    // row, applied per seat, so an empty session belonging to one member
+    // cannot silence the whole room.
+    let said: { text: string; at?: number; name?: string } | undefined;
+    for (const id of room.memberIds) {
+      const standing = standingFor(byAgent.get(id));
+      if (!standing.text) continue;
+      if (said && (said.at ?? 0) >= (standing.at ?? 0)) continue;
+      said = { ...standing, name: agents.find(agent => agent.id === id)?.name };
+    }
 
     return {
       row: {
         id: room.id,
         name: room.name,
-        preview: said && newest?.name ? `${newest.name}: ${said}` : said,
-        when: whenLabel(newest?.session?.updatedAt, now),
+        preview: said?.name ? `${said.name}: ${said.text}` : (said?.text ?? ''),
+        when: whenLabel(said?.at, now),
       } satisfies SidebarAgent,
-      at: newest?.session?.updatedAt ?? room.createdAt,
+      // Making a room counts as activity, for the same reason making an
+      // agent does: a room nobody has spoken in yet still just happened.
+      at: Math.max(said?.at ?? 0, room.createdAt),
     };
   })
     .sort((a, b) => b.at - a.at)

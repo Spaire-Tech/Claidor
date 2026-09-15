@@ -56,6 +56,7 @@ class AgentService {
           source: a.source,
           skillIds: a.skillIds ?? [],
           subagentAllowAgentIds: a.subagentAllowAgentIds ?? [],
+          createdAt: a.createdAt ?? 0,
         }));
         store.dispatch(setAgents(mappedAgents));
       }
@@ -97,6 +98,7 @@ class AgentService {
           source: agent.source,
           skillIds: agent.skillIds ?? [],
           subagentAllowAgentIds: agent.subagentAllowAgentIds ?? [],
+          createdAt: agent.createdAt ?? 0,
         }));
         return agent;
       }
@@ -178,6 +180,7 @@ class AgentService {
         source: agent.source,
         skillIds: agent.skillIds ?? [],
         subagentAllowAgentIds: agent.subagentAllowAgentIds ?? [],
+        createdAt: agent.createdAt ?? 0,
       }));
       store.dispatch(setAgents(mappedAgents));
       return true;
@@ -267,6 +270,7 @@ class AgentService {
           source: agent.source,
           skillIds: agent.skillIds ?? [],
           subagentAllowAgentIds: agent.subagentAllowAgentIds ?? [],
+          createdAt: agent.createdAt ?? 0,
         }));
         return agent;
       }

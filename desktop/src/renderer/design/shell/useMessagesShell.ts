@@ -159,40 +159,61 @@ export function useMessagesShell(): MessagesShellState {
     return () => { current = false; };
   }, []);
 
-  const sessionsByAgent = useMemo(() => {
-    const newest: Record<string, StoreSession | undefined> = {};
+  /**
+   * Every session, with the open one's loaded messages folded in.
+   *
+   * All of them, not one per agent. A row stands for an agent and shows
+   * the last thing said with it; reducing to the newest session first
+   * meant a fresh, empty conversation hid a full one. `standingFor` walks
+   * this list, so it needs the list.
+   */
+  const sidebarSessions = useMemo(() => {
+    const list: StoreSession[] = [];
     for (const summary of sessions) {
-      const agentId = summary.agentId;
-      if (!agentId) continue;
-      const at = summary.updatedAt ?? 0;
-      if ((newest[agentId]?.updatedAt ?? -1) >= at) continue;
-      newest[agentId] = {
+      if (!summary.agentId) continue;
+      list.push({
         id: summary.id,
-        agentId,
-        updatedAt: at,
+        agentId: summary.agentId,
+        updatedAt: summary.updatedAt ?? 0,
         ...(summary.lastMessage ? { lastMessage: summary.lastMessage } : {}),
-      };
+      });
     }
-    // The open conversation is the one with messages loaded; the rest are
-    // summaries, which is all a sidebar row needs.
     if (currentSession?.agentId) {
-      newest[currentSession.agentId] = {
-        ...newest[currentSession.agentId],
-        id: currentSession.id,
-        agentId: currentSession.agentId,
+      const at = list.findIndex(one => one.id === currentSession.id);
+      const open: StoreSession = {
+        ...(at >= 0 ? list[at] : { id: currentSession.id, agentId: currentSession.agentId }),
         updatedAt: currentSession.updatedAt ?? Date.now(),
         messages: currentSession.messages as readonly EngineMessage[],
       };
+      if (at >= 0) list[at] = open;
+      else list.push(open);
+    }
+    return list;
+  }, [sessions, currentSession]);
+
+  /**
+   * The newest session per agent — which conversation to resume.
+   *
+   * A different question from what a row shows, and conflating the two is
+   * what broke the preview. This one must stay "newest", because opening
+   * an agent should land you in the conversation you were last in, empty
+   * or not.
+   */
+  const sessionsByAgent = useMemo(() => {
+    const newest: Record<string, StoreSession | undefined> = {};
+    for (const session of sidebarSessions) {
+      if ((newest[session.agentId]?.updatedAt ?? -1) >= (session.updatedAt ?? 0)) continue;
+      newest[session.agentId] = session;
     }
     return newest;
-  }, [sessions, currentSession]);
+  }, [sidebarSessions]);
 
   const rows = useMemo(
     () => [
-      ...sidebarRooms({ rooms, agents, sessionsByAgent }),
-      ...sidebarAgents({ agents, sessionsByAgent }),
+      ...sidebarRooms({ rooms, agents, sessions: sidebarSessions }),
+      ...sidebarAgents({ agents, sessions: sidebarSessions }),
     ],
-    [rooms, agents, sessionsByAgent],
+    [rooms, agents, sidebarSessions],
   );
 
   const active = useMemo(

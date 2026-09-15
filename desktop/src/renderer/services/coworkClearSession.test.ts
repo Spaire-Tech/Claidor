@@ -42,6 +42,7 @@ afterEach(() => {
 describe('coworkService.clearSession', () => {
   test('restores the current agent default skills for a new task', () => {
     store.dispatch(setAgents([{
+      createdAt: 0,
       id: 'agent-1',
       name: 'Agent 1',
       description: '',
@@ -78,6 +79,7 @@ describe('coworkService.clearSession', () => {
 
   test('clears active skills when the current agent has no default skills', () => {
     store.dispatch(setAgents([{
+      createdAt: 0,
       id: 'agent-1',
       name: 'Agent 1',
       description: '',
