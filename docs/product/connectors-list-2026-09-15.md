@@ -26,7 +26,7 @@ write, with the contract's one-line description as the brief.
 | Gmail | Own client (Google) | Testing status: 100 people, 7-day re-sign-in; verification later |
 | Google Calendar | Own client (Google) | same client |
 | Outlook & Microsoft 365 Calendar | Own client (Microsoft) | no public vendor MCP; Graph API with our Azure app |
-| Any IMAP mailbox (Fastmail, iCloud, work mail) | Channel + skill | engine `email` plugin, bundled `imap-smtp-email` skill |
+| Any IMAP mailbox (Fastmail, iCloud, work mail) | Channel + skill | the `@clawemail/email` plugin the app installs (`package.json`, `openclaw.plugins`) — not an engine extension, as an earlier line here said; bundled `imap-smtp-email` skill |
 | Apple Calendar | Local | macOS |
 | Calendly | Self | |
 

@@ -10313,12 +10313,17 @@ if (!gotTheLock) {
         configPath: manager.getConfigPath(),
       };
     },
-    writeServer: async ({ name, url, scope }) => {
+    writeServer: async ({ name, url, scope, open }) => {
       const store = getMcpRuntime().getStore();
       const existing = store.listServers().find(one => one.name === name);
+      // An open server gets no `auth` at all: with `oauth` the engine
+      // would go looking for an authorization server the vendor does
+      // not run, and the connection would fail on a server that needs
+      // nothing.
+      const auth = open ? {} : { auth: 'oauth' as const };
       if (existing) {
         store.updateServer(existing.id, {
-          url, transportType: 'http', auth: 'oauth',
+          url, transportType: 'http', ...auth,
           ...(scope ? { oauthScope: scope } : {}),
         });
         return;
@@ -10331,7 +10336,7 @@ if (!gotTheLock) {
         description: '',
         transportType: 'http',
         url,
-        auth: 'oauth',
+        ...auth,
         ...(scope ? { oauthScope: scope } : {}),
       });
     },

@@ -1,9 +1,19 @@
 import { describe, expect, test, vi } from 'vitest';
 
 import type { ConnectionItem } from '../../../shared/connections/catalog';
-import { ConnectionGroupId, ConnectionKind, ConnectVia } from '../../../shared/connections/catalog';
+import {
+  ConnectionGroupId,
+  ConnectionKind,
+  ConnectVia,
+  OAuthRegistration,
+} from '../../../shared/connections/catalog';
 import type { CallbackResult } from './authUrl';
-import { ConnectOutcome, connectService, disconnectService } from './connectService';
+import {
+  ConnectOutcome,
+  connectService,
+  disconnectService,
+  type ServerToWrite,
+} from './connectService';
 import type { CliResult } from './openclawCli';
 
 const GMAIL: ConnectionItem = {
@@ -30,7 +40,7 @@ function harness(options: {
 } = {}) {
   const runs = options.runs ?? [];
   const calls: string[][] = [];
-  const written: { name: string; url: string; scope?: string }[] = [];
+  const written: ServerToWrite[] = [];
   const removed: string[] = [];
   const opened: string[] = [];
   let closed = false;
@@ -40,7 +50,7 @@ function harness(options: {
       entry: '/runtime/openclaw.mjs', runtimeRoot: '/runtime',
       baseDir: '/base', stateDir: '/state', configPath: '/state/openclaw.json',
     },
-    writeServer: vi.fn(async (input: { name: string; url: string; scope?: string }) => {
+    writeServer: vi.fn(async (input: ServerToWrite) => {
       written.push(input);
     }),
     removeServer: vi.fn(async (name: string) => { removed.push(name); }),
@@ -173,6 +183,39 @@ describe('when it does not work', () => {
     expect(result.outcome).toBe(ConnectOutcome.Unsupported);
     expect(h.written).toEqual([]);
     expect(h.deps.listen).not.toHaveBeenCalled();
+  });
+
+  test('a service wanting a client we have not registered is refused, not attempted', async () => {
+    // The card says "Not yet"; this is the same answer from the other
+    // side of the bridge, so a stale renderer cannot start a sign-in
+    // that has nowhere to go.
+    const h = harness();
+    const result = await connectService({
+      ...GMAIL,
+      connect: { via: ConnectVia.Mcp, url: GMAIL.connect.url, registration: OAuthRegistration.Preregistered },
+    } as ConnectionItem, h.deps);
+
+    expect(result.outcome).toBe(ConnectOutcome.Unsupported);
+    expect(h.written).toEqual([]);
+    expect(h.deps.runCli).not.toHaveBeenCalled();
+  });
+
+  test('an open server is written without a sign-in and reloaded', async () => {
+    // Excalidraw and GoDaddy answered the probe with 200 and no
+    // challenge. Running `mcp login` against them would fail looking
+    // for an authorization server they do not have.
+    const h = harness();
+    const result = await connectService({
+      id: 'excalidraw', name: 'Excalidraw', group: ConnectionGroupId.Creativity,
+      kind: ConnectionKind.Account,
+      connect: { via: ConnectVia.Mcp, url: 'https://mcp.excalidraw.com/mcp', open: true },
+    }, h.deps);
+
+    expect(result.outcome).toBe(ConnectOutcome.Connected);
+    expect(h.written).toEqual([{ name: 'connection-excalidraw', url: 'https://mcp.excalidraw.com/mcp', open: true }]);
+    expect(h.calls).toEqual([['mcp', 'reload']]);
+    expect(h.deps.listen).not.toHaveBeenCalled();
+    expect(h.opened).toEqual([]);
   });
 });
 

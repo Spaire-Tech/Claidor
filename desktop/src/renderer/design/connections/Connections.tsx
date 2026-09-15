@@ -1,6 +1,6 @@
 import type { ConnectionItem } from '../../../shared/connections/catalog';
 import { APP_LOGO_DIRECTORY, connectionMonogram } from '../../../shared/connections/catalog';
-import { color, line, radius, shadow, text, tracking } from '../tokens';
+import { color, line, radius, shadow, text } from '../tokens';
 import { actionFor, ConnectAction, type RowAction, shelfGroups } from './shelf';
 
 export interface ConnectionsProps {
@@ -11,29 +11,36 @@ export interface ConnectionsProps {
   busyId?: string;
   /** The last thing that went wrong, and which card it was about. */
   failure?: { id: string; message: string };
+  /** The installed pill pressed: only the Connected group. */
+  onlyConnected?: boolean;
   onConnect: (id: string) => void;
   onDisconnect: (id: string) => void;
 }
 
 /**
- * The shelf of services.
+ * The shelf of services, as the canvas draws it.
  *
- * A hundred and nine cards, and only forty-eight can be signed into
- * today. The other sixty-one say what they are instead of offering a
- * button that opens nothing — a browser one says "In your browser", one
- * wanting an API key says "Needs a key". `shelf.ts` decides which,
- * and it is the only decision on this screen worth testing.
+ * A section per category — its name at 15.5 and a count beside it — and
+ * a `minmax(320px, 1fr)` grid of cards. A card is a 42px logo tile, the
+ * name, a tag line under it when there is one, and a button on the
+ * right: black "Connect", or green "Connected". That is the whole card;
+ * there is no description line. The first build put one there, and put
+ * grey statements where the button goes, and the founder said it was
+ * "100% different" from what they drew. It was.
+ *
+ * What the canvas could not know is that most cards cannot sign in
+ * today: a browser one, a local one, a channel, a vendor that wants a
+ * client we have not registered. Those cards keep the canvas's shape
+ * and use its tag-line slot for the fact — "In your browser", "On this
+ * Mac", "Not yet" — and have no button, because a button that opens
+ * nothing is the one thing worse than no button. `shelf.ts` decides
+ * which, and it is the only decision on this screen worth testing.
  *
  * What you have connected is lifted to the top, because four out of a
- * hundred and nine is otherwise a hunt.
- *
- * The shape is the canvas's: a section per category, each with its name
- * and a count, and a `minmax(320px, 1fr)` grid of cards underneath. This
- * was a list of 34px rows in a 620px modal, which is what a settings
- * page looks like, not a shelf.
+ * hundred and thirty is otherwise a hunt.
  */
 export function Connections(props: ConnectionsProps): JSX.Element {
-  const groups = shelfGroups(props.query, props.connected);
+  const groups = shelfGroups(props.query, props.connected, undefined, props.onlyConnected);
 
   if (groups.length === 0) {
     return (
@@ -84,6 +91,7 @@ interface CardProps {
 
 function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.Element {
   const connected = row.action === ConnectAction.Connected;
+  const working = row.action === ConnectAction.Working;
 
   return (
     <div
@@ -98,14 +106,18 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
         <span
           style={{
             fontSize: text.emphasis, fontWeight: 400, color: color.ink,
-            letterSpacing: tracking.body,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}
         >
           {item.name}
         </span>
-        {item.line && (
-          <span style={{ fontSize: text.label, color: color.muted }}>{item.line}</span>
+        {/*
+          The canvas's tag line, 13.5 and muted, under the name. A card
+          with a button has nothing to say here; a card without one says
+          why — and while a sign-in runs, that it is running.
+        */}
+        {(!row.pressable) && (
+          <span style={{ fontSize: text.label, color: color.muted }}>{row.label}</span>
         )}
         {failure && (
           <span style={{ fontSize: text.label, color: color.danger, lineHeight: 1.4 }}>
@@ -114,14 +126,16 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
         )}
       </span>
 
-      {row.pressable ? (
+      {(row.pressable || working) && (
         <button
           type="button"
+          disabled={working}
           onClick={() => (connected ? onDisconnect(item.id) : onConnect(item.id))}
           style={{
             flex: '0 0 auto', height: 34, padding: '0 16px', borderRadius: radius.pill,
             font: 'inherit', fontSize: text.small, fontWeight: 500,
-            whiteSpace: 'nowrap', cursor: 'pointer',
+            whiteSpace: 'nowrap', cursor: working ? 'default' : 'pointer',
+            opacity: working ? 0.6 : 1,
             ...(connected
               ? {
                 background: color.successFill,
@@ -132,16 +146,12 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
           }}
         >
           {/*
-            A connected card keeps one control and changes what it says on
-            hover, rather than growing a second button nobody wants next
-            to the one they do.
+            A connected card keeps one control, and pressing it
+            disconnects, rather than growing a second button nobody wants
+            next to the one they do.
           */}
-          {row.label}
+          {working ? 'Connect' : row.label}
         </button>
-      ) : (
-        <span style={{ flex: '0 0 auto', fontSize: text.small, color: color.faint, whiteSpace: 'nowrap' }}>
-          {row.label}
-        </span>
       )}
     </div>
   );
@@ -176,6 +186,33 @@ function Logo({ item }: { item: ConnectionItem }): JSX.Element {
   }
   return (
     <span style={{ ...box, fontSize: text.base, fontWeight: 500, color: color.muted }}>
+      {connectionMonogram(item.name)}
+    </span>
+  );
+}
+
+/**
+ * A small logo tile for the installed pill: 26px, radius 8, overlapping
+ * the one before it by 7px, exactly as the canvas draws them.
+ */
+export function PillLogo({ item, first }: { item: ConnectionItem; first: boolean }): JSX.Element {
+  const box: React.CSSProperties = {
+    position: 'relative', width: 26, height: 26, flex: '0 0 auto', borderRadius: 8,
+    background: color.paper, border: `1px solid ${line.hairline}`,
+    boxShadow: '0 1px 2px rgba(16,22,35,.06)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+    ...(first ? {} : { marginLeft: -7 }),
+  };
+  if (item.logo) {
+    return (
+      <span style={box}>
+        <img src={`${APP_LOGO_DIRECTORY}/${item.logo}`} alt="" width={17} height={17} style={{ objectFit: 'contain' }} />
+      </span>
+    );
+  }
+  return (
+    <span style={{ ...box, fontSize: 11, fontWeight: 500, color: color.muted }}>
       {connectionMonogram(item.name)}
     </span>
   );

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 
+import { avatarFallback, isAvatarIndex } from '../../../shared/agent/avatars';
 import type { PresetAgent } from '../../types/agent';
-import { Connections, type ConnectionsProps } from '../connections/Connections';
-import { shelfCount } from '../connections/shelf';
-import { CloseIcon, SearchIcon } from '../icons';
-import { Orb, OrbMood } from '../orb/Orb';
+import { Connections, type ConnectionsProps, PillLogo } from '../connections/Connections';
+import { installedPill, shelfTotal } from '../connections/shelf';
+import { ChevronRightIcon, CloseIcon, SearchIcon } from '../icons';
+import { CloudBlob } from '../orb/CloudBlob';
 import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { AGENT_TABS, agentBody, type AgentTab, matchingRoles, roleMeta } from './roles';
 
@@ -23,12 +24,18 @@ export interface AppsProps {
    * Everything the connections half needs except the search word, which
    * is this sheet's — the box is shared between the two tabs.
    */
-  connections: Omit<ConnectionsProps, 'query'>;
+  connections: Omit<ConnectionsProps, 'query' | 'onlyConnected'>;
   /** The ids of roles already added, so they read as done rather than gone. */
   installedIds: ReadonlySet<string>;
   busyId?: string;
   onInstall: (presetId: string) => void;
+  /** An installed role's card says "Use": go and talk to it. */
+  onUse: (presetId: string) => void;
   onClose: () => void;
+  /** Which tab opens first. The harness photographs the other one. */
+  initialTab?: AppsTab;
+  /** A role's page opened straight away. The harness, again. */
+  initialRoleId?: string;
 }
 
 /**
@@ -39,26 +46,34 @@ export interface AppsProps {
  * agents rather than kits — and the install flow for presets already
  * existed and worked.
  *
- * **This was a 620px modal.** The canvas is a full sheet —
- * `calc(100% - 48px)` up to 1080px, tabs beside the 22px title, search on
- * the right of the same row — and the shelf inside it is a grid of cards,
- * not a list of rows. The first build put a hundred and nine services and
- * twelve agents into something the size of a preferences dialog.
+ * The sheet is the canvas's: `calc(100% - 48px)` up to 1080px, tabs
+ * beside the 22px title, search on the right of the same row. Under
+ * "Connectors" the canvas puts the bare total and, when anything is
+ * connected, a pill with up to four logos and "N installed". Under
+ * "Agents" it puts cards with the agent's cloud face, and a page behind
+ * each card with the face at 88px.
  *
  * Installed roles stay in the list, marked, instead of disappearing.
  * A list that empties as you use it makes you wonder what you did.
  */
 export function Apps({
-  available, connections, installedIds, busyId, onInstall, onClose,
+  available, connections, installedIds, busyId, onInstall, onUse, onClose,
+  initialTab = AppsTab.Plugins, initialRoleId,
 }: AppsProps): JSX.Element {
-  const [tab, setTab] = useState<AppsTab>(AppsTab.Plugins);
+  const [tab, setTab] = useState<AppsTab>(initialTab);
   const [query, setQuery] = useState('');
   // Which role's page is open, inside the Agents tab. The canvas puts the
   // detail here — behind a card, with a back arrow — and not behind the
   // agent's name in the conversation header.
-  const [openRole, setOpenRole] = useState<PresetAgent>();
+  const [openRole, setOpenRole] = useState<PresetAgent | undefined>(
+    () => available.find(role => role.id === initialRoleId),
+  );
+  // The installed pill pressed: only what is connected, and the chevron
+  // turned down to say so.
+  const [onlyConnected, setOnlyConnected] = useState(false);
   const onPlugins = tab === AppsTab.Plugins;
   const shown = matchingRoles(available, query);
+  const pill = installedPill(connections.connected);
 
   const tabButton = (id: AppsTab, label: string): JSX.Element => {
     const on = tab === id;
@@ -177,32 +192,55 @@ export function Apps({
 
         <div
           style={{
-            flex: '1 1 auto', minHeight: 0, overflowY: 'auto',
+            flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden',
             padding: '30px 34px 44px', display: 'flex', flexDirection: 'column', gap: 8,
           }}
         >
           {onPlugins && (
             <>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '0 2px' }}>
-                <span style={{ fontSize: text.section, fontWeight: 500, letterSpacing: tracking.title, color: color.ink }}>
-                  Connectors
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 2px', flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                  <span style={{ fontSize: text.section, fontWeight: 500, letterSpacing: tracking.title, color: color.ink }}>
+                    Connectors
+                  </span>
+                  <span style={{ fontSize: text.message, color: color.muted }}>{shelfTotal()}</span>
                 </span>
-                {/*
-                  The canvas puts a bare total here — 109. That is the
-                  flattering number and the less useful one: sixty-one of
-                  those cards are statements, not buttons. Same slot, same
-                  size, same grey; a phrase instead of a figure.
-                */}
-                <span style={{ fontSize: text.message, color: color.muted }}>
-                  {shelfCount(connections.connected)}
-                </span>
+                {pill && (
+                  <button
+                    type="button"
+                    onClick={() => setOnlyConnected(on => !on)}
+                    aria-pressed={onlyConnected}
+                    aria-label={`${pill.label}. Show only what is connected.`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12, height: 40,
+                      padding: '0 12px 0 8px', borderRadius: radius.pill,
+                      border: `1px solid ${line.hairline}`, background: color.paper,
+                      cursor: 'pointer', font: 'inherit', boxShadow: shadow.flat,
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                      {pill.shown.map((item, index) => (
+                        <PillLogo key={item.id} item={item} first={index === 0} />
+                      ))}
+                    </span>
+                    <span style={{ fontSize: text.body, color: color.muted, whiteSpace: 'nowrap' }}>{pill.label}</span>
+                    <ChevronRightIcon
+                      size={13}
+                      style={{
+                        flex: '0 0 auto', color: color.faint,
+                        transform: onlyConnected ? 'rotate(90deg)' : 'none',
+                        transition: `transform ${motion.hover.duration} ${motion.hover.easing}`,
+                      }}
+                    />
+                  </button>
+                )}
               </div>
               <div style={{ fontSize: text.message, color: color.muted, lineHeight: 1.55, maxWidth: '74ch', padding: '8px 2px 0', textWrap: 'pretty' }}>
                 A connector lets your agent act inside a service you already use.
                 Where there&rsquo;s no connector it uses your computer and your
                 browser instead, so nothing is out of reach.
               </div>
-              <Connections {...connections} query={query} />
+              <Connections {...connections} query={query} onlyConnected={onlyConnected} />
             </>
           )}
 
@@ -233,6 +271,7 @@ export function Apps({
                       busy={busyId === role.id}
                       onOpen={() => setOpenRole(role)}
                       onInstall={() => onInstall(role.id)}
+                      onUse={() => onUse(role.id)}
                     />
                   ))}
                 </div>
@@ -255,27 +294,35 @@ export function Apps({
   );
 }
 
-/** The install button, which is the same shape in three places. */
-function installButton(
-  { installed, busy, height, padding, radiusPx, onClick }: {
-    installed: boolean;
+/** The face a role will wear: the one its preset names, drawn at the canvas's sizes. */
+function roleAvatar(role: PresetAgent): number {
+  return isAvatarIndex(role.avatar) ? role.avatar : avatarFallback(role.id);
+}
+
+/** The black or green button, which is the same shape in three places. */
+function roleButton(
+  { done, busy, label, height, padding, radiusPx, fontSize, onClick }: {
+    done: boolean;
     busy: boolean;
+    label: string;
     height: number;
     padding: string;
     radiusPx: number;
-    onClick: (event: React.MouseEvent) => void;
+    fontSize: number;
+    onClick?: (event: React.MouseEvent) => void;
   },
 ): JSX.Element {
+  const inert = busy || !onClick;
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={busy || installed}
+      disabled={inert}
       style={{
         flex: '0 0 auto', height, padding, borderRadius: radiusPx,
-        font: 'inherit', fontSize: text.small, fontWeight: 500,
-        whiteSpace: 'nowrap', cursor: busy || installed ? 'default' : 'pointer',
-        ...(installed
+        font: 'inherit', fontSize, fontWeight: 500,
+        whiteSpace: 'nowrap', cursor: inert ? 'default' : 'pointer',
+        ...(done
           ? {
             background: color.successFill,
             color: color.success,
@@ -285,18 +332,19 @@ function installButton(
         opacity: busy ? 0.6 : 1,
       }}
     >
-      {installed ? 'Installed' : busy ? 'Adding…' : 'Install'}
+      {label}
     </button>
   );
 }
 
 function RoleCard(
-  { role, installed, busy, onOpen, onInstall }: {
+  { role, installed, busy, onOpen, onInstall, onUse }: {
     role: PresetAgent;
     installed: boolean;
     busy: boolean;
     onOpen: () => void;
     onInstall: () => void;
+    onUse: () => void;
   },
 ): JSX.Element {
   return (
@@ -310,10 +358,10 @@ function RoleCard(
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        {/* The orb it will wear once it is here, so the shelf and the
+        {/* The face it will wear once it is here, so the shelf and the
             sidebar agree with each other. */}
-        <Orb agentId={role.id} size={48} mood={OrbMood.Still} />
-        <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <CloudBlob avatar={roleAvatar(role)} size={48} />
+        <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <span
             style={{
               fontSize: text.agentName, fontWeight: 500, letterSpacing: '-.008em',
@@ -329,15 +377,22 @@ function RoleCard(
                 {role.skillIds.length} skills
               </span>
             )}
-            {/* Every role in this list is ours. The canvas's blue word for
-                that is "Official", and it means it came from us rather
-                than from somebody's export. */}
-            <span style={{ fontSize: text.caption, color: color.accent }}>Official</span>
+            {/* Every role in this list is ours. The canvas's word for
+                that is "Official", in ink, and it means it came from us
+                rather than from somebody's export. */}
+            <span style={{ fontSize: text.caption, color: color.ink }}>Official</span>
           </span>
         </span>
-        {installButton({
-          installed, busy, height: 36, padding: '0 18px', radiusPx: radius.pill,
-          onClick: event => { event.stopPropagation(); onInstall(); },
+        {/*
+          The canvas: "Install" until it is here, then "Use" — green, and
+          it goes to the conversation. Not "Installed", which is a word
+          for the page behind the card.
+        */}
+        {roleButton({
+          done: installed, busy,
+          label: installed ? 'Use' : busy ? 'Adding…' : 'Install',
+          height: 36, padding: '0 18px', radiusPx: radius.pill, fontSize: text.small,
+          onClick: event => { event.stopPropagation(); if (installed) onUse(); else onInstall(); },
         })}
       </div>
       <div style={{ fontSize: text.message, color: color.muted, lineHeight: 1.55, textWrap: 'pretty' }}>
@@ -379,16 +434,19 @@ function RoleDetail(
 
         <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 22 }}>
-            <Orb agentId={role.id} size={88} mood={OrbMood.Still} elevated />
+            <CloudBlob avatar={roleAvatar(role)} size={88} />
             <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
               <div style={{ fontSize: text.detailTitle, fontWeight: 500, letterSpacing: tracking.detailTitle, lineHeight: 1.2, color: color.ink }}>
                 {role.nameEn}
               </div>
               <div style={{ fontSize: text.message, color: color.muted }}>{roleMeta(role)}</div>
             </div>
-            {installButton({
-              installed, busy, height: 40, padding: '0 20px', radiusPx: radius.field,
-              onClick: onInstall,
+            {/* The canvas: "Import agent", then "Installed" and inert. */}
+            {roleButton({
+              done: installed, busy,
+              label: installed ? 'Installed' : busy ? 'Adding…' : 'Import agent',
+              height: 40, padding: '0 20px', radiusPx: radius.field, fontSize: text.body,
+              ...(installed ? {} : { onClick: onInstall }),
             })}
           </div>
 

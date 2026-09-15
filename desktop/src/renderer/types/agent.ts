@@ -37,6 +37,8 @@ export interface PresetAgent {
   id: string;
   name: string;
   nameEn: string;
+  /** The face: 0–24 into `shared/agent/avatars.ts`, the canvas's own for each role. */
+  avatar: number;
   icon: string;
   description: string;
   descriptionEn: string;

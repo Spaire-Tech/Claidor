@@ -133,6 +133,7 @@ export function FaiserApp(): JSX.Element {
           installedIds={shell.installedIds}
           busyId={shell.busyPresetId}
           onInstall={shell.onInstallPreset}
+          onUse={shell.onUsePreset}
           onClose={shell.onCloseApps}
         />
       )}

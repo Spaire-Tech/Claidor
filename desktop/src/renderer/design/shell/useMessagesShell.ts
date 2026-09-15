@@ -127,6 +127,8 @@ export interface MessagesShellState {
   /** The one being added, while it is being added. */
   busyPresetId: string | undefined;
   onInstallPreset: (presetId: string) => void;
+  /** An installed role's "Use": close the sheet and go and talk to it. */
+  onUsePreset: (presetId: string) => void;
   /** The open conversation, for the panel to watch. */
   sessionId: string | undefined;
   workingDirectory: string | undefined;
@@ -802,6 +804,14 @@ export function useMessagesShell(): MessagesShellState {
     }
   }, [onSelect]);
 
+  // An installed role keeps the preset's id as its agent id
+  // (`presetToCreateRequest` passes `id: preset.id`), which is what lets
+  // "Use" go straight to it without a lookup.
+  const onUsePreset = useCallback((presetId: string) => {
+    setAppsOpen(false);
+    onSelect(presetId);
+  }, [onSelect]);
+
   const answer = useCallback((itemId: string, value: string) => {
     const parsed = parseChoiceId(itemId);
     if (!parsed) return;
@@ -907,6 +917,7 @@ export function useMessagesShell(): MessagesShellState {
     installedIds,
     busyPresetId,
     onInstallPreset: (presetId: string) => { void onInstallPreset(presetId); },
+    onUsePreset,
     sessionId: currentSession?.id,
     workingDirectory: currentSession?.cwd,
     panelOpen,

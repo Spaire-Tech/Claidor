@@ -3,8 +3,9 @@ import path from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
+import { isAvatarIndex } from '../shared/agent/avatars';
 import { VOICE_BRIEF } from '../shared/agent/voiceBrief';
-import { PRESET_AGENTS } from './presetAgents';
+import { PRESET_AGENTS, presetToCreateRequest } from './presetAgents';
 
 const SKILLS_DIR = path.resolve(__dirname, '../../SKILLs');
 
@@ -63,10 +64,36 @@ describe('the twelve role agents, and the one that runs them', () => {
     expect(missing).toEqual([]);
   });
 
-  test('every id and avatar is distinct', () => {
+  test('every id and icon is distinct', () => {
     expect(new Set(PRESET_AGENTS.map(a => a.id)).size).toBe(PRESET_AGENTS.length);
     // Twelve agents wearing three icons would make the list unreadable.
     expect(new Set(PRESET_AGENTS.map(a => a.icon)).size).toBe(PRESET_AGENTS.length);
+  });
+
+  test('every face is one of the twenty-five, and no two roles share one', () => {
+    for (const agent of PRESET_AGENTS) {
+      expect(isAvatarIndex(agent.avatar), `${agent.id} wears ${agent.avatar}`).toBe(true);
+    }
+    expect(new Set(PRESET_AGENTS.map(a => a.avatar)).size).toBe(PRESET_AGENTS.length);
+  });
+
+  test('the faces are the ones the canvas gives each role', () => {
+    // `docs/product/design/canvas-2026-09-15-files.html`, AGENTS: a seed
+    // per role, and `seed = index * 5 + 2`. The founder's complaint was
+    // "you forgot to put the avatars. its the old ones there" — this is
+    // the mapping, so it cannot drift back.
+    const bySeed = Object.fromEntries(PRESET_AGENTS.map(a => [a.id, a.avatar * 5 + 2]));
+    expect(bySeed).toMatchObject({
+      'engineering-lead': 22, 'design-lead': 92, 'operations-manager': 62,
+      'product-manager': 42, 'head-of-people': 7, 'marketing-lead': 87,
+      'financial-controller': 57, 'account-executive': 12, 'data-analyst': 107,
+      'support-specialist': 77, 'in-house-counsel': 47, 'research-scientist': 82,
+    });
+  });
+
+  test('installing a role passes its face on, so the agent wears what the card showed', () => {
+    const lead = PRESET_AGENTS.find(a => a.id === 'engineering-lead')!;
+    expect(presetToCreateRequest(lead).avatar).toBe(lead.avatar);
   });
 
   test('every one carries the voice brief, unparaphrased', () => {

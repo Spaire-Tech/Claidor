@@ -1,5 +1,10 @@
 import type { ConnectionItem } from '../../../shared/connections/catalog';
-import { ConnectionKind, ConnectVia, mcpServerName } from '../../../shared/connections/catalog';
+import {
+  ConnectionKind,
+  ConnectVia,
+  mcpServerName,
+  OAuthRegistration,
+} from '../../../shared/connections/catalog';
 import { failureLine, findAuthorizationUrl, saysAuthorized } from './authUrl';
 import type { CallbackListener } from './callbackServer';
 import type { CliResult, OpenClawCliEnvironment } from './openclawCli';
@@ -42,10 +47,18 @@ export interface ConnectResult {
   message?: string;
 }
 
+export interface ServerToWrite {
+  name: string;
+  url: string;
+  scope?: string;
+  /** True for a server with no sign-in; it is written without `auth`. */
+  open?: true;
+}
+
 export interface ConnectDeps {
   environment: OpenClawCliEnvironment;
   /** Puts the server into the engine's config and waits for the write. */
-  writeServer: (input: { name: string; url: string; scope?: string }) => Promise<void>;
+  writeServer: (input: ServerToWrite) => Promise<void>;
   /** Takes the server back out again, for a login that never finished. */
   removeServer: (name: string) => Promise<void>;
   listen: () => Promise<CallbackListener>;
@@ -83,6 +96,25 @@ export async function connectService(
 
   const name = mcpServerName(item.id);
   const { url, scope } = item.connect;
+
+  if (item.connect.registration === OAuthRegistration.Preregistered) {
+    // The card already says "Not yet" for these. Refusing here as well
+    // means a stale renderer cannot start a sign-in that has nowhere to go.
+    return {
+      outcome: ConnectOutcome.Unsupported,
+      message: `${item.name} needs a client registered with them first.`,
+    };
+  }
+
+  if (item.connect.open) {
+    // No sign-in to do: the server took the probe without a challenge.
+    // Written without `auth`, or the engine would go looking for an
+    // authorization server the vendor does not run.
+    say(`${name} — open server, writing it and reloading`);
+    await deps.writeServer({ name, url, open: true });
+    await deps.runCli(['mcp', 'reload']);
+    return { outcome: ConnectOutcome.Connected };
+  }
 
   // 1. The config first, because the login reads it.
   say(`${name} — writing the server and syncing the config`);

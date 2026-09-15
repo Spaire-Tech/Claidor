@@ -1664,3 +1664,68 @@ agent delete still passes every check; eslint, tsc clean.
 **Where:** `design/thread/attachment.ts`, `types.ts`, `fromEngine.ts`,
 `ThreadItemView.tsx`, `pdf-doc.webp`; `design/shell/useMessagesShell.ts`
 (save a copy); `harness/main.tsx` (`?screen=files`).
+
+---
+
+## 42. The connectors, and the Apps sheet as drawn — `built`
+
+The founder: *"build the 63 self-registering ones first. also, look at
+the last design i gave you. the way you designed plugin is 100% different
+from how i designed it. please design it like i did … also not just
+plugins, but "agents" too. you forgot to to put the avatars. its the old
+ones there. pls fix"*
+
+**The catalogue.** Rebuilt on the new list (`connectors-list-2026-09-15.md`):
+134 services in the canvas's nine groups plus four for what the canvas
+never drew. The sixty-three whose vendor registers us itself are the
+ones with a Connect button; a test names every one of them, so the count
+cannot drift. Fifteen want a client we have not registered (Google ×7,
+Zoom, HubSpot, Intercom, Docusign, Box, Rippling, X, X Ads) and say "Not
+yet" — and the main process refuses them too, so a stale renderer cannot
+start a sign-in that ends on their error page. Two are open servers with
+no sign-in (Excalidraw, GoDaddy): written without `auth`, reloaded, done.
+Nine are channels the engine or a plugin actually carries; that test
+caught my own doc calling email an engine extension when it is the
+`@clawemail/email` plugin from `package.json`. The doc is corrected.
+Gong was marked as needing our own client; the probe says it registers
+itself, and it is a button now.
+
+**Plugins, as designed.** A card is the canvas's: 42px tile, name at
+15.5, the tag line under it at 13.5, and a black Connect or green
+Connected on the right. No description line. Cards that cannot sign in
+keep the shape and put the fact in the tag-line slot — "In your browser",
+"On this Mac", "A way to reach you", "Needs a key", "Not yet" — with no
+button, because a button that opens nothing is the one thing worse than
+no button. The header is the bare total and, once anything is connected,
+the canvas's pill: up to four overlapping logos, "N installed", a
+chevron; pressed, it shows only what is connected. The engine's state
+wins over the route: a server that is there is Connected whatever the
+catalogue thinks.
+
+**Agents, as designed.** The cards and the page behind them wear the
+cloud faces — the canvas's own seed per role, so Engineering Lead is
+avatar 4, Design Lead 18, and so on down the twelve; Chief of Staff, not
+on the canvas, takes one nobody else wears. The preset carries the face
+and passes it to the agent it creates, so the shelf and the sidebar agree
+about who this is. Card buttons say Install and then Use (green, and it
+goes to the conversation); the page says Import agent and then
+Installed. "Official" is in ink, as drawn.
+
+**Proof.** 418 design, catalogue, connect-service and preset tests pass
+(21 new); eslint, tsc, `compile:electron` clean; `harness/shoot.mjs
+apps apps-adding apps-agents apps-agent` photographs all four next to
+`harness/shoot-canvas.mjs`'s shots of the founder's canvas.
+
+**Not done.** 83 of the 134 services have no logo file yet and show the
+monogram tile; the list went to the founder, who said they would fetch
+them. Nobody has yet completed one of the sixty-three sign-ins end to
+end on a real machine; the flow is the one the browser audit ran by hand
+(`mcp login connection-todoist`, above) and the log line
+to read when it fails is `[Connections]`.
+
+**Where:** `shared/connections/catalog.ts` (+test);
+`design/connections/shelf.ts`, `Connections.tsx`, `design/shell/Apps.tsx`,
+`useMessagesShell.ts` (Use), `main/presetAgents.ts` (avatars),
+`main/libs/connections/connectService.ts` (open servers, refused
+routes), `main.ts` (no `auth` for an open server); `harness/main.tsx`
+(`?screen=apps-agents`, `apps-agent`), `harness/shoot-canvas.mjs`.

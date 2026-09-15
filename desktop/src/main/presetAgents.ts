@@ -1,4 +1,5 @@
 import { AgentAvatarSvg, encodeAgentAvatarIcon } from '../shared/agent/avatar';
+import type { AvatarIndex } from '../shared/agent/avatars';
 import { VOICE_BRIEF } from '../shared/agent/voiceBrief';
 import type { CreateAgentRequest } from './coworkStore';
 import { getLanguage } from './i18n';
@@ -7,6 +8,15 @@ export interface PresetAgent {
   id: string;
   name: string;
   nameEn: string;
+  /**
+   * The face, 0–24 into `shared/agent/avatars.ts`. The canvas of
+   * 15 September gives each role its own cloud — `seed: 22` for the
+   * Engineering Lead, and `seed = index * 5 + 2`, so that is avatar 4 —
+   * and the card in Apps, the page behind it and the agent once
+   * installed all wear the same one. Chief of Staff is not on the canvas
+   * and takes a cloud none of the twelve wears.
+   */
+  avatar: AvatarIndex;
   icon: string;
   description: string;
   descriptionEn: string;
@@ -68,6 +78,7 @@ const ROLE_PROMPT = (identity: string, rules: string): string =>
 export const PRESET_AGENTS: PresetAgent[] = [
   {
     id: 'chief-of-staff',
+    avatar: 10,
     name: '幕僚长',
     nameEn: 'Chief of Staff',
     icon: RoleAgentIcon.Brain,
@@ -89,6 +100,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'engineering-lead',
+    avatar: 4,
     name: '工程负责人',
     nameEn: 'Engineering Lead',
     icon: RoleAgentIcon.Code,
@@ -114,6 +126,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'design-lead',
+    avatar: 18,
     name: '设计负责人',
     nameEn: 'Design Lead',
     icon: RoleAgentIcon.Artboard,
@@ -139,6 +152,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'operations-manager',
+    avatar: 12,
     name: '运营经理',
     nameEn: 'Operations Manager',
     icon: RoleAgentIcon.Repair,
@@ -162,6 +176,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'product-manager',
+    avatar: 8,
     name: '产品经理',
     nameEn: 'Product Manager',
     icon: RoleAgentIcon.Lightning,
@@ -185,6 +200,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'head-of-people',
+    avatar: 1,
     name: '人力负责人',
     nameEn: 'Head of People',
     icon: RoleAgentIcon.Heart,
@@ -208,6 +224,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'marketing-lead',
+    avatar: 17,
     name: '市场负责人',
     nameEn: 'Marketing Lead',
     icon: RoleAgentIcon.Inspiration,
@@ -231,6 +248,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'financial-controller',
+    avatar: 11,
     name: '财务总监',
     nameEn: 'Financial Controller',
     icon: RoleAgentIcon.Briefcase,
@@ -256,6 +274,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'account-executive',
+    avatar: 2,
     name: '客户经理',
     nameEn: 'Account Executive',
     icon: RoleAgentIcon.ShoppingCart,
@@ -279,6 +298,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'data-analyst',
+    avatar: 21,
     name: '数据分析师',
     nameEn: 'Data Analyst',
     icon: RoleAgentIcon.Data,
@@ -304,6 +324,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'support-specialist',
+    avatar: 15,
     name: '客户支持',
     nameEn: 'Support Specialist',
     icon: RoleAgentIcon.Headphones,
@@ -327,6 +348,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'in-house-counsel',
+    avatar: 9,
     name: '法务顾问',
     nameEn: 'In-house Counsel',
     icon: RoleAgentIcon.Scales,
@@ -352,6 +374,7 @@ export const PRESET_AGENTS: PresetAgent[] = [
   },
   {
     id: 'research-scientist',
+    avatar: 16,
     name: '研究员',
     nameEn: 'Research Scientist',
     icon: RoleAgentIcon.Experiment,
@@ -390,6 +413,10 @@ export function presetToCreateRequest(preset: PresetAgent): CreateAgentRequest {
     identity: isEn && preset.identityEn ? preset.identityEn : preset.identity,
     systemPrompt: isEn && preset.systemPromptEn ? preset.systemPromptEn : preset.systemPrompt,
     icon: preset.icon,
+    // The face the card showed is the face the agent wears. Left out,
+    // the store would hand the new agent whichever cloud was free, and
+    // the Apps shelf and the sidebar would disagree about who this is.
+    avatar: preset.avatar,
     skillIds: preset.skillIds,
     source: 'preset',
     presetId: preset.id,

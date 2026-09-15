@@ -12,7 +12,7 @@ import { AgentDetail } from '../src/renderer/design/agent/AgentDetail';
 import { AgentTab } from '../src/renderer/design/agent/detail';
 import type { AgentDetailState } from '../src/renderer/design/agent/useAgentDetail';
 import { AccountMenu } from '../src/renderer/design/shell/AccountMenu';
-import { Apps } from '../src/renderer/design/shell/Apps';
+import { Apps, AppsTab } from '../src/renderer/design/shell/Apps';
 import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/MessagesShell';
 import { SignIn } from '../src/renderer/design/shell/SignIn';
 import type { EngineMessage, EnginePermissionRequest } from '../src/renderer/design/thread/fromEngine';
@@ -292,13 +292,17 @@ function Screens(): JSX.Element {
       onPickAgent={noop}
       onCreateAgent={noop}
       onApps={noop}
-      apps={screen === 'apps' || screen === 'apps-adding' ? (
+      apps={screen.startsWith('apps') ? (
         <Apps
+          // `apps` and `apps-adding` open on Plugins; `apps-agents` on the
+          // Agents tab; `apps-agent` on the Engineering Lead's page.
+          initialTab={screen === 'apps-agents' || screen === 'apps-agent' ? AppsTab.Agents : AppsTab.Plugins}
+          {...(screen === 'apps-agent' ? { initialRoleId: 'engineering-lead' } : {})}
           connections={{
             // Two connected, one mid-flight and one that just failed, so
             // every state of a row is on screen at once.
-            connected: new Set(['gmail', 'todoist']),
-            busyId: screen === 'apps-adding' ? 'google-drive' : undefined,
+            connected: new Set(['notion', 'todoist']),
+            busyId: screen === 'apps-adding' ? 'stripe' : undefined,
             failure: screen === 'apps-adding'
               ? undefined
               : { id: 'otter', message: 'Otter.ai said no to that account.' },
@@ -311,6 +315,7 @@ function Screens(): JSX.Element {
           installedIds={new Set(['engineering-lead'])}
           busyId={screen === 'apps-adding' ? 'design-lead' : undefined}
           onInstall={noop}
+          onUse={noop}
           onClose={noop}
         />
       ) : undefined}
