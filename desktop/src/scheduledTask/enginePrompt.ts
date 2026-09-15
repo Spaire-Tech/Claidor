@@ -18,6 +18,12 @@ export function buildScheduledTaskEnginePrompt(): string {
     '- When running inside a scheduled-task (cron) session, **do NOT** call the `message` tool directly to send results to IM channels.',
     '- The cron system handles result delivery automatically based on the task\'s delivery configuration. Calling `message` from a cron session without an associated channel will fail with "Channel is required".',
     '- Instead, output your results as plain text in the session. If the task has a delivery channel configured, the cron system will forward the output automatically.',
-    '- If the user\'s prompt asks to "send" or "notify", and you are in a cron session, produce the content as session output rather than calling `message`. Append a note: "（此定时任务未配置 IM 通知通道，结果已保存在执行记录中。如需自动推送，请在定时任务设置中配置通知通道。）"',
+    // Upstream had the agent append a sentence in Chinese here, about a
+    // notification channel the person had not set up. It reached the
+    // person in a language the app does not speak, and it named a
+    // "scheduled task setting" that this app's Settings does not have.
+    // The honest version is one plain sentence in the person's language,
+    // and only when it is true.
+    '- If the user\'s prompt asks to "send" or "notify", and you are in a cron session, produce the content as session output rather than calling `message`. If no delivery channel is configured for this task, end with one plain sentence, in the language the person writes in, saying the result is saved with the task\'s run history and was not sent anywhere.',
   ].join('\n');
 }
