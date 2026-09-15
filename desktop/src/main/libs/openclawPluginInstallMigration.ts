@@ -80,7 +80,7 @@ export function runOpenClawPluginInstallMigrationProcess(
     };
     timeout = setTimeout(() => {
       const error = new Error(
-        `OpenClaw plugin install migration timed out after ${options.timeoutMs}ms`,
+        `Engine plugin install migration timed out after ${options.timeoutMs}ms`,
       );
       timeoutError = error;
       if (!child.kill()) {
@@ -174,7 +174,7 @@ const restoreOriginalConfig = (
 const describeProcessFailure = (result: MigrationProcessResult): string => {
   const output = result.stderr.trim() || result.stdout.trim();
   const suffix = output ? `: ${output}` : '';
-  return `OpenClaw config migration exited with code ${String(result.code)}${suffix}`;
+  return `Engine config migration exited with code ${String(result.code)}${suffix}`;
 };
 
 /**
@@ -220,11 +220,11 @@ export async function migrateLegacyOpenClawPluginInstalls(params: {
   };
 
   if (!params.runtimeRoot) {
-    return restoreAndFail('OpenClaw runtime is unavailable for legacy plugin install migration');
+    return restoreAndFail('The engine is unavailable for legacy plugin install migration');
   }
   const cliPath = resolveOpenClawCliPath(params.runtimeRoot);
   if (!cliPath) {
-    return restoreAndFail(`OpenClaw CLI is unavailable in runtime: ${params.runtimeRoot}`);
+    return restoreAndFail(`Engine CLI is unavailable in runtime: ${params.runtimeRoot}`);
   }
 
   const runner = params.runner ?? runOpenClawPluginInstallMigrationProcess;
@@ -238,7 +238,7 @@ export async function migrateLegacyOpenClawPluginInstalls(params: {
   };
   const args = [cliPath, 'config', 'unset', LEGACY_PLUGIN_INSTALL_CONFIG_PATH];
 
-  console.log('[OpenClaw] Legacy plugins.installs detected; running official config migration.');
+  console.log('[Engine] Legacy plugins.installs detected; running official config migration.');
   try {
     const result = await runner(params.electronNodeRuntimePath, args, {
       cwd: params.runtimeRoot,
@@ -254,20 +254,20 @@ export async function migrateLegacyOpenClawPluginInstalls(params: {
       migratedRaw = fs.readFileSync(params.configPath, 'utf8');
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
-      return restoreAndFail(`OpenClaw config migration output is unreadable: ${detail}`);
+      return restoreAndFail(`Engine config migration output is unreadable: ${detail}`);
     }
     const migratedInspection = inspectLegacyPluginInstallConfig(migratedRaw);
     if (!migratedInspection.valid) {
-      return restoreAndFail('OpenClaw config migration produced invalid JSON');
+      return restoreAndFail('Engine config migration produced invalid JSON');
     }
     if (migratedInspection.hasLegacyInstalls) {
-      return restoreAndFail('OpenClaw config migration completed without removing plugins.installs');
+      return restoreAndFail('Engine config migration completed without removing plugins.installs');
     }
 
-    console.log('[OpenClaw] Legacy plugins.installs migrated into the plugin index.');
+    console.log('[Engine] Legacy plugins.installs migrated into the plugin index.');
     return { status: OpenClawPluginInstallMigrationStatus.Migrated };
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    return restoreAndFail(`OpenClaw config migration failed: ${detail}`);
+    return restoreAndFail(`Engine config migration failed: ${detail}`);
   }
 }

@@ -7,6 +7,10 @@ import {
   BrowserCredentialLoginTool,
   BrowserCredentialMcpServer,
 } from '../../shared/browserCredentials/constants';
+import {
+  AGENTS_MD_LEGACY_MANAGED_MARKERS,
+  AGENTS_MD_MANAGED_MARKER,
+} from '../../shared/openclawEngine/constants';
 import { ProviderName } from '../../shared/providers';
 
 vi.mock('electron', () => ({
@@ -2964,6 +2968,42 @@ describe('OpenClawConfigSync runtime config output', () => {
       .toBeLessThan(agentsMd.indexOf('## Browser Policy'));
   });
 
+  test('an AGENTS.md carrying the legacy managed marker is migrated to the current one', async () => {
+    // Installs made before the rename have a managed section under the
+    // old marker. The next sync must find it, keep what the person wrote
+    // above it, drop the old managed section and write the new marker.
+    const workspace = path.join(stateDir, 'workspace-main');
+    fs.mkdirSync(workspace, { recursive: true });
+    const agentsMdPath = path.join(workspace, 'AGENTS.md');
+    fs.writeFileSync(
+      agentsMdPath,
+      [
+        '# Custom Workspace Notes',
+        '',
+        'Keep this line.',
+        '',
+        AGENTS_MD_LEGACY_MANAGED_MARKERS[0],
+        '',
+        '## System Prompt',
+        '',
+        'Old managed-only content.',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const sync = await createSync();
+    expect(sync.sync('legacy-marker').ok).toBe(true);
+
+    const agentsMd = fs.readFileSync(agentsMdPath, 'utf8');
+    expect(agentsMd).toMatch(/^# Custom Workspace Notes\n\nKeep this line\./);
+    expect(agentsMd).toContain(AGENTS_MD_MANAGED_MARKER);
+    expect(agentsMd).not.toContain(AGENTS_MD_LEGACY_MANAGED_MARKERS[0]);
+    expect(agentsMd).not.toContain('Old managed-only content.');
+    expect(agentsMd).toContain('## Browser Policy');
+    expect(agentsMd.indexOf('Keep this line.')).toBeLessThan(agentsMd.indexOf(AGENTS_MD_MANAGED_MARKER));
+  });
+
   test('the app UI map is written, and the prompt points at it', async () => {
     // The ban on inventing a click-path is not actionable on its own.
     // This is the half that makes it possible to obey.
@@ -2996,10 +3036,10 @@ describe('OpenClawConfigSync runtime config output', () => {
       'utf8',
     );
     expect(agentsMd).toContain('### Pointing at a setting');
-    expect(agentsMd).toContain('faiser://settings/exec-policy');
+    expect(agentsMd).toContain('caisra://settings/exec-policy');
     expect(agentsMd).toContain('quietly turns back into plain words');
     expect(agentsMd).toContain('### Pointing at something said earlier');
-    expect(agentsMd).toContain('faiser://message/<id>');
+    expect(agentsMd).toContain('caisra://message/<id>');
   });
 
   test('the failure reference is written, with this machine’s real log path', async () => {
@@ -3041,7 +3081,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(sync.sync('ask-input').ok).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const server = config.mcp?.servers?.['faiser-ask-input'];
+    const server = config.mcp?.servers?.['caisra-ask-input'];
     expect(server).toBeTruthy();
     expect(server.command).toBe('/tmp/ask-input-mcp/ask-input-mcp');
     // Only the one tool. This server has no business offering anything else.
@@ -3064,7 +3104,7 @@ describe('OpenClawConfigSync runtime config output', () => {
     const sync = await createSync();
     expect(sync.sync('no-bridge').ok).toBe(true);
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(config.mcp?.servers?.['faiser-ask-input']).toBeUndefined();
+    expect(config.mcp?.servers?.['caisra-ask-input']).toBeUndefined();
   });
 
   test('the agent is told how to put the bulk out of the way', async () => {

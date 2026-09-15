@@ -584,15 +584,16 @@ sign-in followed by making your first agent — which the design already
 has a form and a voice picker for, and which would double as onboarding
 without drawing anything new.
 
-### 3. The name decides where the data lives — **settled: Faiser**
+### 3. The name decides where the data lives — **settled: Caisra**
 
 `src/main/appConstants.ts` is the one definition site, and `APP_NAME` is
 what `configureUserDataPath()` joins onto `appData` — so it decides where
 a person's conversations, memory, logins and engine state live. Renaming
 after an install orphans all of it.
 
-Settled and applied on 13 September, before anything shipped, so no
-migration is owed. See `direction.md` §0 for what deliberately keeps the
+Settled as Faiser on 13 September and renamed to Caisra on the 15th, so
+a migration was owed after all: `adoptLegacyUserData()` in `main.ts`
+renames the Faiser directory and database on first start. See `direction.md` §0 for what deliberately keeps the
 old name and why.
 
 ### 4. The design has no error state anywhere

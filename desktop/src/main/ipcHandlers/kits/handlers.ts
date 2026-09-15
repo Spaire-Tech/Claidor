@@ -400,7 +400,7 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
           expectedImpact: OpenClawConfigImpact.Restart,
         });
         if (!syncResult.success) {
-          throw new Error(syncResult.error || 'OpenClaw config sync failed after Computer Use install');
+          throw new Error(syncResult.error || 'Engine config sync failed after Computer Use install');
         }
       }
 
@@ -484,7 +484,7 @@ export function registerKitHandlers(deps: KitHandlerDeps): void {
           expectedImpact: OpenClawConfigImpact.Restart,
         });
         if (!syncResult.success) {
-          throw new Error(syncResult.error || 'OpenClaw config sync failed after Computer Use uninstall');
+          throw new Error(syncResult.error || 'Engine config sync failed after Computer Use uninstall');
         }
       }
       // Notify

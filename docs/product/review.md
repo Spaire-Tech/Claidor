@@ -1782,3 +1782,110 @@ could not be fetched (a JavaScript-only page); `fonts/README.md` says so.
 `shell/Composer.tsx` (`seed`), `MessagesShell.tsx`; every other
 component under `design/`; `harness/shoot.mjs`, `shoot-canvas.mjs`;
 `docs/product/design/canvas-2026-09-15-type*.html`.
+
+## 44. Caisra: the name, and no other — `built`
+
+The founder, 15 September: *"Caisra is now the official name I've
+decided on… rename everything Caisra. Important too. The AI thinks he
+works for Lobster AI. No. The AI works for Caisra… zero zero mention of
+openclaw. not ever by the agent, not ever in settings or whatnot. not ever
+in mcps. the mcp is Caisra's from now."*
+
+**What changed.** Every string a person or the agent can read. The
+identity is one site, `appConstants.ts`: name, id, bundle id, database,
+deep-link scheme (`caisra://`, matched by the server's callback), home
+and temp directories. A Faiser install is adopted on first start:
+`adoptLegacyUserData()` renames the directory and the database files
+before anything opens them. The agent's default identity says it is
+Caisra; the managed prompt, the failure reference, the continuity
+capsule, the media and browser tool descriptions, the `caisra-browser`,
+`caisra-browser-credentials` and `caisra-ask-input` MCP servers, the
+`caisra_image_generate` / `caisra_video_generate` / `caisra_skin_manage`
+tools, the four bundled extensions' names and descriptions, thirty-seven
+skill files, both i18n tables (zh and en), the tray, the dialogs, the
+sign-in page a browser shows, the READMEs and the developer guide all say
+Caisra or "the engine". The AGENTS.md marker is now `Caisra managed`;
+the old marker is still recognised and replaced on the next sync, with a
+test that proves an existing install's file is migrated, not duplicated.
+
+**The engine itself** is patched, `zzz-caisra-identity.patch`, last in
+the order so it sits on top of the other thirty: the system prompt no
+longer says "running inside OpenClaw", no longer sends the agent to
+`docs.openclaw.ai` or to the `openclaw` CLI, and its control section,
+tool descriptions, transcript tags (`[Caisra heartbeat poll]`, `[Caisra
+room event]`, runtime events), realtime-voice prompt, push titles, chat
+command descriptions and the OAuth client name a third-party MCP server
+shows on its consent page (`Caisra`) all carry the new name. The
+heartbeat filter accepts both spellings, because transcripts written
+before today carry the old one. The patch applies cleanly to a fresh
+checkout with the other thirty and the result is byte-identical to the
+tree it was cut from; `apply-openclaw-patches.cjs` validates it.
+
+**What keeps an old name, and why it is not a lie.** Internal
+identifiers nobody reads: `OPENCLAW_*` environment variables,
+`openclaw.json` and the `openclaw` state directory, file and module
+names, IPC channel names, the `X-LobsterAI-*` headers the server
+expects, the `lobsterai_` analytics prefix, the plugin ids, the
+`lobsterai:` session-key prefix, and `LOBSTERAI_SKILLS_ROOT`, which the
+app still sets beside the new `CAISRA_SKILLS_ROOT`. Developer log tags
+are `[Engine…]` now. Three things are the founder's to decide, because
+there is nothing to replace them with yet: the old shell's About panel
+still shows NetEase's contact address and help links
+(`Settings.tsx:966-969`), the channel guide links point at
+`lobsterai.youdao.com` (`shared/platform/constants.ts`), and the
+`/__openclaw__/canvas/` embed URL in the engine's webchat prompt is a
+route the engine serves. `direction.md` §0 has the list.
+
+**One thing I broke and fixed before it left.** The log-tag sweep was a
+blind `[OpenClaw` → `[Engine` and it also rewrote `[OpenClawProviderId.…]`
+member accesses in nine files; `tsc` caught it and the suite showed 257
+failures before the nine were restored.
+
+**Proof.** `tsc` clean; `compile:electron` clean; eslint clean on the 115 changed
+TypeScript files. The full suite: 4418 tests pass, 156 fail, and every one
+of the 156 is the `better-sqlite3` native binding refusing to load under
+this machine's Node 24 (fourteen files, all of them the SQLite-backed
+stores) — the same fourteen fail on `HEAD` for the same reason, and they
+are not touched here. The engine's own tests for the patched files pass
+(`system-prompt`, `prompt-prelude`, `heartbeat-filter`, `runtime-context-prompt`,
+`capability-cli`, and the rest: 1,070 of 1,072; the two that fail are
+`attempt.spawn-workspace.context-engine`'s aggregate tool-result bound,
+which fails identically on the unpatched base, so it is the
+`live-tool-result-cache-stability` patch's and predates this). The
+harness rebuilt and photographed `signin`, `thread` and `account` with
+no console errors and Switzer confirmed; the sign-in page shows no
+product name at all, which is the founder's design, not an omission.
+
+**Where:** `appConstants.ts`, `main.ts` (`adoptLegacyUserData`),
+`electron-builder.json`, `package.json`, `shared/thread/links.ts`,
+`shared/askInput/constants.ts`, `shared/browserCredentials/constants.ts`,
+`shared/browserWebAccess/constants.ts`, `shared/openclawEngine/constants.ts`
+(markers), `openclawMemoryFile.ts`, `openclawConfigSync.ts`,
+`openclawAgentsMdIdentityMigration.ts`, `openclawWorkspaceMigration.ts`,
+`lobsterBrowserMcpServer.ts`, `mcpBridgeServer.ts`, `agentBrowserHost.ts`,
+`coworkContinuityCapsule.ts`, `mediaGenerationTurnInstruction.ts`,
+`whenThingsFail.ts`, `main/i18n.ts`, `renderer/services/i18n.ts`,
+`openclaw-extensions/*`, `SKILLs/*`, `scripts/patches/v2026.6.1/zzz-caisra-identity.patch`,
+`scripts/apply-openclaw-patches.cjs`, `server/polar/desktop/endpoints.py`,
+`CLAUDE.md`, `desktop/AGENTS.md`, `docs/product/direction.md`, `plan.md`.
+
+## 45. The icon — `built, traced`
+
+The founder sent the official icon: a white rounded tile and six navy
+dots. It arrived twice as a picture pasted into the chat and never as a
+file, and the SVG would not attach, so there was nothing on disk to
+build from. Rather than stop, I traced it: measured each dot's centre,
+radii and tilt from the picture and drew them as a vector
+(`build/icons/caisra-icon.svg`, the dots alone in `caisra-mark.svg`),
+rendered that to 1024 with Chromium, and ran `make-app-icons.mjs` over
+it. **It is a tracing, not the original file.** The founder has the
+render to compare; the moment the real PNG lands, the same command
+replaces all of it.
+
+What it produced: the nine PNGs, `icon.icns`, `icon.ico`, the in-app
+`public/logo.png`, and the tray marks for all three platforms (the dots
+alone, navy, 22/44 for macOS, 48 for Linux, a 16/32/48 `.ico` for
+Windows) — the tray is a colour image upstream too, not a template. The
+old `generate-tray-icons.js` and `regenerate-mac-icon.sh` need
+ImageMagick and `iconutil`; they are left in place but nothing here
+used them.

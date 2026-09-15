@@ -7,11 +7,11 @@ import {
   AgentLegacyIdentityCleanupSkipReason,
   AgentLegacyIdentityCleanupStatus,
 } from '../../shared/agent/constants';
+import { findAgentsMdManagedMarker } from '../../shared/openclawEngine/constants';
 
 const AGENTS_MD_FILENAME = 'AGENTS.md';
 const LOBSTERAI_MIGRATIONS_DIR = path.join('.lobsterai', 'migrations');
 const LEGACY_IDENTITY_TITLE = '## Identity（必须遵守）';
-const MANAGED_MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
 const MAX_LEGACY_IDENTITY_BLOCK_CHARS = 20_000;
 
 const TEMPLATE_ANCHORS = [
@@ -140,7 +140,7 @@ const removeLegacyBlockFromPreMarkerContent = (
 export function removeLegacyAgentsMdIdentityBlock(content: string): LegacyIdentityRemovalResult {
   const lineEnding = detectLineEnding(content);
   const normalized = normalizeLineEndings(content);
-  const markerIndex = normalized.indexOf(MANAGED_MARKER);
+  const markerIndex = findAgentsMdManagedMarker(normalized)?.index ?? -1;
   const preMarkerContent = markerIndex >= 0 ? normalized.slice(0, markerIndex) : normalized;
   const managedContent = markerIndex >= 0 ? normalized.slice(markerIndex) : '';
   const result = removeLegacyBlockFromPreMarkerContent(preMarkerContent);

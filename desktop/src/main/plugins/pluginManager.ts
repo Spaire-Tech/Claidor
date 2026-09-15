@@ -276,7 +276,7 @@ export class PluginManager {
 
     const openclawMjs = getOpenClawMjsPath();
     if (!fs.existsSync(openclawMjs)) {
-      return { ok: false, error: `OpenClaw CLI not found at ${openclawMjs}` };
+      return { ok: false, error: `Engine CLI not found at ${openclawMjs}` };
     }
 
     let stagingDir: string | null = null;

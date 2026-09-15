@@ -31,7 +31,7 @@ const everyRowId = (): string[] =>
     settingsFor(tab, full()).flatMap(group => group.rows.map(row => row.id)),
   );
 
-const map = (): string => buildAppUiMap('Faiser');
+const map = (): string => buildAppUiMap('Caisra');
 
 describe('the map cannot drift from the app', () => {
   // This is the whole point of generating it. Grok Bot ships the same
@@ -148,7 +148,7 @@ describe('what the map tells the agent', () => {
   });
 
   test('it carries the app’s own name rather than "the app"', () => {
-    expect(buildAppUiMap('Faiser')).toContain('# Faiser, as it actually is');
+    expect(buildAppUiMap('Caisra')).toContain('# Caisra, as it actually is');
     expect(buildAppUiMap('Something Else')).toContain('# Something Else, as it actually is');
   });
 

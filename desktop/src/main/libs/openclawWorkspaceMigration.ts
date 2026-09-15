@@ -10,16 +10,16 @@
 import fs from 'fs';
 import path from 'path';
 
+import { findAgentsMdManagedMarker } from '../../shared/openclawEngine/constants';
 import type { SqliteStore } from '../sqliteStore';
 import {
   getMainAgentWorkspacePath,
   syncMemoryFileOnWorkspaceChange,
 } from './openclawMemoryFile';
 
-const TAG = '[OpenClaw Migration]';
+const TAG = '[Engine Migration]';
 const MIGRATION_KEY = 'migration.mainAgentWorkspace.v3.completed';
 
-const AGENTS_MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
 const BOOTSTRAP_FILES = ['IDENTITY.md', 'USER.md', 'SOUL.md', 'TOOLS.md', 'BOOTSTRAP.md'];
 
 type CopyResult = {
@@ -139,7 +139,7 @@ function mergeDirIfNeeded(src: string, dest: string): CopyResult {
 }
 
 function extractAgentsUserContent(content: string): string {
-  const markerIndex = content.indexOf(AGENTS_MARKER);
+  const markerIndex = findAgentsMdManagedMarker(content)?.index ?? -1;
   const userContent = markerIndex >= 0 ? content.slice(0, markerIndex) : content;
   return userContent.trim();
 }
@@ -163,7 +163,7 @@ function mergeAgentsMdUserContent(src: string, dest: string): CopyResult {
       return { changed: false, error: false };
     }
 
-    const markerIndex = destContent.indexOf(AGENTS_MARKER);
+    const markerIndex = findAgentsMdManagedMarker(destContent)?.index ?? -1;
     let nextContent: string;
     if (!destContent.trim()) {
       nextContent = `${srcUserContent}\n`;

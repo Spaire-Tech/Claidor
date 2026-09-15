@@ -111,7 +111,7 @@ export const RunBehavior = {
   newSession: 'Creates a new session on each trigger',
   uiSession: 'Runs within the associated UI session',
   imSession: (platform: string) => `Triggers and delivers results via ${platform}`,
-  sessionKey: 'Runs with explicit OpenClaw session key',
+  sessionKey: 'Runs with an explicit engine session key',
 } as const;
 
 // ─── IPC Channels ───────────────────────────────────────────────────────────

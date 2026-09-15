@@ -20,7 +20,7 @@ import { SETTINGS_TABS, settingsFor, type SettingsInput } from '../settings/rows
  * `reference/app-ui.md`, so the three cannot disagree.
  */
 
-export const APP_LINK_SCHEME = 'faiser:';
+export const APP_LINK_SCHEME = 'caisra:';
 
 export const AppLinkKind = {
   /** A row in Settings, by its anchor id. */
@@ -36,9 +36,9 @@ export interface AppLink {
   id: string;
 }
 
-/** `faiser://settings/exec-policy` → `{ kind: 'settings', id: 'exec-policy' }`. */
+/** `caisra://settings/exec-policy` → `{ kind: 'settings', id: 'exec-policy' }`. */
 export function parseAppLink(target: string): AppLink | undefined {
-  const match = /^faiser:\/\/(settings|message)\/([A-Za-z0-9_-]+)$/.exec(target.trim());
+  const match = /^caisra:\/\/(settings|message)\/([A-Za-z0-9_-]+)$/.exec(target.trim());
   if (!match) return undefined;
   return { kind: match[1] as AppLinkKind, id: match[2] };
 }

@@ -509,16 +509,16 @@ test('diff stats count added and removed lines', () => {
 
 test('media polling groups count their polls as steps', () => {
   const polls = [
-    activityToolItem('poll-1', 'lobsterai_video_generate'),
-    activityToolItem('poll-2', 'lobsterai_video_generate'),
-    activityToolItem('poll-3', 'lobsterai_video_generate'),
+    activityToolItem('poll-1', 'caisra_video_generate'),
+    activityToolItem('poll-2', 'caisra_video_generate'),
+    activityToolItem('poll-3', 'caisra_video_generate'),
   ].map(item => (item as Extract<ConsolidatedItem, { type: 'tool_group' }>).group);
 
   const mediaItem = {
     type: 'media_polling_group',
     group: {
       type: 'media_polling_group',
-      toolName: 'lobsterai_video_generate',
+      toolName: 'caisra_video_generate',
       taskId: 'task-1',
       lastStatus: 'succeeded',
       pollCount: 3,

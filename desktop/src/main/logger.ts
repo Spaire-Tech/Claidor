@@ -6,9 +6,9 @@
  * renamed — `app.setName(APP_NAME)` runs in `main.ts` before this, and
  * electron-log reads `electron.app.name`:
  *
- *   macOS:   ~/Library/Logs/Faiser/main-YYYY-MM-DD.log
- *   Windows: %USERPROFILE%\AppData\Roaming\Faiser\logs\main-YYYY-MM-DD.log
- *   Linux:   ~/.config/Faiser/logs/main-YYYY-MM-DD.log
+ *   macOS:   ~/Library/Logs/Caisra/main-YYYY-MM-DD.log
+ *   Windows: %USERPROFILE%\AppData\Roaming\Caisra\logs\main-YYYY-MM-DD.log
+ *   Linux:   ~/.config/Caisra/logs/main-YYYY-MM-DD.log
  *
  * This comment said `LobsterAI` long after the rename, and it cost the
  * founder an evening: every instruction to "check the log" sent them to a

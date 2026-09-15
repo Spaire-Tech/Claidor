@@ -304,7 +304,7 @@ export function runProcess(
 
     const timer = setTimeout(() => {
       child.kill();
-      reject(new Error(`OpenClaw memory index migration timed out after ${options.timeoutMs}ms`));
+      reject(new Error(`Memory index migration timed out after ${options.timeoutMs}ms`));
     }, options.timeoutMs);
 
     child.on('close', (code) => {
@@ -346,7 +346,7 @@ export async function migrateAllFtsOnlyMemoryIndexes(params: {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn('[OpenClaw] Failed to inspect memory index metadata before migration:', error);
+    console.warn('[Engine] Failed to inspect memory index metadata before migration:', error);
     return { status: 'failed', code: null, error: message };
   }
 
@@ -356,7 +356,7 @@ export async function migrateAllFtsOnlyMemoryIndexes(params: {
 
   const openclawCliPath = path.join(params.runtimeRoot, 'openclaw.mjs');
   if (!fs.existsSync(openclawCliPath)) {
-    console.warn(`[OpenClaw] Memory index migration needed but OpenClaw CLI is missing: ${openclawCliPath}`);
+    console.warn(`[Engine] Memory index migration needed but OpenClaw CLI is missing: ${openclawCliPath}`);
     return { status: 'skipped', reason: 'missing-openclaw-cli' };
   }
 
@@ -372,7 +372,7 @@ export async function migrateAllFtsOnlyMemoryIndexes(params: {
   const targetAgentIds = need.targets.map((target) => target.agentId);
 
   console.log(
-    `[OpenClaw] FTS-only memory index migration needed for agents ${JSON.stringify(targetAgentIds)}; running official all-agent reindex: ${JSON.stringify(args.slice(1))}`,
+    `[Engine] FTS-only memory index migration needed for agents ${JSON.stringify(targetAgentIds)}; running official all-agent reindex: ${JSON.stringify(args.slice(1))}`,
   );
   try {
     const result = await runner(params.electronNodeRuntimePath, args, {
@@ -386,16 +386,16 @@ export async function migrateAllFtsOnlyMemoryIndexes(params: {
       if (staleTargets.length > 0) {
         const staleAgentIds = staleTargets.map((target) => target.agentId);
         const error = `post-reindex verification failed for agents ${JSON.stringify(staleAgentIds)}`;
-        console.warn(`[OpenClaw] FTS-only memory index migration ${error}.`);
+        console.warn(`[Engine] FTS-only memory index migration ${error}.`);
         return { status: 'failed', code: result.code, error };
       }
-      console.log(`[OpenClaw] FTS-only memory index migration completed: ${need.reason}`);
+      console.log(`[Engine] FTS-only memory index migration completed: ${need.reason}`);
       return { status: 'migrated', code: result.code, reason: need.reason };
     }
 
     console.warn(
       [
-        `[OpenClaw] FTS-only memory index migration failed with exit code ${result.code}.`,
+        `[Engine] FTS-only memory index migration failed with exit code ${result.code}.`,
         result.stderr ? `stderr tail:\n${tailLog(result.stderr)}` : '',
         result.stdout ? `stdout tail:\n${tailLog(result.stdout)}` : '',
       ].filter(Boolean).join('\n'),
@@ -403,7 +403,7 @@ export async function migrateAllFtsOnlyMemoryIndexes(params: {
     return { status: 'failed', code: result.code };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn('[OpenClaw] FTS-only memory index migration failed before gateway startup:', error);
+    console.warn('[Engine] FTS-only memory index migration failed before gateway startup:', error);
     return { status: 'failed', code: null, error: message };
   }
 }

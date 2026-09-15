@@ -1018,7 +1018,7 @@ const assertOpenClawStateSummaryValuesMatch = (
 ): void => {
   if (sourceSummary.error || targetSummary.error) {
     throw new Error(
-      `${label} OpenClaw state summary failed: ${sourceSummary.error || targetSummary.error}`,
+      `${label} engine state summary failed: ${sourceSummary.error || targetSummary.error}`,
     );
   }
   for (const fieldName of [
@@ -1033,7 +1033,7 @@ const assertOpenClawStateSummaryValuesMatch = (
   ] as const) {
     if (sourceSummary[fieldName] !== targetSummary[fieldName]) {
       throw new Error(
-        `${label} OpenClaw state ${fieldName} mismatch: expected ${String(sourceSummary[fieldName])}, got ${String(targetSummary[fieldName])}.`,
+        `${label} engine state ${fieldName} mismatch: expected ${String(sourceSummary[fieldName])}, got ${String(targetSummary[fieldName])}.`,
       );
     }
   }
@@ -1099,7 +1099,7 @@ const validateExtractedArchiveContentSync = (sourceRoot: string): MigrationManif
   assertManifestSqliteSummaryMatches(manifest.sqlite, sqliteSummary, 'Backup archive manifest');
 
   if (!manifest.openclawState) {
-    throw new Error('Backup archive manifest is missing OpenClaw state summary.');
+    throw new Error('Backup archive manifest is missing the engine state summary.');
   }
   assertOpenClawStateSummaryValuesMatch(
     manifest.openclawState,
@@ -1334,7 +1334,7 @@ export const inspectMigrationArchiveSync = (
   });
 
   if (!state.root || state.entryCount <= 0) {
-    throw new Error('Backup archive is empty or missing LobsterAI user data.');
+    throw new Error('Backup archive is empty or missing Caisra user data.');
   }
   if (requireSqliteDatabase && !state.hasSqliteDatabase) {
     throw new Error(`Backup archive is missing ${DB_FILENAME}.`);
@@ -1402,7 +1402,7 @@ const extractMigrationArchiveToTempSync = (
 
     const sourceRoot = path.join(tempRoot, ...info.root.split('/'));
     if (!fs.existsSync(sourceRoot) || !fs.statSync(sourceRoot).isDirectory()) {
-      throw new Error('Backup archive did not extract a valid LobsterAI user data directory.');
+      throw new Error('Backup archive did not extract a valid Caisra user data directory.');
     }
     if (options.validateArchiveContent ?? true) {
       validateExtractedArchiveContentSync(sourceRoot);

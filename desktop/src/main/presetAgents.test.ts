@@ -105,7 +105,7 @@ describe('the twelve role agents, and the one that runs them', () => {
 
   test('no product name reaches an agent', () => {
     const written = JSON.stringify(PRESET_AGENTS).toLowerCase();
-    for (const forbidden of ['faiser', 'maties', 'swens', 'lobsterai', 'claidor']) {
+    for (const forbidden of ['faiser', 'maties', 'swens', 'lobsterai', 'openclaw', 'netease', 'youdao', 'claidor']) {
       expect(written).not.toContain(forbidden);
     }
   });

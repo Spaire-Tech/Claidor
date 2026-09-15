@@ -36,7 +36,7 @@ const LEGACY_HEARTBEAT_FENCED_RELATED_TEMPLATE = [
 
 const DOCS_HEARTBEAT_TEMPLATE_PAGE_AS_TEMPLATE = [
   '# HEARTBEAT.md template',
-  '`HEARTBEAT.md` lives in the agent workspace. Keep the file empty, or with only Markdown comments and headings, when you want OpenClaw to skip heartbeat model calls.',
+  '`HEARTBEAT.md` lives in the agent workspace. Keep the file empty, or with only Markdown comments and headings, when you want the engine to skip heartbeat model calls.',
   'The default runtime template is:',
   '```markdown',
   '# Keep this file empty (or with only comments) to skip heartbeat API calls.',

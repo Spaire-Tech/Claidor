@@ -73,7 +73,7 @@ export class OpenClawApprovalController {
         if (!this.options.sessionExists(sessionId)) return;
         if (!this.options.isSessionActive(sessionId)) {
           void this.options.continueSession(sessionId, prompt).catch((error) => {
-            console.warn('[OpenClawRuntime] failed to continue session after approval:', error);
+            console.warn('[EngineRuntime] failed to continue session after approval:', error);
           });
           return;
         }
@@ -84,7 +84,7 @@ export class OpenClawApprovalController {
       tryContinue(10);
     }).catch((error) => {
       const message = error instanceof Error ? error.message : String(error);
-      this.options.emitError(sessionId, `Failed to resolve OpenClaw approval: ${message}`);
+      this.options.emitError(sessionId, `Failed to resolve the approval: ${message}`);
     }).finally(() => {
       this.pendingApprovals.delete(requestId);
     });
@@ -105,11 +105,11 @@ export class OpenClawApprovalController {
     }
 
     if (this.options.isSessionInStopCooldown(sessionId)) {
-      console.log('[OpenClawRuntime] suppressed approval for stopped session, requestId:', requestId, 'sessionId:', sessionId);
+      console.log('[EngineRuntime] suppressed approval for stopped session, requestId:', requestId, 'sessionId:', sessionId);
       return;
     }
     if (this.options.isManualStopSuppressed(sessionId, sessionKey)) {
-      console.log('[OpenClawRuntime] suppressed approval for manually stopped desktop session, requestId:', requestId, 'sessionId:', sessionId);
+      console.log('[EngineRuntime] suppressed approval for manually stopped desktop session, requestId:', requestId, 'sessionId:', sessionId);
       return;
     }
 
@@ -163,11 +163,11 @@ export class OpenClawApprovalController {
     }
 
     if (this.options.isSessionInStopCooldown(sessionId)) {
-      console.log('[OpenClawRuntime] suppressed plugin approval for stopped session, requestId:', requestId, 'sessionId:', sessionId);
+      console.log('[EngineRuntime] suppressed plugin approval for stopped session, requestId:', requestId, 'sessionId:', sessionId);
       return;
     }
     if (this.options.isManualStopSuppressed(sessionId, sessionKey)) {
-      console.log('[OpenClawRuntime] suppressed plugin approval for manually stopped desktop session, requestId:', requestId, 'sessionId:', sessionId);
+      console.log('[EngineRuntime] suppressed plugin approval for manually stopped desktop session, requestId:', requestId, 'sessionId:', sessionId);
       return;
     }
 

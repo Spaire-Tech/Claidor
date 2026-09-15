@@ -45,7 +45,7 @@ export class SubagentSessionMaterializer {
         createdAt: params.createdAt,
       });
       console.log(
-        '[OpenClawRuntime] materialized subagent child session:',
+        '[EngineRuntime] materialized subagent child session:',
         `runId=${params.runId}`,
         `childSessionId=${session.id}`,
         `parentSessionId=${params.parentSessionId}`,
@@ -59,10 +59,10 @@ export class SubagentSessionMaterializer {
       this.deps.notifySessionsChanged(session.id);
       void this.deps.syncSessionHistory(session.id, params.childSessionKey)
         .catch((error) => {
-          console.warn('[OpenClawRuntime] subagent child history sync failed:', error);
+          console.warn('[EngineRuntime] subagent child history sync failed:', error);
         });
     } catch (error) {
-      console.warn('[OpenClawRuntime] failed to materialize subagent child session:', error);
+      console.warn('[EngineRuntime] failed to materialize subagent child session:', error);
     }
   }
 
@@ -78,7 +78,7 @@ export class SubagentSessionMaterializer {
     const sessionId = this.deps.resolveSessionIdBySessionKey(sessionKey);
     if (!sessionId) {
       console.log(
-        '[OpenClawRuntime] passive subagent finalize skipped: no session mapping',
+        '[EngineRuntime] passive subagent finalize skipped: no session mapping',
         `sessionKey=${sessionKey}`,
         `status=${status}`,
       );
@@ -88,7 +88,7 @@ export class SubagentSessionMaterializer {
     const nextStatus: CoworkSessionStatus = status === 'done' ? 'completed' : 'error';
     const previousStatus = this.deps.store.getSession(sessionId, 0)?.status ?? 'unknown';
     console.log(
-      '[OpenClawRuntime] passive subagent finalize:',
+      '[EngineRuntime] passive subagent finalize:',
       `sessionId=${sessionId}`,
       `sessionKey=${sessionKey}`,
       `status=${status}`,
@@ -105,7 +105,7 @@ export class SubagentSessionMaterializer {
     this.deps.notifySessionsChanged(sessionId);
     void this.deps.syncSessionHistory(sessionId, sessionKey)
       .catch((error) => {
-        console.warn('[OpenClawRuntime] passive subagent final history sync failed:', error);
+        console.warn('[EngineRuntime] passive subagent final history sync failed:', error);
       });
   }
 

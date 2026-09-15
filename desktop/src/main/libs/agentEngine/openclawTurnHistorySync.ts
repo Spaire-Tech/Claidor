@@ -108,7 +108,7 @@ export class OpenClawTurnHistorySync {
       if (!messages || currentTurn?.turnToken !== turn.turnToken) return;
       this.dependencies.handleThinkingHistory(sessionId, messages);
     } catch (error) {
-      console.warn('[OpenClawRuntime] tool-boundary thinking history sync failed:', error);
+      console.warn('[EngineRuntime] tool-boundary thinking history sync failed:', error);
     } finally {
       if (this.pendingThinkingToolCallIds.get(sessionId)?.size && this.dependencies.getTurn(sessionId)) {
         this.schedule(
@@ -142,7 +142,7 @@ export class OpenClawTurnHistorySync {
       if (!messages || currentTurn?.turnToken !== turn.turnToken) return;
       this.dependencies.handleBackfillHistory(sessionId, messages);
     } catch (error) {
-      console.warn('[OpenClawRuntime] incremental backfill chat.history fetch failed:', error);
+      console.warn('[EngineRuntime] incremental backfill chat.history fetch failed:', error);
       const currentPending = this.pendingBackfillToolCallIds.get(sessionId) ?? new Set<string>();
       toolCallIds.forEach((toolCallId) => currentPending.add(toolCallId));
       this.pendingBackfillToolCallIds.set(sessionId, currentPending);

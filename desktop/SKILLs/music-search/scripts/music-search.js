@@ -230,6 +230,7 @@ function buildSearchQueries(keyword, panTypes) {
  */
 function getWebSearchScriptPath() {
   const skillsRoot = process.env.SKILLS_ROOT
+    || process.env.CAISRA_SKILLS_ROOT
     || process.env.LOBSTERAI_SKILLS_ROOT
     || path.resolve(__dirname, '..', '..');
 

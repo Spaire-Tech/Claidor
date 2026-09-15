@@ -188,7 +188,7 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
     try {
       const adapter = getOpenClawRuntimeAdapter();
       if (!adapter) {
-        return { skills: [], error: 'OpenClaw runtime not available' };
+        return { skills: [], error: 'The engine is not running' };
       }
       await adapter.connectGatewayIfNeeded();
       const client = adapter.getGatewayClient();
@@ -208,7 +208,7 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
     try {
       const adapter = getOpenClawRuntimeAdapter();
       if (!adapter) {
-        return { synced: [], error: 'OpenClaw runtime not available' };
+        return { synced: [], error: 'The engine is not running' };
       }
       await adapter.connectGatewayIfNeeded();
       const client = adapter.getGatewayClient();
@@ -228,7 +228,7 @@ export function registerSkillHandlers(deps: SkillHandlerDeps): void {
     try {
       const adapter = getOpenClawRuntimeAdapter();
       if (!adapter) {
-        return { success: false, error: 'OpenClaw runtime not available' };
+        return { success: false, error: 'The engine is not running' };
       }
       await adapter.connectGatewayIfNeeded();
       const client = adapter.getGatewayClient();

@@ -727,7 +727,7 @@ export class IMGatewayManager extends EventEmitter {
         checks: [{
           code: 'gateway_running',
           level: 'info',
-          message: 'NetEase Bee channel does not support standalone connectivity testing.',
+          message: 'The Xiaomifeng channel does not support standalone connectivity testing.',
         }],
       };
     }
@@ -1647,7 +1647,7 @@ export class IMGatewayManager extends EventEmitter {
       await this.ensureOpenClawGatewayReady?.();
       const retryClient = this.getOpenClawGatewayClient?.();
       if (!retryClient) {
-        return { message: 'OpenClaw Gateway is not running. Please start OpenClaw engine first.' };
+        return { message: 'The engine is not running. Start the engine first.' };
       }
       return this.doWeixinQrLoginStart(retryClient);
     }
@@ -1674,7 +1674,7 @@ export class IMGatewayManager extends EventEmitter {
   async weixinQrLoginWait(sessionKey?: string): Promise<WeixinQrLoginWaitResult> {
     const client = this.getOpenClawGatewayClient?.();
     if (!client) {
-      return { connected: false, message: 'OpenClaw Gateway is not connected.' };
+      return { connected: false, message: 'The engine is not connected.' };
     }
     try {
       const result = await client.request<WeixinQrLoginWaitResult>(
@@ -2625,7 +2625,7 @@ export class IMGatewayManager extends EventEmitter {
       client = this.getOpenClawGatewayClient?.() ?? null;
     }
     if (!client) {
-      throw new Error('OpenClaw gateway client is unavailable.');
+      throw new Error('The engine is not running.');
     }
     return client.request<T>(method, params);
   }

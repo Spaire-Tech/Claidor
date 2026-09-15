@@ -74,17 +74,17 @@ describe('templateBase64', () => {
 
 describe('templateFileName', () => {
   test('names the file after the agent', () => {
-    expect(templateFileName('Mira')).toBe('Mira.faiser-agent.json');
+    expect(templateFileName('Mira')).toBe('Mira.caisra-agent.json');
   });
 
   test('anything a file system objects to becomes a hyphen', () => {
     // And a hyphen left at the end is then trimmed, so the name does not
     // read as though something were cut off it.
-    expect(templateFileName('Q4/Q1 "board"')).toBe('Q4-Q1 -board.faiser-agent.json');
+    expect(templateFileName('Q4/Q1 "board"')).toBe('Q4-Q1 -board.caisra-agent.json');
   });
 
   test('an agent named in punctuation alone still gets a file', () => {
-    expect(templateFileName('///')).toBe('Agent.faiser-agent.json');
-    expect(templateFileName('   ')).toBe('Agent.faiser-agent.json');
+    expect(templateFileName('///')).toBe('Agent.caisra-agent.json');
+    expect(templateFileName('   ')).toBe('Agent.caisra-agent.json');
   });
 });

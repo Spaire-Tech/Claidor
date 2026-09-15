@@ -23,7 +23,7 @@ import { color, font, glass, line, motion, radius, shadow, text, tracking } from
  * Settings.
  *
  * A 236px rail of four tabs and a column of grouped rows, which is the
- * canvas's shape down to the numbers. It replaces NetEase's thirteen
+ * canvas's shape down to the numbers. It replaces upstream's thirteen
  * tabs, which is what the account menu opened until now — providers, API
  * keys, skins, IM platforms, a growth tour, all of it in Chinese first.
  *

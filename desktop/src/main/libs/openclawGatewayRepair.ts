@@ -7,7 +7,7 @@ export interface OpenClawConfigBackupResult {
 }
 
 export const OPENCLAW_GATEWAY_REPAIR_BUSY_ERROR =
-  'OpenClaw has active sessions or scheduled tasks. Stop them before repairing the gateway state.';
+  'Caisra has active sessions or scheduled tasks. Stop them before repairing the engine state.';
 
 export function getOpenClawGatewayRepairBusyError(hasActiveWorkloads: boolean): string | null {
   return hasActiveWorkloads ? OPENCLAW_GATEWAY_REPAIR_BUSY_ERROR : null;
@@ -53,7 +53,7 @@ export function resolveOpenClawConfigBackupPath(
     }
   }
 
-  throw new Error('Unable to allocate an OpenClaw config backup path.');
+  throw new Error('Unable to allocate an engine config backup path.');
 }
 
 export function backupOpenClawConfig(configPath: string): OpenClawConfigBackupResult {

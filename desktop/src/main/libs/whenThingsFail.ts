@@ -9,7 +9,7 @@
  *
  * The cause was not reasoning. It was that nothing told the agent where
  * the evidence lives — and the one line that *would* have settled it,
- * `[OpenClawConfigSync] browser profile=…`, was sitting in a log file
+ * `[EngineConfigSync] browser profile=…`, was sitting in a log file
  * the agent had never been told about. Worse, the comment I had written
  * above `logger.ts` named the wrong directory, so even the human
  * investigation looked in an empty folder three times
@@ -89,9 +89,9 @@ export function buildFailureReference(input: FailureReferenceInput): string {
     '| If this is failing | Search for | What it tells you |',
     '|---|---|---|',
     '| A model or provider call | `desktop.proxy.upstream_refused` | The provider\'s own sentence for why it refused. This has settled arguments that two hours of reasoning could not. |',
-    '| The browser opening in the wrong place | `browser profile=` | Which browser profile the engine was configured with. `lobster-in-app` is the one inside the app. |',
-    '| Anything about the engine\'s configuration | `[OpenClawConfigSync]` | Every decision the app made when it last wrote the engine\'s config. |',
-    '| The engine not starting, or dying | `[OpenClaw]` | Startup, readiness, restarts and crashes. |',
+    '| The browser opening in the wrong place | `browser profile=` | Which browser profile the engine was configured with. `caisra-in-app` is the one inside the app. |',
+    '| Anything about the engine\'s configuration | `[EngineConfigSync]` | Every decision the app made when it last wrote the engine\'s config. |',
+    '| The engine not starting, or dying | `[Engine]` | Startup, readiness, restarts and crashes. |',
     '| A connected app or MCP server | `[MCP]`, `[Connections]` | Connection attempts, auth state, and tool discovery. |',
     '| A scheduled job | `[Cron]`, `[ScheduledTask]` | Whether it fired at all, which is usually the question. |',
     '',

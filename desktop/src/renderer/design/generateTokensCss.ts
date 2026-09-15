@@ -71,7 +71,7 @@ export function generateTokensCss(): string {
 
   return [
     '/*',
-    ' * Faiser design tokens.',
+    ' * Caisra design tokens.',
     ' *',
     ' * GENERATED from src/renderer/design/tokens.ts by generateTokensCss().',
     ' * Do not edit: tokens.test.ts compares this file against the generator',

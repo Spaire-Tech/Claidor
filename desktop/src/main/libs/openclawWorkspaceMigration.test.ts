@@ -10,9 +10,14 @@ vi.mock('electron', () => ({
   },
 }));
 
+import {
+  AGENTS_MD_LEGACY_MANAGED_MARKERS,
+  AGENTS_MD_MANAGED_MARKER,
+} from '../../shared/openclawEngine/constants';
 import { migrateMainAgentWorkspace } from './openclawWorkspaceMigration';
 
-const AGENTS_MARKER = '<!-- LobsterAI managed: do not edit below this line -->';
+const AGENTS_MARKER = AGENTS_MD_MANAGED_MARKER;
+const LEGACY_AGENTS_MARKER = AGENTS_MD_LEGACY_MANAGED_MARKERS[0];
 
 function createStore() {
   const values = new Map<string, string>();
@@ -98,6 +103,27 @@ describe('openclawWorkspaceMigration', () => {
     expect(migrated).toContain('Keep user files in the selected folder.');
     expect(migrated).toContain('new managed content');
     expect(migrated).not.toContain('old managed content');
+  });
+
+  test('recognises the legacy managed marker in both source and destination AGENTS.md', () => {
+    fs.writeFileSync(
+      path.join(oldDir, 'AGENTS.md'),
+      `# User instructions\n\nKeep user files in the selected folder.\n\n${LEGACY_AGENTS_MARKER}\n\nold managed content\n`,
+    );
+    fs.mkdirSync(newDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(newDir, 'AGENTS.md'),
+      `# Generated template\n\n${LEGACY_AGENTS_MARKER}\n\nnew managed content\n`,
+    );
+
+    migrateMainAgentWorkspace(stateDir, oldDir, createStore().store as never);
+
+    const migrated = fs.readFileSync(path.join(newDir, 'AGENTS.md'), 'utf8');
+    expect(migrated).toContain('# User instructions');
+    expect(migrated).toContain('Keep user files in the selected folder.');
+    expect(migrated).toContain('new managed content');
+    expect(migrated).not.toContain('old managed content');
+    expect(migrated.indexOf('Keep user files')).toBeLessThan(migrated.indexOf(LEGACY_AGENTS_MARKER));
   });
 
   test('does not duplicate migrated AGENTS.md user content on rerun', () => {

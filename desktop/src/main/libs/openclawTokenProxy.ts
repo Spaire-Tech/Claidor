@@ -90,7 +90,7 @@ export function startOpenClawTokenProxy(config: OpenClawTokenProxyConfig): Promi
       if (addr && typeof addr === 'object') {
         proxyPort = addr.port;
         proxyServer = server;
-        console.log(`[OpenClawTokenProxy] started on ${PROXY_BIND_HOST}:${proxyPort}`);
+        console.log(`[EngineTokenProxy] started on ${PROXY_BIND_HOST}:${proxyPort}`);
         resolve({ port: proxyPort });
       } else {
         server.close();
@@ -99,7 +99,7 @@ export function startOpenClawTokenProxy(config: OpenClawTokenProxyConfig): Promi
     });
 
     server.on('error', (err) => {
-      console.error('[OpenClawTokenProxy] server error:', err);
+      console.error('[EngineTokenProxy] server error:', err);
       reject(err);
     });
   });
@@ -108,7 +108,7 @@ export function startOpenClawTokenProxy(config: OpenClawTokenProxyConfig): Promi
 export function stopOpenClawTokenProxy(): void {
   if (proxyServer) {
     proxyServer.close();
-    console.log('[OpenClawTokenProxy] stopped');
+    console.log('[EngineTokenProxy] stopped');
   }
   proxyServer = null;
   proxyPort = null;
@@ -256,7 +256,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         }
       }
 
-      console.log('[OpenClawTokenProxy] received 401, attempting token refresh');
+      console.log('[EngineTokenProxy] received 401, attempting token refresh');
       const refreshResult = await tokenRefresher(AuthRefreshReason.OpenClawProxy);
       if (!isProxySessionKeyCurrent(requestSessionKey, sessionKeyGetter)) {
         writeAuthSessionChanged(res);
@@ -287,7 +287,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     pipeResponse(result, res, inspectionContext);
   } catch (err) {
-    console.error('[OpenClawTokenProxy] request handling error:', err);
+    console.error('[EngineTokenProxy] request handling error:', err);
     if (!res.headersSent) {
       res.writeHead(502, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Token proxy upstream error' }));
@@ -316,11 +316,11 @@ function cancelUpstreamResult(result: UpstreamResult): void {
     }
     if (typeof body.cancel === 'function') {
       void body.cancel('Authenticated account changed').catch(error => {
-        console.debug('[OpenClawTokenProxy] stale upstream cancellation failed:', error);
+        console.debug('[EngineTokenProxy] stale upstream cancellation failed:', error);
       });
     }
   } catch (error) {
-    console.debug('[OpenClawTokenProxy] stale upstream cancellation failed:', error);
+    console.debug('[EngineTokenProxy] stale upstream cancellation failed:', error);
   }
 }
 
@@ -704,7 +704,7 @@ function notifyEnterpriseMembershipRevoked(
       requestSession: scanState.inspectionContext.requestEnterpriseSession,
     });
   } catch (error) {
-    console.warn('[OpenClawTokenProxy] failed to invalidate revoked enterprise session:', error);
+    console.warn('[EngineTokenProxy] failed to invalidate revoked enterprise session:', error);
   }
 }
 
@@ -799,7 +799,7 @@ function scanProxyBodyForQuotaError(
         requestSession: inspectionContext.requestEnterpriseSession,
       });
     } catch (error) {
-      console.warn('[OpenClawTokenProxy] failed to invalidate revoked enterprise session:', error);
+      console.warn('[EngineTokenProxy] failed to invalidate revoked enterprise session:', error);
     }
   }
 }
@@ -816,7 +816,7 @@ async function forwardRequest(
   try {
     accountContextHeaders = accountContextHeadersGetter?.() ?? {};
   } catch (error) {
-    console.warn('[OpenClawTokenProxy] failed to read account context headers; forwarding with token only:', error);
+    console.warn('[EngineTokenProxy] failed to read account context headers; forwarding with token only:', error);
   }
   const headers = buildUpstreamRequestHeaders(
     accessToken,
@@ -948,7 +948,7 @@ function formatProxySSEOutcome(
   const downstreamClosedAfterMs = scanState.downstreamClosedAt === null
     ? 'none'
     : Math.max(0, scanState.downstreamClosedAt - scanState.startedAt);
-  return `[OpenClawTokenProxy] upstream SSE outcome=${outcome}`
+  return `[EngineTokenProxy] upstream SSE outcome=${outcome}`
     + ` terminal=${scanState.terminalKind ?? 'none'}`
     + ` events=${scanState.eventCount}`
     + ` durationMs=${durationMs}`
@@ -1032,7 +1032,7 @@ function abortProxyResponseAfterReadError(
       : 'transport_error_after_downstream_close';
     console.error(formatProxySSEOutcome(outcome, scanState), error);
   } else {
-    console.error('[OpenClawTokenProxy] upstream stream read error', error);
+    console.error('[EngineTokenProxy] upstream stream read error', error);
   }
   abortProxyResponse(res);
 }
@@ -1061,12 +1061,12 @@ function pipeNodeReadableResponseWithQuotaScan(
       destroyableStream.destroy();
       return true;
     } catch (error) {
-      console.debug('[OpenClawTokenProxy] upstream stream cancellation failed:', error);
+      console.debug('[EngineTokenProxy] upstream stream cancellation failed:', error);
       return false;
     }
   }, scanState);
   res.on('error', (err) => {
-    console.debug('[OpenClawTokenProxy] response write error:', err);
+    console.debug('[EngineTokenProxy] response write error:', err);
   });
 
   stream.on('data', (chunk: Buffer | Uint8Array | string) => {
@@ -1108,12 +1108,12 @@ function pipeWebReadableResponseWithQuotaScan(
       return false;
     }
     void reader.cancel('Downstream response closed').catch((error) => {
-      console.debug('[OpenClawTokenProxy] upstream stream cancellation failed:', error);
+      console.debug('[EngineTokenProxy] upstream stream cancellation failed:', error);
     });
     return true;
   }, scanState);
   res.on('error', (err) => {
-    console.debug('[OpenClawTokenProxy] response write error:', err);
+    console.debug('[EngineTokenProxy] response write error:', err);
   });
 
   const pump = (): void => {

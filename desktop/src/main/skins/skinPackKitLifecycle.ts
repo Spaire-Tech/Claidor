@@ -164,7 +164,7 @@ export function createSkinPackKitLifecycle(
         expectedImpact: OpenClawConfigImpact.Sync,
       });
       if (!syncResult.success) {
-        throw new Error(syncResult.error || 'OpenClaw config sync failed after AI Skin Designer install');
+        throw new Error(syncResult.error || 'Engine config sync failed after AI Skin Designer install');
       }
 
       console.log(`[SkinPackKit] Kit installed with bundled skill: ${SkinPackSkillId.BuiltIn}`);
@@ -198,7 +198,7 @@ export function createSkinPackKitLifecycle(
         expectedImpact: OpenClawConfigImpact.Sync,
       });
       if (!syncResult.success) {
-        throw new Error(syncResult.error || 'OpenClaw config sync failed after AI Skin Designer uninstall');
+        throw new Error(syncResult.error || 'Engine config sync failed after AI Skin Designer uninstall');
       }
 
       console.log('[SkinPackKit] Kit uninstalled successfully');

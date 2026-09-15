@@ -4,7 +4,7 @@
  * **Why this is ours to build.** The engine has no room. `sessions_send`
  * is one agent, with a timeout, waiting for one reply
  * (`openclaw/src/agents/tools/sessions-send-tool.ts`) — agent-to-agent
- * messaging, not a place several of them sit. So a room is a Faiser
+ * messaging, not a place several of them sit. So a room is a Caisra
  * construct: one name, a few members, and a thread that merges what each
  * of them said.
  *

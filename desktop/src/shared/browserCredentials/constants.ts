@@ -136,7 +136,7 @@ export const BrowserCredentialLoginTool = {
 } as const;
 
 export const BrowserCredentialMcpServer = {
-  Name: 'lobster-browser-credentials',
+  Name: 'caisra-browser-credentials',
   ToolSetArgument: '--lobster-tool-set=credentials',
-  ModelToolName: 'lobster-browser-credentials__login_with_saved_credential',
+  ModelToolName: 'caisra-browser-credentials__login_with_saved_credential',
 } as const;

@@ -92,7 +92,7 @@ describe('the instructions a new agent is created with', () => {
 
   test('ship no product name', () => {
     const prompt = systemPromptFor({ name: 'Perrin', voiceId: 'warm' }).toLowerCase();
-    for (const forbidden of ['faiser', 'maties', 'swens', 'lobsterai', 'claidor']) {
+    for (const forbidden of ['faiser', 'maties', 'swens', 'lobsterai', 'openclaw', 'netease', 'youdao', 'claidor']) {
       expect(prompt).not.toContain(forbidden);
     }
   });

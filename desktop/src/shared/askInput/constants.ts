@@ -24,7 +24,7 @@
 export const ASK_INPUT_TOOL = 'ask_user_input';
 
 /** The name the gateway knows this MCP server by. */
-export const ASK_INPUT_MCP_SERVER = 'faiser-ask-input';
+export const ASK_INPUT_MCP_SERVER = 'caisra-ask-input';
 
 export const AskInputFieldKind = {
   /** One line. An email, a name, a code. */

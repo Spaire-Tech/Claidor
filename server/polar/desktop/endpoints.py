@@ -7,7 +7,7 @@ server mode does. Sign-in works like this:
 1. The app opens the browser at `/desktop/login?redirect_uri=…&state=…`
    (the redirect is a loopback callback the app is listening on; when
    it could not open one it comes with no redirect and expects a
-   `maties://` deep link instead).
+   `caisra://` deep link instead).
 2. With no Claidor session in the browser, that page sends the person
    to the web login and asks to be returned to.
 3. With one, it mints a five-minute, single-use code and redirects to
@@ -91,7 +91,7 @@ log = structlog.get_logger()
 router = APIRouter(prefix="/desktop", tags=["desktop", APITag.private])
 
 ANTHROPIC_VERSION = "2023-06-01"
-DEEP_LINK_CALLBACK = "maties://auth/callback"
+DEEP_LINK_CALLBACK = "caisra://auth/callback"
 CLIENT_VERSION_HEADER = "x-maties-client-version"
 
 
@@ -122,7 +122,7 @@ def _callback_target(redirect_uri: str | None) -> str | None:
     ):
         return redirect_uri.strip()
     if (
-        parsed.scheme == "maties"
+        parsed.scheme == "caisra"
         and parsed.netloc == "auth"
         and parsed.path == "/callback"
     ):

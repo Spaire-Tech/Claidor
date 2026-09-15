@@ -1,5 +1,5 @@
 /**
- * The app, live, in a browser: the real `FaiserApp` on the real store,
+ * The app, live, in a browser: the real `CaisraApp` on the real store,
  * with the only thing that does not exist here — the Electron bridge —
  * stood in for by a fixture.
  *
@@ -20,7 +20,7 @@
 
 import '../src/renderer/index.css';
 
-const CWD = '/Users/bass/faiser/project';
+const CWD = '/Users/bass/caisra/project';
 const DOCX = `${CWD}/Gym Routine.docx`;
 
 const at = (minutes: number): number => Date.parse('2026-03-10T09:00:00Z') + minutes * 60_000;
@@ -187,12 +187,12 @@ window.electron = fake([]);
 
 async function mount(): Promise<void> {
   // After the bridge exists, never before: the services read it on import.
-  const [{ createRoot }, { Provider }, { store }, { setLoggedIn }, { FaiserApp }] = await Promise.all([
+  const [{ createRoot }, { Provider }, { store }, { setLoggedIn }, { CaisraApp }] = await Promise.all([
     import('react-dom/client'),
     import('react-redux'),
     import('../src/renderer/store'),
     import('../src/renderer/store/slices/authSlice'),
-    import('../src/renderer/design/shell/FaiserApp'),
+    import('../src/renderer/design/shell/CaisraApp'),
   ]);
   store.dispatch(setLoggedIn({
     user: { id: 'u1', nickname: 'Bass Fall' } as never,
@@ -201,7 +201,7 @@ async function mount(): Promise<void> {
   }));
   createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
-      <FaiserApp />
+      <CaisraApp />
     </Provider>,
   );
 }

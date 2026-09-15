@@ -60,7 +60,7 @@ non-matching one is gone, and that a query with no hits says so.
 
 ## Running the app itself
 
-`?screen=live` is not a screen of fixtures. It mounts `FaiserApp` — the
+`?screen=live` is not a screen of fixtures. It mounts `CaisraApp` — the
 hook, the services, the real Redux store — with only the Electron bridge
 stood in for (`live-app.tsx`), and a script drives the two flows that were
 reported broken from a built app:

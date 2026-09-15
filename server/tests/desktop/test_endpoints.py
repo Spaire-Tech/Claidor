@@ -95,7 +95,7 @@ class TestLogin:
     ) -> None:
         response = await client.get("/desktop/login", follow_redirects=False)
         assert response.status_code == 303
-        assert response.headers["location"].startswith("maties://auth/callback?code=")
+        assert response.headers["location"].startswith("caisra://auth/callback?code=")
 
     @pytest.mark.auth
     async def test_a_foreign_callback_gets_nothing(

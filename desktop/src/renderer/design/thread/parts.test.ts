@@ -209,7 +209,7 @@ describe('links that point back into the app', () => {
   // and an older build shows the label rather than punctuation.
   test('a settings pill knows which row it opens', () => {
     const parts = splitMessageParts(
-      'You can change that in [Running things on this computer](faiser://settings/exec-policy).',
+      'You can change that in [Running things on this computer](caisra://settings/exec-policy).',
     );
     const pill = parts.find(one => one.kind === PartKind.Setting);
     expect(pill?.text).toBe('Running things on this computer');
@@ -221,26 +221,26 @@ describe('links that point back into the app', () => {
   test('a pill to a row this build does not have is prose, not a dead pill', () => {
     // Somebody clicks a dead pill once and stops trusting the next one.
     // Checked against the same settingsFor() that draws the screen.
-    const parts = splitMessageParts('Try [Hardware acceleration](faiser://settings/hardware-accel).');
+    const parts = splitMessageParts('Try [Hardware acceleration](caisra://settings/hardware-accel).');
     expect(parts.some(one => one.kind === PartKind.Setting)).toBe(false);
     expect(parts.map(one => one.text).join('')).toBe('Try Hardware acceleration.');
   });
 
   test('a reference chip jumps back to a message', () => {
-    const parts = splitMessageParts('Like [the folder you named earlier](faiser://message/m-42).');
+    const parts = splitMessageParts('Like [the folder you named earlier](caisra://message/m-42).');
     const ref = parts.find(one => one.kind === PartKind.Ref);
     expect(ref?.text).toBe('the folder you named earlier');
     expect(ref?.app).toEqual({ kind: 'message', id: 'm-42' });
   });
 
   test('a bare app link falls back to its id as the label', () => {
-    const parts = splitMessageParts('[](faiser://settings/memory)');
+    const parts = splitMessageParts('[](caisra://settings/memory)');
     expect(parts[0]).toMatchObject({ kind: PartKind.Setting, text: 'memory' });
   });
 
   test('it is not confused with a file or a web link', () => {
     const parts = splitMessageParts(
-      '[a page](https://example.com) and [a file](file:///tmp/x.txt) and [a row](faiser://settings/memory)',
+      '[a page](https://example.com) and [a file](file:///tmp/x.txt) and [a row](caisra://settings/memory)',
     );
     expect(parts.filter(one => one.kind === PartKind.Link)).toHaveLength(1);
     expect(parts.filter(one => one.kind === PartKind.File)).toHaveLength(1);

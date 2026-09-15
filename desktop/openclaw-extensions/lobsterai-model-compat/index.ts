@@ -68,7 +68,7 @@ const register = (api: OpenClawPluginApi): void => {
 
   api.registerProvider({
     id: PLUGIN_ID,
-    label: 'LobsterAI Model Compatibility',
+    label: 'Caisra Model Compatibility',
     hookAliases: ['lobsterai-server'],
     auth: [],
     buildReplayPolicy: (ctx) => {
@@ -122,7 +122,7 @@ const register = (api: OpenClawPluginApi): void => {
 
 export default {
   id: PLUGIN_ID,
-  name: 'LobsterAI Model Compatibility',
-  description: 'Applies explicit LobsterAI-managed model runtime profiles.',
+  name: 'Caisra Model Compatibility',
+  description: 'Applies explicit Caisra-managed model runtime profiles.',
   register,
 };

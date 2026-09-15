@@ -44,7 +44,6 @@ import {
 import { AppIpcChannel } from '../shared/app/constants';
 import { AppSettingsAutoLaunchErrorCode, AppSettingsIpc } from '../shared/appSettings/constants';
 import { type AppUpdateActiveWorkloads, AppUpdateIpc } from '../shared/appUpdate/constants';
-import { describeBuild } from '../shared/buildStamp/constants';
 import { ArtifactBrowserPartition, ArtifactPreviewIpc, ArtifactPreviewProtocol } from '../shared/artifactPreview/constants';
 import { AskInputIpc, type AskInputResponse } from '../shared/askInput/constants';
 import { createAccountOwnerKey } from '../shared/auth/accountOwner';
@@ -75,6 +74,7 @@ import {
   type BrowserWebAccessConfig,
   normalizeBrowserWebAccessConfig,
 } from '../shared/browserWebAccess/constants';
+import { describeBuild } from '../shared/buildStamp/constants';
 import { ClipboardIpc } from '../shared/clipboard/constants';
 import {
   type CoworkBrowserAnnotationMessageBatch,
@@ -219,12 +219,15 @@ import {
   APP_TEMP_DIR_NAME,
   APP_USER_MODEL_ID,
   DB_FILENAME,
+  LEGACY_APP_NAMES,
+  LEGACY_DB_FILENAMES,
 } from './appConstants';
 import { createLocalFileProtocolResponse } from './artifactLocalFileProtocol';
 import { authQuotaGateStateFromQuota, AuthSubscriptionStatus, createDefaultAuthQuotaGateState, normalizeAuthQuota } from './authQuota';
 import { type AutoLaunchStatus, getAutoLaunchStatus, isAutoLaunched, setAutoLaunchEnabled } from './autoLaunchManager';
 import { BrowserCredentialApprovalService } from './browserCredentials/browserCredentialApprovalService';
 import { BrowserCredentialService } from './browserCredentials/browserCredentialService';
+import { readBuildInfo } from './buildInfo';
 import { getRecentComputerUseLogEntries } from './computerUse/computerUseLogs';
 import { type CoworkForkContextMessage, type CoworkMessage, CoworkStore } from './coworkStore';
 import {
@@ -530,7 +533,6 @@ import {
   restoreOriginalProxyEnv,
   setSystemProxyEnabled,
 } from './libs/systemProxy';
-import { readBuildInfo } from './buildInfo';
 import { getLogFilePath, getRecentMainLogEntries, initLogger } from './logger';
 import { type AskUserResponse, McpRuntime } from './mcp/mcpRuntime';
 import {
@@ -1959,11 +1961,47 @@ const savePngWithDialog = async (
   return { success: true, canceled: false, path: outputPath };
 };
 
+/**
+ * An install made under a previous name keeps its data.
+ *
+ * The user-data directory is named after the app, so a rename would
+ * otherwise start everyone from nothing — every conversation, login and
+ * agent left behind in a folder the new build never opens. Before the
+ * logger exists (it writes into this directory), the old folder is moved
+ * to the new name, once, and the database file inside it renamed too.
+ * Nothing is copied and nothing is deleted: a rename on the same disk is
+ * atomic and leaves the old contents exactly where they were, under the
+ * new name. A failure is logged and the app starts fresh rather than not
+ * at all.
+ */
+const adoptLegacyUserData = (appDataPath: string, preferredUserDataPath: string): void => {
+  if (fs.existsSync(preferredUserDataPath)) return;
+  for (const legacyName of LEGACY_APP_NAMES) {
+    const legacyPath = path.join(appDataPath, legacyName);
+    if (!fs.existsSync(legacyPath)) continue;
+    try {
+      fs.renameSync(legacyPath, preferredUserDataPath);
+      for (const legacyDb of LEGACY_DB_FILENAMES) {
+        for (const suffix of ['', '-wal', '-shm']) {
+          const from = path.join(preferredUserDataPath, `${legacyDb}${suffix}`);
+          const to = path.join(preferredUserDataPath, `${DB_FILENAME}${suffix}`);
+          if (fs.existsSync(from) && !fs.existsSync(to)) fs.renameSync(from, to);
+        }
+      }
+      console.log(`[Main] adopted user data from ${legacyPath} as ${preferredUserDataPath}`);
+    } catch (error) {
+      console.error(`[Main] could not adopt user data from ${legacyPath}:`, error);
+    }
+    return;
+  }
+};
+
 const configureUserDataPath = (): void => {
   const appDataPath = app.getPath('appData');
   const preferredUserDataPath = path.join(appDataPath, APP_NAME);
   const currentUserDataPath = app.getPath('userData');
 
+  adoptLegacyUserData(appDataPath, preferredUserDataPath);
   if (currentUserDataPath !== preferredUserDataPath) {
     app.setPath('userData', preferredUserDataPath);
     console.log(`[Main] userData path updated: ${currentUserDataPath} -> ${preferredUserDataPath}`);
@@ -2326,21 +2364,21 @@ const bootstrapOpenClawEngine = async (
     const t0 = Date.now();
     const elapsed = () => `${Date.now() - t0}ms`;
     try {
-      console.log(`[OpenClaw] bootstrap starting (reason=${reason})`);
+      console.log(`[Engine] bootstrap starting (reason=${reason})`);
 
       // Start AskUser HTTP server before config sync
       await startAskUserServer().catch((err: unknown) => {
-        console.error(`[OpenClaw] bootstrap: AskUser server startup failed (non-fatal):`, err);
+        console.error(`[Engine] bootstrap: AskUser server startup failed (non-fatal):`, err);
       });
       console.log(
-        `[OpenClaw] bootstrap: AskUser server setup done (${elapsed()}), askUserUrl=${getMcpRuntime().getAskUserCallbackUrl() || 'null'}`,
+        `[Engine] bootstrap: AskUser server setup done (${elapsed()}), askUserUrl=${getMcpRuntime().getAskUserCallbackUrl() || 'null'}`,
       );
 
       // Ensure IDENTITY.md has default content in the main agent workspace
       try {
         ensureDefaultIdentity(getMainAgentWorkspacePath(manager.getStateDir()));
       } catch (err) {
-        console.warn('[OpenClaw] bootstrap: ensureDefaultIdentity failed (non-fatal):', err);
+        console.warn('[Engine] bootstrap: ensureDefaultIdentity failed (non-fatal):', err);
       }
 
       // Put the agent's browser back in the app, before the sync below
@@ -2354,11 +2392,11 @@ const bootstrapOpenClawEngine = async (
         if (repair.changed) {
           getStore().set('app_config', { ...appConfig, browserWebAccess: repair.next });
           console.log(
-            `[OpenClaw] bootstrap: moved the agent's browser back into the app (was ${repair.reason})`,
+            `[Engine] bootstrap: moved the agent's browser back into the app (was ${repair.reason})`,
           );
         }
       } catch (err) {
-        console.warn('[OpenClaw] bootstrap: browser display repair failed (non-fatal):', err);
+        console.warn('[Engine] bootstrap: browser display repair failed (non-fatal):', err);
       }
 
       const syncResult = await syncOpenClawConfig({
@@ -2366,7 +2404,7 @@ const bootstrapOpenClawEngine = async (
         restartGatewayIfRunning: false,
       });
       console.log(
-        `[OpenClaw] bootstrap: syncOpenClawConfig done (${elapsed()}), success=${syncResult.success}`,
+        `[Engine] bootstrap: syncOpenClawConfig done (${elapsed()}), success=${syncResult.success}`,
       );
       if (!syncResult.success) {
         return syncResult.status || manager.getStatus();
@@ -2376,20 +2414,20 @@ const bootstrapOpenClawEngine = async (
           `${gwDiagTs()} bootstrap: forceReinstall requested, stopping gateway before reinstall`,
         );
         await manager.stopGateway();
-        console.log(`[OpenClaw] bootstrap: stopGateway done (${elapsed()})`);
+        console.log(`[Engine] bootstrap: stopGateway done (${elapsed()})`);
       }
       const ensuredStatus = await manager.ensureReady();
       console.log(
-        `[OpenClaw] bootstrap: ensureReady done (${elapsed()}), phase=${ensuredStatus.phase}`,
+        `[Engine] bootstrap: ensureReady done (${elapsed()}), phase=${ensuredStatus.phase}`,
       );
       if (ensuredStatus.phase !== 'ready' && ensuredStatus.phase !== 'running') {
         return ensuredStatus;
       }
       const result = await manager.startGateway(`bootstrap:${reason}`);
-      console.log(`[OpenClaw] bootstrap completed (${elapsed()}), phase=${result.phase}`);
+      console.log(`[Engine] bootstrap completed (${elapsed()}), phase=${result.phase}`);
       return result;
     } catch (error) {
-      console.error(`[OpenClaw] bootstrap failed (${reason}, ${elapsed()}):`, error);
+      console.error(`[Engine] bootstrap failed (${reason}, ${elapsed()}):`, error);
       return manager.getStatus();
     }
   };
@@ -2432,14 +2470,14 @@ const ensureOpenClawRunningForCowork = async () => {
   // Ensure AskUser server is started and config is synced before launching the gateway,
   // so that mcp.servers config is available in openclaw.json when the gateway loads.
   await startAskUserServer().catch((err: unknown) => {
-    console.error('[OpenClaw] ensureRunning: AskUser server startup failed (non-fatal):', err);
+    console.error('[Engine] ensureRunning: AskUser server startup failed (non-fatal):', err);
   });
   const syncResult = await syncOpenClawConfig({
     reason: 'ensureRunning:mcpConfig',
     restartGatewayIfRunning: false,
   });
   if (!syncResult.success) {
-    console.error('[OpenClaw] ensureRunning: config sync failed:', syncResult.error);
+    console.error('[Engine] ensureRunning: config sync failed:', syncResult.error);
   }
 
   console.log(`${gwDiagTs()} ensureRunning: gateway not running (phase=${status.phase}), starting`);
@@ -2750,7 +2788,7 @@ const waitForOpenClawConfigApply = async (context: string): Promise<OpenClawEngi
   const pendingApply = openClawConfigApplyState;
   if (pendingApply) {
     console.log(
-      '[OpenClawConfigApply] waiting for pending config sync before proceeding.',
+      '[EngineConfigApply] waiting for pending config sync before proceeding.',
       `Context ${context}.`,
       `Reason ${pendingApply.reason}.`,
       `Restart required ${pendingApply.restartRequired}.`,
@@ -2760,7 +2798,7 @@ const waitForOpenClawConfigApply = async (context: string): Promise<OpenClawEngi
     } catch (error) {
       const message = error instanceof Error
         ? error.message
-        : 'OpenClaw config sync failed.';
+        : 'Engine config sync failed.';
       return buildConfigApplyPendingStatus(message);
     }
   }
@@ -2895,8 +2933,8 @@ const _syncOpenClawConfigImpl = async (
     secretEnvVars: migrationSecretEnvVars,
   });
   if (pluginInstallMigration.status === OpenClawPluginInstallMigrationStatus.Failed) {
-    const message = `OpenClaw legacy plugin install migration failed: ${pluginInstallMigration.error}`;
-    console.error('[OpenClaw] Legacy plugin install migration blocked config sync:', new Error(message));
+    const message = `Legacy plugin install migration failed: ${pluginInstallMigration.error}`;
+    console.error('[Engine] Legacy plugin install migration blocked config sync:', new Error(message));
     const status = manager.setExternalError(message);
     return {
       success: false,
@@ -2912,7 +2950,7 @@ const _syncOpenClawConfigImpl = async (
   try {
     await getMcpRuntime().refreshResolvedServersCache();
   } catch (err) {
-    console.warn(`[OpenClaw] getResolvedMcpServers failed (non-fatal):`, err);
+    console.warn(`[Engine] getResolvedMcpServers failed (non-fatal):`, err);
     getMcpRuntime().clearResolvedServersCache();
   }
 
@@ -2923,7 +2961,7 @@ const _syncOpenClawConfigImpl = async (
   if (!syncResult.ok) {
     console.log(`${D()} sync FAILED: ${syncResult.error}`);
     const status = getOpenClawEngineManager().setExternalError(
-      `OpenClaw config sync failed: ${syncResult.error || 'unknown error'}`,
+      `Engine config sync failed: ${syncResult.error || 'unknown error'}`,
     );
     return {
       success: false,
@@ -2953,7 +2991,7 @@ const _syncOpenClawConfigImpl = async (
     const configText = fs.readFileSync(manager.getConfigPath(), 'utf8');
     referencedSecretEnvVarNames = collectReferencedEnvVarNames(configText);
   } catch (error) {
-    console.warn('[OpenClawConfigSync] failed to inspect referenced secret env vars, comparing all secrets:', error);
+    console.warn('[EngineConfigSync] failed to inspect referenced secret env vars, comparing all secrets:', error);
   }
   const effectiveNextSecretEnvVars = referencedSecretEnvVarNames
     ? pickReferencedSecretEnvVars(nextSecretEnvVars, referencedSecretEnvVarNames)
@@ -3104,7 +3142,7 @@ const _syncOpenClawConfigImpl = async (
       success: false,
       changed: true,
       status: restarted,
-      error: restarted.message || 'Failed to restart OpenClaw gateway after config sync.',
+      error: restarted.message || 'Failed to restart the engine after config sync.',
     };
   }
   return {
@@ -3125,7 +3163,7 @@ const syncOpenClawConfig = async (
   const resultPromise = startAfterPrevious.then(() => _syncOpenClawConfigImpl(options));
   const barrierPromise = resultPromise.then((result) => {
     if (!result.success) {
-      throw new Error(result.error || 'OpenClaw config sync failed.');
+      throw new Error(result.error || 'Engine config sync failed.');
     }
   });
   barrierPromise.catch(() => {
@@ -3150,7 +3188,7 @@ const syncOpenClawConfig = async (
     return {
       success: false,
       changed: false,
-      error: error instanceof Error ? error.message : 'OpenClaw config sync failed.',
+      error: error instanceof Error ? error.message : 'Engine config sync failed.',
     };
   } finally {
     if (generation === openClawConfigApplyGeneration) {
@@ -3224,7 +3262,7 @@ const buildOpenClawRepairBusyResult = (
 
 const repairOpenClawGatewayState = (): Promise<OpenClawGatewayRepairResult> => {
   if (openClawGatewayRepairPromise) {
-    console.log('[OpenClawRepair] repair already in progress, joining existing request.');
+    console.log('[EngineRepair] repair already in progress, joining existing request.');
     return openClawGatewayRepairPromise;
   }
 
@@ -3235,18 +3273,18 @@ const repairOpenClawGatewayState = (): Promise<OpenClawGatewayRepairResult> => {
 
     const initialBusyResult = buildOpenClawRepairBusyResult(originalPath, manager.getStatus());
     if (initialBusyResult) {
-      console.warn('[OpenClawRepair] repair was blocked because gateway work is still running.');
+      console.warn('[EngineRepair] repair was blocked because gateway work is still running.');
       return initialBusyResult;
     }
 
-    const pendingApplyStatus = await waitForOpenClawConfigApply('manual OpenClaw repair');
+    const pendingApplyStatus = await waitForOpenClawConfigApply('manual engine repair');
     if (pendingApplyStatus) {
-      console.warn('[OpenClawRepair] repair was blocked while configuration changes are still applying.');
+      console.warn('[EngineRepair] repair was blocked while configuration changes are still applying.');
       return {
         success: false,
         status: pendingApplyStatus,
         originalPath,
-        error: pendingApplyStatus.message || 'OpenClaw is still applying configuration changes.',
+        error: pendingApplyStatus.message || 'Caisra is still applying configuration changes.',
         errorCode: OpenClawGatewayRepairErrorCode.ConfigApplyPending,
         recoverable: true,
       };
@@ -3254,26 +3292,26 @@ const repairOpenClawGatewayState = (): Promise<OpenClawGatewayRepairResult> => {
 
     const postApplyBusyResult = buildOpenClawRepairBusyResult(originalPath, manager.getStatus());
     if (postApplyBusyResult) {
-      console.warn('[OpenClawRepair] repair was blocked because gateway work started during the check.');
+      console.warn('[EngineRepair] repair was blocked because gateway work started during the check.');
       return postApplyBusyResult;
     }
 
     if (openClawBootstrapPromise) {
-      console.log('[OpenClawRepair] waiting for the current OpenClaw startup attempt to finish.');
+      console.log('[EngineRepair] waiting for the current OpenClaw startup attempt to finish.');
       await openClawBootstrapPromise.catch((error: unknown): null => {
-        console.warn('[OpenClawRepair] existing startup attempt failed before repair:', error);
+        console.warn('[EngineRepair] existing startup attempt failed before repair:', error);
         return null;
       });
     }
 
     const postBootstrapBusyResult = buildOpenClawRepairBusyResult(originalPath, manager.getStatus());
     if (postBootstrapBusyResult) {
-      console.warn('[OpenClawRepair] repair was blocked because gateway work started after startup finished.');
+      console.warn('[EngineRepair] repair was blocked because gateway work started after startup finished.');
       return postBootstrapBusyResult;
     }
 
     try {
-      console.log('[OpenClawRepair] starting gateway state repair.');
+      console.log('[EngineRepair] starting gateway state repair.');
       if (openClawRuntimeAdapter) {
         openClawRuntimeAdapter.disconnectGatewayClient();
       }
@@ -3281,9 +3319,9 @@ const repairOpenClawGatewayState = (): Promise<OpenClawGatewayRepairResult> => {
       await manager.stopGateway();
       const backupResult = backupOpenClawConfig(originalPath);
       if (backupResult.backupPath) {
-        console.log(`[OpenClawRepair] backed up OpenClaw config to ${backupResult.backupPath}.`);
+        console.log(`[EngineRepair] backed up OpenClaw config to ${backupResult.backupPath}.`);
       } else {
-        console.log('[OpenClawRepair] no OpenClaw config file was present, continuing with regeneration.');
+        console.log('[EngineRepair] no OpenClaw config file was present, continuing with regeneration.');
       }
 
       const status = await bootstrapOpenClawEngine({
@@ -3292,9 +3330,9 @@ const repairOpenClawGatewayState = (): Promise<OpenClawGatewayRepairResult> => {
       });
       const success = isOpenClawGatewayRepairSuccess(status);
       if (success) {
-        console.log('[OpenClawRepair] gateway state repair completed successfully.');
+        console.log('[EngineRepair] gateway state repair completed successfully.');
       } else {
-        console.warn('[OpenClawRepair] gateway state repair completed but the gateway is not ready.');
+        console.warn('[EngineRepair] gateway state repair completed but the gateway is not ready.');
       }
 
       return {
@@ -3302,15 +3340,15 @@ const repairOpenClawGatewayState = (): Promise<OpenClawGatewayRepairResult> => {
         status,
         originalPath: backupResult.originalPath,
         backupPath: backupResult.backupPath,
-        error: success ? undefined : status.message || 'Failed to restart OpenClaw gateway after repair.',
+        error: success ? undefined : status.message || 'Failed to restart the engine after repair.',
       };
     } catch (error) {
-      console.error('[OpenClawRepair] gateway state repair failed:', error);
+      console.error('[EngineRepair] gateway state repair failed:', error);
       return {
         success: false,
         status: manager.getStatus(),
         originalPath,
-        error: error instanceof Error ? error.message : 'Failed to repair OpenClaw gateway state.',
+        error: error instanceof Error ? error.message : 'Failed to repair the engine state.',
       };
     }
   })().finally(() => {
@@ -3722,7 +3760,7 @@ const getIMGatewayManager = () => {
       ensureOpenClawGatewayConnected: async () => {
         const configApplyStatus = await waitForOpenClawConfigApply('IM gateway client connection');
         if (configApplyStatus) {
-          throw new Error(configApplyStatus.message || 'OpenClaw is applying configuration changes.');
+          throw new Error(configApplyStatus.message || 'Caisra is applying configuration changes.');
         }
         if (openClawRuntimeAdapter) {
           await openClawRuntimeAdapter.connectGatewayIfNeeded();
@@ -3731,11 +3769,11 @@ const getIMGatewayManager = () => {
       getOpenClawGatewayClient: () => openClawRuntimeAdapter?.getGatewayClient() ?? null,
       ensureOpenClawGatewayReady: async () => {
         if (!openClawRuntimeAdapter) {
-          throw new Error('OpenClaw runtime adapter not initialized.');
+          throw new Error('The engine is not running.');
         }
         const configApplyStatus = await waitForOpenClawConfigApply('IM gateway readiness check');
         if (configApplyStatus) {
-          throw new Error(configApplyStatus.message || 'OpenClaw is applying configuration changes.');
+          throw new Error(configApplyStatus.message || 'Caisra is applying configuration changes.');
         }
         await openClawRuntimeAdapter.ensureReady();
         await openClawRuntimeAdapter.connectGatewayIfNeeded();
@@ -4854,7 +4892,7 @@ if (!gotTheLock) {
       ]);
 
       if (proxyChanged && getOpenClawEngineManager().getStatus().phase === 'running') {
-        console.log('[OpenClaw] Deferred app_config sync to the system proxy watcher.');
+        console.log('[Engine] Deferred app_config sync to the system proxy watcher.');
         return;
       }
 
@@ -4866,7 +4904,7 @@ if (!gotTheLock) {
             actionDecision.impact === OpenClawConfigImpact.Restart || browserWebAccessChanged,
         });
         if (!syncResult.success) {
-          console.error('[OpenClaw] Failed to sync config after app_config update:', syncResult.error);
+          console.error('[Engine] Failed to sync config after app_config update:', syncResult.error);
         }
       }
     }
@@ -4945,7 +4983,7 @@ if (!gotTheLock) {
             ? [
                 {
                   archiveName: 'install-timing.log',
-                  filePath: path.join(app.getPath('appData'), 'LobsterAI', 'install-timing.log'),
+                  filePath: path.join(app.getPath('appData'), APP_NAME, 'install-timing.log'),
                 },
               ]
             : []),
@@ -8489,7 +8527,7 @@ if (!gotTheLock) {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get OpenClaw engine status',
+        error: error instanceof Error ? error.message : 'Failed to get the engine status',
       };
     }
   });
@@ -8509,7 +8547,7 @@ if (!gotTheLock) {
       return {
         success: false,
         status: manager.getStatus(),
-        error: error instanceof Error ? error.message : 'Failed to install OpenClaw engine',
+        error: error instanceof Error ? error.message : 'Failed to install the engine',
       };
     }
   });
@@ -8529,7 +8567,7 @@ if (!gotTheLock) {
       return {
         success: false,
         status: manager.getStatus(),
-        error: error instanceof Error ? error.message : 'Failed to retry OpenClaw engine install',
+        error: error instanceof Error ? error.message : 'Failed to retry the engine install',
       };
     }
   });
@@ -8559,7 +8597,7 @@ if (!gotTheLock) {
       return {
         success: false,
         status: manager.getStatus(),
-        error: error instanceof Error ? error.message : 'Failed to restart OpenClaw gateway',
+        error: error instanceof Error ? error.message : 'Failed to restart the engine',
       };
     } finally {
       restartGatewayPromise = null;
@@ -8575,7 +8613,7 @@ if (!gotTheLock) {
         success: false,
         status: manager.getStatus(),
         originalPath: manager.getConfigPath(),
-        error: error instanceof Error ? error.message : 'Failed to repair OpenClaw gateway state',
+        error: error instanceof Error ? error.message : 'Failed to repair the engine state',
       };
     }
   });
@@ -8632,7 +8670,7 @@ if (!gotTheLock) {
       console.error('[DataMigration] backup failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to back up LobsterAI data',
+        error: error instanceof Error ? error.message : 'Failed to back up Caisra data',
       };
     }
   });
@@ -8691,11 +8729,11 @@ if (!gotTheLock) {
         success,
         scheduledRestart: rendererReleased,
         rollbackPath: restoreResult?.rollbackPath,
-        error: success ? undefined : restoreResult?.error || 'Failed to import LobsterAI data backup',
+        error: success ? undefined : restoreResult?.error || 'Failed to import Caisra data backup',
       };
     } catch (error) {
       isCleanupInProgress = false;
-      const message = error instanceof Error ? error.message : 'Failed to import LobsterAI data backup';
+      const message = error instanceof Error ? error.message : 'Failed to import Caisra data backup';
       console.error('[DataMigration] restore scheduling failed:', error);
       if (rendererReleased) {
         dialog.showErrorBox(t('dataMigrationRestoreDialogTitle'), message);
@@ -8732,7 +8770,7 @@ if (!gotTheLock) {
   const getBrowserControlBaseUrl = (): string => {
     const info = getOpenClawEngineManager().getGatewayConnectionInfo();
     if (!info.port) {
-      throw new Error('OpenClaw gateway port is unavailable.');
+      throw new Error('The engine port is unavailable.');
     }
     return `http://127.0.0.1:${info.port + 2}`;
   };
@@ -8785,7 +8823,7 @@ if (!gotTheLock) {
     try {
       return { success: true, state: await action() };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'LobsterAI in-app browser action failed.';
+      const message = error instanceof Error ? error.message : 'Caisra in-app browser action failed.';
       return {
         success: false,
         state: {
@@ -8933,7 +8971,7 @@ if (!gotTheLock) {
       const engineStatus = getOpenClawEngineManager().getStatus();
       if (engineStatus.phase !== 'running') {
         addStep(BrowserDiagnosticStep.GatewayStatus, BrowserDiagnosticStatus.Error, 'browserDiagnosticGatewayNotRunning', engineStatus.message);
-        return { success: false, steps, error: engineStatus.message || 'OpenClaw gateway is not running.' };
+        return { success: false, steps, error: engineStatus.message || 'The engine is not running.' };
       }
       addStep(BrowserDiagnosticStep.GatewayStatus, BrowserDiagnosticStatus.Success, 'browserDiagnosticGatewayReady');
 
@@ -10641,7 +10679,7 @@ if (!gotTheLock) {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get OpenClaw session policy',
+        error: error instanceof Error ? error.message : 'Failed to get the session policy',
       };
     }
   });
@@ -10658,7 +10696,7 @@ if (!gotTheLock) {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to save OpenClaw session policy',
+        error: error instanceof Error ? error.message : 'Failed to save the session policy',
       };
     }
   });
@@ -10666,7 +10704,7 @@ if (!gotTheLock) {
   ipcMain.handle(OpenClawSessionIpc.Patch, async (_event, input: unknown) => {
     try {
       if (!input || typeof input !== 'object' || Array.isArray(input)) {
-        throw new Error('Invalid OpenClaw session patch input.');
+        throw new Error('Invalid session patch input.');
       }
 
       const request = input as { sessionId?: unknown; patch?: unknown };
@@ -10713,7 +10751,7 @@ if (!gotTheLock) {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to patch OpenClaw session',
+        error: error instanceof Error ? error.message : 'Failed to patch the session',
       };
     }
   });
@@ -10972,7 +11010,7 @@ if (!gotTheLock) {
       const workspace = resolveExistingAgentWorkspacePath(options?.agentId);
       writeBootstrapFile(workspace, filename, content);
       syncOpenClawConfig({ reason: 'bootstrap-updated' }).catch(err => {
-        console.error('[OpenClaw] config sync after bootstrap-updated failed:', err);
+        console.error('[Engine] config sync after bootstrap-updated failed:', err);
       });
       return { success: true };
     } catch (error) {
@@ -11128,7 +11166,7 @@ if (!gotTheLock) {
           return {
             success: false,
             code: ENGINE_NOT_READY_CODE,
-            error: syncResult.error || 'OpenClaw config sync failed.',
+            error: syncResult.error || 'Engine config sync failed.',
             engineStatus: syncResult.status || getOpenClawEngineManager().getStatus(),
           };
         }
@@ -11260,7 +11298,7 @@ if (!gotTheLock) {
         restartGatewayIfRunning,
       });
       if (!syncResult.success) {
-        throw new Error(syncResult.error || 'OpenClaw config sync failed.');
+        throw new Error(syncResult.error || 'Engine config sync failed.');
       }
       lastSyncedImOpenClawConfigFingerprint = getCurrentImOpenClawConfigFingerprint();
       imConfigRestartOnNextSettingsSave = false;
@@ -11278,7 +11316,7 @@ if (!gotTheLock) {
       console.error('[IM] Config sync failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'OpenClaw config sync failed.',
+        error: error instanceof Error ? error.message : 'Engine config sync failed.',
       };
     } finally {
       imConfigSyncRunning = false;
@@ -11598,7 +11636,7 @@ if (!gotTheLock) {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get OpenClaw config schema',
+        error: error instanceof Error ? error.message : 'Failed to get the engine config schema',
       };
     }
   });
@@ -14310,7 +14348,7 @@ if (!gotTheLock) {
     if (openClawEngineManager) {
       currentAppCleanupStep = 'openclaw-gateway';
       await openClawEngineManager.stopGateway().catch(error => {
-        console.error('[OpenClaw] Failed to stop gateway on quit:', error);
+        console.error('[Engine] Failed to stop gateway on quit:', error);
       });
     }
 
@@ -14796,7 +14834,7 @@ if (!gotTheLock) {
         getStore(),
       );
     } catch (err) {
-      console.warn('[OpenClaw] main agent workspace migration failed (non-fatal):', err);
+      console.warn('[Engine] main agent workspace migration failed (non-fatal):', err);
     }
 
     // An interrupted Windows installer can leave an empty resources/cfmind
@@ -14812,7 +14850,7 @@ if (!gotTheLock) {
       restartGatewayIfRunning: false,
     });
     if (!startupSync.success) {
-      console.error('[OpenClaw] Startup config sync failed:', startupSync.error);
+      console.error('[Engine] Startup config sync failed:', startupSync.error);
     }
     profiler.measure('syncOpenClawConfig');
     void ensureOpenClawRunningForCowork()
@@ -14828,7 +14866,7 @@ if (!gotTheLock) {
         });
       })
       .catch(error => {
-        console.error('[OpenClaw] Failed to auto-start gateway on app startup:', error);
+        console.error('[Engine] Failed to auto-start gateway on app startup:', error);
       });
 
     // ── Step 1: Show window ASAP ──────────────────────────────────────
@@ -15023,7 +15061,7 @@ if (!gotTheLock) {
               restartGatewayIfRunning: true,
             }).then((result) => {
               if (!result.success) {
-                console.error('[OpenClaw] Failed to sync config after system proxy change:', result.error);
+                console.error('[Engine] Failed to sync config after system proxy change:', result.error);
               }
             });
           }
