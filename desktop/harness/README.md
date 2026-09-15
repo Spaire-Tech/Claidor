@@ -20,7 +20,7 @@ The script prints anything the page logged as an error and the path of
 anything the static server refused, because a bare "404 (Not Found)" is
 one guess away from chasing the wrong file.
 
-`?screen=` picks the screen: `signin`, `signin-error`, `thread`,
+`?screen=` picks the screen: `signin`, `signin-error`, `thread`, `files`,
 `choice`, `typing`, `voice`, `compose`, `arriving`.
 
 ## Proving the stagger

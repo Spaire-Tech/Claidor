@@ -1636,3 +1636,31 @@ build made before the stamp existed.
 **Where:** `scripts/electron-builder-config.cjs`, `src/shared/buildStamp/
 constants.ts` (tested), `src/main/buildInfo.ts`, `main.ts`,
 `preload.ts`, `design/shell/FaiserApp.tsx`, `README.md`.
+
+---
+
+## 41. The file cards — `built`
+
+The founder, with a new canvas: *"when the ai finishes its work to
+render it in this style, and not just wordmock.doc … its pdf excel and
+word. with their own svg. … `send me the whole pack` → all three."*
+
+The files a reply ends with are now cards, one per file, under whatever
+the reply said: the file's own icon at 38px (PDF, Word, Excel,
+PowerPoint; a paperclip for anything else), its name, and a round button
+that opens the save sheet and writes a copy where the person points. The
+card itself opens the file in the computer panel, as item 34 made every
+file do. Three links at the end of a reply are three cards; a bulleted
+list of them is the same three; a file named in the middle of a sentence
+is still a chip in that sentence. The card is the canvas's to the pixel —
+its paper, its raised shadow, its 440px column — recorded in
+`docs/product/design/`.
+
+**Proof.** `harness/shoot.mjs files` photographs the pack from the
+canvas's own conversation; 335 design tests pass (8 new, for the peel,
+the icons and the mapper); the live run of the Word-file click and the
+agent delete still passes every check; eslint, tsc clean.
+
+**Where:** `design/thread/attachment.ts`, `types.ts`, `fromEngine.ts`,
+`ThreadItemView.tsx`, `pdf-doc.webp`; `design/shell/useMessagesShell.ts`
+(save a copy); `harness/main.tsx` (`?screen=files`).

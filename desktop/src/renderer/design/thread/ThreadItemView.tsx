@@ -3,14 +3,18 @@ import { type CSSProperties, useState } from 'react';
 import { avatarFallback, avatarInk } from '../../../shared/agent/avatars';
 import { AskInputFieldKind } from '../../../shared/askInput/constants';
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
+import { logoUrl } from '../logos';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
-import { readableSize } from './attachment';
+import { FILE_LOGO, readableSize } from './attachment';
 import { detailsLabel } from './details';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
+// The design's PDF icon, bundled by Vite like the service logos.
+import pdfDoc from './pdf-doc.webp?url';
 import {
   type AttachmentItem,
   type AuthDecision,
+  FileKind,
   type SecretItem,
   Speaker,
   type ThreadItem,
@@ -35,6 +39,8 @@ const avatarOf = (handlers: PartHandlers, agentId: string): number =>
 export interface PartHandlers {
   /** Open a file on this computer. */
   onOpenFile?: (path: string) => void;
+  /** Save a copy of a file the agent made, wherever the person points. */
+  onSaveCopy?: (path: string) => void;
   /** Open a link, in whatever the person uses for links. */
   onOpenLink?: (href: string) => void;
   /** Open Settings at a row the agent named. */
@@ -600,60 +606,125 @@ function AuthCard(
 /**
  * A file as the whole message.
  *
- * An image is looked at; anything else is named, sized and openable. The
- * card takes the agent bubble's own surface rather than inventing a
- * second one, so a thread of replies and files reads as one column.
+ * An image is looked at. Anything else is the founder's 15 September
+ * card, from their design: the file's own icon at 38px, its name, and a
+ * round button that saves a copy. The card sits on the page's own paper
+ * with the raised shadow, in a column no wider than 440px, so a pack of
+ * three reads as three cards and not as three bubbles. The whole card
+ * opens the file in the computer panel; only the button saves.
  */
 function AttachmentCard(
   { item, handlers }: { item: AttachmentItem; handlers: PartHandlers },
 ): JSX.Element {
   const mine = item.from === Speaker.Person;
   const open = handlers.onOpenFile ? () => handlers.onOpenFile?.(item.path) : undefined;
-  const size = readableSize(item.size);
+  const save = handlers.onSaveCopy ? () => handlers.onSaveCopy?.(item.path) : undefined;
+  const [hover, setHover] = useState(false);
+  const [saveHover, setSaveHover] = useState(false);
+  const row: CSSProperties = { display: 'flex', ...(mine ? { justifyContent: 'flex-end' } : {}), animation: enter };
 
-  const body = item.image ? (
-    <img
-      src={`file://${item.path}`}
-      alt={item.name}
+  if (item.image) {
+    const shell: CSSProperties = {
+      maxWidth: 'min(70%, 420px)', padding: 6, borderRadius: radius.bubble,
+      background: color.fillRaised, border: `1px solid ${line.hairline}`, textAlign: 'left',
+    };
+    const picture = (
+      <img
+        src={`file://${item.path}`}
+        alt={item.name}
+        style={{ display: 'block', maxWidth: '100%', maxHeight: 320, borderRadius: radius.card, background: color.fill }}
+      />
+    );
+    return (
+      <div style={row}>
+        {open ? (
+          <button type="button" onClick={open} title={item.path} style={{ ...shell, cursor: 'pointer', font: 'inherit' }}>
+            {picture}
+          </button>
+        ) : (
+          <div style={shell} title={item.path}>{picture}</div>
+        )}
+      </div>
+    );
+  }
+
+  const size = readableSize(item.size);
+  return (
+    <div style={row}>
+      <div
+        role="button"
+        tabIndex={open ? 0 : -1}
+        onClick={open}
+        onKeyDown={event => {
+          if (open && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); open(); }
+        }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        title={item.path}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 14, width: 'min(70%, 440px)',
+          boxSizing: 'border-box', padding: '13px 14px', borderRadius: radius.card,
+          background: hover ? '#f6f7f9' : color.paper,
+          border: '1px solid rgba(255,255,255,.6)',
+          boxShadow: '0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset 0 1px 0 rgba(255,255,255,.7)',
+          cursor: open ? 'pointer' : 'default', textAlign: 'left', transition: 'background .15s',
+        }}
+      >
+        <FileGlyph kind={item.file} name={item.name} />
+        <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{
+            fontSize: 15, fontWeight: 500, letterSpacing: '-.005em', color: '#1c1f23',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            {item.name}
+          </span>
+          {size && <span style={{ fontSize: text.caption, color: color.muted }}>{size}</span>}
+        </span>
+        {save && (
+          <button
+            type="button"
+            aria-label="Save a copy"
+            title="Save a copy"
+            onClick={event => { event.stopPropagation(); save(); }}
+            onMouseEnter={() => setSaveHover(true)}
+            onMouseLeave={() => setSaveHover(false)}
+            style={{
+              width: 34, height: 34, flex: '0 0 auto', borderRadius: '50%', padding: 0,
+              border: `1px solid ${line.hairline}`, background: saveHover ? color.fillRaised : color.paper,
+              color: color.ink, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+              <path d="M12 4v11" /><path d="M7.5 11l4.5 4.5 4.5-4.5" /><path d="M5 19.5h14" />
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** The file's own icon — the design's four — or a paperclip for the rest. */
+function FileGlyph({ kind, name }: { kind: FileKind | undefined; name: string }): JSX.Element {
+  const logo = kind ? FILE_LOGO[kind] : undefined;
+  const url = kind === FileKind.Pdf ? pdfDoc : logo ? logoUrl(logo) : undefined;
+  if (!url) {
+    return (
+      <span style={{ width: 38, height: 38, flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <PaperclipGlyph />
+      </span>
+    );
+  }
+  return (
+    <span
+      role="img"
+      aria-label={name}
       style={{
-        display: 'block', maxWidth: '100%', maxHeight: 320,
-        borderRadius: radius.card, background: color.fill,
+        width: 38, height: 38, flex: '0 0 auto',
+        backgroundImage: `url(${url})`, backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
       }}
     />
-  ) : (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
-      <PaperclipGlyph />
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <span style={{
-          fontSize: text.body, color: color.ink,
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {item.name}
-        </span>
-        {size && <span style={{ fontSize: text.caption, color: color.muted }}>{size}</span>}
-      </span>
-    </span>
-  );
-
-  const shell: CSSProperties = {
-    maxWidth: 'min(70%, 420px)',
-    padding: item.image ? 6 : '13px 16px',
-    borderRadius: radius.bubble,
-    background: color.fillRaised,
-    border: `1px solid ${line.hairline}`,
-    textAlign: 'left',
-  };
-
-  return (
-    <div style={{ display: 'flex', ...(mine ? { justifyContent: 'flex-end' } : {}), animation: enter }}>
-      {open ? (
-        <button type="button" onClick={open} title={item.path} style={{ ...shell, cursor: 'pointer', font: 'inherit' }}>
-          {body}
-        </button>
-      ) : (
-        <div style={shell} title={item.path}>{body}</div>
-      )}
-    </div>
   );
 }
 

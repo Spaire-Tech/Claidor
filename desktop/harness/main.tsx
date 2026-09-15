@@ -65,6 +65,26 @@ const CONVERSATION: EngineMessage[] = [
   message({ type: 'tool_use', metadata: { toolName: 'bash', toolUseId: 'live-1' } }, 6),
 ];
 
+/**
+ * The founder's 15 September file cards: "send me the whole pack" and
+ * the three come back, each with its own icon. The reply is written the
+ * way the managed prompt tells the agent to write it — a sentence, then
+ * one absolute link per line.
+ */
+const PACK: EngineMessage[] = [
+  message({ type: 'user', content: 'where did the q4 deck end up' }, 0),
+  message({ type: 'assistant', content: 'Filed the Q4 deck under Board / 2026.\n\nKept the old version beside it as v1 so nothing got overwritten.' }, 1),
+  message({ type: 'user', content: 'send me the whole pack' }, 2),
+  message({
+    type: 'assistant',
+    content: 'Here it is — deck, model and the memo that went out with them.\n'
+      + '[Q4 Board Deck.pdf](file:///Users/bass/Board/2026/Q4%20Board%20Deck.pdf)\n'
+      + '[Q4 Model v3.xlsx](file:///Users/bass/Board/2026/Q4%20Model%20v3.xlsx)\n'
+      + '[Q4 Board Memo.docx](file:///Users/bass/Board/2026/Q4%20Board%20Memo.docx)',
+  }, 3),
+  message({ type: 'assistant', content: 'The model is v3. [[Q4 Model v2.xlsx]] is still in Board / 2026 if you want to compare.' }, 3),
+];
+
 const PENDING: (EnginePermissionRequest & { sessionId: string })[] = [
   {
     sessionId: 's1',
@@ -240,11 +260,12 @@ function Screens(): JSX.Element {
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
-  const items = toThreadItems(CONVERSATION, {
+  const items = toThreadItems(screen === 'files' ? PACK : CONVERSATION, {
     agentId: 'juno',
     agentName: 'Juno',
     pending: withAuth ? PENDING : [],
     deviceId: '6c0f8fd9-7d6d-439b-83e2-0d53f8b8542f',
+    files: [{ name: 'Q4 Model v2.xlsx', path: '/Users/bass/Board/2026/Q4 Model v2.xlsx' }],
   });
   if (screen === 'choice') items.push(CHOICE);
 
@@ -260,6 +281,9 @@ function Screens(): JSX.Element {
       accountName="Bass Fall"
       choice={{ onPick: noop, onFreeAnswer: noop, onDismiss: noop }}
       auth={{ onDecide: noop }}
+      // So a file card draws its save button, which only exists when
+      // there is something to save with.
+      parts={{ onOpenFile: noop, onSaveCopy: noop }}
       onSelect={noop}
       onSend={noop}
       composing={composing}

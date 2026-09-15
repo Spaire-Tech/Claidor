@@ -1,5 +1,5 @@
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
-import { attachmentFor } from './attachment';
+import { peelAttachments } from './attachment';
 import { splitReply } from './details';
 import type { KnownFile } from './parts';
 import { verbForTool } from './toolVerbs';
@@ -367,25 +367,29 @@ export function toThreadItems(
             ...(group && agentId && options.agentName ? { agentName: options.agentName } : {}),
           };
 
-          // A reply that is nothing but a file it produced is the file,
-          // not a sentence about the file.
-          const attachment = attachmentFor(text, { id, from: Speaker.Agent, at, ...sender }, options.files);
-          if (attachment) {
-            items.push(attachment);
-            return;
-          }
-
-          items.push({
-            kind: ThreadItemKind.Text,
-            id,
-            from: Speaker.Agent,
+          // The files a reply ends with are cards, not chips: one per
+          // file, after whatever was said. A reply that is nothing but
+          // its files is only the cards.
+          const { text: said, attachments } = peelAttachments(
             text,
-            ...sender,
-            // Under the last bubble of the reply, which is where the
-            // person's eye already is when they finish reading it.
-            ...(details && index === parts.length - 1 ? { details } : {}),
-            at,
-          } satisfies TextItem);
+            { id, from: Speaker.Agent, at, ...sender },
+            options.files,
+          );
+
+          if (said) {
+            items.push({
+              kind: ThreadItemKind.Text,
+              id,
+              from: Speaker.Agent,
+              text: said,
+              ...sender,
+              // Under the last bubble of the reply, which is where the
+              // person's eye already is when they finish reading it.
+              ...(details && index === parts.length - 1 ? { details } : {}),
+              at,
+            } satisfies TextItem);
+          }
+          items.push(...attachments);
         });
         break;
       }

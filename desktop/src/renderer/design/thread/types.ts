@@ -137,6 +137,21 @@ export interface AuthItem {
   at: number;
 }
 
+/**
+ * The kinds of file a card draws with the file's own icon.
+ *
+ * The founder's 15 September design: *"its pdf excel and word. with
+ * their own svg."* Slides too, because the design's icon set had it.
+ * Anything else is a paperclip.
+ */
+export const FileKind = {
+  Pdf: 'pdf',
+  Word: 'docx',
+  Excel: 'xlsx',
+  Slides: 'pptx',
+} as const;
+export type FileKind = typeof FileKind[keyof typeof FileKind];
+
 export interface AttachmentItem {
   kind: typeof ThreadItemKind.Attachment;
   id: string;
@@ -145,6 +160,8 @@ export interface AttachmentItem {
   name: string;
   /** Where it is on this computer. Absolute. */
   path: string;
+  /** Which icon the card draws. Absent for a file the design has none for. */
+  file?: FileKind;
   /** Bytes, when known. Absent rather than zero when it is not. */
   size?: number;
   /**

@@ -456,6 +456,25 @@ describe('a reply that is only a file', () => {
     });
   });
 
+  test('a reply that ends with the pack is a bubble and three cards', () => {
+    // The founder's design: "send me the whole pack → all three", each
+    // with its own icon, under the sentence that hands them over.
+    const items = toThreadItems([
+      msg({
+        type: 'assistant',
+        content: 'Here it is — deck, model and the memo that went out with them.\n'
+          + '[Q4 Board Deck.pdf](file:///Users/bass/Board/Q4%20Board%20Deck.pdf)\n'
+          + '[Q4 Model v3.xlsx](file:///Users/bass/Board/Q4%20Model%20v3.xlsx)\n'
+          + '[Q4 Board Memo.docx](file:///Users/bass/Board/Q4%20Board%20Memo.docx)',
+      }),
+    ], {});
+    expect(items.map(item => item.kind)).toEqual([
+      ThreadItemKind.Text, ThreadItemKind.Attachment, ThreadItemKind.Attachment, ThreadItemKind.Attachment,
+    ]);
+    expect(items[0]).toMatchObject({ text: 'Here it is — deck, model and the memo that went out with them.' });
+    expect(items[2]).toMatchObject({ name: 'Q4 Model v3.xlsx', file: 'xlsx' });
+  });
+
   test('a reply with something to say stays a bubble', () => {
     const items = toThreadItems([
       msg({
