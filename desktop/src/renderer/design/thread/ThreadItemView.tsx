@@ -6,8 +6,10 @@ import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
 import { logoUrl } from '../logos';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { messageIdOf, type Reactions } from './actions';
 import { FILE_LOGO, readableSize } from './attachment';
 import { detailsLabel } from './details';
+import { MessageActions, ReactionChip } from './MessageActions';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
 // The design's PDF icon, bundled by Vite like the service logos.
 import pdfDoc from './pdf-doc.webp?url';
@@ -60,7 +62,7 @@ export interface PartHandlers {
 /**
  * The chip. The canvas's, to the character:
  *
- *   font-family:'SF Mono', …; font-size:13.5px; padding:2px 7px;
+ *   font-family:'SF Mono', …; font-size:12.5px; padding:2px 6px;
  *   margin:0 1px; border-radius:7px; background:rgba(16,22,35,.11);
  *   white-space:nowrap
  *
@@ -72,7 +74,7 @@ export interface PartHandlers {
 const chipStyle: CSSProperties = {
   fontFamily: font.mono,
   fontSize: text.label,
-  padding: '2px 7px',
+  padding: '2px 6px',
   margin: '0 1px',
   borderRadius: radius.fileChip,
   background: line.hairline,
@@ -203,7 +205,7 @@ const bubbleBase: CSSProperties = {
 const mineBubble: CSSProperties = {
   ...bubbleBase,
   maxWidth: 'min(62%, 560px)',
-  padding: '13px 18px',
+  padding: '11px 15px',
   background: color.ink,
   color: color.paper,
   fontSize: text.message,
@@ -213,7 +215,7 @@ const mineBubble: CSSProperties = {
 const theirBubble: CSSProperties = {
   ...bubbleBase,
   maxWidth: 'min(70%, 640px)',
-  padding: '14px 20px',
+  padding: '12px 17px',
   background: color.fill,
   color: color.ink,
   fontSize: text.emphasis,
@@ -221,15 +223,21 @@ const theirBubble: CSSProperties = {
 };
 
 function TextBubble(
-  { item, leading, handlers }: {
+  { item, leading, handlers, actions }: {
     item: Extract<ThreadItem, { kind: 'text' }>;
     leading?: boolean;
     handlers: PartHandlers;
+    actions?: MessageHandlers;
   },
 ) {
   const mine = item.from === Speaker.Person;
   const parts = splitMessageParts(item.text, handlers.files);
   const [open, setOpen] = useState(false);
+  // The hover cluster. `held` is a popover of its being open, which
+  // keeps the cluster on screen while the pointer is over the popover.
+  const [hovered, setHovered] = useState(false);
+  const [held, setHeld] = useState(false);
+  const reaction = actions?.reactions[item.id] ?? '';
   const bubble = (
     <div style={mine ? mineBubble : theirBubble}>
       {parts.map((part, index) => (
@@ -285,22 +293,24 @@ function TextBubble(
 
   return (
     <div
+      onMouseEnter={actions ? () => setHovered(true) : undefined}
+      onMouseLeave={actions ? () => setHovered(false) : undefined}
       style={{
         display: 'flex',
         ...(mine ? { justifyContent: 'flex-end' } : {}),
-        ...(leading ? { paddingTop: 8 } : {}),
+        ...(leading ? { paddingTop: 6 } : {}),
         animation: enter,
       }}
     >
       {sender ? (
         <>
           <span style={{ flex: '0 0 auto', margin: '0 10px 2px 0', alignSelf: 'flex-end' }}>
-            <CloudBlob avatar={avatarOf(handlers, sender)} size={28} />
+            <CloudBlob avatar={avatarOf(handlers, sender)} size={26} />
           </span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
             <span
               style={{
-                fontSize: text.label, fontWeight: 400, paddingLeft: 4,
+                fontSize: text.label, fontWeight: 400, paddingLeft: 3,
                 color: avatarInk(avatarOf(handlers, sender)),
               }}
             >
@@ -310,6 +320,18 @@ function TextBubble(
           </div>
         </>
       ) : bubble}
+      {reaction && <ReactionChip emoji={reaction} />}
+      {actions && (
+        <MessageActions
+          mine={mine}
+          hovered={hovered || held}
+          reaction={reaction}
+          messageId={messageIdOf(item.id)}
+          onReact={emoji => actions.onReact(item.id, emoji)}
+          onReply={() => actions.onReply(item.id, item.text)}
+          onHold={setHeld}
+        />
+      )}
     </div>
   );
 }
@@ -336,7 +358,7 @@ function SystemLine(
 ) {
   const parts = splitMessageParts(item.text, handlers.files);
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 6px', animation: enter }}>
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 5px', animation: enter }}>
       <span
         style={{
           fontSize: text.body,
@@ -358,8 +380,8 @@ function StatusLine(
   { item, handlers }: { item: Extract<ThreadItem, { kind: 'status' }>; handlers: PartHandlers },
 ) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 11, paddingTop: 4, animation: enter }}>
-      {item.agentId && <CloudBlob avatar={avatarOf(handlers, item.agentId)} size={26} />}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 3, animation: enter }}>
+      {item.agentId && <CloudBlob avatar={avatarOf(handlers, item.agentId)} size={24} />}
       <span
         style={{
           fontSize: text.message,
@@ -394,20 +416,20 @@ function ChoiceCard(
     <div
       style={{
         maxWidth: 'min(72%, 560px)',
-        padding: 18,
+        padding: 15,
         borderRadius: radius.panel,
         background: color.fill,
         border: `1px solid ${line.hairline}`,
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
-        // The canvas gives a question the same 8px above it as a change
+        gap: 12,
+        // The canvas gives a question the same 6px above it as a change
         // of speaker, because that is what it is.
-        marginTop: 8,
+        marginTop: 6,
         animation: enter,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '0 2px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '0 2px' }}>
         <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ fontSize: text.emphasis, fontWeight: 500, lineHeight: 1.35, letterSpacing: tracking.body, textWrap: 'pretty' }}>
             {item.text}
@@ -422,12 +444,12 @@ function ChoiceCard(
             aria-label="Dismiss"
             onClick={() => handlers.onDismiss?.(item.id)}
             style={{
-              width: 22, height: 22, border: 'none', background: 'transparent',
+              width: 19, height: 19, border: 'none', background: 'transparent',
               cursor: 'pointer', color: color.muted, padding: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <CloseIcon size={13} />
+            <CloseIcon size={12} />
           </button>
         )}
       </div>
@@ -449,7 +471,7 @@ function ChoiceCard(
             type="button"
             onClick={() => handlers.onPick(item.id, option.key)}
             style={{
-              display: 'flex', alignItems: 'flex-start', gap: 14, padding: '16px 18px',
+              display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 15px',
               border: 'none', background: 'transparent', cursor: 'pointer',
               font: 'inherit', textAlign: 'left', width: '100%',
               ...(item.options[0] === option ? {} : { borderTop: `1px solid ${line.hairline}` }),
@@ -457,16 +479,16 @@ function ChoiceCard(
           >
             <span
               style={{
-                width: 24, height: 24, flex: '0 0 auto', marginTop: 1,
+                width: 23, height: 23, flex: '0 0 auto', marginTop: 1,
                 borderRadius: radius.chip, background: color.fill,
                 border: `1px solid ${line.hairline}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, color: color.muted,
+                fontSize: text.code, color: color.muted,
               }}
             >
               {option.key}
             </span>
-            <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ fontSize: text.emphasis, color: color.ink, lineHeight: 1.3 }}>{option.label}</span>
               {option.hint && (
                 <span style={{ fontSize: text.small, color: color.muted, lineHeight: 1.35 }}>{option.hint}</span>
@@ -488,7 +510,7 @@ function ChoiceCard(
           }}
           placeholder="Type your own answer"
           style={{
-            height: 46, padding: '0 16px', borderRadius: radius.input,
+            height: 43, padding: '0 14px', borderRadius: radius.input,
             border: `1px solid ${line.field}`, background: color.paper,
             outline: 'none', font: 'inherit', fontSize: text.message, color: color.ink,
           }}
@@ -512,11 +534,11 @@ function AuthCard(
       type="button"
       onClick={() => handlers.onDecide(item.id, decision)}
       style={{
-        height: 40, padding: '0 20px', borderRadius: radius.field,
+        height: 37, padding: '0 19px', borderRadius: radius.pill,
         border: primary ? 'none' : `1px solid ${line.button}`,
         background: primary ? color.ink : color.paper,
         color: primary ? color.paper : color.ink,
-        font: 'inherit', fontSize: text.body, fontWeight: primary ? 500 : 400,
+        font: 'inherit', fontSize: text.body, fontWeight: 400,
         cursor: 'pointer',
       }}
     >
@@ -527,26 +549,26 @@ function AuthCard(
   return (
     <div
       style={{
-        maxWidth: 'min(72%, 560px)', padding: '18px 20px 20px',
+        maxWidth: 'min(72%, 560px)', padding: '15px 17px 17px',
         borderRadius: radius.panel, background: color.fill,
         border: `1px solid ${line.hairline}`,
         display: 'flex', flexDirection: 'column', animation: enter,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
-        <WarningIcon size={17} style={{ color: color.warning, marginTop: 2 }} />
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <WarningIcon size={15.5} style={{ color: color.warning, marginTop: 2 }} />
         <div style={{ flex: '1 1 auto', minWidth: 0, fontSize: text.emphasis, fontWeight: 500, lineHeight: 1.35, letterSpacing: tracking.body, textWrap: 'pretty' }}>
           {item.text}
         </div>
       </div>
 
       {item.deviceId && (
-        <div style={{ padding: '9px 0 0 28px', fontFamily: font.mono, fontSize: 12.5, color: color.muted, wordBreak: 'break-all' }}>
+        <div style={{ padding: '8px 0 0 24px', fontFamily: font.mono, fontSize: text.code, color: color.muted, wordBreak: 'break-all' }}>
           {item.deviceId}
         </div>
       )}
       {item.note && (
-        <div style={{ padding: '7px 0 0 28px', fontSize: text.body, lineHeight: 1.45, color: color.muted, textWrap: 'pretty' }}>
+        <div style={{ padding: '6px 0 0 24px', fontSize: text.body, lineHeight: 1.45, color: color.muted, textWrap: 'pretty' }}>
           {item.note}
         </div>
       )}
@@ -564,13 +586,13 @@ function AuthCard(
             aria-expanded={open}
             style={{
               margin: '12px 0 0 24px', alignSelf: 'flex-start',
-              display: 'flex', alignItems: 'center', gap: 9, padding: 4,
+              display: 'flex', alignItems: 'center', gap: 8, padding: 3,
               border: 'none', background: 'transparent', cursor: 'pointer',
               font: 'inherit', fontSize: text.body, color: color.muted,
             }}
           >
             <ChevronRightIcon
-              size={11}
+              size={10.5}
               style={{
                 transform: open ? 'rotate(90deg)' : 'none',
                 transition: `transform ${motion.hover.duration} ${motion.hover.easing}`,
@@ -581,10 +603,10 @@ function AuthCard(
           {open && (
             <div
               style={{
-                margin: '10px 0 0 28px', padding: '13px 15px',
+                margin: '10px 0 0 28px', padding: '11px 13px',
                 borderRadius: radius.input, background: color.paper,
                 border: `1px solid ${line.hairline}`,
-                fontFamily: font.mono, fontSize: 12.5, lineHeight: 1.6,
+                fontFamily: font.mono, fontSize: text.code, lineHeight: 1.6,
                 color: color.ink, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
               }}
             >
@@ -594,7 +616,7 @@ function AuthCard(
         </>
       )}
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, padding: '18px 0 0 28px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '15px 0 0 24px' }}>
         {button('Always allow', 'always', true)}
         {button('Allow once', 'once')}
         {button('Never', 'never')}
@@ -607,7 +629,7 @@ function AuthCard(
  * A file as the whole message.
  *
  * An image is looked at. Anything else is the founder's 15 September
- * card, from their design: the file's own icon at 38px, its name, and a
+ * card, from their design: the file's own icon at 36px, its name, and a
  * round button that saves a copy. The card sits on the page's own paper
  * with the raised shadow, in a column no wider than 440px, so a pack of
  * three reads as three cards and not as three bubbles. The whole card
@@ -662,8 +684,8 @@ function AttachmentCard(
         onMouseLeave={() => setHover(false)}
         title={item.path}
         style={{
-          display: 'flex', alignItems: 'center', gap: 14, width: 'min(70%, 440px)',
-          boxSizing: 'border-box', padding: '13px 14px', borderRadius: radius.card,
+          display: 'flex', alignItems: 'center', gap: 12, width: 'min(70%, 440px)',
+          boxSizing: 'border-box', padding: '11px 12px', borderRadius: radius.card,
           background: hover ? '#f6f7f9' : color.paper,
           border: '1px solid rgba(255,255,255,.6)',
           boxShadow: '0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset 0 1px 0 rgba(255,255,255,.7)',
@@ -673,7 +695,7 @@ function AttachmentCard(
         <FileGlyph kind={item.file} name={item.name} />
         <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{
-            fontSize: 15, fontWeight: 500, letterSpacing: '-.005em', color: '#1c1f23',
+            fontSize: text.message, fontWeight: 500, letterSpacing: tracking.body, color: color.shimmerInk,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {item.name}
@@ -689,12 +711,12 @@ function AttachmentCard(
             onMouseEnter={() => setSaveHover(true)}
             onMouseLeave={() => setSaveHover(false)}
             style={{
-              width: 34, height: 34, flex: '0 0 auto', borderRadius: '50%', padding: 0,
+              width: 31, height: 31, flex: '0 0 auto', borderRadius: '50%', padding: 0,
               border: `1px solid ${line.hairline}`, background: saveHover ? color.fillRaised : color.paper,
               color: color.ink, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
               <path d="M12 4v11" /><path d="M7.5 11l4.5 4.5 4.5-4.5" /><path d="M5 19.5h14" />
             </svg>
           </button>
@@ -710,7 +732,7 @@ function FileGlyph({ kind, name }: { kind: FileKind | undefined; name: string })
   const url = kind === FileKind.Pdf ? pdfDoc : logo ? logoUrl(logo) : undefined;
   if (!url) {
     return (
-      <span style={{ width: 38, height: 38, flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ width: 36, height: 36, flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <PaperclipGlyph />
       </span>
     );
@@ -720,7 +742,7 @@ function FileGlyph({ kind, name }: { kind: FileKind | undefined; name: string })
       role="img"
       aria-label={name}
       style={{
-        width: 38, height: 38, flex: '0 0 auto',
+        width: 36, height: 36, flex: '0 0 auto',
         backgroundImage: `url(${url})`, backgroundSize: 'contain',
         backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
       }}
@@ -837,7 +859,7 @@ function SecretCard(
                     onClick={() => setShown(one => ({ ...one, [field.name]: !one[field.name] }))}
                     aria-pressed={!!shown[field.name]}
                     style={{
-                      height: 38, padding: '0 12px', borderRadius: radius.small,
+                      height: 36, padding: '0 12px', borderRadius: radius.pill,
                       border: `1px solid ${line.field}`, background: color.fill,
                       color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
                       flex: '0 0 auto',
@@ -872,10 +894,10 @@ function SecretCard(
           disabled={!ready}
           onClick={send}
           style={{
-            height: 38, padding: '0 18px', borderRadius: radius.field, border: 'none',
+            height: 36, padding: '0 17px', borderRadius: radius.pill, border: 'none',
             background: ready ? color.ink : color.fill,
             color: ready ? color.paper : color.faint,
-            font: 'inherit', fontSize: text.body, fontWeight: 500,
+            font: 'inherit', fontSize: text.body, fontWeight: 400,
             cursor: ready ? 'pointer' : 'default',
           }}
         >
@@ -885,7 +907,7 @@ function SecretCard(
           type="button"
           onClick={() => handlers.onDecline?.(item.id)}
           style={{
-            height: 38, padding: '0 16px', borderRadius: radius.field,
+            height: 36, padding: '0 16px', borderRadius: radius.pill,
             border: `1px solid ${line.field}`, background: color.fill, color: color.ink,
             font: 'inherit', fontSize: text.body, cursor: 'pointer',
           }}
@@ -897,6 +919,18 @@ function SecretCard(
   );
 }
 
+/**
+ * What the hover cluster beside a bubble can do. Absent, there is no
+ * cluster — the harness's still screens, for one.
+ */
+export interface MessageHandlers {
+  /** Message id → the emoji on it. */
+  reactions: Reactions;
+  onReact: (itemId: string, emoji: string) => void;
+  /** Quote this message into the composer. */
+  onReply: (itemId: string, text: string) => void;
+}
+
 export interface ThreadItemViewProps {
   item: ThreadItem;
   choice: ChoiceHandlers;
@@ -905,6 +939,8 @@ export interface ThreadItemViewProps {
   secret?: SecretHandlers;
   /** What a file or a link in the text can do. */
   parts?: PartHandlers;
+  /** React, reply, copy the id — the cluster that appears on hover. */
+  actions?: MessageHandlers;
   /**
    * True when this bubble starts a turn — the one before it came from the
    * other side. The canvas puts 8px above it and nothing between bubbles
@@ -918,11 +954,11 @@ const noHandlers: PartHandlers = {};
 const noSecret: SecretHandlers = {};
 
 export function ThreadItemView(
-  { item, choice, auth, secret = noSecret, parts = noHandlers, leading }: ThreadItemViewProps,
+  { item, choice, auth, secret = noSecret, parts = noHandlers, actions, leading }: ThreadItemViewProps,
 ): JSX.Element | null {
   switch (item.kind) {
     case ThreadItemKind.Text:
-      return <TextBubble item={item} leading={leading} handlers={parts} />;
+      return <TextBubble item={item} leading={leading} handlers={parts} actions={actions} />;
     case ThreadItemKind.System:
       return <SystemLine item={item} handlers={parts} />;
     case ThreadItemKind.Status:

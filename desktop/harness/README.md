@@ -24,8 +24,12 @@ one guess away from chasing the wrong file.
 `choice`, `typing`, `voice`, `compose`, `arriving`; and the Apps sheet as
 `apps` (Plugins), `apps-adding` (one sign-in running), `apps-agents`
 (the Agents tab) and `apps-agent` (the Engineering Lead's page).
-`node harness/shoot-canvas.mjs` photographs the same three screens of
-the founder's canvas, to put beside them.
+`hover` is `thread` with the pointer resting on the agent's last bubble
+and its emoji row opened (`hover.png`, `hover-emoji.png`); the shooter
+also prints which face the page drew, so a system-font fallback cannot
+pass for Switzer. `node harness/shoot-canvas.mjs [canvas.html] [screens…]`
+photographs the founder's canvas — `thread`, `apps`, `agents`, `agent`,
+`compose`, `account`, `settings` — to put beside them.
 
 ## Proving the stagger
 

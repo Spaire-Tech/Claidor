@@ -14,6 +14,12 @@ export interface ComposerProps {
    * again. Absent, the row is not shown rather than shown dead.
    */
   onTeach?: () => void;
+  /**
+   * Text put into the box from outside — Reply on a message. `at` is a
+   * stamp that changes each time, so quoting the same message twice
+   * works; the text replaces the draft and the caret lands after it.
+   */
+  seed?: { text: string; at: number };
 }
 
 /**
@@ -24,18 +30,29 @@ export interface ComposerProps {
  * - **The send button changes with the draft.** Empty, it is a microphone;
  *   with text, an arrow. One control, two jobs, no dead button ever shown.
  * - **Enter sends, Shift+Enter does not.** This is a texting app.
- * - **The `+` opens a 232px popover**: Attach files, and Teach a task with
+ * - **The `+` opens a 216px popover**: Attach files, and Teach a task with
  *   a red record dot. It shipped once as `onPlus={() => {}}` — a button
  *   that looked like every other button and did nothing at all.
  */
 export function Composer({
-  placeholder = 'Message', disabled, onSend, onTeach,
+  placeholder = 'Message', disabled, onSend, onTeach, seed,
 }: ComposerProps): JSX.Element {
   const [draft, setDraft] = useState('');
   const [plusOpen, setPlusOpen] = useState(false);
   const [attached, setAttached] = useState<readonly string[]>([]);
   const has = draft.trim().length > 0;
   const plusRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!seed) return;
+    setDraft(seed.text);
+    const input = inputRef.current;
+    if (!input) return;
+    input.focus();
+    // After React has written the value, or the caret lands at 0.
+    window.setTimeout(() => input.setSelectionRange(seed.text.length, seed.text.length), 0);
+  }, [seed]);
 
   // Escape, and a click anywhere else. The same behaviour as the account
   // menu, because a popover that only closes by pressing its own button is
@@ -93,7 +110,7 @@ export function Composer({
       type="button"
       onClick={onClick}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12, height: 44, padding: '0 12px',
+        display: 'flex', alignItems: 'center', gap: 11, height: 41, padding: '0 11px',
         border: 'none', background: 'transparent', borderRadius: radius.input,
         cursor: 'pointer', font: 'inherit', color: color.muted, width: '100%',
       }}
@@ -104,7 +121,7 @@ export function Composer({
   );
 
   return (
-    <div style={{ padding: '14px 24px 22px' }}>
+    <div style={{ padding: '12px 21px 19px' }}>
       {/* What is going with the next message. Above the pill, so the pill
           keeps the shape the canvas gives it however many files there are. */}
       {attached.length > 0 && (
@@ -144,9 +161,9 @@ export function Composer({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          minHeight: 52,
-          padding: '6px 8px 6px 6px',
+          gap: 11,
+          minHeight: 49,
+          padding: '5px 6px 5px 5px',
           borderRadius: radius.pill,
           background: color.fill,
           border: `1px solid ${line.hairline}`,
@@ -158,16 +175,16 @@ export function Composer({
             <div
               role="menu"
               style={{
-                position: 'absolute', left: 0, bottom: 52, width: 232, zIndex: 40,
-                padding: 8, borderRadius: radius.menu,
+                position: 'absolute', left: 0, bottom: 52, width: 216, zIndex: 40,
+                padding: 6, borderRadius: radius.menu,
                 background: glass.background, backdropFilter: glass.blur,
                 border: `1px solid ${glass.border}`,
                 boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
-                display: 'flex', flexDirection: 'column', gap: 1,
+                display: 'flex', flexDirection: 'column', gap: 4,
                 animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
               }}
             >
-              {menuRow(<AttachIcon size={17} />, 'Attach files', () => { void attach(); })}
+              {menuRow(<AttachIcon size={15.5} />, 'Attach files', () => { void attach(); })}
               {onTeach && menuRow(
                 // The canvas draws this one as a record dot rather than an
                 // icon: a 17px ring in `danger` around a 7px filled centre.
@@ -191,9 +208,9 @@ export function Composer({
             aria-label="More"
             aria-expanded={plusOpen}
             style={{
-              width: 40, height: 40, borderRadius: '50%',
+              width: 37, height: 37, borderRadius: '50%',
               border: `1px solid ${line.hairline}`, background: color.paper,
-              color: color.muted, fontSize: 19, lineHeight: 1, cursor: 'pointer',
+              color: color.muted, fontSize: 18, lineHeight: 1, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: shadow.flat,
             }}
@@ -203,6 +220,7 @@ export function Composer({
         </div>
 
         <input
+          ref={inputRef}
           value={draft}
           onChange={event => setDraft(event.target.value)}
           onKeyDown={onKeyDown}
@@ -221,13 +239,13 @@ export function Composer({
           disabled={disabled}
           aria-label={has ? 'Send' : 'Speak'}
           style={{
-            width: 40, height: 40, flex: '0 0 auto', borderRadius: '50%',
+            width: 37, height: 37, flex: '0 0 auto', borderRadius: '50%',
             border: 'none', background: color.ink, cursor: disabled ? 'default' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             opacity: disabled ? 0.5 : 1, color: color.paper,
           }}
         >
-          {has ? <SendIcon size={17} /> : <MicIcon size={16} />}
+          {has ? <SendIcon size={15.5} /> : <MicIcon size={15} />}
         </button>
       </div>
     </div>

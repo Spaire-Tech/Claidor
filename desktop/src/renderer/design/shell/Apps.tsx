@@ -87,7 +87,7 @@ export function Apps({
         // nothing on the other.
         onClick={() => { setTab(id); setQuery(''); setOpenRole(undefined); }}
         style={{
-          height: 30, padding: '0 16px', borderRadius: radius.pill, cursor: 'pointer',
+          height: 28, padding: '0 14px', borderRadius: radius.pill, cursor: 'pointer',
           font: 'inherit', fontSize: text.label,
           ...(on
             ? {
@@ -134,8 +134,8 @@ export function Apps({
       >
         <div
           style={{
-            flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 14,
-            padding: '22px 26px 16px', borderBottom: `1px solid ${line.hairline}`,
+            flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 12,
+            padding: '19px 23px 14px', borderBottom: `1px solid ${line.hairline}`,
           }}
         >
           <div style={{ fontSize: text.screenTitle, fontWeight: 500, letterSpacing: tracking.screenTitle, color: color.ink }}>
@@ -144,7 +144,7 @@ export function Apps({
           <div
             role="tablist"
             style={{
-              display: 'flex', alignItems: 'center', padding: 3,
+              display: 'flex', alignItems: 'center', padding: 2,
               borderRadius: radius.pill, background: 'rgba(233,237,242,.9)',
               border: `1px solid ${line.hairline}`,
             }}
@@ -155,13 +155,13 @@ export function Apps({
 
           <span
             style={{
-              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10,
-              width: 'min(300px, 42%)', height: 40, padding: '0 16px',
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 9,
+              width: 'min(300px, 42%)', height: 37, padding: '0 14px',
               borderRadius: radius.pill, background: color.fill,
               border: `1px solid ${line.hairline}`,
             }}
           >
-            <SearchIcon size={14} style={{ color: color.muted }} />
+            <SearchIcon size={13} style={{ color: color.muted }} />
             <input
               value={query}
               onChange={event => { setQuery(event.target.value); setOpenRole(undefined); }}
@@ -180,30 +180,30 @@ export function Apps({
             onClick={onClose}
             aria-label="Close"
             style={{
-              width: 32, height: 32, flex: '0 0 auto', border: 'none',
+              width: 30, height: 30, flex: '0 0 auto', border: 'none',
               background: 'transparent', borderRadius: '50%', cursor: 'pointer',
               color: color.muted,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <CloseIcon size={14} />
+            <CloseIcon size={13} />
           </button>
         </div>
 
         <div
           style={{
             flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden',
-            padding: '30px 34px 44px', display: 'flex', flexDirection: 'column', gap: 8,
+            padding: '26px 29px 38px', display: 'flex', flexDirection: 'column', gap: 6,
           }}
         >
           {onPlugins && (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 2px', flexWrap: 'wrap' }}>
-                <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 2px', flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
                   <span style={{ fontSize: text.section, fontWeight: 500, letterSpacing: tracking.title, color: color.ink }}>
                     Connectors
                   </span>
-                  <span style={{ fontSize: text.message, color: color.muted }}>{shelfTotal()}</span>
+                  <span style={{ fontSize: text.small, color: color.muted }}>{shelfTotal()}</span>
                 </span>
                 {pill && (
                   <button
@@ -212,8 +212,8 @@ export function Apps({
                     aria-pressed={onlyConnected}
                     aria-label={`${pill.label}. Show only what is connected.`}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 12, height: 40,
-                      padding: '0 12px 0 8px', borderRadius: radius.pill,
+                      display: 'flex', alignItems: 'center', gap: 11, height: 37,
+                      padding: '0 11px 0 6px', borderRadius: radius.pill,
                       border: `1px solid ${line.hairline}`, background: color.paper,
                       cursor: 'pointer', font: 'inherit', boxShadow: shadow.flat,
                     }}
@@ -225,7 +225,7 @@ export function Apps({
                     </span>
                     <span style={{ fontSize: text.body, color: color.muted, whiteSpace: 'nowrap' }}>{pill.label}</span>
                     <ChevronRightIcon
-                      size={13}
+                      size={12}
                       style={{
                         flex: '0 0 auto', color: color.faint,
                         transform: onlyConnected ? 'rotate(90deg)' : 'none',
@@ -235,7 +235,7 @@ export function Apps({
                   </button>
                 )}
               </div>
-              <div style={{ fontSize: text.message, color: color.muted, lineHeight: 1.55, maxWidth: '74ch', padding: '8px 2px 0', textWrap: 'pretty' }}>
+              <div style={{ fontSize: text.message, color: color.muted, lineHeight: 1.55, maxWidth: '74ch', padding: '6px 2px 0', textWrap: 'pretty' }}>
                 A connector lets your agent act inside a service you already use.
                 Where there&rsquo;s no connector it uses your computer and your
                 browser instead, so nothing is out of reach.
@@ -246,23 +246,23 @@ export function Apps({
 
           {!onPlugins && !openRole && (
             <>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '0 2px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '0 2px' }}>
                 <span style={{ fontSize: text.section, fontWeight: 500, letterSpacing: tracking.title, color: color.ink }}>
                   Agents
                 </span>
-                <span style={{ fontSize: text.message, color: color.muted }}>{available.length}</span>
+                <span style={{ fontSize: text.small, color: color.muted }}>{available.length}</span>
               </div>
-              <div style={{ fontSize: text.message, color: color.muted, lineHeight: 1.55, maxWidth: '74ch', padding: '8px 2px 26px', textWrap: 'pretty' }}>
+              <div style={{ fontSize: text.message, color: color.muted, lineHeight: 1.55, maxWidth: '74ch', padding: '6px 2px 23px', textWrap: 'pretty' }}>
                 Agents come ready for a role. Install one and it arrives with its
                 own skills, already knowing the work.
               </div>
 
               {shown.length === 0 ? (
-                <div style={{ fontSize: text.message, color: color.muted, textAlign: 'center', padding: '48px 0' }}>
+                <div style={{ fontSize: text.message, color: color.muted, textAlign: 'center', padding: '41px 0' }}>
                   Nothing matches that search.
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 17 }}>
                   {shown.map(role => (
                     <RoleCard
                       key={role.id}
@@ -320,7 +320,7 @@ function roleButton(
       disabled={inert}
       style={{
         flex: '0 0 auto', height, padding, borderRadius: radiusPx,
-        font: 'inherit', fontSize, fontWeight: 500,
+        font: 'inherit', fontSize, fontWeight: 400,
         whiteSpace: 'nowrap', cursor: inert ? 'default' : 'pointer',
         ...(done
           ? {
@@ -352,15 +352,15 @@ function RoleCard(
       onClick={onOpen}
       role="presentation"
       style={{
-        display: 'flex', flexDirection: 'column', gap: 18, padding: 24,
+        display: 'flex', flexDirection: 'column', gap: 15, padding: 21,
         background: color.paper, border: `1px solid ${line.hairline}`,
         borderRadius: radius.bubble, boxShadow: shadow.flat, cursor: 'pointer',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {/* The face it will wear once it is here, so the shelf and the
             sidebar agree with each other. */}
-        <CloudBlob avatar={roleAvatar(role)} size={48} />
+        <CloudBlob avatar={roleAvatar(role)} size={44} />
         <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <span
             style={{
@@ -371,7 +371,7 @@ function RoleCard(
           >
             {role.nameEn}
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {role.skillIds.length > 0 && (
               <span style={{ fontSize: text.caption, color: color.muted }}>
                 {role.skillIds.length} skills
@@ -391,7 +391,7 @@ function RoleCard(
         {roleButton({
           done: installed, busy,
           label: installed ? 'Use' : busy ? 'Adding…' : 'Install',
-          height: 36, padding: '0 18px', radiusPx: radius.pill, fontSize: text.small,
+          height: 33, padding: '0 15px', radiusPx: radius.pill, fontSize: text.small,
           onClick: event => { event.stopPropagation(); if (installed) onUse(); else onInstall(); },
         })}
       </div>
@@ -414,28 +414,28 @@ function RoleDetail(
   const [tab, setTab] = useState<AgentTab>(AGENT_TABS[0].id);
 
   return (
-    <div style={{ width: '100%', maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 36 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
+    <div style={{ width: '100%', maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 31 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 21 }}>
         <button
           type="button"
           onClick={onBack}
           aria-label="Back to agents"
           style={{
-            width: 34, height: 34, flex: '0 0 auto', marginTop: 20, border: 'none',
+            width: 31, height: 31, flex: '0 0 auto', marginTop: 20, border: 'none',
             background: 'transparent', borderRadius: '50%', cursor: 'pointer',
             color: color.muted,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
 
-        <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 22 }}>
-            <CloudBlob avatar={roleAvatar(role)} size={88} />
-            <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
+        <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 21 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 19 }}>
+            <CloudBlob avatar={roleAvatar(role)} size={82} />
+            <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 6 }}>
               <div style={{ fontSize: text.detailTitle, fontWeight: 500, letterSpacing: tracking.detailTitle, lineHeight: 1.2, color: color.ink }}>
                 {role.nameEn}
               </div>
@@ -445,7 +445,7 @@ function RoleDetail(
             {roleButton({
               done: installed, busy,
               label: installed ? 'Installed' : busy ? 'Adding…' : 'Import agent',
-              height: 40, padding: '0 20px', radiusPx: radius.field, fontSize: text.body,
+              height: 37, padding: '0 19px', radiusPx: radius.pill, fontSize: text.body,
               ...(installed ? {} : { onClick: onInstall }),
             })}
           </div>
@@ -458,7 +458,7 @@ function RoleDetail(
 
       <div style={{ height: 1, background: line.hairline }} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '240px minmax(0,1fr)', gap: 32, alignItems: 'start', paddingBottom: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '240px minmax(0,1fr)', gap: 28, alignItems: 'start', paddingBottom: 6 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {AGENT_TABS.map(one => {
             const on = one.id === tab;
@@ -470,7 +470,7 @@ function RoleDetail(
                 aria-pressed={on}
                 style={{
                   display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start',
-                  textAlign: 'left', padding: '16px 18px', borderRadius: radius.row,
+                  textAlign: 'left', padding: '14px 15px', borderRadius: radius.row,
                   cursor: 'pointer', font: 'inherit',
                   background: on ? color.fillStrong : 'transparent',
                   border: on ? `1px solid ${line.hairline}` : '1px solid transparent',
@@ -485,9 +485,9 @@ function RoleDetail(
 
         <div
           style={{
-            minHeight: 280, padding: '28px 30px', borderRadius: radius.bubble,
+            minHeight: 280, padding: '24px 26px', borderRadius: radius.bubble,
             background: color.fillRaised, border: `1px solid ${line.hairline}`,
-            display: 'flex', flexDirection: 'column', gap: 20,
+            display: 'flex', flexDirection: 'column', gap: 17,
           }}
         >
           <div style={{ fontSize: text.caption, color: color.muted }}>{tab}</div>
@@ -495,12 +495,12 @@ function RoleDetail(
             {agentBody(role, tab)}
           </div>
           {tab === 'Skills' && role.skillIds.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, paddingTop: 4 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 3 }}>
               {role.skillIds.map(skill => (
                 <span
                   key={skill}
                   style={{
-                    height: 34, display: 'flex', alignItems: 'center', padding: '0 15px',
+                    height: 31, display: 'flex', alignItems: 'center', padding: '0 13px',
                     borderRadius: radius.pill, background: color.paper,
                     border: `1px solid ${line.hairline}`,
                     fontSize: text.small, color: color.ink,

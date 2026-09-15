@@ -33,18 +33,20 @@ import { useEffect, useState } from 'react';
 /**
  * The sidebar as a list: an orb, a name, a time and a line of preview.
  *
- * Under about 300px the preview has no room to be a sentence and the name
- * starts eliding, at which point it is a worse rail than a rail.
+ * 272 since the evening canvas of 15 September, which brought the whole
+ * scale down a step (it was 300). Under about that the preview has no
+ * room to be a sentence and the name starts eliding, at which point it
+ * is a worse rail than a rail.
  */
-export const SIDEBAR_WIDTH = 300;
+export const SIDEBAR_WIDTH = 272;
 
 /**
  * The sidebar as a rail: orbs and nothing else.
  *
- * 76 is a 40px orb with 18px either side — the same orb the list row
+ * 73 is a 37px orb with 18px either side — the same orb the list row
  * uses, so switching modes moves it rather than resizing it.
  */
-export const RAIL_WIDTH = 76;
+export const RAIL_WIDTH = 73;
 
 /** Below this window width the list becomes a rail. */
 export const RAIL_BELOW = 900;
@@ -124,17 +126,19 @@ export type PanelWant = typeof PanelWant[keyof typeof PanelWant];
 
 /**
  * The agent panel's own measurements, from the canvas's `gridCols`:
+ * `clamp(233px,21%,272px) minmax(0,1fr) clamp(220px,23%,294px)` — the
+ * evening canvas of 15 September; it was
  * `clamp(252px,22%,300px) minmax(0,1fr) clamp(236px,25%,324px)`.
  *
  * Narrower than the computer panel, and it takes some of its room from
  * the sidebar rather than all of it from the thread — the canvas shrinks
  * the list to make space, which is what those first numbers are.
  */
-export const AGENT_PANEL_MIN = 236;
-export const AGENT_PANEL_MAX = 324;
-export const AGENT_PANEL_SHARE = 0.25;
-export const SIDEBAR_BESIDE_AGENT_MIN = 252;
-export const SIDEBAR_BESIDE_AGENT_SHARE = 0.22;
+export const AGENT_PANEL_MIN = 220;
+export const AGENT_PANEL_MAX = 294;
+export const AGENT_PANEL_SHARE = 0.23;
+export const SIDEBAR_BESIDE_AGENT_MIN = 233;
+export const SIDEBAR_BESIDE_AGENT_SHARE = 0.21;
 
 export interface ShellLayout {
   sidebar: SidebarMode;

@@ -1,6 +1,6 @@
 import type { ConnectionItem } from '../../../shared/connections/catalog';
 import { APP_LOGO_DIRECTORY, connectionMonogram } from '../../../shared/connections/catalog';
-import { color, line, radius, shadow, text } from '../tokens';
+import { color, line, radius, shadow, text, tracking } from '../tokens';
 import { actionFor, ConnectAction, type RowAction, shelfGroups } from './shelf';
 
 export interface ConnectionsProps {
@@ -20,8 +20,8 @@ export interface ConnectionsProps {
 /**
  * The shelf of services, as the canvas draws it.
  *
- * A section per category — its name at 15.5 and a count beside it — and
- * a `minmax(320px, 1fr)` grid of cards. A card is a 42px logo tile, the
+ * A section per category — its name at 14.5 and a count beside it — and
+ * a `minmax(320px, 1fr)` grid of cards. A card is a 39px logo tile, the
  * name, a tag line under it when there is one, and a button on the
  * right: black "Connect", or green "Connected". That is the whole card;
  * there is no description line. The first build put one there, and put
@@ -55,15 +55,15 @@ export function Connections(props: ConnectionsProps): JSX.Element {
       {groups.map(group => (
         <div
           key={group.id}
-          style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 36 }}
+          style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 31 }}
         >
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '0 2px' }}>
-            <span style={{ fontSize: text.emphasis, fontWeight: 500, letterSpacing: '-.008em', color: color.ink }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '0 2px' }}>
+            <span style={{ fontSize: text.emphasis, fontWeight: 500, letterSpacing: tracking.body, color: color.ink }}>
               {group.title}
             </span>
             <span style={{ fontSize: text.small, color: color.muted }}>{group.items.length}</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
             {group.items.map(item => (
               <Card
                 key={item.id}
@@ -96,13 +96,13 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
   return (
     <div
       style={{
-        display: 'flex', alignItems: 'center', gap: 16, padding: '20px 22px',
+        display: 'flex', alignItems: 'center', gap: 14, padding: '17px 19px',
         background: color.paper, border: `1px solid ${line.hairline}`,
         borderRadius: radius.card, boxShadow: shadow.flat,
       }}
     >
       <Logo item={item} />
-      <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span
           style={{
             fontSize: text.emphasis, fontWeight: 400, color: color.ink,
@@ -132,8 +132,8 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
           disabled={working}
           onClick={() => (connected ? onDisconnect(item.id) : onConnect(item.id))}
           style={{
-            flex: '0 0 auto', height: 34, padding: '0 16px', borderRadius: radius.pill,
-            font: 'inherit', fontSize: text.small, fontWeight: 500,
+            flex: '0 0 auto', height: 31, padding: '0 14px', borderRadius: radius.pill,
+            font: 'inherit', fontSize: text.small, fontWeight: 400,
             whiteSpace: 'nowrap', cursor: working ? 'default' : 'pointer',
             opacity: working ? 0.6 : 1,
             ...(connected
@@ -160,7 +160,7 @@ function Card({ item, row, failure, onConnect, onDisconnect }: CardProps): JSX.E
 /** The service's mark, or its initial when we have no file for it. */
 function Logo({ item }: { item: ConnectionItem }): JSX.Element {
   const box: React.CSSProperties = {
-    flex: '0 0 auto', position: 'relative', width: 42, height: 42,
+    flex: '0 0 auto', position: 'relative', width: 39, height: 39,
     borderRadius: radius.control,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: color.fillRaised, border: `1px solid ${line.hairline}`,
@@ -177,8 +177,8 @@ function Logo({ item }: { item: ConnectionItem }): JSX.Element {
         <img
           src={`${APP_LOGO_DIRECTORY}/${item.logo}`}
           alt=""
-          width={26}
-          height={26}
+          width={24}
+          height={24}
           style={{ objectFit: 'contain' }}
         />
       </span>
@@ -192,12 +192,12 @@ function Logo({ item }: { item: ConnectionItem }): JSX.Element {
 }
 
 /**
- * A small logo tile for the installed pill: 26px, radius 8, overlapping
+ * A small logo tile for the installed pill: 24px, radius 8, overlapping
  * the one before it by 7px, exactly as the canvas draws them.
  */
 export function PillLogo({ item, first }: { item: ConnectionItem; first: boolean }): JSX.Element {
   const box: React.CSSProperties = {
-    position: 'relative', width: 26, height: 26, flex: '0 0 auto', borderRadius: 8,
+    position: 'relative', width: 24, height: 24, flex: '0 0 auto', borderRadius: radius.chip,
     background: color.paper, border: `1px solid ${line.hairline}`,
     boxShadow: '0 1px 2px rgba(16,22,35,.06)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -212,7 +212,7 @@ export function PillLogo({ item, first }: { item: ConnectionItem; first: boolean
     );
   }
   return (
-    <span style={{ ...box, fontSize: 11, fontWeight: 500, color: color.muted }}>
+    <span style={{ ...box, fontSize: text.code, fontWeight: 500, color: color.muted }}>
       {connectionMonogram(item.name)}
     </span>
   );

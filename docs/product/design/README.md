@@ -59,6 +59,56 @@ specification for everything the 15 September canvas does not touch.
 and `grain`. It is now the *voice's* picture and the logo's; the agent
 wears the blob.
 
+## 15 September 2026, evening — the face, the scale, the hover cluster
+
+| File | What it is |
+|---|---|
+| `canvas-2026-09-15-type.html` | the canvas exactly as delivered — a self-unpacking bundle, 2.7 MB, opens in a browser |
+| `canvas-2026-09-15-type-template.html` | the same thing unpacked: the markup and the `text/x-dc` script, readable |
+
+The founder: *"i've added some changes to the design of the app. the
+fonts, the size, the butons style etc... and more. (the emoji reactions
+etc) make sure it all fits well with our app."* Diffed against the
+file-cards canvas, element by element, the changes are four:
+
+- **The face is Switzer** (`'Switzer','Switzer Variable',-apple-system,
+  BlinkMacSystemFont,sans-serif`), bundled in the canvas at 400 and 500
+  as woff2, woff and ttf. The app ships the two woff2 files under
+  `desktop/src/renderer/design/fonts/`. Names and titles that were
+  tracked at -.005em or -.008em are at 0; the larger titles keep their
+  tightening.
+- **Everything is one step smaller.** Type: 15 → 14, 15.5 → 14.5,
+  14.5 → 13.5, 13 and 13.5 → 12.5, 16.5 → 15.5, 17 → 16, 19 → 18,
+  21 → 20, 22 → 20.5, 27 → 25.5; the mono sizes at 12. Controls: rows
+  52 → 49, 44 → 41; buttons 42 → 39, 40 → 37, 36 → 33, 34 → 31; the
+  composer 52 → 49; blobs 40 → 37, 28 → 26, 26 → 24, 48 → 44, 88 → 82,
+  76 → 70, 104 → 96; the voice orb 176 → 163. Columns:
+  `272px minmax(0,1fr)` and, with the agent panel,
+  `clamp(233px,21%,272px) minmax(0,1fr) clamp(220px,23%,294px)`. Menus
+  and lists gain a 4px gap between rows and lose 2px of padding.
+- **Every button is a pill** (`border-radius:999px`) at weight 400 —
+  Create agent, Use this voice, Always allow, Connect, Install, Import
+  agent, Delete, the settings selects, the header's icon buttons.
+  Toggles come down to 44×26 (knob 19) and 41×24 (knob 17).
+- **A hover cluster beside every text bubble.** Three 28px round
+  buttons — react, reply, more — in a 93px slot beside the bubble, on
+  the left of the person's own and the right of the agent's, at
+  opacity 0 until the pointer rests on the row. React opens six emoji
+  (👍 ❤️ 😂 😮 😢 🙏) at 31px on a glass popover; the pick becomes a
+  24px chip at the bubble's foot and picking it again clears it. Reply
+  sets the composer to the message's first 52 characters in curly
+  quotes. More opens a 191px menu with one row, which copies an id and
+  says "Copied" for 1.1 seconds.
+
+Built as: `tokens.ts` (the scale, `font.ui`, `font.emoji`), `tokens.css`
+(`@font-face`), `shell/layout.ts` (the columns), every component under
+`design/` (the sizes and the pills), and `thread/MessageActions.tsx`
+with `thread/actions.ts` and `thread/useReactions.ts` (the cluster;
+reactions kept per conversation in the renderer's storage). One thing
+is not the canvas's word for word: its menu row says "Copy request ID"
+and copies a hash it invents. The app copies the engine's message id
+and calls it that, because that is what it is.
+
 ## Reading these
 
 The `canvas*.html` files are the originals and should not be edited.

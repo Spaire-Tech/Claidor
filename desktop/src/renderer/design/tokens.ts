@@ -107,31 +107,45 @@ export const glass = {
 } as const;
 
 /**
- * Type. Thirteen sizes, and they are half-pixel values because the canvas
+ * Type. Fourteen sizes, and they are half-pixel values because the canvas
  * was drawn at a size and then trusted — 14.5 and 15.5 do real work in it.
+ *
+ * **Every size came down a step on the evening of 15 September**
+ * (`canvas-2026-09-15-type-template.html`): 15 became 14, 15.5 became
+ * 14.5, 22 became 20.5, and so on down the scale. That canvas also set
+ * the face to Switzer, which sits a little larger on the line than the
+ * system font, so the smaller numbers read at about the old size.
  */
 export const text = {
-  caption: 13,
-  label: 13.5,
-  small: 14,
+  /** A key cap, an id, a command: the mono sizes. The canvas puts them at 12. */
+  code: 12,
+  caption: 12.5,
+  /**
+   * The same size as `caption` since the 15 September evening canvas,
+   * which brought 13 and 13.5 together at 12.5. Two names kept, because
+   * they are two roles — a stamp beside a name, and the line under it.
+   */
+  label: 12.5,
+  small: 13,
   /** The workhorse: menu rows, settings labels, buttons. 30 uses. */
-  body: 14.5,
+  body: 13.5,
   /** Message text, inputs, descriptions. 20 uses. */
-  message: 15,
+  message: 14,
   /** A name in a list, a question card's title. */
-  emphasis: 15.5,
-  base: 16,
-  agentName: 16.5,
-  section: 17,
-  sidebarTitle: 19,
-  dialogTitle: 21,
-  screenTitle: 22,
-  detailTitle: 27,
+  emphasis: 14.5,
+  base: 15,
+  agentName: 15.5,
+  section: 16,
+  sidebarTitle: 18,
+  dialogTitle: 20,
+  screenTitle: 20.5,
+  detailTitle: 25.5,
 } as const;
 
 /** Tracking tightens as type grows, which is the whole of the system. */
 export const tracking = {
-  body: '-.005em',
+  /** Switzer needs no tightening at text sizes; the canvas sets 0 where it had -.005em. */
+  body: '0',
   title: '-.01em',
   screenTitle: '-.015em',
   detailTitle: '-.02em',
@@ -182,12 +196,23 @@ export const motion = {
 } as const;
 
 /**
- * The system font stack, as the canvas sets it. No webfont: the app is a
- * desktop app and should look like one.
+ * The faces.
+ *
+ * Switzer, from the evening canvas of 15 September — Indian Type
+ * Foundry's, served by Fontshare, bundled here at 400 and 500
+ * (`fonts/`, declared in `tokens.css`). The system stack stays behind
+ * it for the moment before the file is loaded and for any glyph it does
+ * not carry. The canvas also names 'Switzer Variable', which is the
+ * same face as one file; we ship the two weights and list it anyway so
+ * the stack is the canvas's.
+ *
+ * Emoji get their own stack, for the reactions: a colour emoji drawn by
+ * the system's emoji face, never a text glyph from Switzer.
  */
 export const font = {
-  ui: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+  ui: "'Switzer', 'Switzer Variable', -apple-system, BlinkMacSystemFont, sans-serif",
   mono: "'SF Mono', ui-monospace, SFMono-Regular, monospace",
+  emoji: "'Apple Color Emoji', 'Segoe UI Emoji', sans-serif",
 } as const;
 
 /**
