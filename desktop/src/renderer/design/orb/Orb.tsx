@@ -42,6 +42,16 @@ export interface OrbProps {
   size: number;
   /** A stored or chosen palette, overriding the one derived from the id. */
   paletteId?: string;
+  /**
+   * An explicit palette and seed, overriding everything.
+   *
+   * The voices carry their own five colours and seed in the 15 September
+   * canvas; a voice's sphere is drawn from them and from nothing else.
+   * Both must be given together — a palette with somebody else's seed is
+   * the unpairing the first build got wrong.
+   */
+  colors?: readonly string[];
+  seed?: number;
   mood?: OrbMood;
   /** Orbs carry a shadow at every size in the design; larger ones carry more. */
   elevated?: boolean;
@@ -65,6 +75,8 @@ export function Orb({
   agentId,
   size,
   paletteId,
+  colors,
+  seed,
   mood = OrbMood.Idle,
   elevated,
   className,
@@ -76,8 +88,10 @@ export function Orb({
   }, []);
 
   const identity = useMemo(
-    () => orbIdentity(agentId, paletteId),
-    [agentId, paletteId],
+    () => (colors && seed !== undefined
+      ? { colors: colors.join(','), seed, paletteId: 'explicit' }
+      : orbIdentity(agentId, paletteId)),
+    [agentId, paletteId, colors, seed],
   );
 
   // An orb is the agent's face, not a picture of anything. Where a name

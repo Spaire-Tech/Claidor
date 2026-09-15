@@ -133,7 +133,11 @@ function setupDb(): void {
       source TEXT NOT NULL DEFAULT 'custom',
       preset_id TEXT NOT NULL DEFAULT '',
       created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
+      updated_at INTEGER NOT NULL,
+      avatar INTEGER,
+      label TEXT NOT NULL DEFAULT '',
+      voice_id TEXT NOT NULL DEFAULT '',
+      notify INTEGER NOT NULL DEFAULT 1
     );
   `);
 
@@ -1504,4 +1508,64 @@ test('deleting a project forgets the row and leaves the folder alone', () => {
   store.deleteProject(project.id);
   expect(store.getProject(project.id)).toBeNull();
   expect(store.listProjects()).toHaveLength(0);
+});
+
+// ---------------------------------------------------------------------------
+// Avatars: the founder's rule, at the store
+// ---------------------------------------------------------------------------
+
+test('every new agent gets a face nobody else is wearing, until all twenty-five are', () => {
+  const seen = new Set<number>();
+  for (let i = 0; i < 25; i += 1) {
+    const agent = store.createAgent({ name: `Agent ${i}` });
+    expect(agent.avatar).toBeGreaterThanOrEqual(0);
+    expect(agent.avatar).toBeLessThan(25);
+    seen.add(agent.avatar);
+  }
+  expect(seen.size).toBe(25);
+  // The twenty-sixth wears one somebody already wears — the rule re-does.
+  const extra = store.createAgent({ name: 'Agent 25' });
+  expect(seen.has(extra.avatar)).toBe(true);
+});
+
+test('a chosen face is kept, and changing it later is a plain update', () => {
+  const agent = store.createAgent({ name: 'Picked', avatar: 17 });
+  expect(agent.avatar).toBe(17);
+  expect(store.updateAgent(agent.id, { avatar: 3 })?.avatar).toBe(3);
+  // A number nothing can draw is not written.
+  expect(store.updateAgent(agent.id, { avatar: 99 })?.avatar).toBe(3);
+});
+
+test('deleting an agent frees its face for the next one', () => {
+  const made = Array.from({ length: 25 }, (_, i) => store.createAgent({ name: `Agent ${i}` }));
+  const freed = made[9].avatar;
+  store.deleteAgent(made[9].id);
+  expect(store.createAgent({ name: 'Replacement' }).avatar).toBe(freed);
+});
+
+test('agents from before faces existed are given one on backfill, all different', () => {
+  // Rows written the old way: no avatar at all.
+  const insert = db.prepare(`
+    INSERT INTO agents (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)
+  `);
+  for (let i = 0; i < 5; i += 1) insert.run(`old-${i}`, `Old ${i}`, 1000 + i, 1000 + i);
+  expect(db.prepare('SELECT COUNT(*) AS n FROM agents WHERE avatar IS NULL').get()).toEqual({ n: 5 });
+
+  expect(store.backfillMissingAvatars()).toBe(5);
+
+  const faces = store.listAgents().filter(a => a.id.startsWith('old-')).map(a => a.avatar);
+  expect(new Set(faces).size).toBe(5);
+  expect(db.prepare('SELECT COUNT(*) AS n FROM agents WHERE avatar IS NULL').get()).toEqual({ n: 0 });
+  // Running it again does nothing.
+  expect(store.backfillMissingAvatars()).toBe(0);
+});
+
+test('label, voice and notify are stored and come back', () => {
+  const agent = store.createAgent({ name: 'Mira', label: ' Inbox ', voiceId: 'direct' });
+  expect(agent.label).toBe('Inbox');
+  expect(agent.voiceId).toBe('direct');
+  expect(agent.notify).toBe(true);
+  const updated = store.updateAgent(agent.id, { notify: false, label: 'Mail' });
+  expect(updated?.notify).toBe(false);
+  expect(updated?.label).toBe('Mail');
 });

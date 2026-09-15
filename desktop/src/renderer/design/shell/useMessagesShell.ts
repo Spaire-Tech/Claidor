@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { AgentId } from '../../../shared/agent';
+import { avatarFallback } from '../../../shared/agent/avatars';
 import { isRoomId, type Room } from '../../../shared/rooms/constants';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
@@ -48,10 +49,36 @@ import { agentTemplate, templateBase64, templateFileName } from './template';
  * which mode the header is in, and the notes left by answered approvals.
  */
 
+/** What the agent panel shows and edits. */
+export interface ActiveAgentView {
+  id: string;
+  name: string;
+  label: string;
+  description: string;
+  avatar: number;
+  notify: boolean;
+  /** The main agent cannot be deleted. */
+  deletable: boolean;
+}
+
+export interface AgentEditPatch {
+  name?: string;
+  label?: string;
+  description?: string;
+  avatar?: number;
+  notify?: boolean;
+}
+
 export interface MessagesShellState {
   agents: ReturnType<typeof sidebarAgents>;
   activeId: string;
   activeName: string;
+  /** The open agent's face, 0–24. */
+  activeAvatar: number;
+  /** The open agent, as the panel needs it. Undefined for a room. */
+  activeAgent: ActiveAgentView | undefined;
+  /** Every face on an agent, for the create screen's roll. */
+  wornAvatars: readonly number[];
   items: ReturnType<typeof threadItems>;
   dayStamp: string | undefined;
   typing: boolean;
@@ -63,6 +90,18 @@ export interface MessagesShellState {
   onSelect: (agentId: string) => void;
   /** Delete a conversation, permanently. Rooms and agents both. */
   onDelete: (id: string) => void;
+  /** The sidebar's trash: open the agent panel with the question asked. */
+  onAskDelete: (id: string) => void;
+  agentPanelOpen: boolean;
+  /** Whether the panel opened from the trash, with the question showing. */
+  agentPanelAsking: boolean;
+  /** The agent's name in the header. */
+  onToggleAgentPanel: () => void;
+  onCloseAgentPanel: () => void;
+  /** Live edits from the panel. Text is written down a moment after it stops. */
+  onEditAgent: (patch: AgentEditPatch) => void;
+  /** The panel's red button, after the question. */
+  onConfirmDelete: () => void;
   onSend: (message: string) => void;
   onMode: (mode: ThreadMode) => void;
   /** "Teach a task", from the composer's `+` menu. */
@@ -372,12 +411,19 @@ export function useMessagesShell(): MessagesShellState {
     })();
   }, [detected, currentSession, typing, dispatch]);
 
+  // Each agent's face by id, for the senders in a room and the status line.
+  const avatars = useMemo(
+    () => Object.fromEntries(agents.map(agent => [agent.id, agent.avatar])) as Record<string, number>,
+    [agents],
+  );
+
   const parts = useMemo<PartHandlers>(() => ({
     files,
+    avatars,
     onOpenFile: (path: string) => { void openLocalPathWithToast(path); },
     // A link belongs in the person's own browser, not inside a bubble.
     onOpenLink: (href: string) => { window.open(href, '_blank', 'noopener,noreferrer'); },
-  }), [files]);
+  }), [files, avatars]);
 
   // Open on a conversation rather than on nothing, the way Messages does.
   // Once only, and never over an open one: the guard is what stops this
@@ -554,6 +600,62 @@ export function useMessagesShell(): MessagesShellState {
   // and toggling it from here would move a panel it also draws.
   const [panelOpen, setPanelOpen] = useState(false);
 
+  // The agent panel. Two doors, one room: the header name toggles it
+  // and the sidebar's trash opens it with the delete question already
+  // asked. It and the computer panel take the same column, so opening
+  // one closes the other.
+  const [agentPanel, setAgentPanel] = useState<{ open: boolean; asking: boolean }>({ open: false, asking: false });
+  const onToggleAgentPanel = useCallback(() => {
+    setAgentPanel(current => (current.open ? { open: false, asking: false } : { open: true, asking: false }));
+    setPanelOpen(false);
+  }, []);
+  const onCloseAgentPanel = useCallback(() => setAgentPanel({ open: false, asking: false }), []);
+  const onAskDelete = useCallback((id: string) => {
+    if (id !== activeId) onSelect(id);
+    setAgentPanel({ open: true, asking: true });
+    setPanelOpen(false);
+  }, [activeId, onSelect]);
+  const onConfirmDelete = useCallback(() => {
+    setAgentPanel({ open: false, asking: false });
+    onDelete(activeId);
+  }, [activeId, onDelete]);
+
+  // Live edits. The canvas writes on every keystroke; the store is a
+  // process away, so text waits until it stops for a moment and clicks
+  // (a face, the toggle) go straight through. The system prompt is
+  // rebuilt from the stored parts on every write, which is why the parts
+  // are stored at all.
+  const pendingEdit = useRef<AgentEditPatch>({});
+  const editTimer = useRef<number>();
+  const flushEdit = useCallback(() => {
+    editTimer.current = undefined;
+    const patch = pendingEdit.current;
+    pendingEdit.current = {};
+    if (!active || Object.keys(patch).length === 0) return;
+    const name = (patch.name ?? active.name).trim() || active.name;
+    const label = patch.label ?? active.label;
+    const description = patch.description ?? active.description;
+    void agentService.updateAgent(active.id, {
+      ...patch,
+      name,
+      label,
+      description,
+      systemPrompt: systemPromptFor({ name, label, description, voiceId: active.voiceId }),
+    }).then(updated => {
+      if (!updated) showToast('That could not be saved.');
+    });
+  }, [active]);
+  const onEditAgent = useCallback((patch: AgentEditPatch) => {
+    if (!active) return;
+    const immediate = patch.avatar !== undefined || patch.notify !== undefined;
+    pendingEdit.current = { ...pendingEdit.current, ...patch };
+    if (editTimer.current) window.clearTimeout(editTimer.current);
+    if (immediate) { flushEdit(); return; }
+    editTimer.current = window.setTimeout(flushEdit, 300);
+  }, [active, flushEdit]);
+  // Nothing typed is lost to a closing panel or a switched agent.
+  useEffect(() => () => { if (editTimer.current) { window.clearTimeout(editTimer.current); flushEdit(); } }, [flushEdit]);
+
 
   const onCompose = useCallback(() => setComposing(true), []);
   const onCloseCompose = useCallback(() => setComposing(false), []);
@@ -578,6 +680,11 @@ export function useMessagesShell(): MessagesShellState {
         description: draft.description,
         voiceId: draft.voiceId,
       }),
+      // Stored as parts as well as folded into the prompt, so the panel
+      // can edit them later and rebuild the same prompt.
+      avatar: draft.avatar,
+      label: draft.label.trim(),
+      voiceId: draft.voiceId,
     });
     setComposing(false);
     if (agent) onSelect(agent.id);
@@ -679,6 +786,17 @@ export function useMessagesShell(): MessagesShellState {
     agents: rows,
     activeId,
     activeName: room?.name ?? active?.name ?? '',
+    activeAvatar: active?.avatar ?? avatarFallback(activeId),
+    activeAgent: active && !room ? {
+      id: active.id,
+      name: active.name,
+      label: active.label,
+      description: active.description,
+      avatar: active.avatar,
+      notify: active.notify,
+      deletable: active.id !== AgentId.Main,
+    } : undefined,
+    wornAvatars: agents.map(agent => agent.avatar),
     items,
     dayStamp: dayStampOf(messages),
     typing,
@@ -688,6 +806,13 @@ export function useMessagesShell(): MessagesShellState {
     parts,
     onSelect,
     onDelete,
+    onAskDelete,
+    agentPanelOpen: agentPanel.open,
+    agentPanelAsking: agentPanel.asking,
+    onToggleAgentPanel,
+    onCloseAgentPanel,
+    onEditAgent,
+    onConfirmDelete,
     onSend,
     onMode: setMode,
     onTeach,
@@ -707,7 +832,7 @@ export function useMessagesShell(): MessagesShellState {
     sessionId: currentSession?.id,
     workingDirectory: currentSession?.cwd,
     panelOpen,
-    onOpenPanel: () => setPanelOpen(open => !open),
+    onOpenPanel: () => { setPanelOpen(open => !open); setAgentPanel({ open: false, asking: false }); },
     onClosePanel: () => setPanelOpen(false),
   };
 }

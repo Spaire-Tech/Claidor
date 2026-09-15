@@ -27,6 +27,8 @@ export interface ComposeRow {
   label: string;
   /** `1`–`9`, shown as ⌘N. Absent past the ninth row. */
   key?: string;
+  /** Agent rows only: the face, 0–24. */
+  avatar?: number;
 }
 
 /** ⌘1–⌘9. The tenth row and beyond are clickable but have no shortcut. */
@@ -56,7 +58,7 @@ export function composeRows({ agents, query }: ComposeInput): ComposeRow[] {
       .map(action => ({ kind: ComposeRowKind.Action, id: action.id, label: action.label })),
     ...agents
       .filter(agent => matches(agent.name))
-      .map(agent => ({ kind: ComposeRowKind.Agent, id: agent.id, label: agent.name })),
+      .map(agent => ({ kind: ComposeRowKind.Agent, id: agent.id, label: agent.name, avatar: agent.avatar })),
   ];
 
   // Numbered after filtering, so ⌘1 is always the first row on screen

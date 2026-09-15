@@ -4,6 +4,7 @@ import {
   PANEL_MAX,
   PANEL_MIN,
   PanelMode,
+  PanelWant,
   RAIL_BELOW,
   shellLayout,
   SidebarMode,
@@ -123,5 +124,36 @@ describe('the macOS window buttons', () => {
     // y 20 plus a 12px circle is 32. The header padding above the title
     // adds the rest; this only has to clear the circles themselves.
     expect(titleBarInset('darwin')).toBeGreaterThanOrEqual(32 - 18);
+  });
+});
+
+describe('the agent panel', () => {
+  // From the canvas: `clamp(252px,22%,300px) minmax(0,1fr) clamp(236px,25%,324px)`.
+  test('takes some of its room from the sidebar, not all from the thread', () => {
+    const without = shellLayout(1200, PanelWant.None);
+    const withPanel = shellLayout(1200, PanelWant.Agent);
+    expect(withPanel.sidebarWidth).toBeLessThan(without.sidebarWidth);
+    expect(withPanel.sidebarWidth).toBe(264); // 22% of 1200
+    expect(withPanel.panelWidth).toBe(300); // 25% of 1200
+    expect(withPanel.panel).toBe(PanelMode.Split);
+  });
+
+  test('is clamped to the canvas\'s numbers at both ends', () => {
+    expect(shellLayout(6016, PanelWant.Agent).panelWidth).toBe(324);
+    expect(shellLayout(6016, PanelWant.Agent).sidebarWidth).toBe(300);
+    expect(shellLayout(960, PanelWant.Agent).panelWidth).toBe(240);
+    expect(shellLayout(960, PanelWant.Agent).sidebarWidth).toBe(252);
+  });
+
+  test('never crushes the thread either', () => {
+    const bad = EVERY_WIDTH
+      .map(width => shellLayout(width, PanelWant.Agent))
+      .filter(one => one.panel === PanelMode.Split && one.threadWidth < THREAD_MIN);
+    expect(bad).toEqual([]);
+  });
+
+  test('the old boolean still means the computer panel', () => {
+    expect(shellLayout(1440, true)).toEqual(shellLayout(1440, PanelWant.Computer));
+    expect(shellLayout(1440, false)).toEqual(shellLayout(1440, PanelWant.None));
   });
 });

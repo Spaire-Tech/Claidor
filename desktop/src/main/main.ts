@@ -3619,6 +3619,17 @@ const getDesktopNotificationManager = (): DesktopNotificationManager => {
           return null;
         }
       },
+      // The agent panel's one toggle. Anything that cannot be answered
+      // answers yes — the global setting is the gate that says no.
+      isSessionNotifying: (sessionId: string) => {
+        try {
+          const agentId = getCoworkStore().getSession(sessionId, 0)?.agentId;
+          if (!agentId) return true;
+          return getCoworkStore().getAgent(agentId)?.notify ?? true;
+        } catch {
+          return true;
+        }
+      },
       focusMainWindow: focusMainWindowForReason,
       openSession: (sessionId: string) => {
         const targetWindow = mainWindow && !mainWindow.isDestroyed()
@@ -14745,6 +14756,12 @@ if (!gotTheLock) {
     // can match lobsterai-server models without falling back.
     const defaultAgentModelRef = resolveDefaultAgentModelRef();
     const backfilledAgentModels = getCoworkStore().backfillEmptyAgentModels(defaultAgentModelRef);
+    // Faces for agents that predate faces — every install that upgrades
+    // has at least the main agent and the presets with none.
+    const backfilledAvatars = getCoworkStore().backfillMissingAvatars();
+    if (backfilledAvatars > 0) {
+      console.log(`[Agents] gave ${backfilledAvatars} existing agent(s) an avatar`);
+    }
     const qualifiedAgentModels = migrateAgentModelRefs({
       defaultModelRef: defaultAgentModelRef,
       availableProviders: buildAvailableOpenClawProviders(),

@@ -25,6 +25,11 @@ interface AgentSummary {
    * the bottom of the list, under conversations from weeks ago.
    */
   createdAt: number;
+  /** The face: 0–24. Every row draws it; see `shared/agent/avatars.ts`. */
+  avatar: number;
+  label: string;
+  voiceId: string;
+  notify: boolean;
 }
 
 interface AgentState {

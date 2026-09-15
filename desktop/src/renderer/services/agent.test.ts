@@ -13,6 +13,10 @@ import { agentService } from './agent';
 
 const makeAgent = (overrides: Partial<Agent> = {}): Agent => ({
   id: 'agent-1',
+  avatar: 0,
+  label: '',
+  voiceId: '',
+  notify: true,
   name: 'Agent 1',
   description: '',
   systemPrompt: '',
@@ -47,6 +51,10 @@ describe('agentService.updateAgent', () => {
   test('refreshes active skills when the current agent is saved', async () => {
     store.dispatch(setAgents([{
       createdAt: 0,
+      avatar: 0,
+      label: '',
+      voiceId: '',
+      notify: true,
       id: 'agent-1',
       name: 'Agent 1',
       description: '',
@@ -81,6 +89,10 @@ describe('agentService.updateAgent', () => {
   test('persists model and thinking level together without clearing active skills', async () => {
     store.dispatch(setAgents([{
       createdAt: 0,
+      avatar: 0,
+      label: '',
+      voiceId: '',
+      notify: true,
       id: 'agent-1',
       name: 'Agent 1',
       description: '',
@@ -124,6 +136,10 @@ describe('agentService.updateAgent', () => {
   test('does not replace active skills when another agent is saved', async () => {
     store.dispatch(setAgents([{
       createdAt: 0,
+      avatar: 0,
+      label: '',
+      voiceId: '',
+      notify: true,
       id: 'agent-1',
       name: 'Agent 1',
       description: '',

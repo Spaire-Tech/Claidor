@@ -1,3 +1,5 @@
+import { AgentId } from '../../../shared/agent';
+import { avatarFallback } from '../../../shared/agent/avatars';
 import type { Room } from '../../../shared/rooms/constants';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import type { EngineMessage, EnginePermissionRequest } from '../thread/fromEngine';
@@ -26,6 +28,8 @@ export interface StoreAgent {
    * without it a new agent sorts as though it were ancient.
    */
   createdAt?: number;
+  /** The face, 0–24. Stored on the agent; see `shared/agent/avatars.ts`. */
+  avatar?: number;
 }
 
 /** The session shape the store already holds, reduced to what a row needs. */
@@ -190,9 +194,13 @@ export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
         row: {
           id: agent.id,
           name: agent.name,
+          avatar: agent.avatar ?? avatarFallback(agent.id),
           preview: standing.text,
           when: whenLabel(standing.at, now),
           unread: unread?.has(agent.id) ?? false,
+          // The main agent is the one conversation that always exists;
+          // offering to remove it would mean an app with no way in.
+          deletable: agent.id !== AgentId.Main,
         } satisfies SidebarAgent,
       };
     })
@@ -243,8 +251,15 @@ export function sidebarRooms(input: {
       row: {
         id: room.id,
         name: room.name,
+        // A room has no face of its own in the canvas. A stable one from
+        // its id, so it does not change between launches.
+        avatar: avatarFallback(room.id),
         preview: said?.name ? `${said.name}: ${said.text}` : (said?.text ?? ''),
         when: whenLabel(said?.at, now),
+        // The trash opens the agent panel, and a room has no panel yet —
+        // there is nothing for the question to be asked in. Until there
+        // is, a room shows no trash rather than deleting on one click.
+        deletable: false,
       } satisfies SidebarAgent,
       // Making a room counts as activity, for the same reason making an
       // agent does: a room nobody has spoken in yet still just happened.

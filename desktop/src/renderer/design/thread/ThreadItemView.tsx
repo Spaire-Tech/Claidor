@@ -1,9 +1,9 @@
 import { type CSSProperties, useState } from 'react';
 
+import { avatarFallback, avatarInk } from '../../../shared/agent/avatars';
 import { AskInputFieldKind } from '../../../shared/askInput/constants';
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
-import { Orb, OrbMood } from '../orb/Orb';
-import { paletteForAgent } from '../orb/palette';
+import { CloudBlob } from '../orb/CloudBlob';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { readableSize } from './attachment';
 import { detailsLabel } from './details';
@@ -27,6 +27,10 @@ import {
 
 const enter = `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`;
 
+/** An agent's face by id, or a stable stand-in for an id the map lacks. */
+const avatarOf = (handlers: PartHandlers, agentId: string): number =>
+  handlers.avatars?.[agentId] ?? avatarFallback(agentId);
+
 /** What the person may do with something named in a message. */
 export interface PartHandlers {
   /** Open a file on this computer. */
@@ -39,6 +43,12 @@ export interface PartHandlers {
   onOpenMessage?: (messageId: string) => void;
   /** The files this conversation has produced, so a chip can find one. */
   files?: readonly KnownFile[];
+  /**
+   * Each agent's face, by id, for the sender beside a room message and
+   * the status line. An id with no entry gets a stable fallback rather
+   * than nothing — but every agent has one after the first launch.
+   */
+  avatars?: Readonly<Record<string, number>>;
 }
 
 /**
@@ -279,13 +289,13 @@ function TextBubble(
       {sender ? (
         <>
           <span style={{ flex: '0 0 auto', margin: '0 10px 2px 0', alignSelf: 'flex-end' }}>
-            <Orb agentId={sender} size={28} mood={OrbMood.Still} />
+            <CloudBlob avatar={avatarOf(handlers, sender)} size={28} />
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
             <span
               style={{
                 fontSize: text.label, fontWeight: 400, paddingLeft: 4,
-                color: paletteForAgent(sender).colors[0],
+                color: avatarInk(avatarOf(handlers, sender)),
               }}
             >
               {item.agentName ?? ''}
@@ -338,10 +348,12 @@ function SystemLine(
   );
 }
 
-function StatusLine({ item }: { item: Extract<ThreadItem, { kind: 'status' }> }) {
+function StatusLine(
+  { item, handlers }: { item: Extract<ThreadItem, { kind: 'status' }>; handlers: PartHandlers },
+) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 11, paddingTop: 4, animation: enter }}>
-      {item.agentId && <Orb agentId={item.agentId} size={26} mood={OrbMood.Still} />}
+      {item.agentId && <CloudBlob avatar={avatarOf(handlers, item.agentId)} size={26} />}
       <span
         style={{
           fontSize: text.message,
@@ -843,7 +855,7 @@ export function ThreadItemView(
     case ThreadItemKind.System:
       return <SystemLine item={item} handlers={parts} />;
     case ThreadItemKind.Status:
-      return <StatusLine item={item} />;
+      return <StatusLine item={item} handlers={parts} />;
     case ThreadItemKind.Choice:
       return <ChoiceCard item={item} handlers={choice} />;
     case ThreadItemKind.Auth:

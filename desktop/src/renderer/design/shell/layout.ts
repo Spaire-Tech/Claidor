@@ -112,6 +112,30 @@ export const PanelMode = {
 } as const;
 export type PanelMode = typeof PanelMode[keyof typeof PanelMode];
 
+/** Which panel, if any, the person has asked for. */
+export const PanelWant = {
+  None: 'none',
+  /** The computer: the browser, files, the screen. */
+  Computer: 'computer',
+  /** The agent panel from the 15 September canvas. */
+  Agent: 'agent',
+} as const;
+export type PanelWant = typeof PanelWant[keyof typeof PanelWant];
+
+/**
+ * The agent panel's own measurements, from the canvas's `gridCols`:
+ * `clamp(252px,22%,300px) minmax(0,1fr) clamp(236px,25%,324px)`.
+ *
+ * Narrower than the computer panel, and it takes some of its room from
+ * the sidebar rather than all of it from the thread — the canvas shrinks
+ * the list to make space, which is what those first numbers are.
+ */
+export const AGENT_PANEL_MIN = 236;
+export const AGENT_PANEL_MAX = 324;
+export const AGENT_PANEL_SHARE = 0.25;
+export const SIDEBAR_BESIDE_AGENT_MIN = 252;
+export const SIDEBAR_BESIDE_AGENT_SHARE = 0.22;
+
 export interface ShellLayout {
   sidebar: SidebarMode;
   sidebarWidth: number;
@@ -132,18 +156,26 @@ const clamp = (low: number, value: number, high: number): number =>
  * screen tab being on. Whether they get it beside the conversation or
  * over it is this function's business, not theirs.
  */
-export function shellLayout(width: number, panelWanted = false): ShellLayout {
+export function shellLayout(width: number, wanted: boolean | PanelWant = false): ShellLayout {
+  const want: PanelWant = wanted === true ? PanelWant.Computer : wanted === false ? PanelWant.None : wanted;
   const sidebar = width < RAIL_BELOW ? SidebarMode.Rail : SidebarMode.List;
-  const sidebarWidth = sidebar === SidebarMode.Rail ? RAIL_WIDTH : SIDEBAR_WIDTH;
+  const agent = want === PanelWant.Agent;
+  const sidebarWidth = sidebar === SidebarMode.Rail
+    ? RAIL_WIDTH
+    : agent
+      ? clamp(SIDEBAR_BESIDE_AGENT_MIN, Math.round(width * SIDEBAR_BESIDE_AGENT_SHARE), SIDEBAR_WIDTH)
+      : SIDEBAR_WIDTH;
   const rest = Math.max(0, width - sidebarWidth);
 
   // The thread is paid first. A panel only exists in what is left over,
   // and only if that leftover is enough to be a column rather than a
   // sliver — which is the whole of the fix.
-  const panelWidth = clamp(PANEL_MIN, Math.round(rest * PANEL_SHARE), PANEL_MAX);
+  const panelWidth = agent
+    ? clamp(AGENT_PANEL_MIN, Math.round(width * AGENT_PANEL_SHARE), AGENT_PANEL_MAX)
+    : clamp(PANEL_MIN, Math.round(rest * PANEL_SHARE), PANEL_MAX);
   const fits = rest - panelWidth >= THREAD_MIN;
 
-  if (!panelWanted) {
+  if (want === PanelWant.None) {
     return { sidebar, sidebarWidth, panel: PanelMode.None, panelWidth: 0, threadWidth: rest };
   }
   if (fits) {

@@ -1132,3 +1132,123 @@ repository, so the wiring is read and not run.
 **Where:** `renderer/design/thread/ThreadItemView.tsx`, `main/i18n.ts`,
 `renderer/services/i18n.ts`, `main/i18n.quota.test.ts`,
 `shared/settings/models.ts`.
+
+---
+
+## 28. The avatar was a hash, and there were four faces in the whole app — `fixed`
+
+The founder, 15 September: *"the avatar is a big fat massive lie.
+everything is either blue or green, what shows when you create an agent
+makes no sense."* And of the voice: *"it has many colors, but when you
+pick a voice with a different color, it shows you a default blue. when
+btw i clearly design it having only one color."*
+
+**What was wrong.** `palette.ts` derived the face from an FNV hash of
+the agent's id. Nothing was chosen and nothing was stored. The create
+screen hashed the *typed name* instead, so the face changed on every
+keystroke and was never the one the saved agent wore. The seed was
+locked to the palette's own, so four palettes meant exactly four
+possible pictures — not four colours with variation, four images. And
+the voice picker passed the voice's id as an agent id, so every voice got
+a colour of its own and the voice's actual seed was never used.
+
+**What the 15 September canvas says**
+(`docs/product/design/canvas-2026-09-15-template.html`):
+
+- `AVATARS` — twenty-five three-colour gradients. An agent's face is a
+  `<cloud-blob>` (a soft cloud with eyes, pure SVG, now
+  `design/orb/CloudBlob.tsx`) tinted by one of them, shaped by
+  `seed = i * 5 + 2`. An avatar is one number, 0–24.
+- `setupPalette()` rolls one when the create screen opens and it is
+  **stored on the agent**. "Edit avatar" opens a grid of all twenty-five
+  on the create screen (9 columns) and in the agent panel (5 columns).
+- Voices carry their own five-colour palette and seed and are drawn with
+  the sphere. The setup button reads "No voice yet / Add" until one is
+  picked.
+
+**What was built.** `shared/agent/avatars.ts`: the list, the seed rule,
+and `assignAvatar` — the founder's rule verbatim: *"the first 25 created
+agents always have a different color. after 25, we re-do."* Avatars
+nobody wears come first; once every one is worn, the least-worn; among
+equals, chance. Deleting an agent frees its avatar. An `avatar` column on
+`agents`, assigned inside the create transaction; a backfill on launch
+gives every existing agent one in creation order by the same rule, so
+an upgraded install with fourteen agents gets fourteen different faces.
+Tested 1,000 runs with real chance: twenty-five in a row are always
+twenty-five different.
+
+The create screen rolls once and shows that face beside "Pick an
+avatar, a name and a voice." — and the agent that appears in the sidebar
+wears exactly it. The voice is the voice's sphere, or a grey disc and
+"No voice yet".
+
+**Where:** `shared/agent/avatars.ts`, `design/orb/CloudBlob.tsx`,
+`design/shell/Compose.tsx`, `design/agents/voices.ts`,
+`main/coworkStore.ts`, `main/sqliteStore.ts`.
+
+---
+
+## 29. Delete opens the agent panel; the same panel is the edit — `fixed`
+
+The founder: *"i added a delete button in the left bar, that opens a
+right panel. that same right panel opens up top. for edit."*
+
+**Built as drawn.** A trash icon replaces the unread dot on the *active*
+row (`showDelete: isActive && BOTS.length > 1`), red on hover. It opens
+the third column with the question already asked: "Delete {name} and
+this conversation? This can't be undone." — Delete / Keep. The agent's
+name in the conversation header opens the same panel without the
+question. The panel: "Agent settings", a 76px face and Edit avatar /
+Done, Name, Label and Description edited live (text is written a moment
+after it stops; a face or the toggle goes straight through), a
+Notifications toggle, and Delete agent. The columns are the canvas's:
+`clamp(252px,22%,300px) minmax(0,1fr) clamp(236px,25%,324px)`, and the
+layout rules from item 27's neighbour still hold — the thread is never
+crushed, and the panel covers rather than splits when there is no room.
+
+**What that replaced.** Item 37's right-click delete with the two-click
+confirm drawn over the row. The canvas has one door, not two. The
+two-click piece (`confirm.ts`) stays in Settings.
+
+**Notifications is real, not decorative.** The toggle is stored
+(`notify` on the agent) and `desktopNotificationManager` asks
+`isSessionNotifying` before a completion notification. Off means off.
+
+**Deliberate differences, mine:**
+- No trash on the main agent. It is the one conversation that always
+  exists.
+- No trash on a room. The trash opens the agent panel and a room has no
+  panel yet; rather than delete on one click, it shows no trash. Rooms
+  cannot be created from the app yet either.
+- No trash on the rail (under 900px). A rail row is a face with no name.
+- The five-tab agent detail sheet (item 4, mine) is no longer reachable:
+  the name in the header is the canvas's door to the panel. Skills,
+  routines and integrations of an agent have no screen in this shell
+  now. **Flagged: that is a loss of function, and it is the founder's
+  call whether the panel grows a way to them.**
+- The label and voice are now stored on the agent (`label`, `voice_id`)
+  so the panel can rebuild the system prompt from its parts. They were
+  folded into the prompt and lost.
+
+**Not verified:** nobody has opened the built app against any of this.
+The rule is proved; the columns are proved at every width; the blob is
+the element's arithmetic verbatim; whether it *looks* like the canvas is
+a run.
+
+**Where:** `design/agent/AgentPanel.tsx`, `design/shell/Sidebar.tsx`,
+`design/shell/useMessagesShell.ts`, `design/shell/layout.ts`,
+`main/libs/desktopNotificationManager.ts`.
+
+---
+
+## 30. "Typing" is an animation — `fixed`
+
+The founder: *"in the chat its not longer 'writing' its an animation."*
+
+The header's word "typing" is three 4.5px dots (`thinkDot`). At the end
+of the thread, the agent's face at 26px hops (`thinkHop`) beside a small
+bubble of the same three dots (`thinkBubble`). Both from the canvas's
+keyframes, verbatim, in `tokens.css` as `fsr-think-*`.
+
+**Where:** `design/thread/Thread.tsx`, `design/shell/MessagesShell.tsx`,
+`design/tokens.css`.

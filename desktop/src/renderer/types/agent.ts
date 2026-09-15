@@ -23,6 +23,14 @@ export interface Agent {
   presetId: string;
   createdAt: number;
   updatedAt: number;
+  /** The face: 0–24 into `shared/agent/avatars.ts`. Stored, never derived. */
+  avatar: number;
+  /** "Research, marketing, admin…" — the remit line. */
+  label: string;
+  /** One of the seven voices, or '' for none yet. */
+  voiceId: string;
+  /** Whether finishing or needing input raises a desktop notification. */
+  notify: boolean;
 }
 
 export interface PresetAgent {

@@ -1,19 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { AppsIcon, ChevronUpIcon, CloseIcon, SearchIcon } from '../icons';
-import { Orb, OrbMood } from '../orb/Orb';
+import { AppsIcon, ChevronUpIcon, SearchIcon } from '../icons';
+import { CloudBlob } from '../orb/CloudBlob';
 import { color, line, radius, shadow, text, tracking } from '../tokens';
-import { CONFIRM_WINDOW_MS, ConfirmState, pressConfirm } from './confirm';
 import { SidebarMode } from './layout';
 
 export interface SidebarAgent {
   id: string;
   name: string;
+  /** The face, 0–24. Every row has one. */
+  avatar: number;
   /** The last thing said, either way. */
   preview: string;
   /** "9:12 AM", "Friday". */
   when: string;
   unread?: boolean;
+  /** Whether the row can be deleted at all. The main agent cannot. */
+  deletable?: boolean;
 }
 
 export interface SidebarProps {
@@ -21,14 +24,15 @@ export interface SidebarProps {
   activeId: string;
   onSelect: (agentId: string) => void;
   /**
-   * Delete this conversation and everything in it.
+   * The trash icon on the active row.
    *
-   * Permanent, and there is no archive: `grok-bot-app-ui.md` is explicit
-   * that the only option is a permanent delete with a confirm, and a
-   * half-measure here would be a second concept for people to wonder
-   * about. Absent for rows that cannot be deleted — the main agent.
+   * It does not delete. It opens the agent panel with the question
+   * already asked — "Delete {name} and this conversation? This can't be
+   * undone." — which is where the 15 September canvas puts it. The row
+   * itself never carries a confirm; a sidebar is for choosing, not for
+   * destroying.
    */
-  onDelete?: (id: string) => void;
+  onAskDelete?: (id: string) => void;
   onCompose: () => void;
   onApps: () => void;
   /** The signed-in person, for the row at the bottom. */
@@ -37,7 +41,7 @@ export interface SidebarProps {
   /** The account menu, when it is open. Anchored to the row below it. */
   accountMenu?: React.ReactNode;
   /**
-   * A list of conversations, or a rail of orbs.
+   * A list of conversations, or a rail of faces.
    *
    * Decided by the window's width in `layout.ts`, not here — this
    * component draws the answer rather than working it out.
@@ -53,35 +57,38 @@ export interface SidebarProps {
   topInset?: number;
 }
 
+/** The canvas's trash, 14px, stroke 1.7. */
+function TrashGlyph(): JSX.Element {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden focusable="false">
+      <path d="M4 7h16" />
+      <path d="M9 7V5h6v2" />
+      <path d="M6 7l1 13h10l1-13" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
 /**
  * The list of agents.
  *
  * It is a conversation list, not a navigation tree: one row per agent,
- * last message, timestamp, unread dot. The search filters by name only —
- * searching message content is a different feature with a different
- * screen, and pretending otherwise in a filter box is how a search box
- * becomes untrustworthy.
+ * a face, the last message, a timestamp, an unread dot. The search
+ * filters by name only — searching message content is a different
+ * feature with a different screen, and pretending otherwise in a filter
+ * box is how a search box becomes untrustworthy.
+ *
+ * On the active row the dot gives way to a trash icon (the canvas's
+ * `showDelete: isActive && BOTS.length > 1`): the one you are looking at
+ * is the one you might want gone, and the others keep their dot.
  */
 export function Sidebar({
-  agents, activeId, onSelect, onDelete, onCompose, onApps, accountName, onAccount,
+  agents, activeId, onSelect, onAskDelete, onCompose, onApps, accountName, onAccount,
   accountMenu, mode = SidebarMode.List, topInset = 0,
 }: SidebarProps): JSX.Element {
   const [query, setQuery] = useState('');
   const rail = mode === SidebarMode.Rail;
-
-  // Which row is being asked about, and since when.
-  //
-  // One at a time: arming a second row disarms the first, so there is
-  // never more than one control on screen waiting for a second press.
-  const [armed, setArmed] = useState<{ id: string; at: number } | undefined>();
-
-  useEffect(() => {
-    if (!armed) return undefined;
-    // Goes quiet on its own. A row left asking is a question nobody
-    // answered, and it should stop asking rather than wait indefinitely.
-    const timer = window.setTimeout(() => setArmed(undefined), CONFIRM_WINDOW_MS);
-    return () => window.clearTimeout(timer);
-  }, [armed]);
+  const [hoverTrash, setHoverTrash] = useState<string>();
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -166,54 +173,41 @@ export function Sidebar({
       <div
         style={{
           display: 'flex', flexDirection: 'column', gap: 2,
-          padding: rail ? '0 6px' : '0 10px',
+          padding: rail ? '0 6px' : '0 10px 8px',
           overflowY: 'auto', overflowX: 'hidden', flex: '1 1 auto', minWidth: 0,
         }}
       >
         {shown.map(agent => {
           const active = agent.id === activeId;
-          const asking = armed?.id === agent.id;
-          // Not from the rail. Delete here is permanent and there is no
-          // archive; a rail row is an orb with no name on it, so the
-          // question "delete which one?" has no answer on screen. Widening
-          // the window is a cheaper thing to ask of somebody than losing
-          // the wrong conversation.
-          const deletable = Boolean(onDelete) && !rail;
-
-          const press = (): void => {
-            const step = pressConfirm(
-              asking ? ConfirmState.Armed : ConfirmState.Ready,
-              armed?.at,
-              Date.now(),
-            );
-            if (step.act) {
-              setArmed(undefined);
-              onDelete?.(agent.id);
-              return;
-            }
-            setArmed({ id: agent.id, at: Date.now() });
-          };
+          // The canvas's rule, plus ours: never the main agent, and never
+          // from the rail, where a row is a face with no name and "delete
+          // which one?" has no answer on screen.
+          const showTrash = active && !rail && Boolean(onAskDelete)
+            && agent.deletable !== false && agents.length > 1;
+          const trashHot = hoverTrash === agent.id;
 
           return (
-            <div key={agent.id} style={{ position: 'relative', display: 'flex' }}>
-            <button
-              type="button"
-              onClick={() => (asking ? setArmed(undefined) : onSelect(agent.id))}
+            <div
+              key={agent.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelect(agent.id)}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelect(agent.id);
+                }
+              }}
               title={rail ? agent.name : undefined}
               aria-label={rail ? agent.name : undefined}
-              onContextMenu={deletable ? (event => {
-                // Right-click is where people look for this, and it is the
-                // only route: `grok-bot-app-ui.md` is explicit that delete
-                // is not in Settings.
-                event.preventDefault();
-                setArmed({ id: agent.id, at: Date.now() });
-              }) : undefined}
+              aria-current={active ? 'true' : undefined}
               style={{
+                position: 'relative',
                 display: 'flex', alignItems: 'center',
                 justifyContent: rail ? 'center' : 'flex-start',
                 gap: rail ? 0 : 12, height: 64,
                 padding: rail ? '0' : '0 12px', borderRadius: radius.row, cursor: 'pointer',
-                font: 'inherit', textAlign: 'left', width: '100%',
+                width: '100%', boxSizing: 'border-box',
                 background: active ? color.paper : 'transparent',
                 border: active ? '1px solid rgba(255,255,255,.6)' : '1px solid transparent',
                 // The canvas ends the selected row's shadow with
@@ -221,14 +215,16 @@ export function Sidebar({
                 // along its top edge, which is what stops the row
                 // reading as a flat grey patch.
                 boxShadow: active ? `${shadow.raised}, inset 0 1px 0 rgba(255,255,255,.7)` : 'none',
-                position: 'relative',
+                transition: 'background .15s',
               }}
             >
-              <Orb agentId={agent.id} size={40} mood={OrbMood.Idle} />
+              <span style={{ animation: 'fsr-orb-idle 7.5s ease-in-out infinite', display: 'block', flex: '0 0 auto' }}>
+                <CloudBlob avatar={agent.avatar} size={40} />
+              </span>
               {/*
-                On the rail the dot moves onto the orb, because there is no
-                row left for it to sit at the end of. Same 7px, same
-                colour — it is the same dot, parked somewhere it fits.
+                On the rail the dot moves onto the face, because there is
+                no row left for it to sit at the end of. Same colour — it
+                is the same dot, parked somewhere it fits.
               */}
               {rail && agent.unread && (
                 <span
@@ -241,88 +237,63 @@ export function Sidebar({
                 />
               )}
               {!rail && (
-              <span style={{ minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                <span style={{ minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                    <span
+                      style={{
+                        flex: '1 1 auto', minWidth: 0, fontSize: text.emphasis, fontWeight: 500,
+                        letterSpacing: tracking.body, whiteSpace: 'nowrap',
+                        overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {agent.name}
+                    </span>
+                    <span style={{ flex: '0 0 auto', fontSize: text.caption, color: color.muted, whiteSpace: 'nowrap' }}>
+                      {agent.when}
+                    </span>
+                  </span>
                   <span
                     style={{
-                      flex: '1 1 auto', minWidth: 0, fontSize: text.emphasis, fontWeight: 500,
-                      letterSpacing: tracking.body, whiteSpace: 'nowrap',
-                      overflow: 'hidden', textOverflow: 'ellipsis',
+                      fontSize: text.label, color: color.muted,
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}
                   >
-                    {agent.name}
-                  </span>
-                  <span style={{ flex: '0 0 auto', fontSize: text.caption, color: color.muted, whiteSpace: 'nowrap' }}>
-                    {agent.when}
+                    {agent.preview}
                   </span>
                 </span>
-                <span
+              )}
+              {!rail && (showTrash ? (
+                <button
+                  type="button"
+                  title="Delete conversation"
+                  aria-label={`Delete ${agent.name}`}
+                  onClick={event => {
+                    // The row underneath selects. This must not.
+                    event.stopPropagation();
+                    onAskDelete?.(agent.id);
+                  }}
+                  onMouseEnter={() => setHoverTrash(agent.id)}
+                  onMouseLeave={() => setHoverTrash(undefined)}
                   style={{
-                    fontSize: text.label, color: color.muted,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    width: 28, height: 28, flex: '0 0 auto', padding: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 9, cursor: 'pointer', font: 'inherit',
+                    border: `1px solid ${trashHot ? 'rgba(201,42,37,.18)' : 'transparent'}`,
+                    background: trashHot ? '#fdeceb' : 'transparent',
+                    color: trashHot ? color.danger : color.faint,
                   }}
                 >
-                  {agent.preview}
-                </span>
-              </span>
-              )}
-              {!rail && (
+                  <TrashGlyph />
+                </button>
+              ) : (
                 <span
                   aria-label={agent.unread ? 'Unread' : undefined}
                   style={{
                     width: 7, height: 7, flex: '0 0 auto', borderRadius: '50%',
-                    background: agent.unread ? color.accent : 'transparent',
+                    background: agent.unread ? color.ink : 'transparent',
                   }}
                 />
-              )}
-            </button>
-
-            {asking && (
-              // Over the row it belongs to, rather than a dialog in the
-              // middle of the screen. The answer stays where the question
-              // was asked.
-              <div
-                style={{
-                  position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-                  gap: 8, padding: '0 12px', borderRadius: radius.row,
-                  background: color.paper, border: `1px solid ${line.field}`,
-                  boxShadow: shadow.raised,
-                }}
-              >
-                <span
-                  style={{
-                    flex: '1 1 auto', minWidth: 0, fontSize: text.label, color: color.ink,
-                    lineHeight: 1.35, textWrap: 'pretty',
-                  }}
-                >
-                  Delete {agent.name} and everything in it? This cannot be undone.
-                </span>
-                <button
-                  type="button"
-                  onClick={press}
-                  style={{
-                    flex: '0 0 auto', height: 30, padding: '0 12px', border: 'none',
-                    borderRadius: radius.field, background: color.danger, color: color.paper,
-                    font: 'inherit', fontSize: text.label, fontWeight: 500, cursor: 'pointer',
-                  }}
-                >
-                  Delete
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setArmed(undefined)}
-                  aria-label="Keep it"
-                  style={{
-                    flex: '0 0 auto', width: 28, height: 28, border: 'none',
-                    background: 'transparent', borderRadius: '50%', cursor: 'pointer',
-                    color: color.muted, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <CloseIcon size={12} />
-                </button>
-              </div>
-            )}
+              ))}
             </div>
           );
         })}

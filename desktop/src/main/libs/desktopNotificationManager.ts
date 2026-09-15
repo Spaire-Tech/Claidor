@@ -37,6 +37,15 @@ interface DesktopNotificationManagerOptions {
   getNotificationIconPath: () => string | null;
   getNotificationSettings: () => Partial<NotificationSettings> | undefined;
   getSessionTitle: (sessionId: string) => string | null;
+  /**
+   * Whether the agent behind this session wants to be heard from.
+   *
+   * The agent panel has one toggle — "Get notified when this agent
+   * finishes or needs input" — and it is stored on the agent. Absent, or
+   * unable to answer, means yes: the global settings still apply, and a
+   * lookup failure must not silence an agent somebody is waiting on.
+   */
+  isSessionNotifying?: (sessionId: string) => boolean;
   focusMainWindow: (reason: string) => void;
   openSession: (sessionId: string) => void;
   updateTrayReminder: (count: number, onClick?: () => void) => void;
@@ -63,6 +72,10 @@ export class DesktopNotificationManager {
     const mode = settings.taskCompletionNotificationMode;
     if (mode === TaskCompletionNotificationMode.Off) {
       console.debug(`[DesktopNotification] skipped completed session ${sessionId} because completion notifications are off`);
+      return;
+    }
+    if (this.options.isSessionNotifying && !this.options.isSessionNotifying(sessionId)) {
+      console.debug(`[DesktopNotification] skipped completed session ${sessionId} because its agent's notifications are off`);
       return;
     }
 
