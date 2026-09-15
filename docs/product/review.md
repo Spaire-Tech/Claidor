@@ -1401,3 +1401,42 @@ browser ask, nor a connector's tool.
 Not done here. It is the founder's rule and the founder's trade-off.
 My recommendation is 1, with main's exception stated until its
 workspace is moved.
+
+**Correction, same day.** Two things in the options above were wrong,
+and the founder's *"wdym? there is no project"* is what made me check.
+
+- The main agent's workspace is **not** the person's working folder. It
+  is `workspace-main` under the app's hidden state directory, like every
+  other agent's (`openclawMemoryFile.ts`, `getMainAgentWorkspacePath`).
+  A stale comment in `buildAgentsList` said otherwise and I repeated it.
+  The comment is fixed.
+- Option 1 does not do what I said. The engine measures
+  `tools.fs.workspaceOnly` from the **session's working folder** when
+  one is set (`openclaw/src/agents/agent-tools.ts:688`, `runtimeRoot`
+  from `options.cwd`), and our adapter sets it on every run
+  (`openclawRuntimeAdapter.ts:5578`, `cwd: runCwd`). So on, the fence
+  would let the agent write anywhere inside that folder with no card,
+  and cut it off from its own `MEMORY.md`, which lives elsewhere. I had
+  switched it on; it is reverted, and a test now keeps it off with the
+  reason beside it.
+
+The working folder, for the record: every conversation has one, by
+default `~/faiser/project` (`coworkStore.ts:65`), shown in Settings →
+Computer as the `working-directory` row. It is where the agent's files
+land. It is not a "project" in the Projects sense.
+
+**The real options, after that:**
+
+1. **Deny the file tools** (`write`, `edit`, `apply_patch`, and `read`
+   if reading must ask too) in the managed tool deny list. Every touch
+   of a file is then a command, and a command draws the card. Available
+   today, a few lines. Cost: "remember this" becomes a command with a
+   card on it, because memory is a file write; and "Always allow" on a
+   command allows that program from then on, not that file.
+2. **Patch the engine** so the file tools go through the same approval
+   as commands and draw the card with the path in it. The proper fix,
+   under the repo's version-scoped patch policy. A day or two, and a
+   patch to carry across engine upgrades.
+3. Leave it, and say so in the contract.
+
+My recommendation is 2. Decision is the founder's.
