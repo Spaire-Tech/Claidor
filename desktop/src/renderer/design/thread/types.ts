@@ -128,6 +128,12 @@ export interface AuthItem {
    * teaches people that approving is meaningless.
    */
   command?: string;
+  /**
+   * Set when a file tool is asking rather than a command: `command` then
+   * holds the paths, one per line, and the note after answering talks
+   * about files rather than commands.
+   */
+  access?: 'read' | 'write';
   at: number;
 }
 

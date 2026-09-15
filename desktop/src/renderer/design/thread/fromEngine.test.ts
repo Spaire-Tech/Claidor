@@ -9,6 +9,8 @@ import {
   decisionNote,
   type EngineMessage,
   type EnginePermissionRequest,
+  fileAccessFromToolInput,
+  fileAccessQuestion,
   parseChoiceId,
   splitIntoBubbles,
   toThreadItems,
@@ -208,6 +210,56 @@ describe('the approval card', () => {
       .toBe('Perrin can run commands on your computer from now on.');
     expect(decisionNote('Perrin', 'never'))
       .toBe("Declined. Perrin can't run commands on your computer.");
+  });
+
+  test('a file tool asking draws the same card, with the paths on it', () => {
+    // The engine patch makes read/write/edit/apply_patch ask through the
+    // command approval; the bridge attaches `fileAccess`. The card must
+    // say "file", not "command", and show the paths where the command
+    // would go.
+    const items = toThreadItems([], {
+      agentName: 'Perrin',
+      deviceId: '6c0f8fd9',
+      pending: [{
+        requestId: 'req-2',
+        toolName: 'FileAccess',
+        toolInput: {
+          fileAccess: { kind: 'write', paths: ['/Users/bass/Work/report.docx'] },
+          command: '/Users/bass/Work/report.docx',
+        },
+      }],
+    });
+    expect(items).toEqual([
+      expect.objectContaining({
+        kind: ThreadItemKind.Auth,
+        text: 'Allow Perrin to continue — changing a file on your computer?',
+        command: '/Users/bass/Work/report.docx',
+        access: 'write',
+        deviceId: '6c0f8fd9',
+      }),
+    ]);
+    expect(fileAccessQuestion('Perrin', { kind: 'read', paths: ['/a', '/b', '/c'] }))
+      .toBe('Allow Perrin to continue — reading 3 files on your computer?');
+  });
+
+  test('a malformed file request falls back to the command card rather than vanishing', () => {
+    expect(fileAccessFromToolInput({ fileAccess: { kind: 'delete', paths: ['/x'] } })).toBeUndefined();
+    expect(fileAccessFromToolInput({ fileAccess: { kind: 'read', paths: [] } })).toBeUndefined();
+    expect(fileAccessFromToolInput({ command: 'ls' })).toBeUndefined();
+    const items = toThreadItems([], {
+      pending: [{ requestId: 'r', toolName: 'FileAccess', toolInput: { fileAccess: { kind: 'read' }, command: '/x' } }],
+    });
+    expect(items[0]).toMatchObject({ kind: ThreadItemKind.Auth, command: '/x' });
+    expect((items[0] as { access?: string }).access).toBeUndefined();
+  });
+
+  test('the note after a file answer talks about files, and Always about the folder', () => {
+    expect(decisionNote('Perrin', 'always', 'write'))
+      .toBe('Perrin can change files in that folder from now on.');
+    expect(decisionNote('Perrin', 'once', 'read'))
+      .toBe('Perrin can read that file this time.');
+    expect(decisionNote('Perrin', 'never', 'write'))
+      .toBe("Declined. Perrin can't change that file.");
   });
 });
 

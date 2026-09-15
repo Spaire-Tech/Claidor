@@ -344,7 +344,7 @@ export function toThreadItems(
         // by drawing the partial as one whole bubble that kept changing.
         // Now nothing is drawn until the reply is complete; the typing
         // animation covers the wait, and the finished reply lands as
-        // bubbles 420ms apart like everything else.
+        // bubbles a second apart like everything else.
         //
         // The one exception is an engine that stopped mid-reply and never
         // sent a final: once the session is no longer running, whatever
@@ -451,6 +451,21 @@ export function toThreadItems(
       continue;
     }
 
+    const access = fileAccessFromToolInput(request.toolInput);
+    if (access) {
+      // A file tool asking. Same card, the paths where the command goes.
+      items.push({
+        kind: ThreadItemKind.Auth,
+        id: `auth:${request.requestId}`,
+        text: fileAccessQuestion(options.agentName, access),
+        ...(deviceId ? { deviceId } : {}),
+        command: access.paths.join('\n'),
+        access: access.kind,
+        at: Date.now(),
+      } satisfies AuthItem);
+      continue;
+    }
+
     items.push({
       kind: ThreadItemKind.Auth,
       id: `auth:${request.requestId}`,
@@ -466,6 +481,38 @@ export function toThreadItems(
   return items;
 }
 
+/** What a file tool is asking for, as the bridge attached it. */
+export interface FileAccessAsk {
+  kind: 'read' | 'write';
+  paths: string[];
+}
+
+/**
+ * The engine patch makes `read`, `write`, `edit` and `apply_patch` ask
+ * through the command approval, and the bridge
+ * (`main/libs/agentEngine/openclawApprovalBridge.ts`) attaches this to
+ * the request. Anything malformed is treated as an ordinary command
+ * approval rather than dropped: a card with the wrong words beats no card.
+ */
+export function fileAccessFromToolInput(input: Record<string, unknown>): FileAccessAsk | undefined {
+  const raw = input.fileAccess;
+  if (!raw || typeof raw !== 'object') return undefined;
+  const { kind, paths } = raw as { kind?: unknown; paths?: unknown };
+  if (kind !== 'read' && kind !== 'write') return undefined;
+  if (!Array.isArray(paths)) return undefined;
+  const clean = paths.filter((one): one is string => typeof one === 'string' && one.trim().length > 0);
+  if (!clean.length) return undefined;
+  return { kind, paths: clean };
+}
+
+/** "Allow Perrin to continue — changing a file on your computer?" */
+export function fileAccessQuestion(agentName: string | undefined, access: FileAccessAsk): string {
+  const who = agentName?.trim() || 'this agent';
+  const verb = access.kind === 'read' ? 'reading' : 'changing';
+  const what = access.paths.length === 1 ? 'a file' : `${access.paths.length} files`;
+  return `Allow ${who} to continue — ${verb} ${what} on your computer?`;
+}
+
 /**
  * The line left behind when an approval is answered.
  *
@@ -475,7 +522,20 @@ export function toThreadItems(
 export function decisionNote(
   agentName: string,
   decision: 'always' | 'once' | 'never',
+  access?: 'read' | 'write',
 ): string {
+  if (access) {
+    // A file, not a command. "Always" is remembered as the file's folder,
+    // for that kind of access, which is what the engine patch stores.
+    const verb = access === 'read' ? 'read' : 'change';
+    if (decision === 'always') {
+      return `${agentName} can ${verb} files in that folder from now on.`;
+    }
+    if (decision === 'once') {
+      return `${agentName} can ${verb} that file this time.`;
+    }
+    return `Declined. ${agentName} can't ${verb} that file.`;
+  }
   if (decision === 'always') {
     return `${agentName} can run commands on your computer from now on.`;
   }

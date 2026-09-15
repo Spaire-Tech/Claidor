@@ -623,9 +623,11 @@ is not written. To add.**
 
 ### 14.1 What gets checked
 
-Every command on the person's computer, under one app-wide setting with
-three values (`shared/settings/constants.ts`, mapped one-to-one onto the
-engine's `infra/exec-approvals.ts` modes):
+Every command on the person's computer, and — since the engine patch
+`openclaw-file-tools-ask-first.patch` (review.md item 36) — every read,
+write, edit or patch of a file that is not the agent's own. Both under
+one app-wide setting with three values (`shared/settings/constants.ts`,
+mapped one-to-one onto the engine's `infra/exec-approvals.ts` modes):
 
 | Setting | What happens |
 |---|---|
@@ -642,6 +644,12 @@ system note. The agent never says "approval" to the person
 
 Deleting files is stricter: the question card first, whatever the
 setting.
+
+A file tool asking draws the same card with the path on it. The agent's
+own workspace, the engine's state directory and the skill folders never
+ask. **Always** is remembered as that file's folder for that kind of
+access; a refusal comes back to the agent as a plain result and the
+prompt says a refused file is refused.
 
 ### 14.2 On a refusal — to add
 

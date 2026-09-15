@@ -4,6 +4,7 @@ import type { Room } from '../../../shared/rooms/constants';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import type { EngineMessage, EnginePermissionRequest } from '../thread/fromEngine';
 import { toThreadItems } from '../thread/fromEngine';
+import { splitMessageParts } from '../thread/parts';
 import type { ThreadItem } from '../thread/types';
 import type { SidebarAgent } from './Sidebar';
 
@@ -83,8 +84,14 @@ export function whenLabel(at: number | undefined, now: number = Date.now()): str
  * "Input Files: /Users/…" is not what anybody said.
  */
 export function plainPreview(content: string): string {
-  return extractUserMessageFileAttachments(content).text
-    .replace(/\[\[(.+?)\]\]/g, '$1')
+  // The same reading the bubble gives the text, flattened: a markdown
+  // link becomes its label, a `file://` URL its name, bold its words.
+  // Before this the row read "Done. Here it is: [Gym R…" under a bubble
+  // that showed a chip.
+  const text = splitMessageParts(extractUserMessageFileAttachments(content).text)
+    .map(part => part.text)
+    .join('');
+  return text
     .replace(/\s+/g, ' ')
     .trim();
 }

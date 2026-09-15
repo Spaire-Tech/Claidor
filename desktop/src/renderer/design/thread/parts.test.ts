@@ -99,6 +99,13 @@ describe('what an engine actually writes', () => {
     });
   });
 
+  test('a file link with a space in the path is still one chip', () => {
+    const parts = splitMessageParts('Here: [Gym Routine.docx](/Users/bass/Gym Routine.docx)');
+    expect(kinds(parts)).toEqual([PartKind.Text, PartKind.File]);
+    expect(parts[1].text).toBe('Gym Routine.docx');
+    expect(parts[1].target).toBe('/Users/bass/Gym Routine.docx');
+  });
+
   test('a code span is the same chip, because it is the same idea', () => {
     const parts = splitMessageParts('Run `npm test` first.');
     expect(kinds(parts)).toEqual([PartKind.Text, PartKind.Code, PartKind.Text]);

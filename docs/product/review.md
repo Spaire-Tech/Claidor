@@ -1440,3 +1440,154 @@ land. It is not a "project" in the Projects sense.
 3. Leave it, and say so in the contract.
 
 My recommendation is 2. Decision is the founder's.
+
+---
+
+## 36. The file tools ask, through the same card as a command — `built, unrun`
+
+The founder, on item 35: *"do option 2. patch the engine. please be
+careful. make no mistake."*
+
+**What the engine now does.** A version-scoped patch,
+`desktop/scripts/patches/v2026.6.1/openclaw-file-tools-ask-first.patch`,
+wraps `read`, `write`, `edit` and `apply_patch` in the tool factory
+(`openclaw/src/agents/agent-tools.ts`) with one module,
+`openclaw/src/agents/file-tool-approval.ts`:
+
+- A path inside a *free root* never asks: the agent's own workspace (its
+  memory and notes), the engine state directory (every agent's
+  workspace, the shared project notes), and the skill folders.
+- Any other path asks under the agent's exec policy, resolved exactly as
+  the exec tool resolves it — the configured layer, tightened by
+  `exec-approvals.json`, never loosened. So the Settings → Computer
+  choice governs files too: **Ask** asks, **Allow** does not, and a
+  refusal answers as `security=deny`.
+- The ask is the exec tool's own gateway request
+  (`exec.approval.request` → `exec.approval.waitDecision`), so it is the
+  same card, with `file-access <kind> <paths>` in `commandArgv` so the
+  app can tell it from a command. No shell command is named that.
+- **Always** is remembered as the file's folder for that kind of access,
+  in `file-approvals.json` beside the command allowlist; a write rule
+  also covers reads. Once, or no answer, remembers nothing; no answer
+  before the request expires follows the file's `askFallback`, like a
+  command.
+- A refusal comes back to the model as a plain tool result — *File write
+  denied (approval-denied): /path* — so it can say so and stop, rather
+  than crash the turn.
+- Symlinks are judged by where they land, so a link inside the
+  workspace cannot reach the person's folder without asking.
+- Sandboxed runs are not wrapped; the sandbox already confines them.
+
+**What the app now does.** The bridge recognises the marker
+(`openclawApprovalBridge.ts`, `parseFileAccess`) and raises the card
+with the paths where the command would be; the sentence reads *"Allow
+Perrin to continue — changing a file on your computer?"*; the note
+after answering says *"Perrin can change files in that folder from now
+on."* And, the one thing that would have been a real bug: a file
+approval gets **no continuation prompt** afterwards. A command approval
+ends the turn and the app sends "approved, carry on" when the person
+answers; a file tool is blocked on the answer inside the turn, and that
+prompt would have landed as a phantom user turn. `PendingApprovalEntry`
+has a third kind, `file`, for exactly that.
+
+**Gates.** Engine: 26 test files, 382 tests, including every existing
+tool-factory test (workspace-only, root guard, tilde expansion, host
+edit access) — none changed behaviour, because with no approvals file
+the exec default is full/off and the wrapper follows it. Engine
+typecheck clean on the touched files (two pre-existing errors in files
+other patches modify). App: full suite, plus new tests for the bridge,
+the controller, the thread and the prompt.
+
+**Not run in the app.** The patch is applied by `npm run openclaw:patch`
+and reaches the app only through a rebuilt engine runtime
+(`npm run electron:dev:openclaw`). Nobody has seen the card come up for
+a file yet.
+
+---
+
+## 37. "You didn't fix the delete. You didn't fix the Word file." — `run; both work here`
+
+The founder, after 32 and 34: *"when you delete an agent, literally
+everything is gone. all text history gone. from all agents not just
+one … it still opens in the computer and not in the artifact. did you
+understand what i asked you? are you lying to me?"*
+
+Neither fix had been run. They had been read, tested in pieces, and
+called fixed; the founder opened the app and saw the old behaviour. So
+the first thing this entry does is run them, in a browser, against the
+real app — not a component with fixture props, but `FaiserApp` on the
+real store with only the Electron bridge stood in for. `harness/
+live.mjs` clicks the chip and deletes the agent the way a person does.
+
+**What the run shows, on this branch:**
+
+- A Word file the agent linked opens in the computer panel, on Files,
+  with the document drawn (docx-preview, 1 page) and "Save a copy…" in
+  the toolbar. The operating system was never asked to open it.
+- Deleting the open agent removes its row and nothing else: the other
+  rows keep their last lines, the main conversation opens with its
+  history, and another agent's conversation still has all its messages.
+
+**What the founder saw.** Both symptoms are exactly what the app did
+before commits `9035520d` (delete) and `45a26088` (the file), both of
+15 September, 04:47 and 05:25 UTC. The one build I have seen named in
+this conversation is `Faiser-darwin-arm64-2026.9.4-official.dmg`, built
+on the founder's Mac on 13 September at 23:09 — two days before either
+fix. The macOS workflow builds by hand only, and its last run (14
+September) failed, so no build carries these fixes unless one was made
+locally after 05:25 UTC on the 15th. I cannot see which build was
+tested. If a build made after that still shows either symptom, the
+harness run above is wrong about something and I want the log line.
+
+**Three real faults the run found anyway**, in the same screenshots:
+
+1. **Switching agents performed the history.** `useStaggered` seeded
+   "already on screen" once, at the first render. Click another agent
+   and its messages load a beat later, all unseen, so every reply in it
+   was staged bubble by bubble — while the sidebar row had already
+   shown the last line. This is the founder's *"the sidebar left
+   preview comes first and then the chat comes"* for every conversation
+   switch, and the delete flow lands on main's conversation the same
+   way. Fixed: anything said before the conversation was opened is
+   history, whenever it loads (`stagger.ts` takes `since`; the hook
+   takes the conversation). A reply that arrives after opening is still
+   staged, and `harness/stagger.mjs` still measures it.
+2. **The sidebar row showed the markdown.** Under a bubble drawing a
+   chip, the row read `Done. Here it is: [Gym R…`. `plainPreview` now
+   flattens the same parts the bubble draws: a link is its label, a
+   path its name, bold its words.
+3. **A link with a space in the path was not a link.** The bubble's
+   link pattern stopped at whitespace; the detector's did not. A model
+   writing `[Gym Routine.docx](/Users/bass/Gym Routine.docx)` got a
+   bracketed mess in the bubble and a chip only by name-matching.
+   Aligned, with a test.
+
+**Where:** `harness/live-app.tsx`, `harness/live.mjs`, `harness/
+README.md`; `design/thread/stagger.ts`, `useStaggered.ts`,
+`design/shell/MessagesShell.tsx`, `select.ts`, `design/thread/parts.ts`,
+each with tests.
+
+**Still by design, and worth the founder's word:** a reply's second and
+third bubbles arrive 420ms apart (item 31, the canvas's number). The
+row shows the reply's last line at once. For a three-bubble reply the
+row is therefore 840ms ahead of the thread, and that is the one part of
+*"the preview comes first"* that is not a bug. It can be zero.
+
+---
+
+## 38. A second between bubbles — `done`
+
+The founder, on the gap item 37 left as a decision: *"when its 3 bubble,
+after the first come, i dont want the second to IMMEDIATELY come. i want
+a bit of realism. so 1 second might be good between it."*
+
+`BUBBLE_GAP_MS` is 1000. The first bubble is immediate; the second lands
+a second later, the third a second after that. Nothing else changed:
+history is still shown at once (item 37), a single-bubble reply waits for
+nothing, and the row under the agent's name still shows the reply's last
+line the moment it is final — so for a three-bubble reply the sidebar is
+now two seconds ahead of the thread. That is the realism, and it is the
+founder's call. `harness/stagger.mjs` measures the new gap.
+
+**Where:** `design/thread/stagger.ts`; `docs/product/direction.md`
+amended.

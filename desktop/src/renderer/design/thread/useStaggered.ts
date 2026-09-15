@@ -7,28 +7,36 @@ import type { ThreadItem } from './types';
  * The thread's items, with a just-arrived reply's later bubbles held back.
  *
  * The decisions live in `stagger.ts` and are tested without a clock. This
- * owns the two things that need one: what was already on screen, and the
- * timers releasing what is not.
+ * owns the things that need one: when the conversation was opened, what
+ * was already on screen, and the timers releasing what is not.
  *
- * The first render seeds "already seen" with everything, so opening a
- * conversation shows its history at once. Only what arrives afterwards is
- * staged.
+ * Opening a conversation shows its history at once. That is two rules,
+ * and the first build had only one of them. Everything on screen at the
+ * first render is "seen" — but a conversation's messages load a beat
+ * after the click that opens it, so on switching agents every reply in
+ * the new one was unseen, and the thread performed its history bubble by
+ * bubble while the sidebar row had already shown the last line. So the
+ * second rule: anything said before `conversation` was opened is history,
+ * whenever it turns up.
  */
-export function useStaggered(items: readonly ThreadItem[]): ThreadItem[] {
+export function useStaggered(items: readonly ThreadItem[], conversation: string): ThreadItem[] {
   const seen = useRef<Set<string>>(new Set());
-  const primed = useRef(false);
+  const opened = useRef<{ conversation: string; at: number }>();
   const timers = useRef<number[]>([]);
   const [held, setHeld] = useState<Set<string>>(new Set());
 
-  if (!primed.current) {
-    primed.current = true;
-    for (const item of items) seen.current.add(item.id);
+  if (opened.current?.conversation !== conversation) {
+    opened.current = { conversation, at: Date.now() };
+    seen.current = new Set(items.map(item => item.id));
+    // A bubble still held from the last conversation belongs to it, not
+    // to this one. The timers stay: releasing an id nobody holds is nothing.
+    if (held.size) setHeld(new Set());
   }
 
   useEffect(() => {
     const delays = prefersInstant()
       ? new Map<string, number>()
-      : staggerDelays(items, seen.current);
+      : staggerDelays(items, seen.current, opened.current?.at ?? 0);
 
     // Everything present is now accounted for, whether it is being held
     // or not — so a re-render cannot stage the same bubble twice.

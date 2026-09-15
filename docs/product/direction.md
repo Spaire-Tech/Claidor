@@ -120,7 +120,11 @@ as stream."*
 Two different behaviours, and the design already separates them:
 
 - **Text mode** — the reply is split on blank lines into at most three
-  short messages, pushed whole, 420 ms apart. They land like texts.
+  short messages, pushed whole, one second apart. They land like texts.
+  (The canvas had 420 ms. The founder, 15 September, having watched it:
+  *"i dont want the second to IMMEDIATELY come. i want a bit of realism.
+  so 1 second might be good between it."* `BUBBLE_GAP_MS` in
+  `design/thread/stagger.ts`.)
 - **Voice mode** — the same parts are streamed word by word.
 
 So streaming is a property of speech, not of text. A typed answer should

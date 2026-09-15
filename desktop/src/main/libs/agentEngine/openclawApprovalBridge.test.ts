@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  buildExecApprovalPermissionRequest,
+  FILE_ACCESS_COMMAND_HEAD,
   parseExecApprovalRequestedPayload,
+  parseFileAccess,
   type PendingApprovalEntry,
   resolveApprovalDecision,
 } from './openclawApprovalBridge';
@@ -34,6 +37,65 @@ describe('when the app decides for you', () => {
     const channelKey = 'agent:main:feishu:direct:ou_abc123';
     expect(parseExecApprovalRequestedPayload(payload('ls', channelKey))?.shouldAutoApprove)
       .toBe(true);
+  });
+});
+
+describe('a file tool asking', () => {
+  // The engine patch `openclaw-file-tools-ask-first.patch` raises a command
+  // approval with `file-access <kind> <paths…>` in commandArgv. The bridge
+  // has to recognise exactly that and nothing that could be a real command.
+  const fileRequest = (argv: unknown) => ({
+    sessionKey: 'desktop-session-1',
+    command: 'file-access write /Users/bass/Work/report.docx',
+    commandArgv: argv as string[],
+    cwd: '/Users/bass/Work',
+  });
+
+  test('is recognised by its argv head, and carries the paths', () => {
+    const parsed = parseExecApprovalRequestedPayload({
+      id: 'req-2',
+      request: fileRequest([FILE_ACCESS_COMMAND_HEAD, 'write', '/Users/bass/Work/report.docx', '/Users/bass/Work/notes.md']),
+    });
+    expect(parsed?.fileAccess).toEqual({
+      kind: 'write',
+      paths: ['/Users/bass/Work/report.docx', '/Users/bass/Work/notes.md'],
+    });
+    // Still not auto-approved on this computer.
+    expect(parsed?.shouldAutoApprove).toBe(false);
+  });
+
+  test('a real command is never mistaken for one', () => {
+    expect(parseFileAccess({ command: 'read foo', commandArgv: ['read', 'foo'] })).toBeUndefined();
+    expect(parseFileAccess({ command: 'ls', commandArgv: ['ls'] })).toBeUndefined();
+    expect(parseFileAccess({ command: 'ls' })).toBeUndefined();
+    // The head alone, or an unknown kind, or no path: not a file request.
+    expect(parseFileAccess({ commandArgv: [FILE_ACCESS_COMMAND_HEAD] })).toBeUndefined();
+    expect(parseFileAccess({ commandArgv: [FILE_ACCESS_COMMAND_HEAD, 'delete', '/x'] })).toBeUndefined();
+    expect(parseFileAccess({ commandArgv: [FILE_ACCESS_COMMAND_HEAD, 'read', ''] })).toBeUndefined();
+  });
+
+  test('becomes a card that shows the paths where a command would show the command', () => {
+    const request = buildExecApprovalPermissionRequest(
+      'req-2',
+      fileRequest([FILE_ACCESS_COMMAND_HEAD, 'read', '/a', '/b']),
+      'file-access read /a /b',
+      { kind: 'read', paths: ['/a', '/b'] },
+    );
+    expect(request.toolName).toBe('FileAccess');
+    expect(request.toolInput.fileAccess).toEqual({ kind: 'read', paths: ['/a', '/b'] });
+    expect(request.toolInput.command).toBe('/a\n/b');
+    expect(request.toolInput.cwd).toBe('/Users/bass/Work');
+  });
+
+  test('a command approval is untouched', () => {
+    const request = buildExecApprovalPermissionRequest(
+      'req-1',
+      { sessionKey: 's', command: 'ls -la', cwd: '/x' },
+      'ls -la',
+    );
+    expect(request.toolName).toBe('Bash');
+    expect(request.toolInput.command).toBe('ls -la');
+    expect(request.toolInput.fileAccess).toBeUndefined();
   });
 });
 

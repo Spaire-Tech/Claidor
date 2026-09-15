@@ -123,11 +123,11 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   );
 
   // "The text come like texts. not ai." A reply's later bubbles arrive
-  // 420ms apart rather than all in one frame; history is never replayed.
+  // a second apart rather than all in one frame; history is never replayed.
   // This lives here rather than inside the thread because the header is
   // what says "typing", and it has to keep saying it while bubbles are
   // still landing — otherwise the word blinks off mid-reply.
-  const staged = useStaggered(shown);
+  const staged = useStaggered(shown, activeId);
 
   // "typing" is a text-mode word, and in voice the orb is already
   // pulsing to say the same thing. The canvas draws the same line:
