@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="fd9d081b-ffa7-439e-9831-20e778942983"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://api.fontshare.com">
+<style>/* Switzer */
+@font-face {
+  font-family: 'Switzer';
+  src: url("e4a5c54b-fa25-4b35-87b6-795ceb75c608") format('woff2'),
+       url("befe6dc0-a62a-42b1-b6b4-d9f5158ccba5") format('woff'),
+       url("70db2be6-9994-447f-875c-bf607127aaa2") format('truetype');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url("93cdd266-441c-4945-875f-5d87a8a4b2fc") format('woff2'),
+       url("5883ab9d-764e-4860-88c7-4cd3d5105d6e") format('woff'),
+       url("9bf1780d-ecd4-4fff-985d-ed459354b015") format('truetype');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+
+</style>
+<style>
+  html, body { margin:0; height:100%; background:#fbfbfc; }
+  a { color:#2b6cf5; text-decoration:none; }
+  a:hover { color:#1c4fc4; }
+  @keyframes orbIn { from { opacity:0; transform:translateY(14px) scale(.72); } to { opacity:1; transform:none; } }
+  @keyframes orbIdle { 0%,100% { transform:scale(1); } 50% { transform:scale(1.035); } }
+  @keyframes orbSpeak { 0% { transform:scale(1); } 18% { transform:scale(1.09); } 36% { transform:scale(1.02); } 54% { transform:scale(1.12); } 74% { transform:scale(1.04); } 100% { transform:scale(1); } }
+  @keyframes runShimmer { from { background-position:120% 0; } to { background-position:-40% 0; } }
+  @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  @keyframes thinkHop { 0%,100% { transform:translateY(0) rotate(0deg); } 28% { transform:translateY(-4px) rotate(-4deg); } 60% { transform:translateY(-1.5px) rotate(3deg); } }
+  @keyframes thinkDot { 0%,100% { transform:translateY(0); opacity:.38; } 40% { transform:translateY(-4.5px); opacity:1; } }
+  @keyframes thinkBubble { 0%,100% { transform:scale(1); } 50% { transform:scale(1.035); } }
+  input::placeholder { color:#6e6e73; }
+</style>
+</helmet>
+
+<div style="position:relative; height:100vh; box-sizing:border-box; overflow:hidden; font-family:'Switzer','Switzer Variable',-apple-system,BlinkMacSystemFont,sans-serif; color:#1e3358; -webkit-font-smoothing:antialiased">
+  <div style="display:grid; grid-template-columns:{{ gridCols }}; height:100%; min-height:0; overflow:hidden; background-color:#fbfbfc; background-image:linear-gradient(rgba(16,22,35,.018) 1px, transparent 1px), linear-gradient(90deg, rgba(16,22,35,.018) 1px, transparent 1px); background-size:34px 34px; background-position:-1px -1px">
+
+    <div style="display:flex; flex-direction:column; min-height:0; min-width:0; border-right:1px solid rgba(16,22,35,.11); background:rgba(249,250,252,.86); backdrop-filter:blur(2px)">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:15px 15px 11px">
+        <div style="font-size:18px; font-weight:500; letter-spacing:-.01em">Messages</div>
+        <button sc-camel-on-click="{{ openCompose }}" style="width:30px; height:30px; border-radius:50%; border:1px solid rgba(16,22,35,.11); background:#fbfbfc; color:#6e6e73; font-size:16.5px; font-weight:400; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(16,22,35,.04)" style-hover="color:#1e3358">+</button>
+      </div>
+
+      <div style="padding:0 12px 12px">
+        <div style="display:flex; align-items:center; gap:8px; height:37px; padding:0 12px; border-radius:999px; background:#e9edf2; border:1px solid rgba(16,22,35,.11)">
+          <svg width="13" height="13" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+          <input value="{{ query }}" sc-camel-on-change="{{ onQuery }}" placeholder="Search" style="flex:1 1 auto; min-width:0; border:none; outline:none; background:transparent; font-family:inherit; font-size:13px; color:#1e3358">
+        </div>
+      </div>
+
+      <div style="flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:4px; padding:0 9px 6px; overflow-y:auto; overflow-x:hidden">
+        <sc-for list="{{ bots }}" as="bot" hint-placeholder-count="4">
+          <div sc-camel-on-click="{{ bot.select }}" style="{{ bot.rowStyle }}">
+            <span style="width:37px; height:37px; flex:0 0 auto; animation:orbIdle 7.5s ease-in-out infinite">
+              <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ bot.colors }}" seed="{{ bot.seed }}" hint-size="37px,37px" style="width:37px; height:37px"></x-import>
+            </span>
+            <div style="min-width:0; flex:1 1 auto; display:flex; flex-direction:column; gap:4px">
+              <div style="display:flex; align-items:baseline; gap:9px">
+                <span style="flex:1 1 auto; min-width:0; font-size:14px; font-weight:500; letter-spacing:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ bot.name }}</span>
+                <span style="flex:0 0 auto; font-size:12.5px; font-weight:400; color:#6e6e73; white-space:nowrap">{{ bot.when }}</span>
+              </div>
+              <div style="font-size:12.5px; color:#6e6e73; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ bot.preview }}</div>
+            </div>
+            <sc-if value="{{ bot.showDelete }}" hint-placeholder-val="{{ false }}">
+              <button sc-camel-on-click="{{ bot.remove }}" title="Delete conversation" style="width:26px; height:26px; flex:0 0 auto; padding:0; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid transparent; background:transparent; cursor:pointer; color:#86868b" style-hover="background:#fdeceb; border-color:rgba(201,42,37,.18); color:#c92a25">
+                <svg width="13" height="13" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16"></path><path d="M9 7V5h6v2"></path><path d="M6 7l1 13h10l1-13"></path><path d="M10 11v6M14 11v6"></path></svg>
+              </button>
+            </sc-if>
+            <sc-if value="{{ bot.showDot }}" hint-placeholder-val="{{ true }}">
+              <span style="width:7px; height:7px; flex:0 0 auto; border-radius:50%; background:{{ bot.dotColor }}"></span>
+            </sc-if>
+            <sc-if value="{{ m.isFile }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:8px; max-width:min(70%,440px)">
+                <sc-for list="{{ m.files }}" as="f" hint-placeholder-count="2">
+                  <div style="display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:18px; background:#fbfbfc; border:1px solid rgba(255,255,255,.6); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset 0 1px 0 rgba(255,255,255,.7); transition:background .15s" style-hover="background:#f6f7f9">
+                    <span style="{{ f.iconStyle }}"></span>
+                    <span style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column">
+                      <span style="font-size:14px; font-weight:500; letter-spacing:0; color:#1c1f23; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ f.name }}</span>
+                    </span>
+                    <button style="width:31px; height:31px; flex:0 0 auto; border-radius:50%; border:1px solid rgba(16,22,35,.11); background:#fbfbfc; color:#1e3358; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0" style-hover="background:#eef1f5">
+                      <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M7.5 11l4.5 4.5 4.5-4.5"></path><path d="M5 19.5h14"></path></svg>
+                    </button>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="flex:0 0 auto; padding:12px 9px 14px; display:flex; flex-direction:column; gap:4px; border-top:1px solid rgba(16,22,35,.11)">
+        <div sc-camel-on-click="{{ openApps }}" style="display:flex; align-items:center; gap:11px; height:49px; padding:0 11px; border-radius:16px; cursor:pointer" style-hover="background:rgba(16,22,35,.06)">
+          <span style="width:31px; height:31px; border-radius:50%; background:#e9edf2; border:1px solid rgba(16,22,35,.11); display:flex; align-items:center; justify-content:center; flex:0 0 auto">
+            <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="3" width="7" height="7" rx="2"></rect><rect x="3" y="14" width="7" height="7" rx="2"></rect><rect x="14" y="14" width="7" height="7" rx="2"></rect></svg>
+          </span>
+          <span style="font-size:13.5px; font-weight:400">Apps</span>
+        </div>
+        <div style="position:relative">
+          <sc-if value="{{ accountOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute; left:2px; bottom:56px; width:272px; z-index:40; padding:6px; border-radius:20px; background:rgba(255,255,255,.94); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 18px 44px rgba(16,22,35,.18), inset 0 1px 0 rgba(255,255,255,.8); display:flex; flex-direction:column; gap:4px; animation:msgIn .16s ease-out both">
+              <button style="display:flex; align-items:center; gap:11px; height:41px; padding:0 11px; border:none; background:transparent; border-radius:14px; cursor:pointer; font-family:inherit" style-hover="background:rgba(16,22,35,.04)">
+                <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.7" style="flex:0 0 auto"><circle cx="12" cy="12" r="9"></circle><path d="M12 12l4-3"></path></svg>
+                <span style="flex:1 1 auto; text-align:left; font-size:13.5px; color:#1e3358">Trial usage</span>
+                <span style="font-size:13px; color:#6e6e73">74%</span>
+                <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2" style="flex:0 0 auto"><path d="M9 5l7 7-7 7"></path></svg>
+              </button>
+              <button style="display:flex; align-items:center; gap:11px; height:41px; padding:0 11px; border:none; background:transparent; border-radius:14px; cursor:pointer; font-family:inherit" style-hover="background:rgba(16,22,35,.04)">
+                <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.7" style="flex:0 0 auto"><rect x="4" y="3" width="16" height="18" rx="3"></rect><path d="M9 7h6"></path></svg>
+                <span style="flex:1 1 auto; text-align:left; font-size:13.5px; color:#1e3358">Support</span>
+                <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2" style="flex:0 0 auto"><path d="M9 5l7 7-7 7"></path></svg>
+              </button>
+              <button style="display:flex; align-items:center; gap:11px; height:41px; padding:0 11px; border:none; background:transparent; border-radius:14px; cursor:pointer; font-family:inherit" style-hover="background:rgba(16,22,35,.04)">
+                <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.7" style="flex:0 0 auto"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.5v2.2M12 18.3v2.2M4.6 7.8l1.9 1.1M17.5 15.1l1.9 1.1M4.6 16.2l1.9-1.1M17.5 8.9l1.9-1.1"></path></svg>
+                <span sc-camel-on-click="{{ openSettings }}" style="flex:1 1 auto; text-align:left; font-size:13.5px; color:#1e3358">Settings</span>
+              </button>
+              <div style="height:1px; margin:7px 10px; background:rgba(16,22,35,.11)"></div>
+              <button style="display:flex; align-items:center; gap:11px; height:41px; padding:0 11px; border:none; background:transparent; border-radius:14px; cursor:pointer; font-family:inherit" style-hover="background:rgba(16,22,35,.04)">
+                <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.7" style="flex:0 0 auto"><circle cx="10" cy="8" r="3.4"></circle><path d="M3.5 20c.6-3.4 3.3-5.4 6.5-5.4M18 13v5M15.5 15.5h5"></path></svg>
+                <span style="flex:1 1 auto; text-align:left; font-size:13.5px; color:#1e3358">Add account</span>
+              </button>
+              <button style="display:flex; align-items:center; gap:11px; height:41px; padding:0 11px; border:none; background:transparent; border-radius:14px; cursor:pointer; font-family:inherit" style-hover="background:rgba(16,22,35,.04)">
+                <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.7" style="flex:0 0 auto"><path d="M10 5H6a2 2 0 00-2 2v10a2 2 0 002 2h4"></path><path d="M15 8l-3.5 4 3.5 4"></path><path d="M11.5 12H20"></path></svg>
+                <span style="flex:1 1 auto; text-align:left; font-size:13.5px; color:#1e3358">Log out</span>
+              </button>
+            </div>
+          </sc-if>
+          <div sc-camel-on-click="{{ toggleAccount }}" style="display:flex; align-items:center; gap:11px; height:49px; padding:0 11px; border-radius:16px; cursor:pointer" style-hover="background:rgba(16,22,35,.06)">
+            <span style="width:31px; height:31px; border-radius:50%; background:#1e3358; color:#fbfbfc; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:500; flex:0 0 auto">B</span>
+            <span style="flex:1 1 auto; font-size:13.5px; font-weight:400">Bass Fall</span>
+            <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2" style="flex:0 0 auto"><path d="M5 15l7-7 7 7"></path></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; min-width:0; min-height:0">
+      <sc-if value="{{ composing }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:center; gap:9px; padding:14px 21px; border-bottom:1px solid rgba(16,22,35,.11); background:rgba(250,251,252,.92); backdrop-filter:blur(20px)">
+          <span style="font-size:14.5px; color:#6e6e73">To:</span>
+          <sc-for list="{{ groupChips }}" as="c" hint-placeholder-count="0">
+            <span style="display:flex; align-items:center; gap:6px; height:31px; padding:0 5px 0 4px; border-radius:999px; background:#eef1f5; border:1px solid rgba(16,22,35,.11); flex:0 0 auto">
+              <span style="width:23px; height:23px; flex:0 0 auto">
+                <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ c.colors }}" seed="{{ c.seed }}" hint-size="23px,23px" style="width:23px; height:23px"></x-import>
+              </span>
+              <span style="font-size:13.5px; color:#1e3358">{{ c.name }}</span>
+              <button sc-camel-on-click="{{ c.remove }}" style="width:17px; height:17px; border:none; background:transparent; cursor:pointer; color:#6e6e73; display:flex; align-items:center; justify-content:center; padding:0" style-hover="color:#1e3358">
+                <svg width="10.5" height="10.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 5l14 14"></path><path d="M19 5L5 19"></path></svg>
+              </button>
+            </span>
+          </sc-for>
+          <input ref="{{ composeRef }}" value="{{ composeQuery }}" sc-camel-on-change="{{ onComposeQuery }}" sc-camel-on-key-down="{{ onComposeKey }}" placeholder="{{ composePlaceholder }}" style="flex:1 1 auto; min-width:0; border:none; outline:none; background:transparent; font-family:inherit; font-size:14.5px; color:#1e3358">
+          <button sc-camel-on-click="{{ closeCompose }}" style="width:28px; height:28px; border:none; background:transparent; cursor:pointer; color:#6e6e73; display:flex; align-items:center; justify-content:center; border-radius:50%" style-hover="background:#e9edf2; color:#1e3358">
+            <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14"></path><path d="M19 5L5 19"></path></svg>
+          </button>
+        </div>
+        <div style="flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding:15px 21px 24px; display:flex; flex-direction:column; gap:12px; align-items:flex-start">
+          <sc-if value="{{ setupOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="width:100%; max-width:640px; box-sizing:border-box; padding:21px 21px 19px; border-radius:22px; background:rgba(255,255,255,.88); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.6); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.13), inset 0 1px 0 rgba(255,255,255,.7); display:flex; flex-direction:column; gap:19px; animation:msgIn .22s ease-out both">
+              <div style="display:flex; align-items:center; gap:14px">
+                <span style="width:52px; height:52px; flex:0 0 auto; ">
+                  <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ setupColors }}" seed="{{ setupSeed }}" hint-size="52px,52px" style="width:52px; height:52px"></x-import>
+                </span>
+                <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px">
+                  <div style="font-size:15.5px; font-weight:500; letter-spacing:-.01em; color:#1e3358">New agent</div>
+                  <div style="font-size:12.5px; color:#6e6e73">Pick an avatar, a name and a voice.</div>
+                </div>
+                <button sc-camel-on-click="{{ toggleSetupAvatar }}" style="{{ setupAvatarBtnStyle }}" style-hover="background:#eef1f5">
+                  <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20h4l10.5-10.5a2.5 2.5 0 00-3.5-3.5L4.5 16.5V20z"></path><path d="M14.5 6.5l3 3"></path></svg>
+                  <span style="font-size:13px; white-space:nowrap">Edit avatar</span>
+                </button>
+              </div>
+
+              <sc-if value="{{ setupAvatarOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:12px; border-radius:16px; background:#fbfbfc; border:1px solid rgba(16,22,35,.06); box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(16,22,35,.04); display:flex; flex-direction:column; gap:10px">
+                  <div style="font-size:12.5px; color:#6e6e73">Choose an avatar</div>
+                  <div style="display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:6px">
+                    <sc-for list="{{ setupAvatarOptions }}" as="av" hint-placeholder-count="25">
+                      <button sc-camel-on-click="{{ av.pick }}" style="{{ av.style }}">
+                        <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ av.colors }}" seed="{{ av.seed }}" hint-size="31px,31px" style="width:100%; height:100%"></x-import>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div style="font-size:12.5px; color:#6e6e73">Name</div>
+                <input ref="{{ setupNameRef }}" value="{{ setupName }}" sc-camel-on-change="{{ onSetupName }}" placeholder="e.g. Perrin" style="height:41px; padding:0 14px; border-radius:12px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; outline:none; font-family:inherit; font-size:14px; color:#1e3358">
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div style="font-size:12.5px; color:#6e6e73">Voice</div>
+                <button sc-camel-on-click="{{ openVoice }}" style="display:flex; align-items:center; gap:11px; align-self:flex-start; height:41px; padding:0 14px 0 5px; border-radius:999px; border:1px solid rgba(16,22,35,.15); background:#fbfbfc; cursor:pointer; font-family:inherit" style-hover="background:#eef1f5">
+                  <sc-if value="{{ hasSetupVoice }}" hint-placeholder-val="{{ false }}">
+                    <span style="width:30px; height:30px; flex:0 0 auto; border-radius:50%; overflow:hidden; box-shadow:0 1px 2px rgba(16,22,35,.11)">
+                      <x-import component-from-global-scope="cloud-orb" from="b552479a-b900-425a-a63e-9f3a4f1c1632#/cloud-orb.js" grain="0.08" colors="{{ setupVoiceColors }}" seed="{{ setupVoiceSeed }}" hint-size="30px,30px" style="width:30px; height:30px"></x-import>
+                    </span>
+                  </sc-if>
+                  <sc-if value="{{ noSetupVoice }}" hint-placeholder-val="{{ true }}">
+                    <span style="width:30px; height:30px; flex:0 0 auto; border-radius:50%; background:#dfe4ec; border:1px solid rgba(16,22,35,.11)"></span>
+                  </sc-if>
+                  <span style="font-size:14px; color:#1e3358; white-space:nowrap">{{ setupVoiceLabel }}</span>
+                  <span style="font-size:14px; color:#6e6e73; white-space:nowrap">{{ setupVoiceAction }}</span>
+                </button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div style="font-size:12.5px; color:#6e6e73">Label (optional)</div>
+                <input value="{{ setupLabel }}" sc-camel-on-change="{{ onSetupLabel }}" placeholder="Research, marketing, admin…" style="height:41px; padding:0 14px; border-radius:12px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; outline:none; font-family:inherit; font-size:14px; color:#1e3358">
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div style="font-size:12.5px; color:#6e6e73">Description</div>
+                <textarea value="{{ setupDesc }}" sc-camel-on-change="{{ onSetupDesc }}" placeholder="What should this agent take care of?" style="min-height:78px; padding:11px 14px; border-radius:14px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; outline:none; resize:none; font-family:inherit; font-size:14px; line-height:1.45; color:#1e3358"></textarea>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:9px; padding-top:2px">
+                <button sc-camel-on-click="{{ createAgent }}" style="{{ createStyle }}">Create agent</button>
+                <button sc-camel-on-click="{{ closeCompose }}" style="height:39px; padding:0 21px; border-radius:999px; border:1px solid rgba(16,22,35,.17); background:#fbfbfc; color:#1e3358; font-family:inherit; font-size:13.5px; cursor:pointer" style-hover="background:#eef1f5">Cancel</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="width:100%; max-width:640px; box-sizing:border-box; padding:6px; border-radius:22px; background:rgba(255,255,255,.88); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.6); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.13), inset 0 1px 0 rgba(255,255,255,.7); display:flex; flex-direction:column; gap:4px; animation:msgIn .2s ease-out both">
+            <sc-for list="{{ composeRows }}" as="r" hint-placeholder-count="6">
+              <button sc-camel-on-click="{{ r.pick }}" style="{{ r.style }}" style-hover="background:rgba(16,22,35,.07)">
+                <sc-if value="{{ r.isAgent }}" hint-placeholder-val="{{ false }}">
+                  <span style="width:28px; height:28px; flex:0 0 auto; ">
+                    <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ r.colors }}" seed="{{ r.seed }}" hint-size="28px,28px" style="width:28px; height:28px"></x-import>
+                  </span>
+                </sc-if>
+                <sc-if value="{{ r.isAction }}" hint-placeholder-val="{{ true }}">
+                  <span style="width:28px; height:28px; flex:0 0 auto; border-radius:50%; background:#e9edf2; border:1px solid rgba(16,22,35,.11); display:flex; align-items:center; justify-content:center; color:#6e6e73">
+                    <span style="{{ r.glyphStyle }}">{{ r.glyph }}</span>
+                  </span>
+                </sc-if>
+                <span style="flex:1 1 auto; min-width:0; text-align:left; font-size:14.5px; font-weight:400; color:#1e3358; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ r.label }}</span>
+                <sc-if value="{{ r.hasHint }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex:0 0 auto; font-size:13px; color:#6e6e73">{{ r.hint }}</span>
+                </sc-if>
+                <sc-if value="{{ r.hasKey }}" hint-placeholder-val="{{ true }}">
+                  <span style="flex:0 0 auto; display:flex; align-items:center; gap:4px">
+                    <span style="min-width:19px; height:19px; padding:0 4px; border-radius:6px; background:#e9edf2; border:1px solid rgba(16,22,35,.11); display:flex; align-items:center; justify-content:center; font-family:'SF Mono', ui-monospace, SFMono-Regular, monospace; font-size:12px; color:#6e6e73">⌘</span>
+                    <span style="min-width:19px; height:19px; padding:0 4px; border-radius:6px; background:#e9edf2; border:1px solid rgba(16,22,35,.11); display:flex; align-items:center; justify-content:center; font-family:'SF Mono', ui-monospace, SFMono-Regular, monospace; font-size:12px; color:#6e6e73">{{ r.key }}</span>
+                  </span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ canStartGroup }}" hint-placeholder-val="{{ false }}">
+            <button sc-camel-on-click="{{ startGroup }}" style="height:39px; padding:0 21px; border-radius:999px; border:none; background:#1e3358; color:#fbfbfc; font-family:inherit; font-size:13.5px; font-weight:400; cursor:pointer" style-hover="background:#2c4674">{{ startGroupLabel }}</button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ voiceOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:28px; background:rgba(195,203,214,.42); backdrop-filter:blur(10px); animation:msgIn .18s ease-out both">
+          <div style="width:100%; max-width:560px; box-sizing:border-box; padding:29px 28px 24px; border-radius:24px; background:rgba(255,255,255,.94); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 24px 60px rgba(16,22,35,.14), inset 0 1px 0 rgba(255,255,255,.8); display:flex; flex-direction:column; align-items:center; gap:21px">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center">
+              <div style="font-size:20px; font-weight:500; letter-spacing:-.015em; color:#1e3358">Choose a voice.</div>
+              <div style="font-size:14.5px; color:#6e6e73">How your agent speaks to you.</div>
+            </div>
+
+            <span style="width:163px; height:163px; flex:0 0 auto; border-radius:50%; overflow:hidden; box-shadow:0 2px 6px rgba(16,22,35,.11), 0 20px 48px rgba(16,22,35,.14); animation:orbIdle 6s ease-in-out infinite">
+              <x-import component-from-global-scope="cloud-orb" from="b552479a-b900-425a-a63e-9f3a4f1c1632#/cloud-orb.js" grain="0.08" colors="{{ voiceColors }}" seed="{{ voiceSeed }}" hint-size="163px,163px" style="width:163px; height:163px"></x-import>
+            </span>
+
+            <div style="display:flex; align-items:center; gap:17px; width:100%; justify-content:center">
+              <button sc-camel-on-click="{{ voicePrev }}" style="width:33px; height:33px; flex:0 0 auto; border:none; background:transparent; cursor:pointer; color:#86868b; display:flex; align-items:center; justify-content:center; border-radius:50%" style-hover="color:#1e3358; background:rgba(16,22,35,.04)">
+                <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 5l-7 7 7 7"></path></svg>
+              </button>
+              <div style="min-width:204px; display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center">
+                <div style="font-size:18px; font-weight:500; letter-spacing:-.012em; color:#1e3358">{{ voiceName }}</div>
+                <div style="font-size:14px; color:#6e6e73">{{ voiceDesc }}</div>
+              </div>
+              <button sc-camel-on-click="{{ voiceNext }}" style="width:33px; height:33px; flex:0 0 auto; border:none; background:transparent; cursor:pointer; color:#86868b; display:flex; align-items:center; justify-content:center; border-radius:50%" style-hover="color:#1e3358; background:rgba(16,22,35,.04)">
+                <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5l7 7-7 7"></path></svg>
+              </button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px">
+              <sc-for list="{{ voiceDots }}" as="d" hint-placeholder-count="5">
+                <button sc-camel-on-click="{{ d.pick }}" style="{{ d.style }}"></button>
+              </sc-for>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:9px; padding-top:2px">
+              <button sc-camel-on-click="{{ confirmVoice }}" style="height:39px; padding:0 21px; border-radius:999px; border:none; background:#1e3358; color:#fbfbfc; font-family:inherit; font-size:13.5px; font-weight:400; white-space:nowrap; cursor:pointer" style-hover="background:#2c4674">Use this voice</button>
+              <button sc-camel-on-click="{{ closeVoice }}" style="height:39px; padding:0 21px; border-radius:999px; border:1px solid rgba(16,22,35,.17); background:#fbfbfc; color:#1e3358; font-family:inherit; font-size:13.5px; cursor:pointer" style-hover="background:#eef1f5">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:80; display:flex; background:rgba(195,203,214,.42); backdrop-filter:blur(10px); animation:msgIn .18s ease-out both">
+          <div style="margin:auto; width:calc(100% - 48px); max-width:1080px; height:calc(100% - 48px); box-sizing:border-box; display:grid; grid-template-columns:236px minmax(0,1fr); border-radius:24px; overflow:hidden; background:rgba(255,255,255,.94); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 24px 60px rgba(16,22,35,.18), inset 0 1px 0 rgba(255,255,255,.8)">
+
+            <div style="display:flex; flex-direction:column; gap:4px; padding:17px 11px; border-right:1px solid rgba(16,22,35,.11); background:rgba(249,250,252,.86)">
+              <sc-for list="{{ settingsTabs }}" as="t" hint-placeholder-count="4">
+                <button sc-camel-on-click="{{ t.pick }}" style="{{ t.style }}">
+                  <span style="width:18px; height:18px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; color:{{ t.iconColor }}">
+                    <sc-if value="{{ t.isGeneral }}" hint-placeholder-val="{{ true }}">
+                      <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.5v2.2M12 18.3v2.2M4.6 7.8l1.9 1.1M17.5 15.1l1.9 1.1M4.6 16.2l1.9-1.1M17.5 8.9l1.9-1.1"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ t.isComputer }}" hint-placeholder-val="{{ false }}">
+                      <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="12" rx="2.5"></rect><path d="M9 20h6M12 16v4"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ t.isUsage }}" hint-placeholder-val="{{ false }}">
+                      <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 20V11M12 20V4M19 20v-6"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ t.isUpdates }}" hint-placeholder-val="{{ false }}">
+                      <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4v10"></path><path d="M8 10l4 4 4-4"></path><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"></path></svg>
+                    </sc-if>
+                  </span>
+                  <span style="flex:1 1 auto; text-align:left">{{ t.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+
+            <div style="position:relative; min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden">
+              <div style="flex:0 0 auto; display:flex; align-items:center; gap:11px; padding:21px 24px 12px">
+                <div style="flex:1 1 auto; font-size:20.5px; font-weight:500; letter-spacing:-.015em; color:#1e3358">{{ settingsTitle }}</div>
+                <button sc-camel-on-click="{{ closeSettings }}" style="width:30px; height:30px; flex:0 0 auto; border:none; background:transparent; border-radius:50%; cursor:pointer; color:#6e6e73; display:flex; align-items:center; justify-content:center" style-hover="background:rgba(16,22,35,.06); color:#1e3358">
+                  <svg width="13" height="13" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14"></path><path d="M19 5L5 19"></path></svg>
+                </button>
+              </div>
+
+              <div style="flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding:5px 24px 28px; display:flex; flex-direction:column; gap:23px">
+                <sc-for list="{{ settingsGroups }}" as="g" hint-placeholder-count="3">
+                  <div style="flex:0 0 auto; display:flex; flex-direction:column; gap:9px">
+                    <div style="font-size:12.5px; color:#6e6e73; padding-left:3px">{{ g.title }}</div>
+                    <div style="border-radius:18px; background:#eef1f5; border:1px solid rgba(16,22,35,.11); overflow:hidden; display:flex; flex-direction:column">
+                      <sc-for list="{{ g.rows }}" as="row" hint-placeholder-count="2">
+                        <div style="{{ row.style }}">
+                          <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px">
+                            <div style="font-size:14.5px; font-weight:400; color:#1e3358; line-height:1.3">{{ row.label }}</div>
+                            <sc-if value="{{ row.hasDesc }}" hint-placeholder-val="{{ false }}">
+                              <div style="font-size:13px; color:#6e6e73; line-height:1.45; text-wrap:pretty">{{ row.desc }}</div>
+                            </sc-if>
+                          </div>
+
+                          <sc-if value="{{ row.isSelect }}" hint-placeholder-val="{{ false }}">
+                            <button style="display:flex; align-items:center; gap:6px; flex:0 0 auto; height:33px; padding:0 12px 0 14px; border-radius:999px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; cursor:pointer; font-family:inherit; font-size:13.5px; color:#1e3358" style-hover="background:#eef1f5">
+                              <span>{{ row.value }}</span>
+                              <svg width="11.5" height="11.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2"><path d="M5 9l7 7 7-7"></path></svg>
+                            </button>
+                          </sc-if>
+
+                          <sc-if value="{{ row.isToggle }}" hint-placeholder-val="{{ false }}">
+                            <button sc-camel-on-click="{{ row.toggle }}" style="{{ row.trackStyle }}">
+                              <span style="{{ row.knobStyle }}"></span>
+                            </button>
+                          </sc-if>
+
+                          <sc-if value="{{ row.isButton }}" hint-placeholder-val="{{ false }}">
+                            <button style="{{ row.buttonStyle }}">{{ row.action }}</button>
+                          </sc-if>
+
+                          <sc-if value="{{ row.isField }}" hint-placeholder-val="{{ false }}">
+                            <span style="display:flex; align-items:center; gap:6px; flex:0 0 auto">
+                              <input value="{{ row.value }}" sc-camel-on-change="{{ row.onInput }}" style="width:204px; height:33px; padding:0 11px; border-radius:11px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; outline:none; font-family:inherit; font-size:13.5px; color:#1e3358">
+                              <button style="height:33px; padding:0 15px; border-radius:999px; border:1px solid rgba(16,22,35,.13); background:#e9edf2; color:#6e6e73; font-family:inherit; font-size:13.5px; cursor:pointer" style-hover="background:#dfe4ec; color:#1e3358">Save</button>
+                            </span>
+                          </sc-if>
+
+                          <sc-if value="{{ row.isMeter }}" hint-placeholder-val="{{ false }}">
+                            <span style="flex:1 1 auto; display:flex; flex-direction:column; gap:8px; min-width:0">
+                              <span style="height:7px; border-radius:999px; background:#d7dde6; overflow:hidden; display:flex">
+                                <span style="{{ row.fillStyle }}"></span>
+                              </span>
+                              <span style="display:flex; align-items:baseline; gap:9px">
+                                <span style="flex:1 1 auto; font-size:13px; color:#6e6e73">{{ row.desc }}</span>
+                                <span style="font-size:13px; color:#6e6e73">{{ row.value }}</span>
+                              </span>
+                            </span>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ appsOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:80; display:flex; background:rgba(195,203,214,.42); backdrop-filter:blur(10px); animation:msgIn .18s ease-out both">
+          <div style="margin:auto; width:calc(100% - 48px); max-width:1080px; height:calc(100% - 48px); box-sizing:border-box; display:flex; flex-direction:column; border-radius:24px; overflow:hidden; background:rgba(255,255,255,.94); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 24px 60px rgba(16,22,35,.18), inset 0 1px 0 rgba(255,255,255,.8)">
+
+            <div style="flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:19px 23px 14px; border-bottom:1px solid rgba(16,22,35,.11)">
+              <div style="font-size:20.5px; font-weight:500; letter-spacing:-.015em; color:#1e3358">Apps</div>
+              <div style="display:flex; align-items:center; padding:2px; border-radius:999px; background:rgba(233,237,242,.9); border:1px solid rgba(16,22,35,.11)">
+                <button sc-camel-on-click="{{ pickPlugins }}" style="{{ pluginsTabStyle }}">Plugins</button>
+                <button sc-camel-on-click="{{ pickAgents }}" style="{{ agentsTabStyle }}">Agents</button>
+              </div>
+              <span style="margin-left:auto; display:flex; align-items:center; gap:9px; width:min(300px,42%); height:37px; padding:0 14px; border-radius:999px; background:#e9edf2; border:1px solid rgba(16,22,35,.11)">
+                <svg width="13" height="13" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+                <input value="{{ appQuery }}" sc-camel-on-change="{{ onAppQuery }}" placeholder="Search" style="flex:1 1 auto; min-width:0; border:none; outline:none; background:transparent; font-family:inherit; font-size:14px; color:#1e3358">
+              </span>
+              <button sc-camel-on-click="{{ closeApps }}" style="width:30px; height:30px; flex:0 0 auto; border:none; background:transparent; border-radius:50%; cursor:pointer; color:#6e6e73; display:flex; align-items:center; justify-content:center" style-hover="background:rgba(16,22,35,.06); color:#1e3358">
+                <svg width="13" height="13" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14"></path><path d="M19 5L5 19"></path></svg>
+              </button>
+            </div>
+
+            <div style="flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding:26px 29px 38px; display:flex; flex-direction:column; gap:6px">
+              <sc-if value="{{ pluginsTab }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; align-items:center; gap:12px; padding:0 2px; flex-wrap:wrap">
+                  <span style="display:flex; align-items:baseline; gap:9px">
+                    <span style="font-size:16px; font-weight:500; letter-spacing:-.01em; color:#1e3358">Connectors</span>
+                    <span style="font-size:14px; color:#6e6e73">{{ appCount }}</span>
+                  </span>
+                  <sc-if value="{{ hasInstalled }}" hint-placeholder-val="{{ true }}">
+                    <button style="display:flex; align-items:center; gap:11px; height:37px; padding:0 11px 0 6px; border-radius:999px; border:1px solid rgba(16,22,35,.11); background:#fbfbfc; cursor:pointer; font-family:inherit; box-shadow:0 1px 2px rgba(16,22,35,.04)" style-hover="background:#f6f8fb">
+                      <span style="display:flex; align-items:center">
+                        <sc-for list="{{ installedLogos }}" as="l" hint-placeholder-count="4">
+                          <span style="{{ l.style }}">
+                            <span style="font-size:12px; font-weight:500; color:#6e6e73">{{ l.mono }}</span>
+                            <img ref="{{ l.logoRef }}" alt="" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:17px; height:17px; object-fit:contain; display:none">
+                          </span>
+                        </sc-for>
+                      </span>
+                      <span style="font-size:13.5px; color:#6e6e73; white-space:nowrap">{{ installedLabel }}</span>
+                      <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2" style="flex:0 0 auto"><path d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                  </sc-if>
+                </div>
+                <div style="font-size:14px; color:#6e6e73; line-height:1.55; max-width:74ch; padding:6px 2px 0; text-wrap:pretty">A connector lets your agent act inside a service you already use. Where there's no connector it uses your computer and your browser instead, so nothing is out of reach.</div>
+
+                <sc-for list="{{ appCats }}" as="c" hint-placeholder-count="4">
+                  <div style="flex:0 0 auto; display:flex; flex-direction:column; gap:14px; padding-top:31px">
+                    <div style="display:flex; flex-direction:column; gap:4px; padding:0 2px">
+                      <div style="display:flex; align-items:baseline; gap:8px">
+                        <span style="font-size:14.5px; font-weight:500; letter-spacing:0; color:#1e3358">{{ c.title }}</span>
+                        <span style="font-size:13px; color:#6e6e73">{{ c.count }}</span>
+                      </div>
+                      <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:13px; color:#6e6e73; line-height:1.45; text-wrap:pretty">{{ c.note }}</span>
+                      </sc-if>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px">
+                      <sc-for list="{{ c.items }}" as="i" hint-placeholder-count="6">
+                        <div style="display:flex; align-items:center; gap:14px; padding:17px 19px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); border-radius:18px; box-shadow:0 1px 2px rgba(16,22,35,.04)">
+                          <span style="flex:0 0 auto; position:relative; width:39px; height:39px; border-radius:13px; background:#eef1f5; border:1px solid rgba(16,22,35,.11); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:500; color:#6e6e73">
+                            <span>{{ i.mono }}</span>
+                            <img ref="{{ i.logoRef }}" alt="" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:24px; height:24px; object-fit:contain; display:none">
+                          </span>
+                          <span style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px">
+                            <span style="font-size:14.5px; font-weight:400; color:#1e3358; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ i.name }}</span>
+                            <sc-if value="{{ i.hasTag }}" hint-placeholder-val="{{ false }}">
+                              <span style="font-size:12.5px; color:#6e6e73">{{ i.tag }}</span>
+                            </sc-if>
+                          </span>
+                          <button sc-camel-on-click="{{ i.toggle }}" style="{{ i.btnStyle }}">{{ i.btnLabel }}</button>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ appsEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:14px; color:#6e6e73; text-align:center; padding:41px 0">Nothing matches that search.</div>
+                </sc-if>
+              </sc-if>
+
+              <sc-if value="{{ agentsList }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; align-items:baseline; gap:9px; padding:0 2px">
+                  <span style="font-size:16px; font-weight:500; letter-spacing:-.01em; color:#1e3358">Agents</span>
+                  <span style="font-size:14px; color:#6e6e73">{{ agentCount }}</span>
+                </div>
+                <div style="font-size:14px; color:#6e6e73; line-height:1.55; max-width:74ch; padding:6px 2px 23px; text-wrap:pretty">Agents come ready for a role. Install one and it arrives with its own skills, already knowing the work.</div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:17px">
+                  <sc-for list="{{ agentCards }}" as="a" hint-placeholder-count="6">
+                    <div sc-camel-on-click="{{ a.open }}" style="display:flex; flex-direction:column; gap:15px; padding:21px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); border-radius:20px; box-shadow:0 1px 2px rgba(16,22,35,.04); cursor:pointer" style-hover="background:#f6f8fb">
+                      <div style="display:flex; align-items:center; gap:14px">
+                        <span style="width:44px; height:44px; flex:0 0 auto; ">
+                          <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ a.colors }}" seed="{{ a.seed }}" hint-size="44px,44px" style="width:44px; height:44px"></x-import>
+                        </span>
+                        <span style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column">
+                          <span style="font-size:15.5px; font-weight:500; letter-spacing:0; color:#1e3358; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ a.name }}</span>
+                          <span style="display:flex; align-items:center; gap:8px">
+                            <sc-if value="{{ a.hasSkills }}" hint-placeholder-val="{{ true }}">
+                              <span style="font-size:12.5px; color:#6e6e73">{{ a.skills }}</span>
+                            </sc-if>
+                            <sc-if value="{{ a.official }}" hint-placeholder-val="{{ false }}">
+                              <span style="font-size:12.5px; color:#1e3358">Official</span>
+                            </sc-if>
+                          </span>
+                        </span>
+                        <button sc-camel-on-click="{{ a.install }}" style="{{ a.btnStyle }}">{{ a.btnLabel }}</button>
+                      </div>
+                      <div style="font-size:14px; color:#6e6e73; line-height:1.55; text-wrap:pretty">{{ a.desc }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ agentDetail }}" hint-placeholder-val="{{ false }}">
+                <div style="width:100%; max-width:860px; margin:0 auto; display:flex; flex-direction:column; gap:31px">
+
+                  <div style="display:flex; align-items:flex-start; gap:21px">
+                    <button sc-camel-on-click="{{ backToAgents }}" style="width:31px; height:31px; flex:0 0 auto; margin-top:20px; border:none; background:transparent; border-radius:50%; cursor:pointer; color:#6e6e73; display:flex; align-items:center; justify-content:center" style-hover="background:rgba(16,22,35,.06); color:#1e3358">
+                      <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M15 5l-7 7 7 7"></path></svg>
+                    </button>
+
+                    <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:21px">
+                      <div style="display:flex; align-items:flex-start; gap:19px">
+                        <span style="width:82px; height:82px; flex:0 0 auto; ">
+                          <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ detailColors }}" seed="{{ detailSeed }}" hint-size="82px,82px" style="width:82px; height:82px"></x-import>
+                        </span>
+                        <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:6px; padding-top:6px">
+                          <div style="font-size:25.5px; font-weight:500; letter-spacing:-.02em; line-height:1.2; color:#1e3358">{{ detailName }}</div>
+                          <div style="font-size:14px; color:#6e6e73">{{ detailMeta }}</div>
+                        </div>
+                        <button sc-camel-on-click="{{ detailInstall }}" style="{{ detailBtnStyle }}">{{ detailBtnLabel }}</button>
+                      </div>
+
+                      <div style="font-size:15.5px; color:#1e3358; line-height:1.6; max-width:70ch; text-wrap:pretty">{{ detailDesc }}</div>
+                    </div>
+                  </div>
+
+                  <div style="height:1px; background:rgba(16,22,35,.11)"></div>
+
+                  <div style="display:grid; grid-template-columns:240px minmax(0,1fr); gap:28px; align-items:start; padding-bottom:6px">
+                    <div style="display:flex; flex-direction:column; gap:4px">
+                      <sc-for list="{{ detailTabs }}" as="t" hint-placeholder-count="5">
+                        <button sc-camel-on-click="{{ t.pick }}" style="{{ t.style }}">
+                          <span style="font-size:14.5px; color:#1e3358">{{ t.label }}</span>
+                          <span style="font-size:13px; color:#6e6e73">{{ t.note }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                    <div style="min-height:280px; padding:24px 26px; border-radius:20px; background:#eef1f5; border:1px solid rgba(16,22,35,.11); display:flex; flex-direction:column; gap:17px">
+                      <div style="font-size:12.5px; color:#6e6e73">{{ agentTabLabel }}</div>
+                      <div style="font-size:15px; color:#1e3358; line-height:1.65; max-width:62ch; text-wrap:pretty">{{ detailBody }}</div>
+                      <sc-if value="{{ hasSkillList }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; padding-top:3px">
+                          <sc-for list="{{ skillChips }}" as="sk" hint-placeholder-count="6">
+                            <span style="height:31px; display:flex; align-items:center; padding:0 13px; border-radius:999px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); font-size:13px; color:#1e3358">{{ sk.label }}</span>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ notComposing }}" hint-placeholder-val="{{ true }}">
+      <div style="position:relative; display:flex; align-items:center; gap:10px; padding:14px 21px; border-bottom:1px solid rgba(16,22,35,.11); background:rgba(250,251,252,.92); backdrop-filter:blur(20px)">
+        <span style="width:26px; height:26px; flex:0 0 auto; ">
+          <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ activeColors }}" seed="{{ activeSeed }}" hint-size="26px,26px" style="width:26px; height:26px"></x-import>
+        </span>
+        <button sc-camel-on-click="{{ toggleAgentPanel }}" style="display:flex; align-items:center; gap:6px; height:28px; padding:0 8px 0 6px; margin-left:-4px; border:1px solid transparent; border-radius:10px; background:transparent; cursor:pointer; font-family:inherit; font-size:15px; font-weight:500; letter-spacing:-.01em; color:#1e3358" style-hover="background:#e9edf2; border-color:rgba(16,22,35,.11)">
+          <span>{{ botName }}</span>
+          <svg width="10.5" height="10.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.2"><path d="M6 9.5l6 6 6-6"></path></svg>
+        </button>
+        <sc-if value="{{ typing }}" hint-placeholder-val="{{ false }}">
+          <span style="display:flex; align-items:center; gap:4px">
+            <span style="width:4.5px; height:4.5px; border-radius:50%; background:#6e6e73; animation:thinkDot 1.2s ease-in-out infinite"></span>
+            <span style="width:4.5px; height:4.5px; border-radius:50%; background:#6e6e73; animation:thinkDot 1.2s ease-in-out .16s infinite"></span>
+            <span style="width:4.5px; height:4.5px; border-radius:50%; background:#6e6e73; animation:thinkDot 1.2s ease-in-out .32s infinite"></span>
+          </span>
+        </sc-if>
+        <div style="position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; padding:2px; border-radius:999px; background:rgba(241,243,246,.72); backdrop-filter:blur(20px) saturate(1.4); border:1px solid rgba(255,255,255,.6); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 6px 16px rgba(16,22,35,.11), inset 0 1px 0 rgba(255,255,255,.8)">
+          <button sc-camel-on-click="{{ pickText }}" style="{{ textTabStyle }}">Text</button>
+          <button sc-camel-on-click="{{ pickVoice }}" style="{{ voiceTabStyle }}">Voice</button>
+        </div>
+        <span style="margin-left:auto; display:flex; align-items:center; gap:5px">
+          <button style="width:31px; height:31px; border-radius:999px; border:1px solid transparent; background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center" style-hover="background:#e9edf2; border-color:rgba(16,22,35,.11)">
+            <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+          </button>
+          <span style="position:relative; display:flex">
+            <sc-if value="{{ shareOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; right:0; top:42px; z-index:40; padding:6px; border-radius:18px; background:rgba(255,255,255,.94); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 18px 44px rgba(16,22,35,.18), inset 0 1px 0 rgba(255,255,255,.8); animation:msgIn .16s ease-out both">
+                <button style="display:flex; align-items:center; height:41px; padding:0 14px; border:none; background:transparent; border-radius:14px; cursor:pointer; font-family:inherit; font-size:13.5px; color:#1e3358; white-space:nowrap" style-hover="background:rgba(16,22,35,.06)">Share as template</button>
+              </div>
+            </sc-if>
+            <button sc-camel-on-click="{{ toggleShare }}" style="width:31px; height:31px; border-radius:999px; border:1px solid transparent; background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center" style-hover="background:#e9edf2; border-color:rgba(16,22,35,.11)">
+              <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"></path></svg>
+            </button>
+          </span>
+          <button style="width:31px; height:31px; border-radius:999px; border:1px solid transparent; background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center" style-hover="background:#e9edf2; border-color:rgba(16,22,35,.11)">
+            <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8"><rect x="2.5" y="4" width="19" height="13" rx="2"></rect><path d="M9 21h6"></path></svg>
+          </button>
+        </span>
+      </div>
+
+      <div ref="{{ threadRef }}" style="flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding:24px 21px 17px; display:flex; flex-direction:column; gap:9px">
+        <div style="display:flex; justify-content:center; padding-bottom:5px">
+          <span style="font-size:12.5px; color:#6e6e73">{{ dayStamp }}</span>
+        </div>
+
+        <sc-for list="{{ messages }}" as="m" hint-placeholder-count="4">
+          <div style="{{ m.rowStyle }}" sc-camel-on-mouse-enter="{{ m.onEnter }}" sc-camel-on-mouse-leave="{{ m.onLeave }}">
+            <sc-if value="{{ m.isText }}" hint-placeholder-val="{{ true }}">
+              <sc-if value="{{ m.hasSender }}" hint-placeholder-val="{{ false }}">
+                <span style="width:26px; height:26px; flex:0 0 auto; margin:0 10px 2px 0; align-self:flex-end; ">
+                  <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ m.senderColors }}" seed="{{ m.senderSeed }}" hint-size="26px,26px" style="width:26px; height:26px"></x-import>
+                </span>
+                <div style="display:flex; flex-direction:column; gap:4px; min-width:0">
+                  <span style="{{ m.senderNameStyle }}">{{ m.senderName }}</span>
+                  <div style="{{ m.bubbleStyle }}"><sc-for list="{{ m.parts }}" as="p" hint-placeholder-count="1"><span style="{{ p.style }}">{{ p.text }}</span></sc-for></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ m.noSender }}" hint-placeholder-val="{{ true }}">
+                <div style="{{ m.bubbleStyle }}"><sc-for list="{{ m.parts }}" as="p" hint-placeholder-count="1"><span style="{{ p.style }}">{{ p.text }}</span></sc-for></div>
+              </sc-if>
+              <sc-if value="{{ m.hasReaction }}" hint-placeholder-val="{{ false }}">
+                <span style="align-self:flex-end; margin:0 0 2px 7px; flex:0 0 auto; display:flex; align-items:center; height:24px; padding:0 8px; border-radius:999px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); box-shadow:0 1px 2px rgba(16,22,35,.04); font-family:'Apple Color Emoji','Segoe UI Emoji',sans-serif; font-size:13px; line-height:1">{{ m.reaction }}</span>
+              </sc-if>
+              <div style="{{ m.actionsStyle }}">
+                  <button sc-camel-on-click="{{ m.toggleEmoji }}" style="width:28px; height:28px; border:none; background:transparent; border-radius:50%; cursor:pointer; color:#6b7280; display:flex; align-items:center; justify-content:center; padding:0" style-hover="background:rgba(16,22,35,.06); color:#1c1f23">
+                    <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"></circle><path d="M8.6 14.2c.8 1.2 2 1.9 3.4 1.9s2.6-.7 3.4-1.9" stroke-linecap="round"></path><path d="M9.2 9.6v.1" stroke-linecap="round" stroke-width="2"></path><path d="M14.8 9.6v.1" stroke-linecap="round" stroke-width="2"></path></svg>
+                  </button>
+                  <button sc-camel-on-click="{{ m.reply }}" style="width:28px; height:28px; border:none; background:transparent; border-radius:50%; cursor:pointer; color:#6b7280; display:flex; align-items:center; justify-content:center; padding:0" style-hover="background:rgba(16,22,35,.06); color:#1c1f23">
+                    <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 7L4.5 11.5 9.5 16"></path><path d="M4.5 11.5h8.8c3.4 0 6.2 2.6 6.2 5.9V18"></path></svg>
+                  </button>
+                  <button sc-camel-on-click="{{ m.toggleMenu }}" style="width:28px; height:28px; border:none; background:transparent; border-radius:50%; cursor:pointer; color:#6b7280; display:flex; align-items:center; justify-content:center; padding:0" style-hover="background:rgba(16,22,35,.06); color:#1c1f23">
+                    <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="18.5" cy="12" r="1.5"></circle></svg>
+                  </button>
+                  <sc-if value="{{ m.emojiOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ m.popStyle }}display:flex; gap:4px; padding:4px; border-radius:18px; background:rgba(255,255,255,.72); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.6); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.14)">
+                      <sc-for list="{{ m.emojis }}" as="e" hint-placeholder-count="6">
+                        <button sc-camel-on-click="{{ e.pick }}" style="width:31px; height:31px; border:none; background:transparent; border-radius:50%; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; font-family:'Apple Color Emoji','Segoe UI Emoji',sans-serif; font-size:19px; line-height:1" style-hover="background:rgba(16,22,35,.07)">{{ e.ch }}</button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ m.menuOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ m.popStyle }}min-width:191px; padding:5px; border-radius:16px; background:rgba(255,255,255,.72); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.6); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.14)">
+                      <button sc-camel-on-click="{{ m.copyId }}" style="width:100%; display:flex; align-items:center; gap:9px; padding:8px 10px; border:none; background:transparent; border-radius:11px; cursor:pointer; font-family:inherit; font-size:13.5px; font-weight:400; color:#1c1f23; text-align:left" style-hover="background:rgba(16,22,35,.06)">
+                        <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex:0 0 auto; color:#6b7280"><rect x="9" y="9" width="11" height="11" rx="2.5"></rect><path d="M15 5.5A2.5 2.5 0 0012.5 3H6.5A3.5 3.5 0 003 6.5v6A2.5 2.5 0 005.5 15"></path></svg>
+                        <span>{{ m.copyLabel }}</span>
+                      </button>
+                      <div style="padding:2px 11px 6px 31px; font-family:'SF Mono', ui-monospace, SFMono-Regular, monospace; font-size:12px; letter-spacing:0; color:#6b7280; word-break:break-all">{{ m.reqId }}</div>
+                    </div>
+                  </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isSystem }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:13.5px; color:#6e6e73; text-align:center; text-wrap:pretty">{{ m.text }}</span>
+            </sc-if>
+            <sc-if value="{{ m.isStatus }}" hint-placeholder-val="{{ false }}">
+              <span style="width:24px; height:24px; flex:0 0 auto; ">
+                <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ m.colors }}" seed="{{ m.seed }}" hint-size="24px,24px" style="width:24px; height:24px"></x-import>
+              </span>
+              <span style="font-size:14px; color:#1e3358; background:linear-gradient(90deg,#1c1f23 0%,#1c1f23 30%,#c7c7cc 55%,#1c1f23 80%); background-size:220% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:runShimmer 1.9s linear infinite">{{ m.text }}</span>
+            </sc-if>
+            <sc-if value="{{ m.isChoice }}" hint-placeholder-val="{{ false }}">
+              <div style="max-width:min(72%,560px); padding:15px 15px 15px; border-radius:22px; background:#e9edf2; border:1px solid rgba(16,22,35,.11); display:flex; flex-direction:column; gap:12px">
+                <div style="display:flex; align-items:flex-start; gap:11px; padding:0 2px">
+                  <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px">
+                    <div style="font-size:14.5px; font-weight:500; line-height:1.35; letter-spacing:0; text-wrap:pretty">{{ m.text }}</div>
+                    <sc-if value="{{ m.hasNote }}" hint-placeholder-val="{{ false }}">
+                      <div style="font-size:13.5px; color:#6e6e73; line-height:1.4">{{ m.note }}</div>
+                    </sc-if>
+                  </div>
+                  <button sc-camel-on-click="{{ m.dismiss }}" style="width:19px; height:19px; flex:0 0 auto; border:none; background:transparent; cursor:pointer; color:#6e6e73; display:flex; align-items:center; justify-content:center; padding:0" style-hover="color:#1e3358">
+                    <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14"></path><path d="M19 5L5 19"></path></svg>
+                  </button>
+                </div>
+                <div style="display:flex; flex-direction:column; border-radius:16px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); overflow:hidden; box-shadow:0 1px 2px rgba(16,22,35,.04)">
+                  <sc-for list="{{ m.options }}" as="o" hint-placeholder-count="3">
+                    <button sc-camel-on-click="{{ o.pick }}" style="{{ o.rowStyle }}" style-hover="background:#eef1f5">
+                      <span style="width:23px; height:23px; flex:0 0 auto; margin-top:1px; border-radius:8px; background:#e9edf2; border:1px solid rgba(16,22,35,.11); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:400; color:#6e6e73">{{ o.key }}</span>
+                      <span style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px">
+                        <span style="font-size:14.5px; font-weight:400; color:#1e3358; line-height:1.3">{{ o.label }}</span>
+                        <sc-if value="{{ o.hasHint }}" hint-placeholder-val="{{ true }}">
+                          <span style="font-size:13px; color:#6e6e73; line-height:1.35">{{ o.hint }}</span>
+                        </sc-if>
+                      </span>
+                    </button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ m.hasInput }}" hint-placeholder-val="{{ false }}">
+                  <input value="{{ m.freeValue }}" sc-camel-on-change="{{ m.onFree }}" sc-camel-on-key-down="{{ m.onFreeKey }}" placeholder="Type your own answer" style="height:43px; padding:0 14px; border-radius:14px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; outline:none; font-family:inherit; font-size:14px; color:#1e3358">
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isAuth }}" hint-placeholder-val="{{ false }}">
+              <div style="max-width:min(72%,560px); padding:15px 17px 17px; border-radius:22px; background:#e9edf2; border:1px solid rgba(16,22,35,.11); display:flex; flex-direction:column; gap:0">
+                <div style="display:flex; align-items:flex-start; gap:10px">
+                  <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#e8a300" stroke-width="1.9" style="flex:0 0 auto; margin-top:2px"><path d="M12 3.5L21.5 20H2.5L12 3.5z"></path><path d="M12 9.5v4.5"></path><path d="M12 17.2v.1"></path></svg>
+                  <div style="flex:1 1 auto; min-width:0; font-size:14.5px; font-weight:500; line-height:1.35; letter-spacing:0; text-wrap:pretty">{{ m.text }}</div>
+                  <button sc-camel-on-click="{{ m.dismiss }}" style="width:19px; height:19px; flex:0 0 auto; border:none; background:transparent; cursor:pointer; color:#6e6e73; display:flex; align-items:center; justify-content:center; padding:0" style-hover="color:#1e3358">
+                    <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14"></path><path d="M19 5L5 19"></path></svg>
+                  </button>
+                </div>
+                <div style="padding:8px 0 0 24px; font-family:'SF Mono', ui-monospace, SFMono-Regular, monospace; font-size:12px; color:#6e6e73; letter-spacing:0; word-break:break-all">{{ m.deviceId }}</div>
+                <div style="padding:6px 0 0 24px; font-size:13.5px; line-height:1.45; color:#6e6e73; text-wrap:pretty">{{ m.note }}</div>
+                <button sc-camel-on-click="{{ m.toggle }}" style="margin:12px 0 0 24px; align-self:flex-start; display:flex; align-items:center; gap:8px; padding:3px 3px; border:none; background:transparent; cursor:pointer; font-family:inherit; font-size:13.5px; color:#6e6e73" style-hover="color:#1e3358">
+                  <span style="{{ m.caretStyle }}">
+                    <svg width="10.5" height="10.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5l7 7-7 7"></path></svg>
+                  </span>
+                  <span>{{ m.toggleLabel }}</span>
+                </button>
+                <sc-if value="{{ m.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:10px 0 0 28px; padding:11px 13px; border-radius:14px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); font-family:'SF Mono', ui-monospace, SFMono-Regular, monospace; font-size:12px; line-height:1.6; color:#1e3358; white-space:pre-wrap; word-break:break-word">{{ m.command }}</div>
+                </sc-if>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; padding:15px 0 0 24px">
+                    <button sc-camel-on-click="{{ m.always }}" style="height:37px; padding:0 19px; border-radius:999px; border:none; background:#1e3358; color:#fbfbfc; font-family:inherit; font-size:13.5px; font-weight:400; cursor:pointer" style-hover="background:#2c4674">Always allow</button>
+                    <button sc-camel-on-click="{{ m.once }}" style="height:37px; padding:0 19px; border-radius:999px; border:1px solid rgba(16,22,35,.17); background:#fbfbfc; color:#1e3358; font-family:inherit; font-size:13.5px; font-weight:400; cursor:pointer" style-hover="background:#eef1f5">Allow once</button>
+                  <button sc-camel-on-click="{{ m.never }}" style="height:37px; padding:0 19px; border-radius:999px; border:1px solid rgba(16,22,35,.17); background:#fbfbfc; color:#1e3358; font-family:inherit; font-size:13.5px; font-weight:400; cursor:pointer" style-hover="background:#eef1f5">Never</button>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isFile }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:8px; max-width:min(70%,440px)">
+                <sc-for list="{{ m.files }}" as="f" hint-placeholder-count="2">
+                  <div style="display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:18px; background:#fbfbfc; border:1px solid rgba(255,255,255,.6); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset 0 1px 0 rgba(255,255,255,.7); transition:background .15s" style-hover="background:#f6f7f9">
+                    <span style="{{ f.iconStyle }}"></span>
+                    <span style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column">
+                      <span style="font-size:14px; font-weight:500; letter-spacing:0; color:#1c1f23; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ f.name }}</span>
+                    </span>
+                    <button style="width:31px; height:31px; flex:0 0 auto; border-radius:50%; border:1px solid rgba(16,22,35,.11); background:#fbfbfc; color:#1e3358; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0" style-hover="background:#eef1f5">
+                      <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M7.5 11l4.5 4.5 4.5-4.5"></path><path d="M5 19.5h14"></path></svg>
+                    </button>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ typing }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:flex-end; gap:8px; padding-top:5px; animation:msgIn .2s ease-out both">
+            <span style="width:24px; height:24px; flex:0 0 auto; animation:thinkHop 1.5s ease-in-out infinite">
+              <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ activeColors }}" seed="{{ activeSeed }}" hint-size="24px,24px" style="width:24px; height:24px"></x-import>
+            </span>
+            <span style="display:flex; align-items:center; gap:4px; height:24px; padding:0 10px; border-radius:13px 13px 13px 5px; background:#fbfbfc; border:1px solid rgba(16,22,35,.06); box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(16,22,35,.04); animation:thinkBubble 1.5s ease-in-out infinite">
+              <span style="width:5px; height:5px; border-radius:50%; background:#1e3358; animation:thinkDot 1.2s ease-in-out infinite"></span>
+              <span style="width:5px; height:5px; border-radius:50%; background:#1e3358; animation:thinkDot 1.2s ease-in-out .16s infinite"></span>
+              <span style="width:5px; height:5px; border-radius:50%; background:#1e3358; animation:thinkDot 1.2s ease-in-out .32s infinite"></span>
+            </span>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ isVoice }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:0 0 auto; padding:9px 21px 3px; display:flex; justify-content:center; animation:orbIn .52s cubic-bezier(.22,.68,.36,1) both">
+          <button style="width:96px; height:96px; padding:0; border:none; background:transparent; cursor:pointer; animation:{{ orbPulse }}">
+            <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ activeColors }}" seed="{{ activeSeed }}" hint-size="96px,96px" style="width:96px; height:96px"></x-import>
+          </button>
+        </div>
+      </sc-if>
+
+      <div style="padding:12px 21px 19px">
+        <div style="display:flex; align-items:center; gap:11px; min-height:49px; padding:5px 6px 5px 5px; border-radius:999px; background:#e9edf2; border:1px solid rgba(16,22,35,.11); box-shadow:inset 0 1px 0 rgba(255,255,255,.7)">
+          <div style="position:relative; flex:0 0 auto">
+            <sc-if value="{{ plusOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; left:0; bottom:52px; width:216px; z-index:40; padding:6px; border-radius:20px; background:rgba(255,255,255,.94); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 18px 44px rgba(16,22,35,.18), inset 0 1px 0 rgba(255,255,255,.8); display:flex; flex-direction:column; gap:4px; animation:msgIn .16s ease-out both">
+                <button style="display:flex; align-items:center; gap:11px; height:41px; padding:0 11px; border:none; background:transparent; border-radius:14px; cursor:pointer; font-family:inherit" style-hover="background:rgba(16,22,35,.04)">
+                  <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.7" style="flex:0 0 auto"><path d="M20 11.5l-7.8 7.8a4.3 4.3 0 01-6.1-6.1l8-8a2.9 2.9 0 014.1 4.1l-8 8a1.5 1.5 0 01-2.1-2.1l7.2-7.2"></path></svg>
+                  <span style="font-size:13.5px; color:#1e3358">Attach files</span>
+                </button>
+                <button style="display:flex; align-items:center; gap:11px; height:41px; padding:0 11px; border:none; background:transparent; border-radius:14px; cursor:pointer; font-family:inherit" style-hover="background:rgba(16,22,35,.04)">
+                  <span style="width:17px; height:17px; flex:0 0 auto; border-radius:50%; border:2px solid #e0322d; display:flex; align-items:center; justify-content:center">
+                    <span style="width:7px; height:7px; border-radius:50%; background:#e0322d"></span>
+                  </span>
+                  <span style="font-size:13.5px; color:#1e3358">Teach a task</span>
+                </button>
+              </div>
+            </sc-if>
+            <button sc-camel-on-click="{{ togglePlus }}" style="width:37px; height:37px; border-radius:50%; border:1px solid rgba(16,22,35,.11); background:#fbfbfc; color:#6e6e73; font-size:18px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(16,22,35,.04)" style-hover="color:#1e3358">+</button>
+          </div>
+          <input ref="{{ inputRef }}" value="{{ draft }}" sc-camel-on-change="{{ onDraft }}" sc-camel-on-key-down="{{ onKey }}" placeholder="{{ placeholder }}" style="flex:1 1 auto; min-width:0; border:none; outline:none; background:transparent; font-family:inherit; font-size:14px; color:#1e3358">
+          <button sc-camel-on-click="{{ send }}" style="width:37px; height:37px; border-radius:50%; border:none; background:#1e3358; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto" style-hover="background:#2c4674">
+            <sc-if value="{{ hasDraft }}" hint-placeholder-val="{{ false }}">
+              <svg width="15.5" height="15.5" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fbfbfc" stroke-width="1.9"><path d="M12 19V5"></path><path d="M6 11l6-6 6 6"></path></svg>
+            </sc-if>
+            <sc-if value="{{ noDraft }}" hint-placeholder-val="{{ true }}">
+              <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fbfbfc" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0014 0"></path><path d="M12 18v3"></path></svg>
+            </sc-if>
+          </button>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+      <sc-if value="{{ agentPanelOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; border-left:1px solid rgba(16,22,35,.11); background:rgba(249,250,252,.86); backdrop-filter:blur(20px); animation:msgIn .18s ease-out both">
+        <div style="flex:0 0 auto; display:flex; align-items:center; gap:9px; padding:14px 15px; border-bottom:1px solid rgba(16,22,35,.11)">
+          <span style="flex:1 1 auto; font-size:14.5px; font-weight:500; letter-spacing:-.01em">Agent settings</span>
+          <button sc-camel-on-click="{{ closeAgentPanel }}" style="width:28px; height:28px; border-radius:999px; border:1px solid transparent; background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center" style-hover="background:#e9edf2; border-color:rgba(16,22,35,.11)">
+            <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2"><path d="M5 5l14 14"></path><path d="M19 5L5 19"></path></svg>
+          </button>
+        </div>
+
+        <div style="flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding:17px 15px 21px; display:flex; flex-direction:column; gap:14px">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:9px; padding:2px 0 2px">
+            <span style="width:70px; height:70px; flex:0 0 auto">
+              <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ editColors }}" seed="{{ editSeed }}" hint-size="70px,70px" style="width:70px; height:70px"></x-import>
+            </span>
+            <button sc-camel-on-click="{{ toggleAvatarPicker }}" style="height:30px; padding:0 12px; border-radius:999px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; cursor:pointer; font-family:inherit; font-size:12.5px; color:#1e3358; white-space:nowrap; box-shadow:0 1px 2px rgba(16,22,35,.04)" style-hover="background:#eef1f5">{{ avatarBtnLabel }}</button>
+          </div>
+
+          <sc-if value="{{ avatarPickerOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:11px; border-radius:16px; background:#fbfbfc; border:1px solid rgba(16,22,35,.06); box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(16,22,35,.04); display:flex; flex-direction:column; gap:10px">
+              <div style="font-size:12.5px; color:#6e6e73">Choose an avatar</div>
+              <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px">
+                <sc-for list="{{ avatarOptions }}" as="av" hint-placeholder-count="25">
+                  <button sc-camel-on-click="{{ av.pick }}" style="{{ av.style }}">
+                    <x-import component-from-global-scope="cloud-blob" from="9bf6f161-23a3-4052-9fbb-f7d981f40399#/cloud-blob.js" colors="{{ av.colors }}" seed="{{ av.seed }}" hint-size="36px,36px" style="width:100%; height:100%"></x-import>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:12.5px; color:#6e6e73">Name</div>
+            <input value="{{ editName }}" sc-camel-on-change="{{ onEditName }}" placeholder="Agent name" style="height:39px; padding:0 12px; border-radius:12px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; outline:none; font-family:inherit; font-size:14px; color:#1e3358; box-shadow:0 1px 2px rgba(16,22,35,.04)">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:12.5px; color:#6e6e73">Label (optional)</div>
+            <input value="{{ editLabel }}" sc-camel-on-change="{{ onEditLabel }}" placeholder="Research, marketing, admin…" style="height:39px; padding:0 12px; border-radius:12px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; outline:none; font-family:inherit; font-size:13.5px; color:#1e3358; box-shadow:0 1px 2px rgba(16,22,35,.04)">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:12.5px; color:#6e6e73">Description</div>
+            <textarea value="{{ editDesc }}" sc-camel-on-change="{{ onEditDesc }}" placeholder="What should this agent take care of?" style="min-height:78px; padding:11px 12px; border-radius:14px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; outline:none; resize:vertical; font-family:inherit; font-size:14px; line-height:1.45; color:#1e3358; box-shadow:0 1px 2px rgba(16,22,35,.04)"></textarea>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:11px; padding:12px 13px; border-radius:16px; background:#fbfbfc; border:1px solid rgba(16,22,35,.06); box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(16,22,35,.04)">
+            <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px">
+              <div style="font-size:13.5px; font-weight:500; color:#1e3358">Notifications</div>
+              <div style="font-size:12.5px; color:#6e6e73; line-height:1.4">Get notified when this agent finishes or needs input</div>
+            </div>
+            <button sc-camel-on-click="{{ toggleNotify }}" style="{{ notifyTrackStyle }}"><span style="{{ notifyKnobStyle }}"></span></button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px; padding-top:12px; border-top:1px solid rgba(16,22,35,.06)">
+            <sc-if value="{{ deleteIdle }}" hint-placeholder-val="{{ true }}">
+              <button sc-camel-on-click="{{ askDelete }}" style="display:flex; align-items:center; justify-content:center; gap:6px; height:39px; padding:0 17px; border-radius:999px; border:1px solid rgba(201,42,37,.2); background:#fdeceb; color:#c92a25; font-family:inherit; font-size:13.5px; white-space:nowrap; cursor:pointer" style-hover="background:#fbdedc">
+                <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="flex:0 0 auto"><path d="M4 7h16"></path><path d="M9 7V5h6v2"></path><path d="M6 7l1 13h10l1-13"></path><path d="M10 11v6M14 11v6"></path></svg>
+                <span>Delete agent</span>
+              </button>
+            </sc-if>
+            <sc-if value="{{ deleteAsking }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:9px; padding:12px; border-radius:14px; background:#fdeceb; border:1px solid rgba(201,42,37,.16)">
+                <div style="font-size:12.5px; line-height:1.45; color:#c92a25; text-wrap:pretty">Delete {{ editNameOrBot }} and this conversation? This can't be undone.</div>
+                <div style="display:flex; align-items:center; gap:6px">
+                  <button sc-camel-on-click="{{ confirmDelete }}" style="flex:1 1 auto; height:36px; border-radius:999px; border:none; background:#c92a25; color:#fbfbfc; font-family:inherit; font-size:13px; font-weight:400; cursor:pointer" style-hover="background:#b02420">Delete</button>
+                  <button sc-camel-on-click="{{ cancelDelete }}" style="flex:1 1 auto; height:36px; border-radius:999px; border:1px solid rgba(16,22,35,.17); background:#fbfbfc; color:#1e3358; font-family:inherit; font-size:13px; cursor:pointer" style-hover="background:#eef1f5">Keep</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{}">
+const AVATARS = [
+  "#8fd3f4,#b9c4ee,#f7b2d9", "#a8e6cf,#c9e9a8,#f3e6a0", "#cdbdf5,#e3c2ee,#f9cfd6",
+  "#ffd79a,#ffbfa3,#f7a3b4", "#9fe0e6,#9cc2ef,#b0a8ee", "#f2e2c9,#eec7a8,#e2a896",
+  "#dbe3ee,#bccbdf,#9fb2cb", "#ffe3c7,#ffcdb2,#f7bfae", "#cfe6b8,#a9d49a,#87c08c",
+  "#d8b8dd,#c095bb,#a3789d", "#a9c8ff,#8fb6f5,#86d4e8", "#ffd899,#f5b06a,#dd8a63",
+  "#b4e4d6,#8fd0c6,#6fb9bd", "#f5b7e0,#dda5ea,#bd9ce6", "#e6e6e8,#cbcbd2,#adaebb",
+  "#fdf0b4,#fbdd9d,#f6c6a0", "#e3e0bd,#c8c79b,#a9ab81", "#f7b6b6,#ef9a9f,#dd7d8c",
+  "#cfe4f2,#aecbe2,#8fadc7", "#ffd2b0,#fbb6ad,#f2a2bb", "#b6cfc2,#93b3ab,#7e93a0",
+  "#e0bdf0,#c3bcf2,#a8cdf3", "#e7d3c3,#d0b39f,#b4937f", "#e6efa8,#d2e58c,#f0d982",
+  "#f7a8c4,#f2909e,#f0a785"
+];
+const BOTS = [
+  { id: "juno", name: "Juno", when: "9:12 AM", seed: 2, colors: "#8fd3f4,#b9c4ee,#f7b2d9",
+    role: "You handle documents and decks. Practical, quick.",
+    history: [
+      { role: "user", text: "can you read the board deck before the call" },
+      { role: "bot", text: "Already pulled it. 24 slides, two of them have numbers that don't match the model — want me to flag those now or in a note after?" },
+      { role: "bot", text: "This chat is built for text. I can read the deck too." }
+    ] },
+  { id: "mira", name: "Mira", when: "2:42 AM", seed: 52, colors: "#a9c8ff,#8fb6f5,#86d4e8",
+    role: "You handle inbox triage and cleanup. Terse, factual.",
+    history: [
+      { role: "user", text: "inbox is unusable, do something" },
+      { role: "bot", text: "Cleared ~499 promotional threads." },
+      { role: "bot", text: "Left anything with a person's name on it. 14 need you — I put them at the top." }
+    ] },
+  { id: "perrin", name: "Perrin", when: "Friday", seed: 37, colors: "#ffe3c7,#ffcdb2,#f7bfae",
+    role: "You handle connectors, integrations and browser automation. Plain-spoken, never oversells.",
+    history: [
+      { role: "user", text: "so you actually understand what i'm doing" },
+      { role: "bot", text: "Yes — it doesn't just \"remember the vibe.\" When you teach me a task, I turn it into a clear recipe: what to watch for, which steps to take, what \"done\" looks like. Next time I follow that, not improvise from a blurry memory." },
+      { role: "bot", text: "Best way to teach me is walk through it once (say what you're doing, or screen-record a demo). I watch the flow, ask only if something's ambiguous, then save it so I can run it again. Want to try with a small task you do often?" },
+      { role: "user", text: "i will later on." },
+      { role: "bot", text: "Sounds good — whenever you're ready." },
+      { role: "user", text: "what can you do for me if i add linkedin?" },
+      { role: "bot", text: "There's no full LinkedIn connector (DMs, feed, profile edits) in the catalog right now. Closest add-on is Postiz, which is mainly for scheduling and posting to LinkedIn (and other networks)." },
+      { role: "bot", text: "Without that, I can still help via the site in my browser once you're signed in, and I already see LinkedIn noise through Gmail. What did you want LinkedIn for — posting, outreach, or inbox triage?" },
+      { role: "user", text: "but you have web integration" },
+      { role: "bot", text: "Yep — browser works. I can open LinkedIn on my computer, click around, draft posts, dig through messages, that kind of thing, after you're signed in there." },
+      { role: "bot", text: "A connector is just faster and more reliable for the same actions over and over. Browser is the fallback when there's no connector — a bit slower, more clicky, but real. Want me to use that for LinkedIn when you're ready?" },
+      { role: "user", text: "can you access my computer?" },
+      { role: "bot", text: "Yes — if that computer is registered with Swens, I can use it when a task needs it, and you'll get an approval prompt first. I don't have always-on access; it's per action, with your okay." },
+      { role: "user", text: "check my most recent excel file" },
+      { role: "bot", text: "On it — finding the newest Excel file on that computer." },
+      { kind: "auth", id: "auth-1",
+        text: "Allow Perrin and all Swens agents to run commands on your local computer?",
+        deviceId: "6c0f8fd9-7d6d-439b-83e2-0d53f8b8542f",
+        note: "This applies to Perrin and every agent in your workspace. It can always be changed in Settings.",
+        command: "swens-agent exec --device 6c0f8fd9 \\\n  --cmd \"ls -t ~/Documents/**/*.xlsx | head -1\"" },
+      { role: "bot", text: "A first glance found [[Mango 3y IS.xlsx]] on your Desktop — looks like it may be open, there's a lock file. Further access on your Mac was declined, so I couldn't open it." },
+      { kind: "choice", id: "reach-1", text: "How do you want me to get at it?",
+        options: [
+          { label: "Try again on this Mac", hint: "I'll approve the next local-file request",
+            reply: "Standing by — the next request will come up as a prompt here, and I'll open the file the moment you approve it." },
+          { label: "I'll drop the file here", hint: "I'll attach it in chat",
+            reply: "Works for me. Drop it in and I'll read it straight from the message, no local access needed." },
+          { label: "Different file", hint: "",
+            reply: "Tell me which one — name or roughly where it lives is enough and I'll find it." }
+        ] }
+    ] },
+  { id: "sable", name: "Sable", when: "Thursday", seed: 67, colors: "#f5b7e0,#dda5ea,#bd9ce6",
+    role: "You handle filing, naming and where things live. Calm, orderly.",
+    history: [
+      { role: "user", text: "where did the q4 deck end up" },
+      { role: "bot", text: "Filed the Q4 deck under Board / 2026." },
+      { role: "bot", text: "Kept the old version beside it as v1 so nothing got overwritten." },
+      { role: "user", text: "send me the whole pack" },
+      { role: "bot", text: "Here it is — deck, model and the memo that went out with them." },
+      { kind: "file", id: "pack-1", files: [
+        { type: "pdf", name: "Q4 Board Deck.pdf", size: "4.2 MB", note: "28 pages" },
+        { type: "xlsx", name: "Q4 Model v3.xlsx", size: "1.1 MB", note: "6 sheets" },
+        { type: "docx", name: "Q4 Board Memo.docx", size: "86 KB", note: "4 pages" }
+      ] },
+      { role: "bot", text: "The model is v3. [[Q4 Model v2.xlsx]] is still in Board / 2026 if you want to compare." }
+    ] }
+];
+
+const CATS = [
+  ['Mail & Calendar','',[['Gmail','','logos/apps/gmail.webp'],['Outlook','','logos/apps/outlook.webp'],['Google Calendar','','logos/apps/google-calendar.webp'],['Apple Calendar','','logos/apps/apple-calendar-mac.png']]],
+  ['Messaging','',[['WhatsApp','whatsapp.com'],['iMessage','','logos/apps/imessage.webp'],['Slack','slack.com'],['Microsoft Teams','teams.microsoft.com'],['Telegram','telegram.org'],['Discord','discord.com']]],
+  ['Files & Docs','',[['Google Drive','','logos/apps/google-drive.svg'],['Google Docs','','logos/apps/google-docs.svg'],['Google Sheets','','logos/apps/google-sheets.webp'],['Google Slides','','logos/apps/google-slides.webp'],['OneDrive','','logos/apps/onedrive.jpg'],['Word','','logos/apps/word.webp'],['Excel','','logos/apps/excel.webp'],['PowerPoint','','logos/apps/powerpoint.webp'],['Dropbox','dropbox.com'],['Notion','notion.so'],['Apple Notes','','logos/apps/apple-notes.webp']]],
+  ['Productivity & Tasks','',[['Todoist','todoist.com'],['Apple Reminders','','logos/apps/apple-reminders.png'],['Google Tasks','tasks.google.com'],['Trello','trello.com'],['Asana','asana.com'],['Monday','monday.com']]],
+  ['Meetings','',[['Zoom','','logos/apps/zoom.webp'],['Google Meet','','logos/apps/google-meet.webp'],['Fathom','','logos/apps/fathom.jpg'],['Otter','otter.ai']]],
+  ['Creativity','',[['Canva','canva.com'],['Figma','figma.com'],['Adobe Express','express.adobe.com'],['YouTube Studio','youtube.com']]],
+  ['Finance & Money','',[['Stripe','stripe.com'],['PayPal','paypal.com'],['QuickBooks','quickbooks.intuit.com'],['Xero','xero.com'],['Shopify','shopify.com'],['Amazon Seller','sellercentral.amazon.com']]],
+  ['Sales & Customers','',[['HubSpot','hubspot.com'],['Salesforce','salesforce.com'],['Pipedrive','pipedrive.com'],['Intercom','intercom.com'],['Calendly','calendly.com']]],
+  ['Developer','',[['GitHub','github.com'],['GitLab','gitlab.com'],['Linear','linear.app'],['Jira','atlassian.com'],['Supabase','supabase.com'],['Vercel','vercel.com']]]
+];
+
+const AGENTS = [
+  ['Engineering Lead','Assist with standups, code review, debugging, architecture decisions, incident response, technical docs, and release checks.',true,'#9fe0e6,#9cc2ef,#b0a8ee',22,
+    ['Standups','Code review','Debugging','Architecture decisions','Incident response','Technical docs','Release checks']],
+  ['Design Lead','Support design critique, design systems, UX copy, accessibility review, user research synthesis, and developer handoff.',false,'#cfe4f2,#aecbe2,#8fadc7',92,
+    ['Design critique','Design systems','UX copy','Accessibility review','Research synthesis','Developer handoff']],
+  ['Operations Manager','Handle vendor review, process documentation, change requests, capacity planning, compliance tracking, and runbooks.',false,'#b4e4d6,#8fd0c6,#6fb9bd',62,
+    ['Vendor review','Process documentation','Change requests','Capacity planning','Compliance tracking','Runbooks']],
+  ['Product Manager','Cover PM workflows including specs, roadmaps, stakeholder updates, user research synthesis, competitive briefs, and metrics review.',false,'#cfe6b8,#a9d49a,#87c08c',42,
+    ['Specs','Roadmaps','Stakeholder updates','Research synthesis','Competitive briefs','Metrics review']],
+  ['Head of People','Help with recruiting, onboarding, performance reviews, policy lookup, compensation analysis, and people reporting.',true,'#a8e6cf,#c9e9a8,#f3e6a0',7,
+    ['Recruiting','Onboarding','Performance reviews','Policy lookup','Compensation analysis','People reporting']],
+  ['Marketing Lead','Create content, plan campaigns, review brand fit, analyze competitors, audit SEO, and report on marketing performance.',false,'#f7b6b6,#ef9a9f,#dd7d8c',87,
+    ['Content','Campaign planning','Brand fit review','Competitor analysis','SEO audit','Performance reporting']],
+  ['Financial Controller','Support close management, journal entries, reconciliation, financial statements, variance analysis, and audit prep.',false,'#ffd899,#f5b06a,#dd8a63',57,
+    ['Close management','Journal entries','Reconciliation','Financial statements','Variance analysis','Audit prep']],
+  ['Account Executive','Help with account research, call prep, call summaries, outreach drafting, pipeline review, forecasting, and sales assets.',false,'#cdbdf5,#e3c2ee,#f9cfd6',12,
+    ['Account research','Call prep','Call summaries','Outreach drafting','Pipeline review','Forecasting','Sales assets']],
+  ['Data Analyst','Write SQL, explore datasets, validate analysis, create visualizations, build dashboards, and generate statistical insights.',false,'#e0bdf0,#c3bcf2,#a8cdf3',107,
+    ['SQL','Dataset exploration','Analysis validation','Visualizations','Dashboards','Statistical insights']],
+  ['Support Specialist','Triage tickets, research customer context, draft responses, package escalations, and create knowledge base articles.',false,'#fdf0b4,#fbdd9d,#f6c6a0',77,
+    ['Ticket triage','Customer context','Response drafting','Escalations','Knowledge base']],
+  ['In-house Counsel','Assist in-house legal teams with contract review, NDA triage, compliance checks, risk assessment, legal briefs, and templated responses.',false,'#d8b8dd,#c095bb,#a3789d',47,
+    ['Contract review','NDA triage','Compliance checks','Risk assessment','Legal briefs','Templated responses']],
+  ['Research Scientist','Support life sciences research workflows including literature search, genomics analysis, target prioritization, and scientific analysis.',false,'#e3e0bd,#c8c79b,#a9ab81',82,
+    ['Literature search','Genomics analysis','Target prioritization','Scientific analysis']]
+];
+
+
+const appMono = (el) => el.parentElement && el.parentElement.querySelector('span');
+const RES = (p) => {
+  const id = 'logo_' + p.split('/').pop().replace(/\.[a-z]+$/, '').replace(/[^a-z0-9]/g, '_');
+  return (window.__resources && window.__resources[id]) || p;
+};
+const fileLogo = (rawPath) => (el) => {
+  const path = RES(rawPath);
+  if (!el || el.dataset.file === path) return;
+  el.dataset.file = path;
+  const m = appMono(el);
+  el.onload = () => { el.style.display = 'block'; if (m) m.style.display = 'none'; };
+  el.onerror = () => { el.style.display = 'none'; if (m) m.style.display = 'block'; };
+  el.src = path;
+};
+const domainLogo = (domain) => (el) => {
+  if (!el || !domain || el.dataset.dom === domain) return;
+  el.dataset.dom = domain;
+  let tried = 0;
+  const srcs = ['https://icons.duckduckgo.com/ip3/' + domain + '.ico', 'https://www.google.com/s2/favicons?sz=64&domain=' + domain];
+  const m = appMono(el);
+  el.onload = () => { if (el.naturalWidth > 0) { el.style.display = 'block'; if (m) m.style.display = 'none'; } };
+  el.onerror = () => { tried += 1; if (tried < srcs.length) { el.src = srcs[tried]; } else { el.style.display = 'none'; if (m) m.style.display = 'block'; } };
+  el.src = srcs[0];
+};
+
+const OFFLINE = {
+  "juno": ["Pulled it up — two of the figures don't line up with the model. Want them flagged now or in a note after?", "Reading it now. I'll come back with the parts that need you."],
+  "mira": ["Cleared the promotional threads. Fourteen need you — they're at the top.", "Nothing urgent in the last hour. I'll keep watching."],
+  "perrin": ["I can do that through the browser once you're signed in — a connector would be faster for the repeat runs.", "Noted. I'll ask before anything touches your machine."],
+  "sable": ["Filed under Board / 2026, old version kept beside it as v1.", "I'll keep the naming consistent with the rest of the folder."]
+};
+const offlineReply = (bot) => {
+  const set = OFFLINE[bot.id] || ["Working offline right now, so I'm answering from what I already know."];
+  return set[Math.floor(Math.random() * set.length)];
+};
+
+
+class Component extends DCLogic {
+  discGradient(v) {
+    const c = v.colors.split(",");
+    return [
+      "radial-gradient(46% 44% at 32% 26%, " + c[3] + " 0%, " + c[3] + "00 62%)",
+      "radial-gradient(54% 52% at 70% 24%, " + c[1] + " 0%, " + c[1] + "00 66%)",
+      "radial-gradient(58% 56% at 26% 74%, " + c[0] + " 0%, " + c[0] + "00 70%)",
+      "radial-gradient(42% 40% at 68% 72%, " + c[2] + " 0%, " + c[2] + "00 64%)",
+      "linear-gradient(155deg, " + c[3] + " 0%, " + c[1] + " 48%, " + c[0] + " 100%)"
+    ].join(", ");
+  }
+
+  voices() {
+    return [
+      { name: "Concise", desc: "Says only what matters", seed: 101, colors: "#4f9a2e,#2a7fa8,#c9b755,#e8f0d8,#4f9c7a" },
+      { name: "Balanced", desc: "Even and unhurried", seed: 202, colors: "#2f6ab8,#3f93ad,#6a56b0,#dbe6f5,#4a7fc4" },
+      { name: "Warm", desc: "Encouraging and reassuring", seed: 303, colors: "#c07a28,#bf6a4a,#c9a03d,#f5e4d2,#c4854a" },
+      { name: "Direct", desc: "Gets to the point and stops", seed: 404, colors: "#3a4a63,#2a6f8f,#5a6f8f,#dfe6ef,#44607f" },
+      { name: "Sassy", desc: "Playful, with a little bite", seed: 505, colors: "#bf4a86,#c07a28,#8f5cad,#f2dae5,#c45f92" },
+      { name: "Curious", desc: "Asks before it assumes", seed: 606, colors: "#6d4bb8,#3f66b8,#a85fa0,#e2d8f2,#7d5cc4" },
+      { name: "Formal", desc: "Measured and professional", seed: 707, colors: "#33506e,#4a6b85,#6b7f96,#e3e9f0,#3d5c7d" }
+    ];
+  }
+
+  threadRef = React.createRef();
+  composeRef = React.createRef();
+  setupNameRef = React.createRef();
+  inputRef = React.createRef();
+
+  state = {
+    activeId: "perrin",
+    mode: "text",
+    composing: false,
+    composeQuery: "",
+    composeStep: "pick",
+    group: [],
+    setup: { name: "", voice: "", label: "", desc: "", seed: 0, colors: "" },
+    voiceOpen: false,
+    accountOpen: false,
+    settingsOpen: false,
+    agentPanelOpen: false,
+    avatarPickerOpen: false,
+    setupAvatarOpen: false,
+    confirmDeleteId: null,
+    edit: { name: "", label: "", desc: "", colors: "", seed: 0, notify: true },
+    appsOpen: false,
+    appsTab: "Plugins",
+    appQuery: "",
+    connected: {
+      "Mail & Calendar:Gmail": true,
+      "Mail & Calendar:Google Calendar": true,
+      "Files & Docs:Google Drive": true,
+      "Files & Docs:Notion": true,
+      "Messaging:Slack": true,
+      "Developer:GitHub": true
+    },
+    installed: { "Engineering Lead": true },
+    openAgent: null,
+    agentTab: "Instructions",
+    settingsTab: "General",
+    toggles: { hwAccel: true, autoReview: true, securityKeys: true, egress: false, autoUpdate: false },
+    fields: { thisComputer: "MacBook-Air-de-Bass.local", otherComputer: "Dell7040", ruleWhen: "" },
+    plusOpen: false,
+    shareOpen: false,
+    voiceDraft: "Balanced",
+    draft: "",
+    query: "",
+    typing: false,
+    threads: BOTS.reduce((acc, b) => { acc[b.id] = b.history.slice(); return acc; }, {}),
+    unread: { juno: true },
+    freeText: {},
+    auth: {},
+    authOpen: {},
+    hoverMsg: null,
+    emojiFor: null,
+    menuFor: null,
+    reactions: {},
+    copied: null
+  };
+
+  setSetup(patch) { this.setState(s => ({ setup: { ...s.setup, ...patch } })); }
+
+  setupPalette() {
+    const i = Math.floor(Math.random() * AVATARS.length);
+    return { colors: AVATARS[i], seed: i * 5 + 2 };
+  }
+
+  createAgent() {
+    const st = this.state.setup;
+    const name = st.name.trim();
+    if (!name) { const el = this.setupNameRef.current; if (el) el.focus(); return; }
+    const id = "agent" + Date.now().toString(36);
+    BOTS.unshift({
+      id, name, when: "Now",
+      colors: st.colors || BOTS[2].colors,
+      seed: st.seed,
+      role: "You are " + name + ", a Swens agent." +
+        (st.label ? " Your remit is " + st.label.toLowerCase() + "." : "") +
+        (st.desc.trim() ? " The user described your job as: " + st.desc.trim() + "." : "") +
+        (st.voice ? " Your voice is " + st.voice.toLowerCase() + ": " + ((this.voices().find(v => v.name === st.voice) || {}).desc || "") : ""),
+      voice: st.voice,
+      history: []
+    });
+    this.setState(s => ({
+      composing: false, composeQuery: "", composeStep: "pick", activeId: id,
+      setup: { name: "", voice: "", label: "", desc: "", seed: 0, colors: "" },
+    voiceOpen: false,
+    accountOpen: false,
+    settingsOpen: false,
+    agentPanelOpen: false,
+    avatarPickerOpen: false,
+    setupAvatarOpen: false,
+    confirmDeleteId: null,
+    edit: { name: "", label: "", desc: "", colors: "", seed: 0, notify: true },
+    appsOpen: false,
+    appsTab: "Plugins",
+    appQuery: "",
+    connected: {
+      "Mail & Calendar:Gmail": true,
+      "Mail & Calendar:Google Calendar": true,
+      "Files & Docs:Google Drive": true,
+      "Files & Docs:Notion": true,
+      "Messaging:Slack": true,
+      "Developer:GitHub": true
+    },
+    installed: { "Engineering Lead": true },
+    openAgent: null,
+    agentTab: "Instructions",
+    settingsTab: "General",
+    toggles: { hwAccel: true, autoReview: true, securityKeys: true, egress: false, autoUpdate: false },
+    fields: { thisComputer: "MacBook-Air-de-Bass.local", otherComputer: "Dell7040", ruleWhen: "" },
+    plusOpen: false,
+    shareOpen: false,
+    voiceDraft: "Balanced",
+      threads: {
+        ...s.threads,
+        [id]: [
+          { role: "bot", text: "Hey Bass — good to meet you." },
+          { kind: "choice", id: "remit-1",
+            text: "What do you mainly want me for?",
+            note: "We'll shape how I work from there.",
+            freeform: true,
+            freeReply: "Understood — I'll work from that.",
+            options: [
+              { label: "Day-to-day productivity", hint: "Tasks, calendar, reminders, inbox triage",
+                reply: "Good — I'll keep your day in order. Point me at your calendar and inbox when you're ready and I'll start there." },
+              { label: "Research & writing", hint: "Summaries, drafts, digging into topics",
+                reply: "Then I'll do the reading. Give me a topic or a document and I'll come back with something you can use." },
+              { label: "Coding & technical work", hint: "Repos, debugging, scripts, projects",
+                reply: "Right. Connect a repo or drop the error and I'll dig in from there." },
+              { label: "Something else", hint: "I'll tell you what I have in mind",
+                reply: "Go ahead — tell me what you have in mind and I'll shape myself around it." }
+            ] }
+        ]
+      }
+    }), () => this.pin(true));
+  }
+
+  startGroup() {
+    const members = this.state.group.map(id => BOTS.find(b => b.id === id)).filter(Boolean);
+    if (!members.length) return;
+    const id = "group" + Date.now().toString(36);
+    const names = members.map(m => m.name);
+    const list = names.length === 1 ? names[0]
+      : names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+    BOTS.unshift({
+      id, name: names.join(", "), when: "Now",
+      colors: members[0].colors, seed: members[0].seed,
+      role: "You speak for a group of Swens agents (" + names.join(", ") + ").",
+      members: members.map(m => m.id),
+      history: []
+    });
+    this.setState(s => ({
+      composing: false, composeQuery: "", composeStep: "pick", group: [], activeId: id,
+      threads: { ...s.threads, [id]: members.map((m, i) => ({
+        role: "bot", from: m.id,
+        text: i === 0 ? "Hey Bass — " + m.name + " here. What's up?" : "Hey. " + m.name + " here — I'm in."
+      })) }
+    }), () => this.pin(true));
+  }
+
+  startNew(kind) {
+    if (kind === "Create group chat") {
+      this.setState({ composeStep: "group", composeQuery: "" });
+      return;
+    }
+    if (kind === "Create new agent") {
+      const p = this.setupPalette();
+      this.setState(s => ({ composeStep: "setup", composeQuery: "", setup: { ...s.setup, ...p } }),
+        () => { const el = this.setupNameRef.current; if (el) el.focus(); });
+      return;
+    }
+    const group = kind === "Create group chat";
+    const id = (group ? "group" : "agent") + Date.now().toString(36);
+    const base = BOTS[Math.floor(Math.random() * BOTS.length)];
+    const bot = {
+      ...base,
+      id,
+      name: group ? "New group" : "New agent",
+      when: "Now",
+      role: group
+        ? "You coordinate several Swens agents in one thread. Brief and organised."
+        : "You are a brand-new agent with no set speciality yet. Curious, brief."
+    };
+    BOTS.unshift(bot);
+    const opening = group
+      ? "Group started. Add the agents you want in here and tell me what we're working on."
+      : "I'm new — no speciality yet. Tell me what you'd like me to take care of and I'll learn it.";
+    this.setState(s => ({
+      composing: false, composeQuery: "", activeId: id,
+      threads: { ...s.threads, [id]: [{ role: "bot", text: opening }] }
+    }), () => this.pin(true));
+  }
+
+  agentBody(a, tab) {
+    const name = a[0];
+    if (tab === "Memories") return "Nothing yet. " + name + " keeps what you tell it — team names, where files live, how you like things written — and uses it without being reminded.";
+    if (tab === "Skills") return name + " ships with " + a[5].length + " playbooks for this role. Each one is a saved recipe: what to look at, which steps to take, and what finished looks like.";
+    if (tab === "Routines") return "No routines yet. Give " + name + " a standing job — a weekly summary, a morning check — and it runs on its own and reports back here.";
+    if (tab === "Integrations") return name + " uses whichever connectors you've linked under Plugins. Where there's no connector it falls back to your computer and browser, with your approval each time.";
+    return a[1];
+  }
+
+  appTabStyle(on) {
+    return "height:28px; padding:0 14px; border-radius:999px; cursor:pointer; font-family:inherit; font-size:12.5px; transition:background .16s, color .16s;" +
+      (on
+        ? " background:#fbfbfc; color:#1e3358; font-weight:500; border:1px solid rgba(255,255,255,.8); box-shadow:0 1px 2px rgba(16,22,35,.08);"
+        : " background:transparent; color:#6e6e73; font-weight:400; border:1px solid transparent;");
+  }
+
+  settingsRow(extra) {
+    return "display:flex; align-items:center; gap:17px; padding:15px 17px; background:transparent;" + (extra || "");
+  }
+
+  toggleRow(key, label, desc) {
+    const on = this.state.toggles[key];
+    return {
+      label, desc: desc || "", hasDesc: !!desc,
+      isToggle: true, isSelect: false, isButton: false, isField: false, isMeter: false,
+      value: "", action: "", style: this.settingsRow(),
+      trackStyle: "width:44px; height:26px; flex:0 0 auto; padding:0; border:none; border-radius:999px; cursor:pointer; display:flex; align-items:center; justify-content:" +
+        (on ? "flex-end" : "flex-start") + "; padding:0 2px; transition:background .18s; background:" + (on ? "#1e3358" : "#c4ccd8") + ";",
+      knobStyle: "width:19px; height:19px; border-radius:50%; background:#fbfbfc; box-shadow:0 1px 3px rgba(16,22,35,.25); display:block",
+      toggle: () => this.setState(s => ({ toggles: { ...s.toggles, [key]: !s.toggles[key] } })),
+      onInput: () => {}, fillStyle: ""
+    };
+  }
+
+  selectRow(label, value, desc) {
+    return {
+      label, value, desc: desc || "", hasDesc: !!desc,
+      isSelect: true, isToggle: false, isButton: false, isField: false, isMeter: false,
+      action: "", style: this.settingsRow(), trackStyle: "", knobStyle: "", buttonStyle: "",
+      toggle: () => {}, onInput: () => {}, fillStyle: ""
+    };
+  }
+
+  buttonRow(label, action, desc, tone) {
+    return {
+      label, action, desc: desc || "", hasDesc: !!desc, value: "",
+      isButton: true, isSelect: false, isToggle: false, isField: false, isMeter: false,
+      style: this.settingsRow(),
+      buttonStyle: "flex:0 0 auto; height:36px; padding:0 17px; border-radius:999px; cursor:pointer; font-family:inherit; font-size:13.5px; font-weight:" +
+        (tone ? "500" : "400") + ";" +
+        (tone === "primary" ? " background:#1e3358; color:#fbfbfc; border:none;"
+         : tone === "danger" ? " background:#e0322d; color:#fbfbfc; border:none;"
+         : " background:#e9edf2; color:#1e3358; border:1px solid rgba(16,22,35,.13);"),
+      trackStyle: "", knobStyle: "", toggle: () => {}, onInput: () => {}, fillStyle: ""
+    };
+  }
+
+  fieldRow(key, label, desc) {
+    return {
+      label, desc: desc || "", hasDesc: !!desc, value: this.state.fields[key],
+      isField: true, isSelect: false, isToggle: false, isButton: false, isMeter: false,
+      action: "", style: this.settingsRow(), trackStyle: "", knobStyle: "", buttonStyle: "",
+      toggle: () => {},
+      onInput: e => this.setState(s => ({ fields: { ...s.fields, [key]: e.target.value } })),
+      fillStyle: ""
+    };
+  }
+
+  meterRow(label, pct, desc) {
+    return {
+      label, desc, hasDesc: false, value: pct + "%",
+      isMeter: true, isSelect: false, isToggle: false, isButton: false, isField: false,
+      action: "", style: this.settingsRow("flex-direction:column; align-items:stretch; gap:11px;"),
+      trackStyle: "", knobStyle: "", buttonStyle: "", toggle: () => {}, onInput: () => {},
+      fillStyle: "width:" + pct + "%; background:#1e3358; border-radius:999px; display:block"
+    };
+  }
+
+  settingsFor(tab) {
+    if (tab === "Computer") return [
+      { title: "Computers", rows: [
+        this.fieldRow("thisComputer", "Current computer", "This is the computer you are using now"),
+        this.selectRow("Execution on this computer", "Ask every time", "Let Swens open files and run tasks on your computer. Auto-review still checks everything first."),
+        this.fieldRow("otherComputer", "Computer"),
+        this.selectRow("Execution on this computer", "Ask every time", "Let Swens open files and run tasks on your computer. Auto-review still checks everything first.")
+      ] },
+      { title: "Egress", rows: [
+        this.toggleRow("egress", "Route egress through this desktop", "The Swens computer wasn't provisioned with the egress tunnel — start a new one to use this.")
+      ] }
+    ];
+    if (tab === "Usage & Billing") return [
+      { title: "Usage", rows: [this.meterRow("Trial usage", 74, "Ends in 6 days")] },
+      { title: "Manage plan", rows: [
+        this.buttonRow("Current plan: Trial", "Upgrade to Pro", "Get more Swens usage", "primary"),
+        this.buttonRow("Link an existing subscription", "Link account", "Use a separate usage pool for Swens agents"),
+        this.buttonRow("Cancel trial", "Cancel trial")
+      ] }
+    ];
+    if (tab === "Updates") return [
+      { title: "Swens updates", rows: [
+        this.selectRow("Update track", "Stable", "Stable is the safe default. Other tracks ship new builds earlier and more often. Switching checks for updates right away."),
+        this.toggleRow("autoUpdate", "Automatic updates", "Automatically update your client while you're away."),
+        this.buttonRow("Version 0.47.0", "Check for updates", "Updates follow the Stable track. You're up to date.")
+      ] },
+      { title: "The Swens computer", rows: [
+        this.buttonRow("Update the Swens computer", "Update", "Updates the computer your agents share. Your files and logins stay, but installed apps and packages are removed. All agents update together."),
+        this.buttonRow("Reset the Swens computer", "Reset", "Start fresh if the computer gets stuck. It's rebuilt from your last saved snapshot, so very recent changes may be lost.", "danger")
+      ] }
+    ];
+    return [
+      { title: "Account", rows: [
+        this.buttonRow("Bass Fall", "Sign out", "bass.zurich@gmail.com"),
+        this.buttonRow("Add account", "Add")
+      ] },
+      { title: "Appearance", rows: [
+        this.selectRow("Theme", "Follow system"),
+        this.selectRow("Language", "Follow system")
+      ] },
+      { title: "System", rows: [
+        this.selectRow("Microphone", "System default"),
+        this.toggleRow("hwAccel", "Use hardware acceleration"),
+        this.buttonRow("Network debugger", "Open", "Check the Swens connection.")
+      ] },
+      { title: "Agents", rows: [
+        this.selectRow("Timezone", "Auto-detect (Europe/Zurich)"),
+        this.toggleRow("autoReview", "Auto-review", "Swens checks each action before it runs and asks you first when needed. Add rules to change what it can do on its own."),
+        this.fieldRow("ruleWhen", "Auto-review rule", "One short rule per action, in plain words. \"Ask first\" wins if two rules conflict."),
+        this.selectRow("It should", "Allow automatically", "These rules apply only to you. Built-in safety checks always apply.")
+      ] },
+      { title: "Security key", rows: [
+        this.toggleRow("securityKeys", "Use hardware security keys", "Let Swens use a security key connected to your computer. You'll be asked to approve each use.")
+      ] }
+    ];
+  }
+
+  composeRowStyle() {
+    return "display:flex; align-items:center; gap:11px; width:100%; height:49px; padding:0 11px; border:none; background:transparent; border-radius:16px; cursor:pointer; font-family:inherit; transition:background .14s;";
+  }
+
+  tabStyle(on) {
+    return "height:28px; padding:0 15px; border-radius:999px; cursor:pointer; font-family:inherit; font-size:12.5px; letter-spacing:0; transition:background .18s, color .18s, box-shadow .18s;" +
+      (on
+        ? " background:#fbfbfc; color:#1e3358; font-weight:500; border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(16,22,35,.11), 0 4px 10px rgba(16,22,35,.13), inset 0 1px 0 rgba(255,255,255,.9);"
+        : " background:transparent; color:#6e6e73; font-weight:400; border:1px solid transparent;");
+  }
+
+  stream(id, text) {
+    const mid = "s" + Date.now() + Math.random().toString(36).slice(2, 6);
+    this.push(id, { role: "bot", id: mid, text: "" });
+    const words = text.split(/(\s+)/);
+    let i = 0;
+    const step = () => {
+      i += 1;
+      const shown = words.slice(0, i).join("");
+      this.setState(s => ({
+        threads: { ...s.threads, [id]: s.threads[id].map(m => m.id === mid ? { ...m, text: shown } : m) }
+      }));
+      if (i < words.length) this._streamT = setTimeout(step, words[i] && words[i].trim() ? 52 : 26);
+    };
+    step();
+  }
+
+  pickChoice(key, option) {
+    const id = this.state.activeId;
+    this.setState(s => ({
+      threads: { ...s.threads, [id]: s.threads[id].filter(m => !(m.kind === "choice" && id + ":" + m.id === key)) }
+    }));
+    if (!option) return;
+    this.push(id, { kind: "system", id: "pick-" + key, text: "Bass chose " + option.label.charAt(0).toLowerCase() + option.label.slice(1) + "." });
+    setTimeout(() => this.push(id, { role: "bot", text: option.reply }), 620);
+  }
+
+  decide(key, choice) {
+    const id = this.state.activeId;
+    const bot = this.active();
+    const note = choice === "always"
+      ? bot.name + " can run commands on your computer from now on."
+      : choice === "once"
+      ? bot.name + " can run commands on your computer this time."
+      : "Declined. " + bot.name + " can't run commands on your computer.";
+
+    // the prompt is consumed by the decision — it's replaced by a quiet system line
+    this.setState(s => {
+      const thread = s.threads[id].map(m =>
+        m.kind === "auth" && id + ":" + m.id === key ? { kind: "system", id: m.id, text: note } : m);
+      return { threads: { ...s.threads, [id]: thread }, auth: { ...s.auth, [key]: choice } };
+    });
+    if (choice === "never") return;
+
+    setTimeout(() => this.push(id, { kind: "status", id: "run-" + key, text: "Running commands" }), 320);
+    setTimeout(() => {
+      this.setState(s => ({
+        threads: { ...s.threads, [id]: s.threads[id].filter(m => m.id !== "run-" + key) }
+      }));
+      this.push(id, { role: "bot", text: "Found it. Q4_model_v7.xlsx, saved 14 minutes ago. Want the headline numbers or the whole sheet?" });
+    }, 2600);
+  }
+
+  componentDidMount() {
+    this.pin(true);
+    this._onKeys = e => {
+      if (!this.state.composing || !(e.metaKey || e.ctrlKey)) return;
+      const n = parseInt(e.key, 10);
+      if (!n || n < 1 || n > this._composeRows.length) return;
+      e.preventDefault();
+      this._composeRows[n - 1].pick();
+    };
+    document.addEventListener("keydown", this._onKeys);
+  }
+  componentDidUpdate() { this.pin(); }
+
+  pin(force) {
+    if (force) this._stuck = true;
+    const el = this.threadRef.current;
+    if (!el) return;
+    if (this._stuck !== false) el.scrollTop = el.scrollHeight;
+    if (this._pinRo) return;
+
+    const glue = () => {
+      const node = this.threadRef.current;
+      if (node && this._stuck) node.scrollTop = node.scrollHeight;
+    };
+    this._pinRo = new ResizeObserver(glue);
+    this._pinRo.observe(el);
+    if (el.firstElementChild) this._pinRo.observe(el.firstElementChild);
+    this._pinMo = new MutationObserver(glue);
+    this._pinMo.observe(el, { childList: true, subtree: true, characterData: true });
+    this._onScroll = () => {
+      const node = this.threadRef.current;
+      if (!node) return;
+      this._stuck = node.scrollHeight - node.clientHeight - node.scrollTop < 48;
+    };
+    el.addEventListener("scroll", this._onScroll, { passive: true });
+    requestAnimationFrame(glue);
+  }
+
+  componentWillUnmount() {
+    if (this._pinRo) this._pinRo.disconnect();
+    if (this._pinMo) this._pinMo.disconnect();
+    const el = this.threadRef.current;
+    if (el && this._onScroll) el.removeEventListener("scroll", this._onScroll);
+    clearTimeout(this._streamT);
+    document.removeEventListener("keydown", this._onKeys);
+  }
+
+  active() { return BOTS.find(b => b.id === this.state.activeId) || BOTS[0]; }
+
+  openAgentPanel() {
+    const b = this.active();
+    this.setState({
+      agentPanelOpen: true, avatarPickerOpen: false, accountOpen: false,
+      edit: {
+        name: b.name, label: b.label || "", desc: b.desc || "",
+        colors: b.colors, seed: b.seed, notify: b.notify !== false
+      }
+    });
+  }
+
+  deleteBot(id) {
+    const i = BOTS.findIndex(b => b.id === id);
+    if (i < 0 || BOTS.length === 1) return;
+    BOTS.splice(i, 1);
+    const next = BOTS[Math.min(i, BOTS.length - 1)];
+    this.setState(st => {
+      const threads = { ...st.threads }; delete threads[id];
+      const unread = { ...st.unread }; delete unread[id];
+      return {
+        threads, unread, confirmDeleteId: null,
+        activeId: st.activeId === id ? next.id : st.activeId,
+        agentPanelOpen: st.activeId === id ? false : st.agentPanelOpen,
+        avatarPickerOpen: false,
+        group: st.group.filter(g => g !== id)
+      };
+    });
+  }
+
+  applyEdit(patch) {
+    const b = this.active();
+    const e = { ...this.state.edit, ...patch };
+    const name = e.name.trim();
+    if (name) b.name = name;
+    b.label = e.label;
+    b.desc = e.desc;
+    b.colors = e.colors;
+    b.seed = e.seed;
+    b.notify = e.notify;
+    b.role = "You are " + (name || b.name) + ", a Swens agent." +
+      (e.label.trim() ? " Your remit is " + e.label.trim().toLowerCase() + "." : "") +
+      (e.desc.trim() ? " The user described your job as: " + e.desc.trim() + "." : "");
+    this.setState({ edit: e });
+  }
+
+  select(id) {
+    this.setState(s => ({ activeId: id, unread: { ...s.unread, [id]: false } }), () => this.pin(true));
+  }
+
+  push(id, msg) {
+    this.setState(s => ({ threads: { ...s.threads, [id]: [...s.threads[id], msg] } }));
+  }
+
+  maybeSendFiles(id, text) {
+    const t = text.toLowerCase();
+    if (!/\b(send|share|attach|export|give me|email)\b/.test(t)) return false;
+    const want = [];
+    if (/\b(pdf|deck|slides|presentation)\b/.test(t)) want.push({ type: "pdf", name: "Q4 Board Deck.pdf", size: "4.2 MB", note: "28 pages" });
+    if (/\b(excel|xlsx|model|spreadsheet|sheet)\b/.test(t)) want.push({ type: "xlsx", name: "Q4 Model v3.xlsx", size: "1.1 MB", note: "6 sheets" });
+    if (/\b(word|docx|memo|doc|document|write.?up)\b/.test(t)) want.push({ type: "docx", name: "Q4 Board Memo.docx", size: "86 KB", note: "4 pages" });
+    if (!want.length && /\b(file|files|pack|everything|all of it|attachments?)\b/.test(t)) {
+      want.push({ type: "pdf", name: "Q4 Board Deck.pdf", size: "4.2 MB", note: "28 pages" },
+                { type: "xlsx", name: "Q4 Model v3.xlsx", size: "1.1 MB", note: "6 sheets" },
+                { type: "docx", name: "Q4 Board Memo.docx", size: "86 KB", note: "4 pages" });
+    }
+    if (!want.length) return false;
+    setTimeout(() => {
+      this.setState({ typing: false });
+      this.push(id, { role: "bot", text: want.length > 1 ? "Here they are." : "Here you go." });
+      this.push(id, { kind: "file", id: "f" + Date.now(), files: want });
+    }, 900);
+    return true;
+  }
+
+  async send() {
+    const text = this.state.draft.trim();
+    if (!text || this.state.typing) return;
+    const bot = this.active();
+    const id = bot.id;
+    this.setState({ draft: "", typing: true });
+    this.push(id, { role: "user", text });
+
+    if (this.maybeSendFiles(id, text)) return;
+
+    if (bot.members && bot.members.length) {
+      const members = bot.members.map(mid => BOTS.find(b => b.id === mid)).filter(Boolean);
+      const lower = text.toLowerCase();
+      const named = members.filter(m => lower.includes(m.name.toLowerCase()));
+      const answering = named.length ? named : members;
+
+      const history = [...this.state.threads[id], { role: "user", text }]
+        .filter(m => !m.kind)
+        .slice(-12)
+        .map(m => ({
+          role: m.role === "user" ? "user" : "assistant",
+          content: m.from ? "[" + (BOTS.find(b => b.id === m.from) || {}).name + "] " + m.text : m.text
+        }));
+
+      for (let i = 0; i < answering.length; i++) {
+        const who = answering[i];
+        let reply;
+        try {
+          if (!(window.claude && window.claude.complete)) throw new Error("offline");
+          reply = await window.claude.complete({
+            system: "You are " + who.name + ", one of several Swens agents in a group chat with Bass. " + who.role +
+              " The others here are " + members.filter(m => m.id !== who.id).map(m => m.name).join(", ") + "." +
+              " Reply like a text message: one or two short sentences, no lists, no markdown, no emoji." +
+              " Speak only for yourself, don't repeat what another agent has already said, and don't narrate.",
+            messages: history,
+            max_tokens: 200
+          });
+        } catch (e) {
+          reply = offlineReply(who);
+        }
+        this.setState({ typing: i < answering.length - 1 });
+        this.push(id, { role: "bot", from: who.id, text: String(reply || "").split(/\n{2,}/)[0].trim() });
+        if (i < answering.length - 1) await new Promise(r => setTimeout(r, 520));
+      }
+      this.setState({ typing: false });
+      return;
+    }
+
+    const history = [...this.state.threads[id], { role: "user", text }]
+      .filter(m => !m.kind)
+      .slice(-12)
+      .map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
+
+    let reply;
+    try {
+      if (!(window.claude && window.claude.complete)) throw new Error("offline");
+      reply = await window.claude.complete({
+        system: "You are " + bot.name + ", an assistant inside Swens, a workspace app. " + bot.role +
+          " Reply like a text message: short, lowercase-tolerant, no lists, no markdown, no emoji, no headings. " +
+          "One to three sentences per paragraph, at most two paragraphs. Never mention being an AI model. " +
+          "If a capability doesn't exist, say so plainly and offer the nearest real option.",
+        messages: history,
+        max_tokens: 400
+      });
+    } catch (e) {
+      reply = offlineReply(bot);
+    }
+
+    const parts = String(reply || "").split(/\n{2,}/).map(s => s.trim()).filter(Boolean).slice(0, 3);
+    if (!parts.length) parts.push("…");
+
+    this.setState({ typing: false });
+    if (this.state.mode === "voice") {
+      parts.forEach((p, i) => setTimeout(() => this.stream(id, p), i * 1400));
+    } else {
+      parts.forEach((p, i) => setTimeout(() => this.push(id, { role: "bot", text: p }), i * 420));
+    }
+  }
+
+  renderVals() {
+    const s = this.state;
+    const bot = this.active();
+    const q = s.query.trim().toLowerCase();
+
+    const bots = BOTS
+      .filter(b => !q || b.name.toLowerCase().includes(q))
+      .map(b => {
+        const thread = s.threads[b.id];
+        const last = [...thread].reverse().find(m => !m.kind);
+        const isActive = b.id === s.activeId;
+        return {
+          ...b,
+          preview: last ? last.text.replace(/\[\[(.+?)\]\]/g, "$1") : "",
+          unread: !!s.unread[b.id],
+          dotColor: s.unread[b.id] ? "#1e3358" : "transparent",
+          select: () => this.select(b.id),
+          showDelete: isActive && BOTS.length > 1,
+          showDot: !(isActive && BOTS.length > 1),
+          remove: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ confirmDeleteId: b.id, agentPanelOpen: true, avatarPickerOpen: false, edit: { name: b.name, label: b.label || "", desc: b.desc || "", colors: b.colors, seed: b.seed, notify: b.notify !== false } }); },
+          rowStyle: "display:flex; align-items:center; gap:11px; height:59px; padding:0 11px; border-radius:16px; cursor:pointer; transition:background .15s;" +
+            (isActive
+              ? " background:#fbfbfc; border:1px solid rgba(255,255,255,.6); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 6px 18px rgba(16,22,35,.11), inset 0 1px 0 rgba(255,255,255,.7);"
+              : " border:1px solid transparent;")
+        };
+      });
+
+    const cq = s.composeQuery.trim().toLowerCase();
+    const actions = [
+      { label: "Create new agent", glyph: "+", glyphStyle: "font-size:16px; line-height:1" },
+      { label: "Create group chat", glyph: "◎", glyphStyle: "font-size:12.5px; line-height:1" }
+    ].filter(a => !cq || a.label.toLowerCase().includes(cq));
+    const agentRows = BOTS.filter(b => !cq || b.name.toLowerCase().includes(cq));
+    const inGroup = s.composeStep === "group";
+    const visibleActions = inGroup
+      ? actions.filter(a => a.label === "Create new agent")
+      : actions;
+    const pickableAgents = inGroup ? agentRows.filter(b => !s.group.includes(b.id)) : agentRows;
+
+    const composeRows = [
+      ...visibleActions.map(a => ({
+        label: a.label, glyph: a.glyph, glyphStyle: a.glyphStyle,
+        isAction: true, isAgent: false, hint: "", hasHint: false,
+        colors: BOTS[2].colors, seed: 0,
+        style: this.composeRowStyle(),
+        pick: () => this.startNew(a.label)
+      })),
+      ...pickableAgents.map(b => ({
+        label: b.name, colors: b.colors, seed: b.seed,
+        isAction: false, isAgent: true,
+        glyph: "", glyphStyle: "",
+        hint: inGroup ? "Add to group chat" : "",
+        hasHint: inGroup,
+        style: this.composeRowStyle(),
+        pick: () => inGroup
+          ? this.setState(st => ({ group: [...st.group, b.id], composeQuery: "" }))
+          : (this.select(b.id), this.setState({ composing: false, composeQuery: "" }))
+      }))
+    ].map((r, k) => ({ ...r, key: String(k + 1), hasKey: !r.hasHint }));
+    this._composeRows = composeRows;
+
+    const groupChips = s.group
+      .map(id => BOTS.find(b => b.id === id))
+      .filter(Boolean)
+      .map(b => ({
+        name: b.name, colors: b.colors, seed: b.seed,
+        remove: () => this.setState(st => ({ group: st.group.filter(x => x !== b.id) }))
+      }));
+
+    const VOICE_LIST = this.voices();
+    const vSel = VOICE_LIST.find(v => v.name === s.voiceDraft) || VOICE_LIST[1];
+    const vIdx = Math.max(0, VOICE_LIST.findIndex(v => v.name === s.voiceDraft));
+    const voiceDots = VOICE_LIST.map((v, k) => ({
+      style: "width:9px; height:9px; padding:0; border:none; border-radius:50%; cursor:pointer; transition:background .16s; background:" +
+        (k === vIdx ? "#1e3358" : "#b3bcc9") + ";",
+      pick: () => this.setState({ voiceDraft: v.name })
+    }));
+    const setupVoice = VOICE_LIST.find(v => v.name === s.setup.voice);
+
+    const aq = s.appQuery.trim().toLowerCase();
+    const appCats = CATS.map(c => {
+      const items = c[2]
+        .filter(it => !aq || it[0].toLowerCase().includes(aq) || c[0].toLowerCase().includes(aq))
+        .map(it => {
+          const key = c[0] + ":" + it[0];
+          const on = !!s.connected[key];
+          return {
+            name: it[0],
+            mono: it[0].charAt(0),
+            tag: it[3] || "",
+            hasTag: !!it[3],
+            logoRef: it[2] ? fileLogo(it[2]) : domainLogo(it[1]),
+            btnLabel: on ? "Connected" : "Connect",
+            btnStyle: "flex:0 0 auto; height:31px; padding:0 14px; border-radius:999px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:400; white-space:nowrap;" +
+              (on
+                ? " background:#e7f6ec; color:#1a8547; border:1px solid rgba(26,133,71,.22);"
+                : " background:#1e3358; color:#fbfbfc; border:none;"),
+            toggle: () => this.setState(st => ({ connected: { ...st.connected, [key]: !st.connected[key] } }))
+          };
+        });
+      return { title: c[0], note: c[1], hasNote: !!c[1], count: items.length, items };
+    }).filter(c => c.items.length > 0);
+
+    const detail = s.openAgent ? AGENTS.find(a => a[0] === s.openAgent) : null;
+    const agentCards = AGENTS
+      .filter(a => !aq || a[0].toLowerCase().includes(aq) || a[1].toLowerCase().includes(aq))
+      .map(a => {
+        const on = !!s.installed[a[0]];
+        return {
+          name: a[0], desc: a[1],
+          skills: a[5].length + " skills",
+          hasSkills: true,
+          official: !!a[2],
+          colors: a[3], seed: a[4],
+          btnLabel: on ? "Use" : "Install",
+          btnStyle: "flex:0 0 auto; height:33px; padding:0 15px; border-radius:999px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:400; white-space:nowrap;" +
+            (on
+              ? " background:#e7f6ec; color:#1a8547; border:1px solid rgba(26,133,71,.22);"
+              : " background:#1e3358; color:#fbfbfc; border:none;"),
+          install: e => {
+            if (e && e.stopPropagation) e.stopPropagation();
+            this.setState(st => ({ installed: { ...st.installed, [a[0]]: !st.installed[a[0]] } }));
+          },
+          open: () => this.setState({ openAgent: a[0], agentTab: "Instructions" })
+        };
+      });
+
+    const installedList = [];
+    CATS.forEach(c => c[2].forEach(it => {
+      if (s.connected[c[0] + ":" + it[0]]) {
+        installedList.push({ name: it[0], logoRef: it[2] ? fileLogo(it[2]) : domainLogo(it[1]) });
+      }
+    }));
+
+    const thread = s.threads[s.activeId];
+
+    const messages = thread.map((m, i) => {
+      const prev = thread[i - 1];
+      if (m.kind === "system") {
+        return {
+          isText: false, isAuth: false, isSystem: true, isStatus: false, isChoice: false, isFile: false,
+          text: m.text,
+          rowStyle: "display:flex; justify-content:center; padding:12px 0 5px; animation:msgIn .22s ease-out both;"
+        };
+      }
+      if (m.kind === "status") {
+        return {
+          isText: false, isAuth: false, isSystem: false, isStatus: true, isChoice: false, isFile: false,
+          text: m.text,
+          colors: bot.colors, seed: bot.seed,
+          rowStyle: "display:flex; align-items:center; gap:10px; padding-top:3px; animation:msgIn .22s ease-out both;"
+        };
+      }
+      if (m.kind === "choice") {
+        const key = s.activeId + ":" + m.id;
+        return {
+          isText: false, isAuth: false, isSystem: false, isStatus: false, isChoice: true, isFile: false,
+          text: m.text, note: m.note || "", hasNote: !!m.note,
+          options: m.options.map((o, k) => ({
+            key: String.fromCharCode(65 + k),
+            label: o.label,
+            hint: o.hint || "",
+            hasHint: !!o.hint,
+            rowStyle: "display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left; padding:14px 15px; background:transparent; border:none; cursor:pointer; font-family:inherit;" +
+              (k ? " border-top:1px solid rgba(16,22,35,.11);" : ""),
+            pick: () => this.pickChoice(key, o)
+          })),
+          hasInput: !!m.freeform,
+          freeValue: s.freeText[key] || "",
+          onFree: e => this.setState(st => ({ freeText: { ...st.freeText, [key]: e.target.value } })),
+          onFreeKey: e => {
+            if (e.key !== "Enter") return;
+            const v = (this.state.freeText[key] || "").trim();
+            if (!v) return;
+            e.preventDefault();
+            this.pickChoice(key, { label: v, reply: m.freeReply || "Got it." });
+          },
+          dismiss: () => this.pickChoice(key, null),
+          rowStyle: "display:flex; animation:msgIn .22s ease-out both; padding-top:6px;"
+        };
+      }
+      if (m.kind === "file") {
+        const ICONS = { pdf: RES("icons/pdf-doc.webp"), xlsx: RES("logos/apps/excel.webp"), docx: RES("logos/apps/word.webp"), pptx: RES("logos/apps/powerpoint.webp") };
+        return {
+          isText: false, isAuth: false, isSystem: false, isStatus: false, isChoice: false, isFile: true,
+          files: m.files.map(f => ({
+            iconStyle: "width:36px; height:36px; flex:0 0 auto; background-image:url(" + (ICONS[f.type] || ICONS.pdf) + "); background-size:contain; background-repeat:no-repeat; background-position:center",
+            name: f.name
+          })),
+          rowStyle: "display:flex; animation:msgIn .22s ease-out both; padding-top:3px;"
+        };
+      }
+      if (m.kind === "auth") {
+        const key = s.activeId + ":" + m.id;
+        const choice = s.auth[key];
+        const open = !!s.authOpen[key];
+        const label = choice === "always" ? "Allowed for all agents"
+          : choice === "once" ? "Allowed once"
+          : choice === "never" ? "Declined" : "";
+        return {
+          isText: false, isAuth: true, isSystem: false, isStatus: false, isChoice: false, isFile: false,
+          text: m.text, deviceId: m.deviceId, note: m.note, command: m.command,
+          open, pending: !choice, decided: !!choice,
+          toggleLabel: open ? "Hide the command" : "Show the command",
+          caretStyle: "display:flex; align-items:center; justify-content:center; transition:transform .16s;" + (open ? " transform:rotate(90deg);" : ""),
+          decisionLabel: label,
+          decisionDotStyle: "width:6px; height:6px; border-radius:50%; flex:0 0 auto; background:" + (choice === "never" ? "#e0322d" : "#1a8547"),
+          toggle: () => this.setState(st => ({ authOpen: { ...st.authOpen, [key]: !st.authOpen[key] } })),
+          dismiss: () => this.decide(key, "never"),
+          always: () => this.decide(key, "always"),
+          once: () => this.decide(key, "once"),
+          never: () => this.decide(key, "never"),
+          rowStyle: "display:flex; animation:msgIn .22s ease-out both; padding-top:6px;"
+        };
+      }
+      const mine = m.role === "user";
+      const pad = prev && prev.role !== m.role ? " padding-top:6px;" : "";
+      const runs = String(m.text).split(/\[\[(.+?)\]\]/g).map((chunk, k) => ({
+        text: chunk,
+        style: k % 2
+          ? "font-family:'SF Mono', ui-monospace, SFMono-Regular, monospace; font-size:12.5px; padding:2px 6px; margin:0 1px; border-radius:7px; background:rgba(16,22,35,.11); white-space:nowrap"
+          : ""
+      })).filter(p => p.text !== "");
+      const sender = m.from ? BOTS.find(b => b.id === m.from) : null;
+      const mkey = s.activeId + ":" + i;
+      const reaction = s.reactions[mkey] || "";
+      const emojiOpen = s.emojiFor === mkey;
+      const menuOpen = s.menuFor === mkey;
+      let h = 0;
+      for (let k = 0; k < mkey.length; k++) h = (h * 33 + mkey.charCodeAt(k)) >>> 0;
+      const reqId = "req_01" + h.toString(36).padStart(7, "0") + (mkey.length * 7919).toString(36);
+      const snippet = String(m.text).replace(/\[\[(.+?)\]\]/g, "$1");
+      return {
+        isText: true, isAuth: false, isSystem: false, isStatus: false, isChoice: false, isFile: false,
+        actionsStyle: "position:relative; align-self:center; flex:0 0 auto; width:93px; display:flex; align-items:center; justify-content:center; gap:4px; transition:opacity .12s;" +
+          (mine ? " order:-1;" : "") +
+          (s.hoverMsg === mkey || emojiOpen || menuOpen ? "" : " opacity:0; pointer-events:none;"),
+        popStyle: "position:absolute; bottom:36px; z-index:6; " + (mine ? "right:0; " : "left:0; "),
+        onEnter: () => this.setState({ hoverMsg: mkey }),
+        onLeave: () => this.setState(st => ({ hoverMsg: st.hoverMsg === mkey ? null : st.hoverMsg })),
+        hasReaction: !!reaction, reaction,
+        emojiOpen, menuOpen,
+        emojis: ["\u{1F44D}", "\u2764\uFE0F", "\u{1F602}", "\u{1F62E}", "\u{1F622}", "\u{1F64F}"].map(ch => ({
+          ch,
+          pick: () => this.setState(st => ({
+            reactions: { ...st.reactions, [mkey]: st.reactions[mkey] === ch ? "" : ch },
+            emojiFor: null
+          }))
+        })),
+        toggleEmoji: () => this.setState(st => ({ emojiFor: st.emojiFor === mkey ? null : mkey, menuFor: null })),
+        toggleMenu: () => this.setState(st => ({ menuFor: st.menuFor === mkey ? null : mkey, emojiFor: null })),
+        reply: () => this.setState({ draft: "\u201C" + snippet.slice(0, 52) + (snippet.length > 52 ? "\u2026" : "") + "\u201D " }),
+        reqId,
+        copyLabel: s.copied === mkey ? "Copied" : "Copy request ID",
+        copyId: () => {
+          if (navigator.clipboard) navigator.clipboard.writeText(reqId).catch(() => {});
+          this.setState({ copied: mkey });
+          setTimeout(() => this.setState(st => ({ copied: st.copied === mkey ? null : st.copied, menuFor: st.menuFor === mkey ? null : st.menuFor })), 1100);
+        },
+        hasSender: !!sender, noSender: !sender,
+        senderName: sender ? sender.name : "",
+        senderColors: sender ? sender.colors : "",
+        senderSeed: sender ? sender.seed : 0,
+        senderNameStyle: "font-size:12.5px; font-weight:400; padding-left:3px; color:" + (sender ? sender.colors.split(",")[0] : "#6e6e73"),
+        text: m.text, parts: runs,
+        rowStyle: "display:flex; animation:msgIn .22s ease-out both;" + (mine ? " justify-content:flex-end;" : "") + pad,
+        bubbleStyle: mine
+          ? "max-width:min(62%,560px); padding:11px 15px; border-radius:20px; background:#1e3358; color:#fbfbfc; font-size:14px; line-height:1.45; text-wrap:pretty"
+          : "max-width:min(70%,640px); padding:12px 17px; border-radius:20px; background:#e9edf2; font-size:14.5px; line-height:1.4; text-wrap:pretty"
+      };
+    });
+
+    return {
+      bots, messages,
+      botName: bot.name,
+      activeColors: bot.colors,
+      activeSeed: bot.seed,
+      gridCols: s.agentPanelOpen ? "clamp(233px,21%,272px) minmax(0,1fr) clamp(220px,23%,294px)" : "272px minmax(0,1fr)",
+      agentPanelOpen: s.agentPanelOpen,
+      toggleAgentPanel: () => s.agentPanelOpen ? this.setState({ agentPanelOpen: false }) : this.openAgentPanel(),
+      closeAgentPanel: () => this.setState({ agentPanelOpen: false, avatarPickerOpen: false, confirmDeleteId: null }),
+      editName: s.edit.name,
+      editLabel: s.edit.label,
+      editDesc: s.edit.desc,
+      editColors: s.edit.colors || bot.colors,
+      editSeed: s.edit.seed,
+      onEditName: e => this.applyEdit({ name: e.target.value }),
+      onEditLabel: e => this.applyEdit({ label: e.target.value }),
+      onEditDesc: e => this.applyEdit({ desc: e.target.value }),
+      avatarPickerOpen: s.avatarPickerOpen,
+      avatarBtnLabel: s.avatarPickerOpen ? "Done" : "Edit avatar",
+      toggleAvatarPicker: () => this.setState(st => ({ avatarPickerOpen: !st.avatarPickerOpen })),
+      avatarOptions: AVATARS.map((c, i) => {
+        const on = s.edit.colors === c;
+        return {
+          colors: c, seed: i * 5 + 2,
+          pick: () => this.applyEdit({ colors: c, seed: i * 5 + 2 }),
+          style: "display:flex; align-items:center; justify-content:center; width:100%; min-width:0; aspect-ratio:1; padding:0; border-radius:13px; cursor:pointer; background:" +
+            (on ? "#eef1f5" : "transparent") + "; border:1.5px solid " + (on ? "#1e3358" : "rgba(16,22,35,.08)")
+        };
+      }),
+      notifyOn: s.edit.notify,
+      toggleNotify: () => this.applyEdit({ notify: !s.edit.notify }),
+      notifyTrackStyle: "position:relative; width:41px; height:24px; flex:0 0 auto; padding:0; border:none; border-radius:999px; cursor:pointer; transition:background .16s ease; background:" +
+        (s.edit.notify ? "#1e3358" : "#c4ccd8"),
+      editNameOrBot: s.edit.name.trim() || bot.name,
+      deleteIdle: s.confirmDeleteId !== bot.id,
+      deleteAsking: s.confirmDeleteId === bot.id,
+      askDelete: () => this.setState({ confirmDeleteId: bot.id }),
+      cancelDelete: () => this.setState({ confirmDeleteId: null }),
+      confirmDelete: () => this.deleteBot(bot.id),
+      notifyKnobStyle: "position:absolute; top:3px; left:" + (s.edit.notify ? "21px" : "3px") +
+        "; width:17px; height:17px; border-radius:50%; background:#fbfbfc; transition:left .16s ease; box-shadow:0 1px 2px rgba(16,22,35,.18)",
+
+      dayStamp: "Today",
+      typing: s.typing && s.mode === "text",
+      draft: s.draft,
+      query: s.query,
+      hasDraft: s.draft.trim().length > 0,
+      noDraft: s.draft.trim().length === 0,
+      placeholder: "Message " + bot.name,
+      isVoice: s.mode === "voice",
+      isText: s.mode === "text",
+      orbPulse: s.typing ? "orbSpeak 1.8s ease-in-out infinite" : "orbIdle 5.5s ease-in-out infinite",
+      composing: s.composing,
+      notComposing: !s.composing,
+      composeQuery: s.composeQuery,
+      composeRef: this.composeRef,
+      onComposeQuery: e => this.setState({ composeQuery: e.target.value }),
+      onComposeKey: e => { if (e.key === "Escape") this.setState({ composing: false, composeQuery: "", composeStep: "pick", group: [] }); },
+      openCompose: () => this.setState({ composing: true, composeQuery: "", composeStep: "pick", group: [] }, () => { const el = this.composeRef.current; if (el) el.focus(); }),
+      closeCompose: () => this.setState({ composing: false, composeQuery: "", composeStep: "pick", group: [] }),
+      composeRows: composeRows,
+      composePlaceholder: s.composeStep === "group" ? "Search or create agents" : "Search or create agents",
+      groupChips: groupChips,
+      setupOpen: s.composeStep === "setup",
+      pickerOpen: s.composeStep !== "setup",
+      canStartGroup: s.composeStep === "group" && s.group.length > 0,
+      startGroupLabel: "Start group chat with " + s.group.length + (s.group.length === 1 ? " agent" : " agents"),
+      startGroup: () => this.startGroup(),
+      setupName: s.setup.name,
+      setupDesc: s.setup.desc,
+      setupColors: s.setup.colors || BOTS[2].colors,
+      setupSeed: s.setup.seed,
+      setupAvatarOpen: s.setupAvatarOpen,
+      toggleSetupAvatar: () => this.setState(st => ({ setupAvatarOpen: !st.setupAvatarOpen })),
+      setupAvatarBtnStyle: "display:flex; align-items:center; gap:6px; flex:0 0 auto; height:31px; padding:0 11px; border-radius:999px; cursor:pointer; font-family:inherit; color:#1e3358; box-shadow:0 1px 2px rgba(16,22,35,.04); border:1px solid rgba(16,22,35,.13); background:" +
+        (s.setupAvatarOpen ? "#eef1f5" : "#fbfbfc"),
+      setupAvatarOptions: AVATARS.map((c, i) => {
+        const on = (s.setup.colors || BOTS[2].colors) === c;
+        return {
+          colors: c, seed: i * 5 + 2,
+          pick: () => this.setSetup({ colors: c, seed: i * 5 + 2 }),
+          style: "display:flex; align-items:center; justify-content:center; width:100%; min-width:0; aspect-ratio:1; padding:0; border-radius:12px; cursor:pointer; background:" +
+            (on ? "#eef1f5" : "transparent") + "; border:1.5px solid " + (on ? "#1e3358" : "rgba(16,22,35,.08)")
+        };
+      }),
+      setupNameRef: this.setupNameRef,
+      onSetupName: e => this.setSetup({ name: e.target.value }),
+      onSetupDesc: e => this.setSetup({ desc: e.target.value }),
+      setupLabel: s.setup.label,
+      onSetupLabel: e => this.setSetup({ label: e.target.value }),
+      voiceOpen: s.voiceOpen,
+      accountOpen: s.accountOpen,
+      appsOpen: s.appsOpen,
+      pluginsTab: s.appsTab === "Plugins",
+      agentsList: s.appsTab === "Agents" && !s.openAgent,
+      agentDetail: s.appsTab === "Agents" && !!s.openAgent,
+      agentCount: AGENTS.length,
+      agentCards: agentCards,
+      backToAgents: () => this.setState({ openAgent: null }),
+      detailName: detail ? detail[0] : "",
+      detailDesc: detail ? detail[1] : "",
+      detailColors: detail ? detail[3] : "",
+      detailSeed: detail ? detail[4] : 0,
+      detailMeta: detail
+        ? detail[5].length + " skills" + (detail[2] ? " · Official" : "") + " · by Swens"
+        : "",
+      detailBtnLabel: detail && s.installed[detail[0]] ? "Installed" : "Import agent",
+      detailBtnStyle: "flex:0 0 auto; height:37px; padding:0 19px; border-radius:999px; cursor:pointer; font-family:inherit; font-size:13.5px; font-weight:400;" +
+        (detail && s.installed[detail[0]]
+          ? " background:#e7f6ec; color:#1a8547; border:1px solid rgba(26,133,71,.22);"
+          : " background:#1e3358; color:#fbfbfc; border:none;"),
+      detailInstall: () => { if (detail) this.setState(st => ({ installed: { ...st.installed, [detail[0]]: !st.installed[detail[0]] } })); },
+      detailTabs: [
+        ["Instructions", "How this agent works"],
+        ["Memories", "Facts it already knows"],
+        ["Skills", "Playbooks it can run"],
+        ["Routines", "Jobs that run on their own"],
+        ["Integrations", "Connectors it can use"]
+      ].map(t => ({
+        label: t[0], note: t[1],
+        style: "display:flex; flex-direction:column; gap:4px; align-items:flex-start; text-align:left; padding:14px 15px; border-radius:16px; cursor:pointer; font-family:inherit; transition:background .14s;" +
+          (s.agentTab === t[0]
+            ? " background:#e3e8ef; border:1px solid rgba(16,22,35,.11);"
+            : " background:transparent; border:1px solid transparent;"),
+        pick: () => this.setState({ agentTab: t[0] })
+      })),
+      detailBody: detail ? this.agentBody(detail, s.agentTab) : "",
+      agentTabLabel: s.agentTab,
+      hasSkillList: !!(detail && s.agentTab === "Skills"),
+      skillChips: detail && s.agentTab === "Skills" ? detail[5].map(x => ({ label: x })) : [],
+      pluginsTabStyle: this.appTabStyle(s.appsTab === "Plugins"),
+      agentsTabStyle: this.appTabStyle(s.appsTab === "Agents"),
+      pickPlugins: () => this.setState({ appsTab: "Plugins" }),
+      pickAgents: () => this.setState({ appsTab: "Agents", openAgent: null }),
+      openApps: () => this.setState({ appsOpen: true, appsTab: "Plugins", appQuery: "", openAgent: null }),
+      closeApps: () => this.setState({ appsOpen: false }),
+      appQuery: s.appQuery,
+      onAppQuery: e => this.setState({ appQuery: e.target.value }),
+      appCount: CATS.reduce((n, c) => n + c[2].length, 0),
+      appCats: appCats,
+      hasInstalled: installedList.length > 0,
+      installedLabel: installedList.length + " installed",
+      installedLogos: installedList.slice(0, 4).map((it, k) => ({
+        mono: it.name.charAt(0),
+        logoRef: it.logoRef,
+        style: "position:relative; width:24px; height:24px; flex:0 0 auto; border-radius:8px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); box-shadow:0 1px 2px rgba(16,22,35,.06); display:flex; align-items:center; justify-content:center;" +
+          (k ? " margin-left:-7px;" : "")
+      })),
+      appsEmpty: appCats.length === 0,
+      settingsOpen: s.settingsOpen,
+      settingsTitle: s.settingsTab,
+      openSettings: () => this.setState({ settingsOpen: true, accountOpen: false }),
+      closeSettings: () => this.setState({ settingsOpen: false }),
+      settingsTabs: ["General", "Computer", "Usage & Billing", "Updates"].map(t => ({
+        label: t,
+        isGeneral: t === "General",
+        isComputer: t === "Computer",
+        isUsage: t === "Usage & Billing",
+        isUpdates: t === "Updates",
+        iconColor: s.settingsTab === t ? "#1e3358" : "#6e6e73",
+        style: "display:flex; align-items:center; gap:10px; height:41px; padding:0 11px; border-radius:14px; cursor:pointer; font-family:inherit; font-size:13.5px; transition:background .14s;" +
+          (s.settingsTab === t
+            ? " background:#e3e8ef; color:#1e3358; font-weight:500; border:1px solid rgba(16,22,35,.11);"
+            : " background:transparent; color:#1e3358; font-weight:400; border:1px solid transparent;"),
+        pick: () => this.setState({ settingsTab: t })
+      })),
+      settingsGroups: this.settingsFor(s.settingsTab).map(g => ({
+        title: g.title,
+        rows: g.rows.map((r, i) => ({ ...r, style: r.style + (i ? " border-top:1px solid rgba(16,22,35,.11);" : "") }))
+      })),
+      plusOpen: s.plusOpen,
+      shareOpen: s.shareOpen,
+      toggleShare: () => this.setState(st => ({ shareOpen: !st.shareOpen, plusOpen: false, accountOpen: false })),
+      toggleAccount: () => this.setState(st => ({ accountOpen: !st.accountOpen, plusOpen: false })),
+      togglePlus: () => this.setState(st => ({ plusOpen: !st.plusOpen, accountOpen: false })),
+      voiceDots: voiceDots,
+      voiceName: vSel.name,
+      voiceDesc: vSel.desc,
+      voiceSeed: vSel.seed,
+      voiceColors: vSel.colors,
+      setupVoiceColors: setupVoice ? setupVoice.colors : "",
+      setupVoiceSeed: setupVoice ? setupVoice.seed : 0,
+      hasSetupVoice: !!setupVoice,
+      noSetupVoice: !setupVoice,
+      voicePrev: () => this.setState({ voiceDraft: VOICE_LIST[(vIdx - 1 + VOICE_LIST.length) % VOICE_LIST.length].name }),
+      voiceNext: () => this.setState({ voiceDraft: VOICE_LIST[(vIdx + 1) % VOICE_LIST.length].name }),
+      setupVoiceLabel: setupVoice ? setupVoice.name : "No voice yet",
+      setupVoiceAction: setupVoice ? "Change" : "Add",
+      openVoice: () => this.setState(st => ({ voiceOpen: true, voiceDraft: st.setup.voice || "Balanced" })),
+      closeVoice: () => this.setState({ voiceOpen: false }),
+      confirmVoice: () => this.setState(st => ({ voiceOpen: false, setup: { ...st.setup, voice: st.voiceDraft } })),
+      createStyle: "height:39px; padding:0 21px; border-radius:999px; border:none; font-family:inherit; font-size:13.5px; font-weight:400; cursor:" +
+        (s.setup.name.trim() ? "pointer" : "default") + "; background:" + (s.setup.name.trim() ? "#1e3358" : "#b8b8bd") + "; color:#fbfbfc;",
+      createAgent: () => this.createAgent(),
+      pickText: () => this.setState({ mode: "text" }),
+      pickVoice: () => this.setState({ mode: "voice" }),
+      textTabStyle: this.tabStyle(s.mode === "text"),
+      voiceTabStyle: this.tabStyle(s.mode === "voice"),
+      threadRef: this.threadRef,
+      inputRef: this.inputRef,
+      onDraft: e => this.setState({ draft: e.target.value }),
+      onQuery: e => this.setState({ query: e.target.value }),
+      onKey: e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); this.send(); } },
+      send: () => this.send()
+    };
+  }
+}
+</script>
+
+
+
+</body></html>

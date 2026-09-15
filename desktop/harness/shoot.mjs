@@ -45,12 +45,38 @@ const screens = process.argv.slice(2).length ? process.argv.slice(2)
   : ['signin', 'thread', 'files', 'choice', 'typing', 'voice', 'signin-error'];
 
 for (const screen of screens) {
-  await page.goto(`http://127.0.0.1:${port}/?screen=${screen}`, { waitUntil: 'networkidle' });
+  // `hover` is `thread` with the pointer resting on the agent's last
+  // bubble, then its emoji row opened: the cluster only exists on hover.
+  const base = screen === 'hover' ? 'thread' : screen;
+  await page.goto(`http://127.0.0.1:${port}/?screen=${base}`, { waitUntil: 'networkidle' });
   // Give the orb's shader a few frames to draw something.
   await page.waitForTimeout(1200);
+  if (screen === 'hover') {
+    const react = page.getByRole('button', { name: 'React' }).last();
+    await react.hover({ force: true });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: 'harness/shots/hover.png' });
+    await react.click({ force: true });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: 'harness/shots/hover-emoji.png' });
+    console.log('shot hover, hover-emoji');
+    continue;
+  }
   await page.screenshot({ path: `harness/shots/${screen}.png` });
   console.log('shot', screen);
 }
+
+// The face: a page set in the system font by mistake looks almost right
+// and is wrong everywhere, so the shooter says which one it drew.
+const face = await page.evaluate(async () => {
+  await document.fonts.ready;
+  return {
+    switzer400: document.fonts.check('14px Switzer'),
+    switzer500: document.fonts.check('500 14px Switzer'),
+    body: getComputedStyle(document.body).fontFamily,
+  };
+});
+console.log('font:', JSON.stringify(face));
 
 const orbs = await page.evaluate(() => document.querySelectorAll('cloud-orb').length);
 console.log('cloud-orb elements on the last screen:', orbs);

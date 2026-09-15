@@ -89,7 +89,7 @@ export function Settings(props: SettingsProps): JSX.Element {
       >
         <div
           style={{
-            display: 'flex', flexDirection: 'column', gap: 2, padding: '20px 12px',
+            display: 'flex', flexDirection: 'column', gap: 4, padding: '17px 11px',
             borderRight: `1px solid ${line.hairline}`, background: 'rgba(249,250,252,.86)',
           }}
         >
@@ -102,8 +102,8 @@ export function Settings(props: SettingsProps): JSX.Element {
                 onClick={() => setTab(one)}
                 aria-pressed={on}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 11, height: 44,
-                  padding: '0 12px', borderRadius: radius.input, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 10, height: 41,
+                  padding: '0 11px', borderRadius: radius.input, cursor: 'pointer',
                   font: 'inherit', fontSize: text.body, color: color.ink,
                   background: on ? color.fillStrong : 'transparent',
                   border: on ? `1px solid ${line.hairline}` : '1px solid transparent',
@@ -117,7 +117,7 @@ export function Settings(props: SettingsProps): JSX.Element {
                     color: on ? color.ink : color.muted,
                   }}
                 >
-                  {ICONS[one](16)}
+                  {ICONS[one](15)}
                 </span>
                 <span style={{ flex: '1 1 auto', textAlign: 'left' }}>{one}</span>
               </button>
@@ -126,7 +126,7 @@ export function Settings(props: SettingsProps): JSX.Element {
         </div>
 
         <div style={{ position: 'relative', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 12, padding: '24px 28px 14px' }}>
+          <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 11, padding: '21px 24px 12px' }}>
             <div style={{ flex: '1 1 auto', fontSize: text.screenTitle, fontWeight: 500, letterSpacing: tracking.screenTitle, color: color.ink }}>
               {tab}
             </div>
@@ -135,20 +135,20 @@ export function Settings(props: SettingsProps): JSX.Element {
               onClick={onClose}
               aria-label="Close"
               style={{
-                width: 32, height: 32, flex: '0 0 auto', border: 'none',
+                width: 30, height: 30, flex: '0 0 auto', border: 'none',
                 background: 'transparent', borderRadius: '50%', cursor: 'pointer',
                 color: color.muted,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <CloseIcon size={14} />
+              <CloseIcon size={13} />
             </button>
           </div>
 
           <div
             style={{
               flex: '1 1 auto', minHeight: 0, overflowY: 'auto',
-              padding: '6px 28px 32px', display: 'flex', flexDirection: 'column', gap: 26,
+              padding: '5px 24px 28px', display: 'flex', flexDirection: 'column', gap: 23,
             }}
           >
             {groups.map(group => <Group key={group.title} group={group} />)}
@@ -161,8 +161,8 @@ export function Settings(props: SettingsProps): JSX.Element {
 
 function Group({ group }: { group: SettingsGroup }): JSX.Element {
   return (
-    <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ fontSize: text.caption, color: color.muted, paddingLeft: 4 }}>{group.title}</div>
+    <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
+      <div style={{ fontSize: text.caption, color: color.muted, paddingLeft: 3 }}>{group.title}</div>
       <div
         style={{
           borderRadius: radius.card, background: color.fillRaised,
@@ -182,8 +182,8 @@ const rowStyle = (first: boolean, stacked: boolean): CSSProperties => ({
   display: 'flex',
   alignItems: stacked ? 'stretch' : 'center',
   flexDirection: stacked ? 'column' : 'row',
-  gap: stacked ? 12 : 20,
-  padding: '18px 20px',
+  gap: stacked ? 11 : 17,
+  padding: '15px 17px',
   ...(first ? {} : { borderTop: `1px solid ${line.hairline}` }),
 });
 
@@ -218,7 +218,7 @@ function Control({ row }: { row: SettingsRow }): JSX.Element | null {
       return <Field row={row} />;
     case SettingsRowKind.Meter:
       return (
-        <span style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 9, minWidth: 0 }}>
+        <span style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
           <span style={{ height: 7, borderRadius: radius.pill, background: '#d7dde6', overflow: 'hidden', display: 'flex' }}>
             <span
               style={{
@@ -227,7 +227,7 @@ function Control({ row }: { row: SettingsRow }): JSX.Element | null {
               }}
             />
           </span>
-          <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
             <span style={{ flex: '1 1 auto', fontSize: text.small, color: color.muted }}>{row.desc}</span>
             <span style={{ fontSize: text.small, color: color.muted }}>{row.value}</span>
           </span>
@@ -286,9 +286,9 @@ function ActionButton({ row }: { row: Extract<SettingsRow, { kind: 'button' }> }
       onClick={press}
       disabled={row.busy}
       style={{
-        flex: '0 0 auto', height: 38, padding: '0 18px', borderRadius: radius.field,
+        flex: '0 0 auto', height: 36, padding: '0 17px', borderRadius: radius.pill,
         cursor: row.busy ? 'default' : 'pointer', font: 'inherit', fontSize: text.body,
-        fontWeight: row.tone ? 500 : 400, whiteSpace: 'nowrap',
+        fontWeight: 400, whiteSpace: 'nowrap',
         opacity: row.busy ? 0.6 : 1,
         ...(row.tone === 'primary'
           ? { background: color.ink, color: color.paper, border: 'none' }
@@ -322,8 +322,8 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
     return (
       <span
         style={{
-          flex: '0 0 auto', maxWidth: 260, height: 36, display: 'flex', alignItems: 'center',
-          padding: '0 12px', borderRadius: radius.small, background: color.paper,
+          flex: '0 0 auto', maxWidth: 240, height: 33, display: 'flex', alignItems: 'center',
+          padding: '0 11px', borderRadius: radius.small, background: color.paper,
           border: `1px solid ${line.field}`, fontSize: text.body, color: color.muted,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}
@@ -335,7 +335,7 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
   }
 
   return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 0 auto' }}>
+    <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '0 0 auto' }}>
       <input
         value={draft}
         onChange={event => setDraft(event.target.value)}
@@ -346,7 +346,7 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
         autoComplete="off"
         spellCheck={false}
         style={{
-          width: 220, height: 36, padding: '0 12px', borderRadius: radius.small,
+          width: 204, height: 33, padding: '0 11px', borderRadius: radius.small,
           border: `1px solid ${line.field}`, background: color.paper, outline: 'none',
           font: 'inherit', fontSize: text.body, color: color.ink,
           ...(row.secret ? { fontFamily: font.mono, letterSpacing: '.02em' } : {}),
@@ -358,7 +358,7 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
           onClick={() => setShown(one => !one)}
           aria-pressed={shown}
           style={{
-            height: 36, padding: '0 12px', borderRadius: radius.small,
+            height: 33, padding: '0 12px', borderRadius: radius.pill,
             border: `1px solid ${line.field}`, background: color.fill,
             color: color.muted, font: 'inherit', fontSize: text.body, cursor: 'pointer',
           }}
@@ -371,7 +371,7 @@ function Field({ row }: { row: Extract<SettingsRow, { kind: 'field' }> }): JSX.E
         onClick={() => row.onSave?.(draft)}
         disabled={!dirty}
         style={{
-          height: 36, padding: '0 14px', borderRadius: radius.small,
+          height: 33, padding: '0 15px', borderRadius: radius.pill,
           border: `1px solid ${line.field}`, background: color.fill,
           color: dirty ? color.ink : color.faint, font: 'inherit', fontSize: text.body,
           cursor: dirty ? 'pointer' : 'default',
@@ -394,16 +394,16 @@ function Toggle(
       aria-label={label}
       onClick={onToggle}
       style={{
-        width: 48, height: 28, flex: '0 0 auto', border: 'none', borderRadius: radius.pill,
+        width: 44, height: 26, flex: '0 0 auto', border: 'none', borderRadius: radius.pill,
         cursor: 'pointer', display: 'flex', alignItems: 'center',
-        justifyContent: on ? 'flex-end' : 'flex-start', padding: '0 3px',
+        justifyContent: on ? 'flex-end' : 'flex-start', padding: '0 2px',
         transition: 'background .18s',
         background: on ? color.ink : '#c4ccd8',
       }}
     >
       <span
         style={{
-          width: 22, height: 22, borderRadius: '50%', background: color.paper,
+          width: 19, height: 19, borderRadius: '50%', background: color.paper,
           boxShadow: '0 1px 3px rgba(16,22,35,.25)', display: 'block',
         }}
       />
@@ -451,11 +451,11 @@ function Select(
         <div
           role="menu"
           style={{
-            position: 'absolute', right: 0, top: 42, zIndex: 90, width: 320, padding: 8,
+            position: 'absolute', right: 0, top: 39, zIndex: 90, width: 320, padding: 6,
             borderRadius: radius.menu, background: glass.background, backdropFilter: glass.blur,
             border: `1px solid ${glass.border}`,
             boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
-            display: 'flex', flexDirection: 'column', gap: 1,
+            display: 'flex', flexDirection: 'column', gap: 4,
             animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
           }}
         >
@@ -489,14 +489,14 @@ function Select(
         aria-expanded={open}
         aria-label={label}
         style={{
-          display: 'flex', alignItems: 'center', gap: 8, height: 36,
-          padding: '0 12px 0 14px', borderRadius: radius.small,
+          display: 'flex', alignItems: 'center', gap: 6, height: 33,
+          padding: '0 12px 0 14px', borderRadius: radius.pill,
           border: `1px solid ${line.field}`, background: color.paper, cursor: 'pointer',
           font: 'inherit', fontSize: text.body, color: color.ink, whiteSpace: 'nowrap',
         }}
       >
         <span>{current?.label ?? value}</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color.faint} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+        <svg width="11.5" height="11.5" viewBox="0 0 24 24" fill="none" stroke={color.faint} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
           <path d="M5 9l7 7 7-7" />
         </svg>
       </button>

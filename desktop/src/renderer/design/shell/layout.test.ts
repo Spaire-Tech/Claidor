@@ -101,7 +101,7 @@ describe('the panel', () => {
 
   test('is absent when nobody asked for it', () => {
     expect(shellLayout(1440, false).panel).toBe(PanelMode.None);
-    expect(shellLayout(1440, false).threadWidth).toBe(1440 - 300);
+    expect(shellLayout(1440, false).threadWidth).toBe(1440 - 272);
   });
 
   test('every width is one of the three modes and nothing in between', () => {
@@ -128,21 +128,22 @@ describe('the macOS window buttons', () => {
 });
 
 describe('the agent panel', () => {
-  // From the canvas: `clamp(252px,22%,300px) minmax(0,1fr) clamp(236px,25%,324px)`.
+  // From the evening canvas of 15 September:
+  // `clamp(233px,21%,272px) minmax(0,1fr) clamp(220px,23%,294px)`.
   test('takes some of its room from the sidebar, not all from the thread', () => {
     const without = shellLayout(1200, PanelWant.None);
     const withPanel = shellLayout(1200, PanelWant.Agent);
     expect(withPanel.sidebarWidth).toBeLessThan(without.sidebarWidth);
-    expect(withPanel.sidebarWidth).toBe(264); // 22% of 1200
-    expect(withPanel.panelWidth).toBe(300); // 25% of 1200
+    expect(withPanel.sidebarWidth).toBe(252); // 21% of 1200
+    expect(withPanel.panelWidth).toBe(276); // 23% of 1200
     expect(withPanel.panel).toBe(PanelMode.Split);
   });
 
   test('is clamped to the canvas\'s numbers at both ends', () => {
-    expect(shellLayout(6016, PanelWant.Agent).panelWidth).toBe(324);
-    expect(shellLayout(6016, PanelWant.Agent).sidebarWidth).toBe(300);
-    expect(shellLayout(960, PanelWant.Agent).panelWidth).toBe(240);
-    expect(shellLayout(960, PanelWant.Agent).sidebarWidth).toBe(252);
+    expect(shellLayout(6016, PanelWant.Agent).panelWidth).toBe(294);
+    expect(shellLayout(6016, PanelWant.Agent).sidebarWidth).toBe(272);
+    expect(shellLayout(960, PanelWant.Agent).panelWidth).toBe(221);
+    expect(shellLayout(960, PanelWant.Agent).sidebarWidth).toBe(233);
   });
 
   test('never crushes the thread either', () => {

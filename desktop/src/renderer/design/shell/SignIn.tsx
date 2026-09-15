@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { Orb, OrbMood } from '../orb/Orb';
-import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 
 export interface SignInProps {
   /** Opens the browser and waits for the callback. */
@@ -54,6 +54,7 @@ export function SignIn({ onSignIn, error }: SignInProps): JSX.Element {
         backgroundSize: '34px 34px',
         backgroundPosition: '-1px -1px',
         color: color.ink,
+        fontFamily: font.ui, fontWeight: 400,
       }}
     >
       <div
@@ -91,9 +92,9 @@ export function SignIn({ onSignIn, error }: SignInProps): JSX.Element {
           onClick={() => { void go(); }}
           disabled={busy}
           style={{
-            height: 44, padding: '0 26px', borderRadius: radius.field,
+            height: 41, padding: '0 24px', borderRadius: radius.pill,
             border: 'none', background: color.ink, color: color.paper,
-            font: 'inherit', fontSize: text.body, fontWeight: 500,
+            font: 'inherit', fontSize: text.body, fontWeight: 400,
             cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1,
           }}
         >

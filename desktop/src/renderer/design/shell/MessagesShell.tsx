@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { avatarFallback } from '../../../shared/agent/avatars';
 import { CloseIcon, ComputerIcon, SearchIcon, ShareIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
+import { replyQuote } from '../thread/actions';
 import { findInThread, matchLabel, stepMatch } from '../thread/search';
 import { rowsWhileLanding, type RowText } from '../thread/stagger';
 import { Thread } from '../thread/Thread';
@@ -13,8 +14,9 @@ import type {
   SecretHandlers,
 } from '../thread/ThreadItemView';
 import type { ThreadItem } from '../thread/types';
+import { useReactions } from '../thread/useReactions';
 import { useStaggered } from '../thread/useStaggered';
-import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { color, font, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
 import { PanelMode, PanelWant, shellLayout, titleBarInset, useWindowWidth } from './layout';
@@ -151,6 +153,15 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     settled.current?.id === activeId ? settled.current : undefined,
   );
 
+  // The hover cluster beside a bubble: reactions kept per conversation,
+  // and Reply, which puts the message's first line into the composer in
+  // quotes. The canvas's `reply: () => this.setState({ draft: … })`.
+  const { reactions, onReact } = useReactions(activeId);
+  const [replySeed, setReplySeed] = useState<{ text: string; at: number }>();
+  const onReply = useCallback((_itemId: string, messageText: string) => {
+    setReplySeed({ text: replyQuote(messageText), at: Date.now() });
+  }, []);
+
   // The share popover. Escape and a click elsewhere close it, like every
   // other menu in the app.
   const [shareOpen, setShareOpen] = useState(false);
@@ -180,8 +191,8 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         onClick={() => onMode(value)}
         aria-pressed={on}
         style={{
-          height: 30, padding: '0 18px', borderRadius: radius.pill, cursor: 'pointer',
-          font: 'inherit', fontSize: 13.5, letterSpacing: tracking.body,
+          height: 28, padding: '0 15px', borderRadius: radius.pill, cursor: 'pointer',
+          font: 'inherit', fontSize: text.label, letterSpacing: tracking.body,
           background: on ? color.paper : 'transparent',
           color: on ? color.accent : color.muted,
           fontWeight: on ? 500 : 400,
@@ -199,6 +210,12 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
       style={{
         position: 'relative', height: '100vh', boxSizing: 'border-box',
         overflow: 'hidden', color: color.ink,
+        // The face, set here and inherited by everything below — the
+        // sheets and menus included, since they are rendered inside this
+        // root. The weight is said too: upstream's stylesheet puts 445 on
+        // the document, and with two static weights a browser rounds 445
+        // up to Medium, which would set the whole app in bold.
+        fontFamily: font.ui, fontWeight: 400,
       }}
     >
       <div
@@ -252,8 +269,8 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
           <div
             style={{
-              position: 'relative', display: 'flex', alignItems: 'center', gap: 11,
-              padding: `${16 + inset}px 24px 16px`,
+              position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
+              padding: `${14 + inset}px 21px 14px`,
               borderBottom: `1px solid ${line.hairline}`,
               background: 'rgba(250,251,252,.92)', backdropFilter: 'blur(20px)',
               // The other half of the window you can pick up. Controls
@@ -274,13 +291,13 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               disabled={!onOpenAgent}
               aria-label={onOpenAgent ? `About ${activeName}` : undefined}
               style={{
-                display: 'flex', alignItems: 'center', gap: 11, padding: '2px 8px 2px 2px',
+                display: 'flex', alignItems: 'center', gap: 10, padding: '2px 8px 2px 2px',
                 margin: 0, border: '1px solid transparent', borderRadius: radius.pill,
                 background: 'transparent', font: 'inherit', color: 'inherit',
                 cursor: onOpenAgent ? 'pointer' : 'default',
               }}
             >
-              <CloudBlob avatar={activeAvatar} size={28} />
+              <CloudBlob avatar={activeAvatar} size={26} />
               <span style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title }}>
                 {activeName}
               </span>
@@ -308,7 +325,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             <div
               style={{
                 position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-                display: 'flex', alignItems: 'center', padding: 3,
+                display: 'flex', alignItems: 'center', padding: 2,
                 borderRadius: radius.pill, background: 'rgba(241,243,246,.72)',
                 backdropFilter: 'blur(20px) saturate(1.4)',
                 border: '1px solid rgba(255,255,255,.6)',
@@ -331,13 +348,13 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               onClick={() => { setFinding(true); }}
               aria-label="Find in this conversation"
               style={{
-                marginLeft: 'auto', width: 34, height: 34, borderRadius: radius.small,
+                marginLeft: 'auto', width: 31, height: 31, borderRadius: radius.pill,
                 border: '1px solid transparent', background: 'transparent',
                 cursor: 'pointer', color: color.muted,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <SearchIcon size={16} />
+              <SearchIcon size={15} />
             </button>
 
             {/*
@@ -353,7 +370,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                   <div
                     role="menu"
                     style={{
-                      position: 'absolute', right: 0, top: 42, zIndex: 40, padding: 8,
+                      position: 'absolute', right: 0, top: 42, zIndex: 40, padding: 6,
                       borderRadius: radius.card, background: glass.background,
                       backdropFilter: glass.blur, border: `1px solid ${glass.border}`,
                       boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
@@ -364,7 +381,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                       type="button"
                       onClick={() => { setShareOpen(false); onShareTemplate(); }}
                       style={{
-                        display: 'flex', alignItems: 'center', height: 44, padding: '0 16px',
+                        display: 'flex', alignItems: 'center', height: 41, padding: '0 14px',
                         border: 'none', background: 'transparent', borderRadius: radius.input,
                         cursor: 'pointer', font: 'inherit', fontSize: text.body,
                         color: color.ink, whiteSpace: 'nowrap',
@@ -380,13 +397,13 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                   aria-label="Share this conversation"
                   aria-expanded={shareOpen}
                   style={{
-                    width: 34, height: 34, borderRadius: radius.small,
+                    width: 31, height: 31, borderRadius: radius.pill,
                     border: '1px solid transparent', background: 'transparent',
                     cursor: 'pointer', color: color.muted,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
-                  <ShareIcon size={16} />
+                  <ShareIcon size={15} />
                 </button>
               </span>
             )}
@@ -396,13 +413,13 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               onClick={onOpenPanel}
               aria-label="Watch the agent work"
               style={{
-                width: 34, height: 34, borderRadius: radius.small,
+                width: 31, height: 31, borderRadius: radius.pill,
                 border: '1px solid transparent', background: 'transparent',
                 cursor: 'pointer', color: color.muted,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <ComputerIcon size={17} />
+              <ComputerIcon size={15} />
             </button>
           </div>
 
@@ -423,11 +440,12 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             auth={auth}
             {...(secret ? { secret } : {})}
             {...(parts ? { parts } : {})}
+            actions={{ reactions, onReact, onReply }}
             typing={saysTyping ? { avatar: activeAvatar } : undefined}
           />
 
           {mode === ThreadMode.Voice && (
-            <div style={{ flex: '0 0 auto', padding: '10px 24px 4px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ flex: '0 0 auto', padding: '9px 21px 3px', display: 'flex', justifyContent: 'center' }}>
               <span
                 style={{
                   display: 'block',
@@ -436,7 +454,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                     : `fsr-orb-idle ${motion.orbIdle.duration} ${motion.orbIdle.easing} infinite`,
                 }}
               >
-                <CloudBlob avatar={activeAvatar} size={104} label={`${activeName} is listening`} />
+                <CloudBlob avatar={activeAvatar} size={96} label={`${activeName} is listening`} />
               </span>
             </div>
           )}
@@ -445,6 +463,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             placeholder={`Message ${activeName}`}
             onSend={onSend}
             {...(onTeach ? { onTeach } : {})}
+            {...(replySeed ? { seed: replySeed } : {})}
           />
         </div>
         {layout.panel === PanelMode.Split && (agentPanel ?? panel)}
@@ -496,8 +515,8 @@ function FindBar({ query, label, onQuery, onStep, onClose }: FindBarProps): JSX.
   return (
     <div
       style={{
-        flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 10,
-        padding: '10px 24px', borderBottom: `1px solid ${line.hairline}`,
+        flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 9,
+        padding: '9px 21px', borderBottom: `1px solid ${line.hairline}`,
         background: color.fill,
       }}
     >

@@ -175,7 +175,7 @@ function Switch({ on, onChange, label }: {
       aria-label={label}
       onClick={() => onChange(!on)}
       style={{
-        flex: '0 0 auto', width: 42, height: 25, padding: 2, cursor: 'pointer',
+        flex: '0 0 auto', width: 41, height: 24, padding: 2, cursor: 'pointer',
         borderRadius: radius.pill, border: `1px solid ${line.button}`,
         background: on ? color.accent : color.fillStrong,
         display: 'flex', justifyContent: on ? 'flex-end' : 'flex-start',
@@ -184,7 +184,7 @@ function Switch({ on, onChange, label }: {
     >
       <span
         style={{
-          width: 19, height: 19, borderRadius: '50%', background: color.paper,
+          width: 18, height: 18, borderRadius: '50%', background: color.paper,
           boxShadow: shadow.flat,
         }}
       />
@@ -220,7 +220,7 @@ function Instructions({ detail, agentName }: { detail: AgentDetailState; agentNa
           onClick={detail.onSaveInstructions}
           disabled={!dirty || detail.saving}
           style={{
-            flex: '0 0 auto', height: 34, padding: '0 18px', borderRadius: radius.pill,
+            flex: '0 0 auto', height: 33, padding: '0 17px', borderRadius: radius.pill,
             border: 'none', font: 'inherit', fontSize: text.body, color: color.paper,
             background: dirty && !detail.saving ? color.ink : color.disabled,
             cursor: dirty && !detail.saving ? 'pointer' : 'default',
@@ -247,7 +247,7 @@ function Memories({ detail, agentName }: { detail: AgentDetailState; agentName: 
           placeholder={`Something ${agentName} should know`}
           aria-label={`Something ${agentName} should know`}
           style={{
-            flex: '1 1 auto', minWidth: 0, height: 38, padding: '0 14px',
+            flex: '1 1 auto', minWidth: 0, height: 36, padding: '0 13px',
             borderRadius: radius.pill, background: color.fill,
             border: `1px solid ${line.hairline}`, outline: 'none',
             font: 'inherit', fontSize: text.small, color: color.ink,
@@ -258,7 +258,7 @@ function Memories({ detail, agentName }: { detail: AgentDetailState; agentName: 
           onClick={add}
           disabled={!draft.trim()}
           style={{
-            flex: '0 0 auto', height: 38, padding: '0 16px', borderRadius: radius.pill,
+            flex: '0 0 auto', height: 36, padding: '0 15px', borderRadius: radius.pill,
             border: `1px solid ${line.button}`, background: color.paper,
             font: 'inherit', fontSize: text.small,
             color: draft.trim() ? color.ink : color.disabled,

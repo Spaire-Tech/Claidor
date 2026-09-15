@@ -50,22 +50,23 @@
   --fsr-glass-scrim-blur: blur(10px);
 
   /* Type */
-  --fsr-text-caption: 13px;
-  --fsr-text-label: 13.5px;
-  --fsr-text-small: 14px;
-  --fsr-text-body: 14.5px;
-  --fsr-text-message: 15px;
-  --fsr-text-emphasis: 15.5px;
-  --fsr-text-base: 16px;
-  --fsr-text-agent-name: 16.5px;
-  --fsr-text-section: 17px;
-  --fsr-text-sidebar-title: 19px;
-  --fsr-text-dialog-title: 21px;
-  --fsr-text-screen-title: 22px;
-  --fsr-text-detail-title: 27px;
+  --fsr-text-code: 12px;
+  --fsr-text-caption: 12.5px;
+  --fsr-text-label: 12.5px;
+  --fsr-text-small: 13px;
+  --fsr-text-body: 13.5px;
+  --fsr-text-message: 14px;
+  --fsr-text-emphasis: 14.5px;
+  --fsr-text-base: 15px;
+  --fsr-text-agent-name: 15.5px;
+  --fsr-text-section: 16px;
+  --fsr-text-sidebar-title: 18px;
+  --fsr-text-dialog-title: 20px;
+  --fsr-text-screen-title: 20.5px;
+  --fsr-text-detail-title: 25.5px;
 
   /* Tracking */
-  --fsr-tracking-body: -.005em;
+  --fsr-tracking-body: 0;
   --fsr-tracking-title: -.01em;
   --fsr-tracking-screen-title: -.015em;
   --fsr-tracking-detail-title: -.02em;
@@ -90,8 +91,9 @@
   --fsr-grid-size: 34px;
 
   /* Type faces */
-  --fsr-font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  --fsr-font-ui: 'Switzer', 'Switzer Variable', -apple-system, BlinkMacSystemFont, sans-serif;
   --fsr-font-mono: 'SF Mono', ui-monospace, SFMono-Regular, monospace;
+  --fsr-font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
 
   /* Motion */
   --fsr-motion-message-in-duration: .16s;
@@ -107,6 +109,27 @@
   --fsr-motion-shimmer-easing: linear;
   --fsr-motion-hover-duration: .15s;
   --fsr-motion-hover-easing: ease;
+}
+
+/*
+ * The face. Two weights of Switzer, bundled beside this file; the
+ * evening canvas of 15 September set it in place of the system stack.
+ * `font-display: swap` so the system face carries the first paint and
+ * Switzer takes over when its 17KB has arrived — never an empty screen.
+ */
+@font-face {
+  font-family: 'Switzer';
+  src: url('./fonts/Switzer-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url('./fonts/Switzer-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
 }
 
 /*

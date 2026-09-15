@@ -1729,3 +1729,56 @@ to read when it fails is `[Connections]`.
 `main/libs/connections/connectService.ts` (open servers, refused
 routes), `main.ts` (no `auth` for an open server); `harness/main.tsx`
 (`?screen=apps-agents`, `apps-agent`), `harness/shoot-canvas.mjs`.
+
+---
+
+## 43. The evening canvas: Switzer, the smaller scale, pill buttons, reactions — `built`
+
+The founder: *"i've added some changes to the design of the app. the
+fonts, the size, the butons style etc... and more. (the emoji reactions
+etc) make sure it all fits well with our app. when u'r done i'll test
+everything out"* — with `Swens_Messages_4.html`.
+
+Diffed against the previous canvas rather than eyeballed: 316 lines of
+script and 1,149 of markup changed, and every one is one of four
+things. The face is Switzer, bundled at 400 and 500. Every size came
+down a step (15 → 14, 22 → 20.5, rows 52 → 49, the sidebar 300 → 272,
+the blobs 40 → 37 and 88 → 82). Every button is a pill at weight 400.
+And a hover cluster beside each bubble: react with one of six emoji,
+reply in quotes, copy an id. `docs/product/design/README.md` lists the
+numbers.
+
+**What was done.** The type scale in `tokens.ts` is the new one, so
+every component that used a token moved with it; the sizes written in
+by hand — heights, paddings, gaps, blob sizes, icon sizes, the columns
+in `layout.ts` — were changed one by one against the diff, across the
+sidebar, header, thread, composer, compose, voice picker, account menu,
+settings, apps, connections, agent panel, agent detail and sign-in. The
+cluster is new: `MessageActions.tsx`, drawn to the canvas's pixels,
+with the decisions in `actions.ts` (one reaction per message, same one
+again clears it; the quote's 52 characters; the id) and reactions kept
+per conversation in the renderer's own storage by `useReactions`.
+
+**Two things to know.** The shell root now sets the face and weight
+400 itself: upstream's stylesheet asks the document for weight 445, and
+with two static weights a browser rounds that up to Medium — the whole
+app in bold, which is exactly the kind of fault a test does not see.
+And the menu row says "Copy message ID" rather than the canvas's "Copy
+request ID": the canvas invents a hash, and the store strips the
+engine's run id from a message when it saves it, so the one real id a
+person can hand to support is the message's. The label says what it
+copies.
+
+**Proof.** 710 tests pass (12 new, for the cluster's decisions); eslint,
+tsc clean; the harness reports `switzer400: true, switzer500: true` and
+photographs `thread`, `hover`, `hover-emoji`, `compose`, `apps`,
+`apps-agents`, `apps-agent`, `account`, `voice` beside
+`shoot-canvas.mjs`'s shots of the new canvas. The Switzer license text
+could not be fetched (a JavaScript-only page); `fonts/README.md` says so.
+
+**Where:** `design/tokens.ts`, `tokens.css`, `fonts/`; `shell/layout.ts`
+(+test); `thread/actions.ts` (+test), `useReactions.ts`,
+`MessageActions.tsx`, `ThreadItemView.tsx`, `Thread.tsx`;
+`shell/Composer.tsx` (`seed`), `MessagesShell.tsx`; every other
+component under `design/`; `harness/shoot.mjs`, `shoot-canvas.mjs`;
+`docs/product/design/canvas-2026-09-15-type*.html`.

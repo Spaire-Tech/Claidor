@@ -208,3 +208,41 @@ export const AttachIcon = (props: IconProps): JSX.Element => svg(
   <path d="M20 11.5l-7.8 7.8a4.3 4.3 0 01-6.1-6.1l8-8a2.9 2.9 0 014.1 4.1l-8 8a1.5 1.5 0 01-2.1-2.1l7.2-7.2" />,
   { weight: 1.7, ...props },
 );
+
+/** The hover cluster's react button: a face, from the evening canvas of 15 September. */
+export const SmileIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8.6 14.2c.8 1.2 2 1.9 3.4 1.9s2.6-.7 3.4-1.9" strokeLinecap="round" />
+    <path d="M9.2 9.6v.1" strokeLinecap="round" strokeWidth={2} />
+    <path d="M14.8 9.6v.1" strokeLinecap="round" strokeWidth={2} />
+  </>,
+  { weight: 1.6, ...props },
+);
+
+/** Reply: an arrow turning back. */
+export const ReplyIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <path d="M9.5 7L4.5 11.5 9.5 16" />
+    <path d="M4.5 11.5h8.8c3.4 0 6.2 2.6 6.2 5.9V18" />
+  </>,
+  { weight: 1.6, ...props },
+);
+
+/** More: three dots. Filled, which is why it is not built through `svg()`. */
+export const DotsIcon = ({ size = 15, className, style }: IconProps): JSX.Element => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} style={style} aria-hidden focusable="false">
+    <circle cx="5.5" cy="12" r="1.5" />
+    <circle cx="12" cy="12" r="1.5" />
+    <circle cx="18.5" cy="12" r="1.5" />
+  </svg>
+);
+
+/** Copy: two sheets. */
+export const CopyIcon = (props: IconProps): JSX.Element => svg(
+  <>
+    <rect x="9" y="9" width="11" height="11" rx="2.5" />
+    <path d="M15 5.5A2.5 2.5 0 0012.5 3H6.5A3.5 3.5 0 003 6.5v6A2.5 2.5 0 005.5 15" />
+  </>,
+  { weight: 1.6, ...props },
+);

@@ -79,8 +79,8 @@ export function AccountMenu({
       onClick={onClick}
       disabled={!onClick}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12, height: 44,
-        padding: '0 12px', border: 'none', background: 'transparent',
+        display: 'flex', alignItems: 'center', gap: 11, height: 41,
+        padding: '0 11px', border: 'none', background: 'transparent',
         borderRadius: radius.row, cursor: onClick ? 'pointer' : 'default',
         font: 'inherit', color: color.muted, width: '100%',
       }}
@@ -99,15 +99,15 @@ export function AccountMenu({
       role="menu"
       style={{
         position: 'absolute', left: 2, bottom: 56, width: 272, zIndex: 40,
-        padding: 8, borderRadius: radius.modal,
+        padding: 6, borderRadius: radius.menu,
         background: glass.background, backdropFilter: glass.blur,
         border: `1px solid ${glass.border}`,
-        boxShadow: `${shadow.modal}, ${shadow.glassInset}`,
-        display: 'flex', flexDirection: 'column', gap: 1,
+        boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
+        display: 'flex', flexDirection: 'column', gap: 4,
       }}
     >
       {row(
-        <UsageIcon size={17} />,
+        <UsageIcon size={15.5} />,
         usage.title,
         onUsage,
         <>
@@ -124,7 +124,7 @@ export function AccountMenu({
               {usage.value}
             </span>
           )}
-          {onUsage && <ChevronRightIcon size={13} style={{ color: color.faint }} />}
+          {onUsage && <ChevronRightIcon size={12} style={{ color: color.faint }} />}
         </>,
       )}
 
@@ -146,19 +146,19 @@ export function AccountMenu({
       )}
 
       {row(
-        <SupportIcon size={17} />,
+        <SupportIcon size={15.5} />,
         'Support',
         onSupport,
-        <ChevronRightIcon size={13} style={{ color: color.faint }} />,
+        <ChevronRightIcon size={12} style={{ color: color.faint }} />,
       )}
 
-      {row(<GearIcon size={17} />, 'Settings', onSettings)}
+      {row(<GearIcon size={15.5} />, 'Settings', onSettings)}
 
       <div style={{ height: 1, margin: '7px 10px', background: line.hairline }} />
 
-      {row(<AddAccountIcon size={17} />, 'Add account', onAddAccount)}
+      {row(<AddAccountIcon size={15.5} />, 'Add account', onAddAccount)}
 
-      {row(<SignOutIcon size={17} />, 'Log out', onLogOut)}
+      {row(<SignOutIcon size={15.5} />, 'Log out', onLogOut)}
     </div>
   );
 }

@@ -57,10 +57,10 @@ export interface SidebarProps {
   topInset?: number;
 }
 
-/** The canvas's trash, 14px, stroke 1.7. */
+/** The canvas's trash, 13px, stroke 1.7. */
 function TrashGlyph(): JSX.Element {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden focusable="false">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden focusable="false">
       <path d="M4 7h16" />
       <path d="M9 7V5h6v2" />
       <path d="M6 7l1 13h10l1-13" />
@@ -115,7 +115,7 @@ export function Sidebar({
         style={{
           display: 'flex', alignItems: 'center',
           justifyContent: rail ? 'center' : 'space-between',
-          padding: rail ? `${18 + topInset}px 0 12px` : `${18 + topInset}px 18px 12px`,
+          padding: rail ? `${15 + topInset}px 0 11px` : `${15 + topInset}px 15px 11px`,
           WebkitAppRegion: 'drag',
         } as React.CSSProperties}
       >
@@ -129,9 +129,9 @@ export function Sidebar({
           onClick={onCompose}
           aria-label="New"
           style={{
-            width: 32, height: 32, borderRadius: '50%',
+            width: 30, height: 30, borderRadius: '50%',
             border: `1px solid ${line.hairline}`, background: color.paper,
-            color: color.muted, fontSize: 18, lineHeight: 1, cursor: 'pointer',
+            color: color.muted, fontSize: 16.5, lineHeight: 1, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: shadow.flat, WebkitAppRegion: 'no-drag',
           } as React.CSSProperties}
@@ -146,15 +146,15 @@ export function Sidebar({
         pretending otherwise spends the room twice.
       */}
       {!rail && (
-        <div style={{ padding: '0 14px 14px' }}>
+        <div style={{ padding: '0 12px 12px' }}>
           <div
             style={{
-              display: 'flex', alignItems: 'center', gap: 9, height: 40,
-              padding: '0 14px', borderRadius: radius.pill,
+              display: 'flex', alignItems: 'center', gap: 8, height: 37,
+              padding: '0 12px', borderRadius: radius.pill,
               background: color.fill, border: `1px solid ${line.hairline}`,
             }}
           >
-            <SearchIcon size={14} style={{ color: color.muted }} />
+            <SearchIcon size={13} style={{ color: color.muted }} />
             <input
               value={query}
               onChange={event => setQuery(event.target.value)}
@@ -172,8 +172,8 @@ export function Sidebar({
 
       <div
         style={{
-          display: 'flex', flexDirection: 'column', gap: 2,
-          padding: rail ? '0 6px' : '0 10px 8px',
+          display: 'flex', flexDirection: 'column', gap: 4,
+          padding: rail ? '0 6px' : '0 9px 6px',
           overflowY: 'auto', overflowX: 'hidden', flex: '1 1 auto', minWidth: 0,
         }}
       >
@@ -205,8 +205,8 @@ export function Sidebar({
                 position: 'relative',
                 display: 'flex', alignItems: 'center',
                 justifyContent: rail ? 'center' : 'flex-start',
-                gap: rail ? 0 : 12, height: 64,
-                padding: rail ? '0' : '0 12px', borderRadius: radius.row, cursor: 'pointer',
+                gap: rail ? 0 : 11, height: 59,
+                padding: rail ? '0' : '0 11px', borderRadius: radius.row, cursor: 'pointer',
                 width: '100%', boxSizing: 'border-box',
                 background: active ? color.paper : 'transparent',
                 border: active ? '1px solid rgba(255,255,255,.6)' : '1px solid transparent',
@@ -219,7 +219,7 @@ export function Sidebar({
               }}
             >
               <span style={{ animation: 'fsr-orb-idle 7.5s ease-in-out infinite', display: 'block', flex: '0 0 auto' }}>
-                <CloudBlob avatar={agent.avatar} size={40} />
+                <CloudBlob avatar={agent.avatar} size={37} />
               </span>
               {/*
                 On the rail the dot moves onto the face, because there is
@@ -230,18 +230,18 @@ export function Sidebar({
                 <span
                   aria-label="Unread"
                   style={{
-                    position: 'absolute', right: 15, top: 16,
+                    position: 'absolute', right: 14, top: 14,
                     width: 9, height: 9, borderRadius: '50%',
                     background: color.accent, border: `2px solid ${color.paper}`,
                   }}
                 />
               )}
               {!rail && (
-                <span style={{ minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                <span style={{ minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
                     <span
                       style={{
-                        flex: '1 1 auto', minWidth: 0, fontSize: text.emphasis, fontWeight: 500,
+                        flex: '1 1 auto', minWidth: 0, fontSize: text.message, fontWeight: 500,
                         letterSpacing: tracking.body, whiteSpace: 'nowrap',
                         overflow: 'hidden', textOverflow: 'ellipsis',
                       }}
@@ -275,7 +275,7 @@ export function Sidebar({
                   onMouseEnter={() => setHoverTrash(agent.id)}
                   onMouseLeave={() => setHoverTrash(undefined)}
                   style={{
-                    width: 28, height: 28, flex: '0 0 auto', padding: 0,
+                    width: 26, height: 26, flex: '0 0 auto', padding: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     borderRadius: 9, cursor: 'pointer', font: 'inherit',
                     border: `1px solid ${trashHot ? 'rgba(201,42,37,.18)' : 'transparent'}`,
@@ -301,8 +301,8 @@ export function Sidebar({
 
       <div
         style={{
-          marginTop: 'auto', padding: '14px 10px 16px',
-          display: 'flex', flexDirection: 'column', gap: 2,
+          marginTop: 'auto', padding: '12px 9px 14px',
+          display: 'flex', flexDirection: 'column', gap: 4,
           borderTop: `1px solid ${line.hairline}`,
           // The menu is absolute against this, so it opens upward from
           // the row rather than from the window.
@@ -318,20 +318,20 @@ export function Sidebar({
           style={{
             display: 'flex', alignItems: 'center',
             justifyContent: rail ? 'center' : 'flex-start',
-            gap: rail ? 0 : 12, height: 52, padding: rail ? '0' : '0 12px',
+            gap: rail ? 0 : 11, height: 49, padding: rail ? '0' : '0 11px',
             borderRadius: radius.row, cursor: 'pointer', border: 'none',
             background: 'transparent', font: 'inherit', textAlign: 'left',
           }}
         >
           <span
             style={{
-              width: 34, height: 34, borderRadius: '50%', background: color.fill,
+              width: 31, height: 31, borderRadius: '50%', background: color.fill,
               border: `1px solid ${line.hairline}`, flex: '0 0 auto',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: color.muted,
             }}
           >
-            <AppsIcon size={15} />
+            <AppsIcon size={14} />
           </span>
           {!rail && <span style={{ fontSize: text.body }}>Apps</span>}
         </button>
@@ -344,14 +344,14 @@ export function Sidebar({
           style={{
             display: 'flex', alignItems: 'center',
             justifyContent: rail ? 'center' : 'flex-start',
-            gap: rail ? 0 : 12, height: 52, padding: rail ? '0' : '0 12px',
+            gap: rail ? 0 : 11, height: 49, padding: rail ? '0' : '0 11px',
             borderRadius: radius.row, cursor: 'pointer', border: 'none',
             background: 'transparent', font: 'inherit', textAlign: 'left',
           }}
         >
           <span
             style={{
-              width: 34, height: 34, borderRadius: '50%', background: color.ink,
+              width: 31, height: 31, borderRadius: '50%', background: color.ink,
               color: color.paper, flex: '0 0 auto',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: text.caption, fontWeight: 500,
@@ -362,7 +362,7 @@ export function Sidebar({
           {!rail && (
             <>
               <span style={{ flex: '1 1 auto', fontSize: text.body }}>{accountName}</span>
-              <ChevronUpIcon size={13} style={{ color: color.faint }} />
+              <ChevronUpIcon size={12} style={{ color: color.faint }} />
             </>
           )}
         </button>

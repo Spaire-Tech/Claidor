@@ -55,7 +55,7 @@ export interface AgentPanelProps {
 }
 
 const fieldStyle: React.CSSProperties = {
-  height: 42, padding: '0 14px', borderRadius: radius.field,
+  height: 39, padding: '0 12px', borderRadius: radius.field,
   border: `1px solid ${line.button}`, background: color.paper,
   outline: 'none', font: 'inherit', fontSize: text.message, color: color.ink,
   boxShadow: shadow.flat, boxSizing: 'border-box', width: '100%',
@@ -99,8 +99,8 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
     >
       <div
         style={{
-          flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 10,
-          padding: '16px 18px', borderBottom: `1px solid ${line.hairline}`,
+          flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 9,
+          padding: '14px 15px', borderBottom: `1px solid ${line.hairline}`,
         }}
       >
         <span style={{ flex: '1 1 auto', fontSize: text.emphasis, fontWeight: 500, letterSpacing: tracking.title }}>
@@ -111,29 +111,29 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
           onClick={onClose}
           aria-label="Close"
           style={{
-            width: 30, height: 30, borderRadius: 10, border: '1px solid transparent',
+            width: 28, height: 28, borderRadius: radius.pill, border: '1px solid transparent',
             background: 'transparent', cursor: 'pointer', color: color.muted,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <CloseIcon size={13} />
+          <CloseIcon size={12} />
         </button>
       </div>
 
       <div
         style={{
           flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden',
-          padding: '20px 18px 24px', display: 'flex', flexDirection: 'column', gap: 16,
+          padding: '17px 15px 21px', display: 'flex', flexDirection: 'column', gap: 14,
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '2px 0' }}>
-          <CloudBlob avatar={agent.avatar} size={76} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, padding: '2px 0' }}>
+          <CloudBlob avatar={agent.avatar} size={70} />
           <button
             type="button"
             onClick={() => setPickerOpen(open => !open)}
             aria-expanded={pickerOpen}
             style={{
-              height: 32, padding: '0 14px', borderRadius: radius.pill,
+              height: 30, padding: '0 12px', borderRadius: radius.pill,
               border: `1px solid ${line.button}`, background: color.paper,
               cursor: 'pointer', font: 'inherit', fontSize: text.caption, color: color.ink,
               whiteSpace: 'nowrap', boxShadow: shadow.flat,
@@ -144,9 +144,9 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
         </div>
 
         {pickerOpen && (
-          <div style={{ ...cardStyle, padding: 13, display: 'flex', flexDirection: 'column', gap: 11 }}>
+          <div style={{ ...cardStyle, padding: 11, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={labelStyle}>Choose an avatar</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 7 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
               {Array.from({ length: AVATAR_COUNT }, (_, index) => {
                 const on = index === agent.avatar;
                 return (
@@ -164,7 +164,7 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
                       border: `1.5px solid ${on ? color.ink : line.hairline}`,
                     }}
                   >
-                    <CloudBlob avatar={index} size={38} style={{ width: '100%', height: '100%' }} />
+                    <CloudBlob avatar={index} size={36} style={{ width: '100%', height: '100%' }} />
                   </button>
                 );
               })}
@@ -172,7 +172,7 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={labelStyle}>Name</div>
           <input
             value={name}
@@ -182,7 +182,7 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={labelStyle}>Label (optional)</div>
           <input
             value={label}
@@ -192,21 +192,21 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={labelStyle}>Description</div>
           <textarea
             value={description}
             onChange={event => { setDescription(event.target.value); onChange({ description: event.target.value }); }}
             placeholder="What should this agent take care of?"
             style={{
-              ...fieldStyle, height: 'auto', minHeight: 84, padding: '12px 14px',
-              borderRadius: radius.panel, resize: 'vertical', lineHeight: 1.45,
+              ...fieldStyle, height: 'auto', minHeight: 78, padding: '11px 12px',
+              borderRadius: radius.input, resize: 'vertical', lineHeight: 1.45,
             }}
           />
         </div>
 
-        <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 12, padding: '14px 15px' }}>
-          <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px' }}>
+          <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ fontSize: text.body, fontWeight: 500, color: color.ink }}>Notifications</div>
             <div style={{ fontSize: text.label, color: color.muted, lineHeight: 1.4 }}>
               Get notified when this agent finishes or needs input
@@ -219,7 +219,7 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
             aria-label="Notifications"
             onClick={() => onChange({ notify: !agent.notify })}
             style={{
-              position: 'relative', width: 44, height: 26, flex: '0 0 auto', padding: 0,
+              position: 'relative', width: 41, height: 24, flex: '0 0 auto', padding: 0,
               border: 'none', borderRadius: radius.pill, cursor: 'pointer',
               transition: 'background .16s ease',
               background: agent.notify ? color.ink : '#c4ccd8',
@@ -228,7 +228,7 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
             <span
               style={{
                 position: 'absolute', top: 3, left: agent.notify ? 21 : 3,
-                width: 20, height: 20, borderRadius: '50%', background: color.paper,
+                width: 17, height: 17, borderRadius: '50%', background: color.paper,
                 transition: 'left .16s ease', boxShadow: '0 1px 2px rgba(16,22,35,.18)',
               }}
             />
@@ -236,19 +236,19 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
         </div>
 
         {onDelete && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 9, paddingTop: 14, borderTop: `1px solid ${line.hairline}` }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 12, borderTop: `1px solid ${line.hairline}` }}>
             {!askingDelete ? (
               <button
                 type="button"
                 onClick={() => setAskingDelete(true)}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  height: 42, padding: '0 16px', borderRadius: radius.field,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  height: 39, padding: '0 17px', borderRadius: radius.pill,
                   border: '1px solid rgba(201,42,37,.2)', background: '#fdeceb', color: color.danger,
                   font: 'inherit', fontSize: text.body, whiteSpace: 'nowrap', cursor: 'pointer',
                 }}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden focusable="false" style={{ flex: '0 0 auto' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden focusable="false" style={{ flex: '0 0 auto' }}>
                   <path d="M4 7h16" /><path d="M9 7V5h6v2" /><path d="M6 7l1 13h10l1-13" /><path d="M10 11v6M14 11v6" />
                 </svg>
                 <span>Delete agent</span>
@@ -256,21 +256,21 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
             ) : (
               <div
                 style={{
-                  display: 'flex', flexDirection: 'column', gap: 10, padding: 14,
-                  borderRadius: radius.panel, background: '#fdeceb', border: '1px solid rgba(201,42,37,.16)',
+                  display: 'flex', flexDirection: 'column', gap: 9, padding: 12,
+                  borderRadius: radius.input, background: '#fdeceb', border: '1px solid rgba(201,42,37,.16)',
                 }}
               >
                 <div style={{ fontSize: text.label, lineHeight: 1.45, color: color.danger, textWrap: 'pretty' }}>
                   Delete {shownName} and this conversation? This can&apos;t be undone.
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button
                     type="button"
                     onClick={onDelete}
                     style={{
-                      flex: '1 1 auto', height: 38, borderRadius: 11, border: 'none',
+                      flex: '1 1 auto', height: 36, borderRadius: radius.pill, border: 'none',
                       background: color.danger, color: color.paper,
-                      font: 'inherit', fontSize: text.small, fontWeight: 500, cursor: 'pointer',
+                      font: 'inherit', fontSize: text.small, fontWeight: 400, cursor: 'pointer',
                     }}
                   >
                     Delete
@@ -279,7 +279,7 @@ export function AgentPanel({ agent, asking = false, onDelete, onChange, onClose 
                     type="button"
                     onClick={() => setAskingDelete(false)}
                     style={{
-                      flex: '1 1 auto', height: 38, borderRadius: 11,
+                      flex: '1 1 auto', height: 36, borderRadius: radius.pill,
                       border: `1px solid ${line.button}`, background: color.paper, color: color.ink,
                       font: 'inherit', fontSize: text.small, cursor: 'pointer',
                     }}

@@ -7,6 +7,7 @@ import { startsTurn } from './leading';
 import {
   type AuthHandlers,
   type ChoiceHandlers,
+  type MessageHandlers,
   type PartHandlers,
   type SecretHandlers,
   ThreadItemView,
@@ -25,6 +26,8 @@ export interface ThreadProps {
   parts?: PartHandlers;
   /** What a card asking for something typed can do with the answer. */
   secret?: SecretHandlers;
+  /** React, reply, copy the id: the cluster beside a bubble on hover. */
+  actions?: MessageHandlers;
   /**
    * The agent is working: its face hops beside a small bubble of three
    * dots, at the end of the thread. From the 15 September canvas, which
@@ -44,7 +47,7 @@ export interface ThreadProps {
  * scrolling; this does the same for the same reason.
  */
 export function Thread({
-  items, dayStamp, choice, auth, parts, secret, typing,
+  items, dayStamp, choice, auth, parts, secret, actions, typing,
 }: ThreadProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   // Whether the person is still at the bottom. Starts true so a freshly
@@ -130,7 +133,7 @@ export function Thread({
             position: 'absolute', left: '50%', bottom: 16, zIndex: 5,
             transform: 'translateX(-50%)',
             display: 'flex', alignItems: 'center', gap: 7,
-            height: 34, padding: '0 14px 0 16px', borderRadius: radius.pill,
+            height: 31, padding: '0 13px 0 15px', borderRadius: radius.pill,
             background: glass.background, backdropFilter: glass.blur,
             border: `1px solid ${glass.border}`,
             boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
@@ -150,14 +153,14 @@ export function Thread({
         flex: '1 1 auto',
         minHeight: 0,
         overflowY: 'auto',
-        padding: '28px 24px 20px',
+        padding: '24px 21px 17px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 10,
+        gap: 9,
       }}
     >
       {dayStamp && (
-        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 5 }}>
           <span style={{ fontSize: text.caption, color: color.muted }}>{dayStamp}</span>
         </div>
       )}
@@ -170,6 +173,7 @@ export function Thread({
           auth={auth}
           {...(secret ? { secret } : {})}
           {...(parts ? { parts } : {})}
+          {...(actions ? { actions } : {})}
           leading={startsTurn(items[index - 1], item)}
         />
       ))}
@@ -177,7 +181,7 @@ export function Thread({
       {/*
         The 13 September canvas had no line here — its whole indicator
         was the word "typing" in the header. The 15 September one has
-        this: the agent's face at 26px, hopping, beside a bubble that is
+        this: the agent's face at 24px, hopping, beside a bubble that is
         nothing but three dots. The header keeps a smaller set of the
         same dots; the two are one animation seen from two distances.
       */}
@@ -185,16 +189,16 @@ export function Thread({
         <div
           aria-label="Working"
           style={{
-            display: 'flex', alignItems: 'flex-end', gap: 9, paddingTop: 6,
+            display: 'flex', alignItems: 'flex-end', gap: 8, paddingTop: 5,
             animation: `fsr-message-in ${motion.messageIn.duration} ease-out both`,
           }}
         >
-          <span style={{ width: 26, height: 26, flex: '0 0 auto', display: 'block', animation: 'fsr-think-hop 1.5s ease-in-out infinite' }}>
-            <CloudBlob avatar={typing.avatar} size={26} />
+          <span style={{ width: 24, height: 24, flex: '0 0 auto', display: 'block', animation: 'fsr-think-hop 1.5s ease-in-out infinite' }}>
+            <CloudBlob avatar={typing.avatar} size={24} />
           </span>
           <span
             style={{
-              display: 'flex', alignItems: 'center', gap: 4.5, height: 25, padding: '0 11px',
+              display: 'flex', alignItems: 'center', gap: 4, height: 24, padding: '0 10px',
               borderRadius: '13px 13px 13px 5px', background: color.paper,
               border: `1px solid ${line.hairline}`,
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(16,22,35,.04)',
