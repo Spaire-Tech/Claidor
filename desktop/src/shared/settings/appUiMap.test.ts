@@ -132,6 +132,21 @@ describe('what the map tells the agent', () => {
     }
   });
 
+  test('it says where an agent is edited and deleted, and that the agent cannot do it', () => {
+    // Found by the audit against Grok Bot's contract (§12, §17): the map
+    // described Settings and the computer icon and nothing else, so an
+    // agent asked "how do I rename you" or "delete you" was back to
+    // guessing. The panel and the trash icon are real
+    // (`design/agent/AgentPanel.tsx`, `design/shell/Sidebar.tsx`); the
+    // map has to say so.
+    const text = map();
+    expect(text).toMatch(/its name in the conversation\s+header/i);
+    expect(text).toMatch(/trash icon/i);
+    expect(text).toMatch(/"Delete" \/ "Keep"/);
+    expect(text).toMatch(/no archive and no hide/i);
+    expect(text).toMatch(/You cannot delete an agent yourself/i);
+  });
+
   test('it carries the app’s own name rather than "the app"', () => {
     expect(buildAppUiMap('Faiser')).toContain('# Faiser, as it actually is');
     expect(buildAppUiMap('Something Else')).toContain('# Something Else, as it actually is');

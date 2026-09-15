@@ -9,6 +9,15 @@ verbatim. Nothing in this folder is mine.
 | `grok-bot-chat.md` | How the bot is built (prompt stack, guardrails) and how chat is configured | 15 Sep 2026 |
 | `grok-bot-app-ui.md` | The verified UI map the agent is given so it never invents a click-path | 15 Sep 2026 |
 | `grok-bot-agent-reference.md` | The whole agent contract in one page: identity, voice, autonomy, safety, surfaces | 15 Sep 2026 |
+| `grok-bot-agent-system-contract.md` | The full builder-facing contract, §§1–32 with both appendices | 15 Sep 2026 |
+
+The fifth is answered by a document of ours in the same shape:
+`../agent-contract.md`, which carries the section-by-section audit
+(live / partial / missing / not ours, each tied to a file) and is the
+list to work from. **The "What is still not built" section at the end
+of this file predates most of a day's work and is kept as a record of
+the reading, not as the list.** Where the two disagree, the contract is
+current.
 
 The founder's instruction with the first one: *"keep it in our repo as a
 source of truth. we building exactly that."*
