@@ -18,7 +18,7 @@ import { openLocalPathWithToast, showToast } from '../../utils/localFileActions'
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
-import { askUserQuestions, decisionNote, parseChoiceId } from '../thread/fromEngine';
+import { askUserQuestions, decisionNote, fileAccessFromToolInput, parseChoiceId } from '../thread/fromEngine';
 import { basename, type KnownFile } from '../thread/parts';
 import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
 import { AuthDecision } from '../thread/types';
@@ -657,15 +657,18 @@ export function useMessagesShell(): MessagesShellState {
           : { behavior: 'deny', message: 'Declined.' },
       );
       // Answering consumes the card: the prompt is replaced by one quiet
-      // line, so a thread never accumulates dead controls.
+      // line, so a thread never accumulates dead controls. The line talks
+      // about a file when a file tool asked, which the request still says.
+      const request = pendingPermissions.find(one => one.requestId === requestId);
+      const access = request ? fileAccessFromToolInput(request.toolInput)?.kind : undefined;
       setNotes(previous => [...previous, {
         id: `note:${requestId}`,
         type: 'system',
-        content: decisionNote(active?.name ?? 'This agent', decision),
+        content: decisionNote(active?.name ?? 'This agent', decision, access),
         timestamp: Date.now(),
       }]);
     },
-  }), [active]);
+  }), [active, pendingPermissions]);
 
   // Composing: who to message, or a new agent.
   const [composing, setComposing] = useState(false);

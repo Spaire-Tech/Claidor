@@ -1440,3 +1440,65 @@ land. It is not a "project" in the Projects sense.
 3. Leave it, and say so in the contract.
 
 My recommendation is 2. Decision is the founder's.
+
+---
+
+## 36. The file tools ask, through the same card as a command — `built, unrun`
+
+The founder, on item 35: *"do option 2. patch the engine. please be
+careful. make no mistake."*
+
+**What the engine now does.** A version-scoped patch,
+`desktop/scripts/patches/v2026.6.1/openclaw-file-tools-ask-first.patch`,
+wraps `read`, `write`, `edit` and `apply_patch` in the tool factory
+(`openclaw/src/agents/agent-tools.ts`) with one module,
+`openclaw/src/agents/file-tool-approval.ts`:
+
+- A path inside a *free root* never asks: the agent's own workspace (its
+  memory and notes), the engine state directory (every agent's
+  workspace, the shared project notes), and the skill folders.
+- Any other path asks under the agent's exec policy, resolved exactly as
+  the exec tool resolves it — the configured layer, tightened by
+  `exec-approvals.json`, never loosened. So the Settings → Computer
+  choice governs files too: **Ask** asks, **Allow** does not, and a
+  refusal answers as `security=deny`.
+- The ask is the exec tool's own gateway request
+  (`exec.approval.request` → `exec.approval.waitDecision`), so it is the
+  same card, with `file-access <kind> <paths>` in `commandArgv` so the
+  app can tell it from a command. No shell command is named that.
+- **Always** is remembered as the file's folder for that kind of access,
+  in `file-approvals.json` beside the command allowlist; a write rule
+  also covers reads. Once, or no answer, remembers nothing; no answer
+  before the request expires follows the file's `askFallback`, like a
+  command.
+- A refusal comes back to the model as a plain tool result — *File write
+  denied (approval-denied): /path* — so it can say so and stop, rather
+  than crash the turn.
+- Symlinks are judged by where they land, so a link inside the
+  workspace cannot reach the person's folder without asking.
+- Sandboxed runs are not wrapped; the sandbox already confines them.
+
+**What the app now does.** The bridge recognises the marker
+(`openclawApprovalBridge.ts`, `parseFileAccess`) and raises the card
+with the paths where the command would be; the sentence reads *"Allow
+Perrin to continue — changing a file on your computer?"*; the note
+after answering says *"Perrin can change files in that folder from now
+on."* And, the one thing that would have been a real bug: a file
+approval gets **no continuation prompt** afterwards. A command approval
+ends the turn and the app sends "approved, carry on" when the person
+answers; a file tool is blocked on the answer inside the turn, and that
+prompt would have landed as a phantom user turn. `PendingApprovalEntry`
+has a third kind, `file`, for exactly that.
+
+**Gates.** Engine: 26 test files, 382 tests, including every existing
+tool-factory test (workspace-only, root guard, tilde expansion, host
+edit access) — none changed behaviour, because with no approvals file
+the exec default is full/off and the wrapper follows it. Engine
+typecheck clean on the touched files (two pre-existing errors in files
+other patches modify). App: full suite, plus new tests for the bridge,
+the controller, the thread and the prompt.
+
+**Not run in the app.** The patch is applied by `npm run openclaw:patch`
+and reaches the app only through a rebuilt engine runtime
+(`npm run electron:dev:openclaw`). Nobody has seen the card come up for
+a file yet.

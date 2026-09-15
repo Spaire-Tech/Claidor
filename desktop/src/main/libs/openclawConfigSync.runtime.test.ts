@@ -3379,6 +3379,16 @@ describe('OpenClawConfigSync runtime config output', () => {
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(config.tools.fs).toBeUndefined();
+
+    // What replaced it: the engine patch makes the file tools ask through
+    // the command approval, and the prompt tells the agent so.
+    const agentsMd = fs.readFileSync(
+      path.join(stateDir, 'workspace-main', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(agentsMd).toContain('### Files on their computer');
+    expect(agentsMd).toContain('draws the same card a command does');
+    expect(agentsMd).toContain('A refused file is refused.');
   });
 
   test('memory precedence says which file wins', async () => {

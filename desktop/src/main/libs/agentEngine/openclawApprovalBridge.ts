@@ -4,10 +4,35 @@ import type { PermissionRequest, PermissionResult } from './types';
 
 export type ApprovalDecision = 'allow-once' | 'allow-always' | 'deny';
 
+/**
+ * A file tool asking, through the command approval.
+ *
+ * The engine patch `openclaw-file-tools-ask-first.patch` makes `read`,
+ * `write`, `edit` and `apply_patch` request approval exactly as a command
+ * does, and marks the request by putting `file-access <kind> <paths…>` in
+ * `commandArgv`. No shell command is named that, so it is unambiguous.
+ * The two constants below mirror `FILE_ACCESS_COMMAND_HEAD` and the kinds
+ * in `openclaw/src/agents/file-tool-approval.ts`; change both together.
+ */
+export const FILE_ACCESS_COMMAND_HEAD = 'file-access';
+
+export type FileAccessKind = 'read' | 'write';
+
+export type FileAccess = {
+  kind: FileAccessKind;
+  paths: string[];
+};
+
 export type PendingApprovalEntry = {
   requestId: string;
   sessionId: string;
-  kind: 'exec' | 'plugin';
+  /**
+   * `file` is a command approval raised by a file tool. It resolves like
+   * `exec`, but the tool is blocked on the answer inside the turn, so it
+   * must not get the "approved, carry on" continuation an exec approval
+   * needs — that would land a phantom turn in the conversation.
+   */
+  kind: 'exec' | 'plugin' | 'file';
   allowedDecisions?: ApprovalDecision[];
   /** When true, use 'allow-always' decision so OpenClaw adds the command to its allowlist. */
   allowAlways?: boolean;
@@ -15,6 +40,7 @@ export type PendingApprovalEntry = {
 
 type ExecApprovalRequest = {
   command?: string;
+  commandArgv?: string[] | null;
   cwd?: string | null;
   host?: string | null;
   security?: string | null;
@@ -52,6 +78,19 @@ export type ParsedExecApprovalRequest = {
   sessionKey: string;
   command: string;
   shouldAutoApprove: boolean;
+  /** Present when a file tool raised this, not a command. */
+  fileAccess?: FileAccess;
+};
+
+export const parseFileAccess = (request: ExecApprovalRequest): FileAccess | undefined => {
+  const argv = request.commandArgv;
+  if (!Array.isArray(argv) || argv.length < 3) return undefined;
+  if (argv[0] !== FILE_ACCESS_COMMAND_HEAD) return undefined;
+  const kind = argv[1];
+  if (kind !== 'read' && kind !== 'write') return undefined;
+  const paths = argv.slice(2).filter((one): one is string => typeof one === 'string' && one.trim().length > 0);
+  if (!paths.length) return undefined;
+  return { kind, paths };
 };
 
 export type ParsedPluginApprovalRequest = {
@@ -90,11 +129,13 @@ export const parseExecApprovalRequestedPayload = (payload: unknown): ParsedExecA
   const request = typedPayload.request;
   const sessionKey = typeof request.sessionKey === 'string' ? request.sessionKey.trim() : '';
   const command = typeof request.command === 'string' ? request.command : '';
+  const fileAccess = parseFileAccess(request);
   return {
     requestId,
     request,
     sessionKey,
     command,
+    ...(fileAccess ? { fileAccess } : {}),
     // Auto-approve only where there is nobody to ask. An IM channel
     // session is a person messaging from Feishu or Discord; no approval
     // card can reach them, so the alternative to allowing is hanging.
@@ -135,7 +176,28 @@ export const buildExecApprovalPermissionRequest = (
   requestId: string,
   request: ExecApprovalRequest,
   command: string,
+  fileAccess?: FileAccess,
 ): PermissionRequest => {
+  if (fileAccess) {
+    // The card shows the paths, one per line, where a command would show
+    // the command. Nothing else about the request is a shell command.
+    return {
+      requestId,
+      toolName: 'FileAccess',
+      toolInput: {
+        fileAccess,
+        command: fileAccess.paths.join('\n'),
+        cwd: request.cwd ?? null,
+        host: request.host ?? null,
+        security: request.security ?? null,
+        ask: request.ask ?? null,
+        sessionKey: request.sessionKey ?? null,
+        agentId: request.agentId ?? null,
+      },
+      toolUseId: requestId,
+    };
+  }
+
   const { level: dangerLevel, reason: dangerReason } = getCommandDangerLevel(command);
 
   return {

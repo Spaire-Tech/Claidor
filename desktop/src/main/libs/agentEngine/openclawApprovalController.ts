@@ -93,7 +93,11 @@ export class OpenClawApprovalController {
   handleExecApprovalRequested(payload: unknown): void {
     const approval = parseExecApprovalRequestedPayload(payload);
     if (!approval) return;
-    const { command, request, requestId, sessionKey, shouldAutoApprove } = approval;
+    const { command, fileAccess, request, requestId, sessionKey, shouldAutoApprove } = approval;
+    // A file tool's request resolves through the same gateway method as a
+    // command's, but the tool waits for the answer inside the turn, so it
+    // gets no continuation prompt afterwards (see PendingApprovalEntry).
+    const kind = fileAccess ? 'file' : 'exec';
     const sessionId = this.options.resolveSessionId(sessionKey);
 
     if (!sessionId) {
@@ -113,7 +117,7 @@ export class OpenClawApprovalController {
       this.pendingApprovals.set(requestId, {
         requestId,
         sessionId,
-        kind: 'exec',
+        kind,
         allowAlways: true,
       });
       this.respondToPermission(requestId, { behavior: 'allow', updatedInput: {} });
@@ -129,12 +133,12 @@ export class OpenClawApprovalController {
     this.pendingApprovals.set(requestId, {
       requestId,
       sessionId,
-      kind: 'exec',
+      kind,
     });
 
     this.options.emitPermissionRequest(
       sessionId,
-      buildExecApprovalPermissionRequest(requestId, request, command),
+      buildExecApprovalPermissionRequest(requestId, request, command, fileAccess),
     );
   }
 
