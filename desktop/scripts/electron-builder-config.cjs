@@ -142,4 +142,24 @@ if (isWebInstallerEnabled()) {
 console.log(`[Keyfrom] configured artifact keyfrom as ${keyfrom}`);
 console.log(`[ChannelBuild] silentOnDoubleClick=${silentOnDoubleClick}`);
 
+// Which build this is. Every build says the same version, so without
+// this two installers are told apart by the modification time of a file
+// inside the bundle. electron-builder merges `extraMetadata` into the
+// packaged package.json; `src/shared/buildStamp/constants.ts` reads it back,
+// the log prints it on startup, and the Support draft carries it.
+function buildStamp() {
+  let commit = 'unknown';
+  try {
+    commit = require('child_process')
+      .execSync('git rev-parse --short HEAD', { cwd: path.join(__dirname, '..'), stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim() || commit;
+  } catch {
+    // Not a git checkout (a source tarball, say). "unknown" is the truth.
+  }
+  return { commit, builtAt: new Date().toISOString() };
+}
+config.extraMetadata = { ...(config.extraMetadata || {}), build: buildStamp() };
+console.log(`[Build] stamp ${config.extraMetadata.build.commit} at ${config.extraMetadata.build.builtAt}`);
+
 module.exports = config;

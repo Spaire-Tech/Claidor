@@ -1649,6 +1649,8 @@ interface IElectronAPI {
   };
   appInfo: {
     getVersion: () => Promise<string>;
+    /** The commit and time this build was made from; `dev` from a checkout. */
+    getBuildInfo: () => Promise<{ commit: string; builtAt: string }>;
     /** This computer's hostname, shown on approval cards. */
     getComputerName: () => Promise<string>;
     getSystemLocale: () => Promise<string>;

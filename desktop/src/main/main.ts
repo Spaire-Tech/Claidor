@@ -44,6 +44,7 @@ import {
 import { AppIpcChannel } from '../shared/app/constants';
 import { AppSettingsAutoLaunchErrorCode, AppSettingsIpc } from '../shared/appSettings/constants';
 import { type AppUpdateActiveWorkloads, AppUpdateIpc } from '../shared/appUpdate/constants';
+import { describeBuild } from '../shared/buildStamp/constants';
 import { ArtifactBrowserPartition, ArtifactPreviewIpc, ArtifactPreviewProtocol } from '../shared/artifactPreview/constants';
 import { AskInputIpc, type AskInputResponse } from '../shared/askInput/constants';
 import { createAccountOwnerKey } from '../shared/auth/accountOwner';
@@ -529,6 +530,7 @@ import {
   restoreOriginalProxyEnv,
   setSystemProxyEnabled,
 } from './libs/systemProxy';
+import { readBuildInfo } from './buildInfo';
 import { getLogFilePath, getRecentMainLogEntries, initLogger } from './logger';
 import { type AskUserResponse, McpRuntime } from './mcp/mcpRuntime';
 import {
@@ -1979,6 +1981,10 @@ try {
   console.error('[DataMigration] pending restore failed before logger initialization:', error);
 }
 initLogger();
+// The first thing the log says after where it is: which build this is.
+// Every build has the same version, so this line is the only way to
+// tell whether a fix is in the app that produced the log.
+console.log(`[App] ${describeBuild(app.getVersion(), readBuildInfo())}`);
 if (startupDataMigrationRestoreResult) {
   const status = startupDataMigrationRestoreResult.status;
   console.log(`[DataMigration] pending restore finished with status ${status}`);
@@ -5066,6 +5072,7 @@ if (!gotTheLock) {
   );
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
+  ipcMain.handle('app:getBuildInfo', () => readBuildInfo());
   ipcMain.handle('app:getSystemLocale', () => app.getLocale());
   // The name of this computer, for the approval card. There is only ever
   // one computer — "there is no 'which computer', there is only this

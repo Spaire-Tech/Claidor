@@ -1109,6 +1109,7 @@ contextBridge.exposeInMainWorld('electron', {
   },
   appInfo: {
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
+    getBuildInfo: () => ipcRenderer.invoke('app:getBuildInfo'),
     getComputerName: () => ipcRenderer.invoke('app:getComputerName'),
     getSystemLocale: () => ipcRenderer.invoke('app:getSystemLocale'),
     getKeyfromAttribution: () => ipcRenderer.invoke(AppIpcChannel.GetKeyfromAttribution),

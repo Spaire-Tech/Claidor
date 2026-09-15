@@ -263,6 +263,33 @@ on a rented Mac, and GitHub bills macOS runners at **ten times** the
 minute rate — which is why it now only runs when you ask for it
 (`workflow_dispatch`), never on a push.
 
+### Which build am I running?
+
+Every build says version 2026.9.4, so the version tells you nothing.
+Three things do:
+
+```bash
+# 1. Which app is actually running, and where it lives
+ps -eo comm | grep -i faiser | head -3
+
+# 2. Which commit it was built from — the log's first lines say so
+grep -m1 '\[App\] 2026' ~/Library/Logs/Faiser/main-$(date +%F).log
+
+# 3. What the checkout you build from has
+git log --oneline -1
+```
+
+The log line reads `[App] 2026.9.4 (09309433, built 2026-09-15 07:41
+UTC)`. The commit in it is the one `git log` shows if the build came from
+that checkout; `dev checkout` means the app is running from source. The
+same line is in the body of the Support mail draft (account menu →
+Support). A build made before this stamp existed prints no such line;
+the closest you can get for one of those is when its bundle was written:
+
+```bash
+stat -f '%Sm' /Applications/Faiser.app/Contents/Resources/app.asar
+```
+
 **To just run the app**, which is faster and has no signing problem at
 all:
 

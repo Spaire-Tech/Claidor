@@ -1612,3 +1612,27 @@ says when it moved, and whether that was before the last bubble.
 
 **Where:** `design/thread/stagger.ts` (`rowsWhileLanding`, tested),
 `design/shell/MessagesShell.tsx`.
+
+---
+
+## 40. The app could not say which build it was — `fixed`
+
+The founder: *"things are not working. how can i find out what electron
+im running?"*
+
+There was no answer. Every build says version 2026.9.4, the app carried
+no commit and no build time, and the two builds in this conversation —
+one from the 13th, one with today's fixes — were told apart by nothing
+but the modification time of a file inside the bundle. That is how
+"you didn't fix it" and "it works here" were both true for half a day.
+
+**Fixed.** electron-builder writes the commit and the build time into
+the packaged `package.json`; the log's first lines print `[App]
+2026.9.4 (09309433, built 2026-09-15 07:41 UTC)`; the Support draft
+carries the same line; from a checkout it says `dev checkout`. The
+README has the three commands, including the file-time fallback for a
+build made before the stamp existed.
+
+**Where:** `scripts/electron-builder-config.cjs`, `src/shared/buildStamp/
+constants.ts` (tested), `src/main/buildInfo.ts`, `main.ts`,
+`preload.ts`, `design/shell/FaiserApp.tsx`, `README.md`.

@@ -3,6 +3,7 @@ import '../tokens.css';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 
+import { describeBuild, DEV_BUILD } from '../../../shared/buildStamp/constants';
 import { authService } from '../../services/auth';
 import type { RootState } from '../../store';
 import { AgentPanel } from '../agent/AgentPanel';
@@ -37,12 +38,18 @@ export function FaiserApp(): JSX.Element {
   const [signInError, setSignInError] = useState<string | undefined>();
   const [accountOpen, setAccountOpen] = useState(false);
   // Asked once, for the Support mail draft. It cannot change underneath
-  // somebody while the app is open.
+  // somebody while the app is open. The version alone says nothing —
+  // every build has the same one — so the commit and build time go too.
   const [appVersion, setAppVersion] = useState<string>();
   useEffect(() => {
     let current = true;
-    void window.electron?.appInfo?.getVersion?.()
-      .then(version => { if (current && version) setAppVersion(version); })
+    void Promise.all([
+      window.electron?.appInfo?.getVersion?.(),
+      window.electron?.appInfo?.getBuildInfo?.().catch(() => DEV_BUILD),
+    ])
+      .then(([version, build]) => {
+        if (current && version) setAppVersion(describeBuild(version, build ?? DEV_BUILD));
+      })
       .catch(() => { /* the draft says "unknown", which is true */ });
     return () => { current = false; };
   }, []);
