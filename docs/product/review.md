@@ -1889,3 +1889,69 @@ Windows) — the tray is a colour image upstream too, not a template. The
 old `generate-tray-icons.js` and `regenerate-mac-icon.sh` need
 ImageMagick and `iconutil`; they are left in place but nothing here
 used them.
+
+## 46. The DoorDash afternoon: four faults, four fixes — `built, unrun`
+
+The founder's agent was asked for the healthiest lunch on DoorDash and
+spent the afternoon saying "doing it now" and doing nothing, then
+"the listing didn't open", then "Too many requests". They said *"i
+personally think theres something wrong with the browser"* and asked for
+an audit. Item 45 of `agent-contract.md`'s method applied: read the code,
+not the transcript.
+
+**What was actually wrong.**
+
+1. *It stopped after every promise.* Our own prompt (`openclawConfigSync.ts`,
+   "Answer before you work") told it to write one line before a long run
+   of tools. A reply with no tool call ends the turn, so each time the
+   model wrote the line alone the work died until the person typed. The
+   rule now says exactly how a turn works — "a reply that contains no
+   tool call ends your turn… the one line and the first tool call go in
+   the same response, always" — and forbids "on it" as a reply of its own.
+2. *The click "landed" and nothing loaded.* `agentBrowserHost.ts`'s `click`
+   dispatched a synthetic `element.click()` and returned "Element clicked."
+   at once. DoorDash redraws a second later; the agent read the old page
+   and concluded the click did nothing. `click` and a control key now wait
+   for the page — a navigation to start and finish, then the DOM to be
+   still for half a second, each with a ceiling — and return the *new*
+   snapshot, saying whether the page navigated, loaded, or settled
+   (`agentBrowserSettle.ts`, pure and tested with a scripted clock).
+3. *The agent could not see most of the page.* The snapshot took the first
+   2,000 accessibility nodes and dropped the rest silently. It now prunes
+   unnamed wrappers (children move up), caps what it *emits* at 4,000, and
+   says when it cut and by how much, so the agent narrows down instead of
+   declaring a thing absent (`agentBrowserSnapshot.ts`, tested).
+4. *It asked four times after being told to go.* The prompt already said
+   "unless they told you in this conversation to go ahead"; it now also
+   says that "order it", "yes" and "k" are the answer, that a review step
+   nobody asked for is not to be invented, and that a question card can
+   be drawn here — the agent had claimed it could not.
+
+And the sentence at the end, "Too many requests. Please try again later.",
+is `coworkErrorRateLimit`: the **model provider** returned a 429 mid-run.
+Not DoorDash, not the browser. The server's
+`desktop.proxy.upstream_refused` line has the provider's own words.
+
+**The split screen.** The founder asked, with a screenshot of Claude's
+Chrome panel, whether the app could split chat left and browser right
+rather than opening a window over the chat. It already does — the
+built-in browser lives in the computer panel — but the panel only opened
+from the icon or a file click. It now opens by itself the moment the
+agent's browser goes from no page to a page, once per browsing, so a
+person who closes it is not fought (`useMessagesShell.ts`). A separate
+window is the engine's fallback when the in-app bridge is not reachable;
+the log line `browser profile=` says which, and reading it is the one
+thing on this list that is the founder's, not mine.
+
+**Unrun.** Nothing here has been driven against DoorDash. The settle
+logic and the snapshot pruning are unit-tested with fakes; the host
+compiles; the prompt is asserted by the runtime test. The founder runs
+the real thing.
+
+**Proof.** 237 tests across the browser modules, the config sync runtime
+test and the shell pass; eslint, tsc, `compile:electron` clean.
+
+**Where:** `openclawConfigSync.ts` (three prompt sections),
+`agentBrowserHost.ts`, `agentBrowserSettle.ts` (+test),
+`agentBrowserSnapshot.ts` (+test), `useMessagesShell.ts`,
+`openclawConfigSync.runtime.test.ts`.
