@@ -50,10 +50,36 @@ It opens the thread, clicks the magnifier, types `slide`, and checks the
 count reads `1 of 2`, that the matching line survived, that a
 non-matching one is gone, and that a query with no hits says so.
 
+## Running the app itself
+
+`?screen=live` is not a screen of fixtures. It mounts `FaiserApp` — the
+hook, the services, the real Redux store — with only the Electron bridge
+stood in for (`live-app.tsx`), and a script drives the two flows that were
+reported broken from a built app:
+
+```bash
+node harness/live.mjs            # both
+node harness/live.mjs open       # a Word file the agent made, clicked
+node harness/live.mjs delete     # the open agent, deleted
+```
+
+The first clicks the `.docx` chip in a reply and checks the computer panel
+opened on Files with the document drawn, that Save a copy is offered, and
+that the operating system was never asked to open it. The second deletes
+the open agent from the sidebar and checks the other rows keep their last
+lines, the main conversation opens with its history, and another agent's
+conversation still has its messages — all three at once, not staged.
+
+The script prints every bridge method the app reached for that the
+fixture did not know. Listeners and status reads are expected there; a
+method a flow depends on is not.
+
 ## What it does and does not prove
 
 It mounts the shipped components — not copies, not mocks. The only thing
 faked is the store, so everything below `MessagesShell` is the real code.
 
 It is still a browser and not Electron. Nothing here exercises IPC, the
-engine, the gateway, or anything the main process owns.
+engine, the gateway, or anything the main process owns — `live` included:
+its bridge answers from a fixture, so it proves the renderer's side of a
+flow and nothing about what the main process does with the call.

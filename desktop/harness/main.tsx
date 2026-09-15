@@ -201,7 +201,9 @@ const LATER_REPLY = message({
 function Arriving(): JSX.Element {
   const [extra, setExtra] = useState<EngineMessage[]>([]);
   useEffect(() => {
-    const timer = window.setTimeout(() => setExtra([LATER_REPLY]), 600);
+    // Stamped when it lands: a reply is only staged if it was said after
+    // the conversation was opened, which is what "arrived" means.
+    const timer = window.setTimeout(() => setExtra([{ ...LATER_REPLY, timestamp: Date.now() }]), 600);
     return () => window.clearTimeout(timer);
   }, []);
   const items = toThreadItems([...CONVERSATION.slice(0, 8), ...extra], {
@@ -309,4 +311,10 @@ function Screens(): JSX.Element {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<Screens />);
+// `live` is the whole app on the real store, not a screen of fixtures;
+// it installs its own bridge before anything that reads it is imported.
+if (new URLSearchParams(location.search).get('screen') === 'live') {
+  void import('./live-app');
+} else {
+  createRoot(document.getElementById('root')!).render(<Screens />);
+}

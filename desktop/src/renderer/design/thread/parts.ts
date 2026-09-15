@@ -91,7 +91,11 @@ export interface KnownFile {
 const MARKERS = new RegExp(
   [
     '\\[\\[(?<chip>[^[\\]\\n]+?)\\]\\]',
-    '\\[(?<label>[^\\]\\n]*)\\]\\((?<href>[^)\\s]+)\\)',
+    // A space is allowed in the target: a model writing a link to
+    // `/Users/bass/Gym Routine.docx` does not always escape it, and the
+    // detector (`artifactParser.ts`) accepts the same, so the chip and
+    // the artifact it opens agree on what the link was.
+    '\\[(?<label>[^\\]\\n]*)\\]\\((?<href>[^)\\n]+)\\)',
     '`(?<code>[^`\\n]+)`',
     '\\*\\*(?<strong>[^*\\n]+?)\\*\\*',
     '(?<url>(?:https?|file):\\/\\/[^\\s<>"\'`]+)',

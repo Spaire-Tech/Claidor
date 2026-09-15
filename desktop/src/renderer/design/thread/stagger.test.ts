@@ -32,6 +32,21 @@ describe('staggering a reply', () => {
     expect(staggerDelays(history, seen('a:0', 'a:1', 'b:0', 'b:1')).size).toBe(0);
   });
 
+  test('what was said before the conversation was opened is history, however late it loads', () => {
+    // Switching agents: the click changes the conversation, its messages
+    // arrive a beat later, and none of them were "seen" at the switch.
+    // Their timestamps say what they are.
+    const opened = 1_000;
+    const items = [
+      { ...bubble('h:0'), at: 900 }, { ...bubble('h:1'), at: 900 },
+      { ...bubble('n:0'), at: 1_200 }, { ...bubble('n:1'), at: 1_200 },
+    ];
+    const delays = staggerDelays(items, none, opened);
+    expect(delays.has('h:1')).toBe(false);
+    expect(delays.get('n:0')).toBeUndefined();
+    expect(delays.get('n:1')).toBe(BUBBLE_GAP_MS);
+  });
+
   test('stages only what is new, counting from the new one', () => {
     const items = [bubble('old:0'), bubble('old:1'), bubble('new:0'), bubble('new:1')];
     const delays = staggerDelays(items, seen('old:0', 'old:1'));

@@ -27,18 +27,24 @@ const isAgentBubble = (item: ThreadItem): boolean =>
  * Only newly-arrived agent bubbles are delayed, and only by their place
  * within the run of new bubbles they arrived in — so the first of a reply
  * is immediate and the rest follow. Anything already on screen, anything
- * the person said, and every card and status line is immediate: a
- * question waiting for an answer is not something to stage.
+ * said before `since` (when the conversation was opened), anything the
+ * person said, and every card and status line is immediate: a question
+ * waiting for an answer is not something to stage.
  */
 export function staggerDelays(
   items: readonly ThreadItem[],
   seen: ReadonlySet<string>,
+  since = 0,
 ): Map<string, number> {
   const delays = new Map<string, number>();
   let position = 0;
 
   for (const item of items) {
     if (seen.has(item.id)) continue;
+    // Said before this conversation was opened: history, however late it
+    // loads. A conversation's messages arrive a beat after the click that
+    // opens it, so "not seen yet" alone would stage every reply in it.
+    if (item.at < since) continue;
     if (!isAgentBubble(item)) {
       // A status, a card, or something the person said resets the run:
       // the next reply is a new reply, not a continuation of this one.

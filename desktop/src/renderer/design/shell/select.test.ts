@@ -68,6 +68,18 @@ describe('previewOf', () => {
       .toBe('Found Mango 3y IS.xlsx there.');
   });
 
+  test('reads a file link the way the bubble does: the name, not the markdown', () => {
+    // The row under a bubble showing a chip read "Done. Here it is: [Gym R…".
+    expect(previewOf([message({
+      type: 'assistant',
+      content: 'Done. Here it is: [Gym Routine.docx](file:///Users/bass/Gym%20Routine.docx)',
+    })])).toBe('Done. Here it is: Gym Routine.docx');
+    expect(previewOf([message({ type: 'assistant', content: 'Saved to /Users/bass/Desktop/plan.xlsx.' })]))
+      .toBe('Saved to plan.xlsx.');
+    expect(previewOf([message({ type: 'assistant', content: 'That is **done**.' })]))
+      .toBe('That is done.');
+  });
+
   test('never shows the machine-written attachment lines', () => {
     expect(previewOf([
       message({ type: 'user', content: 'have a look\nInput Files: /Users/bass/a.xlsx' }),
