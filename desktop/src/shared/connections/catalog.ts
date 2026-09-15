@@ -211,7 +211,13 @@ export const CONNECTION_ITEMS: readonly ConnectionItem[] = [
   { id: 'outlook', name: 'Outlook', group: G.MailCalendar, kind: K.Account, connect: viaUs('microsoft_outlook'), line: 'Mail and Microsoft 365 calendar.', logo: 'outlook.webp' },
   { id: 'google-calendar', name: 'Google Calendar', group: G.MailCalendar, kind: K.Account, connect: own('https://calendarmcp.googleapis.com/mcp/v1'), line: 'Search events and schedule meetings.', logo: 'google-calendar.webp' },
   { id: 'apple-calendar', name: 'Apple Calendar', group: G.MailCalendar, kind: K.Local, logo: 'apple-calendar-mac.png' },
-  { id: 'email', name: 'Email', group: G.MailCalendar, kind: K.Channel, platformId: 'email', line: 'Any IMAP mailbox: Fastmail, iCloud, work mail.' },
+  // Not a service: any mailbox the person already has, reached over
+  // IMAP and SMTP with an app password. Two things use it — the
+  // `@clawemail/email` plugin, which makes the mailbox a way to reach
+  // the agent, and the bundled `imap-smtp-email` skill, which reads and
+  // sends from it. It is also the honest way into Gmail and Outlook
+  // today, since their own servers want a client we have not registered.
+  { id: 'email', name: 'IMAP mailbox', group: G.MailCalendar, kind: K.Channel, platformId: 'email', line: 'Your own mailbox over IMAP and SMTP with an app password: Gmail, Outlook, iCloud, Fastmail, work mail. The agent reads, searches and sends from it, and can be emailed at it.' },
   { id: 'calendly', name: 'Calendly', group: G.MailCalendar, kind: K.Account, connect: self('https://mcp.calendly.com/'), line: 'Check availability and book, cancel, or reschedule.', logo: 'calendly.svg' },
   // Messaging
   { id: 'whatsapp', name: 'WhatsApp', group: G.Messaging, kind: K.Channel, logo: 'whatsapp.svg' },
