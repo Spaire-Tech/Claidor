@@ -1,0 +1,24 @@
+Skills vendored from https://github.com/anthropics/skills
+Commit 34040c9c568585f6929bedeaad110ad08f079624 (10 September 2026).
+
+Every directory here is one skill from that repository's `skills/`
+folder, copied byte for byte, and each carries its own LICENSE.txt: the
+Apache License, Version 2.0, Copyright 2026 Anthropic, PBC. The
+repository ships no NOTICE file of its own; THIRD_PARTY_NOTICES.md is
+its third-party attribution file and is kept here unchanged (the fonts
+under canvas-design/canvas-fonts are under the SIL Open Font License,
+each with its OFL.txt beside it).
+
+Not vendored, and why:
+
+- docx, pdf, pptx, xlsx — their LICENSE.txt is not Apache: "Use of these
+  materials ... is governed by your agreement with Anthropic". The
+  desktop app already bundles them under that agreement.
+- doc-coauthoring — carries no LICENSE.txt, no `license` frontmatter, and
+  the repository has no top-level licence, so its terms are not
+  established.
+
+Modifications: none at rest. When a skill is served as an archive
+(`polar/desktop/skill_store.py`) a `version` line is added to the
+SKILL.md frontmatter so the desktop app can tell an installed copy from
+a newer one; the catalogue's `version` is the upstream snapshot date.

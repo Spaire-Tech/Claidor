@@ -2047,3 +2047,44 @@ against Composio itself: that needs a key, which is the founder's.
 `openclawConfigImpact.ts`, `main.ts`, `shared/connections/catalog.ts`,
 `design/connections/{shelf.ts,Connections.tsx,useConnections.ts}`,
 `shared/settings/rows.ts`, `design/settings/useSettings.ts`, `renderer/config.ts`.
+
+## 49. The skill store, filled from anthropics/skills — `built, served, tested`
+
+*"i want the skill repo too."* The store was served empty. It now serves
+fourteen skills vendored from `anthropics/skills` at commit `34040c9c`
+(10 September 2026), every one under Apache-2.0 with its `LICENSE.txt`
+beside it and a `NOTICE` naming the source: academy-guide,
+algorithmic-art, brand-guidelines, canvas-design, claude-api,
+discernment-nudge, frontend-design, internal-comms, mcp-builder,
+skill-creator, slack-gif-creator, theme-factory, web-artifacts-builder,
+webapp-testing. **Excluded:** docx, pdf, pptx, xlsx (their licence is
+"your agreement with Anthropic"; item 44 flagged it and the app bundles
+them anyway) and doc-coauthoring (no licence anywhere, so no terms).
+
+**How it is served.** The app fetches `/api/skill-store` without a bearer
+and installs by downloading a `.zip` whose one top-level directory holds
+a `SKILL.md` — read from `skillManager.ts` with line numbers, not
+assumed. So the server lists the catalogue with a zip URL per skill and
+builds each zip from the vendored directory on request. Upstream's
+SKILL.md files carry no version and the app compares versions to decide
+"update available", so the archive builder writes one `version:` line
+into the frontmatter; the files at rest stay byte-identical to upstream,
+and a test holds that. The three Apache skills the app already bundles
+are served with an empty version, because the app re-copies its bundle
+over any lower-versioned install at every start and a store "update"
+would ping-pong.
+
+**Proof.** 41 skill-store tests in `server/tests/desktop`; the desktop
+suite there reads `137 passed, 2 failed`, and the two are the
+pre-existing model-menu expectations (Opus and Haiku deliberately
+withheld by `offered_models()`), failing identically on `HEAD`. ruff
+clean on the desktop package. Getting real numbers took a Python 3.14.0
+interpreter in the scratchpad, because the repo's `.venv` is the 3.14
+release candidate `server/CLAUDE.md` warns about. Nothing in the app
+changed: the served shape matches the install path as it is. Scripted
+skills will pass through the app's security-scan dialog on install; that
+is the app's design.
+
+**Where:** `server/polar/desktop/{skill_store.py,endpoints.py}`,
+`server/polar/desktop/skills/`, `server/pyproject.toml` (the vendored
+scripts excluded from ruff and mypy), `server/tests/desktop/test_endpoints.py`.
