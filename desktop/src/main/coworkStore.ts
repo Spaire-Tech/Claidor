@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { CoworkSystemMessageKind } from '../common/coworkSystemMessages';
 import { AgentId, normalizeAgentAvatarIcon } from '../shared/agent';
+import { assignAvatar, avatarFallback, isAvatarIndex } from '../shared/agent/avatars';
 import {
   COWORK_MESSAGE_PAGE_SIZE,
   COWORK_SEARCH_HISTORY_MAX_MESSAGE_CONTENT_CODE_UNITS,
@@ -423,6 +424,18 @@ export interface Agent {
   presetId: string;
   createdAt: number;
   updatedAt: number;
+  /**
+   * The face: 0–24 into `shared/agent/avatars.ts`. Stored on creation by
+   * `assignAvatar` and never derived again, so the one shown on the
+   * create screen is the one the agent wears.
+   */
+  avatar: number;
+  /** The remit line — "Research, marketing, admin…". */
+  label: string;
+  /** One of the seven voices, or '' for none yet. */
+  voiceId: string;
+  /** "Get notified when this agent finishes or needs input." */
+  notify: boolean;
 }
 
 export interface CreateAgentRequest {
@@ -439,6 +452,10 @@ export interface CreateAgentRequest {
   subagentAllowAgentIds?: string[];
   source?: AgentSource;
   presetId?: string;
+  /** Chosen on the create screen. Absent, the store assigns one. */
+  avatar?: number;
+  label?: string;
+  voiceId?: string;
 }
 
 export interface UpdateAgentRequest {
@@ -455,6 +472,10 @@ export interface UpdateAgentRequest {
   enabled?: boolean;
   pinned?: boolean;
   sortOrder?: number | null;
+  avatar?: number;
+  label?: string;
+  voiceId?: string;
+  notify?: boolean;
 }
 
 
@@ -3471,11 +3492,19 @@ export class CoworkStore {
     const createAgent = this.db.transaction(() => {
       removedOrphanSessionCount = this.deleteSessionsForAgent(id).length;
 
+      // A chosen face is kept; otherwise one is given by the founder's
+      // rule — the first twenty-five agents all different, then the least
+      // worn. Counted inside the transaction so two creations cannot read
+      // the same "worn" list.
+      const avatar = isAvatarIndex(request.avatar)
+        ? request.avatar
+        : assignAvatar(this.listAgents().map(agent => agent.avatar));
+
       this.db
         .prepare(
           `
-        INSERT INTO agents (id, name, description, system_prompt, identity, model, thinking_level, working_directory, icon, skill_ids, subagent_allow_agent_ids, enabled, is_default, source, preset_id, sort_order, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?)
+        INSERT INTO agents (id, name, description, system_prompt, identity, model, thinking_level, working_directory, icon, skill_ids, subagent_allow_agent_ids, enabled, is_default, source, preset_id, sort_order, created_at, updated_at, avatar, label, voice_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
         )
         .run(
@@ -3495,6 +3524,9 @@ export class CoworkStore {
           this.getNextAgentSortOrder(),
           now,
           now,
+          avatar,
+          (request.label ?? '').trim(),
+          (request.voiceId ?? '').trim(),
         );
     });
     createAgent();
@@ -3584,10 +3616,56 @@ export class CoworkStore {
       setClauses.push('sort_order = ?');
       values.push(updates.sortOrder);
     }
+    // A face outside the list is not written. Better to keep the one it
+    // has than to store a number nothing can draw.
+    if (updates.avatar !== undefined && isAvatarIndex(updates.avatar)) {
+      setClauses.push('avatar = ?');
+      values.push(updates.avatar);
+    }
+    if (updates.label !== undefined) {
+      setClauses.push('label = ?');
+      values.push(updates.label.trim());
+    }
+    if (updates.voiceId !== undefined) {
+      setClauses.push('voice_id = ?');
+      values.push(updates.voiceId.trim());
+    }
+    if (updates.notify !== undefined) {
+      setClauses.push('notify = ?');
+      values.push(updates.notify ? 1 : 0);
+    }
 
     values.push(id);
     this.db.prepare(`UPDATE agents SET ${setClauses.join(', ')} WHERE id = ?`).run(...values);
     return this.getAgent(id);
+  }
+
+  /**
+   * A face for every agent that predates faces.
+   *
+   * Runs once per launch, after the migration adds the column. Agents are
+   * taken in creation order and given an avatar by the same rule a new
+   * one gets, counting the ones already handed out — so an install with
+   * fourteen agents ends up with fourteen different faces, not fourteen
+   * copies of the first.
+   */
+  backfillMissingAvatars(): number {
+    const rows = this.db
+      .prepare('SELECT id FROM agents WHERE avatar IS NULL ORDER BY created_at ASC, id ASC')
+      .all() as { id: string }[];
+    if (rows.length === 0) return 0;
+
+    const worn = this.listAgents().map(agent => agent.avatar);
+    const write = this.db.prepare('UPDATE agents SET avatar = ? WHERE id = ?');
+    const run = this.db.transaction(() => {
+      for (const row of rows) {
+        const avatar = assignAvatar(worn);
+        write.run(avatar, row.id);
+        worn.push(avatar);
+      }
+    });
+    run();
+    return rows.length;
   }
 
   reorderAgents(agentIds: string[]): Agent[] {
@@ -3664,6 +3742,10 @@ export class CoworkStore {
     preset_id: string;
     created_at: number;
     updated_at: number;
+    avatar?: number | null;
+    label?: string | null;
+    voice_id?: string | null;
+    notify?: number | null;
   }): Agent {
     const skillIds = parseStringIdList(row.skill_ids);
     const subagentAllowAgentIds = parseStringIdList(row.subagent_allow_agent_ids);
@@ -3688,6 +3770,13 @@ export class CoworkStore {
       presetId: row.preset_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      // NULL only between the migration and `backfillMissingAvatars` on
+      // the same launch. The fallback is deterministic so nothing flickers
+      // in that window; it is never written.
+      avatar: isAvatarIndex(row.avatar) ? row.avatar : avatarFallback(row.id),
+      label: row.label ?? '',
+      voiceId: row.voice_id ?? '',
+      notify: row.notify === null || row.notify === undefined ? true : Boolean(row.notify),
     };
   }
 

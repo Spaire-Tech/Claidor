@@ -17,6 +17,19 @@ interface AgentSummary {
   source: 'custom' | 'preset';
   skillIds: string[];
   subagentAllowAgentIds: string[];
+  /**
+   * When this agent was made.
+   *
+   * Carried because the sidebar sorts by activity, and making an agent is
+   * activity. Without it a new agent has nothing to sort by and lands at
+   * the bottom of the list, under conversations from weeks ago.
+   */
+  createdAt: number;
+  /** The face: 0–24. Every row draws it; see `shared/agent/avatars.ts`. */
+  avatar: number;
+  label: string;
+  voiceId: string;
+  notify: boolean;
 }
 
 interface AgentState {

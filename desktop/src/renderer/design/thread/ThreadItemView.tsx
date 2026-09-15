@@ -1,9 +1,9 @@
 import { type CSSProperties, useState } from 'react';
 
+import { avatarFallback, avatarInk } from '../../../shared/agent/avatars';
 import { AskInputFieldKind } from '../../../shared/askInput/constants';
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
-import { Orb, OrbMood } from '../orb/Orb';
-import { paletteForAgent } from '../orb/palette';
+import { CloudBlob } from '../orb/CloudBlob';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { readableSize } from './attachment';
 import { detailsLabel } from './details';
@@ -27,6 +27,10 @@ import {
 
 const enter = `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`;
 
+/** An agent's face by id, or a stable stand-in for an id the map lacks. */
+const avatarOf = (handlers: PartHandlers, agentId: string): number =>
+  handlers.avatars?.[agentId] ?? avatarFallback(agentId);
+
 /** What the person may do with something named in a message. */
 export interface PartHandlers {
   /** Open a file on this computer. */
@@ -39,6 +43,12 @@ export interface PartHandlers {
   onOpenMessage?: (messageId: string) => void;
   /** The files this conversation has produced, so a chip can find one. */
   files?: readonly KnownFile[];
+  /**
+   * Each agent's face, by id, for the sender beside a room message and
+   * the status line. An id with no entry gets a stable fallback rather
+   * than nothing — but every agent has one after the first launch.
+   */
+  avatars?: Readonly<Record<string, number>>;
 }
 
 /**
@@ -279,13 +289,13 @@ function TextBubble(
       {sender ? (
         <>
           <span style={{ flex: '0 0 auto', margin: '0 10px 2px 0', alignSelf: 'flex-end' }}>
-            <Orb agentId={sender} size={28} mood={OrbMood.Still} />
+            <CloudBlob avatar={avatarOf(handlers, sender)} size={28} />
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
             <span
               style={{
                 fontSize: text.label, fontWeight: 400, paddingLeft: 4,
-                color: paletteForAgent(sender).colors[0],
+                color: avatarInk(avatarOf(handlers, sender)),
               }}
             >
               {item.agentName ?? ''}
@@ -298,7 +308,27 @@ function TextBubble(
   );
 }
 
-function SystemLine({ item }: { item: Extract<ThreadItem, { kind: 'system' }> }) {
+/**
+ * A system line, through the same parser as a bubble.
+ *
+ * It used to print `item.text` verbatim. Errors are the text that arrives
+ * here, error strings carry links, and a link written as markdown came out
+ * as `[Upgrade or recharge](https://…)` — brackets, scheme and all, in the
+ * middle of a sentence telling somebody their month had run out. That is
+ * the same fault as the one `parts.ts` was written for, in the one place
+ * that was not using it.
+ *
+ * So the runs are the bubble's runs: a path is a chip, a URL is a link,
+ * and a `faiser://settings/…` target is a pill that opens the row. What is
+ * different is only the setting — centred, muted, no bubble around it.
+ */
+function SystemLine(
+  { item, handlers }: {
+    item: Extract<ThreadItem, { kind: 'system' }>;
+    handlers: PartHandlers;
+  },
+) {
+  const parts = splitMessageParts(item.text, handlers.files);
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 6px', animation: enter }}>
       <span
@@ -310,16 +340,20 @@ function SystemLine({ item }: { item: Extract<ThreadItem, { kind: 'system' }> })
           maxWidth: '80%',
         }}
       >
-        {item.text}
+        {parts.map((part, index) => (
+          <Part key={index} part={part} mine={false} handlers={handlers} />
+        ))}
       </span>
     </div>
   );
 }
 
-function StatusLine({ item }: { item: Extract<ThreadItem, { kind: 'status' }> }) {
+function StatusLine(
+  { item, handlers }: { item: Extract<ThreadItem, { kind: 'status' }>; handlers: PartHandlers },
+) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 11, paddingTop: 4, animation: enter }}>
-      {item.agentId && <Orb agentId={item.agentId} size={26} mood={OrbMood.Still} />}
+      {item.agentId && <CloudBlob avatar={avatarOf(handlers, item.agentId)} size={26} />}
       <span
         style={{
           fontSize: text.message,
@@ -819,9 +853,9 @@ export function ThreadItemView(
     case ThreadItemKind.Text:
       return <TextBubble item={item} leading={leading} handlers={parts} />;
     case ThreadItemKind.System:
-      return <SystemLine item={item} />;
+      return <SystemLine item={item} handlers={parts} />;
     case ThreadItemKind.Status:
-      return <StatusLine item={item} />;
+      return <StatusLine item={item} handlers={parts} />;
     case ThreadItemKind.Choice:
       return <ChoiceCard item={item} handlers={choice} />;
     case ThreadItemKind.Auth:

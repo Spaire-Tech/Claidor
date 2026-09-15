@@ -56,6 +56,11 @@ class AgentService {
           source: a.source,
           skillIds: a.skillIds ?? [],
           subagentAllowAgentIds: a.subagentAllowAgentIds ?? [],
+          createdAt: a.createdAt ?? 0,
+          avatar: a.avatar,
+          label: a.label ?? '',
+          voiceId: a.voiceId ?? '',
+          notify: a.notify ?? true,
         }));
         store.dispatch(setAgents(mappedAgents));
       }
@@ -77,6 +82,9 @@ class AgentService {
     icon?: string;
     skillIds?: string[];
     subagentAllowAgentIds?: string[];
+    avatar?: number;
+    label?: string;
+    voiceId?: string;
   }): Promise<Agent | null> {
     try {
       const agent = await window.electron?.agents?.create(request);
@@ -97,6 +105,11 @@ class AgentService {
           source: agent.source,
           skillIds: agent.skillIds ?? [],
           subagentAllowAgentIds: agent.subagentAllowAgentIds ?? [],
+          createdAt: agent.createdAt ?? 0,
+          avatar: agent.avatar,
+          label: agent.label ?? '',
+          voiceId: agent.voiceId ?? '',
+          notify: agent.notify ?? true,
         }));
         return agent;
       }
@@ -121,6 +134,10 @@ class AgentService {
     enabled?: boolean;
     pinned?: boolean;
     sortOrder?: number | null;
+    avatar?: number;
+    label?: string;
+    voiceId?: string;
+    notify?: boolean;
   }): Promise<Agent | null> {
     try {
       const agent = await window.electron?.agents?.update(id, updates);
@@ -141,6 +158,10 @@ class AgentService {
             sortOrder: agent.sortOrder ?? null,
             skillIds,
             subagentAllowAgentIds: agent.subagentAllowAgentIds ?? [],
+            avatar: agent.avatar,
+            label: agent.label ?? '',
+            voiceId: agent.voiceId ?? '',
+            notify: agent.notify ?? true,
           },
         }));
         // Only sync active skills when skillIds were explicitly updated,
@@ -178,6 +199,11 @@ class AgentService {
         source: agent.source,
         skillIds: agent.skillIds ?? [],
         subagentAllowAgentIds: agent.subagentAllowAgentIds ?? [],
+        createdAt: agent.createdAt ?? 0,
+        avatar: agent.avatar,
+        label: agent.label ?? '',
+        voiceId: agent.voiceId ?? '',
+        notify: agent.notify ?? true,
       }));
       store.dispatch(setAgents(mappedAgents));
       return true;
@@ -267,6 +293,11 @@ class AgentService {
           source: agent.source,
           skillIds: agent.skillIds ?? [],
           subagentAllowAgentIds: agent.subagentAllowAgentIds ?? [],
+          createdAt: agent.createdAt ?? 0,
+          avatar: agent.avatar,
+          label: agent.label ?? '',
+          voiceId: agent.voiceId ?? '',
+          notify: agent.notify ?? true,
         }));
         return agent;
       }

@@ -1,7 +1,9 @@
 import { type KeyboardEvent, useMemo, useRef, useState } from 'react';
 
+import { assignAvatar, AVATAR_COUNT, avatarFallback } from '../../../shared/agent/avatars';
 import { DEFAULT_VOICE_ID, voiceById,VOICES } from '../agents/voices';
 import { CloseIcon } from '../icons';
+import { CloudBlob } from '../orb/CloudBlob';
 import { Orb, OrbMood } from '../orb/Orb';
 import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import {
@@ -18,7 +20,14 @@ export interface AgentDraftSubmit {
   name: string;
   label: string;
   description: string;
+  /** '' when no voice was picked. The canvas allows that. */
   voiceId: string;
+  /**
+   * The face, 0–24. Rolled once when the form opened and shown on it
+   * since, so the agent that appears in the sidebar is the one the person
+   * was looking at while they typed its name.
+   */
+  avatar: number;
 }
 
 export interface ComposeProps {
@@ -27,6 +36,11 @@ export interface ComposeProps {
   onPick: (agentId: string) => void;
   onCreate: (draft: AgentDraftSubmit) => void;
   onClose: () => void;
+  /**
+   * Every face currently on an agent, for the roll. Without it the rule
+   * "the first twenty-five are all different" cannot be kept here.
+   */
+  wornAvatars?: readonly number[];
 }
 
 /**
@@ -36,21 +50,28 @@ export interface ComposeProps {
  * it, which is what the canvas does and what Messages does — composing is
  * a place you are, not a thing on top of where you were.
  */
-export function Compose({ agents, onPick, onCreate, onClose }: ComposeProps): JSX.Element {
+export function Compose({ agents, onPick, onCreate, onClose, wornAvatars = [] }: ComposeProps): JSX.Element {
   const [query, setQuery] = useState('');
   const [creating, setCreating] = useState(false);
 
   const [name, setName] = useState('');
   const [label, setLabel] = useState('');
   const [description, setDescription] = useState('');
-  const [voiceId, setVoiceId] = useState(DEFAULT_VOICE_ID);
+  // No voice until one is picked: the canvas starts at "No voice yet".
+  const [voiceId, setVoiceId] = useState('');
   const [pickingVoice, setPickingVoice] = useState(false);
+  // Rolled once, when "Create new agent" is taken — the canvas's
+  // `setupPalette()` — and held here until the agent is made or the pane
+  // closes. Changing it is the picker's job, not typing's.
+  const [avatar, setAvatar] = useState<number>();
+  const [avatarOpen, setAvatarOpen] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
   const rows = useMemo(() => composeRows({ agents, query }), [agents, query]);
 
   const take = (row: ComposeRow): void => {
     if (row.kind === ComposeRowKind.Action && row.id === ComposeAction.NewAgent) {
+      setAvatar(assignAvatar(wornAvatars));
       setCreating(true);
       // The name is the only required field, so start in it.
       window.setTimeout(() => nameRef.current?.focus(), 0);
@@ -121,10 +142,17 @@ export function Compose({ agents, onPick, onCreate, onClose }: ComposeProps): JS
             label={label} setLabel={setLabel}
             description={description} setDescription={setDescription}
             voiceId={voiceId}
+            avatar={avatar ?? avatarFallback(name)}
+            avatarOpen={avatarOpen}
+            onToggleAvatar={() => setAvatarOpen(open => !open)}
+            onPickAvatar={index => setAvatar(index)}
             nameRef={nameRef}
             onPickVoice={() => setPickingVoice(true)}
             onCancel={onClose}
-            onCreate={() => onCreate({ name, label, description, voiceId })}
+            onCreate={() => {
+              if (avatar === undefined) return;
+              onCreate({ name, label, description, voiceId, avatar });
+            }}
           />
         ) : (
           <div
@@ -154,7 +182,7 @@ export function Compose({ agents, onPick, onCreate, onClose }: ComposeProps): JS
                 }}
               >
                 {row.kind === ComposeRowKind.Agent ? (
-                  <Orb agentId={row.id} size={30} mood={OrbMood.Still} />
+                  <CloudBlob avatar={row.avatar ?? avatarFallback(row.id)} size={30} />
                 ) : (
                   <span
                     style={{
@@ -227,6 +255,10 @@ interface NewAgentFormProps {
   label: string; setLabel: (value: string) => void;
   description: string; setDescription: (value: string) => void;
   voiceId: string;
+  avatar: number;
+  avatarOpen: boolean;
+  onToggleAvatar: () => void;
+  onPickAvatar: (avatar: number) => void;
   nameRef: React.RefObject<HTMLInputElement>;
   onPickVoice: () => void;
   onCancel: () => void;
@@ -256,13 +288,73 @@ function NewAgentForm(props: NewAgentFormProps): JSX.Element {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        {/* The orb is drawn from the name, so it changes as you type and
-            the agent arrives already looking like itself. */}
-        <Orb agentId={name.trim() || 'new-agent'} size={56} mood={OrbMood.Idle} elevated />
-        <div style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title }}>
-          New agent
+        {/*
+          The face was rolled when this form opened and it stays put while
+          you type. It used to be drawn from the name — a different face on
+          every keystroke, and none of them the one the agent ended up
+          with, since that was drawn from its id. This one is stored.
+        */}
+        <CloudBlob avatar={props.avatar} size={56} />
+        <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <div style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title, color: color.ink }}>
+            New agent
+          </div>
+          <div style={{ fontSize: text.label, color: color.muted }}>Pick an avatar, a name and a voice.</div>
         </div>
+        <button
+          type="button"
+          onClick={props.onToggleAvatar}
+          aria-expanded={props.avatarOpen}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 7, flex: '0 0 auto', height: 34,
+            padding: '0 13px', borderRadius: radius.pill, cursor: 'pointer', font: 'inherit',
+            color: color.ink, boxShadow: shadow.flat, border: `1px solid ${line.button}`,
+            background: props.avatarOpen ? color.fill : color.paper,
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden focusable="false">
+            <path d="M4 20h4l10.5-10.5a2.5 2.5 0 00-3.5-3.5L4.5 16.5V20z" />
+            <path d="M14.5 6.5l3 3" />
+          </svg>
+          <span style={{ fontSize: text.small, whiteSpace: 'nowrap' }}>Edit avatar</span>
+        </button>
       </div>
+
+      {props.avatarOpen && (
+        <div
+          style={{
+            padding: 14, borderRadius: radius.row, background: color.paper,
+            border: `1px solid ${line.hairline}`,
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,.7), ${shadow.flat}`,
+            display: 'flex', flexDirection: 'column', gap: 11,
+          }}
+        >
+          <div style={{ fontSize: text.caption, color: color.muted }}>Choose an avatar</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, minmax(0, 1fr))', gap: 7 }}>
+            {Array.from({ length: AVATAR_COUNT }, (_, index) => {
+              const on = index === props.avatar;
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => props.onPickAvatar(index)}
+                  aria-label={`Avatar ${index + 1}`}
+                  aria-pressed={on}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '100%', minWidth: 0, aspectRatio: '1', padding: 0,
+                    borderRadius: 12, cursor: 'pointer',
+                    background: on ? color.fill : 'transparent',
+                    border: `1.5px solid ${on ? color.ink : line.hairline}`,
+                  }}
+                >
+                  <CloudBlob avatar={index} size={34} style={{ width: '100%', height: '100%' }} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {group('Name', (
         <input
@@ -285,9 +377,24 @@ function NewAgentForm(props: NewAgentFormProps): JSX.Element {
             cursor: 'pointer', font: 'inherit',
           }}
         >
-          <Orb agentId={props.voiceId} size={32} mood={OrbMood.Still} />
-          <span style={{ fontSize: text.message, color: color.ink }}>{voice?.name ?? 'Pick a voice'}</span>
-          <span style={{ fontSize: text.message, color: color.muted }}>Change</span>
+          {/*
+            The voice's own sphere, not the agent's face. A voice is a
+            picture of its own in the canvas, and until one is picked there
+            is a plain grey disc and "No voice yet" — not a default nobody
+            chose wearing a colour that belongs to something else.
+          */}
+          {voice ? (
+            <Orb agentId={voice.id} colors={voice.colors} seed={voice.seed} size={32} mood={OrbMood.Still} />
+          ) : (
+            <span
+              style={{
+                width: 32, height: 32, flex: '0 0 auto', borderRadius: '50%',
+                background: '#dfe4ec', border: `1px solid ${line.hairline}`, display: 'block',
+              }}
+            />
+          )}
+          <span style={{ fontSize: text.message, color: color.ink, whiteSpace: 'nowrap' }}>{voice?.name ?? 'No voice yet'}</span>
+          <span style={{ fontSize: text.message, color: color.muted, whiteSpace: 'nowrap' }}>{voice ? 'Change' : 'Add'}</span>
         </button>
       ))}
 
@@ -365,7 +472,7 @@ interface VoicePickerProps {
  * selection here and the caller only hears about it once.
  */
 function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Element {
-  const start = Math.max(0, VOICES.findIndex(one => one.id === voiceId));
+  const start = Math.max(0, VOICES.findIndex(one => one.id === (voiceId || DEFAULT_VOICE_ID)));
   const [at, setAt] = useState(start);
   const voice = VOICES[at] ?? VOICES[0];
 
@@ -423,7 +530,7 @@ function VoicePicker({ voiceId, onPick, onClose }: VoicePickerProps): JSX.Elemen
           </div>
         </div>
 
-        <Orb agentId={voice.id} size={176} mood={OrbMood.Idle} elevated />
+        <Orb agentId={voice.id} colors={voice.colors} seed={voice.seed} size={176} mood={OrbMood.Idle} elevated />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 20, width: '100%', justifyContent: 'center' }}>
           {arrow(-1, 'Previous voice', 'M15 5l-7 7 7 7')}

@@ -893,7 +893,7 @@ Everything up to and after that point is verified.
 
 ---
 
-## 25. "Your credits have been used up. Upgrade your plan." — `fixed`
+## 25. "Your credits have been used up. Upgrade your plan." — `fixed on the second attempt`
 
 The founder, 15 September:
 
@@ -912,8 +912,30 @@ credits against `DESKTOP_MONTHLY_CREDITS` (3,000,000) and answers HTTP
 (`common/coworkErrorClassify.ts`) matches `40200` with the pattern
 `/\b(?:4020[0-2]|4160[678])\b/` and shows `coworkErrorQuotaExhausted` —
 whose text was NetEase's pricing page. So *our* quota was advertising
-*their* upgrade. All four `lobsterai.youdao.com` links are gone;
-`grep -c` now returns 0. The new line points at Settings instead.
+*their* upgrade. The new line points at Settings instead.
+
+> **This paragraph used to end "All four `lobsterai.youdao.com` links are
+> gone; `grep -c` now returns 0." That was not true, and the founder
+> found out by reading the sentence again a day later.** Two of the four
+> were in `renderer/services/i18n.ts` and two were in `main/i18n.ts`. I
+> fixed the renderer's, checked the renderer's, and wrote the sentence
+> as though I had checked both — and `shared/settings/models.ts` carried
+> the same claim in a code comment.
+>
+> The main process is the one that matters here.
+> `openclawRuntimeAdapter.ts` resolves a runtime error through
+> `t(key)` from **`main/i18n.ts`** and stores the result as the message.
+> The renderer's `classifyError` only rewrites text that is still raw;
+> by then it is not, and the English sentence does not match the pattern
+> anyway. So the renderer's copy never got a turn on this path, and the
+> founder read NetEase's words again on 14 September, verbatim, with the
+> link.
+>
+> Both copies now say the same thing, and `main/i18n.quota.test.ts`
+> holds them to it: no `youdao.com/portal` in either dictionary, no
+> "upgrade your plan", both languages naming the way out, and
+> `t()` checked through the real main-process dictionary. The guard was
+> run against the old string first and fails three ways on it.
 
 **There was nowhere to put a key.** A person's own provider key is a
 real capability — `app_config.providers`, read by the config sync — but
@@ -1072,3 +1094,186 @@ the model obeys it is a run.
 
 **Where:** `shared/settings/appUiMap.ts`, `shared/settings/rows.ts`,
 `shared/settings/models.ts`, `main/libs/openclawConfigSync.ts`.
+
+---
+
+## 27. The one place in the thread that still printed markdown — `fixed`
+
+Found while chasing 25. The founder's screenshot showed the link as
+literal text — `[Upgrade or recharge](https://…)` — brackets, scheme and
+all. That is not how the quota message was written; it is how it was
+drawn.
+
+`design/thread/ThreadItemView.tsx:SystemLine` rendered `{item.text}`
+verbatim. Every other kind in the thread goes through
+`splitMessageParts` (`design/thread/parts.ts`), which exists precisely
+because a model writes markdown and the first build showed it as
+punctuation — the fault the founder called "artifacts do not render".
+System lines were the one kind that never got it, and system lines are
+where errors land (`fromEngine.ts`: an assistant message with
+`meta.isError` becomes a `System` item carrying the raw text).
+
+So any error string containing a link came out as characters. Fixed by
+running the system line through the same parser as a bubble: a path is a
+chip, a URL is a link, and a `faiser://settings/…` target is a pill that
+opens the row. Centred and muted as before — only the runs changed.
+
+**What this also means.** An error message can now carry a working pill
+to the setting that fixes it. The quota message does not use one, on
+purpose: the same string goes out over IM channels
+(`im/imGatewayManager.ts` localises through the same dictionary), and a
+`faiser://` link is meaningless in Feishu. It says "Settings → Models"
+in words, and `i18n.quota.test.ts` asserts no markdown link in it.
+
+**Not verified:** nobody has seen a system line render in the built app.
+The parser is tested; there are no React rendering tests in this
+repository, so the wiring is read and not run.
+
+**Where:** `renderer/design/thread/ThreadItemView.tsx`, `main/i18n.ts`,
+`renderer/services/i18n.ts`, `main/i18n.quota.test.ts`,
+`shared/settings/models.ts`.
+
+---
+
+## 28. The avatar was a hash, and there were four faces in the whole app — `fixed`
+
+The founder, 15 September: *"the avatar is a big fat massive lie.
+everything is either blue or green, what shows when you create an agent
+makes no sense."* And of the voice: *"it has many colors, but when you
+pick a voice with a different color, it shows you a default blue. when
+btw i clearly design it having only one color."*
+
+**What was wrong.** `palette.ts` derived the face from an FNV hash of
+the agent's id. Nothing was chosen and nothing was stored. The create
+screen hashed the *typed name* instead, so the face changed on every
+keystroke and was never the one the saved agent wore. The seed was
+locked to the palette's own, so four palettes meant exactly four
+possible pictures — not four colours with variation, four images. And
+the voice picker passed the voice's id as an agent id, so every voice got
+a colour of its own and the voice's actual seed was never used.
+
+**What the 15 September canvas says**
+(`docs/product/design/canvas-2026-09-15-template.html`):
+
+- `AVATARS` — twenty-five three-colour gradients. An agent's face is a
+  `<cloud-blob>` (a soft cloud with eyes, pure SVG, now
+  `design/orb/CloudBlob.tsx`) tinted by one of them, shaped by
+  `seed = i * 5 + 2`. An avatar is one number, 0–24.
+- `setupPalette()` rolls one when the create screen opens and it is
+  **stored on the agent**. "Edit avatar" opens a grid of all twenty-five
+  on the create screen (9 columns) and in the agent panel (5 columns).
+- Voices carry their own five-colour palette and seed and are drawn with
+  the sphere. The setup button reads "No voice yet / Add" until one is
+  picked.
+
+**What was built.** `shared/agent/avatars.ts`: the list, the seed rule,
+and `assignAvatar` — the founder's rule verbatim: *"the first 25 created
+agents always have a different color. after 25, we re-do."* Avatars
+nobody wears come first; once every one is worn, the least-worn; among
+equals, chance. Deleting an agent frees its avatar. An `avatar` column on
+`agents`, assigned inside the create transaction; a backfill on launch
+gives every existing agent one in creation order by the same rule, so
+an upgraded install with fourteen agents gets fourteen different faces.
+Tested 1,000 runs with real chance: twenty-five in a row are always
+twenty-five different.
+
+The create screen rolls once and shows that face beside "Pick an
+avatar, a name and a voice." — and the agent that appears in the sidebar
+wears exactly it. The voice is the voice's sphere, or a grey disc and
+"No voice yet".
+
+**Where:** `shared/agent/avatars.ts`, `design/orb/CloudBlob.tsx`,
+`design/shell/Compose.tsx`, `design/agents/voices.ts`,
+`main/coworkStore.ts`, `main/sqliteStore.ts`.
+
+---
+
+## 29. Delete opens the agent panel; the same panel is the edit — `fixed`
+
+The founder: *"i added a delete button in the left bar, that opens a
+right panel. that same right panel opens up top. for edit."*
+
+**Built as drawn.** A trash icon replaces the unread dot on the *active*
+row (`showDelete: isActive && BOTS.length > 1`), red on hover. It opens
+the third column with the question already asked: "Delete {name} and
+this conversation? This can't be undone." — Delete / Keep. The agent's
+name in the conversation header opens the same panel without the
+question. The panel: "Agent settings", a 76px face and Edit avatar /
+Done, Name, Label and Description edited live (text is written a moment
+after it stops; a face or the toggle goes straight through), a
+Notifications toggle, and Delete agent. The columns are the canvas's:
+`clamp(252px,22%,300px) minmax(0,1fr) clamp(236px,25%,324px)`, and the
+layout rules from item 27's neighbour still hold — the thread is never
+crushed, and the panel covers rather than splits when there is no room.
+
+**What that replaced.** Item 37's right-click delete with the two-click
+confirm drawn over the row. The canvas has one door, not two. The
+two-click piece (`confirm.ts`) stays in Settings.
+
+**Notifications is real, not decorative.** The toggle is stored
+(`notify` on the agent) and `desktopNotificationManager` asks
+`isSessionNotifying` before a completion notification. Off means off.
+
+**Deliberate differences, mine:**
+- No trash on the main agent. It is the one conversation that always
+  exists.
+- No trash on a room. The trash opens the agent panel and a room has no
+  panel yet; rather than delete on one click, it shows no trash. Rooms
+  cannot be created from the app yet either.
+- No trash on the rail (under 900px). A rail row is a face with no name.
+- The five-tab agent detail sheet (item 4, mine) is no longer reachable:
+  the name in the header is the canvas's door to the panel. Skills,
+  routines and integrations of an agent have no screen in this shell
+  now. **Flagged: that is a loss of function, and it is the founder's
+  call whether the panel grows a way to them.**
+- The label and voice are now stored on the agent (`label`, `voice_id`)
+  so the panel can rebuild the system prompt from its parts. They were
+  folded into the prompt and lost.
+
+**Not verified:** nobody has opened the built app against any of this.
+The rule is proved; the columns are proved at every width; the blob is
+the element's arithmetic verbatim; whether it *looks* like the canvas is
+a run.
+
+**Where:** `design/agent/AgentPanel.tsx`, `design/shell/Sidebar.tsx`,
+`design/shell/useMessagesShell.ts`, `design/shell/layout.ts`,
+`main/libs/desktopNotificationManager.ts`.
+
+---
+
+## 30. "Typing" is an animation — `fixed`
+
+The founder: *"in the chat its not longer 'writing' its an animation."*
+
+The header's word "typing" is three 4.5px dots (`thinkDot`). At the end
+of the thread, the agent's face at 26px hops (`thinkHop`) beside a small
+bubble of the same three dots (`thinkBubble`). Both from the canvas's
+keyframes, verbatim, in `tokens.css` as `fsr-think-*`.
+
+**Where:** `design/thread/Thread.tsx`, `design/shell/MessagesShell.tsx`,
+`design/tokens.css`.
+
+---
+
+## 31. A reply crawled out a token at a time — `fixed`
+
+The founder: *"it's supposed come as text. but the ai write it in
+streams. which creates lags. i want to have it as text. always."*
+
+`direction.md` §3 had said this since 13 September — "a typed answer
+should never crawl out a token at a time" — and the build did it anyway.
+`fromEngine.ts` drew a streaming reply as one whole bubble that kept
+changing as tokens landed. It had a comment explaining it would not
+*split* while streaming, as if that were the rule; the rule was that it
+should not be there.
+
+**Fixed.** A reply is not drawn until it is complete. While it arrives
+the thread shows the typing animation (item 30) and nothing else; when
+the final lands it is split into bubbles 420ms apart, as before. In every
+mode — there is no speech yet, and when there is, it is the speech that
+streams. One exception: an engine that stops mid-reply without a final
+shows what arrived once the session is no longer running, rather than
+hiding it forever. `direction.md` §3 is amended with the founder's words.
+
+**Where:** `design/thread/fromEngine.ts`, `design/shell/select.ts`,
+`design/shell/useMessagesShell.ts`, `docs/product/direction.md`.

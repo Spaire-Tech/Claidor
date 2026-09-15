@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { avatarFallback } from '../../../shared/agent/avatars';
 import { CloseIcon, ComputerIcon, SearchIcon, ShareIcon } from '../icons';
-import { Orb, OrbMood } from '../orb/Orb';
+import { CloudBlob } from '../orb/CloudBlob';
 import { findInThread, matchLabel, stepMatch } from '../thread/search';
 import { Thread } from '../thread/Thread';
 import type {
@@ -15,6 +16,7 @@ import { useStaggered } from '../thread/useStaggered';
 import { color, glass, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
+import { PanelMode, PanelWant, shellLayout, titleBarInset, useWindowWidth } from './layout';
 import { Sidebar, type SidebarAgent } from './Sidebar';
 
 export const ThreadMode = {
@@ -27,6 +29,10 @@ export interface MessagesShellProps {
   agents: readonly SidebarAgent[];
   activeId: string;
   activeName: string;
+  /** The open agent's face, 0–24. Falls back to a stable one from the id. */
+  activeAvatar?: number;
+  /** Every face on an agent, for the create screen's roll. */
+  wornAvatars?: readonly number[];
   items: readonly ThreadItem[];
   /** What a card asking for something typed can do with the answer. */
   secret?: SecretHandlers;
@@ -39,8 +45,8 @@ export interface MessagesShellProps {
   /** What a file or a link named in a message can do. */
   parts?: PartHandlers;
   onSelect: (agentId: string) => void;
-  /** Delete a conversation, permanently. */
-  onDelete?: (id: string) => void;
+  /** The sidebar's trash icon: opens the agent panel with the question asked. */
+  onAskDelete?: (id: string) => void;
   onSend: (message: string) => void;
   onCompose: () => void;
   /** Compose has taken over the conversation pane. */
@@ -55,6 +61,12 @@ export interface MessagesShellProps {
   onOpenAgent?: () => void;
   /** The agent's five tabs, when open. Over everything, like `apps`. */
   agentDetail?: React.ReactNode;
+  /**
+   * The agent panel — the third column from the 15 September canvas —
+   * when open. Takes the panel slot; the computer panel and this are
+   * never open together.
+   */
+  agentPanel?: React.ReactNode;
   /** Settings, when open. Over everything, like `apps`. */
   settings?: React.ReactNode;
   onAccount: () => void;
@@ -84,10 +96,19 @@ export interface MessagesShellProps {
 export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
-    choice, auth, parts, secret, onSelect, onDelete, onSend, onCompose, onApps, apps, onAccount, onMode,
-    onOpenPanel, onTeach, onShareTemplate, onOpenAgent, agentDetail, settings,
-    composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel,
+    choice, auth, parts, secret, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode,
+    onOpenPanel, onTeach, onShareTemplate, onOpenAgent, agentDetail, agentPanel, settings,
+    composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel, wornAvatars,
   } = props;
+  const activeAvatar = props.activeAvatar ?? avatarFallback(activeId);
+
+  // How the window is divided right now. Re-read on every resize, which
+  // is the piece that was missing: the old columns stretched but never
+  // reconsidered, so leaving full screen changed nothing but the numbers.
+  const width = useWindowWidth();
+  const wanted = agentPanel ? PanelWant.Agent : panel ? PanelWant.Computer : PanelWant.None;
+  const layout = useMemo(() => shellLayout(width, wanted), [width, wanted]);
+  const inset = titleBarInset(window.electron?.platform);
 
   // Finding something in this conversation. Closed, it costs nothing;
   // open, the thread shows only what matched, which is the cheapest
@@ -166,7 +187,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
     >
       <div
         style={{
-          display: 'grid', gridTemplateColumns: '300px minmax(0,1fr)',
+          display: 'grid', gridTemplateColumns: `${layout.sidebarWidth}px minmax(0,1fr)`,
           height: '100%', minHeight: 0, overflow: 'hidden',
           background: color.paper,
           backgroundImage:
@@ -179,12 +200,14 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
           agents={agents}
           activeId={activeId}
           onSelect={onSelect}
-          {...(onDelete ? { onDelete } : {})}
+          {...(onAskDelete ? { onAskDelete } : {})}
           onCompose={onCompose}
           onApps={onApps}
           accountName={accountName}
           onAccount={onAccount}
           accountMenu={accountMenu}
+          mode={layout.sidebar}
+          topInset={inset}
         />
 
         {composing && onCloseCompose && onPickAgent && onCreateAgent ? (
@@ -193,16 +216,34 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             onPick={onPickAgent}
             onCreate={onCreateAgent}
             onClose={onCloseCompose}
+            {...(wornAvatars ? { wornAvatars } : {})}
           />
         ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: panel ? 'minmax(0,1fr) minmax(360px, 44%)' : 'minmax(0,1fr)', minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            display: 'grid',
+            // Two columns only when the panel has earned one. A panel that
+            // cannot have `PANEL_MIN` without taking the thread below
+            // `THREAD_MIN` is drawn over the conversation instead, which is
+            // the difference between a narrow window and a broken one.
+            gridTemplateColumns: layout.panel === PanelMode.Split
+              ? `minmax(0,1fr) ${layout.panelWidth}px`
+              : 'minmax(0,1fr)',
+            position: 'relative',
+            minWidth: 0, minHeight: 0, overflow: 'hidden',
+          }}
+        >
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
           <div
             style={{
               position: 'relative', display: 'flex', alignItems: 'center', gap: 11,
-              padding: '16px 24px', borderBottom: `1px solid ${line.hairline}`,
+              padding: `${16 + inset}px 24px 16px`,
+              borderBottom: `1px solid ${line.hairline}`,
               background: 'rgba(250,251,252,.92)', backdropFilter: 'blur(20px)',
-            }}
+              // The other half of the window you can pick up. Controls
+              // inside set `no-drag` for themselves.
+              WebkitAppRegion: 'drag',
+            } as React.CSSProperties}
           >
             {/*
               The name at the top opens the agent, which is the gesture
@@ -223,12 +264,30 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
                 cursor: onOpenAgent ? 'pointer' : 'default',
               }}
             >
-              <Orb agentId={activeId} size={28} mood={OrbMood.Idle} />
+              <CloudBlob avatar={activeAvatar} size={28} />
               <span style={{ fontSize: text.base, fontWeight: 500, letterSpacing: tracking.title }}>
                 {activeName}
               </span>
             </button>
-            {saysTyping && <span style={{ fontSize: text.caption, color: color.muted }}>typing</span>}
+            {/*
+              Three small dots, from the 15 September canvas, in place of
+              the word "typing". The thread carries the same dots at full
+              size beside the agent's face; this is the same thing seen
+              from the header.
+            */}
+            {saysTyping && (
+              <span aria-label="Working" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {[0, 0.16, 0.32].map(delay => (
+                  <span
+                    key={delay}
+                    style={{
+                      width: 4.5, height: 4.5, borderRadius: '50%', background: color.muted,
+                      animation: `fsr-think-dot 1.2s ease-in-out ${delay}s infinite`,
+                    }}
+                  />
+                ))}
+              </span>
+            )}
 
             <div
               style={{
@@ -348,17 +407,21 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             auth={auth}
             {...(secret ? { secret } : {})}
             {...(parts ? { parts } : {})}
+            typing={saysTyping ? { avatar: activeAvatar } : undefined}
           />
 
           {mode === ThreadMode.Voice && (
             <div style={{ flex: '0 0 auto', padding: '10px 24px 4px', display: 'flex', justifyContent: 'center' }}>
-              <Orb
-                agentId={activeId}
-                size={104}
-                mood={typing ? OrbMood.Speaking : OrbMood.Idle}
-                elevated
-                label={`${activeName} is listening`}
-              />
+              <span
+                style={{
+                  display: 'block',
+                  animation: typing
+                    ? `fsr-orb-speak ${motion.orbSpeak.duration} ${motion.orbSpeak.easing} infinite`
+                    : `fsr-orb-idle ${motion.orbIdle.duration} ${motion.orbIdle.easing} infinite`,
+                }}
+              >
+                <CloudBlob avatar={activeAvatar} size={104} label={`${activeName} is listening`} />
+              </span>
             </div>
           )}
 
@@ -368,7 +431,20 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             {...(onTeach ? { onTeach } : {})}
           />
         </div>
-        {panel}
+        {layout.panel === PanelMode.Split && (agentPanel ?? panel)}
+        {layout.panel === PanelMode.Cover && (
+          // Over the conversation, filling it. Not a third column squeezed
+          // to nothing, and not a button that quietly refuses.
+          <div
+            style={{
+              position: 'absolute', inset: 0, zIndex: 40,
+              display: 'flex', flexDirection: 'column',
+              minWidth: 0, minHeight: 0, background: color.paper,
+            }}
+          >
+            {agentPanel ?? panel}
+          </div>
+        )}
         </div>
         )}
       </div>

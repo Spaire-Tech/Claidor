@@ -4,7 +4,21 @@ export const AppWindowStoreKey = {
 
 export const DEFAULT_APP_WINDOW_WIDTH = 1280;
 export const DEFAULT_APP_WINDOW_HEIGHT = 800;
-export const MIN_APP_WINDOW_WIDTH = 800;
+/**
+ * The narrowest the window may be dragged.
+ *
+ * 560, not 800. The founder's complaint was that other apps go genuinely
+ * thin and this one does not, and 800 was never a considered number — it
+ * was the width at which the old fixed three-column layout stopped being
+ * *completely* unusable, which is not the same thing.
+ *
+ * What makes 560 safe is `renderer/design/shell/layout.ts`: below 900 the
+ * sidebar collapses to a 76px rail, and the panel covers the conversation
+ * rather than splitting it. That leaves the thread 484px at this width,
+ * above its 460px floor. Lowering this without those rules would put the
+ * conversation back at one character per line.
+ */
+export const MIN_APP_WINDOW_WIDTH = 560;
 export const MIN_APP_WINDOW_HEIGHT = 600;
 
 const DEFAULT_WINDOW_SCREEN_MARGIN = 24;

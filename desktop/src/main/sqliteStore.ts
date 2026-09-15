@@ -230,7 +230,11 @@ export class SqliteStore {
         source TEXT NOT NULL DEFAULT 'custom',
         preset_id TEXT NOT NULL DEFAULT '',
         created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
+        updated_at INTEGER NOT NULL,
+        avatar INTEGER,
+        label TEXT NOT NULL DEFAULT '',
+        voice_id TEXT NOT NULL DEFAULT '',
+        notify INTEGER NOT NULL DEFAULT 1
       );
     `);
 
@@ -664,6 +668,30 @@ export class SqliteStore {
       }
       if (!agentColNames.includes('subagent_allow_agent_ids')) {
         this.db.exec("ALTER TABLE agents ADD COLUMN subagent_allow_agent_ids TEXT NOT NULL DEFAULT '[]';");
+        this.didRunMigration = true;
+      }
+      // The agent's face, stored rather than derived (see
+      // `shared/agent/avatars.ts`). NULL until `backfillMissingAvatars`
+      // runs on the next launch, which gives every existing agent one in
+      // creation order by the same rule a new one gets.
+      if (!agentColNames.includes('avatar')) {
+        this.db.exec('ALTER TABLE agents ADD COLUMN avatar INTEGER;');
+        this.didRunMigration = true;
+      }
+      // What the agent panel edits and the system prompt is rebuilt from.
+      // The prompt is derived from name, label, description and voice; keeping
+      // the parts is what makes it editable after the fact.
+      if (!agentColNames.includes('label')) {
+        this.db.exec("ALTER TABLE agents ADD COLUMN label TEXT NOT NULL DEFAULT '';");
+        this.didRunMigration = true;
+      }
+      if (!agentColNames.includes('voice_id')) {
+        this.db.exec("ALTER TABLE agents ADD COLUMN voice_id TEXT NOT NULL DEFAULT '';");
+        this.didRunMigration = true;
+      }
+      // Per agent: "Get notified when this agent finishes or needs input".
+      if (!agentColNames.includes('notify')) {
+        this.db.exec('ALTER TABLE agents ADD COLUMN notify INTEGER NOT NULL DEFAULT 1;');
         this.didRunMigration = true;
       }
     } catch {

@@ -5,8 +5,7 @@ import { useSelector } from 'react-redux';
 
 import { authService } from '../../services/auth';
 import type { RootState } from '../../store';
-import { AgentDetail } from '../agent/AgentDetail';
-import { useAgentDetail } from '../agent/useAgentDetail';
+import { AgentPanel } from '../agent/AgentPanel';
 import { useConnections } from '../connections/useConnections';
 import { ComputerPanel } from '../panel/ComputerPanel';
 import { Settings } from '../settings/Settings';
@@ -47,7 +46,6 @@ export function FaiserApp(): JSX.Element {
       .catch(() => { /* the draft says "unknown", which is true */ });
     return () => { current = false; };
   }, []);
-  const [agentOpen, setAgentOpen] = useState(false);
   // Settings is ours now. The account menu used to open NetEase's
   // thirteen tabs — providers, API keys, skins, IM platforms, a growth
   // tour — which is the app this one was carved out of, not this one.
@@ -58,7 +56,6 @@ export function FaiserApp(): JSX.Element {
   // than inside them: a password prompt is not a message, and it must not
   // scroll back into view a week later with an empty box.
   const askInput = useAskInput();
-  const detail = useAgentDetail(shell.activeId, agentOpen);
   const connections = useConnections(shell.appsOpen);
 
   // `nickname` is the only display name the profile carries; everything
@@ -99,6 +96,8 @@ export function FaiserApp(): JSX.Element {
       agents={shell.agents}
       activeId={shell.activeId}
       activeName={shell.activeName}
+      activeAvatar={shell.activeAvatar}
+      wornAvatars={shell.wornAvatars}
       items={[...shell.items, ...askInput.items]}
       dayStamp={shell.dayStamp}
       typing={shell.typing}
@@ -109,7 +108,7 @@ export function FaiserApp(): JSX.Element {
       parts={shell.parts}
       secret={askInput.handlers}
       onSelect={shell.onSelect}
-      onDelete={shell.onDelete}
+      onAskDelete={shell.onAskDelete}
       onSend={shell.onSend}
       onMode={shell.onMode}
       onTeach={shell.onTeach}
@@ -150,15 +149,20 @@ export function FaiserApp(): JSX.Element {
           onClose={() => setAccountOpen(false)}
         />
       )}
-      onOpenAgent={() => setAgentOpen(true)}
-      agentDetail={agentOpen && (
-        <AgentDetail
-          detail={detail}
-          agentId={shell.activeId}
-          agentName={shell.activeName}
-          onClose={() => setAgentOpen(false)}
+      // The name in the header opens the agent panel — the 15 September
+      // canvas's `toggleAgentPanel`. The five-tab detail sheet
+      // (`agent/AgentDetail.tsx`) is no longer reachable from here; it was
+      // mine, not the founder's, and the panel is what they drew.
+      onOpenAgent={shell.onToggleAgentPanel}
+      agentPanel={shell.agentPanelOpen && shell.activeAgent ? (
+        <AgentPanel
+          agent={shell.activeAgent}
+          asking={shell.agentPanelAsking}
+          {...(shell.activeAgent.deletable ? { onDelete: shell.onConfirmDelete } : {})}
+          onChange={shell.onEditAgent}
+          onClose={shell.onCloseAgentPanel}
         />
-      )}
+      ) : undefined}
       settings={settingsOpen && (
         <Settings {...settings} onClose={() => setSettingsOpen(false)} />
       )}

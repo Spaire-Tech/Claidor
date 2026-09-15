@@ -153,3 +153,61 @@
   [style*="fsr-orb-idle"],
   [style*="fsr-orb-speak"] { animation: none !important; }
 }
+
+/*
+ * Nothing you can press is a handle for the window.
+ *
+ * The shell marks two strips `-webkit-app-region: drag` — the sidebar
+ * header and the conversation header — because a frameless macOS window
+ * is otherwise impossible to move. Drag is inherited, so without this
+ * every button inside those strips would swallow its own click and move
+ * the window instead. One rule, stated once, rather than `no-drag` copied
+ * onto each control and forgotten on the next one added.
+ */
+button,
+input,
+textarea,
+select,
+a,
+[role='button'],
+[contenteditable='true'] {
+  -webkit-app-region: no-drag;
+}
+
+/*
+ * The blob's motion, from `docs/product/design/cloud-blob.js` verbatim.
+ *
+ * The element carried these inside its own shadow root, one <style> per
+ * blob. Here they are declared once; the durations and delays, which the
+ * seed decides, stay on the element. `scale` is the CSS property, as the
+ * element wrote it, not a transform — the two are separate so bob and
+ * squish can run together.
+ */
+@keyframes fsr-blob-bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
+@keyframes fsr-blob-squish { 0%,100% { scale:1 1; } 50% { scale:1.015 0.985; } }
+@keyframes fsr-blob-blink { 0%,92%,100% { transform:scaleY(1); } 95% { transform:scaleY(.08); } }
+@keyframes fsr-blob-drift {
+  0%,100% { transform:translate(0,0); }
+  30% { transform:translate(1.6px,-1px); }
+  65% { transform:translate(-1.4px,1.2px); }
+}
+@keyframes fsr-blob-drift-awake {
+  0%,100% { transform:translate(0,0); }
+  30% { transform:translate(2.6px,-1px); }
+  65% { transform:translate(-2.4px,1.2px); }
+}
+@keyframes fsr-blob-shade { 0%,100% { opacity:.2; transform:scale(1); } 50% { opacity:.13; transform:scale(.93); } }
+
+/*
+ * Typing, from the 15 September canvas: three dots beside the name in the
+ * header (`thinkDot`), and in the thread the agent's blob hopping beside
+ * a bubble of the same three dots (`thinkHop`, `thinkBubble`).
+ */
+@keyframes fsr-think-dot { 0%,100% { transform:translateY(0); opacity:.38; } 40% { transform:translateY(-4.5px); opacity:1; } }
+@keyframes fsr-think-hop { 0%,100% { transform:translateY(0) rotate(0deg); } 28% { transform:translateY(-4px) rotate(-4deg); } 60% { transform:translateY(-1.5px) rotate(3deg); } }
+@keyframes fsr-think-bubble { 0%,100% { transform:scale(1); } 50% { transform:scale(1.035); } }
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="fsr-blob-"],
+  [style*="fsr-think-"] { animation: none !important; }
+}

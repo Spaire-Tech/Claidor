@@ -823,6 +823,10 @@ interface IElectronAPI {
       subagentAllowAgentIds?: string[];
       source?: string;
       presetId?: string;
+      /** 0–24. Assigned by the store when absent; see `shared/agent/avatars.ts`. */
+      avatar?: number;
+      label?: string;
+      voiceId?: string;
     }) => Promise<Agent>;
     update: (
       id: string,
@@ -840,6 +844,10 @@ interface IElectronAPI {
         enabled?: boolean;
         pinned?: boolean;
         sortOrder?: number | null;
+        avatar?: number;
+        label?: string;
+        voiceId?: string;
+        notify?: boolean;
       },
     ) => Promise<Agent>;
     reorder: (agentIds: string[]) => Promise<Agent[] | null>;

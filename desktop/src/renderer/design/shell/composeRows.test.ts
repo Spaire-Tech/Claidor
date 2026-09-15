@@ -12,7 +12,7 @@ import {
 import type { SidebarAgent } from './Sidebar';
 
 const agent = (id: string, name = id): SidebarAgent => ({
-  id, name, preview: '', when: '',
+  id, name, avatar: 0, preview: '', when: '',
 });
 
 describe('the compose picker', () => {
