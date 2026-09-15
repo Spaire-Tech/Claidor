@@ -60,3 +60,7 @@ openspec/
 # Screenshots from the design harness. Regenerated in two commands
 # (see harness/README.md); never worth a couple of MB per commit.
 harness/shots/
+
+# whisper.cpp binaries, built by scripts/build-whisper.sh
+resources/whisper/*/
+.whisper-build/

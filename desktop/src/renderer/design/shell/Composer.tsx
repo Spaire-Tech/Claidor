@@ -4,6 +4,7 @@ import { i18nService } from '../../services/i18n';
 import { AttachIcon, CloseIcon, MicIcon, SendIcon } from '../icons';
 import { color, glass, line, motion, radius, shadow, text } from '../tokens';
 import { attachmentLines, basenameOf } from './attach';
+import type { DictationHandle } from './useDictation';
 
 export interface ComposerProps {
   placeholder?: string;
@@ -20,6 +21,13 @@ export interface ComposerProps {
    * works; the text replaces the draft and the caret lands after it.
    */
   seed?: { text: string; at: number };
+  /**
+   * The microphone. `text` mirrors into the draft while listening and
+   * lands as the draft when `finalAt` bumps; `note` is shown in place of
+   * the placeholder while the draft is empty. Absent, the mic button is
+   * still drawn (the canvas has it) but says speech needs the app.
+   */
+  dictation?: DictationHandle;
 }
 
 /**
@@ -35,7 +43,7 @@ export interface ComposerProps {
  *   that looked like every other button and did nothing at all.
  */
 export function Composer({
-  placeholder = 'Message', disabled, onSend, onTeach, seed,
+  placeholder = 'Message', disabled, onSend, onTeach, seed, dictation,
 }: ComposerProps): JSX.Element {
   const [draft, setDraft] = useState('');
   const [plusOpen, setPlusOpen] = useState(false);
@@ -43,6 +51,27 @@ export function Composer({
   const has = draft.trim().length > 0;
   const plusRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // While the person speaks, the draft is what has been recognised so
+  // far; when they stop, the final text takes its place and the caret
+  // lands after it, ready to be read, fixed and sent.
+  const listening = dictation?.listening ?? false;
+  const spoken = dictation?.text ?? '';
+  const finalAt = dictation?.finalAt ?? 0;
+  useEffect(() => {
+    if (!listening) return;
+    setDraft(spoken);
+  }, [listening, spoken]);
+  useEffect(() => {
+    if (finalAt === 0) return;
+    setDraft(spoken);
+    const input = inputRef.current;
+    if (!input) return;
+    input.focus();
+    window.setTimeout(() => input.setSelectionRange(spoken.length, spoken.length), 0);
+    // `spoken` is fixed for a given `finalAt`; re-running on it would reseed a draft being edited.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finalAt]);
 
   useEffect(() => {
     if (!seed) return;
@@ -224,7 +253,7 @@ export function Composer({
           value={draft}
           onChange={event => setDraft(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={placeholder}
+          placeholder={dictation?.note && !has ? dictation.note : placeholder}
           disabled={disabled}
           style={{
             flex: '1 1 auto', minWidth: 0, border: 'none', outline: 'none',
@@ -233,19 +262,28 @@ export function Composer({
           }}
         />
 
+        {/*
+          One control, three jobs: listening, it stops; with text, it sends;
+          empty, it starts listening. While listening it is the record red
+          from the canvas's Teach row, so a live microphone is never mistaken
+          for an idle one.
+        */}
         <button
           type="button"
-          onClick={send}
+          onClick={listening ? dictation?.toggle : (has ? send : (dictation?.toggle ?? send))}
           disabled={disabled}
-          aria-label={has ? 'Send' : 'Speak'}
+          aria-label={listening ? 'Stop' : (has ? 'Send' : 'Speak')}
+          aria-pressed={listening}
           style={{
             width: 37, height: 37, flex: '0 0 auto', borderRadius: '50%',
-            border: 'none', background: color.ink, cursor: disabled ? 'default' : 'pointer',
+            border: 'none', background: listening ? color.danger : color.ink,
+            cursor: disabled ? 'default' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             opacity: disabled ? 0.5 : 1, color: color.paper,
+            transition: `background ${motion.messageIn.duration} ${motion.messageIn.easing}`,
           }}
         >
-          {has ? <SendIcon size={15.5} /> : <MicIcon size={15} />}
+          {listening ? <MicIcon size={15} /> : (has ? <SendIcon size={15.5} /> : <MicIcon size={15} />)}
         </button>
       </div>
     </div>

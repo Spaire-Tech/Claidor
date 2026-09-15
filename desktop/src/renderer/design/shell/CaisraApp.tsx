@@ -17,6 +17,7 @@ import { AccountMenu } from './AccountMenu';
 import { Apps } from './Apps';
 import { MessagesShell } from './MessagesShell';
 import { SignIn } from './SignIn';
+import { useDictation } from './useDictation';
 import { useMessagesShell } from './useMessagesShell';
 
 /**
@@ -58,6 +59,7 @@ export function CaisraApp(): JSX.Element {
   // tour — which is the app this one was carved out of, not this one.
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settings = useSettings(settingsOpen);
+  const dictation = useDictation();
   const shell = useMessagesShell();
   // The cards asking for something typed. Kept beside the messages rather
   // than inside them: a password prompt is not a message, and it must not
@@ -119,6 +121,7 @@ export function CaisraApp(): JSX.Element {
       onSend={shell.onSend}
       onMode={shell.onMode}
       onTeach={shell.onTeach}
+      dictation={dictation}
       onShareTemplate={shell.onShareTemplate}
       composing={shell.composing}
       onCompose={shell.onCompose}

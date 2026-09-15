@@ -211,6 +211,7 @@ import {
 } from '../shared/shareDeployment/constants';
 import type { ShellOpenFailureReason as ShellOpenFailureReasonType } from '../shared/shell/constants';
 import { type ShellGetBrowserAppsInput, ShellIpc, ShellOpenFailureReason } from '../shared/shell/constants';
+import { SpeechEventKind, SpeechIpc } from '../shared/speech/constants';
 import { AgentManager } from './agentManager';
 import {
   APP_HOME_DIR_NAME,
@@ -291,6 +292,7 @@ import {
 import { registerSessionDiagnosticsHandlers } from './ipcHandlers/sessionDiagnostics';
 import { registerSiteIpcHandlers } from './ipcHandlers/site';
 import { registerSkillHandlers } from './ipcHandlers/skills';
+import { registerSpeechIpcHandlers } from './ipcHandlers/speech/handlers';
 import { LibraryIndexService } from './library/libraryIndexService';
 import { registerLibraryIpcHandlers } from './library/libraryIpc';
 import { LibraryLocalStore } from './library/libraryLocalStore';
@@ -581,6 +583,7 @@ import {
   SKIN_PRIVILEGED_SCHEME,
   SkinRuntimeController,
 } from './skins';
+import { WhisperServer } from './speech/whisperServer';
 import { SqliteStore } from './sqliteStore';
 import { StartupProfiler } from './startupProfiler';
 import { SubagentMessageStore } from './subagentMessageStore';
@@ -4072,6 +4075,7 @@ const getNotificationIconPath = (): string | null => {
 
 // 保存对主窗口的引用
 let mainWindow: BrowserWindow | null = null;
+let whisperServer: WhisperServer | null = null;
 let dataMigrationRestoreWindow: BrowserWindow | null = null;
 let desktopNotificationManager: DesktopNotificationManager | null = null;
 let ensureMainWindowForReason: ((reason: string) => BrowserWindow | null) | null = null;
@@ -13246,6 +13250,27 @@ if (!gotTheLock) {
     getServerApiBaseUrl,
   });
 
+  // Speech recognition on this computer (whisper.cpp). The recogniser is
+  // made once and brought up on the first dictation; its status events go
+  // to every window so the composer can say "downloading" or "listening".
+  registerSpeechIpcHandlers(() => {
+    if (!whisperServer) {
+      whisperServer = new WhisperServer({
+        resourcesDir: app.isPackaged ? process.resourcesPath : path.join(__dirname, '..', 'resources'),
+        userDataDir: app.getPath('userData'),
+        env: process.env,
+        onStatus: status => {
+          for (const window of BrowserWindow.getAllWindows()) {
+            if (!window.isDestroyed()) {
+              window.webContents.send(SpeechIpc.Event, { kind: SpeechEventKind.Status, status });
+            }
+          }
+        },
+      });
+    }
+    return whisperServer;
+  });
+
   registerSiteIpcHandlers({
     fetchWithAuth: (url, options) => {
       const { scopedFetch } = capturePublishingRequest();
@@ -14315,6 +14340,9 @@ if (!gotTheLock) {
 
     if (browserHost) {
       currentAppCleanupStep = 'agent-browser-storage';
+      await whisperServer?.dispose().catch(error => {
+        console.warn('[Speech] recogniser did not stop cleanly:', error);
+      });
       await browserHost.dispose().catch(error => {
         console.error('[AgentBrowserHost] Failed to flush persistent browser storage on quit:', error);
       });

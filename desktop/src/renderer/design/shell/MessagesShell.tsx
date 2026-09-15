@@ -21,6 +21,7 @@ import { type AgentDraftSubmit, Compose } from './Compose';
 import { Composer } from './Composer';
 import { PanelMode, PanelWant, shellLayout, titleBarInset, useWindowWidth } from './layout';
 import { Sidebar, type SidebarAgent } from './Sidebar';
+import type { DictationHandle } from './useDictation';
 
 export const ThreadMode = {
   Text: 'text',
@@ -82,6 +83,8 @@ export interface MessagesShellProps {
   panel?: React.ReactNode;
   /** "Teach a task" in the composer's `+` menu. */
   onTeach?: () => void;
+  /** The composer's microphone; see `useDictation`. */
+  dictation?: DictationHandle;
   /** "Share as template", behind the share button in the header. */
   onShareTemplate?: () => void;
 }
@@ -100,7 +103,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
     choice, auth, parts, secret, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode,
-    onOpenPanel, onTeach, onShareTemplate, onOpenAgent, agentDetail, agentPanel, settings,
+    onOpenPanel, onTeach, dictation, onShareTemplate, onOpenAgent, agentDetail, agentPanel, settings,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel, wornAvatars,
   } = props;
   const activeAvatar = props.activeAvatar ?? avatarFallback(activeId);
@@ -464,6 +467,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             onSend={onSend}
             {...(onTeach ? { onTeach } : {})}
             {...(replySeed ? { seed: replySeed } : {})}
+            {...(dictation ? { dictation } : {})}
           />
         </div>
         {layout.panel === PanelMode.Split && (agentPanel ?? panel)}

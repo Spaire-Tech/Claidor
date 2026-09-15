@@ -1955,3 +1955,51 @@ test and the shell pass; eslint, tsc, `compile:electron` clean.
 `agentBrowserHost.ts`, `agentBrowserSettle.ts` (+test),
 `agentBrowserSnapshot.ts` (+test), `useMessagesShell.ts`,
 `openclawConfigSync.runtime.test.ts`.
+
+## 47. Voice input, alive, on this computer — `built, proven on a clip, unrun with a microphone`
+
+The app's microphone asked our server for a recognition session that was
+NetEase's, and our server never had one, so speaking did nothing. The
+founder: *"do whisper.cpp first, voice input is dead."*
+
+**What it is now.** whisper.cpp's `whisper-server`, pinned at v1.8.3,
+built by `scripts/build-whisper.sh` (the macOS workflow runs it before
+packaging; a developer runs it once), shipped under
+`resources/whisper/<platform>-<arch>/`. The main process keeps it warm on
+a loopback port and asks it for text over HTTP; nothing leaves the
+computer and there is no quota. The model, `ggml-base.bin` (multilingual,
+148 MB), is not in the installer: the first press of the microphone
+fetches it once into the app's data directory, checks its SHA-1 against
+the value whisper.cpp publishes, and the composer shows the percent in
+place of "Listening" while it comes.
+
+**How it feels.** The composer's mic is the canvas's: empty draft, a
+microphone; press it and it turns the record red and the words appear in
+the draft as they are recognised; press again and the final text lands
+with the caret after it. Nothing is sent for the person. Whisper is not a
+streaming model, so "live" text is a fresh pass over the last twenty
+seconds every second and a half, and the real answer is one pass over
+everything on stop (`Dictation` in `main/speech/dictation.ts`, which also
+refuses to overlap passes and drops a partial that lands after stop).
+Two minutes is the cap; it is dictation, not a meeting recorder.
+
+**Proof.** The recogniser class itself, with the real binary built here
+and the tiny model, transcribed whisper.cpp's JFK sample end to end:
+*"And so my fellow Americans ask not what your country can do for you,
+ask what you can do for your country."* That is
+`whisperServer.live.test.ts`, which runs when the three environment
+variables point at a binary, a model and a clip, and says it skipped
+otherwise. The cadence logic has its own tests with a scripted clock;
+the path and response parsing too. tsc, eslint and `compile:electron`
+clean. **Not yet done with a microphone**: that needs a Mac with the
+binary built, which is the founder's next installer.
+
+**What is left of the old path.** The old shell's `useCoworkVoiceInput`
+still calls the dead route; it is not rendered and was not touched. The
+main-process handler for that route stays registered and harmless.
+
+**Where:** `shared/speech/constants.ts`, `main/speech/{dictation,whisperServer}.ts`
+(+tests), `main/ipcHandlers/speech/handlers.ts`, `main.ts`, `preload.ts`,
+`types/electron.d.ts`, `design/shell/{useDictation.ts,Composer.tsx,MessagesShell.tsx,CaisraApp.tsx}`,
+`scripts/build-whisper.sh`, `resources/whisper/README.md`,
+`electron-builder.json`, `.github/workflows/desktop_mac.yml`.

@@ -167,6 +167,12 @@ import type {
   SkinGetActiveResponse,
   SkinListResponse,
 } from '../../shared/skin/types';
+import type {
+  SpeechEvent,
+  SpeechStartResult,
+  SpeechStatus,
+  SpeechStopResult,
+} from '../../shared/speech/constants';
 import type { CoworkTempDirPreview } from './cowork';
 interface ApiResponse {
   ok: boolean;
@@ -1596,6 +1602,14 @@ interface IElectronAPI {
   };
   asr: {
     createRealtimeSession: (options: AsrRealtimeSessionRequest) => Promise<AsrRealtimeSessionResult>;
+  };
+  speech: {
+    status: () => Promise<SpeechStatus>;
+    start: () => Promise<SpeechStartResult>;
+    chunk: (sessionId: string, pcm16: Uint8Array) => void;
+    stop: (sessionId: string) => Promise<SpeechStopResult>;
+    cancel: (sessionId: string) => Promise<void>;
+    onEvent: (callback: (event: SpeechEvent) => void) => () => void;
   };
   artifact: {
     watchFile: (filePath: string) => Promise<void>;
