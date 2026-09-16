@@ -10,16 +10,12 @@ const full = (over: Partial<SettingsInput> = {}): SettingsInput => ({
   workingDirectory: '/Users/bass/Work',
   execPolicy: ExecPolicy.Ask,
   memoryEnabled: true,
-  modelChoice: 'openai',
-  modelApiKey: '',
   usage: { fraction: 0.5, value: '50%', desc: 'Ends in 6 days' },
   version: '2026.9.4',
   onSignOut: vi.fn(),
   onAddAccount: vi.fn(),
   onExecPolicy: vi.fn(),
   onMemory: vi.fn(),
-  onModelChoice: vi.fn(),
-  onModelApiKey: vi.fn(),
   onWorkingDirectory: vi.fn(),
   onRefreshUsage: vi.fn(),
   onCheckUpdates: vi.fn(),
@@ -96,7 +92,10 @@ describe('the map states nothing it cannot know', () => {
     expect(text).not.toMatch(/Version \d/);
     expect(text).not.toMatch(/OpenAI API key/);
     expect(text).toContain('the version this app is on');
-    expect(text).toContain("the chosen provider's API key");
+    // No models row and no key field exist any more; the map says so
+    // rather than describing a control the person cannot find.
+    expect(text).toContain('no API key field and no allowance choice');
+    expect(text).not.toMatch(/chosen provider/);
   });
 });
 

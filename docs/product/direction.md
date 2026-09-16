@@ -64,14 +64,43 @@ key. everything happens under the hood. not a setting."* And, on the
 Claude Code sign-in they had asked for: *"its for you to switch the
 mechanic in the code, but thats not visible to others."*
 
-Applied that day (`docs/product/review.md` item 53). The Settings
-screen's Models row offers the account's allowance and a person's own
-provider key — the one key a person may hold, because it is theirs and
-bills them — and nothing else. Claidor's Composio key is on the server
-(`polar/desktop/composio.py`) and the app has no field for it. Claude
-Code is a mechanic of a development build (`desktop/src/main/libs/claudeCodeMode.ts`),
-decided in code, logged at `[ClaudeCode]`, invisible on every screen.
-Anything a client would have to be told to type in is the wrong design.
+Applied that day (`docs/product/review.md` item 53) and finished the
+same evening (item 56), after the founder, again: *"i told you to
+remove that settings for api keys. or allowance or whatever that is."*
+Nothing about models is a setting. There is no Models row, no
+allowance choice, no key field of any kind: the account's models run
+through the metered proxy, Claidor's Composio key is on the server
+(`polar/desktop/composio.py`) and the app has no field for it, and
+Claude Code is a mechanic of a development build
+(`desktop/src/main/libs/claudeCodeMode.ts`), decided in code, logged at
+`[ClaudeCode]`, invisible on every screen. Anything a client would have
+to be told to type in is the wrong design.
+
+**Under Claude Code, every action still asks first.** Verified on the
+engine itself, 16 September (item 56): as shipped, the engine answered
+Claude Code's own `Write`, `Bash` and the rest with a flat denial under
+any policy that asks, and a flat allow under the policy that never
+does — no card either way. The engine patch
+`openclaw-claude-tools-ask-first.patch` makes those tools ask through
+the same card the engine's own tools use: a command as a command, a
+file as a file, anything else as itself.
+
+## 0c. The main agent is Yodo, the Chief of Staff
+
+16 September 2026, with the onboarding canvas: *"there is a cloud
+avatar, who's the chief of staff. his name is yodo. he's the main agent.
+his job is literally being a chief of staff."* And the goal the first
+step of onboarding works towards: *"the final goal is to have the chief
+of staff create the first agents for the user. i'll figure out the rest
+later. for now after get started it should take them to the chat."*
+
+Applied that day (`docs/product/review.md` item 55).
+`desktop/src/shared/agent/constants.ts` names him and carries his
+colours and seed; `chiefOfStaff.ts` is his brief, written into the main
+agent's managed instructions; the twelve role presets stay and the
+Chief of Staff preset is gone, because it was him. The first step of
+onboarding (`design/onboarding/`) is the canvas exactly, and the one
+small thing it does on the Mac is real.
 
 ---
 

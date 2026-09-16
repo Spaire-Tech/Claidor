@@ -3079,7 +3079,9 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(map).toContain('as it actually is');
     // Generated from settingsFor(), so the real row ids are in it.
     expect(map).toContain('`exec-policy`');
-    expect(map).toContain('`model-choice`');
+    // No models row exists (rows.ts, the note above the General tab), so
+    // the map must not send the agent to one.
+    expect(map).not.toContain('`model-choice`');
     expect(map).toContain('account button at the bottom of the sidebar');
   });
 

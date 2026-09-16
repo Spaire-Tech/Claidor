@@ -1,5 +1,5 @@
 import { AgentId } from '../../../shared/agent';
-import { avatarFallback } from '../../../shared/agent/avatars';
+import { agentAvatar, avatarFallback } from '../../../shared/agent/avatars';
 import type { Room } from '../../../shared/rooms/constants';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import type { EngineMessage, EnginePermissionRequest } from '../thread/fromEngine';
@@ -208,7 +208,7 @@ export function sidebarAgents(input: SidebarInput): SidebarAgent[] {
         row: {
           id: agent.id,
           name: agent.name,
-          avatar: agent.avatar ?? avatarFallback(agent.id),
+          avatar: agentAvatar(agent.id, agent.avatar),
           preview: standing.text,
           when: whenLabel(standing.at, now),
           unread: unread?.has(agent.id) ?? false,

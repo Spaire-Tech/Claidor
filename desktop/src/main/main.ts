@@ -280,6 +280,7 @@ import { registerEnterpriseAccountHandlers } from './ipcHandlers/enterpriseAccou
 import { registerKitHandlers } from './ipcHandlers/kits';
 import { registerMcpHandlers } from './ipcHandlers/mcp';
 import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
+import { registerOnboardingIpcHandlers } from './ipcHandlers/onboarding/handlers';
 import { registerPermissionIpcHandlers } from './ipcHandlers/permissions/handlers';
 import { registerPluginHandlers } from './ipcHandlers/plugins';
 import {
@@ -4460,6 +4461,8 @@ type AppConfigSettings = {
   usageAnalyticsEnabled?: boolean;
   notificationSettings?: Partial<NotificationSettings>;
   browserWebAccess?: Partial<BrowserWebAccessConfig>;
+  /** When the first step of onboarding was finished, so it plays once. */
+  onboardingDoneAt?: number;
 };
 
 const getUseSystemProxyFromConfig = (config?: { useSystemProxy?: boolean }): boolean => {
@@ -13337,6 +13340,10 @@ if (!gotTheLock) {
     fetchWithAuth,
     getServerApiBaseUrl,
   });
+
+  // The first step of onboarding: Yodo's three small tasks on this Mac
+  // (a riddle in Notes, the appearance switch; Messages not yet).
+  registerOnboardingIpcHandlers();
 
   // Speech recognition on this computer (whisper.cpp). The recogniser is
   // made once and brought up on the first dictation; its status events go

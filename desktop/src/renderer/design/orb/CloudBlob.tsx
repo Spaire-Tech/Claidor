@@ -4,6 +4,7 @@ import {
   avatarColors,
   type AvatarIndex,
   avatarSeed,
+  MAIN_AVATAR,
 } from '../../../shared/agent/avatars';
 
 /**
@@ -104,6 +105,9 @@ export function CloudBlob({
   const colors = avatarColors(avatar);
   const shape = useMemo(() => shapeFor(avatarSeed(avatar)), [avatar]);
   const awake = mood === BlobMood.Awake;
+  // Yodo is drawn without the shade under him: the onboarding canvas
+  // gives his cloud `noshade`, and he is the same cloud everywhere.
+  const shaded = avatar !== MAIN_AVATAR;
 
   const aria = label
     ? { role: 'img' as const, 'aria-label': label }
@@ -163,11 +167,13 @@ export function CloudBlob({
           </filter>
         </defs>
 
-        <ellipse
-          cx={102} cy={172} rx={46} ry={8} fill="#5b6478"
-          filter={`url(#blur-${uid})`}
-          style={{ animation: shade }}
-        />
+        {shaded && (
+          <ellipse
+            cx={102} cy={172} rx={46} ry={8} fill="#5b6478"
+            filter={`url(#blur-${uid})`}
+            style={{ animation: shade }}
+          />
+        )}
 
         <g style={{ transformOrigin: '100px 150px', animation: `${bob}, ${squish}` }}>
           <g mask={`url(#m-${uid})`} filter={`url(#soft-${uid})`}>

@@ -11,6 +11,8 @@ import { PRESET_AGENTS } from '../src/main/presetAgents';
 import { AgentDetail } from '../src/renderer/design/agent/AgentDetail';
 import { AgentTab } from '../src/renderer/design/agent/detail';
 import type { AgentDetailState } from '../src/renderer/design/agent/useAgentDetail';
+import { Onboarding } from '../src/renderer/design/onboarding/Onboarding';
+import type { OnboardingBridge } from '../src/renderer/design/onboarding/useOnboarding';
 import { Settings } from '../src/renderer/design/settings/Settings';
 import { AccountMenu } from '../src/renderer/design/shell/AccountMenu';
 import { Apps, AppsTab } from '../src/renderer/design/shell/Apps';
@@ -259,6 +261,20 @@ function Screens(): JSX.Element {
     return <SignIn onSignIn={noop} error="That did not go through. Try again?" />;
   }
   if (screen === 'arriving') return <Arriving />;
+  if (screen === 'onboarding') {
+    // Yodo's first step, with a Mac stood in for: the status says Notes
+    // and the appearance can be done, a run answers after a moment.
+    // `harness/onboarding-walk.mjs` walks it and photographs each stage.
+    const bridge: OnboardingBridge = {
+      status: async () => ({ platform: 'darwin', appearance: 'light', available: ['notes', 'appearance'] }),
+      runTask: async task => {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        return { ok: true, task, ref: task === 'appearance' ? 'dark' : 'x-coredata://harness/ICNote/p1' };
+      },
+      openResult: async () => undefined,
+    };
+    return <Onboarding userName="Bass" bridge={bridge} onDone={noop} />;
+  }
   if (screen === 'settings') {
     // The screen over a blank shell, with every row the app can draw
     // (`appUiMap.ts`'s fullest input). The select opens in a portal;

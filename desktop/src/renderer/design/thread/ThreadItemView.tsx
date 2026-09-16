@@ -1,6 +1,6 @@
 import { type CSSProperties, useState } from 'react';
 
-import { avatarFallback, avatarInk } from '../../../shared/agent/avatars';
+import { agentAvatar, avatarInk } from '../../../shared/agent/avatars';
 import { AskInputFieldKind } from '../../../shared/askInput/constants';
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
 import { logoUrl } from '../logos';
@@ -35,7 +35,7 @@ const enter = `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easi
 
 /** An agent's face by id, or a stable stand-in for an id the map lacks. */
 const avatarOf = (handlers: PartHandlers, agentId: string): number =>
-  handlers.avatars?.[agentId] ?? avatarFallback(agentId);
+  agentAvatar(agentId, handlers.avatars?.[agentId]);
 
 /** What the person may do with something named in a message. */
 export interface PartHandlers {

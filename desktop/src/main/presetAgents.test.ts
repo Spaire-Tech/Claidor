@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { isAvatarIndex } from '../shared/agent/avatars';
+import { CHIEF_OF_STAFF_BRIEF } from '../shared/agent/chiefOfStaff';
 import { VOICE_BRIEF } from '../shared/agent/voiceBrief';
 import { PRESET_AGENTS, presetToCreateRequest } from './presetAgents';
 
@@ -11,42 +12,29 @@ const SKILLS_DIR = path.resolve(__dirname, '../../SKILLs');
 
 describe('the twelve role agents, and the one that runs them', () => {
   test('there are twelve roles', () => {
-    expect(PRESET_AGENTS.filter(a => a.id !== 'chief-of-staff')).toHaveLength(12);
+    expect(PRESET_AGENTS).toHaveLength(12);
   });
 
-  test('the roles are the ones the plan names, with the coordinator first', () => {
-    // `direction.md` §6 names twelve. Chief of Staff is a thirteenth and
-    // is not one of them: it does no work of its own, it decides which of
-    // the twelve should. Added from `grok-bot.md` §3.2 rather than
-    // replacing anything, and recorded in §6.
+  test('the roles are the ones the plan names', () => {
+    // `direction.md` §6 names twelve. The chief of staff is not one of
+    // them: that is Yodo, the main agent (`shared/agent/chiefOfStaff.ts`).
     expect(PRESET_AGENTS.map(a => a.nameEn)).toEqual([
-      'Chief of Staff',
       'Engineering Lead', 'Design Lead', 'Operations Manager', 'Product Manager',
       'Head of People', 'Marketing Lead', 'Financial Controller', 'Account Executive',
       'Data Analyst', 'Support Specialist', 'In-house Counsel', 'Research Scientist',
     ]);
   });
 
-  test('the coordinator is told to check who exists before handing work out', () => {
-    // The failure mode is inventing a teammate, or handing something to
-    // an agent whose remit it is not — both of which look like work
-    // happening until somebody reads the result.
-    const chief = PRESET_AGENTS.find(a => a.id === 'chief-of-staff');
-    expect(chief?.systemPromptEn).toMatch(/Do not invent a teammate/);
-    expect(chief?.systemPromptEn).toMatch(/Hand over the whole task/);
-  });
-
-  test('the coordinator does not fan out by default', () => {
-    // Six answers to read and one decision still to make is worse than
-    // one answer.
-    const chief = PRESET_AGENTS.find(a => a.id === 'chief-of-staff');
-    expect(chief?.systemPromptEn).toMatch(/One at a time unless they asked otherwise/);
-  });
-
-  test('the coordinator interrupts for decisions, not for progress', () => {
-    const chief = PRESET_AGENTS.find(a => a.id === 'chief-of-staff');
-    expect(chief?.systemPromptEn).toMatch(/Interrupt them for decisions, not for progress/);
-    expect(chief?.systemPromptEn).toMatch(/Still working on it.* is not/);
+  test('there is no Chief of Staff preset: Yodo, the main agent, is the chief of staff', () => {
+    // The rules that preset carried live in `shared/agent/chiefOfStaff.ts`
+    // and go into the main agent's managed instructions.
+    expect(PRESET_AGENTS.find(a => a.id === 'chief-of-staff')).toBeUndefined();
+    expect(CHIEF_OF_STAFF_BRIEF).toMatch(/Your name is Yodo/);
+    expect(CHIEF_OF_STAFF_BRIEF).toMatch(/Do not invent a teammate/);
+    expect(CHIEF_OF_STAFF_BRIEF).toMatch(/Hand over the whole task/);
+    expect(CHIEF_OF_STAFF_BRIEF).toMatch(/One at a time unless they asked otherwise/);
+    expect(CHIEF_OF_STAFF_BRIEF).toMatch(/Interrupt them for decisions, not for progress/);
+    expect(CHIEF_OF_STAFF_BRIEF).toMatch(/Still working on it.* is not/);
   });
 
   test('every named skill is a skill that exists', () => {

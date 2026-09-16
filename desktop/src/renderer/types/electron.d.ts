@@ -114,6 +114,11 @@ import type {
   LocalWebService,
 } from '../../shared/localWebServices/constants';
 import type {
+  OnboardingRunResult,
+  OnboardingStatus,
+  OnboardingTask,
+} from '../../shared/onboarding/constants';
+import type {
   OpenClawEngineErrorCode,
   OpenClawEnginePhase as SharedOpenClawEnginePhase,
   OpenClawGatewayRepairErrorCode,
@@ -1610,6 +1615,11 @@ interface IElectronAPI {
     stop: (sessionId: string) => Promise<SpeechStopResult>;
     cancel: (sessionId: string) => Promise<void>;
     onEvent: (callback: (event: SpeechEvent) => void) => () => void;
+  };
+  onboarding: {
+    status: () => Promise<OnboardingStatus>;
+    runTask: (task: OnboardingTask) => Promise<OnboardingRunResult>;
+    openResult: (task: OnboardingTask, ref: string) => Promise<void>;
   };
   artifact: {
     watchFile: (filePath: string) => Promise<void>;

@@ -6,6 +6,7 @@ import path from 'path';
 import { buildScheduledTaskEnginePrompt } from '../../scheduledTask/enginePrompt';
 import { AgentId, DefaultAgentProfile } from '../../shared/agent';
 import { avatarFallback } from '../../shared/agent/avatars';
+import { CHIEF_OF_STAFF_BRIEF } from '../../shared/agent/chiefOfStaff';
 import {
   ASK_INPUT_MCP_SERVER,
   ASK_INPUT_TOOL,
@@ -4346,6 +4347,11 @@ export class OpenClawConfigSync {
 
       // Skills are now loaded by OpenClaw natively via skills.load.extraDirs
       // in openclaw.json, so we no longer embed the skills routing prompt here.
+
+      // The main agent is Yodo, the Chief of Staff, and is told so
+      // before anything else. The other agents get their identity from
+      // their own row; his is the product's.
+      if (agentId === AgentId.Main) sections.push(CHIEF_OF_STAFF_BRIEF);
 
       // First, because it is about every message rather than one tool,
       // and because a model that reads the tool policies first tends to

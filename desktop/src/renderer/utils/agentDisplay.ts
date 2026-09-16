@@ -19,6 +19,8 @@ export const isDefaultAgentProfileName = (agent: Pick<AgentDisplaySource, 'id' |
     || normalizedName === LegacyAgentName.Main
     // Upstream's name, for a row the startup migration has not reached yet.
     || normalizedName === LegacyAgentName.Upstream
+    || normalizedName === LegacyAgentName.Faiser
+    || normalizedName === LegacyAgentName.Caisra
     || normalizedName === DefaultAgentProfile.Name.toLowerCase();
 };
 

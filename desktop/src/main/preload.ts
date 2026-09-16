@@ -96,6 +96,12 @@ import {
   LocalWebServicesIpc,
 } from '../shared/localWebServices/constants';
 import { McpIpcChannel } from '../shared/mcp/constants';
+import {
+  OnboardingIpc,
+  type OnboardingRunResult,
+  type OnboardingStatus,
+  type OnboardingTask,
+} from '../shared/onboarding/constants';
 import { OpenClawEngineIpc } from '../shared/openclawEngine/constants';
 import { PermissionIpcChannel } from '../shared/permissions/constants';
 import type { Platform } from '../shared/platform';
@@ -1077,6 +1083,11 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.on(SpeechIpc.Event, handler);
       return () => ipcRenderer.removeListener(SpeechIpc.Event, handler);
     },
+  },
+  onboarding: {
+    status: (): Promise<OnboardingStatus> => ipcRenderer.invoke(OnboardingIpc.Status),
+    runTask: (task: OnboardingTask): Promise<OnboardingRunResult> => ipcRenderer.invoke(OnboardingIpc.RunTask, task),
+    openResult: (task: OnboardingTask, ref: string): Promise<void> => ipcRenderer.invoke(OnboardingIpc.OpenResult, task, ref),
   },
   artifact: {
     watchFile: (filePath: string) => ipcRenderer.invoke('artifact:watchFile', filePath),

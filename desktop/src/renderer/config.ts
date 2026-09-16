@@ -123,6 +123,11 @@ export interface AppConfig {
    * key here: Claidor's key is on the server, never in the app.
    */
   composioConnected?: string[];
+  /**
+   * When Yodo's first step of onboarding was finished (`Get Started`),
+   * so it plays once per install. Absent means it has not.
+   */
+  onboardingDoneAt?: number;
   // 主题配置
   theme: 'light' | 'dark' | 'system';
   // Optional for configs created before exact default theme persistence was introduced.

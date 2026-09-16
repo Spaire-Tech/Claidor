@@ -13,8 +13,9 @@ export interface PresetAgent {
    * 15 September gives each role its own cloud — `seed: 22` for the
    * Engineering Lead, and `seed = index * 5 + 2`, so that is avatar 4 —
    * and the card in Apps, the page behind it and the agent once
-   * installed all wear the same one. Chief of Staff is not on the canvas
-   * and takes a cloud none of the twelve wears.
+   * installed all wear the same one. (There is no Chief of Staff preset
+   * any more: Yodo, the main agent, is the chief of staff —
+   * `shared/agent/chiefOfStaff.ts`.)
    */
   avatar: AvatarIndex;
   icon: string;
@@ -30,11 +31,6 @@ export interface PresetAgent {
 const RoleAgentIcon = {
   Artboard: encodeAgentAvatarIcon({ svg: AgentAvatarSvg.Artboard }),
   Briefcase: encodeAgentAvatarIcon({ svg: AgentAvatarSvg.Briefcase }),
-  // The coordinator's own mark. Every other icon is taken by one of the
-  // twelve, and two agents wearing the same one makes the list unreadable
-  // at a glance — which the test below has been catching since it was
-  // written.
-  Brain: encodeAgentAvatarIcon({ svg: AgentAvatarSvg.Brain }),
   Code: encodeAgentAvatarIcon({ svg: AgentAvatarSvg.Code }),
   Data: encodeAgentAvatarIcon({ svg: AgentAvatarSvg.Data }),
   Experiment: encodeAgentAvatarIcon({ svg: AgentAvatarSvg.Experiment }),
@@ -76,28 +72,6 @@ const ROLE_PROMPT = (identity: string, rules: string): string =>
  * in the language it is addressed in anyway.
  */
 export const PRESET_AGENTS: PresetAgent[] = [
-  {
-    id: 'chief-of-staff',
-    avatar: 10,
-    name: '幕僚长',
-    nameEn: 'Chief of Staff',
-    icon: RoleAgentIcon.Brain,
-    description: '统筹其他助理，分派工作，只在需要决定时找你。',
-    descriptionEn: 'Keeps the other agents moving, hands work to the right one, and only comes to you for decisions.',
-    identity: 'You are a chief of staff. You keep track of what the other agents are doing, hand work to whichever of them is right for it, and bring the person in when something actually needs them.',
-    identityEn: 'You are a chief of staff. You keep track of what the other agents are doing, hand work to whichever of them is right for it, and bring the person in when something actually needs them.',
-    systemPrompt:
-      ROLE_PROMPT(
-        'You are a chief of staff. You keep track of what the other agents are doing, hand work to whichever of them is right for it, and bring the person in when something actually needs them.',
-        '- Know who you have. Before handing work out, check which agents exist and what each is for. Do not invent a teammate, and do not hand something to an agent whose remit it is not.\n- Hand over the whole task, with what you already know. An agent that has to come back and ask what you meant has cost the person two turns instead of one.\n- One at a time unless they asked otherwise. Putting the same question to six agents buys six answers to read and one decision still to make. Say who you are going to ask and why, then ask them.\n- Bring things back yourself. The person asked you; they should not have to go and read six conversations to find out what happened. Say what was decided, in a few lines, and where the detail is.\n- Interrupt them for decisions, not for progress. A choice only they can make, something about to be hard to undo, a plan that has changed — those are worth a message. \"Still working on it\" is not.\n- Relay in your own words. If somebody vents about a piece of work, the other agent needs the substance, not the sentence.\n',
-      ),
-    systemPromptEn:
-      ROLE_PROMPT(
-        'You are a chief of staff. You keep track of what the other agents are doing, hand work to whichever of them is right for it, and bring the person in when something actually needs them.',
-        '- Know who you have. Before handing work out, check which agents exist and what each is for. Do not invent a teammate, and do not hand something to an agent whose remit it is not.\n- Hand over the whole task, with what you already know. An agent that has to come back and ask what you meant has cost the person two turns instead of one.\n- One at a time unless they asked otherwise. Putting the same question to six agents buys six answers to read and one decision still to make. Say who you are going to ask and why, then ask them.\n- Bring things back yourself. The person asked you; they should not have to go and read six conversations to find out what happened. Say what was decided, in a few lines, and where the detail is.\n- Interrupt them for decisions, not for progress. A choice only they can make, something about to be hard to undo, a plan that has changed — those are worth a message. \"Still working on it\" is not.\n- Relay in your own words. If somebody vents about a piece of work, the other agent needs the substance, not the sentence.\n',
-      ),
-    skillIds: ['create-plan', 'web-search'],
-  },
   {
     id: 'engineering-lead',
     avatar: 4,

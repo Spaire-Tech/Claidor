@@ -93,11 +93,12 @@ export class OpenClawApprovalController {
   handleExecApprovalRequested(payload: unknown): void {
     const approval = parseExecApprovalRequestedPayload(payload);
     if (!approval) return;
-    const { command, fileAccess, request, requestId, sessionKey, shouldAutoApprove } = approval;
+    const { claudeTool, command, fileAccess, request, requestId, sessionKey, shouldAutoApprove } = approval;
     // A file tool's request resolves through the same gateway method as a
     // command's, but the tool waits for the answer inside the turn, so it
     // gets no continuation prompt afterwards (see PendingApprovalEntry).
-    const kind = fileAccess ? 'file' : 'exec';
+    // One of Claude Code's own tools waits the same way.
+    const kind = fileAccess ? 'file' : claudeTool ? 'claude' : 'exec';
     const sessionId = this.options.resolveSessionId(sessionKey);
 
     if (!sessionId) {
@@ -138,7 +139,7 @@ export class OpenClawApprovalController {
 
     this.options.emitPermissionRequest(
       sessionId,
-      buildExecApprovalPermissionRequest(requestId, request, command, fileAccess),
+      buildExecApprovalPermissionRequest(requestId, request, command, fileAccess, claudeTool),
     );
   }
 
