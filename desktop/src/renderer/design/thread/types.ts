@@ -134,6 +134,12 @@ export interface AuthItem {
    * about files rather than commands.
    */
   access?: 'read' | 'write';
+  /**
+   * Set when the card is Yodo asking to stand up an agent: `command` then
+   * holds the brief, the disclosure says so, and the buttons are Stand up
+   * and Not now. There is no "always" for a teammate.
+   */
+  staffing?: boolean;
   at: number;
 }
 

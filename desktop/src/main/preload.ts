@@ -144,6 +144,11 @@ import {
   type SpeechStatus,
   type SpeechStopResult,
 } from '../shared/speech/constants';
+import {
+  type CreateAgentAnswer,
+  type CreateAgentAsk,
+  CreateAgentIpc,
+} from '../shared/staffing/constants';
 import { NimQrLoginIpc } from './ipcHandlers/nimQrLogin';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
@@ -895,6 +900,25 @@ contextBridge.exposeInMainWorld('electron', {
     },
     respond: (requestId: string, response: AskInputResponse) =>
       ipcRenderer.invoke(AskInputIpc.Respond, requestId, response),
+  },
+  createAgent: {
+    onRequested: (callback: (ask: CreateAgentAsk) => void) => {
+      const handler = (_event: unknown, ask: CreateAgentAsk) => callback(ask);
+      ipcRenderer.on(CreateAgentIpc.Requested, handler);
+      return () => ipcRenderer.removeListener(CreateAgentIpc.Requested, handler);
+    },
+    onDismissed: (callback: (data: { requestId: string }) => void) => {
+      const handler = (_event: unknown, data: { requestId: string }) => callback(data);
+      ipcRenderer.on(CreateAgentIpc.Dismissed, handler);
+      return () => ipcRenderer.removeListener(CreateAgentIpc.Dismissed, handler);
+    },
+    onCreated: (callback: (data: { agentId: string }) => void) => {
+      const handler = (_event: unknown, data: { agentId: string }) => callback(data);
+      ipcRenderer.on(CreateAgentIpc.Created, handler);
+      return () => ipcRenderer.removeListener(CreateAgentIpc.Created, handler);
+    },
+    respond: (requestId: string, answer: CreateAgentAnswer) =>
+      ipcRenderer.invoke(CreateAgentIpc.Respond, requestId, answer),
   },
   settings: {
     getExecPolicy: () => ipcRenderer.invoke(SettingsChannel.GetExecPolicy),

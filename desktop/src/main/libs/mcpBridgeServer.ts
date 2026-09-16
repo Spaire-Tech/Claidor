@@ -31,6 +31,16 @@ import {
   type AskInputResponse,
   describeResponse,
 } from '../../shared/askInput/constants';
+import {
+  CREATE_AGENT_ROUTE,
+  CREATE_AGENT_TIMEOUT_MS,
+  type CreateAgentAnswer,
+  type CreateAgentAsk,
+  CreateAgentBehavior,
+  type CreateAgentInput,
+  type CreateAgentResult,
+  parseCreateAgentInput,
+} from '../../shared/staffing/constants';
 
 export type AskUserRequest = {
   requestId: string;
@@ -61,6 +71,17 @@ type PendingAskInput = {
   resolve: (response: AskInputResponse) => void;
   timer: ReturnType<typeof setTimeout>;
 };
+
+type PendingCreateAgent = {
+  requestId: string;
+  resolve: (answer: CreateAgentAnswer) => void;
+  timer: ReturnType<typeof setTimeout>;
+};
+
+/** Who actually creates the agent once the person has said yes. */
+export type CreateAgentPerformer = (
+  input: CreateAgentInput,
+) => Promise<{ agentId: string; name: string }>;
 
 export type MediaGenerationRequest = {
   tool: string;
@@ -97,6 +118,10 @@ export class McpBridgeServer {
   private onAskInputCallback: ((request: AskInputRequest) => void) | null = null;
   private onAskInputDismissCallback: ((requestId: string) => void) | null = null;
   private readonly pendingAskInput = new Map<string, PendingAskInput>();
+  private onCreateAgentCallback: ((ask: CreateAgentAsk) => void) | null = null;
+  private onCreateAgentDismissCallback: ((requestId: string) => void) | null = null;
+  private createAgentPerformer: CreateAgentPerformer | null = null;
+  private readonly pendingCreateAgent = new Map<string, PendingCreateAgent>();
   private onAskUserDismissCallback: ((requestId: string) => void) | null = null;
   private onMediaGenerationCallback: ((request: MediaGenerationRequest) => Promise<MediaGenerationResponse>) | null = null;
   private onBrowserToolCallback: ((request: BrowserToolRequest) => Promise<BrowserToolResponse>) | null = null;
@@ -169,6 +194,37 @@ export class McpBridgeServer {
     this.pendingAskInput.delete(requestId);
     log('INFO', `AskInput resolved, requestId=${requestId} ${describeResponse(response)}`);
     pending.resolve(response);
+  }
+
+  get createAgentCallbackUrl(): string | null {
+    return this._port ? `http://127.0.0.1:${this._port}${CREATE_AGENT_ROUTE}` : null;
+  }
+
+  /**
+   * Standing up an agent, in three parts: the card (`onCreateAgent`,
+   * `resolveCreateAgent`), what happens once the person has said yes
+   * (`setCreateAgentPerformer`), and the card coming down
+   * (`onCreateAgentDismiss`). The tool waits on the whole of it.
+   */
+  onCreateAgent(callback: (ask: CreateAgentAsk) => void): void {
+    this.onCreateAgentCallback = callback;
+  }
+
+  onCreateAgentDismiss(callback: (requestId: string) => void): void {
+    this.onCreateAgentDismissCallback = callback;
+  }
+
+  setCreateAgentPerformer(performer: CreateAgentPerformer): void {
+    this.createAgentPerformer = performer;
+  }
+
+  resolveCreateAgent(requestId: string, answer: CreateAgentAnswer): void {
+    const pending = this.pendingCreateAgent.get(requestId);
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    this.pendingCreateAgent.delete(requestId);
+    log('INFO', `CreateAgent answered, requestId=${requestId} behavior=${answer.behavior}`);
+    pending.resolve(answer);
   }
 
   /**
@@ -312,6 +368,11 @@ export class McpBridgeServer {
       return;
     }
 
+    if (req.url?.startsWith(CREATE_AGENT_ROUTE)) {
+      await this.handleCreateAgent(req, res);
+      return;
+    }
+
     if (req.url?.startsWith('/media-generation/tool')) {
       await this.handleMediaGeneration(req, res);
       return;
@@ -390,6 +451,70 @@ export class McpBridgeServer {
    * which of them are masked. The prompt may name a service; the values
    * never appear here at all.
    */
+  /**
+   * A tool asking to stand up an agent.
+   *
+   * The card goes up and the request waits on the answer, like a file
+   * access does: the tool is blocked inside its turn. On Stand up, the
+   * performer creates the agent and the tool is told its id; on Not now,
+   * or after five minutes, the tool is told the person declined. Nothing
+   * is created without the press.
+   */
+  private async handleCreateAgent(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const answer = (status: number, result: CreateAgentResult): void => {
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    };
+    try {
+      const body = await this.readBody(req);
+      const parsed = parseCreateAgentInput(JSON.parse(body));
+      if (typeof parsed === 'string') {
+        answer(400, { behavior: 'failed', reason: parsed });
+        return;
+      }
+      if (!this.onCreateAgentCallback || !this.createAgentPerformer) {
+        // No window to draw the card in, or nobody to create the agent.
+        // Declining is the only honest answer; the tool's turn would
+        // otherwise sit waiting.
+        log('WARN', 'CreateAgent callback or performer not registered, declining');
+        answer(200, { behavior: 'declined' });
+        return;
+      }
+
+      const requestId = crypto.randomUUID();
+      log('INFO', `CreateAgent request, requestId=${requestId} name=${serializeForLog(parsed.name)}`);
+
+      const decision = await new Promise<CreateAgentAnswer>((resolve) => {
+        const timer = setTimeout(() => {
+          log('INFO', `CreateAgent timeout, requestId=${requestId}`);
+          this.pendingCreateAgent.delete(requestId);
+          this.onCreateAgentDismissCallback?.(requestId);
+          resolve({ behavior: CreateAgentBehavior.Decline });
+        }, CREATE_AGENT_TIMEOUT_MS);
+        this.pendingCreateAgent.set(requestId, { requestId, resolve, timer });
+        this.onCreateAgentCallback?.({ requestId, ...parsed });
+      });
+
+      if (decision.behavior !== CreateAgentBehavior.Allow) {
+        answer(200, { behavior: 'declined' });
+        return;
+      }
+      try {
+        const created = await this.createAgentPerformer(parsed);
+        log('INFO', `CreateAgent created, requestId=${requestId} agentId=${created.agentId}`);
+        answer(200, { behavior: 'created', agentId: created.agentId, name: created.name });
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        log('ERROR', `CreateAgent failed, requestId=${requestId}: ${reason}`);
+        answer(200, { behavior: 'failed', reason });
+      }
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      log('ERROR', `CreateAgent request error: ${errMsg}`);
+      answer(500, { behavior: 'failed', reason: 'The request could not be read.' });
+    }
+  }
+
   private async handleAskInput(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     try {
       const body = await this.readBody(req);

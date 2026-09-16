@@ -9,6 +9,11 @@ import {
 } from '../../shared/askInput/constants';
 import { ASK_USER_QUESTION_TOOL_NAME, SESSION_AGNOSTIC_PERMISSION_SESSION_ID } from '../../shared/cowork/constants';
 import { McpIpcChannel } from '../../shared/mcp/constants';
+import {
+  type CreateAgentAnswer,
+  CreateAgentBehavior,
+  CreateAgentIpc,
+} from '../../shared/staffing/constants';
 import { isComputerUseKitInstalled } from '../computerUse/computerUseKit';
 import { resolveComputerUseMcpServer } from '../computerUse/computerUseMcpServer';
 import { installComputerUseRuntime } from '../computerUse/computerUseRuntime';
@@ -18,6 +23,7 @@ import {
   type AskUserResponse,
   type BrowserToolRequest,
   type BrowserToolResponse,
+  type CreateAgentPerformer,
   McpBridgeServer,
   type MediaGenerationRequest,
   type MediaGenerationResponse,
@@ -58,6 +64,7 @@ export class McpRuntime {
   private browserToolHandler:
     | ((request: BrowserToolRequest) => Promise<BrowserToolResponse>)
     | null = null;
+  private createAgentPerformer: CreateAgentPerformer | null = null;
 
   constructor(private readonly deps: McpRuntimeDeps) {}
 
@@ -118,6 +125,21 @@ export class McpRuntime {
 
   getAskInputCallbackUrl(): string | null {
     return this.bridgeServer?.askInputCallbackUrl ?? null;
+  }
+
+  getCreateAgentCallbackUrl(): string | null {
+    return this.bridgeServer?.createAgentCallbackUrl ?? null;
+  }
+
+  /** Who creates the agent once the person has pressed Stand up. */
+  setCreateAgentPerformer(performer: CreateAgentPerformer): void {
+    this.createAgentPerformer = performer;
+    this.bridgeServer?.setCreateAgentPerformer(performer);
+  }
+
+  /** Stand up, or Not now, from the card. */
+  resolveCreateAgent(requestId: string, answer: CreateAgentAnswer): void {
+    this.bridgeServer?.resolveCreateAgent(requestId, answer);
   }
 
   getBridgeSecret(): string {
@@ -230,6 +252,40 @@ export class McpRuntime {
         }
       });
     });
+
+    // The card asking whether to stand up an agent. Every window, like
+    // ask-input: it is a person being asked, wherever they are looking.
+    this.bridgeServer.onCreateAgent(ask => {
+      const windows = BrowserWindow.getAllWindows();
+      if (windows.length === 0) {
+        console.warn('[CreateAgent] no window open, declining');
+        this.resolveCreateAgent(ask.requestId, { behavior: CreateAgentBehavior.Decline });
+        return;
+      }
+      windows.forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(CreateAgentIpc.Requested, ask);
+        } catch (error) {
+          console.error('[CreateAgent] failed to send request to window:', error);
+        }
+      });
+    });
+
+    this.bridgeServer.onCreateAgentDismiss(requestId => {
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(CreateAgentIpc.Dismissed, { requestId });
+        } catch {
+          // The window is going away; the card goes with it.
+        }
+      });
+    });
+
+    if (this.createAgentPerformer) {
+      this.bridgeServer.setCreateAgentPerformer(this.createAgentPerformer);
+    }
 
     this.bridgeServer.onMediaGeneration(async (request) => {
       if (!this.mediaGenerationHandler) {

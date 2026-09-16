@@ -2791,3 +2791,70 @@ conversation, through the same ask-first card as everything else.
 **Not built.** Nothing in the app changed. Still needed before step two:
 the canvas for it, the 23 as kits (item 57), the Slack decision, and the
 create-agent tool.
+
+## 59. Yodo can stand up an agent — `built; the app itself unrun`
+
+The founder, on item 58: *"i agree. Yodo cannot create an agent. -
+first sting to build."* Their product and onboarding page arrived the
+same evening (`docs/product/onboarding-step-two-2026-09-16.md`, kept
+verbatim) and is the source of truth for what follows.
+
+**What was built.** A tool, `create_agent`, on a stdio MCP server of
+the app's own (`caisra-staffing`, `main/libs/createAgentMcpServer.ts`),
+the same shape as the ask-input tool of item 30 and registered with the
+engine the same way. Yodo calls it with a name, a label, a one-sentence
+job, at least one anti-job, and optionally a voice. The bridge
+(`mcpBridgeServer.ts`, route `/create-agent`) raises the permission card
+in the thread — "Allow Yodo to continue — standing up Projects Manager,
+Project ops?", the job under it, the brief behind "Show the brief", and
+two buttons, Stand up and Not now; there is no "always" for a teammate.
+The tool waits on the press inside its turn. On Stand up, main creates
+the agent by the create screen's own path (`agentManager`, then the
+engine config sync, awaited, so the engine knows the agent before the
+tool is told its id), tells every window so the sidebar shows it, and
+the tool returns "Projects Manager is in, as agent …". On Not now the
+tool is told plainly and told not to ask again for that agent. After
+five minutes with no press the card comes down and the tool is told the
+same. A brief with no anti-jobs never reaches the card.
+
+The agent's instructions come from the brief in one fixed shape
+(`shared/staffing/constants.ts`, `buildAgentInstructions`): the job,
+what it does not do, how it sounds, and the standing rule — draft by
+default, never send, post or spend without a yes, hand back what is not
+its job. Yodo's own brief (`chiefOfStaff.ts`) gains one rule naming the
+tool and its limits: never more than asked for, never for something he
+can do himself now, and when one is in, say so in a line and brief it.
+
+**What it is not, yet.** The 23 as kits (item 57): today the brief is
+Yodo's words from the anatomy, not an installed package with skills and
+connectors. The roster card of step two, "Your starter team" with Swap
+one / Just two / Add a third: not built; the tool is what it calls. Any
+agent can call the tool, not only Yodo; the card names who asked and the
+person decides, and limiting it to the main agent in the engine's tool
+policy is a follow-up.
+
+**Proof.** 130 tests across the touched files: the contract (what is
+accepted, what is cut, what the instructions and the brief say), the
+server written to disk and its permissions, the server spawned and
+spoken to over stdio against a real HTTP bridge (list, a create that
+comes back with the id, a decline as a decision, a failure with its
+reason, a brief with no anti-jobs refused before the bridge), the bridge
+route itself (card up, Stand up creates, Not now creates nothing, bad
+brief never shown, nobody to draw it means declined), the engine
+registration with only its one tool and Yodo told about it, and the
+card's routing (a staffing card answers the staffing bridge, an engine
+card the engine). tsc, eslint, `compile:electron` clean. The harness
+draws the card (`?screen=staffing`) and a scripted press count finds
+Stand up, Not now and no Always allow.
+
+**Unrun:** the app. Yodo calling the tool through the engine on the
+founder's Mac, the card appearing in the live thread, the agent
+appearing in the sidebar. Log lines: the bridge's `CreateAgent request,
+requestId=… name=…`, `CreateAgent answered … behavior=allow|decline`,
+then `[Staffing] stood up agent id=… name=…`.
+
+**Where:** `shared/staffing/constants.ts` (+test), `main/libs/createAgentMcpServer.ts` (+2 tests),
+`main/libs/mcpBridgeServer.ts` (+test), `main/mcp/mcpRuntime.ts`, `main/main.ts`,
+`main/libs/openclawConfigSync.ts` (+runtime test), `main/preload.ts`, `renderer/types/electron.d.ts`,
+`design/thread/{staffingCards.ts,useCreateAgent.ts,types.ts,ThreadItemView.tsx}` (+test),
+`design/shell/CaisraApp.tsx`, `shared/agent/chiefOfStaff.ts`, `harness/main.tsx`.

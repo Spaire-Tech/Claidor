@@ -212,6 +212,11 @@ import {
 import type { ShellOpenFailureReason as ShellOpenFailureReasonType } from '../shared/shell/constants';
 import { type ShellGetBrowserAppsInput, ShellIpc, ShellOpenFailureReason } from '../shared/shell/constants';
 import { SpeechEventKind, SpeechIpc } from '../shared/speech/constants';
+import {
+  buildAgentInstructions,
+  type CreateAgentAnswer,
+  CreateAgentIpc,
+} from '../shared/staffing/constants';
 import { AgentManager } from './agentManager';
 import {
   APP_HOME_DIR_NAME,
@@ -370,6 +375,7 @@ import {
   getElectronNodeRuntimePath,
   probeCoworkModelReadiness,
 } from './libs/coworkUtil';
+import { resolveCreateAgentMcpStdioLaunch } from './libs/createAgentMcpServer';
 import {
   assertDataMigrationSqliteSnapshotMatchesLiveSync,
   buildDataMigrationBackupFileName,
@@ -2714,6 +2720,19 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         const bridgeUrl = mcpRuntime.getAskInputCallbackUrl();
         if (!bridgeUrl) return null;
         return resolveAskInputMcpStdioLaunch(
+          path.join(getOpenClawEngineManager().getStateDir(), 'generated'),
+          {
+            electronNodeRuntimePath: getElectronNodeRuntimePath(),
+            bridgeUrl,
+            bridgeSecret: mcpRuntime.getBridgeSecret(),
+          },
+        );
+      },
+      getCreateAgentMcpStdioLaunch: () => {
+        const mcpRuntime = getMcpRuntime();
+        const bridgeUrl = mcpRuntime.getCreateAgentCallbackUrl();
+        if (!bridgeUrl) return null;
+        return resolveCreateAgentMcpStdioLaunch(
           path.join(getOpenClawEngineManager().getStateDir(), 'generated'),
           {
             electronNodeRuntimePath: getElectronNodeRuntimePath(),
@@ -6661,6 +6680,37 @@ if (!gotTheLock) {
   };
 
   getMcpRuntime().setMediaGenerationHandler(handleMediaGenerationCallback);
+
+  // Standing up an agent once the person has pressed Stand up on the card.
+  // The same path as the create screen (`ipcHandlers/agents/handlers.ts`):
+  // the store, then the engine config, so the engine knows the agent
+  // before the tool that asked is told its id. The renderer is told too,
+  // so the sidebar shows the new agent without anybody pressing anything.
+  getMcpRuntime().setCreateAgentPerformer(async (input) => {
+    const agent = getAgentManager().createAgent(
+      {
+        name: input.name,
+        label: input.label,
+        description: input.job,
+        systemPrompt: buildAgentInstructions(input),
+      },
+      resolveDefaultAgentModelRef(),
+    );
+    const synced = await syncOpenClawConfig({ reason: 'agent-created' });
+    if (!synced.success) {
+      console.error('[Staffing] config sync after standing up an agent failed:', synced.error);
+    }
+    console.log(`[Staffing] stood up agent id=${agent.id} name=${JSON.stringify(agent.name)}`);
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (win.isDestroyed()) return;
+      try {
+        win.webContents.send(CreateAgentIpc.Created, { agentId: agent.id });
+      } catch {
+        // The window is going away.
+      }
+    });
+    return { agentId: agent.id, name: agent.name };
+  });
 
   const registerMediaTaskForPolling = (tracker: MediaTaskTracker) => {
     rememberMediaTaskOwnership(tracker.ownerAccountKey, tracker.taskId);
@@ -13143,6 +13193,17 @@ if (!gotTheLock) {
     (_event, requestId: string, response: AskInputResponse) => {
       if (typeof requestId !== 'string' || !requestId) return;
       getMcpRuntime().resolveAskInput(requestId, response);
+    },
+  );
+
+  // Stand up, or Not now, from the card Yodo raised to create an agent.
+  // The answer goes to the bridge's pending promise; the tool that asked
+  // is waiting on it inside its turn.
+  ipcMain.handle(
+    CreateAgentIpc.Respond,
+    (_event, requestId: string, answer: CreateAgentAnswer) => {
+      if (typeof requestId !== 'string' || !requestId) return;
+      getMcpRuntime().resolveCreateAgent(requestId, answer);
     },
   );
 

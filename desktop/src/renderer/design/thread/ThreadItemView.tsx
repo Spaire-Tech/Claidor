@@ -598,7 +598,11 @@ function AuthCard(
                 transition: `transform ${motion.hover.duration} ${motion.hover.easing}`,
               }}
             />
-            <span>{open ? 'Hide the command' : 'Show the command'}</span>
+            <span>
+              {item.staffing
+                ? (open ? 'Hide the brief' : 'Show the brief')
+                : (open ? 'Hide the command' : 'Show the command')}
+            </span>
           </button>
           {open && (
             <div
@@ -617,9 +621,20 @@ function AuthCard(
       )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '15px 0 0 24px' }}>
-        {button('Always allow', 'always', true)}
-        {button('Allow once', 'once')}
-        {button('Never', 'never')}
+        {item.staffing
+          ? (
+            <>
+              {button('Stand up', 'once', true)}
+              {button('Not now', 'never')}
+            </>
+          )
+          : (
+            <>
+              {button('Always allow', 'always', true)}
+              {button('Allow once', 'once')}
+              {button('Never', 'never')}
+            </>
+          )}
       </div>
     </div>
   );

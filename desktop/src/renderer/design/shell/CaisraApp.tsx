@@ -14,7 +14,9 @@ import { electronOnboardingBridge } from '../onboarding/useOnboarding';
 import { ComputerPanel } from '../panel/ComputerPanel';
 import { Settings } from '../settings/Settings';
 import { useSettings } from '../settings/useSettings';
+import { composeAuthHandlers } from '../thread/staffingCards';
 import { useAskInput } from '../thread/useAskInput';
+import { useCreateAgent } from '../thread/useCreateAgent';
 import { supportMailto } from './account';
 import { AccountMenu } from './AccountMenu';
 import { Apps } from './Apps';
@@ -68,6 +70,13 @@ export function CaisraApp(): JSX.Element {
   // than inside them: a password prompt is not a message, and it must not
   // scroll back into view a week later with an empty box.
   const askInput = useAskInput();
+  // Yodo asking to stand up an agent: the permission card, answered
+  // through the staffing bridge rather than the engine's approval.
+  const staffing = useCreateAgent(shell.activeName);
+  const auth = useMemo(
+    () => composeAuthHandlers(shell.auth, { onDecide: staffing.onDecide }),
+    [shell.auth, staffing.onDecide],
+  );
   const connections = useConnections(shell.appsOpen);
 
   // `nickname` is the only display name the profile carries; everything
@@ -137,13 +146,13 @@ export function CaisraApp(): JSX.Element {
       activeName={shell.activeName}
       activeAvatar={shell.activeAvatar}
       wornAvatars={shell.wornAvatars}
-      items={[...shell.items, ...askInput.items]}
+      items={[...shell.items, ...askInput.items, ...staffing.items]}
       dayStamp={shell.dayStamp}
       typing={shell.typing}
       mode={shell.mode}
       accountName={accountName}
       choice={shell.choice}
-      auth={shell.auth}
+      auth={auth}
       parts={shell.parts}
       secret={askInput.handlers}
       onSelect={shell.onSelect}

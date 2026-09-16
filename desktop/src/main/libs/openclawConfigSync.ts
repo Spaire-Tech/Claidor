@@ -62,6 +62,10 @@ import {
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
 import { APP_UI_MAP_PATH, buildAppUiMap } from '../../shared/settings/appUiMap';
 import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
+import {
+  CREATE_AGENT_MCP_SERVER,
+  CREATE_AGENT_TOOL,
+} from '../../shared/staffing/constants';
 import { APP_NAME } from '../appConstants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
@@ -87,6 +91,7 @@ import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
 } from './coworkOpenAICompatProxy';
+import type { CreateAgentMcpStdioLaunch } from './createAgentMcpServer';
 import type { LobsterBrowserMcpStdioLaunch } from './lobsterBrowserMcpServer';
 import {
   buildAgentEntry,
@@ -2214,6 +2219,8 @@ type OpenClawConfigSyncDeps = {
   getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
   /** Launches the tool that asks the person to type something. */
   getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
+  /** Launches the tool that lets Yodo stand up an agent, through a card. */
+  getCreateAgentMcpStdioLaunch?: () => CreateAgentMcpStdioLaunch | null;
   /** Every project, so each agent can be told about its own. */
   getProjects?: () => readonly Project[];
   getMcpBridgeSecret?: () => string;
@@ -2283,6 +2290,7 @@ export class OpenClawConfigSync {
   private readonly getLobsterBrowserMcpCommand?: () => string | null;
   private readonly getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
   private readonly getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
+  private readonly getCreateAgentMcpStdioLaunch?: () => CreateAgentMcpStdioLaunch | null;
   private readonly getProjects?: () => readonly Project[];
   private readonly getMcpBridgeSecret?: () => string;
   private readonly getSkillsList?: () => Array<{ id: string; name: string; enabled: boolean }>;
@@ -2320,6 +2328,7 @@ export class OpenClawConfigSync {
     this.getLobsterBrowserMcpCommand = deps.getLobsterBrowserMcpCommand;
     this.getLobsterBrowserMcpStdioLaunch = deps.getLobsterBrowserMcpStdioLaunch;
     this.getAskInputMcpStdioLaunch = deps.getAskInputMcpStdioLaunch;
+    this.getCreateAgentMcpStdioLaunch = deps.getCreateAgentMcpStdioLaunch;
     this.getProjects = deps.getProjects;
     this.getMcpBridgeSecret = deps.getMcpBridgeSecret;
     this.getSkillsList = deps.getSkillsList;
@@ -3184,6 +3193,20 @@ export class OpenClawConfigSync {
         args: [...askInputLaunch.args],
         ...(Object.keys(askInputLaunch.env).length > 0 ? { env: askInputLaunch.env } : {}),
         toolFilter: { include: [ASK_INPUT_TOOL] },
+      };
+    }
+
+    // Standing up an agent from a conversation. The founder's onboarding,
+    // step two: Yodo proposes two or three agents and on "Stand them up"
+    // they exist. It goes through a card like every action on this
+    // computer; the tool waits on the person's answer.
+    const createAgentLaunch = this.getCreateAgentMcpStdioLaunch?.();
+    if (createAgentLaunch) {
+      nativeMcpServers[CREATE_AGENT_MCP_SERVER] = {
+        command: createAgentLaunch.command,
+        args: [...createAgentLaunch.args],
+        ...(Object.keys(createAgentLaunch.env).length > 0 ? { env: createAgentLaunch.env } : {}),
+        toolFilter: { include: [CREATE_AGENT_TOOL] },
       };
     }
 

@@ -3159,6 +3159,37 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('do not fall back to asking in chat');
   });
 
+  test('the staffing tool is registered, with only its one tool', async () => {
+    // Step two of onboarding: Yodo stands up two or three agents. The
+    // tool goes through a card like everything else; here is only that
+    // the engine is told it exists.
+    const sync = await createSync({
+      getCreateAgentMcpStdioLaunch: () => ({
+        command: '/tmp/create-agent-mcp/create-agent-mcp',
+        args: [],
+        env: { ELECTRON_RUN_AS_NODE: '1' },
+      }),
+    });
+    expect(sync.sync('staffing').ok).toBe(true);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const server = config.mcp?.servers?.['caisra-staffing'];
+    expect(server).toBeTruthy();
+    expect(server.command).toBe('/tmp/create-agent-mcp/create-agent-mcp');
+    expect(server.toolFilter).toEqual({ include: ['create_agent'] });
+
+    // And Yodo, the main agent, is told what it is for.
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('create_agent');
+    expect(agentsMd).toContain('one job, one voice');
+  });
+
+  test('no staffing server when the bridge is not up', async () => {
+    const sync = await createSync();
+    expect(sync.sync('no-bridge').ok).toBe(true);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.mcp?.servers?.['caisra-staffing']).toBeUndefined();
+  });
+
   test('no ask-input server when the bridge is not up', async () => {
     // Registering a server whose bridge is not listening would give the
     // agent a tool that fails on every call.
