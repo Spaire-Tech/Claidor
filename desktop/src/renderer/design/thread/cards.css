@@ -64,6 +64,27 @@
   background-color: var(--fsr-fill);
 }
 
+/*
+ * A figure tile: the value sits under the label, not under the icon,
+ * and reads as the label's figure (the founder: "theres no reson why
+ * '3 days' or '104' are on the far left like this, and not
+ * proportionate to what is above"). Their icon box is 36px with a
+ * 12px gap, so the label starts 48px in; the value starts there too,
+ * a size up, and closer to the label than their 18px.
+ */
+.caisra-cards .c1-overview-card__vertical {
+  gap: 8px;
+  justify-content: flex-start;
+}
+.caisra-cards .c1-overview-card__top-row:has(.c1-icon-text--horizontal) + .c1-overview-card__slot--bottom {
+  padding-left: 48px;
+}
+.caisra-cards .c1-overview-card .c1-metric-indicator__main-value {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
 /* Room between cards. */
 .caisra-cards .c1-medium-card-block { --c1-medium-card-gap: 16px; }
 .caisra-cards .c1-small-card-block { --c1-small-card-gap: 16px; }
