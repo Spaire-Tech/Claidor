@@ -3220,3 +3220,61 @@ turn on the tool's result with no words of its own, and the app drew
 what the turn returned. Dropping a final answer that is only a tool
 result is a follow-up. The doubled message is not in the log; every
 turn appears once.
+
+## 64. The founder's connectors report — `read; kept; three things usable, one decision`
+
+The founder, 16 September: *"does this help you for the connectors."*
+The zip is the report their agent wrote on the other product's box
+about that product's connector mechanism and its public marketplace,
+kept under `docs/product/connectors-report-2026-09-15/` minus the
+founder's private Notion pointers.
+
+**What it is.** A catalogue of 330 plugins, 271 with an MCP server and
+236 with skill packs, every one pointing at a public GitHub repository;
+the six featured (Google Drive, Calendar, Gmail, Granola, Slack,
+Notion); the mechanism in the other product's words (search, install,
+a host-drawn connect card, tools on the next message); the twenty
+platform skills that product ships; and the live state of the
+founder's account there (one connector, Notion, 44 tools).
+
+**What is usable here.**
+
+1. *Which services publish their own MCP server.* Fifty-four are hosted
+   by the other product itself, so they say nothing about the service.
+   But Notion, Linear, Figma, Slack, Stripe, Sentry, Supabase, Asana,
+   Airtable, Canva, ClickUp, Atlassian, Granola, Ramp, monday, Dropbox
+   and ZoomInfo each publish their own plugin with an `mcp.json`, and
+   the engine here already takes a remote MCP server with its own
+   sign-in (`mcp.servers` with `url`, `auth`, `oauthScope` in the config
+   sync). Those are connectors we could offer directly, without
+   Composio in the middle, with the service's own sign-in page. Notion's
+   endpoint is in the report (`https://mcp.notion.com/mcp`, HTTP); the
+   others are one fetch of a public file each.
+
+2. *Skill packs for the strongs.* The 23 name Notion, Slack, Figma,
+   Linear, HubSpot and Granola by skill. Notion's fourteen, Slack's six,
+   Figma's fourteen and Granola's three are public SKILL.md packs in
+   those repositories; licence permitting, they are what a strong's
+   kit would install (item 62 left kits for later). Twenty-two plugins
+   need a typed key at setup; the rest sign in, which is the founder's
+   rule ("my users should never put a key").
+
+3. *Slack, for the decision in item 62.* Slack publishes its own MCP
+   plugin (`slackapi/slack-mcp-plugin`) with sign-in and no key. So
+   Slack can come back as a direct connector, not only through
+   Composio, and the seven strongs that deliver to Slack would work as
+   written. The decision is still the founder's; the cost is now one
+   row, one logo and one public `mcp.json`.
+
+**What is not.** The other product's mechanism (its install tools,
+its connect card, its "tools on the next message") is theirs; ours is
+the Apps screen, Composio sign-in and the engine's own MCP config,
+already built (items 51, 54, 55). Nothing here changes that. And the
+catalogue lists what each plugin *ships*, not the endpoints
+themselves; each is in the plugin's public repository, fetchable, not
+in the zip.
+
+**Nothing built.** A next step, if wanted: fetch the `mcp.json` of the
+seventeen self-published services above, add the ones with sign-in to
+the connections catalogue as direct connectors beside the Composio
+ones, and pull the four skill packs the strongs name.

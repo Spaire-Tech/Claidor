@@ -1,0 +1,36 @@
+{
+  "note": "GetMcpServerStatus and GetDynamicTools were NOT exposed to this executor subagent. Status inferred from GetMcpTools catalog + on-box plugin cache + settings.json.",
+  "live_mcp_servers": [
+    {
+      "server": "user-Notion",
+      "serverStatus": "ready",
+      "tool_count": 44,
+      "source_plugin": "notion-workspace",
+      "plugin_id": "404"
+    }
+  ],
+  "installed_plugins_on_box": [
+    {
+      "pluginId": "404",
+      "pluginName": "notion-workspace",
+      "version": "cf1324609edba6d617164f1dec138aeb43f26735",
+      "cache_path": "/home/box/sand-data/plugins/cache/cursor-public/notion-workspace/cf1324609edba6d617164f1dec138aeb43f26735",
+      "skills_cached": 14,
+      "mcp": {
+        "notion": {
+          "type": "http",
+          "url": "https://mcp.notion.com/mcp"
+        }
+      }
+    }
+  ],
+  "settings_mcp": {
+    "mcpBoxServers": [],
+    "mcpCustomInstructions": {},
+    "mcpCustomInstructionsByServerId": {},
+    "mcpDisabledToolsByServerId": {}
+  },
+  "search_plugins_unavailable": true,
+  "catalog_source": "cursor.com/marketplace HTML initialPlugins (330 plugins, marketplace cursor-public id 34)",
+  "fetched_at_pt": "2026-09-15 ~11:23 PM PT"
+}
