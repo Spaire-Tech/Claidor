@@ -78,6 +78,7 @@ import {
   buildAgentModelRoleDefaults,
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
+import { buildManagedArtifactsPrompt } from './artifactsPrompt';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
 import { buildManagedCardsPrompt } from './cardsPrompt';
 import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_MODELS, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
@@ -4520,6 +4521,9 @@ export class OpenClawConfigSync {
       // exception to: texts stay texts, and a set of things is a block
       // between them (`shared/cards/library.ts`).
       sections.push(buildManagedCardsPrompt());
+      // And the two artifacts, a deck and a report, in OpenUI's own
+      // libraries (`shared/artifacts/`).
+      sections.push(buildManagedArtifactsPrompt());
       sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH, WHEN_THINGS_FAIL_PATH));
       sections.push(MANAGED_ESCALATION_PROMPT);
 

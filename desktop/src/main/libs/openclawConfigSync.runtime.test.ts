@@ -3303,6 +3303,10 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('## Cards');
     expect(agentsMd).toContain('Tile(name: string');
     expect(agentsMd.indexOf('## Talking to the Person')).toBeLessThan(agentsMd.indexOf('## Cards'));
+    // The artifacts right after, taught from OpenUI's own libraries.
+    expect(agentsMd.indexOf('## Cards')).toBeLessThan(agentsMd.indexOf('## Artifacts'));
+    expect(agentsMd).toContain('SlideShow(title: string');
+    expect(agentsMd).toContain('ReportView(title: string');
   });
 
   test('the exec policy reaches every agent, and a stale full-bypass default is corrected', async () => {

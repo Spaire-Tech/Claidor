@@ -1,3 +1,4 @@
+import type { ArtifactKind } from '../../../shared/artifacts/constants';
 import type { AskInputField } from '../../../shared/askInput/constants';
 import type { RosterOption } from '../../../shared/staffing/roster';
 
@@ -273,6 +274,12 @@ export interface CardItem {
   kind: typeof ThreadItemKind.Card;
   id: string;
   program: string;
+  /**
+   * Set when the block is a deck or a report rather than answer cards:
+   * OpenUI's own chip and full-screen view draw it
+   * (`shared/artifacts/constants.ts`).
+   */
+  artifact?: ArtifactKind;
   agentId?: string;
   agentName?: string;
   at: number;

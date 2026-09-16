@@ -69,6 +69,23 @@ for (const screen of screens) {
   console.log('shot', screen);
   // The thread pins to its newest message, so a screen whose point is
   // higher up gets a second photograph from the top.
+  // The artifacts: the chips first, then the deck opened by its chip.
+  if (screen === 'artifacts') {
+    const chip = page.locator('[data-artifact="presentation"] button, [data-artifact="presentation"] [role="button"]').first();
+    await chip.click({ force: true });
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: 'harness/shots/artifacts-deck.png' });
+    console.log('shot artifacts-deck');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    const report = page.locator('[data-artifact="report"] button, [data-artifact="report"] [role="button"]').first();
+    await report.click({ force: true });
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: 'harness/shots/artifacts-report.png' });
+    console.log('shot artifacts-report');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+  }
   if (screen === 'cards') {
     await page.evaluate(() => {
       const row = document.querySelector('[data-thread-item]');

@@ -4007,3 +4007,80 @@ that way."*). What is here is the mechanism and a first drawing; the
 drawing is theirs to replace, component by component, in
 `CardBlock.tsx`. The library (what the agent may name) stays unless
 their design needs a card it does not have.
+
+## 72. The artifacts: OpenUI's deck and report, whole — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, after the cards: *"i told you this for the
+artifacts, openui is golden - i meant the docs, excel (not sure if they
+do excel), slides etc... i want my artifacts to look exactly like open
+ui's. i want a complete replica here for the desing."*
+
+**What OpenUI's artifacts are, checked.** In their words an artifact is
+*"a first-class output of a conversation … not a chat message and not a
+tool result. Once it exists, it stands on its own."* Two kinds exist:
+a slide deck and a report. Their hosted service (OpenUI Cloud, a
+`THESYS_API_KEY`) generates them, and their open packages render them.
+The open repository has the artifact *framework* (a renderer registry,
+an artifacts browser, storage interfaces) and no deck or report. Those
+live in `@openuidev/thesys` on npm, 0.14.0, MIT: *"Openui-lang based
+artifacts (Presentation, Report)"*, 47 MB with its charts, maths and
+editor, shipping the two React components, their libraries
+(`presentationLibrary`, 33 components; `reportLibrary`, 34) and their
+stylesheet. The only call it makes to their cloud is a storage adapter
+for their conversations API, which we do not use: ours is SQLite.
+Loaded in Node, it works without a DOM, and its generated prompts are
+6,656 and 5,897 characters. **No spreadsheet exists anywhere in OpenUI.**
+A report can carry a table and four kinds of chart; an Excel file is a
+file the agent writes with its file tools, and already a card.
+
+**One thing their package does not say, found by rendering.** The
+viewers (`<Presentation>`, `<Report>`) parse a program whose root is
+`SlideShow(title, subtitle?, slides)` or `ReportView(title, subtitle?,
+pages)`, the shape their cloud emits; the exported libraries name their
+roots `Presentation(metadata, slides)` and `Report(metadata, pages)`,
+which the viewers do not read. The first run drew the chip with no
+title and opened onto a blank sheet. The generator now rewrites the
+root line to the viewers' and keeps everything else verbatim, and the
+tests parse the sample deck and report against libraries built the way
+the package builds them.
+
+**How it fits.** The same fence and language as the cards, told apart
+by the root (`shared/artifacts/constants.ts`, `artifactKindOf`). The
+brief gets an `## Artifacts` section after the cards: when a deck, when
+a report, one per reply, real numbers only, a spreadsheet is a file;
+then both libraries' signatures, generated from the installed package
+by `scripts/generate-artifact-prompts.mjs` into
+`prompts.generated.ts`, with a test that regenerates and compares so the
+file cannot drift. In the thread a block whose root is an artifact is
+drawn by `ArtifactBlock.tsx`: their `Presentation` or `Report` in
+preview mode, which is their chip with the title and a View button,
+and on press their full-screen viewer over the app, with thumbnails,
+page count, Show all, zoom, Escape to close. Their stylesheet and
+tokens come with it; nothing of ours restyles them. That is the
+replica, by construction.
+
+**Run:** tsc, `compile:electron`, eslint on every touched file, the
+artifact tests (roots, titles, generated file in sync, both samples
+parse clean), the config-sync runtime test (`## Cards` then
+`## Artifacts` in the brief), the whole suite; and the harness: an
+`artifacts` screen with a board deck and an arbitration memo, the
+shooter pressing each chip, three photographs sent to the founder.
+
+**Two things to know.**
+- Their design is set in Inter and the package does not ship it; on
+  this box it fell back to the system face, and on a Mac it will be
+  Helvetica. Bundling Inter (Open Font Licence) is one file and the
+  founder's call, since the app is set in Switzer.
+- Print mode exists in both viewers for PDF and PPTX export; the
+  exporters themselves are their cloud's. A PDF through Electron's own
+  print is a small follow-up; a `.pptx` is not something OpenUI gives.
+
+**Unrun:** a model writing a deck or a report. The brief is 12,000
+characters longer; the runtime test keeps the whole under the line.
+
+**Where:** `desktop/src/shared/artifacts/{constants,prompts.generated}.ts`
+(+tests), `desktop/scripts/generate-artifact-prompts.{mjs,d.mts}`,
+`desktop/src/main/libs/artifactsPrompt.ts` (+test),
+`openclawConfigSync.ts` (+runtime test),
+`desktop/src/renderer/design/thread/{ArtifactBlock,CardBlock,fromEngine,types}`,
+`harness/{main.tsx,shoot.mjs}`, `package.json` (five dependencies, MIT).

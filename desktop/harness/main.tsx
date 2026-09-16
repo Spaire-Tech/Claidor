@@ -140,6 +140,48 @@ const CARDS: EngineMessage[] = [
   }, 3),
 ];
 
+/**
+ * The artifacts, 17 September: a deck and a report in OpenUI's own
+ * components, reached from the thread as OpenUI's chip. The programs are
+ * the ones the tests check against OpenUI's libraries.
+ */
+const ARTIFACTS: EngineMessage[] = [
+  message({ type: 'user', content: 'make me the board deck for thursday' }, 0),
+  message({
+    type: 'assistant',
+    content: [
+      'Five slides, the ask on the last one.',
+      '',
+      '```openui-lang',
+      'root = SlideShow("Q4 Board Update", "Spaire, September 2026", [s1, s2, s3, s4, s5])',
+      's1 = Slide("s1", StandardTitle("Q4 Board Update", "Where we are, and what we ask of you", "September 2026"))',
+      's2 = Slide("s2", HeroMetric("\u20ac1.2M", "Annual recurring revenue, up 38% on the quarter"))',
+      's3 = Slide("s3", KeyInfoWithTitle("Three things that moved", [{title: "Pipeline", description: "42 qualified conversations, 11 in contract"}, {title: "Churn", description: "Two logos lost, both under \u20ac5k"}, {title: "Hiring", description: "Two engineers start in October"}]))',
+      's4 = Slide("s4", SectionBreakClassic("What we ask"))',
+      's5 = Slide("s5", NumberedKeyPoint([{title: "Approve the Series A timeline", body: "Open the round in January"}, {title: "Confirm the hiring plan", body: "Six roles by March"}]))',
+      '```',
+      '',
+      'Say if you want the churn slide softened.',
+    ].join('\n'),
+  }, 1),
+  message({ type: 'user', content: 'and a short note on the arbitration clause' }, 2),
+  message({
+    type: 'assistant',
+    content: [
+      '```openui-lang',
+      'root = ReportView("OHADA arbitration clauses", "A note for the deal team", [p1, p2])',
+      'p1 = Page("p1", MinimalFrontPage("OHADA arbitration clauses", TextContent("What a seat in Abidjan changes, and what it does not."), "A note for the deal team"))',
+      'p2 = Page("p2", ContentPage([h, t, k]))',
+      'h = Headline("The short answer", "Three points the clause must settle")',
+      't = TextContent("The CCJA administers the arbitration; the seat fixes the courts that supervise it; the law of the contract stays what the parties chose.")',
+      'k = KeyMetrics("row", [{title: "Seat", text: "Abidjan"}, {title: "Rules", text: "CCJA 2017"}, {title: "Language", text: "French"}])',
+      '```',
+      '',
+      'Two pages. The front page says the point; the second says why.',
+    ].join('\n'),
+  }, 3),
+];
+
 const PENDING: (EnginePermissionRequest & { sessionId: string })[] = [
   {
     sessionId: 's1',
@@ -339,7 +381,7 @@ function Screens(): JSX.Element {
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
-  const items = toThreadItems(screen === 'files' ? PACK : screen === 'cards' ? CARDS : CONVERSATION, {
+  const items = toThreadItems(screen === 'files' ? PACK : screen === 'cards' ? CARDS : screen === 'artifacts' ? ARTIFACTS : CONVERSATION, {
     agentId: 'juno',
     agentName: 'Juno',
     pending: withAuth ? PENDING : [],

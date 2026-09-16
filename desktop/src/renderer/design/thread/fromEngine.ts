@@ -1,3 +1,4 @@
+import { artifactKindOf } from '../../../shared/artifacts/constants';
 import { splitCardSegments } from '../../../shared/cards/fence';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { peelAttachments } from './attachment';
@@ -423,10 +424,12 @@ export function toThreadItems(
 
         for (const segment of segments) {
           if (segment.kind === 'card') {
+            const artifact = artifactKindOf(segment.program);
             items.push({
               kind: ThreadItemKind.Card,
               id: `${message.id}:c${cardIndex}`,
               program: segment.program,
+              ...(artifact ? { artifact } : {}),
               ...sender,
               at,
             } satisfies CardItem);

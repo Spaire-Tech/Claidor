@@ -27,6 +27,7 @@ import {
 } from '../../../shared/cards/library';
 import { ChevronRightIcon } from '../icons';
 import { color, line, motion, radius, shadow, text, tracking } from '../tokens';
+import { ArtifactBlock } from './ArtifactBlock';
 import type { CardItem } from './types';
 
 /**
@@ -348,6 +349,14 @@ export const CARD_VIEWS = createLibrary({
 });
 
 export function CardBlock(
+  { item, handlers }: { item: CardItem; handlers: CardHandlers },
+): JSX.Element {
+  // A deck or a report is OpenUI's own chip and view, not our cards.
+  if (item.artifact) return <ArtifactBlock item={item} />;
+  return <CardsBlock item={item} handlers={handlers} />;
+}
+
+function CardsBlock(
   { item, handlers }: { item: CardItem; handlers: CardHandlers },
 ): JSX.Element {
   const [errors, setErrors] = useState<readonly OpenUIError[]>([]);

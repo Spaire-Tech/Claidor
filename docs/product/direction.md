@@ -489,6 +489,14 @@ has left the space for it, not one that has filled it with my guesses.
    `desktop/src/shared/cards/library.ts`; texts still arrive as texts;
    every other card (permission, choice, secret, file, roster) is
    unchanged (review item 71).
+   The same day, the founder said what they meant by artifacts: *"i
+   meant the docs, excel (not sure if they do excel), slides etc... i
+   want my artifacts to look exactly like open ui's. i want a complete
+   replica here for the desing."* So a deck and a report are OpenUI's
+   own components, used whole (`@openuidev/thesys`, MIT): their chip in
+   the thread, their full-screen viewer, their libraries taught to the
+   agent. OpenUI has no spreadsheet; an Excel file is a file the agent
+   writes (review item 72).
 4. The computer asks once: the first action raises the card, Allow is
    this computer until the person changes it in Settings, Not now is
    that one action. Decided 17 September from the founder's
