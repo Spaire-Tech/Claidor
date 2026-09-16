@@ -373,6 +373,29 @@ const strongPatchValidators = {
       snippets: ['keeps prompt projections byte-stable as history grows'],
     },
   ],
+  // 17 September: the quick half of auto-review. Everyday commands and
+  // the destructive ones are decided without a model call; the middle
+  // reaches the engine's model-backed reviewer. Files and Claude Code's
+  // tools use the same sensitive-path rules under review mode.
+  // Named to apply after zzz-caisra-identity.patch, which also edits
+  // bash-tools.exec.ts.
+  'zzz-openclaw-exec-quick-review.patch': [
+    {
+      file: 'src/agents/exec-quick-review.ts',
+      snippets: [
+        'export function quickExecReview(',
+        'export function sensitivePathReason(',
+        'export function withQuickExecReview(',
+      ],
+    },
+    {
+      file: 'src/agents/bash-tools.exec.ts',
+      snippets: [
+        'import { withQuickExecReview } from "./exec-quick-review.js";',
+        'const autoReviewer = withQuickExecReview(',
+      ],
+    },
+  ],
   'openclaw-file-tools-ask-first.patch': [
     {
       file: 'src/agents/agent-tools.ts',
@@ -383,6 +406,7 @@ const strongPatchValidators = {
         // holds the config, credentials, sessions and every agent's
         // workspace; a read there is a read of the app's own insides.
         "freeRoots: [workspaceRoot, ...(skillReadRoots ?? [])],",
+        'autoReview: effectiveExecPolicy.mode === "auto",',
       ],
       forbiddenSnippets: ['resolveStateDir()'],
     },
@@ -392,6 +416,9 @@ const strongPatchValidators = {
         'export const FILE_ACCESS_COMMAND_HEAD = "file-access";',
         'export async function decideFileToolAccess(',
         'export function wrapToolWithFileApproval(',
+        // Review mode: a sensitive place still asks, with the reason.
+        'import { sensitivePathReason } from "./exec-quick-review.js";',
+        '...(sensitive ? { warningText: sensitive } : {}),',
       ],
     },
     {
@@ -421,6 +448,8 @@ const strongPatchValidators = {
         // 17 September: an allow carries the input back as updatedInput;
         // newer Claude Code versions refuse a bare allow.
         'const allow = { behavior: "allow", updatedInput: isRecord(request.input) ? request.input : {} };',
+        // Review mode reaches Claude Code's own tools too.
+        'autoReview: configured.autoReview,',
       ],
       forbiddenSnippets: [
         'OpenClaw exec policy denied Claude native tool use',
@@ -434,6 +463,7 @@ const strongPatchValidators = {
         'decideFileAccess: (params) => decideFileToolAccess(params),',
         // Only the agent's own workspace is free; the state dir is not.
         'freeRoots: [params.context.workspaceDir],',
+        'import { quickExecReview } from "../exec-quick-review.js";',
       ],
       forbiddenSnippets: ['deps.stateDir()'],
     },

@@ -3295,6 +3295,31 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(file.agents.perro).toMatchObject({ security: 'allowlist', ask: 'on-miss', allowlist: ['git status'] });
   });
 
+  test('the exec mode reaches the engine, and review runs on the cheap model', async () => {
+    // Review ("Check, then ask") is switched on by `tools.exec.mode`
+    // alone; the approvals file's autoReview field is not read by the
+    // engine. Until 17 September the app never wrote the mode, so that
+    // setting asked every time and reviewed nothing.
+    mockRuntimeState.serverModels = [
+      { modelId: 'gpt-5.6-terra', apiFormat: 'openai', transportApi: 'openai-responses', role: 'primary' },
+      { modelId: 'gpt-5.6-luna', apiFormat: 'openai', transportApi: 'openai-responses', role: 'cheap' },
+    ];
+    const auto = await createSync({ getExecPolicy: () => 'auto' });
+    expect(auto.sync('exec-mode-auto').ok).toBe(true);
+    const reviewed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(reviewed.tools.exec).toEqual({
+      mode: 'auto',
+      reviewer: { model: 'lobsterai-server/gpt-5.6-luna', timeoutMs: 15_000 },
+    });
+
+    const ask = await createSync({ getExecPolicy: () => 'ask' });
+    expect(ask.sync('exec-mode-ask').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).tools.exec.mode).toBe('ask');
+    const allow = await createSync({ getExecPolicy: () => 'allow' });
+    expect(allow.sync('exec-mode-full').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).tools.exec.mode).toBe('full');
+  });
+
   test('before step one has played, the brief says nothing about the person', async () => {
     const sync = await createSync();
     expect(sync.sync('no-work-type').ok).toBe(true);

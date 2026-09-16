@@ -148,7 +148,7 @@ export const EXEC_POLICY_OPTIONS: readonly SelectOption[] = [
   {
     value: ExecPolicy.Auto,
     label: 'Check, then ask',
-    hint: 'It reviews what it is about to do, and still asks you first.',
+    hint: 'It runs everyday commands and asks you about risky ones.',
   },
   {
     value: ExecPolicy.Allow,

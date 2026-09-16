@@ -482,8 +482,11 @@ has left the space for it, not one that has filled it with my guesses.
    this computer until the person changes it in Settings, Not now is
    that one action. Decided 17 September from the founder's
    `sources/caisra-permissions.md` (*"we MUST follow"*), replacing "ask
-   before every action", which asked five times for one poem.
-   Deleting, sending and paying still ask, as a question card.
+   before every action", which asked five times for one poem. After
+   Allow the engine's reviewer runs: everyday work goes ahead, a risky
+   command or a sensitive file asks again with the reason on the card
+   (review item 68). Deleting, sending and paying still ask, as a
+   question card.
 5. Text arrives as texts; only speech streams.
 6. The voice brief above, verbatim.
 7. Speech from OpenAI. Build it; there is no speech route today.

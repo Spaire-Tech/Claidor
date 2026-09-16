@@ -290,9 +290,22 @@ export const isEngineToolSummary = (text: string): boolean => ENGINE_TOOL_SUMMAR
  * Under a command or file card: the answer is for this computer, once.
  * `docs/product/sources/caisra-permissions.md` §2.2, the founder's own
  * design intent: "once per machine until revoked", and the setting is
- * where it is revoked.
+ * where it is revoked. Allow puts the computer in review mode: everyday
+ * work goes ahead, and only what the reviewer flags asks again.
  */
-export const COMPUTER_GRANT_NOTE = 'Once you allow it, it won\'t ask again on this computer. You can change that any time in Settings.';
+export const COMPUTER_GRANT_NOTE = 'Once you allow it, it won\'t ask again on this computer, except about something risky. You can change that any time in Settings.';
+
+/**
+ * Under a card the reviewer raised: the reason, in its sentence. The
+ * computer is already allowed, so this card is about this one action.
+ */
+export const flaggedNote = (reason: string): string => `Flagged: ${reason.trim().replace(/\.?$/, '.')} Allow runs this one; it will keep asking about things like it.`;
+
+/** The reviewer's reason, as the bridge attached it, or nothing. */
+export function reviewReasonFromToolInput(input: Record<string, unknown>): string | undefined {
+  const raw = input.reason;
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined;
+}
 
 /**
  * Turn a session's messages into what the thread shows.
@@ -479,6 +492,11 @@ export function toThreadItems(
       continue;
     }
 
+    // Flagged by the reviewer, or the first grant for this computer: the
+    // note and the meaning of Allow differ.
+    const reason = reviewReasonFromToolInput(request.toolInput);
+    const grant = reason ? { note: flaggedNote(reason), flagged: true } : { note: COMPUTER_GRANT_NOTE };
+
     const access = fileAccessFromToolInput(request.toolInput);
     if (access) {
       // A file tool asking. Same card, the paths where the command goes.
@@ -487,7 +505,7 @@ export function toThreadItems(
         id: `auth:${request.requestId}`,
         text: fileAccessQuestion(options.agentName, access),
         ...(deviceId ? { deviceId } : {}),
-        note: COMPUTER_GRANT_NOTE,
+        ...grant,
         command: access.paths.join('\n'),
         access: access.kind,
         at: Date.now(),
@@ -500,7 +518,7 @@ export function toThreadItems(
       id: `auth:${request.requestId}`,
       text: authQuestion(options.agentName, request.toolName),
       ...(deviceId ? { deviceId } : {}),
-      note: COMPUTER_GRANT_NOTE,
+      ...grant,
       ...(commandFromToolInput(request.toolInput)
         ? { command: commandFromToolInput(request.toolInput) }
         : {}),
@@ -562,7 +580,7 @@ export function decisionNote(
   access?: 'read' | 'write',
 ): string {
   if (decision === 'always') {
-    return `${agentName} can work on your computer from now on. Change that any time in Settings.`;
+    return `${agentName} can work on your computer from now on. It will still ask before anything risky. Change that any time in Settings.`;
   }
   if (decision === 'never') {
     return `Not now. ${agentName} will ask again when it matters.`;

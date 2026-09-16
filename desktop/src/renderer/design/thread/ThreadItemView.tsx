@@ -637,8 +637,10 @@ function AuthCard(
             // (`caisra-permissions.md` §2.2). "Allow once" went on 17
             // September: pressed five times in a row for one poem, it
             // was the pestering the founder's design forbids.
+            // A flagged card is one action on an already-allowed computer,
+            // so its Allow is this once.
             <>
-              {button('Allow', 'always', true)}
+              {button('Allow', item.flagged ? 'once' : 'always', true)}
               {button('Not now', 'never')}
             </>
           )}

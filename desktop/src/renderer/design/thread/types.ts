@@ -153,6 +153,12 @@ export interface AuthItem {
    * and Not now. There is no "always" for a teammate.
    */
   staffing?: boolean;
+  /**
+   * Set when the engine's reviewer flagged this one under review mode:
+   * the computer is already allowed, so Allow is this action only, and
+   * `note` carries the reason.
+   */
+  flagged?: boolean;
   at: number;
 }
 

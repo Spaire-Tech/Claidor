@@ -12,6 +12,7 @@ import {
   type EnginePermissionRequest,
   fileAccessFromToolInput,
   fileAccessQuestion,
+  flaggedNote,
   isEngineToolSummary,
   parseChoiceId,
   splitIntoBubbles,
@@ -212,7 +213,7 @@ describe('the approval card', () => {
     // action, and the card comes back when it matters
     // (`caisra-permissions.md` §2.2, §10, §11).
     expect(decisionNote('Perrin', 'always'))
-      .toBe('Perrin can work on your computer from now on. Change that any time in Settings.');
+      .toBe('Perrin can work on your computer from now on. It will still ask before anything risky. Change that any time in Settings.');
     expect(decisionNote('Perrin', 'never'))
       .toBe('Not now. Perrin will ask again when it matters.');
   });
@@ -220,7 +221,24 @@ describe('the approval card', () => {
   test('the card says the answer is for this computer, once', () => {
     const items = toThreadItems([], { agentName: 'Perrin', pending: [request] });
     expect((items[0] as { note?: string }).note).toBe(COMPUTER_GRANT_NOTE);
-    expect(COMPUTER_GRANT_NOTE).toContain("won't ask again on this computer");
+    expect((items[0] as { flagged?: boolean }).flagged).toBeUndefined();
+    expect(COMPUTER_GRANT_NOTE).toContain("won't ask again on this computer, except about something risky");
+  });
+
+  test("a card the reviewer raised carries its reason, and Allow is this once", () => {
+    // Review mode: the computer is already allowed. The reviewer's
+    // sentence is the note, and the card is marked so Allow does not
+    // read as a second grant.
+    const items = toThreadItems([], {
+      agentName: 'Perrin',
+      pending: [{ ...request, toolInput: { command: 'rm -rf build', reason: 'Deletes a whole folder and everything in it' } }],
+    });
+    expect(items[0]).toMatchObject({
+      kind: ThreadItemKind.Auth,
+      flagged: true,
+      note: 'Flagged: Deletes a whole folder and everything in it. Allow runs this one; it will keep asking about things like it.',
+    });
+    expect(flaggedNote('Touches the SSH keys.')).toBe('Flagged: Touches the SSH keys. Allow runs this one; it will keep asking about things like it.');
   });
 
   test("the engine's own chain-of-tools line never reaches the thread", () => {
@@ -282,7 +300,7 @@ describe('the approval card', () => {
 
   test('the note after a file answer is the same grant: the computer, or not now', () => {
     expect(decisionNote('Perrin', 'always', 'write'))
-      .toBe('Perrin can work on your computer from now on. Change that any time in Settings.');
+      .toBe('Perrin can work on your computer from now on. It will still ask before anything risky. Change that any time in Settings.');
     expect(decisionNote('Perrin', 'once', 'read'))
       .toBe('Perrin can read that file this time.');
     expect(decisionNote('Perrin', 'never', 'write'))

@@ -51,8 +51,10 @@ about the product's shape. Its headlines: the app is Messages, with each
 conversation an agent; five message kinds and no step cards; the
 computer asks once, the first time, and then not again until the person
 changes it in Settings (`docs/product/sources/caisra-permissions.md`,
-17 September; decisions that are hard to undo still ask, as a question
-card); text arrives as texts and only speech
+17 September), except a risky command or a sensitive file, which the
+engine's reviewer flags with a reason on the card (review item 68;
+decisions that are hard to undo still ask, as a question card); text
+arrives as texts and only speech
 streams; one computer, this one; role agents are kits in the upstream's format, whose
 store endpoint we already serve empty. **The product is Caisra**, the
 founder's official name, decided 15 September 2026. The agent works for

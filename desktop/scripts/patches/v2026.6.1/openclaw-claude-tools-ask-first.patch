@@ -1,5 +1,5 @@
 diff --git a/src/agents/cli-runner/claude-live-session.ts b/src/agents/cli-runner/claude-live-session.ts
-index e03642ec..ce9cc47a 100644
+index e03642ec..93b71518 100644
 --- a/src/agents/cli-runner/claude-live-session.ts
 +++ b/src/agents/cli-runner/claude-live-session.ts
 @@ -29,6 +29,10 @@ import {
@@ -27,7 +27,16 @@ index e03642ec..ce9cc47a 100644
    resolve: (output: CliOutput) => void;
    reject: (error: unknown) => void;
  };
-@@ -242,11 +253,41 @@ export function buildClaudeLiveArgs(params: {
+@@ -81,6 +92,8 @@ type ClaudeLiveOutputLimits = {
+ type ClaudeLiveExecPermission = {
+   security: ExecSecurity;
+   ask: ExecAsk;
++  /** `tools.exec.mode: "auto"`: the computer is allowed, the risky still asks. */
++  autoReview: boolean;
+   permissionMode: "bypassPermissions" | "default";
+ };
+ type ClaudeLiveDiagnosticRefs = {
+@@ -242,11 +255,41 @@ export function buildClaudeLiveArgs(params: {
      ),
      "--replay-user-messages",
    );
@@ -71,7 +80,7 @@ index e03642ec..ce9cc47a 100644
  function buildClaudeLiveKey(context: PreparedCliRunContext): string {
    return `${context.backendResolved.id}:${sha256(
      JSON.stringify({
-@@ -689,6 +730,19 @@ function resetNoOutputTimer(session: ClaudeLiveSession): void {
+@@ -689,6 +732,19 @@ function resetNoOutputTimer(session: ClaudeLiveSession): void {
    }
    if (turn.noOutputTimer) {
      clearTimeout(turn.noOutputTimer);
@@ -91,7 +100,31 @@ index e03642ec..ce9cc47a 100644
    }
    turn.noOutputTimer = setTimeout(() => {
      closeLiveSession(
-@@ -850,24 +904,68 @@ function handleClaudeLiveControlRequest(
+@@ -751,6 +807,7 @@ function resolveClaudeLiveOutputLimits(backend: CliBackendConfig): ClaudeLiveOut
+ function readConfiguredExecPolicy(context: PreparedCliRunContext): {
+   security: ExecSecurity;
+   ask: ExecAsk;
++  autoReview: boolean;
+   agentId: string;
+ } {
+   const agentId = context.params.agentId ?? resolveAgentIdFromSessionKey(context.params.sessionKey);
+@@ -764,6 +821,7 @@ function readConfiguredExecPolicy(context: PreparedCliRunContext): {
+     agentId,
+     security,
+     ask: sessionAsk ? maxAsk(configuredAsk, sessionAsk) : configuredAsk,
++    autoReview: exec?.mode === "auto",
+   };
+ }
+ 
+@@ -782,6 +840,7 @@ function resolveClaudeLiveExecPermission(context: PreparedCliRunContext): Claude
+   return {
+     security,
+     ask,
++    autoReview: configured.autoReview,
+     permissionMode: security === "full" && ask === "off" ? "bypassPermissions" : "default",
+   };
+ }
+@@ -850,24 +909,68 @@ function handleClaudeLiveControlRequest(
      return;
    }
    const toolUseId = typeof request.tool_use_id === "string" ? request.tool_use_id : undefined;
@@ -178,7 +211,7 @@ index e03642ec..ce9cc47a 100644
  }
  
  function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
-@@ -911,7 +1009,15 @@ function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
+@@ -911,7 +1014,15 @@ function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
    turn.rawLines.push(trimmed);
    turn.streamingParser.push(`${trimmed}\n`);
    turn.sessionId = parseSessionId(parsed) ?? turn.sessionId;
@@ -194,7 +227,7 @@ index e03642ec..ce9cc47a 100644
    handleClaudeLiveControlRequest(session, turn, parsed);
    if (parsed.type !== "result") {
      return;
-@@ -1141,6 +1247,16 @@ function createTurn(params: {
+@@ -1141,6 +1252,20 @@ function createTurn(params: {
        onToolResult: params.onToolResult,
      }),
      execPermission: params.execPermission,
@@ -205,7 +238,11 @@ index e03642ec..ce9cc47a 100644
 +      sessionKey: params.context.params.sessionKey,
 +      cwd: params.context.cwd ?? params.context.workspaceDir,
 +      workspaceDir: params.context.workspaceDir,
-+      policy: { security: params.execPermission.security, ask: params.execPermission.ask },
++      policy: {
++        security: params.execPermission.security,
++        ask: params.execPermission.ask,
++        autoReview: params.execPermission.autoReview,
++      },
 +    },
 +    pendingControlRequests: 0,
      resolve: params.resolve,
@@ -213,10 +250,10 @@ index e03642ec..ce9cc47a 100644
    };
 diff --git a/src/agents/cli-runner/claude-native-tool-approval.ts b/src/agents/cli-runner/claude-native-tool-approval.ts
 new file mode 100644
-index 00000000..873dd69e
+index 00000000..5ec5381d
 --- /dev/null
 +++ b/src/agents/cli-runner/claude-native-tool-approval.ts
-@@ -0,0 +1,397 @@
+@@ -0,0 +1,422 @@
 +import crypto from "node:crypto";
 +import {
 +  evaluateShellAllowlist,
@@ -237,6 +274,7 @@ index 00000000..873dd69e
 +} from "../../infra/exec-approvals.js";
 +import { resolveSafeBinProfiles } from "../../infra/exec-safe-bin-policy-profiles.js";
 +import type { RequestExecApprovalDecisionParams } from "../bash-tools.exec-approval-request.js";
++import { quickExecReview } from "../exec-quick-review.js";
 +import {
 +  decideFileToolAccess,
 +  type FileToolApprovalContext,
@@ -297,6 +335,8 @@ index 00000000..873dd69e
 +export type ClaudeNativeToolPolicy = {
 +  security: ExecSecurity;
 +  ask: ExecAsk;
++  /** Review mode: everyday commands and files go ahead, the risky ones ask with a reason. */
++  autoReview?: boolean;
 +};
 +
 +export type ClaudeNativeToolContext = {
@@ -523,6 +563,27 @@ index 00000000..873dd69e
 +    return ALLOW;
 +  }
 +
++  // Review mode: the quick rules let the everyday through and give the
++  // risky a reason; the middle is asked about, as there is no model
++  // reviewer on this path.
++  const quick =
++    params.context.policy.autoReview && params.shell
++      ? quickExecReview({
++          command: params.text,
++          cwd: params.context.cwd,
++          host: "gateway",
++          reason: "allowlist-miss",
++          analysis: {
++            parsed: evaluation.analysisOk,
++            allowlistMatched: evaluation.allowlistSatisfied,
++            inlineEval: false,
++          },
++        })
++      : undefined;
++  if (quick?.decision === "allow-once") {
++    return ALLOW;
++  }
++
 +  const { command, commandArgv } = buildClaudeToolCommand(params.toolName, params.text);
 +  const decision = await deps.requestDecision({
 +    id: crypto.randomUUID(),
@@ -532,6 +593,7 @@ index 00000000..873dd69e
 +    host: "gateway",
 +    security: host.security,
 +    ask: host.ask,
++    ...(quick?.decision === "ask" ? { warningText: quick.rationale } : {}),
 +    agentId: params.context.agentId,
 +    sessionKey: params.context.sessionKey,
 +  });
@@ -616,10 +678,10 @@ index 00000000..873dd69e
 +}
 diff --git a/src/agents/cli-runner/claude-native-tool-approval.test.ts b/src/agents/cli-runner/claude-native-tool-approval.test.ts
 new file mode 100644
-index 00000000..6c6e08bf
+index 00000000..4eb42cef
 --- /dev/null
 +++ b/src/agents/cli-runner/claude-native-tool-approval.test.ts
-@@ -0,0 +1,367 @@
+@@ -0,0 +1,398 @@
 +import { describe, expect, it, vi } from "vitest";
 +import {
 +  buildClaudeToolCommand,
@@ -683,6 +745,37 @@ index 00000000..6c6e08bf
 +    expect(request?.agentId).toBe("main");
 +    expect(request?.sessionKey).toBe("agent:main:main");
 +    expect(request?.host).toBe("gateway");
++  });
++
++  it("in review mode, the everyday runs and the risky asks with a sentence", async () => {
++    const d = deps();
++    const reviewed = context({
++      policy: { security: "allowlist", ask: "on-miss", autoReview: true },
++    });
++    await expect(
++      decideClaudeNativeToolUse(
++        { request: { toolName: "Bash", input: { command: "ls -la" } }, context: reviewed },
++        d.deps,
++      ),
++    ).resolves.toEqual({ behavior: "allow" });
++    expect(d.deps.requestDecision).not.toHaveBeenCalled();
++
++    await decideClaudeNativeToolUse(
++      { request: { toolName: "Bash", input: { command: "rm -rf build" } }, context: reviewed },
++      d.deps,
++    );
++    expect(d.deps.requestDecision).toHaveBeenCalledTimes(1);
++    expect(vi.mocked(d.deps.requestDecision).mock.calls[0]?.[0]?.warningText).toBe(
++      "Deletes a whole folder and everything in it.",
++    );
++
++    // The middle is asked about, with no reason: there is no model
++    // reviewer on this path.
++    await decideClaudeNativeToolUse(
++      { request: { toolName: "Bash", input: { command: "brew install jq" } }, context: reviewed },
++      d.deps,
++    );
++    expect(vi.mocked(d.deps.requestDecision).mock.calls[1]?.[0]?.warningText).toBeUndefined();
 +  });
 +
 +  it("is denied when the person says no, with the reason for the model", async () => {

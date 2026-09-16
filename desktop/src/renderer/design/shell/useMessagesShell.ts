@@ -710,11 +710,12 @@ export function useMessagesShell(): MessagesShellState {
           : { behavior: 'deny', message: 'Declined.' },
       );
       // Allow is the computer, once. The same setting the Settings screen
-      // writes ("Allow automatically"), so the grant is one thing with one
-      // place to revoke it, and the engine stops asking for every command
-      // and every file from here on (`caisra-permissions.md` §2.2).
+      // writes ("Check, then ask"), so the grant is one thing with one
+      // place to revoke it: from here on the engine's reviewer lets the
+      // everyday through and only the risky asks again, with its reason
+      // on the card (`caisra-permissions.md` §2.2, §3).
       if (decision === AuthDecision.Always) {
-        void window.electron?.settings?.setExecPolicy?.(ExecPolicy.Allow)
+        void window.electron?.settings?.setExecPolicy?.(ExecPolicy.Auto)
           .then(result => { if (!result?.success) showToast('That could not be saved. It will ask again.'); })
           .catch(() => { showToast('That could not be saved. It will ask again.'); });
       }

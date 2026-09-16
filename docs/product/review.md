@@ -3608,3 +3608,95 @@ card back.
 `select.ts` (+test), `desktop/src/main/libs/openclawConfigSync.ts`
 (+runtime test), `docs/product/sources/caisra-permissions.md`,
 `sources/README.md`, `docs/product/direction.md`, `CLAUDE.md`.
+
+**Correction to item 67, same day.** "The engine has the hook and no
+reviewer behind it" was wrong. The engine has a model-backed reviewer
+(`exec-auto-reviewer.ts`, `createModelExecAutoReviewer`) that runs on
+the agent's model, or on `tools.exec.reviewer.model`, and asks the
+person only for what it will not allow. What was missing was ours: the
+app wrote `autoReview: true` into `exec-approvals.json`, a field the
+engine never reads for this, and never wrote `tools.exec.mode: "auto"`,
+which is the one switch (`bash-tools.exec.ts`, `resolveExecModePolicy`).
+So "Check, then ask" asked every time and reviewed nothing. Item 68.
+
+## 68. Auto-review: the reviewer for risky commands — `built; the Mac unrun`
+
+*"build the auto-review reviewer for risky commands."* The founder's
+permissions document (§3): risky calls get a quick automatic review
+before they run, most pass untouched, and the person is asked only
+about what the review will not allow, with the reason.
+
+**What runs now, in order, for a command the allowlist does not cover
+under "Check, then ask".**
+
+1. **The quick rules** (`openclaw/src/agents/exec-quick-review.ts`, new,
+   49 tests), without a model call. Everyday goes through: reading and
+   listing, `mkdir`, `cp`, `unzip`, `tar`, a script in the person's
+   folders (`python3 make_poem.py`, `node build.js`), read-only git.
+   Destructive asks, with a sentence that becomes the card's note:
+   administrator rights, `rm -r`, a delete at the top of a tree,
+   rewriting a disk, permissions across a tree, a script piped from the
+   internet, encoded commands, `eval`, force-pushes and hard resets,
+   publishing, killing programs, start-up items, system settings, the
+   keychain, automation that drives the computer, reaching another
+   computer, printing the environment, raw network sockets, turning off
+   an OS protection, erasing history. A path into a sensitive place
+   asks too: `~/.ssh`, cloud and cluster credentials, keychains,
+   browser data, `.env` files, private keys, credentials files, the
+   command history, the operating system's own folders. Anything with a
+   doubtful segment in a pipeline is not everyday.
+2. **The engine's model reviewer** for the middle (`brew install`,
+   `pip install`, `git push`, `rm poem.txt`, an unknown tool), on the
+   account's cheap model (`gpt-5.6-luna`, the server's `cheap` role)
+   with a 15-second limit, allow only on low risk, otherwise ask.
+3. **The card**, only then, with the reason on it: *"Flagged: Deletes a
+   whole folder and everything in it. Allow runs this one; it will
+   keep asking about things like it."* The bridge reads the reviewer's
+   sentence out of the engine's warnings (`reviewReason`); the card is
+   marked flagged, so its Allow is this action and not a second grant.
+
+**Files under review mode** go the same way: the person's own files no
+longer ask at all; a sensitive place asks with the reason ("Touches the
+SSH keys."). The engine's file approval and Claude Code's tool approval
+both carry `autoReview` now; on the Claude path the quick rules decide
+and the middle asks, as there is no model reviewer there.
+
+**The grant is review mode.** Allow on the first card now writes
+"Check, then ask" (`ExecPolicy.Auto`), not "Allow automatically". The
+Settings row says what it does: *"It runs everyday commands and asks
+you about risky ones."* "Allow automatically" stays as the no-review
+choice. The card's note and the line it leaves say "except about
+something risky".
+
+**Patches.** `zzz-openclaw-exec-quick-review.patch` (new: the module,
+its test, the wrap in `bash-tools.exec.ts`; named to apply after the
+identity patch, which also edits that file);
+`openclaw-file-tools-ask-first.patch` and
+`openclaw-claude-tools-ask-first.patch` regenerated. Thirty-three
+patches apply from a clean base and reproduce the tree byte for byte.
+
+**Proof.** Engine: 142 tests across the quick rules, file approval,
+Claude approval and spawn; oxfmt, oxlint, tsgo. App: 360 tests
+including the config sync writing `tools.exec.mode` and the reviewer
+model, the bridge's reason, the card's note; tsc, eslint,
+`compile:electron`.
+
+**Unrun: the founder's Mac.** After pulling: the first command asks;
+Allow; Settings reads "Check, then ask"; `ls`, `mkdir`, a Word document
+run with no card; `rm -rf something` raises a card with "Flagged:
+Deletes a whole folder…"; `cat ~/.ssh/config` raises one with "Touches
+the SSH keys."; `brew install x` raises one with the model's own reason
+or runs, within fifteen seconds. The engine log line `Exec auto-review
+allowed once (risk=low)` or `deferred to human approval` says which
+path each command took.
+
+**Where:** `openclaw/src/agents/exec-quick-review.ts` (+test),
+`bash-tools.exec.ts`, `file-tool-approval.ts` (+test), `agent-tools.ts`,
+`cli-runner/claude-native-tool-approval.ts` (+test),
+`cli-runner/claude-live-session.ts`; `desktop/scripts/patches/v2026.6.1/`
+(three), `apply-openclaw-patches.cjs`;
+`desktop/src/shared/settings/constants.ts` (`engineExecModeFor`),
+`rows.ts`, `desktop/src/main/libs/openclawConfigSync.ts` (+runtime
+test), `agentEngine/openclawApprovalBridge.ts` (+test),
+`desktop/src/renderer/design/thread/{types,fromEngine,ThreadItemView}`,
+`shell/useMessagesShell.ts`.

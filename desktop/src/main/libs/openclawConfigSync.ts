@@ -61,7 +61,7 @@ import {
 } from '../../shared/providers/lobsterAIRequestOptions';
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
 import { APP_UI_MAP_PATH, buildAppUiMap } from '../../shared/settings/appUiMap';
-import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
+import { DEFAULT_EXEC_POLICY, engineExecModeFor, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
 import {
   CREATE_AGENT_MCP_SERVER,
   CREATE_AGENT_TOOL,
@@ -368,6 +368,14 @@ const MANAGED_OWNER_ALLOW_FROM = [
 ];
 
 const MANAGED_TOOL_DENY = ['web_search'] as const;
+
+/**
+ * How long the engine's model-backed exec reviewer may take before the
+ * command is asked about instead. The engine's default is 30 s; a person
+ * watching a card that has not appeared yet is the cost of a slow review,
+ * and a cheap model answers in a few seconds.
+ */
+const EXEC_REVIEWER_TIMEOUT_MS = 15_000;
 // knownPollNoProgress is off: polling a live background process that stays
 // quiet (builds, installs, downloads) legitimately repeats identical calls
 // with identical output, and the detector killed such runs after 10 polls
@@ -762,7 +770,7 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- Never use the person\'s keys, cookies, sessions or saved logins to reach anything they did not ask you to reach, and never gather, copy or send a credential from this computer anywhere. A credential you meet by accident is left where it was and not mentioned in a memory, a note or a summary.',
   '',
   '### Their computer asks once',
-  '- Working on their computer, a command or a file, is not something you ask about in text or with a question card. You call the tool, and the app itself asks the person, in its own card, the first time. Once they have allowed it, nothing on this computer asks again until they change it in Settings, and you never mention the card, the setting, or that anything was allowed.',
+  '- Working on their computer, a command or a file, is not something you ask about in text or with a question card. You call the tool, and the app itself asks the person, in its own card, the first time. Once they have allowed it, nothing on this computer asks again until they change it in Settings, except a risky action (deleting a folder, administrator rights, a key or a credential, a script from the internet), which the app flags and asks about by itself. You never mention the card, the setting, the review, or that anything was allowed.',
   '- If they answered Not now, that one action is declined. Stop it, say what you cannot do without it, and do not try another way. Ask again only by trying again later for something that matters, not by asking in words.',
   '',
   '### Deleting, sending, paying',
@@ -2499,7 +2507,10 @@ export class OpenClawConfigSync {
     };
   }
 
-  private buildWebToolsConfig(browserWebAccess: BrowserWebAccessConfig): Record<string, unknown> {
+  private buildWebToolsConfig(
+    browserWebAccess: BrowserWebAccessConfig,
+    exec: { mode: 'ask' | 'auto' | 'full'; reviewerModel?: string },
+  ): Record<string, unknown> {
     const fetch = browserWebAccess.webFetch;
     const fetchConfig = {
       enabled: fetch.enabled,
@@ -2518,6 +2529,16 @@ export class OpenClawConfigSync {
         ...MANAGED_TOOL_DENY
       ],
       loopDetection: MANAGED_TOOL_LOOP_DETECTION,
+      // The exec policy's mode, because review (`auto`) is switched on by
+      // this and by nothing in the approvals file. The reviewer that
+      // judges the middle runs on the account's cheap model when the
+      // server names one: a review is machinery the person never sees.
+      exec: {
+        mode: exec.mode,
+        ...(exec.reviewerModel
+          ? { reviewer: { model: exec.reviewerModel, timeoutMs: EXEC_REVIEWER_TIMEOUT_MS } }
+          : {}),
+      },
       // Not `fs: { workspaceOnly: true }`. It looks like the fence for the
       // engine's file tools, and it is — but measured from the session's
       // working folder when one is set (`agent-tools.ts`, `codingRoot =
@@ -2544,9 +2565,8 @@ export class OpenClawConfigSync {
     // (`role` on each row of /api/models/available) so the policy changes
     // with a deploy rather than a release; every slot below already exists
     // in OpenClaw's agent config, so none of it is new machinery.
-    const modelRoleDefaults = buildAgentModelRoleDefaults(
-      resolveAgentModelRoleRefs(serverModels, OpenClawProviderId.LobsteraiServer),
-    );
+    const modelRoleRefs = resolveAgentModelRoleRefs(serverModels, OpenClawProviderId.LobsteraiServer);
+    const modelRoleDefaults = buildAgentModelRoleDefaults(modelRoleRefs);
     const invalidKimiK3Transports = findInvalidKimiK3ServerTransports(serverModels);
     if (invalidKimiK3Transports.length > 0) {
       const invalidRefs = invalidKimiK3Transports
@@ -3057,7 +3077,10 @@ export class OpenClawConfigSync {
       commands: {
         ownerAllowFrom: MANAGED_OWNER_ALLOW_FROM,
       },
-      tools: this.buildWebToolsConfig(browserWebAccess),
+      tools: this.buildWebToolsConfig(browserWebAccess, {
+        mode: engineExecModeFor(this.getExecPolicy()),
+        reviewerModel: modelRoleRefs.cheap,
+      }),
       browser: this.buildBrowserConfig(browserWebAccess),
       skills: {
         entries: {
