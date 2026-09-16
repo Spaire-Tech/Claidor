@@ -3288,7 +3288,15 @@ Ramp, Dropbox, each with the vendor's own endpoint and sign-in. The
 other six are out by the founder's own rule of 16 September: Slack as
 a channel, and Sentry, ClickUp, Granola, monday and ZoomInfo as long
 tail. What is true: no skill pack has been pulled, and Slack is still
-undecided.
+undecided. And one more thing, checked the same day when the founder
+asked how many cards are Composio's: the endpoints are in the
+catalogue, but the shelf goes Composio first for every card that has
+a Composio slug (`shelf.ts`, `actionFor`), and forty-three of the
+forty-five have one. So pressing Connect on Notion signs in through
+Composio, not through `mcp.notion.com`. The vendor route is used by
+two cards only, Fathom and Mercury, which have no slug. "Direct" in
+the catalogue means the endpoint is known, not that the button uses
+it.
 
 **Second addendum, from the next morning's thread ("WHERE IS MY
 DESIGN").** A new agent, Yone, asked for a mock Word document: the
