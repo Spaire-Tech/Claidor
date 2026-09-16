@@ -4107,3 +4107,77 @@ characters longer; the runtime test keeps the whole under the line.
 `openclawConfigSync.ts` (+runtime test),
 `desktop/src/renderer/design/thread/{ArtifactBlock,CardBlock,fromEngine,types}`,
 `harness/{main.tsx,shoot.mjs}`, `package.json` (five dependencies, MIT).
+
+## 73. The answer cards: OpenUI's, whole — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, after the deck and the report: *"now i want
+you to use the same logic you did for the report as you went all in
+and do the same for all the rest of the cards. i could not care less
+if it doesnt match our design. i want it exactly like openui's. i'm
+talking about Trip itineraries, restaurants etc... what they did in
+the screenshots i sent. the way they did it when asked about fifa etc.
+this is great to me and i want it. use their colors. use their style.
+perhaps keep our font but thats it. i want screenshots."*
+
+So item 71's ten components of ours are gone, and the cards are
+OpenUI's the way the artifacts are.
+
+**Which library, checked.** Two chat libraries ship in the packages we
+already have. `@openuidev/react-ui` has a generic one (58 components:
+carousels, list blocks, forms). `@openuidev/thesys` has `chatLibrary`,
+the one behind their C1 answers and the founder's four pictures: 73
+components with root `Card`, among them the image cards with a tag and
+a Book button (`CompositeCardBlock`), the picture-as-card with a tag on
+it (`VisualCardBlock`), the figure tiles (`OverviewCardBlock`), the
+Highlights rows (`EntityList`), tables, charts, steps, buttons. It
+comes with its own renderer, `OpenUIC1Component`, which is what their
+assistant answers with. That is the one.
+
+**What is theirs.** The library, the renderer, the stylesheet, the
+prompt. The brief's `## Cards` section is now the prompt OpenUI
+generates for that library, 15,400 characters, regenerated into
+`shared/cards/prompt.generated.ts` by the same script as the artifacts
+with a test that regenerates and compares; two markers in it take our
+opening (theirs says the whole reply must be code) and our rules under
+their own heading: the fence, texts stay texts, one block a reply,
+which block for what, the Wikipedia picture path, never an invented
+address, what a button's `continue_conversation` context does, and
+that every block is complete on its own. That last one matters: their
+inline mode tells the model to send only changed lines on a follow-up,
+and the thread draws each block by itself.
+
+**What is ours.** The typeface, and it took a generator to keep it.
+Their stylesheet writes thirty-three typography tokens on `:root` as
+`font` shorthands with Inter baked in, so overriding their font
+variable under the block changed nothing; the shooter said "Inter"
+and a walk up the ancestors found `.openui-card` reading the baked
+token. `cards.generated.css` redeclares every such token under the
+block with the thread's face, generated from their stylesheet and
+compared by a test, so a version bump cannot leave one out. Also ours:
+the width, and where a pressed button goes (its context as the
+person's next message; a URL is opened by their renderer).
+
+**Checked, not assumed.** Their `Image` resolves a missing `src` from
+the caption through their cloud only when an image-search provider is
+mounted above it, and none is; the shooter now fails on any request
+that leaves the loopback, and none did. Telemetry stays off. An item
+with no picture draws their empty frame (Tsukushinbo in the first
+shot), which is their behaviour and stays.
+
+**Photographed.** The founder's four: Seattle restaurants, Paris hotels
+("Showing 5 results", five image cards with a price and Book, the
+Highlights rows), Tokyo in three days (hero, three figure tiles, three
+day cards with the tag on the picture), the 2026 World Cup (hero, four
+figures, four feature cards). One harness screen each so every block
+is shot whole, and the shooter prints the face it drew. The programs
+the harness draws are the programs the tests parse against the
+library (`harness/cardExamples.ts`).
+
+**Unrun:** a model writing one of these. The whole brief stays under
+the engine's line (runtime test).
+
+**Where:** `desktop/src/shared/cards/{library,prompt.generated}.ts`
+(+tests), `desktop/src/main/libs/cardsPrompt.ts` (+test),
+`desktop/scripts/generate-artifact-prompts.{mjs,d.mts}`,
+`desktop/src/renderer/design/thread/{CardBlock.tsx,cards.css,cards.generated.css}`,
+`harness/{cardExamples.ts,main.tsx,shoot.mjs}`.

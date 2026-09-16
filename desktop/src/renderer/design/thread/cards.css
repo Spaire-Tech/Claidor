@@ -1,0 +1,15 @@
+/*
+ * The answer cards are OpenUI's own, drawn by their renderer with their
+ * stylesheet: their colours, their spacing, their radii, their sizes.
+ * The one thing ours is the typeface. Their typography tokens bake Inter
+ * into a `font` shorthand on `:root`, so `cards.generated.css` redeclares
+ * each of them under the block with the thread's face (`tokens.css`);
+ * this file covers the few places that read `--openui-font-body` itself.
+ * The artifacts keep Inter (`artifacts.css`).
+ */
+@import './cards.generated.css';
+
+.caisra-cards {
+  --openui-font-body: var(--fsr-font-ui);
+  font-family: var(--openui-font-body);
+}

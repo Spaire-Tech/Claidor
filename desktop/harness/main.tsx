@@ -26,6 +26,7 @@ import type { ThreadItem } from '../src/renderer/design/thread/types';
 import { ThreadItemKind } from '../src/renderer/design/thread/types';
 import { EVERY_ROW } from '../src/shared/settings/appUiMap';
 import { buildRoster } from '../src/shared/staffing/roster';
+import { cardExamples } from './cardExamples';
 
 /**
  * A harness for looking at the design, not part of the app.
@@ -93,52 +94,24 @@ const PACK: EngineMessage[] = [
 ];
 
 /**
- * The answer cards, 17 September: the founder's OpenUI pictures as our
- * cards, with photographs. The shooter serves `harness/shots/photos/`
- * on its own loopback port (`shoot.mjs`), which is why the addresses
- * are built from the page's origin at runtime; a fresh clone without
- * that folder draws the same cards with no pictures.
+ * The answer cards, 17 September: the founder's four OpenUI pictures
+ * (Seattle restaurants, Paris hotels, a Tokyo itinerary, the 2026 World
+ * Cup) as OpenUI's own chat components, with photographs. One screen
+ * each, so every block gets its photograph. The shooter serves
+ * `harness/shots/photos/` on its own loopback port (`shoot.mjs`), which
+ * is why the addresses are built from the page's origin at runtime; a
+ * fresh clone without that folder draws the same cards with no pictures.
  */
 const photo = (name: string): string => `${location.origin}/photos/${name}.jpg`;
-const CARDS: EngineMessage[] = [
-  message({ type: 'user', content: 'find me the best restaurants in seattle' }, 0),
-  message({
-    type: 'assistant',
-    content: [
-      'Seattle is Pacific Northwest seafood first, then everything the city\u2019s Asian heritage brought with it.',
-      '',
-      '```openui-lang',
-      'root = Stack([places, facts], "Best restaurants in Seattle", "From iconic fine dining to artisanal soba")',
-      'places = Row([a, b, c, d])',
-      `a = Tile("Canlis", "Panoramic views & iconic fine dining", "Fine dining", "${photo('canlis')}", "Book")`,
-      `b = Tile("The Walrus & The Carpenter", "Fresh Pacific oysters & Muscadet in Ballard", "Seafood", "${photo('walrus')}", "Book")`,
-      `c = Tile("Spinasse", "Hand-cut tajarin & authentic Piedmontese Italian", "Italian", "${photo('spinasse')}", "Book")`,
-      'd = Tile("Tsukushinbo", "Handmade soba, twelve seats, cash only", "Soba", "", "Book")',
-      'facts = Grid([Fact("Book ahead", "Canlis, two weeks"), Fact("Price", "$$ to $$$$"), Fact("Best for a view", "Canlis, at dusk"), Fact("Walk-in", "The Walrus, before six")])',
-      '```',
-      '',
-      'Canlis needs booking about two weeks out. Say the word and I\u2019ll hold a table.',
-    ].join('\n'),
-  }, 1),
-  message({ type: 'user', content: 'ok and plan me three days in tokyo' }, 2),
-  message({
-    type: 'assistant',
-    content: [
-      '```openui-lang',
-      'root = Stack([hero, summary, days, next])',
-      `hero = Banner("Tokyo, three days", "Grouped by neighbourhood, pace and travel time", "${photo('tokyo')}")`,
-      'summary = Row([Metric("Trip length", "3 days", "Tokyo only"), Metric("Best base", "Shinjuku", "Easy transit"), Metric("Budget", "\u00a548,000", "per person, no flights")])',
-      'days = Row([d1, d2, d3])',
-      `d1 = Tile("Shinjuku arrival", "Easy first day to reset after landing", "Day 1", "${photo('shinjuku')}")`,
-      `d2 = Tile("Harajuku + Shibuya", "Vibrant culture and iconic sights", "Day 2", "${photo('shibuya')}")`,
-      `d3 = Tile("Asakusa + Ueno", "Traditional Tokyo, then the park", "Day 3", "${photo('asakusa')}")`,
-      'next = Button("Swap day two for Kichijoji", "Swap day two for Kichijoji")',
-      '```',
-      '',
-      'Three days is tight, so this stays on the east side and skips the day trips.',
-    ].join('\n'),
-  }, 3),
-];
+const CARD_SCREENS: Record<string, EngineMessage[]> = Object.fromEntries(
+  Object.entries(cardExamples(photo)).map(([screen, example]) => [screen, [
+    message({ type: 'user', content: example.ask }, 0),
+    message({
+      type: 'assistant',
+      content: [example.before, '', '```openui-lang', ...example.program, '```', '', example.after].join('\n'),
+    }, 1),
+  ]]),
+);
 
 /**
  * The artifacts, 17 September: a deck and a report in OpenUI's own
@@ -394,7 +367,7 @@ function Screens(): JSX.Element {
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
-  const items = toThreadItems(screen === 'files' ? PACK : screen === 'cards' ? CARDS : screen === 'artifacts' ? ARTIFACTS : CONVERSATION, {
+  const items = toThreadItems(screen === 'files' ? PACK : CARD_SCREENS[screen] ?? (screen === 'artifacts' ? ARTIFACTS : CONVERSATION), {
     agentId: 'juno',
     agentName: 'Juno',
     pending: withAuth ? PENDING : [],

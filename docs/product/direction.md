@@ -488,7 +488,11 @@ has left the space for it, not one that has filled it with my guesses.
    100% be our design."* Ten components, ours, in
    `desktop/src/shared/cards/library.ts`; texts still arrive as texts;
    every other card (permission, choice, secret, file, roster) is
-   unchanged (review item 71).
+   unchanged (review item 71). Later that day the founder reversed the
+   design half: *"i want it exactly like openui's … use their colors.
+   use their style. perhaps keep our font but thats it."* So the cards
+   are OpenUI's chat library, renderer and stylesheet, whole, in
+   Switzer (review item 73). Texts still arrive as texts.
    The same day, the founder said what they meant by artifacts: *"i
    meant the docs, excel (not sure if they do excel), slides etc... i
    want my artifacts to look exactly like open ui's. i want a complete

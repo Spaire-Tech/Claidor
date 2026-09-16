@@ -43,6 +43,13 @@ page.on('pageerror', e => problems.push(`pageerror: ${e.message}`));
 page.on('response', r => {
   if (r.status() >= 400) problems.push(`${r.status()}: ${r.url()}`);
 });
+// Nothing the harness draws may call out. OpenUI's chat renderer can
+// resolve pictures and send analytics through its cloud when told to;
+// it is not told to, and this proves it every run.
+page.on('request', r => {
+  const url = new URL(r.url());
+  if (url.hostname !== '127.0.0.1' && url.protocol !== 'data:' && url.protocol !== 'blob:') problems.push(`left the loopback: ${r.url()}`);
+});
 
 const screens = process.argv.slice(2).length ? process.argv.slice(2)
   : ['signin', 'thread', 'files', 'choice', 'typing', 'voice', 'signin-error'];
@@ -103,15 +110,31 @@ for (const screen of screens) {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
   }
-  if (screen === 'cards') {
+  if (screen.startsWith('cards')) {
     await page.evaluate(() => {
       const row = document.querySelector('[data-thread-item]');
       const list = row?.parentElement;
       if (list) list.scrollTop = 0;
     });
     await page.waitForTimeout(300);
-    await page.screenshot({ path: 'harness/shots/cards-top.png' });
-    console.log('shot cards-top');
+    await page.screenshot({ path: `harness/shots/${screen}-top.png` });
+    console.log(`shot ${screen}-top`);
+    // The block in full, however tall, so nothing is judged from a crop:
+    // the thread scrolls inside the window, so the window grows to fit.
+    const blockEl = page.locator('[data-card-block]').first();
+    const tall = await blockEl.evaluate(el => el.getBoundingClientRect().height + 400);
+    await page.setViewportSize({ width: 1280, height: Math.ceil(Math.max(820, tall)) });
+    await page.waitForTimeout(300);
+    await blockEl.screenshot({ path: `harness/shots/${screen}-block.png` });
+    await page.setViewportSize({ width: 1280, height: 820 });
+    console.log(`shot ${screen}-block`);
+    // The face inside the block: the founder keeps ours, OpenUI's
+    // defaults say Inter, so the shooter says which one drew it.
+    const cardFont = await page.evaluate(() => {
+      const title = document.querySelector('[data-card-block] h1, [data-card-block] h2, [data-card-block] h3, [data-card-block] [class*="header"]');
+      return title ? getComputedStyle(title).fontFamily : 'no title found';
+    });
+    console.log('card font:', cardFont);
   }
 }
 

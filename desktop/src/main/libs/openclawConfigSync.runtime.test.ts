@@ -3301,7 +3301,10 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(sync.sync('cards').ok).toBe(true);
     const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
     expect(agentsMd).toContain('## Cards');
-    expect(agentsMd).toContain('Tile(name: string');
+    // OpenUI's chat library, by its own signatures (`shared/cards/prompt.generated.ts`).
+    expect(agentsMd).toContain('Card(children?:');
+    expect(agentsMd).toContain('CompositeCardBlock(');
+    expect(agentsMd).toContain('## Rules in this app');
     expect(agentsMd.indexOf('## Talking to the Person')).toBeLessThan(agentsMd.indexOf('## Cards'));
     // The artifacts right after, taught from OpenUI's own libraries.
     expect(agentsMd.indexOf('## Cards')).toBeLessThan(agentsMd.indexOf('## Artifacts'));
