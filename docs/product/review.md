@@ -2858,3 +2858,27 @@ then `[Staffing] stood up agent id=… name=…`.
 `main/libs/openclawConfigSync.ts` (+runtime test), `main/preload.ts`, `renderer/types/electron.d.ts`,
 `design/thread/{staffingCards.ts,useCreateAgent.ts,types.ts,ThreadItemView.tsx}` (+test),
 `design/shell/CaisraApp.tsx`, `shared/agent/chiefOfStaff.ts`, `harness/main.tsx`.
+
+## 60. "claude code still isnt working" — it was the account, 16 September — `fixed by the founder`
+
+The founder's log, once read from the right day's file (the app names
+its log by the UTC date, so an evening in California is already
+tomorrow's file): the mechanic on, Claude Code found at
+`~/.local/bin/claude`, every message routed, the live session starting,
+and three minutes later `claude live session turn failed …
+error=FailoverError`, three times, at 188, 195 and 197 seconds. The
+line names the error's kind and not its words; the words were in the
+thread, where the app puts them: *"OAuth authorization is invalid or
+missing required access. Re-authenticate and try again."*
+
+The cause was which account `claude` was signed in as on the Mac. It
+was a second account with no plan behind it; the subscription is on
+another. Claude Code retried Anthropic's refusal for three minutes and
+gave up. `claude auth logout`, `claude auth login` as the account with
+the subscription, and it worked. The Caisra sign-in is a different
+account entirely and plays no part.
+
+Two things learned for next time. Ask for the sentence in the thread
+first; it took three exchanges to get it and it was the answer. And the
+founder's Claude Code was 2.1.76 where every proof here ran on 2.1.273;
+`claude update` was part of the fix. Nothing in the app changed.
