@@ -4185,6 +4185,19 @@ thread's pill, ink on paper and paper with the button line, hugging
 their label. Their tags, icons, pictures and layouts stay theirs.
 Re-photographed, all four.
 
+**And once more, on the clean shots.** *"hotel in paris (showing 5
+results) etc all that title things dissapears. only cards. also the
+buttons show the groups, match near me are too close to the cards …
+also put any 'book' on the right of the card, proportionate with the
+price."* So: no Header in a block, ever — the brief says the block is
+the cards themselves and the set's name goes in the text before it,
+the examples lost theirs, and the stylesheet hides one if a model
+writes it anyway; 8px more before the buttons under a block; a card's
+footer is one row, the price on the left and the small pill on the
+right. The founder is changing the design's colours and will send the
+new design; the cards read the thread's tokens, so a colour change in
+`tokens.css` reaches them without another pass here.
+
 **Photographed.** The founder's four: Seattle restaurants, Paris hotels
 ("Showing 5 results", five image cards with a price and Book, the
 Highlights rows), Tokyo in three days (hero, three figure tiles, three

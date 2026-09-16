@@ -27,8 +27,7 @@ export function cardExamples(photo: (name: string) => string): Record<string, Ca
       ask: 'find me the best restaurants in seattle',
       before: 'Seattle is Pacific Northwest seafood first, then everything the city’s Asian heritage brought with it.',
       program: [
-        'root = Card([title, places, facts, next])',
-        'title = Header("Best restaurants in Seattle", "From iconic fine dining to artisanal soba")',
+        'root = Card([places, facts, next])',
         'places = CompositeCardBlock([a, b, c, d], "grid")',
         `a = CompositeCardItem("canlis", ImageTextLarge("${photo('canlis')}", "Canlis", "Canlis", "Panoramic views & iconic fine dining"), [TagBlock([Tag("Fine dining"), Tag("Book ahead", "warning")])], {price: BoldText("number", "$$$$", "tasting menu"), button: ${book('Book a table at Canlis')}})`,
         `b = CompositeCardItem("walrus", ImageTextLarge("${photo('walrus')}", "The Walrus & The Carpenter", "The Walrus & The Carpenter", "Fresh Pacific oysters & Muscadet in Ballard"), [TagBlock([Tag("Seafood"), Tag("Walk-in", "success")])], {price: BoldText("number", "$$", "oysters by the half dozen"), button: ${book('Book a table at The Walrus and The Carpenter')}})`,
@@ -43,8 +42,7 @@ export function cardExamples(photo: (name: string) => string): Record<string, Ca
       ask: 'best hotels in paris for next week, five star',
       before: 'Five on the Right Bank, all within a walk of each other. Prices are for next Tuesday, one night, from the hotels’ own sites.',
       program: [
-        'root = Card([title, hotels, highlights, next])',
-        'title = Header("Hotels in Paris", "Showing 5 results")',
+        'root = Card([hotels, highlights, next])',
         'hotels = CompositeCardBlock([h1, h2, h3, h4, h5], "grid")',
         `h1 = CompositeCardItem("athenee", ImageTextLarge("${photo('hotel-1')}", "Plaza Athénée", "Hôtel Plaza Athénée", "Avenue Montaigne, Eiffel Tower views"), [TagBlock([Tag("5 star"), Tag("Spa"), Tag("Michelin dining")])], {price: BoldText("number", "€1,100", "per night"), button: ${book('Book the Plaza Athénée for next Tuesday')}})`,
         `h2 = CompositeCardItem("georgev", ImageTextLarge("${photo('hotel-2')}", "Four Seasons George V", "Four Seasons George V", "Off the Champs-Élysées, three Michelin stars in one building"), [TagBlock([Tag("5 star"), Tag("Pool"), Tag("Family rooms")])], {price: BoldText("number", "€1,400", "per night"), button: ${book('Book the George V for next Tuesday')}})`,
@@ -60,8 +58,7 @@ export function cardExamples(photo: (name: string) => string): Record<string, Ca
       ask: 'plan me three days in tokyo',
       before: 'Three days is tight, so this stays on the east side and skips the day trips.',
       program: [
-        'root = Card([title, hero, keys, days, next])',
-        'title = Header("Tokyo, three days", "Grouped by neighbourhood, pace and travel time")',
+        'root = Card([hero, keys, days, next])',
         `hero = Image("Tokyo at dusk from the Shibuya crossing", "${photo('tokyo')}")`,
         'keys = OverviewCardBlock([k1, k2, k3], "grid")',
         'k1 = OverviewCardItem("length", IconText(Icon("calendar"), "neutral", "md", "Trip length", "Tokyo only"), MetricIndicatorInline("3 days"))',
@@ -79,8 +76,7 @@ export function cardExamples(photo: (name: string) => string): Record<string, Ca
       ask: 'tell me about the 2026 world cup',
       before: 'The first with 48 teams and the first across three countries. It opens on 11 June in Mexico City and ends on 19 July in New Jersey.',
       program: [
-        'root = Card([title, hero, figures, features, next])',
-        'title = Header("FIFA World Cup 2026", "United States, Canada and Mexico, 11 June to 19 July")',
+        'root = Card([hero, figures, features, next])',
         `hero = Image("A full stadium under the lights", "${photo('stadium')}")`,
         'figures = OverviewCardBlock([f1, f2, f3, f4], "grid")',
         'f1 = OverviewCardItem("teams", IconText(Icon("users"), "neutral", "md", "Teams", "up from 32"), MetricIndicatorInline("48"))',

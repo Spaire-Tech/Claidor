@@ -99,9 +99,35 @@
   object-fit: cover;
 }
 
-/* A card's button hugs its label, as every button of ours does. */
+/*
+ * A card's footer: the price on the left, the button on the right, one
+ * row (the founder: "put any 'book' on the right of the card,
+ * proportionate with the price"). The pill hugs its label.
+ */
 .caisra-cards .c1-composite-card__footer-content {
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.caisra-cards .c1-composite-card__footer-content > * {
+  width: auto;
+  flex: 0 1 auto;
+}
+
+/*
+ * No title over a block. The founder, 17 September: "hotel in paris
+ * (showing 5 results) etc all that title things dissapears. only
+ * cards." The brief says not to write one; this makes sure one never
+ * shows if a model does.
+ */
+.caisra-cards .openui-card > .openui-header {
+  display: none;
+}
+
+/* Air between the last card and the buttons under it. */
+.caisra-cards .openui-card > .openui-buttons {
+  margin-top: 8px;
 }
 
 /* Buttons: ours. The same pill as the choice card and the roster card. */
