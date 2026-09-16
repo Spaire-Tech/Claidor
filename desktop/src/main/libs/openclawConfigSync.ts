@@ -4116,6 +4116,7 @@ export class OpenClawConfigSync {
     type AgentEntry = { security?: string; ask?: string; autoReview?: boolean; [key: string]: unknown };
     type ApprovalsFile = {
       version: number;
+      defaults?: AgentEntry;
       agents?: Record<string, AgentEntry>;
       [key: string]: unknown;
     };
@@ -4134,21 +4135,34 @@ export class OpenClawConfigSync {
 
     if (!file.agents) file.agents = {};
     if (!file.agents.main) file.agents.main = {};
-    const agent = file.agents.main;
 
+    // One setting, every agent. The engine resolves an agent's policy
+    // from its own entry, then `defaults` (`exec-approvals.ts`,
+    // `resolveExecApprovalsFromFile`). This used to write only `main`,
+    // so an agent stood up later had no entry and fell through to
+    // `defaults`, which the pinned-open era had left at full/off: on
+    // 16 September the founder's second agent ran every command and
+    // wrote every file without a card while the setting said "Ask every
+    // time". Now the setting is written into `defaults` and into every
+    // agent entry, and a stale one is corrected rather than kept.
     const policy = this.getExecPolicy();
     const wanted = enginePolicyFor(policy);
-    if (
-      agent.security === wanted.security
-      && agent.ask === wanted.ask
-      && agent.autoReview === wanted.autoReview
-    ) {
+    const entries: AgentEntry[] = [
+      (file.defaults ??= {}) as AgentEntry,
+      ...Object.values(file.agents),
+    ];
+    const stale = entries.filter(entry =>
+      entry.security !== wanted.security
+      || entry.ask !== wanted.ask
+      || entry.autoReview !== wanted.autoReview);
+    if (stale.length === 0) {
       return;
     }
-
-    agent.security = wanted.security;
-    agent.ask = wanted.ask;
-    agent.autoReview = wanted.autoReview;
+    for (const entry of stale) {
+      entry.security = wanted.security;
+      entry.ask = wanted.ask;
+      entry.autoReview = wanted.autoReview;
+    }
 
     try {
       const dir = path.dirname(filePath);

@@ -3193,3 +3193,30 @@ questions.
 `desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`
 (`claude-live-session.ts`, `cli-runner.spawn.test.ts`),
 `desktop/scripts/apply-openclaw-patches.cjs`.
+
+**Addendum, from the founder's log (later that night).** The log had
+no `claude native tool` line at all across an evening of tool use,
+which means the CLI was running in bypass mode: no permission
+request ever reached the engine. The reason was not the setting, and
+not the runtime (built 22:52, after the patch). The sync wrote the
+person's exec policy into `exec-approvals.json` for the **main agent
+only**. The founder was talking to a second agent, Perro. The engine
+resolves an agent's policy from its own entry, then `defaults`, and
+`defaults` on that Mac still held the pinned-open era's
+`security: full, ask: off`. So every command and every file write of
+every agent but Yodo ran without a card, whatever Settings said, and
+Claude Code was launched with `--permission-mode bypassPermissions`,
+which is why nothing asked. **Fixed:** the setting is written into
+`defaults` and into every agent entry, and a stale entry is
+corrected; a runtime test starts from a file with a full-bypass
+default and a second agent and proves both are brought to the
+setting. This is a fifth fault, and it explains "not once was i asked
+permission" completely.
+
+The `{ "ok": true }` bubble is settled too: the turn at 23:15 ran 197
+seconds, printed 14 lines and returned 18 bytes of final text, which
+is that object pretty-printed and nothing else. The model ended its
+turn on the tool's result with no words of its own, and the app drew
+what the turn returned. Dropping a final answer that is only a tool
+result is a follow-up. The doubled message is not in the log; every
+turn appears once.
