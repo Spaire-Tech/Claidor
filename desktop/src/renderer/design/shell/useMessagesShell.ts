@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { AgentId } from '../../../shared/agent';
-import { avatarFallback } from '../../../shared/agent/avatars';
+import { agentAvatar } from '../../../shared/agent/avatars';
 import { BrowserDisplayMode, normalizeBrowserWebAccessConfig } from '../../../shared/browserWebAccess/constants';
 import { isRoomId, type Room } from '../../../shared/rooms/constants';
 import { agentService } from '../../services/agent';
@@ -911,7 +911,7 @@ export function useMessagesShell(): MessagesShellState {
     agents: rows,
     activeId,
     activeName: room?.name ?? active?.name ?? '',
-    activeAvatar: active?.avatar ?? avatarFallback(activeId),
+    activeAvatar: agentAvatar(activeId, active?.avatar),
     activeAgent: active && !room ? {
       id: active.id,
       name: active.name,

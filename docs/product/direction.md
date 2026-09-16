@@ -73,6 +73,23 @@ Code is a mechanic of a development build (`desktop/src/main/libs/claudeCodeMode
 decided in code, logged at `[ClaudeCode]`, invisible on every screen.
 Anything a client would have to be told to type in is the wrong design.
 
+## 0c. The main agent is Yodo, the Chief of Staff
+
+16 September 2026, with the onboarding canvas: *"there is a cloud
+avatar, who's the chief of staff. his name is yodo. he's the main agent.
+his job is literally being a chief of staff."* And the goal the first
+step of onboarding works towards: *"the final goal is to have the chief
+of staff create the first agents for the user. i'll figure out the rest
+later. for now after get started it should take them to the chat."*
+
+Applied that day (`docs/product/review.md` item 55).
+`desktop/src/shared/agent/constants.ts` names him and carries his
+colours and seed; `chiefOfStaff.ts` is his brief, written into the main
+agent's managed instructions; the twelve role presets stay and the
+Chief of Staff preset is gone, because it was him. The first step of
+onboarding (`design/onboarding/`) is the canvas exactly, and the one
+small thing it does on the Mac is real.
+
 ---
 
 ## 1. The shape: it is Messages

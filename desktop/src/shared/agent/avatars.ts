@@ -1,3 +1,5 @@
+import { AgentId, DefaultAgentProfile } from './constants';
+
 /**
  * The twenty-five avatars, and how one is given to an agent.
  *
@@ -49,18 +51,34 @@ export const AVATAR_COUNT = AVATARS.length;
 /** An avatar is its index into `AVATARS`. */
 export type AvatarIndex = number;
 
+/**
+ * Yodo's face, outside the twenty-five. The main agent wears it always
+ * and nobody else can pick it: it is not an index into `AVATARS`, so
+ * `isAvatarIndex` says no, the grid does not offer it, and the rotation
+ * never hands it out. `avatarColors` and `avatarSeed` know it.
+ */
+export const MAIN_AVATAR: AvatarIndex = -1;
+
 export function isAvatarIndex(value: unknown): value is AvatarIndex {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < AVATAR_COUNT;
 }
 
 /** The canvas's pairing: `seed: i * 5 + 2`. The shape belongs to the index. */
 export function avatarSeed(avatar: AvatarIndex): number {
+  if (avatar === MAIN_AVATAR) return DefaultAgentProfile.Seed;
   return avatar * 5 + 2;
 }
 
 /** The three stops, top to bottom. */
 export function avatarColors(avatar: AvatarIndex): readonly string[] {
+  if (avatar === MAIN_AVATAR) return DefaultAgentProfile.Colors.split(',');
   return (AVATARS[avatar] ?? AVATARS[0]).split(',');
+}
+
+/** The face an agent wears: the main agent's is fixed, the rest is what is stored or the fallback. */
+export function agentAvatar(id: string, stored?: AvatarIndex | null): AvatarIndex {
+  if (id === AgentId.Main) return MAIN_AVATAR;
+  return stored ?? avatarFallback(id);
 }
 
 /**

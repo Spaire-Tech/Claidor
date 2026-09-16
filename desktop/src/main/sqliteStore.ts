@@ -753,7 +753,9 @@ export class SqliteStore {
         // another company's product name.
         const shouldUpgradeName = !normalizedName
           || normalizedName === LegacyAgentName.Main
-          || normalizedName === LegacyAgentName.Upstream;
+          || normalizedName === LegacyAgentName.Upstream
+          || normalizedName === LegacyAgentName.Faiser
+          || normalizedName === LegacyAgentName.Caisra;
         if (shouldUpgradeName) {
           this.db
             .prepare('UPDATE agents SET name = ?, updated_at = ? WHERE id = ?')

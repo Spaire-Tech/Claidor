@@ -1,13 +1,16 @@
 import '../tokens.css';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 
 import { describeBuild, DEV_BUILD } from '../../../shared/buildStamp/constants';
 import { authService } from '../../services/auth';
+import { configService, ConfigServiceEvent } from '../../services/config';
 import type { RootState } from '../../store';
 import { AgentPanel } from '../agent/AgentPanel';
 import { useConnections } from '../connections/useConnections';
+import { Onboarding } from '../onboarding/Onboarding';
+import { electronOnboardingBridge } from '../onboarding/useOnboarding';
 import { ComputerPanel } from '../panel/ComputerPanel';
 import { Settings } from '../settings/Settings';
 import { useSettings } from '../settings/useSettings';
@@ -78,6 +81,18 @@ export function CaisraApp(): JSX.Element {
     if (signedIn) setSignInError(undefined);
   }, [signedIn]);
 
+  // The first step of onboarding plays once per install, after sign-in
+  // and before the conversation: Yodo, the Chief of Staff, and one small
+  // thing done on this Mac. `Get Started` writes the date; there is no
+  // way back to it, and nothing on a screen to switch it off.
+  const [onboarded, setOnboarded] = useState<boolean>(() => !!configService.getConfig().onboardingDoneAt);
+  useEffect(() => {
+    const reread = (): void => setOnboarded(!!configService.getConfig().onboardingDoneAt);
+    window.addEventListener(ConfigServiceEvent.Updated, reread);
+    return () => window.removeEventListener(ConfigServiceEvent.Updated, reread);
+  }, []);
+  const onboardingBridge = useMemo(() => electronOnboardingBridge(), []);
+
   if (!signedIn) {
     return (
       <SignIn
@@ -95,6 +110,21 @@ export function CaisraApp(): JSX.Element {
                 : 'That did not go through. Try again?',
             );
           }
+        }}
+      />
+    );
+  }
+
+  if (!onboarded) {
+    return (
+      <Onboarding
+        userName={accountName === 'Account' ? '' : accountName}
+        {...(onboardingBridge ? { bridge: onboardingBridge } : {})}
+        onDone={() => {
+          setOnboarded(true);
+          void configService.updateConfig({ onboardingDoneAt: Date.now() }).catch(() => {
+            // It plays again next launch, which is the cheaper mistake.
+          });
         }}
       />
     );

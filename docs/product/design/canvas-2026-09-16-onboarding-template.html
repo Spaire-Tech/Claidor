@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+
+<script src="8545fa26-8faa-4f57-b991-5113dc71a14e"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://api.fontshare.com">
+<style>/* Switzer */
+@font-face {
+  font-family: 'Switzer';
+  src: url("51b88195-7193-4e10-bcff-20109e494e73") format('woff2'),
+       url("cd216e6c-e37a-4ba5-9257-6cad1336132b") format('woff'),
+       url("12d425bb-16ea-43d7-9bcc-d341911b3117") format('truetype');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url("3a6170a5-6f16-4219-9bfd-dc3a4be47efb") format('woff2'),
+       url("32dd7404-c796-4999-a794-a7e8868ac249") format('woff'),
+       url("fa5a0a3f-ccea-4237-bf7b-f73c7054c006") format('truetype');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+
+</style>
+<style>
+  html, body { margin:0; min-height:100%; background:#f0f1f3; }
+  a { color:#1e3358; text-decoration:underline; text-underline-offset:2px; }
+  a:hover { color:#2c4674; }
+  *::-webkit-scrollbar { width:0; height:0; display:none; }
+  * { scrollbar-width:none; }
+  @keyframes blockIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes chipIn { from { opacity:0; transform:translateY(6px) scale(.96); } to { opacity:1; transform:none; } }
+  @keyframes orbIdle { 0%,100% { transform:scale(1); } 50% { transform:scale(1.04); } }
+  @keyframes wordIn { from { opacity:0; filter:blur(2.5px); } to { opacity:1; filter:blur(0); } }
+  @keyframes introCloud {
+    0% { opacity:0; transform:scale(.72); }
+    16% { opacity:1; transform:scale(1); }
+    58% { opacity:1; transform:scale(1.03); }
+    100% { opacity:0; transform:scale(1.12); }
+  }
+  @keyframes driftA { 0%,100% { transform:translate3d(-18%,-12%,0) scale(1); } 33% { transform:translate3d(30%,20%,0) scale(1.22); } 66% { transform:translate3d(12%,-26%,0) scale(.86); } }
+  @keyframes driftB { 0%,100% { transform:translate3d(24%,16%,0) scale(1.08); } 40% { transform:translate3d(-28%,-18%,0) scale(.86); } 70% { transform:translate3d(-8%,28%,0) scale(1.24); } }
+  @keyframes driftC { 0%,100% { transform:translate3d(8%,24%,0) scale(.9); } 45% { transform:translate3d(-26%,-10%,0) scale(1.26); } 75% { transform:translate3d(28%,6%,0) scale(1.04); } }
+</style>
+</helmet>
+
+<div style="height:100vh; box-sizing:border-box; position:relative; display:flex; align-items:stretch; overflow:hidden; background:radial-gradient(120% 90% at 50% 0%, #fdfdfe 0%, #f0f1f3 100%); font-family:'Switzer','Switzer Variable',-apple-system,BlinkMacSystemFont,sans-serif; color:#1e3358; -webkit-font-smoothing:antialiased">
+
+  <div aria-hidden="true" style="position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0">
+    <span style="position:absolute; top:-22%; left:-14%; width:76vw; height:76vw; border-radius:50%; background:radial-gradient(circle, #8fd3f4 0%, rgba(143,211,244,0) 68%); opacity:.2; filter:blur(90px); animation:driftA 34s ease-in-out infinite"></span>
+    <span style="position:absolute; top:6%; right:-18%; width:68vw; height:68vw; border-radius:50%; background:radial-gradient(circle, #cdbdf5 0%, rgba(205,189,245,0) 68%); opacity:.26; filter:blur(95px); animation:driftB 41s ease-in-out infinite"></span>
+    <span style="position:absolute; bottom:-30%; left:18%; width:72vw; height:72vw; border-radius:50%; background:radial-gradient(circle, #f7c9a8 0%, rgba(247,201,168,0) 66%); opacity:.22; filter:blur(100px); animation:driftC 47s ease-in-out infinite"></span>
+    <span style="position:absolute; bottom:-16%; right:4%; width:58vw; height:58vw; border-radius:50%; background:radial-gradient(circle, #a8e6cf 0%, rgba(168,230,207,0) 66%); opacity:.18; filter:blur(100px); animation:driftA 38s ease-in-out infinite reverse"></span>
+  </div>
+
+  <div style="flex:1 1 auto; min-width:0; position:relative; z-index:1; display:flex; flex-direction:column; overflow:hidden; background:rgba(253,253,254,.88); backdrop-filter:blur(40px) saturate(1.15); -webkit-backdrop-filter:blur(40px) saturate(1.15)">
+
+    <div style="position:absolute; top:19px; left:20px; z-index:5">
+      <x-import component-from-global-scope="MacTrafficLights" from="47581836-edf0-463b-86e8-df50c50a7715#/macos-window.jsx" hint-size="62px,14px" style="display:block; width:62px; height:14px"></x-import>
+    </div>
+
+
+    <sc-if value="{{ signedIn }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ introRunning }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; z-index:4; display:flex; align-items:center; justify-content:center; pointer-events:none">
+        <span style="width:158px; height:158px; animation:introCloud 2.5s cubic-bezier(.3,.7,.3,1) both">
+          <x-import component-from-global-scope="cloud-blob" from="4c735825-bffd-4e21-8a27-7e524383460c#/cloud-blob.js" colors="{{ speakerColors }}" noshade="1" seed="{{ speakerSeed }}" hint-size="158px,158px" style="width:158px; height:158px"></x-import>
+        </span>
+      </div>
+    </sc-if>
+
+    <div style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; height:72px">
+      <sc-if value="{{ introDone }}" hint-placeholder-val="{{ true }}">
+        <span style="width:42px; height:42px; flex:0 0 auto; animation:orbIdle 7s ease-in-out infinite">
+          <x-import component-from-global-scope="cloud-blob" from="4c735825-bffd-4e21-8a27-7e524383460c#/cloud-blob.js" colors="{{ speakerColors }}" noshade="1" seed="{{ speakerSeed }}" hint-size="42px,42px" style="width:42px; height:42px"></x-import>
+        </span>
+      </sc-if>
+    </div>
+
+    <div ref="{{ scrollRef }}" style="flex:1 1 auto; min-height:0; overflow-y:auto; padding:8px 0 150px">
+      <div style="width:min(760px, calc(100% - 64px)); margin:0 auto; display:flex; flex-direction:column; gap:26px">
+
+        <div style="padding-top:18px; min-height:42px">
+          <div style="font-size:30px; font-weight:500; letter-spacing:-.022em; white-space:pre-wrap"><sc-for list="{{ wGreeting }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px; font-size:17px; line-height:1.6; color:#1e3358; text-wrap:pretty">
+          <div style="white-space:pre-wrap"><sc-for list="{{ wL1 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+          <div style="white-space:pre-wrap"><sc-for list="{{ wL2 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+          <div style="white-space:pre-wrap"><sc-for list="{{ wL3 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+          <div style="white-space:pre-wrap"><sc-for list="{{ wL4 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+        </div>
+
+        <sc-if value="{{ showChips }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ chipsOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-wrap:wrap; gap:9px; animation:blockIn .3s ease-out both">
+              <sc-for list="{{ roles }}" as="r" hint-placeholder-count="10">
+                <button sc-camel-on-click="{{ r.pick }}" style="height:42px; padding:0 20px; border-radius:999px; border:1px solid rgba(16,22,35,.13); background:#fbfbfc; color:#1e3358; font-family:inherit; font-size:15.5px; font-weight:400; white-space:nowrap; cursor:pointer; box-shadow:0 1px 2px rgba(16,22,35,.04); transition:background .15s" style-hover="background:#eef1f5">{{ r.label }}</button>
+              </sc-for>
+              <button sc-camel-on-click="{{ openOther }}" style="display:flex; align-items:center; gap:8px; height:42px; padding:0 20px; border-radius:999px; border:1px dashed rgba(16,22,35,.22); background:transparent; color:#6e6e73; font-family:inherit; font-size:15.5px; font-weight:400; white-space:nowrap; cursor:pointer; transition:background .15s, color .15s" style-hover="background:#eef1f5; color:#1e3358">
+                <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" style="flex:0 0 auto"><path d="M4 18.5l1-4L16 3.5a2.1 2.1 0 013 3L8 17.5l-4 1z"></path></svg>
+                <span>Something else</span>
+              </button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ otherOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:10px; animation:blockIn .26s ease-out both">
+              <input value="{{ other }}" sc-camel-on-change="{{ onOther }}" sc-camel-on-key-down="{{ onOtherKey }}" placeholder="So what is it you do?" style="flex:1 1 auto; min-width:0; height:50px; padding:0 20px; border-radius:999px; border:1px solid rgba(16,22,35,.14); background:#fbfbfc; outline:none; font-family:inherit; font-size:16.5px; color:#1e3358; box-shadow:0 1px 2px rgba(16,22,35,.04)">
+              <button sc-camel-on-click="{{ submitOther }}" style="{{ otherSubmitStyle }}">Tell him</button>
+              <button sc-camel-on-click="{{ closeOther }}" style="height:42px; padding:0 16px; border:none; background:transparent; font-family:inherit; font-size:15.5px; color:#6e6e73; cursor:pointer; white-space:nowrap" style-hover="color:#1e3358">Back</button>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ hasRole }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; justify-content:flex-end; animation:chipIn .26s cubic-bezier(.22,.68,.36,1) both">
+            <span style="display:inline-flex; align-items:center; max-width:70%; height:44px; padding:0 21px; border-radius:999px; background:#1e3358; color:#fbfbfc; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ roleLabel }}</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:16px; font-size:17px; line-height:1.6; text-wrap:pretty">
+            <div style="white-space:pre-wrap"><sc-for list="{{ wR1 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+            <div style="white-space:pre-wrap"><sc-for list="{{ wR2 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+            <div style="white-space:pre-wrap"><sc-for list="{{ wR3 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+          </div>
+
+          <sc-if value="{{ showTasks }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; animation:blockIn .4s ease-out both">
+              <sc-for list="{{ tasks }}" as="t" hint-placeholder-count="3">
+                <button sc-camel-on-click="{{ t.pick }}" style="{{ t.cardStyle }}">
+                  <span style="{{ t.iconStyle }}"></span>
+                  <span style="font-size:16.5px; font-weight:400; line-height:1.35; color:#1e3358; text-wrap:pretty">{{ t.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ hasTask }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; justify-content:flex-end; animation:chipIn .26s cubic-bezier(.22,.68,.36,1) both">
+            <span style="display:inline-flex; align-items:center; max-width:70%; height:44px; padding:0 21px; border-radius:999px; background:#1e3358; color:#fbfbfc; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ taskLabel }}</span>
+          </div>
+
+          <div style="white-space:pre-wrap; font-size:17px; line-height:1.6; text-wrap:pretty"><sc-for list="{{ wP1 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+
+          <sc-if value="{{ showPerm }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; gap:16px; padding:15px 17px; border-radius:18px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 10px 28px rgba(16,22,35,.06); animation:blockIn .4s ease-out both">
+              <span style="{{ permIconStyle }}"></span>
+              <span style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px">
+                <span style="font-size:16.5px; font-weight:500; letter-spacing:-.01em; color:#1e3358">{{ permTitle }}</span>
+                <span style="font-size:15px; color:#6e6e73">{{ permSub }}</span>
+              </span>
+              <span style="display:flex; align-items:center; gap:9px; flex:0 0 auto">
+                <button sc-camel-on-click="{{ deny }}" style="height:42px; padding:0 20px; border-radius:999px; border:1px solid rgba(16,22,35,.14); background:#fbfbfc; color:#1e3358; font-family:inherit; font-size:15.5px; cursor:pointer; white-space:nowrap; transition:background .15s" style-hover="background:#eef1f5">Not now</button>
+                <button sc-camel-on-click="{{ allow }}" style="height:42px; padding:0 22px; border-radius:999px; border:none; background:#1e3358; color:#fbfbfc; font-family:inherit; font-size:15.5px; cursor:pointer; white-space:nowrap; transition:background .15s" style-hover="background:#2c4674">Allow access</button>
+              </span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasPerm }}" hint-placeholder-val="{{ false }}">
+          <div style="white-space:pre-wrap; font-size:17px; line-height:1.6; text-wrap:pretty"><sc-for list="{{ wT1 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+
+          <sc-if value="{{ showResult }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; gap:16px; padding:15px 17px; border-radius:18px; background:#fbfbfc; border:1px solid rgba(16,22,35,.11); box-shadow:0 1px 2px rgba(16,22,35,.04), 0 10px 28px rgba(16,22,35,.06); animation:blockIn .4s ease-out both">
+              <span style="{{ resultIconStyle }}"></span>
+              <span style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px">
+                <span style="font-size:16.5px; font-weight:500; letter-spacing:-.01em; color:#1e3358">{{ resultName }}</span>
+                <span style="font-size:15px; color:#6e6e73">{{ resultKind }}</span>
+              </span>
+              <button style="flex:0 0 auto; display:flex; align-items:center; gap:8px; height:42px; padding:0 20px; border-radius:999px; border:1px solid rgba(16,22,35,.14); background:#fbfbfc; color:#1e3358; font-family:inherit; font-size:15.5px; cursor:pointer; white-space:nowrap; transition:background .15s" style-hover="background:#eef1f5">
+                <span>{{ resultOpen }}</span>
+                <svg width="13" height="13" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto"><path d="M7 17L17 7"></path><path d="M9 7h8v8"></path></svg>
+              </button>
+            </div>
+          </sc-if>
+
+          <div style="display:flex; flex-direction:column; gap:16px; font-size:17px; line-height:1.6; text-wrap:pretty">
+            <div style="white-space:pre-wrap"><sc-for list="{{ wT2 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+            <div style="white-space:pre-wrap"><sc-for list="{{ wT3 }}" as="w" hint-placeholder-count="0"><span style="{{ w.style }}">{{ w.text }}</span></sc-for></div>
+          </div>
+
+          <sc-if value="{{ showAgents }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; justify-content:center; padding:18px 0 4px; animation:blockIn .46s ease-out both">
+              <button style="width:min(560px,100%); height:56px; border-radius:999px; border:none; background:#1e3358; color:#fbfbfc; font-family:inherit; font-size:17px; font-weight:400; letter-spacing:-.005em; cursor:pointer; transition:background .15s" style-hover="background:#2c4674">Get Started</button>
+            </div>
+          </sc-if>
+          </sc-if>
+        </sc-if>
+
+      </div>
+    </div>
+
+    <div style="flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:22px; padding:10px 0 38px">
+      <sc-if value="{{ showSkip }}" hint-placeholder-val="{{ true }}">
+        <button sc-camel-on-click="{{ skip }}" style="height:34px; padding:0 14px; border:none; background:transparent; cursor:pointer; font-family:inherit; font-size:16px; font-weight:400; color:#6e6e73; transition:color .15s" style-hover="color:#1e3358">Skip</button>
+      </sc-if>
+      <div style="display:flex; align-items:center; gap:7px">
+        <sc-for list="{{ dots }}" as="d" hint-placeholder-count="3">
+          <span style="{{ d.style }}"></span>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1120,&quot;height&quot;:845},&quot;userName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Bass&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const ROLES = [
+  ["Finance", "Numbers, then. I'll keep receipts on everything I hand you."],
+  ["Engineering / Tech", "Right. I'll stay literal and leave the detail in."],
+  ["Founder / Business Owner", "Thought so. I'll keep things short and decision-shaped."],
+  ["Sales / Marketing", "Pipeline work. I'll keep you in front of people instead of admin."],
+  ["Office Work", "The stuff nobody thanks you for. That's the easiest to take off you."],
+  ["Content Creator", "Output work. I'll keep the drafts moving so you're never starting cold."],
+  ["Design / Creative", "Fine. I'll keep the output visual where that helps."],
+  ["Consultant / Freelance", "Many masters. I'll keep the clients from blurring into each other."],
+  ["Student", "Deadlines and reading. I can carry most of that."],
+  ["Slacker (my kind)", "Ha. My kind of client. We'll find you agents who work while you don't."]
+];
+const OTHER_REPLY = "Noted. I'll work out the shape of it as we go.";
+
+const TASKS = [
+  ["apple-notes.webp", "Leave a riddle on your note app", "Notes",
+   "App access requested",
+   "I can do that, but I'll need access to Notes to write it in there. Mind allowing that?",
+   "Done. I left one in Notes. Try opening it.",
+   "A riddle from Yodo", "Note", "Open in Notes"],
+  ["macos-settings.png", "Change my theme to dark mode", "System Settings",
+   "System access requested",
+   "Easy enough. I'll need permission to change your system appearance. Mind allowing that?",
+   "Done. Have a look around \u2014 everything just went dark.",
+   "Appearance \u2014 Dark", "System setting", "Open in Settings"],
+  ["imessage.webp", "Text myself a pep talk for 9am tomorrow", "Messages",
+   "App access requested",
+   "Can do. I'll need access to Messages to send it to you in the morning. Mind allowing that?",
+   "Done. It'll land at nine, whether you're ready for it or not.",
+   "Pep talk \u2014 9:00 AM", "Scheduled message", "Open in Messages"]
+];
+
+const AGENTS = [
+  ["Perrin", "Reads files and answers with the numbers", "#f7c9a8,#f4b9b0,#efd3a8", 12],
+  ["Juno", "Handles documents, decks and exports", "#8fd3f4,#b9c4ee,#f7b2d9", 2],
+  ["Sable", "Keeps filing, naming and versions in order", "#cdbdf5,#e3c2ee,#f9cfd6", 7]
+];
+
+const RES = (p) => {
+  const id = "logo_" + p.replace(/^.*\//, "").replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]/gi, "_");
+  return (window.__resources && window.__resources[id]) || p;
+};
+
+const WPS = 13;
+const GAP = 3;
+const WORD_ON = "display:inline; animation:wordIn .3s ease-out both";
+const WORD_OFF = "display:inline";
+const INTRO_MS = 2150;
+
+class Component extends DCLogic {
+  scrollRef = React.createRef();
+  born = Date.now();
+  state = { signedIn: true, intro: true, phase: null, t0: null, revealed: 0, role: null, other: "", otherOpen: false, task: null, perm: null, agent: 0 };
+
+  componentDidMount() { this.timer = setInterval(() => this.frame(), 16); }
+  componentWillUnmount() { clearInterval(this.timer); }
+
+  componentDidUpdate() {
+    if (this._seen === this.state.revealed && this._seenPhase === this.state.phase) return;
+    this._seen = this.state.revealed;
+    this._seenPhase = this.state.phase;
+    const el = this.scrollRef.current;
+    if (el && el.scrollHeight - el.clientHeight - el.scrollTop < 260) el.scrollTop = el.scrollHeight;
+  }
+
+  frame() {
+    const s = this.state;
+    if (!s.signedIn) return;
+    if (s.intro) {
+      if (Date.now() - this.born > INTRO_MS) this.begin("open");
+      return;
+    }
+    if (!s.phase || s.t0 == null) return;
+    const total = this.segs(s.phase).total;
+    const n = Math.min(total, Math.floor(((Date.now() - s.t0) / 1000) * WPS));
+    if (n !== s.revealed) this.setState({ revealed: n });
+  }
+
+  begin(phase) { this.setState({ intro: false, phase: phase, t0: Date.now(), revealed: 0 }); }
+
+  lines(phase) {
+    const s = this.state;
+    if (phase === "role") return [
+      s.role === "other" ? OTHER_REPLY : (ROLES[s.role] ? ROLES[s.role][1] : ""),
+      "Here on your Mac I work directly with your files, your folders, and the apps you connect.",
+      "Start with something small to see how it feels:"
+    ];
+    if (phase === "perm") return [
+      TASKS[s.task] ? TASKS[s.task][4] : ""
+    ];
+    if (phase === "task") {
+      const t = TASKS[s.task];
+      if (s.perm !== "allowed") return [
+        "No bother. I'll ask again when it actually matters.",
+        "We can get you moving without it.",
+        "You're all set."
+      ];
+      return [
+        t ? t[5] : "",
+        "And just like that, we did something on your computer.",
+        "You're all set."
+      ];
+    }
+    return [
+      "Hey, " + ((this.props.userName || "Bass").trim() || "Bass") + "!",
+      "My name is Yodo. I'm your Chief of Staff.",
+      "My job is simple: figure out what you need done, then put the right agents on it. You can work with them yourself, or let me run the team for you.",
+      "Right now you've got nobody. By the time we're done here you'll have two or three, and they'll already be working.",
+      "So talk to me. Which best describes your work?"
+    ];
+  }
+
+  words(text) {
+    return text.split(" ").map((w, i) => (i ? " " + w : w));
+  }
+
+  segs(phase) {
+    let off = 0;
+    const out = this.lines(phase).map(text => {
+      const ws = this.words(text);
+      const seg = { words: ws, off: off };
+      off += ws.length + GAP;
+      return seg;
+    });
+    return { out: out, total: off };
+  }
+
+  renderVals() {
+    if (!this.timer) this.timer = setInterval(() => this.frame(), 16);
+    const s = this.state;
+    const isOther = s.role === "other";
+    const role = (s.role !== null && !isOther) ? ROLES[s.role] : null;
+    const task = s.task !== null ? TASKS[s.task] : null;
+    const stage = s.task !== null ? 2 : (s.role !== null ? 1 : 0);
+
+    const cut = (phase, k) => {
+      const segs = this.segs(phase).out;
+      const ws = segs[k].words;
+      if (s.phase !== phase) {
+        return s.intro ? [] : ws.map(t => ({ text: t, style: WORD_OFF }));
+      }
+      const n = s.revealed - segs[k].off;
+      if (n <= 0) return [];
+      return ws.slice(0, Math.min(n, ws.length)).map(t => ({ text: t, style: WORD_ON }));
+    };
+    const done = phase => s.phase !== phase ? !s.intro : s.revealed >= this.segs(phase).total;
+
+    return {
+      showLogin: !s.signedIn,
+      signedIn: s.signedIn,
+      signIn: () => { this.born = Date.now(); this.setState({ signedIn: true }); },
+      introRunning: s.intro,
+      introDone: !s.intro,
+      speakerColors: "#8ec9f0,#a9b8ea,#bfe0f5",
+      speakerSeed: 22,
+      scrollRef: this.scrollRef,
+
+      wGreeting: cut("open", 0),
+      wL1: cut("open", 1),
+      wL2: cut("open", 2),
+      wL3: cut("open", 3),
+      wL4: cut("open", 4),
+
+      showChips: s.role === null && !s.intro && done("open"),
+      hasRole: s.role !== null,
+      roleLabel: isOther ? s.other.trim() : (role ? role[0] : ""),
+      roles: ROLES.map((x, n) => ({ label: x[0], pick: () => { this.setState({ role: n }); this.begin("role"); } })),
+      chipsOpen: !s.otherOpen,
+      otherOpen: s.otherOpen,
+      other: s.other,
+      openOther: () => this.setState({ otherOpen: true }),
+      closeOther: () => this.setState({ otherOpen: false, other: "" }),
+      onOther: e => this.setState({ other: e.target.value }),
+      onOtherKey: e => {
+        if (e.key === "Enter" && this.state.other.trim()) { this.setState({ role: "other", otherOpen: false }); this.begin("role"); }
+        if (e.key === "Escape") this.setState({ otherOpen: false, other: "" });
+      },
+      submitOther: () => { if (this.state.other.trim()) { this.setState({ role: "other", otherOpen: false }); this.begin("role"); } },
+      otherSubmitStyle: "height:42px; padding:0 22px; border-radius:999px; border:none; font-family:inherit; font-size:15.5px; font-weight:400; white-space:nowrap; cursor:pointer; transition:background .15s; background:" +
+        (s.other.trim() ? "#1e3358" : "#c4ccd8") + "; color:#fbfbfc;",
+
+      wR1: cut("role", 0),
+      wR2: cut("role", 1),
+      wR3: cut("role", 2),
+
+      showTasks: s.role !== null && done("role"),
+      hasTask: s.task !== null,
+      taskLabel: task ? task[1] : "",
+      tasks: TASKS.map((x, n) => {
+        const chosen = s.task === n;
+        const dim = s.task !== null && !chosen;
+        return {
+          label: x[1],
+          pick: () => { if (this.state.task === null) { this.setState({ task: n, perm: null }); this.begin("perm"); } },
+          cardStyle: "display:flex; flex-direction:column; align-items:flex-start; gap:26px; min-height:152px; padding:20px; border-radius:16px; text-align:left; font-family:inherit; transition:background .18s, border-color .18s, opacity .18s; cursor:" +
+            (s.task === null ? "pointer" : "default") + "; background:" +
+            (chosen ? "#eef1f5" : "#fbfbfc") + "; border:1.5px solid " + (chosen ? "#1e3358" : "rgba(16,22,35,.11)") +
+            "; opacity:" + (dim ? ".42" : "1") + ";" + (chosen || dim ? "" : " box-shadow:0 1px 2px rgba(16,22,35,.04), 0 10px 28px rgba(16,22,35,.06);"),
+          iconStyle: "width:46px; height:46px; flex:0 0 auto; border-radius:10px; background-image:url(" + RES("logos/apps/" + x[0]) + "); background-size:contain; background-repeat:no-repeat; background-position:center"
+        };
+      }),
+
+      wP1: cut("perm", 0),
+      showPerm: s.task !== null && s.perm === null && done("perm"),
+      permTitle: task ? task[2] : "",
+      permSub: task ? task[3] : "",
+      permIconStyle: task
+        ? "width:44px; height:44px; flex:0 0 auto; border-radius:11px; background-image:url(" + RES("logos/apps/" + task[0]) + "); background-size:contain; background-repeat:no-repeat; background-position:center"
+        : "width:44px; height:44px; flex:0 0 auto",
+      allow: () => { this.setState({ perm: "allowed" }); this.begin("task"); },
+      deny: () => { this.setState({ perm: "declined" }); this.begin("task"); },
+
+      hasPerm: s.perm !== null,
+      wT1: cut("task", 0),
+      wT2: cut("task", 1),
+      wT3: cut("task", 2),
+      showResult: s.perm === "allowed" && s.phase === "task" &&
+        s.revealed >= (this.segs("task").out[1] ? this.segs("task").out[1].off : 0),
+      resultName: task ? task[6] : "",
+      resultKind: task ? task[7] : "",
+      resultOpen: task ? task[8] : "",
+      resultIconStyle: task
+        ? "width:44px; height:44px; flex:0 0 auto; border-radius:11px; background-image:url(" + RES("logos/apps/" + task[0]) + "); background-size:contain; background-repeat:no-repeat; background-position:center"
+        : "width:44px; height:44px; flex:0 0 auto",
+      showAgents: s.perm !== null && done("task"),
+      showSkip: !(s.perm !== null && done("task")),
+
+      dots: [0, 1, 2].map(n => ({
+        style: "width:" + (n === stage ? "22px" : "14px") + "; height:5px; border-radius:999px; transition:width .22s ease, background .22s ease; background:" +
+          (n === stage ? "#1e3358" : "rgba(16,22,35,.16)")
+      })),
+
+      skip: () => {
+        const phase = this.state.phase || "open";
+        const total = this.segs(phase).total;
+        this.setState({ intro: false, phase: phase, t0: Date.now() - ((total / WPS) * 1000) - 800, revealed: total });
+      }
+    };
+  }
+}
+</script>
+
+
+</body></html>

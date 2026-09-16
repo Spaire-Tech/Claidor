@@ -153,3 +153,15 @@ canvas's fake bot matched words in the prompt; the app's cards come from
 the files the agent actually links. The Word, Excel and PowerPoint
 images were already bundled under `design/logos/`; the PDF one is
 `design/thread/pdf-doc.webp`, lifted from this bundle.
+
+## 16 September 2026 — onboarding, step one
+
+`canvas-2026-09-16-onboarding.html` is the founder's bundle as uploaded
+(`Caisra_Mac_Onboarding_1.html`); `canvas-2026-09-16-onboarding-template.html`
+is its own source, pulled from the bundle's `__bundler/template`, with
+the script (roles, tasks, timings) at the bottom. Built as
+`desktop/src/renderer/design/onboarding/`; the three app logos it
+embeds are under `desktop/public/logos/apps/` as `apple-notes.webp`,
+`macos-settings.webp` (shrunk from the bundle's 472KB PNG) and
+`imessage.webp`. Photographed by `harness/onboarding-walk.mjs`.
+

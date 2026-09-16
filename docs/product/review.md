@@ -2416,3 +2416,97 @@ photographed from the harness. **Unrun:** a sign-in, as before.
 `scripts/build-connections-catalogue.py` (note), `public/logos/apps/`,
 `docs/product/connectors-list-2026-09-15.md` (note).
 
+## 55. Onboarding, step one: Yodo — `built; the Mac work unrun`
+
+The founder's canvas of 16 September (`docs/product/design/canvas-2026-09-16-onboarding.html`,
+source beside it as `-template.html`): *"i designed what i call the
+first step of onboarding. cause the final goal is to have the chief of
+staff create the first agents for the user. i'll figure out the rest
+later. for now after get started it should take them to the chat …
+there is a cloud avatar, who's the chief of staff. his name is yodo.
+he's the main agent … the chat streams, the design i want it exactly
+like i designed it. the permission must come and the thing should
+actually do the work. if its a riddle, have one ready. no generate new
+one, lets just have one that we save. message needs imessage … we'll
+make it unavailable until we figure it out. settings is
+straightforward. the ai tho has to be smart enough to see if the mac is
+in light or dark mode currently."*
+
+**Yodo is the main agent.** `DefaultAgentProfile` is Yodo: the name,
+the canvas's three colours and `seed: 22`, drawn without the shade the
+other clouds carry. The main agent wears that face everywhere
+(`MAIN_AVATAR`, outside the twenty-five, never handed out), existing
+rows named Caisra or Faiser migrate on start, and the main agent's
+managed instructions open with the chief-of-staff brief
+(`shared/agent/chiefOfStaff.ts`). The separate Chief of Staff preset is
+gone: it was Yodo by another route. Twelve roles remain.
+
+**The screen.** `design/onboarding/Onboarding.tsx` is the canvas to the
+number: the big cloud for 2.15s, the 42px cloud, the 760px column, the
+30px greeting, the 17px lines at 1.6 streaming at thirteen words a
+second with three beats between lines and each word fading in, the ten
+chips and "Something else" with its field, the pill on the right for
+what the person chose, the three cards, the permission card, the result
+card, Get Started, Skip, the three dots. The words are the founder's
+verbatim (`shared/onboarding/script.ts`); the arithmetic of the
+streaming is pure and tested. Get Started writes
+`app_config.onboardingDoneAt` and the app goes to the conversation;
+the screen never plays again on that install. Skip is the canvas's:
+the current lines land at once. It is not an exit.
+
+**The work is real.** "Allow access" asks the main process
+(`main/onboarding/macTasks.ts`, over `onboarding:*` IPC) and the Mac
+does it through `osascript`:
+
+- **Notes:** one saved riddle (`RIDDLE`, an echo), written as a note
+  titled "A riddle from Yodo" with the answer at the bottom; the note's
+  id is kept and "Open in Notes" shows that note.
+- **Appearance:** `nativeTheme.shouldUseDarkColors` says what the Mac is
+  showing now, so a light Mac is offered dark and a dark Mac is offered
+  light; the card, the done line and the result name all follow. The
+  switch goes through System Events; "Open in Settings" opens the
+  Appearance pane. That is the smartness the founder asked for, done in
+  code rather than by a model, because it is a fact and not a judgement.
+- **Messages:** the card is there, dimmed, and says "Not yet". Not
+  pressable until iMessage is figured out.
+
+macOS asks its own question the first time Caisra controls Notes or
+System Events; if the person says no there, the script fails with
+-1743 and the person is told where to turn it on. The canvas had two
+endings, done and declined; there is a third for allowed-and-failed,
+because "Done" over a note that was never written is the lie the app
+must not tell. While the Mac works, the permission card keeps its
+place and says "Working…" instead of pretending.
+
+**Chief-of-staff skills, looked at.** Four turned up:
+alirezarezvani/claude-skills' `chief-of-staff` (MIT), a routing matrix
+over fifteen C-suite advisor skills with a decision log, built for a
+founder consulting a board; affaan-m's, a personal inbox triager;
+Akshat2430/ai-chief-of-staff, a Claude Code setup for email replies;
+richardbowman's, one person's standing rules with no licence file. None
+is our shape and none was taken. The one rule worth keeping from any of
+them — what can be undone may be done, what cannot is asked first — is
+already the product's own.
+
+**Proof.** 21 new tests on the script and the Mac tasks (scripts read,
+appearance both ways, Messages refused before anything runs, -1743
+explained, open by note id); eslint, tsc, `compile:electron` clean;
+528 tests across the touched areas pass with 9 failures in
+`sqliteStore.test.ts` that fail identically on the clean tree — the
+machine's better-sqlite3 binding, not the change.
+`harness/onboarding-walk.mjs` drives the screen in Chromium with the Mac
+stood in for and photographs seven stages; the Messages card is
+disabled and the result card comes. **Unrun:** the Mac itself — the
+AppleScripts, macOS's own permission dialog, the note appearing, the
+appearance flipping. That needs the founder's Mac.
+
+**Where:** `shared/onboarding/{constants,script}.ts` (+test),
+`main/onboarding/macTasks.ts` (+test), `main/ipcHandlers/onboarding/handlers.ts`,
+`main/preload.ts`, `renderer/types/electron.d.ts`, `main/main.ts`,
+`renderer/config.ts`, `design/onboarding/{Onboarding.tsx,useOnboarding.ts}`,
+`design/shell/CaisraApp.tsx`; `shared/agent/{constants,avatars,chiefOfStaff}.ts`,
+`design/orb/CloudBlob.tsx`, `design/shell/{select,useMessagesShell}.ts`,
+`design/thread/ThreadItemView.tsx`, `main/sqliteStore.ts`, `main/presetAgents.ts` (+test),
+`renderer/utils/agentDisplay.ts`; `public/logos/apps/{apple-notes,macos-settings,imessage}.webp`;
+`harness/main.tsx`, `harness/onboarding-walk.mjs`.
+

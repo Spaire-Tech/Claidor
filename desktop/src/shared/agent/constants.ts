@@ -61,9 +61,26 @@ export const LegacyAgentName = {
    * leave existing installs saying "LobsterAI" forever.
    */
   Upstream: 'lobsterai',
+  /** The app's own earlier names for the main agent, 13 to 16 September 2026. */
+  Faiser: 'faiser',
+  Caisra: 'caisra',
 } as const;
 
+/**
+ * The main agent is Yodo, the Chief of Staff.
+ *
+ * The founder, 16 September 2026, with the onboarding canvas: *"there is
+ * a cloud avatar, who's the chief of staff. his name is yodo. he's the
+ * main agent. his job is literally being a chief of staff."* Before that
+ * the main agent wore the app's name (Caisra from the 15th, Faiser for two
+ * days before); those are legacy names now and existing rows migrate.
+ *
+ * The face is the canvas's, not one of the twenty-five in
+ * `avatars.ts`: its own three stops and `seed: 22`, drawn without the
+ * shade the other clouds carry.
+ */
 export const DefaultAgentProfile = {
-  /** The main agent wears the app's name. Caisra, since 15 September 2026. */
-  Name: 'Caisra',
+  Name: 'Yodo',
+  Colors: '#8ec9f0,#a9b8ea,#bfe0f5',
+  Seed: 22,
 } as const;
