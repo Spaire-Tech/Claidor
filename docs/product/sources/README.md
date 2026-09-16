@@ -10,6 +10,7 @@ verbatim. Nothing in this folder is mine.
 | `grok-bot-app-ui.md` | The verified UI map the agent is given so it never invents a click-path | 15 Sep 2026 |
 | `grok-bot-agent-reference.md` | The whole agent contract in one page: identity, voice, autonomy, safety, surfaces | 15 Sep 2026 |
 | `grok-bot-agent-system-contract.md` | The full builder-facing contract, §§1–32 with both appendices | 15 Sep 2026 |
+| `caisra-permissions.md` | Every gate a person meets and when it asks: chat decisions, the computer (once per machine until revoked), auto-review, OS dialogs, connectors, secrets, forms, spend, and what must never re-prompt. *"a permission md from grok bot we MUST follow."* Applied 17 Sep (review item 67). | 17 Sep 2026 |
 
 The fifth is answered by a document of ours in the same shape:
 `../agent-contract.md`, which carries the section-by-section audit

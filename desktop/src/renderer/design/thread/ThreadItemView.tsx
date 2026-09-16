@@ -633,10 +633,13 @@ function AuthCard(
             </>
           )
           : (
+            // One trust decision for this computer, then out of the way
+            // (`caisra-permissions.md` §2.2). "Allow once" went on 17
+            // September: pressed five times in a row for one poem, it
+            // was the pestering the founder's design forbids.
             <>
-              {button('Always allow', 'always', true)}
-              {button('Allow once', 'once')}
-              {button('Never', 'never')}
+              {button('Allow', 'always', true)}
+              {button('Not now', 'never')}
             </>
           )}
       </div>

@@ -48,8 +48,11 @@ The founder has redesigned the app and set the direction. It is written
 down in `docs/product/direction.md`, with the founder's own words quoted
 and every code claim tied to a file. Read it before proposing anything
 about the product's shape. Its headlines: the app is Messages, with each
-conversation an agent; five message kinds and no step cards; every
-action on the computer asks first; text arrives as texts and only speech
+conversation an agent; five message kinds and no step cards; the
+computer asks once, the first time, and then not again until the person
+changes it in Settings (`docs/product/sources/caisra-permissions.md`,
+17 September; decisions that are hard to undo still ask, as a question
+card); text arrives as texts and only speech
 streams; one computer, this one; role agents are kits in the upstream's format, whose
 store endpoint we already serve empty. **The product is Caisra**, the
 founder's official name, decided 15 September 2026. The agent works for

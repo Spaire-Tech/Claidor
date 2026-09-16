@@ -3640,6 +3640,13 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('### Files on their computer');
     expect(agentsMd).toContain('draws the same card a command does');
     expect(agentsMd).toContain('A refused file is refused.');
+    // 17 September, the founder's permissions doc: the computer asks
+    // once, the agent never asks in words, and the hard-to-undo things
+    // are a question card, not the computer card.
+    expect(agentsMd).toContain('### Their computer asks once');
+    expect(agentsMd).toContain('nothing on this computer asks again until they change it in Settings');
+    expect(agentsMd).toContain('### Deleting, sending, paying');
+    expect(agentsMd).not.toContain('If they answered Always for a folder');
   });
 
   test('memory precedence says which file wins', async () => {

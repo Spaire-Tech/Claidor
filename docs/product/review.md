@@ -3510,3 +3510,101 @@ tools. What I cannot see from here is Render's deploy list; the
 `lobsterai-server` provider's `api` field in the Mac's `openclaw.json`
 says `openai-responses` if the deployed server is current. `CLAUDE.md`
 corrected in the same commit.
+
+## 67. "its better but not good. there are garbages we need to fix." — the poem thread, and the founder's permissions doc — `four faults fixed; the Mac unrun`
+
+The oke thread, 17 September, on the account's model. The poem came,
+as a Word document card. Under it: a line beginning `⚠️ 🛠️ create
+folder .cowork-temp → show > → run const → … → run unzip
+funny-romcom-poem.docx (in /Users/bassfall/caisra/project) failed`;
+then a bubble reading *"The user approved the command execution.
+Please check the result and continue."*, twice; then five lines of
+*"oke can run commands on your computer this time"*, pinned to the
+bottom under every reply that came later. And with it the founder's
+own document, `sources/caisra-permissions.md`: *"a permission md from
+grok bot we MUST follow."* Its rule for the computer is one sentence:
+once per machine until revoked.
+
+**The four, read from the code.**
+
+1. **The phantom bubble is upstream's.** After every command approval
+   the app pushed that sentence into the session as a *user turn*
+   (`openclawApprovalController.ts`, `t('execApprovalApproved')`,
+   `continueSession`), and the thread drew it as if the person had
+   typed it. The engine already wakes the agent itself when an
+   approved command finishes
+   (`bash-tools.exec-approval-followup.ts`, "An async command the user
+   already approved has completed…"), so the app's prompt was a second
+   turn on top of the engine's, and a visible one. Deleted, with its
+   two strings in both languages and the three options that existed
+   only for it.
+
+2. **The chain of tools is the engine's step card in one line.** The
+   engine summarises a run of tools as `🛠️ verb target → verb target`
+   (`tool-display-exec.ts`, joined with arrows; `tool-display-config.ts`
+   for the emoji), with `⚠️` in front and `failed` behind when the run
+   ended badly. The design has no step cards. The thread's one gate
+   (`fromEngine.ts`, "everything else is dropped here") now drops any
+   text that starts with those marks, on every path it can arrive by:
+   an assistant text, an assistant error, a system line. I did not pin
+   the exact engine path that emitted this one; the gate does not
+   depend on it, and that is the point of having one gate.
+
+3. **Five cards for one poem.** Every command the agent ran that was
+   not on the engine's allowlist asked, and the founder pressed Allow
+   once five times. The document's cadence (§2.2): the first action on
+   a not-yet-allowed machine asks; after Allow, no re-prompt until the
+   person revokes it; per-command re-prompts are not to be invented.
+   Now the card has two buttons, **Allow** and **Not now**. Allow
+   answers the pending request and writes the same setting the
+   Settings screen writes ("Allow automatically",
+   `settings.setExecPolicy(ExecPolicy.Allow)`), so the engine stops
+   asking for every command and every file until the person changes
+   it there. "Allow once" is gone. The card says so under the
+   question: *"Once you allow it, it won't ask again on this computer.
+   You can change that any time in Settings."* The line it leaves:
+   *"oke can work on your computer from now on. Change that any time
+   in Settings."* Not now leaves *"Not now. oke will ask again when it
+   matters."* (§10, the onboarding wording).
+
+4. **The line pinned to the bottom.** The notes an answered card
+   leaves were appended after the session's messages, so they sat
+   under every later reply for good. They are merged by time now
+   (`select.ts`, `mergeByTime`, stable), each after the last message
+   that came before it.
+
+**The agent's side of the same rule** (`openclawConfigSync.ts`,
+exec safety): "Their computer asks once": call the tool, the app asks,
+never ask in words or with a question card, and once allowed never
+mention it; Not now is that one action, declined. "Deleting, sending,
+paying" replaces "Deleting": the computer card is not about those; ask
+once with the question card unless they just told you to.
+
+**What the document has that we do not.** Auto-review (§3): a
+reviewer that lets a low-risk command through and asks only for the
+risky one. The engine has the hook (`autoReview`, "Check, then ask" in
+Settings) and no reviewer behind it: its default reviewer answers
+"ask" every time (`exec-auto-review.ts`), so that setting is "Ask every
+time" with extra steps. After Allow, `rm -rf` runs without a card, and
+the only thing between the person and that is the agent's rule to ask
+first with a question card. A model-backed reviewer is the follow-up
+that would make "Check, then ask" true.
+
+**Proof.** 304 tests across the thread, the shell's select, the
+approval controller, the config sync; tsc; eslint on every touched
+file; `compile:electron`; the adapter and router tests.
+
+**Unrun: the founder's Mac.** After pulling: ask for a poem in a Word
+document; one card, Allow; no line with a hammer on it, no "the user
+approved" bubble, the note in its place; then a second command with no
+card. Settings → the computer row must read "Allow automatically"
+afterwards, and changing it back to "Ask every time" must bring the
+card back.
+
+**Where:** `desktop/src/main/libs/agentEngine/openclawApprovalController.ts`
+(+test), `openclawRuntimeAdapter.ts`, `desktop/src/main/i18n.ts`,
+`desktop/src/renderer/design/thread/fromEngine.ts` (+test),
+`ThreadItemView.tsx`, `desktop/src/renderer/design/shell/useMessagesShell.ts`,
+`select.ts` (+test), `desktop/src/main/libs/openclawConfigSync.ts`
+(+runtime test), `docs/product/sources/caisra-permissions.md`,
+`sources/README.md`, `docs/product/direction.md`, `CLAUDE.md`.

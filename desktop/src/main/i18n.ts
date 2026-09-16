@@ -150,9 +150,6 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkBtwStopFailed: '停止顺便问问失败，请重试。',
     imErrorPrefix: '处理消息时出错',
 
-    // Exec approval continuation
-    execApprovalApproved: '用户已确认执行该命令，请检查执行结果并继续。',
-    execApprovalDenied: '用户已拒绝执行该命令。',
 
     // Skill manager errors
     skillErrNoSkillMd: '来源中未找到 SKILL.md',
@@ -535,10 +532,6 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkBtwStopFailed: 'Failed to stop the BTW side question. Please try again.',
     imErrorPrefix: 'Error processing message',
 
-    // Exec approval continuation
-    execApprovalApproved:
-      'The user approved the command execution. Please check the result and continue.',
-    execApprovalDenied: 'The user denied the command execution.',
 
     // Skill manager errors
     skillErrNoSkillMd: 'No SKILL.md found in source',

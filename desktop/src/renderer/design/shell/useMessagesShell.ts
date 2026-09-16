@@ -5,6 +5,7 @@ import { AgentId } from '../../../shared/agent';
 import { agentAvatar } from '../../../shared/agent/avatars';
 import { BrowserDisplayMode, normalizeBrowserWebAccessConfig } from '../../../shared/browserWebAccess/constants';
 import { isRoomId, type Room } from '../../../shared/rooms/constants';
+import { ExecPolicy } from '../../../shared/settings/constants';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { configService } from '../../services/config';
@@ -32,6 +33,7 @@ import { installedPresetIds } from './roles';
 import { mergeRoomThread, roomTyping } from './room';
 import {
   dayStamp as dayStampOf,
+  mergeByTime,
   sidebarAgents,
   sidebarRooms,
   type StoreSession,
@@ -274,8 +276,13 @@ export function useMessagesShell(): MessagesShellState {
 
   const session = sessionsByAgent[activeId];
 
+  // The notes go where they happened. Appended after the messages they
+  // sat at the bottom of the thread for good, under every reply that came
+  // later ("oke can run commands on your computer this time" pinned below
+  // the poem, 17 September). A stable merge by time puts each one after
+  // the last message that came before it.
   const messages = useMemo<readonly EngineMessage[]>(
-    () => [...((session?.messages ?? []) as readonly EngineMessage[]), ...notes],
+    () => mergeByTime((session?.messages ?? []) as readonly EngineMessage[], notes),
     [session, notes],
   );
 
@@ -699,12 +706,18 @@ export function useMessagesShell(): MessagesShellState {
       void coworkService.respondToPermission(
         requestId,
         allow
-          // The scope is the difference between the two allow buttons.
-          // Without it they were the same press: the engine decided from
-          // its own flag and the person's choice was thrown away.
           ? { behavior: 'allow', scope: decision === AuthDecision.Always ? 'always' : 'once' }
           : { behavior: 'deny', message: 'Declined.' },
       );
+      // Allow is the computer, once. The same setting the Settings screen
+      // writes ("Allow automatically"), so the grant is one thing with one
+      // place to revoke it, and the engine stops asking for every command
+      // and every file from here on (`caisra-permissions.md` §2.2).
+      if (decision === AuthDecision.Always) {
+        void window.electron?.settings?.setExecPolicy?.(ExecPolicy.Allow)
+          .then(result => { if (!result?.success) showToast('That could not be saved. It will ask again.'); })
+          .catch(() => { showToast('That could not be saved. It will ask again.'); });
+      }
       // Answering consumes the card: the prompt is replaced by one quiet
       // line, so a thread never accumulates dead controls. The line talks
       // about a file when a file tool asked, which the request still says.

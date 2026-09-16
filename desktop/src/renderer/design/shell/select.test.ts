@@ -4,6 +4,7 @@ import type { EngineMessage } from '../thread/fromEngine';
 import { ThreadItemKind } from '../thread/types';
 import {
   dayStamp,
+  mergeByTime,
   previewOf,
   sidebarAgents,
   sidebarRooms,
@@ -328,5 +329,33 @@ describe('rooms in the sidebar', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].name).toBe('Launch');
     expect(rows[0].preview).toBe('');
+  });
+});
+
+describe('mergeByTime', () => {
+  const at = (id: string, timestamp: number, type: EngineMessage['type'] = 'assistant'): EngineMessage =>
+    ({ id, type, content: id, timestamp });
+
+  test('a note goes after the last message that came before it, not at the bottom', () => {
+    // 17 September: "oke can run commands on your computer this time"
+    // sat under the poem and under every reply that came later.
+    const merged = mergeByTime(
+      [at('m1', 100), at('m2', 200), at('m3', 300)],
+      [at('note', 250, 'system')],
+    );
+    expect(merged.map(one => one.id)).toEqual(['m1', 'm2', 'note', 'm3']);
+  });
+
+  test('notes keep their own order, and later ones still land at the end', () => {
+    const merged = mergeByTime(
+      [at('m1', 100), at('m2', 200)],
+      [at('a', 150, 'system'), at('b', 150, 'system'), at('c', 900, 'system')],
+    );
+    expect(merged.map(one => one.id)).toEqual(['m1', 'a', 'b', 'm2', 'c']);
+  });
+
+  test('no notes is the messages, untouched', () => {
+    const messages = [at('m1', 100)];
+    expect(mergeByTime(messages, [])).toEqual(messages);
   });
 });

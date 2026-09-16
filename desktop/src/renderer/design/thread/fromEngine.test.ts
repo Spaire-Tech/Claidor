@@ -6,11 +6,13 @@ import {
   authQuestion,
   choiceId,
   commandFromToolInput,
+  COMPUTER_GRANT_NOTE,
   decisionNote,
   type EngineMessage,
   type EnginePermissionRequest,
   fileAccessFromToolInput,
   fileAccessQuestion,
+  isEngineToolSummary,
   parseChoiceId,
   splitIntoBubbles,
   toThreadItems,
@@ -205,11 +207,36 @@ describe('the approval card', () => {
     expect(items[items.length - 1].kind).toBe(ThreadItemKind.Auth);
   });
 
-  test('answering it leaves one plain line', () => {
+  test('answering it leaves one plain line: the computer, or not now', () => {
+    // Allow is the computer until the setting is changed; Not now is one
+    // action, and the card comes back when it matters
+    // (`caisra-permissions.md` §2.2, §10, §11).
     expect(decisionNote('Perrin', 'always'))
-      .toBe('Perrin can run commands on your computer from now on.');
+      .toBe('Perrin can work on your computer from now on. Change that any time in Settings.');
     expect(decisionNote('Perrin', 'never'))
-      .toBe("Declined. Perrin can't run commands on your computer.");
+      .toBe('Not now. Perrin will ask again when it matters.');
+  });
+
+  test('the card says the answer is for this computer, once', () => {
+    const items = toThreadItems([], { agentName: 'Perrin', pending: [request] });
+    expect((items[0] as { note?: string }).note).toBe(COMPUTER_GRANT_NOTE);
+    expect(COMPUTER_GRANT_NOTE).toContain("won't ask again on this computer");
+  });
+
+  test("the engine's own chain-of-tools line never reaches the thread", () => {
+    // "⚠️ 🛠️ create folder .cowork-temp → show > → run const → … failed",
+    // 17 September, under a Word document. The engine's step card in one
+    // line; the design has no step cards, on any path it arrives by.
+    const chain = '⚠️ 🛠️ create folder .cowork-temp → run node → list files in poem.docx failed';
+    const items = toThreadItems([
+      msg({ type: 'assistant', content: chain }),
+      msg({ type: 'assistant', content: chain, metadata: { isError: true } }),
+      msg({ type: 'system', content: '🛠️ run unzip poem.docx' }),
+      msg({ type: 'assistant', content: 'The document is ready.' }),
+    ], { running: false });
+    expect(items.map(one => one.kind)).toEqual([ThreadItemKind.Text]);
+    expect(isEngineToolSummary('  ⚠️ 🛠️ x')).toBe(true);
+    expect(isEngineToolSummary('Careful ⚠️')).toBe(false);
   });
 
   test('a file tool asking draws the same card, with the paths on it', () => {
@@ -253,13 +280,13 @@ describe('the approval card', () => {
     expect((items[0] as { access?: string }).access).toBeUndefined();
   });
 
-  test('the note after a file answer talks about files, and Always about the folder', () => {
+  test('the note after a file answer is the same grant: the computer, or not now', () => {
     expect(decisionNote('Perrin', 'always', 'write'))
-      .toBe('Perrin can change files in that folder from now on.');
+      .toBe('Perrin can work on your computer from now on. Change that any time in Settings.');
     expect(decisionNote('Perrin', 'once', 'read'))
       .toBe('Perrin can read that file this time.');
     expect(decisionNote('Perrin', 'never', 'write'))
-      .toBe("Declined. Perrin can't change that file.");
+      .toBe('Not now. Perrin will ask again when it matters.');
   });
 });
 
