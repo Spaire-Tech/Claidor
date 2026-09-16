@@ -49,6 +49,11 @@
   background-color: var(--fsr-paper);
   border: 1px solid var(--fsr-line-hairline);
   box-shadow: var(--fsr-shadow-flat);
+  /* Their overview card sizes as content-box: at width 100% its padding
+     and border spill 22px past the grid cell and swallow the gap, so the
+     tiles touch. Every card fits its cell. */
+  box-sizing: border-box;
+  min-width: 0;
 }
 .caisra-cards .c1-visual-first-card__bottom {
   background-color: var(--fsr-paper);
