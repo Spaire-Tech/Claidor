@@ -92,6 +92,52 @@ const PACK: EngineMessage[] = [
   message({ type: 'assistant', content: 'The model is v3. [[Q4 Model v2.xlsx]] is still in Board / 2026 if you want to compare.' }, 3),
 ];
 
+/**
+ * The answer cards, 17 September: the founder's OpenUI pictures as our
+ * cards. Texts stay texts; the block between them is drawn by us. No
+ * images here, because the harness has no network and a card only
+ * loads a real https address.
+ */
+const CARDS: EngineMessage[] = [
+  message({ type: 'user', content: 'find me the best restaurants in seattle' }, 0),
+  message({
+    type: 'assistant',
+    content: [
+      'Seattle is Pacific Northwest seafood first, then everything the city\u2019s Asian heritage brought with it.',
+      '',
+      '```openui-lang',
+      'root = Stack([places, facts], "Best restaurants in Seattle", "From iconic fine dining to artisanal soba")',
+      'places = Row([a, b, c, d])',
+      'a = Tile("Canlis", "Panoramic views & iconic fine dining", "Fine dining", "", "Book")',
+      'b = Tile("The Walrus & The Carpenter", "Fresh Pacific oysters & Muscadet in Ballard", "Seafood", "", "Book")',
+      'c = Tile("Spinasse", "Hand-cut tajarin & authentic Piedmontese Italian", "Italian", "", "Book")',
+      'd = Tile("Tsukushinbo", "Handmade soba, twelve seats, cash only", "Soba", "", "Book")',
+      'facts = Grid([Fact("Book ahead", "Canlis, two weeks"), Fact("Price", "$$ to $$$$"), Fact("Best for a view", "Canlis, at dusk"), Fact("Walk-in", "The Walrus, before six")])',
+      '```',
+      '',
+      'Canlis needs booking about two weeks out. Say the word and I\u2019ll hold a table.',
+    ].join('\n'),
+  }, 1),
+  message({ type: 'user', content: 'ok and plan me three days in tokyo' }, 2),
+  message({
+    type: 'assistant',
+    content: [
+      '```openui-lang',
+      'root = Stack([hero, summary, days, next])',
+      'hero = Banner("Tokyo, three days", "Grouped by neighbourhood, pace and travel time")',
+      'summary = Row([Metric("Trip length", "3 days", "Tokyo only"), Metric("Best base", "Shinjuku", "Easy transit"), Metric("Budget", "\u00a548,000", "per person, no flights")])',
+      'days = Row([d1, d2, d3])',
+      'd1 = Tile("Shinjuku arrival", "Easy first day to reset after landing", "Day 1")',
+      'd2 = Tile("Harajuku + Shibuya", "Vibrant culture and iconic sights", "Day 2")',
+      'd3 = Tile("Asakusa + Ueno", "Traditional Tokyo, then the park", "Day 3")',
+      'next = Button("Swap day two for Kichijoji", "Swap day two for Kichijoji")',
+      '```',
+      '',
+      'Three days is tight, so this stays on the east side and skips the day trips.',
+    ].join('\n'),
+  }, 3),
+];
+
 const PENDING: (EnginePermissionRequest & { sessionId: string })[] = [
   {
     sessionId: 's1',
@@ -291,7 +337,7 @@ function Screens(): JSX.Element {
   const composing = screen === 'compose';
 
   const withAuth = screen === 'auth' || screen === 'thread';
-  const items = toThreadItems(screen === 'files' ? PACK : CONVERSATION, {
+  const items = toThreadItems(screen === 'files' ? PACK : screen === 'cards' ? CARDS : CONVERSATION, {
     agentId: 'juno',
     agentName: 'Juno',
     pending: withAuth ? PENDING : [],

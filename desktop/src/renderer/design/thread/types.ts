@@ -54,6 +54,13 @@ export const ThreadItemKind = {
    * approval card (nothing is being run yet). So it is its own kind.
    */
   Roster: 'roster',
+  /**
+   * The answer cards: a block the agent wrote in OpenUI's language,
+   * drawn by us between its texts. The founder, 17 September: *"text
+   * should stays text, but having cards that come with it is amazing."*
+   * (`shared/cards/library.ts`.)
+   */
+  Card: 'card',
 } as const;
 export type ThreadItemKind = typeof ThreadItemKind[keyof typeof ThreadItemKind];
 
@@ -254,6 +261,23 @@ export interface RosterItem {
   at: number;
 }
 
+/**
+ * A block of answer cards, in the agent's reply where it wrote it.
+ *
+ * `program` is the fenced block verbatim; the renderer parses it against
+ * the card library and draws what it can. It is kept as text rather than
+ * parsed here so the message in the store stays the source of truth and
+ * an old reply re-renders with whatever the library draws today.
+ */
+export interface CardItem {
+  kind: typeof ThreadItemKind.Card;
+  id: string;
+  program: string;
+  agentId?: string;
+  agentName?: string;
+  at: number;
+}
+
 export type ThreadItem =
   | TextItem
   | SystemItem
@@ -262,7 +286,8 @@ export type ThreadItem =
   | AuthItem
   | AttachmentItem
   | SecretItem
-  | RosterItem;
+  | RosterItem
+  | CardItem;
 
 /** What the person chose on an approval card. */
 export const AuthDecision = {

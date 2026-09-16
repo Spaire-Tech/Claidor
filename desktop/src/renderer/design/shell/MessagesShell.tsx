@@ -460,6 +460,9 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             {...(roster ? { roster } : {})}
             {...(parts ? { parts } : {})}
             actions={{ reactions, onReact, onReply }}
+            // A button in an answer card is the person's next message,
+            // sent as if typed: "Book: Canlis".
+            cards={{ onMessage: onSend }}
             typing={saysTyping && !waiting ? { avatar: activeAvatar } : undefined}
           />
 

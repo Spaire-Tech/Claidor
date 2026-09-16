@@ -8,6 +8,7 @@ import { CloudBlob } from '../orb/CloudBlob';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { messageIdOf, type Reactions } from './actions';
 import { FILE_LOGO, readableSize } from './attachment';
+import { CardBlock, type CardHandlers } from './CardBlock';
 import { detailsLabel } from './details';
 import { MessageActions, ReactionChip } from './MessageActions';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
@@ -1013,6 +1014,8 @@ export interface ThreadItemViewProps {
   parts?: PartHandlers;
   /** React, reply, copy the id — the cluster that appears on hover. */
   actions?: MessageHandlers;
+  /** What a pressed button in an answer card does. */
+  cards?: CardHandlers;
   /**
    * True when this bubble starts a turn — the one before it came from the
    * other side. The canvas puts 8px above it and nothing between bubbles
@@ -1023,16 +1026,20 @@ export interface ThreadItemViewProps {
 
 const noHandlers: PartHandlers = {};
 
+const noCards: CardHandlers = {};
+
 const noSecret: SecretHandlers = {};
 
 const noRoster: RosterHandlers = { onStandUp: () => {}, onSomethingElse: () => {}, onDecline: () => {} };
 
 export function ThreadItemView(
-  { item, choice, auth, secret = noSecret, roster = noRoster, parts = noHandlers, actions, leading }: ThreadItemViewProps,
+  { item, choice, auth, secret = noSecret, roster = noRoster, parts = noHandlers, actions, cards = noCards, leading }: ThreadItemViewProps,
 ): JSX.Element | null {
   switch (item.kind) {
     case ThreadItemKind.Roster:
       return <RosterCard item={item} handlers={roster} />;
+    case ThreadItemKind.Card:
+      return <CardBlock item={item} handlers={cards} />;
     case ThreadItemKind.Text:
       return <TextBubble item={item} leading={leading} handlers={parts} actions={actions} />;
     case ThreadItemKind.System:

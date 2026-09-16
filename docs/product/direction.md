@@ -478,6 +478,17 @@ has left the space for it, not one that has filled it with my guesses.
 1. The name is Caisra, applied; `appConstants.ts` is the one site.
 2. Messages shape; five surfaces; four settings tabs.
 3. Five message kinds, closed list; approval card with the real command.
+   From 17 September, one more thing in the thread and not a message
+   kind of the model's choosing: the answer cards. When an answer is a
+   set of things (places, options, days of a plan, figures, a
+   comparison), the agent writes one fenced block in OpenUI's language
+   (`thesysdev/openui`, MIT) and the app draws it, in our design, between
+   its texts. The founder, on OpenUI's pictures: *"text should stays
+   text, but having cards that come with it is amazing … this should
+   100% be our design."* Ten components, ours, in
+   `desktop/src/shared/cards/library.ts`; texts still arrive as texts;
+   every other card (permission, choice, secret, file, roster) is
+   unchanged (review item 71).
 4. The computer asks once: the first action raises the card, Allow is
    this computer until the person changes it in Settings, Not now is
    that one action. Decided 17 September from the founder's

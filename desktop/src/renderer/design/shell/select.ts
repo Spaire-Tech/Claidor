@@ -1,5 +1,6 @@
 import { AgentId } from '../../../shared/agent';
 import { agentAvatar, avatarFallback } from '../../../shared/agent/avatars';
+import { stripCards } from '../../../shared/cards/fence';
 import type { Room } from '../../../shared/rooms/constants';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import type { EngineMessage, EnginePermissionRequest } from '../thread/fromEngine';
@@ -88,7 +89,8 @@ export function plainPreview(content: string): string {
   // link becomes its label, a `file://` URL its name, bold its words.
   // Before this the row read "Done. Here it is: [Gym R…" under a bubble
   // that showed a chip.
-  const text = splitMessageParts(extractUserMessageFileAttachments(content).text)
+  // A card block is drawn, not read: the row shows the words around it.
+  const text = splitMessageParts(extractUserMessageFileAttachments(stripCards(content)).text)
     .map(part => part.text)
     .join('');
   return text

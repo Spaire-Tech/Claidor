@@ -1,3 +1,4 @@
+import { splitCardSegments } from '../../../shared/cards/fence';
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { peelAttachments } from './attachment';
 import { splitReply } from './details';
@@ -5,6 +6,7 @@ import type { KnownFile } from './parts';
 import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
+  type CardItem,
   type ChoiceItem,
   type ChoiceOutcome,
   Speaker,
@@ -405,40 +407,70 @@ export function toThreadItems(
         // it first would tear the fence in half and leave a bubble that
         // is nothing but a `details` block — which, having no summary in
         // front of it, is then quite correctly refused and shown raw.
-        const { summary, details } = splitReply(message.content);
-        const parts = splitIntoBubbles(summary);
+        const sender = {
+          ...(group && agentId ? { agentId } : {}),
+          ...(group && agentId && options.agentName ? { agentName: options.agentName } : {}),
+        };
 
-        parts.forEach((text, index) => {
-          const id = parts.length > 1 ? `${message.id}:${index}` : message.id;
-          const sender = {
-            ...(group && agentId ? { agentId } : {}),
-            ...(group && agentId && options.agentName ? { agentName: options.agentName } : {}),
-          };
+        // The answer cards come off first: a fenced `openui-lang` block
+        // is a card item where the agent wrote it, and the text on
+        // either side is bubbles as before. A reply with no block is one
+        // text segment, and ids are what they always were.
+        const segments = splitCardSegments(message.content);
+        const single = segments.length === 1 && segments[0].kind === 'text';
+        let bubbleIndex = 0;
+        let cardIndex = 0;
 
-          // The files a reply ends with are cards, not chips: one per
-          // file, after whatever was said. A reply that is nothing but
-          // its files is only the cards.
-          const { text: said, attachments } = peelAttachments(
-            text,
-            { id, from: Speaker.Agent, at, ...sender },
-            options.files,
-          );
-
-          if (said) {
+        for (const segment of segments) {
+          if (segment.kind === 'card') {
             items.push({
-              kind: ThreadItemKind.Text,
-              id,
-              from: Speaker.Agent,
-              text: said,
+              kind: ThreadItemKind.Card,
+              id: `${message.id}:c${cardIndex}`,
+              program: segment.program,
               ...sender,
-              // Under the last bubble of the reply, which is where the
-              // person's eye already is when they finish reading it.
-              ...(details && index === parts.length - 1 ? { details } : {}),
               at,
-            } satisfies TextItem);
+            } satisfies CardItem);
+            cardIndex += 1;
+            continue;
           }
-          items.push(...attachments);
-        });
+
+          // The bulk comes off before anything is split into bubbles.
+          // `splitIntoBubbles` breaks on blank lines, so running it
+          // first would tear the fence in half and leave a bubble that
+          // is nothing but a `details` block — which, having no summary
+          // in front of it, is then quite correctly refused and shown raw.
+          const { summary, details } = splitReply(segment.text);
+          const parts = splitIntoBubbles(summary);
+
+          parts.forEach((text, index) => {
+            const id = single && parts.length === 1 ? message.id : `${message.id}:${bubbleIndex}`;
+            bubbleIndex += 1;
+
+            // The files a reply ends with are cards, not chips: one per
+            // file, after whatever was said. A reply that is nothing but
+            // its files is only the cards.
+            const { text: said, attachments } = peelAttachments(
+              text,
+              { id, from: Speaker.Agent, at, ...sender },
+              options.files,
+            );
+
+            if (said) {
+              items.push({
+                kind: ThreadItemKind.Text,
+                id,
+                from: Speaker.Agent,
+                text: said,
+                ...sender,
+                // Under the last bubble of the reply, which is where the
+                // person's eye already is when they finish reading it.
+                ...(details && index === parts.length - 1 ? { details } : {}),
+                at,
+              } satisfies TextItem);
+            }
+            items.push(...attachments);
+          });
+        }
         break;
       }
 

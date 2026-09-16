@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRightIcon } from '../icons';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, glass, line, motion, radius, shadow, text } from '../tokens';
+import type { CardHandlers } from './CardBlock';
 import { startsTurn } from './leading';
 import {
   type AuthHandlers,
@@ -48,6 +49,8 @@ export interface ThreadProps {
   roster?: RosterHandlers;
   /** React, reply, copy the id: the cluster beside a bubble on hover. */
   actions?: MessageHandlers;
+  /** What a pressed button in an answer card does. */
+  cards?: CardHandlers;
   /**
    * The agent is working: its face hops beside a small bubble of three
    * dots, at the end of the thread. From the 15 September canvas, which
@@ -67,7 +70,7 @@ export interface ThreadProps {
  * scrolling; this does the same for the same reason.
  */
 export function Thread({
-  items, dayStamp, choice, auth, parts, secret, roster, actions, typing,
+  items, dayStamp, choice, auth, parts, secret, roster, actions, cards, typing,
 }: ThreadProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   // Whether the person is still at the bottom. Starts true so a freshly
@@ -198,6 +201,7 @@ export function Thread({
             {...(roster ? { roster } : {})}
             {...(parts ? { parts } : {})}
             {...(actions ? { actions } : {})}
+            {...(cards ? { cards } : {})}
             leading={startsTurn(items[index - 1], item)}
           />
         </div>

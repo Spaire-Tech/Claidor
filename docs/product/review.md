@@ -3888,3 +3888,81 @@ the thread show "Talking to another agent" (the verb already exists).
 That is a day. Routines: a Routines tab on the agent panel, over the
 client that exists. Routines with the Mac shut: the server-side queue
 decided on 15 September (`sources/README.md`), not started.
+
+## 71. The answer cards: OpenUI's language, our design — `built; run in the harness; the Mac unrun`
+
+The founder, 17 September, with four of OpenUI's pictures (hotels in
+Paris, a Tokyo itinerary, the World Cup, Seattle restaurants): *"i want
+it, cause open ui is great … i'd want my agent to give me anwers like
+this … what is important is that we still keep the text style. not
+stream. messages come like an imessage text. but this should 100% be
+our design. we can keep stuff we designed Permission cards, forms, file
+cards, choice cards, etc - but for the artifacts, openui is golden."*
+
+**What OpenUI is, checked.** `thesysdev/openui`, MIT, 9,400 stars,
+`@openuidev/lang-core` and `@openuidev/react-lang` 0.3.0 published
+15 September. The model writes a small declarative language ("root =
+Stack([a, b])", one statement a line, positional arguments); a parser
+reads it against a component library; a React renderer draws each
+component with whatever component you give it. Its "inline mode" is
+exactly the founder's rule: text plus, optionally, one fenced block.
+Verified by generating a real prompt from a five-component library
+(3,783 characters) and parsing a program with it before a line of ours
+was written.
+
+**How it fits, and the one constraint.** OpenUI expects to sit between
+the model and the screen. Our model runs inside the engine, so the fit
+is: the library is defined once (`shared/cards/library.ts`), main
+generates the section of the brief that teaches it (`## Cards`, after
+the conversation rules, 5,000-odd characters, from the same list), the
+agent writes the block in its reply, and the renderer cuts the block
+out of the reply (`shared/cards/fence.ts`, `splitCardSegments`) into a
+ninth item kind, `Card`, drawn between the bubbles where it was
+written. Nothing streams: the block arrives with the reply, whole, like
+every text. The message in the store keeps the block verbatim, so an
+old reply re-renders with whatever the library draws that day.
+
+**Ten components, ours.** Stack (the block, with a title), Banner, Text,
+Row (scrolls), Grid (two columns), Tile (the picture card: name, line,
+tag, image, action), Metric (a figure), Fact (label and value), Table,
+Button. Every one drawn in `thread/CardBlock.tsx` from the thread's
+tokens: Switzer, the ink, the hairline, the pill button, the same
+enter animation as a bubble. A Tile's action ("Book") and a Button send
+their label back to the agent as the person's next message, through
+the shell's own `onSend`, so pressing one is typing one. No forms, no
+inputs, no queries from inside a card: those are the choice card and
+the secret card, unchanged.
+
+**Two things OpenUI does that were switched off.** Its core sends a
+pseudonymous record of every generated prompt to PostHog unless told
+not to; main sets `OPENUI_TELEMETRY_DISABLED` before generating, and a
+test checks it. And its parser checks types, not formats, so a made-up
+image address gets through the schema; the renderer draws a picture
+only from a well-formed https address (`cardImageUrl`), and the brief
+says never to invent one. A picture that fails to load leaves no hole.
+
+**Run:** tsc, `compile:electron`, eslint on every touched file; the
+library, fence, prompt and adapter tests, and the config-sync runtime
+test with the Cards section (`## Cards` present, after the conversation
+rules, the brief still under the line); the whole suite; and the
+harness, which mounts the real shell: a `cards` screen with the
+restaurant answer and the Tokyo plan, photographed at
+`harness/shots/cards.png`, Switzer confirmed, no console errors. The
+photograph shows the second block whole (banner, three metrics, three
+day tiles, a button) and the tail of the first; the tiles with a Book
+button sit above the fold and were not photographed.
+
+**Unrun: the founder's Mac, and the model.** Nobody has yet seen a
+model write a block. After pulling and rebuilding: "find me the best
+restaurants in Seattle" should come back as a text, a block of tiles,
+a text. If the block comes back as raw text, the fence was not
+`openui-lang` and the log has the reply. Pictures depend on the agent
+having fetched a page with a real image address; the brief forbids
+guessing one, so the first answers may well have none.
+
+**Where:** `desktop/src/shared/cards/{library,fence}.ts` (+tests),
+`desktop/src/main/libs/cardsPrompt.ts` (+test),
+`openclawConfigSync.ts` (+runtime test),
+`desktop/src/renderer/design/thread/{types,fromEngine,CardBlock,ThreadItemView,Thread}`,
+`shell/{select,MessagesShell}`, `harness/main.tsx` (`cards`),
+`package.json` (two dependencies, MIT).

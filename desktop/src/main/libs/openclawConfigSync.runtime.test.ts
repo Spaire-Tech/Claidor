@@ -3296,6 +3296,15 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd.length).toBeLessThan(OPENCLAW_BOOTSTRAP_MAX_CHARS * 0.6);
   });
 
+  test('every agent is taught the answer cards, after the conversation rules', async () => {
+    const sync = await createSync({});
+    expect(sync.sync('cards').ok).toBe(true);
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('## Cards');
+    expect(agentsMd).toContain('Tile(name: string');
+    expect(agentsMd.indexOf('## Talking to the Person')).toBeLessThan(agentsMd.indexOf('## Cards'));
+  });
+
   test('the exec policy reaches every agent, and a stale full-bypass default is corrected', async () => {
     // The engine resolves an agent's policy from its own entry, then
     // `defaults`. The sync used to write only `main`, so a second agent

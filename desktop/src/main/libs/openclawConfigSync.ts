@@ -79,6 +79,7 @@ import {
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
+import { buildManagedCardsPrompt } from './cardsPrompt';
 import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_MODELS, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
 import {
   getAllServerModelMetadata,
@@ -4515,6 +4516,10 @@ export class OpenClawConfigSync {
       // than one tool, and because a model that reads the tool policies
       // first tends to answer like a tool.
       sections.push(MANAGED_CONVERSATION_PROMPT);
+      // The answer cards, right after the conversation rules they are an
+      // exception to: texts stay texts, and a set of things is a block
+      // between them (`shared/cards/library.ts`).
+      sections.push(buildManagedCardsPrompt());
       sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH, WHEN_THINGS_FAIL_PATH));
       sections.push(MANAGED_ESCALATION_PROMPT);
 
