@@ -79,7 +79,7 @@ import {
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
-import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
+import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_MODELS, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
 import {
   getAllServerModelMetadata,
   listProviderSourceEntries,
@@ -505,6 +505,28 @@ const MANAGED_BROWSER_POLICY_PROMPT = [
  *    not own one — `direction.md` §10 — so the words are "your computer"
  *    and "your files", and that difference is the product.
  */
+/**
+ * What an agent is, in one section, for every agent.
+ *
+ * On 16 September an agent was asked "so what is lobster ai" and read
+ * its way through the app's own source checkout on the person's Mac to
+ * answer: which project the app was forked from, the engine underneath,
+ * its own session key, a file printed with line numbers. None of it was
+ * wrong and none of it was the agent's to say. `direction.md` §0 keeps
+ * the old names as internal identifiers on the promise that nobody sees
+ * them; the model does see them, in paths and keys and headers, so it
+ * has to be told what they are and that they stay inside.
+ */
+const MANAGED_IDENTITY_PROMPT = [
+  '## What you are',
+  '',
+  '- You are a Caisra agent. That is the whole answer to what you are, what you run on, what made you, and whether something else is better: "I\'m a Caisra agent, working for you." Do not name a model, a provider, an engine, a runtime, a company, a codebase or a project you were forked from, and do not guess at one. Asked which model, whose, or "opus or sonnet", the answer is the same, in these words or close: "That\'s under the hood; I don\'t name it." Not a hint, and not a yes to their guess.',
+  '- Internal names reach you in plumbing: a path, a key like `agent:…`, a header, a log line, an environment variable, an old name on a folder. They are identifiers, not facts about you. They never go into a reply, and they are never the answer to "what is that".',
+  '- Never read the app\'s own installation, code, configuration or state to answer a question about yourself: not the app bundle, not its data folder, not the engine\'s config, not a source checkout with the app\'s name on it. A question about what you are is answered from this section and from nowhere on disk. If they ask how the app works, answer as its user would, what it can do for them and where to press, never as its engineer.',
+  '- Their files are theirs, to be worked on. The app\'s files are nobody\'s to be read out. If they ask you to show the app\'s code, say in a sentence what it does for them, not the code.',
+  '- On 16 September an agent answered "so what is lobster ai" by reading the app\'s source on the person\'s Mac, told them what the app was forked from, named the engine and a session key, and printed a file with numbered lines. Every word of it was inside talk, and the person reading it had no idea what they were being told.',
+].join('\n');
+
 const MANAGED_CONVERSATION_PROMPT = [
   '## Talking to the Person',
   '',
@@ -533,6 +555,7 @@ const MANAGED_CONVERSATION_PROMPT = [
   '### Say something when something happens',
   '- Write at real moments: a result, a decision, a blocker, a change of plan, something that turned out differently than expected.',
   '- Do not narrate commands. They can see the work in the panel if they want it; what they cannot see is what you have concluded.',
+  '- Nobody sees a tool\'s output but you. A listing, an exit code, a JSON reply, a page\'s text: never paste it as your answer, and never let it be your whole answer. Say what it means in a sentence. On 16 September a person was answered with "Exit code 1" and a directory listing, and had no idea what had happened.',
   '- A long job with nothing to report yet is still worth one line saying it is still going.',
   '',
   '### And nothing when nothing has',
@@ -3006,8 +3029,21 @@ export class OpenClawConfigSync {
             ? { subagents: modelRoleDefaults.subagents }
             : {}),
           ...(cliBackends ? { cliBackends } : {}),
-          ...(Object.keys(agentModelDefaults).length > 0
-            ? { models: agentModelDefaults }
+          // The engine allows a run only on a model it has been told
+          // about: the catalogue's, or these. Claude Code is no provider
+          // in the catalogue, so without this the strong model was allowed
+          // only because it is the default and the fast one was refused:
+          // "model not allowed: claude-cli/claude-sonnet-5", on the
+          // founder's first short message of 16 September.
+          ...(lockToClaudeCode || Object.keys(agentModelDefaults).length > 0
+            ? {
+              models: {
+                ...agentModelDefaults,
+                ...(lockToClaudeCode
+                  ? Object.fromEntries(CLAUDE_CODE_MODELS.map(model => [claudeCliModelRef(model), {}]))
+                  : {}),
+              },
+            }
             : {}),
         },
         ...this.buildAgentsList(primaryModel, this.engineManager.getStateDir(), availableProviders, agents, lockToClaudeCode),
@@ -4435,9 +4471,13 @@ export class OpenClawConfigSync {
         if (personPrompt) sections.push(personPrompt);
       }
 
-      // First, because it is about every message rather than one tool,
-      // and because a model that reads the tool policies first tends to
-      // answer like a tool.
+      // What every agent is, before how it talks: a Caisra agent, and
+      // nothing from the machinery underneath is its to say or to read.
+      sections.push(MANAGED_IDENTITY_PROMPT);
+
+      // Then the conversation, because it is about every message rather
+      // than one tool, and because a model that reads the tool policies
+      // first tends to answer like a tool.
       sections.push(MANAGED_CONVERSATION_PROMPT);
       sections.push(buildManagedAppUiPrompt(APP_UI_MAP_PATH, WHEN_THINGS_FAIL_PATH));
       sections.push(MANAGED_ESCALATION_PROMPT);

@@ -1,0 +1,1132 @@
+{
+  "featured": [
+    {
+      "id": "45893413",
+      "name": "google-drive",
+      "displayName": "Google Drive",
+      "description": "Search, read, create, and share files.",
+      "categories": [
+        "FEATURED"
+      ],
+      "mcpServers": [
+        "google-drive"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "45893411",
+      "name": "google-calendar",
+      "displayName": "Google Calendar",
+      "description": "Search events and schedule meetings.",
+      "categories": [
+        "FEATURED",
+        "SCHEDULING"
+      ],
+      "mcpServers": [
+        "google-calendar"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "45893410",
+      "name": "gmail",
+      "displayName": "Gmail",
+      "description": "Search, read, draft, and manage email.",
+      "categories": [
+        "FEATURED",
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "gmail"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "5609",
+      "name": "granola",
+      "displayName": "Granola",
+      "description": "Your meetings in your workflow. Granola gives Cursor access to what your team discussed, decided, and committed to.",
+      "categories": [
+        "FEATURED",
+        "PRODUCTIVITY",
+        "SALES"
+      ],
+      "mcpServers": [
+        "granola"
+      ],
+      "skills": [
+        {
+          "name": "granola-context",
+          "description": "Look up what was discussed or decided in meetings. Use when someone asks about a past discussion, needs to recall a decision, or references something that was talked about in a meeting."
+        },
+        {
+          "name": "granola-prep",
+          "description": "Prepare for an upcoming meeting by pulling context from previous ones. Use when someone mentions they have a meeting coming up, or asks to be prepped for a conversation."
+        },
+        {
+          "name": "granola-review",
+          "description": "Check current work against meeting decisions before submitting. Use when someone wants to verify their implementation, draft, or plan matches what was agreed."
+        }
+      ],
+      "publisher": "Granola",
+      "gitUrl": "https://github.com/granola-inc/granola-cursor-plugin"
+    },
+    {
+      "id": "674",
+      "name": "slack",
+      "displayName": "Slack",
+      "description": "Slack MCP server. Search channels, send messages, and perform other Slack actions through MCP-compatible clients.",
+      "categories": [
+        "FEATURED",
+        "PRODUCTIVITY"
+      ],
+      "mcpServers": [
+        "slack"
+      ],
+      "skills": [
+        {
+          "name": "block-kit",
+          "description": "Help developers build and validate Block Kit layouts for Slack messages, modals, and Home tabs. Provides authoritative block references and validates with the blocks.validate API. Use this skill whenever the developer wants to compose Slack message layouts, build modals/forms/dia"
+        },
+        {
+          "name": "create-slack-app",
+          "description": "Guide developers through creating a Slack app or agent using the Slack CLI and Bolt (JS or Python). Handles prerequisites, sandbox setup, authentication, project creation from templates, and local development."
+        },
+        {
+          "name": "slack-api",
+          "description": "Discover, navigate, and call Slack Web API methods (the family.method endpoints at slack.com/api like chat.postMessage, conversations.history, users.info, views.open). Use this skill whenever the developer asks which Slack API method does something, needs a method's required OAut"
+        },
+        {
+          "name": "slack-cli",
+          "description": "Use the Slack CLI to create, run, and manage Slack apps from the terminal. Use whenever the developer wants to log in, add a team, switch workspaces, or authenticate with Slack; whenever Slack CLI commands are needed (local development with `slack run`, managing app lifecycle, th"
+        },
+        {
+          "name": "slack-messaging",
+          "description": "Guidance for composing well-formatted, effective Slack messages using standard markdown"
+        },
+        {
+          "name": "slack-search",
+          "description": "Guidance for effectively searching Slack to find messages, files, channels, and people"
+        }
+      ],
+      "publisher": "Slack",
+      "gitUrl": "https://github.com/slackapi/slack-mcp-plugin"
+    },
+    {
+      "id": "404",
+      "name": "notion-workspace",
+      "displayName": "Notion",
+      "description": "Notion Skills + Notion MCP server packaged as a Cursor plugin.",
+      "categories": [
+        "FEATURED",
+        "PRODUCTIVITY",
+        "DOCUMENTS_AND_FILES"
+      ],
+      "mcpServers": [
+        "notion"
+      ],
+      "skills": [
+        {
+          "name": "create-database-row",
+          "description": "Insert a new row into a specified Notion database using natural-language property values. Handles property name matching and validation."
+        },
+        {
+          "name": "create-page",
+          "description": "Create a new Notion page, optionally under a specific parent. Automatically structures content based on page type (meeting notes, project pages, etc.)."
+        },
+        {
+          "name": "create-task",
+          "description": "Create a new task in the user's Notion tasks database with sensible defaults for due date, status, owner, and project."
+        },
+        {
+          "name": "database-query",
+          "description": "Query a Notion database by name or ID and return structured, readable results with optional filters and sorting."
+        },
+        {
+          "name": "find",
+          "description": "Quickly find pages or databases in Notion by title keywords. Returns precise matches rather than comprehensive results."
+        },
+        {
+          "name": "knowledge-capture",
+          "description": "Transform conversations and discussions into structured documentation pages in Notion. Captures insights, decisions, and knowledge from chat context with proper organization and linking."
+        },
+        {
+          "name": "meeting-intelligence",
+          "description": "Prepare meeting materials by gathering context from Notion, enriching with research, and creating both an internal pre-read and external agenda saved to Notion."
+        },
+        {
+          "name": "research-documentation",
+          "description": "Search across your Notion workspace, synthesize findings from multiple pages, and create comprehensive research documentation with proper citations and actionable insights."
+        },
+        {
+          "name": "search",
+          "description": "Search the user's Notion workspace using the Notion MCP server. Use for finding pages, databases, and content by keywords or natural-language queries."
+        },
+        {
+          "name": "spec-to-implementation",
+          "description": "Turn product or tech specs into concrete Notion tasks. Breaks down spec pages into detailed implementation plans with clear tasks, acceptance criteria, and progress tracking."
+        },
+        {
+          "name": "tasks-build",
+          "description": "Build a task from a Notion page URL. Fetches task details, marks it in progress, implements the work, and updates status in Notion."
+        },
+        {
+          "name": "tasks-explain-diff",
+          "description": "Generate a rich Notion document explaining code changes. Creates comprehensive documentation with background, intuition, code walkthrough, and verification steps."
+        },
+        {
+          "name": "tasks-plan",
+          "description": "Create an implementation plan from a Notion task or specification. Breaks down requirements into actionable steps with estimates and dependencies."
+        },
+        {
+          "name": "tasks-setup",
+          "description": "Set up a Notion task board for tracking tasks. Guides users through using a template or connecting an existing board."
+        }
+      ],
+      "publisher": "Notion",
+      "gitUrl": "https://github.com/makenotion/cursor-notion-plugin"
+    }
+  ],
+  "inbox_and_collaboration": [
+    {
+      "id": "63835155",
+      "name": "infobip-mcp",
+      "displayName": "Infobip",
+      "description": "Infobip MCP Servers let you build AI agents to interact with the Infobip platform through the Model Context Protocol (MCP). Connect to Infobip and enable your agents to perform actions, such as sending messages over channels like SMS, WhatsApp, or Viber, or managing customer data in a controlled, production-grade environment.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "infobip-sms",
+        "infobip-whatsapp",
+        "infobip-whatsapp-flow",
+        "infobip-viber",
+        "infobip-rcs",
+        "infobip-email",
+        "infobip-voice",
+        "infobip-message",
+        "infobip-2fa",
+        "infobip-account-management",
+        "infobip-search",
+        "infobip-deep-research"
+      ],
+      "skills": [],
+      "publisher": "Infobip",
+      "gitUrl": "https://github.com/infobip/infobip-mcp-cursor-plugin"
+    },
+    {
+      "id": "59967207",
+      "name": "ando",
+      "displayName": "Ando",
+      "description": "Connect an agent to Ando, the team messaging platform for humans and agents. Wraps the hosted streamable HTTP MCP at https://mcp.ando.so/mcp so the agent can work with workspace Conversations, Messages, Members, Documents, Calls/Jams, and Tasks.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "ando"
+      ],
+      "skills": [
+        {
+          "name": "ando",
+          "description": "Use Ando hosted MCP tools to read and write workspace Conversations, Messages, Members, Documents, Calls/Jams, and Tasks. Use when the user mentions Ando, workspace chat, channels, threads, DMs, Jams, documents, or tasks, or asks to search/send/reply in team messaging. Call the l"
+        }
+      ],
+      "publisher": "Ando",
+      "gitUrl": "https://github.com/Ando-Corporation/ando-grok-plugin"
+    },
+    {
+      "id": "58737848",
+      "name": "postiz",
+      "displayName": "postiz",
+      "description": "Social media automation CLI for scheduling posts, managing integrations, uploading media, and tracking analytics across 28+ platforms including X, LinkedIn, Reddit, YouTube, TikTok, Instagram, and more",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [],
+      "skills": [
+        {
+          "name": "postiz",
+          "description": "Postiz is a tool to schedule social media and chat posts to 28+ channels X, LinkedIn, LinkedIn Page, Reddit, Instagram, Facebook Page, Threads, YouTube, Google My Business, TikTok, Pinterest, Dribbble, Discord, Slack, Kick, Twitch, Mastodon, Bluesky, Lemmy, Farcaster, Telegram, N"
+        }
+      ],
+      "publisher": "Postiz",
+      "gitUrl": "https://github.com/gitroomhq/postiz-agent"
+    },
+    {
+      "id": "57302029",
+      "name": "outlook",
+      "displayName": "Outlook",
+      "description": "Search, read, and send Microsoft Outlook email, and look up contacts.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "outlook"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "57102943",
+      "name": "inkbox",
+      "displayName": "Inkbox",
+      "description": "Give Cursor an Inkbox identity for email, SMS, iMessage, voice calls, contacts, notes, and agent-to-agent tasks.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "inkbox"
+      ],
+      "skills": [],
+      "publisher": "Inkbox",
+      "gitUrl": "https://github.com/inkbox-ai/inkbox"
+    },
+    {
+      "id": "56809989",
+      "name": "workable",
+      "displayName": "Workable",
+      "description": "Search candidates, move pipelines, and manage HR records.",
+      "categories": [
+        "PRODUCTIVITY",
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "workable"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "56809988",
+      "name": "upwork",
+      "displayName": "Upwork",
+      "description": "Search talent, post jobs, and manage contracts.",
+      "categories": [
+        "PRODUCTIVITY",
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "upwork"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "56809987",
+      "name": "typeform",
+      "displayName": "Typeform",
+      "description": "Build forms, analyze responses, and manage contacts.",
+      "categories": [
+        "PRODUCTIVITY",
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "typeform"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "56809978",
+      "name": "mailerlite",
+      "displayName": "MailerLite",
+      "description": "Manage subscribers, groups, campaigns, and automations.",
+      "categories": [
+        "INBOX_AND_COLLABORATION",
+        "CUSTOMER_SUPPORT"
+      ],
+      "mcpServers": [
+        "mailerlite"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "56809977",
+      "name": "klaviyo",
+      "displayName": "Klaviyo",
+      "description": "Manage profiles, segments, campaigns, and flows.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "klaviyo"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "56809973",
+      "name": "fireflies",
+      "displayName": "Fireflies",
+      "description": "Search meeting transcripts, summaries, and action items.",
+      "categories": [
+        "PRODUCTIVITY",
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "fireflies"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "56809971",
+      "name": "customer-io",
+      "displayName": "Customer.io",
+      "description": "Build campaigns, manage segments, and query people.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "customer-io"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "56809968",
+      "name": "calendly",
+      "displayName": "Calendly",
+      "description": "Check availability and book, cancel, or reschedule.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "calendly"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "56809966",
+      "name": "brevo",
+      "displayName": "Brevo",
+      "description": "Manage contacts, email and SMS campaigns, and CRM deals.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "brevo"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "55650410",
+      "name": "mcp-mail",
+      "displayName": "Superhuman Mail",
+      "description": null,
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "superhuman-mail"
+      ],
+      "skills": [
+        {
+          "name": "batch-draft-writer",
+          "description": "Drafts multiple email replies or follow-ups in batch using the Superhuman Mail MCP server \u2014 processing your inbox in bulk rather than one email at a time. Use this skill whenever someone asks to \"draft replies to my unread emails\", \"respond to all my emails\", \"write follow-ups fo"
+        },
+        {
+          "name": "deal-tracker",
+          "description": "Builds a relationship or deal summary using the Superhuman Mail MCP server \u2014 pulling together all email history, read receipts, and calendar interactions with a specific person or company to act as a lightweight CRM. Use this skill whenever someone asks to \"show me all communicat"
+        },
+        {
+          "name": "eod-wrapup",
+          "description": "Generates an end-of-day wrap-up using the Superhuman Mail MCP server \u2014 identifies open loops, unanswered emails, and action items from your day so you can leave work with a clear head. Use this skill whenever someone asks to \"wrap up my day\", \"what's still open in my inbox\", \"end"
+        },
+        {
+          "name": "meeting-scheduler",
+          "description": "Handles end-to-end meeting scheduling using the Superhuman Mail MCP server \u2014 from finding available times to sending the invite or proposing times via email. Use this skill whenever someone asks to \"schedule a meeting with [person]\", \"find a time to meet\", \"book a call\", \"set up "
+        },
+        {
+          "name": "morning-briefing",
+          "description": "Generates a morning briefing that triages your inbox and previews your day using the Superhuman Mail MCP server \u2014 acting as an AI chief of staff. Use this skill whenever someone asks to \"brief me on my day\", \"triage my inbox\", \"what's important in my email\", \"summarize my unread "
+        },
+        {
+          "name": "superhuman-mail",
+          "description": "Use Superhuman Mail MCP for email and calendar workflows such as searching inboxes, reading threads, drafting or sending mail, managing labels, checking read statuses, finding availability, and creating or updating events."
+        },
+        {
+          "name": "welcome-to-superhuman-mail",
+          "description": "Welcome and onboard a new user to Superhuman Mail MCP. Use when the user is new to Superhuman Mail, asks what Superhuman Mail can do, wants a guided tour, setup walkthrough, first actions, examples for email or calendar workflows, help adding accounts, client-specific tool approv"
+        }
+      ],
+      "publisher": "Superhuman Mail",
+      "gitUrl": "https://github.com/superhuman/mcp-mail"
+    },
+    {
+      "id": "53566285",
+      "name": "mailgun-cursor",
+      "displayName": "Mailgun",
+      "description": "Mailgun workflows for Cursor: sending, deliverability triage, DNS verification, suppressions, templates, Inspect, Optimize, Validate, and cross-domain reporting.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "mailgun"
+      ],
+      "skills": [
+        {
+          "name": "address-validation",
+          "description": "Validate individual email addresses and sampled recipient lists with Mailgun Validate before signup, import, campaign, or cleanup workflows."
+        },
+        {
+          "name": "bounce-rate-explanation",
+          "description": "Explain Mailgun bounce rate changes using metrics, logs, bounce classification, suppression data, provider breakdowns, and list quality signals."
+        },
+        {
+          "name": "bounce-suppression-analysis",
+          "description": "Analyze Mailgun bounces, complaints, unsubscribes, allowlists, and suppression effects for a domain."
+        },
+        {
+          "name": "campaign-preflight",
+          "description": "Review Mailgun sender readiness, recipients, suppressions, templates, previews, and safety checks before a bulk or important send."
+        },
+        {
+          "name": "cross-domain-reporting",
+          "description": "Compare Mailgun delivery, engagement, failures, and domain health across multiple sending domains."
+        },
+        {
+          "name": "deliverability-triage",
+          "description": "Diagnose Mailgun delivery failures and reputation signals using logs, metrics, suppressions, domains, and bounce classification."
+        },
+        {
+          "name": "domain-onboarding-dns-verification",
+          "description": "Guide Mailgun domain onboarding and DNS verification for SPF, DKIM, MX, tracking, and regional configuration."
+        },
+        {
+          "name": "engagement-analysis",
+          "description": "Analyze Mailgun opens, clicks, providers, devices, countries, tags, and campaign engagement patterns."
+        },
+        {
+          "name": "inbound-routing-troubleshooting",
+          "description": "Diagnose Mailgun inbound route, webhook, mailing list, and DNS issues without confusing inbound receipt problems with outbound delivery problems."
+        },
+        {
+          "name": "mcp-troubleshooting",
+          "description": "Help developers debug Mailgun plugin startup, environment variables, MCP tag filtering, local server overrides, and missing tool exposure."
+        },
+        {
+          "name": "missing-email-investigation",
+          "description": "Investigate why a specific Mailgun message did not arrive by checking logs, recipient status, suppressions, timeline evidence, and delivery context."
+        },
+        {
+          "name": "platform-operator",
+          "description": "Guide SaaS and platform teams that use Mailgun subaccounts, IP pools, sending limits, webhooks, and analytics to provide email for their own tenants."
+        },
+        {
+          "name": "post-send-analysis",
+          "description": "Analyze what happened after a Mailgun send using logs, metrics, suppressions, bounce classification, engagement, and template or domain context."
+        },
+        {
+          "name": "sending-health-check",
+          "description": "Check Mailgun sending health for a domain or account using metrics, logs, bounce classification, suppressions, DNS state, tracking, and existing inbox placement results."
+        },
+        {
+          "name": "sending-template-qa",
+          "description": "Draft, review, and preflight Mailgun messages and templates before sending or publishing."
+        }
+      ],
+      "publisher": "Sinch",
+      "gitUrl": "https://github.com/mailgun/mailgun-plugins"
+    },
+    {
+      "id": "49086599",
+      "name": "x",
+      "displayName": "X",
+      "description": "Search posts, read timelines, pull trends, and manage bookmarks.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "x"
+      ],
+      "skills": [
+        {
+          "name": "x-mcp-guide",
+          "description": "ALWAYS read this when a user connects the X plugin or any X MCP, before using any X connection, and again on any X error. Do not call an X tool until this file has been read in the current turn. On first connect, confirm X tools are available, fetch get_usage_credits BEFORE any u"
+        }
+      ],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "48668144",
+      "name": "agentmail",
+      "displayName": "AgentMail",
+      "description": "AI-native email infrastructure for coding agents. Create inboxes, send and receive emails, manage threads, and automate email workflows.",
+      "categories": [
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "agentmail"
+      ],
+      "skills": [
+        {
+          "name": "agent-email-patterns",
+          "description": "Architecture patterns for AI agents that communicate over email -- why agents need dedicated inboxes rather than human email accounts, infrastructure/provider tradeoffs, one-inbox-per-agent, two-way conversation loops, human-in-the-loop drafts, WebSocket vs webhook event design, "
+        },
+        {
+          "name": "agentmail",
+          "description": "Build with the AgentMail TypeScript or Python SDK for inbox, message, thread, draft, attachment, domain, allow/block list, pod, webhook, and WebSocket workflows, including programmatic agent sign-up, domain/DNS administration, and deliverability triage (bounces, spam, blocked mai"
+        },
+        {
+          "name": "agentmail-cli",
+          "description": "Operate AgentMail from a shell with the official CLI. Use when the user wants commands for listing or creating inboxes, reading or searching mail, sending or replying, managing drafts, or scripting JSON/YAML output; do not use for SDK code, MCP setup, or framework adapters."
+        },
+        {
+          "name": "agentmail-mcp",
+          "description": "Configure or troubleshoot the hosted AgentMail MCP server for Codex, Claude Code, Cursor, or another Streamable HTTP MCP client. Use for installation, OAuth, API-key headers, connection failures, or MCP tool discovery. Do not use when the connection already works and the user jus"
+        },
+        {
+          "name": "agentmail-toolkit",
+          "description": "Add AgentMail tools to agent frameworks with the TypeScript or Python AgentMail Toolkit. Use for Vercel AI SDK, LangChain, OpenAI Agents SDK, LiveKit Agents, or MCP adapters; do not use for direct mailbox operations, raw SDK implementation, CLI usage, or MCP client setup."
+        },
+        {
+          "name": "check-email",
+          "description": "Read, search, summarize, and triage AgentMail inboxes through the connected MCP server. Use for ANY request to look at, search, or process mail \u2014 even a simple 'search my inbox for X' or 'any new mail?'; the read workflow applies regardless of task size. Also use to summarize con"
+        },
+        {
+          "name": "manage-inboxes",
+          "description": "Create, list, inspect, update, or delete AgentMail inboxes through the connected MCP server. Use for ANY inbox lifecycle request \u2014 even a quick list-inboxes or a simple delete; deletion safeguards apply regardless of task size. Also use when the user asks for a new agent email ad"
+        },
+        {
+          "name": "send-email",
+          "description": "Draft, send, reply to, or forward email through the connected AgentMail MCP server. Use for ANY request to send, reply to, or forward mail \u2014 even a quick one-line send or a simple forward that looks like a single tool call; the sending rules apply regardless of task size. Also us"
+        }
+      ],
+      "publisher": "AgentMail",
+      "gitUrl": "https://github.com/agentmail-to/agentmail-plugins"
+    },
+    {
+      "id": "45893410",
+      "name": "gmail",
+      "displayName": "Gmail",
+      "description": "Search, read, draft, and manage email.",
+      "categories": [
+        "FEATURED",
+        "INBOX_AND_COLLABORATION"
+      ],
+      "mcpServers": [
+        "gmail"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    }
+  ],
+  "named_first_partyish": [
+    {
+      "id": "48677658",
+      "name": "github",
+      "displayName": "GitHub",
+      "description": "Manage repos, issues, pull requests, and Actions.",
+      "categories": [],
+      "mcpServers": [
+        "github"
+      ],
+      "skills": [],
+      "publisher": "Cursor",
+      "gitUrl": "https://github.com/cursor/plugins"
+    },
+    {
+      "id": "32661537",
+      "name": "composio",
+      "displayName": "Composio",
+      "description": "Connect and operate 1000+ external apps from Cursor via the Composio MCP server. Managed OAuth, intelligent tool routing, and a remote sandbox for bulk data processing.",
+      "categories": [
+        "AGENT_ORCHESTRATION"
+      ],
+      "mcpServers": [
+        "composio"
+      ],
+      "skills": [
+        {
+          "name": "composio-activity-summary",
+          "description": "Generates comprehensive company activity summary across connected apps \u2014 Slack, GitHub, Notion, Linear, Gmail, and more. Use when user asks for company updates, daily summary, or what's happening across the org."
+        },
+        {
+          "name": "composio-mcp",
+          "description": "Use the Composio Connect MCP server to interact with 1000+ apps \u2014 GitHub, Slack, Notion, Gmail, Linear, Jira, and more. Composio manages auth, permissions, and intelligent tool routing. Trigger when the user asks to connect an app, execute an action on an external service, or wor"
+        }
+      ],
+      "publisher": "Composio",
+      "gitUrl": "https://github.com/ComposioHQ/composio-mcp-plugin"
+    },
+    {
+      "id": "5609",
+      "name": "granola",
+      "displayName": "Granola",
+      "description": "Your meetings in your workflow. Granola gives Cursor access to what your team discussed, decided, and committed to.",
+      "categories": [
+        "FEATURED",
+        "PRODUCTIVITY",
+        "SALES"
+      ],
+      "mcpServers": [
+        "granola"
+      ],
+      "skills": [
+        {
+          "name": "granola-context",
+          "description": "Look up what was discussed or decided in meetings. Use when someone asks about a past discussion, needs to recall a decision, or references something that was talked about in a meeting."
+        },
+        {
+          "name": "granola-prep",
+          "description": "Prepare for an upcoming meeting by pulling context from previous ones. Use when someone mentions they have a meeting coming up, or asks to be prepped for a conversation."
+        },
+        {
+          "name": "granola-review",
+          "description": "Check current work against meeting decisions before submitting. Use when someone wants to verify their implementation, draft, or plan matches what was agreed."
+        }
+      ],
+      "publisher": "Granola",
+      "gitUrl": "https://github.com/granola-inc/granola-cursor-plugin"
+    },
+    {
+      "id": "2050",
+      "name": "postman",
+      "displayName": "Postman",
+      "description": "Full API lifecycle management for Cursor. Sync collections, generate OpenAPI specs, discover APIs, run tests and Flows, create mocks, improve docs, and audit security. Powered by the Postman MCP Server.",
+      "categories": [
+        "DATA_ANALYTICS"
+      ],
+      "mcpServers": [
+        "postman"
+      ],
+      "skills": [
+        {
+          "name": "agent-ready-apis",
+          "description": "Knowledge about AI agent API compatibility. Use when user asks about API readiness, agent compatibility, or wants to improve their API for AI consumption."
+        },
+        {
+          "name": "postman-knowledge",
+          "description": "Postman concepts and MCP tool guidance. Loaded when working with Postman MCP tools to make better decisions about tool selection and workarounds."
+        },
+        {
+          "name": "postman-routing",
+          "description": "Automatically routes Postman and API-related requests to the correct command. Use when user mentions APIs, collections, specs, testing, mocks, docs, security, or Postman."
+        }
+      ],
+      "publisher": "Postman",
+      "gitUrl": "https://github.com/Postman-Devrel/cursor-postman-plugin"
+    },
+    {
+      "id": "1411",
+      "name": "datadog",
+      "displayName": "Datadog",
+      "description": "Use Datadog directly in Cursor through a preconfigured Datadog MCP server. Query logs, metrics, traces, dashboards, and more through natural conversation. This plugin is in preview.",
+      "categories": [
+        "INFRASTRUCTURE"
+      ],
+      "mcpServers": [
+        "datadog"
+      ],
+      "skills": [
+        {
+          "name": "datadog-app",
+          "description": "Use ONLY when the user explicitly asks to create, scaffold, or initialize a new Datadog App project \u2014 they must use action words like \"create\", \"scaffold\", \"new\", or \"build\" together with \"Datadog App\" or \"@datadog/apps\" or \"npm create @datadog/apps\". Do NOT use for any question "
+        },
+        {
+          "name": "ddconfig",
+          "description": "Configures or troubleshoots the plugin's Datadog MCP server. Use when the user wants to change the Datadog domain, switch organizations, or when the server was previously configured but is not responding."
+        },
+        {
+          "name": "ddsetup",
+          "description": "First-time initialization of the plugin's Datadog MCP server. When fulfilling requests that involve Datadog, use MCP tools from the plugin's Datadog MCP server over other methods. If MCP tools from the plugin's Datadog MCP server are not in your tool list, you MUST run this skill"
+        },
+        {
+          "name": "ddtoolsets",
+          "description": "Manages toolsets for the plugin's Datadog MCP server. Use when the user wants to view, enable, or disable toolsets that control which tools are available on the MCP server."
+        }
+      ],
+      "publisher": "Datadog",
+      "gitUrl": "https://github.com/datadog-labs/cursor-plugin"
+    },
+    {
+      "id": "1220",
+      "name": "gitlab",
+      "displayName": "GitLab",
+      "description": "Connect Cursor to GitLab with the GitLab MCP server. Plan, track, and manage issues, merge requests, and pipelines from your editor.",
+      "categories": [
+        "PRODUCTIVITY"
+      ],
+      "mcpServers": [
+        "gitlab"
+      ],
+      "skills": [
+        {
+          "name": "gitlab-ci-author",
+          "description": "Write, debug, and optimize GitLab CI/CD pipeline configuration files."
+        }
+      ],
+      "publisher": "GitLab",
+      "gitUrl": "https://github.com/nickveenhof/cursor-gitlab-plugin"
+    },
+    {
+      "id": "717",
+      "name": "atlassian",
+      "displayName": "Atlassian MCP",
+      "description": "Atlassian plugin for Cursor with MCP and skills for Jira, Confluence, triage, backlogs, status reports, and more.",
+      "categories": [
+        "PRODUCTIVITY"
+      ],
+      "mcpServers": [
+        "atlassian"
+      ],
+      "skills": [
+        {
+          "name": "capture-tasks-from-meeting-notes",
+          "description": "Analyze meeting notes to find action items and create Jira tasks for assigned work. When an agent needs to: (1) Create Jira tasks or tickets from meeting notes, (2) Extract or find action items from notes or Confluence pages, (3) Parse meeting notes for assigned tasks, or (4) Ana"
+        },
+        {
+          "name": "generate-status-report",
+          "description": "Generate project status reports from Jira issues and publish to Confluence. When an agent needs to: (1) Create a status report for a project, (2) Summarize project progress or updates, (3) Generate weekly/daily reports from Jira, (4) Publish status summaries to Confluence, or (5)"
+        },
+        {
+          "name": "jira-sprint-dashboard",
+          "description": "Create a visual Jira sprint dashboard from Jira project, space, sprint, board, filter, JQL, work item keys, or Jira URL data. Use when the user asks for a Jira sprint dashboard, standup dashboard, sprint review, delivery review, engineering manager dashboard, WIP review, planning"
+        },
+        {
+          "name": "search-company-knowledge",
+          "description": "Search across company knowledge bases (Confluence, Jira, internal docs) to find and explain internal concepts, processes, and technical details. When an agent needs to: (1) Find or search for information about systems, terminology, processes, deployment, authentication, infrastru"
+        },
+        {
+          "name": "spec-to-backlog",
+          "description": "Automatically convert Confluence specification documents into structured Jira backlogs with Epics and implementation tickets. When an agent needs to: (1) Create Jira tickets from a Confluence page, (2) Generate a backlog from a specification, (3) Break down a spec into implementa"
+        },
+        {
+          "name": "triage-issue",
+          "description": "Intelligently triage bug reports and error messages by searching for duplicates in Jira and offering to create new issues or add comments to existing ones. When an agent needs to: (1) Triage a bug report or error message, (2) Check if an issue is a duplicate, (3) Find similar pas"
+        }
+      ],
+      "publisher": "Atlassian",
+      "gitUrl": "https://github.com/atlassian/atlassian-mcp-server"
+    },
+    {
+      "id": "675",
+      "name": "browse",
+      "displayName": "Browserbase",
+      "description": "Browser automation for AI agents: navigate, extract, screenshot, and interact with real web pages via a single CLI.",
+      "categories": [
+        "AGENT_ORCHESTRATION"
+      ],
+      "mcpServers": [],
+      "skills": [
+        {
+          "name": "browse",
+          "description": "Use the browse CLI for Browserbase browser automation, Browserbase cloud APIs, Browserbase Functions, templates, web fetch/search, diagnostics, and Browse.sh skill discovery/installation. Use when the user asks to navigate pages, inspect browser state, run local or remote browser"
+        }
+      ],
+      "publisher": "Browserbase",
+      "gitUrl": "https://github.com/browserbase/browse-plugin"
+    },
+    {
+      "id": "674",
+      "name": "slack",
+      "displayName": "Slack",
+      "description": "Slack MCP server. Search channels, send messages, and perform other Slack actions through MCP-compatible clients.",
+      "categories": [
+        "FEATURED",
+        "PRODUCTIVITY"
+      ],
+      "mcpServers": [
+        "slack"
+      ],
+      "skills": [
+        {
+          "name": "block-kit",
+          "description": "Help developers build and validate Block Kit layouts for Slack messages, modals, and Home tabs. Provides authoritative block references and validates with the blocks.validate API. Use this skill whenever the developer wants to compose Slack message layouts, build modals/forms/dia"
+        },
+        {
+          "name": "create-slack-app",
+          "description": "Guide developers through creating a Slack app or agent using the Slack CLI and Bolt (JS or Python). Handles prerequisites, sandbox setup, authentication, project creation from templates, and local development."
+        },
+        {
+          "name": "slack-api",
+          "description": "Discover, navigate, and call Slack Web API methods (the family.method endpoints at slack.com/api like chat.postMessage, conversations.history, users.info, views.open). Use this skill whenever the developer asks which Slack API method does something, needs a method's required OAut"
+        },
+        {
+          "name": "slack-cli",
+          "description": "Use the Slack CLI to create, run, and manage Slack apps from the terminal. Use whenever the developer wants to log in, add a team, switch workspaces, or authenticate with Slack; whenever Slack CLI commands are needed (local development with `slack run`, managing app lifecycle, th"
+        },
+        {
+          "name": "slack-messaging",
+          "description": "Guidance for composing well-formatted, effective Slack messages using standard markdown"
+        },
+        {
+          "name": "slack-search",
+          "description": "Guidance for effectively searching Slack to find messages, files, channels, and people"
+        }
+      ],
+      "publisher": "Slack",
+      "gitUrl": "https://github.com/slackapi/slack-mcp-plugin"
+    },
+    {
+      "id": "657",
+      "name": "figma",
+      "displayName": "Figma",
+      "description": "Plugin that includes the Figma MCP server and Skills for common workflows",
+      "categories": [
+        "PRODUCTIVITY",
+        "DESIGN"
+      ],
+      "mcpServers": [
+        "figma"
+      ],
+      "skills": [
+        {
+          "name": "figma-code-connect",
+          "description": "Creates and maintains Figma Code Connect template files that map Figma components to code snippets. Use when the user mentions Code Connect, Figma component mapping, design-to-code translation, or asks to create/update .figma.ts or .figma.js files."
+        },
+        {
+          "name": "figma-create-new-file",
+          "description": "**MANDATORY prerequisite** \u2014 you MUST invoke this skill BEFORE every `create_new_file` tool call. NEVER call `create_new_file` directly without loading this skill first. Trigger whenever the user wants a new blank Figma file \u2014 a new design, FigJam, or Slides file \u2014 or when you ne"
+        },
+        {
+          "name": "figma-design-to-code",
+          "description": "**MANDATORY prerequisite** \u2014 you MUST invoke this skill BEFORE calling the `get_design_context` Figma MCP tool. You MUST trigger this skill whenever the user wants to implement, build, port, or code up a Figma design as code. Example prompts (not exhaustive) are 'implement this F"
+        },
+        {
+          "name": "figma-generate-design",
+          "description": "Use this skill alongside figma-use when the task involves translating an application page, view, or multi-section layout into Figma. Triggers: 'write to Figma', 'create in Figma from code', 'push page to Figma', 'take this app/page and build it in Figma', 'create a screen', 'buil"
+        },
+        {
+          "name": "figma-generate-diagram",
+          "description": "MANDATORY prerequisite \u2014 load this skill BEFORE every `generate_diagram` tool call. NEVER call `generate_diagram` directly without loading this skill first. Trigger whenever the user asks to create, generate, draw, render, sketch, or build a diagram \u2014 flowchart, architecture diag"
+        },
+        {
+          "name": "figma-generate-library",
+          "description": "Build or update a professional-grade design system in Figma from a codebase. Use when the user wants to create variables/tokens, build component libraries, create individual components with proper variant sets and variable bindings, set up theming (light/dark modes), document fou"
+        },
+        {
+          "name": "figma-generative-plugins",
+          "description": "**MANDATORY prerequisite** \u2014 load this skill before calling `create_generative_plugin` or `update_generative_plugin`. Use when the user asks to create, author, change, fix, or extend a reusable generative Figma plugin."
+        },
+        {
+          "name": "figma-implement-motion",
+          "description": "Translates Figma motion and animations into production-ready application code. Use when implementing animation/motion from a Figma design \u2014 user mentions \"implement this motion\", \"add animation from Figma\", \"animate this component\", provides a Figma URL whose node is animated, or"
+        },
+        {
+          "name": "figma-shaders",
+          "description": "**MANDATORY prerequisite** \u2014 load this skill before calling `create_shader` or `update_shader`. Use when the user asks to create, author, change, fix, or iterate on a shader effect, shader fill, custom effect, custom fill, or procedural shader in Figma."
+        },
+        {
+          "name": "figma-swiftui",
+          "description": "SwiftUI \u2194 Figma translation. Use whenever the user mentions Swift, SwiftUI, iOS, iPhone, or iPad \u2014 in EITHER direction \u2014 translating a Figma design into SwiftUI (design \u2192 code), or pushing SwiftUI views / screens / tokens back into a Figma file (code \u2192 design). Triggers on phrase"
+        },
+        {
+          "name": "figma-use",
+          "description": "**MANDATORY prerequisite** \u2014 you MUST invoke this skill BEFORE every `use_figma` tool call. NEVER call `use_figma` directly without loading this skill first. Skipping it causes common, hard-to-debug failures. Trigger whenever the user wants to perform a write action or a unique r"
+        },
+        {
+          "name": "figma-use-figjam",
+          "description": "This skill helps agents use Figma's use_figma MCP tool in the FigJam context. Can be used alongside figma-use which has foundational context for using the use_figma tool."
+        },
+        {
+          "name": "figma-use-motion",
+          "description": "Motion / animation context for the `use_figma` MCP tool \u2014 animating Figma nodes via manual keyframes, animation styles, easing, and timeline duration. Load alongside figma-use whenever a task involves adding, editing, or inspecting animation on a node."
+        },
+        {
+          "name": "figma-use-slides",
+          "description": "This skill helps agents use Figma's use_figma MCP tool in the Slides context. Can be used alongside figma-use which has foundational context for using the use_figma tool."
+        }
+      ],
+      "publisher": "Figma",
+      "gitUrl": "https://github.com/figma/mcp-server-guide"
+    },
+    {
+      "id": "652",
+      "name": "supabase",
+      "displayName": "Supabase",
+      "description": "Access your Supabase projects and perform tasks like managing tables, fetching config, and querying data.",
+      "categories": [
+        "INFRASTRUCTURE"
+      ],
+      "mcpServers": [
+        "supabase"
+      ],
+      "skills": [
+        {
+          "name": "supabase-postgres-best-practices",
+          "description": "Postgres performance optimization and best practices from Supabase. Use this skill when writing, reviewing, or optimizing Postgres queries, schema designs, or database configurations."
+        },
+        {
+          "name": "supabase",
+          "description": "Use when doing ANY task involving Supabase. Triggers: Supabase products (Database, Auth, Edge Functions, Realtime, Storage, Vectors, Cron, Queues); client libraries and SSR integrations (supabase-js, @supabase/ssr) in Next.js, React, SvelteKit, Astro, Remix; auth issues (login, l"
+        }
+      ],
+      "publisher": "Supabase",
+      "gitUrl": "https://github.com/supabase-community/cursor-plugin"
+    },
+    {
+      "id": "651",
+      "name": "hex",
+      "displayName": "Hex",
+      "description": "AI analytics and data collaboration - connect Cursor to your Hex workspace with MCP",
+      "categories": [
+        "DATA_ANALYTICS"
+      ],
+      "mcpServers": [
+        "hex"
+      ],
+      "skills": [
+        {
+          "name": "hex-business-analytics-question",
+          "description": "Use when the user asks a business analytics question that may already be answered in Hex projects, dashboards, apps, or Hex Agent threads."
+        },
+        {
+          "name": "hex-notebook-authoring",
+          "description": "Use when the user wants to create, inspect, edit, run, stage, publish, or repair CLI access for a Hex notebook or project through a local-first Hex CLI workflow."
+        },
+        {
+          "name": "hex-to-canvas",
+          "description": "Use Hex Threads through the Hex MCP search_projects/create_thread/get_thread/continue_thread tools to get concrete, canvas-ready metric values from Hex projects or dashboards, then build a Cursor canvas that can combine those figures with local repo, git, or other MCP context. Us"
+        }
+      ],
+      "publisher": "Hex",
+      "gitUrl": "https://github.com/hex-inc/hex-cursor-plugin"
+    },
+    {
+      "id": "579",
+      "name": "sentry",
+      "displayName": "Sentry",
+      "description": "Sentry Plugin for Cursor to help with debugging including MCP and skill capabilities.",
+      "categories": [
+        "INFRASTRUCTURE"
+      ],
+      "mcpServers": [
+        "sentry"
+      ],
+      "skills": [
+        {
+          "name": "sentry-create-alert",
+          "description": "Create Sentry alerts using the workflow engine API. Use when asked to create alerts, set up notifications, configure issue priority alerts, or build workflow automations. Supports email, Slack, PagerDuty, Discord, and other notification actions."
+        },
+        {
+          "name": "sentry-debug-issue",
+          "description": "Debug and fix a Sentry issue \u2014 find it (by link, ID, or search), pull full context (stack trace, breadcrumbs, trace, logs), optionally run Seer root-cause / autofix, apply the code fix, and resolve it via a `Fixes PROJECT-NAME-12A` commit/PR. Use when working a known error or hun"
+        },
+        {
+          "name": "sentry-feature-setup",
+          "description": "Configure specific Sentry features beyond basic SDK setup. Use when asked to set up OpenTelemetry pipelines, create alerts and notifications, or set up Sentry Snapshots."
+        },
+        {
+          "name": "sentry-get-started",
+          "description": "Guided entry point for using Sentry through your agent. Orients you to your current setup and, for a new project, sets up Sentry end to end with sane defaults \u2014 provision a project, install the SDK (errors, tracing, and whatever it enables by default), and confirm real telemetry "
+        },
+        {
+          "name": "sentry-instrument",
+          "description": "Instrument an application with Sentry \u2014 detect the platform, install and initialize the SDK if needed, and wire up any signal \u2014 error monitoring, tracing/performance, logging, metrics, profiling, session replay, user feedback, cron check-ins, and AI/LLM monitoring (agent runs, to"
+        },
+        {
+          "name": "sentry-otel-exporter-setup",
+          "description": "Configure the OpenTelemetry Collector with Sentry Exporter for multi-project routing and automatic project creation. Use when setting up OTel with Sentry, configuring collector pipelines for traces and logs, or routing telemetry from multiple services to Sentry projects."
+        },
+        {
+          "name": "sentry-snapshots-cocoa",
+          "description": "Full Sentry Snapshots setup for Apple/Cocoa projects. Use when asked to \"setup SnapshotPreviews\", \"setup Apple snapshot testing\", \"upload Apple snapshots to Sentry\", \"setup Apple snapshot GitHub Actions\", or \"setup Apple selective snapshot testing\"."
+        }
+      ],
+      "publisher": "Sentry",
+      "gitUrl": "https://github.com/getsentry/plugin-cursor"
+    },
+    {
+      "id": "512",
+      "name": "linear",
+      "displayName": "Linear",
+      "description": "The product development system for teams and agents. Manage issues, projects, documents, and everything else across your Linear workspace.",
+      "categories": [
+        "PRODUCTIVITY"
+      ],
+      "mcpServers": [
+        "linear"
+      ],
+      "skills": [],
+      "publisher": "Linear",
+      "gitUrl": "https://github.com/linear/cursor-plugin"
+    },
+    {
+      "id": "408",
+      "name": "stripe",
+      "displayName": "Stripe",
+      "description": "Stripe plugin for Cursor to help with Stripe integrations including best practices, API/SDK upgrade guidance, and the Stripe MCP server.",
+      "categories": [
+        "PAYMENTS"
+      ],
+      "mcpServers": [
+        "stripe"
+      ],
+      "skills": [
+        {
+          "name": "connect-recommend",
+          "description": "Use this skill when the user asks about Stripe Connect configuration, charge patterns, Dashboard access, or how to get started with Connect, is building a marketplace, platform, multi-vendor store, gig platform, or subscription platform, needs to pay out sellers, vendors, or prov"
+        },
+        {
+          "name": "stripe-apps",
+          "description": "Use when building, modifying, or reviewing a Stripe App \u2014 or when the user describes something that implies one (e.g. \"add a panel to the customer page\", \"customize my Stripe Dashboard\", \"react to Stripe events from my app\", \"connect my service to Stripe without sharing API keys\""
+        },
+        {
+          "name": "stripe-best-practices",
+          "description": "Guides Stripe integration decisions across API selection (Checkout Sessions vs PaymentIntents), Connect platform setup (Accounts v2, controller properties), billing/subscriptions, tax and registrations (Stripe Tax, automatic_tax, product tax codes), Treasury financial accounts, i"
+        },
+        {
+          "name": "stripe-directory",
+          "description": "Use when the user wants to find businesses, software, service providers, or partners for a specific industry, workflow, pain point, capability, or job to be done. Also use when the agent needs to programmatically purchase or consume a service. Use Stripe Directory to build a shor"
+        },
+        {
+          "name": "stripe-docs",
+          "description": "Use when the user or agent needs to read, search, or look up Stripe documentation or API reference. Prefer this over curl or WebFetch for any docs.stripe.com content."
+        },
+        {
+          "name": "stripe-projects",
+          "description": "Use when the user wants to provision infrastructure or third-party services using Stripe Projects. Triggers: \"I need a database\", \"set up auth\", \"add caching\", \"give me a Postgres\", \"provision Redis\", \"I need hosting\", \"add a vector DB\", \"get me an API key for X\", \"get credential"
+        },
+        {
+          "name": "upgrade-stripe",
+          "description": "Guide for upgrading Stripe API versions and SDKs"
+        }
+      ],
+      "publisher": "Stripe",
+      "gitUrl": "https://github.com/stripe/ai"
+    },
+    {
+      "id": "406",
+      "name": "context7-plugin",
+      "displayName": "Context7",
+      "description": "Upstash Context7 MCP server for up-to-date documentation lookup. Pull version-specific documentation and code examples directly from source repositories into your LLM context.",
+      "categories": [
+        "AGENT_ORCHESTRATION"
+      ],
+      "mcpServers": [
+        "context7"
+      ],
+      "skills": [
+        {
+          "name": "context7-mcp",
+          "description": "This skill should be used when the user asks about libraries, frameworks, API references, or needs code examples. Activates for setup questions, code generation involving libraries, or mentions of specific frameworks like React, Vue, Next.js, Prisma, Supabase, etc."
+        }
+      ],
+      "publisher": "Upstash",
+      "gitUrl": "https://github.com/upstash/context7"
+    }
+  ]
+}

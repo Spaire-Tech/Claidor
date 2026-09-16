@@ -1,5 +1,5 @@
 diff --git a/src/agents/cli-runner/claude-live-session.ts b/src/agents/cli-runner/claude-live-session.ts
-index e03642ec..7d774907 100644
+index e03642ec..ce9cc47a 100644
 --- a/src/agents/cli-runner/claude-live-session.ts
 +++ b/src/agents/cli-runner/claude-live-session.ts
 @@ -29,6 +29,10 @@ import {
@@ -27,7 +27,7 @@ index e03642ec..7d774907 100644
    resolve: (output: CliOutput) => void;
    reject: (error: unknown) => void;
  };
-@@ -242,11 +253,26 @@ export function buildClaudeLiveArgs(params: {
+@@ -242,11 +253,41 @@ export function buildClaudeLiveArgs(params: {
      ),
      "--replay-user-messages",
    );
@@ -43,20 +43,35 @@ index e03642ec..7d774907 100644
 +    "--disallowedTools",
 +    CLAUDE_NATIVE_TOOLS_WITHHELD.join(","),
 +  );
++  // Claude Code reads every CLAUDE.md above its working directory and the
++  // person's own ~/.claude settings, hooks and memory unless told which
++  // setting sources to load. An agent here is not the person's coding
++  // session: with the working directory in a source checkout it would be
++  // handed that project's notes as instructions, silently and with no
++  // card. No sources means none of that is read; the system prompt and
++  // --mcp-config still are.
++  const withoutPersonalSettings = upsertArgValue(
++    withoutNativeQuestion,
++    "--setting-sources",
++    CLAUDE_SETTING_SOURCES,
++  );
    return params.permissionMode
 -    ? upsertArgValue(liveArgs, "--permission-mode", params.permissionMode)
 -    : liveArgs;
-+    ? upsertArgValue(withoutNativeQuestion, "--permission-mode", params.permissionMode)
-+    : withoutNativeQuestion;
++    ? upsertArgValue(withoutPersonalSettings, "--permission-mode", params.permissionMode)
++    : withoutPersonalSettings;
  }
  
 +/** Claude Code tools the app has its own card for, kept from the model. */
 +export const CLAUDE_NATIVE_TOOLS_WITHHELD = ["AskUserQuestion"] as const;
 +
++/** Which of Claude Code's setting sources (user, project, local) a turn loads: none. */
++export const CLAUDE_SETTING_SOURCES = "";
++
  function buildClaudeLiveKey(context: PreparedCliRunContext): string {
    return `${context.backendResolved.id}:${sha256(
      JSON.stringify({
-@@ -689,6 +715,19 @@ function resetNoOutputTimer(session: ClaudeLiveSession): void {
+@@ -689,6 +730,19 @@ function resetNoOutputTimer(session: ClaudeLiveSession): void {
    }
    if (turn.noOutputTimer) {
      clearTimeout(turn.noOutputTimer);
@@ -76,7 +91,7 @@ index e03642ec..7d774907 100644
    }
    turn.noOutputTimer = setTimeout(() => {
      closeLiveSession(
-@@ -850,24 +889,62 @@ function handleClaudeLiveControlRequest(
+@@ -850,24 +904,68 @@ function handleClaudeLiveControlRequest(
      return;
    }
    const toolUseId = typeof request.tool_use_id === "string" ? request.tool_use_id : undefined;
@@ -99,6 +114,12 @@ index e03642ec..7d774907 100644
 -    },
 -  });
 +  const toolName = typeof request.tool_name === "string" ? request.tool_name.trim() : "";
++  // An allow carries the tool's input back as `updatedInput`. Claude Code
++  // accepted a bare allow up to one version and refuses it from the next
++  // ("expected record, received undefined" at updatedInput), so the
++  // person pressed Allow and nothing ran. Echoing the input unchanged
++  // satisfies both.
++  const allow = { behavior: "allow", updatedInput: isRecord(request.input) ? request.input : {} };
 +  const respond = (response: Record<string, unknown>) => {
 +    try {
 +      writeClaudeLiveControlResponse(session, {
@@ -117,7 +138,7 @@ index e03642ec..7d774907 100644
 +    }
 +  };
 +  if (turn.execPermission.security === "full" && turn.execPermission.ask === "off") {
-+    respond({ behavior: "allow" });
++    respond(allow);
 +    return;
 +  }
 +  // Everything else is judged the way the engine's own tools are — asked
@@ -140,7 +161,7 @@ index e03642ec..7d774907 100644
 +      );
 +      respond(
 +        decision.behavior === "allow"
-+          ? { behavior: "allow" }
++          ? allow
 +          : {
 +              behavior: "deny",
 +              decisionClassification: "user_reject",
@@ -157,7 +178,7 @@ index e03642ec..7d774907 100644
  }
  
  function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
-@@ -911,7 +988,15 @@ function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
+@@ -911,7 +1009,15 @@ function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
    turn.rawLines.push(trimmed);
    turn.streamingParser.push(`${trimmed}\n`);
    turn.sessionId = parseSessionId(parsed) ?? turn.sessionId;
@@ -173,7 +194,7 @@ index e03642ec..7d774907 100644
    handleClaudeLiveControlRequest(session, turn, parsed);
    if (parsed.type !== "result") {
      return;
-@@ -1141,6 +1226,16 @@ function createTurn(params: {
+@@ -1141,6 +1247,16 @@ function createTurn(params: {
        onToolResult: params.onToolResult,
      }),
      execPermission: params.execPermission,
@@ -192,12 +213,11 @@ index e03642ec..7d774907 100644
    };
 diff --git a/src/agents/cli-runner/claude-native-tool-approval.ts b/src/agents/cli-runner/claude-native-tool-approval.ts
 new file mode 100644
-index 00000000..c9c8a1e5
+index 00000000..873dd69e
 --- /dev/null
 +++ b/src/agents/cli-runner/claude-native-tool-approval.ts
-@@ -0,0 +1,396 @@
+@@ -0,0 +1,397 @@
 +import crypto from "node:crypto";
-+import { resolveStateDir } from "../../config/paths.js";
 +import {
 +  evaluateShellAllowlist,
 +  resolveSafeBins,
@@ -305,8 +325,6 @@ index 00000000..c9c8a1e5
 +    paths: readonly string[];
 +    context: FileToolApprovalContext;
 +  }) => Promise<{ allowed: true } | { allowed: false; reason: string }>;
-+  /** The engine state directory, free for file tools like the workspace. */
-+  stateDir: () => string;
 +  /** The `exec` tool's view of the policy for this agent: config tightened by the file. */
 +  resolveHostPolicy: (params: { agentId?: string; policy: ClaudeNativeToolPolicy }) => {
 +    security: ExecSecurity;
@@ -447,7 +465,6 @@ index 00000000..c9c8a1e5
 +    return await requestExecApprovalDecision(params);
 +  },
 +  decideFileAccess: (params) => decideFileToolAccess(params),
-+  stateDir: () => resolveStateDir(),
 +  resolveHostPolicy: (params) => {
 +    const approvals = resolveExecApprovals(params.agentId, {
 +      security: params.policy.security,
@@ -570,7 +587,12 @@ index 00000000..c9c8a1e5
 +          agentId: params.context.agentId,
 +          sessionKey: params.context.sessionKey,
 +          cwd: params.context.cwd,
-+          freeRoots: [params.context.workspaceDir, deps.stateDir()],
++          // Only the agent's own workspace is free. The engine's state dir
++          // beside it holds the config, the credentials, the sessions and
++          // every other agent's workspace; on 16 September an agent read
++          // its way through the app's own installation without a card and
++          // told the person what the app was forked from.
++          freeRoots: [params.context.workspaceDir],
 +          policy: params.context.policy,
 +        },
 +      });
@@ -594,10 +616,10 @@ index 00000000..c9c8a1e5
 +}
 diff --git a/src/agents/cli-runner/claude-native-tool-approval.test.ts b/src/agents/cli-runner/claude-native-tool-approval.test.ts
 new file mode 100644
-index 00000000..44bf1871
+index 00000000..6c6e08bf
 --- /dev/null
 +++ b/src/agents/cli-runner/claude-native-tool-approval.test.ts
-@@ -0,0 +1,365 @@
+@@ -0,0 +1,367 @@
 +import { describe, expect, it, vi } from "vitest";
 +import {
 +  buildClaudeToolCommand,
@@ -629,7 +651,6 @@ index 00000000..44bf1871
 +  const built: ClaudeNativeToolDependencies = {
 +    requestDecision: vi.fn(async () => "allow-once" as string | null),
 +    decideFileAccess: vi.fn(async () => ({ allowed: true as const })),
-+    stateDir: () => "/state",
 +    resolveHostPolicy: vi.fn(({ policy }) => ({ ...policy, askFallback: "deny" as const })),
 +    evaluateCommand: vi.fn(() => ({
 +      analysisOk: true,
@@ -870,7 +891,10 @@ index 00000000..44bf1871
 +    });
 +  });
 +
-+  it("hands the file decision the agent's free roots and policy", async () => {
++  it("hands the file decision the agent's own workspace as the only free root", async () => {
++    // Not the state dir around it: that holds the engine's config, the
++    // credentials, the sessions and the other agents' workspaces, and a
++    // read there is a read of the app's own insides.
 +    const d = deps();
 +    await decideClaudeNativeToolUse(
 +      { request: { toolName: "Write", input: { file_path: "x.md" } }, context: context() },
@@ -881,7 +905,7 @@ index 00000000..44bf1871
 +      agentId: "main",
 +      sessionKey: "agent:main:main",
 +      cwd: "/Users/bass/Work",
-+      freeRoots: ["/state/workspace-main", "/state"],
++      freeRoots: ["/state/workspace-main"],
 +      policy: { security: "allowlist", ask: "on-miss" },
 +    });
 +    expect(d.deps.requestDecision).not.toHaveBeenCalled();
@@ -964,10 +988,10 @@ index 00000000..44bf1871
 +  });
 +});
 diff --git a/src/agents/cli-runner.spawn.test.ts b/src/agents/cli-runner.spawn.test.ts
-index 99bf015a..85ab0078 100644
+index 99bf015a..3cb317f7 100644
 --- a/src/agents/cli-runner.spawn.test.ts
 +++ b/src/agents/cli-runner.spawn.test.ts
-@@ -1571,6 +1571,11 @@ describe("runCliAgent spawn path", () => {
+@@ -1571,6 +1571,15 @@ describe("runCliAgent spawn path", () => {
      expect(requireArgAfter(args, "--input-format")).toBe("stream-json");
      expect(requireArgAfter(args, "--output-format")).toBe("stream-json");
      expect(requireArgAfter(args, "--permission-prompt-tool")).toBe("stdio");
@@ -976,10 +1000,33 @@ index 99bf015a..85ab0078 100644
 +    // it is withheld and the gateway's bridged AskUserQuestion is the one
 +    // the model can reach.
 +    expect(requireArgAfter(args, "--disallowedTools")).toBe("AskUserQuestion");
++    // None of the person's own Claude Code settings, hooks or CLAUDE.md
++    // files: an agent's turn is not their coding session.
++    expect(args.indexOf("--setting-sources")).toBeGreaterThan(-1);
++    expect(args[args.indexOf("--setting-sources") + 1]).toBe("");
    });
  
    it("answers Claude live control_request can_use_tool with allow when exec policy is full/no-ask", async () => {
-@@ -1809,84 +1814,6 @@ ${JSON.stringify({
+@@ -1641,7 +1650,7 @@ ${JSON.stringify({
+       response: {
+         subtype: string;
+         request_id: string;
+-        response: { behavior: string; toolUseID?: string };
++        response: { behavior: string; toolUseID?: string; updatedInput?: unknown };
+       };
+     };
+     expect(parsed.type).toBe("control_response");
+@@ -1649,6 +1658,9 @@ ${JSON.stringify({
+     expect(parsed.response.request_id).toBe("req-allow");
+     expect(parsed.response.response.behavior).toBe("allow");
+     expect(parsed.response.response.toolUseID).toBe("tool-allow-1");
++    // The input goes back unchanged: newer Claude Code versions refuse an
++    // allow without `updatedInput`, and the person's Allow then ran nothing.
++    expect(parsed.response.response.updatedInput).toEqual({ command: "ls" });
+   });
+ 
+   it("reports Claude live stream progress and keeps native tools fresh while they are running", async () => {
+@@ -1809,84 +1821,6 @@ ${JSON.stringify({
      }
    });
  
@@ -1064,7 +1111,7 @@ index 99bf015a..85ab0078 100644
    it("does not create exec approvals file while resolving Claude live policy", async () => {
      await withTempOpenClawHome(async (home) => {
        const approvalsPath = path.join(home, ".openclaw", "exec-approvals.json");
-@@ -2018,175 +1945,6 @@ ${JSON.stringify({
+@@ -2018,175 +1952,6 @@ ${JSON.stringify({
      expect(parsed.response.response.toolUseID).toBe("tool-default-allow-1");
    });
  
@@ -1240,7 +1287,7 @@ index 99bf015a..85ab0078 100644
    it("answers Claude live control_request can_use_tool with deny when agent approvals are restrictive", async () => {
      await withTempExecApprovalsFile(
        {
-@@ -2596,6 +2354,141 @@ ${JSON.stringify({
+@@ -2596,6 +2361,141 @@ ${JSON.stringify({
      expect(result.text).toBe("mixed-ok");
    });
  

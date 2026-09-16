@@ -6,21 +6,22 @@ import { resolveClaudeCli } from './claudeCodeCli';
  * Whether this app runs its turns through the Claude Code app on this
  * computer instead of a model API.
  *
- * The founder: *"i asked you to use my claude code sign in for me. i
- * never asked you to add anything on settings … when i ask for claude
- * sign to be used, its for you to switch the mechanic in the code, but
- * thats not visible to others."* So there is no setting. The decision
- * is made here, once, from two facts nobody has to type:
+ * **Off, since 17 September 2026.** Every build, development or
+ * packaged, runs on the account's model through the metered proxy. The
+ * founder, after three evenings on the other path: *"i want out of the
+ * model. bring me back to my old open ai model - the one before we
+ * switch to claude code, the api … claude code is a coding assistant.
+ * nothing to do with any of this."* The last straw was its permission
+ * protocol changing under us: the allow reply this engine sends was
+ * accepted by one Claude Code version and refused by the next, with a
+ * schema error in the person's thread and no file written (review item
+ * 66). A coding CLI's stdio contract is not a model API, and the app
+ * should not depend on it.
  *
- * - **A development build** (`npm run electron:dev`, not a packaged app)
- *   with Claude Code installed runs on Claude Code. That is the founder
- *   developing on their own Mac, under their own plan.
- * - **A packaged build never does.** A client's app runs on the account
- *   allowance through the metered proxy, whatever is installed beside it.
- *
- * `CAISRA_CLAUDE_CODE=1` forces it on and `=0` forces it off, for the
- * one day either is needed; neither is a screen. The decision is logged
- * at `[ClaudeCode]` so the log says which way it went and why.
+ * The mechanic stays in the tree, off. `CAISRA_CLAUDE_CODE=1` is the
+ * one way to turn it on, for a developer at a terminal; there is no
+ * screen and no build that does it by itself. Whichever way it goes is
+ * logged once at `[ClaudeCode]`.
  *
  * Nothing here reads or copies Claude Code's credentials. The engine
  * spawns the installed `claude` command and Claude Code signs itself in.
@@ -58,13 +59,11 @@ export function decideClaudeCodeMode(input: {
         : `${CLAUDE_CODE_ENV}=${flag}, but no claude command was found; the engine will try a bare \`claude\``,
     };
   }
-  if (input.packaged) {
-    return { enabled: false, command: input.command, reason: 'packaged build; the account allowance carries the models' };
-  }
-  if (!input.command) {
-    return { enabled: false, command: null, reason: 'development build, but Claude Code is not installed here' };
-  }
-  return { enabled: true, command: input.command, reason: `development build, claude at ${input.command}` };
+  return {
+    enabled: false,
+    command: input.command,
+    reason: `the account's model through the proxy carries every ${input.packaged ? 'packaged' : 'development'} build; ${CLAUDE_CODE_ENV}=1 is the only way on`,
+  };
 }
 
 let decided: ClaudeCodeDecision | undefined;

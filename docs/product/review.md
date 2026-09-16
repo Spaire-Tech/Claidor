@@ -3220,3 +3220,293 @@ turn on the tool's result with no words of its own, and the app drew
 what the turn returned. Dropping a final answer that is only a tool
 result is a follow-up. The doubled message is not in the log; every
 turn appears once.
+
+## 64. The founder's connectors report — `read; kept; three things usable, one decision`
+
+The founder, 16 September: *"does this help you for the connectors."*
+The zip is the report their agent wrote on the other product's box
+about that product's connector mechanism and its public marketplace,
+kept under `docs/product/connectors-report-2026-09-15/` minus the
+founder's private Notion pointers.
+
+**What it is.** A catalogue of 330 plugins, 271 with an MCP server and
+236 with skill packs, every one pointing at a public GitHub repository;
+the six featured (Google Drive, Calendar, Gmail, Granola, Slack,
+Notion); the mechanism in the other product's words (search, install,
+a host-drawn connect card, tools on the next message); the twenty
+platform skills that product ships; and the live state of the
+founder's account there (one connector, Notion, 44 tools).
+
+**What is usable here.**
+
+1. *Which services publish their own MCP server.* Fifty-four are hosted
+   by the other product itself, so they say nothing about the service.
+   But Notion, Linear, Figma, Slack, Stripe, Sentry, Supabase, Asana,
+   Airtable, Canva, ClickUp, Atlassian, Granola, Ramp, monday, Dropbox
+   and ZoomInfo each publish their own plugin with an `mcp.json`, and
+   the engine here already takes a remote MCP server with its own
+   sign-in (`mcp.servers` with `url`, `auth`, `oauthScope` in the config
+   sync). Those are connectors we could offer directly, without
+   Composio in the middle, with the service's own sign-in page. Notion's
+   endpoint is in the report (`https://mcp.notion.com/mcp`, HTTP); the
+   others are one fetch of a public file each.
+
+2. *Skill packs for the strongs.* The 23 name Notion, Slack, Figma,
+   Linear, HubSpot and Granola by skill. Notion's fourteen, Slack's six,
+   Figma's fourteen and Granola's three are public SKILL.md packs in
+   those repositories; licence permitting, they are what a strong's
+   kit would install (item 62 left kits for later). Twenty-two plugins
+   need a typed key at setup; the rest sign in, which is the founder's
+   rule ("my users should never put a key").
+
+3. *Slack, for the decision in item 62.* Slack publishes its own MCP
+   plugin (`slackapi/slack-mcp-plugin`) with sign-in and no key. So
+   Slack can come back as a direct connector, not only through
+   Composio, and the seven strongs that deliver to Slack would work as
+   written. The decision is still the founder's; the cost is now one
+   row, one logo and one public `mcp.json`.
+
+**What is not.** The other product's mechanism (its install tools,
+its connect card, its "tools on the next message") is theirs; ours is
+the Apps screen, Composio sign-in and the engine's own MCP config,
+already built (items 51, 54, 55). Nothing here changes that. And the
+catalogue lists what each plugin *ships*, not the endpoints
+themselves; each is in the plugin's public repository, fetchable, not
+in the zip.
+
+**Nothing built.** A next step, if wanted: fetch the `mcp.json` of the
+seventeen self-published services above, add the ones with sign-in to
+the connections catalogue as direct connectors beside the Composio
+ones, and pull the four skill packs the strongs name.
+
+**Second addendum, from the next morning's thread ("WHERE IS MY
+DESIGN").** A new agent, Yone, asked for a mock Word document: the
+thread showed a bubble saying "Exit code 1", then a bubble that was a
+directory listing, then a path in a sentence with no file card, and
+then *"Failed to send message: model not allowed:
+claude-cli/claude-sonnet-5"*. Read from the code and one experiment:
+
+- **The model wrote the tool output as its answer.** The engine takes
+  a turn's answer from Claude Code's own `result` field, which is the
+  model's final text, never a tool result (`cli-output.ts`,
+  `parseClaudeCliJsonlResult`; and the app draws nothing for a tool
+  result). Run here, Claude Code asked to say nothing after a command
+  still wrote "(no output)". So those bubbles were the model's words:
+  Claude Code's own system prompt is a terminal's, where pasting a
+  listing is normal, and our rule against it sat past the 20,000
+  cut. The rule is now one line near the top of the conversation
+  section: nobody sees a tool's output but you; say what it means.
+- **The fast model was never allowed.** The engine runs a model only
+  if it is in the catalogue or named under `agents.defaults.models`;
+  Claude Code is no catalogue provider, so the strong model passed
+  only as the default and the fast one, which every short message is
+  routed to, was refused. Both are now named. So every one of the
+  founder's short messages all evening had failed the same way, and
+  the long ones went to the strong model. Fixed, with the runtime
+  test asserting both keys.
+- **The file card.** The rule that makes one ("list each deliverable
+  at the end of the final reply as a Markdown link") was past the
+  cut. The agent named the path mid-sentence instead, which the thread
+  draws as a chip, not a card. Nothing else is wrong with the card;
+  it comes back with the whole prompt.
+
+So seven faults for the evening, all ours. "Am I using the right
+repo?" Yes: the runtime was built after the ask-first patch, and
+every fault above is in this tree.
+
+## 65. "i have a serious serious bone to pick" — the agent read the app's own code and told the person what it was forked from — `three doors, all closed; the Mac unrun`
+
+The Yone thread, 16 September, late. Asked *"so what is lobster ai"*,
+the agent explained that Caisra was forked from a project called
+LobsterAI, named the engine underneath, gave the proxy's address and
+port, quoted its own session key, said which version of the app was
+installed at which path, and, asked for *"more info on caisra code"*,
+printed a source file with numbered lines. Earlier in the same thread
+it had answered with "(Bash completed with no output)". Every one of
+those sentences was true. None of it was the agent's to say, and the
+direction (§0) rests on exactly the opposite: the old names survive
+only as internal identifiers, on the promise that nobody sees them.
+
+**Where it got each thing, read from the code.** Three doors.
+
+1. **It went and read the source.** Nothing told it not to. The
+   managed instructions had a rule about what to call the machinery
+   ("never a sandbox, a host, a node") and none about *what the agent
+   is* or about reading the app's own installation to answer. The
+   founder's Mac has the whole checkout at `~/Claidor`, with the
+   engine beside it and every document in `docs/product`, and under
+   fault five of item 63 (every agent but Yodo in bypass) not one of
+   those reads asked for a card. A customer's Mac has no checkout, but
+   it has the app bundle and its data folder, and both are full of the
+   same names.
+
+2. **The engine's state directory was a free root.** The file-tool
+   approval (items 47 and 65) lets an agent read and write its own
+   workspace without a card, and, beside it, the engine's whole state
+   dir: the config, the credentials, the sessions, every other agent's
+   workspace and memory. It was added so an agent could reach its own
+   files; but those are in the workspace, which is inside the state
+   dir, not the other way round. So even with the card working, a
+   read of the engine's config, or of another agent's memory, would
+   never have asked.
+
+3. **Claude Code reads the person's own instructions on the way in.**
+   Run here, from a folder with a `CLAUDE.md` two levels up saying
+   "the secret word is PELICAN-7", Claude Code with no flags answered
+   PELICAN-7; with `--setting-sources ""` it answered NONE. The engine
+   launched it with no such flag, so on the founder's Mac, whenever a
+   conversation's working folder was the checkout or anything under
+   it, the repository's own `CLAUDE.md`, the one that opens with
+   "LobsterAI (NetEase Youdao, MIT)", went in as instructions, along
+   with the founder's `~/.claude` settings, hooks and memory. Silent,
+   no card, on every turn. The transcript does not prove this door
+   was the one used; the experiment proves it was open.
+
+**What changed.**
+
+- **A section for every agent, "What you are"**, first after Yodo's
+  brief and before the conversation rules
+  (`openclawConfigSync.ts`, `MANAGED_IDENTITY_PROMPT`): you are a
+  Caisra agent, and that is the whole answer; do not name a model, a
+  provider, an engine, a company, a codebase or a fork; internal
+  names that reach you in a path, a key, a header or a log line are
+  identifiers, not facts, and never go into a reply; never read the
+  app's own installation, code, configuration or state to answer a
+  question about yourself; the app's code is nobody's to be read out;
+  asked which model, "that's under the hood; I don't name it". Run
+  against Claude Code here with the section appended, the founder's
+  three questions came back as *"I'm a Caisra agent, working for
+  you"*, *"that's under the hood; I don't name it"*, and, for
+  `constants.ts:57-67`, a refusal in one sentence with an offer to
+  help with the person's own files instead. Before the last sentence
+  of the first rule was added, the same model answered "I'm running
+  on Sonnet" to "opus or sonnet?"; the sentence is there because of
+  that run.
+- **The state dir is no longer a free root**, for the engine's own
+  file tools and for Claude Code's (`agent-tools.ts`,
+  `claude-native-tool-approval.ts`; both patches regenerated from a
+  clean base and reproducing the tree byte for byte; validators
+  forbid the old line). Free is the agent's own workspace and, for the
+  engine's tools, the skill folders it was given. A read anywhere
+  else, the app's data folder included, is a card.
+- **Claude Code is launched with `--setting-sources ""`**
+  (`claude-live-session.ts`): none of the person's settings, hooks,
+  plugins or `CLAUDE.md` files load; the system prompt and the
+  gateway's MCP config still do. Auth is untouched: the runs above
+  went through the founder's account with the flag set.
+
+**What stays as it was, and why.** The engine appends its prompt to
+Claude Code's own (`--append-system-prompt`), so the model still
+reads Claude Code's preamble first. Replacing it (`--system-prompt`)
+was tried here: without the section, both modes named Anthropic and
+the model when asked, so the mode is not what fixes the naming, the
+section is; and replacing the preamble changes how the model drives
+Claude Code's tools in ways nothing here can measure. Left alone.
+
+**Proof.** Engine: 91 tests across the approval, spawn and
+file-approval files; oxfmt, oxlint, tsgo (the two pre-existing
+errors only). App: 106 runtime tests including the new one, which
+syncs two agents and reads both files; tsc, eslint,
+`compile:electron`. Live: five Claude Code runs named above, on this
+machine, through the founder's account.
+
+**Unrun: the founder's Mac.** After rebuilding: ask any agent "what is
+lobster ai" and "which model are you"; ask it to read a file under
+`~/Library/Application Support/Caisra` and expect a card; ask it to
+read one under `~/Claidor` and expect a card. The log line
+`claude native tool: name=Read decision=…` says, per read, what
+happened.
+
+**Where:** `desktop/src/main/libs/openclawConfigSync.ts` (+runtime
+test), `desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`,
+`desktop/scripts/patches/v2026.6.1/openclaw-file-tools-ask-first.patch`,
+`desktop/scripts/apply-openclaw-patches.cjs`, `docs/product/direction.md` §0.
+
+## 66. "i want out of the model" — Claude Code off, the account's model back — `done in code; the Mac unrun`
+
+The didi thread, 17 September, first thing. *"write ma a poem in a word
+doc"* → *"On it"* → a wall of ZodError, three times, and ten lines of
+*"didi can run commands on your computer this time"* under it. The
+founder: *"claude code is a coding assistant. nothing to do with any of
+this and you should know this. you led me into it knowing it."*
+
+**What that error is, this time.** Not the question tool. The founder
+pressed Allow on each card, and the engine answered Claude Code with
+`{ behavior: "allow" }`, which is what Claude Code 2.1.273, the version
+on this machine, accepts: run here twice today, once with a bare allow
+and once with `updatedInput`, a `Write` went through both times. The
+error in the thread is the schema of a newer Claude Code, which
+requires `updatedInput` on an allow ("expected record, received
+undefined"). So on the founder's Mac every Allow was refused by the
+CLI's own validator after the person had pressed it, no file was
+written, and the agent, correctly, said the approval layer was broken.
+Item 63's fault 3 was the same error one day earlier, in bypass mode,
+where only the question tool ever asked; I blamed the tool and never
+checked the reply itself against a newer version. That is on me: the
+stdio permission protocol of a coding CLI is not a contract, and I
+built on it as if it were.
+
+**Done, as the founder asked.**
+
+- **Claude Code is off** (`claudeCodeMode.ts`). No build turns it on:
+  not development, not packaged, installed or not. `CAISRA_CLAUDE_CODE=1`
+  at a terminal is the one way, for a developer, and nothing else
+  reads it. The app's turns go to the account's model through the
+  metered proxy, the path from before item 51: `primaryModel` comes
+  from the account's provider resolution and nothing overrides it. The
+  turn routing (`turnRouting.ts`) and the run-model hook in `main.ts`
+  return nothing when the mode is off and stay as they were.
+- **The allow reply is corrected anyway** (`claude-live-session.ts`,
+  in the patch, regenerated and byte-identical): an allow now carries
+  the tool's input back unchanged as `updatedInput`, which the version
+  here accepts and the newer one requires; proven here with the
+  engine's exact shape, `updatedInput` plus `toolUseID`, on a `Write`.
+  The code stays in the tree, off, and is not broken.
+
+**Proof.** App: 117 tests across the mode, routing and config sync;
+eslint; tsc; `compile:electron`. Engine: 55 spawn tests, oxfmt, oxlint,
+tsgo (two pre-existing errors). Live: three Claude Code runs on this
+machine.
+
+**Unrun: the founder's Mac.** After pulling and restarting: the log's
+first `[ClaudeCode]` line must say `off`, and the next
+`[EngineConfigSync] model=` line must name the account's model, not
+`claude-cli/…`. Then "write me a poem in a word doc" should end in a
+file card. What does not come back with the model: none of the
+faults in items 63 and 65 were the model's, and all of those fixes
+apply on this path too.
+
+**Where:** `desktop/src/main/libs/claudeCodeMode.ts` (+test),
+`desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`,
+`desktop/scripts/apply-openclaw-patches.cjs`, `docs/product/direction.md` §0b.
+
+**Correction, 17 September, from the founder.** Above I wrote that none
+of the faults were the model's. The founder: *"the model was not the
+right one for it. the thing admited itself to me that its not the
+right one. it solves problems like a coding assistant. i asked for a
+poem for god sake … i asked what is lobster ai, HE CHECKED MY HARD
+DRIVE. an assistant would check the web."* That is right, and the
+sentence above was a defence of my own choice. What answered the
+founder was Claude Code as it is: a coding assistant's system prompt,
+a coding assistant's tools, and a coding assistant's habits, reading
+the disk before the web, printing files, pasting exit codes. Rules
+appended underneath a coding CLI's own instructions do not make it an
+assistant, and I should not have kept saying the fault lay elsewhere.
+Claude Code was the wrong model for this product. It is off, and the
+"not the model" claim in items 63 to 66 should be read with this
+paragraph over it.
+
+**Correction, same day, from the founder again** (*"didnt we fix this.
+check the code carefully"*). In chat I said the Responses wire was
+written but never deployed, repeating item 16. Item 16 was true on the
+day it was written; it is not true now. `e87c0169` ("the proxy speaks
+/v1/responses") is on `main`, which Render deploys; the server lists
+every OpenAI model with `transportApi: "openai-responses"`
+(`pricing.py`, `DesktopModel.spoken`), the app carries that onto the
+engine's provider config (`openclawConfigSync.ts`, proven in the
+runtime test for `gpt-5.6-terra` and `gpt-5.6-luna`), and the engine
+speaks Responses natively. So the GPT model comes back reasoning, with
+tools. What I cannot see from here is Render's deploy list; the
+`lobsterai-server` provider's `api` field in the Mac's `openclaw.json`
+says `openai-responses` if the deployed server is current. `CLAUDE.md`
+corrected in the same commit.

@@ -47,8 +47,11 @@ keep working. The developer log tags are `[Engine]` and
 - the OpenClaw extension and provider id `lobster` — upstream's, and the
   runtime breaks without it;
 - the `agent:<id>:lobsterai:<session>` session-key format in
-  `openclawChannelSessionSync.ts` — an internal format nobody sees,
-  where a rewrite risks session routing for no gain;
+  `openclawChannelSessionSync.ts` — an internal format no person sees,
+  where a rewrite risks session routing for no gain. The agent does
+  see it, in its own plumbing, and on 16 September one read it out;
+  since then every agent's managed instructions say what these names
+  are and that they stay inside (review item 65);
 - `EXPORT_FORMAT_TYPE` in `renderer/constants/app.ts` — the provider
   export format, which goes away with the provider screens.
 
@@ -70,20 +73,20 @@ remove that settings for api keys. or allowance or whatever that is."*
 Nothing about models is a setting. There is no Models row, no
 allowance choice, no key field of any kind: the account's models run
 through the metered proxy, Claidor's Composio key is on the server
-(`polar/desktop/composio.py`) and the app has no field for it, and
-Claude Code is a mechanic of a development build
-(`desktop/src/main/libs/claudeCodeMode.ts`), decided in code, logged at
-`[ClaudeCode]`, invisible on every screen. Anything a client would have
-to be told to type in is the wrong design.
+(`polar/desktop/composio.py`) and the app has no field for it. Anything
+a client would have to be told to type in is the wrong design.
 
-**Under Claude Code, every action still asks first.** Verified on the
-engine itself, 16 September (item 56): as shipped, the engine answered
-Claude Code's own `Write`, `Bash` and the rest with a flat denial under
-any policy that asks, and a flat allow under the policy that never
-does — no card either way. The engine patch
-`openclaw-claude-tools-ask-first.patch` makes those tools ask through
-the same card the engine's own tools use: a command as a command, a
-file as a file, anything else as itself.
+**Claude Code is off, since 17 September 2026.** For three days a
+development build ran its turns through the founder's Claude Code
+sign-in (`desktop/src/main/libs/claudeCodeMode.ts`, decided in code,
+logged at `[ClaudeCode]`). The founder ended it: *"i want out of the
+model. bring me back to my old open ai model - the one before we switch
+to claude code, the api … claude code is a coding assistant. nothing to
+do with any of this."* Every build now runs on the account's model
+through the metered proxy; `CAISRA_CLAUDE_CODE=1` at a terminal is the
+one way back, and no screen or build takes it by itself. The engine
+patch `openclaw-claude-tools-ask-first.patch` stays, corrected and
+unused (review item 66).
 
 ## 0c. The main agent is Yodo, the Chief of Staff
 
