@@ -33,7 +33,10 @@ const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'],
 });
-const page = await browser.newPage({ viewport: { width: 1280, height: 820 }, deviceScaleFactor: 2 });
+// The window: the app's default, or `SHOT_VIEWPORT=1440x1400` for a
+// tall one when a whole conversation has to fit in one picture.
+const [width, height] = (process.env.SHOT_VIEWPORT ?? '1280x820').split('x').map(Number);
+const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
 
 page.on('console', m => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
 page.on('pageerror', e => problems.push(`pageerror: ${e.message}`));
@@ -123,10 +126,10 @@ for (const screen of screens) {
     // the thread scrolls inside the window, so the window grows to fit.
     const blockEl = page.locator('[data-card-block]').first();
     const tall = await blockEl.evaluate(el => el.getBoundingClientRect().height + 400);
-    await page.setViewportSize({ width: 1280, height: Math.ceil(Math.max(820, tall)) });
+    await page.setViewportSize({ width, height: Math.ceil(Math.max(height, tall)) });
     await page.waitForTimeout(300);
     await blockEl.screenshot({ path: `harness/shots/${screen}-block.png` });
-    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.setViewportSize({ width, height });
     console.log(`shot ${screen}-block`);
     // The face inside the block: the founder keeps ours, OpenUI's
     // defaults say Inter, so the shooter says which one drew it.
