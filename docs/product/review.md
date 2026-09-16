@@ -3495,3 +3495,18 @@ assistant, and I should not have kept saying the fault lay elsewhere.
 Claude Code was the wrong model for this product. It is off, and the
 "not the model" claim in items 63 to 66 should be read with this
 paragraph over it.
+
+**Correction, same day, from the founder again** (*"didnt we fix this.
+check the code carefully"*). In chat I said the Responses wire was
+written but never deployed, repeating item 16. Item 16 was true on the
+day it was written; it is not true now. `e87c0169` ("the proxy speaks
+/v1/responses") is on `main`, which Render deploys; the server lists
+every OpenAI model with `transportApi: "openai-responses"`
+(`pricing.py`, `DesktopModel.spoken`), the app carries that onto the
+engine's provider config (`openclawConfigSync.ts`, proven in the
+runtime test for `gpt-5.6-terra` and `gpt-5.6-luna`), and the engine
+speaks Responses natively. So the GPT model comes back reasoning, with
+tools. What I cannot see from here is Render's deploy list; the
+`lobsterai-server` provider's `api` field in the Mac's `openclaw.json`
+says `openai-responses` if the deployed server is current. `CLAUDE.md`
+corrected in the same commit.

@@ -58,13 +58,22 @@ Youdao or OpenClaw, and the MCP servers the app registers are Caisra's.
 `docs/product/direction.md` §0 lists what keeps an old name as an
 internal identifier, and why.
 
-**GPT models work.** OpenAI refuses `reasoning_effort` together with
-function tools on `/v1/chat/completions`; the proxy now sends
-`reasoning_effort: "none"` whenever an OpenAI model is holding tools, and
-that is deployed and confirmed working by the founder. The cost is that
-those models run without reasoning whenever tools are in play, which for
-an agent is always; the proper fix is OpenAI's `/v1/responses`, and that
-is a translation layer nobody has built.
+**GPT models reason with tools, on `/v1/responses`.** OpenAI refuses
+`reasoning_effort` together with function tools on
+`/v1/chat/completions`, so on that wire the proxy sends
+`reasoning_effort: "none"` whenever an OpenAI model holds tools. That
+wire is no longer the one used. Since 13 September (`e87c0169`, on
+`main`, which Render deploys) the server lists every OpenAI model with
+`transportApi: "openai-responses"` (`polar/desktop/pricing.py`,
+`DesktopModel.spoken`), the app writes that api onto the engine's
+provider (`openclawConfigSync.ts`, `transportApi`), and the engine
+speaks Responses natively to `/api/proxy/v1/responses`, where reasoning
+and tools travel together and nothing is forced to `none`. An earlier
+version of this paragraph said the translation was "a layer nobody has
+built"; it was written before the merge and repeated once on 17
+September without checking. The engine config on a Mac shows which wire
+is in use: the `lobsterai-server` provider's `api` field in
+`openclaw.json`.
 
 **The engine cuts every instruction file at 20,000 characters unless
 told otherwise** (`agents.defaults.bootstrapMaxChars`), and the managed
