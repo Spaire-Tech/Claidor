@@ -16,6 +16,12 @@ Then paste the rows between the two hand-written halves of catalog.ts.
 The file is hand-maintained after that; re-run this only to pick up new
 services from upstream, and diff rather than overwrite.
 
+**16 September 2026: the catalogue was cut to forty-five.** Every card
+must be a Connect button that works (the founder's rule; see the note
+above `CONNECTION_ITEMS`). This script emits the full upstream list of
+a hundred-odd; anything it emits that is not on the kept list is noise
+and must not go back in.
+
 Two rules are applied while copying and both are load-bearing:
 
   * Cursor's own proxy (`api.cursor.com`) is somebody else's middleman

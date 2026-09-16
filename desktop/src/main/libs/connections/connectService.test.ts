@@ -23,7 +23,7 @@ const GMAIL: ConnectionItem = {
 };
 
 const SLACK: ConnectionItem = {
-  id: 'slack', name: 'Slack', group: ConnectionGroupId.Messaging,
+  id: 'slack', name: 'Slack', group: ConnectionGroupId.Developer,
   kind: ConnectionKind.Account,
   connect: { via: ConnectVia.Pipedream, appSlug: 'slack_v2' },
 };

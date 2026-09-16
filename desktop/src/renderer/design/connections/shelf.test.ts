@@ -138,11 +138,14 @@ describe('what a card can actually do', () => {
     expect(row).toEqual({ action: ConnectAction.Connect, label: 'Connect', pressable: true });
   });
 
-  test('every card in the real catalogue gets an action, and says something', () => {
-    // No card may be blank on the right-hand side.
+  test('every card in the real catalogue is a Connect button', () => {
+    // The founder, 16 September: nothing browser, nothing that cannot
+    // be connected — "it says plugins, so you should plug it". The
+    // kinds above still exist for the day a channel screen exists; no
+    // card in the catalogue uses them.
     for (const one of CONNECTION_ITEMS) {
-      const row = actionFor(one, NONE);
-      expect(row.label, `${one.id} says nothing`).toBeTruthy();
+      expect(actionFor(one, NONE), one.id)
+        .toEqual({ action: ConnectAction.Connect, label: 'Connect', pressable: true });
     }
   });
 });

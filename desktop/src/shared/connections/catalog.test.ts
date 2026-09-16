@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, test } from 'vitest';
@@ -92,56 +92,54 @@ describe('no card offers something it cannot do', () => {
 });
 
 describe('the route each service takes', () => {
-  test('sixty-three sign in with nothing from us — the list the founder asked to build first', () => {
+  test('every card is an account with a Connect that works: nothing browser, local, channel, soon or "not yet"', () => {
+    // The founder, 16 September: "i want nothing that is browser. or
+    // that cant be connected. its noise … it says plugins, so you
+    // should plug it." A card works when Composio carries it, or when
+    // the vendor's own server registers us itself.
+    for (const item of CONNECTION_ITEMS) {
+      expect(item.kind, item.id).toBe(ConnectionKind.Account);
+      const works = composioToolkit(item) !== undefined || signsInItself(item);
+      expect(works, `${item.id} has no way in`).toBe(true);
+    }
+  });
+
+  test('twenty-one sign in with nothing from us', () => {
     // `docs/product/connectors-list-2026-09-15.md`, "Self": the vendor's
     // own MCP server, registering us itself. Checked against each
     // endpoint on 15 September (`connectors-probe-2026-09-15*.txt`).
-    // The two open servers are on top of the sixty-three.
     const self = CONNECTION_ITEMS.filter(one => {
       const method = connectMethod(one);
       return signsInItself(one) && method?.via === ConnectVia.Mcp && !method.open;
     });
     expect(self.map(one => one.id).sort()).toEqual([
-      'ahrefs', 'airtable', 'amplemarket', 'apollo', 'asana', 'ashby', 'attio',
-      'brex', 'calendly', 'canva', 'circleback', 'clay', 'clickup', 'cloudflare',
-      'coda', 'craft', 'customer-io', 'daloopa', 'deepl', 'dropbox', 'fathom',
-      'figma', 'fireflies', 'gamma', 'gong', 'greenhouse', 'guru',
-      'interactive-brokers', 'jira', 'jotform', 'juicebox', 'klaviyo', 'linear',
-      'mailerlite', 'make', 'meltwater', 'mem', 'mercury', 'miro', 'monday',
-      'navan', 'notion', 'otter', 'outreach', 'paypal', 'profound', 'ramp',
-      'readwise', 'semrush', 'sentry', 'sp-global', 'square', 'stripe',
-      'supabase', 'todoist', 'typeform', 'upwork', 'vercel', 'webflow', 'webull',
-      'wix', 'workable', 'zapier',
+      'airtable', 'asana', 'ashby', 'brex', 'canva', 'dropbox', 'fathom', 'figma',
+      'greenhouse', 'jira', 'klaviyo', 'linear', 'mercury', 'miro', 'notion',
+      'paypal', 'ramp', 'stripe', 'supabase', 'todoist', 'vercel',
     ]);
-    expect(self).toHaveLength(63);
+    expect(self).toHaveLength(21);
   });
 
-  test('the two open servers need no sign-in and say so', () => {
-    for (const id of ['excalidraw', 'godaddy']) {
-      const method = connectMethod(findConnection(id)!)!;
-      expect(method.via).toBe(ConnectVia.Mcp);
-      expect(method.via === ConnectVia.Mcp && method.open).toBe(true);
-    }
-  });
-
-  test('the ones that want a client we have not registered are marked, not hidden', () => {
+  test('the ones whose vendor wants a client we have not registered are all carried by Composio', () => {
     // The probe found no registration endpoint at these. Our config
-    // cannot pass a client id, so until one is registered with each
-    // vendor the card says "Not yet". The flag is what lets it.
+    // cannot pass a client id, so without Composio the card would say
+    // "Not yet", and no card may say that now.
     const marked = accounts.filter(one => {
       const method = connectMethod(one)!;
       return method.via === ConnectVia.Mcp
         && method.registration === OAuthRegistration.Preregistered;
     }).map(one => one.id).sort();
     expect(marked).toEqual([
-      'box', 'docusign', 'gmail', 'google-calendar', 'google-cloud-bigquery',
-      'google-docs', 'google-drive', 'google-sheets', 'google-slides', 'hubspot',
-      'intercom', 'rippling', 'x', 'x-ads', 'zoom',
+      'docusign', 'gmail', 'google-calendar', 'google-docs', 'google-drive',
+      'google-sheets', 'google-slides', 'hubspot', 'intercom', 'zoom',
     ]);
-    for (const id of marked) expect(signsInItself(findConnection(id)!)).toBe(false);
+    for (const id of marked) {
+      expect(signsInItself(findConnection(id)!)).toBe(false);
+      expect(composioToolkit(findConnection(id)!), id).toBeTruthy();
+    }
   });
 
-  test('Pipedream is still there for what no vendor carries, and is never a button', () => {
+  test('the middleman route is never a button on its own; every card on it is carried by Composio', () => {
     const viaUs = accounts.filter(one => connectMethod(one)!.via === ConnectVia.Pipedream);
     expect(viaUs.length).toBeGreaterThan(0);
     for (const one of viaUs) {
@@ -149,59 +147,48 @@ describe('the route each service takes', () => {
       if (method.via !== ConnectVia.Pipedream) continue;
       expect(method.appSlug).toBeTruthy();
       expect(signsInItself(one)).toBe(false);
+      expect(composioToolkit(one), one.id).toBeTruthy();
+    }
+  });
+
+  test('a token or local route is never a button on its own either', () => {
+    // GitHub wants a pasted token; Xero's server wants a client id in
+    // its environment. Nobody types either; Composio carries both.
+    for (const one of accounts) {
+      const via = connectMethod(one)!.via;
+      if (via === ConnectVia.Token || via === ConnectVia.Local) {
+        expect(composioToolkit(one), one.id).toBeTruthy();
+      }
     }
   });
 
   test('the Microsoft accounts fell back rather than going through Cursor', () => {
-    // Cursor's manifests point at api.cursor.com. The catalogue must
-    // not. Teams is a channel now — the engine carries `msteams` — so it
-    // is not an account at all.
+    // Cursor's manifests point at api.cursor.com. The catalogue must not.
     for (const id of ['outlook', 'onedrive']) {
       const item = findConnection(id);
       expect(item, `${id} is missing`).toBeTruthy();
       expect(connectMethod(item!)!.via).toBe(ConnectVia.Pipedream);
     }
-    expect(findConnection('microsoft-teams')?.kind).toBe(ConnectionKind.Channel);
   });
 
-  test('every channel is a plugin that actually ships', () => {
-    // Eight are engine extensions, `openclaw/extensions/<id>`. Email is
-    // not: it is the third-party `@clawemail/email` plugin the app
-    // installs from `package.json`'s `openclaw.plugins` — which this
-    // test found out, after the doc had called it an engine plugin. A
-    // channel card for a plugin that does not exist would be a way to
-    // reach the agent that reaches nothing.
-    const extensions: Record<string, string> = {
-      whatsapp: 'whatsapp', imessage: 'imessage', slack: 'slack',
-      'microsoft-teams': 'msteams', telegram: 'telegram', discord: 'discord',
-      signal: 'signal', 'google-chat': 'googlechat',
-    };
-    const channels = CONNECTION_ITEMS.filter(one => one.kind === ConnectionKind.Channel);
-    expect(channels.map(one => one.id).sort()).toEqual([...Object.keys(extensions), 'email'].sort());
-
-    const manifest = JSON.parse(readFileSync(path.resolve(__dirname, '../../../package.json'), 'utf8')) as {
-      openclaw?: { plugins?: { id: string }[] };
-    };
-    expect(manifest.openclaw?.plugins?.map(one => one.id)).toContain('clawemail-email');
-
-    const engine = path.resolve(__dirname, '../../../../openclaw/extensions');
-    if (!existsSync(engine)) return; // the engine is a sibling checkout, not always there
-    for (const [id, extension] of Object.entries(extensions)) {
-      expect(existsSync(path.join(engine, extension)), `${id} → ${extension}`).toBe(true);
-    }
+  test('no channel is a card: those belong to a channel screen, which does not exist yet', () => {
+    // WhatsApp, Telegram, Slack and the rest are ways to reach the
+    // agent, with a pairing flow of their own. Until the new shell has
+    // that screen they are not "plugins" and are not here.
+    expect(CONNECTION_ITEMS.filter(one => one.kind === ConnectionKind.Channel)).toEqual([]);
   });
 });
 
 describe('the Composio route', () => {
   test('the services the founder named are all carried, under Composio\'s own slugs', () => {
-    // Each checked on 15 September at composio.dev/toolkits/<slug>: the
-    // page exists for these, and does not for the spellings dropped.
+    // Each checked at composio.dev/toolkits/<slug>: the page exists for
+    // these, and does not for the spellings dropped.
     const named: Record<string, string> = {
       gmail: 'gmail', 'google-calendar': 'googlecalendar', notion: 'notion',
-      slack: 'slack', github: 'github', hubspot: 'hubspot', linear: 'linear',
+      github: 'github', hubspot: 'hubspot', linear: 'linear',
       jira: 'jira', trello: 'trello', asana: 'asana', salesforce: 'salesforce',
       dropbox: 'dropbox', 'google-drive': 'googledrive', outlook: 'outlook',
-      zoom: 'zoom',
+      zoom: 'zoom', linkedin: 'linkedin', xero: 'xero', shopify: 'shopify',
     };
     for (const [id, slug] of Object.entries(named)) {
       expect(composioToolkit(findConnection(id)!), id).toBe(slug);
@@ -216,16 +203,6 @@ describe('the Composio route', () => {
       const slug = composioToolkit(one);
       if (slug === undefined) continue;
       expect(slug, one.id).toMatch(/^[a-z0-9_]+$/);
-    }
-  });
-
-  test('it never sits on a card that is the person\'s own browser or this computer', () => {
-    // Those cards have nothing to sign into; a Connect there would be
-    // the dead button all over again.
-    for (const one of CONNECTION_ITEMS) {
-      if (one.kind === ConnectionKind.Browser || one.kind === ConnectionKind.Local) {
-        expect(composioToolkit(one), one.id).toBeUndefined();
-      }
     }
   });
 
@@ -266,7 +243,7 @@ describe('finding a service', () => {
 
   test('it matches the group name', () => {
     const found = searchConnections('hiring').map(one => one.id);
-    expect(found).toContain('ashby');
+    expect(found).toContain('greenhouse');
   });
 
   test('nothing matching is empty, not everything', () => {

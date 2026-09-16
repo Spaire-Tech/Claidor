@@ -2342,3 +2342,77 @@ Connect on one card.
 `design/connections/{shelf,useConnections,Connections}`;
 `server/polar/config.py`, `polar/desktop/composio.py`, `endpoints.py`,
 `tests/desktop/test_endpoints.py`.
+
+## 54. The connectors, cut to what plugs in — `built`
+
+The founder: *"remove all the junks in connectors. its a lot of them.
+put there only our chosen connectors … i want nothing that is browser.
+or that cant be connected. its noise. cause what is it doing there? it
+says pluggins, so you should plug it … no social media either cause i
+cant do anything there either. leave linkedin we'll find a connector."*
+
+**The rule.** Every card in Plugins is a Connect button that works.
+Nothing browser, nothing "on this Mac", nothing "not yet", "needs a
+key" or "no way in yet", no channels, no long tail. The catalogue went
+from a hundred and thirty-four cards to forty-five. I told the founder
+fifty-two in the message that proposed the list; the count was wrong
+and the list was right. Forty-five it is.
+
+**The forty-five.** Mail & Calendar: Gmail, Outlook, Google Calendar.
+Files & Docs: Google Drive, Docs, Sheets, Slides, OneDrive, Dropbox,
+Notion. Tasks: Todoist, Google Tasks, Trello, Asana, Airtable. Meetings:
+Zoom, Google Meet, Fathom. Creativity: Canva, Figma, Miro. Finance:
+Stripe, PayPal, QuickBooks, Xero, Shopify, Brex, Ramp, Mercury. Sales:
+HubSpot, Salesforce, Pipedrive, Intercom, Docusign. Developer: GitHub,
+Linear, Jira, Supabase, Vercel. Marketing: Mailchimp, Klaviyo. Hiring:
+Greenhouse, Ashby, Gusto. Social: LinkedIn.
+
+**Three changed route to make the rule hold.** LinkedIn was a browser
+card; Shopify was a browser card; Xero's own server needs a client id
+in its environment. Composio carries all three — `linkedin`, `shopify`
+and `xero` each answer 200 at `composio.dev/toolkits/<slug>` and a
+nonsense slug answers 404 from the same check — so all three are
+Connect. LinkedIn's line says what Composio's LinkedIn is: posting and
+the person's own profile, not the feed or messages. Mailchimp and Gusto
+were "no way in yet" cards with a slug; they are accounts now.
+
+**What left, and where it went.** Messaging (WhatsApp, iMessage, Slack,
+Teams, Telegram, Discord, Signal, Google Chat, IMAP) is not a set of
+connectors: those are ways to reach the agent with a pairing flow of
+their own, and they belong to the channel screen the new shell does not
+have yet, which is on the founder's open list. Shopping & Travel and the
+social browser cards are the agent using the person's browser, with
+nothing to plug in. The Mac cards (Word, Excel, PowerPoint, Apple
+Calendar, Notes, Reminders) are already there. Both empty groups are
+gone from the group list. The kinds and routes the type still allows
+(browser, local, channel, soon, token, middleman) are kept for the
+channel screen and for a vendor that one day registers us; the shelf's
+handling of them is tested with synthetic items and no real card uses
+them.
+
+**Unverified, said so in the file.** Four cards have no vendor MCP and
+sit on Composio alone: Shopify, Mailchimp, Gusto, LinkedIn. Their
+fallback route names the middleman's app slug as I know it and those
+four slugs are unverified; the middleman route is not wired, so nothing
+rides on them. Composio draws the button.
+
+**Logos.** 30 of the 45 carry a logo file; 15 show the monogram (Airtable,
+Canva, Miro, Brex, Ramp, Mercury, Salesforce, Pipedrive, Docusign,
+Mailchimp, Klaviyo, Greenhouse, Ashby, Gusto, LinkedIn). Fourteen logo
+files nothing names any more were removed. Kept: the channel marks
+(WhatsApp, iMessage, Telegram, Discord, Signal, the Apple mark), which
+the channel screen will want, and the Word, Excel and PowerPoint marks,
+which the thread's file cards use.
+
+**Proof.** The catalogue test now asserts every card is an account with
+a working way in, names the twenty-one that sign in by themselves and
+the ten whose vendor wants a client and are carried by Composio, and
+that no channel is a card; the shelf test asserts every real card is a
+Connect button. Tests, eslint and tsc below. The Apps sheet was
+photographed from the harness. **Unrun:** a sign-in, as before.
+
+**Where:** `shared/connections/catalog.ts` (+test),
+`design/connections/shelf.test.ts`, `libs/connections/connectService.test.ts`,
+`scripts/build-connections-catalogue.py` (note), `public/logos/apps/`,
+`docs/product/connectors-list-2026-09-15.md` (note).
+
