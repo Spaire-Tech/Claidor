@@ -1854,6 +1854,32 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.deny).not.toContain('video_generate');
   });
 
+  test('the question plugin carries the tapback route, and only when the app has one', async () => {
+    // `ReactToMessage` lives in the same plugin as `AskUserQuestion`
+    // because that is where the session key is. Without the route the
+    // plugin does not offer the tool.
+    const withReact = await createSync({
+      getAskUserCallbackUrl: () => 'http://127.0.0.1:5175/askuser',
+      getReactCallbackUrl: () => 'http://127.0.0.1:5175/react',
+    });
+    expect(withReact.sync('react-route').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).plugins.entries['ask-user-question']).toEqual({
+      enabled: true,
+      config: {
+        callbackUrl: 'http://127.0.0.1:5175/askuser',
+        secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+        reactUrl: 'http://127.0.0.1:5175/react',
+      },
+    });
+
+    const without = await createSync({
+      getAskUserCallbackUrl: () => 'http://127.0.0.1:5175/askuser',
+    });
+    expect(without.sync('no-react-route').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).plugins.entries['ask-user-question'].config)
+      .not.toHaveProperty('reactUrl');
+  });
+
   test('the Claude Code mechanic makes the engine run every agent through the Claude CLI', async () => {
     // The engine's own planner uses exactly this form: a `claude-cli/<model>`
     // primary model, and the engine spawns the installed Claude Code app.

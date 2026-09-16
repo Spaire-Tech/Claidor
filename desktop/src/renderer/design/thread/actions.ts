@@ -30,6 +30,16 @@ export function toggleReaction(reactions: Reactions, messageId: string, emoji: s
   return next;
 }
 
+/**
+ * The agent's tapback: set, not toggled. An agent reacting twice with
+ * the same emoji means it twice, and a second emoji replaces the first,
+ * since a message carries one.
+ */
+export function withReaction(reactions: Reactions, messageId: string, emoji: string): Reactions {
+  if (reactions[messageId] === emoji) return reactions;
+  return { ...reactions, [messageId]: emoji };
+}
+
 /** How long a reply quote may be before it is cut, in characters. */
 export const QUOTE_LENGTH = 52;
 

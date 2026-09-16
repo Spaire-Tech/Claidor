@@ -6,6 +6,7 @@ import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
   type ChoiceItem,
+  type ChoiceOutcome,
   Speaker,
   type StatusItem,
   type TextItem,
@@ -89,6 +90,16 @@ export interface AskUserQuestion {
   header?: string;
   options: readonly AskUserOption[];
   multiSelect?: boolean;
+}
+
+/**
+ * The card as it stays in the thread once answered or dismissed: the
+ * same prompt and options, the outcome on it, the time it was settled.
+ * Pure, so the shell can keep it beside the messages the way it keeps
+ * the notes an approval leaves.
+ */
+export function resolveChoiceItem(item: ChoiceItem, outcome: ChoiceOutcome, at: number): ChoiceItem {
+  return { ...item, resolved: outcome, freeform: false, at };
 }
 
 /** `choice:<requestId>:<index>` — the card, and what it answers. */

@@ -3700,3 +3700,113 @@ path each command took.
 test), `agentEngine/openclawApprovalBridge.ts` (+test),
 `desktop/src/renderer/design/thread/{types,fromEngine,ThreadItemView}`,
 `shell/useMessagesShell.ts`.
+
+## 69. The chat-UI reaction logic, applied — `built; the Mac unrun`
+
+The founder's second document of 17 September,
+`docs/product/sources/caisra-chat-ui-logic.md`, verbatim: how chat
+reacts, cause → UI → agent. It was audited line by line against the
+thread before anything was written, on the standing rule that the code
+is complete until proven otherwise. The audit is the table; the work is
+what the table said was missing.
+
+**Already live, untouched:** several bubbles per reply (§1.1),
+attachments as cards, the secret card (§7.4, with forms folded into it
+as review item 33 decided), the computer card (§7.1), "N new messages"
+(§5), the prompt rules on reply-first and progress beats (§2), the
+per-agent notify toggle (§12, our label "Notifications"), reactions
+by the person (§8), reply quoting (§8, threads).
+
+**Partial, now finished:**
+
+- **Choice cards have a lifecycle (§6).** Answered, a card stayed on
+  screen as a live control with nothing to say it was done; dismissed,
+  it vanished. Now an answered card stays, muted, with the chosen
+  answer checked under the prompt (`ResolvedChoiceCard`); a dismissed
+  one stays muted and says "Dismissed"; and a card the person writes
+  past is dismissed for them and the engine told no
+  (`dismissOnMoveOn`, in `onSend`). The settled cards are placed back
+  in the thread at the moment they were answered (`placeByTime`, the
+  generic form of item 67's `mergeByTime`) and cleared when the
+  conversation changes.
+- **Reference chips and settings pills do something (§8).** Both were
+  parsed and drawn since item 31, and neither handler was ever
+  supplied. A chip now scrolls the thread to the message it names
+  (`scrollToThreadItem`, over a `data-thread-item` wrapper per item;
+  a message not on screen is a toast). A settings pill opens Settings
+  on the tab its row sits on (`tabForRow`, which finds the tab by
+  building each one, so a row that moves takes its link with it;
+  `Settings` takes `initialTab`).
+- **The unread dot is fed (§12).** Drawn since item 43, never lit.
+  The shell now keeps, per agent, the newest time the conversation had
+  when it was open; a row whose conversation moved on while another
+  was open shows the dot until it is opened. History is never unread:
+  the first list fills the map.
+- **"Waiting for you" (§3).** When a card in the open conversation is
+  waiting on the person, the header says so in place of the typing
+  dots, and the thread draws no typing bubble, because nothing moves
+  until they answer.
+- **A rename is said once (§13).** "Renamed to X." as a note in the
+  thread when the panel's name edit lands, and only when the name
+  changed.
+- **The agent can react (§1.1, §8).** `ReactToMessage` is a second
+  tool in the same engine plugin as `AskUserQuestion`, because that is
+  where the session key is: a stdio server (the staffing pattern)
+  never learns which conversation called it, and a tapback on the
+  wrong message is a visible lie. The tool takes one emoji and no
+  message id, since the agent never sees ids; the app puts it on the
+  person's newest message in that session, over a new bridge route
+  (`/react`), the runtime resolving the session and the message, the
+  renderer saving it where the person's own reactions live. A reaction
+  on a conversation not on screen is saved and shows when it opens.
+  The doc's line is on the tool and in the brief: an acknowledgement,
+  never a reply; it never replaces an answer they are waiting for.
+
+**Missing, and left so, with the reason:**
+
+- Voice memo playback (§9): dictation exists (item 54), playback of an
+  agent's spoken reply does not; the server has text-to-speech
+  (`/api/proxy/v1/audio/speech`) and nothing in the app calls it. A
+  separate piece of work, not a reaction rule.
+- `to: "dm"` from a room (§11): our rooms send to each member's own
+  conversation already, so there is no room transcript to be private
+  from. Nothing to build until rooms have one.
+- Email and Slack draft cards, the listener-connect card, the connector
+  card in chat, the virtual card, 1Password fill, `cursor-agent`,
+  box-help (§7.3, §7.5–7.7): none of these tools exist in our engine.
+  Connectors are the Apps screen by design (item 51); the rest are
+  Grok Bot's plumbing, not ours.
+- Notification sound (§12): deliberately out; the app does not make
+  noise.
+- Typing indicator, read receipts, avatar animation frames (§14): the
+  doc itself says not to invent them. Ours are items 43's dots and
+  blob, unchanged.
+
+**Run:** the app's typecheck, eslint on every touched file,
+`compile:electron`; the design, settings, reactions, bridge, config
+sync, manifest and extension test files (thirty-three files, five
+hundred and twenty-eight tests, all passing), including a live test
+that loads the real plugin, hands it a fake engine `api`, and executes
+`ReactToMessage` against the real bridge over the loopback socket: the
+emoji and the session key arrive, the model is told it landed, a
+channel session is not offered the tool, and without the route the
+plugin registers one tool and not two.
+
+**Unrun: the founder's Mac.** After pulling and rebuilding: ask Yodo a
+question that makes him ask one back; pick an answer and see the card
+stay with the answer checked; ask another, type past it, see it go
+muted with "Dismissed" and the header lose "Waiting for you"; say
+thanks and see whether the model reaches for `ReactToMessage` (the
+gateway log says `registered ReactToMessage tool factory` on start);
+rename an agent in the panel and see "Renamed to X." in its thread;
+have one agent working while another is open and see the dot.
+
+**Where:** `desktop/src/renderer/design/thread/{types,fromEngine,ThreadItemView,Thread,actions,useReactions}`
+(+tests), `shell/{select,useMessagesShell,MessagesShell,CaisraApp}`,
+`settings/Settings.tsx`, `desktop/src/shared/settings/rows.ts`
+(`tabForRow`, +test), `desktop/src/shared/reactions/constants.ts`
+(+test), `desktop/openclaw-extensions/ask-user-question/{index.ts,openclaw.plugin.json}`,
+`desktop/src/main/libs/mcpBridgeServer.ts` (+test),
+`desktop/src/main/mcp/mcpRuntime.ts`, `openclawConfigSync.ts`
+(+runtime test), `main.ts`, `preload.ts`, `renderer/types/electron.d.ts`,
+`desktop/tests/openclaw-extensions/ask-user-question/reactToMessage.live.test.ts`.

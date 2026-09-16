@@ -790,6 +790,7 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- Do not use it to confirm a command you are about to run. The app asks the user about that itself, in its own card.',
   '- A card they dismiss, or let expire, is a no. Do not ask the same thing again, differently worded or in plain text. Say what you cannot do without the answer and stop, or go on without that part.',
   '- If `AskUserQuestion` is NOT available: ask via plain text instead.',
+  '- `ReactToMessage` puts one emoji on the person\'s last message, the way a tapback works in Messages. It is an acknowledgement, not a reply: a thanks, a joke, good news. It never replaces an answer they are waiting for.',
   '',
   '### Passwords, Keys And Codes',
   `- Never ask the person to type a password, an API key, a one-time code or a card number as a chat message. Call \`${ASK_INPUT_TOOL}\` instead. It draws a card with masked boxes, and what they type comes back to you without ever entering the conversation.`,
@@ -2271,6 +2272,8 @@ type OpenClawConfigSyncDeps = {
   getIMSettings?: () => IMSettings | null;
   getResolvedMcpServers?: () => ResolvedMcpServer[];
   getAskUserCallbackUrl?: () => string | null;
+  /** Where the `ReactToMessage` tool posts a tapback. Absent, the tool is not offered. */
+  getReactCallbackUrl?: () => string | null;
   getMediaCallbackUrl?: () => string | null;
   getBrowserCallbackUrl?: () => string | null;
   getLobsterBrowserMcpCommand?: () => string | null;
@@ -2349,6 +2352,7 @@ export class OpenClawConfigSync {
   private readonly getIMSettings?: () => IMSettings | null;
   private readonly getResolvedMcpServers?: () => ResolvedMcpServer[];
   private readonly getAskUserCallbackUrl?: () => string | null;
+  private readonly getReactCallbackUrl?: () => string | null;
   private readonly getMediaCallbackUrl?: () => string | null;
   private readonly getBrowserCallbackUrl?: () => string | null;
   private readonly getLobsterBrowserMcpCommand?: () => string | null;
@@ -2388,6 +2392,7 @@ export class OpenClawConfigSync {
     this.getIMSettings = deps.getIMSettings;
     this.getResolvedMcpServers = deps.getResolvedMcpServers;
     this.getAskUserCallbackUrl = deps.getAskUserCallbackUrl;
+    this.getReactCallbackUrl = deps.getReactCallbackUrl;
     this.getMediaCallbackUrl = deps.getMediaCallbackUrl;
     this.getBrowserCallbackUrl = deps.getBrowserCallbackUrl;
     this.getLobsterBrowserMcpCommand = deps.getLobsterBrowserMcpCommand;
@@ -3347,11 +3352,15 @@ export class OpenClawConfigSync {
     if (hasAskUserPlugin && askUserCallbackUrl && managedConfig.plugins) {
       const plugins = managedConfig.plugins as Record<string, unknown>;
       const entries = plugins.entries as Record<string, Record<string, unknown>>;
+      // The same plugin carries `ReactToMessage`, which posts to its own
+      // route; without the route the tool is not offered.
+      const reactUrl = this.getReactCallbackUrl?.();
       entries['ask-user-question'] = {
         enabled: true,
         config: {
           callbackUrl: askUserCallbackUrl,
           secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+          ...(reactUrl ? { reactUrl } : {}),
         },
       };
     }

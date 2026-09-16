@@ -130,6 +130,7 @@ import type {
   PublishingSubscriptionRecoveryMode,
   PublishingTrialPolicy,
 } from '../../shared/publishing/constants';
+import type { AgentReaction } from '../../shared/reactions/constants';
 import type { Room, RoomError } from '../../shared/rooms/constants';
 import type {
   ShareDeploymentAnalyzeProjectInput,
@@ -680,6 +681,9 @@ interface IElectronAPI {
     update: (id: string, changes: { name?: string; memberIds?: string[] }) =>
       Promise<{ ok: true; room: Room | null } | { ok: false; problem: RoomError }>;
     remove: (id: string) => Promise<void>;
+  };
+  reactions?: {
+    onAgent: (callback: (reaction: AgentReaction) => void) => () => void;
   };
   askInput?: {
     onRequested: (callback: (request: AskInputRequest) => void) => () => void;

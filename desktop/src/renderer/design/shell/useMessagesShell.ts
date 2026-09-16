@@ -22,10 +22,11 @@ import { openLocalPathWithToast, showToast } from '../../utils/localFileActions'
 import { extractUserMessageFileAttachments } from '../../utils/userMessageFileAttachments';
 import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
-import { askUserQuestions, decisionNote, fileAccessFromToolInput, parseChoiceId } from '../thread/fromEngine';
+import { askUserQuestions, decisionNote, fileAccessFromToolInput, parseChoiceId, resolveChoiceItem } from '../thread/fromEngine';
 import { basename, type KnownFile } from '../thread/parts';
+import { scrollToThreadItem } from '../thread/Thread';
 import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
-import { AuthDecision } from '../thread/types';
+import { AuthDecision, type ChoiceItem, type ChoiceOutcome, ThreadItemKind } from '../thread/types';
 import type { AgentDraftSubmit } from './Compose';
 import { ThreadMode } from './MessagesShell';
 import { openFileTarget } from './openFile';
@@ -34,6 +35,7 @@ import { mergeRoomThread, roomTyping } from './room';
 import {
   dayStamp as dayStampOf,
   mergeByTime,
+  placeByTime,
   sidebarAgents,
   sidebarRooms,
   type StoreSession,
@@ -88,6 +90,11 @@ export interface MessagesShellState {
   items: ReturnType<typeof threadItems>;
   dayStamp: string | undefined;
   typing: boolean;
+  /**
+   * True while a card in the open conversation is waiting on the person.
+   * The header says "Waiting for you" instead of the typing dots.
+   */
+  waiting: boolean;
   mode: ThreadMode;
   choice: ChoiceHandlers;
   auth: AuthHandlers;
@@ -261,12 +268,39 @@ export function useMessagesShell(): MessagesShellState {
     return newest;
   }, [sidebarSessions]);
 
+  // Unread: an agent whose conversation moved on while another was open.
+  // What was seen is the newest time the open conversation had when it
+  // was open; anything newer on another row is unread until it is
+  // opened. History is not unread: the first list fills the map.
+  const seenAt = useRef<Map<string, number>>(new Map());
+  const [seenTick, setSeenTick] = useState(0);
+  useEffect(() => {
+    if (seenAt.current.size === 0 && sidebarSessions.length > 0) {
+      for (const one of sidebarSessions) {
+        seenAt.current.set(one.agentId, Math.max(seenAt.current.get(one.agentId) ?? 0, one.updatedAt ?? 0));
+      }
+    }
+    const open = sessionsByAgent[activeId];
+    if (open) seenAt.current.set(activeId, open.updatedAt ?? Date.now());
+    setSeenTick(tick => tick + 1);
+  }, [activeId, sessionsByAgent, sidebarSessions]);
+  const unread = useMemo(() => {
+    const set = new Set<string>();
+    for (const [agentId, session] of Object.entries(sessionsByAgent)) {
+      if (!session || agentId === activeId) continue;
+      if ((session.updatedAt ?? 0) > (seenAt.current.get(agentId) ?? Number.POSITIVE_INFINITY)) set.add(agentId);
+    }
+    return set;
+    // `seenTick` is what makes a change to the map count.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionsByAgent, activeId, seenTick]);
+
   const rows = useMemo(
     () => [
       ...sidebarRooms({ rooms, agents, sessions: sidebarSessions }),
-      ...sidebarAgents({ agents, sessions: sidebarSessions }),
+      ...sidebarAgents({ agents, sessions: sidebarSessions, unread }),
     ],
-    [rooms, agents, sidebarSessions],
+    [rooms, agents, sidebarSessions, unread],
   );
 
   const active = useMemo(
@@ -301,6 +335,14 @@ export function useMessagesShell(): MessagesShellState {
   const [answers, setAnswers] = useState<Record<string, Record<string, string>>>({});
 
   /**
+   * The question cards once settled. Answered, a card stays with the
+   * answer checked under it; dismissed, or moved past by a newer message,
+   * it stays muted. Local for the same reason the notes are: the engine
+   * holds the answer inside the tool call, and the card is the thread's.
+   */
+  const [resolvedChoices, setResolvedChoices] = useState<ChoiceItem[]>([]);
+
+  /**
    * A room's thread: every member's session, merged.
    *
    * Built from the same `threadItems` each one-to-one conversation uses,
@@ -333,7 +375,7 @@ export function useMessagesShell(): MessagesShellState {
   }, [room, agents, sessionsByAgent, sessions, computerName, pendingPermissions, answers]);
 
   const items = useMemo(
-    () => roomItems ?? threadItems({
+    () => roomItems ?? placeByTime(threadItems({
       agentId: activeId,
       // The id identifies, the name is what a person reads. Passing the
       // id for both put "Allow juno to continue" on an approval card.
@@ -343,9 +385,14 @@ export function useMessagesShell(): MessagesShellState {
       pendingPermissions,
       answered: answers,
       running: currentSession?.status === 'running',
-    }),
-    [roomItems, activeId, active, session, messages, pendingPermissions, computerName, answers, currentSession?.status],
+    }), resolvedChoices, one => one.at),
+    [roomItems, activeId, active, session, messages, pendingPermissions, computerName, answers, currentSession?.status, resolvedChoices],
   );
+
+  // A card is waiting on the person: the header says so and the thread
+  // draws no typing bubble, because nothing moves until they answer.
+  const waiting = !room && pendingPermissions.some(one =>
+    !one.sessionId || one.sessionId === currentSession?.id);
 
   // A room is working while any member is. The person is waiting for the
   // room, not for one of its members.
@@ -538,6 +585,12 @@ export function useMessagesShell(): MessagesShellState {
     onSaveCopy,
     // A link belongs in the person's own browser, not inside a bubble.
     onOpenLink: (href: string) => { window.open(href, '_blank', 'noopener,noreferrer'); },
+    // A reference chip scrolls back to the message it names. A message
+    // that is not on screen (another conversation, or trimmed) is a
+    // toast rather than nothing.
+    onOpenMessage: (messageId: string) => {
+      if (!scrollToThreadItem(messageId)) showToast('That message is not in this conversation.');
+    },
   }), [files, avatars, onOpenFile, onSaveCopy]);
 
   // Open on a conversation rather than on nothing, the way Messages does.
@@ -562,8 +615,9 @@ export function useMessagesShell(): MessagesShellState {
     dispatch(setCurrentAgentId(agentId));
     // The notes belong to the conversation that produced them. Left alone
     // they would follow you into the next one — "Mira can run commands
-    // from now on" appearing in Juno's thread.
+    // from now on" appearing in Juno's thread. The settled cards likewise.
     setNotes([]);
+    setResolvedChoices([]);
     const newest = sessionsByAgent[agentId];
     if (!newest) {
       // No history with this agent. An empty thread, not the last one's.
@@ -617,6 +671,31 @@ export function useMessagesShell(): MessagesShellState {
     });
   }, [activeId, dispatch, reloadRooms]);
 
+  /** The settled form of a card that is on screen now, by outcome. */
+  const settle = useCallback((itemId: string, outcome: ChoiceOutcome) => {
+    const card = items.find(one => one.id === itemId && one.kind === ThreadItemKind.Choice);
+    if (!card || card.kind !== ThreadItemKind.Choice || card.resolved) return;
+    setResolvedChoices(previous => [...previous, resolveChoiceItem(card, outcome, Date.now())]);
+  }, [items]);
+
+  /**
+   * Decline a whole question request: every card of it goes muted and
+   * the engine hears no, once. Used by the card's own dismiss and by a
+   * newer message written past it.
+   */
+  const dismissRequest = useCallback((requestId: string) => {
+    for (const card of items) {
+      if (card.kind === ThreadItemKind.Choice && parseChoiceId(card.id)?.requestId === requestId) {
+        settle(card.id, { dismissed: true });
+      }
+    }
+    void coworkService.respondToPermission(requestId, { behavior: 'deny', message: 'Dismissed.' });
+    setAnswers(previous => {
+      const { [requestId]: _gone, ...rest } = previous;
+      return rest;
+    });
+  }, [items, settle]);
+
   // Which model a turn runs on is not this screen's business: the main
   // process decides per run (`main/libs/turnRouting.ts`, under the
   // Claude Code mechanic) and nothing here names a model.
@@ -636,13 +715,21 @@ export function useMessagesShell(): MessagesShellState {
       return;
     }
 
+    // A question card the person writes past is a question they are not
+    // answering: it goes muted and the engine is told no, so the turn is
+    // not left hanging on it (`caisra-chat-ui-logic.md` §6, dismiss on
+    // move on).
+    for (const request of pendingPermissions) {
+      if (askUserQuestions(request).length) dismissRequest(request.requestId);
+    }
+
     const sessionId = currentSession?.id;
     if (sessionId) {
       void coworkService.continueSession({ sessionId, prompt: message });
       return;
     }
     void coworkService.startSession({ prompt: message, agentId: activeId });
-  }, [room, sessionsByAgent, currentSession, activeId]);
+  }, [room, sessionsByAgent, currentSession, activeId, pendingPermissions, dismissRequest]);
 
   /**
    * "Teach a task", from the composer's `+` menu.
@@ -773,7 +860,17 @@ export function useMessagesShell(): MessagesShellState {
       description,
       systemPrompt: systemPromptFor({ name, label, description, voiceId: active.voiceId }),
     }).then(updated => {
-      if (!updated) showToast('That could not be saved.');
+      if (!updated) { showToast('That could not be saved.'); return; }
+      // A rename is said once in the thread, the way Messages says it
+      // (`caisra-chat-ui-logic.md` §13, "Renamed to {0}").
+      if (name !== active.name) {
+        setNotes(previous => [...previous, {
+          id: `note:rename:${Date.now()}`,
+          type: 'system',
+          content: `Renamed to ${name}.`,
+          timestamp: Date.now(),
+        }]);
+      }
     });
   }, [active]);
   const onEditAgent = useCallback((patch: AgentEditPatch) => {
@@ -871,6 +968,7 @@ export function useMessagesShell(): MessagesShellState {
     const questions = askUserQuestions(request);
     const question = questions[parsed.index];
     if (!question) return;
+    settle(itemId, { answer: value });
 
     setAnswers(previous => {
       const forRequest = { ...(previous[parsed.requestId] ?? {}), [question.question]: value };
@@ -889,7 +987,7 @@ export function useMessagesShell(): MessagesShellState {
       }
       return { ...previous, [parsed.requestId]: forRequest };
     });
-  }, [pendingPermissions]);
+  }, [pendingPermissions, settle]);
 
   const choice = useMemo<ChoiceHandlers>(() => ({
     onPick: (itemId, optionKey) => {
@@ -910,16 +1008,9 @@ export function useMessagesShell(): MessagesShellState {
       if (!parsed) return;
       // Dismissing one card answers nothing, so it declines the whole
       // question. Leaving the tool call open would hang the turn.
-      void coworkService.respondToPermission(parsed.requestId, {
-        behavior: 'deny',
-        message: 'Dismissed.',
-      });
-      setAnswers(previous => {
-        const { [parsed.requestId]: _gone, ...rest } = previous;
-        return rest;
-      });
+      dismissRequest(parsed.requestId);
     },
-  }), [answer, pendingPermissions]);
+  }), [answer, pendingPermissions, dismissRequest]);
 
   return {
     agents: rows,
@@ -939,6 +1030,7 @@ export function useMessagesShell(): MessagesShellState {
     items,
     dayStamp: dayStampOf(messages),
     typing,
+    waiting,
     mode,
     choice,
     auth,

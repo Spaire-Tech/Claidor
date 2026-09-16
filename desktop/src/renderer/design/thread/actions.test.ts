@@ -10,11 +10,23 @@ import {
   replyQuote,
   saveReactions,
   toggleReaction,
+  withReaction,
 } from './actions';
 
 describe('reacting to a message', () => {
   test('the six are the canvas\'s, in its order', () => {
     expect(REACTION_EMOJIS).toEqual(['👍', '❤️', '😂', '😮', '😢', '🙏']);
+  });
+
+  test('the agent\'s tapback is set, not toggled', () => {
+    // An agent saying 👍 twice means it twice; only a person's own press
+    // on the same emoji takes it off.
+    let reactions = withReaction({}, 'm1', '👍');
+    expect(reactions).toEqual({ m1: '👍' });
+    const same = withReaction(reactions, 'm1', '👍');
+    expect(same).toBe(reactions);
+    reactions = withReaction(reactions, 'm1', '❤️');
+    expect(reactions).toEqual({ m1: '❤️' });
   });
 
   test('one reaction per message, and the same one again clears it', () => {

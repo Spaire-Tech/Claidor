@@ -68,6 +68,65 @@ describe('McpBridgeServer AskUser session attribution', () => {
   });
 });
 
+describe('McpBridgeServer reacting to a message', () => {
+  const post = (url: string, secret: string, body: unknown) => fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-mcp-bridge-secret': secret },
+    body: JSON.stringify(body),
+  });
+
+  test('hands the emoji and the session on, and answers with what came back', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    const seen: unknown[] = [];
+    try {
+      await server.start();
+      server.onReact(request => {
+        seen.push(request);
+        return { behavior: 'reacted' };
+      });
+      const response = await post(server.reactCallbackUrl!, secret, {
+        emoji: ' 👍 ',
+        sessionKey: 'agent:main:lobsterai:session-a',
+      });
+      expect(response.ok).toBe(true);
+      await expect(response.json()).resolves.toEqual({ behavior: 'reacted' });
+      expect(seen).toEqual([{ emoji: '👍', sessionKey: 'agent:main:lobsterai:session-a' }]);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('two emoji never reach the app', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    let seen = 0;
+    try {
+      await server.start();
+      server.onReact(() => { seen += 1; return { behavior: 'reacted' }; });
+      const response = await post(server.reactCallbackUrl!, secret, { emoji: '👍👍' });
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({ behavior: 'nothing', reason: 'One emoji only.' });
+      expect(seen).toBe(0);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('with nobody listening, the tool is told nothing happened', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    try {
+      await server.start();
+      const response = await post(server.reactCallbackUrl!, secret, { emoji: '🙏' });
+      expect(response.ok).toBe(true);
+      await expect(response.json()).resolves.toMatchObject({ behavior: 'nothing' });
+    } finally {
+      await server.stop();
+    }
+  });
+});
+
 describe('McpBridgeServer browser bridge', () => {
   test('authenticates and forwards browser tool requests', async () => {
     const secret = 'browser-test-secret';

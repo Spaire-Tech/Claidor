@@ -17,6 +17,8 @@ import { isAskUserQuestionCandidateSessionKey } from './sessionKey';
 type PluginConfig = {
   callbackUrl: string;
   secret: string;
+  /** Where `ReactToMessage` posts. Absent, that tool is not offered. */
+  reactUrl: string;
 };
 
 type QuestionOption = {
@@ -55,8 +57,48 @@ const parsePluginConfig = (value: unknown): PluginConfig => {
   return {
     callbackUrl: typeof raw.callbackUrl === 'string' ? raw.callbackUrl.trim() : '',
     secret: typeof raw.secret === 'string' ? raw.secret.trim() : '',
+    reactUrl: typeof raw.reactUrl === 'string' ? raw.reactUrl.trim() : '',
   };
 };
+
+const ReactToMessageSchema = Type.Object({
+  emoji: Type.String({ description: 'One emoji, such as 👍 or ❤️ or 🙏.' }),
+});
+
+type ReactResult =
+  | { behavior: 'reacted' }
+  | { behavior: 'nothing'; reason: string };
+
+/** Post a tapback to the app. The app decides which message it goes on. */
+async function react(config: PluginConfig, input: { emoji: string; sessionKey: string }): Promise<ReactResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const response = await fetch(config.reactUrl, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-mcp-bridge-secret': config.secret,
+      },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    const parsed: unknown = text.trim() ? JSON.parse(text) : null;
+    if (isRecord(parsed) && parsed.behavior === 'reacted') return { behavior: 'reacted' };
+    const reason = isRecord(parsed) && typeof parsed.reason === 'string'
+      ? parsed.reason
+      : `The app answered ${response.status}.`;
+    return { behavior: 'nothing', reason };
+  } catch (error) {
+    const reason = error instanceof Error && error.name === 'AbortError'
+      ? 'The app did not answer in time.'
+      : error instanceof Error ? error.message : String(error);
+    return { behavior: 'nothing', reason };
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 const QuestionOptionSchema = Type.Object({
   label: Type.String({ description: 'Display text for this option (1-5 words).' }),
@@ -207,6 +249,44 @@ const plugin = {
     });  // end of factory function passed to registerTool
 
     api.logger.info('[ask-user-question] registered AskUserQuestion tool factory.');
+
+    // The tapback. Same sessions as the question card, for the same
+    // reason: it is drawn in the app's conversation, so it is only for
+    // sessions the app is showing. Offered only when the app has said
+    // where to post it.
+    if (!config.reactUrl) {
+      api.logger.info('[ask-user-question] ReactToMessage skipped: reactUrl not configured.');
+      return;
+    }
+    api.registerTool((ctx) => {
+      const sessionKey = ctx.sessionKey ?? '';
+      if (!isAskUserQuestionCandidateSessionKey(sessionKey)) {
+        return null;
+      }
+      return {
+        name: 'ReactToMessage',
+        label: 'React to message',
+        description: [
+          'Put one emoji on the person\'s last message, the way a tapback works in Messages.',
+          'It is an acknowledgement, not a reply: use it when a word would be too much, such as thanks, a joke, or good news.',
+          'It never replaces an answer they are waiting for; if they asked for something, still give it.',
+          'One emoji, once per message.',
+        ].join(' '),
+        parameters: ReactToMessageSchema,
+        async execute(_id: string, params: unknown) {
+          const emoji = isRecord(params) && typeof params.emoji === 'string' ? params.emoji.trim() : '';
+          if (!emoji) {
+            return { content: [{ type: 'text', text: 'An emoji is required.' }], isError: true };
+          }
+          const result = await react(config, { emoji, sessionKey });
+          if (result.behavior === 'reacted') {
+            return { content: [{ type: 'text', text: `Reacted ${emoji} to their last message.` }] };
+          }
+          return { content: [{ type: 'text', text: `No reaction: ${result.reason}` }] };
+        },
+      };
+    });
+    api.logger.info('[ask-user-question] registered ReactToMessage tool factory.');
   },
 };
 

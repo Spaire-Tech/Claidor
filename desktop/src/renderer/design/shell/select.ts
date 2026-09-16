@@ -339,17 +339,29 @@ export function mergeByTime(
   messages: readonly EngineMessage[],
   notes: readonly EngineMessage[],
 ): EngineMessage[] {
-  if (notes.length === 0) return [...messages];
-  const out: EngineMessage[] = [];
+  return placeByTime(messages, notes, one => one.timestamp);
+}
+
+/**
+ * The same, for anything with a time: the settled question cards go in
+ * beside the thread's items where they were answered.
+ */
+export function placeByTime<T>(
+  base: readonly T[],
+  extras: readonly T[],
+  at: (one: T) => number,
+): T[] {
+  if (extras.length === 0) return [...base];
+  const out: T[] = [];
   let next = 0;
-  for (const message of messages) {
-    while (next < notes.length && notes[next].timestamp < message.timestamp) {
-      out.push(notes[next]);
+  for (const one of base) {
+    while (next < extras.length && at(extras[next]) < at(one)) {
+      out.push(extras[next]);
       next += 1;
     }
-    out.push(message);
+    out.push(one);
   }
-  return [...out, ...notes.slice(next)];
+  return [...out, ...extras.slice(next)];
 }
 
 /** "Today", "Friday", "3 March" — one stamp at the top of a thread. */

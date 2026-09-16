@@ -35,6 +35,8 @@ import { color, font, glass, line, motion, radius, shadow, text, tracking } from
 
 export interface SettingsProps extends SettingsInput {
   onClose: () => void;
+  /** The tab to open on, when a link in the thread named a row. */
+  initialTab?: SettingsTab;
 }
 
 const ICONS: Record<SettingsTab, (size: number) => JSX.Element> = {
@@ -53,8 +55,8 @@ const ICONS: Record<SettingsTab, (size: number) => JSX.Element> = {
 };
 
 export function Settings(props: SettingsProps): JSX.Element {
-  const { onClose, ...input } = props;
-  const [tab, setTab] = useState<SettingsTab>(SettingsTab.General);
+  const { onClose, initialTab, ...input } = props;
+  const [tab, setTab] = useState<SettingsTab>(initialTab ?? SettingsTab.General);
   const groups = settingsFor(tab, input);
 
   useEffect(() => {

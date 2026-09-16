@@ -32,6 +32,12 @@ import {
   describeResponse,
 } from '../../shared/askInput/constants';
 import {
+  parseReactInput,
+  REACT_ROUTE,
+  type ReactRequest,
+  type ReactResult,
+} from '../../shared/reactions/constants';
+import {
   CREATE_AGENT_ROUTE,
   CREATE_AGENT_TIMEOUT_MS,
   type CreateAgentAnswer,
@@ -140,6 +146,7 @@ export class McpBridgeServer {
   private onAskInputCallback: ((request: AskInputRequest) => void) | null = null;
   private onAskInputDismissCallback: ((requestId: string) => void) | null = null;
   private readonly pendingAskInput = new Map<string, PendingAskInput>();
+  private onReactCallback: ((request: ReactRequest) => ReactResult) | null = null;
   private onCreateAgentCallback: ((ask: CreateAgentAsk) => void) | null = null;
   private onCreateAgentDismissCallback: ((requestId: string) => void) | null = null;
   private createAgentPerformer: CreateAgentPerformer | null = null;
@@ -219,6 +226,19 @@ export class McpBridgeServer {
     this.pendingAskInput.delete(requestId);
     log('INFO', `AskInput resolved, requestId=${requestId} ${describeResponse(response)}`);
     pending.resolve(response);
+  }
+
+  get reactCallbackUrl(): string | null {
+    return this._port ? `http://127.0.0.1:${this._port}${REACT_ROUTE}` : null;
+  }
+
+  /**
+   * The agent putting an emoji on the person's message. Nothing waits:
+   * the callback says where it landed, or why nowhere, and the tool is
+   * told that at once.
+   */
+  onReact(callback: (request: ReactRequest) => ReactResult): void {
+    this.onReactCallback = callback;
   }
 
   get createAgentCallbackUrl(): string | null {
@@ -427,6 +447,11 @@ export class McpBridgeServer {
       return;
     }
 
+    if (req.url?.startsWith(REACT_ROUTE)) {
+      await this.handleReact(req, res);
+      return;
+    }
+
     if (req.url?.startsWith(CREATE_AGENT_ROUTE)) {
       await this.handleCreateAgent(req, res);
       return;
@@ -524,6 +549,41 @@ export class McpBridgeServer {
    * or after five minutes, the tool is told the person declined. Nothing
    * is created without the press.
    */
+  /**
+   * A tapback from the `ReactToMessage` tool. The emoji is checked, the
+   * session key handed on with it, and whoever registered `onReact`
+   * decides where it lands. No card, no waiting.
+   */
+  private async handleReact(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const answer = (status: number, result: ReactResult): void => {
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    };
+    try {
+      const body = await this.readBody(req);
+      const raw: unknown = JSON.parse(body);
+      const parsed = parseReactInput(raw);
+      if (typeof parsed === 'string') {
+        answer(400, { behavior: 'nothing', reason: parsed });
+        return;
+      }
+      const sessionKey = raw && typeof raw === 'object' && typeof (raw as { sessionKey?: unknown }).sessionKey === 'string'
+        ? (raw as { sessionKey: string }).sessionKey.trim() || undefined
+        : undefined;
+      if (!this.onReactCallback) {
+        answer(200, { behavior: 'nothing', reason: 'The app is not showing the conversation.' });
+        return;
+      }
+      const result = this.onReactCallback({ emoji: parsed.emoji, ...(sessionKey ? { sessionKey } : {}) });
+      log('INFO', `React ${result.behavior} emoji=${serializeForLog(parsed.emoji)} sessionKey=${sessionKey?.slice(0, 30) ?? ''}`);
+      answer(200, result);
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      log('ERROR', `React request error: ${errMsg}`);
+      answer(500, { behavior: 'nothing', reason: 'The request could not be read.' });
+    }
+  }
+
   private async handleCreateAgent(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     const answer = (status: number, result: CreateAgentResult): void => {
       res.writeHead(status, { 'Content-Type': 'application/json' });

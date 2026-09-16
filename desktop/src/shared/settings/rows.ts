@@ -157,6 +157,17 @@ export const EXEC_POLICY_OPTIONS: readonly SelectOption[] = [
   },
 ];
 
+/**
+ * The tab a row sits on, for a deep link the agent wrote
+ * (`caisra://settings/<row>`), or undefined for a row that does not
+ * exist. Found by building each tab rather than kept as a second table,
+ * so a row that moves takes its link with it.
+ */
+export function tabForRow(rowId: string, input: SettingsInput): SettingsTab | undefined {
+  return SETTINGS_TABS.find(tab =>
+    settingsFor(tab, input).some(group => group.rows.some(row => row.id === rowId)));
+}
+
 export function execPolicyLabel(policy: ExecPolicy): string {
   return EXEC_POLICY_OPTIONS.find(one => one.value === policy)?.label ?? 'Ask every time';
 }

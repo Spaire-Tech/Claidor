@@ -15,6 +15,7 @@ import {
   flaggedNote,
   isEngineToolSummary,
   parseChoiceId,
+  resolveChoiceItem,
   splitIntoBubbles,
   toThreadItems,
 } from './fromEngine';
@@ -425,6 +426,27 @@ describe('the agent asking a question', () => {
       pending: [{ requestId: 'r2', toolName: 'Bash', toolInput: { command: 'ls' } }],
     });
     expect(item.kind).toBe(ThreadItemKind.Auth);
+  });
+
+  test('an answered card settles with the answer, and no free box', () => {
+    // `caisra-chat-ui-logic.md` §6: the card stays, muted, with the
+    // chosen answer checked under it. It is no longer a control.
+    const [item] = toThreadItems([], { pending: [ask([one])] });
+    if (item.kind !== ThreadItemKind.Choice) throw new Error('not a choice');
+    const settled = resolveChoiceItem(item, { answer: 'Different file' }, 1_700_000_000_000);
+    expect(settled.resolved).toEqual({ answer: 'Different file' });
+    expect(settled.freeform).toBe(false);
+    expect(settled.at).toBe(1_700_000_000_000);
+    expect(settled.id).toBe(item.id);
+    expect(settled.options).toEqual(item.options);
+  });
+
+  test('a dismissed card settles as dismissed', () => {
+    const [item] = toThreadItems([], { pending: [ask([one])] });
+    if (item.kind !== ThreadItemKind.Choice) throw new Error('not a choice');
+    const settled = resolveChoiceItem(item, { dismissed: true }, 5);
+    expect(settled.resolved).toEqual({ dismissed: true });
+    expect(settled.freeform).toBe(false);
   });
 });
 

@@ -1,11 +1,12 @@
 import '../tokens.css';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 
 import { AgentId } from '../../../shared/agent/constants';
 import { describeBuild, DEV_BUILD } from '../../../shared/buildStamp/constants';
 import { STEP_TWO_TITLE, stepTwoKickoff } from '../../../shared/onboarding/stepTwo';
+import { type SettingsTab, tabForRow } from '../../../shared/settings/rows';
 import { authService } from '../../services/auth';
 import { configService, ConfigServiceEvent } from '../../services/config';
 import { coworkService } from '../../services/cowork';
@@ -68,6 +69,15 @@ export function CaisraApp(): JSX.Element {
   // tour — which is the app this one was carved out of, not this one.
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settings = useSettings(settingsOpen);
+  // A settings pill in the thread (`caisra://settings/<row>`) opens
+  // Settings on the tab that row sits on; a row that does not exist just
+  // opens Settings.
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>();
+  const onOpenSetting = useCallback((rowId: string) => {
+    setAccountOpen(false);
+    setSettingsTab(tabForRow(rowId, settings));
+    setSettingsOpen(true);
+  }, [settings]);
   const dictation = useDictation();
   const shell = useMessagesShell();
   // The cards asking for something typed. Kept beside the messages rather
@@ -173,7 +183,8 @@ export function CaisraApp(): JSX.Element {
       accountName={accountName}
       choice={shell.choice}
       auth={auth}
-      parts={shell.parts}
+      parts={{ ...shell.parts, onOpenSetting }}
+      waiting={shell.waiting}
       secret={askInput.handlers}
       roster={roster.handlers}
       onSelect={shell.onSelect}
@@ -235,7 +246,11 @@ export function CaisraApp(): JSX.Element {
         />
       ) : undefined}
       settings={settingsOpen && (
-        <Settings {...settings} onClose={() => setSettingsOpen(false)} />
+        <Settings
+          {...settings}
+          {...(settingsTab ? { initialTab: settingsTab } : {})}
+          onClose={() => { setSettingsOpen(false); setSettingsTab(undefined); }}
+        />
       )}
       onOpenPanel={shell.onOpenPanel}
       panel={shell.panelOpen && shell.sessionId ? (

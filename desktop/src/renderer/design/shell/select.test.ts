@@ -5,6 +5,7 @@ import { ThreadItemKind } from '../thread/types';
 import {
   dayStamp,
   mergeByTime,
+  placeByTime,
   previewOf,
   sidebarAgents,
   sidebarRooms,
@@ -357,5 +358,37 @@ describe('mergeByTime', () => {
   test('no notes is the messages, untouched', () => {
     const messages = [at('m1', 100)];
     expect(mergeByTime(messages, [])).toEqual(messages);
+  });
+});
+
+describe('placeByTime', () => {
+  // The same rule for anything with a time: a settled question card goes
+  // back where it was answered, between the items of the thread.
+  const item = (id: string, at: number) => ({ id, at });
+
+  test('an extra lands after the last base item before it', () => {
+    const placed = placeByTime(
+      [item('m1', 100), item('m2', 200), item('m3', 300)],
+      [item('x', 250)],
+      one => one.at,
+    );
+    expect(placed.map(one => one.id)).toEqual(['m1', 'm2', 'x', 'm3']);
+  });
+
+  test('an extra with the same time as a base item goes after it', () => {
+    const placed = placeByTime([item('m1', 100)], [item('x', 100)], one => one.at);
+    expect(placed.map(one => one.id)).toEqual(['m1', 'x']);
+  });
+
+  test('extras past the end go at the end, in order', () => {
+    const placed = placeByTime([item('m1', 100)], [item('a', 500), item('b', 600)], one => one.at);
+    expect(placed.map(one => one.id)).toEqual(['m1', 'a', 'b']);
+  });
+
+  test('no extras is a copy of the base', () => {
+    const base = [item('m1', 100)];
+    const placed = placeByTime(base, [], one => one.at);
+    expect(placed).toEqual(base);
+    expect(placed).not.toBe(base);
   });
 });

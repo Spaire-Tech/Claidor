@@ -27,8 +27,8 @@ function readPackageOpenClawExtensions(extensionId: string): string[] {
 }
 
 describe('OpenClaw extension manifests', () => {
-  test('declares the AskUserQuestion agent tool contract', () => {
-    expect(readContractTools('ask-user-question')).toEqual(['AskUserQuestion']);
+  test('declares the AskUserQuestion and ReactToMessage agent tool contracts', () => {
+    expect(readContractTools('ask-user-question')).toEqual(['AskUserQuestion', 'ReactToMessage']);
   });
 
   test('declares Caisra media generation and skin agent tool contracts', () => {
