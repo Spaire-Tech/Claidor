@@ -1854,6 +1854,32 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.deny).not.toContain('video_generate');
   });
 
+  test('the question plugin carries the tapback route, and only when the app has one', async () => {
+    // `ReactToMessage` lives in the same plugin as `AskUserQuestion`
+    // because that is where the session key is. Without the route the
+    // plugin does not offer the tool.
+    const withReact = await createSync({
+      getAskUserCallbackUrl: () => 'http://127.0.0.1:5175/askuser',
+      getReactCallbackUrl: () => 'http://127.0.0.1:5175/react',
+    });
+    expect(withReact.sync('react-route').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).plugins.entries['ask-user-question']).toEqual({
+      enabled: true,
+      config: {
+        callbackUrl: 'http://127.0.0.1:5175/askuser',
+        secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+        reactUrl: 'http://127.0.0.1:5175/react',
+      },
+    });
+
+    const without = await createSync({
+      getAskUserCallbackUrl: () => 'http://127.0.0.1:5175/askuser',
+    });
+    expect(without.sync('no-react-route').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).plugins.entries['ask-user-question'].config)
+      .not.toHaveProperty('reactUrl');
+  });
+
   test('the Claude Code mechanic makes the engine run every agent through the Claude CLI', async () => {
     // The engine's own planner uses exactly this form: a `claude-cli/<model>`
     // primary model, and the engine spawns the installed Claude Code app.
@@ -3295,6 +3321,31 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(file.agents.perro).toMatchObject({ security: 'allowlist', ask: 'on-miss', allowlist: ['git status'] });
   });
 
+  test('the exec mode reaches the engine, and review runs on the cheap model', async () => {
+    // Review ("Check, then ask") is switched on by `tools.exec.mode`
+    // alone; the approvals file's autoReview field is not read by the
+    // engine. Until 17 September the app never wrote the mode, so that
+    // setting asked every time and reviewed nothing.
+    mockRuntimeState.serverModels = [
+      { modelId: 'gpt-5.6-terra', apiFormat: 'openai', transportApi: 'openai-responses', role: 'primary' },
+      { modelId: 'gpt-5.6-luna', apiFormat: 'openai', transportApi: 'openai-responses', role: 'cheap' },
+    ];
+    const auto = await createSync({ getExecPolicy: () => 'auto' });
+    expect(auto.sync('exec-mode-auto').ok).toBe(true);
+    const reviewed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(reviewed.tools.exec).toEqual({
+      mode: 'auto',
+      reviewer: { model: 'lobsterai-server/gpt-5.6-luna', timeoutMs: 15_000 },
+    });
+
+    const ask = await createSync({ getExecPolicy: () => 'ask' });
+    expect(ask.sync('exec-mode-ask').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).tools.exec.mode).toBe('ask');
+    const allow = await createSync({ getExecPolicy: () => 'allow' });
+    expect(allow.sync('exec-mode-full').ok).toBe(true);
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).tools.exec.mode).toBe('full');
+  });
+
   test('before step one has played, the brief says nothing about the person', async () => {
     const sync = await createSync();
     expect(sync.sync('no-work-type').ok).toBe(true);
@@ -3640,6 +3691,13 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('### Files on their computer');
     expect(agentsMd).toContain('draws the same card a command does');
     expect(agentsMd).toContain('A refused file is refused.');
+    // 17 September, the founder's permissions doc: the computer asks
+    // once, the agent never asks in words, and the hard-to-undo things
+    // are a question card, not the computer card.
+    expect(agentsMd).toContain('### Their computer asks once');
+    expect(agentsMd).toContain('nothing on this computer asks again until they change it in Settings');
+    expect(agentsMd).toContain('### Deleting, sending, paying');
+    expect(agentsMd).not.toContain('If they answered Always for a folder');
   });
 
   test('memory precedence says which file wins', async () => {

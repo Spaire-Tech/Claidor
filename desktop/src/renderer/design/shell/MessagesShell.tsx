@@ -45,6 +45,13 @@ export interface MessagesShellProps {
   roster?: RosterHandlers;
   dayStamp?: string;
   typing?: boolean;
+  /**
+   * A card is waiting on the person. The header says so instead of
+   * showing the dots, and the thread draws no typing bubble: nothing is
+   * happening until they answer (`caisra-chat-ui-logic.md` §3, "Waiting
+   * for you").
+   */
+  waiting?: boolean;
   mode: ThreadMode;
   accountName: string;
   choice: ChoiceHandlers;
@@ -105,7 +112,7 @@ export interface MessagesShellProps {
 export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
-    choice, auth, parts, secret, roster, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode,
+    choice, auth, parts, secret, roster, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode, waiting,
     onOpenPanel, onTeach, dictation, onShareTemplate, onOpenAgent, agentDetail, agentPanel, settings,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel, wornAvatars,
   } = props;
@@ -314,7 +321,12 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
               size beside the agent's face; this is the same thing seen
               from the header.
             */}
-            {saysTyping && (
+            {waiting && (
+              <span style={{ fontSize: text.caption, color: color.muted, letterSpacing: tracking.body }}>
+                Waiting for you
+              </span>
+            )}
+            {saysTyping && !waiting && (
               <span aria-label="Working" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 {[0, 0.16, 0.32].map(delay => (
                   <span
@@ -448,7 +460,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             {...(roster ? { roster } : {})}
             {...(parts ? { parts } : {})}
             actions={{ reactions, onReact, onReply }}
-            typing={saysTyping ? { avatar: activeAvatar } : undefined}
+            typing={saysTyping && !waiting ? { avatar: activeAvatar } : undefined}
           />
 
           {mode === ThreadMode.Voice && (

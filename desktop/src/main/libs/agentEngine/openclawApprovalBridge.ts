@@ -69,6 +69,32 @@ type ExecApprovalRequest = {
   resolvedPath?: string | null;
   sessionKey?: string | null;
   agentId?: string | null;
+  /** The engine's warnings for the request, one per line; the reviewer's reason is among them. */
+  warningText?: string | null;
+};
+
+/**
+ * Why the engine flagged this one, in a sentence for the card, or
+ * undefined when nothing did.
+ *
+ * Under review mode ("Check, then ask") a card means the reviewer said
+ * so: the quick rules with a plain sentence ("Deletes a whole folder and
+ * everything in it."), the model with its own, or a sensitive path
+ * ("Touches the SSH keys."). The engine wraps a deferral as `Exec
+ * auto-review deferred to human approval (risk=high): <reason>` and
+ * files send the sentence bare. Its other warnings ("Warning: heredoc
+ * execution requires…") are the engine talking to itself, and stay out.
+ */
+export const reviewReason = (warningText: string | null | undefined): string | undefined => {
+  for (const line of (warningText ?? '').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const deferred = /deferred to human approval \(risk=\w+\): (.+)$/.exec(trimmed);
+    if (deferred) return deferred[1].trim();
+    if (/^(Warning:|Exec auto-review allowed)/.test(trimmed)) continue;
+    return trimmed;
+  }
+  return undefined;
 };
 
 type ExecApprovalRequestedPayload = {
@@ -214,6 +240,7 @@ export const buildExecApprovalPermissionRequest = (
   fileAccess?: FileAccess,
   claudeTool?: ClaudeTool,
 ): PermissionRequest => {
+  const reason = reviewReason(request.warningText);
   if (claudeTool && claudeTool.toolName !== 'Bash') {
     // Claude Code's own WebFetch, WebSearch or whatever else: the card is
     // named for the tool and shows its arguments where a command would go.
@@ -224,6 +251,7 @@ export const buildExecApprovalPermissionRequest = (
       toolInput: {
         claudeTool: { toolName: claudeTool.toolName },
         command: claudeTool.text,
+        ...(reason ? { reason } : {}),
         cwd: request.cwd ?? null,
         host: request.host ?? null,
         security: request.security ?? null,
@@ -243,6 +271,7 @@ export const buildExecApprovalPermissionRequest = (
       toolInput: {
         fileAccess,
         command: fileAccess.paths.join('\n'),
+        ...(reason ? { reason } : {}),
         cwd: request.cwd ?? null,
         host: request.host ?? null,
         security: request.security ?? null,
@@ -263,6 +292,7 @@ export const buildExecApprovalPermissionRequest = (
       command,
       dangerLevel,
       dangerReason,
+      ...(reason ? { reason } : {}),
       cwd: request.cwd ?? null,
       host: request.host ?? null,
       security: request.security ?? null,

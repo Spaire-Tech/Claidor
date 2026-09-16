@@ -9,6 +9,7 @@ import {
   type SettingsInput,
   SettingsRowKind,
   SettingsTab,
+  tabForRow,
 } from './rows';
 
 const input = (over: Partial<SettingsInput> = {}): SettingsInput => ({
@@ -162,6 +163,29 @@ describe('the Updates tab', () => {
     const row = rowsOf(SettingsTab.Updates, { checkingUpdate: true })[0];
     if (row.kind !== SettingsRowKind.Button) throw new Error('not a button');
     expect(row.busy).toBe(true);
+  });
+});
+
+describe('tabForRow', () => {
+  // A settings pill in the thread (`caisra://settings/<row>`) opens
+  // Settings on the tab the row sits on, so the link follows the row.
+  test('finds the tab a row sits on', () => {
+    expect(tabForRow('exec-policy', input())).toBe(SettingsTab.Computer);
+    expect(tabForRow('memory', input())).toBe(SettingsTab.General);
+    expect(tabForRow('refresh-usage', input())).toBe(SettingsTab.Usage);
+    expect(tabForRow('version', input())).toBe(SettingsTab.Updates);
+  });
+
+  test('a row that is only there in some states follows the state', () => {
+    // The usage meter is built once the figure has come back; before
+    // that a link to it has no tab, and Settings opens where it opens.
+    expect(tabForRow('usage', input())).toBeUndefined();
+    expect(tabForRow('usage', input({ usage: { fraction: 0.2, value: '20%', desc: 'of this month' } })))
+      .toBe(SettingsTab.Usage);
+  });
+
+  test('a row that does not exist has no tab', () => {
+    expect(tabForRow('no-such-row', input())).toBeUndefined();
   });
 });
 

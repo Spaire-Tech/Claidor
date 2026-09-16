@@ -6,6 +6,7 @@ import { verbForTool } from './toolVerbs';
 import {
   type AuthItem,
   type ChoiceItem,
+  type ChoiceOutcome,
   Speaker,
   type StatusItem,
   type TextItem,
@@ -89,6 +90,16 @@ export interface AskUserQuestion {
   header?: string;
   options: readonly AskUserOption[];
   multiSelect?: boolean;
+}
+
+/**
+ * The card as it stays in the thread once answered or dismissed: the
+ * same prompt and options, the outcome on it, the time it was settled.
+ * Pure, so the shell can keep it beside the messages the way it keeps
+ * the notes an approval leaves.
+ */
+export function resolveChoiceItem(item: ChoiceItem, outcome: ChoiceOutcome, at: number): ChoiceItem {
+  return { ...item, resolved: outcome, freeform: false, at };
 }
 
 /** `choice:<requestId>:<index>` — the card, and what it answers. */
@@ -274,6 +285,40 @@ export function authQuestion(agentName: string | undefined, toolName: string): s
 const isBlank = (value: string): boolean => !value.trim();
 
 /**
+ * The engine's own summary of a run of tools: "🛠️ create folder x → run
+ * node → list files in y", with "⚠️" in front and "failed" behind when
+ * the run ended badly. It is the engine's step card in one line, and the
+ * design has no step cards. On 17 September one reached the thread under
+ * a Word document ("⚠️ 🛠️ create folder .cowork-temp → show > → run const
+ * → … → run unzip funny-romcom-poem.docx failed") and the founder asked,
+ * rightly, what on earth it was. The agent says what happened in its own
+ * words; the chain of tools is not something a person is ever shown.
+ */
+const ENGINE_TOOL_SUMMARY = /^\s*(?:⚠️\s*)?🛠️/u;
+export const isEngineToolSummary = (text: string): boolean => ENGINE_TOOL_SUMMARY.test(text);
+
+/**
+ * Under a command or file card: the answer is for this computer, once.
+ * `docs/product/sources/caisra-permissions.md` §2.2, the founder's own
+ * design intent: "once per machine until revoked", and the setting is
+ * where it is revoked. Allow puts the computer in review mode: everyday
+ * work goes ahead, and only what the reviewer flags asks again.
+ */
+export const COMPUTER_GRANT_NOTE = 'Once you allow it, it won\'t ask again on this computer, except about something risky. You can change that any time in Settings.';
+
+/**
+ * Under a card the reviewer raised: the reason, in its sentence. The
+ * computer is already allowed, so this card is about this one action.
+ */
+export const flaggedNote = (reason: string): string => `Flagged: ${reason.trim().replace(/\.?$/, '.')} Allow runs this one; it will keep asking about things like it.`;
+
+/** The reviewer's reason, as the bridge attached it, or nothing. */
+export function reviewReasonFromToolInput(input: Record<string, unknown>): string | undefined {
+  const raw = input.reason;
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined;
+}
+
+/**
  * Turn a session's messages into what the thread shows.
  *
  * Order is preserved. A `tool_use` with no matching `tool_result` stays
@@ -333,9 +378,12 @@ export function toThreadItems(
 
         if (meta.isError || meta.error) {
           const text = (meta.error ?? message.content).trim();
-          if (text) items.push({ kind: ThreadItemKind.System, id: message.id, text, at });
+          if (text && !isEngineToolSummary(text)) {
+            items.push({ kind: ThreadItemKind.System, id: message.id, text, at });
+          }
           break;
         }
+        if (isEngineToolSummary(message.content)) break;
         // A reply that is still arriving is not shown. The founder:
         // "it's supposed come as text. but the ai write it in streams.
         // which creates lags. i want to have it as text. always." A bubble
@@ -413,7 +461,7 @@ export function toThreadItems(
         break;
 
       case 'system': {
-        if (isBlank(message.content)) break;
+        if (isBlank(message.content) || isEngineToolSummary(message.content)) break;
         items.push({
           kind: ThreadItemKind.System,
           id: message.id,
@@ -455,6 +503,11 @@ export function toThreadItems(
       continue;
     }
 
+    // Flagged by the reviewer, or the first grant for this computer: the
+    // note and the meaning of Allow differ.
+    const reason = reviewReasonFromToolInput(request.toolInput);
+    const grant = reason ? { note: flaggedNote(reason), flagged: true } : { note: COMPUTER_GRANT_NOTE };
+
     const access = fileAccessFromToolInput(request.toolInput);
     if (access) {
       // A file tool asking. Same card, the paths where the command goes.
@@ -463,6 +516,7 @@ export function toThreadItems(
         id: `auth:${request.requestId}`,
         text: fileAccessQuestion(options.agentName, access),
         ...(deviceId ? { deviceId } : {}),
+        ...grant,
         command: access.paths.join('\n'),
         access: access.kind,
         at: Date.now(),
@@ -475,6 +529,7 @@ export function toThreadItems(
       id: `auth:${request.requestId}`,
       text: authQuestion(options.agentName, request.toolName),
       ...(deviceId ? { deviceId } : {}),
+      ...grant,
       ...(commandFromToolInput(request.toolInput)
         ? { command: commandFromToolInput(request.toolInput) }
         : {}),
@@ -521,30 +576,29 @@ export function fileAccessQuestion(agentName: string | undefined, access: FileAc
  * The line left behind when an approval is answered.
  *
  * Answering consumes the card — the prompt is replaced by this, so a
- * thread never accumulates dead controls. The wording is the canvas's.
+ * thread never accumulates dead controls.
+ *
+ * Allow is the computer, not the command and not the folder: after it,
+ * nothing on this computer asks again until the setting is changed
+ * (`caisra-permissions.md` §2.2, §11). Not now is one action declined,
+ * and the next time it matters the card comes back (§10: "No bother.
+ * I'll ask again when it actually matters"). "Once" has no button since
+ * 17 September and is kept for a thread written before that.
  */
 export function decisionNote(
   agentName: string,
   decision: 'always' | 'once' | 'never',
   access?: 'read' | 'write',
 ): string {
-  if (access) {
-    // A file, not a command. "Always" is remembered as the file's folder,
-    // for that kind of access, which is what the engine patch stores.
-    const verb = access === 'read' ? 'read' : 'change';
-    if (decision === 'always') {
-      return `${agentName} can ${verb} files in that folder from now on.`;
-    }
-    if (decision === 'once') {
-      return `${agentName} can ${verb} that file this time.`;
-    }
-    return `Declined. ${agentName} can't ${verb} that file.`;
-  }
   if (decision === 'always') {
-    return `${agentName} can run commands on your computer from now on.`;
+    return `${agentName} can work on your computer from now on. It will still ask before anything risky. Change that any time in Settings.`;
   }
-  if (decision === 'once') {
-    return `${agentName} can run commands on your computer this time.`;
+  if (decision === 'never') {
+    return `Not now. ${agentName} will ask again when it matters.`;
   }
-  return `Declined. ${agentName} can't run commands on your computer.`;
+  if (access) {
+    const verb = access === 'read' ? 'read' : 'change';
+    return `${agentName} can ${verb} that file this time.`;
+  }
+  return `${agentName} can run commands on your computer this time.`;
 }

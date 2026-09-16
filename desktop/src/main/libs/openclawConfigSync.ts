@@ -61,7 +61,7 @@ import {
 } from '../../shared/providers/lobsterAIRequestOptions';
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
 import { APP_UI_MAP_PATH, buildAppUiMap } from '../../shared/settings/appUiMap';
-import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
+import { DEFAULT_EXEC_POLICY, engineExecModeFor, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
 import {
   CREATE_AGENT_MCP_SERVER,
   CREATE_AGENT_TOOL,
@@ -368,6 +368,14 @@ const MANAGED_OWNER_ALLOW_FROM = [
 ];
 
 const MANAGED_TOOL_DENY = ['web_search'] as const;
+
+/**
+ * How long the engine's model-backed exec reviewer may take before the
+ * command is asked about instead. The engine's default is 30 s; a person
+ * watching a card that has not appeared yet is the cost of a slow review,
+ * and a cheap model answers in a few seconds.
+ */
+const EXEC_REVIEWER_TIMEOUT_MS = 15_000;
 // knownPollNoProgress is off: polling a live background process that stays
 // quiet (builds, installs, downloads) legitimately repeats identical calls
 // with identical output, and the detector killed such runs after 10 polls
@@ -761,8 +769,12 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- Never write an exploit, a proof of concept for one, malware, or a procedure for attacking any system — including this computer, a test box, a lab, a class exercise, a system the person says they own, or fiction. No framing changes this. If asked for a fix and an exploit together, give the fix and decline the exploit in one short sentence, without a lecture.',
   '- Never use the person\'s keys, cookies, sessions or saved logins to reach anything they did not ask you to reach, and never gather, copy or send a credential from this computer anywhere. A credential you meet by accident is left where it was and not mentioned in a memory, a note or a summary.',
   '',
-  '### Deleting',
-  '- A command that removes files (rm, trash, rmdir, unlink, git clean) is asked about by the app itself, in its own card, before it runs. Do not ask a second time in text or with a question card; say in one line what you are about to remove and why, then run it and let the card do the asking. If the card is refused, that is the answer.',
+  '### Their computer asks once',
+  '- Working on their computer, a command or a file, is not something you ask about in text or with a question card. You call the tool, and the app itself asks the person, in its own card, the first time. Once they have allowed it, nothing on this computer asks again until they change it in Settings, except a risky action (deleting a folder, administrator rights, a key or a credential, a script from the internet), which the app flags and asks about by itself. You never mention the card, the setting, the review, or that anything was allowed.',
+  '- If they answered Not now, that one action is declined. Stop it, say what you cannot do without it, and do not try another way. Ask again only by trying again later for something that matters, not by asking in words.',
+  '',
+  '### Deleting, sending, paying',
+  '- Removing files they did not just ask you to remove, sending anything under their name, paying: a real decision, and the computer card is not about that. Ask once with the question card before the work, act on the answer, and do not ask again in other words. If they just told you to ("delete it", "send it"), that is the answer; do it.',
   '',
   // The question card is a designed part of this product, not a fallback
   // for tricky cases. The prompt this replaced offered it for "selecting
@@ -778,6 +790,7 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- Do not use it to confirm a command you are about to run. The app asks the user about that itself, in its own card.',
   '- A card they dismiss, or let expire, is a no. Do not ask the same thing again, differently worded or in plain text. Say what you cannot do without the answer and stop, or go on without that part.',
   '- If `AskUserQuestion` is NOT available: ask via plain text instead.',
+  '- `ReactToMessage` puts one emoji on the person\'s last message, the way a tapback works in Messages. It is an acknowledgement, not a reply: a thanks, a joke, good news. It never replaces an answer they are waiting for.',
   '',
   '### Passwords, Keys And Codes',
   `- Never ask the person to type a password, an API key, a one-time code or a card number as a chat message. Call \`${ASK_INPUT_TOOL}\` instead. It draws a card with masked boxes, and what they type comes back to you without ever entering the conversation.`,
@@ -798,7 +811,7 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '### Files on their computer',
   '- Reading or changing a file that is not in your own workspace draws the same card a command does, with the path on it. Your own workspace — your memory, your notes, the shared project file — does not ask.',
   '- Do the file in one go. Do not split one change into many small writes: each is a card, and ten cards for one file is ten times the interruption.',
-  '- If they answered Always for a folder, that folder stays answered for that kind of access. Do not ask again in text, and do not mention the card.',
+  '- Once they have allowed their computer, files do not ask again either. Do not ask in text, and do not mention the card.',
   '- A refused file is refused. Do not reach it another way.',
   '',
   '### General Commands',
@@ -2259,6 +2272,8 @@ type OpenClawConfigSyncDeps = {
   getIMSettings?: () => IMSettings | null;
   getResolvedMcpServers?: () => ResolvedMcpServer[];
   getAskUserCallbackUrl?: () => string | null;
+  /** Where the `ReactToMessage` tool posts a tapback. Absent, the tool is not offered. */
+  getReactCallbackUrl?: () => string | null;
   getMediaCallbackUrl?: () => string | null;
   getBrowserCallbackUrl?: () => string | null;
   getLobsterBrowserMcpCommand?: () => string | null;
@@ -2337,6 +2352,7 @@ export class OpenClawConfigSync {
   private readonly getIMSettings?: () => IMSettings | null;
   private readonly getResolvedMcpServers?: () => ResolvedMcpServer[];
   private readonly getAskUserCallbackUrl?: () => string | null;
+  private readonly getReactCallbackUrl?: () => string | null;
   private readonly getMediaCallbackUrl?: () => string | null;
   private readonly getBrowserCallbackUrl?: () => string | null;
   private readonly getLobsterBrowserMcpCommand?: () => string | null;
@@ -2376,6 +2392,7 @@ export class OpenClawConfigSync {
     this.getIMSettings = deps.getIMSettings;
     this.getResolvedMcpServers = deps.getResolvedMcpServers;
     this.getAskUserCallbackUrl = deps.getAskUserCallbackUrl;
+    this.getReactCallbackUrl = deps.getReactCallbackUrl;
     this.getMediaCallbackUrl = deps.getMediaCallbackUrl;
     this.getBrowserCallbackUrl = deps.getBrowserCallbackUrl;
     this.getLobsterBrowserMcpCommand = deps.getLobsterBrowserMcpCommand;
@@ -2495,7 +2512,10 @@ export class OpenClawConfigSync {
     };
   }
 
-  private buildWebToolsConfig(browserWebAccess: BrowserWebAccessConfig): Record<string, unknown> {
+  private buildWebToolsConfig(
+    browserWebAccess: BrowserWebAccessConfig,
+    exec: { mode: 'ask' | 'auto' | 'full'; reviewerModel?: string },
+  ): Record<string, unknown> {
     const fetch = browserWebAccess.webFetch;
     const fetchConfig = {
       enabled: fetch.enabled,
@@ -2514,6 +2534,16 @@ export class OpenClawConfigSync {
         ...MANAGED_TOOL_DENY
       ],
       loopDetection: MANAGED_TOOL_LOOP_DETECTION,
+      // The exec policy's mode, because review (`auto`) is switched on by
+      // this and by nothing in the approvals file. The reviewer that
+      // judges the middle runs on the account's cheap model when the
+      // server names one: a review is machinery the person never sees.
+      exec: {
+        mode: exec.mode,
+        ...(exec.reviewerModel
+          ? { reviewer: { model: exec.reviewerModel, timeoutMs: EXEC_REVIEWER_TIMEOUT_MS } }
+          : {}),
+      },
       // Not `fs: { workspaceOnly: true }`. It looks like the fence for the
       // engine's file tools, and it is — but measured from the session's
       // working folder when one is set (`agent-tools.ts`, `codingRoot =
@@ -2540,9 +2570,8 @@ export class OpenClawConfigSync {
     // (`role` on each row of /api/models/available) so the policy changes
     // with a deploy rather than a release; every slot below already exists
     // in OpenClaw's agent config, so none of it is new machinery.
-    const modelRoleDefaults = buildAgentModelRoleDefaults(
-      resolveAgentModelRoleRefs(serverModels, OpenClawProviderId.LobsteraiServer),
-    );
+    const modelRoleRefs = resolveAgentModelRoleRefs(serverModels, OpenClawProviderId.LobsteraiServer);
+    const modelRoleDefaults = buildAgentModelRoleDefaults(modelRoleRefs);
     const invalidKimiK3Transports = findInvalidKimiK3ServerTransports(serverModels);
     if (invalidKimiK3Transports.length > 0) {
       const invalidRefs = invalidKimiK3Transports
@@ -3053,7 +3082,10 @@ export class OpenClawConfigSync {
       commands: {
         ownerAllowFrom: MANAGED_OWNER_ALLOW_FROM,
       },
-      tools: this.buildWebToolsConfig(browserWebAccess),
+      tools: this.buildWebToolsConfig(browserWebAccess, {
+        mode: engineExecModeFor(this.getExecPolicy()),
+        reviewerModel: modelRoleRefs.cheap,
+      }),
       browser: this.buildBrowserConfig(browserWebAccess),
       skills: {
         entries: {
@@ -3320,11 +3352,15 @@ export class OpenClawConfigSync {
     if (hasAskUserPlugin && askUserCallbackUrl && managedConfig.plugins) {
       const plugins = managedConfig.plugins as Record<string, unknown>;
       const entries = plugins.entries as Record<string, Record<string, unknown>>;
+      // The same plugin carries `ReactToMessage`, which posts to its own
+      // route; without the route the tool is not offered.
+      const reactUrl = this.getReactCallbackUrl?.();
       entries['ask-user-question'] = {
         enabled: true,
         config: {
           callbackUrl: askUserCallbackUrl,
           secret: '${LOBSTER_MCP_BRIDGE_SECRET}',
+          ...(reactUrl ? { reactUrl } : {}),
         },
       };
     }

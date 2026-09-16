@@ -17,6 +17,7 @@ import { RosterCard, type RosterHandlers } from './RosterCard';
 import {
   type AttachmentItem,
   type AuthDecision,
+  type ChoiceOutcome,
   FileKind,
   type SecretItem,
   Speaker,
@@ -412,10 +413,55 @@ export interface ChoiceHandlers {
   onDismiss?: (itemId: string) => void;
 }
 
+/**
+ * A question card once it is settled: the prompt with the chosen answer
+ * checked under it, or muted and marked Dismissed. Nothing on it presses
+ * (`caisra-chat-ui-logic.md` §6).
+ */
+function ResolvedChoiceCard({ item, outcome }: { item: Extract<ThreadItem, { kind: 'choice' }>; outcome: ChoiceOutcome }) {
+  const dismissed = 'dismissed' in outcome;
+  const answer = dismissed ? undefined : outcome.answer;
+  const picked = item.options.find(option => option.label === answer);
+  return (
+    <div
+      aria-label={dismissed ? 'Dismissed' : 'Answered'}
+      style={{
+        maxWidth: 'min(72%, 560px)', padding: 15, marginTop: 6,
+        borderRadius: radius.panel, background: color.fill,
+        border: `1px solid ${line.hairline}`,
+        display: 'flex', flexDirection: 'column', gap: 10,
+        opacity: dismissed ? 0.55 : 0.85,
+      }}
+    >
+      <div style={{ fontSize: text.emphasis, fontWeight: 500, lineHeight: 1.35, letterSpacing: tracking.body, textWrap: 'pretty' }}>
+        {item.text}
+      </div>
+      {dismissed
+        ? <div style={{ fontSize: text.small, color: color.muted }}>Dismissed</div>
+        : (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: text.body, lineHeight: 1.35 }}>
+            <span
+              aria-hidden
+              style={{
+                width: 18, height: 18, flex: '0 0 auto', marginTop: 1, borderRadius: '50%',
+                background: color.ink, color: color.paper,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
+              }}
+            >
+              ✓
+            </span>
+            <span style={{ color: color.ink }}>{picked?.label ?? answer}</span>
+          </div>
+        )}
+    </div>
+  );
+}
+
 function ChoiceCard(
   { item, handlers }: { item: Extract<ThreadItem, { kind: 'choice' }>; handlers: ChoiceHandlers },
 ) {
   const [free, setFree] = useState('');
+  if (item.resolved) return <ResolvedChoiceCard item={item} outcome={item.resolved} />;
   return (
     <div
       style={{
@@ -633,10 +679,15 @@ function AuthCard(
             </>
           )
           : (
+            // One trust decision for this computer, then out of the way
+            // (`caisra-permissions.md` §2.2). "Allow once" went on 17
+            // September: pressed five times in a row for one poem, it
+            // was the pestering the founder's design forbids.
+            // A flagged card is one action on an already-allowed computer,
+            // so its Allow is this once.
             <>
-              {button('Always allow', 'always', true)}
-              {button('Allow once', 'once')}
-              {button('Never', 'never')}
+              {button('Allow', item.flagged ? 'once' : 'always', true)}
+              {button('Not now', 'never')}
             </>
           )}
       </div>

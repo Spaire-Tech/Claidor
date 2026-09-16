@@ -9,6 +9,7 @@ import {
 } from '../../shared/askInput/constants';
 import { ASK_USER_QUESTION_TOOL_NAME, SESSION_AGNOSTIC_PERMISSION_SESSION_ID } from '../../shared/cowork/constants';
 import { McpIpcChannel } from '../../shared/mcp/constants';
+import { type AgentReaction, latestPersonMessageId, ReactionIpc } from '../../shared/reactions/constants';
 import {
   type CreateAgentAnswer,
   CreateAgentBehavior,
@@ -18,6 +19,7 @@ import { RosterBehavior, RosterIpc } from '../../shared/staffing/roster';
 import { isComputerUseKitInstalled } from '../computerUse/computerUseKit';
 import { resolveComputerUseMcpServer } from '../computerUse/computerUseMcpServer';
 import { installComputerUseRuntime } from '../computerUse/computerUseRuntime';
+import type { CoworkStore } from '../coworkStore';
 import { getElectronNodeRuntimePath } from '../libs/coworkUtil';
 import {
   type AskUserRequest,
@@ -42,6 +44,8 @@ export type { AskUserResponse, MediaGenerationRequest, MediaGenerationResponse }
 
 export interface McpRuntimeDeps {
   getStore: () => SqliteStore;
+  /** The conversations, for a tapback to find the person's newest message. */
+  getCoworkStore?: () => CoworkStore;
   syncOpenClawConfig: (options: {
     reason: string;
     restartGatewayIfRunning?: boolean;
@@ -126,6 +130,11 @@ export class McpRuntime {
 
   getAskInputCallbackUrl(): string | null {
     return this.bridgeServer?.askInputCallbackUrl ?? null;
+  }
+
+  /** Where the `ReactToMessage` tool posts a tapback. */
+  getReactCallbackUrl(): string | null {
+    return this.bridgeServer?.reactCallbackUrl ?? null;
   }
 
   getCreateAgentCallbackUrl(): string | null {
@@ -226,6 +235,48 @@ export class McpRuntime {
         }
       });
       this.deps.onAskUserDismissed?.(requestId);
+    });
+
+    // A tapback from the agent. Routed by session like a question card:
+    // the emoji goes on the person's newest message in the conversation
+    // the tool was called from, and the renderer is told which
+    // conversation that is. Nothing to put it on is an answer, not an
+    // error.
+    this.bridgeServer.onReact(request => {
+      const sessionId = request.sessionKey
+        ? resolveLocalDesktopCoworkSessionIdByOpenClawSessionKey(
+            this.deps.getStore().getDatabase(),
+            request.sessionKey,
+          )
+        : null;
+      const store = this.deps.getCoworkStore?.();
+      if (!sessionId || !store) {
+        return { behavior: 'nothing', reason: 'This conversation cannot take a reaction.' };
+      }
+      const session = store.getSession(sessionId, 0);
+      const messageId = latestPersonMessageId(store.getRecentConversationMessages(sessionId, 20));
+      if (!session || !messageId) {
+        return { behavior: 'nothing', reason: 'The person has not said anything yet.' };
+      }
+      const reaction: AgentReaction = {
+        conversationId: session.agentId,
+        messageId,
+        emoji: request.emoji,
+        at: Date.now(),
+      };
+      const windows = BrowserWindow.getAllWindows();
+      if (windows.length === 0) {
+        return { behavior: 'nothing', reason: 'The app is not showing the conversation.' };
+      }
+      windows.forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(ReactionIpc.Agent, reaction);
+        } catch (error) {
+          console.error('[Reaction] failed to send to window:', error);
+        }
+      });
+      return { behavior: 'reacted' };
     });
 
     // The card that asks the person to type something. Sent to every

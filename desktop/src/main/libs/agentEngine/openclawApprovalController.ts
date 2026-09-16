@@ -1,4 +1,3 @@
-import { t } from '../../i18n';
 import {
   buildExecApprovalPermissionRequest,
   buildPluginApprovalPermissionRequest,
@@ -24,9 +23,6 @@ type OpenClawApprovalControllerOptions = {
   resolveSessionId: (sessionKey: string) => string | undefined;
   isSessionInStopCooldown: (sessionId: string) => boolean;
   isManualStopSuppressed: (sessionId: string, sessionKey: string) => boolean;
-  sessionExists: (sessionId: string) => boolean;
-  isSessionActive: (sessionId: string) => boolean;
-  continueSession: (sessionId: string, prompt: string) => Promise<void>;
   emitPermissionRequest: (sessionId: string, request: PermissionRequest) => void;
   emitPermissionResolved: (sessionId: string, requestId: string) => void;
   emitError: (sessionId: string, error: string) => void;
@@ -56,32 +52,18 @@ export class OpenClawApprovalController {
     }
 
     const sessionId = pending.sessionId;
-    // Only schedule continuation for user-initiated exec approvals, not for
-    // plugin approvals or auto-approved commands.
-    const needsContinuation = pending.kind === 'exec' && !pending.allowAlways;
     const method = getApprovalResolveMethod(pending);
 
+    // No continuation prompt. Upstream pushed "The user approved the
+    // command execution. Please check the result and continue." into the
+    // session as a user turn after every command approval, and the thread
+    // drew it as if the person had typed it (17 September, the poem). The
+    // engine already wakes the agent itself once an approved command
+    // finishes (`bash-tools.exec-approval-followup.ts`), so the prompt
+    // was a second, visible, phantom turn on top of that.
     void client.request(method, {
       id: requestId,
       decision,
-    }).then(() => {
-      if (!needsContinuation) return;
-      const prompt = decision !== 'deny'
-        ? t('execApprovalApproved')
-        : t('execApprovalDenied');
-      const tryContinue = (retries: number) => {
-        if (!this.options.sessionExists(sessionId)) return;
-        if (!this.options.isSessionActive(sessionId)) {
-          void this.options.continueSession(sessionId, prompt).catch((error) => {
-            console.warn('[EngineRuntime] failed to continue session after approval:', error);
-          });
-          return;
-        }
-        if (retries > 0) {
-          setTimeout(() => tryContinue(retries - 1), 1000);
-        }
-      };
-      tryContinue(10);
     }).catch((error) => {
       const message = error instanceof Error ? error.message : String(error);
       this.options.emitError(sessionId, `Failed to resolve the approval: ${message}`);

@@ -478,7 +478,15 @@ has left the space for it, not one that has filled it with my guesses.
 1. The name is Caisra, applied; `appConstants.ts` is the one site.
 2. Messages shape; five surfaces; four settings tabs.
 3. Five message kinds, closed list; approval card with the real command.
-4. Ask before every action on the computer.
+4. The computer asks once: the first action raises the card, Allow is
+   this computer until the person changes it in Settings, Not now is
+   that one action. Decided 17 September from the founder's
+   `sources/caisra-permissions.md` (*"we MUST follow"*), replacing "ask
+   before every action", which asked five times for one poem. After
+   Allow the engine's reviewer runs: everyday work goes ahead, a risky
+   command or a sensitive file asks again with the reason on the card
+   (review item 68). Deleting, sending and paying still ask, as a
+   question card.
 5. Text arrives as texts; only speech streams.
 6. The voice brief above, verbatim.
 7. Speech from OpenAI. Build it; there is no speech route today.

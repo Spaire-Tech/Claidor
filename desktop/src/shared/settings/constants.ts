@@ -71,6 +71,29 @@ export function enginePolicyFor(policy: ExecPolicy): EnginePolicy {
   }
 }
 
+/**
+ * The engine's `tools.exec.mode` for a policy.
+ *
+ * The approvals file above carries security and ask; review is switched
+ * on only by this mode (`bash-tools.exec.ts`, `resolveExecModePolicy`),
+ * which until 17 September the app never wrote, so "Check, then ask"
+ * asked every time and reviewed nothing. In `auto` the engine's own
+ * reviewer runs first: the quick rules let everyday commands through and
+ * name the risky ones, the model judges the rest, and only what those
+ * flag reaches the person, with the reason on the card.
+ */
+export function engineExecModeFor(policy: ExecPolicy): 'ask' | 'auto' | 'full' {
+  switch (policy) {
+    case ExecPolicy.Allow:
+      return 'full';
+    case ExecPolicy.Auto:
+      return 'auto';
+    case ExecPolicy.Ask:
+    default:
+      return 'ask';
+  }
+}
+
 /** Anything else that reaches this — an older build, a hand-edit — is `Ask`. */
 export function asExecPolicy(value: unknown): ExecPolicy {
   return value === ExecPolicy.Allow || value === ExecPolicy.Auto || value === ExecPolicy.Ask

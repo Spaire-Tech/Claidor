@@ -9,6 +9,7 @@ import {
   parseFileAccess,
   type PendingApprovalEntry,
   resolveApprovalDecision,
+  reviewReason,
 } from './openclawApprovalBridge';
 
 const payload = (command: string, sessionKey = 'desktop-session-1') => ({
@@ -195,5 +196,39 @@ describe('which button was pressed', () => {
       pending({ kind: 'plugin', allowedDecisions: ['allow-once'] }),
       { behavior: 'allow', scope: 'always' },
     )).toBe('allow-once');
+  });
+});
+
+describe('the reason on a flagged card', () => {
+  test("is the reviewer's sentence, not the engine's wrapping", () => {
+    expect(reviewReason('Exec auto-review deferred to human approval (risk=high): Deletes a whole folder and everything in it.'))
+      .toBe('Deletes a whole folder and everything in it.');
+    expect(reviewReason('Touches the SSH keys.')).toBe('Touches the SSH keys.');
+    expect(reviewReason('Warning: heredoc execution requires reviewer or explicit approval in allowlist mode.\nExec auto-review deferred to human approval (risk=medium): Installs software.'))
+      .toBe('Installs software.');
+  });
+
+  test('is nothing when the engine only talked to itself, or said nothing', () => {
+    expect(reviewReason('Warning: allowlist auto-execution is unavailable on linux; reviewer or explicit approval is required.')).toBeUndefined();
+    expect(reviewReason('Exec auto-review allowed once (risk=low): fine')).toBeUndefined();
+    expect(reviewReason(undefined)).toBeUndefined();
+    expect(reviewReason('')).toBeUndefined();
+  });
+
+  test('travels onto the card as `reason`, for a command and for a file', () => {
+    const command = buildExecApprovalPermissionRequest('r1', {
+      sessionKey: 'desktop-1',
+      command: 'rm -rf build',
+      warningText: 'Exec auto-review deferred to human approval (risk=high): Deletes a whole folder and everything in it.',
+    }, 'rm -rf build');
+    expect(command.toolInput.reason).toBe('Deletes a whole folder and everything in it.');
+    const file = buildExecApprovalPermissionRequest('r2', {
+      sessionKey: 'desktop-1',
+      command: 'file-access read /Users/bass/.ssh/config',
+      warningText: 'Touches the SSH keys.',
+    }, 'file-access read /Users/bass/.ssh/config', { kind: 'read', paths: ['/Users/bass/.ssh/config'] });
+    expect(file.toolInput.reason).toBe('Touches the SSH keys.');
+    const plain = buildExecApprovalPermissionRequest('r3', { sessionKey: 'desktop-1', command: 'ls' }, 'ls');
+    expect(plain.toolInput.reason).toBeUndefined();
   });
 });

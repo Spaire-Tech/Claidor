@@ -6,12 +6,16 @@ import {
   authQuestion,
   choiceId,
   commandFromToolInput,
+  COMPUTER_GRANT_NOTE,
   decisionNote,
   type EngineMessage,
   type EnginePermissionRequest,
   fileAccessFromToolInput,
   fileAccessQuestion,
+  flaggedNote,
+  isEngineToolSummary,
   parseChoiceId,
+  resolveChoiceItem,
   splitIntoBubbles,
   toThreadItems,
 } from './fromEngine';
@@ -205,11 +209,53 @@ describe('the approval card', () => {
     expect(items[items.length - 1].kind).toBe(ThreadItemKind.Auth);
   });
 
-  test('answering it leaves one plain line', () => {
+  test('answering it leaves one plain line: the computer, or not now', () => {
+    // Allow is the computer until the setting is changed; Not now is one
+    // action, and the card comes back when it matters
+    // (`caisra-permissions.md` §2.2, §10, §11).
     expect(decisionNote('Perrin', 'always'))
-      .toBe('Perrin can run commands on your computer from now on.');
+      .toBe('Perrin can work on your computer from now on. It will still ask before anything risky. Change that any time in Settings.');
     expect(decisionNote('Perrin', 'never'))
-      .toBe("Declined. Perrin can't run commands on your computer.");
+      .toBe('Not now. Perrin will ask again when it matters.');
+  });
+
+  test('the card says the answer is for this computer, once', () => {
+    const items = toThreadItems([], { agentName: 'Perrin', pending: [request] });
+    expect((items[0] as { note?: string }).note).toBe(COMPUTER_GRANT_NOTE);
+    expect((items[0] as { flagged?: boolean }).flagged).toBeUndefined();
+    expect(COMPUTER_GRANT_NOTE).toContain("won't ask again on this computer, except about something risky");
+  });
+
+  test("a card the reviewer raised carries its reason, and Allow is this once", () => {
+    // Review mode: the computer is already allowed. The reviewer's
+    // sentence is the note, and the card is marked so Allow does not
+    // read as a second grant.
+    const items = toThreadItems([], {
+      agentName: 'Perrin',
+      pending: [{ ...request, toolInput: { command: 'rm -rf build', reason: 'Deletes a whole folder and everything in it' } }],
+    });
+    expect(items[0]).toMatchObject({
+      kind: ThreadItemKind.Auth,
+      flagged: true,
+      note: 'Flagged: Deletes a whole folder and everything in it. Allow runs this one; it will keep asking about things like it.',
+    });
+    expect(flaggedNote('Touches the SSH keys.')).toBe('Flagged: Touches the SSH keys. Allow runs this one; it will keep asking about things like it.');
+  });
+
+  test("the engine's own chain-of-tools line never reaches the thread", () => {
+    // "⚠️ 🛠️ create folder .cowork-temp → show > → run const → … failed",
+    // 17 September, under a Word document. The engine's step card in one
+    // line; the design has no step cards, on any path it arrives by.
+    const chain = '⚠️ 🛠️ create folder .cowork-temp → run node → list files in poem.docx failed';
+    const items = toThreadItems([
+      msg({ type: 'assistant', content: chain }),
+      msg({ type: 'assistant', content: chain, metadata: { isError: true } }),
+      msg({ type: 'system', content: '🛠️ run unzip poem.docx' }),
+      msg({ type: 'assistant', content: 'The document is ready.' }),
+    ], { running: false });
+    expect(items.map(one => one.kind)).toEqual([ThreadItemKind.Text]);
+    expect(isEngineToolSummary('  ⚠️ 🛠️ x')).toBe(true);
+    expect(isEngineToolSummary('Careful ⚠️')).toBe(false);
   });
 
   test('a file tool asking draws the same card, with the paths on it', () => {
@@ -253,13 +299,13 @@ describe('the approval card', () => {
     expect((items[0] as { access?: string }).access).toBeUndefined();
   });
 
-  test('the note after a file answer talks about files, and Always about the folder', () => {
+  test('the note after a file answer is the same grant: the computer, or not now', () => {
     expect(decisionNote('Perrin', 'always', 'write'))
-      .toBe('Perrin can change files in that folder from now on.');
+      .toBe('Perrin can work on your computer from now on. It will still ask before anything risky. Change that any time in Settings.');
     expect(decisionNote('Perrin', 'once', 'read'))
       .toBe('Perrin can read that file this time.');
     expect(decisionNote('Perrin', 'never', 'write'))
-      .toBe("Declined. Perrin can't change that file.");
+      .toBe('Not now. Perrin will ask again when it matters.');
   });
 });
 
@@ -380,6 +426,27 @@ describe('the agent asking a question', () => {
       pending: [{ requestId: 'r2', toolName: 'Bash', toolInput: { command: 'ls' } }],
     });
     expect(item.kind).toBe(ThreadItemKind.Auth);
+  });
+
+  test('an answered card settles with the answer, and no free box', () => {
+    // `caisra-chat-ui-logic.md` §6: the card stays, muted, with the
+    // chosen answer checked under it. It is no longer a control.
+    const [item] = toThreadItems([], { pending: [ask([one])] });
+    if (item.kind !== ThreadItemKind.Choice) throw new Error('not a choice');
+    const settled = resolveChoiceItem(item, { answer: 'Different file' }, 1_700_000_000_000);
+    expect(settled.resolved).toEqual({ answer: 'Different file' });
+    expect(settled.freeform).toBe(false);
+    expect(settled.at).toBe(1_700_000_000_000);
+    expect(settled.id).toBe(item.id);
+    expect(settled.options).toEqual(item.options);
+  });
+
+  test('a dismissed card settles as dismissed', () => {
+    const [item] = toThreadItems([], { pending: [ask([one])] });
+    if (item.kind !== ThreadItemKind.Choice) throw new Error('not a choice');
+    const settled = resolveChoiceItem(item, { dismissed: true }, 5);
+    expect(settled.resolved).toEqual({ dismissed: true });
+    expect(settled.freeform).toBe(false);
   });
 });
 

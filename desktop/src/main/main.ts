@@ -2689,6 +2689,7 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         return getMcpRuntime().getResolvedServersCache();
       },
       getAskUserCallbackUrl: () => getMcpRuntime().getAskUserCallbackUrl(),
+      getReactCallbackUrl: () => getMcpRuntime().getReactCallbackUrl(),
       getMediaCallbackUrl: () => getMcpRuntime().getMediaCallbackUrl(),
       getBrowserCallbackUrl: () => getMcpRuntime().getBrowserCallbackUrl(),
       getLobsterBrowserMcpCommand: () => {
@@ -3754,6 +3755,7 @@ const getMcpRuntime = (): McpRuntime => {
   if (!mcpRuntime) {
     mcpRuntime = new McpRuntime({
       getStore,
+      getCoworkStore,
       syncOpenClawConfig,
       onAskUserRequested: (sessionId, request) => {
         getDesktopNotificationManager().handlePermissionRequest(sessionId, request);

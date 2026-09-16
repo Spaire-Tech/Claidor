@@ -112,6 +112,14 @@ export interface ChoiceOption {
   hint?: string;
 }
 
+/**
+ * What became of a question card. Answered, it stays in the thread with
+ * the chosen answer checked under the prompt; dismissed, or moved past
+ * with a newer message, it stays muted and marked. Neither is pressable
+ * again (`caisra-chat-ui-logic.md` §6).
+ */
+export type ChoiceOutcome = { answer: string } | { dismissed: true };
+
 export interface ChoiceItem {
   kind: typeof ThreadItemKind.Choice;
   id: string;
@@ -120,6 +128,8 @@ export interface ChoiceItem {
   options: readonly ChoiceOption[];
   /** Whether the card offers "Type your own answer". */
   freeform?: boolean;
+  /** Set once the card has been answered or dismissed. */
+  resolved?: ChoiceOutcome;
   at: number;
 }
 
@@ -153,6 +163,12 @@ export interface AuthItem {
    * and Not now. There is no "always" for a teammate.
    */
   staffing?: boolean;
+  /**
+   * Set when the engine's reviewer flagged this one under review mode:
+   * the computer is already allowed, so Allow is this action only, and
+   * `note` carries the reason.
+   */
+  flagged?: boolean;
   at: number;
 }
 

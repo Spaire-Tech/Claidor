@@ -325,6 +325,45 @@ export function threadItems(input: ThreadInput): ThreadItem[] {
   });
 }
 
+/**
+ * The notes an answered card leaves, put where they happened.
+ *
+ * The store's messages are already in order. A note is appended to its
+ * own list when the person presses a button, so it carries the time of
+ * the press; each one goes after the last message that came before it.
+ * Appended to the end instead, the line sat under everything that came
+ * later ("oke can run commands on your computer this time" pinned under
+ * the poem, 17 September). Stable: two notes keep their own order.
+ */
+export function mergeByTime(
+  messages: readonly EngineMessage[],
+  notes: readonly EngineMessage[],
+): EngineMessage[] {
+  return placeByTime(messages, notes, one => one.timestamp);
+}
+
+/**
+ * The same, for anything with a time: the settled question cards go in
+ * beside the thread's items where they were answered.
+ */
+export function placeByTime<T>(
+  base: readonly T[],
+  extras: readonly T[],
+  at: (one: T) => number,
+): T[] {
+  if (extras.length === 0) return [...base];
+  const out: T[] = [];
+  let next = 0;
+  for (const one of base) {
+    while (next < extras.length && at(extras[next]) < at(one)) {
+      out.push(extras[next]);
+      next += 1;
+    }
+    out.push(one);
+  }
+  return [...out, ...extras.slice(next)];
+}
+
 /** "Today", "Friday", "3 March" — one stamp at the top of a thread. */
 export function dayStamp(messages: readonly EngineMessage[] | undefined, now = Date.now()): string | undefined {
   const first = messages?.[0]?.timestamp;

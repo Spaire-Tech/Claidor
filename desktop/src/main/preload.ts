@@ -106,6 +106,7 @@ import { OpenClawEngineIpc } from '../shared/openclawEngine/constants';
 import { PermissionIpcChannel } from '../shared/permissions/constants';
 import type { Platform } from '../shared/platform';
 import { ProjectIpc } from '../shared/projects/constants';
+import { type AgentReaction, ReactionIpc } from '../shared/reactions/constants';
 import { RoomIpc } from '../shared/rooms/constants';
 import { type ExecPolicy, SettingsChannel } from '../shared/settings/constants';
 import {
@@ -887,6 +888,14 @@ contextBridge.exposeInMainWorld('electron', {
     update: (id: string, changes: { name?: string; memberIds?: string[] }) =>
       ipcRenderer.invoke(RoomIpc.Update, id, changes),
     remove: (id: string) => ipcRenderer.invoke(RoomIpc.Delete, id),
+  },
+  /** The agent's tapback on the person's message, from `ReactToMessage`. */
+  reactions: {
+    onAgent: (callback: (reaction: AgentReaction) => void) => {
+      const handler = (_event: unknown, reaction: AgentReaction) => callback(reaction);
+      ipcRenderer.on(ReactionIpc.Agent, handler);
+      return () => ipcRenderer.removeListener(ReactionIpc.Agent, handler);
+    },
   },
   askInput: {
     onRequested: (callback: (request: AskInputRequest) => void) => {

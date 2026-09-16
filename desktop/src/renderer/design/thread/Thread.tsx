@@ -15,6 +15,23 @@ import {
 } from './ThreadItemView';
 import type { ThreadItem } from './types';
 
+/**
+ * Scroll the thread to an earlier message: what a reference chip does.
+ * A reply drawn as three bubbles has ids `<message>:0` and so on, so the
+ * first item whose id starts with the message's is the one.
+ */
+export function scrollToThreadItem(messageId: string): boolean {
+  const rows = document.querySelectorAll<HTMLElement>('[data-thread-item]');
+  for (const row of rows) {
+    const id = row.dataset.threadItem ?? '';
+    if (id === messageId || id.startsWith(`${messageId}:`)) {
+      (row.firstElementChild ?? row).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return true;
+    }
+  }
+  return false;
+}
+
 export interface ThreadProps {
   /** Already staggered: the shell holds that, because the header's
    *  "typing" has to stay on while bubbles are still landing. */
@@ -169,17 +186,21 @@ export function Thread({
       )}
 
       {items.map((item, index) => (
-        <ThreadItemView
-          key={item.id}
-          item={item}
-          choice={choice}
-          auth={auth}
-          {...(secret ? { secret } : {})}
-          {...(roster ? { roster } : {})}
-          {...(parts ? { parts } : {})}
-          {...(actions ? { actions } : {})}
-          leading={startsTurn(items[index - 1], item)}
-        />
+        // `data-thread-item` is what a reference chip scrolls to
+        // (`scrollToThreadItem`); `display: contents` keeps the wrapper
+        // out of the layout.
+        <div key={item.id} data-thread-item={item.id} style={{ display: 'contents' }}>
+          <ThreadItemView
+            item={item}
+            choice={choice}
+            auth={auth}
+            {...(secret ? { secret } : {})}
+            {...(roster ? { roster } : {})}
+            {...(parts ? { parts } : {})}
+            {...(actions ? { actions } : {})}
+            leading={startsTurn(items[index - 1], item)}
+          />
+        </div>
       ))}
 
       {/*
