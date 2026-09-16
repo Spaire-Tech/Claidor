@@ -58,6 +58,7 @@ describe('the card library', () => {
     expect(result.meta.errors).toEqual([]);
     expect(cardImageUrl('a picture of canlis')).toBeUndefined();
     expect(cardImageUrl('http://example.com/a.jpg')).toBeUndefined();
+    expect(cardImageUrl('http://127.0.0.1:5175/photos/canlis.jpg')).toBe('http://127.0.0.1:5175/photos/canlis.jpg');
     expect(cardImageUrl('javascript:alert(1)')).toBeUndefined();
     expect(cardImageUrl(' https://example.com/canlis.jpg ')).toBe('https://example.com/canlis.jpg');
     expect(cardImageUrl(undefined)).toBeUndefined();

@@ -94,10 +94,12 @@ const PACK: EngineMessage[] = [
 
 /**
  * The answer cards, 17 September: the founder's OpenUI pictures as our
- * cards. Texts stay texts; the block between them is drawn by us. No
- * images here, because the harness has no network and a card only
- * loads a real https address.
+ * cards, with photographs. The shooter serves `harness/shots/photos/`
+ * on its own loopback port (`shoot.mjs`), which is why the addresses
+ * are built from the page's origin at runtime; a fresh clone without
+ * that folder draws the same cards with no pictures.
  */
+const photo = (name: string): string => `${location.origin}/photos/${name}.jpg`;
 const CARDS: EngineMessage[] = [
   message({ type: 'user', content: 'find me the best restaurants in seattle' }, 0),
   message({
@@ -108,9 +110,9 @@ const CARDS: EngineMessage[] = [
       '```openui-lang',
       'root = Stack([places, facts], "Best restaurants in Seattle", "From iconic fine dining to artisanal soba")',
       'places = Row([a, b, c, d])',
-      'a = Tile("Canlis", "Panoramic views & iconic fine dining", "Fine dining", "", "Book")',
-      'b = Tile("The Walrus & The Carpenter", "Fresh Pacific oysters & Muscadet in Ballard", "Seafood", "", "Book")',
-      'c = Tile("Spinasse", "Hand-cut tajarin & authentic Piedmontese Italian", "Italian", "", "Book")',
+      `a = Tile("Canlis", "Panoramic views & iconic fine dining", "Fine dining", "${photo('canlis')}", "Book")`,
+      `b = Tile("The Walrus & The Carpenter", "Fresh Pacific oysters & Muscadet in Ballard", "Seafood", "${photo('walrus')}", "Book")`,
+      `c = Tile("Spinasse", "Hand-cut tajarin & authentic Piedmontese Italian", "Italian", "${photo('spinasse')}", "Book")`,
       'd = Tile("Tsukushinbo", "Handmade soba, twelve seats, cash only", "Soba", "", "Book")',
       'facts = Grid([Fact("Book ahead", "Canlis, two weeks"), Fact("Price", "$$ to $$$$"), Fact("Best for a view", "Canlis, at dusk"), Fact("Walk-in", "The Walrus, before six")])',
       '```',
@@ -124,12 +126,12 @@ const CARDS: EngineMessage[] = [
     content: [
       '```openui-lang',
       'root = Stack([hero, summary, days, next])',
-      'hero = Banner("Tokyo, three days", "Grouped by neighbourhood, pace and travel time")',
+      `hero = Banner("Tokyo, three days", "Grouped by neighbourhood, pace and travel time", "${photo('tokyo')}")`,
       'summary = Row([Metric("Trip length", "3 days", "Tokyo only"), Metric("Best base", "Shinjuku", "Easy transit"), Metric("Budget", "\u00a548,000", "per person, no flights")])',
       'days = Row([d1, d2, d3])',
-      'd1 = Tile("Shinjuku arrival", "Easy first day to reset after landing", "Day 1")',
-      'd2 = Tile("Harajuku + Shibuya", "Vibrant culture and iconic sights", "Day 2")',
-      'd3 = Tile("Asakusa + Ueno", "Traditional Tokyo, then the park", "Day 3")',
+      `d1 = Tile("Shinjuku arrival", "Easy first day to reset after landing", "Day 1", "${photo('shinjuku')}")`,
+      `d2 = Tile("Harajuku + Shibuya", "Vibrant culture and iconic sights", "Day 2", "${photo('shibuya')}")`,
+      `d3 = Tile("Asakusa + Ueno", "Traditional Tokyo, then the park", "Day 3", "${photo('asakusa')}")`,
       'next = Button("Swap day two for Kichijoji", "Swap day two for Kichijoji")',
       '```',
       '',

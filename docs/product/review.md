@@ -3966,3 +3966,37 @@ guessing one, so the first answers may well have none.
 `desktop/src/renderer/design/thread/{types,fromEngine,CardBlock,ThreadItemView,Thread}`,
 `shell/{select,MessagesShell}`, `harness/main.tsx` (`cards`),
 `package.json` (two dependencies, MIT).
+
+**The first look was wrong, and the founder said so.** *"can i say what
+you did there looks utterly terrible … do not put it in a text box.
+separate texts and those cards … AND I WANT THE PICTURES. ITS WHAT
+MAKES IT SPECIAL. design it like them."* Two faults. The block sat in
+a grey panel, which read as one more bubble; their four pictures have
+nothing around the block, the title and subtitle are plain text on the
+page and the cards sit on the page after them. And there were no
+pictures, because I had no source for one and left it at "never
+invent". Both fixed the same evening:
+
+- `CardBlock.tsx` redrawn from the pictures. No container. A Tile
+  with a photo is the photo edge to edge, the tag over it top left in
+  a dark translucent pill with white text, the name and line in a
+  white box inset at the foot in black, and the action as a black bar
+  under. The Banner is a wide photo with white title and subtitle on
+  it. Metrics are white boxes with the label and note at left and the
+  figure at right; Facts the same without the figure.
+- **Pictures have a source.** The engine's `web_fetch` strips images
+  out of a page (`htmlToMarkdown` keeps links and headings, not `img`)
+  but returns JSON whole, and Wikipedia's summary endpoint
+  (`/api/rest_v1/page/summary/<Title>`) carries `originalimage.source`
+  and `thumbnail.source`; checked from here for Canlis, which returned
+  its front entrance. The brief now says: for a place, a landmark, a
+  dish, a company, fetch that and use the address; no page, no
+  picture. The renderer loads a picture from https or from this
+  computer's loopback (the app's own preview servers), and nothing
+  else.
+- The harness serves seven placeholder photographs from
+  `harness/shots/photos/` (ignored) so the screens can be judged; both
+  photographs were sent to the founder.
+
+Unrun as before: a model writing a block, and a model fetching a
+Wikipedia summary for a picture. Both wait on the Mac.

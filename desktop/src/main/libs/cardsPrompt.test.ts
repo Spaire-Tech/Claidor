@@ -16,6 +16,10 @@ describe('the Cards section of the brief', () => {
   test('says the rules in our words: texts stay texts, no invented images, one block', () => {
     expect(section).toContain('Your texts stay texts.');
     expect(section).toContain('Never invent, guess or "typical" one.');
+    // The one place the engine can get a picture address from: the
+    // fetch tool strips images out of pages but returns JSON whole.
+    expect(section).toContain('https://en.wikipedia.org/api/rest_v1/page/summary/');
+    expect(section).toContain('originalimage.source');
     expect(section).toContain('One block per reply at most.');
     // OpenUI's own opening line, which says the whole reply must be code, is replaced.
     expect(section).not.toContain('Your ENTIRE response must be valid openui-lang');

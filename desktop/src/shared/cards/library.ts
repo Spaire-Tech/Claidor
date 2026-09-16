@@ -55,13 +55,19 @@ export const ROW_ADVICE = 3;
  */
 const image = z.string().url().optional();
 
-/** The address a card may load a picture from: https, well formed, or nothing. */
+/**
+ * The address a card may load a picture from: https and well formed, or
+ * this computer's own loopback (the app's local preview servers and
+ * the harness serve pictures there), or nothing.
+ */
 export function cardImageUrl(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
   try {
     const url = new URL(trimmed);
-    return url.protocol === 'https:' ? url.toString() : undefined;
+    if (url.protocol === 'https:') return url.toString();
+    if (url.protocol === 'http:' && (url.hostname === '127.0.0.1' || url.hostname === 'localhost')) return url.toString();
+    return undefined;
   } catch {
     return undefined;
   }

@@ -14,7 +14,10 @@ const server = createServer(async (req, res) => {
   if (url.pathname === '/favicon.ico') { res.statusCode = 204; res.end(); return; }
   const file = url.pathname === '/' ? '/index.html' : url.pathname;
   try {
-    const body = await readFile(path.join(DIST, file));
+    // Photographs for the cards screen live beside the shots, not in
+    // the build: `harness/shots/photos/*.jpg`, ignored by git.
+    const root = file.startsWith('/photos/') ? path.resolve('harness/shots') : DIST;
+    const body = await readFile(path.join(root, file));
     res.setHeader('content-type', TYPES[path.extname(file)] ?? 'application/octet-stream');
     res.end(body);
   } catch {
