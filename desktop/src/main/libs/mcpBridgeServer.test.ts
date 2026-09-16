@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import type { RosterAsk } from '../../shared/staffing/roster';
 import { type AskUserRequest, McpBridgeServer } from './mcpBridgeServer';
 
 const makeQuestions = (): AskUserRequest['questions'] => [{
@@ -190,6 +191,126 @@ describe('McpBridgeServer standing up an agent', () => {
       await server.start();
       const response = await post(server.createAgentCallbackUrl!, secret, brief);
       await expect(response.json()).resolves.toEqual({ behavior: 'declined' });
+    } finally {
+      await server.stop();
+    }
+  });
+});
+
+describe('McpBridgeServer proposing a starter team', () => {
+  const post = (url: string, secret: string, body: unknown) => fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-mcp-bridge-secret': secret },
+    body: JSON.stringify(body),
+  });
+
+  test('the card goes up with the founder\'s three; Stand them up stands each up and the tool is told who is in', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    const shown: RosterAsk[] = [];
+    const performed: string[] = [];
+    try {
+      await server.start();
+      server.onRoster(ask => {
+        shown.push(ask);
+        server.resolveRoster(ask.requestId, { behavior: 'standUp', slugs: ask.team.map(one => one.slug) });
+      });
+      server.setCreateAgentPerformer(async input => {
+        performed.push(input.name);
+        return { agentId: `agent-${performed.length}`, name: input.name };
+      });
+
+      const response = await post(server.proposeTeamCallbackUrl!, secret, { workType: 'Founder / Business Owner' });
+      expect(response.ok).toBe(true);
+      const result = await response.json();
+      expect(result.behavior).toBe('stoodUp');
+      expect(result.agents.map((one: { name: string }) => one.name)).toEqual(['Projects Manager', 'Outbound Prospecting', 'GTM Loop Closer']);
+      expect(result.failed).toEqual([]);
+      expect(shown).toHaveLength(1);
+      expect(shown[0].workType).toBe('Founder / Business Owner');
+      expect(shown[0].team).toHaveLength(3);
+      expect(performed).toEqual(['Projects Manager', 'Outbound Prospecting', 'GTM Loop Closer']);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('a swapped-in alternate is stood up, and one that fails is reported, not hidden', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    try {
+      await server.start();
+      server.onRoster(ask => {
+        server.resolveRoster(ask.requestId, { behavior: 'standUp', slugs: [ask.team[0].slug, ask.alternates[0].slug] });
+      });
+      server.setCreateAgentPerformer(async input => {
+        if (input.name === 'Projects Manager') throw new Error('the engine is restarting');
+        return { agentId: 'agent-x', name: input.name };
+      });
+      const response = await post(server.proposeTeamCallbackUrl!, secret, { workType: 'Founder / Business Owner' });
+      const result = await response.json();
+      expect(result.behavior).toBe('stoodUp');
+      expect(result.agents).toHaveLength(1);
+      expect(result.failed).toEqual([{ slug: 'projects-manager', name: 'Projects Manager', reason: 'the engine is restarting' }]);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('an answer naming a row that was never on the card is refused and the card stays up', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    let performed = 0;
+    try {
+      await server.start();
+      server.onRoster(ask => {
+        server.resolveRoster(ask.requestId, { behavior: 'standUp', slugs: ['skippy', 'cooper'] });
+        // The refusal leaves the promise pending; a real answer settles it.
+        server.resolveRoster(ask.requestId, { behavior: 'decline' });
+      });
+      server.setCreateAgentPerformer(async () => {
+        performed += 1;
+        return { agentId: 'never', name: 'never' };
+      });
+      const response = await post(server.proposeTeamCallbackUrl!, secret, { workType: 'Finance' });
+      await expect(response.json()).resolves.toEqual({ behavior: 'declined' });
+      expect(performed).toBe(0);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('Something else comes back as the line they typed, and nothing is created', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    let performed = 0;
+    try {
+      await server.start();
+      server.onRoster(ask => server.resolveRoster(ask.requestId, { behavior: 'somethingElse', text: 'someone for grants' }));
+      server.setCreateAgentPerformer(async () => {
+        performed += 1;
+        return { agentId: 'never', name: 'never' };
+      });
+      const response = await post(server.proposeTeamCallbackUrl!, secret, { workType: 'Student' });
+      await expect(response.json()).resolves.toEqual({ behavior: 'somethingElse', text: 'someone for grants' });
+      expect(performed).toBe(0);
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('an unknown work type with no picks never reaches the card', async () => {
+    const secret = 'test-secret';
+    const server = new McpBridgeServer(secret);
+    let shown = 0;
+    try {
+      await server.start();
+      server.onRoster(() => { shown += 1; });
+      server.setCreateAgentPerformer(async () => ({ agentId: 'never', name: 'never' }));
+      const response = await post(server.proposeTeamCallbackUrl!, secret, { workType: 'I run a bakery' });
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toMatchObject({ behavior: 'failed' });
+      expect(shown).toBe(0);
     } finally {
       await server.stop();
     }

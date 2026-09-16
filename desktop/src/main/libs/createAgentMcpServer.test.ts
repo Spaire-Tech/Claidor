@@ -4,6 +4,7 @@ import path from 'path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { CREATE_AGENT_TOOL } from '../../shared/staffing/constants';
+import { PROPOSE_TEAM_TOOL } from '../../shared/staffing/roster';
 import { resolveCreateAgentMcpStdioLaunch } from './createAgentMcpServer';
 
 let baseDir = '';
@@ -70,5 +71,23 @@ describe('what the model is told', () => {
     expect(source).toMatch(/at least one\s*',\s*'anti-job|Give at least one/);
     expect(source).toMatch(/Never stand up more than the person asked for/);
     expect(source).toContain("required: ['name', 'label', 'job', 'antiJobs']");
+  });
+
+  test('the roster: curated two or three, never the twenty-three listed or stood up, the card is the asking', () => {
+    const source = serverSource();
+    expect(source).toContain(`name: '${PROPOSE_TEAM_TOOL}'`);
+    expect(source).toMatch(/Never list the twenty-three in chat and never stand all of them up/);
+    expect(source).toMatch(/do not call create_agent for them/);
+    expect(source).toMatch(/Founder \/ Business Owner/);
+    expect(source).toContain('projects-manager (Projects Manager)');
+    expect(source).toContain("required: ['workType']");
+  });
+
+  test('without the propose-team route, that tool says the app is not reachable and the other still works', () => {
+    const result = launch();
+    const config = JSON.parse(fs.readFileSync(path.join(baseDir, 'create-agent-mcp', 'create-agent-mcp-runtime.json'), 'utf8'));
+    expect(config.proposeTeamUrl).toBeUndefined();
+    expect(config.bridgeUrl).toBe('http://127.0.0.1:51515/create-agent');
+    expect(fs.existsSync(result.command)).toBe(true);
   });
 });

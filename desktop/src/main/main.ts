@@ -217,6 +217,7 @@ import {
   type CreateAgentAnswer,
   CreateAgentIpc,
 } from '../shared/staffing/constants';
+import { RosterIpc } from '../shared/staffing/roster';
 import { AgentManager } from './agentManager';
 import {
   APP_HOME_DIR_NAME,
@@ -2590,6 +2591,8 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       getBrowserWebAccessConfig: () => getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
       // Decided in code, never on a screen: see `claudeCodeMode.ts`.
       getClaudeCodeMode: () => claudeCodeMode(),
+      // What they said they do in step one, for Yodo's brief.
+      getOnboardingWorkType: () => getStore().get<AppConfigSettings>('app_config')?.onboardingWorkType,
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
       getSkillsList: () =>
@@ -2732,11 +2735,13 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
         const mcpRuntime = getMcpRuntime();
         const bridgeUrl = mcpRuntime.getCreateAgentCallbackUrl();
         if (!bridgeUrl) return null;
+        const proposeTeamUrl = mcpRuntime.getProposeTeamCallbackUrl();
         return resolveCreateAgentMcpStdioLaunch(
           path.join(getOpenClawEngineManager().getStateDir(), 'generated'),
           {
             electronNodeRuntimePath: getElectronNodeRuntimePath(),
             bridgeUrl,
+            ...(proposeTeamUrl ? { proposeTeamUrl } : {}),
             bridgeSecret: mcpRuntime.getBridgeSecret(),
           },
         );
@@ -4482,6 +4487,8 @@ type AppConfigSettings = {
   browserWebAccess?: Partial<BrowserWebAccessConfig>;
   /** When the first step of onboarding was finished, so it plays once. */
   onboardingDoneAt?: number;
+  /** What they said they do in step one; goes into Yodo's brief. */
+  onboardingWorkType?: string;
 };
 
 const getUseSystemProxyFromConfig = (config?: { useSystemProxy?: boolean }): boolean => {
@@ -9215,6 +9222,8 @@ if (!gotTheLock) {
       _event,
       options: {
         prompt: string;
+        /** The app's own opening turn: sent to the agent, never kept as the person's message. */
+        hidden?: boolean;
         cwd?: string;
         systemPrompt?: string;
         title?: string;
@@ -9398,11 +9407,18 @@ if (!gotTheLock) {
           browserAnnotations,
           imageAttachmentPreviews,
         });
-        coworkStoreInstance.addMessage(session.id, {
-          type: 'user',
-          content: prompt,
-          metadata: messageMetadata,
-        });
+        if (options.hidden) {
+          // The app's cue, not the person's words. The runtime is told to
+          // skip the message either way (below); here is only that it is
+          // not written into the conversation.
+          console.log(`[Cowork:StartSession] hidden opening turn for session ${session.id}`);
+        } else {
+          coworkStoreInstance.addMessage(session.id, {
+            type: 'user',
+            content: prompt,
+            metadata: messageMetadata,
+          });
+        }
 
         coworkStoreInstance.updateSession(session.id, { status: 'running' });
 
@@ -13204,6 +13220,16 @@ if (!gotTheLock) {
     (_event, requestId: string, answer: CreateAgentAnswer) => {
       if (typeof requestId !== 'string' || !requestId) return;
       getMcpRuntime().resolveCreateAgent(requestId, answer);
+    },
+  );
+
+  // Stand them up, Something else, or Not now, from the roster card.
+  // Checked against the card in the bridge; the tool is waiting on it.
+  ipcMain.handle(
+    RosterIpc.Respond,
+    (_event, requestId: string, answer: unknown) => {
+      if (typeof requestId !== 'string' || !requestId) return;
+      getMcpRuntime().resolveRoster(requestId, answer);
     },
   );
 

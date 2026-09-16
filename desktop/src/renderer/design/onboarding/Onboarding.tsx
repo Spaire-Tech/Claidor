@@ -35,8 +35,12 @@ export interface OnboardingProps {
   userName: string;
   /** How to reach the Mac. Absent in the harness; the cards then say so. */
   bridge?: OnboardingBridge;
-  /** Get Started. */
-  onDone: () => void;
+  /**
+   * Get Started, with what they said they do: a work type as its button
+   * read, or their own words, and which of the two it was. Step two
+   * opens on it.
+   */
+  onDone: (work: { workType: string; ownWords: boolean }) => void;
 }
 
 const INK = color.ink;
@@ -382,7 +386,7 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
                       <div style={{ display: 'flex', justifyContent: 'center', padding: '18px 0 4px', animation: 'onb-block-in .46s ease-out both' }}>
                         <button
                           type="button"
-                          onClick={onDone}
+                          onClick={() => onDone({ workType: state.roleLabel, ownWords: state.ownWords })}
                           className="onb-hover-ink"
                           style={{
                             width: 'min(560px, 100%)', height: 56, borderRadius: 999, border: 'none', background: INK, color: PAPER,

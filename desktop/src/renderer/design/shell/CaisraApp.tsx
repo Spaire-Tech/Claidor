@@ -3,9 +3,12 @@ import '../tokens.css';
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 
+import { AgentId } from '../../../shared/agent/constants';
 import { describeBuild, DEV_BUILD } from '../../../shared/buildStamp/constants';
+import { STEP_TWO_TITLE, stepTwoKickoff } from '../../../shared/onboarding/stepTwo';
 import { authService } from '../../services/auth';
 import { configService, ConfigServiceEvent } from '../../services/config';
+import { coworkService } from '../../services/cowork';
 import type { RootState } from '../../store';
 import { AgentPanel } from '../agent/AgentPanel';
 import { useConnections } from '../connections/useConnections';
@@ -17,6 +20,7 @@ import { useSettings } from '../settings/useSettings';
 import { composeAuthHandlers } from '../thread/staffingCards';
 import { useAskInput } from '../thread/useAskInput';
 import { useCreateAgent } from '../thread/useCreateAgent';
+import { useRoster } from '../thread/useRoster';
 import { supportMailto } from './account';
 import { AccountMenu } from './AccountMenu';
 import { Apps } from './Apps';
@@ -77,6 +81,9 @@ export function CaisraApp(): JSX.Element {
     () => composeAuthHandlers(shell.auth, { onDecide: staffing.onDecide }),
     [shell.auth, staffing.onDecide],
   );
+  // "Your starter team": the roster card of step two, answered through
+  // the staffing bridge like the card above.
+  const roster = useRoster();
   const connections = useConnections(shell.appsOpen);
 
   // `nickname` is the only display name the profile carries; everything
@@ -129,10 +136,23 @@ export function CaisraApp(): JSX.Element {
       <Onboarding
         userName={accountName === 'Account' ? '' : accountName}
         {...(onboardingBridge ? { bridge: onboardingBridge } : {})}
-        onDone={() => {
+        onDone={work => {
           setOnboarded(true);
-          void configService.updateConfig({ onboardingDoneAt: Date.now() }).catch(() => {
+          const userName = accountName === 'Account' ? '' : accountName;
+          void configService.updateConfig({ onboardingDoneAt: Date.now(), onboardingWorkType: work.workType }).catch(() => {
             // It plays again next launch, which is the cheaper mistake.
+          });
+          // Step two: Yodo speaks first. The app's own opening turn goes
+          // to him hidden, so the conversation starts with his bubble and
+          // not one of the person's (`shared/onboarding/stepTwo.ts`).
+          void coworkService.startSession({
+            prompt: stepTwoKickoff({ userName, workType: work.workType, ownWords: work.ownWords }),
+            hidden: true,
+            title: STEP_TWO_TITLE,
+            agentId: AgentId.Main,
+          }).catch(() => {
+            // The thread is empty and Yodo waits to be spoken to; the
+            // composer is right there.
           });
         }}
       />
@@ -146,7 +166,7 @@ export function CaisraApp(): JSX.Element {
       activeName={shell.activeName}
       activeAvatar={shell.activeAvatar}
       wornAvatars={shell.wornAvatars}
-      items={[...shell.items, ...askInput.items, ...staffing.items]}
+      items={[...shell.items, ...askInput.items, ...staffing.items, ...roster.items]}
       dayStamp={shell.dayStamp}
       typing={shell.typing}
       mode={shell.mode}
@@ -155,6 +175,7 @@ export function CaisraApp(): JSX.Element {
       auth={auth}
       parts={shell.parts}
       secret={askInput.handlers}
+      roster={roster.handlers}
       onSelect={shell.onSelect}
       onAskDelete={shell.onAskDelete}
       onSend={shell.onSend}

@@ -2949,3 +2949,126 @@ frame, so a word could land up to a frame after its beat; it ticks on
 `requestAnimationFrame` now. The cadence, the fade and the blur are the
 canvas's numbers, untouched. Measured again: 60 frames a second, no late
 frame at all this time; the walk draws every stage.
+
+## 62. Step two: the roster card, the twenty-three as briefs, and Yodo speaking first — `built; the app itself unrun; Slack still the founder's call`
+
+The founder, 16 September, after the stream: *"and back to this. What
+step two still needs: the roster card, the 23 as kits so Yodo has real
+briefs to pick from rather than his own words, and the Slack decision."*
+The first two are built. The third is a decision and is laid out at the
+end.
+
+**The twenty-three as briefs** (`shared/staffing/strongs.ts`, 23
+records, 12 tests). Every word is taken, not written: the names and
+lanes and the work-type table from the founder's page (§7, §8), the
+jobs, anti-jobs, voices and connectors from the anatomies of item 57.
+A brief is the shape `create_agent` already takes — name, label, one
+sentence of job, anti-jobs, a voice where the listing had one — and
+every one of the twenty-three passes the same check the tool applies
+to Yodo's own briefs. Seven anatomies have no pitch line; their job is
+the catalogue's own one-liner from the same section. Nothing was
+derived: every anatomy has a "does not own" section, so every anti-job
+is the listing's. Four carry `translates: false` (dr eggbot, tinkabot,
+Engineer Bot, skippy: about the other product's machinery, as item 57
+said); the data records the fact and does not editorialise, and the
+Engineering row still names two of them because the founder's table
+does. The table gives each of the ten work types its two or three, and
+three or four alternates for "Swap one", chosen as the lane's nearest
+others; each has a one-line reason in the file and they are mine to be
+overruled. The word "kit" is not used: a kit here (`shared/kit`) is an
+installed package with skills, MCP servers and connectors, and the
+store serves none; what Yodo picks from is a brief. When the kit store
+exists, a strong's brief is what its kit would install.
+
+**The roster card** (`ThreadItemKind.Roster`, `RosterCard.tsx`). The
+eighth kind of thing a thread may show, and the founder made it: their
+page draws "one multi-select card" and names every control. "Your
+starter team"; two or three rows, each with the short name, the lane,
+the one-line job and the one-line anti-job, checked when the card
+opens; Swap one on each row, opening three or four alternates from
+the twenty-three that replace the row in place; Just two when there
+are three, Add a third when there are two; Something else, one line
+and Tell him; Stand them up, pressable with two or three checked, and
+Not now. Drawn like the question card because it is the same kind of
+thing. `harness/roster-press.mjs` presses every one of those and
+checks what it did; `?screen=roster` photographs it.
+
+**How it reaches Yodo.** A second tool on the staffing server,
+`propose_team` (`createAgentMcpServer.ts`), taking the work type or
+Yodo's own two or three picks; the bridge builds the card from the
+table (`shared/staffing/roster.ts`, `buildRoster`), raises it, and
+waits. The card is the asking: Stand them up is the person's yes for
+every checked row, so no second card is raised per agent — the bridge
+stands each one up itself by the create-agent performer of item 59,
+one after another, and the tool is told who is in and who did not go
+through, by name. Something else comes back as the line they typed,
+for Yodo to map to one of the twenty-three or design a custom brief.
+Not now comes back as a decision. An answer naming a row that was
+never on the card is refused and the card stays up. Yodo's brief gains
+the rule: not a blank team, twenty-three trained, pick a few they can
+swap, never list them in chat, never stand all of them up, one line
+each when they are in, then one first useful action as two options.
+
+**Yodo speaks first.** Step two is "chat with Yodo" and Yodo opens it,
+which nothing in the engine does unprompted. The app now opens the
+conversation with one turn of its own, marked hidden
+(`shared/onboarding/stepTwo.ts`; `startSession({ hidden: true })`):
+it reaches Yodo and is never written into the conversation, so the
+thread starts with his bubble and not one of the person's. The turn
+carries the name and the work type from step one and the beats in the
+founder's order. The work type is now kept (`onboardingWorkType`, at
+Get Started; it was thrown away before, and the "profile into the
+engine" work I had listed as done is not in this tree) and written
+into Yodo's managed brief under "The person", for him alone, re-synced
+when it changes.
+
+**Proof.** 358 tests across the touched suites: the data (limits,
+slugs on disk, the table complete, the seven Slack users), the card's
+arithmetic, the contract (what the tool may ask, the card from the
+table for all ten work types, the answer checked against the card),
+the bridge (three stood up, a swapped alternate stood up and a failure
+reported, a stranger refused, something else, an unknown work type
+never shown), the server spawned and spoken to (two tools listed, the
+propose-team route, who is in, something else, decline), the engine
+registration with both tools and Yodo told, the work type in the
+brief, the re-sync classification. tsc, eslint, `compile:electron`
+clean; the harness draws the card and the press script passes.
+
+**Unrun: the app on the founder's Mac**, which is the whole of step
+two end to end: Get Started, Yodo's two opening lines, the card in the
+live thread, Stand them up, three agents in the sidebar, Yodo's three
+short lines. Log lines to look for: `[Cowork:StartSession] hidden
+opening turn`, `Roster request … workType=… team=…`, `Roster
+answered … behavior=standUp slugs=…`, `Roster stood up … agentId=…`,
+`[Staffing] stood up agent`. Two things I expect to need tuning there
+and cannot from here: whether the model calls `propose_team` on the
+cue without being reminded, and whether it holds to one short line
+per agent afterwards.
+
+**The Slack decision, laid out.** Seven of the twenty-three name Slack
+as where they deliver or read (Cooper, Customer Call Coach, Event
+Request Desk, GTM Loop Closer, Haggle Bot, Office Ops Desk, Stalk
+Bot). Slack was cut from the connector catalogue on 16 September as
+social noise (item 54); Composio can connect it, so putting it back is
+one row in `shared/connections/catalog.ts` and a logo. Three ways to
+go: put Slack back as a connector and those seven work as written;
+leave it out and let those seven deliver in the thread instead of a
+channel, which is what they do here anyway until a channel exists; or
+leave it out and drop the seven from the defaults, which touches four
+of the ten work types. My recommendation is the second for now, since
+every one of the seven can do its job into the conversation, and the
+row can come back the day somebody asks for Slack. Beat D (the fleet
+proof, two cards after the team is in) and the last step (the front
+door lines and the soft chips) are not built; Yodo is told to offer
+the first action in two options, in words.
+
+**Where:** `shared/staffing/{strongs,roster}.ts` (+tests),
+`shared/onboarding/stepTwo.ts` (+test), `main/libs/createAgentMcpServer.ts`
+(+2 tests), `main/libs/mcpBridgeServer.ts` (+test), `main/mcp/mcpRuntime.ts`,
+`main/main.ts`, `main/preload.ts`, `main/libs/openclawConfigSync.ts`
+(+runtime test), `main/libs/openclawConfigImpact.ts` (+test),
+`renderer/design/thread/{types,RosterCard,rosterCards,useRoster,ThreadItemView,Thread}`,
+`renderer/design/shell/{MessagesShell,CaisraApp}`,
+`renderer/design/onboarding/{Onboarding,useOnboarding}`, `renderer/config.ts`,
+`renderer/types/{cowork,electron.d}.ts`, `shared/agent/chiefOfStaff.ts`,
+`harness/{main.tsx,roster-press.mjs}`.

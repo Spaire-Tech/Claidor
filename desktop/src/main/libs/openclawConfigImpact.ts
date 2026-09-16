@@ -14,6 +14,8 @@ export const OpenClawConfigImpactReason = {
   AppModelConfig: 'app.model',
   AppProviderConfig: 'app.providers.config',
   AppProviderSecret: 'app.providers.secret',
+  /** What the person said they do in step one; it sits in Yodo's brief. */
+  AppOnboardingWorkType: 'app.onboardingWorkType',
   CoworkRuntimeConfig: 'cowork.runtime',
   CoworkOpenClawConfig: 'cowork.openclaw',
   CoworkDreamingConfig: 'cowork.dreaming',
@@ -252,6 +254,12 @@ export const classifyAppConfigChange = (
 
   if (changed(providersWithoutSecrets(previous.providers), providersWithoutSecrets(next.providers))) {
     decisions.push(decision(OpenClawConfigImpact.Sync, OpenClawConfigImpactReason.AppProviderConfig));
+  }
+
+  // The work type reaches Yodo's managed brief, so it has to be written
+  // out when it changes; nothing running has to restart for it.
+  if (changed(previous.onboardingWorkType, next.onboardingWorkType)) {
+    decisions.push(decision(OpenClawConfigImpact.Sync, OpenClawConfigImpactReason.AppOnboardingWorkType));
   }
 
   // `composioConnected` is the renderer's own note of which cards are

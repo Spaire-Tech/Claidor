@@ -128,6 +128,12 @@ export interface AppConfig {
    * so it plays once per install. Absent means it has not.
    */
   onboardingDoneAt?: number;
+  /**
+   * What the person said they do in step one, as the button read
+   * ("Founder / Business Owner") or in their own words. Yodo's brief
+   * names it; step two proposes the starter team from it.
+   */
+  onboardingWorkType?: string;
   // 主题配置
   theme: 'light' | 'dark' | 'system';
   // Optional for configs created before exact default theme persistence was introduced.

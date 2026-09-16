@@ -6,6 +6,7 @@ import path from 'path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { CREATE_AGENT_TOOL } from '../../shared/staffing/constants';
+import { PROPOSE_TEAM_TOOL } from '../../shared/staffing/roster';
 import { resolveCreateAgentMcpStdioLaunch } from './createAgentMcpServer';
 
 /**
@@ -27,7 +28,7 @@ const startBridge = async (): Promise<string> => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
-      received.push({ secret: req.headers['x-mcp-bridge-secret'], body: JSON.parse(body || '{}') });
+      received.push({ secret: req.headers['x-mcp-bridge-secret'], body: JSON.parse(body || '{}'), url: req.url });
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(reply));
     });
@@ -58,6 +59,7 @@ const talk = async (requests: unknown[]): Promise<Record<string, unknown>[]> => 
   resolveCreateAgentMcpStdioLaunch(baseDir, {
     electronNodeRuntimePath: process.execPath,
     bridgeUrl,
+    proposeTeamUrl: bridgeUrl.replace('/create-agent', '/propose-team'),
     bridgeSecret: 'live-secret',
     platform: process.platform,
   });
@@ -99,16 +101,56 @@ const brief = {
 };
 
 describe('the server, spawned and spoken to', () => {
-  test('it introduces itself and lists the one tool', async () => {
+  test('it introduces itself and lists its two tools', async () => {
     const replies = await talk([
       { jsonrpc: '2.0', id: 1, method: 'initialize', params: {} },
       { jsonrpc: '2.0', id: 2, method: 'tools/list' },
     ]);
     expect((replies[0].result as { serverInfo: { name: string } }).serverInfo.name).toBe('staffing');
     const tools = (replies[1].result as { tools: { name: string }[] }).tools;
-    expect(tools).toHaveLength(1);
-    expect(tools[0].name).toBe(CREATE_AGENT_TOOL);
+    expect(tools.map(one => one.name).sort()).toEqual([CREATE_AGENT_TOOL, PROPOSE_TEAM_TOOL].sort());
   }, 20_000);
+
+  test('propose_team reaches its own route with the work type, and reports who is in', async () => {
+    reply = {
+      behavior: 'stoodUp',
+      agents: [{ slug: 'projects-manager', name: 'Projects Manager', agentId: 'agent-1' }],
+      failed: [{ slug: 'pg', name: 'Outbound Prospecting', reason: 'the engine is restarting' }],
+    };
+    const replies = await talk([{
+      jsonrpc: '2.0', id: 1, method: 'tools/call',
+      params: { name: PROPOSE_TEAM_TOOL, arguments: { workType: 'Founder / Business Owner' } },
+    }]);
+    expect(received).toHaveLength(1);
+    const call = received[0] as { secret: string; body: Record<string, unknown>; url: string };
+    expect(call.url).toBe('/propose-team');
+    expect(call.body).toEqual({ workType: 'Founder / Business Owner' });
+    const result = replies[0].result as { isError?: boolean; content: { text: string }[]; structuredContent?: unknown };
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0].text).toMatch(/Projects Manager is in, as agent agent-1\./);
+    expect(result.content[0].text).toMatch(/Outbound Prospecting did not go through: the engine is restarting\./);
+  }, 20_000);
+
+  test('propose_team hands back something else as text, and a decline as a decision', async () => {
+    reply = { behavior: 'somethingElse', text: 'someone for grants' };
+    let replies = await talk([{
+      jsonrpc: '2.0', id: 1, method: 'tools/call',
+      params: { name: PROPOSE_TEAM_TOOL, arguments: { workType: 'Student' } },
+    }]);
+    let result = replies[0].result as { isError?: boolean; content: { text: string }[]; structuredContent?: { somethingElse?: string } };
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0].text).toMatch(/someone for grants/);
+    expect(result.structuredContent?.somethingElse).toBe('someone for grants');
+
+    reply = { behavior: 'declined' };
+    replies = await talk([{
+      jsonrpc: '2.0', id: 1, method: 'tools/call',
+      params: { name: PROPOSE_TEAM_TOOL, arguments: { workType: 'Student' } },
+    }]);
+    result = replies[0].result as typeof result;
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0].text).toMatch(/Do not raise the card again/);
+  }, 40_000);
 
   test('a call reaches the bridge with the brief and the secret, and comes back with the agent', async () => {
     const replies = await talk([{

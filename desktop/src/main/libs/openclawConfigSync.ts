@@ -66,6 +66,7 @@ import {
   CREATE_AGENT_MCP_SERVER,
   CREATE_AGENT_TOOL,
 } from '../../shared/staffing/constants';
+import { PROPOSE_TEAM_TOOL } from '../../shared/staffing/roster';
 import { APP_NAME } from '../appConstants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
@@ -602,6 +603,21 @@ const MANAGED_CONVERSATION_PROMPT = [
  * the thing that makes this product different — one computer — is the
  * thing that makes project memory a file rather than a protocol.
  */
+/**
+ * What step one learned about the person, for Yodo alone. One fact so
+ * far; the founder's page gives the work type its own table (§7), so it
+ * is the one that steers staffing.
+ */
+const buildManagedPersonPrompt = (workType: string | undefined): string => {
+  const work = (workType ?? '').replace(/\s+/g, ' ').trim();
+  if (!work) return '';
+  return [
+    '### The person',
+    '',
+    `Asked what they do when they first opened the app, they said: ${work}. Their starter team comes from that (\`propose_team\`); their later asks may not.`,
+  ].join('\n');
+};
+
 const buildManagedProjectsPrompt = (
   projects: readonly { name: string; memoryPath: string; folder?: string }[],
 ): string => {
@@ -2239,6 +2255,12 @@ type OpenClawConfigSyncDeps = {
    */
   getClaudeCodeMode?: () => { enabled: boolean; command: string | null } | undefined;
   /**
+   * What the person said they do in step one of onboarding, as the
+   * button read or in their own words. Goes into Yodo's brief and
+   * nowhere else; absent before step one has been played.
+   */
+  getOnboardingWorkType?: () => string | undefined;
+  /**
    * How much the agent may do on this computer without asking.
    *
    * Absent, it asks. See `shared/settings/constants.ts` for why that
@@ -2298,6 +2320,7 @@ export class OpenClawConfigSync {
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
   private readonly getClaudeCodeMode: () => { enabled: boolean; command: string | null } | undefined;
+  private readonly getOnboardingWorkType: () => string | undefined;
   private readonly getExecPolicy: () => ExecPolicy;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
@@ -2336,6 +2359,7 @@ export class OpenClawConfigSync {
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
     this.getClaudeCodeMode = deps.getClaudeCodeMode ?? (() => undefined);
+    this.getOnboardingWorkType = deps.getOnboardingWorkType ?? (() => undefined);
   }
 
   /**
@@ -3206,7 +3230,7 @@ export class OpenClawConfigSync {
         command: createAgentLaunch.command,
         args: [...createAgentLaunch.args],
         ...(Object.keys(createAgentLaunch.env).length > 0 ? { env: createAgentLaunch.env } : {}),
-        toolFilter: { include: [CREATE_AGENT_TOOL] },
+        toolFilter: { include: [CREATE_AGENT_TOOL, PROPOSE_TEAM_TOOL] },
       };
     }
 
@@ -4374,7 +4398,11 @@ export class OpenClawConfigSync {
       // The main agent is Yodo, the Chief of Staff, and is told so
       // before anything else. The other agents get their identity from
       // their own row; his is the product's.
-      if (agentId === AgentId.Main) sections.push(CHIEF_OF_STAFF_BRIEF);
+      if (agentId === AgentId.Main) {
+        sections.push(CHIEF_OF_STAFF_BRIEF);
+        const personPrompt = buildManagedPersonPrompt(this.getOnboardingWorkType());
+        if (personPrompt) sections.push(personPrompt);
+      }
 
       // First, because it is about every message rather than one tool,
       // and because a model that reads the tool policies first tends to

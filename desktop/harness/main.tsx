@@ -20,10 +20,12 @@ import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/Messages
 import { SignIn } from '../src/renderer/design/shell/SignIn';
 import type { EngineMessage, EnginePermissionRequest } from '../src/renderer/design/thread/fromEngine';
 import { toThreadItems } from '../src/renderer/design/thread/fromEngine';
+import { rosterItem } from '../src/renderer/design/thread/rosterCards';
 import { staffingItem } from '../src/renderer/design/thread/staffingCards';
 import type { ThreadItem } from '../src/renderer/design/thread/types';
 import { ThreadItemKind } from '../src/renderer/design/thread/types';
 import { EVERY_ROW } from '../src/shared/settings/appUiMap';
+import { buildRoster } from '../src/shared/staffing/roster';
 
 /**
  * A harness for looking at the design, not part of the app.
@@ -310,6 +312,13 @@ function Screens(): JSX.Element {
       voice: 'Short and decision-shaped.',
     }, 'Yodo', at(8)));
   }
+  // "Your starter team": the roster card of step two, built from the
+  // founder's table for a founder, exactly as the bridge builds it.
+  if (screen === 'roster') {
+    const roster = buildRoster({ workType: 'Founder / Business Owner' });
+    if (typeof roster === 'string') throw new Error(roster);
+    items.push(rosterItem({ requestId: 'req-roster-1', ...roster }, at(8)));
+  }
 
   return (
     <MessagesShell
@@ -323,6 +332,7 @@ function Screens(): JSX.Element {
       accountName="Bass Fall"
       choice={{ onPick: noop, onFreeAnswer: noop, onDismiss: noop }}
       auth={{ onDecide: noop }}
+      roster={{ onStandUp: noop, onSomethingElse: noop, onDecline: noop }}
       // So a file card draws its save button, which only exists when
       // there is something to save with.
       parts={{ onOpenFile: noop, onSaveCopy: noop }}

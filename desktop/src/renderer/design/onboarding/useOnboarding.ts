@@ -89,6 +89,8 @@ export interface OnboardingState {
   submitOther: () => void;
   hasRole: boolean;
   roleLabel: string;
+  /** They typed their own words rather than picking one of the ten. */
+  ownWords: boolean;
   showTasks: boolean;
   tasks: readonly TaskCard[];
   task?: TaskCopy;
@@ -271,6 +273,7 @@ export function useOnboarding(
     submitOther,
     hasRole: role !== undefined,
     roleLabel,
+    ownWords: role !== undefined && typeof role !== 'number',
     showTasks: role !== undefined && done(OnboardingPhase.Role),
     tasks,
     ...(task ? { task } : {}),

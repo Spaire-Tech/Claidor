@@ -11,6 +11,7 @@ import type {
   AuthHandlers,
   ChoiceHandlers,
   PartHandlers,
+  RosterHandlers,
   SecretHandlers,
 } from '../thread/ThreadItemView';
 import type { ThreadItem } from '../thread/types';
@@ -40,6 +41,8 @@ export interface MessagesShellProps {
   items: readonly ThreadItem[];
   /** What a card asking for something typed can do with the answer. */
   secret?: SecretHandlers;
+  /** What the roster card ("Your starter team") can answer with. */
+  roster?: RosterHandlers;
   dayStamp?: string;
   typing?: boolean;
   mode: ThreadMode;
@@ -102,7 +105,7 @@ export interface MessagesShellProps {
 export function MessagesShell(props: MessagesShellProps): JSX.Element {
   const {
     agents, activeId, activeName, items, dayStamp, typing, mode, accountName,
-    choice, auth, parts, secret, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode,
+    choice, auth, parts, secret, roster, onSelect, onAskDelete, onSend, onCompose, onApps, apps, onAccount, onMode,
     onOpenPanel, onTeach, dictation, onShareTemplate, onOpenAgent, agentDetail, agentPanel, settings,
     composing, onCloseCompose, onPickAgent, onCreateAgent, accountMenu, panel, wornAvatars,
   } = props;
@@ -442,6 +445,7 @@ export function MessagesShell(props: MessagesShellProps): JSX.Element {
             choice={choice}
             auth={auth}
             {...(secret ? { secret } : {})}
+            {...(roster ? { roster } : {})}
             {...(parts ? { parts } : {})}
             actions={{ reactions, onReact, onReply }}
             typing={saysTyping ? { avatar: activeAvatar } : undefined}

@@ -9,6 +9,7 @@ import {
   type ChoiceHandlers,
   type MessageHandlers,
   type PartHandlers,
+  type RosterHandlers,
   type SecretHandlers,
   ThreadItemView,
 } from './ThreadItemView';
@@ -26,6 +27,8 @@ export interface ThreadProps {
   parts?: PartHandlers;
   /** What a card asking for something typed can do with the answer. */
   secret?: SecretHandlers;
+  /** What the roster card can answer with. */
+  roster?: RosterHandlers;
   /** React, reply, copy the id: the cluster beside a bubble on hover. */
   actions?: MessageHandlers;
   /**
@@ -47,7 +50,7 @@ export interface ThreadProps {
  * scrolling; this does the same for the same reason.
  */
 export function Thread({
-  items, dayStamp, choice, auth, parts, secret, actions, typing,
+  items, dayStamp, choice, auth, parts, secret, roster, actions, typing,
 }: ThreadProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   // Whether the person is still at the bottom. Starts true so a freshly
@@ -172,6 +175,7 @@ export function Thread({
           choice={choice}
           auth={auth}
           {...(secret ? { secret } : {})}
+          {...(roster ? { roster } : {})}
           {...(parts ? { parts } : {})}
           {...(actions ? { actions } : {})}
           leading={startsTurn(items[index - 1], item)}

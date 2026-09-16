@@ -149,6 +149,7 @@ import {
   type CreateAgentAsk,
   CreateAgentIpc,
 } from '../shared/staffing/constants';
+import { type RosterAnswer, type RosterAsk, RosterIpc } from '../shared/staffing/roster';
 import { NimQrLoginIpc } from './ipcHandlers/nimQrLogin';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
@@ -919,6 +920,20 @@ contextBridge.exposeInMainWorld('electron', {
     },
     respond: (requestId: string, answer: CreateAgentAnswer) =>
       ipcRenderer.invoke(CreateAgentIpc.Respond, requestId, answer),
+  },
+  roster: {
+    onRequested: (callback: (ask: RosterAsk) => void) => {
+      const handler = (_event: unknown, ask: RosterAsk) => callback(ask);
+      ipcRenderer.on(RosterIpc.Requested, handler);
+      return () => ipcRenderer.removeListener(RosterIpc.Requested, handler);
+    },
+    onDismissed: (callback: (data: { requestId: string }) => void) => {
+      const handler = (_event: unknown, data: { requestId: string }) => callback(data);
+      ipcRenderer.on(RosterIpc.Dismissed, handler);
+      return () => ipcRenderer.removeListener(RosterIpc.Dismissed, handler);
+    },
+    respond: (requestId: string, answer: RosterAnswer) =>
+      ipcRenderer.invoke(RosterIpc.Respond, requestId, answer),
   },
   settings: {
     getExecPolicy: () => ipcRenderer.invoke(SettingsChannel.GetExecPolicy),

@@ -3159,10 +3159,10 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('do not fall back to asking in chat');
   });
 
-  test('the staffing tool is registered, with only its one tool', async () => {
-    // Step two of onboarding: Yodo stands up two or three agents. The
-    // tool goes through a card like everything else; here is only that
-    // the engine is told it exists.
+  test('the staffing server is registered, with its two tools and no other', async () => {
+    // Step two of onboarding: Yodo proposes a starter team and stands
+    // two or three agents up. Both tools go through a card like
+    // everything else; here is only that the engine is told they exist.
     const sync = await createSync({
       getCreateAgentMcpStdioLaunch: () => ({
         command: '/tmp/create-agent-mcp/create-agent-mcp',
@@ -3175,12 +3175,32 @@ describe('OpenClawConfigSync runtime config output', () => {
     const server = config.mcp?.servers?.['caisra-staffing'];
     expect(server).toBeTruthy();
     expect(server.command).toBe('/tmp/create-agent-mcp/create-agent-mcp');
-    expect(server.toolFilter).toEqual({ include: ['create_agent'] });
+    expect(server.toolFilter).toEqual({ include: ['create_agent', 'propose_team'] });
 
-    // And Yodo, the main agent, is told what it is for.
+    // And Yodo, the main agent, is told what they are for.
     const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
     expect(agentsMd).toContain('create_agent');
     expect(agentsMd).toContain('one job, one voice');
+    expect(agentsMd).toContain('propose_team');
+    expect(agentsMd).toContain('Never list the twenty-three in chat');
+  });
+
+  test("what the person said they do in step one is in Yodo's brief, and only his", async () => {
+    const sync = await createSync({
+      getOnboardingWorkType: () => 'Founder / Business Owner',
+    });
+    expect(sync.sync('work-type').ok).toBe(true);
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('### The person');
+    expect(agentsMd).toContain('they said: Founder / Business Owner.');
+    expect(agentsMd.indexOf('### The person')).toBeGreaterThan(agentsMd.indexOf('## Who you are'));
+  });
+
+  test('before step one has played, the brief says nothing about the person', async () => {
+    const sync = await createSync();
+    expect(sync.sync('no-work-type').ok).toBe(true);
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).not.toContain('### The person');
   });
 
   test('no staffing server when the bridge is not up', async () => {

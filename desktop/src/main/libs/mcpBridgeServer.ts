@@ -41,6 +41,21 @@ import {
   type CreateAgentResult,
   parseCreateAgentInput,
 } from '../../shared/staffing/constants';
+import {
+  briefOf,
+  buildRoster,
+  checkRosterAnswer,
+  type NotStoodUpAgent,
+  parseProposeTeamInput,
+  PROPOSE_TEAM_ROUTE,
+  PROPOSE_TEAM_TIMEOUT_MS,
+  type ProposeTeamResult,
+  type RosterAnswer,
+  type RosterAsk,
+  RosterBehavior,
+  type StoodUpAgent,
+} from '../../shared/staffing/roster';
+import { strongBySlug } from '../../shared/staffing/strongs';
 
 export type AskUserRequest = {
   requestId: string;
@@ -75,6 +90,13 @@ type PendingAskInput = {
 type PendingCreateAgent = {
   requestId: string;
   resolve: (answer: CreateAgentAnswer) => void;
+  timer: ReturnType<typeof setTimeout>;
+};
+
+type PendingRoster = {
+  requestId: string;
+  ask: RosterAsk;
+  resolve: (answer: RosterAnswer) => void;
   timer: ReturnType<typeof setTimeout>;
 };
 
@@ -122,6 +144,9 @@ export class McpBridgeServer {
   private onCreateAgentDismissCallback: ((requestId: string) => void) | null = null;
   private createAgentPerformer: CreateAgentPerformer | null = null;
   private readonly pendingCreateAgent = new Map<string, PendingCreateAgent>();
+  private onRosterCallback: ((ask: RosterAsk) => void) | null = null;
+  private onRosterDismissCallback: ((requestId: string) => void) | null = null;
+  private readonly pendingRoster = new Map<string, PendingRoster>();
   private onAskUserDismissCallback: ((requestId: string) => void) | null = null;
   private onMediaGenerationCallback: ((request: MediaGenerationRequest) => Promise<MediaGenerationResponse>) | null = null;
   private onBrowserToolCallback: ((request: BrowserToolRequest) => Promise<BrowserToolResponse>) | null = null;
@@ -225,6 +250,40 @@ export class McpBridgeServer {
     this.pendingCreateAgent.delete(requestId);
     log('INFO', `CreateAgent answered, requestId=${requestId} behavior=${answer.behavior}`);
     pending.resolve(answer);
+  }
+
+  get proposeTeamCallbackUrl(): string | null {
+    return this._port ? `http://127.0.0.1:${this._port}${PROPOSE_TEAM_ROUTE}` : null;
+  }
+
+  /**
+   * The roster card ("Your starter team"). The card (`onRoster`,
+   * `resolveRoster`) and its coming down (`onRosterDismiss`); standing
+   * the agents up reuses the create-agent performer, because Stand them
+   * up is the person's yes for every row on the card.
+   */
+  onRoster(callback: (ask: RosterAsk) => void): void {
+    this.onRosterCallback = callback;
+  }
+
+  onRosterDismiss(callback: (requestId: string) => void): void {
+    this.onRosterDismissCallback = callback;
+  }
+
+  resolveRoster(requestId: string, answer: unknown): void {
+    const pending = this.pendingRoster.get(requestId);
+    if (!pending) return;
+    const checked = checkRosterAnswer(answer, pending.ask);
+    if (typeof checked === 'string') {
+      // Our own renderer sent something the card cannot mean. Say so and
+      // leave the card up rather than guess.
+      log('WARN', `Roster answer refused, requestId=${requestId}: ${checked}`);
+      return;
+    }
+    clearTimeout(pending.timer);
+    this.pendingRoster.delete(requestId);
+    log('INFO', `Roster answered, requestId=${requestId} behavior=${checked.behavior}${checked.behavior === RosterBehavior.StandUp ? ` slugs=${checked.slugs.join(',')}` : ''}`);
+    pending.resolve(checked);
   }
 
   /**
@@ -373,6 +432,11 @@ export class McpBridgeServer {
       return;
     }
 
+    if (req.url?.startsWith(PROPOSE_TEAM_ROUTE)) {
+      await this.handleProposeTeam(req, res);
+      return;
+    }
+
     if (req.url?.startsWith('/media-generation/tool')) {
       await this.handleMediaGeneration(req, res);
       return;
@@ -511,6 +575,85 @@ export class McpBridgeServer {
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
       log('ERROR', `CreateAgent request error: ${errMsg}`);
+      answer(500, { behavior: 'failed', reason: 'The request could not be read.' });
+    }
+  }
+
+  /**
+   * The roster card, from the `propose_team` tool.
+   *
+   * The card is built here from the founder's table and the twenty-three
+   * (`buildRoster`), goes up, and the request waits on it. Stand them up
+   * stands every checked row up through the create-agent performer, one
+   * after another, and the tool is told who is in and who is not.
+   * Something else and Not now come back as decisions.
+   */
+  private async handleProposeTeam(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const answer = (status: number, result: ProposeTeamResult): void => {
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    };
+    try {
+      const body = await this.readBody(req);
+      const parsed = parseProposeTeamInput(JSON.parse(body));
+      if (typeof parsed === 'string') {
+        answer(400, { behavior: 'failed', reason: parsed });
+        return;
+      }
+      const roster = buildRoster(parsed);
+      if (typeof roster === 'string') {
+        answer(400, { behavior: 'failed', reason: roster });
+        return;
+      }
+      if (!this.onRosterCallback || !this.createAgentPerformer) {
+        log('WARN', 'Roster callback or performer not registered, declining');
+        answer(200, { behavior: 'declined' });
+        return;
+      }
+
+      const requestId = crypto.randomUUID();
+      const ask: RosterAsk = { requestId, ...roster };
+      log('INFO', `Roster request, requestId=${requestId} workType=${serializeForLog(ask.workType)} team=${ask.team.map(one => one.slug).join(',')}`);
+
+      const decision = await new Promise<RosterAnswer>((resolve) => {
+        const timer = setTimeout(() => {
+          log('INFO', `Roster timeout, requestId=${requestId}`);
+          this.pendingRoster.delete(requestId);
+          this.onRosterDismissCallback?.(requestId);
+          resolve({ behavior: RosterBehavior.Decline });
+        }, PROPOSE_TEAM_TIMEOUT_MS);
+        this.pendingRoster.set(requestId, { requestId, ask, resolve, timer });
+        this.onRosterCallback?.(ask);
+      });
+
+      if (decision.behavior === RosterBehavior.Decline) {
+        answer(200, { behavior: 'declined' });
+        return;
+      }
+      if (decision.behavior === RosterBehavior.SomethingElse) {
+        answer(200, { behavior: 'somethingElse', text: decision.text });
+        return;
+      }
+
+      const agents: StoodUpAgent[] = [];
+      const failed: NotStoodUpAgent[] = [];
+      for (const slug of decision.slugs) {
+        const strong = strongBySlug(slug);
+        if (!strong) continue;
+        try {
+          const created = await this.createAgentPerformer(briefOf(strong));
+          log('INFO', `Roster stood up, requestId=${requestId} slug=${slug} agentId=${created.agentId}`);
+          agents.push({ slug, name: created.name, agentId: created.agentId });
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error);
+          log('ERROR', `Roster failed to stand up, requestId=${requestId} slug=${slug}: ${reason}`);
+          failed.push({ slug, name: strong.name, reason });
+        }
+      }
+      answer(200, { behavior: 'stoodUp', agents, failed });
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      log('ERROR', `Roster request error: ${errMsg}`);
       answer(500, { behavior: 'failed', reason: 'The request could not be read.' });
     }
   }

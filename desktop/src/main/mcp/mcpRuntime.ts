@@ -14,6 +14,7 @@ import {
   CreateAgentBehavior,
   CreateAgentIpc,
 } from '../../shared/staffing/constants';
+import { RosterBehavior, RosterIpc } from '../../shared/staffing/roster';
 import { isComputerUseKitInstalled } from '../computerUse/computerUseKit';
 import { resolveComputerUseMcpServer } from '../computerUse/computerUseMcpServer';
 import { installComputerUseRuntime } from '../computerUse/computerUseRuntime';
@@ -140,6 +141,15 @@ export class McpRuntime {
   /** Stand up, or Not now, from the card. */
   resolveCreateAgent(requestId: string, answer: CreateAgentAnswer): void {
     this.bridgeServer?.resolveCreateAgent(requestId, answer);
+  }
+
+  getProposeTeamCallbackUrl(): string | null {
+    return this.bridgeServer?.proposeTeamCallbackUrl ?? null;
+  }
+
+  /** Stand them up, Something else, or Not now, from the roster card. */
+  resolveRoster(requestId: string, answer: unknown): void {
+    this.bridgeServer?.resolveRoster(requestId, answer);
   }
 
   getBridgeSecret(): string {
@@ -277,6 +287,36 @@ export class McpRuntime {
         if (win.isDestroyed()) return;
         try {
           win.webContents.send(CreateAgentIpc.Dismissed, { requestId });
+        } catch {
+          // The window is going away; the card goes with it.
+        }
+      });
+    });
+
+    // The roster card, "Your starter team". Every window, like the two
+    // cards above.
+    this.bridgeServer.onRoster(ask => {
+      const windows = BrowserWindow.getAllWindows();
+      if (windows.length === 0) {
+        console.warn('[Roster] no window open, declining');
+        this.resolveRoster(ask.requestId, { behavior: RosterBehavior.Decline });
+        return;
+      }
+      windows.forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(RosterIpc.Requested, ask);
+        } catch (error) {
+          console.error('[Roster] failed to send request to window:', error);
+        }
+      });
+    });
+
+    this.bridgeServer.onRosterDismiss(requestId => {
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (win.isDestroyed()) return;
+        try {
+          win.webContents.send(RosterIpc.Dismissed, { requestId });
         } catch {
           // The window is going away; the card goes with it.
         }
