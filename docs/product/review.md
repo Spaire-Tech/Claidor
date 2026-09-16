@@ -2659,3 +2659,82 @@ bill moves; nothing in the code decides that.
 `shared/settings/{rows,appUiMap}.ts` (+tests), `shared/thread/links.ts`,
 `design/settings/useSettings.ts`, `main/libs/openclawConfigSync.runtime.test.ts`;
 deleted `shared/settings/models.ts` (+test), `main/libs/claudeSettings.providerChoice.test.ts`.
+
+## 57. The 23 "strongs", received as a zip — `read; recorded; nothing built`
+
+The founder, 16 September: *"i got a list of 23 agents called internally
+'the strongs'. When Yodo staffs you at the start, he doesn't invent mush
+from scratch. He picks 2–3 from these 23 that fit your work type,
+imports/creates them, and they're already useful."* The zip
+(`caisra-agents-anatomies.zip`) is kept byte for byte under
+`docs/product/agents-anatomies/`: a README, a branding note, and one
+`agent.md` per agent, 173 KB in all. Sent for the 23 first, at my ask;
+the Chief of Staff anatomy and the step-two design are not in it.
+
+**What they are.** Not agents. They are descriptions, written to a
+fourteen-section template (identity, job boundary, voice, operating
+model, skills, routines, data, connectors, guardrails, first run,
+handoffs, a description sketch, open gaps), and every one says on its
+first line that it was *reconstructed from a public listing*, not
+exported from a running agent. The README names the source catalog file
+as `gbt-bots.json`, and the sixteen authors are the people who published
+those bots on the reference product's store. The rename to "Caisra
+Agents" is on the surface: inside, the text still names the other
+product's machinery — `design-grok-bot`, `CreateAgent`, `pstack`,
+"poteto-mode", "Make Bot UI", the Cursor dashboard, `cursor.directory`,
+`~/.cursor/plugins/local`, "cloud agents". Four of the 23 are *about*
+that machinery and do not translate: **dr eggbot** (designs bots with
+CreateAgent), **tinkabot** (wraps an API as a Cursor plugin),
+**engineer-bot** (launches the other product's cloud agents and watches
+their PRs), **skippy** (San Francisco street data, DataSF). What the
+founder does with someone else's catalogue text is the founder's call;
+this note only makes sure it is known.
+
+**How much is there.** Every file carries fields marked *Unknown (not
+in public listing)*: two in the fullest, fourteen in the thinnest
+(Cooper). Seven have no pitch line at all (call-follow-ups, cooper,
+customer-call-coach, event-request-desk, office-ops-desk, skippy,
+stalk-bot). Voice, routines and first-run are the sections most often
+empty, and those are the three that make an agent feel like somebody.
+Four (call-follow-ups, customer-call-coach, event-request-desk,
+office-ops-desk) share a second template with "hard stops" and "locked
+cold-start" lines that read as one author's house style.
+
+**Against what we have.** Nothing overlaps: the twelve presets in
+`presetAgents.ts` are NetEase's Chinese role set (engineering lead,
+design lead, operations manager…), a different idea. Kits
+(`shared/kit/constants.ts`) are the format Yodo would hand these out in,
+and the store still serves none. The connector gap is the real one:
+
+| Named by the 23 | In our 45? | Named by |
+|---|---|---|
+| Notion | yes | projects-manager, engineer-bot, office-ops, haggle, loop closer |
+| Figma | yes | figma bro, critiquito |
+| HubSpot / Salesforce, Gmail / Outlook, Google Calendar, Sheets | yes | loop closer, haggle, mr-toms |
+| Ramp | yes | haggle |
+| GitHub, Linear | yes | engineer-bot, office-ops |
+| Greenhouse, Ashby | yes | sherlock |
+| **Slack** | **no** — cut with the messaging group on 16 September (item 54) | cooper, customer-call-coach, event-request-desk, loop closer, haggle, office-ops, stalk-bot |
+| Gong, Granola | no | call-follow-ups, customer-call-coach, loop closer |
+| Search Console | no | seo-aeo-desk |
+| Lever, Workday | no | sherlock |
+| NetSuite, AgentMail, X | no | haggle, stalk-bot |
+
+Seven of the 23 lean on Slack. The cut in item 54 was "nothing that
+cannot be connected"; Slack can be, through Composio, and was removed as
+social noise. If the strongs stand, Slack comes back as a connector, or
+those seven lose their delivery channel.
+
+**The founder's staffing sketch, checked against the files.**
+Founder → Projects Manager, Outbound Prospecting, GTM Loop Closer: all
+three are among the fullest files and need only Notion, the web, and a
+CRM we have. Sales → Prospecting, Sales Call Coach, Call Follow-Ups:
+the coach works from a pasted transcript, the follow-ups need Gong or
+Granola, which we do not have. Design → figma bro, Critiquito: both
+full, both on Figma, which we have. Engineering → Engineer Bot,
+tinkabot: the two most tied to the other product; neither works as
+written on Caisra.
+
+**Not in the zip, still needed before step two is built:** Yodo's own
+anatomy (how he chooses), and the step-two canvas. Nothing was built
+from this; nothing was changed in the app.
