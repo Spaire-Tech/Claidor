@@ -37,6 +37,9 @@ export const CLAUDE_CODE_STRONG_MODEL = 'claude-opus-5';
 /** The model a plain question runs on; see `turnRouting.ts`. */
 export const CLAUDE_CODE_FAST_MODEL = 'claude-sonnet-5';
 
+/** Every model a turn may be routed to; the engine is told to allow each. */
+export const CLAUDE_CODE_MODELS: readonly string[] = [CLAUDE_CODE_STRONG_MODEL, CLAUDE_CODE_FAST_MODEL];
+
 export const claudeCliModelRef = (model: string): string => `${CLAUDE_CLI_PROVIDER}/${model}`;
 
 export function claudeCliCandidates(options: {

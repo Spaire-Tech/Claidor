@@ -1867,6 +1867,12 @@ describe('OpenClawConfigSync runtime config output', () => {
     for (const agent of onConfig.agents.list ?? []) {
       expect(agent.model?.primary, agent.id).toBe('claude-cli/claude-opus-5');
     }
+    // Both models a turn is routed to are allowed, not only the default:
+    // the fast one was refused ("model not allowed: claude-cli/claude-sonnet-5")
+    // on the founder's first short message of 16 September.
+    expect(Object.keys(onConfig.agents.defaults.models ?? {})).toEqual(
+      expect.arrayContaining(['claude-cli/claude-opus-5', 'claude-cli/claude-sonnet-5']),
+    );
 
     // No command found: the primary still says claude-cli and the engine
     // is left to try a bare `claude`; nothing else is invented.

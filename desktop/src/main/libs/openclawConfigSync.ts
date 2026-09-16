@@ -79,7 +79,7 @@ import {
   resolveAgentModelRoleRefs,
 } from './agentModelRoles';
 import type { AskInputMcpStdioLaunch } from './askInputMcpServer';
-import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
+import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_MODELS, CLAUDE_CODE_STRONG_MODEL, claudeCliModelRef } from './claudeCodeCli';
 import {
   getAllServerModelMetadata,
   listProviderSourceEntries,
@@ -533,6 +533,7 @@ const MANAGED_CONVERSATION_PROMPT = [
   '### Say something when something happens',
   '- Write at real moments: a result, a decision, a blocker, a change of plan, something that turned out differently than expected.',
   '- Do not narrate commands. They can see the work in the panel if they want it; what they cannot see is what you have concluded.',
+  '- Nobody sees a tool\'s output but you. A listing, an exit code, a JSON reply, a page\'s text: never paste it as your answer, and never let it be your whole answer. Say what it means in a sentence. On 16 September a person was answered with "Exit code 1" and a directory listing, and had no idea what had happened.',
   '- A long job with nothing to report yet is still worth one line saying it is still going.',
   '',
   '### And nothing when nothing has',
@@ -3006,8 +3007,21 @@ export class OpenClawConfigSync {
             ? { subagents: modelRoleDefaults.subagents }
             : {}),
           ...(cliBackends ? { cliBackends } : {}),
-          ...(Object.keys(agentModelDefaults).length > 0
-            ? { models: agentModelDefaults }
+          // The engine allows a run only on a model it has been told
+          // about: the catalogue's, or these. Claude Code is no provider
+          // in the catalogue, so without this the strong model was allowed
+          // only because it is the default and the fast one was refused:
+          // "model not allowed: claude-cli/claude-sonnet-5", on the
+          // founder's first short message of 16 September.
+          ...(lockToClaudeCode || Object.keys(agentModelDefaults).length > 0
+            ? {
+              models: {
+                ...agentModelDefaults,
+                ...(lockToClaudeCode
+                  ? Object.fromEntries(CLAUDE_CODE_MODELS.map(model => [claudeCliModelRef(model), {}]))
+                  : {}),
+              },
+            }
             : {}),
         },
         ...this.buildAgentsList(primaryModel, this.engineManager.getStateDir(), availableProviders, agents, lockToClaudeCode),

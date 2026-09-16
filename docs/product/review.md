@@ -3278,3 +3278,38 @@ in the zip.
 seventeen self-published services above, add the ones with sign-in to
 the connections catalogue as direct connectors beside the Composio
 ones, and pull the four skill packs the strongs name.
+
+**Second addendum, from the next morning's thread ("WHERE IS MY
+DESIGN").** A new agent, Yone, asked for a mock Word document: the
+thread showed a bubble saying "Exit code 1", then a bubble that was a
+directory listing, then a path in a sentence with no file card, and
+then *"Failed to send message: model not allowed:
+claude-cli/claude-sonnet-5"*. Read from the code and one experiment:
+
+- **The model wrote the tool output as its answer.** The engine takes
+  a turn's answer from Claude Code's own `result` field, which is the
+  model's final text, never a tool result (`cli-output.ts`,
+  `parseClaudeCliJsonlResult`; and the app draws nothing for a tool
+  result). Run here, Claude Code asked to say nothing after a command
+  still wrote "(no output)". So those bubbles were the model's words:
+  Claude Code's own system prompt is a terminal's, where pasting a
+  listing is normal, and our rule against it sat past the 20,000
+  cut. The rule is now one line near the top of the conversation
+  section: nobody sees a tool's output but you; say what it means.
+- **The fast model was never allowed.** The engine runs a model only
+  if it is in the catalogue or named under `agents.defaults.models`;
+  Claude Code is no catalogue provider, so the strong model passed
+  only as the default and the fast one, which every short message is
+  routed to, was refused. Both are now named. So every one of the
+  founder's short messages all evening had failed the same way, and
+  the long ones went to the strong model. Fixed, with the runtime
+  test asserting both keys.
+- **The file card.** The rule that makes one ("list each deliverable
+  at the end of the final reply as a Markdown link") was past the
+  cut. The agent named the path mid-sentence instead, which the thread
+  draws as a chip, not a card. Nothing else is wrong with the card;
+  it comes back with the whole prompt.
+
+So seven faults for the evening, all ours. "Am I using the right
+repo?" Yes: the runtime was built after the ask-first patch, and
+every fault above is in this tree.
