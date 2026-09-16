@@ -2882,3 +2882,54 @@ Two things learned for next time. Ask for the sentence in the thread
 first; it took three exchanges to get it and it was the answer. And the
 founder's Claude Code was 2.1.76 where every proof here ran on 2.1.273;
 `claude update` was part of the fix. Nothing in the app changed.
+
+## 61. "the way the stream comes is not smooth. at all. it lags" — `fixed; measured here; the Mac unrun`
+
+The founder, 16 September, on step one of onboarding: the words did not
+stream, they stuttered. Measured before guessing. A harness script
+(`desktop/harness/onboarding-frames.mjs`) samples the frame clock for
+six seconds while the greeting is typing; a second one
+(`onboarding-frames-variants.mjs`) applies a CSS override after load and
+measures again, so each suspect was tried without a rebuild. On this
+machine's software GPU:
+
+| What was drawn                                        | Frames a second |
+| ----------------------------------------------------- | --------------- |
+| As shipped                                            | 8               |
+| Without the words' fade-and-blur                      | 8               |
+| Without the panel's `backdrop-filter: blur(40px)`     | 9               |
+| Clouds at `blur(24px)` instead of 90–100              | 14              |
+| Clouds without their `filter: blur(…)`                | 31              |
+| Clouds and panel both without blur                    | 60, no late frame |
+| Clouds drawn at half or quarter size and scaled up    | 9–12            |
+
+The words, the clock and the cloud blob cost nothing. What cost was the
+four colour clouds the canvas blurs with `filter: blur(90–100px)` while
+they drift and scale for half a minute: a CSS filter on a moving element
+is applied again on every frame over a surface the size of the window,
+and the glass panel's `backdrop-filter` blurred the whole window a second
+time on top of that. Drawing the clouds smaller and scaling them up, the
+usual trick, gave nothing here, because the filter still ran per frame.
+
+The fix keeps the founder's numbers and moves the blur to once.
+`ambientClouds.ts` draws each cloud's radial gradient on an offscreen
+canvas, blurs it by the same standard deviation the canvas asked for,
+folds in the panel's `saturate(1.15)`, and hands the picture to the
+drifting element as its background. The element keeps its position,
+size, opacity and keyframes; the picture overhangs the box by three
+standard deviations so the blur spills past the edge as before. The
+panel keeps its 88% white and loses its backdrop blur, which over
+already-blurred clouds changed nothing the eye could see. After the
+change the greeting streams at 60 frames a second here with no frame
+late (`{"frames":356,"meanMs":16.9,"p95Ms":16.8,"lateOver33ms":4}` on
+the first run, the four late frames being the first paint), and the
+screenshots before and after sit side by side in `harness/shots/`
+without a ring or a step where the colour changes: a plain gradient
+without the blur showed faint concentric rings, which is why the blur
+stayed and only moved.
+
+Gates: type-check, lint, 373 tests in the design and onboarding suites,
+and the onboarding walk (every stage drew, the result card came). The
+founder's MacBook Air has a real GPU and will have lagged for the same
+reason with different numbers; that it is smooth there is for them to
+say, since nobody has run it there yet.
