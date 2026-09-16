@@ -1,5 +1,5 @@
 diff --git a/src/agents/cli-runner/claude-live-session.ts b/src/agents/cli-runner/claude-live-session.ts
-index e03642ec..45b98c8c 100644
+index e03642ec..ce9cc47a 100644
 --- a/src/agents/cli-runner/claude-live-session.ts
 +++ b/src/agents/cli-runner/claude-live-session.ts
 @@ -29,6 +29,10 @@ import {
@@ -91,7 +91,7 @@ index e03642ec..45b98c8c 100644
    }
    turn.noOutputTimer = setTimeout(() => {
      closeLiveSession(
-@@ -850,24 +904,62 @@ function handleClaudeLiveControlRequest(
+@@ -850,24 +904,68 @@ function handleClaudeLiveControlRequest(
      return;
    }
    const toolUseId = typeof request.tool_use_id === "string" ? request.tool_use_id : undefined;
@@ -114,6 +114,12 @@ index e03642ec..45b98c8c 100644
 -    },
 -  });
 +  const toolName = typeof request.tool_name === "string" ? request.tool_name.trim() : "";
++  // An allow carries the tool's input back as `updatedInput`. Claude Code
++  // accepted a bare allow up to one version and refuses it from the next
++  // ("expected record, received undefined" at updatedInput), so the
++  // person pressed Allow and nothing ran. Echoing the input unchanged
++  // satisfies both.
++  const allow = { behavior: "allow", updatedInput: isRecord(request.input) ? request.input : {} };
 +  const respond = (response: Record<string, unknown>) => {
 +    try {
 +      writeClaudeLiveControlResponse(session, {
@@ -132,7 +138,7 @@ index e03642ec..45b98c8c 100644
 +    }
 +  };
 +  if (turn.execPermission.security === "full" && turn.execPermission.ask === "off") {
-+    respond({ behavior: "allow" });
++    respond(allow);
 +    return;
 +  }
 +  // Everything else is judged the way the engine's own tools are — asked
@@ -155,7 +161,7 @@ index e03642ec..45b98c8c 100644
 +      );
 +      respond(
 +        decision.behavior === "allow"
-+          ? { behavior: "allow" }
++          ? allow
 +          : {
 +              behavior: "deny",
 +              decisionClassification: "user_reject",
@@ -172,7 +178,7 @@ index e03642ec..45b98c8c 100644
  }
  
  function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
-@@ -911,7 +1003,15 @@ function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
+@@ -911,7 +1009,15 @@ function handleClaudeLiveLine(session: ClaudeLiveSession, line: string): void {
    turn.rawLines.push(trimmed);
    turn.streamingParser.push(`${trimmed}\n`);
    turn.sessionId = parseSessionId(parsed) ?? turn.sessionId;
@@ -188,7 +194,7 @@ index e03642ec..45b98c8c 100644
    handleClaudeLiveControlRequest(session, turn, parsed);
    if (parsed.type !== "result") {
      return;
-@@ -1141,6 +1241,16 @@ function createTurn(params: {
+@@ -1141,6 +1247,16 @@ function createTurn(params: {
        onToolResult: params.onToolResult,
      }),
      execPermission: params.execPermission,
@@ -982,7 +988,7 @@ index 00000000..6c6e08bf
 +  });
 +});
 diff --git a/src/agents/cli-runner.spawn.test.ts b/src/agents/cli-runner.spawn.test.ts
-index 99bf015a..dc8e4200 100644
+index 99bf015a..3cb317f7 100644
 --- a/src/agents/cli-runner.spawn.test.ts
 +++ b/src/agents/cli-runner.spawn.test.ts
 @@ -1571,6 +1571,15 @@ describe("runCliAgent spawn path", () => {
@@ -1001,7 +1007,26 @@ index 99bf015a..dc8e4200 100644
    });
  
    it("answers Claude live control_request can_use_tool with allow when exec policy is full/no-ask", async () => {
-@@ -1809,84 +1818,6 @@ ${JSON.stringify({
+@@ -1641,7 +1650,7 @@ ${JSON.stringify({
+       response: {
+         subtype: string;
+         request_id: string;
+-        response: { behavior: string; toolUseID?: string };
++        response: { behavior: string; toolUseID?: string; updatedInput?: unknown };
+       };
+     };
+     expect(parsed.type).toBe("control_response");
+@@ -1649,6 +1658,9 @@ ${JSON.stringify({
+     expect(parsed.response.request_id).toBe("req-allow");
+     expect(parsed.response.response.behavior).toBe("allow");
+     expect(parsed.response.response.toolUseID).toBe("tool-allow-1");
++    // The input goes back unchanged: newer Claude Code versions refuse an
++    // allow without `updatedInput`, and the person's Allow then ran nothing.
++    expect(parsed.response.response.updatedInput).toEqual({ command: "ls" });
+   });
+ 
+   it("reports Claude live stream progress and keeps native tools fresh while they are running", async () => {
+@@ -1809,84 +1821,6 @@ ${JSON.stringify({
      }
    });
  
@@ -1086,7 +1111,7 @@ index 99bf015a..dc8e4200 100644
    it("does not create exec approvals file while resolving Claude live policy", async () => {
      await withTempOpenClawHome(async (home) => {
        const approvalsPath = path.join(home, ".openclaw", "exec-approvals.json");
-@@ -2018,175 +1949,6 @@ ${JSON.stringify({
+@@ -2018,175 +1952,6 @@ ${JSON.stringify({
      expect(parsed.response.response.toolUseID).toBe("tool-default-allow-1");
    });
  
@@ -1262,7 +1287,7 @@ index 99bf015a..dc8e4200 100644
    it("answers Claude live control_request can_use_tool with deny when agent approvals are restrictive", async () => {
      await withTempExecApprovalsFile(
        {
-@@ -2596,6 +2358,141 @@ ${JSON.stringify({
+@@ -2596,6 +2361,141 @@ ${JSON.stringify({
      expect(result.text).toBe("mixed-ok");
    });
  

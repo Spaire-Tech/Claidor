@@ -418,6 +418,9 @@ const strongPatchValidators = {
         // settings, hooks or CLAUDE.md files reach an agent's turn.
         '"--setting-sources",',
         'export const CLAUDE_SETTING_SOURCES = "";',
+        // 17 September: an allow carries the input back as updatedInput;
+        // newer Claude Code versions refuse a bare allow.
+        'const allow = { behavior: "allow", updatedInput: isRecord(request.input) ? request.input : {} };',
       ],
       forbiddenSnippets: [
         'OpenClaw exec policy denied Claude native tool use',

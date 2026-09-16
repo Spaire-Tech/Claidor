@@ -3421,3 +3421,61 @@ happened.
 test), `desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`,
 `desktop/scripts/patches/v2026.6.1/openclaw-file-tools-ask-first.patch`,
 `desktop/scripts/apply-openclaw-patches.cjs`, `docs/product/direction.md` §0.
+
+## 66. "i want out of the model" — Claude Code off, the account's model back — `done in code; the Mac unrun`
+
+The didi thread, 17 September, first thing. *"write ma a poem in a word
+doc"* → *"On it"* → a wall of ZodError, three times, and ten lines of
+*"didi can run commands on your computer this time"* under it. The
+founder: *"claude code is a coding assistant. nothing to do with any of
+this and you should know this. you led me into it knowing it."*
+
+**What that error is, this time.** Not the question tool. The founder
+pressed Allow on each card, and the engine answered Claude Code with
+`{ behavior: "allow" }`, which is what Claude Code 2.1.273, the version
+on this machine, accepts: run here twice today, once with a bare allow
+and once with `updatedInput`, a `Write` went through both times. The
+error in the thread is the schema of a newer Claude Code, which
+requires `updatedInput` on an allow ("expected record, received
+undefined"). So on the founder's Mac every Allow was refused by the
+CLI's own validator after the person had pressed it, no file was
+written, and the agent, correctly, said the approval layer was broken.
+Item 63's fault 3 was the same error one day earlier, in bypass mode,
+where only the question tool ever asked; I blamed the tool and never
+checked the reply itself against a newer version. That is on me: the
+stdio permission protocol of a coding CLI is not a contract, and I
+built on it as if it were.
+
+**Done, as the founder asked.**
+
+- **Claude Code is off** (`claudeCodeMode.ts`). No build turns it on:
+  not development, not packaged, installed or not. `CAISRA_CLAUDE_CODE=1`
+  at a terminal is the one way, for a developer, and nothing else
+  reads it. The app's turns go to the account's model through the
+  metered proxy, the path from before item 51: `primaryModel` comes
+  from the account's provider resolution and nothing overrides it. The
+  turn routing (`turnRouting.ts`) and the run-model hook in `main.ts`
+  return nothing when the mode is off and stay as they were.
+- **The allow reply is corrected anyway** (`claude-live-session.ts`,
+  in the patch, regenerated and byte-identical): an allow now carries
+  the tool's input back unchanged as `updatedInput`, which the version
+  here accepts and the newer one requires; proven here with the
+  engine's exact shape, `updatedInput` plus `toolUseID`, on a `Write`.
+  The code stays in the tree, off, and is not broken.
+
+**Proof.** App: 117 tests across the mode, routing and config sync;
+eslint; tsc; `compile:electron`. Engine: 55 spawn tests, oxfmt, oxlint,
+tsgo (two pre-existing errors). Live: three Claude Code runs on this
+machine.
+
+**Unrun: the founder's Mac.** After pulling and restarting: the log's
+first `[ClaudeCode]` line must say `off`, and the next
+`[EngineConfigSync] model=` line must name the account's model, not
+`claude-cli/…`. Then "write me a poem in a word doc" should end in a
+file card. What does not come back with the model: none of the
+faults in items 63 and 65 were the model's, and all of those fixes
+apply on this path too.
+
+**Where:** `desktop/src/main/libs/claudeCodeMode.ts` (+test),
+`desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`,
+`desktop/scripts/apply-openclaw-patches.cjs`, `docs/product/direction.md` §0b.
