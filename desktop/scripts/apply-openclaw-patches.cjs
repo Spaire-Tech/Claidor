@@ -379,8 +379,12 @@ const strongPatchValidators = {
       snippets: [
         'wrapToolWithFileApproval,',
         'const fileApproval: FileToolApprovalContext | undefined = sandboxRoot',
-        "freeRoots: [workspaceRoot, resolveStateDir(), ...(skillReadRoots ?? [])],",
+        // 16 September: the engine's state dir is not a free root. It
+        // holds the config, credentials, sessions and every agent's
+        // workspace; a read there is a read of the app's own insides.
+        "freeRoots: [workspaceRoot, ...(skillReadRoots ?? [])],",
       ],
+      forbiddenSnippets: ['resolveStateDir()'],
     },
     {
       file: 'src/agents/file-tool-approval.ts',
@@ -410,6 +414,10 @@ const strongPatchValidators = {
         'if (turn.activeTools.size > 0) {',
         'export const CLAUDE_NATIVE_TOOLS_WITHHELD = ["AskUserQuestion"] as const;',
         '"--disallowedTools",',
+        // 16 September, later: none of the person's own Claude Code
+        // settings, hooks or CLAUDE.md files reach an agent's turn.
+        '"--setting-sources",',
+        'export const CLAUDE_SETTING_SOURCES = "";',
       ],
       forbiddenSnippets: [
         'OpenClaw exec policy denied Claude native tool use',
@@ -421,7 +429,10 @@ const strongPatchValidators = {
         'export const CLAUDE_TOOL_COMMAND_HEAD = "claude-tool";',
         'export async function decideClaudeNativeToolUse(',
         'decideFileAccess: (params) => decideFileToolAccess(params),',
+        // Only the agent's own workspace is free; the state dir is not.
+        'freeRoots: [params.context.workspaceDir],',
       ],
+      forbiddenSnippets: ['deps.stateDir()'],
     },
   ],
   'zzz-caisra-identity.patch': [

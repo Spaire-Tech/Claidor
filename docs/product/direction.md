@@ -47,8 +47,11 @@ keep working. The developer log tags are `[Engine]` and
 - the OpenClaw extension and provider id `lobster` — upstream's, and the
   runtime breaks without it;
 - the `agent:<id>:lobsterai:<session>` session-key format in
-  `openclawChannelSessionSync.ts` — an internal format nobody sees,
-  where a rewrite risks session routing for no gain;
+  `openclawChannelSessionSync.ts` — an internal format no person sees,
+  where a rewrite risks session routing for no gain. The agent does
+  see it, in its own plumbing, and on 16 September one read it out;
+  since then every agent's managed instructions say what these names
+  are and that they stay inside (review item 65);
 - `EXPORT_FORMAT_TYPE` in `renderer/constants/app.ts` — the provider
   export format, which goes away with the provider screens.
 

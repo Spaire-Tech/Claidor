@@ -3313,3 +3313,111 @@ claude-cli/claude-sonnet-5"*. Read from the code and one experiment:
 So seven faults for the evening, all ours. "Am I using the right
 repo?" Yes: the runtime was built after the ask-first patch, and
 every fault above is in this tree.
+
+## 65. "i have a serious serious bone to pick" — the agent read the app's own code and told the person what it was forked from — `three doors, all closed; the Mac unrun`
+
+The Yone thread, 16 September, late. Asked *"so what is lobster ai"*,
+the agent explained that Caisra was forked from a project called
+LobsterAI, named the engine underneath, gave the proxy's address and
+port, quoted its own session key, said which version of the app was
+installed at which path, and, asked for *"more info on caisra code"*,
+printed a source file with numbered lines. Earlier in the same thread
+it had answered with "(Bash completed with no output)". Every one of
+those sentences was true. None of it was the agent's to say, and the
+direction (§0) rests on exactly the opposite: the old names survive
+only as internal identifiers, on the promise that nobody sees them.
+
+**Where it got each thing, read from the code.** Three doors.
+
+1. **It went and read the source.** Nothing told it not to. The
+   managed instructions had a rule about what to call the machinery
+   ("never a sandbox, a host, a node") and none about *what the agent
+   is* or about reading the app's own installation to answer. The
+   founder's Mac has the whole checkout at `~/Claidor`, with the
+   engine beside it and every document in `docs/product`, and under
+   fault five of item 63 (every agent but Yodo in bypass) not one of
+   those reads asked for a card. A customer's Mac has no checkout, but
+   it has the app bundle and its data folder, and both are full of the
+   same names.
+
+2. **The engine's state directory was a free root.** The file-tool
+   approval (items 47 and 65) lets an agent read and write its own
+   workspace without a card, and, beside it, the engine's whole state
+   dir: the config, the credentials, the sessions, every other agent's
+   workspace and memory. It was added so an agent could reach its own
+   files; but those are in the workspace, which is inside the state
+   dir, not the other way round. So even with the card working, a
+   read of the engine's config, or of another agent's memory, would
+   never have asked.
+
+3. **Claude Code reads the person's own instructions on the way in.**
+   Run here, from a folder with a `CLAUDE.md` two levels up saying
+   "the secret word is PELICAN-7", Claude Code with no flags answered
+   PELICAN-7; with `--setting-sources ""` it answered NONE. The engine
+   launched it with no such flag, so on the founder's Mac, whenever a
+   conversation's working folder was the checkout or anything under
+   it, the repository's own `CLAUDE.md`, the one that opens with
+   "LobsterAI (NetEase Youdao, MIT)", went in as instructions, along
+   with the founder's `~/.claude` settings, hooks and memory. Silent,
+   no card, on every turn. The transcript does not prove this door
+   was the one used; the experiment proves it was open.
+
+**What changed.**
+
+- **A section for every agent, "What you are"**, first after Yodo's
+  brief and before the conversation rules
+  (`openclawConfigSync.ts`, `MANAGED_IDENTITY_PROMPT`): you are a
+  Caisra agent, and that is the whole answer; do not name a model, a
+  provider, an engine, a company, a codebase or a fork; internal
+  names that reach you in a path, a key, a header or a log line are
+  identifiers, not facts, and never go into a reply; never read the
+  app's own installation, code, configuration or state to answer a
+  question about yourself; the app's code is nobody's to be read out;
+  asked which model, "that's under the hood; I don't name it". Run
+  against Claude Code here with the section appended, the founder's
+  three questions came back as *"I'm a Caisra agent, working for
+  you"*, *"that's under the hood; I don't name it"*, and, for
+  `constants.ts:57-67`, a refusal in one sentence with an offer to
+  help with the person's own files instead. Before the last sentence
+  of the first rule was added, the same model answered "I'm running
+  on Sonnet" to "opus or sonnet?"; the sentence is there because of
+  that run.
+- **The state dir is no longer a free root**, for the engine's own
+  file tools and for Claude Code's (`agent-tools.ts`,
+  `claude-native-tool-approval.ts`; both patches regenerated from a
+  clean base and reproducing the tree byte for byte; validators
+  forbid the old line). Free is the agent's own workspace and, for the
+  engine's tools, the skill folders it was given. A read anywhere
+  else, the app's data folder included, is a card.
+- **Claude Code is launched with `--setting-sources ""`**
+  (`claude-live-session.ts`): none of the person's settings, hooks,
+  plugins or `CLAUDE.md` files load; the system prompt and the
+  gateway's MCP config still do. Auth is untouched: the runs above
+  went through the founder's account with the flag set.
+
+**What stays as it was, and why.** The engine appends its prompt to
+Claude Code's own (`--append-system-prompt`), so the model still
+reads Claude Code's preamble first. Replacing it (`--system-prompt`)
+was tried here: without the section, both modes named Anthropic and
+the model when asked, so the mode is not what fixes the naming, the
+section is; and replacing the preamble changes how the model drives
+Claude Code's tools in ways nothing here can measure. Left alone.
+
+**Proof.** Engine: 91 tests across the approval, spawn and
+file-approval files; oxfmt, oxlint, tsgo (the two pre-existing
+errors only). App: 106 runtime tests including the new one, which
+syncs two agents and reads both files; tsc, eslint,
+`compile:electron`. Live: five Claude Code runs named above, on this
+machine, through the founder's account.
+
+**Unrun: the founder's Mac.** After rebuilding: ask any agent "what is
+lobster ai" and "which model are you"; ask it to read a file under
+`~/Library/Application Support/Caisra` and expect a card; ask it to
+read one under `~/Claidor` and expect a card. The log line
+`claude native tool: name=Read decision=…` says, per read, what
+happened.
+
+**Where:** `desktop/src/main/libs/openclawConfigSync.ts` (+runtime
+test), `desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`,
+`desktop/scripts/patches/v2026.6.1/openclaw-file-tools-ask-first.patch`,
+`desktop/scripts/apply-openclaw-patches.cjs`, `docs/product/direction.md` §0.

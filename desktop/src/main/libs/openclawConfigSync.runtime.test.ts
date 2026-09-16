@@ -3191,6 +3191,51 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('Never list the twenty-three in chat');
   });
 
+  test('every agent is told what it is, and that nothing underneath is its to say or read', async () => {
+    // 16 September: asked "so what is lobster ai", an agent read the
+    // app's own source checkout on the person's Mac and answered with the
+    // fork, the engine, a session key and a file printed with line
+    // numbers. The section is for every agent, Yodo and the ones he
+    // stands up alike, and it comes before the conversation rules.
+    const agent = (id: string, isDefault: boolean) => ({
+      id,
+      name: id,
+      description: '',
+      systemPrompt: '',
+      identity: '',
+      model: '',
+      workingDirectory: '',
+      icon: '',
+      skillIds: [],
+      subagentAllowAgentIds: [],
+      enabled: true,
+      pinned: false,
+      isDefault,
+      source: 'custom',
+      presetId: '',
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    const sync = await createSync({ getAgents: () => [agent('main', true), agent('yone', false)] });
+    expect(sync.sync('identity').ok).toBe(true);
+
+    for (const workspace of ['workspace-main', 'workspace-yone']) {
+      const agentsMd = fs.readFileSync(path.join(stateDir, workspace, 'AGENTS.md'), 'utf8');
+      expect(agentsMd).toContain('## What you are');
+      expect(agentsMd).toContain('You are a Caisra agent.');
+      expect(agentsMd).toContain('Do not name a model, a provider, an engine, a runtime, a company, a codebase or a project you were forked from');
+      expect(agentsMd).toContain('They never go into a reply, and they are never the answer to "what is that".');
+      expect(agentsMd).toContain('Never read the app\'s own installation, code, configuration or state to answer a question about yourself');
+      expect(agentsMd).toContain('not the code.');
+      expect(agentsMd.indexOf('## What you are')).toBeLessThan(agentsMd.indexOf('## Talking to the Person'));
+    }
+    // Yodo's brief first, then what he is; the other agents have no brief.
+    const main = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(main.indexOf('## Who you are')).toBeLessThan(main.indexOf('## What you are'));
+    const yone = fs.readFileSync(path.join(stateDir, 'workspace-yone', 'AGENTS.md'), 'utf8');
+    expect(yone).not.toContain('## Who you are');
+  });
+
   test("what the person said they do in step one is in Yodo's brief, and only his", async () => {
     const sync = await createSync({
       getOnboardingWorkType: () => 'Founder / Business Owner',
