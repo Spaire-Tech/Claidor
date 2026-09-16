@@ -3829,3 +3829,62 @@ have one agent working while another is open and see the dot.
 `desktop/src/main/mcp/mcpRuntime.ts`, `openclawConfigSync.ts`
 (+runtime test), `main.ts`, `preload.ts`, `renderer/types/electron.d.ts`,
 `desktop/tests/openclaw-extensions/ask-user-question/reactToMessage.live.test.ts`.
+
+## 70. Routines, and agents talking to each other — `audited; nothing built`
+
+The founder, 17 September: *"audit routines and see what we got. and
+the agents being able to talk to each other. then lmk."* Two audits,
+read against the code and spot-checked by hand. Nothing changed.
+
+**Routines.** The engine's scheduler is complete: cron expressions
+with a timezone, one-shot, every-N, a job that runs in the agent's own
+conversation or in an isolated one, run history in SQLite, failure
+alerts, restart catch-up (`openclaw/src/cron/`). The app is a full
+client for it (`desktop/src/scheduledTask/cronJobService.ts`, fourteen
+IPC handlers) and the model can create, change, run and remove jobs
+with the engine's `cron` tool, which the brief tells it to use
+(`scheduledTask/enginePrompt.ts`). What is missing is any screen: the
+new shell has no routines UI at all. The working Routines tab in
+`AgentDetail.tsx` is unmounted on purpose (item 29 flagged that and no
+ruling came); the "Routines" tab on a role card in Apps is one static
+sentence; "Teach a task" sends a prompt and schedules nothing (item
+11). So today a person can only get a routine by asking an agent for
+one in words. Two more gaps: `direction.md` §10 says a routine fires
+with the Mac shut, on the runner; the runner has `cron: { enabled:
+false }` and nothing on the server queues a routine as it comes due,
+so that is decided and not built. And `caisra-permissions.md` wants a
+routine's creation to ask; the `cron` tool asks nothing. Event
+triggers: a loopback webhook exists and is configured (`/hooks`), so a
+local script can wake an agent; nothing on the internet can reach it,
+and no named listener (Slack, GitHub, Linear) exists. "Stay quiet if
+nothing changed" is one line in the brief, not a field on a job.
+
+**Agents talking to each other.** The engine has it end to end:
+`sessions_send` with a reply-back loop of up to five turns, an
+announce step, `sessions_spawn` and subagents. The app denies none of
+those tools. But cross-agent sends are gated by
+`tools.agentToAgent.enabled`, whose default is off, and the config
+sync never writes it (`grep agentToAgent desktop/src` finds nothing).
+So an agent that tries reaches only its own session tree and is told
+"forbidden" for any other agent. Meanwhile the brief tells every agent
+to "hand work to another agent when they asked you to" and to expect
+"a message from another agent" (`openclawConfigSync.ts:546,602,618`),
+and Yodo's brief has five rules about handing work out and bringing it
+back, with only `create_agent` and `propose_team` to do it with. The
+agent is told it can do a thing the config forbids. Rooms are N
+parallel one-to-one conversations with a merged view: the person's
+message goes to each member verbatim, members never see each other's
+replies, there is no room tag on the turn, no @mention, and no way to
+create a room from the app. Subagent runs are tracked in main and
+shown nowhere in the new shell. Item 58's table said `SendToAgent` was
+covered by the engine's session tools and rooms; it is not, and it
+cited item 35, which is the approvals item. Corrected here.
+
+**What it would take, for the founder to choose from.** Agents: write
+`tools.agentToAgent.enabled: true` and `tools.sessions.visibility:
+"agent"` in the sync, name `sessions_send` in the brief with the rule
+that the person's message is relayed in the agent's own words, and let
+the thread show "Talking to another agent" (the verb already exists).
+That is a day. Routines: a Routines tab on the agent panel, over the
+client that exists. Routines with the Mac shut: the server-side queue
+decided on 15 September (`sources/README.md`), not started.
