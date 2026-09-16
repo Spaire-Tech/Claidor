@@ -1,5 +1,4 @@
 import { ExecPolicy } from './constants';
-import { ACCOUNT_MODELS, apiKeyUrlFor, modelChoices, providerLabel } from './models';
 
 /**
  * Settings, as data.
@@ -118,10 +117,6 @@ export interface SettingsInput {
   workingDirectory?: string;
   execPolicy: ExecPolicy;
   memoryEnabled: boolean;
-  /** `ACCOUNT_MODELS`, or the provider id whose key is in use. */
-  modelChoice: string;
-  /** The key stored for the chosen provider, if there is one. */
-  modelApiKey: string;
   /** 0–1 and a phrase, from the account's quota. Absent while unknown. */
   usage?: { fraction: number; value: string; desc: string };
   version?: string;
@@ -132,8 +127,6 @@ export interface SettingsInput {
   onAddAccount: () => void;
   onExecPolicy: (policy: ExecPolicy) => void;
   onMemory: (enabled: boolean) => void;
-  onModelChoice: (choice: string) => void;
-  onModelApiKey: (apiKey: string) => void;
   onWorkingDirectory: () => void;
   onRefreshUsage: () => void;
   onCheckUpdates: () => void;
@@ -290,39 +283,17 @@ function build(tab: SettingsTab, input: SettingsInput): SettingsGroup[] {
             } satisfies ButtonRow,
           ],
         },
-        {
-          title: 'Models',
-          rows: [
-            {
-              kind: SettingsRowKind.Select,
-              id: 'model-choice',
-              label: 'Which models',
-              desc: "Your account comes with a monthly allowance. Your own key bills you directly and does not touch it.",
-              value: input.modelChoice,
-              options: modelChoices(),
-              onPick: input.onModelChoice,
-            } satisfies SelectRow,
-            // Only once a provider is chosen. A key field above the choice
-            // it belongs to is a question nobody asked yet.
-            ...(input.modelChoice === ACCOUNT_MODELS
-              ? []
-              : [{
-                kind: SettingsRowKind.Field,
-                id: 'model-api-key',
-                label: `${providerLabel(input.modelChoice)} API key`,
-                desc: apiKeyUrlFor(input.modelChoice)
-                  ? `Kept on this computer and sent only to ${providerLabel(input.modelChoice)}. Get one at ${apiKeyUrlFor(input.modelChoice)}`
-                  : `Kept on this computer and sent only to ${providerLabel(input.modelChoice)}.`,
-                value: input.modelApiKey,
-                secret: true,
-                placeholder: 'Paste your key',
-                onSave: input.onModelApiKey,
-              } satisfies FieldRow]),
-          ],
-        },
-        // No "Apps" group with a Composio key. The founder: "my users
-        // should never put a key. everything happens under the hood."
-        // The key is Claidor's and lives on the server (`polar/desktop/composio.py`).
+        // No "Models" group, and no "Apps" group with a Composio key. There
+        // was a Models group for a day — "Your account's allowance" or your
+        // own provider key — and the founder, 16 September: "i told you only
+        // use my claude code account. i told you to remove that settings for
+        // api keys. or allowance or whatever that is." And, of keys in
+        // general: "my users should never put a key. everything happens
+        // under the hood. not a setting." So which models run is decided in
+        // code — the account's models through the metered proxy, or the
+        // Claude Code sign-in in a development build
+        // (`main/libs/claudeCodeMode.ts`) — and the Composio key is
+        // Claidor's, on the server (`polar/desktop/composio.py`).
         {
           title: 'Agents',
           rows: [{

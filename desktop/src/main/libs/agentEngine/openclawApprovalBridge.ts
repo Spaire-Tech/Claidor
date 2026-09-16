@@ -23,6 +23,26 @@ export type FileAccess = {
   paths: string[];
 };
 
+/**
+ * One of Claude Code's own tools asking, through the command approval.
+ *
+ * When the engine runs a turn through the installed Claude Code
+ * (`claude-cli/…`, the development-build mechanic in `claudeCodeMode.ts`),
+ * Claude Code's `Bash`, `Write`, `WebFetch` and the rest ask the engine
+ * before they run, and the engine patch
+ * `openclaw-claude-tools-ask-first.patch` raises a command approval for
+ * each with `claude-tool <ToolName> <text>` in `commandArgv`. `Bash`
+ * carries its command; anything else carries the tool name and its
+ * arguments. Mirrors `CLAUDE_TOOL_COMMAND_HEAD` in
+ * `openclaw/src/agents/cli-runner/claude-native-tool-approval.ts`.
+ */
+export const CLAUDE_TOOL_COMMAND_HEAD = 'claude-tool';
+
+export type ClaudeTool = {
+  toolName: string;
+  text: string;
+};
+
 export type PendingApprovalEntry = {
   requestId: string;
   sessionId: string;
@@ -30,9 +50,10 @@ export type PendingApprovalEntry = {
    * `file` is a command approval raised by a file tool. It resolves like
    * `exec`, but the tool is blocked on the answer inside the turn, so it
    * must not get the "approved, carry on" continuation an exec approval
-   * needs — that would land a phantom turn in the conversation.
+   * needs — that would land a phantom turn in the conversation. `claude`
+   * is one of Claude Code's own tools asking, blocked the same way.
    */
-  kind: 'exec' | 'plugin' | 'file';
+  kind: 'exec' | 'plugin' | 'file' | 'claude';
   allowedDecisions?: ApprovalDecision[];
   /** When true, use 'allow-always' decision so OpenClaw adds the command to its allowlist. */
   allowAlways?: boolean;
@@ -80,6 +101,18 @@ export type ParsedExecApprovalRequest = {
   shouldAutoApprove: boolean;
   /** Present when a file tool raised this, not a command. */
   fileAccess?: FileAccess;
+  /** Present when one of Claude Code's own tools raised this. */
+  claudeTool?: ClaudeTool;
+};
+
+export const parseClaudeTool = (request: ExecApprovalRequest): ClaudeTool | undefined => {
+  const argv = request.commandArgv;
+  if (!Array.isArray(argv) || argv.length !== 3) return undefined;
+  if (argv[0] !== CLAUDE_TOOL_COMMAND_HEAD) return undefined;
+  const [, toolName, text] = argv;
+  if (typeof toolName !== 'string' || !toolName.trim()) return undefined;
+  if (typeof text !== 'string' || !text.trim()) return undefined;
+  return { toolName: toolName.trim(), text };
 };
 
 export const parseFileAccess = (request: ExecApprovalRequest): FileAccess | undefined => {
@@ -130,12 +163,14 @@ export const parseExecApprovalRequestedPayload = (payload: unknown): ParsedExecA
   const sessionKey = typeof request.sessionKey === 'string' ? request.sessionKey.trim() : '';
   const command = typeof request.command === 'string' ? request.command : '';
   const fileAccess = parseFileAccess(request);
+  const claudeTool = fileAccess ? undefined : parseClaudeTool(request);
   return {
     requestId,
     request,
     sessionKey,
     command,
     ...(fileAccess ? { fileAccess } : {}),
+    ...(claudeTool ? { claudeTool } : {}),
     // Auto-approve only where there is nobody to ask. An IM channel
     // session is a person messaging from Feishu or Discord; no approval
     // card can reach them, so the alternative to allowing is hanging.
@@ -177,7 +212,28 @@ export const buildExecApprovalPermissionRequest = (
   request: ExecApprovalRequest,
   command: string,
   fileAccess?: FileAccess,
+  claudeTool?: ClaudeTool,
 ): PermissionRequest => {
+  if (claudeTool && claudeTool.toolName !== 'Bash') {
+    // Claude Code's own WebFetch, WebSearch or whatever else: the card is
+    // named for the tool and shows its arguments where a command would go.
+    // Its Bash is a command and takes the command card below.
+    return {
+      requestId,
+      toolName: claudeTool.toolName,
+      toolInput: {
+        claudeTool: { toolName: claudeTool.toolName },
+        command: claudeTool.text,
+        cwd: request.cwd ?? null,
+        host: request.host ?? null,
+        security: request.security ?? null,
+        ask: request.ask ?? null,
+        sessionKey: request.sessionKey ?? null,
+        agentId: request.agentId ?? null,
+      },
+      toolUseId: requestId,
+    };
+  }
   if (fileAccess) {
     // The card shows the paths, one per line, where a command would show
     // the command. Nothing else about the request is a shell command.

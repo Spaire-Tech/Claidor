@@ -61,4 +61,24 @@ describe('after the person answers', () => {
     expect(request).toHaveBeenCalledWith('exec.approval.resolve', { id: 'req-2', decision: 'allow-always' });
     expect(continueSession).not.toHaveBeenCalled();
   });
+
+  test("one of Claude Code's own tools is resolved the same way and never continued", async () => {
+    // Claude Code is blocked on the answer inside its turn exactly as a
+    // file tool is; the engine patch marks the request `claude-tool`.
+    const { controller, request, emitted, continueSession } = build();
+    controller.handleExecApprovalRequested({
+      id: 'req-3',
+      request: {
+        sessionKey: 'desktop-1',
+        command: 'open -a Notes',
+        commandArgv: ['claude-tool', 'Bash', 'open -a Notes'],
+      },
+    });
+    expect(emitted[0]?.toolName).toBe('Bash');
+    expect(emitted[0]?.toolInput.command).toBe('open -a Notes');
+    controller.respondToPermission('req-3', { behavior: 'allow', scope: 'once' });
+    await tick();
+    expect(request).toHaveBeenCalledWith('exec.approval.resolve', { id: 'req-3', decision: 'allow-once' });
+    expect(continueSession).not.toHaveBeenCalled();
+  });
 });

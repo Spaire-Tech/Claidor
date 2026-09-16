@@ -1,26 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 
-import { type ProviderConfig, ProviderName } from '../../../shared/providers';
 import {
   asExecPolicy,
   DEFAULT_EXEC_POLICY,
   type ExecPolicy,
 } from '../../../shared/settings/constants';
-import {
-  ACCOUNT_MODELS,
-  currentChoice,
-  defaultModelIdFor,
-  providersFor,
-  storedKey,
-} from '../../../shared/settings/models';
 import type { SettingsInput } from '../../../shared/settings/rows';
 import { authService } from '../../services/auth';
-import { configService, ConfigServiceEvent } from '../../services/config';
 import { coworkService } from '../../services/cowork';
-import { providerModelsFromConfig } from '../../services/providerModels';
-import { type RootState, store } from '../../store';
-import { setAvailableModels, setDefaultSelectedModel } from '../../store/slices/modelSlice';
+import type { RootState } from '../../store';
 import { showToast } from '../../utils/localFileActions';
 import { usageLine } from '../shell/account';
 
@@ -32,6 +21,10 @@ import { usageLine } from '../shell/account';
  * writes somewhere real. Nothing on this screen is decoration, which is
  * the whole reason it has four tabs instead of the canvas's full set:
  * rows with nothing behind them are left out rather than mocked.
+ *
+ * Nothing here is about models. Which model runs is decided in code
+ * (`main/libs/claudeCodeMode.ts`, `main/libs/openclawConfigSync.ts`), never
+ * on this screen; see the note above the General tab in `rows.ts`.
  */
 export function useSettings(open: boolean): Omit<SettingsInput, never> {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -46,14 +39,6 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
   const [version, setVersion] = useState<string>();
   const [updateNote, setUpdateNote] = useState<string>();
   const [checkingUpdate, setCheckingUpdate] = useState(false);
-
-  // The providers live in the app config rather than the cowork one, and
-  // `configService` holds it in memory after startup. Kept in state so the
-  // row redraws on a write; re-read on the service's own event so a change
-  // made anywhere else does not leave this screen showing the old answer.
-  const [providers, setProviders] = useState<Record<string, ProviderConfig>>(
-    () => configService.getConfig().providers ?? {},
-  );
 
   // Read once each time the screen opens rather than on a timer: these
   // are settings, and a settings screen that changes under somebody's
@@ -76,88 +61,6 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
 
     return () => { current = false; };
   }, [open]);
-
-  // A provider picked but not yet given a key is a choice nobody can read
-  // back out of the config — `currentChoice` sees no enabled key and
-  // answers "the account", which would snap the select back under the
-  // person's hand and hide the field they were about to type into. So the
-  // pick is held here until the key lands, and dropped when the screen
-  // closes.
-  const [picked, setPicked] = useState<string>();
-  useEffect(() => { if (!open) setPicked(undefined); }, [open]);
-
-  useEffect(() => {
-    const reread = () => {
-      setProviders(configService.getConfig().providers ?? {});
-    };
-    reread();
-    window.addEventListener(ConfigServiceEvent.Updated, reread);
-    return () => window.removeEventListener(ConfigServiceEvent.Updated, reread);
-  }, [open]);
-
-  const modelChoice = picked ?? currentChoice(providers);
-  const modelApiKey = modelChoice === ACCOUNT_MODELS ? '' : storedKey(providers, modelChoice);
-
-  /**
-   * A choice, written all the way down to the engine.
-   *
-   * Three writes, and all three are needed. The providers map says a key
-   * exists. `model.defaultModel` and `defaultModelProvider` are what the
-   * config sync actually resolves the engine's provider from
-   * (`claudeSettings.ts:resolveMatchedProvider`) — it answers with the
-   * account's server plan the moment that field still says
-   * `lobsterai-server`, so without them the key would be stored, synced,
-   * and never used. And the store is told, because `App.tsx` writes its
-   * selected model back into the same config when it changes; leaving the
-   * two out of step means the next thing that touches the picker undoes
-   * this silently.
-   */
-  const writeProviders = useCallback((choice: string, apiKey: string) => {
-    const current = configService.getConfig();
-    const next = providersFor(current.providers, choice, apiKey);
-    const modelId = defaultModelIdFor(next, choice);
-
-    // Back on the account: the server plan's models are not in this config
-    // — they arrive from the account — so the one already selected is the
-    // one to name. With none loaded, leaving the fields alone is right:
-    // `resolveMatchedProvider` falls back to the server plan on its own.
-    const accountModel = store.getState().model.availableModels
-      .find(one => one.isServerModel || one.providerKey === ProviderName.LobsteraiServer);
-    const model = choice === ACCOUNT_MODELS
-      ? (accountModel
-        ? { defaultModel: accountModel.id, defaultModelProvider: ProviderName.LobsteraiServer }
-        : undefined)
-      : (modelId ? { defaultModel: modelId, defaultModelProvider: choice } : undefined);
-
-    setProviders(next);
-    void configService.updateConfig({
-      providers: next,
-      ...(model ? { model: { ...current.model, ...model } } : {}),
-    }).then(() => {
-      const listed = providerModelsFromConfig(next);
-      store.dispatch(setAvailableModels(listed));
-      const picked = choice === ACCOUNT_MODELS
-        ? accountModel
-        : listed.find(one => one.providerKey === choice && one.id === modelId);
-      if (picked) store.dispatch(setDefaultSelectedModel(picked));
-    }).catch(() => {
-      setProviders(configService.getConfig().providers ?? {});
-      showToast('That could not be saved.');
-    });
-  }, []);
-
-  const onModelChoice = useCallback((choice: string) => {
-    setPicked(choice === ACCOUNT_MODELS ? undefined : choice);
-    // A provider with a key already stored takes effect on the pick alone.
-    // One without gets an entry that is off until a key arrives, which is
-    // what makes the field below it appear.
-    writeProviders(choice, storedKey(configService.getConfig().providers, choice));
-  }, [writeProviders]);
-
-  const onModelApiKey = useCallback((apiKey: string) => {
-    if (modelChoice === ACCOUNT_MODELS) return;
-    writeProviders(modelChoice, apiKey);
-  }, [modelChoice, writeProviders]);
 
   const onExecPolicy = useCallback((policy: ExecPolicy) => {
     // Optimistic, then corrected: the write re-runs the engine config
@@ -229,8 +132,6 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
     ...(config.workingDirectory ? { workingDirectory: config.workingDirectory } : {}),
     execPolicy,
     memoryEnabled: config.memoryEnabled,
-    modelChoice,
-    modelApiKey,
     ...(usage ? { usage } : {}),
     ...(version ? { version } : {}),
     ...(updateNote ? { updateNote } : {}),
@@ -239,8 +140,6 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
     onAddAccount: () => { void authService.login(); },
     onExecPolicy,
     onMemory,
-    onModelChoice,
-    onModelApiKey,
     onWorkingDirectory,
     onRefreshUsage,
     onCheckUpdates,

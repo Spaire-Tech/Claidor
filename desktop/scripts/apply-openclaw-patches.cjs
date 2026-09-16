@@ -373,6 +373,51 @@ const strongPatchValidators = {
       snippets: ['keeps prompt projections byte-stable as history grows'],
     },
   ],
+  'openclaw-file-tools-ask-first.patch': [
+    {
+      file: 'src/agents/agent-tools.ts',
+      snippets: [
+        'wrapToolWithFileApproval,',
+        'const fileApproval: FileToolApprovalContext | undefined = sandboxRoot',
+        "freeRoots: [workspaceRoot, resolveStateDir(), ...(skillReadRoots ?? [])],",
+      ],
+    },
+    {
+      file: 'src/agents/file-tool-approval.ts',
+      snippets: [
+        'export const FILE_ACCESS_COMMAND_HEAD = "file-access";',
+        'export async function decideFileToolAccess(',
+        'export function wrapToolWithFileApproval(',
+      ],
+    },
+    {
+      file: 'src/agents/file-tool-approval.runtime.ts',
+      snippets: ['export { requestExecApprovalDecision } from "./bash-tools.exec-approval-request.js";'],
+    },
+  ],
+  'openclaw-claude-tools-ask-first.patch': [
+    {
+      file: 'src/agents/cli-runner/claude-live-session.ts',
+      snippets: [
+        'from "./claude-native-tool-approval.js";',
+        'nativeTools: ClaudeNativeToolContext;',
+        'pendingControlRequests: number;',
+        'void decideClaudeNativeToolUse({',
+        'if (turn.pendingControlRequests > 0) {',
+      ],
+      forbiddenSnippets: [
+        'OpenClaw exec policy denied Claude native tool use',
+      ],
+    },
+    {
+      file: 'src/agents/cli-runner/claude-native-tool-approval.ts',
+      snippets: [
+        'export const CLAUDE_TOOL_COMMAND_HEAD = "claude-tool";',
+        'export async function decideClaudeNativeToolUse(',
+        'decideFileAccess: (params) => decideFileToolAccess(params),',
+      ],
+    },
+  ],
   'zzz-caisra-identity.patch': [
     {
       file: 'src/agents/system-prompt.ts',

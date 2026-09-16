@@ -2510,3 +2510,152 @@ appearance flipping. That needs the founder's Mac.
 `renderer/utils/agentDisplay.ts`; `public/logos/apps/{apple-notes,macos-settings,imessage}.webp`;
 `harness/main.tsx`, `harness/onboarding-walk.mjs`.
 
+
+## 56. "you need to verify if what im asking is even possible" — the Claude Code account, run for real, 16 September — `verified; one engine fault found and patched; the Mac still unrun`
+
+The founder, after 53:
+
+> *"I'm not happy cause whats going on with the model. i told you only
+> use my claude code account. i told you to remove that settings for
+> api keys. or allowance or whatever that is. claude code still isnt
+> working. the thing i dont understand is what are the settings. you
+> need to verify if what im asking is even possible. we can keep going
+> back and forth."*
+
+So this time nothing was reasoned about. The bundled engine
+(`vendor/openclaw-runtime/linux-x64`) was started on this machine with
+`agents.defaults.model.primary = claude-cli/claude-sonnet-5` and the
+installed `claude` (2.1.273, logged in with an OAuth subscription, no
+API key), and messages were sent through it. Every line below was run.
+
+### What the engine does with a Claude Code account
+
+| Turn | Policy | What happened |
+|---|---|---|
+| "Reply with the word banana" | any | `banana`, 4.6 s. Log: `claude live session start`, then `claude live session turn`. |
+| "List your `mcp__` tools" | the app's (ask) | 21 gateway tools, bridged over the loopback MCP: browser, memory, message, sessions, cron, tts, web_fetch, goals, subagents. |
+| "Create hello.txt" | the app's (ask) | **Refused outright**: "Write and Bash were denied by the OpenClaw exec policy (security=allowlist, ask=on-miss)". No card. |
+| "Create hello.txt" | allow everything (`full`/`off`) | Cannot run here — `--permission-mode bypassPermissions` refuses to run as root, and this machine is root. On a Mac it runs with no question asked. |
+
+So the answer to "is it possible" is: **yes for talking, yes for the
+gateway's own tools, and no for anything on the computer** — with the
+engine as shipped. The reason is one function,
+`handleClaudeLiveControlRequest` in
+`openclaw/src/agents/cli-runner/claude-live-session.ts`: Claude Code is
+started with `--permission-prompt-tool stdio`, so every tool it would
+itself prompt for (`Bash`, `Write`, `Edit`, a `Read` outside its folder,
+`WebFetch`) asks the engine, and the engine answered *allow* under
+`full`/`off` and *deny* under everything else. The gateway's own
+`read`/`write`/`edit`/`exec` are deliberately not bridged to Claude Code
+(`NATIVE_TOOL_EXCLUDE` in `gateway/mcp-http.runtime.ts`), so there was
+no second route. Either nothing on the computer is ever asked about, or
+nothing on the computer can be done. The direction says every action
+asks first; under Claude Code that was impossible.
+
+**That is what "claude code still isnt working" is**, if the founder
+asked it to do anything with a file or a command: the model says it is
+blocked. The founder's log excerpt shows the session starting and no
+error, which fits — the engine does not log a denial, it just answers
+Claude Code with one. (The `mcp loopback: conflicting schema
+definitions` lines are the loopback tool schema being built; a warning
+about two tools sharing a parameter name, not a fault.)
+
+### The fix: Claude Code's own tools ask through the card
+
+`scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`, the
+thirty-second engine patch. A new module,
+`src/agents/cli-runner/claude-native-tool-approval.ts`, answers each
+`can_use_tool` the way the engine's own tools are answered:
+
+- **`Bash`** is a command, judged as `exec` judges one: the same
+  approvals file, the same allowlist analysis, the same card, and
+  "Always" remembered the same way (`persistAllowAlwaysPatterns`, or the
+  exact command when no pattern comes out of it).
+- **`Read`, `Glob`, `Grep`** are reads and **`Write`, `Edit`,
+  `MultiEdit`, `NotebookEdit`** are writes, judged by
+  `decideFileToolAccess` from item 47's patch: free inside the agent's
+  workspace and the engine state directory, asked everywhere else, with
+  "Always" remembered per directory. A `Grep` with no path is a read of
+  the working folder.
+- **Anything else** (`WebFetch`, `WebSearch`, a tool that does not exist
+  yet) is asked about as itself, name and arguments on the card. Denying
+  silently would teach the model the computer is broken; allowing
+  silently would break the rule.
+
+The request carries `claude-tool <ToolName> <text>` in `commandArgv`, as
+item 47's carries `file-access`, so the app knows Claude Code is blocked
+on the answer inside its turn and sends no "approved, carry on"
+continuation (`openclawApprovalBridge.ts`, `PendingApprovalEntry.kind =
+'claude'`). Its `Bash` takes the command card with the danger level;
+its other tools take a card named for the tool. While a card is up the
+live session's no-output watchdog stands down (`pendingControlRequests`),
+because Claude Code prints nothing while it waits and the watchdog would
+otherwise kill the session under the person's hand. The decision is
+logged: `claude native tool: name=Write decision=allow|deny reason=…`.
+
+**Proof, live.** The patched engine, run from source on this machine
+with the app's policy (`allowlist`/`on-miss`) and a script standing in
+for the app that answers every card:
+
+| Turn | Card raised | Answer | Result |
+|---|---|---|---|
+| Write `hello.txt` in the workspace | none — free root | — | file written by `Write` |
+| Write `personal/outside.txt` | `file-access write …/outside.txt` | allow once | file written |
+| `echo bashed > personal/bashed.txt` by Bash | `claude-tool Bash echo bashed > …` | allow once | file written |
+| Write `personal/refused.txt` | `file-access write …/refused.txt` | deny | no file; Claude Code: *"the write was denied by an approval check"* |
+
+Engine: 19 new tests on the decision (every policy, allowlist hit,
+durable always, ask=always, timeout fallback, the file kinds, the
+generic card, a failure becoming a denial); the 17 file-approval tests
+still pass; `tsgo` on the core has the same two pre-existing errors as
+before and none in the touched files; `oxfmt`/`oxlint` clean. The patch
+applies on a fresh base with all 31 others in the build's order, and
+both this patch and item 47's now have strong validators in
+`apply-openclaw-patches.cjs` (47's had none). App: 5 new tests on the
+bridge and controller; tsc, eslint, `compile:electron` clean.
+
+**Unrun:** the founder's Mac. The whole thing there — the card appearing
+in the thread for a Claude Code `Write`, "Always" sticking, and the
+bypass mode that cannot run here. The lines to read, in order:
+`[ClaudeCode] on: development build, claude at …`,
+`[EngineConfigSync] model=claude-cli/…`, `claude live session start`,
+then per action `claude native tool: name=… decision=…`, and on a
+failure `claude live session turn failed: … error=…` — that last line is
+the one that was missing from the excerpt, and the one to send next
+time.
+
+### The settings, gone
+
+*"i told you to remove that settings for api keys. or allowance or
+whatever that is."* Item 53 removed the Claude Code choice and the
+Composio key and kept a Models group (the account's allowance or the
+person's own provider key). That group is gone now, with its module
+(`shared/settings/models.ts`), its tests, and the config-resolver test
+that existed only to prove the row moved the engine. Nothing about
+models is a setting: the account's models run through the metered
+proxy, and Claude Code runs in a development build, both decided in
+code. The agent's own map of the app (`reference/app-ui.md`) says so
+instead of sending it to a row that does not exist. A test now walks
+every tab and asserts no models row, no key field, no secret field.
+
+### The billing fact, since "only my claude code account" turns on it
+
+Anthropic announced that from 15 June 2026 the Agent SDK and `claude -p`
+would stop drawing on Pro/Max subscriptions and bill extra usage
+separately — and then paused that change before it took effect.
+Today `claude -p`, and so every turn the engine runs through Claude
+Code, draws on the subscription's usage limits, exactly like typing
+in the terminal. Sources:
+<https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan>,
+<https://zed.dev/blog/anthropic-subscription-changes>. The engine's own
+`docs/providers/claude-max-api-proxy.md` still carries the older
+warning. If Anthropic un-pauses it, the mechanic keeps working and the
+bill moves; nothing in the code decides that.
+
+**Where:** `openclaw/src/agents/cli-runner/{claude-native-tool-approval.ts,claude-live-session.ts}`
+(+test) through `scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`;
+`scripts/apply-openclaw-patches.cjs`;
+`main/libs/agentEngine/{openclawApprovalBridge,openclawApprovalController}.ts` (+tests);
+`shared/settings/{rows,appUiMap}.ts` (+tests), `shared/thread/links.ts`,
+`design/settings/useSettings.ts`, `main/libs/openclawConfigSync.runtime.test.ts`;
+deleted `shared/settings/models.ts` (+test), `main/libs/claudeSettings.providerChoice.test.ts`.

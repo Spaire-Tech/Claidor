@@ -1,5 +1,4 @@
 import { ExecPolicy } from './constants';
-import { ACCOUNT_MODELS } from './models';
 import {
   SETTINGS_TABS,
   settingsFor,
@@ -58,16 +57,12 @@ export const EVERY_ROW: SettingsInput = {
   workingDirectory: MAP_PLACEHOLDERS[1],
   execPolicy: ExecPolicy.Ask,
   memoryEnabled: true,
-  modelChoice: 'openai',
-  modelApiKey: '',
   usage: { fraction: 0, value: '', desc: '' },
   version: MAP_PLACEHOLDERS[2],
   onSignOut: noop,
   onAddAccount: noop,
   onExecPolicy: noop,
   onMemory: noop,
-  onModelChoice: noop,
-  onModelApiKey: noop,
   onWorkingDirectory: noop,
   onRefreshUsage: noop,
   onCheckUpdates: noop,
@@ -88,7 +83,6 @@ const ONLY_WHEN: Record<string, string> = {
   'computer-name': 'once the app knows the computer\'s name',
   'working-directory': 'once a conversation has a working folder',
   usage: 'once the account\'s usage has come back from the server',
-  'model-api-key': 'only when a provider other than the account is chosen',
 };
 
 /**
@@ -104,7 +98,6 @@ const ONLY_WHEN: Record<string, string> = {
 const DESCRIBED_INSTEAD: Record<string, string> = {
   'sign-out': 'the person\'s own name',
   version: 'the version this app is on',
-  'model-api-key': 'the chosen provider\'s API key',
   'refresh-usage': 'the usage figure',
 };
 
@@ -186,9 +179,9 @@ export function buildAppUiMap(appName: string): string {
     '- **The computer icon** in the conversation header opens the panel:',
     '  the browser you drive, the files you have made, what you have',
     '  delegated, and what the person gave you.',
-    '- **Models** live in Settings → General, not in the conversation.',
-    `  \`${ACCOUNT_MODELS}\` means the account's own monthly allowance; the`,
-    '  other choices are the person\'s own provider key, billed to them.',
+    '- **Models** are not a setting anywhere. Which model runs is decided',
+    '  in code: the account\'s models through Caisra\'s own service. There',
+    '  is no API key field and no allowance choice for the person to find.',
     '- **An agent\'s own settings** open from its name in the conversation',
     '  header, or from the small trash icon that appears on its row in the',
     '  sidebar while that conversation is open. The column that opens holds',

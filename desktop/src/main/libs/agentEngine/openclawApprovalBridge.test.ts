@@ -2,7 +2,9 @@ import { describe, expect, test } from 'vitest';
 
 import {
   buildExecApprovalPermissionRequest,
+  CLAUDE_TOOL_COMMAND_HEAD,
   FILE_ACCESS_COMMAND_HEAD,
+  parseClaudeTool,
   parseExecApprovalRequestedPayload,
   parseFileAccess,
   type PendingApprovalEntry,
@@ -95,6 +97,67 @@ describe('a file tool asking', () => {
     );
     expect(request.toolName).toBe('Bash');
     expect(request.toolInput.command).toBe('ls -la');
+    expect(request.toolInput.fileAccess).toBeUndefined();
+  });
+});
+
+describe("one of Claude Code's own tools asking", () => {
+  // The engine patch `openclaw-claude-tools-ask-first.patch` raises a
+  // command approval with `claude-tool <ToolName> <text>` in commandArgv
+  // for every tool Claude Code would itself prompt for.
+  const claudeRequest = (argv: unknown, command = 'ls -la ~/Documents') => ({
+    sessionKey: 'desktop-session-1',
+    command,
+    commandArgv: argv as string[],
+    cwd: '/Users/bass/Work',
+  });
+
+  test('is recognised by its argv head, and carries the tool and its text', () => {
+    const parsed = parseExecApprovalRequestedPayload({
+      id: 'req-3',
+      request: claudeRequest([CLAUDE_TOOL_COMMAND_HEAD, 'Bash', 'ls -la ~/Documents']),
+    });
+    expect(parsed?.claudeTool).toEqual({ toolName: 'Bash', text: 'ls -la ~/Documents' });
+    expect(parsed?.fileAccess).toBeUndefined();
+    expect(parsed?.shouldAutoApprove).toBe(false);
+  });
+
+  test('a real command is never mistaken for one', () => {
+    expect(parseClaudeTool({ command: 'claude-tool x', commandArgv: ['claude-tool'] })).toBeUndefined();
+    expect(parseClaudeTool({ command: 'ls', commandArgv: ['ls'] })).toBeUndefined();
+    expect(parseClaudeTool({ command: 'ls' })).toBeUndefined();
+    expect(parseClaudeTool({ commandArgv: [CLAUDE_TOOL_COMMAND_HEAD, '', 'x'] })).toBeUndefined();
+    expect(parseClaudeTool({ commandArgv: [CLAUDE_TOOL_COMMAND_HEAD, 'Bash', ' '] })).toBeUndefined();
+    expect(parseClaudeTool({ commandArgv: [CLAUDE_TOOL_COMMAND_HEAD, 'Bash', 'ls', 'extra'] })).toBeUndefined();
+  });
+
+  test('its Bash takes the command card', () => {
+    const request = buildExecApprovalPermissionRequest(
+      'req-3',
+      claudeRequest([CLAUDE_TOOL_COMMAND_HEAD, 'Bash', 'rm -rf build']),
+      'rm -rf build',
+      undefined,
+      { toolName: 'Bash', text: 'rm -rf build' },
+    );
+    expect(request.toolName).toBe('Bash');
+    expect(request.toolInput.command).toBe('rm -rf build');
+    expect(request.toolInput.dangerLevel).toBeDefined();
+    expect(request.toolInput.claudeTool).toBeUndefined();
+  });
+
+  test('any other of its tools takes a card named for the tool, arguments where the command goes', () => {
+    const text = 'WebFetch {"url":"https://example.com"}';
+    const request = buildExecApprovalPermissionRequest(
+      'req-4',
+      claudeRequest([CLAUDE_TOOL_COMMAND_HEAD, 'WebFetch', text], text),
+      text,
+      undefined,
+      { toolName: 'WebFetch', text },
+    );
+    expect(request.toolName).toBe('WebFetch');
+    expect(request.toolInput.command).toBe(text);
+    expect(request.toolInput.claudeTool).toEqual({ toolName: 'WebFetch' });
+    expect(request.toolInput.cwd).toBe('/Users/bass/Work');
     expect(request.toolInput.fileAccess).toBeUndefined();
   });
 });
