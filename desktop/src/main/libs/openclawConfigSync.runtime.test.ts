@@ -3196,6 +3196,29 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd.indexOf('### The person')).toBeGreaterThan(agentsMd.indexOf('## Who you are'));
   });
 
+  test('the engine is told to read the whole of AGENTS.md, and the managed file fits under the line', async () => {
+    // The engine cuts each bootstrap file at 20,000 characters unless
+    // told otherwise; the managed AGENTS.md is nearly twice that, and on
+    // 16 September the founder's agent reported it "truncated at startup
+    // (37,604 chars down to 19,188)". This holds the ceiling up and keeps
+    // the file under it, so a growing prompt fails here and not there.
+    const sync = await createSync({
+      getOnboardingWorkType: () => 'Founder / Business Owner',
+      getProjects: () => [{
+        id: 'project:1', slug: 'q4-deck', name: 'Q4 Deck',
+        folder: '/Users/bass/Work/Q4', memberIds: ['main'], createdAt: 1,
+      }],
+    });
+    expect(sync.sync('bootstrap-limits').ok).toBe(true);
+    const { OPENCLAW_BOOTSTRAP_MAX_CHARS, OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS } = await import('./openclawConfigSync');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.agents.defaults.bootstrapMaxChars).toBe(OPENCLAW_BOOTSTRAP_MAX_CHARS);
+    expect(config.agents.defaults.bootstrapTotalMaxChars).toBe(OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS);
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd.length).toBeGreaterThan(20_000);
+    expect(agentsMd.length).toBeLessThan(OPENCLAW_BOOTSTRAP_MAX_CHARS * 0.6);
+  });
+
   test('before step one has played, the brief says nothing about the person', async () => {
     const sync = await createSync();
     expect(sync.sync('no-work-type').ok).toBe(true);

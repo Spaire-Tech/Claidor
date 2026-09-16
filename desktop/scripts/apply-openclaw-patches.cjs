@@ -404,6 +404,12 @@ const strongPatchValidators = {
         'pendingControlRequests: number;',
         'void decideClaudeNativeToolUse({',
         'if (turn.pendingControlRequests > 0) {',
+        // 16 September: the silence watchdog stands down while one of
+        // Claude's own tools runs, and Claude's native question tool is
+        // withheld so the app's card is the one the model reaches.
+        'if (turn.activeTools.size > 0) {',
+        'export const CLAUDE_NATIVE_TOOLS_WITHHELD = ["AskUserQuestion"] as const;',
+        '"--disallowedTools",',
       ],
       forbiddenSnippets: [
         'OpenClaw exec policy denied Claude native tool use',

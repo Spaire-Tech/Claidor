@@ -155,11 +155,17 @@ const plugin = {
       return {
         name: 'AskUserQuestion',
         label: 'Ask User Question',
+        // The description the model reads. It used to say "Do NOT use
+        // this tool for non-delete commands", which is why the question
+        // cards the founder designed never appeared: the model read it
+        // and stopped. The card is for any real decision.
         description: [
-        'Ask the user a question with predefined options and wait for their response.',
-        'Use this tool BEFORE executing any delete operation (rm, trash, rmdir, unlink, git clean).',
-        'The user will see a confirmation dialog with the options you provide.',
-        'Do NOT use this tool for non-delete commands.',
+        'Ask the person a question with a small set of answers and wait for their choice.',
+        'It draws a card in the conversation with the options on it; they can also type their own answer.',
+        'Use it whenever what you do next depends on something only they can decide: which file, which account, how far to go, which of two ways.',
+        'Ask before the work, not after. Two to four options, each a short phrase with what happens if chosen.',
+        'Do not use it to confirm a command or a file change: the app asks about those itself, in its own card.',
+        'A dismissed card is a no; do not ask the same thing again.',
       ].join(' '),
       parameters: AskUserQuestionSchema,
       async execute(_id: string, params: unknown) {

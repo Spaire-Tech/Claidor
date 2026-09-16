@@ -66,6 +66,14 @@ those models run without reasoning whenever tools are in play, which for
 an agent is always; the proper fix is OpenAI's `/v1/responses`, and that
 is a translation layer nobody has built.
 
+**The engine cuts every instruction file at 20,000 characters unless
+told otherwise** (`agents.defaults.bootstrapMaxChars`), and the managed
+AGENTS.md is about 38,000. Until 16 September the app never set it, so
+every agent on every model read half its brief and none of the rules
+after the cut. The config sync now sets it and a runtime test keeps
+the file under the line (review item 63). If an agent "ignores" a
+rule, check where in AGENTS.md the rule sits before blaming the model.
+
 That bug was found by one log line and not by reasoning about it. The
 proxy records every provider refusal as `desktop.proxy.upstream_refused`
 with the provider's own sentence in it. Two hours of my guessing —

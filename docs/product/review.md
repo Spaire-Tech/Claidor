@@ -3072,3 +3072,124 @@ the first action in two options, in words.
 `renderer/design/onboarding/{Onboarding,useOnboarding}`, `renderer/config.ts`,
 `renderer/types/{cowork,electron.d}.ts`, `shared/agent/chiefOfStaff.ts`,
 `harness/{main.tsx,roster-press.mjs}`.
+
+## 63. "the ai is dumb. something is wrong." — 16 September, evening — `four faults proved and fixed; three unexplained without the log`
+
+The founder's thread with their agent: a tool's raw `{ "ok": true }`
+in a bubble; a Word document they could not open and no file card; the
+agent saying its instructions were *"truncated at startup (37,604
+chars down to 19,188)"*; the question card failing with a schema error
+twice; "not once was i asked permission to access my computer"; and
+"what is eating my storage" ending in *"CLI produced no output for
+180s and was terminated"*. Then: *"is it the model? is it because we
+using my claude code?"*
+
+**It is not the model.** The model never received half of its
+instructions, and two of the tools it was given failed in ways it
+could not repair. Read from the code, not guessed:
+
+1. **Half the instructions were cut, for every model, since the
+   day the managed prompt passed 20,000 characters.** The engine
+   reads each bootstrap file (AGENTS.md, SOUL.md, USER.md…) up to
+   `agents.defaults.bootstrapMaxChars`, default 20,000
+   (`openclaw/src/agents/embedded-agent-helpers/bootstrap.ts`), and
+   the app never set it. The managed AGENTS.md is about 38,000. The
+   agent's own report, 37,604 down to 19,188, is that arithmetic.
+   Everything after the cut — the file cards, the question card's
+   rules, the escalation rules, the deliverable links, memory,
+   scheduled tasks — reached no agent on any model. "Its not even
+   reading its md" was exactly right. **Fixed:** the config sync sets
+   `bootstrapMaxChars` 120,000 and `bootstrapTotalMaxChars` 200,000,
+   and a runtime test holds the managed file under that line so a
+   growing prompt fails in the test and not in the agent.
+
+2. **The question card was forbidden by its own description.** The
+   engine's AskUserQuestion tool (`openclaw-extensions/ask-user-question`)
+   told the model *"Use this tool BEFORE executing any delete
+   operation … Do NOT use this tool for non-delete commands"* —
+   NetEase's text, which the model quoted back to the founder as "the
+   card tool is scoped to delete confirmations only". The managed
+   prompt said the opposite in a section that was itself past the
+   cut. **Fixed:** the description now says what the founder designed
+   (any real decision, ask before the work, not for confirming
+   commands), and the prompt's "Delete Operations" section, which
+   told the model to ask before every delete when the app's own card
+   already asks, is replaced by one line saying so.
+
+3. **Under Claude Code, the card the model then reached for was
+   Claude Code's own, and it cannot work here.** Claude's native
+   AskUserQuestion answers through the permission prompt, and the
+   CLI requires the person's answers back in `updatedInput`
+   (`permission handler updatedInput … must satisfy the tool's input
+   schema`, from the binary). The stdio permission path answers
+   allow or deny and has no way to carry answers, so the CLI's
+   schema check failed — the ZodError the founder saw, twice — and
+   no card was ever drawn. **Fixed:** the live session now passes
+   `--disallowedTools AskUserQuestion`, so the only question tool the
+   model can reach is the gateway's, bridged over MCP, which draws
+   the app's card and returns the answer (proven in item 15).
+
+4. **The storage scan was killed by our own watchdog.** The live
+   session ends a turn when the CLI prints nothing for the no-output
+   timeout (180 seconds on a fresh session). While one of Claude's
+   own tools runs — `du` over a home folder — the CLI prints nothing
+   until it returns. **Fixed:** the watchdog stands down while a tool
+   is active and stands again when its result lands; the run timeout
+   still bounds the turn. Two engine tests: a tool silent past the
+   timeout finishes its turn; a turn silent with no tool running is
+   still ended.
+
+**Three things the transcript cannot settle, and what would.** The
+`{ "ok": true }` bubble: the engine only turns Claude's text deltas
+into a bubble, never tool results, and the app draws nothing for a
+tool result, so either the model wrote it or the turn's final text
+was it; the log line `claude live session turn: … digest` says which.
+The message that appeared twice: not a path I can see in the code;
+the same log line, twice or once, says whether the CLI answered twice
+or the app drew one answer twice. The Word document with no card: a
+file the agent names by path gets a card when the path is inside the
+conversation's folder and the file exists; a screenshot of that
+message would show whether it was a chip in a sentence or nothing.
+And "never asked permission": a command on the engine's read-only
+allowlist, or a write inside the agent's own workspace, is allowed
+without a card by the exec policy; every other command asks. The
+line `claude native tool: name=Bash decision=allow|deny reason=…` in
+the app log says, per command, which it was.
+
+**What I got wrong before this.** Item 65 changed the engine from
+denying Claude's tools outright to asking through the card, and
+three of the engine's own tests for the old behaviour ("deny when
+exec policy is restrictive" and two siblings) were left in place and
+never run; they were failing since that day. Deleted now as tests of
+a path that no longer exists; the ask path is covered by the
+approval module's nineteen tests and the spawn test's allow case.
+And item 63's "proven end to end" was the engine on Linux with a
+scripted approver, not the app on a Mac with a person; the four
+faults above are what that proof did not reach.
+
+**Is it Claude Code?** Faults 3 and 4 are the Claude Code path;
+faults 1 and 2 hit every model and every path. Switching the mechanic
+off would have removed 3 and 4 and left the agent still reading half
+its brief. ChatGPT would have the same halved brief. Both are fixed
+now; the Claude Code path also still lacks the file card for a file
+written by Claude's own Write tool (the app sees the engine's write
+tools, not Claude's), which is the next thing to build there.
+
+**Proof.** Engine: 74 spawn and prompt tests, 10 approval tests,
+oxfmt, oxlint, tsgo; the patch regenerated from a clean base with
+all 32 applied and reproducing the working tree byte for byte;
+validators extended. App: 133 tests in the config sync and the
+question tool, tsc, eslint, `compile:electron`.
+
+**Unrun: the app on the founder's Mac.** After pulling: the log line
+`[EngineConfigSync]` shows the sync; the agent's own "truncated"
+warning must be gone; a question card must appear when the agent is
+asked to ask; "what is eating my storage" must run past three
+minutes; and the log lines named above answer the three open
+questions.
+
+**Where:** `desktop/src/main/libs/openclawConfigSync.ts`
+(+runtime test), `desktop/openclaw-extensions/ask-user-question/index.ts`,
+`desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`
+(`claude-live-session.ts`, `cli-runner.spawn.test.ts`),
+`desktop/scripts/apply-openclaw-patches.cjs`.

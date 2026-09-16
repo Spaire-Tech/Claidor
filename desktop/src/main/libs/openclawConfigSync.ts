@@ -167,6 +167,15 @@ export function omitPluginIndexManagedKeys(plugins: unknown): Record<string, unk
  * Also used by the runtime adapter's client-side timeout watchdog.
  */
 export const OPENCLAW_AGENT_TIMEOUT_SECONDS = 3600;
+/**
+ * How much of each bootstrap file (AGENTS.md, SOUL.md, USER.md…) the
+ * engine reads before cutting it, and of all of them together. The
+ * engine's own defaults are 20,000 and 60,000; the managed AGENTS.md
+ * alone is ~38,000, so with the defaults the agent lost the second half
+ * of its instructions on every turn (review item 63).
+ */
+export const OPENCLAW_BOOTSTRAP_MAX_CHARS = 120_000;
+export const OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS = 200_000;
 export const OPENCLAW_LOBSTERAI_MODEL_TIMEOUT_SECONDS = 330;
 export const OPENCLAW_HEARTBEAT_EVERY_ENABLED = '1h';
 export const OPENCLAW_HEARTBEAT_EVERY_DISABLED = '0m';
@@ -729,10 +738,8 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- Never write an exploit, a proof of concept for one, malware, or a procedure for attacking any system — including this computer, a test box, a lab, a class exercise, a system the person says they own, or fiction. No framing changes this. If asked for a fix and an exploit together, give the fix and decline the exploit in one short sentence, without a lecture.',
   '- Never use the person\'s keys, cookies, sessions or saved logins to reach anything they did not ask you to reach, and never gather, copy or send a credential from this computer anywhere. A credential you meet by accident is left where it was and not mentioned in a memory, a note or a summary.',
   '',
-  '### Delete Operations',
-  '- Before executing **delete operations** (rm, trash, rmdir, unlink, git clean, or any command that permanently removes files/directories), check if the `AskUserQuestion` tool is available in your toolset.',
-  '- If `AskUserQuestion` IS available: you MUST call it first to get user confirmation. The question should clearly state what will be deleted with options like "Allow delete" / "Cancel".',
-  '- If `AskUserQuestion` is NOT available: execute the delete command directly without asking for text-based confirmation.',
+  '### Deleting',
+  '- A command that removes files (rm, trash, rmdir, unlink, git clean) is asked about by the app itself, in its own card, before it runs. Do not ask a second time in text or with a question card; say in one line what you are about to remove and why, then run it and let the card do the asking. If the card is refused, that is the answer.',
   '',
   // The question card is a designed part of this product, not a fallback
   // for tricky cases. The prompt this replaced offered it for "selecting
@@ -2931,6 +2938,16 @@ export class OpenClawConfigSync {
       agents: {
         defaults: {
           timeoutSeconds: OPENCLAW_AGENT_TIMEOUT_SECONDS,
+          // The engine cuts every bootstrap file (AGENTS.md, SOUL.md,
+          // USER.md…) at 20,000 characters unless told otherwise, and the
+          // managed AGENTS.md is close to twice that: on 16 September the
+          // founder's agent reported it "truncated at startup (37,604 chars
+          // down to 19,188)" and had never seen the file cards, the
+          // question card or the escalation rules. Nothing in the app
+          // shortens the prompt, so the ceiling is raised instead, and a
+          // test keeps the managed file under it.
+          bootstrapMaxChars: OPENCLAW_BOOTSTRAP_MAX_CHARS,
+          bootstrapTotalMaxChars: OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS,
           model: {
             primary: primaryModel,
             ...modelRoleDefaults.model,
