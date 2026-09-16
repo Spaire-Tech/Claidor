@@ -2738,3 +2738,56 @@ written on Caisra.
 **Not in the zip, still needed before step two is built:** Yodo's own
 anatomy (how he chooses), and the step-two canvas. Nothing was built
 from this; nothing was changed in the app.
+
+## 58. Yodo's anatomy, v4 — `read; recorded; nothing built`
+
+The second zip (`caisra-yodo-anatomy-v4.zip`), kept byte for byte under
+`docs/product/yodo-anatomy/`: twelve numbered sections, four skills, a
+branding note and a cloud SVG, 44 KB. This is the piece I asked for
+before step two, and it is a real anatomy: who Yodo is, what he owns,
+how work moves (do, staff, ask), the three-beat onboarding arc, the
+staffing playbook, the design rubric he runs before creating an agent,
+voice contracts, what he remembers, two weekly health checks, and the
+work-type table that names which two or three of the 23 each work type
+gets. Section 04 restates step one line for line as it is built.
+
+**Its language is the other product's.** `CreateAgent`, `SendToAgent`
+with a priority flag, `harness: temporal`, "Share JSON", choice cards,
+secret-request, `notifyOnAgentUpdates`, routines at Pacific times,
+"poteto-mode", `pstack`, a "Make Agent UI" over webhook and Tailscale.
+Every one of those is a primitive of the reference product. Most have an
+equivalent here, and the mapping is the work:
+
+| The anatomy says | Here |
+|---|---|
+| chat is the front door; specialists behind it | the shell: Yodo is the main agent, every agent a conversation (direction §1) |
+| choice cards for real decisions | the ask-input tool and the question card (items 15, 33) |
+| secret-request, never keys in chat | the secret-request card (item 30) |
+| `SendToAgent`, priority | the engine's session tools (`sessions_send`, `sessions_spawn`, `subagents`) and group rooms (item 35) |
+| routines, quiet if nothing | the engine's cron, scheduled tasks; the person's timezone, not Pacific |
+| a strong seated from the catalog | a kit installed from the store (`shared/kit`), which serves none yet |
+| **`CreateAgent`** | **nothing.** Agents are created over IPC from the screen (`agentManager.ts`, the create screen). Yodo has no tool to create one from a conversation. Step two's "Stand them up" needs that tool. |
+| poteto-mode, pstack, Make Agent UI, `harness: temporal` | theirs; no equivalent and none wanted |
+
+**What differs from what is decided.** The anatomy gives Yodo a
+"squircle / cyan" avatar and a title chip "Fleet & decisions"; the
+product gives him the cloud (`DefaultAgentProfile`, item 62) and the
+canvas has no chip. It puts dr eggbot's craft "behind Yodo", which is
+right: the design rubric is Yodo's own, not a seat. Its health checks
+name Pacific times; ours run in the person's timezone. Its coding lane
+(Engineer Bot, tinkabot, poteto, pstack) is the part that does not
+translate (item 57).
+
+**What it changes in code when step two is built.** Yodo's managed
+brief (`shared/agent/chiefOfStaff.ts`) grows from seven rules to the
+anatomy's canon: front door, fleet owner, decision gateway, design
+craft, the do/staff/ask loop, the anti-patterns. The two skills
+(`cos-getting-started`, `design-caisra-agent`) become Yodo's own skills
+in his workspace. The work-type table becomes data beside the 23 as
+kits. The roster card is an in-chat form (item 33) with "Stand them up"
+as its action. And the missing tool: create an agent from a kit, from a
+conversation, through the same ask-first card as everything else.
+
+**Not built.** Nothing in the app changed. Still needed before step two:
+the canvas for it, the 23 as kits (item 57), the Slack decision, and the
+create-agent tool.
