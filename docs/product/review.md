@@ -4000,3 +4000,10 @@ invent". Both fixed the same evening:
 
 Unrun as before: a model writing a block, and a model fetching a
 Wikipedia summary for a picture. Both wait on the Mac.
+
+**The founder will design the cards themselves** (*"you know what i'll
+design it myself. when it comes back make sure everything is designed
+that way."*). What is here is the mechanism and a first drawing; the
+drawing is theirs to replace, component by component, in
+`CardBlock.tsx`. The library (what the agent may name) stays unless
+their design needs a card it does not have.
