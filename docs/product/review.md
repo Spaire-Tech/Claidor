@@ -4066,11 +4066,22 @@ parse clean), the config-sync runtime test (`## Cards` then
 `artifacts` screen with a board deck and an arbitration memo, the
 shooter pressing each chip, three photographs sent to the founder.
 
+**The first photographs were an empty shell, and the founder said so.**
+*"where are the pictures? the contents? … can you please take this job
+seriously."* Two thin pages and five thin slides with no photographs,
+in a fallback face, proved only that the viewer ran. Redone the same
+evening: Inter bundled (`fonts/InterVariable.woff2`, Open Font Licence,
+loaded only by the artifacts), a nine-slide board deck (title with a
+photo, a hero metric over a photo, a chart with metrics, visual cards,
+a photo with body, a section break over a photo, a quote) and the
+founder's own "Big Tech 2025 Report Card" as a four-page report (front
+page with a photo, the scoreboard with metrics and a bar chart, the
+four company cards with pictures, the quarter-by-quarter table with
+sources). Six photographs sent; the report's third page is their
+picture, component for component.
+
 **Two things to know.**
-- Their design is set in Inter and the package does not ship it; on
-  this box it fell back to the system face, and on a Mac it will be
-  Helvetica. Bundling Inter (Open Font Licence) is one file and the
-  founder's call, since the app is set in Switzer.
+- Inter is bundled for the artifacts only; the app stays in Switzer.
 - Print mode exists in both viewers for PDF and PPTX export; the
   exporters themselves are their cloud's. A PDF through Electron's own
   print is a small follow-up; a `.pptx` is not something OpenUI gives.

@@ -76,6 +76,15 @@ for (const screen of screens) {
     await page.waitForTimeout(900);
     await page.screenshot({ path: 'harness/shots/artifacts-deck.png' });
     console.log('shot artifacts-deck');
+    // Their viewer opens on the last slide (the newest, as it streams)
+    // and the arrows are buttons, not keys: go by the thumbnails.
+    const slides = ['Where we are, and what we ask', 'Revenue by month', 'Three things that moved', 'Where the growth came from'];
+    for (let index = 0; index < slides.length; index += 1) {
+      await page.getByText(slides[index]).first().click({ force: true });
+      await page.waitForTimeout(600);
+      await page.screenshot({ path: `harness/shots/artifacts-deck-${index + 1}.png` });
+    }
+    console.log('shot artifacts-deck-1..4');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
     const report = page.locator('[data-artifact="report"] button, [data-artifact="report"] [role="button"]').first();
@@ -83,6 +92,14 @@ for (const screen of screens) {
     await page.waitForTimeout(900);
     await page.screenshot({ path: 'harness/shots/artifacts-report.png' });
     console.log('shot artifacts-report');
+    // And the report's later pages, by scrolling the viewer.
+    for (let step = 1; step <= 3; step += 1) {
+      await page.mouse.move(640, 500);
+      await page.mouse.wheel(0, 1500);
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `harness/shots/artifacts-report-${step}.png` });
+    }
+    console.log('shot artifacts-report-1..3');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
   }

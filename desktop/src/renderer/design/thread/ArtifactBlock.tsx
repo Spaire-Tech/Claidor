@@ -1,5 +1,6 @@
 import '@openuidev/react-ui/index.css';
 import '@openuidev/thesys/styles.css';
+import './artifacts.css';
 
 import { Presentation, Report } from '@openuidev/thesys';
 import { useState } from 'react';
