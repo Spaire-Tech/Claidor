@@ -64,6 +64,18 @@ for (const screen of screens) {
   }
   await page.screenshot({ path: `harness/shots/${screen}.png` });
   console.log('shot', screen);
+  // The thread pins to its newest message, so a screen whose point is
+  // higher up gets a second photograph from the top.
+  if (screen === 'cards') {
+    await page.evaluate(() => {
+      const row = document.querySelector('[data-thread-item]');
+      const list = row?.parentElement;
+      if (list) list.scrollTop = 0;
+    });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: 'harness/shots/cards-top.png' });
+    console.log('shot cards-top');
+  }
 }
 
 // The face: a page set in the system font by mistake looks almost right
