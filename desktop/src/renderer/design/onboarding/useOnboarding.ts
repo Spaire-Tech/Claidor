@@ -16,8 +16,8 @@ import {
   ROLES,
   type ScriptContext,
   segmentsOf,
-  shownWords,
   type ShownWord,
+  shownWords,
   stageOf,
   type TaskCopy,
   taskCopy,
@@ -28,8 +28,8 @@ import {
  * The first step of onboarding, as state.
  *
  * The canvas's own logic (`docs/product/design/canvas-2026-09-16-onboarding-template.html`),
- * kept to its shape: one clock per phase, a frame every 16ms that turns
- * elapsed time into how many words have landed, and a handful of
+ * kept to its shape: one clock per phase, a tick on every frame that
+ * turns elapsed time into how many words have landed, and a handful of
  * choices — a role, a task, an answer to the permission card. What the
  * canvas faked, this does: on "Allow access" the main process runs the
  * task on the Mac and the outcome, done or not, decides the last lines.
@@ -89,6 +89,8 @@ export interface OnboardingState {
   submitOther: () => void;
   hasRole: boolean;
   roleLabel: string;
+  /** They typed their own words rather than picking one of the ten. */
+  ownWords: boolean;
   showTasks: boolean;
   tasks: readonly TaskCard[];
   task?: TaskCopy;
@@ -145,10 +147,14 @@ export function useOnboarding(
     setClock({ phase, t0: Date.now(), beats: 0 });
   }, []);
 
-  // The clock. The canvas ticks every 16ms; so does this, and it only
-  // touches state when the count of landed words changes.
+  // The clock. The canvas ticked on a 16ms timer; this ticks on the
+  // display's own frames, so a word lands on the frame its beat falls
+  // in rather than up to a frame later, and it only touches state when
+  // the count of landed words changes.
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    let frame = 0;
+    const tick = (): void => {
+      frame = window.requestAnimationFrame(tick);
       if (intro) {
         if (Date.now() - born.current > INTRO_MS) begin(OnboardingPhase.Open);
         return;
@@ -159,8 +165,9 @@ export function useOnboarding(
         const beats = beatsAt(Date.now() - current.t0, total);
         return beats === current.beats ? current : { ...current, beats };
       });
-    }, 16);
-    return () => window.clearInterval(timer);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
   }, [intro, begin, context]);
 
   const words = useCallback((phase: OnboardingPhase, k: number): ShownWord[] => {
@@ -266,6 +273,7 @@ export function useOnboarding(
     submitOther,
     hasRole: role !== undefined,
     roleLabel,
+    ownWords: role !== undefined && typeof role !== 'number',
     showTasks: role !== undefined && done(OnboardingPhase.Role),
     tasks,
     ...(task ? { task } : {}),

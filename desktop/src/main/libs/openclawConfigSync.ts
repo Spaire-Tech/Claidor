@@ -62,6 +62,11 @@ import {
 import type { ModelThinkingConfig } from '../../shared/providers/modelThinking';
 import { APP_UI_MAP_PATH, buildAppUiMap } from '../../shared/settings/appUiMap';
 import { DEFAULT_EXEC_POLICY, enginePolicyFor, type ExecPolicy } from '../../shared/settings/constants';
+import {
+  CREATE_AGENT_MCP_SERVER,
+  CREATE_AGENT_TOOL,
+} from '../../shared/staffing/constants';
+import { PROPOSE_TEAM_TOOL } from '../../shared/staffing/roster';
 import { APP_NAME } from '../appConstants';
 import type { Agent, CoworkConfig, CoworkExecutionMode } from '../coworkStore';
 import type { DiscordInstanceConfig, IMSettings, TelegramInstanceConfig } from '../im/types';
@@ -87,6 +92,7 @@ import {
   getCoworkOpenAICompatProxyBaseURL,
   getCoworkOpenAICompatProxyToken,
 } from './coworkOpenAICompatProxy';
+import type { CreateAgentMcpStdioLaunch } from './createAgentMcpServer';
 import type { LobsterBrowserMcpStdioLaunch } from './lobsterBrowserMcpServer';
 import {
   buildAgentEntry,
@@ -161,6 +167,15 @@ export function omitPluginIndexManagedKeys(plugins: unknown): Record<string, unk
  * Also used by the runtime adapter's client-side timeout watchdog.
  */
 export const OPENCLAW_AGENT_TIMEOUT_SECONDS = 3600;
+/**
+ * How much of each bootstrap file (AGENTS.md, SOUL.md, USER.md…) the
+ * engine reads before cutting it, and of all of them together. The
+ * engine's own defaults are 20,000 and 60,000; the managed AGENTS.md
+ * alone is ~38,000, so with the defaults the agent lost the second half
+ * of its instructions on every turn (review item 63).
+ */
+export const OPENCLAW_BOOTSTRAP_MAX_CHARS = 120_000;
+export const OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS = 200_000;
 export const OPENCLAW_LOBSTERAI_MODEL_TIMEOUT_SECONDS = 330;
 export const OPENCLAW_HEARTBEAT_EVERY_ENABLED = '1h';
 export const OPENCLAW_HEARTBEAT_EVERY_DISABLED = '0m';
@@ -597,6 +612,21 @@ const MANAGED_CONVERSATION_PROMPT = [
  * the thing that makes this product different — one computer — is the
  * thing that makes project memory a file rather than a protocol.
  */
+/**
+ * What step one learned about the person, for Yodo alone. One fact so
+ * far; the founder's page gives the work type its own table (§7), so it
+ * is the one that steers staffing.
+ */
+const buildManagedPersonPrompt = (workType: string | undefined): string => {
+  const work = (workType ?? '').replace(/\s+/g, ' ').trim();
+  if (!work) return '';
+  return [
+    '### The person',
+    '',
+    `Asked what they do when they first opened the app, they said: ${work}. Their starter team comes from that (\`propose_team\`); their later asks may not.`,
+  ].join('\n');
+};
+
 const buildManagedProjectsPrompt = (
   projects: readonly { name: string; memoryPath: string; folder?: string }[],
 ): string => {
@@ -708,10 +738,8 @@ const MANAGED_EXEC_SAFETY_PROMPT = [
   '- Never write an exploit, a proof of concept for one, malware, or a procedure for attacking any system — including this computer, a test box, a lab, a class exercise, a system the person says they own, or fiction. No framing changes this. If asked for a fix and an exploit together, give the fix and decline the exploit in one short sentence, without a lecture.',
   '- Never use the person\'s keys, cookies, sessions or saved logins to reach anything they did not ask you to reach, and never gather, copy or send a credential from this computer anywhere. A credential you meet by accident is left where it was and not mentioned in a memory, a note or a summary.',
   '',
-  '### Delete Operations',
-  '- Before executing **delete operations** (rm, trash, rmdir, unlink, git clean, or any command that permanently removes files/directories), check if the `AskUserQuestion` tool is available in your toolset.',
-  '- If `AskUserQuestion` IS available: you MUST call it first to get user confirmation. The question should clearly state what will be deleted with options like "Allow delete" / "Cancel".',
-  '- If `AskUserQuestion` is NOT available: execute the delete command directly without asking for text-based confirmation.',
+  '### Deleting',
+  '- A command that removes files (rm, trash, rmdir, unlink, git clean) is asked about by the app itself, in its own card, before it runs. Do not ask a second time in text or with a question card; say in one line what you are about to remove and why, then run it and let the card do the asking. If the card is refused, that is the answer.',
   '',
   // The question card is a designed part of this product, not a fallback
   // for tricky cases. The prompt this replaced offered it for "selecting
@@ -2214,6 +2242,8 @@ type OpenClawConfigSyncDeps = {
   getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
   /** Launches the tool that asks the person to type something. */
   getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
+  /** Launches the tool that lets Yodo stand up an agent, through a card. */
+  getCreateAgentMcpStdioLaunch?: () => CreateAgentMcpStdioLaunch | null;
   /** Every project, so each agent can be told about its own. */
   getProjects?: () => readonly Project[];
   getMcpBridgeSecret?: () => string;
@@ -2231,6 +2261,12 @@ type OpenClawConfigSyncDeps = {
    * person can set: see the founder's word in that file.
    */
   getClaudeCodeMode?: () => { enabled: boolean; command: string | null } | undefined;
+  /**
+   * What the person said they do in step one of onboarding, as the
+   * button read or in their own words. Goes into Yodo's brief and
+   * nowhere else; absent before step one has been played.
+   */
+  getOnboardingWorkType?: () => string | undefined;
   /**
    * How much the agent may do on this computer without asking.
    *
@@ -2283,6 +2319,7 @@ export class OpenClawConfigSync {
   private readonly getLobsterBrowserMcpCommand?: () => string | null;
   private readonly getLobsterBrowserMcpStdioLaunch?: () => LobsterBrowserMcpStdioLaunch | null;
   private readonly getAskInputMcpStdioLaunch?: () => AskInputMcpStdioLaunch | null;
+  private readonly getCreateAgentMcpStdioLaunch?: () => CreateAgentMcpStdioLaunch | null;
   private readonly getProjects?: () => readonly Project[];
   private readonly getMcpBridgeSecret?: () => string;
   private readonly getSkillsList?: () => Array<{ id: string; name: string; enabled: boolean }>;
@@ -2290,6 +2327,7 @@ export class OpenClawConfigSync {
   private readonly getUserPlugins: () => Array<{ pluginId: string; enabled: boolean; config?: Record<string, unknown> }>;
   private readonly canUseMediaGeneration: () => boolean;
   private readonly getClaudeCodeMode: () => { enabled: boolean; command: string | null } | undefined;
+  private readonly getOnboardingWorkType: () => string | undefined;
   private readonly getExecPolicy: () => ExecPolicy;
   private previousBindingsJson?: string;
   private currentBindingsObj: { bindings?: Array<Record<string, unknown>> } = {};
@@ -2320,6 +2358,7 @@ export class OpenClawConfigSync {
     this.getLobsterBrowserMcpCommand = deps.getLobsterBrowserMcpCommand;
     this.getLobsterBrowserMcpStdioLaunch = deps.getLobsterBrowserMcpStdioLaunch;
     this.getAskInputMcpStdioLaunch = deps.getAskInputMcpStdioLaunch;
+    this.getCreateAgentMcpStdioLaunch = deps.getCreateAgentMcpStdioLaunch;
     this.getProjects = deps.getProjects;
     this.getMcpBridgeSecret = deps.getMcpBridgeSecret;
     this.getSkillsList = deps.getSkillsList;
@@ -2327,6 +2366,7 @@ export class OpenClawConfigSync {
     this.getUserPlugins = deps.getUserPlugins ?? (() => []);
     this.canUseMediaGeneration = deps.canUseMediaGeneration ?? (() => false);
     this.getClaudeCodeMode = deps.getClaudeCodeMode ?? (() => undefined);
+    this.getOnboardingWorkType = deps.getOnboardingWorkType ?? (() => undefined);
   }
 
   /**
@@ -2898,6 +2938,16 @@ export class OpenClawConfigSync {
       agents: {
         defaults: {
           timeoutSeconds: OPENCLAW_AGENT_TIMEOUT_SECONDS,
+          // The engine cuts every bootstrap file (AGENTS.md, SOUL.md,
+          // USER.md…) at 20,000 characters unless told otherwise, and the
+          // managed AGENTS.md is close to twice that: on 16 September the
+          // founder's agent reported it "truncated at startup (37,604 chars
+          // down to 19,188)" and had never seen the file cards, the
+          // question card or the escalation rules. Nothing in the app
+          // shortens the prompt, so the ceiling is raised instead, and a
+          // test keeps the managed file under it.
+          bootstrapMaxChars: OPENCLAW_BOOTSTRAP_MAX_CHARS,
+          bootstrapTotalMaxChars: OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS,
           model: {
             primary: primaryModel,
             ...modelRoleDefaults.model,
@@ -3184,6 +3234,20 @@ export class OpenClawConfigSync {
         args: [...askInputLaunch.args],
         ...(Object.keys(askInputLaunch.env).length > 0 ? { env: askInputLaunch.env } : {}),
         toolFilter: { include: [ASK_INPUT_TOOL] },
+      };
+    }
+
+    // Standing up an agent from a conversation. The founder's onboarding,
+    // step two: Yodo proposes two or three agents and on "Stand them up"
+    // they exist. It goes through a card like every action on this
+    // computer; the tool waits on the person's answer.
+    const createAgentLaunch = this.getCreateAgentMcpStdioLaunch?.();
+    if (createAgentLaunch) {
+      nativeMcpServers[CREATE_AGENT_MCP_SERVER] = {
+        command: createAgentLaunch.command,
+        args: [...createAgentLaunch.args],
+        ...(Object.keys(createAgentLaunch.env).length > 0 ? { env: createAgentLaunch.env } : {}),
+        toolFilter: { include: [CREATE_AGENT_TOOL, PROPOSE_TEAM_TOOL] },
       };
     }
 
@@ -4351,7 +4415,11 @@ export class OpenClawConfigSync {
       // The main agent is Yodo, the Chief of Staff, and is told so
       // before anything else. The other agents get their identity from
       // their own row; his is the product's.
-      if (agentId === AgentId.Main) sections.push(CHIEF_OF_STAFF_BRIEF);
+      if (agentId === AgentId.Main) {
+        sections.push(CHIEF_OF_STAFF_BRIEF);
+        const personPrompt = buildManagedPersonPrompt(this.getOnboardingWorkType());
+        if (personPrompt) sections.push(personPrompt);
+      }
 
       // First, because it is about every message rather than one tool,
       // and because a model that reads the tool policies first tends to

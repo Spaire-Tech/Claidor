@@ -20,9 +20,12 @@ import { MessagesShell, ThreadMode } from '../src/renderer/design/shell/Messages
 import { SignIn } from '../src/renderer/design/shell/SignIn';
 import type { EngineMessage, EnginePermissionRequest } from '../src/renderer/design/thread/fromEngine';
 import { toThreadItems } from '../src/renderer/design/thread/fromEngine';
+import { rosterItem } from '../src/renderer/design/thread/rosterCards';
+import { staffingItem } from '../src/renderer/design/thread/staffingCards';
 import type { ThreadItem } from '../src/renderer/design/thread/types';
 import { ThreadItemKind } from '../src/renderer/design/thread/types';
 import { EVERY_ROW } from '../src/shared/settings/appUiMap';
+import { buildRoster } from '../src/shared/staffing/roster';
 
 /**
  * A harness for looking at the design, not part of the app.
@@ -296,6 +299,26 @@ function Screens(): JSX.Element {
     files: [{ name: 'Q4 Model v2.xlsx', path: '/Users/bass/Board/2026/Q4 Model v2.xlsx' }],
   });
   if (screen === 'choice') items.push(CHOICE);
+  // Yodo asking to stand up an agent: the permission card with the brief
+  // behind its disclosure and Stand up / Not now, exactly as the app
+  // draws it from a live request.
+  if (screen === 'staffing') {
+    items.push(staffingItem({
+      requestId: 'req-staff-1',
+      name: 'Projects Manager',
+      label: 'Project ops',
+      job: 'Runs your projects from one board; specialists claim the tasks.',
+      antiJobs: ["Won't do the specialist work itself", "Won't start a project you didn't ask for"],
+      voice: 'Short and decision-shaped.',
+    }, 'Yodo', at(8)));
+  }
+  // "Your starter team": the roster card of step two, built from the
+  // founder's table for a founder, exactly as the bridge builds it.
+  if (screen === 'roster') {
+    const roster = buildRoster({ workType: 'Founder / Business Owner' });
+    if (typeof roster === 'string') throw new Error(roster);
+    items.push(rosterItem({ requestId: 'req-roster-1', ...roster }, at(8)));
+  }
 
   return (
     <MessagesShell
@@ -309,6 +332,7 @@ function Screens(): JSX.Element {
       accountName="Bass Fall"
       choice={{ onPick: noop, onFreeAnswer: noop, onDismiss: noop }}
       auth={{ onDecide: noop }}
+      roster={{ onStandUp: noop, onSomethingElse: noop, onDecline: noop }}
       // So a file card draws its save button, which only exists when
       // there is something to save with.
       parts={{ onOpenFile: noop, onSaveCopy: noop }}

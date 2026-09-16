@@ -13,6 +13,7 @@ import { MessageActions, ReactionChip } from './MessageActions';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
 // The design's PDF icon, bundled by Vite like the service logos.
 import pdfDoc from './pdf-doc.webp?url';
+import { RosterCard, type RosterHandlers } from './RosterCard';
 import {
   type AttachmentItem,
   type AuthDecision,
@@ -24,12 +25,15 @@ import {
 } from './types';
 
 /**
- * The seven things a thread may show.
+ * The eight things a thread may show.
  *
  * One component per kind, and a switch. Deliberately not one clever
  * renderer: the kinds have nothing in common but their container, and the
- * moment they share code the list stops being closed.
+ * moment they share code the list stops being closed. The roster card
+ * lives in its own file (`RosterCard.tsx`) only because this one is long.
  */
+
+export type { RosterHandlers } from './RosterCard';
 
 const enter = `fsr-message-in ${motion.messageIn.longer} ${motion.messageIn.easing} both`;
 
@@ -598,7 +602,11 @@ function AuthCard(
                 transition: `transform ${motion.hover.duration} ${motion.hover.easing}`,
               }}
             />
-            <span>{open ? 'Hide the command' : 'Show the command'}</span>
+            <span>
+              {item.staffing
+                ? (open ? 'Hide the brief' : 'Show the brief')
+                : (open ? 'Hide the command' : 'Show the command')}
+            </span>
           </button>
           {open && (
             <div
@@ -617,9 +625,20 @@ function AuthCard(
       )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '15px 0 0 24px' }}>
-        {button('Always allow', 'always', true)}
-        {button('Allow once', 'once')}
-        {button('Never', 'never')}
+        {item.staffing
+          ? (
+            <>
+              {button('Stand up', 'once', true)}
+              {button('Not now', 'never')}
+            </>
+          )
+          : (
+            <>
+              {button('Always allow', 'always', true)}
+              {button('Allow once', 'once')}
+              {button('Never', 'never')}
+            </>
+          )}
       </div>
     </div>
   );
@@ -937,6 +956,8 @@ export interface ThreadItemViewProps {
   auth: AuthHandlers;
   /** What a secret card can do with what was typed. */
   secret?: SecretHandlers;
+  /** What the roster card can answer with. Absent, it cannot be answered. */
+  roster?: RosterHandlers;
   /** What a file or a link in the text can do. */
   parts?: PartHandlers;
   /** React, reply, copy the id — the cluster that appears on hover. */
@@ -953,10 +974,14 @@ const noHandlers: PartHandlers = {};
 
 const noSecret: SecretHandlers = {};
 
+const noRoster: RosterHandlers = { onStandUp: () => {}, onSomethingElse: () => {}, onDecline: () => {} };
+
 export function ThreadItemView(
-  { item, choice, auth, secret = noSecret, parts = noHandlers, actions, leading }: ThreadItemViewProps,
+  { item, choice, auth, secret = noSecret, roster = noRoster, parts = noHandlers, actions, leading }: ThreadItemViewProps,
 ): JSX.Element | null {
   switch (item.kind) {
+    case ThreadItemKind.Roster:
+      return <RosterCard item={item} handlers={roster} />;
     case ThreadItemKind.Text:
       return <TextBubble item={item} leading={leading} handlers={parts} actions={actions} />;
     case ThreadItemKind.System:

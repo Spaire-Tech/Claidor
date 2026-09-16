@@ -3159,6 +3159,80 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(agentsMd).toContain('do not fall back to asking in chat');
   });
 
+  test('the staffing server is registered, with its two tools and no other', async () => {
+    // Step two of onboarding: Yodo proposes a starter team and stands
+    // two or three agents up. Both tools go through a card like
+    // everything else; here is only that the engine is told they exist.
+    const sync = await createSync({
+      getCreateAgentMcpStdioLaunch: () => ({
+        command: '/tmp/create-agent-mcp/create-agent-mcp',
+        args: [],
+        env: { ELECTRON_RUN_AS_NODE: '1' },
+      }),
+    });
+    expect(sync.sync('staffing').ok).toBe(true);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const server = config.mcp?.servers?.['caisra-staffing'];
+    expect(server).toBeTruthy();
+    expect(server.command).toBe('/tmp/create-agent-mcp/create-agent-mcp');
+    expect(server.toolFilter).toEqual({ include: ['create_agent', 'propose_team'] });
+
+    // And Yodo, the main agent, is told what they are for.
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('create_agent');
+    expect(agentsMd).toContain('one job, one voice');
+    expect(agentsMd).toContain('propose_team');
+    expect(agentsMd).toContain('Never list the twenty-three in chat');
+  });
+
+  test("what the person said they do in step one is in Yodo's brief, and only his", async () => {
+    const sync = await createSync({
+      getOnboardingWorkType: () => 'Founder / Business Owner',
+    });
+    expect(sync.sync('work-type').ok).toBe(true);
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).toContain('### The person');
+    expect(agentsMd).toContain('they said: Founder / Business Owner.');
+    expect(agentsMd.indexOf('### The person')).toBeGreaterThan(agentsMd.indexOf('## Who you are'));
+  });
+
+  test('the engine is told to read the whole of AGENTS.md, and the managed file fits under the line', async () => {
+    // The engine cuts each bootstrap file at 20,000 characters unless
+    // told otherwise; the managed AGENTS.md is nearly twice that, and on
+    // 16 September the founder's agent reported it "truncated at startup
+    // (37,604 chars down to 19,188)". This holds the ceiling up and keeps
+    // the file under it, so a growing prompt fails here and not there.
+    const sync = await createSync({
+      getOnboardingWorkType: () => 'Founder / Business Owner',
+      getProjects: () => [{
+        id: 'project:1', slug: 'q4-deck', name: 'Q4 Deck',
+        folder: '/Users/bass/Work/Q4', memberIds: ['main'], createdAt: 1,
+      }],
+    });
+    expect(sync.sync('bootstrap-limits').ok).toBe(true);
+    const { OPENCLAW_BOOTSTRAP_MAX_CHARS, OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS } = await import('./openclawConfigSync');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.agents.defaults.bootstrapMaxChars).toBe(OPENCLAW_BOOTSTRAP_MAX_CHARS);
+    expect(config.agents.defaults.bootstrapTotalMaxChars).toBe(OPENCLAW_BOOTSTRAP_TOTAL_MAX_CHARS);
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd.length).toBeGreaterThan(20_000);
+    expect(agentsMd.length).toBeLessThan(OPENCLAW_BOOTSTRAP_MAX_CHARS * 0.6);
+  });
+
+  test('before step one has played, the brief says nothing about the person', async () => {
+    const sync = await createSync();
+    expect(sync.sync('no-work-type').ok).toBe(true);
+    const agentsMd = fs.readFileSync(path.join(stateDir, 'workspace-main', 'AGENTS.md'), 'utf8');
+    expect(agentsMd).not.toContain('### The person');
+  });
+
+  test('no staffing server when the bridge is not up', async () => {
+    const sync = await createSync();
+    expect(sync.sync('no-bridge').ok).toBe(true);
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.mcp?.servers?.['caisra-staffing']).toBeUndefined();
+  });
+
   test('no ask-input server when the bridge is not up', async () => {
     // Registering a server whose bridge is not listening would give the
     // agent a tool that fails on every call.

@@ -212,6 +212,12 @@ import {
 import type { ShellOpenFailureReason as ShellOpenFailureReasonType } from '../shared/shell/constants';
 import { type ShellGetBrowserAppsInput, ShellIpc, ShellOpenFailureReason } from '../shared/shell/constants';
 import { SpeechEventKind, SpeechIpc } from '../shared/speech/constants';
+import {
+  buildAgentInstructions,
+  type CreateAgentAnswer,
+  CreateAgentIpc,
+} from '../shared/staffing/constants';
+import { RosterIpc } from '../shared/staffing/roster';
 import { AgentManager } from './agentManager';
 import {
   APP_HOME_DIR_NAME,
@@ -370,6 +376,7 @@ import {
   getElectronNodeRuntimePath,
   probeCoworkModelReadiness,
 } from './libs/coworkUtil';
+import { resolveCreateAgentMcpStdioLaunch } from './libs/createAgentMcpServer';
 import {
   assertDataMigrationSqliteSnapshotMatchesLiveSync,
   buildDataMigrationBackupFileName,
@@ -2584,6 +2591,8 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
       getBrowserWebAccessConfig: () => getStore().get<AppConfigSettings>('app_config')?.browserWebAccess,
       // Decided in code, never on a screen: see `claudeCodeMode.ts`.
       getClaudeCodeMode: () => claudeCodeMode(),
+      // What they said they do in step one, for Yodo's brief.
+      getOnboardingWorkType: () => getStore().get<AppConfigSettings>('app_config')?.onboardingWorkType,
       isEnterprise: () => !!getStore().get('enterprise_config'),
       getOpenClawSessionPolicy: () => loadOpenClawSessionPolicyConfig(getStore()),
       getSkillsList: () =>
@@ -2718,6 +2727,21 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
           {
             electronNodeRuntimePath: getElectronNodeRuntimePath(),
             bridgeUrl,
+            bridgeSecret: mcpRuntime.getBridgeSecret(),
+          },
+        );
+      },
+      getCreateAgentMcpStdioLaunch: () => {
+        const mcpRuntime = getMcpRuntime();
+        const bridgeUrl = mcpRuntime.getCreateAgentCallbackUrl();
+        if (!bridgeUrl) return null;
+        const proposeTeamUrl = mcpRuntime.getProposeTeamCallbackUrl();
+        return resolveCreateAgentMcpStdioLaunch(
+          path.join(getOpenClawEngineManager().getStateDir(), 'generated'),
+          {
+            electronNodeRuntimePath: getElectronNodeRuntimePath(),
+            bridgeUrl,
+            ...(proposeTeamUrl ? { proposeTeamUrl } : {}),
             bridgeSecret: mcpRuntime.getBridgeSecret(),
           },
         );
@@ -4463,6 +4487,8 @@ type AppConfigSettings = {
   browserWebAccess?: Partial<BrowserWebAccessConfig>;
   /** When the first step of onboarding was finished, so it plays once. */
   onboardingDoneAt?: number;
+  /** What they said they do in step one; goes into Yodo's brief. */
+  onboardingWorkType?: string;
 };
 
 const getUseSystemProxyFromConfig = (config?: { useSystemProxy?: boolean }): boolean => {
@@ -6661,6 +6687,37 @@ if (!gotTheLock) {
   };
 
   getMcpRuntime().setMediaGenerationHandler(handleMediaGenerationCallback);
+
+  // Standing up an agent once the person has pressed Stand up on the card.
+  // The same path as the create screen (`ipcHandlers/agents/handlers.ts`):
+  // the store, then the engine config, so the engine knows the agent
+  // before the tool that asked is told its id. The renderer is told too,
+  // so the sidebar shows the new agent without anybody pressing anything.
+  getMcpRuntime().setCreateAgentPerformer(async (input) => {
+    const agent = getAgentManager().createAgent(
+      {
+        name: input.name,
+        label: input.label,
+        description: input.job,
+        systemPrompt: buildAgentInstructions(input),
+      },
+      resolveDefaultAgentModelRef(),
+    );
+    const synced = await syncOpenClawConfig({ reason: 'agent-created' });
+    if (!synced.success) {
+      console.error('[Staffing] config sync after standing up an agent failed:', synced.error);
+    }
+    console.log(`[Staffing] stood up agent id=${agent.id} name=${JSON.stringify(agent.name)}`);
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (win.isDestroyed()) return;
+      try {
+        win.webContents.send(CreateAgentIpc.Created, { agentId: agent.id });
+      } catch {
+        // The window is going away.
+      }
+    });
+    return { agentId: agent.id, name: agent.name };
+  });
 
   const registerMediaTaskForPolling = (tracker: MediaTaskTracker) => {
     rememberMediaTaskOwnership(tracker.ownerAccountKey, tracker.taskId);
@@ -9165,6 +9222,8 @@ if (!gotTheLock) {
       _event,
       options: {
         prompt: string;
+        /** The app's own opening turn: sent to the agent, never kept as the person's message. */
+        hidden?: boolean;
         cwd?: string;
         systemPrompt?: string;
         title?: string;
@@ -9348,11 +9407,18 @@ if (!gotTheLock) {
           browserAnnotations,
           imageAttachmentPreviews,
         });
-        coworkStoreInstance.addMessage(session.id, {
-          type: 'user',
-          content: prompt,
-          metadata: messageMetadata,
-        });
+        if (options.hidden) {
+          // The app's cue, not the person's words. The runtime is told to
+          // skip the message either way (below); here is only that it is
+          // not written into the conversation.
+          console.log(`[Cowork:StartSession] hidden opening turn for session ${session.id}`);
+        } else {
+          coworkStoreInstance.addMessage(session.id, {
+            type: 'user',
+            content: prompt,
+            metadata: messageMetadata,
+          });
+        }
 
         coworkStoreInstance.updateSession(session.id, { status: 'running' });
 
@@ -13143,6 +13209,27 @@ if (!gotTheLock) {
     (_event, requestId: string, response: AskInputResponse) => {
       if (typeof requestId !== 'string' || !requestId) return;
       getMcpRuntime().resolveAskInput(requestId, response);
+    },
+  );
+
+  // Stand up, or Not now, from the card Yodo raised to create an agent.
+  // The answer goes to the bridge's pending promise; the tool that asked
+  // is waiting on it inside its turn.
+  ipcMain.handle(
+    CreateAgentIpc.Respond,
+    (_event, requestId: string, answer: CreateAgentAnswer) => {
+      if (typeof requestId !== 'string' || !requestId) return;
+      getMcpRuntime().resolveCreateAgent(requestId, answer);
+    },
+  );
+
+  // Stand them up, Something else, or Not now, from the roster card.
+  // Checked against the card in the bridge; the tool is waiting on it.
+  ipcMain.handle(
+    RosterIpc.Respond,
+    (_event, requestId: string, answer: unknown) => {
+      if (typeof requestId !== 'string' || !requestId) return;
+      getMcpRuntime().resolveRoster(requestId, answer);
     },
   );
 

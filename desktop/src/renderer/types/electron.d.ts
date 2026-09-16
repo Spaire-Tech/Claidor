@@ -178,6 +178,8 @@ import type {
   SpeechStatus,
   SpeechStopResult,
 } from '../../shared/speech/constants';
+import type { CreateAgentAnswer, CreateAgentAsk } from '../../shared/staffing/constants';
+import type { RosterAnswer, RosterAsk } from '../../shared/staffing/roster';
 import type { CoworkTempDirPreview } from './cowork';
 interface ApiResponse {
   ok: boolean;
@@ -683,6 +685,17 @@ interface IElectronAPI {
     onRequested: (callback: (request: AskInputRequest) => void) => () => void;
     onDismissed: (callback: (data: { requestId: string }) => void) => () => void;
     respond: (requestId: string, response: AskInputResponse) => Promise<void>;
+  };
+  createAgent?: {
+    onRequested: (callback: (ask: CreateAgentAsk) => void) => () => void;
+    onDismissed: (callback: (data: { requestId: string }) => void) => () => void;
+    onCreated: (callback: (data: { agentId: string }) => void) => () => void;
+    respond: (requestId: string, answer: CreateAgentAnswer) => Promise<void>;
+  };
+  roster?: {
+    onRequested: (callback: (ask: RosterAsk) => void) => () => void;
+    onDismissed: (callback: (data: { requestId: string }) => void) => () => void;
+    respond: (requestId: string, answer: RosterAnswer) => Promise<void>;
   };
   platform: string;
   arch: string;

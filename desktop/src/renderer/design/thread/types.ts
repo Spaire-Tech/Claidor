@@ -1,7 +1,8 @@
 import type { AskInputField } from '../../../shared/askInput/constants';
+import type { RosterOption } from '../../../shared/staffing/roster';
 
 /**
- * What may appear in a thread. Seven kinds, and the list is closed.
+ * What may appear in a thread. Eight kinds, and the list is closed.
  *
  * This is the discipline that makes the app feel unlike an AI app. The
  * engine emits a great deal more than this — thinking blocks, tool calls,
@@ -21,9 +22,10 @@ import type { AskInputField } from '../../../shared/askInput/constants';
  *     unenforceable without somewhere else to put it, and a value typed
  *     here never enters the transcript or the model's context.
  *
- * Adding an eighth is the same decision again. If something does not fit
- * these seven, the honest move is usually to say it as a `text` in the
- * agent's own voice.
+ * The eighth, `roster`, came the same way on 16 September: the founder's
+ * product page draws it (see `ThreadItemKind.Roster`). Adding a ninth is
+ * the same decision again. If something does not fit these eight, the
+ * honest move is usually to say it as a `text` in the agent's own voice.
  */
 
 export const ThreadItemKind = {
@@ -41,6 +43,17 @@ export const ThreadItemKind = {
   Attachment: 'attachment',
   /** A masked field. What is typed never reaches the transcript. */
   Secret: 'secret',
+  /**
+   * The roster: "Your starter team", two or three agents to stand up.
+   *
+   * The eighth, and the founder made it: their product page of
+   * 16 September (`docs/product/onboarding-step-two-2026-09-16.md` §5,
+   * beat B) draws "one multi-select card" with Swap one, Just two / Add
+   * a third, Something else and Stand them up. It is not a choice card
+   * (several are picked, and each is swapped in place) and not an
+   * approval card (nothing is being run yet). So it is its own kind.
+   */
+  Roster: 'roster',
 } as const;
 export type ThreadItemKind = typeof ThreadItemKind[keyof typeof ThreadItemKind];
 
@@ -134,6 +147,12 @@ export interface AuthItem {
    * about files rather than commands.
    */
   access?: 'read' | 'write';
+  /**
+   * Set when the card is Yodo asking to stand up an agent: `command` then
+   * holds the brief, the disclosure says so, and the buttons are Stand up
+   * and Not now. There is no "always" for a teammate.
+   */
+  staffing?: boolean;
   at: number;
 }
 
@@ -202,6 +221,23 @@ export interface SecretItem {
   at: number;
 }
 
+/**
+ * The roster card Yodo raises in step two of onboarding.
+ *
+ * `team` is checked when the card opens; `alternates` sit behind Swap
+ * one and Add a third. The card holds its own working state (which rows
+ * are on it now, which are checked) and answers once, with slugs.
+ */
+export interface RosterItem {
+  kind: typeof ThreadItemKind.Roster;
+  id: string;
+  /** "Founder / Business Owner": what the person said they do. */
+  workType: string;
+  team: readonly RosterOption[];
+  alternates: readonly RosterOption[];
+  at: number;
+}
+
 export type ThreadItem =
   | TextItem
   | SystemItem
@@ -209,7 +245,8 @@ export type ThreadItem =
   | ChoiceItem
   | AuthItem
   | AttachmentItem
-  | SecretItem;
+  | SecretItem
+  | RosterItem;
 
 /** What the person chose on an approval card. */
 export const AuthDecision = {

@@ -2659,3 +2659,537 @@ bill moves; nothing in the code decides that.
 `shared/settings/{rows,appUiMap}.ts` (+tests), `shared/thread/links.ts`,
 `design/settings/useSettings.ts`, `main/libs/openclawConfigSync.runtime.test.ts`;
 deleted `shared/settings/models.ts` (+test), `main/libs/claudeSettings.providerChoice.test.ts`.
+
+## 57. The 23 "strongs", received as a zip — `read; recorded; nothing built`
+
+The founder, 16 September: *"i got a list of 23 agents called internally
+'the strongs'. When Yodo staffs you at the start, he doesn't invent mush
+from scratch. He picks 2–3 from these 23 that fit your work type,
+imports/creates them, and they're already useful."* The zip
+(`caisra-agents-anatomies.zip`) is kept byte for byte under
+`docs/product/agents-anatomies/`: a README, a branding note, and one
+`agent.md` per agent, 173 KB in all. Sent for the 23 first, at my ask;
+the Chief of Staff anatomy and the step-two design are not in it.
+
+**What they are.** Not agents. They are descriptions, written to a
+fourteen-section template (identity, job boundary, voice, operating
+model, skills, routines, data, connectors, guardrails, first run,
+handoffs, a description sketch, open gaps), and every one says on its
+first line that it was *reconstructed from a public listing*, not
+exported from a running agent. The README names the source catalog file
+as `gbt-bots.json`, and the sixteen authors are the people who published
+those bots on the reference product's store. The rename to "Caisra
+Agents" is on the surface: inside, the text still names the other
+product's machinery — `design-grok-bot`, `CreateAgent`, `pstack`,
+"poteto-mode", "Make Bot UI", the Cursor dashboard, `cursor.directory`,
+`~/.cursor/plugins/local`, "cloud agents". Four of the 23 are *about*
+that machinery and do not translate: **dr eggbot** (designs bots with
+CreateAgent), **tinkabot** (wraps an API as a Cursor plugin),
+**engineer-bot** (launches the other product's cloud agents and watches
+their PRs), **skippy** (San Francisco street data, DataSF). What the
+founder does with someone else's catalogue text is the founder's call;
+this note only makes sure it is known.
+
+**How much is there.** Every file carries fields marked *Unknown (not
+in public listing)*: two in the fullest, fourteen in the thinnest
+(Cooper). Seven have no pitch line at all (call-follow-ups, cooper,
+customer-call-coach, event-request-desk, office-ops-desk, skippy,
+stalk-bot). Voice, routines and first-run are the sections most often
+empty, and those are the three that make an agent feel like somebody.
+Four (call-follow-ups, customer-call-coach, event-request-desk,
+office-ops-desk) share a second template with "hard stops" and "locked
+cold-start" lines that read as one author's house style.
+
+**Against what we have.** Nothing overlaps: the twelve presets in
+`presetAgents.ts` are NetEase's Chinese role set (engineering lead,
+design lead, operations manager…), a different idea. Kits
+(`shared/kit/constants.ts`) are the format Yodo would hand these out in,
+and the store still serves none. The connector gap is the real one:
+
+| Named by the 23 | In our 45? | Named by |
+|---|---|---|
+| Notion | yes | projects-manager, engineer-bot, office-ops, haggle, loop closer |
+| Figma | yes | figma bro, critiquito |
+| HubSpot / Salesforce, Gmail / Outlook, Google Calendar, Sheets | yes | loop closer, haggle, mr-toms |
+| Ramp | yes | haggle |
+| GitHub, Linear | yes | engineer-bot, office-ops |
+| Greenhouse, Ashby | yes | sherlock |
+| **Slack** | **no** — cut with the messaging group on 16 September (item 54) | cooper, customer-call-coach, event-request-desk, loop closer, haggle, office-ops, stalk-bot |
+| Gong, Granola | no | call-follow-ups, customer-call-coach, loop closer |
+| Search Console | no | seo-aeo-desk |
+| Lever, Workday | no | sherlock |
+| NetSuite, AgentMail, X | no | haggle, stalk-bot |
+
+Seven of the 23 lean on Slack. The cut in item 54 was "nothing that
+cannot be connected"; Slack can be, through Composio, and was removed as
+social noise. If the strongs stand, Slack comes back as a connector, or
+those seven lose their delivery channel.
+
+**The founder's staffing sketch, checked against the files.**
+Founder → Projects Manager, Outbound Prospecting, GTM Loop Closer: all
+three are among the fullest files and need only Notion, the web, and a
+CRM we have. Sales → Prospecting, Sales Call Coach, Call Follow-Ups:
+the coach works from a pasted transcript, the follow-ups need Gong or
+Granola, which we do not have. Design → figma bro, Critiquito: both
+full, both on Figma, which we have. Engineering → Engineer Bot,
+tinkabot: the two most tied to the other product; neither works as
+written on Caisra.
+
+**Not in the zip, still needed before step two is built:** Yodo's own
+anatomy (how he chooses), and the step-two canvas. Nothing was built
+from this; nothing was changed in the app.
+
+## 58. Yodo's anatomy, v4 — `read; recorded; nothing built`
+
+The second zip (`caisra-yodo-anatomy-v4.zip`), kept byte for byte under
+`docs/product/yodo-anatomy/`: twelve numbered sections, four skills, a
+branding note and a cloud SVG, 44 KB. This is the piece I asked for
+before step two, and it is a real anatomy: who Yodo is, what he owns,
+how work moves (do, staff, ask), the three-beat onboarding arc, the
+staffing playbook, the design rubric he runs before creating an agent,
+voice contracts, what he remembers, two weekly health checks, and the
+work-type table that names which two or three of the 23 each work type
+gets. Section 04 restates step one line for line as it is built.
+
+**Its language is the other product's.** `CreateAgent`, `SendToAgent`
+with a priority flag, `harness: temporal`, "Share JSON", choice cards,
+secret-request, `notifyOnAgentUpdates`, routines at Pacific times,
+"poteto-mode", `pstack`, a "Make Agent UI" over webhook and Tailscale.
+Every one of those is a primitive of the reference product. Most have an
+equivalent here, and the mapping is the work:
+
+| The anatomy says | Here |
+|---|---|
+| chat is the front door; specialists behind it | the shell: Yodo is the main agent, every agent a conversation (direction §1) |
+| choice cards for real decisions | the ask-input tool and the question card (items 15, 33) |
+| secret-request, never keys in chat | the secret-request card (item 30) |
+| `SendToAgent`, priority | the engine's session tools (`sessions_send`, `sessions_spawn`, `subagents`) and group rooms (item 35) |
+| routines, quiet if nothing | the engine's cron, scheduled tasks; the person's timezone, not Pacific |
+| a strong seated from the catalog | a kit installed from the store (`shared/kit`), which serves none yet |
+| **`CreateAgent`** | **nothing.** Agents are created over IPC from the screen (`agentManager.ts`, the create screen). Yodo has no tool to create one from a conversation. Step two's "Stand them up" needs that tool. |
+| poteto-mode, pstack, Make Agent UI, `harness: temporal` | theirs; no equivalent and none wanted |
+
+**What differs from what is decided.** The anatomy gives Yodo a
+"squircle / cyan" avatar and a title chip "Fleet & decisions"; the
+product gives him the cloud (`DefaultAgentProfile`, item 62) and the
+canvas has no chip. It puts dr eggbot's craft "behind Yodo", which is
+right: the design rubric is Yodo's own, not a seat. Its health checks
+name Pacific times; ours run in the person's timezone. Its coding lane
+(Engineer Bot, tinkabot, poteto, pstack) is the part that does not
+translate (item 57).
+
+**What it changes in code when step two is built.** Yodo's managed
+brief (`shared/agent/chiefOfStaff.ts`) grows from seven rules to the
+anatomy's canon: front door, fleet owner, decision gateway, design
+craft, the do/staff/ask loop, the anti-patterns. The two skills
+(`cos-getting-started`, `design-caisra-agent`) become Yodo's own skills
+in his workspace. The work-type table becomes data beside the 23 as
+kits. The roster card is an in-chat form (item 33) with "Stand them up"
+as its action. And the missing tool: create an agent from a kit, from a
+conversation, through the same ask-first card as everything else.
+
+**Not built.** Nothing in the app changed. Still needed before step two:
+the canvas for it, the 23 as kits (item 57), the Slack decision, and the
+create-agent tool.
+
+## 59. Yodo can stand up an agent — `built; the app itself unrun`
+
+The founder, on item 58: *"i agree. Yodo cannot create an agent. -
+first sting to build."* Their product and onboarding page arrived the
+same evening (`docs/product/onboarding-step-two-2026-09-16.md`, kept
+verbatim) and is the source of truth for what follows.
+
+**What was built.** A tool, `create_agent`, on a stdio MCP server of
+the app's own (`caisra-staffing`, `main/libs/createAgentMcpServer.ts`),
+the same shape as the ask-input tool of item 30 and registered with the
+engine the same way. Yodo calls it with a name, a label, a one-sentence
+job, at least one anti-job, and optionally a voice. The bridge
+(`mcpBridgeServer.ts`, route `/create-agent`) raises the permission card
+in the thread — "Allow Yodo to continue — standing up Projects Manager,
+Project ops?", the job under it, the brief behind "Show the brief", and
+two buttons, Stand up and Not now; there is no "always" for a teammate.
+The tool waits on the press inside its turn. On Stand up, main creates
+the agent by the create screen's own path (`agentManager`, then the
+engine config sync, awaited, so the engine knows the agent before the
+tool is told its id), tells every window so the sidebar shows it, and
+the tool returns "Projects Manager is in, as agent …". On Not now the
+tool is told plainly and told not to ask again for that agent. After
+five minutes with no press the card comes down and the tool is told the
+same. A brief with no anti-jobs never reaches the card.
+
+The agent's instructions come from the brief in one fixed shape
+(`shared/staffing/constants.ts`, `buildAgentInstructions`): the job,
+what it does not do, how it sounds, and the standing rule — draft by
+default, never send, post or spend without a yes, hand back what is not
+its job. Yodo's own brief (`chiefOfStaff.ts`) gains one rule naming the
+tool and its limits: never more than asked for, never for something he
+can do himself now, and when one is in, say so in a line and brief it.
+
+**What it is not, yet.** The 23 as kits (item 57): today the brief is
+Yodo's words from the anatomy, not an installed package with skills and
+connectors. The roster card of step two, "Your starter team" with Swap
+one / Just two / Add a third: not built; the tool is what it calls. Any
+agent can call the tool, not only Yodo; the card names who asked and the
+person decides, and limiting it to the main agent in the engine's tool
+policy is a follow-up.
+
+**Proof.** 130 tests across the touched files: the contract (what is
+accepted, what is cut, what the instructions and the brief say), the
+server written to disk and its permissions, the server spawned and
+spoken to over stdio against a real HTTP bridge (list, a create that
+comes back with the id, a decline as a decision, a failure with its
+reason, a brief with no anti-jobs refused before the bridge), the bridge
+route itself (card up, Stand up creates, Not now creates nothing, bad
+brief never shown, nobody to draw it means declined), the engine
+registration with only its one tool and Yodo told about it, and the
+card's routing (a staffing card answers the staffing bridge, an engine
+card the engine). tsc, eslint, `compile:electron` clean. The harness
+draws the card (`?screen=staffing`) and a scripted press count finds
+Stand up, Not now and no Always allow.
+
+**Unrun:** the app. Yodo calling the tool through the engine on the
+founder's Mac, the card appearing in the live thread, the agent
+appearing in the sidebar. Log lines: the bridge's `CreateAgent request,
+requestId=… name=…`, `CreateAgent answered … behavior=allow|decline`,
+then `[Staffing] stood up agent id=… name=…`.
+
+**Where:** `shared/staffing/constants.ts` (+test), `main/libs/createAgentMcpServer.ts` (+2 tests),
+`main/libs/mcpBridgeServer.ts` (+test), `main/mcp/mcpRuntime.ts`, `main/main.ts`,
+`main/libs/openclawConfigSync.ts` (+runtime test), `main/preload.ts`, `renderer/types/electron.d.ts`,
+`design/thread/{staffingCards.ts,useCreateAgent.ts,types.ts,ThreadItemView.tsx}` (+test),
+`design/shell/CaisraApp.tsx`, `shared/agent/chiefOfStaff.ts`, `harness/main.tsx`.
+
+## 60. "claude code still isnt working" — it was the account, 16 September — `fixed by the founder`
+
+The founder's log, once read from the right day's file (the app names
+its log by the UTC date, so an evening in California is already
+tomorrow's file): the mechanic on, Claude Code found at
+`~/.local/bin/claude`, every message routed, the live session starting,
+and three minutes later `claude live session turn failed …
+error=FailoverError`, three times, at 188, 195 and 197 seconds. The
+line names the error's kind and not its words; the words were in the
+thread, where the app puts them: *"OAuth authorization is invalid or
+missing required access. Re-authenticate and try again."*
+
+The cause was which account `claude` was signed in as on the Mac. It
+was a second account with no plan behind it; the subscription is on
+another. Claude Code retried Anthropic's refusal for three minutes and
+gave up. `claude auth logout`, `claude auth login` as the account with
+the subscription, and it worked. The Caisra sign-in is a different
+account entirely and plays no part.
+
+Two things learned for next time. Ask for the sentence in the thread
+first; it took three exchanges to get it and it was the answer. And the
+founder's Claude Code was 2.1.76 where every proof here ran on 2.1.273;
+`claude update` was part of the fix. Nothing in the app changed.
+
+## 61. "the way the stream comes is not smooth. at all. it lags" — `fixed; measured here; the Mac unrun`
+
+The founder, 16 September, on step one of onboarding: the words did not
+stream, they stuttered. Measured before guessing. A harness script
+(`desktop/harness/onboarding-frames.mjs`) samples the frame clock for
+six seconds while the greeting is typing; a second one
+(`onboarding-frames-variants.mjs`) applies a CSS override after load and
+measures again, so each suspect was tried without a rebuild. On this
+machine's software GPU:
+
+| What was drawn                                        | Frames a second |
+| ----------------------------------------------------- | --------------- |
+| As shipped                                            | 8               |
+| Without the words' fade-and-blur                      | 8               |
+| Without the panel's `backdrop-filter: blur(40px)`     | 9               |
+| Clouds at `blur(24px)` instead of 90–100              | 14              |
+| Clouds without their `filter: blur(…)`                | 31              |
+| Clouds and panel both without blur                    | 60, no late frame |
+| Clouds drawn at half or quarter size and scaled up    | 9–12            |
+
+The words, the clock and the cloud blob cost nothing. What cost was the
+four colour clouds the canvas blurs with `filter: blur(90–100px)` while
+they drift and scale for half a minute: a CSS filter on a moving element
+is applied again on every frame over a surface the size of the window,
+and the glass panel's `backdrop-filter` blurred the whole window a second
+time on top of that. Drawing the clouds smaller and scaling them up, the
+usual trick, gave nothing here, because the filter still ran per frame.
+
+The fix keeps the founder's numbers and moves the blur to once.
+`ambientClouds.ts` draws each cloud's radial gradient on an offscreen
+canvas, blurs it by the same standard deviation the canvas asked for,
+folds in the panel's `saturate(1.15)`, and hands the picture to the
+drifting element as its background. The element keeps its position,
+size, opacity and keyframes; the picture overhangs the box by three
+standard deviations so the blur spills past the edge as before. The
+panel keeps its 88% white and loses its backdrop blur, which over
+already-blurred clouds changed nothing the eye could see. After the
+change the greeting streams at 60 frames a second here with no frame
+late (`{"frames":356,"meanMs":16.9,"p95Ms":16.8,"lateOver33ms":4}` on
+the first run, the four late frames being the first paint), and the
+screenshots before and after sit side by side in `harness/shots/`
+without a ring or a step where the colour changes: a plain gradient
+without the blur showed faint concentric rings, which is why the blur
+stayed and only moved.
+
+Gates: type-check, lint, 373 tests in the design and onboarding suites,
+and the onboarding walk (every stage drew, the result card came). The
+founder's MacBook Air has a real GPU and will have lagged for the same
+reason with different numbers; that it is smooth there is for them to
+say, since nobody has run it there yet.
+
+**The words themselves, the same evening.** The founder: *"i meant the
+text 'typing stream' to just make the stream smoother. that was it."*
+Two things in the typing itself were not smooth, apart from the frame
+rate. A line used to grow word by word, so the browser wrapped it again
+on every word, and `text-wrap: pretty` (the canvas's, kept) rebalances
+the last lines of a paragraph as it grows: a word landing at the end of
+a line could move the words before it to the line above or below. Now
+every word of a line is on the page from the line's first beat,
+invisible until its beat, so the line wraps once and nothing moves but
+the fade (`shownWords` returns every word with a state: hidden, in,
+still). And the clock ticked on a 16 ms timer, which is not the display's
+frame, so a word could land up to a frame after its beat; it ticks on
+`requestAnimationFrame` now. The cadence, the fade and the blur are the
+canvas's numbers, untouched. Measured again: 60 frames a second, no late
+frame at all this time; the walk draws every stage.
+
+## 62. Step two: the roster card, the twenty-three as briefs, and Yodo speaking first — `built; the app itself unrun; Slack still the founder's call`
+
+The founder, 16 September, after the stream: *"and back to this. What
+step two still needs: the roster card, the 23 as kits so Yodo has real
+briefs to pick from rather than his own words, and the Slack decision."*
+The first two are built. The third is a decision and is laid out at the
+end.
+
+**The twenty-three as briefs** (`shared/staffing/strongs.ts`, 23
+records, 12 tests). Every word is taken, not written: the names and
+lanes and the work-type table from the founder's page (§7, §8), the
+jobs, anti-jobs, voices and connectors from the anatomies of item 57.
+A brief is the shape `create_agent` already takes — name, label, one
+sentence of job, anti-jobs, a voice where the listing had one — and
+every one of the twenty-three passes the same check the tool applies
+to Yodo's own briefs. Seven anatomies have no pitch line; their job is
+the catalogue's own one-liner from the same section. Nothing was
+derived: every anatomy has a "does not own" section, so every anti-job
+is the listing's. Four carry `translates: false` (dr eggbot, tinkabot,
+Engineer Bot, skippy: about the other product's machinery, as item 57
+said); the data records the fact and does not editorialise, and the
+Engineering row still names two of them because the founder's table
+does. The table gives each of the ten work types its two or three, and
+three or four alternates for "Swap one", chosen as the lane's nearest
+others; each has a one-line reason in the file and they are mine to be
+overruled. The word "kit" is not used: a kit here (`shared/kit`) is an
+installed package with skills, MCP servers and connectors, and the
+store serves none; what Yodo picks from is a brief. When the kit store
+exists, a strong's brief is what its kit would install.
+
+**The roster card** (`ThreadItemKind.Roster`, `RosterCard.tsx`). The
+eighth kind of thing a thread may show, and the founder made it: their
+page draws "one multi-select card" and names every control. "Your
+starter team"; two or three rows, each with the short name, the lane,
+the one-line job and the one-line anti-job, checked when the card
+opens; Swap one on each row, opening three or four alternates from
+the twenty-three that replace the row in place; Just two when there
+are three, Add a third when there are two; Something else, one line
+and Tell him; Stand them up, pressable with two or three checked, and
+Not now. Drawn like the question card because it is the same kind of
+thing. `harness/roster-press.mjs` presses every one of those and
+checks what it did; `?screen=roster` photographs it.
+
+**How it reaches Yodo.** A second tool on the staffing server,
+`propose_team` (`createAgentMcpServer.ts`), taking the work type or
+Yodo's own two or three picks; the bridge builds the card from the
+table (`shared/staffing/roster.ts`, `buildRoster`), raises it, and
+waits. The card is the asking: Stand them up is the person's yes for
+every checked row, so no second card is raised per agent — the bridge
+stands each one up itself by the create-agent performer of item 59,
+one after another, and the tool is told who is in and who did not go
+through, by name. Something else comes back as the line they typed,
+for Yodo to map to one of the twenty-three or design a custom brief.
+Not now comes back as a decision. An answer naming a row that was
+never on the card is refused and the card stays up. Yodo's brief gains
+the rule: not a blank team, twenty-three trained, pick a few they can
+swap, never list them in chat, never stand all of them up, one line
+each when they are in, then one first useful action as two options.
+
+**Yodo speaks first.** Step two is "chat with Yodo" and Yodo opens it,
+which nothing in the engine does unprompted. The app now opens the
+conversation with one turn of its own, marked hidden
+(`shared/onboarding/stepTwo.ts`; `startSession({ hidden: true })`):
+it reaches Yodo and is never written into the conversation, so the
+thread starts with his bubble and not one of the person's. The turn
+carries the name and the work type from step one and the beats in the
+founder's order. The work type is now kept (`onboardingWorkType`, at
+Get Started; it was thrown away before, and the "profile into the
+engine" work I had listed as done is not in this tree) and written
+into Yodo's managed brief under "The person", for him alone, re-synced
+when it changes.
+
+**Proof.** 358 tests across the touched suites: the data (limits,
+slugs on disk, the table complete, the seven Slack users), the card's
+arithmetic, the contract (what the tool may ask, the card from the
+table for all ten work types, the answer checked against the card),
+the bridge (three stood up, a swapped alternate stood up and a failure
+reported, a stranger refused, something else, an unknown work type
+never shown), the server spawned and spoken to (two tools listed, the
+propose-team route, who is in, something else, decline), the engine
+registration with both tools and Yodo told, the work type in the
+brief, the re-sync classification. tsc, eslint, `compile:electron`
+clean; the harness draws the card and the press script passes.
+
+**Unrun: the app on the founder's Mac**, which is the whole of step
+two end to end: Get Started, Yodo's two opening lines, the card in the
+live thread, Stand them up, three agents in the sidebar, Yodo's three
+short lines. Log lines to look for: `[Cowork:StartSession] hidden
+opening turn`, `Roster request … workType=… team=…`, `Roster
+answered … behavior=standUp slugs=…`, `Roster stood up … agentId=…`,
+`[Staffing] stood up agent`. Two things I expect to need tuning there
+and cannot from here: whether the model calls `propose_team` on the
+cue without being reminded, and whether it holds to one short line
+per agent afterwards.
+
+**The Slack decision, laid out.** Seven of the twenty-three name Slack
+as where they deliver or read (Cooper, Customer Call Coach, Event
+Request Desk, GTM Loop Closer, Haggle Bot, Office Ops Desk, Stalk
+Bot). Slack was cut from the connector catalogue on 16 September as
+social noise (item 54); Composio can connect it, so putting it back is
+one row in `shared/connections/catalog.ts` and a logo. Three ways to
+go: put Slack back as a connector and those seven work as written;
+leave it out and let those seven deliver in the thread instead of a
+channel, which is what they do here anyway until a channel exists; or
+leave it out and drop the seven from the defaults, which touches four
+of the ten work types. My recommendation is the second for now, since
+every one of the seven can do its job into the conversation, and the
+row can come back the day somebody asks for Slack. Beat D (the fleet
+proof, two cards after the team is in) and the last step (the front
+door lines and the soft chips) are not built; Yodo is told to offer
+the first action in two options, in words.
+
+**Where:** `shared/staffing/{strongs,roster}.ts` (+tests),
+`shared/onboarding/stepTwo.ts` (+test), `main/libs/createAgentMcpServer.ts`
+(+2 tests), `main/libs/mcpBridgeServer.ts` (+test), `main/mcp/mcpRuntime.ts`,
+`main/main.ts`, `main/preload.ts`, `main/libs/openclawConfigSync.ts`
+(+runtime test), `main/libs/openclawConfigImpact.ts` (+test),
+`renderer/design/thread/{types,RosterCard,rosterCards,useRoster,ThreadItemView,Thread}`,
+`renderer/design/shell/{MessagesShell,CaisraApp}`,
+`renderer/design/onboarding/{Onboarding,useOnboarding}`, `renderer/config.ts`,
+`renderer/types/{cowork,electron.d}.ts`, `shared/agent/chiefOfStaff.ts`,
+`harness/{main.tsx,roster-press.mjs}`.
+
+## 63. "the ai is dumb. something is wrong." — 16 September, evening — `four faults proved and fixed; three unexplained without the log`
+
+The founder's thread with their agent: a tool's raw `{ "ok": true }`
+in a bubble; a Word document they could not open and no file card; the
+agent saying its instructions were *"truncated at startup (37,604
+chars down to 19,188)"*; the question card failing with a schema error
+twice; "not once was i asked permission to access my computer"; and
+"what is eating my storage" ending in *"CLI produced no output for
+180s and was terminated"*. Then: *"is it the model? is it because we
+using my claude code?"*
+
+**It is not the model.** The model never received half of its
+instructions, and two of the tools it was given failed in ways it
+could not repair. Read from the code, not guessed:
+
+1. **Half the instructions were cut, for every model, since the
+   day the managed prompt passed 20,000 characters.** The engine
+   reads each bootstrap file (AGENTS.md, SOUL.md, USER.md…) up to
+   `agents.defaults.bootstrapMaxChars`, default 20,000
+   (`openclaw/src/agents/embedded-agent-helpers/bootstrap.ts`), and
+   the app never set it. The managed AGENTS.md is about 38,000. The
+   agent's own report, 37,604 down to 19,188, is that arithmetic.
+   Everything after the cut — the file cards, the question card's
+   rules, the escalation rules, the deliverable links, memory,
+   scheduled tasks — reached no agent on any model. "Its not even
+   reading its md" was exactly right. **Fixed:** the config sync sets
+   `bootstrapMaxChars` 120,000 and `bootstrapTotalMaxChars` 200,000,
+   and a runtime test holds the managed file under that line so a
+   growing prompt fails in the test and not in the agent.
+
+2. **The question card was forbidden by its own description.** The
+   engine's AskUserQuestion tool (`openclaw-extensions/ask-user-question`)
+   told the model *"Use this tool BEFORE executing any delete
+   operation … Do NOT use this tool for non-delete commands"* —
+   NetEase's text, which the model quoted back to the founder as "the
+   card tool is scoped to delete confirmations only". The managed
+   prompt said the opposite in a section that was itself past the
+   cut. **Fixed:** the description now says what the founder designed
+   (any real decision, ask before the work, not for confirming
+   commands), and the prompt's "Delete Operations" section, which
+   told the model to ask before every delete when the app's own card
+   already asks, is replaced by one line saying so.
+
+3. **Under Claude Code, the card the model then reached for was
+   Claude Code's own, and it cannot work here.** Claude's native
+   AskUserQuestion answers through the permission prompt, and the
+   CLI requires the person's answers back in `updatedInput`
+   (`permission handler updatedInput … must satisfy the tool's input
+   schema`, from the binary). The stdio permission path answers
+   allow or deny and has no way to carry answers, so the CLI's
+   schema check failed — the ZodError the founder saw, twice — and
+   no card was ever drawn. **Fixed:** the live session now passes
+   `--disallowedTools AskUserQuestion`, so the only question tool the
+   model can reach is the gateway's, bridged over MCP, which draws
+   the app's card and returns the answer (proven in item 15).
+
+4. **The storage scan was killed by our own watchdog.** The live
+   session ends a turn when the CLI prints nothing for the no-output
+   timeout (180 seconds on a fresh session). While one of Claude's
+   own tools runs — `du` over a home folder — the CLI prints nothing
+   until it returns. **Fixed:** the watchdog stands down while a tool
+   is active and stands again when its result lands; the run timeout
+   still bounds the turn. Two engine tests: a tool silent past the
+   timeout finishes its turn; a turn silent with no tool running is
+   still ended.
+
+**Three things the transcript cannot settle, and what would.** The
+`{ "ok": true }` bubble: the engine only turns Claude's text deltas
+into a bubble, never tool results, and the app draws nothing for a
+tool result, so either the model wrote it or the turn's final text
+was it; the log line `claude live session turn: … digest` says which.
+The message that appeared twice: not a path I can see in the code;
+the same log line, twice or once, says whether the CLI answered twice
+or the app drew one answer twice. The Word document with no card: a
+file the agent names by path gets a card when the path is inside the
+conversation's folder and the file exists; a screenshot of that
+message would show whether it was a chip in a sentence or nothing.
+And "never asked permission": a command on the engine's read-only
+allowlist, or a write inside the agent's own workspace, is allowed
+without a card by the exec policy; every other command asks. The
+line `claude native tool: name=Bash decision=allow|deny reason=…` in
+the app log says, per command, which it was.
+
+**What I got wrong before this.** Item 65 changed the engine from
+denying Claude's tools outright to asking through the card, and
+three of the engine's own tests for the old behaviour ("deny when
+exec policy is restrictive" and two siblings) were left in place and
+never run; they were failing since that day. Deleted now as tests of
+a path that no longer exists; the ask path is covered by the
+approval module's nineteen tests and the spawn test's allow case.
+And item 63's "proven end to end" was the engine on Linux with a
+scripted approver, not the app on a Mac with a person; the four
+faults above are what that proof did not reach.
+
+**Is it Claude Code?** Faults 3 and 4 are the Claude Code path;
+faults 1 and 2 hit every model and every path. Switching the mechanic
+off would have removed 3 and 4 and left the agent still reading half
+its brief. ChatGPT would have the same halved brief. Both are fixed
+now; the Claude Code path also still lacks the file card for a file
+written by Claude's own Write tool (the app sees the engine's write
+tools, not Claude's), which is the next thing to build there.
+
+**Proof.** Engine: 74 spawn and prompt tests, 10 approval tests,
+oxfmt, oxlint, tsgo; the patch regenerated from a clean base with
+all 32 applied and reproducing the working tree byte for byte;
+validators extended. App: 133 tests in the config sync and the
+question tool, tsc, eslint, `compile:electron`.
+
+**Unrun: the app on the founder's Mac.** After pulling: the log line
+`[EngineConfigSync]` shows the sync; the agent's own "truncated"
+warning must be gone; a question card must appear when the agent is
+asked to ask; "what is eating my storage" must run past three
+minutes; and the log lines named above answer the three open
+questions.
+
+**Where:** `desktop/src/main/libs/openclawConfigSync.ts`
+(+runtime test), `desktop/openclaw-extensions/ask-user-question/index.ts`,
+`desktop/scripts/patches/v2026.6.1/openclaw-claude-tools-ask-first.patch`
+(`claude-live-session.ts`, `cli-runner.spawn.test.ts`),
+`desktop/scripts/apply-openclaw-patches.cjs`.

@@ -276,6 +276,20 @@ describe('OpenClaw config impact classification', () => {
     });
   });
 
+  test("a change of what the person does re-syncs Yodo's brief without a restart", () => {
+    expect(classifyAppConfigChange(
+      { onboardingDoneAt: 1 },
+      { onboardingDoneAt: 1, onboardingWorkType: 'Founder / Business Owner' },
+    )).toEqual({
+      impact: OpenClawConfigImpact.Sync,
+      reasons: [OpenClawConfigImpactReason.AppOnboardingWorkType],
+    });
+    expect(classifyAppConfigChange(
+      { onboardingWorkType: 'Student' },
+      { onboardingWorkType: 'Student', onboardingDoneAt: 2 },
+    )).toEqual({ impact: OpenClawConfigImpact.None, reasons: [] });
+  });
+
   test('removes proxy restart reason while preserving provider sync action', () => {
     const source = mergeImpactDecision(
       { impact: OpenClawConfigImpact.Restart, reasons: [OpenClawConfigImpactReason.AppUseSystemProxy] },

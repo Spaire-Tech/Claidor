@@ -369,6 +369,12 @@ export interface SubagentSessionSummary {
 // Start session options
 export interface CoworkStartOptions {
   prompt: string;
+  /**
+   * The prompt is the app's, not the person's: it reaches the agent and
+   * is never kept as a message, so no bubble of theirs appears. Step two
+   * of onboarding opens this way (`shared/onboarding/stepTwo.ts`).
+   */
+  hidden?: boolean;
   cwd?: string;
   systemPrompt?: string;
   title?: string;

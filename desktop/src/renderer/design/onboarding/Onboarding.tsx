@@ -1,11 +1,12 @@
-import { type CSSProperties, useEffect, useRef } from 'react';
+import { type CSSProperties, useEffect, useMemo, useRef } from 'react';
 
 import { MAIN_AVATAR } from '../../../shared/agent/avatars';
 import { APP_LOGO_DIRECTORY } from '../../../shared/connections/catalog';
 import { ONBOARDING_LOGOS } from '../../../shared/onboarding/constants';
-import { OnboardingPhase, OTHER_PLACEHOLDER, type ShownWord } from '../../../shared/onboarding/script';
+import { OnboardingPhase, OTHER_PLACEHOLDER, type ShownWord, WordState } from '../../../shared/onboarding/script';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, font } from '../tokens';
+import { type AmbientCloud, cloudGeometry, cloudGradient, renderCloudImage } from './ambientClouds';
 import { type OnboardingBridge, type OnboardingState, type TaskCard, useOnboarding } from './useOnboarding';
 
 /**
@@ -17,7 +18,9 @@ import { type OnboardingBridge, type OnboardingState, type TaskCard, useOnboardi
  * the 42px chips and pills, the 152px task cards, the 18px-radius
  * permission and result cards, the 560px Get Started, the three dots.
  * The words stream at the canvas's speed and fade in one by one; the
- * ambient colour drifts behind a glass the canvas set at 88% white.
+ * ambient colour drifts behind a glass the canvas set at 88% white. The
+ * clouds are blurred once into pictures rather than on every frame
+ * (`ambientClouds.ts`), which is what made the stream stutter.
  *
  * What the canvas could not do, this does: "Allow access" asks the Mac
  * to write the riddle or flip the appearance (`useOnboarding.ts`), and
@@ -32,8 +35,12 @@ export interface OnboardingProps {
   userName: string;
   /** How to reach the Mac. Absent in the harness; the cards then say so. */
   bridge?: OnboardingBridge;
-  /** Get Started. */
-  onDone: () => void;
+  /**
+   * Get Started, with what they said they do: a work type as its button
+   * read, or their own words, and which of the two it was. Step two
+   * opens on it.
+   */
+  onDone: (work: { workType: string; ownWords: boolean }) => void;
 }
 
 const INK = color.ink;
@@ -64,12 +71,35 @@ const KEYFRAMES = `
 .onb-hover-quiet:hover { color: ${INK} !important; }
 `;
 
-const AMBIENT: readonly CSSProperties[] = [
-  { top: '-22%', left: '-14%', width: '76vw', height: '76vw', background: 'radial-gradient(circle, #8fd3f4 0%, rgba(143,211,244,0) 68%)', opacity: 0.2, filter: 'blur(90px)', animation: 'onb-drift-a 34s ease-in-out infinite' },
-  { top: '6%', right: '-18%', width: '68vw', height: '68vw', background: 'radial-gradient(circle, #cdbdf5 0%, rgba(205,189,245,0) 68%)', opacity: 0.26, filter: 'blur(95px)', animation: 'onb-drift-b 41s ease-in-out infinite' },
-  { bottom: '-30%', left: '18%', width: '72vw', height: '72vw', background: 'radial-gradient(circle, #f7c9a8 0%, rgba(247,201,168,0) 66%)', opacity: 0.22, filter: 'blur(100px)', animation: 'onb-drift-c 47s ease-in-out infinite' },
-  { bottom: '-16%', right: '4%', width: '58vw', height: '58vw', background: 'radial-gradient(circle, #a8e6cf 0%, rgba(168,230,207,0) 66%)', opacity: 0.18, filter: 'blur(100px)', animation: 'onb-drift-a 38s ease-in-out infinite reverse' },
+/**
+ * The canvas's four clouds: its colour, gradient edge, blur, size and
+ * opacity, and where it sits and how it drifts. The blur is drawn once
+ * (`ambientClouds.ts`) instead of on every frame; see there for why.
+ */
+const AMBIENT: readonly { cloud: AmbientCloud; place: CSSProperties }[] = [
+  { cloud: { hex: '#8fd3f4', edge: 0.68, blur: 90, vw: 76, opacity: 0.2 }, place: { top: '-22%', left: '-14%', animation: 'onb-drift-a 34s ease-in-out infinite' } },
+  { cloud: { hex: '#cdbdf5', edge: 0.68, blur: 95, vw: 68, opacity: 0.26 }, place: { top: '6%', right: '-18%', animation: 'onb-drift-b 41s ease-in-out infinite' } },
+  { cloud: { hex: '#f7c9a8', edge: 0.66, blur: 100, vw: 72, opacity: 0.22 }, place: { bottom: '-30%', left: '18%', animation: 'onb-drift-c 47s ease-in-out infinite' } },
+  { cloud: { hex: '#a8e6cf', edge: 0.66, blur: 100, vw: 58, opacity: 0.18 }, place: { bottom: '-16%', right: '4%', animation: 'onb-drift-a 38s ease-in-out infinite reverse' } },
 ];
+
+/** The clouds' pictures, drawn once for the window's width at first paint. */
+function useAmbientClouds(): readonly { place: CSSProperties; cloud: CSSProperties }[] {
+  return useMemo(() => AMBIENT.map(({ cloud, place }) => {
+    const viewportWidth = typeof window === 'undefined' ? 1120 : window.innerWidth;
+    const image = renderCloudImage(cloud, viewportWidth);
+    const { pad } = cloudGeometry(cloud, viewportWidth);
+    return {
+      place: {
+        position: 'absolute', width: `${cloud.vw}vw`, height: `${cloud.vw}vw`, opacity: cloud.opacity,
+        willChange: 'transform', ...place,
+      },
+      cloud: image
+        ? { position: 'absolute', inset: -pad, backgroundImage: `url(${image})`, backgroundSize: '100% 100%' }
+        : { position: 'absolute', inset: 0, borderRadius: '50%', background: cloudGradient(cloud) },
+    };
+  }), []);
+}
 
 const lineStyle: CSSProperties = { whiteSpace: 'pre-wrap', fontSize: 17, lineHeight: 1.6, color: INK, textWrap: 'pretty' };
 const linesBlock: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 16 };
@@ -104,11 +134,23 @@ const logoTile = (task: TaskCard | { task: keyof typeof ONBOARDING_LOGOS }, size
   backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
 });
 
+/**
+ * A line's words. All of them are in the flow from the line's first
+ * beat, so it wraps once; a word not reached yet is invisible and holds
+ * its place, and a word reached fades in with the canvas's keyframes.
+ */
 function Words({ words }: { words: readonly ShownWord[] }): JSX.Element {
   return (
     <>
       {words.map((word, i) => (
-        <span key={i} style={{ display: 'inline', animation: word.animate ? 'onb-word-in .3s ease-out both' : undefined }}>
+        <span
+          key={i}
+          style={{
+            display: 'inline',
+            visibility: word.state === WordState.Hidden ? 'hidden' : undefined,
+            animation: word.state === WordState.In ? 'onb-word-in .3s ease-out both' : undefined,
+          }}
+        >
           {word.text}
         </span>
       ))}
@@ -122,6 +164,7 @@ function Line({ state, phase, k, style }: { state: OnboardingState; phase: Onboa
 
 export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.Element {
   const state = useOnboarding(userName, bridge);
+  const ambient = useAmbientClouds();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Follow the words down while the person is near the bottom, as the
@@ -145,16 +188,18 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
       <style>{KEYFRAMES}</style>
 
       <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-        {AMBIENT.map((one, i) => (
-          <span key={i} style={{ position: 'absolute', borderRadius: '50%', ...one }} />
+        {ambient.map((one, i) => (
+          <span key={i} style={one.place}><span style={one.cloud} /></span>
         ))}
       </div>
 
+      {/* The canvas's glass at 88% white. Its backdrop blur is not here: the
+          clouds are blurred already and blurring the window again every
+          frame was half the lag; its saturate(1.15) is baked into them. */}
       <div
         style={{
           flex: '1 1 auto', minWidth: 0, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column',
-          overflow: 'hidden', background: 'rgba(253,253,254,.88)', backdropFilter: 'blur(40px) saturate(1.15)',
-          WebkitBackdropFilter: 'blur(40px) saturate(1.15)',
+          overflow: 'hidden', background: 'rgba(253,253,254,.88)',
         }}
       >
         {state.intro && (
@@ -341,7 +386,7 @@ export function Onboarding({ userName, bridge, onDone }: OnboardingProps): JSX.E
                       <div style={{ display: 'flex', justifyContent: 'center', padding: '18px 0 4px', animation: 'onb-block-in .46s ease-out both' }}>
                         <button
                           type="button"
-                          onClick={onDone}
+                          onClick={() => onDone({ workType: state.roleLabel, ownWords: state.ownWords })}
                           className="onb-hover-ink"
                           style={{
                             width: 'min(560px, 100%)', height: 56, borderRadius: 999, border: 'none', background: INK, color: PAPER,
