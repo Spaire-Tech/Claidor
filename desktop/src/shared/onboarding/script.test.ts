@@ -13,8 +13,9 @@ import {
   shownWords,
   stageOf,
   taskCopy,
-  wordsOf,
   WORDS_PER_SECOND,
+  wordsOf,
+  WordState,
 } from './script';
 
 describe("Yodo's words", () => {
@@ -78,15 +79,16 @@ describe('how it streams', () => {
     expect(beatsAt(60_000, 50)).toBe(50);
   });
 
-  test('the playing phase shows what the clock has reached, fading; a played phase shows all, still; a later one nothing', () => {
+  test('the playing phase lays out every word and fades in the ones reached; a played phase shows all, still; a later one nothing', () => {
     const lines = ['one two three', 'four five'];
     const playing = { phase: OnboardingPhase.Open, beats: 2 };
     expect(shownWords(lines, 0, playing, OnboardingPhase.Open)).toEqual([
-      { text: 'one', animate: true }, { text: ' two', animate: true },
+      { text: 'one', state: WordState.In }, { text: ' two', state: WordState.In }, { text: ' three', state: WordState.Hidden },
     ]);
-    expect(shownWords(lines, 1, playing, OnboardingPhase.Open)).toEqual([]);
+    // The second line is on the page before its first beat, all of it hidden, so it wraps once.
+    expect(shownWords(lines, 1, playing, OnboardingPhase.Open).map(one => one.state)).toEqual([WordState.Hidden, WordState.Hidden]);
     const later = { phase: OnboardingPhase.Role, beats: 0 };
-    expect(shownWords(lines, 1, later, OnboardingPhase.Open).map(one => one.animate)).toEqual([false, false]);
+    expect(shownWords(lines, 1, later, OnboardingPhase.Open).map(one => one.state)).toEqual([WordState.Still, WordState.Still]);
     expect(shownWords(lines, 0, playing, OnboardingPhase.Role)).toEqual([]);
     expect(phaseDone(lines, playing, OnboardingPhase.Open)).toBe(false);
     expect(phaseDone(lines, { phase: OnboardingPhase.Open, beats: 11 }, OnboardingPhase.Open)).toBe(true);

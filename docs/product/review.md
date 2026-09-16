@@ -2933,3 +2933,19 @@ and the onboarding walk (every stage drew, the result card came). The
 founder's MacBook Air has a real GPU and will have lagged for the same
 reason with different numbers; that it is smooth there is for them to
 say, since nobody has run it there yet.
+
+**The words themselves, the same evening.** The founder: *"i meant the
+text 'typing stream' to just make the stream smoother. that was it."*
+Two things in the typing itself were not smooth, apart from the frame
+rate. A line used to grow word by word, so the browser wrapped it again
+on every word, and `text-wrap: pretty` (the canvas's, kept) rebalances
+the last lines of a paragraph as it grows: a word landing at the end of
+a line could move the words before it to the line above or below. Now
+every word of a line is on the page from the line's first beat,
+invisible until its beat, so the line wraps once and nothing moves but
+the fade (`shownWords` returns every word with a state: hidden, in,
+still). And the clock ticked on a 16 ms timer, which is not the display's
+frame, so a word could land up to a frame after its beat; it ticks on
+`requestAnimationFrame` now. The cadence, the fade and the blur are the
+canvas's numbers, untouched. Measured again: 60 frames a second, no late
+frame at all this time; the walk draws every stage.

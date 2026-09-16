@@ -215,18 +215,30 @@ export function beatsAt(elapsedMs: number, total: number): number {
   return Math.min(total, Math.floor((elapsedMs / 1000) * WORDS_PER_SECOND));
 }
 
+export const WordState = {
+  /** Laid out, not yet reached: it holds its place, invisible. */
+  Hidden: 'hidden',
+  /** Reached while this phase streams: it fades in. */
+  In: 'in',
+  /** From a phase that has played: shown, still. */
+  Still: 'still',
+} as const;
+export type WordState = typeof WordState[keyof typeof WordState];
+
 export interface ShownWord {
   text: string;
-  /** True while this phase is the one streaming: the word fades in. */
-  animate: boolean;
+  state: WordState;
 }
 
 /**
- * The words of line `k` to draw now.
+ * The words of line `k`, and how each is drawn now.
  *
- * A phase that has already played shows every word, still. The phase
- * that is playing shows the words the clock has reached, fading. A phase
- * not reached yet shows nothing — its block is not on screen anyway.
+ * Every word of a line is on the page from the line's first beat, the
+ * unreached ones invisible, so the line wraps once and nothing moves
+ * while it streams — a word landing at the end of a line used to push
+ * the words before it around. A phase that has already played shows
+ * every word, still. A phase not reached yet shows nothing — its block
+ * is not on screen anyway.
  */
 export function shownWords(
   lines: readonly string[],
@@ -240,11 +252,10 @@ export function shownWords(
   if (!segment) return [];
   if (current.phase !== phase) {
     const played = order.indexOf(phase) < order.indexOf(current.phase);
-    return played ? segment.words.map(text => ({ text, animate: false })) : [];
+    return played ? segment.words.map(text => ({ text, state: WordState.Still })) : [];
   }
   const n = current.beats - segment.offset;
-  if (n <= 0) return [];
-  return segment.words.slice(0, Math.min(n, segment.words.length)).map(text => ({ text, animate: true }));
+  return segment.words.map((text, i) => ({ text, state: i < n ? WordState.In : WordState.Hidden }));
 }
 
 /** Whether a phase has finished streaming. */

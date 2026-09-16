@@ -3,7 +3,7 @@ import { type CSSProperties, useEffect, useMemo, useRef } from 'react';
 import { MAIN_AVATAR } from '../../../shared/agent/avatars';
 import { APP_LOGO_DIRECTORY } from '../../../shared/connections/catalog';
 import { ONBOARDING_LOGOS } from '../../../shared/onboarding/constants';
-import { OnboardingPhase, OTHER_PLACEHOLDER, type ShownWord } from '../../../shared/onboarding/script';
+import { OnboardingPhase, OTHER_PLACEHOLDER, type ShownWord, WordState } from '../../../shared/onboarding/script';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, font } from '../tokens';
 import { type AmbientCloud, cloudGeometry, cloudGradient, renderCloudImage } from './ambientClouds';
@@ -130,11 +130,23 @@ const logoTile = (task: TaskCard | { task: keyof typeof ONBOARDING_LOGOS }, size
   backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
 });
 
+/**
+ * A line's words. All of them are in the flow from the line's first
+ * beat, so it wraps once; a word not reached yet is invisible and holds
+ * its place, and a word reached fades in with the canvas's keyframes.
+ */
 function Words({ words }: { words: readonly ShownWord[] }): JSX.Element {
   return (
     <>
       {words.map((word, i) => (
-        <span key={i} style={{ display: 'inline', animation: word.animate ? 'onb-word-in .3s ease-out both' : undefined }}>
+        <span
+          key={i}
+          style={{
+            display: 'inline',
+            visibility: word.state === WordState.Hidden ? 'hidden' : undefined,
+            animation: word.state === WordState.In ? 'onb-word-in .3s ease-out both' : undefined,
+          }}
+        >
           {word.text}
         </span>
       ))}
