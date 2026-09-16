@@ -5,19 +5,36 @@
  * A twin of `openclaw-extensions/composio/client.ts`, on purpose. The
  * extension is copied into the engine's runtime alone and cannot import
  * from `src/`; main cannot import from the extension without moving the
- * electron build's root. Same paths, same header, same reading of the
- * answers — from `@composio/client` 0.1.0-alpha.76,
- * `resources/tool-router/session/session.mjs`:
+ * electron build's root. Same paths, same reading of the answers — from
+ * `@composio/client` 0.1.0-alpha.76, `resources/tool-router/session/session.mjs`:
  *
  *   POST   /api/v3.1/tool_router/session               { user_id }  → { session_id }
  *   POST   /api/v3.1/tool_router/session/{id}/link     { toolkit }  → { redirect_url }
  *   GET    /api/v3.1/tool_router/session/{id}/toolkits              → items[].connected_account
  *   DELETE /api/v3.1/connected_accounts/{id}
+ *
+ * **There is no key in the app.** The founder: "my users should never
+ * put a key. everything happens under the hood." The calls go to the
+ * local token proxy at `/composio`, which forwards them to Claidor's
+ * server under the account's sign-in; the server holds Claidor's
+ * Composio key and puts the account's own id on every session
+ * (`polar/desktop/composio.py`). `apiKey` survives as an option for a
+ * test that talks to Composio directly.
  */
 
 export const COMPOSIO_BASE_URL = 'https://backend.composio.dev';
 
-/** One computer, one person. Composio scopes sign-ins by this. */
+/** The local token proxy's path for Composio; the server side is `/api/proxy/composio`. */
+export const COMPOSIO_PROXY_PATH = '/composio';
+
+export const composioBaseUrlFor = (tokenProxyPort: number): string => (
+  `http://127.0.0.1:${tokenProxyPort}${COMPOSIO_PROXY_PATH}`
+);
+
+/**
+ * What the app sends as the user id. The server replaces it with the
+ * account's own id, so this is a placeholder and never the identity.
+ */
 export const COMPOSIO_USER_ID = 'default';
 
 export interface ComposioToolkitState {
@@ -36,9 +53,11 @@ export interface ComposioApi {
 }
 
 export interface ComposioApiOptions {
-  apiKey: string;
+  /** The local proxy's Composio address (`composioBaseUrlFor`), or Composio itself. */
+  baseUrl: string;
+  /** Only for talking to Composio directly; the proxy route carries none. */
+  apiKey?: string;
   userId?: string;
-  baseUrl?: string;
   fetch?: typeof fetch;
 }
 
@@ -58,7 +77,7 @@ const describeFailure = (status: number, payload: unknown): string => {
 
 export function createComposioApi(options: ComposioApiOptions): ComposioApi {
   const fetchImpl = options.fetch ?? fetch;
-  const baseUrl = (options.baseUrl ?? COMPOSIO_BASE_URL).replace(/\/+$/, '');
+  const baseUrl = options.baseUrl.replace(/\/+$/, '');
   const userId = options.userId ?? COMPOSIO_USER_ID;
   let sessionId: Promise<string> | null = null;
 
@@ -66,7 +85,7 @@ export function createComposioApi(options: ComposioApiOptions): ComposioApi {
     const response = await fetchImpl(`${baseUrl}${path}`, {
       method,
       headers: {
-        'x-api-key': options.apiKey,
+        ...(options.apiKey ? { 'x-api-key': options.apiKey } : {}),
         accept: 'application/json',
         ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
       },
@@ -86,8 +105,10 @@ export function createComposioApi(options: ComposioApiOptions): ComposioApi {
       // `upstream_refused` lesson: a refusal without its reason is two
       // hours of guessing.
       const reason = response.status === 401
-        ? 'Composio refused the API key. Check it in Settings.'
-        : `Composio ${describeFailure(response.status, payload)}`;
+        ? 'You are signed out. Sign in again to connect apps.'
+        : response.status === 503
+          ? 'Apps are not switched on for this server yet.'
+          : `Composio ${describeFailure(response.status, payload)}`;
       console.warn(`[Connections] composio ${method} ${path} — ${reason}`);
       throw new Error(reason);
     }

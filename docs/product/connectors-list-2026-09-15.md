@@ -1,5 +1,15 @@
 # The connectors — a new list, 15 September 2026
 
+> **Cut on 16 September 2026.** The founder: *"remove all the junks in
+> connectors … i want nothing that is browser. or that cant be connected.
+> its noise. cause what is it doing there? it says plugins, so you should
+> plug it … no social media either … leave linkedin."* The catalogue
+> (`desktop/src/shared/connections/catalog.ts`) now holds forty-five
+> cards and every one is a Connect button that works. The list below is
+> the survey the forty-five were chosen from, kept as the record of what
+> was checked and how; it is no longer what the app shows. The kept
+> forty-five are in `docs/product/review.md` item 54.
+
 The founder: *"give me a brand new list of connectors we should use.
 notion, zoom, etc. i want a full list i want categories. where we can
 use skills."*

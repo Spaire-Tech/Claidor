@@ -5,7 +5,6 @@ import { AgentId } from '../../../shared/agent';
 import { avatarFallback } from '../../../shared/agent/avatars';
 import { BrowserDisplayMode, normalizeBrowserWebAccessConfig } from '../../../shared/browserWebAccess/constants';
 import { isRoomId, type Room } from '../../../shared/rooms/constants';
-import { CLAUDE_CLI_PROVIDER, CLAUDE_CODE_DEFAULT_MODEL, CLAUDE_CODE_FAST_MODEL } from '../../../shared/settings/models';
 import { agentService } from '../../services/agent';
 import { collectSessionArtifacts, loadDetectedFileArtifact } from '../../services/artifactDetection';
 import { configService } from '../../services/config';
@@ -24,7 +23,6 @@ import { systemPromptFor } from '../agents/voices';
 import type { EngineMessage } from '../thread/fromEngine';
 import { askUserQuestions, decisionNote, fileAccessFromToolInput, parseChoiceId } from '../thread/fromEngine';
 import { basename, type KnownFile } from '../thread/parts';
-import { lastTurnUsedTools, routeTurn, TurnRoute } from '../thread/routing';
 import type { AuthHandlers, ChoiceHandlers, PartHandlers } from '../thread/ThreadItemView';
 import { AuthDecision } from '../thread/types';
 import type { AgentDraftSubmit } from './Compose';
@@ -612,67 +610,32 @@ export function useMessagesShell(): MessagesShellState {
     });
   }, [activeId, dispatch, reloadRooms]);
 
-  /**
-   * Which model this turn runs on, under the Claude Code sign-in.
-   *
-   * `thread/routing.ts` decides: the fast model for a plain question,
-   * the strong one for a job, and the strong one whenever in doubt. The
-   * session's model override is what the engine reads, so it is set
-   * right before send when it differs, and a new conversation starts
-   * with it. Off the Claude Code sign-in nothing here runs: the account
-   * and a person's own key keep the model they chose.
-   */
-  const routeModelFor = useCallback((message: string, forRoom: boolean): { ref: string; fast: boolean } | null => {
-    const config = configService.getConfig();
-    if (config.claudeCodeLogin !== true) return null;
-    const strong = `${CLAUDE_CLI_PROVIDER}/${config.claudeCodeModel?.trim() || CLAUDE_CODE_DEFAULT_MODEL}`;
-    const fast = `${CLAUDE_CLI_PROVIDER}/${CLAUDE_CODE_FAST_MODEL}`;
-    const route = routeTurn({ text: message, inRoom: forRoom, lastTurnUsedTools: lastTurnUsedTools(messages) });
-    return route === TurnRoute.Fast ? { ref: fast, fast: true } : { ref: strong, fast: false };
-  }, [messages]);
-
-  /** Set the session's model to the route's, only when it differs. */
-  const settleModel = useCallback(async (session: { id: string; modelOverride?: string }, route: { ref: string; fast: boolean }) => {
-    const current = session.modelOverride?.trim() ?? '';
-    // No override means the engine's primary, which is the strong model.
-    const same = route.fast ? current === route.ref : (current === '' || current === route.ref);
-    if (same) return;
-    await coworkService.patchSession(session.id, { model: route.fast ? route.ref : '' });
-  }, []);
-
+  // Which model a turn runs on is not this screen's business: the main
+  // process decides per run (`main/libs/turnRouting.ts`, under the
+  // Claude Code mechanic) and nothing here names a model.
   const onSend = useCallback((message: string) => {
-    void (async () => {
-      // A room has no session of its own. The message goes to each member's
-      // conversation, which is what makes every reply a real reply the
-      // person can go and read on its own.
-      if (room) {
-        const route = routeModelFor(message, true);
-        for (const memberId of room.memberIds) {
-          const memberSession = sessionsByAgent[memberId];
-          if (memberSession?.id) {
-            if (route) await settleModel(memberSession, route);
-            void coworkService.continueSession({ sessionId: memberSession.id, prompt: message });
-          } else {
-            void coworkService.startSession({ prompt: message, agentId: memberId });
-          }
+    // A room has no session of its own. The message goes to each member's
+    // conversation, which is what makes every reply a real reply the
+    // person can go and read on its own.
+    if (room) {
+      for (const memberId of room.memberIds) {
+        const memberSession = sessionsByAgent[memberId];
+        if (memberSession?.id) {
+          void coworkService.continueSession({ sessionId: memberSession.id, prompt: message });
+        } else {
+          void coworkService.startSession({ prompt: message, agentId: memberId });
         }
-        return;
       }
+      return;
+    }
 
-      const route = routeModelFor(message, false);
-      const sessionId = currentSession?.id;
-      if (sessionId && currentSession) {
-        if (route) await settleModel(currentSession, route);
-        void coworkService.continueSession({ sessionId, prompt: message });
-        return;
-      }
-      void coworkService.startSession({
-        prompt: message,
-        agentId: activeId,
-        ...(route?.fast ? { modelOverride: route.ref } : {}),
-      });
-    })();
-  }, [room, sessionsByAgent, currentSession, activeId, routeModelFor, settleModel]);
+    const sessionId = currentSession?.id;
+    if (sessionId) {
+      void coworkService.continueSession({ sessionId, prompt: message });
+      return;
+    }
+    void coworkService.startSession({ prompt: message, agentId: activeId });
+  }, [room, sessionsByAgent, currentSession, activeId]);
 
   /**
    * "Teach a task", from the composer's `+` menu.

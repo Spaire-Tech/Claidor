@@ -57,6 +57,7 @@ from polar.postgres import AsyncSession, get_db_session
 from polar.routing import APIRouter
 
 from .auth import bearer_token, get_desktop_session
+from .composio import forward as composio_forward
 
 # Straight from the price list rather than through `service`, which
 # re-exports only what it uses itself — a name it merely passed through
@@ -1134,6 +1135,24 @@ async def proxy_speech(
         media_type=upstream.headers.get("content-type", "audio/mpeg"),
         headers={"cache-control": "no-store"},
     )
+
+
+# Apps through Composio: the app's six calls, forwarded with Claidor's
+# key and the account's own Composio user id (`composio.py`). Declared
+# before the catch-all below, because FastAPI takes the first route
+# that matches and `/api/proxy/{path}` would take this one.
+@router.api_route(
+    "/api/proxy/composio/{path:path}",
+    methods=["GET", "POST", "DELETE"],
+    name="desktop:composio",
+    include_in_schema=False,
+)
+async def proxy_composio(
+    path: str,
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+) -> Response:
+    return await composio_forward(request, desktop_session, path)
 
 
 @router.api_route(

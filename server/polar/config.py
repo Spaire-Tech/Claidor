@@ -196,6 +196,15 @@ class Settings(BaseSettings):
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
     DESKTOP_OPENAI_BASE_URL: str = "https://api.openai.com"
 
+    # Apps through Composio (polar/desktop/composio.py). One key for the
+    # whole of Claidor, held here and nowhere else: the desktop app never
+    # sees it and never asks a person for one. Each account is a Composio
+    # user of its own, named from the Claidor user id, so one person's
+    # sign-ins are never another's. Left empty, the route answers 503
+    # and the app says apps are not switched on yet.
+    COMPOSIO_API_KEY: str = ""
+    COMPOSIO_BASE_URL: str = "https://backend.composio.dev"
+
     # Connections (polar/connectors/, docs/maties/connectors.md). The
     # middleman that holds the sign-in plumbing for the forty services a
     # person connects an account to. Its developer token is project-wide

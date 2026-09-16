@@ -1,4 +1,5 @@
-import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import {
   type SelectOption,
@@ -411,10 +412,22 @@ function Toggle(
   );
 }
 
+/** The open menu's width and its gap below the control. */
+const SELECT_MENU_WIDTH = 320;
+const SELECT_MENU_GAP = 6;
+
 /**
  * The canvas draws a select as a value and a chevron and never opens it.
  * A real one has to open, so this is the app's popover — the same glass,
  * the same radius, the same Escape-and-click-outside as the account menu.
+ *
+ * The menu is rendered at the document's root, not inside the row. Every
+ * group card clips its contents (`overflow: hidden`, which is what rounds
+ * its corners) and the column scrolls, so a menu positioned inside the
+ * row was cut off at the card's edge: the founder saw "every dropdown in
+ * settings opens inside the box". A portal puts it above everything and
+ * `position: fixed` places it under the control from the control's own
+ * rectangle, measured when it opens.
  */
 function Select(
   { value, options, onPick, label }: {
@@ -425,8 +438,26 @@ function Select(
   },
 ): JSX.Element {
   const [open, setOpen] = useState(false);
+  const [place, setPlace] = useState<{ top: number; right: number }>();
   const ref = useRef<HTMLSpanElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const current = options.find(one => one.value === value);
+
+  // Measure on open, and again when the window changes size under it.
+  useLayoutEffect(() => {
+    if (!open) { setPlace(undefined); return undefined; }
+    const measure = (): void => {
+      const box = ref.current?.getBoundingClientRect();
+      if (!box) return;
+      setPlace({
+        top: box.bottom + SELECT_MENU_GAP,
+        right: Math.max(8, window.innerWidth - box.right),
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -434,7 +465,8 @@ function Select(
       if (event.key === 'Escape') { event.stopPropagation(); setOpen(false); }
     };
     const onDown = (event: MouseEvent): void => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!ref.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
     };
     document.addEventListener('keydown', onKey, true);
     const timer = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
@@ -445,43 +477,51 @@ function Select(
     };
   }, [open]);
 
-  return (
-    <span ref={ref} style={{ position: 'relative', flex: '0 0 auto', display: 'flex' }}>
-      {open && (
-        <div
-          role="menu"
+  const menu = open && place ? createPortal(
+    <div
+      ref={menuRef}
+      role="menu"
+      style={{
+        position: 'fixed', top: place.top, right: place.right, zIndex: 120,
+        width: SELECT_MENU_WIDTH, padding: 6,
+        // A list taller than what is left below the control scrolls
+        // inside itself rather than running off the bottom of the window.
+        maxHeight: `calc(100vh - ${place.top + 12}px)`, overflowY: 'auto',
+        borderRadius: radius.menu, background: glass.background, backdropFilter: glass.blur,
+        border: `1px solid ${glass.border}`,
+        boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
+        display: 'flex', flexDirection: 'column', gap: 4,
+        animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
+      }}
+    >
+      {options.map(option => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => { setOpen(false); onPick(option.value); }}
+          aria-current={option.value === value}
           style={{
-            position: 'absolute', right: 0, top: 39, zIndex: 90, width: 320, padding: 6,
-            borderRadius: radius.menu, background: glass.background, backdropFilter: glass.blur,
-            border: `1px solid ${glass.border}`,
-            boxShadow: `${shadow.popover}, ${shadow.glassInset}`,
-            display: 'flex', flexDirection: 'column', gap: 4,
-            animation: `fsr-message-in ${motion.messageIn.duration} ${motion.messageIn.easing} both`,
+            display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start',
+            textAlign: 'left', padding: '11px 12px', borderRadius: radius.input,
+            border: 'none', cursor: 'pointer', font: 'inherit', width: '100%',
+            background: option.value === value ? color.fillStrong : 'transparent',
           }}
         >
-          {options.map(option => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => { setOpen(false); onPick(option.value); }}
-              aria-current={option.value === value}
-              style={{
-                display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start',
-                textAlign: 'left', padding: '11px 12px', borderRadius: radius.input,
-                border: 'none', cursor: 'pointer', font: 'inherit', width: '100%',
-                background: option.value === value ? color.fillStrong : 'transparent',
-              }}
-            >
-              <span style={{ fontSize: text.body, color: color.ink }}>{option.label}</span>
-              {option.hint && (
-                <span style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.4 }}>
-                  {option.hint}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+          <span style={{ fontSize: text.body, color: color.ink }}>{option.label}</span>
+          {option.hint && (
+            <span style={{ fontSize: text.caption, color: color.muted, lineHeight: 1.4 }}>
+              {option.hint}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>,
+    document.body,
+  ) : null;
+
+  return (
+    <span ref={ref} style={{ position: 'relative', flex: '0 0 auto', display: 'flex' }}>
+      {menu}
       <button
         type="button"
         onClick={() => setOpen(current => !current)}

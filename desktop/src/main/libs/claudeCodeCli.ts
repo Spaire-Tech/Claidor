@@ -4,7 +4,8 @@ import os from 'os';
 import path from 'path';
 
 /**
- * Where the Claude Code command lives on this computer.
+ * Where the Claude Code command lives on this computer, and which models
+ * it is asked for.
  *
  * The engine can run a turn through the installed Claude Code app
  * instead of calling a model API itself (`agents.defaults.model.primary
@@ -17,11 +18,26 @@ import path from 'path';
  * The order: an override (`CAISRA_CLAUDE_CLI`), then `which`, then the
  * places Claude Code's own installers put it. Pure list, injectable
  * existence check, so it is tested without a filesystem.
+ *
+ * Whether the mechanic is on at all is `claudeCodeMode.ts`.
  */
 
 export const CLAUDE_CLI_ENV = 'CAISRA_CLAUDE_CLI';
 
-export { CLAUDE_CLI_PROVIDER } from '../../shared/settings/models';
+/** The engine's provider id for "run this through the Claude Code CLI". */
+export const CLAUDE_CLI_PROVIDER = 'claude-cli';
+
+/**
+ * The model a job runs on. Opus: Caisra is an agent holding a strict
+ * contract, and the founder wants the product judged on the model that
+ * holds it.
+ */
+export const CLAUDE_CODE_STRONG_MODEL = 'claude-opus-5';
+
+/** The model a plain question runs on; see `turnRouting.ts`. */
+export const CLAUDE_CODE_FAST_MODEL = 'claude-sonnet-5';
+
+export const claudeCliModelRef = (model: string): string => `${CLAUDE_CLI_PROVIDER}/${model}`;
 
 export function claudeCliCandidates(options: {
   home: string;
@@ -81,7 +97,7 @@ export function lookupClaudeOnPath(env: NodeJS.ProcessEnv = process.env): string
   }
 }
 
-/** Everything above in one call, for the config sync. */
+/** Everything above in one call. */
 export function resolveClaudeCli(env: NodeJS.ProcessEnv = process.env): string | null {
   return findClaudeCli(claudeCliCandidates({
     home: os.homedir(), platform: process.platform, env, lookup: lookupClaudeOnPath(env),

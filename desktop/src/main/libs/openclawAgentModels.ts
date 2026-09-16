@@ -9,6 +9,8 @@ type BuildManagedAgentEntriesInput = {
   fallbackPrimaryModel: string;
   stateDir?: string;
   availableProviders?: ProviderModelCatalog;
+  /** Every agent on the fallback, whatever its stored model says. */
+  lockToDefault?: boolean;
 };
 
 export type ProviderModelCatalog = Record<string, { models: Array<{ id: string }> }>;
@@ -348,13 +350,26 @@ export function resolveServerModelRefForRun(options: {
 export function buildAgentEntry(
   agent: Agent,
   fallbackPrimaryModel: string,
-  options?: { workspace?: string; availableProviders?: ProviderModelCatalog },
+  options?: {
+    workspace?: string;
+    availableProviders?: ProviderModelCatalog;
+    /**
+     * The fallback for every agent, whatever its stored model says. The
+     * Claude Code mechanic: an agent's stored model is the account's
+     * server model, which qualifies and would otherwise win over the
+     * `claude-cli/…` default, and the account's model is exactly what
+     * that mechanic exists to avoid.
+     */
+    lockToDefault?: boolean;
+  },
 ): Record<string, unknown> {
-  const qualified = resolveQualifiedAgentModelRef({
-    agentModel: agent.model,
-    availableProviders: options?.availableProviders ?? {},
-  });
-  const primaryModel = qualified.status === 'qualified' ? qualified.primaryModel : fallbackPrimaryModel;
+  const qualified = options?.lockToDefault
+    ? null
+    : resolveQualifiedAgentModelRef({
+      agentModel: agent.model,
+      availableProviders: options?.availableProviders ?? {},
+    });
+  const primaryModel = qualified?.status === 'qualified' ? qualified.primaryModel : fallbackPrimaryModel;
   const legacyIcon = isDesignedAgentAvatarIcon(agent.icon) ? '' : agent.icon;
   const subagentConfig = buildSubagentConfig(agent);
 
@@ -383,12 +398,13 @@ export function buildManagedAgentEntries({
   fallbackPrimaryModel,
   stateDir,
   availableProviders,
+  lockToDefault,
 }: BuildManagedAgentEntriesInput): Array<Record<string, unknown>> {
   return agents
     .filter((agent) => agent.id !== 'main' && agent.enabled)
     .map((agent) => buildAgentEntry(agent, fallbackPrimaryModel, stateDir
-      ? { workspace: path.join(stateDir, `workspace-${agent.id}`), availableProviders }
-      : { availableProviders },
+      ? { workspace: path.join(stateDir, `workspace-${agent.id}`), availableProviders, lockToDefault }
+      : { availableProviders, lockToDefault },
     ));
 }
 

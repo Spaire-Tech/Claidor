@@ -6,13 +6,17 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
+      "baseUrl": {
+        "type": "string",
+        "description": "Where the calls go: the app's local token proxy, which carries the account's sign-in to Claidor's server. The server holds Claidor's Composio key; nothing in the app does."
+      },
       "apiKey": {
         "type": "string",
-        "description": "The person's Composio API key. Written as an env placeholder; never the key itself."
+        "description": "Only for talking to Composio directly, in a test. The app never sets it."
       },
       "userId": {
         "type": "string",
-        "description": "The Composio user the sign-ins belong to. One computer, one person: 'default'."
+        "description": "A placeholder. The server replaces it with the account's own id, so one person's sign-ins are never another's."
       },
       "allowedToolkits": {
         "type": "array",

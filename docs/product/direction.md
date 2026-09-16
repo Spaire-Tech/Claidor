@@ -57,6 +57,22 @@ the constant: the installer filenames, the web package, the backup and
 rollback archives a person saves, the default working directory under
 home, and the quit dialog's title.
 
+## 0b. Under the hood, never a setting
+
+16 September 2026, the founder, verbatim: *"my users should never put a
+key. everything happens under the hood. not a setting."* And, on the
+Claude Code sign-in they had asked for: *"its for you to switch the
+mechanic in the code, but thats not visible to others."*
+
+Applied that day (`docs/product/review.md` item 53). The Settings
+screen's Models row offers the account's allowance and a person's own
+provider key — the one key a person may hold, because it is theirs and
+bills them — and nothing else. Claidor's Composio key is on the server
+(`polar/desktop/composio.py`) and the app has no field for it. Claude
+Code is a mechanic of a development build (`desktop/src/main/libs/claudeCodeMode.ts`),
+decided in code, logged at `[ClaudeCode]`, invisible on every screen.
+Anything a client would have to be told to type in is the wrong design.
+
 ---
 
 ## 1. The shape: it is Messages

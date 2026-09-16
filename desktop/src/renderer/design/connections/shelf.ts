@@ -52,14 +52,13 @@ export function actionFor(
   item: ConnectionItem,
   connected: ReadonlySet<string>,
   busyId?: string,
-  /** A Composio key is in Settings, so the cards Composio carries can sign in. */
-  composioReady = false,
 ): RowAction {
-  // Composio first, when there is a key. It carries the cards that were
-  // "Not yet" — Gmail, HubSpot, Outlook, Zoom — and the ones that were
-  // "Needs a key", and the sign-in is one link on their page. `connected`
-  // holds both routes' ids, so a card signed in either way says so.
-  if (composioReady && composioToolkit(item)) {
+  // Composio first. It carries the cards that were "Not yet" — Gmail,
+  // HubSpot, Outlook, Zoom — and the ones that were "Needs a key", and
+  // the sign-in is one link on their page. Nothing has to be typed for
+  // it: Claidor's key is on the server. `connected` holds both routes'
+  // ids, so a card signed in either way says so.
+  if (composioToolkit(item)) {
     if (connected.has(item.id)) {
       return { action: ConnectAction.Connected, label: 'Connected', pressable: true };
     }

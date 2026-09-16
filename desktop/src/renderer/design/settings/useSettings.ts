@@ -9,7 +9,6 @@ import {
 } from '../../../shared/settings/constants';
 import {
   ACCOUNT_MODELS,
-  CLAUDE_CODE_LOGIN,
   currentChoice,
   defaultModelIdFor,
   providersFor,
@@ -87,52 +86,17 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
   const [picked, setPicked] = useState<string>();
   useEffect(() => { if (!open) setPicked(undefined); }, [open]);
 
-  // The Composio key lives beside the provider keys and is read the same
-  // way, for the same reason.
-  const [composioApiKey, setComposioApiKey] = useState<string>(
-    () => configService.getConfig().composioApiKey ?? '',
-  );
-  const [claudeCodeLogin, setClaudeCodeLogin] = useState<boolean>(
-    () => configService.getConfig().claudeCodeLogin === true,
-  );
-  const [claudeCodeModel, setClaudeCodeModel] = useState<string>(
-    () => configService.getConfig().claudeCodeModel ?? '',
-  );
-
   useEffect(() => {
     const reread = () => {
       setProviders(configService.getConfig().providers ?? {});
-      setComposioApiKey(configService.getConfig().composioApiKey ?? '');
-      setClaudeCodeLogin(configService.getConfig().claudeCodeLogin === true);
-      setClaudeCodeModel(configService.getConfig().claudeCodeModel ?? '');
     };
     reread();
     window.addEventListener(ConfigServiceEvent.Updated, reread);
     return () => window.removeEventListener(ConfigServiceEvent.Updated, reread);
   }, [open]);
 
-  const onComposioApiKey = useCallback((apiKey: string) => {
-    const next = apiKey.trim();
-    setComposioApiKey(next);
-    void configService.updateConfig({ composioApiKey: next }).catch(() => {
-      setComposioApiKey(configService.getConfig().composioApiKey ?? '');
-      showToast('That could not be saved.');
-    });
-  }, []);
-
-  const modelChoice = picked ?? currentChoice(providers, claudeCodeLogin);
-  const modelApiKey = modelChoice === ACCOUNT_MODELS || modelChoice === CLAUDE_CODE_LOGIN
-    ? ''
-    : storedKey(providers, modelChoice);
-
-  const onClaudeCodeModel = useCallback((model: string) => {
-    const next = model.trim();
-    setClaudeCodeModel(next);
-    void configService.updateConfig({ claudeCodeModel: next }).catch(() => {
-      setClaudeCodeModel(configService.getConfig().claudeCodeModel ?? '');
-      showToast('That could not be saved.');
-    });
-  }, []);
+  const modelChoice = picked ?? currentChoice(providers);
+  const modelApiKey = modelChoice === ACCOUNT_MODELS ? '' : storedKey(providers, modelChoice);
 
   /**
    * A choice, written all the way down to the engine.
@@ -183,25 +147,12 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
   }, []);
 
   const onModelChoice = useCallback((choice: string) => {
-    // The Claude Code sign-in is a flag on its own, not a provider entry;
-    // turning it on leaves the stored keys alone and the engine's model is
-    // overridden for as long as it is on. Turning it off restores whatever
-    // the keys say.
-    const wantsClaudeCode = choice === CLAUDE_CODE_LOGIN;
-    if (wantsClaudeCode !== claudeCodeLogin) {
-      setClaudeCodeLogin(wantsClaudeCode);
-      void configService.updateConfig({ claudeCodeLogin: wantsClaudeCode }).catch(() => {
-        setClaudeCodeLogin(configService.getConfig().claudeCodeLogin === true);
-        showToast('That could not be saved.');
-      });
-    }
-    if (wantsClaudeCode) { setPicked(undefined); return; }
     setPicked(choice === ACCOUNT_MODELS ? undefined : choice);
     // A provider with a key already stored takes effect on the pick alone.
     // One without gets an entry that is off until a key arrives, which is
     // what makes the field below it appear.
     writeProviders(choice, storedKey(configService.getConfig().providers, choice));
-  }, [writeProviders, claudeCodeLogin]);
+  }, [writeProviders]);
 
   const onModelApiKey = useCallback((apiKey: string) => {
     if (modelChoice === ACCOUNT_MODELS) return;
@@ -280,8 +231,6 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
     memoryEnabled: config.memoryEnabled,
     modelChoice,
     modelApiKey,
-    composioApiKey,
-    claudeCodeModel,
     ...(usage ? { usage } : {}),
     ...(version ? { version } : {}),
     ...(updateNote ? { updateNote } : {}),
@@ -292,8 +241,6 @@ export function useSettings(open: boolean): Omit<SettingsInput, never> {
     onMemory,
     onModelChoice,
     onModelApiKey,
-    onComposioApiKey,
-    onClaudeCodeModel,
     onWorkingDirectory,
     onRefreshUsage,
     onCheckUpdates,

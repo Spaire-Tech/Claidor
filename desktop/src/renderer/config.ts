@@ -115,24 +115,12 @@ export interface AppConfig {
   providers?: Record<string, ProviderConfig>;
   providerModelMigrationVersions?: Record<string, number>;
   /**
-   * The person's Composio API key. Kept here with the provider keys, in
-   * the same store; the engine gets it as an env var, never in its file.
-   */
-  composioApiKey?: string;
-  /**
-   * Turns run through the Claude Code app installed on this computer,
-   * under its sign-in, instead of a model API. For the person's own
-   * development; see `shared/settings/models.ts`.
-   */
-  claudeCodeLogin?: boolean;
-  /** The model Claude Code is asked for; blank means the default. */
-  claudeCodeModel?: string;
-  /**
    * Catalogue ids signed into through Composio, as of the last time this
    * app did it. A copy, and the one place the connections screen keeps
-   * one: the fact lives on Composio's servers and reading it needs the
-   * key and a round trip, which the renderer has no bridge for yet. The
-   * main side confirms each entry against Composio before it is written.
+   * one: the fact lives on Composio's servers and reading it is a round
+   * trip the renderer has no bridge for yet. The main side confirms each
+   * entry against Composio before it is written. There is no Composio
+   * key here: Claidor's key is on the server, never in the app.
    */
   composioConnected?: string[];
   // 主题配置

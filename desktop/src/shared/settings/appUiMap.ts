@@ -52,7 +52,7 @@ export const MAP_PLACEHOLDERS = ['PLACEHOLDER-NAME', 'PLACEHOLDER-DIR', 'PLACEHO
  * meter, the API key field. So the input here is deliberately the
  * fullest one, and the conditional rows are marked rather than hidden.
  */
-const EVERY_ROW: SettingsInput = {
+export const EVERY_ROW: SettingsInput = {
   accountName: MAP_PLACEHOLDERS[0],
   computerName: 'this computer',
   workingDirectory: MAP_PLACEHOLDERS[1],
@@ -60,8 +60,6 @@ const EVERY_ROW: SettingsInput = {
   memoryEnabled: true,
   modelChoice: 'openai',
   modelApiKey: '',
-  composioApiKey: '',
-  claudeCodeModel: '',
   usage: { fraction: 0, value: '', desc: '' },
   version: MAP_PLACEHOLDERS[2],
   onSignOut: noop,
@@ -70,8 +68,6 @@ const EVERY_ROW: SettingsInput = {
   onMemory: noop,
   onModelChoice: noop,
   onModelApiKey: noop,
-  onComposioApiKey: noop,
-  onClaudeCodeModel: noop,
   onWorkingDirectory: noop,
   onRefreshUsage: noop,
   onCheckUpdates: noop,

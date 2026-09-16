@@ -1854,49 +1854,52 @@ describe('OpenClawConfigSync runtime config output', () => {
     expect(config.tools.deny).not.toContain('video_generate');
   });
 
-  test('the Claude Code sign-in makes the engine run turns through the Claude CLI', async () => {
+  test('the Claude Code mechanic makes the engine run every agent through the Claude CLI', async () => {
     // The engine's own planner uses exactly this form: a `claude-cli/<model>`
     // primary model, and the engine spawns the installed Claude Code app.
-    const on = await createSync({ getClaudeCodeLogin: () => ({ enabled: true, model: ' claude-opus-5 ' }) });
+    // Every agent is locked to it: a stored agent model is the account's
+    // server model and would otherwise win over the default.
+    const on = await createSync({ getClaudeCodeMode: () => ({ enabled: true, command: '/opt/homebrew/bin/claude' }) });
     expect(on.sync('claude-code-on').ok).toBe(true);
     const onConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(onConfig.agents.defaults.model.primary).toBe('claude-cli/claude-opus-5');
-    const backend = onConfig.agents.defaults.cliBackends?.['claude-cli'];
-    // The command is written only when the binary was found on this
-    // machine; either way the model ref alone selects the backend.
-    if (backend) expect(typeof backend.command).toBe('string');
+    expect(onConfig.agents.defaults.cliBackends?.['claude-cli']).toEqual({ command: '/opt/homebrew/bin/claude' });
+    for (const agent of onConfig.agents.list ?? []) {
+      expect(agent.model?.primary, agent.id).toBe('claude-cli/claude-opus-5');
+    }
 
-    const blank = await createSync({ getClaudeCodeLogin: () => ({ enabled: true }) });
-    expect(blank.sync('claude-code-default').ok).toBe(true);
-    expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).agents.defaults.model.primary).toBe('claude-cli/claude-opus-5');
+    // No command found: the primary still says claude-cli and the engine
+    // is left to try a bare `claude`; nothing else is invented.
+    const bare = await createSync({ getClaudeCodeMode: () => ({ enabled: true, command: null }) });
+    expect(bare.sync('claude-code-bare').ok).toBe(true);
+    const bareConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(bareConfig.agents.defaults.model.primary).toBe('claude-cli/claude-opus-5');
+    expect(bareConfig.agents.defaults.cliBackends).toBeUndefined();
 
-    const off = await createSync({ getClaudeCodeLogin: () => ({ enabled: false, model: 'claude-opus-5' }) });
+    const off = await createSync({ getClaudeCodeMode: () => ({ enabled: false, command: '/opt/homebrew/bin/claude' }) });
     expect(off.sync('claude-code-off').ok).toBe(true);
     expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).agents.defaults.model.primary).not.toMatch(/^claude-cli\//);
   });
 
-  test('enables the composio plugin only with a key, and never writes the key into the file', async () => {
-    const withKey = await createSync({ getComposioApiKey: () => '  ck_live_secret  ' });
-    expect(withKey.sync('composio-key').ok).toBe(true);
+  test('points the composio plugin at the local token proxy, with no key anywhere in the file', async () => {
+    // The plugin reaches Composio through the app's token proxy, which
+    // carries the account's sign-in to Claidor's server; the server holds
+    // the key. On whenever the proxy is up; written off otherwise rather
+    // than left out, so a stale entry cannot survive the rewrite.
+    mockRuntimeState.proxyPort = 4242;
+    const up = await createSync();
+    expect(up.sync('composio-proxy-up').ok).toBe(true);
     const enabled = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(enabled.plugins.entries.composio).toEqual({
       enabled: true,
-      config: { apiKey: '${COMPOSIO_API_KEY}', userId: 'default' },
+      config: { baseUrl: 'http://127.0.0.1:4242/composio' },
     });
-    expect(fs.readFileSync(configPath, 'utf8')).not.toContain('ck_live_secret');
-    expect(withKey.collectSecretEnvVars().COMPOSIO_API_KEY).toBe('ck_live_secret');
+    expect(fs.readFileSync(configPath, 'utf8')).not.toMatch(/apiKey.*composio|COMPOSIO_API_KEY/i);
+    expect(up.collectSecretEnvVars().COMPOSIO_API_KEY).toBeUndefined();
 
-    // The key removed: the entry is written off, not left out, so the
-    // stale one above cannot survive the rewrite; the env var still
-    // resolves so the placeholder cannot crash the load.
-    const withoutKey = await createSync({ getComposioApiKey: () => '' });
-    expect(withoutKey.sync('composio-key-removed').ok).toBe(true);
-    const disabled = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(disabled.plugins.entries.composio).toEqual({ enabled: false });
-    expect(withoutKey.collectSecretEnvVars().COMPOSIO_API_KEY).toBe('unconfigured');
-
-    const undeclared = await createSync();
-    expect(undeclared.sync('composio-undeclared').ok).toBe(true);
+    mockRuntimeState.proxyPort = null;
+    const down = await createSync();
+    expect(down.sync('composio-proxy-down').ok).toBe(true);
     expect(JSON.parse(fs.readFileSync(configPath, 'utf8')).plugins.entries.composio).toEqual({ enabled: false });
   });
 
