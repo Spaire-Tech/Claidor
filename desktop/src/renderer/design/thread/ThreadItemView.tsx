@@ -3,23 +3,20 @@ import { type CSSProperties, useState } from 'react';
 import { agentAvatar, avatarInk } from '../../../shared/agent/avatars';
 import { AskInputFieldKind } from '../../../shared/askInput/constants';
 import { ChevronRightIcon, CloseIcon, WarningIcon } from '../icons';
-import { logoUrl } from '../logos';
 import { CloudBlob } from '../orb/CloudBlob';
 import { color, font, line, motion, radius, shadow, text, tracking } from '../tokens';
 import { messageIdOf, type Reactions } from './actions';
-import { FILE_LOGO, readableSize } from './attachment';
+import { readableSize } from './attachment';
 import { CardBlock, type CardHandlers } from './CardBlock';
 import { detailsLabel } from './details';
+import { FileCard } from './FileCard';
 import { MessageActions, ReactionChip } from './MessageActions';
 import { type KnownFile, type MessagePart, PartKind, splitMessageParts } from './parts';
-// The design's PDF icon, bundled by Vite like the service logos.
-import pdfDoc from './pdf-doc.webp?url';
 import { RosterCard, type RosterHandlers } from './RosterCard';
 import {
   type AttachmentItem,
   type AuthDecision,
   type ChoiceOutcome,
-  FileKind,
   type SecretItem,
   Speaker,
   type ThreadItem,
@@ -712,8 +709,6 @@ function AttachmentCard(
   const mine = item.from === Speaker.Person;
   const open = handlers.onOpenFile ? () => handlers.onOpenFile?.(item.path) : undefined;
   const save = handlers.onSaveCopy ? () => handlers.onSaveCopy?.(item.path) : undefined;
-  const [hover, setHover] = useState(false);
-  const [saveHover, setSaveHover] = useState(false);
   const row: CSSProperties = { display: 'flex', ...(mine ? { justifyContent: 'flex-end' } : {}), animation: enter };
 
   if (item.image) {
@@ -744,88 +739,8 @@ function AttachmentCard(
   const size = readableSize(item.size);
   return (
     <div style={row}>
-      <div
-        role="button"
-        tabIndex={open ? 0 : -1}
-        onClick={open}
-        onKeyDown={event => {
-          if (open && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); open(); }
-        }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        title={item.path}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 12, width: 'min(70%, 440px)',
-          boxSizing: 'border-box', padding: '11px 12px', borderRadius: radius.card,
-          background: hover ? '#f6f7f9' : color.paper,
-          border: '1px solid rgba(255,255,255,.6)',
-          boxShadow: '0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.08), inset 0 1px 0 rgba(255,255,255,.7)',
-          cursor: open ? 'pointer' : 'default', textAlign: 'left', transition: 'background .15s',
-        }}
-      >
-        <FileGlyph kind={item.file} name={item.name} />
-        <span style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{
-            fontSize: text.message, fontWeight: 500, letterSpacing: tracking.body, color: color.shimmerInk,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {item.name}
-          </span>
-          {size && <span style={{ fontSize: text.caption, color: color.muted }}>{size}</span>}
-        </span>
-        {save && (
-          <button
-            type="button"
-            aria-label="Save a copy"
-            title="Save a copy"
-            onClick={event => { event.stopPropagation(); save(); }}
-            onMouseEnter={() => setSaveHover(true)}
-            onMouseLeave={() => setSaveHover(false)}
-            style={{
-              width: 31, height: 31, flex: '0 0 auto', borderRadius: '50%', padding: 0,
-              border: `1px solid ${line.hairline}`, background: saveHover ? color.fillRaised : color.paper,
-              color: color.ink, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
-              <path d="M12 4v11" /><path d="M7.5 11l4.5 4.5 4.5-4.5" /><path d="M5 19.5h14" />
-            </svg>
-          </button>
-        )}
-      </div>
+      <FileCard name={item.name} caption={size} kind={item.file} title={item.path} onOpen={open} onSave={save} />
     </div>
-  );
-}
-
-/** The file's own icon — the design's four — or a paperclip for the rest. */
-function FileGlyph({ kind, name }: { kind: FileKind | undefined; name: string }): JSX.Element {
-  const logo = kind ? FILE_LOGO[kind] : undefined;
-  const url = kind === FileKind.Pdf ? pdfDoc : logo ? logoUrl(logo) : undefined;
-  if (!url) {
-    return (
-      <span style={{ width: 36, height: 36, flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <PaperclipGlyph />
-      </span>
-    );
-  }
-  return (
-    <span
-      role="img"
-      aria-label={name}
-      style={{
-        width: 36, height: 36, flex: '0 0 auto',
-        backgroundImage: `url(${url})`, backgroundSize: 'contain',
-        backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
-      }}
-    />
-  );
-}
-
-function PaperclipGlyph(): JSX.Element {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color.muted} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" style={{ flex: '0 0 auto' }}>
-      <path d="M21.4 11.1l-8.5 8.5a5 5 0 01-7.1-7.1l8.5-8.5a3.3 3.3 0 014.7 4.7l-8.5 8.5a1.7 1.7 0 01-2.4-2.4l7.8-7.8" />
-    </svg>
   );
 }
 

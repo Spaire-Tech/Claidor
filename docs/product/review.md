@@ -4080,6 +4080,18 @@ four company cards with pictures, the quarter-by-quarter table with
 sources). Six photographs sent; the report's third page is their
 picture, component for component.
 
+**Then the founder drew the line where it belongs.** *"the design for
+the q4 board update, ohada etc. that says 'view' those you can toss.
+and keep our own design, with pdf svgs, docs svgs, ppt etc. and our
+buttons like it was before. this is still artifacts. we just changed
+the design."* So OpenUI's chip is gone. In the thread a deck is our
+file card with the PowerPoint icon and "9 slides" under the name, and
+a report is the same card with the Word icon and "4 pages": the card a
+file the agent made already gets, now one component (`FileCard.tsx`)
+used by both. Pressing it opens their viewer inline, at full size, in
+a sheet of ours over the app: scrim, close in the corner, Escape.
+Their deck and report are untouched inside it. Photographed both.
+
 **Two things to know.**
 - Inter is bundled for the artifacts only; the app stays in Switzer.
 - Print mode exists in both viewers for PDF and PPTX export; the

@@ -67,3 +67,12 @@ export function artifactTitleOf(program: string): string | undefined {
   const match = /^\s*root\s*=\s*(?:SlideShow|ReportView)\s*\(\s*"((?:[^"\\]|\\.)*)"/m.exec(program);
   return match ? match[1].replace(/\\(.)/g, '$1') : undefined;
 }
+
+/**
+ * How many slides or pages a program declares: its `Slide(` or `Page(`
+ * statements, for the line under the name on the card.
+ */
+export function artifactCountOf(program: string, kind: ArtifactKind): number {
+  const unit = kind === ArtifactKind.Presentation ? 'Slide' : 'Page';
+  return (program.match(new RegExp(`^\\s*[A-Za-z_][A-Za-z0-9_]*\\s*=\\s*${unit}\\s*\\(`, 'gm')) ?? []).length;
+}
