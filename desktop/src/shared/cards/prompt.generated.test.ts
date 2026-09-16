@@ -34,7 +34,9 @@ describe('the generated card prompt', () => {
     const css = buildCardsCss();
     expect(file).toBe(renderCardsCss(css));
     expect(Object.keys(css.tokens).length).toBeGreaterThan(20);
-    expect(css.tokens['--openui-text-body-default']).toBe('400 16px/1.5 var(--fsr-font-ui)');
+    // Their 16 is the thread's 14; the weight and the leading are theirs.
+    expect(css.tokens['--openui-text-body-default']).toBe('400 14px/1.5 var(--fsr-font-ui)');
+    expect(css.tokens['--openui-text-heading-sm']).toBe('600 16px/1.25 var(--fsr-font-ui)');
     expect(file).not.toMatch(/"Inter"/);
   });
 });

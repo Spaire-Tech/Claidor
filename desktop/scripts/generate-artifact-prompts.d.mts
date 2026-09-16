@@ -20,5 +20,6 @@ export interface CardsCss {
   version: string;
   tokens: Record<string, string>;
 }
+export const CARD_TYPE_SCALE: Record<number, number>;
 export function buildCardsCss(): CardsCss;
 export function renderCardsCss(css: CardsCss): string;

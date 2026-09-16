@@ -4164,6 +4164,27 @@ that leaves the loopback, and none did. Telemetry stays off. An item
 with no picture draws their empty frame (Tsukushinbo in the first
 shot), which is their behaviour and stays.
 
+**Then the founder looked at them full size.** *"the layout is
+disastrous, the proportions, the cards are transparants therefore we
+see the grid in the background, the cards also touch each other …
+nothing should be transparant. now whatevers that is button
+shape/color - use our design. not theirs."* All true, and all of it
+their stylesheet meeting our ground: their card surface is 2% black
+over whatever is behind it, which here is the grid; their grid gap is
+12px with a 6% border, so the tiles read as touching; their chat
+scale starts at 16px beside a 14px thread; their grids fold to two
+columns under 768px and span the odd card, and the block here is
+never that wide, so three tiles came out as two and one; their blue
+button. So, in `cards.css`: every card is our paper with the hairline
+and the flat shadow; 16px between cards; their type sizes mapped onto
+the thread's scale in the generator (`CARD_TYPE_SCALE`, 16 → 14, 18 →
+16, and so on, weights and leading theirs); their own three-across
+kept from 480px up inside the block; a hero picture capped at 300px;
+the block as wide as the widest bubble; and the buttons are the
+thread's pill, ink on paper and paper with the button line, hugging
+their label. Their tags, icons, pictures and layouts stay theirs.
+Re-photographed, all four.
+
 **Photographed.** The founder's four: Seattle restaurants, Paris hotels
 ("Showing 5 results", five image cards with a price and Book, the
 Highlights rows), Tokyo in three days (hero, three figure tiles, three

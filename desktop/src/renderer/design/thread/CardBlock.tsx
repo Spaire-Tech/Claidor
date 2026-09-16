@@ -69,7 +69,9 @@ function CardsBlock(
     <div
       data-card-block={item.id}
       className="caisra-cards"
-      style={{ width: '100%', maxWidth: 820, padding: '4px 0 6px', animation: enter }}
+      // As wide as the widest bubble (`ThreadItemView`), so the cards
+      // sit in the conversation's column and not across the whole pane.
+      style={{ width: '100%', maxWidth: 'min(80%, 680px)', padding: '4px 0 6px', animation: enter }}
     >
       <OpenUIC1Component
         content={item.program}
